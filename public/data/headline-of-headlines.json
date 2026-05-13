@@ -1,136 +1,56 @@
 {
-  "generatedAt": "2026-04-12T20:37:38Z",
+  "generatedAt": "2026-05-13T23:11:21Z",
   "countries": {
+    "CA": {
+      "countryId": "CAN",
+      "dateUtc": "2026-05-13",
+      "timeIntervalUtc": "08-12",
+      "mainIssue": "environment_and_energy",
+      "mainIssueLabelFr": "Environnement et énergie",
+      "mainIssueLabelEn": "Environment and energy",
+      "title": "Mark Carney et Danielle Smith finalisent un accord sur le prix du carbone",
+      "score": 0.5,
+      "prevScore": 0.5,
+      "velocity": 0,
+      "objects": [],
+      "monitoredSources": [],
+      "headlines": [],
+      "snapshotLabel": null,
+      "nextLabel": {}
+    },
     "QC": {
       "countryId": "QC",
-      "dateUtc": "2026-04-12",
-      "timeIntervalUtc": "15:57",
-      "mainIssue": "economy_and_labour",
-      "mainIssueLabelFr": "Économie et travail",
-      "mainIssueLabelEn": "Economy and Labour",
-      "title": "La guerre des prix de l'essence au Québec fait rage avec des variations jusqu'à 23 cents",
-      "score": 0.74,
-      "prevScore": 0.62,
-      "velocity": 19.4,
-      "objects": [
-        { "label": "essence", "score": 1.0 },
-        { "label": "prix", "score": 0.71 },
-        { "label": "Legault", "score": 0.44 }
-      ],
-      "monitoredSources": [
-        "Radio-Canada",
-        "TVA Nouvelles",
-        "La Presse",
-        "Le Devoir",
-        "Journal de Montréal",
-        "Montreal Gazette"
-      ],
-      "headlines": [
-        {
-          "source": "Radio-Canada",
-          "title": "La guerre des prix de l'essence au Québec fait rage avec des variations jusqu'à 23 cents",
-          "url": "https://ici.radio-canada.ca/",
-          "time": "07:57"
-        },
-        {
-          "source": "TVA Nouvelles",
-          "title": "[VIDÉOS] Le prix de l'essence bondit de 23 cents en quelques heures à Québec",
-          "url": "https://www.tvanouvelles.ca/",
-          "time": "15:47"
-        },
-        {
-          "source": "La Presse",
-          "title": "Le plein d'essence va coûter beaucoup plus cher cet été, préviennent les experts",
-          "url": "https://www.lapresse.ca/",
-          "time": "11:15"
-        },
-        {
-          "source": "Le Devoir",
-          "title": "Variations de prix à la pompe: opacité du marché et absence de régulation en cause",
-          "url": "https://www.ledevoir.com/",
-          "time": "12:30"
-        },
-        {
-          "source": "Journal de Montréal",
-          "title": "Les Québécois paient l'essence plus cher qu'ailleurs au Canada",
-          "url": "https://www.journaldemontreal.com/",
-          "time": "09:40"
-        }
-      ],
-      "snapshotLabel": "15:57 · dimanche 12 avril",
-      "nextLabel": "19:57"
+      "dateUtc": "2026-05-13",
+      "timeIntervalUtc": "08-12",
+      "mainIssue": "culture_and_nationalism",
+      "mainIssueLabelFr": "Culture et nationalisme",
+      "mainIssueLabelEn": "Culture and nationalism",
+      "title": " Les Canadiens s'inclinent face aux Sabres après un but chanceux",
+      "score": 0.5,
+      "prevScore": 0.5,
+      "velocity": 0,
+      "objects": [],
+      "monitoredSources": [],
+      "headlines": [],
+      "snapshotLabel": null,
+      "nextLabel": {}
     },
-    "CA": {
-      "countryId": "CA",
-      "dateUtc": "2026-04-12",
-      "timeIntervalUtc": "15:57",
+    "USA": {
+      "countryId": "USA",
+      "dateUtc": "2026-05-13",
+      "timeIntervalUtc": "08-12",
       "mainIssue": "international_affairs_and_defense",
-      "mainIssueLabelFr": "Affaires internationales",
-      "mainIssueLabelEn": "International Affairs",
-      "title": "US tariffs: Canada scrambles to negotiate as Washington escalates trade threats",
-      "score": 0.88,
-      "prevScore": 0.91,
-      "velocity": -3.3,
-      "objects": [
-        { "label": "tariffs", "score": 1.0 },
-        { "label": "Trump", "score": 0.85 },
-        { "label": "Carney", "score": 0.62 }
-      ],
-      "monitoredSources": [
-        "CBC",
-        "CTV News",
-        "Vancouver Sun",
-        "Global News",
-        "National Post",
-        "Globe and Mail",
-        "Toronto Star"
-      ],
-      "headlines": [
-        {
-          "source": "CBC",
-          "title": "Canada pushes back on new US tariff threats as trade tensions escalate",
-          "url": "https://www.cbc.ca/",
-          "time": "14:30"
-        },
-        {
-          "source": "CTV News",
-          "title": "Canada braces for impact as US trade measures widen",
-          "url": "https://www.ctvnews.ca/",
-          "time": "12:00"
-        },
-        {
-          "source": "Vancouver Sun",
-          "title": "B.C. exporters brace for fallout as US tariff threats intensify",
-          "url": "https://vancouversun.com/",
-          "time": "13:10"
-        },
-        {
-          "source": "Global News",
-          "title": "What the latest US tariff package targets — and what Canada can do",
-          "url": "https://globalnews.ca/",
-          "time": "12:50"
-        },
-        {
-          "source": "National Post",
-          "title": "Trade war escalates: what the new tariffs mean for Canadian households",
-          "url": "https://nationalpost.com/",
-          "time": "11:45"
-        },
-        {
-          "source": "Globe and Mail",
-          "title": "Carney calls emergency economic council after Trump announces sweeping tariffs",
-          "url": "https://www.theglobeandmail.com/",
-          "time": "13:15"
-        },
-        {
-          "source": "Toronto Star",
-          "title": "Ottawa scrambles to respond as Washington doubles down on tariff threats",
-          "url": "https://www.thestar.com/",
-          "time": "10:55"
-        }
-      ],
-      "snapshotLabel": "3:57 PM · Sunday April 12",
-      "nextLabel": "7:57 PM"
+      "mainIssueLabelFr": "Affaires internationales et défense",
+      "mainIssueLabelEn": "International affairs and defense",
+      "title": "Trump et Xi discutent Iran et Taïwan lors d'un sommet crucial à Pékin",
+      "score": 0.5,
+      "prevScore": 0.5,
+      "velocity": 0,
+      "objects": [],
+      "monitoredSources": [],
+      "headlines": [],
+      "snapshotLabel": null,
+      "nextLabel": {}
     }
   }
 }

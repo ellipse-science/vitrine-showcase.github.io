@@ -213,6 +213,12 @@ build_hoh_rich <- function(df) {
 run <- function() {
   results <- list()
 
+  # noctua requires the standard (un-suffixed) env vars to be set for query
+  # execution, even though ellipse_connect() uses the _DEV suffixed vars.
+  # Pattern from vitrine-graph-data/runtime.R.
+  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv("AWS_ACCESS_KEY_ID_DEV"))
+  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV"))
+
   conn <- tube::ellipse_connect("DEV", "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
