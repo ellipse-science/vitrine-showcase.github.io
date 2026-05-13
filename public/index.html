@@ -1564,6 +1564,49 @@
     display: flex; justify-content: space-between;
   }
 
+  /* Hover médias hors-QC */
+  .us-media-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    cursor: pointer;
+    margin-left: 10px;
+    border-bottom: 0.5px dashed var(--rule);
+    transition: color 0.15s ease;
+  }
+  .us-media-hint:hover { color: var(--cordovan); }
+  .byline-us-hover {
+    display: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: var(--paper-deep);
+    border: 0.5px solid var(--rule);
+    line-height: 1.8;
+  }
+  .byline-us-hover.open { display: block; }
+  .byline-us-hover a { color: var(--ink-soft); text-decoration: none; }
+  .byline-us-hover .us-scores {
+    display: block;
+    margin-top: 4px;
+    font-size: 9px;
+    color: var(--ink-softer);
+  }
+
+  /* Taille de police h1 variable selon saillance (data-saillance="1"–"6") */
+  .une-main h1[data-saillance="6"] { font-size: 58px; }
+  .une-main h1[data-saillance="5"] { font-size: 50px; }
+  .une-main h1[data-saillance="4"] { font-size: 44px; }
+  .une-main h1[data-saillance="3"] { font-size: 38px; }
+  .une-main h1[data-saillance="2"] { font-size: 33px; }
+  .une-main h1[data-saillance="1"] { font-size: 28px; }
+
   /* Légende prototype (annotations pour Hugo) */
   .legend-box {
     margin-top: 50px;
@@ -1626,7 +1669,6 @@
     <div class="links">
       <a href="#methodologie">Méthodologie</a>
       <a href="#propos">À propos</a>
-      <a href="#outils">Outils</a>
     </div>
   </nav>
 
@@ -1723,7 +1765,7 @@
     <div class="une-main">
       <span class="une-enjeu" style="--c: #742630">Économie et travail</span>
       <span class="saillance-tag major">Majeur · 6 / 6</span>
-      <h1>Déficit record, mais peu de compressions dans le budget du Québec</h1>
+      <h1 data-saillance="6">Déficit record, mais peu de compressions dans le budget du Québec</h1>
       <div class="saillance-row">
         <span class="region-label">Québec</span>
         <span class="saillance-dots">
@@ -1738,11 +1780,15 @@
         <a href="#a3">Radio-Canada</a><span class="sep">·</span>
         <a href="#a4">TVA Nouvelles</a><span class="sep">·</span>
         <a href="#a5">Journal de Montréal</a><span class="sep">·</span>
-        <a href="#a6">Montreal Gazette</a><span class="sep">·</span>
+        <a href="#a6">Montreal Gazette</a>
+        <span class="us-media-hint" title="Médias hors-Québec ayant couvert cette histoire">+4 médias canadiens/US ▾</span>
+      </div>
+      <div class="byline-us-hover">
         <a href="#a7">Globe and Mail</a><span class="sep">·</span>
         <a href="#a8">CBC</a><span class="sep">·</span>
         <a href="#a9">CTV</a><span class="sep">·</span>
         <a href="#a10">Toronto Star</a>
+        <span class="us-scores">CNN <span class="saillance-dots" style="display:inline-flex;gap:3px;vertical-align:middle"><span class="e" style="width:5px;height:5px;border-radius:50%;border:0.8px solid var(--rule);display:inline-block"></span><span class="e" style="width:5px;height:5px;border-radius:50%;border:0.8px solid var(--rule);display:inline-block"></span></span> · Fox News <span class="saillance-dots" style="display:inline-flex;gap:3px;vertical-align:middle"><span class="e" style="width:5px;height:5px;border-radius:50%;border:0.8px solid var(--rule);display:inline-block"></span><span class="e" style="width:5px;height:5px;border-radius:50%;border:0.8px solid var(--rule);display:inline-block"></span></span></span>
       </div>
       <div class="byline-absent">
         Absent de National Post · CNN · Fox News
@@ -1775,15 +1821,6 @@
           <span class="d"></span><span class="d"></span><span class="d"></span>
           <span class="d"></span><span class="d"></span><span class="e"></span>
         </span>
-        <span class="region-label sub">+ ROC</span>
-        <span class="saillance-dots sub">
-          <span class="d"></span>
-          <span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span>
-        </span>
-        <span class="region-label sub">+ US</span>
-        <span class="saillance-dots sub">
-          <span class="e"></span><span class="e"></span>
-        </span>
         <span class="time">4 h en manchette</span>
       </div>
       <div class="byline">
@@ -1810,14 +1847,6 @@
         <span class="saillance-dots">
           <span class="d"></span><span class="d"></span><span class="d"></span>
           <span class="e"></span><span class="e"></span><span class="e"></span>
-        </span>
-        <span class="region-label sub">+ ROC</span>
-        <span class="saillance-dots sub">
-          <span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span>
-        </span>
-        <span class="region-label sub">+ US</span>
-        <span class="saillance-dots sub">
-          <span class="d"></span><span class="d"></span>
         </span>
         <span class="time">3 h en manchette</span>
       </div>
@@ -1932,7 +1961,7 @@
     <div class="parti-row">
       <span class="parti-name-box plq">PLQ</span>
       <div class="parti-bar-wrap">
-        <div class="parti-bar" style="width: 35%; background: #C2B7A0;" title="Ton neutre · 35 % de part de voix"></div>
+        <div class="parti-bar" style="width: 35%; background: var(--ink);" title="35 % de part de voix"></div>
         <div class="parti-bar-avg" style="left: 30%;" title="Moyenne 7 j : 30 %">
           <span class="avg-label">moyenne 7 jours</span>
         </div>
@@ -1954,7 +1983,7 @@
     <div class="parti-row">
       <span class="parti-name-box caq">CAQ</span>
       <div class="parti-bar-wrap">
-        <div class="parti-bar" style="width: 22%; background: #B07868;" title="Ton plutôt négatif · 22 % de part de voix"></div>
+        <div class="parti-bar" style="width: 22%; background: var(--ink);" title="22 % de part de voix"></div>
         <div class="parti-bar-avg" style="left: 25%;" title="Moyenne 30 j : 25 %"></div>
       </div>
       <div class="parti-spark">
@@ -1974,7 +2003,7 @@
     <div class="parti-row">
       <span class="parti-name-box qs">QS</span>
       <div class="parti-bar-wrap">
-        <div class="parti-bar" style="width: 18%; background: #748A65;" title="Ton positif · 18 % de part de voix"></div>
+        <div class="parti-bar" style="width: 18%; background: var(--ink);" title="18 % de part de voix"></div>
         <div class="parti-bar-avg" style="left: 14%;" title="Moyenne 30 j : 14 %"></div>
       </div>
       <div class="parti-spark">
@@ -1994,7 +2023,7 @@
     <div class="parti-row">
       <span class="parti-name-box pq">PQ</span>
       <div class="parti-bar-wrap">
-        <div class="parti-bar" style="width: 14%; background: #BC9279;" title="Ton plutôt négatif · 14 % de part de voix"></div>
+        <div class="parti-bar" style="width: 14%; background: var(--ink);" title="14 % de part de voix"></div>
         <div class="parti-bar-avg" style="left: 18%;" title="Moyenne 30 j : 18 %"></div>
       </div>
       <div class="parti-spark">
@@ -2016,7 +2045,7 @@
       <div class="parti-row" style="border-bottom: none;">
         <span class="parti-name-box pcq" style="opacity: 0.7;">PCQ</span>
         <div class="parti-bar-wrap">
-          <div class="parti-bar" style="width: 4%; background: #9CA585;" title="Ton légèrement positif · 4 % de part de voix"></div>
+          <div class="parti-bar" style="width: 4%; background: var(--ink);" title="4 % de part de voix"></div>
           <div class="parti-bar-avg" style="left: 5%;" title="Moyenne 30 j : 5 %"></div>
         </div>
         <div class="parti-spark">
@@ -2312,8 +2341,9 @@
       <p>Recevez les nouvelles qui font consensus. <a href="#alerte-consensus" style="color: var(--cordovan);">S'abonner →</a></p>
     </div>
     <div>
-      <h4>Propulsé par</h4>
+      <h4>Propulsé par le CAPP</h4>
       <p>CAPP · Université Laval. <a href="#twitter" style="color: var(--cordovan);">Twitter</a> · <a href="#linkedin" style="color: var(--cordovan);">LinkedIn</a></p>
+      <p style="margin-top: 8px;"><a href="mailto:capp@ulaval.ca" style="color: var(--cordovan); font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;">Accès aux données →</a></p>
     </div>
   </div>
 
@@ -2365,6 +2395,21 @@
 
   tick();
   setInterval(tick, 1000);
+})();
+
+// Toggle médias hors-QC
+(function () {
+  document.querySelectorAll('.us-media-hint').forEach(function (hint) {
+    hint.addEventListener('click', function () {
+      var panel = hint.closest('.byline').nextElementSibling;
+      if (panel && panel.classList.contains('byline-us-hover')) {
+        panel.classList.toggle('open');
+        hint.textContent = panel.classList.contains('open')
+          ? 'Masquer ▴'
+          : '+4 médias canadiens/US ▾';
+      }
+    });
+  });
 })();
 
 // Sélecteur de seuil — Alerte consensus
