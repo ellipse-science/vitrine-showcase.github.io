@@ -133,7 +133,7 @@
     text-align: right;
   }
 
-  /* Figure éditoriale en haut à droite, dimensionnée pour matcher la hauteur de la une principale */
+  /* Figure éditoriale — bande fixe sous les unes, indépendante de la saillance */
   .hero-figure {
     margin: 0 0 4px;
     max-width: 100%;
@@ -146,13 +146,13 @@
     border-bottom: 0.5px solid var(--rule);
     position: relative;
     overflow: hidden;
-    flex: 1 1 auto;
-    min-height: 220px;
+    height: 190px;
   }
   .hero-figure img.editorial-img {
     width: 100%;
-    height: 100%;
+    height: 190px;
     object-fit: cover;
+    object-position: center 30%;
     display: block;
   }
   .hero-figure svg.editorial { /* fallback pour variante SVG si besoin */
@@ -510,18 +510,23 @@
   .section-label .legend-toggle.inline { margin-left: auto; }
 
   /* Hero — une principale pleine largeur, image en dessous */
-  .hero {
+  /* Trio proportionnel : largeur = saillance / somme-saillances (6fr 5fr 3fr) */
+  .hero-trio {
+    display: grid;
+    grid-template-columns: 6fr 5fr 3fr;
+    gap: 0 36px;
     border-top: 2px solid var(--ink);
-    padding-top: 28px;
-    padding-bottom: 32px;
-    border-bottom: none;
-  }
-  .hero .une-main { min-width: 0; }
-
-  /* Figure éditoriale sous la une principale */
-  .hero-editorial-wrap {
     border-bottom: 2px solid var(--ink);
-    padding-bottom: 28px;
+    padding: 28px 0 32px;
+    margin-bottom: 0;
+  }
+  .hero-trio .une-main { min-width: 0; }
+  .hero-trio .une-side { min-width: 0; }
+
+  /* Figure éditoriale — bande compacte sous le trio */
+  .hero-editorial-wrap {
+    border-bottom: 0.5px solid var(--rule);
+    padding-bottom: 0;
     margin-bottom: 0;
   }
   .hero-editorial-wrap .hero-figure {
@@ -529,21 +534,9 @@
     max-width: 100%;
   }
   .hero-editorial-wrap .figure-frame {
-    min-height: 340px;
+    height: 190px;
+    min-height: unset;
   }
-
-  /* Bloc des unes secondaires : centré, sous la ligne noire */
-  .hero-secondaries {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 30px 36px;
-    max-width: 980px;
-    margin: 30px auto 36px;
-    padding-bottom: 4px;
-    border-bottom: 0.5px solid var(--rule);
-  }
-  .hero-secondaries .une-side { min-width: 0; }
-  .hero-secondaries .une-side-left { border-left: none; padding-left: 0; }
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
   .une-enjeu {
     display: inline-block;
@@ -1718,7 +1711,7 @@
     .section-label .section-date { font-size: 13px; }
 
     /* ── Hero editorial figure ── */
-    .hero-editorial-wrap .figure-frame { min-height: 200px; }
+    .hero-editorial-wrap .figure-frame { height: 160px; }
 
     /* ── Sub-nav ── */
     .sub-nav {
@@ -1747,11 +1740,13 @@
     /* ── Section label ── */
     .section-label { font-size: 9px; margin: 36px 0 16px; }
 
-    /* ── Hero principal ── */
-    .hero {
+    /* ── Hero trio (empilé sur mobile) ── */
+    .hero-trio {
+      grid-template-columns: 1fr;
+      gap: 0;
       border-top-width: 1.5px;
       padding-top: 18px;
-      padding-bottom: 20px;
+      padding-bottom: 0;
     }
     .hero-figure figcaption { gap: 8px; }
 
@@ -1783,11 +1778,9 @@
     .byline { font-size: 11px; line-height: 1.9; }
     .byline-absent { font-size: 11px; }
 
-    /* ── Unes secondaires ── */
-    .hero-secondaries {
-      grid-template-columns: 1fr;
-      gap: 0;
-      margin: 16px 0 24px;
+    /* ── Unes secondaires (dans hero-trio empilé) ── */
+    .hero-trio .une-main {
+      padding-bottom: 20px;
     }
     .une-side {
       border-left: none;
@@ -1796,7 +1789,6 @@
       padding-top: 20px;
       margin-top: 4px;
     }
-    .une-side.une-side-left { border-top: none; padding-top: 0; margin-top: 0; }
     .une-side h2 { font-size: 22px; line-height: 1.15; margin-bottom: 10px; }
     .une-side .dek-s { font-size: 15px; }
     .une-side .saillance-dots .d,
@@ -2073,7 +2065,8 @@
   </div>
 
   <!-- Hero : une principale pleine largeur -->
-  <section class="hero">
+  <!-- Trio proportionnel : col-width ∝ saillance (6 : 5 : 3) -->
+  <section class="hero-trio">
     <div class="une-main">
       <span class="une-enjeu" style="--c: #742630">Économie et travail</span>
       <span class="saillance-tag major">Majeur · 6 / 6</span>
@@ -2095,25 +2088,7 @@
         <a href="#a6">Montreal Gazette</a>
       </div>
     </div>
-  </section>
 
-  <!-- Image éditoriale sous la une principale -->
-  <div class="hero-editorial-wrap">
-    <figure class="hero-figure">
-      <div class="figure-frame">
-        <img class="editorial-img"
-             src="https://dev.vitrinedemocratique.com/assets/images/data-visuals/issues/economy_and_labour/economy_and_labour_generic1-md.png"
-             alt="Illustration générique de l'enjeu Économie et travail">
-      </div>
-      <figcaption>
-        <span class="cap-tag">Illustration</span>
-        <span class="cap-body">Style original de Mathieu Fortin, synthèse visuelle des images des unes analysées.</span>
-      </figcaption>
-    </figure>
-  </div>
-
-  <!-- Unes secondaires : centrées sous la ligne noire -->
-  <section class="hero-secondaries">
     <div class="une-side une-side-left">
       <span class="une-enjeu" style="--c: #742630">Économie</span>
       <span class="saillance-tag major">Majeur · 5 / 6</span>
@@ -2160,6 +2135,21 @@
       </div>
     </div>
   </section>
+
+  <!-- Image éditoriale — bande fixe 190 px, indépendante de la saillance -->
+  <div class="hero-editorial-wrap">
+    <figure class="hero-figure">
+      <div class="figure-frame">
+        <img class="editorial-img"
+             src="https://dev.vitrinedemocratique.com/assets/images/data-visuals/issues/economy_and_labour/economy_and_labour_generic1-md.png"
+             alt="Illustration générique de l'enjeu Économie et travail">
+      </div>
+      <figcaption>
+        <span class="cap-tag">Illustration</span>
+        <span class="cap-body">Style original de Mathieu Fortin, synthèse visuelle des images des unes analysées.</span>
+      </figcaption>
+    </figure>
+  </div>
 
   <!-- Deux solitudes -->
   <section class="solitudes" style="--qc-pos: 12%; --roc-pos: 88%;">
