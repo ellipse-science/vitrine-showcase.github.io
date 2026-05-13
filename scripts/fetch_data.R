@@ -131,8 +131,10 @@ write_json_file <- function(df, path) {
 fetch_table <- function(conn, entry) {
   # DBI::dbGetQuery with double-quoted table name handles hyphens safely,
   # avoiding the noctua/dplyr::tbl incompatibility with hyphenated Athena tables.
+  # as.data.frame() normalises noctua's output (data.table when data.table is
+  # installed) so column subsetting with [, cols, drop=FALSE] works correctly.
   sql <- sprintf('SELECT * FROM "%s"', entry$athena)
-  df  <- DBI::dbGetQuery(conn, sql)
+  df  <- as.data.frame(DBI::dbGetQuery(conn, sql))
   df  <- df[, intersect(entry$cols, names(df)), drop = FALSE]
 
   if (entry$name == "headline_events_4h" && "block_start_utc" %in% names(df)) {
