@@ -510,18 +510,37 @@
   .section-label .legend-toggle.inline { margin-left: auto; }
 
   /* Hero — une principale pleine largeur, image en dessous */
-  /* Trio proportionnel : largeur = saillance / somme-saillances (6fr 5fr 3fr) */
+  /* Trio à deux niveaux : une principale pleine largeur, secondaires proportionnelles en dessous */
   .hero-trio {
     display: grid;
-    grid-template-columns: 6fr 5fr 3fr;
-    gap: 0 36px;
+    grid-template-columns: 5fr 3fr;
+    grid-template-areas:
+      "main  main"
+      "side-l side-r";
+    gap: 0;
     border-top: 2px solid var(--ink);
     border-bottom: 2px solid var(--ink);
-    padding: 28px 0 32px;
+    padding: 0;
     margin-bottom: 0;
   }
-  .hero-trio .une-main { min-width: 0; }
-  .hero-trio .une-side { min-width: 0; }
+  .hero-trio .une-main {
+    grid-area: main;
+    min-width: 0;
+    padding: 28px 0 28px;
+    border-bottom: 0.5px solid var(--rule);
+  }
+  .hero-trio .une-side-left {
+    grid-area: side-l;
+    min-width: 0;
+    padding: 24px 36px 28px 0;
+    border-left: none;
+  }
+  .hero-trio .une-side-right {
+    grid-area: side-r;
+    min-width: 0;
+    padding: 24px 0 28px 36px;
+    border-left: 0.5px solid var(--rule);
+  }
 
   /* Figure éditoriale — bande compacte sous le trio */
   .hero-editorial-wrap {
@@ -643,6 +662,7 @@
     line-height: 1.0;
     letter-spacing: -1.2px;
     margin: 0 0 18px;
+    text-align: center;
   }
   .une-main .dek {
     font-family: 'Source Serif 4', Georgia, serif;
