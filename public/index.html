@@ -51,38 +51,40 @@
     opacity: 0.85;
   }
   .mast {
-    align-items: center;
+    align-items: flex-start;
     padding: 18px 0 22px;
+    position: relative;
   }
   .mast .brand {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 10px;
+    width: 100%;
   }
   .mast .capp-attribution {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 5px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
   }
   .mast .capp-prefix {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.24em;
+    font-size: 7px;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
-    margin-bottom: 4px;
-    display: block;
   }
   .mast .date-region {
+    position: absolute;
+    top: 0;
+    right: 0;
     line-height: 1.2;
-    padding-bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 6px;
+    gap: 4px;
   }
   .mast .date-region .date-row {
     display: flex;
@@ -1705,10 +1707,10 @@
 
     /* ── Masthead ── */
     .mast { padding: 14px 0 16px; }
-    .mast .brand { gap: 20px; align-items: center; flex-wrap: wrap; }
-    .logo-vitrine { height: 56px; }
-    .logo-capp { height: 18px; }
-    .mast .capp-prefix { font-size: 8px; }
+    .mast .brand { gap: 8px; }
+    .logo-vitrine { height: 52px; }
+    .logo-capp { height: 16px; }
+    .mast .capp-prefix { font-size: 7px; }
     .mast .date-region { display: none; }
 
     /* ── Section label + date ── */
