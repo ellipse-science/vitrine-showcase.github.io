@@ -19,6 +19,7 @@ const ContactPage = lazy(() => import('../ContactPage/ContactPage'));
 const PartnersPage = lazy(() => import('../PartnersPage/PartnersPage'));
 const MethodologyPage = lazy(() => import('../MethodologyPage/MethodologyPage'));
 const WebsiteRevealDeck = lazy(() => import('../../presentation/WebsiteRevealDeck/WebsiteRevealDeck'));
+const StatusPage = lazy(() => import('../../../pages/StatusPage'));
 
 const contentPages = [Page.CONDITIONS, Page.PRIVACY];
 
@@ -101,6 +102,14 @@ const App = (): ReactElement => {
           element={
             <Suspense fallback={<LoadingPage />}>
               <MethodologyPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/status"
+          element={
+            <Suspense fallback={<LoadingPage />}>
+              <StatusPage />
             </Suspense>
           }
         />
