@@ -1,0 +1,81 @@
+name: Refresh Data
+
+# Triggered exclusively by cron-job.org via the GitHub REST API.
+# No schedule: trigger — GitHub Actions native cron is unreliable for
+# election-scale data freshness. Use cron-job.org → workflow_dispatch instead.
+#
+# cron-job.org setup (post-merge, one-time):
+#   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/refresh-data.yml/dispatches
+#   Method: POST   Body: {"ref":"main"}
+#   Header: Authorization: token <GitHub PAT with workflow scope>
+#   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required to commit data files back to the repo
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION:            ${{ secrets.AWS_REGION }}
+      HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
+      SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-${{ runner.os }}-${{ hashFiles('scripts/fetch_data.R') }}
+          restore-keys: r-${{ runner.os }}-
+
+      - name: Install R packages
+        run: |
+          Rscript -e '
+            pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
+            install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]],
+                             repos = "https://cloud.r-project.org")
+            remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = TRUE)
+          '
+
+      - name: Fetch data from Athena
+        run: Rscript scripts/fetch_data.R
+
+      - name: Commit updated data files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/
+          if git diff --cached --quiet; then
+            echo "No data changes — skipping commit."
+          else
+            git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            git push
+          fi
+
+      - name: Alert Slack on failure
+        if: failure()
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"⚠️ *Vitrine data refresh FAILED*\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
