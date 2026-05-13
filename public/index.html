@@ -513,7 +513,7 @@
   /* Bloc des unes secondaires : centré, sous la ligne noire */
   .hero-secondaries {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.3fr 1fr;
     gap: 30px 36px;
     max-width: 980px;
     margin: 30px auto 36px;
@@ -624,9 +624,9 @@
   .une-main h1 {
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 900;
-    font-size: 58px;
-    line-height: 1.02;
-    letter-spacing: -0.8px;
+    font-size: 72px;
+    line-height: 1.0;
+    letter-spacing: -1.2px;
     margin: 0 0 18px;
   }
   .une-main .dek {
@@ -688,6 +688,12 @@
     letter-spacing: -0.3px;
     margin: 0 0 12px;
   }
+  .une-side h2[data-saillance="6"] { font-size: 36px; letter-spacing: -0.5px; }
+  .une-side h2[data-saillance="5"] { font-size: 32px; letter-spacing: -0.4px; }
+  .une-side h2[data-saillance="4"] { font-size: 28px; }
+  .une-side h2[data-saillance="3"] { font-size: 22px; letter-spacing: -0.1px; }
+  .une-side h2[data-saillance="2"] { font-size: 19px; letter-spacing: 0; }
+  .une-side h2[data-saillance="1"] { font-size: 17px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
     font-style: italic;
@@ -1565,12 +1571,12 @@
   }
 
   /* Taille de police h1 variable selon saillance (data-saillance="1"–"6") */
-  .une-main h1[data-saillance="6"] { font-size: 58px; }
-  .une-main h1[data-saillance="5"] { font-size: 50px; }
-  .une-main h1[data-saillance="4"] { font-size: 44px; }
-  .une-main h1[data-saillance="3"] { font-size: 38px; }
-  .une-main h1[data-saillance="2"] { font-size: 33px; }
-  .une-main h1[data-saillance="1"] { font-size: 28px; }
+  .une-main h1[data-saillance="6"] { font-size: 72px; letter-spacing: -1.2px; }
+  .une-main h1[data-saillance="5"] { font-size: 62px; letter-spacing: -1px; }
+  .une-main h1[data-saillance="4"] { font-size: 52px; letter-spacing: -0.7px; }
+  .une-main h1[data-saillance="3"] { font-size: 44px; letter-spacing: -0.5px; }
+  .une-main h1[data-saillance="2"] { font-size: 36px; letter-spacing: -0.3px; }
+  .une-main h1[data-saillance="1"] { font-size: 30px; letter-spacing: -0.1px; }
 
   /* Légende prototype (annotations pour Hugo) */
   .legend-box {
@@ -1731,14 +1737,20 @@
     .hero-figure .figure-frame { min-height: 200px; }
     .hero-figure figcaption { gap: 8px; }
 
-    /* Titre h1 selon saillance, version mobile */
-    .une-main h1,
-    .une-main h1[data-saillance="6"],
-    .une-main h1[data-saillance="5"] { font-size: 28px !important; line-height: 1.1; letter-spacing: -0.3px; }
-    .une-main h1[data-saillance="4"],
-    .une-main h1[data-saillance="3"] { font-size: 24px !important; }
-    .une-main h1[data-saillance="2"],
-    .une-main h1[data-saillance="1"] { font-size: 22px !important; }
+    /* Titre h1 — hiérarchie journal sur mobile */
+    .une-main h1[data-saillance="6"] { font-size: 42px !important; line-height: 1.05; letter-spacing: -0.6px; }
+    .une-main h1[data-saillance="5"] { font-size: 36px !important; line-height: 1.07; letter-spacing: -0.4px; }
+    .une-main h1[data-saillance="4"] { font-size: 30px !important; line-height: 1.1;  letter-spacing: -0.2px; }
+    .une-main h1[data-saillance="3"] { font-size: 26px !important; line-height: 1.12; }
+    .une-main h1[data-saillance="2"] { font-size: 23px !important; line-height: 1.15; }
+    .une-main h1[data-saillance="1"] { font-size: 20px !important; line-height: 1.2;  }
+
+    /* h2 secondaires — saillance visible sur mobile aussi */
+    .une-side h2[data-saillance="5"] { font-size: 24px; letter-spacing: -0.3px; }
+    .une-side h2[data-saillance="4"] { font-size: 21px; }
+    .une-side h2[data-saillance="3"] { font-size: 18px; letter-spacing: 0; }
+    .une-side h2[data-saillance="2"] { font-size: 16px; letter-spacing: 0; }
+    .une-side h2[data-saillance="1"] { font-size: 15px; letter-spacing: 0; }
 
     .une-main .dek { font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .saillance-tag { font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; margin-bottom: 12px; }
@@ -2083,7 +2095,7 @@
     <div class="une-side une-side-left">
       <span class="une-enjeu" style="--c: #742630">Économie</span>
       <span class="saillance-tag major">Majeur · 5 / 6</span>
-      <h2>La guerre des prix de l'essence au Québec fait rage</h2>
+      <h2 data-saillance="5">La guerre des prix de l'essence au Québec fait rage</h2>
       <p class="dek-s">Écarts régionaux jusqu'à vingt cents. Petro-Canada riposte, Couche-Tard observe.</p>
       <div class="saillance-row">
         <span class="region-label">Québec</span>
@@ -2106,7 +2118,7 @@
       <span class="une-enjeu" style="--c: #304860">Aff. internationales</span>
       <span class="saillance-tag fort">Fort · 3 / 6</span>
       <span class="resonance-tag">Résonance internationale</span>
-      <h2>Détroit d'Ormuz : Trump recule après avoir appelé à l'aide</h2>
+      <h2 data-saillance="3">Détroit d'Ormuz : Trump recule après avoir appelé à l'aide</h2>
       <p class="dek-s">Washington nuance son message de la veille. Téhéran qualifie le revirement de « bluff ».</p>
       <div class="saillance-row">
         <span class="region-label">Québec</span>
