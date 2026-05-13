@@ -47,6 +47,8 @@ jobs:
           restore-keys: r-${{ runner.os }}-
 
       - name: Install R packages
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
