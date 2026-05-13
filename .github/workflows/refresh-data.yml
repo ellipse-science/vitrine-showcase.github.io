@@ -23,6 +23,8 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID_PROD:     ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
       AWS_SECRET_ACCESS_KEY_PROD: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+      AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}

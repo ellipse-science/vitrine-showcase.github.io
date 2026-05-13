@@ -213,7 +213,7 @@ build_hoh_rich <- function(df) {
 run <- function() {
   results <- list()
 
-  conn <- tube::ellipse_connect("PROD", "datamarts")
+  conn <- tube::ellipse_connect("DEV", "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
   for (entry in PUBLISHABLE_TABLES) {
