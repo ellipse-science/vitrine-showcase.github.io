@@ -129,11 +129,12 @@ write_json_file <- function(df, path) {
 }
 
 fetch_table <- function(conn, entry) {
-  df <- tube::ellipse_query(conn, entry$athena) |>
-    dplyr::select(dplyr::any_of(entry$cols)) |>
-    dplyr::collect()
+  # DBI::dbGetQuery with double-quoted table name handles hyphens safely,
+  # avoiding the noctua/dplyr::tbl incompatibility with hyphenated Athena tables.
+  sql <- sprintf('SELECT * FROM "%s"', entry$athena)
+  df  <- DBI::dbGetQuery(conn, sql)
+  df  <- df[, intersect(entry$cols, names(df)), drop = FALSE]
 
-  # For the event salience table, keep only last 3 days in-memory
   if (entry$name == "headline_events_4h" && "block_start_utc" %in% names(df)) {
     cutoff <- format(Sys.time() - as.difftime(3, units = "days"),
                      "%Y-%m-%d %H:%M:%S", tz = "UTC")
