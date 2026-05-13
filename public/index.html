@@ -59,8 +59,14 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 0;
     width: 100%;
+  }
+  .mast .brand-footer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: -36px;
   }
   .mast .capp-attribution {
     display: flex;
@@ -68,23 +74,20 @@
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    margin-left: 165px;
+  }
+  .mast .brand-footer .region {
+    margin-left: auto;
   }
   .mast .capp-prefix {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 7px;
+    font-size: 5.5px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
   }
   .mast .date-region {
-    position: absolute;
-    top: 0;
-    right: 0;
-    line-height: 1.2;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    display: none;
   }
   .mast .date-region .date-row {
     display: flex;
@@ -124,7 +127,7 @@
     padding: 3px 8px;
     border: 0.5px solid var(--cordovan);
   }
-  .mast .date-region .region {
+  .mast .brand-footer .region {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
@@ -510,13 +513,14 @@
   .section-label .legend-toggle.inline { margin-left: auto; }
 
   /* Hero — une principale pleine largeur, image en dessous */
-  /* Trio à deux niveaux : une principale pleine largeur, secondaires proportionnelles en dessous */
+  /* NYT print : une principale à gauche, secondaires empilées à droite */
   .hero-trio {
     display: grid;
-    grid-template-columns: 5fr 3fr;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
-      "main  main"
-      "side-l side-r";
+      "main side-l"
+      "main side-r";
     gap: 0;
     border-top: 2px solid var(--ink);
     border-bottom: 2px solid var(--ink);
@@ -526,35 +530,35 @@
   .hero-trio .une-main {
     grid-area: main;
     min-width: 0;
-    padding: 28px 0 28px;
-    border-bottom: 0.5px solid var(--rule);
+    padding: 28px 40px 28px 0;
+    border-right: 0.5px solid var(--rule);
   }
   .hero-trio .une-side-left {
     grid-area: side-l;
     min-width: 0;
-    padding: 24px 36px 28px 0;
     border-left: none;
+    padding: 24px 0 24px 32px;
+    border-bottom: 0.5px solid var(--rule);
   }
   .hero-trio .une-side-right {
     grid-area: side-r;
     min-width: 0;
-    padding: 24px 0 28px 36px;
-    border-left: 0.5px solid var(--rule);
+    border-left: none;
+    padding: 24px 0 24px 32px;
   }
 
-  /* Figure éditoriale — bande compacte sous le trio */
-  .hero-editorial-wrap {
-    border-bottom: 0.5px solid var(--rule);
-    padding-bottom: 0;
-    margin-bottom: 0;
+  /* Figure inline dans la une principale (style NYT : titre → image → métadonnées) */
+  .hero-figure-inline {
+    margin: 22px 0 20px;
+    width: 100%;
   }
-  .hero-editorial-wrap .hero-figure {
-    margin: 0;
-    max-width: 100%;
-  }
-  .hero-editorial-wrap .figure-frame {
-    height: 190px;
+  .hero-figure-inline .figure-frame {
+    height: 280px;
     min-height: unset;
+    border-top: none;
+  }
+  .hero-figure-inline img.editorial-img {
+    height: 280px;
   }
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
   .une-enjeu {
@@ -1730,8 +1734,9 @@
     .section-label { margin: 28px 0 16px; }
     .section-label .section-date { font-size: 13px; }
 
-    /* ── Hero editorial figure ── */
-    .hero-editorial-wrap .figure-frame { height: 160px; }
+    /* ── Figure inline dans une-main ── */
+    .hero-figure-inline .figure-frame { height: 200px; }
+    .hero-figure-inline img.editorial-img { height: 200px; }
 
     /* ── Sub-nav ── */
     .sub-nav {
@@ -1973,14 +1978,14 @@
         <img class="logo-vitrine" alt="La Vitrine démocratique"
              src="https://dev.vitrinedemocratique.com/assets/images/default/logo_vitrinedemocratique_bg-none_theme-black.png">
       </a>
-      <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener" aria-label="CAPP, Université Laval">
-        <span class="capp-prefix">Un produit du</span>
-        <img class="logo-capp" alt="CAPP · Université Laval"
-             src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
-      </a>
-    </div>
-    <div class="date-region">
-      <span class="region">Édition Québec · Bêta v1.9.7</span>
+      <div class="brand-footer">
+        <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener" aria-label="CAPP, Université Laval">
+          <span class="capp-prefix">Un produit du</span>
+          <img class="logo-capp" alt="CAPP · Université Laval"
+               src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
+        </a>
+        <span class="region">Édition Québec · Bêta v1.9.7</span>
+      </div>
     </div>
   </header>
   <div class="dbl-rule"></div>
@@ -2091,6 +2096,17 @@
       <span class="une-enjeu" style="--c: #742630">Économie et travail</span>
       <span class="saillance-tag major">Majeur · 6 / 6</span>
       <h1 data-saillance="6">Déficit record, mais peu de compressions dans le budget du Québec</h1>
+      <figure class="hero-figure hero-figure-inline">
+        <div class="figure-frame">
+          <img class="editorial-img"
+               src="https://dev.vitrinedemocratique.com/assets/images/data-visuals/issues/economy_and_labour/economy_and_labour_generic1-md.png"
+               alt="Illustration générique de l'enjeu Économie et travail">
+        </div>
+        <figcaption>
+          <span class="cap-tag">Illustration</span>
+          <span class="cap-body">Style original de Mathieu Fortin, synthèse visuelle des images des unes analysées.</span>
+        </figcaption>
+      </figure>
       <div class="saillance-row">
         <span class="region-label">Québec</span>
         <span class="saillance-dots">
@@ -2156,20 +2172,6 @@
     </div>
   </section>
 
-  <!-- Image éditoriale — bande fixe 190 px, indépendante de la saillance -->
-  <div class="hero-editorial-wrap">
-    <figure class="hero-figure">
-      <div class="figure-frame">
-        <img class="editorial-img"
-             src="https://dev.vitrinedemocratique.com/assets/images/data-visuals/issues/economy_and_labour/economy_and_labour_generic1-md.png"
-             alt="Illustration générique de l'enjeu Économie et travail">
-      </div>
-      <figcaption>
-        <span class="cap-tag">Illustration</span>
-        <span class="cap-body">Style original de Mathieu Fortin, synthèse visuelle des images des unes analysées.</span>
-      </figcaption>
-    </figure>
-  </div>
 
   <!-- Deux solitudes -->
   <section class="solitudes" style="--qc-pos: 12%; --roc-pos: 88%;">
