@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>La Vitrine démocratique — maquette pour Hugo</title>
-<meta name="viewport" content="width=1240">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1601,6 +1601,165 @@
     font-size: 9.5px; letter-spacing: 0.3em; text-transform: uppercase;
     color: var(--ink-softer);
     text-align: center;
+  }
+
+  /* ============================================================
+     RESPONSIVE — Mobile (≤ 768px)
+     ============================================================ */
+  @media (max-width: 768px) {
+
+    /* Page wrapper */
+    .page { padding: 20px 18px 60px; }
+
+    /* Masthead */
+    .mast {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0 16px;
+    }
+    .mast .brand { gap: 16px; flex-wrap: wrap; }
+    .logo-vitrine { height: 48px; }
+    .logo-capp { height: 40px; }
+    .mast .date-region { align-items: flex-start; }
+    .mast .date-region .day { font-size: 14px; }
+
+    /* Sub-nav */
+    .sub-nav { justify-content: flex-start; padding: 8px 0 0; }
+
+    /* Pulse band */
+    .pulse-band { margin: 14px -18px 18px; padding: 18px 18px 16px; }
+    .pulse-icons { gap: 6px; max-width: 100%; }
+    .pulse-icon svg.celestial { width: 16px; height: 16px; }
+    .pulse-hour { font-size: 7px; }
+
+    /* Hero — empile main + figure */
+    .hero {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "main"
+        "figure";
+      gap: 20px;
+      padding-top: 20px;
+      padding-bottom: 24px;
+    }
+    .hero .hero-figure { min-height: 200px; }
+    .hero-figure .figure-frame { min-height: 180px; }
+
+    /* Titre principal */
+    .une-main h1 { font-size: 36px !important; letter-spacing: -0.4px; }
+    .une-main .dek { font-size: 16px; }
+
+    /* Unes secondaires — empile */
+    .hero-secondaries {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      margin: 20px 0 28px;
+    }
+    .une-side {
+      border-left: none;
+      padding-left: 0;
+      border-top: 0.5px solid var(--rule);
+      padding-top: 24px;
+    }
+    .une-side.une-side-left { border-top: none; padding-top: 0; }
+    .une-side h2 { font-size: 22px; }
+
+    /* Saillance row */
+    .saillance-row { flex-wrap: wrap; gap: 4px 10px; }
+
+    /* Deux solitudes */
+    .solitudes { padding: 24px 18px 20px; }
+    .solitudes .sol-viz { height: 80px; }
+    .solitudes .sol-stat .stat-big { font-size: 36px; }
+    .solitudes .sol-stories { max-width: 100%; }
+
+    /* Partis title row */
+    .partis-title-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      margin: 36px 0 16px;
+    }
+    .partis-title-row .control-block { align-items: flex-start; }
+    .partis-title { font-size: 26px; }
+    .legend-toggle.inline { flex-wrap: wrap; }
+    .legend-toggle.inline span { font-size: 9px; padding: 4px 8px; }
+
+    /* Barres des partis */
+    .parti-row {
+      grid-template-columns: 68px 1fr;
+      gap: 6px;
+    }
+    .parti-spark { display: none; }
+    .parti-row.header div:last-child { display: none; }
+    .parti-name-box { font-size: 14px; min-width: 50px; padding: 4px 8px; }
+
+    /* Tone key */
+    .tone-key-inline .strip { width: 160px; }
+    .tone-key-inline .ends { width: 160px; }
+
+    /* Treemap — réduit la hauteur et simplifie */
+    .treemap {
+      height: auto;
+      grid-template-rows: auto auto auto auto;
+    }
+    .tm-row-1 { grid-template-columns: 1fr 1fr; }
+    .tm-row-2 { grid-template-columns: 1fr 1fr; }
+    .tm-row-3 { grid-template-columns: 1fr 1fr; }
+    .tm-row-4 { grid-template-columns: 1fr 1fr; }
+    .tm-tile { padding: 12px 14px; min-height: 90px; }
+    .tm-tile .tm-context { font-size: 13px; padding: 4px 4px 16px; }
+    .tm-tile .tm-name { font-size: 11px; }
+    .tm-row-2 .tm-tile, .tm-row-3 .tm-tile { padding: 10px 12px; min-height: 80px; }
+
+    /* Assemblée nationale */
+    .ass-row {
+      grid-template-columns: 60px 1fr;
+      gap: 10px;
+    }
+    .ass-row .ass-tone,
+    .ass-row .ass-words,
+    .ass-row .ass-richness { display: none; }
+    .ass-row.header div:nth-child(n+3) { display: none; }
+    .ass-row.header { grid-template-columns: 60px 1fr; }
+
+    /* Alerte consensus */
+    .alerte-consensus { padding: 30px 18px 28px; }
+    .ac-grid { grid-template-columns: 1fr; max-width: 100%; }
+    .ac-step { border-right: none; border-bottom: 0.5px solid var(--rule); }
+    .ac-step:last-child { border-bottom: none; }
+    .ac-num { font-size: 48px; }
+    .ac-input { width: 220px; font-size: 15px; }
+
+    /* Légende enjeux */
+    .enjeu-legend { grid-template-columns: 1fr 1fr; }
+
+    /* Footer */
+    .footer-note {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .colophon {
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Partners */
+    .partners-grid { gap: 20px 28px; }
+    .partner-logo { height: 32px; }
+  }
+
+  /* ============================================================
+     Très petit écran (≤ 400px)
+     ============================================================ */
+  @media (max-width: 400px) {
+    .page { padding: 14px 14px 50px; }
+    .une-main h1 { font-size: 28px !important; }
+    .tm-row-1, .tm-row-2, .tm-row-3, .tm-row-4 { grid-template-columns: 1fr; }
+    .pulse-band { margin: 14px -14px 16px; }
+    .solitudes { padding: 18px 14px 16px; }
+    .alerte-consensus { padding: 24px 14px 22px; }
   }
 </style>
 </head>
