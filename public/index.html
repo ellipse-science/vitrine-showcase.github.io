@@ -41,14 +41,14 @@
 
   /* Masthead : Vitrine dominant + CAPP en attribution dessous, date prééminente à droite */
   .logo-vitrine {
-    height: 72px; width: auto;
+    height: 96px; width: auto;
     display: block;
     opacity: 0.98;
   }
   .logo-capp {
-    height: 64px; width: auto;
+    height: 28px; width: auto;
     display: block;
-    opacity: 0.9;
+    opacity: 0.85;
   }
   .mast {
     align-items: center;
@@ -72,6 +72,8 @@
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--ink-softer);
+    margin-bottom: 4px;
+    display: block;
   }
   .mast .date-region {
     line-height: 1.2;
@@ -472,11 +474,19 @@
     margin: 52px 0 22px;
     font-weight: 500;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: 14px;
   }
   .section-label .date-hint { color: var(--ink-softer); letter-spacing: 0.22em; }
+  .section-label .section-date {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    text-transform: none;
+    color: var(--ink);
+  }
   .legend-toggle.inline {
     border: 0.5px solid var(--rule);
     display: inline-flex;
@@ -496,19 +506,28 @@
   .legend-toggle.inline .active { background: var(--ink); color: var(--paper); }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
-  /* Hero — main une à gauche, image à droite. Les unes secondaires sont dans un bloc séparé en dessous. */
+  /* Hero — une principale pleine largeur, image en dessous */
   .hero {
-    display: grid;
-    grid-template-columns: 1.6fr 1fr;
-    grid-template-areas: "main figure";
-    gap: 30px 36px;
     border-top: 2px solid var(--ink);
     padding-top: 28px;
     padding-bottom: 32px;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: none;
   }
-  .hero .une-main { grid-area: main; min-width: 0; }
-  .hero .hero-figure { grid-area: figure; margin: 0; min-width: 0; align-self: stretch; }
+  .hero .une-main { min-width: 0; }
+
+  /* Figure éditoriale sous la une principale */
+  .hero-editorial-wrap {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 28px;
+    margin-bottom: 0;
+  }
+  .hero-editorial-wrap .hero-figure {
+    margin: 0;
+    max-width: 100%;
+  }
+  .hero-editorial-wrap .figure-frame {
+    min-height: 340px;
+  }
 
   /* Bloc des unes secondaires : centré, sous la ligne noire */
   .hero-secondaries {
@@ -1687,15 +1706,21 @@
     .mast {
       flex-direction: column;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
       padding: 12px 0 14px;
     }
-    .mast .brand { gap: 14px; }
-    .logo-vitrine { height: 44px; }
-    .logo-capp { height: 36px; }
-    .mast .date-region { align-items: flex-start; gap: 4px; }
-    .mast .date-region .day { font-size: 15px; }
-    .mast .date-region .region { font-size: 9px; }
+    .mast .brand { gap: 16px; align-items: center; flex-wrap: wrap; }
+    .logo-vitrine { height: 56px; }
+    .logo-capp { height: 20px; }
+    .mast .capp-prefix { font-size: 8px; margin-bottom: 2px; }
+    .mast .date-region { display: none; }
+
+    /* ── Section label + date ── */
+    .section-label { margin: 28px 0 16px; }
+    .section-label .section-date { font-size: 13px; }
+
+    /* ── Hero editorial figure ── */
+    .hero-editorial-wrap .figure-frame { min-height: 200px; }
 
     /* ── Sub-nav ── */
     .sub-nav {
@@ -1726,15 +1751,10 @@
 
     /* ── Hero principal ── */
     .hero {
-      grid-template-columns: 1fr;
-      grid-template-areas: "figure" "main";
-      gap: 18px;
       border-top-width: 1.5px;
       padding-top: 18px;
       padding-bottom: 20px;
     }
-    .hero .hero-figure { min-height: 0; }
-    .hero-figure .figure-frame { min-height: 200px; }
     .hero-figure figcaption { gap: 8px; }
 
     /* Titre h1 — hiérarchie journal sur mobile */
@@ -1944,14 +1964,12 @@
              src="https://dev.vitrinedemocratique.com/assets/images/default/logo_vitrinedemocratique_bg-none_theme-black.png">
       </a>
       <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener" aria-label="CAPP, Université Laval">
+        <span class="capp-prefix">Un produit du</span>
         <img class="logo-capp" alt="CAPP · Université Laval"
              src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
       </a>
     </div>
     <div class="date-region">
-      <div class="date-row">
-        <span class="day">Vendredi 24 avril 2026</span>
-      </div>
       <span class="region">Édition Québec · Bêta v1.9.7</span>
     </div>
   </header>
@@ -2051,9 +2069,12 @@
     </div>
   </section>
 
-  <div class="section-label">Les unes du jour</div>
+  <div class="section-label">
+    <span>Les unes du jour</span>
+    <span class="section-date">Vendredi 24 avril 2026</span>
+  </div>
 
-  <!-- Hero : 3 unes + image en haut à droite -->
+  <!-- Hero : une principale pleine largeur -->
   <section class="hero">
     <div class="une-main">
       <span class="une-enjeu" style="--c: #742630">Économie et travail</span>
@@ -2076,7 +2097,10 @@
         <a href="#a6">Montreal Gazette</a>
       </div>
     </div>
+  </section>
 
+  <!-- Image éditoriale sous la une principale -->
+  <div class="hero-editorial-wrap">
     <figure class="hero-figure">
       <div class="figure-frame">
         <img class="editorial-img"
@@ -2088,7 +2112,7 @@
         <span class="cap-body">Style original de Mathieu Fortin, synthèse visuelle des images des unes analysées.</span>
       </figcaption>
     </figure>
-  </section>
+  </div>
 
   <!-- Unes secondaires : centrées sous la ligne noire -->
   <section class="hero-secondaries">
