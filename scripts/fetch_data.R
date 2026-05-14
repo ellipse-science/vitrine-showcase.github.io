@@ -42,6 +42,20 @@ HOH_COLS      <- c("country_id", "date_utc", "time_interval_utc",
                    "main_issue", "main_issue_text_fr", "main_issue_text_en",
                    "title", "text", "objects")
 
+DECIDEURS_COLS <- c("period_type", "period_start_date", "period_end_date",
+                    "party", "n_interventions", "word_count",
+                    "lexical_richness", "tone_score",
+                    "economy_and_labour",
+                    "rights_liberties_minorities_discrimination",
+                    "health_and_social_services",
+                    "public_lands_and_agriculture",
+                    "immigration", "education",
+                    "environment_and_energy", "law_and_crime",
+                    "international_affairs_and_defense",
+                    "technology", "governments_and_governance",
+                    "culture_and_nationalism",
+                    "editorial_angle")
+
 EVENTS_COLS   <- c("block_start_utc", "block_end_utc", "time_interval_utc",
                    "event_id", "event_rank", "event_label", "event_title",
                    "top_entities", "top_themes",
@@ -116,7 +130,13 @@ PUBLISHABLE_TABLES <- list(
   list(name = "headline_events_4h",
        athena = "vitrine_datamart-headline_events_4h",
        out    = "public/data/headline-events.json",
-       cols   = EVENTS_COLS)
+       cols   = EVENTS_COLS),
+
+  # Agora QC — Que dit-on à l'Assemblée nationale ?
+  list(name  = "agora_decideurs_qc",
+       athena = "agora_datamart-agora_decideurs_qc",
+       out    = "public/data/agora/agora_decideurs_qc.json",
+       cols   = DECIDEURS_COLS)
 )
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -144,6 +164,83 @@ fetch_table <- function(conn, entry) {
   }
 
   df
+}
+
+# Build parole-en-chambre.json for the ParoleEnChambre component.
+build_parole_en_chambre <- function(df) {
+  if (is.null(df) || nrow(df) == 0) return(NULL)
+
+  PARTY_FULL_NAMES <- c(
+    caq = "Coalition Avenir Québec",
+    plq = "Parti libéral du Québec",
+    pq  = "Parti Québécois",
+    qs  = "Québec solidaire",
+    pcq = "Parti conservateur du Québec"
+  )
+  QC_PARTIES_ORDER <- c("CAQ", "PLQ", "PQ", "QS", "PCQ")
+
+  last_pdq <- df[df$period_type == "last_pdq", ]
+  session  <- df[df$period_type == "session",  ]
+
+  if (nrow(last_pdq) == 0) last_pdq <- session
+  if (nrow(session)  == 0) session  <- df
+
+  sess_row      <- session[1, ]
+  session_date  <- as.character(sess_row$period_end_date)
+  session_start <- as.character(sess_row$period_start_date)
+  session_label <- paste0(
+    "Session ",
+    format(as.Date(session_start), "%Y"),
+    " – ",
+    format(as.Date(session_date),  "%Y")
+  )
+
+  # party interventions from last_pdq
+  max_int <- max(last_pdq$n_interventions, na.rm = TRUE)
+  if (!is.finite(max_int) || max_int == 0) max_int <- 1L
+
+  party_rows <- lapply(seq_len(nrow(last_pdq)), function(i) {
+    row         <- last_pdq[i, ]
+    party_lower <- tolower(as.character(row$party))
+    party_upper <- toupper(as.character(row$party))
+    full_name   <- PARTY_FULL_NAMES[[party_lower]]
+    if (is.null(full_name)) full_name <- party_upper
+    list(
+      party         = party_upper,
+      fullName      = full_name,
+      interventions = as.integer(row$n_interventions),
+      score         = round(as.numeric(row$n_interventions) / max_int, 4)
+    )
+  })
+
+  # title: editorial_angle of the most-active party in last_pdq
+  title <- tryCatch({
+    top <- last_pdq[which.max(last_pdq$n_interventions), ]
+    angle <- as.character(top$editorial_angle)
+    if (length(angle) == 1L && !is.na(angle) && nzchar(angle)) angle
+    else paste0("Session du ", session_date)
+  }, error = function(e) paste0("Session du ", session_date))
+
+  # rough saillance proxy: total interventions normalised to a [0,1] scale
+  total_int <- sum(last_pdq$n_interventions, na.rm = TRUE)
+  score <- min(round(total_int / 500, 4), 1)
+
+  qc_assembly <- list(
+    assemblyId       = "QC",
+    chambre          = "Assemblée nationale du Québec",
+    sessionDate      = session_date,
+    sessionLabel     = session_label,
+    nextSessionLabel = NULL,
+    title            = title,
+    score            = score,
+    prevScore        = score,
+    velocity         = 0L,
+    objects          = list(),
+    monitoredParties = QC_PARTIES_ORDER,
+    partyInterventions = party_rows
+  )
+
+  list(generatedAt = NOW_UTC, assemblies = list(QC = qc_assembly))
 }
 
 # Build the rich headline-of-headlines.json that UneDesUnes expects.
@@ -258,6 +355,25 @@ run <- function() {
     }
   }, error = function(e) {
     message("  !! Could not build headline-of-headlines.json: ", conditionMessage(e))
+  })
+
+  # Write parole-en-chambre.json for ParoleEnChambre component
+  message("[", format(Sys.time(), "%H:%M:%S"), "] Building parole-en-chambre.json...")
+  tryCatch({
+    decideurs_path <- "public/data/agora/agora_decideurs_qc.json"
+    if (file.exists(decideurs_path)) {
+      decideurs_raw <- jsonlite::fromJSON(decideurs_path, simplifyDataFrame = TRUE)
+      pec <- build_parole_en_chambre(as.data.frame(decideurs_raw))
+      if (!is.null(pec)) {
+        jsonlite::write_json(pec, "public/data/parole-en-chambre.json",
+          auto_unbox = TRUE, pretty = TRUE, na = "null")
+        message("  -> written public/data/parole-en-chambre.json")
+      }
+    } else {
+      message("  !! agora_decideurs_qc.json not found — skipping")
+    }
+  }, error = function(e) {
+    message("  !! Could not build parole-en-chambre.json: ", conditionMessage(e))
   })
 
   # Write meta.json for the /status page
