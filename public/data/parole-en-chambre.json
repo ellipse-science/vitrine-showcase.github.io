@@ -1,52 +1,43 @@
 {
-  "generatedAt": "2026-04-10T14:30:00Z",
+  "generatedAt": "2026-05-14T02:22:24Z",
   "assemblies": {
     "QC": {
       "assemblyId": "QC",
       "chambre": "Assemblée nationale du Québec",
-      "sessionDate": "2026-04-10",
-      "sessionLabel": "Séance du 10 avril",
-      "nextSessionLabel": "14 avril",
-      "title": "tarifs douaniers et commerce extérieur",
-      "score": 0.62,
-      "prevScore": 0.54,
-      "velocity": 14.8,
-      "objects": [
-        { "label": "tarifs",       "score": 1.0  },
-        { "label": "exportations", "score": 0.71 },
-        { "label": "PME",          "score": 0.44 }
-      ],
+      "sessionDate": "2026-05-07",
+      "sessionLabel": "Session 2026 – 2026",
+      "nextSessionLabel": {},
+      "title": "Session du 2026-05-07",
+      "score": 0.328,
+      "prevScore": 0.328,
+      "velocity": 0,
+      "objects": [],
       "monitoredParties": ["CAQ", "PLQ", "PQ", "QS", "PCQ"],
       "partyInterventions": [
-        { "party": "CAQ", "fullName": "Coalition Avenir Québec",        "interventions": 14, "score": 1.0  },
-        { "party": "PLQ", "fullName": "Parti libéral du Québec",        "interventions": 9,  "score": 0.64 },
-        { "party": "PQ",  "fullName": "Parti Québécois",                "interventions": 5,  "score": 0.36 },
-        { "party": "QS",  "fullName": "Québec solidaire",               "interventions": 3,  "score": 0.21 },
-        { "party": "PCQ", "fullName": "Parti conservateur du Québec",   "interventions": 1,  "score": 0.07 }
-      ]
-    },
-    "FED": {
-      "assemblyId": "FED",
-      "chambre": "Chambre des communes",
-      "sessionDate": "2026-04-09",
-      "sessionLabel": "Session du 9 avril",
-      "nextSessionLabel": "10 avril",
-      "title": "US tariffs and trade retaliation measures",
-      "score": 0.88,
-      "prevScore": 0.82,
-      "velocity": 7.3,
-      "objects": [
-        { "label": "tariffs", "score": 1.0  },
-        { "label": "trade",   "score": 0.85 },
-        { "label": "Carney",  "score": 0.62 }
-      ],
-      "monitoredParties": ["LPC", "CPC", "NDP", "BQ", "GP"],
-      "partyInterventions": [
-        { "party": "LPC", "fullName": "Liberal Party of Canada",        "interventions": 22, "score": 1.0  },
-        { "party": "CPC", "fullName": "Conservative Party of Canada",   "interventions": 18, "score": 0.82 },
-        { "party": "BQ",  "fullName": "Bloc Québécois",                 "interventions": 11, "score": 0.50 },
-        { "party": "NDP", "fullName": "New Democratic Party",           "interventions": 8,  "score": 0.36 },
-        { "party": "GP",  "fullName": "Green Party of Canada",          "interventions": 2,  "score": 0.09 }
+        {
+          "party": "CAQ",
+          "fullName": "Coalition Avenir Québec",
+          "interventions": 120,
+          "score": 1
+        },
+        {
+          "party": "PLQ",
+          "fullName": "Parti libéral du Québec",
+          "interventions": 21,
+          "score": 0.175
+        },
+        {
+          "party": "PQ",
+          "fullName": "Parti Québécois",
+          "interventions": 4,
+          "score": 0.0333
+        },
+        {
+          "party": "QS",
+          "fullName": "Québec solidaire",
+          "interventions": 19,
+          "score": 0.1583
+        }
       ]
     }
   }
