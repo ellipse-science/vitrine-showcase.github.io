@@ -17,13 +17,45 @@ type Data = {
 
 const partyNames: Record<string, string> = {
   CAQ: 'Coalition Avenir Québec',
+  PCQ: 'Parti conservateur du Québec',
   PLQ: 'Parti libéral du Québec',
   QS: 'Québec solidaire',
   PQ: 'Parti Québécois',
-  LPC: 'Parti libéral',
-  CPC: 'Parti conservateur',
-  NPD: 'Nouveau Parti démocratique',
+  LPC: 'Parti libéral du Canada',
+  CPC: 'Parti conservateur du Canada',
+  NDP: 'Nouveau Parti démocratique',
   BQ: 'Bloc Québécois',
+  GPC: 'Parti vert du Canada',
+  PPC: 'Parti populaire du Canada',
+};
+
+const PASS_ORDER: Record<string, number> = { pm: 3, noon: 2, am: 1 };
+
+const getLatestSnapshot = (rows: PartyRow[]): PartyRow[] => {
+  if (rows.length === 0) return [];
+
+  const latestDate = rows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), '');
+  const dateRows = rows.filter((r) => r.date_utc === latestDate);
+
+  const passes = Array.from(new Set(dateRows.map((r) => r.pass))).sort(
+    (a, b) => (PASS_ORDER[b] ?? 0) - (PASS_ORDER[a] ?? 0)
+  );
+  const bestPass =
+    passes.find((p) => dateRows.some((r) => r.pass === p && r.weighted_mentions > 0)) ?? passes[0];
+  const passRows = dateRows.filter((r) => r.pass === bestPass);
+
+  const byParty = new Map<string, PartyRow>();
+  for (const row of passRows) {
+    const key = row.party.toUpperCase();
+    const existing = byParty.get(key);
+    if (!existing || row.weighted_mentions > existing.weighted_mentions) {
+      byParty.set(key, { ...row, party: key });
+    }
+  }
+
+  return Array.from(byParty.values())
+    .filter((r) => r.weighted_mentions > 0)
+    .sort((a, b) => b.weighted_mentions - a.weighted_mentions);
 };
 
 const toneChip = (tone: number): { label: string; cls: string } => {
@@ -68,7 +100,10 @@ const PartisModule = (): ReactElement => {
       fetch(`/data/refined/day/provincial_parties_score_day.json?ts=${Date.now()}`).then((r) => r.json()),
     ])
       .then(([federal, provincial]) => {
-        setData({ federal, provincial });
+        setData({
+          federal: getLatestSnapshot(federal),
+          provincial: getLatestSnapshot(provincial),
+        });
         setLoading(false);
       })
       .catch(() => {
