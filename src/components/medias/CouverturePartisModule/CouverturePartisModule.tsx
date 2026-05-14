@@ -21,7 +21,8 @@ type Scope = 'provincial' | 'federal';
 type TimeRange = 'today' | '7days' | 'month';
 
 type HistoryByRange = Record<TimeRange, number[]>;
-type PartyData = Omit<PartyEntry, 'history'> & { histories: HistoryByRange };
+type SovByRange = Record<TimeRange, number>;
+type PartyData = Omit<PartyEntry, 'history'> & { histories: HistoryByRange; sovByRange: SovByRange };
 
 // ── Design constants (colors / logos / display labels) ────────────────────────
 const partyConfig: Record<string, { color: string; logoUrl: string; label: string }> = {
@@ -157,10 +158,12 @@ const buildPartyData = (rawRows: RawPartyRow[]): PartyData[] => {
 
   const todaySov = buildTodaySov(rawRows, latestDate, knownParties);
 
+  const avg = (arr: number[]): number => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0);
+
   return knownParties
     .map((party) => {
       const cfg = partyConfig[party];
-      const sov = sovCache[latestDate]?.[party] ?? 0;
+      const sovToday = sovCache[latestDate]?.[party] ?? 0;
       const history7days = last7Dates.map((d)  => sovCache[d]?.[party]  ?? 0);
       const historyMonth = last30Dates.map((d) => sovCache[d]?.[party]  ?? 0);
 
@@ -169,23 +172,28 @@ const buildPartyData = (rawRows: RawPartyRow[]): PartyData[] => {
         label:    cfg.label,
         color:    cfg.color,
         logoUrl:  cfg.logoUrl,
-        sov,
+        sov:      sovToday,
         tone:     dayLookup[latestDate]?.[party]?.tone ?? 0,
         trend:    computeTrend(history7days),
-        inShadow: sov < 0.05,
+        inShadow: sovToday < 0.05,
         histories: {
           today:   todaySov[party] ?? [0, 0, 0],
           '7days': history7days,
           month:   historyMonth,
+        },
+        sovByRange: {
+          today:   sovToday,
+          '7days': avg(history7days),
+          month:   avg(historyMonth),
         },
       };
     })
     .sort((a, b) => b.sov - a.sov);
 };
 
-// ── Resolve history for the active time range ─────────────────────────────────
+// ── Resolve history and SOV for the active time range ─────────────────────────
 const resolveParties = (data: PartyData[], range: TimeRange): PartyEntry[] =>
-  data.map((d) => ({ ...d, history: d.histories[range] }));
+  data.map((d) => ({ ...d, history: d.histories[range], sov: d.sovByRange[range] }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const trendGlyph: Record<TrendKey, string> = {
