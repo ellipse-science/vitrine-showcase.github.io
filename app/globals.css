@@ -790,9 +790,11 @@
     text-align: center;
   }
   .solitudes .sol-symbol .glyph.fleur {
-    font-family: 'Playfair Display', 'Georgia', serif;
-    font-size: 54px;
-    color: var(--ink);
+    width: 54px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    mix-blend-mode: multiply;
   }
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
