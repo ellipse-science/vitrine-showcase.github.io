@@ -24,6 +24,8 @@ type RawEvent = {
   time_interval_montreal_tz: string | null;
   event_id: string;
   event_label: string | null;
+  representative_url: string | null;
+  representative_media_id: string | null;
   score_saillance: number | null;
   score_qc: number | null;
   extracted_objects: string | null;
@@ -37,6 +39,7 @@ type RawEvent = {
   target_region: string | null;
   interval_convergence_score: number | null;
   top_objects_divergence: string | null; // JSON string or "NA"
+  articles: string | null; // JSON array of {title, url, media_id, ...}
 };
 
 type DivergenceEntry = {
@@ -137,7 +140,8 @@ export type UneEvent = {
   saillanceLabel: string; // = intensity_tier label from table
   saillanceCls: string;   // CSS class derived from intensity_tier
   timeMtl: string;
-  mediaPresent: string[]; // readable names
+  representativeUrl: string | null; // URL de l'article représentatif
+  mediaPresent: { name: string; url: string | null }[]; // nom + URL par média
   mediaAbsent: string[]; // readable names from QC_MEDIA that are absent
   qcOutletCount: number;  // = outlets_qc from table
   totalQcOutlets: number; // = total_outlets_qc from table
@@ -259,9 +263,22 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     } catch {
       // ignore
     }
+    // Parse articles pour obtenir url par media_id (premier article par média)
+    type RawArticle = { media_id: string; url: string };
+    const mediaIdToUrl: Record<string, string> = {};
+    try {
+      const arts = JSON.parse(e.articles ?? "[]") as RawArticle[];
+      for (const art of arts) {
+        if (art.media_id && art.url && !mediaIdToUrl[art.media_id]) {
+          mediaIdToUrl[art.media_id] = art.url;
+        }
+      }
+    } catch {
+      // ignore
+    }
     const mediaPresent = mediaIds
       .filter((id) => MEDIA_NAMES[id])
-      .map((id) => MEDIA_NAMES[id] ?? id);
+      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: mediaIdToUrl[id] ?? null }));
     const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
@@ -277,6 +294,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       saillanceLabel,
       saillanceCls,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
+      representativeUrl: e.representative_url ?? null,
       mediaPresent,
       mediaAbsent,
       qcOutletCount,

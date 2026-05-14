@@ -10,13 +10,20 @@ function SaillanceDots({ filled }: { filled: number }) {
   );
 }
 
-function Byline({ mediaPresent, mediaAbsent }: { mediaPresent: string[]; mediaAbsent: string[] }) {
+function Byline({ mediaPresent, mediaAbsent }: {
+  mediaPresent: { name: string; url: string | null }[];
+  mediaAbsent: string[];
+}) {
   return (
     <>
       <div className="byline">
-        {mediaPresent.map((name, i) => (
+        {mediaPresent.map(({ name, url }, i) => (
           <span key={name}>
-            <span>{name}</span>
+            {url ? (
+              <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+            ) : (
+              <span>{name}</span>
+            )}
             {i < mediaPresent.length - 1 && <span className="sep">·</span>}
           </span>
         ))}
@@ -39,7 +46,11 @@ function MainUne({ event }: { event: UneEvent }) {
       <span className={`saillance-tag ${event.saillanceCls}`}>
         {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
       </span>
-      <h1 data-saillance={event.saillanceFilled}>{event.title}</h1>
+      <h1 data-saillance={event.saillanceFilled}>
+        {event.representativeUrl ? (
+          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
+        ) : event.title}
+      </h1>
       <div className="saillance-row">
         <span className="region-label">Québec</span>
         <SaillanceDots filled={event.saillanceFilled} />
@@ -59,7 +70,11 @@ function SideUne({ event, side }: { event: UneEvent; side: "left" | "right" }) {
       <span className={`saillance-tag ${event.saillanceCls}`}>
         {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
       </span>
-      <h2 data-saillance={event.saillanceFilled}>{event.title}</h2>
+      <h2 data-saillance={event.saillanceFilled}>
+        {event.representativeUrl ? (
+          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
+        ) : event.title}
+      </h2>
       <div className="saillance-row">
         <span className="region-label">Québec</span>
         <SaillanceDots filled={event.saillanceFilled} />
