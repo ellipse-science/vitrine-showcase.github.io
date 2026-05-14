@@ -57,15 +57,17 @@ apply_filter <- function(df, filter_id) {
 }
 
 fetch_table <- function(conn, entry) {
-  # DBI::dbGetQuery with double-quoted table name handles hyphens safely,
-  # avoiding the noctua/dplyr::tbl incompatibility with hyphenated Athena tables.
+  # Project only whitelisted columns in the SQL so Athena never reads columns
+  # that have type mismatches in the underlying Parquet files.
+  # Double-quoted identifiers handle hyphens in table names safely.
   # as.data.frame() normalises noctua's output (data.table when data.table is
   # installed) so column subsetting with [, cols, drop=FALSE] works correctly.
-  sql  <- sprintf('SELECT * FROM "%s"', entry$athena)
-  df   <- as.data.frame(DBI::dbGetQuery(conn, sql))
-  cols <- unlist(entry$cols)
-  df   <- df[, intersect(cols, names(df)), drop = FALSE]
-  df   <- apply_filter(df, entry$filter)
+  cols     <- unlist(entry$cols)
+  col_list <- paste(sprintf('"%s"', cols), collapse = ", ")
+  sql      <- sprintf('SELECT %s FROM "%s"', col_list, entry$athena)
+  df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
+  df       <- df[, intersect(cols, names(df)), drop = FALSE]
+  df       <- apply_filter(df, entry$filter)
   df
 }
 
