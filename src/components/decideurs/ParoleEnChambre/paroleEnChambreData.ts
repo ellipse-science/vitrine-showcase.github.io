@@ -1,33 +1,28 @@
-export type Assembly = 'QC' | 'FED';
-
-export type SalientObject = {
-  label: string;
-  score: number; // 0–1, relative weight
-};
+export type PeriodType = 'last_pdq' | 'session' | 'legislature';
 
 export type PartyIntervention = {
-  party: string;      // abbreviation: CAQ, PLQ, LPC, CPC…
+  party: string;     // abbreviation: CAQ, PLQ, PQ, QS, PCQ
   fullName: string;
   interventions: number;
-  score: number;      // 0–1, relative to the most active party
+  score: number;     // 0–1, relative to the most active party
+};
+
+export type PeriodSnapshot = {
+  periodLabel: string;
+  startDate: string;
+  endDate: string;
+  title: string;     // editorial angle of the most-active party
+  partyInterventions: PartyIntervention[];
 };
 
 export type ParoleAssembly = {
-  assemblyId: Assembly;
+  assemblyId: 'QC';
   chambre: string;
-  sessionDate: string;
-  sessionLabel: string;
-  nextSessionLabel: string;
-  title: string;       // main salient object/topic — computed by refiner
-  score: number;       // absolute_normalized_index (0–1)
-  prevScore: number;
-  velocity: number;    // % change vs previous session
-  objects: SalientObject[];
   monitoredParties: string[];
-  partyInterventions: PartyIntervention[];
+  periods: { [K in PeriodType]?: PeriodSnapshot };
 };
 
 export type ParoleEnChambrePayload = {
   generatedAt: string;
-  assemblies: { QC: ParoleAssembly; FED: ParoleAssembly };
+  assemblies: { QC: ParoleAssembly };
 };

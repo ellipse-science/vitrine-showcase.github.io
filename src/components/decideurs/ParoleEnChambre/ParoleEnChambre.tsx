@@ -2,12 +2,18 @@ import React, { memo, ReactElement, useCallback, useEffect, useMemo, useState } 
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { Assembly, ParoleAssembly, ParoleEnChambrePayload } from './paroleEnChambreData';
+import { ParoleAssembly, ParoleEnChambrePayload, PeriodSnapshot, PeriodType } from './paroleEnChambreData';
 import './ParoleEnChambre.scss';
 
 const partyLogoMap: Record<string, string> = {
   CAQ: 'caq', PLQ: 'plq', PQ: 'pq', QS: 'qs', PCQ: 'pcq',
   LPC: 'lpc', CPC: 'cpc', NDP: 'ndp', BQ: 'bq', GP: 'gpc', GPC: 'gpc',
+};
+
+const periodLabels: Record<PeriodType, string> = {
+  last_pdq:    'Dernière période de questions',
+  session:     'Cette session',
+  legislature: 'Cette législature',
 };
 
 const getSaillanceLevel = (score: number): string => {
@@ -17,20 +23,6 @@ const getSaillanceLevel = (score: number): string => {
   return 'marginal';
 };
 
-const getVelocityKey = (velocity: number): string => {
-  if (velocity > 20)  return 'upStrong';
-  if (velocity > 5)   return 'up';
-  if (velocity >= -5) return 'stable';
-  if (velocity > -20) return 'down';
-  return 'downStrong';
-};
-
-const getVelocityDir = (velocity: number): string => {
-  if (velocity > 5)   return 'up';
-  if (velocity >= -5) return 'neutral';
-  return 'down';
-};
-
 const ParoleEnChambre = (): ReactElement => {
   const { t } = useTranslation('ParoleEnChambre');
   const navigate = useNavigate();
@@ -38,10 +30,11 @@ const ParoleEnChambre = (): ReactElement => {
   const eyebrowLead = eyebrowWords[0];
   const eyebrowAccent = eyebrowWords[1];
   const eyebrowTail = eyebrowWords.slice(2).join(' ');
+
   const [payload, setPayload] = useState<ParoleEnChambrePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [assembly, setAssembly] = useState<Assembly>('QC');
+  const [period, setPeriod] = useState<PeriodType>('last_pdq');
 
   useEffect(() => {
     fetch(`/data/parole-en-chambre.json?ts=${Date.now()}`)
@@ -63,10 +56,15 @@ const ParoleEnChambre = (): ReactElement => {
     navigate('/categorie/agoraplus');
   }, [navigate]);
 
-  const data: ParoleAssembly | null = useMemo(() => {
-    if (!payload) return null;
-    return payload.assemblies[assembly];
-  }, [payload, assembly]);
+  const assembly: ParoleAssembly | null = useMemo(
+    () => payload?.assemblies?.QC ?? null,
+    [payload],
+  );
+
+  const data: PeriodSnapshot | null = useMemo(
+    () => assembly?.periods?.[period] ?? null,
+    [assembly, period],
+  );
 
   const eyebrowEl = (
     <h2 className="ParoleEnChambre-eyebrow">
@@ -85,7 +83,7 @@ const ParoleEnChambre = (): ReactElement => {
     );
   }
 
-  if (error || !data) {
+  if (error || !assembly) {
     return (
       <div className="ParoleEnChambre ParoleEnChambre--state">
         {eyebrowEl}
@@ -94,9 +92,12 @@ const ParoleEnChambre = (): ReactElement => {
     );
   }
 
-  const saillanceLevel = getSaillanceLevel(data.score);
-  const velocityKey    = getVelocityKey(data.velocity);
-  const velocityDir    = getVelocityDir(data.velocity);
+  const availablePeriods = (['last_pdq', 'session', 'legislature'] as PeriodType[]).filter(
+    (pt) => assembly.periods[pt] != null,
+  );
+
+  const saillanceLevel = data ? getSaillanceLevel(data.partyInterventions.reduce(
+    (s, p) => s + p.interventions, 0) / 500) : 'marginal';
 
   return (
     <div className="ParoleEnChambre">
@@ -106,87 +107,69 @@ const ParoleEnChambre = (): ReactElement => {
 
         <div className="ParoleEnChambre-panel-header">
           {eyebrowEl}
-          <div className="ParoleEnChambre-toggle" role="group" aria-label={t('assemblyToggle')}>
-            {(['QC', 'FED'] as Assembly[]).map((a) => (
+          {data && (
+            <p className="ParoleEnChambre-period-label">{data.periodLabel}</p>
+          )}
+          <div className="ParoleEnChambre-toggle" role="group" aria-label={t('periodToggle')}>
+            {availablePeriods.map((pt) => (
               <button
-                key={a}
+                key={pt}
                 type="button"
-                className={`ParoleEnChambre-toggle-btn${assembly === a ? ' is-active' : ''}`}
-                onClick={() => setAssembly(a)}
+                className={`ParoleEnChambre-toggle-btn${period === pt ? ' is-active' : ''}`}
+                onClick={() => setPeriod(pt)}
               >
-                {t(`assemblies.${a}`)}
+                {periodLabels[pt]}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="ParoleEnChambre-story">
-          <p className="ParoleEnChambre-hook">{t('hook')}</p>
-          <h2 className="ParoleEnChambre-title">
-            &laquo;&nbsp;{data.title}&nbsp;&raquo;
-          </h2>
-        </div>
-
-        <div className="ParoleEnChambre-bottom">
-
-          <div className="ParoleEnChambre-saillance">
-            <div className="ParoleEnChambre-saillance-header">
-              <span className="ParoleEnChambre-saillance-label">
-                {t('saillance.label')}
-              </span>
-              <span
-                className="ParoleEnChambre-velocity"
-                data-dir={velocityDir}
-              >
-                {t(`velocity.${velocityKey}`)}
-              </span>
+        {data ? (
+          <>
+            <div className="ParoleEnChambre-story">
+              <p className="ParoleEnChambre-hook">{t('hook')}</p>
+              <h2 className="ParoleEnChambre-title">
+                &laquo;&nbsp;{data.title}&nbsp;&raquo;
+              </h2>
             </div>
-            <div className="ParoleEnChambre-saillance-track">
-              <div
-                className="ParoleEnChambre-saillance-fill"
-                style={{ width: `${Math.round(data.score * 100)}%` }}
-              />
-            </div>
-            <span
-              className="ParoleEnChambre-saillance-level"
-              data-level={saillanceLevel}
-            >
-              {t(`saillance.${saillanceLevel}`)}
-            </span>
-          </div>
 
-          <div className="ParoleEnChambre-objects">
-            {data.objects.slice(0, 3).map((obj, i) => (
-              <div key={obj.label} className="ParoleEnChambre-object">
-                <span className="ParoleEnChambre-object-label">{obj.label}</span>
-                <div className="ParoleEnChambre-object-track">
+            <div className="ParoleEnChambre-bottom">
+              <div className="ParoleEnChambre-saillance">
+                <div className="ParoleEnChambre-saillance-track">
                   <div
-                    className="ParoleEnChambre-object-fill"
-                    style={{ width: `${Math.round(obj.score * 100)}%` }}
+                    className="ParoleEnChambre-saillance-fill"
+                    style={{ width: `${Math.min(Math.round(
+                      data.partyInterventions.reduce((s, p) => s + p.interventions, 0) / 5
+                    ), 100)}%` }}
                   />
                 </div>
-                <span className="ParoleEnChambre-object-rank">
-                  #{i + 1}
+                <span
+                  className="ParoleEnChambre-saillance-level"
+                  data-level={saillanceLevel}
+                >
+                  {t(`saillance.${saillanceLevel}`)}
                 </span>
               </div>
-            ))}
-            <button
-              type="button"
-              className="ParoleEnChambre-debats-link"
-              onClick={handleDebatsLink}
-            >
-              {t('debatsLink')}
-            </button>
-          </div>
 
-        </div>
+              <button
+                type="button"
+                className="ParoleEnChambre-debats-link"
+                onClick={handleDebatsLink}
+              >
+                {t('debatsLink')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="ParoleEnChambre-status">{t('noData')}</p>
+        )}
 
       </div>
 
       {/* ── Party panel ─────────────────────────────────────────── */}
       <div className="ParoleEnChambre-parties">
-        {data.monitoredParties.map((partyCode) => {
-          const row = data.partyInterventions.find((p) => p.party === partyCode);
+        {assembly.monitoredParties.map((partyCode) => {
+          const row = data?.partyInterventions.find((p) => p.party === partyCode);
           const score = row?.score ?? 0;
           const interventions = row?.interventions ?? 0;
           const isActive = interventions > 0;
@@ -234,14 +217,11 @@ const ParoleEnChambre = (): ReactElement => {
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <div className="ParoleEnChambre-footer">
-        <span>{data.sessionLabel}</span>
-        {data.nextSessionLabel && (
-          <span>
-            {t('nextSession')}&nbsp;{data.nextSessionLabel}
-          </span>
-        )}
-      </div>
+      {data && (
+        <div className="ParoleEnChambre-footer">
+          <span>{data.startDate} – {data.endDate}</span>
+        </div>
+      )}
 
     </div>
   );
