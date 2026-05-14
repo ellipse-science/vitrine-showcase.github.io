@@ -70,7 +70,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
           else
-            git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
             git push
           fi
 
