@@ -4,11 +4,15 @@
 # entry (with default name, default output path, and all columns inlined).
 # Existing entries are never modified.
 #
-# Trigger manually after a refiner publishes a new table — locally:
+# Run locally after a refiner publishes a new table:
 #
 #   Rscript scripts/discover_tables.R
 #
-# or via .github/workflows/discover-tables.yml (workflow_dispatch).
+# Requires AWS_ACCESS_KEY_ID_DEV / AWS_SECRET_ACCESS_KEY_DEV / AWS_REGION
+# in the environment or .Renviron (same vars used by scripts/fetch_data.R).
+#
+# Then review the new stub entries in scripts/tables.json, trim `cols` and
+# set `used_by` and `enabled` as appropriate, and commit.
 
 suppressPackageStartupMessages({
   library(tube)
