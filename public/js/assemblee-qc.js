@@ -67,14 +67,31 @@
     return out;
   }
 
-  // MATTR [0–1] → 1–5 filled dots HTML
-  function richnessDots(mattr) {
-    var level = Math.max(1, Math.min(5, Math.ceil((mattr || 0) * 5)));
+  // level 1–5 → filled dots HTML
+  function richnessDots(level) {
     var out = '';
     for (var i = 1; i <= 5; i++) {
       out += i <= level ? '●' : '<span class="empty">○</span>';
     }
     return out;
+  }
+
+  // Normalize MATTR values across parties → 1–5 levels (relative scaling).
+  // The richest party gets 5, others are proportional. When all parties
+  // are within 0.01 of each other, assign mid-scale (3) to all.
+  function computeRichnessLevels(mattrs) {
+    var keys = Object.keys(mattrs);
+    var values = keys.map(function (k) { return mattrs[k]; });
+    var maxVal = Math.max.apply(null, values);
+    var minVal = Math.min.apply(null, values);
+    var range = maxVal - minVal;
+    var result = Object.create(null);
+    keys.forEach(function (k) {
+      result[k] = range < 0.01
+        ? 3
+        : Math.max(1, Math.round(1 + ((mattrs[k] - minVal) / range) * 4));
+    });
+    return result;
   }
 
   // ── Enjeu stack ───────────────────────────────────────────────────────────
@@ -176,6 +193,15 @@
     });
     sorted.sort(function (a, b) { return b.interventions - a.interventions; });
 
+    // Compute relative richness levels across active parties
+    var mattrs = Object.create(null);
+    sorted.forEach(function (item) {
+      if (item.interventions > 0 && item.data) {
+        mattrs[item.key] = parseFloat(item.data.lexical_richness || 0);
+      }
+    });
+    var richnessLevels = computeRichnessLevels(mattrs);
+
     sorted.forEach(function (item) {
       var rowEl = rowMap[item.key];
       if (!rowEl) return;
@@ -199,7 +225,7 @@
         if (wordsEl) wordsEl.textContent = fmtWords(d.word_count);
 
         var richnessEl = rowEl.querySelector('.ass-richness');
-        if (richnessEl) richnessEl.innerHTML = richnessDots(parseFloat(d.lexical_richness || 0));
+        if (richnessEl) richnessEl.innerHTML = richnessDots(richnessLevels[item.key] || 1);
 
         // Place row above shadow zone (sorted order is maintained by iteration)
         if (inShadow) {
