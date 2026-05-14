@@ -32,28 +32,30 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
         <div className="title-block">
           <h2 className="partis-title">De quoi parle-t-on ?</h2>
         </div>
-        <div className="treemap-legend">
-          <div className="legend-toggle">
-            <button
-              className={period === "day" ? "active" : ""}
+        <div className="control-block">
+          <div className="legend-toggle inline">
+            <span
+              className={period === "day" ? "active" : undefined}
               onClick={() => setPeriod("day")}
+              style={{ cursor: "pointer" }}
             >
               Aujourd&apos;hui
-            </button>
-            <button
-              className={period === "week" ? "active" : ""}
+            </span>
+            <span
+              className={period === "week" ? "active" : undefined}
               onClick={() => setPeriod("week")}
+              style={{ cursor: "pointer" }}
             >
               Cette semaine
-            </button>
-            <button
-              className={period === "month" ? "active" : ""}
+            </span>
+            <span
+              className={period === "month" ? "active" : undefined}
               onClick={() => setPeriod("month")}
+              style={{ cursor: "pointer" }}
             >
               Ce mois
-            </button>
+            </span>
           </div>
-          <span>{current.dateLabel}</span>
         </div>
       </div>
 
