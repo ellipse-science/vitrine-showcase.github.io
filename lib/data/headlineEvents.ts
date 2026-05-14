@@ -147,6 +147,27 @@ export type TreemapTile = {
   context: string;
 };
 
+export type TreemapIssueTile = {
+  issueKey: string;
+  issueFr: string;
+  color: string;
+  score: number;      // raw from issues_score_*.json
+  relScore: number;   // 0–100 relative to max tile
+  topObject: string;  // top extracted object name, or ""
+  context: string;    // event title snippet, or ""
+};
+
+export type TreemapPeriodData = {
+  tiles: TreemapIssueTile[]; // 12 issues, sorted by score desc
+  dateLabel: string;
+};
+
+export type TreemapAllPeriods = {
+  day: TreemapPeriodData;
+  week: TreemapPeriodData;
+  month: TreemapPeriodData;
+};
+
 export type HeadlineData = {
   dateLabel: string;
   snapshotInterval: string;
@@ -319,8 +340,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     }
     const eventWeight = e.score_qc ?? e.score_saillance ?? 0;
     const issueColor = ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E";
-    const issueLabel =
-      ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? "Actualité";
     const context = e.title ?? "";
 
     // Top 8 objects per event to avoid dilution
@@ -383,5 +402,132 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     treemapTier3: tier3,
     treemapTier4: tier4,
     treemapMobile,
+  };
+}
+
+// ── Treemap by issue loader ──────────────────────────────────────────────────
+
+const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
+const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
+
+async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<Record<string, unknown>> | null> {
+  const filePath = path.resolve(
+    process.cwd(),
+    "..",
+    "public",
+    "data",
+    "refined",
+    period,
+    `issues_score_${period}.json`,
+  );
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return JSON.parse(raw) as Array<Record<string, unknown>>;
+  } catch {
+    return null;
+  }
+}
+
+function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
+  if (rows.length === 0) return null;
+  return rows.slice().sort((a, b) => {
+    const dA = (a.date_utc as string) ?? "";
+    const dB = (b.date_utc as string) ?? "";
+    if (dB !== dA) return dB.localeCompare(dA);
+    return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
+  })[0] ?? null;
+}
+
+export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
+  // Load headline events to build per-issue content (topObject + context)
+  let rawEvents: string;
+  try {
+    rawEvents = await fs.readFile(DATA_PATH, "utf8");
+  } catch {
+    return null;
+  }
+
+  const allRaw = JSON.parse(rawEvents) as RawEvent[];
+
+  // Deduplicate by event_id (prefer QC), filter USA
+  const byId = new Map<string, RawEvent>();
+  for (const e of allRaw) {
+    const existing = byId.get(e.event_id);
+    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
+  }
+  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+
+  // Per-issue: pick event with highest score_qc, extract topObject + context
+  const issueContent = new Map<string, { topObject: string; context: string }>();
+  const byIssue = new Map<string, RawEvent>();
+  for (const e of unique) {
+    const key = e.main_issue ?? "";
+    const existing = byIssue.get(key);
+    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) {
+      byIssue.set(key, e);
+    }
+  }
+  for (const [issueKey, e] of byIssue) {
+    let topObject = "";
+    if (e.extracted_objects) {
+      try {
+        const objs = JSON.parse(e.extracted_objects) as ExtractedObject[];
+        const raw = objs[0]?.object?.trim() ?? "";
+        if (raw.length >= 2) {
+          const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
+          topObject = capped.length > 22 ? capped.slice(0, 20) + "…" : capped;
+        }
+      } catch { /* ignore */ }
+    }
+    const title = e.title ?? "";
+    const context = title.length > 55 ? title.slice(0, 52) + "…" : title;
+    issueContent.set(issueKey, { topObject, context });
+  }
+
+  // Load all three score files in parallel
+  const [dayRows, weekRows, monthRows] = await Promise.all([
+    loadIssueScores("day"),
+    loadIssueScores("week"),
+    loadIssueScores("month"),
+  ]);
+
+  function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {
+    if (!rows) return null;
+    const latest = latestIssueRow(rows);
+    if (!latest) return null;
+
+    const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
+    const dateLabel = formatDateFr(dateStr);
+
+    const scored = ISSUE_KEYS.map((issueKey) => ({
+      issueKey,
+      score: (latest[issueKey] as number) ?? 0,
+    })).sort((a, b) => b.score - a.score);
+
+    const maxScore = scored[0]?.score || 1;
+
+    const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
+      const content = issueContent.get(issueKey) ?? { topObject: "", context: "" };
+      return {
+        issueKey,
+        issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey,
+        color: ISSUE_COLORS[issueKey] ?? "#463E3E",
+        score,
+        relScore: Math.round((score / maxScore) * 100),
+        topObject: content.topObject,
+        context: content.context,
+      };
+    });
+
+    return { tiles, dateLabel };
+  }
+
+  const day = buildPeriodData(dayRows);
+  if (!day) return null;
+
+  return {
+    day,
+    week: buildPeriodData(weekRows) ?? day,
+    month: buildPeriodData(monthRows) ?? day,
   };
 }
