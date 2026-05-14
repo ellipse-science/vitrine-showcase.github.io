@@ -800,9 +800,11 @@
     text-align: center;
   }
   .solitudes .sol-symbol .glyph.fleur {
-    font-family: 'Playfair Display', 'Georgia', serif;
-    font-size: 54px;
-    color: var(--ink);
+    width: 54px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    mix-blend-mode: multiply;
   }
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
@@ -1866,7 +1868,7 @@
     .solitudes { padding: 22px 16px 20px; margin-top: 28px; }
     .solitudes .sol-title { font-size: 20px; margin-bottom: 14px; }
     .solitudes .sol-viz { height: 110px; max-width: 100%; }
-    .solitudes .sol-symbol .glyph.fleur,
+    .solitudes .sol-symbol .glyph.fleur { width: 54px; height: auto; }
     .solitudes .sol-symbol .glyph.maple { font-size: 54px; }
     .solitudes .sol-symbol .caption { font-size: 9px; margin-top: 6px; }
     .solitudes .sol-stat { gap: 8px; margin: 8px 0 12px; }
@@ -2248,7 +2250,7 @@
     <div class="sol-viz">
       <div class="sol-axis"></div>
       <div class="sol-symbol qc">
-        <span class="glyph fleur" aria-label="Québec">⚜&#xFE0E;</span>
+        <img class="glyph fleur" src="/images/fleur-de-lys.png" alt="Québec" aria-label="Québec">
         <span class="caption">Québec</span>
       </div>
       <div class="sol-symbol roc">
