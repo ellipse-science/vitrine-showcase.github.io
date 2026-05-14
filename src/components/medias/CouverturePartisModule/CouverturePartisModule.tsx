@@ -41,7 +41,7 @@ const partyConfig: Record<string, { color: string; logoUrl: string; label: strin
 
 const passOrder: Record<string, number> = { pm: 3, noon: 2, am: 1 };
 
-// ── Raw data type (from JSON) ─────────────────────────────────────────────────
+// ── Raw data types ────────────────────────────────────────────────────────────
 type RawPartyRow = {
   party: string;
   date_utc: string;
@@ -50,11 +50,18 @@ type RawPartyRow = {
   weighted_tone: number;
 };
 
+// Weekly and monthly tables have no `pass` column
+type RawAggRow = {
+  party: string;
+  date_utc: string;
+  weighted_mentions: number;
+  weighted_tone: number;
+};
+
 type DaySnapshot = { mentions: number; tone: number };
 
 // ── Data transformation ───────────────────────────────────────────────────────
 
-// Build a (date → party → best-pass snapshot) lookup from raw rows.
 const buildDayLookup = (rawRows: RawPartyRow[]): Record<string, Record<string, DaySnapshot>> => {
   const passBest: Record<string, RawPartyRow> = {};
   rawRows.forEach((row) => {
@@ -85,7 +92,6 @@ const buildDayLookup = (rawRows: RawPartyRow[]): Record<string, Record<string, D
   return result;
 };
 
-// Normalized share-of-voice across parties for a given date.
 const computeDaySov = (
   dayLookup: Record<string, Record<string, DaySnapshot>>,
   date: string,
@@ -99,27 +105,30 @@ const computeDaySov = (
   }, {});
 };
 
-// For the "today" tab: SOV per pass (am → noon → pm), normalized across parties.
-const buildTodaySov = (
-  rawRows: RawPartyRow[],
-  date: string,
-  parties: string[]
-): Record<string, number[]> => {
-  const byPass: Record<string, Record<string, number>> = {};
-  rawRows.forEach((row) => {
-    if (row.date_utc !== date) return;
+// Build normalized SOV history from pre-aggregated weekly or monthly rows.
+const buildAggSovHistory = (rows: RawAggRow[], parties: string[]): Record<string, number[]> => {
+  if (rows.length === 0) return parties.reduce((acc, p) => ({ ...acc, [p]: [] }), {});
+
+  const byDate: Record<string, Record<string, number>> = {};
+  rows.forEach((row) => {
     const party = row.party.toUpperCase();
-    if (parties.indexOf(party) === -1) return;
-    if (!byPass[row.pass]) byPass[row.pass] = {};
-    byPass[row.pass][party] = Math.max(byPass[row.pass][party] ?? 0, row.weighted_mentions);
+    if (!parties.includes(party)) return;
+    if (!byDate[row.date_utc]) byDate[row.date_utc] = {};
+    byDate[row.date_utc][party] = Math.max(byDate[row.date_utc][party] ?? 0, row.weighted_mentions);
   });
 
-  return parties.reduce<Record<string, number[]>>((acc, party) => {
-    acc[party] = ['am', 'noon', 'pm'].map((pass) => {
-      const pd = byPass[pass] ?? {};
-      const total = parties.reduce((s, p) => s + (pd[p] ?? 0), 0) || 1;
-      return (pd[party] ?? 0) / total;
+  const dates = Object.keys(byDate).sort();
+  const sovByDate: Record<string, Record<string, number>> = {};
+  dates.forEach((date) => {
+    const total = parties.reduce((s, p) => s + (byDate[date]?.[p] ?? 0), 0) || 1;
+    sovByDate[date] = {};
+    parties.forEach((p) => {
+      sovByDate[date][p] = (byDate[date]?.[p] ?? 0) / total;
     });
+  });
+
+  return parties.reduce<Record<string, number[]>>((acc, p) => {
+    acc[p] = dates.map((d) => sovByDate[d][p] ?? 0);
     return acc;
   }, {});
 };
@@ -138,7 +147,11 @@ const computeTrend = (history: number[]): TrendKey => {
   return 'stable';
 };
 
-const buildPartyData = (rawRows: RawPartyRow[]): PartyData[] => {
+const buildPartyData = (
+  rawRows: RawPartyRow[],
+  weeklyRows: RawAggRow[],
+  monthlyRows: RawAggRow[]
+): PartyData[] => {
   if (rawRows.length === 0) return [];
 
   const dayLookup = buildDayLookup(rawRows);
@@ -156,16 +169,17 @@ const buildPartyData = (rawRows: RawPartyRow[]): PartyData[] => {
     sovCache[date] = computeDaySov(dayLookup, date, knownParties);
   });
 
-  const todaySov = buildTodaySov(rawRows, latestDate, knownParties);
+  const weeklySovHistory  = buildAggSovHistory(weeklyRows,  knownParties);
+  const monthlySovHistory = buildAggSovHistory(monthlyRows, knownParties);
 
   const avg = (arr: number[]): number => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0);
 
   return knownParties
     .map((party) => {
       const cfg = partyConfig[party];
-      const sovToday = sovCache[latestDate]?.[party] ?? 0;
-      const history7days = last7Dates.map((d)  => sovCache[d]?.[party]  ?? 0);
-      const historyMonth = last30Dates.map((d) => sovCache[d]?.[party]  ?? 0);
+      const sovToday    = sovCache[latestDate]?.[party] ?? 0;
+      const history7days  = last7Dates.map((d)  => sovCache[d]?.[party]  ?? 0);
+      const historyMonth  = last30Dates.map((d) => sovCache[d]?.[party]  ?? 0);
 
       return {
         key:      party.toLowerCase(),
@@ -177,9 +191,12 @@ const buildPartyData = (rawRows: RawPartyRow[]): PartyData[] => {
         trend:    computeTrend(history7days),
         inShadow: sovToday < 0.05,
         histories: {
-          today:   todaySov[party] ?? [0, 0, 0],
-          '7days': history7days,
-          month:   historyMonth,
+          // today: last 7 daily values (shows "Les derniers jours" context)
+          today:   history7days,
+          // 7days: weekly pre-computed history (shows "Les dernières semaines")
+          '7days': weeklySovHistory[party]  ?? [],
+          // month: monthly pre-computed history (shows "Les derniers mois")
+          month:   monthlySovHistory[party] ?? [],
         },
         sovByRange: {
           today:   sovToday,
@@ -216,6 +233,7 @@ const toneToRgb = (tone: number): [number, number, number] => {
 };
 
 const sparkPoints = (history: number[], w: number, h: number): string => {
+  if (history.length < 2) return '';
   const min = Math.min(...history);
   const max = Math.max(...history);
   const range = max - min || 0.001;
@@ -239,13 +257,17 @@ const PartyRow = ({ party, maxSov }: { party: PartyEntry; maxSov: number }): Rea
   const [tr, tg, tb] = toneToRgb(party.tone);
   const toneColor = `rgb(${tr},${tg},${tb})`;
   const pts = sparkPoints(party.history, sparkW, sparkH);
+
+  const hasHistory = pts !== '';
   const lastX = sparkW;
-  const lastY = (() => {
-    const min = Math.min(...party.history);
-    const max = Math.max(...party.history);
-    const range = max - min || 0.001;
-    return sparkH - ((party.history[party.history.length - 1] - min) / range) * (sparkH * 0.8) - sparkH * 0.1;
-  })();
+  const lastY = hasHistory
+    ? (() => {
+        const min = Math.min(...party.history);
+        const max = Math.max(...party.history);
+        const range = max - min || 0.001;
+        return sparkH - ((party.history[party.history.length - 1] - min) / range) * (sparkH * 0.8) - sparkH * 0.1;
+      })()
+    : sparkH / 2;
 
   return (
     <div className={`CouvPartis-row${party.inShadow ? ' is-shadow' : ''}`}>
@@ -277,21 +299,25 @@ const PartyRow = ({ party, maxSov }: { party: PartyEntry; maxSov: number }): Rea
       </div>
 
       <svg className="CouvPartis-row-spark" width={sparkW} height={sparkH} aria-hidden="true">
-        <polyline
-          points={`0,${sparkH} ${pts} ${sparkW},${sparkH}`}
-          fill={party.color}
-          fillOpacity={0.12}
-          stroke="none"
-        />
-        <polyline
-          points={pts}
-          fill="none"
-          stroke={party.color}
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx={lastX} cy={lastY} r={2.5} fill={party.color} />
+        {hasHistory && (
+          <>
+            <polyline
+              points={`0,${sparkH} ${pts} ${sparkW},${sparkH}`}
+              fill={party.color}
+              fillOpacity={0.12}
+              stroke="none"
+            />
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={party.color}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx={lastX} cy={lastY} r={2.5} fill={party.color} />
+          </>
+        )}
       </svg>
     </div>
   );
@@ -309,13 +335,31 @@ const CouverturePartisModule = (): ReactElement => {
   const [error, setError]     = useState(false);
 
   useEffect(() => {
+    const ts = Date.now();
+    const get = (path: string): Promise<unknown[]> =>
+      fetch(`${path}?ts=${ts}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => []);
+
     Promise.all([
-      fetch(`/data/refined/day/federal_parties_score_day.json?ts=${Date.now()}`).then((r) => r.json()),
-      fetch(`/data/refined/day/provincial_parties_score_day.json?ts=${Date.now()}`).then((r) => r.json()),
+      get('/data/refined/day/federal_parties_score_day.json'),
+      get('/data/refined/day/provincial_parties_score_day.json'),
+      get('/data/refined/week/federal_parties_score_week.json'),
+      get('/data/refined/week/provincial_parties_score_week.json'),
+      get('/data/refined/month/federal_parties_score_month.json'),
+      get('/data/refined/month/provincial_parties_score_month.json'),
     ])
-      .then(([federal, provincial]) => {
-        setFederalData(buildPartyData(federal));
-        setProvincialData(buildPartyData(provincial));
+      .then(([federalDay, provincialDay, federalWeek, provincialWeek, federalMonth, provincialMonth]) => {
+        setFederalData(buildPartyData(
+          federalDay   as RawPartyRow[],
+          federalWeek  as RawAggRow[],
+          federalMonth as RawAggRow[],
+        ));
+        setProvincialData(buildPartyData(
+          provincialDay   as RawPartyRow[],
+          provincialWeek  as RawAggRow[],
+          provincialMonth as RawAggRow[],
+        ));
         setLoading(false);
       })
       .catch(() => {
@@ -375,6 +419,12 @@ const CouverturePartisModule = (): ReactElement => {
     );
   }
 
+  const sparkLabel: Record<TimeRange, string> = {
+    today:   'Les derniers jours',
+    '7days': 'Les dernières semaines',
+    month:   'Les derniers mois',
+  };
+
   return (
     <div className="CouverturePartisModule">
       <div className="CouverturePartisModule-header">
@@ -417,9 +467,7 @@ const CouverturePartisModule = (): ReactElement => {
         <span className="CouvPartis-colhead-party">Parti</span>
         <span className="CouvPartis-colhead-sov">Part&nbsp;de&nbsp;voix&nbsp;·&nbsp;Tendance</span>
         <span className="CouvPartis-colhead-tone">Ton de la couverture</span>
-        <span className="CouvPartis-colhead-spark">
-          {{ today: "Aujourd'hui", '7days': '7 derniers jours', month: 'Ce mois-ci' }[timeRange]}
-        </span>
+        <span className="CouvPartis-colhead-spark">{sparkLabel[timeRange]}</span>
       </div>
 
       <div className="CouvPartis-list">

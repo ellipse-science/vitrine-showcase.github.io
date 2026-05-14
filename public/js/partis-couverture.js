@@ -27,6 +27,18 @@
   // chart looks like every party has identical neutral coverage. Amplify
   // by this factor (then clamp) so day-to-day differences read visually.
   var TONE_AMPLIFY = 15;
+  var PARTY_COLORS = {
+    plq: '#A03440',
+    caq: '#2B5C7C',
+    qs:  '#B85A2C',
+    pq:  '#1E3A5F',
+    pcq: '#5A3B6E',
+  };
+  var SPARK_HEAD_LABELS = {
+    today: 'Les derniers jours',
+    week:  'Les dernières semaines',
+    month: 'Les derniers mois',
+  };
   var LOG_TAG = '[partis-couverture]';
   function log() {
     if (typeof console !== 'undefined' && console.log) {
@@ -34,6 +46,13 @@
       args.unshift(LOG_TAG);
       console.log.apply(console, args);
     }
+  }
+
+  function isoWeekStart(dateStr) {
+    var d = new Date(dateStr + 'T12:00:00Z');
+    var day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() - (day - 1));
+    return d.toISOString().slice(0, 10);
   }
 
   // ── Data transformation ────────────────────────────────────────────────────
@@ -120,6 +139,24 @@
     var allDatesSovCache = Object.create(null);
     allDates.forEach(function (d) { allDatesSovCache[d] = sovOnDate(d); });
 
+    // Bucket last30 dates by ISO week (Mon–Sun) for the "weekly" sparkline.
+    var weekBuckets = Object.create(null);
+    last30.forEach(function (d) {
+      var wk = isoWeekStart(d);
+      if (!weekBuckets[wk]) weekBuckets[wk] = [];
+      weekBuckets[wk].push(d);
+    });
+    var weekKeys = Object.keys(weekBuckets).sort();
+
+    // Bucket all available dates by calendar month for the "monthly" sparkline.
+    var monthBuckets = Object.create(null);
+    allDates.forEach(function (d) {
+      var mo = d.slice(0, 7);
+      if (!monthBuckets[mo]) monthBuckets[mo] = [];
+      monthBuckets[mo].push(d);
+    });
+    var monthKeys = Object.keys(monthBuckets).sort();
+
     // Mention-weighted mean tone for `party` over `dates`. Days where the
     // party had no mentions contribute nothing (instead of dragging the
     // average toward 0); this matches the intuitive "average tone of the
@@ -141,6 +178,21 @@
       var hist30 = last30.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
       var histYear = allDates.map(function (d) { return (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0; });
       var todayTone = (dayLookup[latestDate] && dayLookup[latestDate][party] && dayLookup[latestDate][party].tone) || 0;
+
+      // Weekly aggregates: one SOV value per ISO week (from last 30 days).
+      var histWeekly = weekKeys.map(function (wk) {
+        var days = weekBuckets[wk];
+        var vals = days.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
+        return vals.reduce(function (s, v) { return s + v; }, 0) / vals.length;
+      });
+
+      // Monthly aggregates: one SOV value per calendar month (all available data).
+      var histMonthly = monthKeys.map(function (mo) {
+        var days = monthBuckets[mo];
+        var vals = days.map(function (d) { return (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0; });
+        return vals.reduce(function (s, v) { return s + v; }, 0) / vals.length;
+      });
+
       return {
         key: party.toLowerCase(),
         sov: {
@@ -155,7 +207,7 @@
           month: weightedToneAvg(last30, party),
           year: weightedToneAvg(allDates, party),
         },
-        history: { week: hist7, month: hist30 },
+        history: { week: hist7, weekly: histWeekly, month: hist30, monthly: histMonthly },
       };
     });
   }
@@ -205,13 +257,8 @@
     if (bar) {
       bar.style.width = barPct.toFixed(1) + '%';
       bar.setAttribute('title', pct + ' % de part de voix');
-      // Color the bar with the party's own colour (read from the
-      // CSS variable --party set on the sibling .parti-name-box).
-      var nameBox = rowEl.querySelector('.parti-name-box');
-      if (nameBox) {
-        var partyColor = getComputedStyle(nameBox).getPropertyValue('--party');
-        if (partyColor) bar.style.background = partyColor.trim();
-      }
+      var color = PARTY_COLORS[stat.key];
+      if (color) bar.style.background = color;
     }
 
     var avgMarker = rowEl.querySelector('.parti-bar-avg');
@@ -230,7 +277,11 @@
       toneDot.style.left = (((amplified + 1) / 2) * 100).toFixed(1) + '%';
     }
 
-    var rawHistory = range === 'month' ? stat.history.month : stat.history.week;
+    var rawHistory = range === 'month'
+      ? stat.history.monthly
+      : range === 'week'
+        ? stat.history.weekly
+        : stat.history.week;
     var pts = sparkPoints(rawHistory, SPARK_W, SPARK_H);
     var ptsStr = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
 
@@ -294,6 +345,10 @@
       var shadowRows = inShadow.querySelectorAll('.parti-row');
       inShadow.style.display = shadowRows.length === 0 ? 'none' : '';
     }
+
+    // Update the sparkline column header to match the active range.
+    var sparkHead = section.querySelector('.parti-row.header div:last-child');
+    if (sparkHead) sparkHead.textContent = SPARK_HEAD_LABELS[range] || SPARK_HEAD_LABELS.today;
 
     // Caption follows the leader and matches the range:
     //   today → "moyenne 7 jours"     (reference = 7-day mean)
