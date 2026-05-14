@@ -1,12 +1,13 @@
 {
-  "name": "next-site",
-  "version": "0.1.0",
+  "name": "vitrine-showcase",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
-    "start": "next start"
+    "start": "next start",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.2.6",

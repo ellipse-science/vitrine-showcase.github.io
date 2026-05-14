@@ -9,7 +9,6 @@ import path from "node:path";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
-  "..",
   "public",
   "data",
   "headline-events.json",

@@ -243,7 +243,6 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
 
 const ASSEMBLEE_JSON_PATH = path.resolve(
   process.cwd(),
-  "..",
   "public",
   "data",
   "agora",

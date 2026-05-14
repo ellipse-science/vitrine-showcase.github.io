@@ -345,12 +345,8 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
   };
 }
 
-// Read from the repo's /public/data, not from next-site/public (which is a
-// symlink). Turbopack refuses to follow symlinks that exit its filesystem
-// root, so we walk up from next-site/ and into the parent public/.
 const PARTIES_JSON_PATH = path.resolve(
   process.cwd(),
-  "..",
   "public",
   "data",
   "refined",
