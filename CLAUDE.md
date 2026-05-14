@@ -60,17 +60,28 @@ presentation/      -- RevealJS slide deck (served at /presentation/)
 
 ## Data
 
-All data modules consume static JSON files from `public/data/`:
-- `media-treemap.json` -- issue treemap with scores, velocity, headlines
-- `headline-of-headlines.json` -- dominant headline story
-- `ticker.json` -- scrolling headline ticker
-- `constellation-graph.json` -- topic co-occurrence graph
-- `top20.json` -- top 20 rankings
-- `parole-en-chambre.json` -- parliamentary debates
-- `refined/day/federal_parties_score_day.json` -- federal party mentions
-- `refined/day/provincial_parties_score_day.json` -- provincial party mentions
+Data is pulled from AWS Athena every 4h by `scripts/fetch_data.R`, run via
+`refresh-data.yml` triggered externally by cron-job.org. The script reads a
+whitelist of Athena tables and post-processed files from `scripts/tables.json`
+and writes JSON to `public/data/`.
 
-These are static snapshots. To update them, replace the JSON files in `public/data/` and push to `main`.
+**Currently in production:**
+- `refined/day/provincial_parties_score_day.json` -- consumed by `public/js/partis-couverture.js`
+- `agora/agora_decideurs_qc.json` -- consumed by `public/js/assemblee-qc.js`
+- `meta.json` -- status / freshness for the `/status` page
+
+**To add a new table:** edit `scripts/tables.json` -- append a new entry under
+`tables` (or flip an existing `enabled: false` to `true`). Each entry declares
+the Athena source, output path, and the column whitelist. Re-fetching happens
+on the next 4h cron tick (or manually via the `refresh-data.yml`
+workflow_dispatch). For tables that need a derived/aggregated output, add a
+`post_process` entry pointing at one of the builders registered in
+`scripts/fetch_data.R`'s `POST_PROCESSORS` map.
+
+13 additional table definitions sit dormant in `scripts/tables.json` with
+`enabled: false` -- the inventory of what's available to switch on when a new
+hydrator is built (federal partis, issues, reflet summaries, headline of
+headlines, headline events).
 
 ## Feature flags (.env.production)
 

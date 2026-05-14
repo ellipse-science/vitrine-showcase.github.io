@@ -1,8 +1,10 @@
 #!/usr/bin/env Rscript
 # Fetches refined Athena tables and writes static JSON to public/data/.
 # Runs in GitHub Actions every 4h via workflow_dispatch triggered by cron-job.org.
-# WHITELIST-ONLY: raw tables (salient_headlines_objects, radar_annotated, etc.) are
-# never queried — only derivative/aggregated datamarts are published.
+#
+# WHITELIST-ONLY: every Athena table and post-processed file is defined in
+# scripts/tables.json. To add a table: append an object to that config and
+# set "enabled": true. Raw upstream tables are never queried here.
 
 suppressPackageStartupMessages({
   library(tube)
@@ -10,134 +12,22 @@ suppressPackageStartupMessages({
   library(jsonlite)
 })
 
-NOW_UTC  <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-LOOKBACK <- as.character(Sys.time() - as.difftime(30, units = "days"))
+NOW_UTC      <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+CONFIG_PATH  <- "scripts/tables.json"
 
-# ── Whitelist ─────────────────────────────────────────────────────────────────
-# Each entry: name (for meta.json), athena table key, output path, columns.
-# Adding a new table requires editing this list — a deliberate governance gate.
+# ── Config ────────────────────────────────────────────────────────────────────
 
-PARTY_COLS    <- c("party", "date_utc", "date_montreal_tz",
-                   "weighted_mentions", "weighted_tone", "pass")
-PARTY_COLS_WM <- c("party", "date_utc", "date_montreal_tz",
-                   "weighted_mentions", "weighted_tone")   # week/month have no pass
+load_config <- function(path) {
+  if (!file.exists(path)) {
+    stop("Config not found at ", path,
+         " — run this script from the repo root.")
+  }
+  jsonlite::fromJSON(path, simplifyVector = FALSE)
+}
 
-ISSUE_COLS    <- c("date_utc", "date_montreal_tz", "pass",
-                   "economy_and_labour",
-                   "rights_liberties_minorities_discrimination",
-                   "health_and_social_services",
-                   "public_lands_and_agriculture",
-                   "immigration", "education",
-                   "environment_and_energy", "law_and_crime",
-                   "international_affairs_and_defense",
-                   "technology", "governments_and_governance",
-                   "culture_and_nationalism")
-ISSUE_COLS_WM <- ISSUE_COLS[ISSUE_COLS != "pass"]
-
-REFLET_COLS   <- c("date_utc", "pass", "issue", "summary")
-REFLET_COLS_WM <- c("date_utc", "issue", "summary")
-
-HOH_COLS      <- c("country_id", "date_utc", "time_interval_utc",
-                   "date_montreal_tz", "time_interval_montreal_tz",
-                   "main_issue", "main_issue_text_fr", "main_issue_text_en",
-                   "title", "text", "objects")
-
-DECIDEURS_COLS <- c("period_type", "period_start_date", "period_end_date",
-                    "party", "n_interventions", "word_count",
-                    "lexical_richness", "tone_score",
-                    "economy_and_labour",
-                    "rights_liberties_minorities_discrimination",
-                    "health_and_social_services",
-                    "public_lands_and_agriculture",
-                    "immigration", "education",
-                    "environment_and_energy", "law_and_crime",
-                    "international_affairs_and_defense",
-                    "technology", "governments_and_governance",
-                    "culture_and_nationalism",
-                    "editorial_angle")
-
-EVENTS_COLS   <- c("block_start_utc", "block_end_utc", "time_interval_utc",
-                   "event_id", "event_rank", "event_label", "event_title",
-                   "top_entities", "top_themes",
-                   "composite_score", "saliency_velocity",
-                   "saliency_breadth", "saliency_prominence",
-                   "saliency_persistence", "saliency_depth",
-                   "outlet_count", "article_count",
-                   "cluster_confidence", "media_ids")
-
-PUBLISHABLE_TABLES <- list(
-  # Party scores
-  list(name = "federal_parties_score_day",
-       athena = "vitrine_datamart-federal_parties_score_day",
-       out    = "public/data/refined/day/federal_parties_score_day.json",
-       cols   = PARTY_COLS),
-  list(name = "provincial_parties_score_day",
-       athena = "vitrine_datamart-provincial_parties_score_day",
-       out    = "public/data/refined/day/provincial_parties_score_day.json",
-       cols   = PARTY_COLS),
-  list(name = "federal_parties_score_week",
-       athena = "vitrine_datamart-federal_parties_score_week",
-       out    = "public/data/refined/week/federal_parties_score_week.json",
-       cols   = PARTY_COLS_WM),
-  list(name = "provincial_parties_score_week",
-       athena = "vitrine_datamart-provincial_parties_score_week",
-       out    = "public/data/refined/week/provincial_parties_score_week.json",
-       cols   = PARTY_COLS_WM),
-  list(name = "federal_parties_score_month",
-       athena = "vitrine_datamart-federal_parties_score_month",
-       out    = "public/data/refined/month/federal_parties_score_month.json",
-       cols   = PARTY_COLS_WM),
-  list(name = "provincial_parties_score_month",
-       athena = "vitrine_datamart-provincial_parties_score_month",
-       out    = "public/data/refined/month/provincial_parties_score_month.json",
-       cols   = PARTY_COLS_WM),
-
-  # Issues scores
-  list(name = "issues_score_day",
-       athena = "vitrine_datamart-issues_score_day",
-       out    = "public/data/refined/day/issues_score_day.json",
-       cols   = ISSUE_COLS),
-  list(name = "issues_score_week",
-       athena = "vitrine_datamart-issues_score_week",
-       out    = "public/data/refined/week/issues_score_week.json",
-       cols   = ISSUE_COLS_WM),
-  list(name = "issues_score_month",
-       athena = "vitrine_datamart-issues_score_month",
-       out    = "public/data/refined/month/issues_score_month.json",
-       cols   = ISSUE_COLS_WM),
-
-  # LLM summaries
-  list(name = "reflet_day",
-       athena = "vitrine_datamart-reflet_day",
-       out    = "public/data/refined/day/reflet_day.json",
-       cols   = REFLET_COLS),
-  list(name = "reflet_week",
-       athena = "vitrine_datamart-reflet_week",
-       out    = "public/data/refined/week/reflet_week.json",
-       cols   = REFLET_COLS_WM),
-  list(name = "reflet_month",
-       athena = "vitrine_datamart-reflet_month",
-       out    = "public/data/refined/month/reflet_month.json",
-       cols   = REFLET_COLS_WM),
-
-  # Headline of headlines (raw array — used by future components)
-  list(name = "headline_of_headlines",
-       athena = "vitrine_datamart-headline_of_headlines",
-       out    = "public/data/refined/day/headline_of_headlines.json",
-       cols   = HOH_COLS),
-
-  # Event salience (new — 3-day rolling window)
-  list(name = "headline_events_4h",
-       athena = "vitrine_datamart-headline_events_4h",
-       out    = "public/data/headline-events.json",
-       cols   = EVENTS_COLS),
-
-  # Agora QC — Que dit-on à l'Assemblée nationale ?
-  list(name  = "agora_decideurs_qc",
-       athena = "agora_datamart-agora_decideurs_qc",
-       out    = "public/data/agora/agora_decideurs_qc.json",
-       cols   = DECIDEURS_COLS)
-)
+CONFIG          <- load_config(CONFIG_PATH)
+ENABLED_TABLES  <- Filter(function(t) isTRUE(t$enabled), CONFIG$tables)
+ENABLED_POSTS   <- Filter(function(p) isTRUE(p$enabled), CONFIG$post_process)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -148,25 +38,41 @@ write_json_file <- function(df, path) {
     dataframe = "rows")
 }
 
+# Per-table optional filtering, keyed by entry$filter.
+# Add a new branch here when a new table needs row-level trimming.
+apply_filter <- function(df, filter_id) {
+  if (is.null(filter_id) || !nzchar(filter_id)) return(df)
+
+  if (filter_id == "headline_events_3day") {
+    if ("block_start_utc" %in% names(df)) {
+      cutoff <- format(Sys.time() - as.difftime(3, units = "days"),
+                       "%Y-%m-%d %H:%M:%S", tz = "UTC")
+      df <- dplyr::filter(df, block_start_utc >= cutoff)
+    }
+    return(df)
+  }
+
+  message("  !! Unknown filter id: ", filter_id, " — passing through")
+  df
+}
+
 fetch_table <- function(conn, entry) {
   # DBI::dbGetQuery with double-quoted table name handles hyphens safely,
   # avoiding the noctua/dplyr::tbl incompatibility with hyphenated Athena tables.
   # as.data.frame() normalises noctua's output (data.table when data.table is
   # installed) so column subsetting with [, cols, drop=FALSE] works correctly.
-  sql <- sprintf('SELECT * FROM "%s"', entry$athena)
-  df  <- as.data.frame(DBI::dbGetQuery(conn, sql))
-  df  <- df[, intersect(entry$cols, names(df)), drop = FALSE]
-
-  if (entry$name == "headline_events_4h" && "block_start_utc" %in% names(df)) {
-    cutoff <- format(Sys.time() - as.difftime(3, units = "days"),
-                     "%Y-%m-%d %H:%M:%S", tz = "UTC")
-    df <- dplyr::filter(df, block_start_utc >= cutoff)
-  }
-
+  sql  <- sprintf('SELECT * FROM "%s"', entry$athena)
+  df   <- as.data.frame(DBI::dbGetQuery(conn, sql))
+  cols <- unlist(entry$cols)
+  df   <- df[, intersect(cols, names(df)), drop = FALSE]
+  df   <- apply_filter(df, entry$filter)
   df
 }
 
-# Build a PeriodSnapshot for one period_type slice of the dataframe.
+# ── Post-processing builders ──────────────────────────────────────────────────
+# Each builder is invoked by name from the post_process config entry; it reads
+# the file produced by its `source` table and writes a derived JSON.
+
 build_period_snapshot <- function(rows, party_full_names) {
   if (nrow(rows) == 0) return(NULL)
 
@@ -216,9 +122,14 @@ build_period_snapshot <- function(rows, party_full_names) {
   )
 }
 
-# Build parole-en-chambre.json for the ParoleEnChambre component.
-build_parole_en_chambre <- function(df) {
-  if (is.null(df) || nrow(df) == 0) return(NULL)
+build_parole_en_chambre <- function(source_path, out_path) {
+  if (!file.exists(source_path)) {
+    message("  !! source not found: ", source_path)
+    return(invisible(NULL))
+  }
+  raw <- jsonlite::fromJSON(source_path, simplifyDataFrame = TRUE)
+  df  <- as.data.frame(raw)
+  if (nrow(df) == 0) return(invisible(NULL))
 
   party_full_names <- c(
     caq = "Coalition Avenir Québec",
@@ -234,24 +145,32 @@ build_parole_en_chambre <- function(df) {
     snap <- build_period_snapshot(rows, party_full_names)
     if (!is.null(snap)) periods[[pt]] <- snap
   }
+  if (length(periods) == 0) return(invisible(NULL))
 
-  if (length(periods) == 0) return(NULL)
-
-  qc_assembly <- list(
-    assemblyId       = "QC",
-    chambre          = "Assemblée nationale du Québec",
-    monitoredParties = c("CAQ", "PLQ", "PQ", "QS", "PCQ"),
-    periods          = periods
+  payload <- list(
+    generatedAt = NOW_UTC,
+    assemblies  = list(QC = list(
+      assemblyId       = "QC",
+      chambre          = "Assemblée nationale du Québec",
+      monitoredParties = c("CAQ", "PLQ", "PQ", "QS", "PCQ"),
+      periods          = periods
+    ))
   )
-
-  list(generatedAt = NOW_UTC, assemblies = list(QC = qc_assembly))
+  jsonlite::write_json(payload, out_path,
+    auto_unbox = TRUE, pretty = TRUE, na = "null")
+  message("  -> written ", out_path)
 }
 
-# Build the rich headline-of-headlines.json that UneDesUnes expects.
-build_hoh_rich <- function(df) {
-  if (nrow(df) == 0) return(NULL)
+build_headline_of_headlines_rich <- function(source_path, out_path) {
+  if (!file.exists(source_path)) {
+    message("  !! source not found: ", source_path)
+    return(invisible(NULL))
+  }
+  raw <- jsonlite::fromJSON(source_path, simplifyDataFrame = TRUE)
+  df  <- as.data.frame(raw)
+  if (nrow(df) == 0) return(invisible(NULL))
 
-  # Get most recent entry per country
+  # Most recent entry per country
   latest <- df |>
     dplyr::group_by(country_id) |>
     dplyr::slice_max(order_by = date_utc, n = 1, with_ties = FALSE) |>
@@ -262,7 +181,6 @@ build_hoh_rich <- function(df) {
       jsonlite::fromJSON(row$objects[[1]]),
       error = function(e) list()
     )
-    # Normalise to [{label, score}] list — handle both named list and data.frame
     if (is.data.frame(objects_parsed)) {
       objects_list <- lapply(seq_len(nrow(objects_parsed)), function(i) {
         list(label = as.character(objects_parsed$label[[i]]),
@@ -274,7 +192,6 @@ build_hoh_rich <- function(df) {
       objects_list <- list()
     }
 
-    # Derive a human-readable snapshot label from the time interval
     snapshot_label <- tryCatch(
       format(lubridate::ymd_hms(row$date_utc[[1]], quiet = TRUE),
              "%Y-%m-%d %H:%M UTC", tz = "UTC"),
@@ -282,40 +199,68 @@ build_hoh_rich <- function(df) {
     )
 
     list(
-      countryId          = row$country_id[[1]],
-      dateUtc            = row$date_utc[[1]],
-      timeIntervalUtc    = row$time_interval_utc[[1]],
-      mainIssue          = row$main_issue[[1]],
-      mainIssueLabelFr   = row$main_issue_text_fr[[1]],
-      mainIssueLabelEn   = row$main_issue_text_en[[1]],
-      title              = row$title[[1]],
-      score              = 0.5,       # not stored in Athena — placeholder
-      prevScore          = 0.5,
-      velocity           = 0,
-      objects            = objects_list,
-      monitoredSources   = list(),    # would require join with salient_headlines_objects
-      headlines          = list(),
-      snapshotLabel      = snapshot_label,
-      nextLabel          = NULL
+      countryId        = row$country_id[[1]],
+      dateUtc          = row$date_utc[[1]],
+      timeIntervalUtc  = row$time_interval_utc[[1]],
+      mainIssue        = row$main_issue[[1]],
+      mainIssueLabelFr = row$main_issue_text_fr[[1]],
+      mainIssueLabelEn = row$main_issue_text_en[[1]],
+      title            = row$title[[1]],
+      score            = 0.5,
+      prevScore        = 0.5,
+      velocity         = 0,
+      objects          = objects_list,
+      monitoredSources = list(),
+      headlines        = list(),
+      snapshotLabel    = snapshot_label,
+      nextLabel        = NULL
     )
   }
 
   countries <- list()
   for (i in seq_len(nrow(latest))) {
-    row    <- latest[i, , drop = FALSE]
-    cid    <- row$country_id[[1]]
-    # Map "CAN" → "CA" for the frontend toggle; keep "QC" as-is
-    key    <- if (cid == "CAN") "CA" else cid
+    row <- latest[i, , drop = FALSE]
+    cid <- row$country_id[[1]]
+    key <- if (cid == "CAN") "CA" else cid
     countries[[key]] <- build_country(row)
   }
 
-  list(generatedAt = NOW_UTC, countries = countries)
+  payload <- list(generatedAt = NOW_UTC, countries = countries)
+  jsonlite::write_json(payload, out_path,
+    auto_unbox = TRUE, pretty = TRUE, na = "null")
+  message("  -> written ", out_path)
+}
+
+# Dispatcher — looks up a builder by post-process entry name.
+POST_PROCESSORS <- list(
+  parole_en_chambre          = build_parole_en_chambre,
+  headline_of_headlines_rich = build_headline_of_headlines_rich
+)
+
+dispatch_post_process <- function(entry, table_outputs) {
+  fn <- POST_PROCESSORS[[entry$name]]
+  if (is.null(fn)) {
+    message("  !! no builder registered for: ", entry$name)
+    return(invisible(NULL))
+  }
+  source_path <- table_outputs[[entry$source]]
+  if (is.null(source_path)) {
+    message("  !! source table '", entry$source,
+            "' is not enabled — cannot build ", entry$name)
+    return(invisible(NULL))
+  }
+  fn(source_path, entry$out)
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 run <- function() {
-  results <- list()
+  message("[", format(Sys.time(), "%H:%M:%S"), "] Loaded ",
+          length(ENABLED_TABLES), " enabled table(s), ",
+          length(ENABLED_POSTS),  " enabled post-processor(s) from ", CONFIG_PATH)
+
+  results       <- list()
+  table_outputs <- list()  # name -> output path, populated as tables succeed
 
   # noctua requires the standard (un-suffixed) env vars to be set for query
   # execution, even though ellipse_connect() uses the _DEV suffixed vars.
@@ -326,13 +271,14 @@ run <- function() {
   conn <- tube::ellipse_connect("DEV", "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
-  for (entry in PUBLISHABLE_TABLES) {
+  for (entry in ENABLED_TABLES) {
     message("[", format(Sys.time(), "%H:%M:%S"), "] Fetching: ", entry$name)
 
     res <- tryCatch({
       df <- fetch_table(conn, entry)
       write_json_file(df, entry$out)
       message("  -> ", nrow(df), " rows -> ", entry$out)
+      table_outputs[[entry$name]] <<- entry$out
       list(name = entry$name, status = "ok", rowCount = nrow(df),
            generatedAt = NOW_UTC, path = entry$out)
     }, error = function(e) {
@@ -344,43 +290,15 @@ run <- function() {
     results[[length(results) + 1]] <- res
   }
 
-  # Write rich headline-of-headlines.json for UneDesUnes component
-  message("[", format(Sys.time(), "%H:%M:%S"), "] Building headline-of-headlines.json...")
-  tryCatch({
-    hoh_raw <- jsonlite::fromJSON(
-      "public/data/refined/day/headline_of_headlines.json",
-      simplifyDataFrame = TRUE
-    )
-    hoh_rich <- build_hoh_rich(as.data.frame(hoh_raw))
-    if (!is.null(hoh_rich)) {
-      jsonlite::write_json(hoh_rich, "public/data/headline-of-headlines.json",
-        auto_unbox = TRUE, pretty = TRUE, na = "null")
-      message("  -> written public/data/headline-of-headlines.json")
-    }
-  }, error = function(e) {
-    message("  !! Could not build headline-of-headlines.json: ", conditionMessage(e))
-  })
+  for (pp in ENABLED_POSTS) {
+    message("[", format(Sys.time(), "%H:%M:%S"), "] Post-processing: ", pp$name)
+    tryCatch(dispatch_post_process(pp, table_outputs),
+      error = function(e) {
+        message("  !! Could not build ", pp$name, ": ", conditionMessage(e))
+      })
+  }
 
-  # Write parole-en-chambre.json for ParoleEnChambre component
-  message("[", format(Sys.time(), "%H:%M:%S"), "] Building parole-en-chambre.json...")
-  tryCatch({
-    decideurs_path <- "public/data/agora/agora_decideurs_qc.json"
-    if (file.exists(decideurs_path)) {
-      decideurs_raw <- jsonlite::fromJSON(decideurs_path, simplifyDataFrame = TRUE)
-      pec <- build_parole_en_chambre(as.data.frame(decideurs_raw))
-      if (!is.null(pec)) {
-        jsonlite::write_json(pec, "public/data/parole-en-chambre.json",
-          auto_unbox = TRUE, pretty = TRUE, na = "null")
-        message("  -> written public/data/parole-en-chambre.json")
-      }
-    } else {
-      message("  !! agora_decideurs_qc.json not found — skipping")
-    }
-  }, error = function(e) {
-    message("  !! Could not build parole-en-chambre.json: ", conditionMessage(e))
-  })
-
-  # Write meta.json for the /status page
+  # Always write meta.json for the /status page
   run_url <- paste0(
     Sys.getenv("GITHUB_SERVER_URL", "https://github.com"), "/",
     Sys.getenv("GITHUB_REPOSITORY", ""),

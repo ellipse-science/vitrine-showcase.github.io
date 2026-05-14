@@ -1,0 +1,210 @@
+{
+  "_comment": "Whitelist of Athena tables published as static JSON every 4h by scripts/fetch_data.R. To add a new table: append an object below and set enabled=true. To deprecate: set enabled=false (the file is left untouched on disk). Columns are inlined per-table; rows from Athena are projected to that subset before write. Special per-table filtering (e.g., date cutoffs) is keyed by the 'filter' field and implemented in fetch_data.R.",
+
+  "tables": [
+    {
+      "name": "provincial_parties_score_day",
+      "athena": "vitrine_datamart-provincial_parties_score_day",
+      "out": "public/data/refined/day/provincial_parties_score_day.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone", "pass"],
+      "enabled": true,
+      "used_by": "public/js/partis-couverture.js"
+    },
+    {
+      "name": "agora_decideurs_qc",
+      "athena": "agora_datamart-agora_decideurs_qc",
+      "out": "public/data/agora/agora_decideurs_qc.json",
+      "cols": [
+        "period_type", "period_start_date", "period_end_date",
+        "party", "n_interventions", "word_count",
+        "lexical_richness", "tone_score",
+        "economy_and_labour",
+        "rights_liberties_minorities_discrimination",
+        "health_and_social_services",
+        "public_lands_and_agriculture",
+        "immigration", "education",
+        "environment_and_energy", "law_and_crime",
+        "international_affairs_and_defense",
+        "technology", "governments_and_governance",
+        "culture_and_nationalism",
+        "editorial_angle"
+      ],
+      "enabled": true,
+      "used_by": "public/js/assemblee-qc.js"
+    },
+
+    {
+      "name": "federal_parties_score_day",
+      "athena": "vitrine_datamart-federal_parties_score_day",
+      "out": "public/data/refined/day/federal_parties_score_day.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone", "pass"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "federal_parties_score_week",
+      "athena": "vitrine_datamart-federal_parties_score_week",
+      "out": "public/data/refined/week/federal_parties_score_week.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "provincial_parties_score_week",
+      "athena": "vitrine_datamart-provincial_parties_score_week",
+      "out": "public/data/refined/week/provincial_parties_score_week.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "federal_parties_score_month",
+      "athena": "vitrine_datamart-federal_parties_score_month",
+      "out": "public/data/refined/month/federal_parties_score_month.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "provincial_parties_score_month",
+      "athena": "vitrine_datamart-provincial_parties_score_month",
+      "out": "public/data/refined/month/provincial_parties_score_month.json",
+      "cols": ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone"],
+      "enabled": false,
+      "used_by": null
+    },
+
+    {
+      "name": "issues_score_day",
+      "athena": "vitrine_datamart-issues_score_day",
+      "out": "public/data/refined/day/issues_score_day.json",
+      "cols": [
+        "date_utc", "date_montreal_tz", "pass",
+        "economy_and_labour",
+        "rights_liberties_minorities_discrimination",
+        "health_and_social_services",
+        "public_lands_and_agriculture",
+        "immigration", "education",
+        "environment_and_energy", "law_and_crime",
+        "international_affairs_and_defense",
+        "technology", "governments_and_governance",
+        "culture_and_nationalism"
+      ],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "issues_score_week",
+      "athena": "vitrine_datamart-issues_score_week",
+      "out": "public/data/refined/week/issues_score_week.json",
+      "cols": [
+        "date_utc", "date_montreal_tz",
+        "economy_and_labour",
+        "rights_liberties_minorities_discrimination",
+        "health_and_social_services",
+        "public_lands_and_agriculture",
+        "immigration", "education",
+        "environment_and_energy", "law_and_crime",
+        "international_affairs_and_defense",
+        "technology", "governments_and_governance",
+        "culture_and_nationalism"
+      ],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "issues_score_month",
+      "athena": "vitrine_datamart-issues_score_month",
+      "out": "public/data/refined/month/issues_score_month.json",
+      "cols": [
+        "date_utc", "date_montreal_tz",
+        "economy_and_labour",
+        "rights_liberties_minorities_discrimination",
+        "health_and_social_services",
+        "public_lands_and_agriculture",
+        "immigration", "education",
+        "environment_and_energy", "law_and_crime",
+        "international_affairs_and_defense",
+        "technology", "governments_and_governance",
+        "culture_and_nationalism"
+      ],
+      "enabled": false,
+      "used_by": null
+    },
+
+    {
+      "name": "reflet_day",
+      "athena": "vitrine_datamart-reflet_day",
+      "out": "public/data/refined/day/reflet_day.json",
+      "cols": ["date_utc", "pass", "issue", "summary"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "reflet_week",
+      "athena": "vitrine_datamart-reflet_week",
+      "out": "public/data/refined/week/reflet_week.json",
+      "cols": ["date_utc", "issue", "summary"],
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "reflet_month",
+      "athena": "vitrine_datamart-reflet_month",
+      "out": "public/data/refined/month/reflet_month.json",
+      "cols": ["date_utc", "issue", "summary"],
+      "enabled": false,
+      "used_by": null
+    },
+
+    {
+      "name": "headline_of_headlines",
+      "athena": "vitrine_datamart-headline_of_headlines",
+      "out": "public/data/refined/day/headline_of_headlines.json",
+      "cols": [
+        "country_id", "date_utc", "time_interval_utc",
+        "date_montreal_tz", "time_interval_montreal_tz",
+        "main_issue", "main_issue_text_fr", "main_issue_text_en",
+        "title", "text", "objects"
+      ],
+      "enabled": false,
+      "used_by": null
+    },
+
+    {
+      "name": "headline_events_4h",
+      "athena": "vitrine_datamart-headline_events_4h",
+      "out": "public/data/headline-events.json",
+      "cols": [
+        "block_start_utc", "block_end_utc", "time_interval_utc",
+        "event_id", "event_rank", "event_label", "event_title",
+        "top_entities", "top_themes",
+        "composite_score", "saliency_velocity",
+        "saliency_breadth", "saliency_prominence",
+        "saliency_persistence", "saliency_depth",
+        "outlet_count", "article_count",
+        "cluster_confidence", "media_ids"
+      ],
+      "filter": "headline_events_3day",
+      "enabled": false,
+      "used_by": null
+    }
+  ],
+
+  "post_process": [
+    {
+      "name": "headline_of_headlines_rich",
+      "source": "headline_of_headlines",
+      "out": "public/data/headline-of-headlines.json",
+      "enabled": false,
+      "used_by": null
+    },
+    {
+      "name": "parole_en_chambre",
+      "source": "agora_decideurs_qc",
+      "out": "public/data/parole-en-chambre.json",
+      "enabled": false,
+      "used_by": null
+    }
+  ]
+}
