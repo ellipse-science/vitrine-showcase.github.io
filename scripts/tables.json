@@ -141,6 +141,7 @@
                 "governments_and_governance",
                 "culture_and_nationalism",
                 "pass",
+                "issues_meta",
                 "tag"
             ],
             "enabled": true,
@@ -165,6 +166,7 @@
                 "technology",
                 "governments_and_governance",
                 "culture_and_nationalism",
+                "issues_meta",
                 "tag"
             ],
             "enabled": true,
@@ -189,6 +191,7 @@
                 "technology",
                 "governments_and_governance",
                 "culture_and_nationalism",
+                "issues_meta",
                 "tag"
             ],
             "enabled": true,
