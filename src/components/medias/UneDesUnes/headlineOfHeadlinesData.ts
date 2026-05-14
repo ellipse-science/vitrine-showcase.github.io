@@ -1,3 +1,26 @@
+export type HeadlineEvent = {
+  country_id: string | null;
+  date_utc: string;
+  time_interval_utc: string;
+  event_id: string;
+  event_rank: number;
+  event_label: string;
+  event_title_raw: string | null;
+  score_saillance: number | null;
+  score_qc: number | null;
+  extracted_objects: string | null; // JSON string
+  cluster_confidence: number;
+  article_count: number;
+  outlet_count: number;
+  media_ids: string; // JSON string like '["LED"]'
+  intensity_tier: string | null;
+  title: string | null;
+  main_issue: string | null;
+  main_issue_text_fr: string | null;
+  main_issue_text_en: string | null;
+  tag: string;
+}
+
 export type SalientObject = {
   label: string;
   score: number; // 0–1, relative weight — drives bar width

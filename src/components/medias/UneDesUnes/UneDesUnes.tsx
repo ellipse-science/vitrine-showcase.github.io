@@ -1,54 +1,42 @@
-import React, { memo, ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
 
-import { HeadlineOfHeadlines, HeadlineOfHeadlinesPayload, HotHeadline } from './headlineOfHeadlinesData';
+import { HeadlineEvent } from './headlineOfHeadlinesData';
+import { getIssueMeta } from '../../../helpers/issues';
+import { getMediaName } from '../../../helpers/media';
 import './UneDesUnes.scss';
 
-type Country = 'QC' | 'CA';
-
-const getSaillanceLevel = (score: number): string => {
-  if (score >= 0.75) return 'sature';
-  if (score >= 0.50) return 'fort';
-  if (score >= 0.25) return 'notable';
-  return 'marginal';
-};
-
-const getVelocityKey = (velocity: number): string => {
-  if (velocity > 20)  return 'upStrong';
-  if (velocity > 5)   return 'up';
-  if (velocity >= -5) return 'stable';
-  if (velocity > -20) return 'down';
-  return 'downStrong';
-};
-
-const getVelocityDir = (velocity: number): string => {
-  if (velocity > 5)   return 'up';
-  if (velocity >= -5) return 'neutral';
-  return 'down';
-};
-
-interface UneDesUnesProps {
-  hideRadarLink?: boolean;
-}
-
-const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement => {
+const UneDesUnes = (): ReactElement => {
   const { t } = useTranslation('UneDesUnes');
-  const [eyebrowLead, eyebrowAccent, eyebrowBridge, ...eyebrowTail] = t('eyebrow').split(' ')
-  const navigate = useNavigate();
-  const [payload, setPayload] = useState<HeadlineOfHeadlinesPayload | null>(null);
+  const [events, setEvents] = useState<HeadlineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [country, setCountry] = useState<Country>('QC');
 
   useEffect(() => {
-    fetch(`/data/headline-of-headlines.json?ts=${Date.now()}`)
+    fetch(`/data/headline-events.json?ts=${Date.now()}`)
       .then((res) => {
         if (!res.ok) throw new Error('network');
         return res.json();
       })
-      .then((data: HeadlineOfHeadlinesPayload) => {
-        setPayload(data);
+      .then((data: HeadlineEvent[]) => {
+        const withTitles = data.filter(e => e.title !== null);
+        if (withTitles.length > 0) {
+          // Find most recent block
+          const sortedByDate = [...withTitles].sort((a, b) => {
+            const dateA = a.date_utc + 'T' + a.time_interval_utc.split('-')[0] + ':00Z';
+            const dateB = b.date_utc + 'T' + b.time_interval_utc.split('-')[0] + ':00Z';
+            return dateB.localeCompare(dateA);
+          });
+
+          const latestDate = sortedByDate[0].date_utc;
+          const latestInterval = sortedByDate[0].time_interval_utc;
+
+          const latestEvents = sortedByDate
+            .filter(e => e.date_utc === latestDate && e.time_interval_utc === latestInterval)
+            .sort((a, b) => (b.score_saillance || 0) - (a.score_saillance || 0));
+
+          setEvents(latestEvents);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -57,230 +45,173 @@ const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement =>
       });
   }, []);
 
-  const handleRadarLink = useCallback(() => {
-    navigate('/categorie/radarplus');
-  }, [navigate]);
-
-  const derived = useMemo(() => {
-    if (!payload) return null;
-    const data: HeadlineOfHeadlines = payload.countries[country];
-    const headlineBySource = new Map<string, HotHeadline>(
-      data.headlines.map((h) => [h.source, h]),
-    );
-    return { data, headlineBySource };
-  }, [payload, country]);
+  const top3 = useMemo(() => events.slice(0, 3), [events]);
 
   if (loading) {
     return (
       <div className="UneDesUnes UneDesUnes--state">
-        <div className="UneDesUnes-eyebrow">
-          {eyebrowLead}
-          {eyebrowAccent && (
-            <>
-              {' '}
-              <span className="has-font-secondary">{eyebrowAccent}</span>
-            </>
-          )}
-          {eyebrowBridge && ` ${eyebrowBridge}`}
-          {eyebrowTail.length > 0 && (
-            <>
-              {' '}
-              <span className="has-font-secondary">{eyebrowTail.join(' ')}</span>
-            </>
-          )}
-        </div>
         <p className="UneDesUnes-status">{t('loading')}</p>
       </div>
     );
   }
 
-  if (error || !derived) {
+  if (error || top3.length === 0) {
     return (
       <div className="UneDesUnes UneDesUnes--state">
-        <div className="UneDesUnes-eyebrow">
-          {eyebrowLead}
-          {eyebrowAccent && (
-            <>
-              {' '}
-              <span className="has-font-secondary">{eyebrowAccent}</span>
-            </>
-          )}
-          {eyebrowBridge && ` ${eyebrowBridge}`}
-          {eyebrowTail.length > 0 && (
-            <>
-              {' '}
-              <span className="has-font-secondary">{eyebrowTail.join(' ')}</span>
-            </>
-          )}
-        </div>
         <p className="UneDesUnes-status">{t('error')}</p>
       </div>
     );
   }
 
-  const { data, headlineBySource } = derived;
-  const saillanceLevel = getSaillanceLevel(data.score);
-  const velocityKey = getVelocityKey(data.velocity);
-  const velocityDir = getVelocityDir(data.velocity);
+  const renderDots = (score: number) => {
+    const total = 6;
+    const filled = Math.round((score / 100) * total);
+    return (
+      <span className="saillance-dots">
+        {Array.from({ length: total }).map((_, i) => (
+          <span key={i} className={`d ${i < filled ? 'filled' : 'empty'}`} />
+        ))}
+      </span>
+    );
+  };
+
+  const getIntensityLabel = (score: number) => {
+    if (score >= 80) return 'Saturé';
+    if (score >= 60) return 'Majeur';
+    if (score >= 40) return 'Fort';
+    if (score >= 20) return 'Notable';
+    return 'Marginal';
+  };
+
+  const main = top3[0];
+  const sideLeft = top3[1];
+  const sideRight = top3[2];
+
+  const mainIssue = getIssueMeta(main.main_issue);
+  const sideLeftIssue = getIssueMeta(sideLeft?.main_issue);
+  const sideRightIssue = getIssueMeta(sideRight?.main_issue);
+
+  const parseMedia = (jsonStr: string) => {
+    try {
+      return JSON.parse(jsonStr) as string[];
+    } catch {
+      return [];
+    }
+  };
+
+  const allMedias = ['LED', 'LAP', 'RCI', 'TVA', 'JDM', 'MG'];
 
   return (
     <div className="UneDesUnes">
-
-      {/* ── Left panel ─────────────────────────────────────────── */}
-      <div className="UneDesUnes-panel">
-
-        <div className="UneDesUnes-panel-header">
-          <div className="UneDesUnes-eyebrow">
-            {eyebrowLead}
-            {eyebrowAccent && (
-              <>
-                {' '}
-                <span className="has-font-secondary">{eyebrowAccent}</span>
-              </>
-            )}
-            {eyebrowBridge && ` ${eyebrowBridge}`}
-            {eyebrowTail.length > 0 && (
-              <>
-                {' '}
-                <span className="has-font-secondary">{eyebrowTail.join(' ')}</span>
-              </>
-            )}
-          </div>
-          <div className="UneDesUnes-toggle" role="group" aria-label={t('countryToggle')}>
-            {(['QC', 'CA'] as Country[]).map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`UneDesUnes-toggle-btn${country === c ? ' is-active' : ''}`}
-                onClick={() => setCountry(c)}
-              >
-                {t(`countries.${c}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="UneDesUnes-story">
-          <p className="UneDesUnes-hook">{t('hook')}</p>
-          <h2 className="UneDesUnes-title">
-            &laquo;&nbsp;{data.title}&nbsp;&raquo;
-          </h2>
-        </div>
-
-        <div className="UneDesUnes-bottom">
-
-          <div className="UneDesUnes-saillance">
-            <div className="UneDesUnes-saillance-header">
-              <span className="UneDesUnes-saillance-label">
-                {t('saillance.label')}
-              </span>
-              <span
-                className="UneDesUnes-velocity"
-                data-dir={velocityDir}
-              >
-                {t(`velocity.${velocityKey}`)}
-              </span>
-            </div>
-            <div className="UneDesUnes-saillance-track">
-              <div
-                className="UneDesUnes-saillance-fill"
-                style={{ width: `${Math.round(data.score * 100)}%` }}
-              />
-            </div>
-            <span
-              className="UneDesUnes-saillance-level"
-              data-level={saillanceLevel}
-            >
-              {t(`saillance.${saillanceLevel}`)}
-            </span>
-          </div>
-
-          <div className="UneDesUnes-objects">
-            {data.objects.slice(0, 3).map((obj, i) => (
-              <div key={obj.label} className="UneDesUnes-object">
-                <span className="UneDesUnes-object-label">{obj.label}</span>
-                <div className="UneDesUnes-object-track">
-                  <div
-                    className="UneDesUnes-object-fill"
-                    style={{ width: `${Math.round(obj.score * 100)}%` }}
-                  />
-                </div>
-                <span className="UneDesUnes-object-rank has-font-secondary">
-                  #{i + 1}
-                </span>
-              </div>
-            ))}
-            {!hideRadarLink && (
-              <button
-                type="button"
-                className="UneDesUnes-radar-link has-font-secondary"
-                onClick={handleRadarLink}
-              >
-                {t('radarLink')}
-              </button>
-            )}
-          </div>
-
-        </div>
-
+      <div className="section-label">
+        <span>{t('sectionLabel') || 'Les unes du jour'}</span>
+        <span className="section-date">{main.date_montreal_tz || main.date_utc}</span>
       </div>
 
-      {/* ── Coverage grid ───────────────────────────────────────── */}
-      <div className="UneDesUnes-coverage">
-        {data.monitoredSources.map((source, index) => {
-          const headline = headlineBySource.get(source);
-          const isOdd = data.monitoredSources.length % 2 !== 0;
-          const isLast = index === data.monitoredSources.length - 1;
-          const spanClass = isOdd && isLast ? ' UneDesUnes-tile--span' : '';
-
-          if (headline) {
-            return (
-              <a
-                key={source}
-                href={headline.url}
-                className={`UneDesUnes-tile UneDesUnes-tile--covering${spanClass}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div className="UneDesUnes-tile-header">
-                  <span className="UneDesUnes-tile-source has-font-secondary">
-                    {source}
-                  </span>
-                  <span className="UneDesUnes-tile-time">{headline.time}</span>
-                </div>
-                <p className="UneDesUnes-tile-headline">{headline.title}</p>
-                <span className="UneDesUnes-tile-indicator UneDesUnes-tile-indicator--yes has-font-secondary" aria-hidden="true">o</span>
-              </a>
-            );
-          }
-
-          return (
-            <div
-              key={source}
-              className={`UneDesUnes-tile UneDesUnes-tile--silent${spanClass}`}
-            >
-              <span className="UneDesUnes-tile-source has-font-secondary">
-                {source}
-              </span>
-              <span className="UneDesUnes-tile-silent-label">
-                {t('notCovering')}
-              </span>
-              <span className="UneDesUnes-tile-indicator UneDesUnes-tile-indicator--no has-font-secondary" aria-hidden="true">x</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Footer ──────────────────────────────────────────────── */}
-      <div className="UneDesUnes-footer">
-        <span className="UneDesUnes-snapshot">{data.snapshotLabel}</span>
-        {data.nextLabel && (
-          <span className="UneDesUnes-next">
-            {t('nextUpdate')}&nbsp;{data.nextLabel}
+      <section className="hero-trio">
+        {/* Main story */}
+        <div className="une-main">
+          <span className="une-enjeu" style={{ '--c': mainIssue?.color } as any}>
+            {main.main_issue_text_fr || mainIssue?.title}
           </span>
-        )}
-      </div>
+          <span className="saillance-tag major">
+            {getIntensityLabel(main.score_saillance || 0)} · {Math.round(((main.score_saillance || 0) / 100) * 6)} / 6
+          </span>
+          <h1 data-saillance={Math.round(((main.score_saillance || 0) / 100) * 6)}>
+            {main.title}
+          </h1>
+          
+          <div className="saillance-row">
+            <span className="region-label">{t('regionLabel') || 'Québec'}</span>
+            {renderDots(main.score_saillance || 0)}
+            <span className="time">{main.time_interval_montreal_tz || main.time_interval_utc} {t('timeLabel') || 'en manchette'}</span>
+          </div>
 
+          <div className="byline">
+            {parseMedia(main.media_ids).map((mid, i, arr) => (
+              <React.Fragment key={mid}>
+                <span className="source">{getMediaName(mid)}</span>
+                {i < arr.length - 1 && <span className="sep">·</span>}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Side story left */}
+        {sideLeft && (
+          <div className="une-side une-side-left">
+            <span className="une-enjeu" style={{ '--c': sideLeftIssue?.color } as any}>
+              {sideLeft.main_issue_text_fr || sideLeftIssue?.title}
+            </span>
+            <span className="saillance-tag">
+              {getIntensityLabel(sideLeft.score_saillance || 0)} · {Math.round(((sideLeft.score_saillance || 0) / 100) * 6)} / 6
+            </span>
+            <h2 data-saillance={Math.round(((sideLeft.score_saillance || 0) / 100) * 6)}>
+              {sideLeft.title}
+            </h2>
+            
+            <div className="saillance-row">
+              <span className="region-label">{t('regionLabel') || 'Québec'}</span>
+              {renderDots(sideLeft.score_saillance || 0)}
+              <span className="time">{sideLeft.time_interval_montreal_tz || sideLeft.time_interval_utc} {t('timeLabel') || 'en manchette'}</span>
+            </div>
+
+            <div className="byline">
+              {parseMedia(sideLeft.media_ids).map((mid, i, arr) => (
+                <React.Fragment key={mid}>
+                  <span className="source">{getMediaName(mid)}</span>
+                  {i < arr.length - 1 && <span className="sep">·</span>}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Side story right */}
+        {sideRight && (
+          <div className="une-side une-side-right">
+            <span className="une-enjeu" style={{ '--c': sideRightIssue?.color } as any}>
+              {sideRight.main_issue_text_fr || sideRightIssue?.title}
+            </span>
+            <span className="saillance-tag">
+              {getIntensityLabel(sideRight.score_saillance || 0)} · {Math.round(((sideRight.score_saillance || 0) / 100) * 6)} / 6
+            </span>
+            <h2 data-saillance={Math.round(((sideRight.score_saillance || 0) / 100) * 6)}>
+              {sideRight.title}
+            </h2>
+            
+            <div className="saillance-row">
+              <span className="region-label">{t('regionLabel') || 'Québec'}</span>
+              {renderDots(sideRight.score_saillance || 0)}
+              <span className="time">{sideRight.time_interval_montreal_tz || sideRight.time_interval_utc} {t('timeLabel') || 'en manchette'}</span>
+            </div>
+
+            <div className="byline">
+              {(() => {
+                const mids = parseMedia(sideRight.media_ids);
+                const absent = allMedias.filter(m => !mids.includes(m));
+                return (
+                  <>
+                    <div className="byline-present">
+                      {mids.map((mid, i, arr) => (
+                        <React.Fragment key={mid}>
+                          <span className="source">{getMediaName(mid)}</span>
+                          {i < arr.length - 1 && <span className="sep">·</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    {absent.length > 0 && (
+                      <div className="byline-absent">
+                        {t('absentFrom') || 'Absent de'} {absent.map(m => getMediaName(m)).join(' · ')}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

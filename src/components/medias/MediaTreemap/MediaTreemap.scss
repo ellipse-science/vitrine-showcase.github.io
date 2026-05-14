@@ -1,536 +1,141 @@
 @import '../../../assets/styles/variables.module';
 
 .MediaTreemap {
-  background: $white;
-  border: 1px solid $black;
-  border-radius: 1.5rem;
-  min-height: 55vh;
+  background: $paper;
+  border: 1px solid $rule;
+  margin-top: responsive-gap(2);
+  min-height: 42rem;
   overflow: hidden;
   position: relative;
 
   // ── Header ──────────────────────────────────────────────────────────────────
   &-header {
-    align-items: flex-start;
-    background: $beige;
-    border-bottom: 1px solid $black;
+    align-items: baseline;
+    background: transparent;
+    border-bottom: 2px solid $ink;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     justify-content: space-between;
-    padding: responsive-gap(1);
-  }
-
-  &-eyebrow {
-    color: $black;
-    display: block;
-    font-family: $family-secondary;
-    font-size: responsive-size(10, 12);
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
+    padding: responsive-gap(1) 0;
+    margin: 0 responsive-gap(1);
   }
 
   &-title {
-    font-size: responsive-size(36, 48);
-    font-weight: 300;
-    line-height: 1;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: $ink;
     margin: 0;
-
-    .has-font-secondary {
-      font-size: inherit;
-      letter-spacing: 0.02em;
-    }
+    letter-spacing: -0.5px;
   }
 
-  &-subtitle {
-    color: $grey;
-    font-size: responsive-size(13, 15);
-    line-height: 1.5;
-    margin: 0.5rem 0 0;
-    max-width: 38ch;
-  }
-
-  &-meta {
-    align-items: flex-end;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    text-align: right;
-
-    @include mobile {
-      align-items: flex-start;
-      text-align: left;
-    }
-  }
-
-  // ── Period controls ─────────────────────────────────────────────────────────
-  &-controls {
-    background: $white;
-    border: 1px solid $black;
-    border-radius: 1rem;
+  .legend-toggle {
     display: inline-flex;
-    gap: 4px;
-    margin-bottom: 0.4rem;
-    overflow: hidden;
-  }
+    border: 0.5px solid $rule;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: $ink-softer;
 
-  &-control {
-    background: transparent;
-    border: none;
-    color: $black;
-    cursor: pointer;
-    font-size: responsive-size(11, 13);
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    padding: 0.35em 0.9em;
-    white-space: nowrap;
-    transition: background 0.4s ease-in-out, color 0.4s ease-in-out;
+    span {
+      padding: 3px 10px;
+      border-right: 0.5px solid $rule;
+      cursor: pointer;
 
-    &.is-active {
-      background: $black;
-      color: $white;
+      &:last-child {
+        border-right: none;
+      }
+
+      &.active {
+        background: $ink;
+        color: $paper;
+      }
     }
   }
 
-  &-stamp,
-  &-next {
-    color: $grey;
-    font-size: responsive-size(11, 13);
-  }
-
-  // ── Status (loading / error) ─────────────────────────────────────────────────
-  &-status {
-    align-items: center;
-    background: $beige;
-    border: 1px solid $border-color;
-    border-radius: 1rem;
-    color: $grey;
-    display: flex;
-    justify-content: center;
-    margin: responsive-gap(1);
-    min-height: 18rem;
-    padding: 2rem;
-
-    &.is-error {
-      color: $black;
-    }
-  }
-
-  // ── Board (treemap + aside) ──────────────────────────────────────────────────
-  &-board {
-    display: grid;
-    gap: responsive-gap(1);
-    padding: responsive-gap(1);
-  }
-
+  // ── Surface ──────────────────────────────────────────────────────────────────
   &-surface {
-    background: $beige;
-    border: 1px solid $border-color;
-    border-radius: 1rem;
-    min-height: 30rem;
-    padding: 1rem;
+    padding: responsive-gap(1);
     position: relative;
   }
 
   &-canvas {
-    min-height: 28rem;
     position: relative;
     width: 100%;
   }
 
   // ── Treemap cells ────────────────────────────────────────────────────────────
   &-cell {
-    border-radius: 1rem;
-    cursor: pointer;
+    position: absolute;
+    color: $paper;
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     overflow: hidden;
-    position: absolute;
-    transition: transform 0.4s ease-in-out, border-color 0.4s ease-in-out;
+    cursor: pointer;
+    transition: filter 0.2s ease;
 
     &:hover {
-      transform: translateY(-2px);
+      filter: brightness(1.14);
     }
 
-    &.is-selected {
-      box-shadow: 0 0 0 2px $black;
+    .tm-enjeu {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 500;
+      opacity: 0.72;
+      line-height: 1.3;
     }
-  }
 
-  &-cellHeader {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-bottom: 0.5rem;
-  }
-
-  // Shared micro-text font
-  &-score,
-  &-velocity,
-  &-headlineMeta,
-  &-timelineLabel,
-  &-chip,
-  &-detailMeta,
-  &-detailVelocity,
-  &-detailButton,
-  &-detailLabel,
-  &-microcopy {
-    font-family: $family-secondary;
-    font-size: responsive-size(10, 12);
-    line-height: 1.2;
-  }
-
-  &-tag {
-    border-radius: 1rem;
-    color: $black;
-    font-family: $family-primary;
-    font-size: responsive-size(12, 15);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    line-height: 1.15;
-    max-width: 100%;
-    padding: 0.35rem 0.7rem;
-    text-align: left;
-    white-space: normal;
-  }
-
-  &-score {
-    color: $black;
-    font-size: responsive-size(11, 13);
-    font-weight: 700;
-  }
-
-  &-velocity {
-    font-size: responsive-size(11, 13);
-    font-weight: 700;
-
-    &.is-up   { color: $black; }
-    &.is-down { color: $grey; }
-    &.is-stable { color: $grey; }
-  }
-
-  &-headlineList {
-    display: grid;
-    gap: 0.6rem;
-    min-height: 0;
-  }
-
-  &-headlineTitle {
-    color: $black;
-    display: -webkit-box;
-    font-size: responsive-size(13, 15);
-    line-height: 1.25;
-    margin: 0;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  &-headlineItem.is-secondary &-headlineTitle {
-    color: $grey;
-  }
-
-  &-headlineMeta {
-    color: $grey;
-    display: block;
-    font-size: responsive-size(10, 12);
-    margin-top: 0.18rem;
-  }
-
-  &-headlineSingle {
-    color: $black;
-    display: -webkit-box;
-    font-size: responsive-size(12, 14);
-    line-height: 1.25;
-    margin: 0;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
-  }
-
-  &-dot {
-    border-radius: 999px;
-    display: inline-block;
-    flex-shrink: 0;
-    height: 0.45rem;
-    width: 0.45rem;
-  }
-
-  // ── Aside (detail + meta panels) ────────────────────────────────────────────
-  &-aside {
-    display: grid;
-    gap: responsive-gap(1);
-
-    @include desktop {
-      grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.75fr);
-    }
-  }
-
-  &-asideMain {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-
-    .MediaTreemap-panel {
+    .tm-context {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-style: italic;
+      font-size: 19px;
+      line-height: 1.3;
       flex: 1;
-    }
-  }
-
-  &-asideMeta {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-
-    .MediaTreemap-panel {
-      flex: 1;
-    }
-  }
-
-  &-panel {
-    background: $white;
-    border: 1px solid $border-color;
-    border-radius: 1rem;
-    padding: responsive-gap(1);
-
-    &--timeline {
       display: flex;
-      flex-direction: column;
-      min-height: 100%;
-    }
-  }
-
-  &-panelHeader {
-    align-items: flex-start;
-    display: flex;
-    gap: 0.75rem;
-    justify-content: space-between;
-    margin-bottom: responsive-gap(1);
-  }
-
-  &-detailTag {
-    border-radius: 1rem;
-    color: $black;
-    display: inline-flex;
-    font-family: $family-primary;
-    font-size: responsive-size(12, 15);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    margin-bottom: 0.55rem;
-    padding: 0.35rem 0.7rem;
-  }
-
-  &-detailTitle {
-    color: $black;
-    font-size: responsive-size(18, 24);
-    font-family: $family-primary;
-    line-height: 1.05;
-    margin: 0 0 0.4rem;
-  }
-
-  &-detailText,
-  &-detailMeta {
-    color: $grey;
-    font-family: $family-primary;
-    font-size: responsive-size(12, 14);
-    line-height: 1.4;
-    margin: 0;
-  }
-
-  &-detailVelocity {
-    font-family: $family-primary;
-    font-size: responsive-size(13, 15);
-    font-weight: 700;
-    &.is-up   { color: $black; }
-    &.is-down { color: $grey; }
-  }
-
-  &-detailButton {
-    background: $white;
-    border: 1px solid $black;
-    border-radius: 999px;
-    color: $black;
-    cursor: pointer;
-    font-family: $family-secondary;
-    font-size: responsive-size(10, 12);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 0.45rem 0.8rem;
-    text-transform: uppercase;
-    transition: background 0.4s ease-in-out, color 0.4s ease-in-out;
-
-    &:hover {
-      background: $black;
-      color: $white;
-    }
-  }
-
-  &-detailList {
-    display: grid;
-    gap: 0.8rem;
-    margin-top: responsive-gap(0.5);
-  }
-
-  &-detailItem {
-    border-top: 1px solid $border-color;
-    padding-top: 0.8rem;
-  }
-
-  &-detailLink {
-    color: inherit;
-    display: block;
-    text-decoration: none;
-
-    &:hover .MediaTreemap-detailHeadline {
-      text-decoration: underline;
-    }
-  }
-
-  &-detailHeadline {
-    color: $black;
-    font-family: $family-primary;
-    font-size: responsive-size(13, 15);
-    line-height: 1.3;
-    margin: 0;
-  }
-
-  // ── Rank line chart ───────────────────────────────────────────────────────────
-  &-rankWrap {
-    flex: 1;
-    min-height: 24rem;
-    margin-top: responsive-gap(0.5);
-    position: relative;
-  }
-
-  &-rankChart {
-    cursor: crosshair;
-    display: block;
-    height: 100%;
-    min-height: 24rem;
-    overflow: visible;
-    width: 100%;
-  }
-
-  &-rankIndicator {
-    stroke: $border-color;
-    stroke-width: 1;
-  }
-
-  &-rankAxisLabel {
-    fill: $grey;
-    font-family: $family-primary;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-
-  &-rankLine {
-    fill: none;
-    opacity: 0.26;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.75;
-    transition: opacity 0.4s ease-in-out, stroke-width 0.4s ease-in-out;
-
-    &.is-selected {
-      opacity: 1;
-      stroke-width: 3;
-    }
-  }
-
-  &-rankDot,
-  &-rankSnapDot {
-    stroke: $white;
-    stroke-width: 2;
-  }
-
-  // Tooltip
-  &-rankTooltip {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 999px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    padding: 0.35rem 0.55rem;
-    pointer-events: none;
-    position: absolute;
-    top: 0.35rem;
-    z-index: 10;
-
-    &-date {
-      color: $grey;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      margin-bottom: 0.18rem;
-    }
-
-    &-row {
       align-items: center;
-      display: flex;
-      gap: 0.35rem;
-      opacity: 1;
-      padding: 0;
-
-      &.is-active {
-        font-weight: 700;
-        opacity: 1;
-      }
+      justify-content: center;
+      text-align: center;
+      padding: 6px 10px 22px;
+      margin: 0;
+      opacity: 0.95;
     }
 
-    &-rank {
-      color: $grey;
-      font-family: $family-primary;
-      font-size: 10px;
+    .tm-name {
+      font-family: 'Playfair Display', Georgia, serif;
       font-weight: 700;
-      min-width: 1.55rem;
-    }
-
-    &-label {
-      color: $black;
-      font-family: $family-primary;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-
-    &-score {
-      color: $black;
-      font-family: $family-primary;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 14px;
+      line-height: 1;
+      letter-spacing: 0;
+      position: absolute;
+      bottom: 10px;
+      right: 14px;
+      opacity: 0.78;
+      margin: 0;
     }
   }
 
-  &-rankSeriesLabel {
-    font-family: $family-primary;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-
-    &.is-selected {
-      font-size: 11px;
-    }
-  }
-
-  &-microcopy {
-    color: $grey;
-    font-size: responsive-size(10, 11);
-    margin: responsive-gap(0.5) 0 0;
-  }
-
-  &-detailLabel {
-    color: $black;
-    display: block;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.5rem;
+  &-status {
+    align-items: center;
+    background: $paper;
+    color: $ink-softer;
+    display: flex;
+    justify-content: center;
+    min-height: 18rem;
+    padding: 2rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
 
-    &--timeline {
-      font-size: responsive-size(20, 28);
-      letter-spacing: 0.02em;
-      margin-bottom: responsive-gap(0.75);
+    &.is-error {
+      color: $cordovan;
     }
   }
 }

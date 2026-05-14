@@ -378,4 +378,133 @@
     font-size: responsive-size(13, 15);
     margin: 0;
   }
+
+  // ── New Newspaper Design ──────────────────────────────────────────
+  background: $paper;
+  color: $ink;
+  padding: responsive-gap(1.5) 0;
+
+  .section-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid $ink;
+    padding-bottom: 8px;
+    margin-bottom: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+
+    .section-date {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 14px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+  }
+
+  .hero-trio {
+    display: grid;
+    gap: 40px;
+    
+    @include desktop {
+      grid-template-columns: 1.5fr 1fr 1fr;
+    }
+  }
+
+  .une-main, .une-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .une-enjeu {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c, $ink-soft);
+    border-bottom: 1px solid var(--c, $ink-soft);
+    padding-bottom: 4px;
+    width: fit-content;
+  }
+
+  .saillance-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: $ink;
+    color: $paper;
+    padding: 3px 8px;
+    width: fit-content;
+    font-weight: 500;
+  }
+
+  h1, h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    margin: 0;
+    line-height: 1.05;
+  }
+
+  h1 {
+    font-size: responsive-size(32, 56);
+    font-weight: 900;
+  }
+
+  h2 {
+    font-size: responsive-size(24, 32);
+    font-weight: 700;
+  }
+
+  .saillance-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: $ink-soft;
+    margin-top: 8px;
+  }
+
+  .saillance-dots {
+    display: flex;
+    gap: 4px;
+
+    .d {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: $rule;
+
+      &.filled {
+        background: $ink;
+      }
+    }
+  }
+
+  .byline {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+    color: $ink-soft;
+    margin-top: 12px;
+    border-top: 0.5px solid $rule;
+    padding-top: 12px;
+
+    .sep {
+      margin: 0 6px;
+      color: $rule;
+    }
+  }
+
+  .byline-absent {
+    font-size: 11px;
+    color: $ink-softer;
+    margin-top: 6px;
+  }
 }
