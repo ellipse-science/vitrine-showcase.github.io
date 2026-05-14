@@ -718,12 +718,12 @@
     letter-spacing: -0.3px;
     margin: 0 0 12px;
   }
-  .une-side h2[data-saillance="6"] { font-size: 36px; letter-spacing: -0.5px; }
-  .une-side h2[data-saillance="5"] { font-size: 32px; letter-spacing: -0.4px; }
-  .une-side h2[data-saillance="4"] { font-size: 28px; }
-  .une-side h2[data-saillance="3"] { font-size: 22px; letter-spacing: -0.1px; }
-  .une-side h2[data-saillance="2"] { font-size: 19px; letter-spacing: 0; }
-  .une-side h2[data-saillance="1"] { font-size: 17px; letter-spacing: 0; }
+  .une-side h2[data-saillance="6"] { font-size: 38px; letter-spacing: -0.5px; }
+  .une-side h2[data-saillance="5"] { font-size: 34px; letter-spacing: -0.4px; }
+  .une-side h2[data-saillance="4"] { font-size: 30px; letter-spacing: -0.2px; }
+  .une-side h2[data-saillance="3"] { font-size: 26px; letter-spacing: -0.1px; }
+  .une-side h2[data-saillance="2"] { font-size: 22px; letter-spacing: 0; }
+  .une-side h2[data-saillance="1"] { font-size: 19px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
     font-style: italic;
@@ -1621,11 +1621,11 @@
 
   /* Taille de police h1 variable selon saillance (data-saillance="1"–"6") */
   .une-main h1[data-saillance="6"] { font-size: 72px; letter-spacing: -1.2px; }
-  .une-main h1[data-saillance="5"] { font-size: 62px; letter-spacing: -1px; }
-  .une-main h1[data-saillance="4"] { font-size: 52px; letter-spacing: -0.7px; }
-  .une-main h1[data-saillance="3"] { font-size: 44px; letter-spacing: -0.5px; }
-  .une-main h1[data-saillance="2"] { font-size: 36px; letter-spacing: -0.3px; }
-  .une-main h1[data-saillance="1"] { font-size: 30px; letter-spacing: -0.1px; }
+  .une-main h1[data-saillance="5"] { font-size: 65px; letter-spacing: -1px; }
+  .une-main h1[data-saillance="4"] { font-size: 56px; letter-spacing: -0.8px; }
+  .une-main h1[data-saillance="3"] { font-size: 50px; letter-spacing: -0.6px; }
+  .une-main h1[data-saillance="2"] { font-size: 44px; letter-spacing: -0.4px; }
+  .une-main h1[data-saillance="1"] { font-size: 38px; letter-spacing: -0.2px; }
 
   /* Légende prototype (annotations pour Hugo) */
   .legend-box {
@@ -1812,19 +1812,19 @@
     .hero-figure figcaption { gap: 8px; }
 
     /* Titre h1 — hiérarchie journal sur mobile */
-    .une-main h1[data-saillance="6"] { font-size: 42px !important; line-height: 1.05; letter-spacing: -0.6px; }
-    .une-main h1[data-saillance="5"] { font-size: 36px !important; line-height: 1.07; letter-spacing: -0.4px; }
-    .une-main h1[data-saillance="4"] { font-size: 30px !important; line-height: 1.1;  letter-spacing: -0.2px; }
-    .une-main h1[data-saillance="3"] { font-size: 26px !important; line-height: 1.12; }
-    .une-main h1[data-saillance="2"] { font-size: 23px !important; line-height: 1.15; }
-    .une-main h1[data-saillance="1"] { font-size: 20px !important; line-height: 1.2;  }
+    .une-main h1[data-saillance="6"] { font-size: 44px !important; line-height: 1.05; letter-spacing: -0.6px; }
+    .une-main h1[data-saillance="5"] { font-size: 38px !important; line-height: 1.07; letter-spacing: -0.4px; }
+    .une-main h1[data-saillance="4"] { font-size: 33px !important; line-height: 1.1;  letter-spacing: -0.2px; }
+    .une-main h1[data-saillance="3"] { font-size: 29px !important; line-height: 1.12; }
+    .une-main h1[data-saillance="2"] { font-size: 26px !important; line-height: 1.15; }
+    .une-main h1[data-saillance="1"] { font-size: 23px !important; line-height: 1.2;  }
 
     /* h2 secondaires — saillance visible sur mobile aussi */
-    .une-side h2[data-saillance="5"] { font-size: 24px; letter-spacing: -0.3px; }
-    .une-side h2[data-saillance="4"] { font-size: 21px; }
-    .une-side h2[data-saillance="3"] { font-size: 18px; letter-spacing: 0; }
-    .une-side h2[data-saillance="2"] { font-size: 16px; letter-spacing: 0; }
-    .une-side h2[data-saillance="1"] { font-size: 15px; letter-spacing: 0; }
+    .une-side h2[data-saillance="5"] { font-size: 27px; letter-spacing: -0.3px; }
+    .une-side h2[data-saillance="4"] { font-size: 24px; }
+    .une-side h2[data-saillance="3"] { font-size: 21px; letter-spacing: 0; }
+    .une-side h2[data-saillance="2"] { font-size: 18px; letter-spacing: 0; }
+    .une-side h2[data-saillance="1"] { font-size: 16px; letter-spacing: 0; }
 
     .une-main .dek { font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .saillance-tag { font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; margin-bottom: 12px; }
