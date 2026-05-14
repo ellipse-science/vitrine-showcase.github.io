@@ -165,6 +165,13 @@
     if (bar) {
       bar.style.width = barPct.toFixed(1) + '%';
       bar.setAttribute('title', pct + ' % de part de voix');
+      // Color the bar with the party's own colour (read from the
+      // CSS variable --party set on the sibling .parti-name-box).
+      var nameBox = rowEl.querySelector('.parti-name-box');
+      if (nameBox) {
+        var partyColor = getComputedStyle(nameBox).getPropertyValue('--party');
+        if (partyColor) bar.style.background = partyColor.trim();
+      }
     }
 
     var avgMarker = rowEl.querySelector('.parti-bar-avg');
