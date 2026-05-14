@@ -141,6 +141,7 @@ export type UneEvent = {
   timeMtl: string;
   mediaPresent: string[]; // readable names
   mediaAbsent: string[]; // readable names from QC_MEDIA that are absent
+  qcOutletCount: number; // number of QC media outlets covering this event
 };
 
 export type SolitudeStory = {
@@ -265,6 +266,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
+    const qcOutletCount = mediaIds.filter((id) => QC_MEDIA.includes(id)).length;
 
     return {
       title: e.title ?? "",
@@ -279,6 +281,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       mediaPresent,
       mediaAbsent,
+      qcOutletCount,
     };
   });
 

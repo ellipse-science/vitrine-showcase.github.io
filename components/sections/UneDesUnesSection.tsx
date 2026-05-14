@@ -37,7 +37,7 @@ function MainUne({ event }: { event: UneEvent }) {
         {event.issueFr}
       </span>
       <span className={`saillance-tag ${event.saillanceCls}`}>
-        {event.saillanceLabel} · {event.saillanceFilled} / 6
+        {event.saillanceLabel} · {event.qcOutletCount} / 6
       </span>
       <h1 data-saillance={event.saillanceFilled}>{event.title}</h1>
       <div className="saillance-row">
@@ -57,7 +57,7 @@ function SideUne({ event, side }: { event: UneEvent; side: "left" | "right" }) {
         {event.issueFr}
       </span>
       <span className={`saillance-tag ${event.saillanceCls}`}>
-        {event.saillanceLabel} · {event.saillanceFilled} / 6
+        {event.saillanceLabel} · {event.qcOutletCount} / 6
       </span>
       <h2 data-saillance={event.saillanceFilled}>{event.title}</h2>
       <div className="saillance-row">
