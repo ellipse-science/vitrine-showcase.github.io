@@ -413,7 +413,6 @@ const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
 async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<Record<string, unknown>> | null> {
   const filePath = path.resolve(
     process.cwd(),
-    "..",
     "public",
     "data",
     "refined",
