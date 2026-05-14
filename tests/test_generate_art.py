@@ -96,3 +96,36 @@ def test_select_reference_images_no_duplicates(tmp_path):
 
     selected = select_reference_images(tmp_path, "economy_and_labour", n_topic=10, n_total=20)
     assert len(selected) == len(set(selected))
+
+
+# ---------------------------------------------------------------------------
+# Task 3: prepare_image
+# ---------------------------------------------------------------------------
+
+from scripts.generate_art import prepare_image
+
+
+def test_prepare_image_returns_valid_base64_jpeg(tmp_path):
+    img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    img_path = tmp_path / "test.png"
+    img.save(img_path, "PNG")
+
+    result = prepare_image(img_path, max_size=64)
+
+    assert isinstance(result, str)
+    decoded = base64.b64decode(result)
+    reopened = Image.open(io.BytesIO(decoded))
+    assert reopened.format == "JPEG"
+
+
+def test_prepare_image_respects_max_size(tmp_path):
+    img = Image.new("RGB", (1024, 512), color=(0, 255, 0))
+    img_path = tmp_path / "wide.png"
+    img.save(img_path, "PNG")
+
+    result = prepare_image(img_path, max_size=256)
+
+    decoded = base64.b64decode(result)
+    reopened = Image.open(io.BytesIO(decoded))
+    assert reopened.size[0] <= 256
+    assert reopened.size[1] <= 256
