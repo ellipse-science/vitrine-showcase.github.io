@@ -49,3 +49,50 @@ def test_find_top_headline_handles_null_title():
     result = find_top_headline(events)
     assert result is not None
     assert result["event_title_raw"] == "Raw English title"
+
+
+# ---------------------------------------------------------------------------
+# Task 2: select_reference_images
+# ---------------------------------------------------------------------------
+
+from scripts.generate_art import select_reference_images
+
+
+def test_select_reference_images_picks_topic_first(tmp_path):
+    for issue in ["economy_and_labour", "immigration", "education"]:
+        for n in range(1, 5):
+            (tmp_path / f"{issue}_generic{n}.png").touch()
+
+    selected = select_reference_images(tmp_path, "economy_and_labour", n_topic=4, n_total=8)
+
+    assert len(selected) == 8
+    topic = [p for p in selected if p.name.startswith("economy_and_labour")]
+    assert len(topic) == 4
+    assert len(set(selected)) == 8  # no duplicates
+
+
+def test_select_reference_images_fills_when_topic_is_small(tmp_path):
+    # Only 2 images for the topic — rest filled from other categories
+    for n in range(1, 3):
+        (tmp_path / f"immigration_generic{n}.png").touch()
+    for issue in ["economy_and_labour", "education"]:
+        for n in range(1, 6):
+            (tmp_path / f"{issue}_generic{n}.png").touch()
+    # Total: 12 images (2+5+5)
+
+    selected = select_reference_images(tmp_path, "immigration", n_topic=10, n_total=20)
+
+    assert len(selected) == 12  # all 12 available (cap at what exists)
+    immigration = [p for p in selected if p.name.startswith("immigration")]
+    assert len(immigration) == 2  # all topic images included
+    assert len(set(selected)) == len(selected)  # no duplicates
+
+
+def test_select_reference_images_no_duplicates(tmp_path):
+    for n in range(1, 8):
+        (tmp_path / f"economy_and_labour_generic{n}.png").touch()
+    for n in range(1, 8):
+        (tmp_path / f"education_generic{n}.png").touch()
+
+    selected = select_reference_images(tmp_path, "economy_and_labour", n_topic=10, n_total=20)
+    assert len(selected) == len(set(selected))
