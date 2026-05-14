@@ -23,6 +23,7 @@ type RawEvent = {
   date_montreal_tz: string | null;
   time_interval_montreal_tz: string | null;
   event_id: string;
+  event_label: string | null;
   score_saillance: number | null;
   score_qc: number | null;
   extracted_objects: string | null;
@@ -32,6 +33,16 @@ type RawEvent = {
   main_issue: string | null;
   main_issue_text_fr: string | null;
   target_region: string | null;
+  interval_convergence_score: number | null;
+  top_objects_divergence: string | null; // JSON string or "NA"
+};
+
+type DivergenceEntry = {
+  event_label: string;
+  event_title_raw: string;
+  score_qc: number;
+  score_roc: number;
+  divergence_score: number;
 };
 
 type ExtractedObject = { object: string; score: number };
@@ -273,49 +284,97 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   // ── Deux solitudes ────────────────────────────────────────────────────────
 
-  // Pick 3 most divergent events (largest |qcRatio - 0.5|)
-  const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-  const maxSaillance =
-    Math.max(...eventsWithScore.map((e) => e.score_saillance ?? 0)) || 1;
+  // Use Lambda-computed cosine similarity when available; fall back to proxy.
+  const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
+  const rawConvergence = qcRow?.interval_convergence_score ?? null;
+  const rawDivergenceJson =
+    qcRow?.top_objects_divergence && qcRow.top_objects_divergence !== "NA"
+      ? qcRow.top_objects_divergence
+      : null;
 
-  const ranked = eventsWithScore
-    .filter((e) => e.title)
-    .map((e) => {
+  let divergenceEntries: DivergenceEntry[] = [];
+  if (rawDivergenceJson) {
+    try {
+      divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[];
+    } catch {
+      // ignore
+    }
+  }
+
+  // divPct: 100 - cosine similarity (real) or proxy if unavailable
+  let divPct: number;
+  if (rawConvergence !== null) {
+    divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
+  } else {
+    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
+    const totalSaillance = eventsWithScore.reduce(
+      (sum, e) => sum + (e.score_saillance ?? 0),
+      0,
+    );
+    const totalExclusivity = eventsWithScore.reduce((sum, e) => {
       const s = e.score_saillance ?? 0;
       const q = e.score_qc ?? 0;
-      const qcRatio = s > 0 ? q / s : 0;
-      return { e, s, q, qcRatio, divergence: Math.abs(qcRatio - 0.5) * 2 };
-    })
-    .sort((a, b) => b.divergence - a.divergence);
+      const ratio = s > 0 ? q / s : 0;
+      return sum + s * Math.abs(ratio - 0.5) * 2;
+    }, 0);
+    divPct =
+      totalSaillance > 0
+        ? Math.round((totalExclusivity / totalSaillance) * 100)
+        : 0;
+  }
 
-  // Overall divergence: weighted average exclusivity
-  const totalSaillance = eventsWithScore.reduce(
-    (sum, e) => sum + (e.score_saillance ?? 0),
-    0,
-  );
-  const totalExclusivity = eventsWithScore.reduce((sum, e) => {
-    const s = e.score_saillance ?? 0;
-    const q = e.score_qc ?? 0;
-    const ratio = s > 0 ? q / s : 0;
-    return sum + s * Math.abs(ratio - 0.5) * 2;
-  }, 0);
-  const divPct =
-    totalSaillance > 0
-      ? Math.round((totalExclusivity / totalSaillance) * 100)
-      : 0;
+  // Build stories from top_objects_divergence (real) or proxy top-3
+  const maxScoreForBars =
+    Math.max(
+      ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
+      ...latest.map((e) => e.score_saillance ?? 0),
+      1,
+    );
 
-  const solitudesStories: SolitudeStory[] = ranked.slice(0, 3).map(({ e, q }) => {
-    const s = e.score_saillance ?? 0;
-    const qcW = Math.round((q / maxSaillance) * 100);
-    const caW = Math.round(((s - q) / maxSaillance) * 100);
-    return {
-      label: e.title ?? "",
-      qcWidth: Math.min(100, qcW),
-      caWidth: Math.min(100, caW),
-      qcZero: qcW <= 2,
-      caZero: caW <= 2,
-    };
-  });
+  let solitudesStories: SolitudeStory[];
+  if (divergenceEntries.length > 0) {
+    // Map event_label to French title from loaded events
+    const labelToTitle = new Map<string, string>();
+    for (const e of latest) {
+      if (e.event_label && e.title) labelToTitle.set(e.event_label, e.title);
+    }
+    solitudesStories = divergenceEntries.slice(0, 5).map((d) => {
+      const label = labelToTitle.get(d.event_label) ?? d.event_title_raw;
+      const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
+      const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
+      return {
+        label,
+        qcWidth: Math.min(100, qcW),
+        caWidth: Math.min(100, caW),
+        qcZero: qcW <= 2,
+        caZero: caW <= 2,
+      };
+    });
+  } else {
+    // Proxy fallback: pick top-3 events by |qcRatio - 0.5|
+    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
+    const ranked = eventsWithScore
+      .filter((e) => e.title)
+      .map((e) => {
+        const s = e.score_saillance ?? 0;
+        const q = e.score_qc ?? 0;
+        const qcRatio = s > 0 ? q / s : 0;
+        return { e, q, divergence: Math.abs(qcRatio - 0.5) * 2 };
+      })
+      .sort((a, b) => b.divergence - a.divergence);
+    solitudesStories = ranked.slice(0, 3).map(({ e, q }) => {
+      const s = e.score_saillance ?? 0;
+      const qcW = Math.round((q / maxScoreForBars) * 100);
+      const caW = Math.round(((s - q) / maxScoreForBars) * 100);
+      return {
+        label: e.title ?? "",
+        qcWidth: Math.min(100, qcW),
+        caWidth: Math.min(100, caW),
+        qcZero: qcW <= 2,
+        caZero: caW <= 2,
+      };
+    });
+  }
 
   // Symbol positions: spread based on divergence
   const spread = Math.round(divPct * 0.4);
