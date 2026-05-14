@@ -28,22 +28,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: yarn
+          node-version: 22
+          cache: npm
+          cache-dependency-path: next-site/package-lock.json
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        working-directory: next-site
+        run: npm ci
 
-      - name: Build
-        run: yarn build
-        env:
-          CI: false  # CRA treats warnings as errors when CI=true
-
-      - name: Copy presentation into build output
-        run: |
-          if [ -d presentation ]; then
-            cp -r presentation build/presentation
-          fi
+      - name: Build (Next.js static export + postbuild asset copy)
+        working-directory: next-site
+        run: npm run build
 
       - name: Configure Pages
         uses: actions/configure-pages@v4
@@ -51,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build
+          path: next-site/out
 
       - name: Deploy to GitHub Pages
         id: deployment
