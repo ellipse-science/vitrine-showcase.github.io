@@ -22,6 +22,19 @@
   var SHADOW_THRESHOLD = 0.05;
   var SPARK_W = 100;
   var SPARK_H = 30;
+  // Raw tone scores from the refiner are tiny (typically |tone| < 0.05),
+  // so a linear [-1,+1] mapping clusters every dot at the centre and the
+  // chart looks like every party has identical neutral coverage. Amplify
+  // by this factor (then clamp) so day-to-day differences read visually.
+  var TONE_AMPLIFY = 15;
+  var LOG_TAG = '[partis-couverture]';
+  function log() {
+    if (typeof console !== 'undefined' && console.log) {
+      var args = Array.prototype.slice.call(arguments);
+      args.unshift(LOG_TAG);
+      console.log.apply(console, args);
+    }
+  }
 
   // ── Data transformation ────────────────────────────────────────────────────
 
@@ -169,8 +182,8 @@
 
     var toneDot = rowEl.querySelector('.parti-tone .ass-tone-dot');
     if (toneDot) {
-      var t = Math.max(-1, Math.min(1, stat.tone));
-      toneDot.style.left = (((t + 1) / 2) * 100).toFixed(1) + '%';
+      var amplified = Math.max(-1, Math.min(1, stat.tone * TONE_AMPLIFY));
+      toneDot.style.left = (((amplified + 1) / 2) * 100).toFixed(1) + '%';
     }
 
     var rawHistory = range === 'month' ? stat.history.month : stat.history.week;
@@ -234,40 +247,87 @@
       var shadowRows = inShadow.querySelectorAll('.parti-row');
       inShadow.style.display = shadowRows.length === 0 ? 'none' : '';
     }
+
+    // The static maquette placed the "moyenne 7 jours" caption inside one
+    // specific row (PLQ). After reordering, that row is no longer the
+    // leader. Move the caption onto the new leader's avg marker when in
+    // "today" view, and remove it elsewhere.
+    var label = section.querySelector('.avg-label');
+    if (label) label.parentNode.removeChild(label);
+    if (range === 'today') {
+      var leaderRow = section.querySelector('.parti-row:not(.header)');
+      if (leaderRow) {
+        var leaderMarker = leaderRow.querySelector('.parti-bar-avg');
+        if (leaderMarker) {
+          var span = document.createElement('span');
+          span.className = 'avg-label';
+          span.textContent = 'moyenne 7 jours';
+          leaderMarker.appendChild(span);
+        }
+      }
+    }
+  }
+
+  // Locate the legend-toggle that sits in the title row immediately
+  // preceding the partis section. Several `.partis-title-row` blocks exist
+  // in the page (treemap, assemblée) and each has its own legend-toggle,
+  // so we cannot just pick the first one by document order.
+  function findPartisTabs() {
+    var section = document.querySelector('section.partis');
+    if (!section) {
+      log('section.partis not found');
+      return null;
+    }
+    var titleRow = section.previousElementSibling;
+    while (titleRow && !(titleRow.classList && titleRow.classList.contains('partis-title-row'))) {
+      titleRow = titleRow.previousElementSibling;
+    }
+    if (!titleRow) {
+      log('preceding partis-title-row not found, falling back to first match');
+      titleRow = document.querySelector('.partis-title-row');
+    }
+    if (!titleRow) return null;
+    var tabs = titleRow.querySelectorAll('.legend-toggle.inline span');
+    log('found tabs:', tabs.length);
+    return tabs.length ? tabs : null;
   }
 
   function wireTabs(stats) {
-    var titleRow = document.querySelector('.partis-title-row');
-    if (!titleRow) return;
-    var tabs = titleRow.querySelectorAll('.legend-toggle.inline span');
-    if (!tabs.length) return;
+    var tabs = findPartisTabs();
+    if (!tabs) return;
 
     var rangeMap = ['today', 'week', 'month'];
     tabs.forEach(function (tab, i) {
       tab.style.cursor = 'pointer';
-      tab.addEventListener('click', function () {
+      tab.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        log('tab clicked', i, rangeMap[i]);
         tabs.forEach(function (t) { t.classList.remove('active'); });
         tab.classList.add('active');
         render(stats, rangeMap[i]);
       });
     });
+    log('tabs wired');
   }
 
   function init() {
+    log('init', { readyState: document.readyState, url: DATA_URL });
     fetch(DATA_URL + '?ts=' + Date.now())
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function (rows) {
+        log('fetched', rows.length, 'rows');
         var stats = computeStats(rows);
-        if (!stats) return;
+        if (!stats) { log('computeStats returned null'); return; }
+        log('computed stats for', stats.length, 'parties');
         render(stats, 'today');
         wireTabs(stats);
       })
       .catch(function (err) {
         if (typeof console !== 'undefined' && console.error) {
-          console.error('[partis-couverture] data load failed', err);
+          console.error(LOG_TAG, 'data load failed', err);
         }
       });
   }
