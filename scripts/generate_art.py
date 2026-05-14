@@ -75,19 +75,20 @@ def build_prompt(headline: str, main_issue_text_fr: str) -> str:
 
 
 def generate_image(api_key: str, prompt: str, reference_b64s: list[str]) -> bytes:
-    """Call gpt-image-1 with reference images + prompt via responses API, return image bytes."""
+    """Call gpt-image-1 via responses API with reference images + prompt, return image bytes."""
     client = OpenAI(api_key=api_key)
 
+    # detail="low" keeps tokens low while still grounding the model in the artist's style
     content: list[dict] = [
-        {"type": "input_image", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+        {"type": "input_image", "image_url": f"data:image/jpeg;base64,{b64}", "detail": "low"}
         for b64 in reference_b64s
     ]
     content.append({"type": "input_text", "text": prompt})
 
     response = client.responses.create(
-        model="gpt-image-1",
+        model="gpt-4o",
         input=[{"role": "user", "content": content}],
-        output=[{"type": "image_generation_call", "quality": "medium"}],
+        tools=[{"type": "image_generation", "quality": "medium", "size": "1024x1024"}],
     )
 
     for item in response.output:
