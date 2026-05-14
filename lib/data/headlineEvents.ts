@@ -498,18 +498,31 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
   })[0] ?? null;
 }
 
-export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
-  // Load headline events to build per-issue content (topObject + context)
+// issues_meta shape produced by radar-issues-score
+type IssueMetaEntry = { label: string; obj: string };
+type IssuesMeta = Record<string, IssueMetaEntry>;
+
+function parseIssuesMeta(raw: unknown): IssuesMeta | null {
+  if (!raw || typeof raw !== "string" || raw === "{}") return null;
+  try {
+    return JSON.parse(raw) as IssuesMeta;
+  } catch {
+    return null;
+  }
+}
+
+// Fallback: cross-reference headline-events.json for per-issue content
+// Used while issues_meta is not yet populated in issues_score JSONs.
+async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string }>> {
+  const map = new Map<string, { topObject: string; context: string }>();
   let rawEvents: string;
   try {
     rawEvents = await fs.readFile(DATA_PATH, "utf8");
   } catch {
-    return null;
+    return map;
   }
 
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
-
-  // Deduplicate by event_id (prefer QC), filter USA
   const byId = new Map<string, RawEvent>();
   for (const e of allRaw) {
     const existing = byId.get(e.event_id);
@@ -517,8 +530,6 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   }
   const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
 
-  // Per-issue: pick event with highest score_qc, extract topObject + context
-  const issueContent = new Map<string, { topObject: string; context: string }>();
   const byIssue = new Map<string, RawEvent>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
@@ -541,14 +552,17 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     }
     const title = e.title ?? "";
     const context = title.length > 55 ? title.slice(0, 52) + "…" : title;
-    issueContent.set(issueKey, { topObject, context });
+    map.set(issueKey, { topObject, context });
   }
+  return map;
+}
 
-  // Load all three score files in parallel
-  const [dayRows, weekRows, monthRows] = await Promise.all([
+export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
+  const [dayRows, weekRows, monthRows, fallbackContent] = await Promise.all([
     loadIssueScores("day"),
     loadIssueScores("week"),
     loadIssueScores("month"),
+    loadFallbackIssueContent(),
   ]);
 
   function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {
@@ -559,6 +573,9 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
 
+    // issues_meta: GPT-generated labels from radar-issues-score (preferred)
+    const meta = parseIssuesMeta(latest.issues_meta);
+
     const scored = ISSUE_KEYS.map((issueKey) => ({
       issueKey,
       score: (latest[issueKey] as number) ?? 0,
@@ -567,15 +584,30 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     const maxScore = scored[0]?.score || 1;
 
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
-      const content = issueContent.get(issueKey) ?? { topObject: "", context: "" };
+      // Prefer issues_meta from the refiner; fall back to headline-events cross-ref
+      let topObject = "";
+      let context = "";
+      if (meta?.[issueKey]) {
+        const obj = meta[issueKey].obj ?? "";
+        const label = meta[issueKey].label ?? "";
+        topObject = obj.length > 0
+          ? obj.charAt(0).toUpperCase() + obj.slice(1)
+          : "";
+        context = label;
+      } else {
+        const fb = fallbackContent.get(issueKey);
+        topObject = fb?.topObject ?? "";
+        context = fb?.context ?? "";
+      }
+
       return {
         issueKey,
         issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey,
         color: ISSUE_COLORS[issueKey] ?? "#463E3E",
         score,
         relScore: Math.round((score / maxScore) * 100),
-        topObject: content.topObject,
-        context: content.context,
+        topObject,
+        context,
       };
     });
 
