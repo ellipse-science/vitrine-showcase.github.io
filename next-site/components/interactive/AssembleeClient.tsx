@@ -87,6 +87,7 @@ function ActiveRow({ row }: { row: AssembleeRow }) {
         </div>
         {row.editorialAngle && <span className="ass-angle">{row.editorialAngle}</span>}
       </div>
+      <div className="ass-ton-label">Ton en chambre</div>
       <div className="ass-tone">
         <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
       </div>

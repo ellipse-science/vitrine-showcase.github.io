@@ -22,6 +22,7 @@ const PUBLIC_DIR = path.join(REPO_ROOT, "public");
 const PUBLIC_ENTRIES = [
   "data",
   "logos",
+  "methodologie",
   "metho.pdf",
   "manifest.json",
   "dark-manifest.json",

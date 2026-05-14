@@ -44,10 +44,10 @@ apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
   if (filter_id == "headline_events_3day") {
-    if ("block_start_utc" %in% names(df)) {
-      cutoff <- format(Sys.time() - as.difftime(3, units = "days"),
-                       "%Y-%m-%d %H:%M:%S", tz = "UTC")
-      df <- dplyr::filter(df, block_start_utc >= cutoff)
+    # date_utc is stored as integer days since 1970-01-01; keep last 3 days
+    if ("date_utc" %in% names(df)) {
+      cutoff_day <- as.integer(Sys.Date() - 3L)
+      df <- dplyr::filter(df, date_utc >= cutoff_day)
     }
     return(df)
   }
@@ -57,15 +57,17 @@ apply_filter <- function(df, filter_id) {
 }
 
 fetch_table <- function(conn, entry) {
-  # DBI::dbGetQuery with double-quoted table name handles hyphens safely,
-  # avoiding the noctua/dplyr::tbl incompatibility with hyphenated Athena tables.
+  # Project only whitelisted columns in the SQL so Athena never reads columns
+  # that have type mismatches in the underlying Parquet files.
+  # Double-quoted identifiers handle hyphens in table names safely.
   # as.data.frame() normalises noctua's output (data.table when data.table is
   # installed) so column subsetting with [, cols, drop=FALSE] works correctly.
-  sql  <- sprintf('SELECT * FROM "%s"', entry$athena)
-  df   <- as.data.frame(DBI::dbGetQuery(conn, sql))
-  cols <- unlist(entry$cols)
-  df   <- df[, intersect(cols, names(df)), drop = FALSE]
-  df   <- apply_filter(df, entry$filter)
+  cols     <- unlist(entry$cols)
+  col_list <- paste(sprintf('"%s"', cols), collapse = ", ")
+  sql      <- sprintf('SELECT %s FROM "%s"', col_list, entry$athena)
+  df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
+  df       <- df[, intersect(cols, names(df)), drop = FALSE]
+  df       <- apply_filter(df, entry$filter)
   df
 }
 

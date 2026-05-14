@@ -37,7 +37,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       <section className="partis">
         <div className="parti-row header">
           <div></div>
-          <div>{view.tabLabel}</div>
+          <div>Saillance</div>
           <div>Ton de la couverture</div>
           <div style={{ textAlign: "right" }}>{view.sparkHeadLabel}</div>
         </div>
@@ -83,6 +83,7 @@ function PartiRow({
       <span className={`parti-name-box ${row.key}`} style={nameStyle}>
         {row.label}
       </span>
+      <div className="parti-sail-label">Saillance</div>
       <div className="parti-bar-wrap">
         <div
           className="parti-bar"
@@ -97,6 +98,7 @@ function PartiRow({
           {row.showLeaderLabel && <span className="avg-label">{refLabel}</span>}
         </div>
       </div>
+      <div className="parti-ton-label">Ton de la couverture</div>
       <div className="parti-tone">
         <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
       </div>
