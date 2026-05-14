@@ -29,3 +29,4 @@ npm-debug.log*
 # Editor
 *.swp
 *.swo
+.venv
