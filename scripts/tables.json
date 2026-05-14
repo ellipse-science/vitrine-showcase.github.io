@@ -279,6 +279,8 @@
                 "main_issue_text_en",
                 "target_region",
                 "event_rank_in_region",
+                "interval_convergence_score",
+                "top_objects_divergence",
                 "tag"
             ],
             "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
