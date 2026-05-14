@@ -120,10 +120,27 @@
     var allDatesSovCache = Object.create(null);
     allDates.forEach(function (d) { allDatesSovCache[d] = sovOnDate(d); });
 
+    // Mention-weighted mean tone for `party` over `dates`. Days where the
+    // party had no mentions contribute nothing (instead of dragging the
+    // average toward 0); this matches the intuitive "average tone of the
+    // coverage that actually happened" reading.
+    function weightedToneAvg(dates, party) {
+      var toneSum = 0;
+      var mentionSum = 0;
+      dates.forEach(function (d) {
+        var entry = dayLookup[d] && dayLookup[d][party];
+        if (!entry) return;
+        toneSum += (entry.tone || 0) * (entry.mentions || 0);
+        mentionSum += entry.mentions || 0;
+      });
+      return mentionSum > 0 ? toneSum / mentionSum : 0;
+    }
+
     return knownParties.map(function (party) {
       var hist7 = last7.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
       var hist30 = last30.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
       var histYear = allDates.map(function (d) { return (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0; });
+      var todayTone = (dayLookup[latestDate] && dayLookup[latestDate][party] && dayLookup[latestDate][party].tone) || 0;
       return {
         key: party.toLowerCase(),
         sov: {
@@ -132,18 +149,24 @@
           month: avg(hist30),
           year: avg(histYear),
         },
-        tone: (dayLookup[latestDate] && dayLookup[latestDate][party] && dayLookup[latestDate][party].tone) || 0,
+        tone: {
+          today: todayTone,
+          week: weightedToneAvg(last7, party),
+          month: weightedToneAvg(last30, party),
+          year: weightedToneAvg(allDates, party),
+        },
         history: { week: hist7, month: hist30 },
       };
     });
   }
 
   // Per range: what the bar shows, what the reference marker shows,
-  // and the caption that follows the leader's marker.
+  // the caption that follows the leader's marker, and which tone bucket
+  // drives the tone dot position.
   var RANGE_CONFIG = {
-    today: { barKey: 'today', refKey: 'week',  refLabel: 'moyenne 7 jours',    refDays: 7 },
-    week:  { barKey: 'week',  refKey: 'month', refLabel: 'moyenne du mois',    refDays: 30 },
-    month: { barKey: 'month', refKey: 'year',  refLabel: "moyenne de l'année", refDays: 365 },
+    today: { barKey: 'today', refKey: 'week',  toneKey: 'today', refLabel: 'moyenne 7 jours' },
+    week:  { barKey: 'week',  refKey: 'month', toneKey: 'week',  refLabel: 'moyenne du mois' },
+    month: { barKey: 'month', refKey: 'year',  toneKey: 'month', refLabel: "moyenne de l'année" },
   };
 
   // ── Sparkline geometry ────────────────────────────────────────────────────
@@ -202,7 +225,8 @@
 
     var toneDot = rowEl.querySelector('.parti-tone .ass-tone-dot');
     if (toneDot) {
-      var amplified = Math.max(-1, Math.min(1, stat.tone * TONE_AMPLIFY));
+      var rawTone = (stat.tone && stat.tone[cfg.toneKey]) || 0;
+      var amplified = Math.max(-1, Math.min(1, rawTone * TONE_AMPLIFY));
       toneDot.style.left = (((amplified + 1) / 2) * 100).toFixed(1) + '%';
     }
 
