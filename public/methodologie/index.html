@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Méthodologie — La Vitrine démocratique</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3ECDD;
+    --paper-deep: #ECE3CF;
+    --ink: #1C1917;
+    --ink-soft: #433F38;
+    --ink-softer: #6E685F;
+    --rule: #C8BDA6;
+    --rule-faint: #DED3B9;
+    --cordovan: #6B1E2A;
+    --brass: #A07A3D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body {
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { color: var(--cordovan); }
+
+  /* Layout */
+  .page { max-width: 1180px; margin: 0 auto; padding: 32px 60px 80px; }
+
+  /* Masthead */
+  .mast {
+    align-items: flex-start;
+    padding: 18px 0 22px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .mast .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+  }
+  .logo-vitrine { height: 120px; width: auto; display: block; opacity: 0.98; }
+  .logo-capp { height: 28px; width: auto; display: block; opacity: 0.85; margin-left: -5px; }
+  .mast .brand-footer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: -36px;
+  }
+  .mast .capp-attribution {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    margin-left: 165px;
+  }
+  .capp-prefix {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 5.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .region {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    text-align: right;
+  }
+  .dbl-rule {
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule);
+    height: 4px;
+    margin-top: 14px;
+  }
+
+  /* Nav secondaire */
+  .sub-nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 10px 0 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    gap: 30px;
+  }
+  .sub-nav .links { display: flex; gap: 22px; }
+  .sub-nav .links a.active { color: var(--cordovan); }
+
+  /* Page header */
+  .metho-header {
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule);
+    padding: 40px 0 36px;
+    margin: 28px 0 0;
+  }
+  .metho-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin: 0 0 14px;
+  }
+  .metho-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(42px, 6vw, 80px);
+    font-weight: 400;
+    line-height: 1.05;
+    margin: 0 0 18px;
+    color: var(--ink);
+  }
+  .metho-subtitle {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 640px;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* Table des matières */
+  .metho-toc {
+    background: var(--paper-deep);
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule);
+    padding: 28px 0 24px;
+    margin: 32px 0;
+  }
+  .metho-toc-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin: 0 0 14px;
+  }
+  .metho-toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    columns: 2;
+    column-gap: 48px;
+  }
+  @media (max-width: 680px) { .metho-toc ol { columns: 1; } }
+  .metho-toc li {
+    break-inside: avoid;
+    border-top: 0.5px solid var(--rule-faint);
+    padding: 7px 0;
+    font-size: 14px;
+    counter-increment: toc;
+  }
+  .metho-toc li::before {
+    content: counter(toc, decimal-leading-zero) " — ";
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-softer);
+    margin-right: 4px;
+  }
+  .metho-toc ol { counter-reset: toc; }
+  .metho-toc a { color: var(--ink-soft); }
+  .metho-toc a:hover { color: var(--cordovan); }
+
+  /* Sections */
+  .metho-section {
+    border-top: 0.5px solid var(--rule);
+    padding: 36px 0 32px;
+  }
+  .metho-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin: 0 0 10px;
+  }
+  .metho-section h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(22px, 3vw, 34px);
+    font-weight: 400;
+    line-height: 1.15;
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+  .metho-section h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 28px 0 10px;
+    font-weight: 500;
+  }
+  .metho-body {
+    max-width: 680px;
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1.7;
+    margin: 0 0 16px;
+  }
+  .metho-body strong { color: var(--ink); font-weight: 600; }
+  .metho-body em { font-style: italic; }
+  .metho-body a { color: var(--cordovan); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Pull quote */
+  .metho-quote {
+    border-left: 2px solid var(--cordovan);
+    margin: 24px 0;
+    padding: 4px 0 4px 20px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.45;
+    color: var(--ink);
+    max-width: 560px;
+  }
+
+  /* Lists */
+  .metho-list {
+    max-width: 680px;
+    padding-left: 1.4em;
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1.7;
+    margin: 0 0 16px;
+  }
+  .metho-list li { margin-bottom: 8px; }
+  .metho-list strong { color: var(--ink); }
+
+  /* Formula block */
+  .metho-formula {
+    background: var(--paper-deep);
+    border-left: 2px solid var(--ink-softer);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 12px 0 20px;
+    max-width: 680px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    color: var(--ink);
+  }
+
+  /* Table */
+  .metho-table-wrap {
+    margin: 12px 0 24px;
+    overflow-x: auto;
+    max-width: 780px;
+  }
+  .metho-table {
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 440px;
+    width: 100%;
+  }
+  .metho-table thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .metho-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    text-align: left;
+    font-weight: 500;
+  }
+  .metho-table td {
+    border-bottom: 0.5px solid var(--rule-faint);
+    padding: 8px 14px;
+    vertical-align: top;
+    color: var(--ink-soft);
+  }
+  .metho-table tbody tr:nth-child(even) td { background: var(--paper-deep); }
+  .metho-table tbody tr:last-child td { border-bottom: none; }
+  .metho-table code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--cordovan);
+  }
+  .metho-table-note {
+    font-size: 13px;
+    color: var(--ink-softer);
+    font-style: italic;
+    margin: 6px 0 0;
+  }
+  .td-group {
+    background: var(--paper-deep) !important;
+    color: var(--ink-softer) !important;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-align: center;
+    text-transform: uppercase;
+    vertical-align: middle !important;
+    border-right: 0.5px solid var(--rule);
+  }
+
+  /* Citation block */
+  .metho-citation {
+    background: var(--paper-deep);
+    border: 0.5px solid var(--rule);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 16px 0;
+    max-width: 680px;
+    padding: 18px 22px;
+    color: var(--ink-soft);
+  }
+  .metho-citation a { color: var(--cordovan); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Print button */
+  .metho-btn {
+    background: transparent;
+    border: 0.8px solid var(--ink);
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    margin-top: 16px;
+    padding: 10px 22px;
+    text-transform: uppercase;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .metho-btn:hover { background: var(--ink); color: var(--paper); }
+
+  /* Footer */
+  .footer-note {
+    border-top: 0.5px solid var(--rule);
+    display: grid;
+    gap: 32px;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 56px;
+    padding-top: 32px;
+    font-size: 13px;
+  }
+  @media (max-width: 680px) { .footer-note { grid-template-columns: 1fr; } }
+  .footer-note h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+  .footer-note p { margin: 0; color: var(--ink-soft); line-height: 1.55; }
+  .colophon {
+    border-top: 0.5px solid var(--rule-faint);
+    display: flex;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    justify-content: space-between;
+    letter-spacing: 0.18em;
+    margin-top: 24px;
+    padding-top: 14px;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+
+  /* Print */
+  @media print {
+    .sub-nav, .metho-toc, .metho-btn { display: none; }
+    .metho-title { font-size: 32pt; }
+    body { font-size: 10pt; }
+    .metho-body, .metho-list { font-size: 10pt; max-width: none; }
+    .metho-table { font-size: 9pt; }
+    .metho-section { page-break-inside: avoid; }
+  }
+
+  @media (max-width: 760px) {
+    .page { padding: 20px 24px 60px; }
+    .mast .capp-attribution { margin-left: 100px; }
+    .logo-vitrine { height: 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Masthead -->
+  <header class="mast">
+    <div class="brand">
+      <a href="/" aria-label="La Vitrine démocratique">
+        <img class="logo-vitrine" alt="La Vitrine démocratique"
+             src="https://dev.vitrinedemocratique.com/assets/images/default/logo_vitrinedemocratique_bg-none_theme-black.png">
+      </a>
+      <div class="brand-footer">
+        <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener">
+          <span class="capp-prefix">Propulsé par</span>
+          <img class="logo-capp" alt="CAPP · Université Laval"
+               src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
+        </a>
+        <span class="region">Édition Québec · Bêta v1.9.7</span>
+      </div>
+    </div>
+  </header>
+  <div class="dbl-rule"></div>
+
+  <nav class="sub-nav">
+    <div class="links">
+      <a href="/methodologie" class="active">Méthodologie</a>
+      <a href="/#propos">À propos</a>
+    </div>
+  </nav>
+
+  <!-- En-tête de page -->
+  <header class="metho-header">
+    <p class="metho-eyebrow">Vitrine Démocratique</p>
+    <h1 class="metho-title">Méthodologie</h1>
+    <p class="metho-subtitle">Comment nous mesurons la saillance dans les trois sphères de l'espace public québécois et canadien.</p>
+  </header>
+
+  <!-- Table des matières -->
+  <nav class="metho-toc" aria-label="Table des matières">
+    <p class="metho-toc-label">Table des matières</p>
+    <ol>
+      <li><a href="#cadre-conceptuel">Cadre conceptuel</a></li>
+      <li><a href="#collecte-medias">Architecture de collecte — Médias</a></li>
+      <li><a href="#indice-saillance">L'indice de saillance</a></li>
+      <li><a href="#une-des-unes">Module : La Une des Unes</a></li>
+      <li><a href="#treemap-enjeux">Module : Carte des enjeux (Treemap)</a></li>
+      <li><a href="#couverture-partis">Module : Couverture des partis (médias)</a></li>
+      <li><a href="#constellation">Module : Constellation médiatique</a></li>
+      <li><a href="#parole-en-chambre">Module : Parole en chambre</a></li>
+      <li><a href="#partis-parlement">Module : Partis politiques — Parlement</a></li>
+      <li><a href="#opinion-publique">Module : Opinion publique citoyenne</a></li>
+      <li><a href="#fenetres-temporelles">Fenêtres temporelles et pondérations</a></li>
+      <li><a href="#limites">Limites reconnues</a></li>
+      <li><a href="#ethique">Éthique et transparence</a></li>
+      <li><a href="#citation">Citation et accès aux données</a></li>
+    </ol>
+  </nav>
+
+  <!-- §1 Cadre conceptuel -->
+  <section id="cadre-conceptuel" class="metho-section">
+    <p class="metho-section-label">§ 01</p>
+    <h2>Cadre conceptuel</h2>
+    <p class="metho-body">
+      La <strong>saillance</strong> est définie comme la prépondérance relative d'un enjeu, d'un acteur ou d'une institution dans une sphère d'activité publique donnée, à un moment précis. Ce concept s'inscrit dans la tradition de la théorie de l'agenda-setting (McCombs &amp; Shaw, 1972 ; Iyengar &amp; Kinder, 1987), selon laquelle les médias, les élus et les citoyens se co-influencent mutuellement dans la construction de l'agenda public.
+    </p>
+    <p class="metho-body">La Vitrine Démocratique mesure trois dimensions complémentaires de la saillance :</p>
+    <ol class="metho-list">
+      <li><strong>Saillance médiatique</strong> — la présence d'un enjeu ou d'un acteur sur les pages frontales des principaux médias québécois et canadiens, pondérée par la durée et la position.</li>
+      <li><strong>Saillance parlementaire</strong> — la part du discours législatif (débats à l'Assemblée nationale et à la Chambre des communes) consacrée à un enjeu ou à un acteur.</li>
+      <li><strong>Préoccupations citoyennes</strong> — les priorités déclarées des Québécois·es mesurées quotidiennement par sondage en ligne.</li>
+    </ol>
+    <p class="metho-body">Ces trois mesures sont indépendantes et ne sont pas agrégées en un indice composite. Leur rapprochement sur une même interface vise à offrir une vue triangulée de l'espace public, sans présumer d'une hiérarchie entre ces sphères.</p>
+  </section>
+
+  <!-- §2 Collecte médias -->
+  <section id="collecte-medias" class="metho-section">
+    <p class="metho-section-label">§ 02</p>
+    <h2>Architecture de collecte — Médias</h2>
+
+    <h3>Capture continue des pages frontales</h3>
+    <p class="metho-body">Le système Radar+, développé et opéré par l'équipe Ellipse Sciences de la CLESSN, effectue une capture automatique des pages d'accueil de <strong>13 sources d'information</strong> toutes les dix minutes environ, de manière ininterrompue depuis septembre 2018. Pour chaque capture sont enregistrés : la structure HTML de la page, la position verticale et le gabarit visuel de chaque manchette, ainsi que le moment précis de l'extraction (horodatage UTC).</p>
+
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Code</th><th>Source</th><th>Langue</th><th>Temps moyen en Une (min)</th></tr></thead>
+        <tbody>
+          <tr><td>JDM</td><td>Journal de Montréal</td><td>Français</td><td>143</td></tr>
+          <tr><td>LAP</td><td>La Presse</td><td>Français</td><td>121</td></tr>
+          <tr><td>LED</td><td>Le Devoir</td><td>Français</td><td>242</td></tr>
+          <tr><td>RCI</td><td>Radio-Canada Info</td><td>Français</td><td>160</td></tr>
+          <tr><td>TVA</td><td>TVA Nouvelles</td><td>Français</td><td>125</td></tr>
+          <tr><td>MG</td><td>Métro</td><td>Français</td><td>241</td></tr>
+          <tr><td>CBC</td><td>CBC News</td><td>Anglais</td><td>159</td></tr>
+          <tr><td>CTV</td><td>CTV News</td><td>Anglais</td><td>228</td></tr>
+          <tr><td>GAM</td><td>Globe &amp; Mail</td><td>Anglais</td><td>326</td></tr>
+          <tr><td>GN</td><td>Global News</td><td>Anglais</td><td>375</td></tr>
+          <tr><td>NP</td><td>National Post</td><td>Anglais</td><td>249</td></tr>
+          <tr><td>TTS</td><td>Toronto Star</td><td>Anglais</td><td>221</td></tr>
+          <tr><td>VS</td><td>Vancouver Sun</td><td>Anglais</td><td>505</td></tr>
+        </tbody>
+      </table>
+      <p class="metho-table-note">Le temps moyen en Une est calculé sur trois mois glissants et sert à pondérer l'indice de saillance inter-médias (§ 03).</p>
+    </div>
+
+    <h3>Collecte des articles</h3>
+    <p class="metho-body">En parallèle des captures de pages frontales, le système extrait le contenu textuel (titre, corps, auteur·e, source) des articles publiés par ces mêmes médias. Ces articles alimentent les modules de couverture par enjeux et par partis politiques.</p>
+
+    <h3>Extraction des entités nommées</h3>
+    <p class="metho-body">Les objets présents dans les manchettes (personnes, enjeux, institutions, lieux) sont identifiés par deux modèles d'intelligence artificielle :</p>
+    <ul class="metho-list">
+      <li><strong>GLiNER</strong> — modèle de reconnaissance d'entités nommées (NER) appliqué directement au texte des manchettes.</li>
+      <li><strong>Gemma 3</strong> — grand modèle de langage (LLM) utilisé pour normaliser les entités en français et en anglais (ex. : « Trudeau » et « Justin Trudeau » renvoient au même objet).</li>
+    </ul>
+    <p class="metho-body">La performance des modèles est évaluée régulièrement par comparaison à environ 1 500 phrases annotées manuellement.</p>
+  </section>
+
+  <!-- §3 Indice de saillance -->
+  <section id="indice-saillance" class="metho-section">
+    <p class="metho-section-label">§ 03</p>
+    <h2>L'indice de saillance</h2>
+    <p class="metho-body">La saillance est mesurée en blocs de quatre heures UTC (00–04 h, 04–08 h, 08–12 h, 12–16 h, 16–20 h, 20–24 h), qui constituent l'unité temporelle de base de l'analyse.</p>
+
+    <h3>Indice absolu</h3>
+    <p class="metho-body">Pour chaque objet <em>o</em>, chaque média <em>m</em> et chaque bloc <em>t</em> :</p>
+    <div class="metho-formula">IndiceAbsolu(o, m, t) = TempsEnUne(o, m, t) × PondérationMédia(m)</div>
+    <p class="metho-body">La <strong>pondération inter-médias</strong> corrige les disparités structurelles entre sources : certains médias renouvellent leur page frontale très fréquemment, d'autres la laissent stable plusieurs heures. Sans correction, les premières accumuleraient mécaniquement moins de durée brute pour une même importance. La pondération est basée sur le temps moyen historique passé en Une sur trois mois glissants.</p>
+
+    <h3>Indice relatif (normalisé)</h3>
+    <p class="metho-body">L'indice absolu est normalisé par la somme des indices de tous les objets du même bloc :</p>
+    <div class="metho-formula">IndiceRelatif(o, t) = IndiceAbsolu(o, t) / Σ IndiceAbsolu(tous objets, t)</div>
+    <p class="metho-body">Cet indice exprime quelle proportion de l'attention médiatique totale est consacrée à un objet sur un bloc de quatre heures. Il est recalculé à chaque nouveau bloc.</p>
+  </section>
+
+  <!-- §4 Une des Unes -->
+  <section id="une-des-unes" class="metho-section">
+    <p class="metho-section-label">§ 04</p>
+    <h2>Module : La Une des Unes</h2>
+    <p class="metho-body">Ce module identifie, en temps quasi réel, l'objet (enjeu, personne ou institution) qui domine le plus l'agenda des médias québécois et canadiens au moment de la consultation.</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li>Pour chaque bloc de quatre heures, les indices de saillance sont calculés pour l'ensemble des objets présents sur les 13 pages frontales.</li>
+      <li>Les objets sont agrégés sur les blocs récents par sommation des indices relatifs, en donnant plus de poids aux blocs les plus récents.</li>
+      <li>L'objet ayant accumulé le score agrégé le plus élevé devient la « Une des Unes ».</li>
+      <li>Pour chaque média, on vérifie si cet objet est présent sur sa page frontale et à quel niveau de saillance.</li>
+    </ol>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Un résumé éditorial de l'histoire dominante, une grille indiquant quels médias la couvrent et à quelle intensité, et des liens vers des articles sources. Sélecteur Québec / Canada disponible.</p>
+  </section>
+
+  <!-- §5 Treemap -->
+  <section id="treemap-enjeux" class="metho-section">
+    <p class="metho-section-label">§ 05</p>
+    <h2>Module : Carte des enjeux (Treemap)</h2>
+    <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée.</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li>Chaque article est découpé en phrases par un algorithme de segmentation basé sur la ponctuation finale.</li>
+      <li>Un <strong>dictionnaire d'enjeux à deux niveaux</strong> est appliqué à chaque phrase via la bibliothèque <code>quanteda</code>.</li>
+      <li>Pour chaque phrase contenant un terme du dictionnaire, un score de pertinence est calculé : nombre de mentions ÷ nombre total de mots.</li>
+      <li>Les scores sont agrégés par enjeu et par jour, puis pondérés temporellement (§ 11).</li>
+    </ol>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Treemap où la superficie de chaque cellule est proportionnelle au score de saillance de l'enjeu. La sélection d'une cellule affiche les manchettes représentatives et un indicateur de vélocité.</p>
+  </section>
+
+  <!-- §6 Couverture des partis -->
+  <section id="couverture-partis" class="metho-section">
+    <p class="metho-section-label">§ 06</p>
+    <h2>Module : Couverture des partis politiques (médias)</h2>
+    <p class="metho-body">Ce module mesure la <strong>part de voix</strong> (share of voice) et le <strong>ton</strong> des partis politiques dans la couverture médiatique québécoise et canadienne.</p>
+
+    <h3>Partis suivis</h3>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Palier</th><th>Parti</th><th>Code</th></tr></thead>
+        <tbody>
+          <tr><td class="td-group" rowspan="6">Fédéral</td><td>Parti libéral du Canada (PLC)</td><td><code>lpc</code></td></tr>
+          <tr><td>Parti conservateur du Canada (PCC)</td><td><code>cpc</code></td></tr>
+          <tr><td>Nouveau Parti démocratique (NPD)</td><td><code>ndp</code></td></tr>
+          <tr><td>Bloc québécois (BQ)</td><td><code>bq</code></td></tr>
+          <tr><td>Parti vert du Canada (PVC)</td><td><code>gpc</code></td></tr>
+          <tr><td>Parti populaire du Canada (PPC)</td><td><code>ppc</code></td></tr>
+          <tr><td class="td-group" rowspan="5">Provincial (QC)</td><td>Coalition avenir Québec (CAQ)</td><td><code>caq</code></td></tr>
+          <tr><td>Parti québécois (PQ)</td><td><code>pq</code></td></tr>
+          <tr><td>Parti libéral du Québec (PLQ)</td><td><code>plq</code></td></tr>
+          <tr><td>Québec solidaire (QS)</td><td><code>qs</code></td></tr>
+          <tr><td>Parti conservateur du Québec (PCQ)</td><td><code>pcq</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li>Les articles sont segmentés en phrases.</li>
+      <li>Dictionnaire de partis + dictionnaire de sentiment appliqués simultanément à chaque phrase.</li>
+      <li><strong>Score de pertinence</strong> : <code>mentions_parti / total_mots_phrase</code></li>
+      <li><strong>Ton net</strong> : <code>(positifs + nég_négatifs − négatifs − nég_positifs) / total_mots_phrase</code></li>
+      <li>Agrégation journalière puis pondération temporelle décroissante (§ 11).</li>
+      <li>Normalisation relative pour produire une part de voix.</li>
+    </ol>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Classement des partis par part de voix, sparklines sur 7 jours, indicateur de ton. Sélecteur provincial / fédéral.</p>
+  </section>
+
+  <!-- §7 Constellation -->
+  <section id="constellation" class="metho-section">
+    <p class="metho-section-label">§ 07</p>
+    <h2>Module : Constellation médiatique</h2>
+    <p class="metho-body">Graphe de co-occurrence des entités saillantes sur les pages frontales médiatiques.</p>
+
+    <h3>Construction du graphe</h3>
+    <ul class="metho-list">
+      <li><strong>Nœuds</strong> : chaque entité nommée ayant atteint un seuil minimal de saillance. La taille du nœud est proportionnelle à l'indice de saillance cumulé.</li>
+      <li><strong>Arêtes</strong> : une arête relie deux entités co-présentes sur la page frontale d'un même média dans le même bloc temporel. Le poids est proportionnel à la fréquence de co-occurrence, pondérée par les indices de saillance des deux entités.</li>
+    </ul>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Graphe force-directed interactif. La sélection d'un nœud affiche les articles sources et la distribution de la couverture par média. Sélecteur Québec / Canada.</p>
+  </section>
+
+  <!-- §8 Parole en chambre -->
+  <section id="parole-en-chambre" class="metho-section">
+    <p class="metho-section-label">§ 08</p>
+    <h2>Module : Parole en chambre</h2>
+    <p class="metho-body">Ce module mesure quels enjeux dominent les débats législatifs en termes de volume de discours.</p>
+
+    <h3>Sources</h3>
+    <ul class="metho-list">
+      <li><strong>Assemblée nationale du Québec (ANQ)</strong> : journal des débats en séance plénière et en commission parlementaire.</li>
+      <li><strong>Chambre des communes du Canada</strong> : journal des débats (Hansard), extrait via les portails officiels du Parlement canadien.</li>
+    </ul>
+
+    <h3>Algorithme</h3>
+    <p class="metho-body">Même pipeline que §&nbsp;05 (segmentation, dictionnaire d'enjeux, score de pertinence, agrégation, pondération temporelle), appliqué aux transcripts parlementaires. Les métadonnées (parti, assemblée, date) permettent de ventiler les résultats.</p>
+  </section>
+
+  <!-- §9 Partis — Parlement -->
+  <section id="partis-parlement" class="metho-section">
+    <p class="metho-section-label">§ 09</p>
+    <h2>Module : Partis politiques — Parlement</h2>
+    <p class="metho-body">Version parlementaire du module §&nbsp;06. Mesure la présence et le ton des partis dans les débats législatifs. Mêmes transcripts (ANQ et Chambre des communes), même pipeline d'analyse (dictionnaires de partis et de sentiment, pondération temporelle).</p>
+  </section>
+
+  <!-- §10 Opinion publique -->
+  <section id="opinion-publique" class="metho-section">
+    <p class="metho-section-label">§ 10</p>
+    <h2>Module : Opinion publique citoyenne</h2>
+    <p class="metho-body">Ce module présente les préoccupations déclarées et les positions des Québécois·es sur les enjeux d'actualité, telles que mesurées par sondage en ligne quotidien.</p>
+
+    <h3>Collecte</h3>
+    <p class="metho-body">Les données proviennent de l'application <strong>Enju</strong> (anciennement Projet Quorum, CLESSN). Des sondages sont conduits quotidiennement sur le Web auprès d'un panel de volontaires. Chaque question est présentée sur une échelle de Likert à cinq points.</p>
+
+    <h3>Pondération</h3>
+    <p class="metho-body">Les résultats bruts sont pondérés selon le genre, l'âge et le niveau d'éducation pour assurer une représentativité approximative par rapport à la population québécoise (recensement).</p>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Pour chaque enjeu, le visiteur se positionne sur l'échelle et sa réponse est comparée à la distribution du panel.</p>
+  </section>
+
+  <!-- §11 Fenêtres temporelles -->
+  <section id="fenetres-temporelles" class="metho-section">
+    <p class="metho-section-label">§ 11</p>
+    <h2>Fenêtres temporelles et pondérations</h2>
+    <p class="metho-body">Les modules médias et parlementaires sont disponibles selon trois fenêtres. Une pondération décroissante est appliquée dans tous les cas : les événements récents ont plus de poids, tout en conservant un contexte historique.</p>
+
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Fenêtre</th><th>Portée</th><th>Pondérations (J, J−1 … J−6)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Jour</strong></td><td>7 derniers jours</td><td>1,00 — 0,25 — 0,20 — 0,15 — 0,10 — 0,05 — 0,02</td></tr>
+          <tr><td><strong>Semaine</strong></td><td>7 derniers jours</td><td>1,00 — 0,85 — 0,70 — 0,55 — 0,40 — 0,25 — 0,10</td></tr>
+          <tr><td><strong>Mois</strong></td><td>30 derniers jours</td><td>Décroissance linéaire de 1,00 à 0,10 sur 30 jours</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- §12 Limites -->
+  <section id="limites" class="metho-section">
+    <p class="metho-section-label">§ 12</p>
+    <h2>Limites reconnues</h2>
+    <blockquote class="metho-quote">Aucune mesure n'est neutre. La Vitrine revendique sa rigueur en exposant aussi ses limites.</blockquote>
+
+    <h3>1 · Sélection des sources médiatiques</h3>
+    <p class="metho-body">Le corpus couvre 13 médias généraux établis. Les médias alternatifs, hyperlocalaux, spécialisés et les plateformes de médias sociaux ne sont pas inclus. Ce choix sur-représente les acteurs médiatiques nationaux et les formats de presse traditionnelle.</p>
+
+    <h3>2 · Pages frontales ≠ couverture totale</h3>
+    <p class="metho-body">Les pages d'accueil ne constituent qu'une fraction de la production journalistique. Certains sujets font l'objet d'une couverture approfondie sans jamais atteindre la une. L'indice mesure la <em>visibilité frontale</em>, pas l'ensemble de la couverture.</p>
+
+    <h3>3 · Imperfections des modèles d'IA</h3>
+    <p class="metho-body">GLiNER et Gemma 3 peuvent produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
+
+    <h3>4 · Limites des dictionnaires de sentiment</h3>
+    <p class="metho-body">L'approche par dictionnaire ne capte pas l'ironie, le sarcasme ou les nuances contextuelles. La valence d'un mot peut varier fortement selon la phrase qui l'entoure.</p>
+
+    <h3>5 · Comparabilité inter-langues</h3>
+    <p class="metho-body">Les indices calculés séparément pour les médias francophones et anglophones ne sont pas directement comparables en valeur absolue, en raison des différences stylistiques entre les deux groupes.</p>
+
+    <h3>6 · Représentativité du panel de sondage</h3>
+    <p class="metho-body">Les sondages Enju reposent sur un panel de volontaires. Malgré la pondération, des biais de sélection persistent : les personnes intéressées par la politique et connectées sont sur-représentées.</p>
+
+    <h3>7 · Nature statique des données publiées</h3>
+    <p class="metho-body">Dans la version actuelle hébergée sur GitHub Pages, les données sont des instantanés statiques (<em>snapshots</em>). Elles ne sont pas mises à jour en temps réel mais remplacées manuellement lors de chaque déploiement.</p>
+  </section>
+
+  <!-- §13 Éthique -->
+  <section id="ethique" class="metho-section">
+    <p class="metho-section-label">§ 13</p>
+    <h2>Éthique et transparence</h2>
+    <ul class="metho-list">
+      <li>La CLESSN détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
+      <li>Les données sont hébergées au Québec, dans les infrastructures de l'Université Laval. Aucune donnée personnelle n'est transmise à des tiers.</li>
+      <li>Aucune donnée permettant d'identifier un individu n'est utilisée dans le calcul des indices de saillance médiatique ou parlementaire.</li>
+      <li>Les sondages Enju sont anonymes. Aucune donnée permettant d'identifier un répondant n'est conservée dans les tables publiées.</li>
+      <li>Le code des raffineurs de données est disponible sur les dépôts GitHub publics de la CLESSN (<a href="https://github.com/clessn" target="_blank" rel="noopener">github.com/clessn</a>) et d'Ellipse Sciences.</li>
+    </ul>
+  </section>
+
+  <!-- §14 Citation -->
+  <section id="citation" class="metho-section">
+    <p class="metho-section-label">§ 14</p>
+    <h2>Citation et accès aux données</h2>
+    <p class="metho-body">Si vous utilisez les données ou les indices de la Vitrine Démocratique dans vos travaux, veuillez citer :</p>
+    <div class="metho-citation">
+      CLESSN (Centre pour l'étude de la citoyenneté, de la démocratie et des inégalités). (2025). <em>Vitrine Démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrine-showcase.github.io" target="_blank" rel="noopener">https://vitrine-showcase.github.io</a>
+    </div>
+    <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, contactez-nous à <a href="mailto:capp@ulaval.ca">capp@ulaval.ca</a>.</p>
+
+    <button class="metho-btn" onclick="window.print()">Télécharger en PDF ↓</button>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    <div>
+      <h4>Méthodologie</h4>
+      <p>Treize médias québécois · une principale · six mises à jour par jour.</p>
+    </div>
+    <div>
+      <h4>Propulsé par le CAPP</h4>
+      <p>CAPP · Université Laval. <a href="https://capp-ulaval.ca/" target="_blank" rel="noopener" style="color: var(--cordovan);">capp-ulaval.ca</a></p>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p><a href="mailto:capp@ulaval.ca" style="color: var(--cordovan);">capp@ulaval.ca</a></p>
+    </div>
+  </div>
+  <div class="colophon">
+    <span>La Vitrine démocratique · © 2026 CAPP</span>
+    <span>Bêta v1.9.7</span>
+  </div>
+
+</div>
+</body>
+</html>

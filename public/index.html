@@ -2860,21 +2860,6 @@
 })();
 </script>
 
-<!-- React SPA mount point. CSS hides it when empty so the static page shows at /.
-     When React renders a sub-route (/methodologie etc.), it covers the full viewport. -->
-<div id="root"></div>
-<style>
-  #root:not(:empty) {
-    background: #fff;
-    bottom: 0;
-    left: 0;
-    overflow-y: auto;
-    position: fixed;
-    right: 0;
-    top: 0;
-    z-index: 9999;
-  }
-</style>
 
 </body>
 </html>
