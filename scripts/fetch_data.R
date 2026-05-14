@@ -278,7 +278,6 @@ run <- function() {
       df <- fetch_table(conn, entry)
       write_json_file(df, entry$out)
       message("  -> ", nrow(df), " rows -> ", entry$out)
-      table_outputs[[entry$name]] <<- entry$out
       list(name = entry$name, status = "ok", rowCount = nrow(df),
            generatedAt = NOW_UTC, path = entry$out)
     }, error = function(e) {
@@ -288,6 +287,9 @@ run <- function() {
     })
 
     results[[length(results) + 1]] <- res
+    if (identical(res$status, "ok")) {
+      table_outputs[[entry$name]] <- entry$out
+    }
   }
 
   for (pp in ENABLED_POSTS) {
