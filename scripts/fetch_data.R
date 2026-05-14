@@ -44,10 +44,10 @@ apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
   if (filter_id == "headline_events_3day") {
-    if ("block_start_utc" %in% names(df)) {
-      cutoff <- format(Sys.time() - as.difftime(3, units = "days"),
-                       "%Y-%m-%d %H:%M:%S", tz = "UTC")
-      df <- dplyr::filter(df, block_start_utc >= cutoff)
+    # date_utc is stored as integer days since 1970-01-01; keep last 3 days
+    if ("date_utc" %in% names(df)) {
+      cutoff_day <- as.integer(Sys.Date() - 3L)
+      df <- dplyr::filter(df, date_utc >= cutoff_day)
     }
     return(df)
   }
