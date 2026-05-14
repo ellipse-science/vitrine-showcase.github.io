@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities, max-len */
 import React, { memo, ReactElement } from 'react';
 
 import InfoPage from '../InfoPage/InfoPage';
