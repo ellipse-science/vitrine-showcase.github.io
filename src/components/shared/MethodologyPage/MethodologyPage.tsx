@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import React, { memo, ReactElement } from 'react';
 
 import InfoPage from '../InfoPage/InfoPage';
@@ -675,7 +676,7 @@ const MethodologyPage = (): ReactElement => {
             Sauvegardez ou imprimez cette méthodologie en PDF via la fonction d'impression de votre
             navigateur (Fichier → Imprimer → Enregistrer au format PDF).
           </p>
-          <button className="Button" onClick={handlePrint}>
+          <button type="button" className="Button" onClick={handlePrint}>
             Télécharger la méthodologie (PDF)
           </button>
         </div>
