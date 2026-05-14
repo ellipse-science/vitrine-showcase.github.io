@@ -86,7 +86,7 @@ def generate_image(api_key: str, prompt: str, reference_b64s: list[str]) -> byte
     content.append({"type": "input_text", "text": prompt})
 
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         input=[{"role": "user", "content": content}],
         tools=[{"type": "image_generation", "quality": "medium", "size": "1024x1024"}],
     )

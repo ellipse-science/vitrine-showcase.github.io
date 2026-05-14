@@ -182,7 +182,7 @@ def test_generate_image_calls_responses_api_correctly():
     assert result == fake_image_bytes
 
     call_kwargs = mock_client.responses.create.call_args.kwargs
-    assert call_kwargs["model"] == "gpt-4o-mini"
+    assert call_kwargs["model"] == "gpt-4o"
     input_content = call_kwargs["input"][0]["content"]
     assert input_content[-1]["type"] == "input_text"
     assert input_content[-1]["text"] == "A test prompt"
