@@ -1,44 +1,108 @@
 {
-  "generatedAt": "2026-05-14T02:22:24Z",
+  "generatedAt": "2026-05-14T04:01:12Z",
   "assemblies": {
     "QC": {
       "assemblyId": "QC",
       "chambre": "Assemblée nationale du Québec",
-      "sessionDate": "2026-05-07",
-      "sessionLabel": "Session 2026 – 2026",
-      "nextSessionLabel": {},
-      "title": "Session du 2026-05-07",
-      "score": 0.328,
-      "prevScore": 0.328,
-      "velocity": 0,
-      "objects": [],
       "monitoredParties": ["CAQ", "PLQ", "PQ", "QS", "PCQ"],
-      "partyInterventions": [
-        {
-          "party": "CAQ",
-          "fullName": "Coalition Avenir Québec",
-          "interventions": 120,
-          "score": 1
+      "periods": {
+        "last_pdq": {
+          "periodLabel": "Période de questions du 2026-05-07",
+          "startDate": "2026-05-07",
+          "endDate": "2026-05-07",
+          "title": "Période de questions du 2026-05-07",
+          "partyInterventions": [
+            {
+              "party": "CAQ",
+              "fullName": "Coalition Avenir Québec",
+              "interventions": 120,
+              "score": 1
+            },
+            {
+              "party": "PLQ",
+              "fullName": "Parti libéral du Québec",
+              "interventions": 21,
+              "score": 0.175
+            },
+            {
+              "party": "PQ",
+              "fullName": "Parti Québécois",
+              "interventions": 4,
+              "score": 0.0333
+            },
+            {
+              "party": "QS",
+              "fullName": "Québec solidaire",
+              "interventions": 19,
+              "score": 0.1583
+            }
+          ]
         },
-        {
-          "party": "PLQ",
-          "fullName": "Parti libéral du Québec",
-          "interventions": 21,
-          "score": 0.175
+        "session": {
+          "periodLabel": "Session 2026 – 2026",
+          "startDate": "2026-05-05",
+          "endDate": "2026-05-07",
+          "title": "Session 2026 – 2026",
+          "partyInterventions": [
+            {
+              "party": "CAQ",
+              "fullName": "Coalition Avenir Québec",
+              "interventions": 197,
+              "score": 1
+            },
+            {
+              "party": "PLQ",
+              "fullName": "Parti libéral du Québec",
+              "interventions": 107,
+              "score": 0.5431
+            },
+            {
+              "party": "PQ",
+              "fullName": "Parti Québécois",
+              "interventions": 10,
+              "score": 0.0508
+            },
+            {
+              "party": "QS",
+              "fullName": "Québec solidaire",
+              "interventions": 40,
+              "score": 0.203
+            }
+          ]
         },
-        {
-          "party": "PQ",
-          "fullName": "Parti Québécois",
-          "interventions": 4,
-          "score": 0.0333
-        },
-        {
-          "party": "QS",
-          "fullName": "Québec solidaire",
-          "interventions": 19,
-          "score": 0.1583
+        "legislature": {
+          "periodLabel": "Législature 2026 – 2026",
+          "startDate": "2026-05-05",
+          "endDate": "2026-05-07",
+          "title": "Législature 2026 – 2026",
+          "partyInterventions": [
+            {
+              "party": "CAQ",
+              "fullName": "Coalition Avenir Québec",
+              "interventions": 197,
+              "score": 1
+            },
+            {
+              "party": "PLQ",
+              "fullName": "Parti libéral du Québec",
+              "interventions": 107,
+              "score": 0.5431
+            },
+            {
+              "party": "PQ",
+              "fullName": "Parti Québécois",
+              "interventions": 10,
+              "score": 0.0508
+            },
+            {
+              "party": "QS",
+              "fullName": "Québec solidaire",
+              "interventions": 40,
+              "score": 0.203
+            }
+          ]
         }
-      ]
+      }
     }
   }
 }
