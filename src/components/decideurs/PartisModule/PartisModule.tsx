@@ -29,7 +29,7 @@ const partyNames: Record<string, string> = {
   PPC: 'Parti populaire du Canada',
 };
 
-const PASS_ORDER: Record<string, number> = { pm: 3, noon: 2, am: 1 };
+const passOrder: Record<string, number> = { pm: 3, noon: 2, am: 1 };
 
 const getLatestSnapshot = (rows: PartyRow[]): PartyRow[] => {
   if (rows.length === 0) return [];
@@ -38,20 +38,20 @@ const getLatestSnapshot = (rows: PartyRow[]): PartyRow[] => {
   const dateRows = rows.filter((r) => r.date_utc === latestDate);
 
   const passes = Array.from(new Set(dateRows.map((r) => r.pass))).sort(
-    (a, b) => (PASS_ORDER[b] ?? 0) - (PASS_ORDER[a] ?? 0)
+    (a, b) => (passOrder[b] ?? 0) - (passOrder[a] ?? 0)
   );
   const bestPass =
     passes.find((p) => dateRows.some((r) => r.pass === p && r.weighted_mentions > 0)) ?? passes[0];
   const passRows = dateRows.filter((r) => r.pass === bestPass);
 
   const byParty = new Map<string, PartyRow>();
-  for (const row of passRows) {
+  passRows.forEach((row) => {
     const key = row.party.toUpperCase();
     const existing = byParty.get(key);
     if (!existing || row.weighted_mentions > existing.weighted_mentions) {
       byParty.set(key, { ...row, party: key });
     }
-  }
+  });
 
   return Array.from(byParty.values())
     .filter((r) => r.weighted_mentions > 0)
