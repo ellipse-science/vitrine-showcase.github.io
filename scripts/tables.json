@@ -142,8 +142,8 @@
                 "governments_and_governance",
                 "culture_and_nationalism"
             ],
-            "enabled": false,
-            "used_by": null
+            "enabled": true,
+            "used_by": "public/js/enjeux.js"
         },
         {
             "name": "issues_score_week",
@@ -165,8 +165,8 @@
                 "governments_and_governance",
                 "culture_and_nationalism"
             ],
-            "enabled": false,
-            "used_by": null
+            "enabled": true,
+            "used_by": "public/js/enjeux.js"
         },
         {
             "name": "issues_score_month",
@@ -188,8 +188,8 @@
                 "governments_and_governance",
                 "culture_and_nationalism"
             ],
-            "enabled": false,
-            "used_by": null
+            "enabled": true,
+            "used_by": "public/js/enjeux.js"
         },
         {
             "name": "reflet_day",
@@ -274,8 +274,8 @@
                 "media_ids"
             ],
             "filter": "headline_events_3day",
-            "enabled": false,
-            "used_by": null
+            "enabled": true,
+            "used_by": "public/js/trois-unes.js"
         }
     ],
     "post_process": [
