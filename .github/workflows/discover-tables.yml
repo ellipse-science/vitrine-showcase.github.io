@@ -1,0 +1,72 @@
+name: Discover Athena Tables
+
+# Manually triggered after a refiner publishes a new table.
+# Runs scripts/discover_tables.R which appends disabled stub entries to
+# scripts/tables.json for any Athena tables matching _discover.match_regex
+# that aren't already in the config. Existing entries are never modified.
+#
+# Trigger from the GitHub Actions UI:
+#   Actions → Discover Athena Tables → Run workflow → main
+# or via gh CLI:
+#   gh workflow run discover-tables.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required to commit tables.json back to the repo
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+      AWS_REGION:                 ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-${{ runner.os }}-v1
+          restore-keys: r-${{ runner.os }}-
+
+      - name: Install R packages
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e '
+            pkgs <- c("remotes", "jsonlite", "DBI")
+            install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = TRUE)
+          '
+
+      - name: Discover new Athena tables
+        run: Rscript scripts/discover_tables.R
+
+      - name: Commit config changes (if any)
+        run: |
+          if git diff --quiet scripts/tables.json; then
+            echo "No changes to scripts/tables.json — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scripts/tables.json
+          git commit -m "chore(data): discover new Athena tables [skip ci]"
+          git push
+          echo "::notice::scripts/tables.json updated. Review and flip enabled=true on tables you want to publish."

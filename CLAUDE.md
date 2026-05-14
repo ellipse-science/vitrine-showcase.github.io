@@ -78,6 +78,15 @@ workflow_dispatch). For tables that need a derived/aggregated output, add a
 `post_process` entry pointing at one of the builders registered in
 `scripts/fetch_data.R`'s `POST_PROCESSORS` map.
 
+**To auto-discover new tables published by a refiner:** trigger
+`discover-tables.yml` from the Actions tab (or `gh workflow run
+discover-tables.yml`). It connects to Athena, lists tables matching
+`_discover.match_regex` in `scripts/tables.json`, and appends disabled stub
+entries for any that aren't already in the config. Existing entries are never
+modified. After the workflow runs you only need to review the stubs (default
+output paths, full column lists) and flip `enabled: true` on what you want
+to publish.
+
 13 additional table definitions sit dormant in `scripts/tables.json` with
 `enabled: false` -- the inventory of what's available to switch on when a new
 hydrator is built (federal partis, issues, reflet summaries, headline of
