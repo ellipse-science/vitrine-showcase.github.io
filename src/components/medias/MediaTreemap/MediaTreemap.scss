@@ -38,11 +38,20 @@
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: $ink-softer;
+    background: transparent;
+    padding: 0;
+    overflow: hidden;
 
-    span {
-      padding: 3px 10px;
+    button {
+      background: transparent;
+      border: none;
       border-right: 0.5px solid $rule;
+      color: inherit;
       cursor: pointer;
+      font: inherit;
+      letter-spacing: inherit;
+      padding: 3px 10px;
+      text-transform: inherit;
 
       &:last-child {
         border-right: none;

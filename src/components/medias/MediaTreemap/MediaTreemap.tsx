@@ -73,7 +73,7 @@ const MediaTreemap = (): ReactElement | null => {
   const { t } = useTranslation('MediaTreemap');
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [payload, setPayload] = useState<MediaTreemapPayload>();
-  const [activePeriod] = useState<MediaTreemapPeriod>('day');
+  const [activePeriod, setActivePeriod] = useState<MediaTreemapPeriod>('day');
   const [width, setWidth] = useState(0);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -189,9 +189,14 @@ const MediaTreemap = (): ReactElement | null => {
         <h3 className="MediaTreemap-title">{t('title') || 'De quoi parle-t-on ?'}</h3>
         <div className="legend-toggle">
           {periodOrder.map((p) => (
-            <span key={p} className={activePeriod === p ? 'active' : ''}>
+            <button
+              type="button"
+              key={p}
+              className={activePeriod === p ? 'active' : ''}
+              onClick={() => setActivePeriod(p)}
+            >
               {t(`controls.${p}`)}
-            </span>
+            </button>
           ))}
         </div>
       </header>

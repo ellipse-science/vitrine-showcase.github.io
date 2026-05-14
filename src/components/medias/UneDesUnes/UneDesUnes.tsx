@@ -6,7 +6,11 @@ import { getIssueMeta } from '../../../helpers/issues';
 import { getMediaName } from '../../../helpers/media';
 import './UneDesUnes.scss';
 
-const UneDesUnes = (): ReactElement => {
+interface UneDesUnesProps {
+  hideRadarLink?: boolean;
+}
+
+const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement => {
   const { t } = useTranslation('UneDesUnes');
   const [events, setEvents] = useState<HeadlineEvent[]>([]);
   const [loading, setLoading] = useState(true);
