@@ -258,7 +258,7 @@
       bar.style.width = barPct.toFixed(1) + '%';
       bar.setAttribute('title', pct + ' % de part de voix');
       var color = PARTY_COLORS[stat.key];
-      if (color) bar.style.background = color;
+      if (color) bar.style.setProperty('background', color, 'important');
     }
 
     var avgMarker = rowEl.querySelector('.parti-bar-avg');
