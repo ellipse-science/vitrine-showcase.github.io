@@ -28,6 +28,8 @@ type RawEvent = {
   score_qc: number | null;
   extracted_objects: string | null;
   media_ids: string; // JSON string e.g. '["LED","LAP"]'
+  outlets_qc: number | null;
+  total_outlets_qc: number | null;
   intensity_tier: string | null;
   title: string | null;
   main_issue: string | null;
@@ -113,20 +115,16 @@ function formatDateFr(dateStr: string): string {
   return `${DAYS_FR[d.getDay()]} ${day} ${MONTHS_FR[month - 1]} ${year}`;
 }
 
-// ── Saillance helpers ───────────────────────────────────────────────────────
+// ── Tier helper (source de vérité: intensity_tier de la table) ───────────────
 
-function getSaillance(
-  scoreQc: number | null,
-  maxScore: number,
-): { filled: number; label: string; cls: string } {
-  const s = scoreQc ?? 0;
-  const normalized = maxScore > 0 ? (s / maxScore) * 100 : 0;
-  if (normalized >= 85) return { filled: 6, label: "Majeur", cls: "major" };
-  if (normalized >= 65) return { filled: 5, label: "Majeur", cls: "major" };
-  if (normalized >= 45) return { filled: 4, label: "Fort", cls: "fort" };
-  if (normalized >= 28) return { filled: 3, label: "Fort", cls: "fort" };
-  if (normalized >= 12) return { filled: 2, label: "Notable", cls: "notable" };
-  return { filled: 1, label: "Notable", cls: "notable" };
+function tierToLabelCls(tier: string | null): { label: string; cls: string } {
+  switch (tier) {
+    case "Majeur": return { label: "Majeur", cls: "major" };
+    case "Fort":   return { label: "Fort",   cls: "fort" };
+    case "Moyen":  return { label: "Moyen",  cls: "notable" };
+    case "Faible": return { label: "Faible", cls: "notable" };
+    default:       return { label: "–",      cls: "notable" };
+  }
 }
 
 // ── Exported types ──────────────────────────────────────────────────────────
@@ -135,13 +133,14 @@ export type UneEvent = {
   title: string;
   issueFr: string;
   issueColor: string;
-  saillanceFilled: number;
-  saillanceLabel: string;
-  saillanceCls: string;
+  saillanceFilled: number; // = outlets_qc (1–6), drives dots + data-saillance
+  saillanceLabel: string; // = intensity_tier label from table
+  saillanceCls: string;   // CSS class derived from intensity_tier
   timeMtl: string;
   mediaPresent: string[]; // readable names
   mediaAbsent: string[]; // readable names from QC_MEDIA that are absent
-  qcOutletCount: number; // number of QC media outlets covering this event
+  qcOutletCount: number;  // = outlets_qc from table
+  totalQcOutlets: number; // = total_outlets_qc from table
 };
 
 export type SolitudeStory = {
@@ -250,10 +249,10 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
     );
 
-  const maxScore = withTitles[0]?.score_qc ?? 1;
-
   const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
-    const saillance = getSaillance(e.score_qc, maxScore);
+    const { label: saillanceLabel, cls: saillanceCls } = tierToLabelCls(e.intensity_tier);
+    const qcOutletCount = e.outlets_qc ?? 0;
+    const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
     try {
       mediaIds = JSON.parse(e.media_ids) as string[];
@@ -266,7 +265,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
-    const qcOutletCount = mediaIds.filter((id) => QC_MEDIA.includes(id)).length;
 
     return {
       title: e.title ?? "",
@@ -275,13 +273,14 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         ISSUE_LABELS_SHORT[e.main_issue ?? ""] ??
         "Actualité",
       issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
-      saillanceFilled: saillance.filled,
-      saillanceLabel: saillance.label,
-      saillanceCls: saillance.cls,
+      saillanceFilled: Math.min(6, Math.max(1, qcOutletCount)),
+      saillanceLabel,
+      saillanceCls,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       mediaPresent,
       mediaAbsent,
       qcOutletCount,
+      totalQcOutlets,
     };
   });
 
