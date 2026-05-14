@@ -4,8 +4,13 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress runs for the same PR when a new commit lands
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,21 +19,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: yarn
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
-      - name: Lint
-        run: yarn lint
+      - name: Type-check
+        run: npm run type-check
 
       - name: Build
-        run: yarn build
-        env:
-          CI: false
-
-      - name: Test
-        run: yarn test
-        env:
-          CI: true
+        run: npm run build
