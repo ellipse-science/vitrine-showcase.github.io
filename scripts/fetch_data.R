@@ -166,44 +166,31 @@ fetch_table <- function(conn, entry) {
   df
 }
 
-# Build parole-en-chambre.json for the ParoleEnChambre component.
-build_parole_en_chambre <- function(df) {
-  if (is.null(df) || nrow(df) == 0) return(NULL)
+# Build a PeriodSnapshot for one period_type slice of the dataframe.
+build_period_snapshot <- function(rows, party_full_names) {
+  if (nrow(rows) == 0) return(NULL)
 
-  PARTY_FULL_NAMES <- c(
-    caq = "Coalition Avenir Québec",
-    plq = "Parti libéral du Québec",
-    pq  = "Parti Québécois",
-    qs  = "Québec solidaire",
-    pcq = "Parti conservateur du Québec"
-  )
-  QC_PARTIES_ORDER <- c("CAQ", "PLQ", "PQ", "QS", "PCQ")
+  period_start <- as.character(rows$period_start_date[1])
+  period_end   <- as.character(rows$period_end_date[1])
+  period_type  <- as.character(rows$period_type[1])
 
-  last_pdq <- df[df$period_type == "last_pdq", ]
-  session  <- df[df$period_type == "session",  ]
-
-  if (nrow(last_pdq) == 0) last_pdq <- session
-  if (nrow(session)  == 0) session  <- df
-
-  sess_row      <- session[1, ]
-  session_date  <- as.character(sess_row$period_end_date)
-  session_start <- as.character(sess_row$period_start_date)
-  session_label <- paste0(
-    "Session ",
-    format(as.Date(session_start), "%Y"),
-    " – ",
-    format(as.Date(session_date),  "%Y")
+  period_label <- switch(period_type,
+    last_pdq    = paste0("Période de questions du ", period_end),
+    session     = paste0("Session ", format(as.Date(period_start), "%Y"),
+                         " – ", format(as.Date(period_end), "%Y")),
+    legislature = paste0("Législature ", format(as.Date(period_start), "%Y"),
+                         " – ", format(as.Date(period_end), "%Y")),
+    period_end
   )
 
-  # party interventions from last_pdq
-  max_int <- max(last_pdq$n_interventions, na.rm = TRUE)
+  max_int <- max(rows$n_interventions, na.rm = TRUE)
   if (!is.finite(max_int) || max_int == 0) max_int <- 1L
 
-  party_rows <- lapply(seq_len(nrow(last_pdq)), function(i) {
-    row         <- last_pdq[i, ]
+  party_rows <- lapply(seq_len(nrow(rows)), function(i) {
+    row         <- rows[i, ]
     party_lower <- tolower(as.character(row$party))
     party_upper <- toupper(as.character(row$party))
-    full_name   <- PARTY_FULL_NAMES[[party_lower]]
+    full_name   <- party_full_names[[party_lower]]
     if (is.null(full_name)) full_name <- party_upper
     list(
       party         = party_upper,
@@ -213,31 +200,48 @@ build_parole_en_chambre <- function(df) {
     )
   })
 
-  # title: editorial_angle of the most-active party in last_pdq
   title <- tryCatch({
-    top <- last_pdq[which.max(last_pdq$n_interventions), ]
+    top   <- rows[which.max(rows$n_interventions), ]
     angle <- as.character(top$editorial_angle)
     if (length(angle) == 1L && !is.na(angle) && nzchar(angle)) angle
-    else paste0("Session du ", session_date)
-  }, error = function(e) paste0("Session du ", session_date))
+    else period_label
+  }, error = function(e) period_label)
 
-  # rough saillance proxy: total interventions normalised to a [0,1] scale
-  total_int <- sum(last_pdq$n_interventions, na.rm = TRUE)
-  score <- min(round(total_int / 500, 4), 1)
+  list(
+    periodLabel        = period_label,
+    startDate          = period_start,
+    endDate            = period_end,
+    title              = title,
+    partyInterventions = party_rows
+  )
+}
+
+# Build parole-en-chambre.json for the ParoleEnChambre component.
+build_parole_en_chambre <- function(df) {
+  if (is.null(df) || nrow(df) == 0) return(NULL)
+
+  party_full_names <- c(
+    caq = "Coalition Avenir Québec",
+    plq = "Parti libéral du Québec",
+    pq  = "Parti Québécois",
+    qs  = "Québec solidaire",
+    pcq = "Parti conservateur du Québec"
+  )
+
+  periods <- list()
+  for (pt in c("last_pdq", "session", "legislature")) {
+    rows <- df[df$period_type == pt, ]
+    snap <- build_period_snapshot(rows, party_full_names)
+    if (!is.null(snap)) periods[[pt]] <- snap
+  }
+
+  if (length(periods) == 0) return(NULL)
 
   qc_assembly <- list(
     assemblyId       = "QC",
     chambre          = "Assemblée nationale du Québec",
-    sessionDate      = session_date,
-    sessionLabel     = session_label,
-    nextSessionLabel = NULL,
-    title            = title,
-    score            = score,
-    prevScore        = score,
-    velocity         = 0L,
-    objects          = list(),
-    monitoredParties = QC_PARTIES_ORDER,
-    partyInterventions = party_rows
+    monitoredParties = c("CAQ", "PLQ", "PQ", "QS", "PCQ"),
+    periods          = periods
   )
 
   list(generatedAt = NOW_UTC, assemblies = list(QC = qc_assembly))
