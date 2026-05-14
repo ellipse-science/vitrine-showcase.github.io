@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-05-14T12:19:31Z",
-  "workflowRunUrl": "https://github.com/vitrine-showcase/vitrine-showcase.github.io/actions/runs/25859587836",
+  "generatedAt": "2026-05-14T12:51:44Z",
+  "workflowRunUrl": "https://github.com/vitrine-showcase/vitrine-showcase.github.io/actions/runs/25860964530",
   "tables": [
     {
       "name": "provincial_parties_score_day",
       "status": "ok",
       "rowCount": 6695,
-      "generatedAt": "2026-05-14T12:19:31Z",
+      "generatedAt": "2026-05-14T12:51:44Z",
       "path": "public/data/refined/day/provincial_parties_score_day.json"
     },
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 12,
-      "generatedAt": "2026-05-14T12:19:31Z",
+      "generatedAt": "2026-05-14T12:51:44Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     }
   ]
