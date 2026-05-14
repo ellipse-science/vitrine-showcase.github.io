@@ -1,110 +1,110 @@
 {
-  "generatedAt": "2026-05-14T04:01:12Z",
-  "workflowRunUrl": "https://github.com/vitrine-showcase/vitrine-showcase.github.io/actions/runs/25840841438",
+  "generatedAt": "2026-05-14T08:01:15Z",
+  "workflowRunUrl": "https://github.com/vitrine-showcase/vitrine-showcase.github.io/actions/runs/25848974051",
   "tables": [
     {
       "name": "federal_parties_score_day",
       "status": "ok",
-      "rowCount": 8016,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "rowCount": 8022,
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/day/federal_parties_score_day.json"
     },
     {
       "name": "provincial_parties_score_day",
       "status": "ok",
-      "rowCount": 6685,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "rowCount": 6690,
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/day/provincial_parties_score_day.json"
     },
     {
       "name": "federal_parties_score_week",
       "status": "ok",
       "rowCount": 2106,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/week/federal_parties_score_week.json"
     },
     {
       "name": "provincial_parties_score_week",
       "status": "ok",
       "rowCount": 1755,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/week/provincial_parties_score_week.json"
     },
     {
       "name": "federal_parties_score_month",
       "status": "ok",
       "rowCount": 2088,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/month/federal_parties_score_month.json"
     },
     {
       "name": "provincial_parties_score_month",
       "status": "ok",
       "rowCount": 1740,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/month/provincial_parties_score_month.json"
     },
     {
       "name": "issues_score_day",
       "status": "ok",
       "rowCount": 2818,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/day/issues_score_day.json"
     },
     {
       "name": "issues_score_week",
       "status": "ok",
       "rowCount": 1414,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/week/issues_score_week.json"
     },
     {
       "name": "issues_score_month",
       "status": "ok",
       "rowCount": 1460,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/month/issues_score_month.json"
     },
     {
       "name": "reflet_day",
       "status": "ok",
       "rowCount": 12618,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/day/reflet_day.json"
     },
     {
       "name": "reflet_week",
       "status": "ok",
       "rowCount": 4219,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/week/reflet_week.json"
     },
     {
       "name": "reflet_month",
       "status": "ok",
       "rowCount": 2112,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/month/reflet_month.json"
     },
     {
       "name": "headline_of_headlines",
       "status": "ok",
-      "rowCount": 6526,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "rowCount": 6529,
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/refined/day/headline_of_headlines.json"
     },
     {
       "name": "headline_events_4h",
       "status": "ok",
-      "rowCount": 478,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "rowCount": 438,
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/headline-events.json"
     },
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 12,
-      "generatedAt": "2026-05-14T04:01:12Z",
+      "generatedAt": "2026-05-14T08:01:15Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     }
   ]
