@@ -173,7 +173,9 @@ const MethodologyPage = (): ReactElement => {
             l'indice absolu est calculé comme suit :
           </p>
           <div className="Metho-formula">
-            <code>IndiceAbsolu(<em>o</em>, <em>m</em>, <em>t</em>) = TempsEnUne(<em>o</em>, <em>m</em>, <em>t</em>) × PondérationMédia(<em>m</em>)</code>
+            <code>
+              IndiceAbsolu(<em>o</em>, <em>m</em>, <em>t</em>) = TempsEnUne(<em>o</em>, <em>m</em>, <em>t</em>) × PondérationMédia(<em>m</em>)
+            </code>
           </div>
           <p className="InfoPage-text">
             La <strong>pondération inter-médias</strong> corrige les disparités structurelles entre sources :
@@ -190,7 +192,9 @@ const MethodologyPage = (): ReactElement => {
             bloc temporel, produisant une part relative :
           </p>
           <div className="Metho-formula">
-            <code>IndiceRelatif(<em>o</em>, <em>t</em>) = IndiceAbsolu(<em>o</em>, <em>t</em>) / Σ IndiceAbsolu(<em>tous objets</em>, <em>t</em>)</code>
+            <code>
+              IndiceRelatif(<em>o</em>, <em>t</em>) = IndiceAbsolu(<em>o</em>, <em>t</em>) / Σ IndiceAbsolu(<em>tous objets</em>, <em>t</em>)
+            </code>
           </div>
           <p className="InfoPage-text">
             Cet indice exprime, pour chaque bloc de quatre heures, quelle proportion de l'attention médiatique
