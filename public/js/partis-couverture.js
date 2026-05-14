@@ -291,10 +291,13 @@
     var circles = rowEl.querySelectorAll('.parti-spark circle');
     if (circles.length > 0) {
       var sampled = samplePoints(pts, circles.length);
-      sampled.forEach(function (p, i) {
-        if (circles[i]) {
-          circles[i].setAttribute('cx', p[0].toFixed(1));
-          circles[i].setAttribute('cy', p[1].toFixed(1));
+      circles.forEach(function (c, i) {
+        if (sampled[i]) {
+          c.setAttribute('cx', sampled[i][0].toFixed(1));
+          c.setAttribute('cy', sampled[i][1].toFixed(1));
+          c.style.display = '';
+        } else {
+          c.style.display = 'none';
         }
       });
     }
