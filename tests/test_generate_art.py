@@ -150,3 +150,40 @@ def test_build_prompt_contains_no_restricted_content():
     assert "sk-" not in prompt
     assert "OPENAI" not in prompt
     assert len(prompt) > 50
+
+
+# ---------------------------------------------------------------------------
+# Task 5: generate_image
+# ---------------------------------------------------------------------------
+
+from unittest.mock import MagicMock, patch
+
+from scripts.generate_art import generate_image
+
+
+def test_generate_image_calls_responses_api_correctly():
+    fake_image_bytes = b"fake_png_data"
+    fake_b64 = base64.b64encode(fake_image_bytes).decode()
+
+    fake_item = MagicMock()
+    fake_item.type = "image_generation_call"
+    fake_item.result = fake_b64
+
+    fake_response = MagicMock()
+    fake_response.output = [fake_item]
+
+    with patch("scripts.generate_art.OpenAI") as MockOpenAI:
+        mock_client = MagicMock()
+        MockOpenAI.return_value = mock_client
+        mock_client.responses.create.return_value = fake_response
+
+        result = generate_image("sk-fake", "A test prompt", ["ref1_b64", "ref2_b64"])
+
+    assert result == fake_image_bytes
+
+    call_kwargs = mock_client.responses.create.call_args.kwargs
+    assert call_kwargs["model"] == "gpt-image-1"
+    input_content = call_kwargs["input"][0]["content"]
+    assert input_content[-1]["type"] == "input_text"
+    assert input_content[-1]["text"] == "A test prompt"
+    assert input_content[0]["type"] == "input_image"
