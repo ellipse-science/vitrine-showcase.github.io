@@ -1,145 +1,136 @@
-import React, { memo, ReactElement, useState } from 'react';
+import React, { memo, ReactElement, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { HeadlineEvent } from '../../medias/UneDesUnes/headlineOfHeadlinesData';
+import { ISSUE_META } from '../../../helpers/issues';
 import './EnjuModule.scss';
 
-interface LikertOption {
-  value: number;
+type IssueBar = {
+  key: string;
   label: string;
-}
-
-const likertOptions: LikertOption[] = [
-  { value: 1, label: 'Pas du tout d’accord' },
-  { value: 2, label: 'Plutôt pas d’accord' },
-  { value: 3, label: 'Neutre' },
-  { value: 4, label: 'Plutôt d’accord' },
-  { value: 5, label: 'Tout à fait d’accord' },
-];
-
-// Mock distribution data from "internal panel"
-const panelDistribution = [12, 18, 10, 35, 25]; // % for each Likert level
+  color: string;
+  score: number;
+  topTitle: string | null;
+};
 
 const EnjuModule = (): ReactElement => {
   const { t } = useTranslation('EnjuModule');
-  const [userVote, setUserVote] = useState<number | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [issues, setIssues] = useState<IssueBar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [snapshotLabel, setSnapshotLabel] = useState('');
 
-  const handleVote = (value: number) => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setUserVote(value);
-      setIsAnimating(false);
-    }, 400);
-  };
+  useEffect(() => {
+    fetch(`/data/headline-events.json?ts=${Date.now()}`)
+      .then(res => {
+        if (!res.ok) throw new Error('network');
+        return res.json();
+      })
+      .then((data: HeadlineEvent[]) => {
+        const withIssues = data.filter(e => e.main_issue !== null);
+        if (withIssues.length === 0) {
+          setError(true);
+          setLoading(false);
+          return;
+        }
 
-  const getMajorityPhrase = (vote: number) => {
-    const pct = panelDistribution[vote - 1];
-    const maxVal = Math.max(...panelDistribution);
-    const isMajority = pct === maxVal;
+        // Deduplicate by event_id, preferring QC target_region
+        const byId = new Map<string, HeadlineEvent>();
+        withIssues.forEach(e => {
+          const existing = byId.get(e.event_id);
+          if (!existing || e.target_region === 'QC') {
+            byId.set(e.event_id, e);
+          }
+        });
+        const unique = Array.from(byId.values()).filter(e => e.country_id !== 'USA');
 
-    if (isMajority) {
-      return `Vous êtes au cœur de l’opinion majoritaire (${pct}%).`;
-    }
+        // Find latest block
+        const sorted = [...unique].sort((a, b) => {
+          const dA = `${a.date_utc}T${a.time_interval_utc.split('-')[0]}:00Z`;
+          const dB = `${b.date_utc}T${b.time_interval_utc.split('-')[0]}:00Z`;
+          return dB.localeCompare(dA);
+        });
+        const latestDate = sorted[0].date_utc;
+        const latestInterval = sorted[0].time_interval_utc;
+        const latest = sorted.filter(
+          e => e.date_utc === latestDate && e.time_interval_utc === latestInterval
+        );
 
-    if (pct > 20) {
-      return `Votre position est largement partagée (${pct}%) par le panel.`;
-    }
+        setSnapshotLabel(`${latestDate} · ${latestInterval}h`);
 
-    if (pct > 10) {
-      return `Vous exprimez une nuance partagée par ${pct}% des répondants.`;
-    }
+        // Aggregate score per issue
+        const issueMap = new Map<string, { score: number; topTitle: string | null }>();
+        latest.forEach(e => {
+          if (!e.main_issue) return;
+          const cur = issueMap.get(e.main_issue) || { score: 0, topTitle: null };
+          const s = (e.score_qc || 0) > 0 ? (e.score_qc || 0) : (e.score_saillance || 0);
+          issueMap.set(e.main_issue, { score: cur.score + s, topTitle: cur.topTitle || e.title });
+        });
 
-    return `Vous occupez une position plus singulière (${pct}%) par rapport au panel.`;
-  };
+        const ranked: IssueBar[] = [];
+        ISSUE_META.forEach(meta => {
+          const val = issueMap.get(meta.key);
+          if (!val) return;
+          ranked.push({ key: meta.key, label: meta.title, color: meta.color, score: val.score, topTitle: val.topTitle });
+        });
+        ranked.sort((a, b) => b.score - a.score);
+
+        const maxScore = ranked[0]?.score || 1;
+        setIssues(ranked.map(i => ({ ...i, score: Math.round((i.score / maxScore) * 100) })));
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="EnjuModule EnjuModule--state">
+        <p className="EnjuModule-status">{t('loading')}</p>
+      </div>
+    );
+  }
+
+  if (error || issues.length === 0) {
+    return (
+      <div className="EnjuModule EnjuModule--state">
+        <p className="EnjuModule-status">{t('error')}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={`EnjuModule ${userVote ? 'EnjuModule--results' : ''} ${isAnimating ? 'EnjuModule--animating' : ''}`}>
+    <div className="EnjuModule">
       <div className="EnjuModule-header">
-        <span className="EnjuModule-eyebrow">{t('eyebrow', 'Question de l\u2019heure')}</span>
-        <span className="EnjuModule-tag">Citoyens</span>
+        <span className="EnjuModule-eyebrow">{t('eyebrow')}</span>
+        <span className="EnjuModule-snapshot">{snapshotLabel}</span>
       </div>
 
-      {!userVote ? (
-        <div className="EnjuModule-question-view">
-          <h2 className="EnjuModule-question">
-            &laquo; Considérez-vous que l&rsquo;instabilité géopolitique actuelle justifie une intervention
-            directe de l&rsquo;État sur le plafonnement des prix de l&rsquo;énergie ? &raquo;
-          </h2>
-          <p className="EnjuModule-context">
-            Le prix de l’essence, fortement lié aux tensions en Iran, ravive le débat sur la souveraineté énergétique.
-          </p>
-          
-          <div className="EnjuModule-likert">
-            {likertOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                className="EnjuModule-likert-btn"
-                onClick={() => handleVote(opt.value)}
-                aria-label={opt.label}
-              >
-                <span className="EnjuModule-likert-value">{opt.value}</span>
-              </button>
-            ))}
-          </div>
-          <div className="EnjuModule-likert-labels">
-            <span>{likertOptions[0].label}</span>
-            <span>{likertOptions[4].label}</span>
-          </div>
-        </div>
-      ) : (
-        <div className="EnjuModule-results-view">
-          <div className="EnjuModule-results-header">
-            <span className="EnjuModule-question-eyebrow">Votre avis sur :</span>
-            <h2 className="EnjuModule-question-small">
-              &laquo; Plafonnement des prix de l&rsquo;énergie et instabilité géopolitique &raquo;
-            </h2>
-          </div>
-
-          <div className="EnjuModule-histogram-container">
-            <div className="EnjuModule-histogram-header">
-              <h3 className="EnjuModule-histogram-title">Distribution des opinions du panel</h3>
+      <div className="EnjuModule-bars">
+        {issues.map(issue => (
+          <div key={issue.key} className="EnjuModule-bar-row">
+            <div className="EnjuModule-bar-meta">
+              <span className="EnjuModule-bar-label" style={{ color: issue.color }}>
+                {issue.label}
+              </span>
+              {issue.topTitle && (
+                <span className="EnjuModule-bar-title">{issue.topTitle}</span>
+              )}
             </div>
-            <div className="EnjuModule-histogram">
-              {panelDistribution.map((pct, idx) => (
-                <div key={`${idx + 1}-${pct}`} className="EnjuModule-histogram-col">
-                  <div className="EnjuModule-histogram-bar-wrapper">
-                    <div
-                      className={`EnjuModule-histogram-bar ${userVote === idx + 1 ? 'EnjuModule-histogram-bar--user' : ''}`}
-                      style={{ height: `${pct}%` }}
-                    >
-                      <span className="EnjuModule-histogram-pct">{pct}%</span>
-                    </div>
-                  </div>
-                  <div className="EnjuModule-histogram-axis">
-                    <span className="EnjuModule-histogram-label">{idx + 1}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="EnjuModule-histogram-legend">
-              <span>{likertOptions[0].label}</span>
-              <span>{likertOptions[4].label}</span>
+            <div className="EnjuModule-bar-track">
+              <div
+                className="EnjuModule-bar-fill"
+                style={{ width: `${issue.score}%`, backgroundColor: issue.color }}
+              />
             </div>
           </div>
-
-          <div className="EnjuModule-feedback">
-            <div className="EnjuModule-feedback-header">
-              <div className={`EnjuModule-feedback-badge ${panelDistribution[userVote - 1] > 20 ? 'EnjuModule-feedback-badge--main' : ''}`}>
-                <span>Profil : {panelDistribution[userVote - 1] > 20 ? 'Consensus' : 'Nuance'}</span>
-              </div>
-            </div>
-            <p className="EnjuModule-feedback-phrase">{getMajorityPhrase(userVote)}</p>
-            <p className="EnjuModule-feedback-sub">Source : Panel CAPP (n=1 250). Comparaison en temps réel.</p>
-          </div>
-          
-          <button type="button" className="EnjuModule-reset-btn" onClick={() => setUserVote(null)}>
-            Revenir à la question
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
 
       <div className="EnjuModule-footer">
-        <span>CAPP — DONNÉES DE PANEL EN TEMPS RÉEL — 2026</span>
+        <span>{t('source')}</span>
       </div>
     </div>
   );

@@ -21,8 +21,19 @@ const UneDesUnes = (): ReactElement => {
       .then((data: HeadlineEvent[]) => {
         const withTitles = data.filter(e => e.title !== null);
         if (withTitles.length > 0) {
+          // Deduplicate by event_id, preferring QC target_region
+          const byId = new Map<string, HeadlineEvent>();
+          withTitles.forEach(e => {
+            const existing = byId.get(e.event_id);
+            if (!existing || e.target_region === 'QC') {
+              byId.set(e.event_id, e);
+            }
+          });
+          // Exclude US-only events
+          const unique = Array.from(byId.values()).filter(e => e.country_id !== 'USA');
+
           // Find most recent block
-          const sortedByDate = [...withTitles].sort((a, b) => {
+          const sortedByDate = [...unique].sort((a, b) => {
             const dateA = `${a.date_utc}T${a.time_interval_utc.split('-')[0]}:00Z`;
             const dateB = `${b.date_utc}T${b.time_interval_utc.split('-')[0]}:00Z`;
             return dateB.localeCompare(dateA);
@@ -33,7 +44,7 @@ const UneDesUnes = (): ReactElement => {
 
           const latestEvents = sortedByDate
             .filter(e => e.date_utc === latestDate && e.time_interval_utc === latestInterval)
-            .sort((a, b) => (b.score_saillance || 0) - (a.score_saillance || 0));
+            .sort((a, b) => (b.score_qc || 0) - (a.score_qc || 0) || (b.score_saillance || 0) - (a.score_saillance || 0));
 
           setEvents(latestEvents);
         }

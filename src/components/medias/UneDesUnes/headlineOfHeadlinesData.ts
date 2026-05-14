@@ -20,6 +20,8 @@ export type HeadlineEvent = {
   main_issue: string | null;
   main_issue_text_fr: string | null;
   main_issue_text_en: string | null;
+  target_region: string | null;
+  event_rank_in_region: number | null;
   tag: string;
 }
 
