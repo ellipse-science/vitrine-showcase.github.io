@@ -762,7 +762,7 @@
   }
   .solitudes .sol-viz {
     position: relative;
-    height: 100px;
+    height: 120px;
     max-width: 720px;
     margin: 0 auto 6px;
   }
@@ -791,7 +791,7 @@
   }
   .solitudes .sol-symbol .glyph.fleur {
     width: auto;
-    height: 100px;
+    height: 64px;
     display: block;
     margin: 0 auto;
     mix-blend-mode: multiply;
@@ -799,6 +799,8 @@
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
     font-size: 54px;
+    height: 64px;
+    line-height: 64px;
     filter: grayscale(1) brightness(0.32) contrast(1.6);
   }
   .solitudes .sol-symbol .caption {
@@ -1857,9 +1859,9 @@
     /* ── Deux solitudes ── */
     .solitudes { padding: 22px 16px 20px; margin-top: 28px; }
     .solitudes .sol-title { font-size: 20px; margin-bottom: 14px; }
-    .solitudes .sol-viz { height: 110px; max-width: 100%; }
-    .solitudes .sol-symbol .glyph.fleur { width: auto; height: 100px; }
-    .solitudes .sol-symbol .glyph.maple { font-size: 54px; }
+    .solitudes .sol-viz { height: 120px; max-width: 100%; }
+    .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; }
+    .solitudes .sol-symbol .glyph.maple { font-size: 54px; height: 64px; line-height: 64px; }
     .solitudes .sol-symbol .caption { font-size: 9px; margin-top: 6px; }
     .solitudes .sol-stat { gap: 8px; margin: 8px 0 12px; }
     .solitudes .sol-stat .stat-big { font-size: 40px; }
