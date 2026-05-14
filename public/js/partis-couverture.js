@@ -114,21 +114,37 @@
       return arr.reduce(function (s, v) { return s + v; }, 0) / arr.length;
     }
 
+    // Cache SOV for every available date so we can compute a yearly mean
+    // (which is "moyenne de l'année" — the long-term reference shown on
+    // the monthly view).
+    var allDatesSovCache = Object.create(null);
+    allDates.forEach(function (d) { allDatesSovCache[d] = sovOnDate(d); });
+
     return knownParties.map(function (party) {
       var hist7 = last7.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
       var hist30 = last30.map(function (d) { return (sovCache[d] && sovCache[d][party]) || 0; });
+      var histYear = allDates.map(function (d) { return (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0; });
       return {
         key: party.toLowerCase(),
         sov: {
           today: (sovCache[latestDate] && sovCache[latestDate][party]) || 0,
           week: avg(hist7),
           month: avg(hist30),
+          year: avg(histYear),
         },
         tone: (dayLookup[latestDate] && dayLookup[latestDate][party] && dayLookup[latestDate][party].tone) || 0,
         history: { week: hist7, month: hist30 },
       };
     });
   }
+
+  // Per range: what the bar shows, what the reference marker shows,
+  // and the caption that follows the leader's marker.
+  var RANGE_CONFIG = {
+    today: { barKey: 'today', refKey: 'week',  refLabel: 'moyenne 7 jours',    refDays: 7 },
+    week:  { barKey: 'week',  refKey: 'month', refLabel: 'moyenne du mois',    refDays: 30 },
+    month: { barKey: 'month', refKey: 'year',  refLabel: "moyenne de l'année", refDays: 365 },
+  };
 
   // ── Sparkline geometry ────────────────────────────────────────────────────
 
@@ -157,7 +173,8 @@
   // ── DOM updates ───────────────────────────────────────────────────────────
 
   function updateRow(rowEl, stat, range, leadSov) {
-    var sov = stat.sov[range];
+    var cfg = RANGE_CONFIG[range] || RANGE_CONFIG.today;
+    var sov = stat.sov[cfg.barKey];
     var pct = Math.round(sov * 100);
     var barPct = leadSov > 0 ? Math.min(100, (sov / leadSov) * 100) : 0;
 
@@ -176,15 +193,11 @@
 
     var avgMarker = rowEl.querySelector('.parti-bar-avg');
     if (avgMarker) {
-      if (range === 'today') {
-        avgMarker.style.display = '';
-        var avgWeek = stat.sov.week;
-        var avgPct = leadSov > 0 ? Math.min(100, (avgWeek / leadSov) * 100) : 0;
-        avgMarker.style.left = avgPct.toFixed(1) + '%';
-        avgMarker.setAttribute('title', 'Moyenne 7 j : ' + Math.round(avgWeek * 100) + ' %');
-      } else {
-        avgMarker.style.display = 'none';
-      }
+      avgMarker.style.display = '';
+      var refSov = stat.sov[cfg.refKey];
+      var refPct = leadSov > 0 ? Math.min(100, (refSov / leadSov) * 100) : 0;
+      avgMarker.style.left = refPct.toFixed(1) + '%';
+      avgMarker.setAttribute('title', cfg.refLabel + ' : ' + Math.round(refSov * 100) + ' %');
     }
 
     var toneDot = rowEl.querySelector('.parti-tone .ass-tone-dot');
@@ -215,6 +228,9 @@
   function render(stats, range) {
     if (!stats || !stats.length) return;
 
+    var cfg = RANGE_CONFIG[range] || RANGE_CONFIG.today;
+    var barKey = cfg.barKey;
+
     var section = document.querySelector('section.partis');
     if (!section) return;
     var inShadow = section.querySelector('.in-shadow');
@@ -225,23 +241,23 @@
       if (nameBox) partyRowEls[key] = nameBox.closest('.parti-row');
     });
 
-    var sorted = stats.slice().sort(function (a, b) { return b.sov[range] - a.sov[range]; });
+    var sorted = stats.slice().sort(function (a, b) { return b.sov[barKey] - a.sov[barKey]; });
 
     // Bar lengths are normalized against the highest non-shadow value so the
     // leader fills the track. Fall back to absolute max if everything is in shadow.
     var visibleLead = 0;
     sorted.forEach(function (s) {
-      if (s.sov[range] >= SHADOW_THRESHOLD && s.sov[range] > visibleLead) {
-        visibleLead = s.sov[range];
+      if (s.sov[barKey] >= SHADOW_THRESHOLD && s.sov[barKey] > visibleLead) {
+        visibleLead = s.sov[barKey];
       }
     });
-    if (visibleLead === 0 && sorted[0]) visibleLead = sorted[0].sov[range];
+    if (visibleLead === 0 && sorted[0]) visibleLead = sorted[0].sov[barKey];
 
     sorted.forEach(function (stat) {
       var row = partyRowEls[stat.key];
       if (!row) return;
       updateRow(row, stat, range, visibleLead);
-      if (stat.sov[range] < SHADOW_THRESHOLD && inShadow) {
+      if (stat.sov[barKey] < SHADOW_THRESHOLD && inShadow) {
         inShadow.appendChild(row);
       } else if (inShadow) {
         section.insertBefore(row, inShadow);
@@ -255,22 +271,20 @@
       inShadow.style.display = shadowRows.length === 0 ? 'none' : '';
     }
 
-    // The static maquette placed the "moyenne 7 jours" caption inside one
-    // specific row (PLQ). After reordering, that row is no longer the
-    // leader. Move the caption onto the new leader's avg marker when in
-    // "today" view, and remove it elsewhere.
+    // Caption follows the leader and matches the range:
+    //   today → "moyenne 7 jours"     (reference = 7-day mean)
+    //   week  → "moyenne du mois"     (reference = 30-day mean)
+    //   month → "moyenne de l'année"  (reference = full-history mean)
     var label = section.querySelector('.avg-label');
     if (label) label.parentNode.removeChild(label);
-    if (range === 'today') {
-      var leaderRow = section.querySelector('.parti-row:not(.header)');
-      if (leaderRow) {
-        var leaderMarker = leaderRow.querySelector('.parti-bar-avg');
-        if (leaderMarker) {
-          var span = document.createElement('span');
-          span.className = 'avg-label';
-          span.textContent = 'moyenne 7 jours';
-          leaderMarker.appendChild(span);
-        }
+    var leaderRow = section.querySelector('.parti-row:not(.header)');
+    if (leaderRow) {
+      var leaderMarker = leaderRow.querySelector('.parti-bar-avg');
+      if (leaderMarker) {
+        var span = document.createElement('span');
+        span.className = 'avg-label';
+        span.textContent = cfg.refLabel;
+        leaderMarker.appendChild(span);
       }
     }
   }
