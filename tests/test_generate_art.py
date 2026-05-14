@@ -129,3 +129,24 @@ def test_prepare_image_respects_max_size(tmp_path):
     reopened = Image.open(io.BytesIO(decoded))
     assert reopened.size[0] <= 256
     assert reopened.size[1] <= 256
+
+
+# ---------------------------------------------------------------------------
+# Task 4: build_prompt
+# ---------------------------------------------------------------------------
+
+from scripts.generate_art import build_prompt
+
+
+def test_build_prompt_includes_headline_and_topic():
+    prompt = build_prompt("Honda suspend son projet EV", "Économie et travail")
+    assert "Honda suspend son projet EV" in prompt
+    assert "Économie et travail" in prompt
+    assert "style" in prompt.lower()
+
+
+def test_build_prompt_contains_no_restricted_content():
+    prompt = build_prompt("Quelconque titre", "Immigration")
+    assert "sk-" not in prompt
+    assert "OPENAI" not in prompt
+    assert len(prompt) > 50
