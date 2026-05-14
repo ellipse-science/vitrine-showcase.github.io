@@ -92,8 +92,8 @@ const MediaTreemap = (): ReactElement | null => {
 
         // Find latest block
         const sortedByDate = [...withTitles].sort((a, b) => {
-          const dateA = a.date_utc + 'T' + a.time_interval_utc.split('-')[0] + ':00Z';
-          const dateB = b.date_utc + 'T' + b.time_interval_utc.split('-')[0] + ':00Z';
+          const dateA = `${a.date_utc}T${a.time_interval_utc.split('-')[0]}:00Z`;
+          const dateB = `${b.date_utc}T${b.time_interval_utc.split('-')[0]}:00Z`;
           return dateB.localeCompare(dateA);
         });
 
@@ -163,7 +163,7 @@ const MediaTreemap = (): ReactElement | null => {
 
   useEffect(() => {
     const element = surfaceRef.current;
-    if (!element) return;
+    if (!element) return undefined;
     setWidth(element.getBoundingClientRect().width);
     const observer = new ResizeObserver((entries) => {
       setWidth(entries[0].contentRect.width);
@@ -174,7 +174,7 @@ const MediaTreemap = (): ReactElement | null => {
 
   const periodData = payload?.periods?.[activePeriod] as MediaTreemapPeriodData | undefined;
 
-  let canvasHeight = 680; // Match mockup height
+  const canvasHeight = 680;
   const layout = useMemo(
     () => squarify(periodData?.issues || [], 0, 0, Math.max(width - 24, 280), canvasHeight),
     [periodData, width, canvasHeight],

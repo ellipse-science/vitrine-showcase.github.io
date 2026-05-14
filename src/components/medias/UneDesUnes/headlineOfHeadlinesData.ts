@@ -1,7 +1,9 @@
 export type HeadlineEvent = {
   country_id: string | null;
   date_utc: string;
+  date_montreal_tz: string | null;
   time_interval_utc: string;
+  time_interval_montreal_tz: string | null;
   event_id: string;
   event_rank: number;
   event_label: string;

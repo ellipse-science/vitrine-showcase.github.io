@@ -5,6 +5,7 @@ export interface IssueMeta {
   title: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const ISSUE_META: IssueMeta[] = [
   { key: 'economy_and_labour',                        color: '#742630', label: 'Économie',   title: 'Économie et travail' },
   { key: 'governments_and_governance',                color: '#6F5828', label: 'Gouv.',       title: 'Gouvernements et gouvernance' },

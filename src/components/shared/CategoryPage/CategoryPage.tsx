@@ -29,7 +29,7 @@ const CategoryPage: FunctionComponent<CategoryProps> = () => (
               <MediaTicker />
               <section className="CategoryPage-module section-outer">
                 <div className="section-inner">
-                  <UneDesUnes hideRadarLink />
+                  <UneDesUnes />
                 </div>
               </section>
               <section className="CategoryPage-module section-outer">

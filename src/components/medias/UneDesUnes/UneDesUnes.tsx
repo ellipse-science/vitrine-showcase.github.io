@@ -6,11 +6,7 @@ import { getIssueMeta } from '../../../helpers/issues';
 import { getMediaName } from '../../../helpers/media';
 import './UneDesUnes.scss';
 
-interface UneDesUnesProps {
-  hideRadarLink?: boolean;
-}
-
-const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement => {
+const UneDesUnes = (): ReactElement => {
   const { t } = useTranslation('UneDesUnes');
   const [events, setEvents] = useState<HeadlineEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,8 +23,8 @@ const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement =>
         if (withTitles.length > 0) {
           // Find most recent block
           const sortedByDate = [...withTitles].sort((a, b) => {
-            const dateA = a.date_utc + 'T' + a.time_interval_utc.split('-')[0] + ':00Z';
-            const dateB = b.date_utc + 'T' + b.time_interval_utc.split('-')[0] + ':00Z';
+            const dateA = `${a.date_utc}T${a.time_interval_utc.split('-')[0]}:00Z`;
+            const dateB = `${b.date_utc}T${b.time_interval_utc.split('-')[0]}:00Z`;
             return dateB.localeCompare(dateA);
           });
 
@@ -72,7 +68,9 @@ const UneDesUnes = ({ hideRadarLink = false }: UneDesUnesProps): ReactElement =>
     const filled = Math.round((score / 100) * total);
     return (
       <span className="saillance-dots">
+        {/* eslint-disable-next-line react/no-array-index-key */}
         {Array.from({ length: total }).map((_, i) => (
+          // eslint-disable-next-line react/no-array-index-key
           <span key={i} className={`d ${i < filled ? 'filled' : 'empty'}`} />
         ))}
       </span>

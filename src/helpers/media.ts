@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const MEDIA_MAP: Record<string, string> = {
   LED: 'Le Devoir',
   LAP: 'La Presse',
