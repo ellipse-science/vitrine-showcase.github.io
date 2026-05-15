@@ -1168,7 +1168,7 @@
   /* Surface = saillance de l'objet · Couleur = enjeu auquel l'objet appartient */
   .treemap {
     display: grid;
-    grid-template-rows: 55fr 34fr 18fr minmax(62px, 10fr);
+    grid-template-rows: 55fr 34fr 18fr;
     gap: 2px;
     height: 680px;
     background: var(--paper);
