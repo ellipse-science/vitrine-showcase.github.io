@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "La Vitrine démocratique",
   description:
-    "Maquette pour Hugo — couverture médiatique et discours politique au Québec, par CLESSN, Université Laval.",
+    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le CAPP de l'Université Laval.",
 };
 
 export default function RootLayout({
