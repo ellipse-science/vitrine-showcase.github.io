@@ -78,7 +78,7 @@ const ISSUE_LABELS_SHORT: Record<string, string> = {
   culture_and_nationalism: "Culture",
   education: "Éducation",
   international_affairs_and_defense: "Aff. internationales",
-  law_and_crime: "Loi et crime",
+  law_and_crime: "Droit et criminalité",
   public_lands_and_agriculture: "Terres publiques",
   immigration: "Immigration",
   technology: "Technologie",
@@ -276,8 +276,9 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     } catch {
       // ignore
     }
+    // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
     const mediaPresent = mediaIds
-      .filter((id) => MEDIA_NAMES[id])
+      .filter((id) => QC_MEDIA.includes(id))
       .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: mediaIdToUrl[id] ?? null }));
     const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
@@ -353,13 +354,24 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   let solitudesStories: SolitudeStory[];
   if (divergenceEntries.length > 0) {
-    // Map event_label to French title from loaded events
-    const labelToTitle = new Map<string, string>();
-    for (const e of latest) {
-      if (e.event_label && e.title) labelToTitle.set(e.event_label, e.title);
+    // Dédupliquer par event_label (garder le score de divergence le plus élevé par label)
+    const dedupedByLabel = new Map<string, DivergenceEntry>();
+    for (const d of divergenceEntries) {
+      const existing = dedupedByLabel.get(d.event_label);
+      if (!existing || d.divergence_score > existing.divergence_score) {
+        dedupedByLabel.set(d.event_label, d);
+      }
     }
-    solitudesStories = divergenceEntries.slice(0, 5).map((d) => {
-      const label = labelToTitle.get(d.event_label) ?? d.event_title_raw;
+    // Retrier par divergence_score décroissant après dédup
+    const uniqueEntries = Array.from(dedupedByLabel.values())
+      .sort((a, b) => b.divergence_score - a.divergence_score);
+
+    solitudesStories = uniqueEntries.slice(0, 5).map((d) => {
+      // Label court = event_label capitalisé (ex: "alberta" → "Alberta")
+      // comme dans la maquette Figma ("Déficit Girard", "Alberta", etc.)
+      const label = d.event_label.length > 0
+        ? d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1)
+        : d.event_title_raw;
       const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
       const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
       return {
@@ -512,9 +524,6 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
     const dA = (a.date_utc as string) ?? "";
     const dB = (b.date_utc as string) ?? "";
     if (dB !== dA) return dB.localeCompare(dA);
-    const tA = (a.tag as string) ?? "";
-    const tB = (b.tag as string) ?? "";
-    if (tB !== tA) return tB.localeCompare(tA);
     return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
   })[0] ?? null;
 }
@@ -567,11 +576,12 @@ async function loadFallbackIssueContent(): Promise<Map<string, { topObject: stri
         const raw = objs[0]?.object?.trim() ?? "";
         if (raw.length >= 2) {
           const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
-          topObject = capped;
+          topObject = capped.length > 22 ? capped.slice(0, 20) + "…" : capped;
         }
       } catch { /* ignore */ }
     }
-    const context = e.title ?? "";
+    const title = e.title ?? "";
+    const context = title.length > 55 ? title.slice(0, 52) + "…" : title;
     map.set(issueKey, { topObject, context });
   }
   return map;
@@ -596,21 +606,9 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     // issues_meta: GPT-generated labels from radar-issues-score (preferred)
     const meta = parseIssuesMeta(latest.issues_meta);
 
-    // Aggregate all rows from the latest tag to get the true period-level scores.
-    // The Lambda produces one row per day within the window; summing gives the
-    // cumulative period view (week = 7-day sum, month = 29-day sum).
-    const latestTag = (latest.tag as string) ?? "";
-    const periodRows = latestTag
-      ? rows.filter((r) => (r.tag as string) === latestTag)
-      : [latest];
-    const aggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
-      acc[key] = periodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
-      return acc;
-    }, {});
-
     const scored = ISSUE_KEYS.map((issueKey) => ({
       issueKey,
-      score: aggregated[issueKey] ?? 0,
+      score: (latest[issueKey] as number) ?? 0,
     })).sort((a, b) => b.score - a.score);
 
     const maxScore = scored[0]?.score || 1;
