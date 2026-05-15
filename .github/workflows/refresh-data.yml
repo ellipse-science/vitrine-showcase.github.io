@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
           persist-credentials: false
@@ -44,7 +44,7 @@ jobs:
           use-public-rspm: true
 
       - name: Cache R packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.R_LIBS_USER }}
           key: r-${{ runner.os }}-v1
