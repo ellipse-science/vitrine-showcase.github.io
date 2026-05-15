@@ -511,7 +511,30 @@
     margin-bottom: 0;
   }
   .hero-main .une-main {
-    padding: 28px 0;
+    padding: 24px 0 20px;
+  }
+  .une-main-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .une-main-head .une-enjeu,
+  .une-main-head .saillance-tag {
+    margin-bottom: 0;
+  }
+  .une-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 40%);
+    gap: 18px 34px;
+    align-items: start;
+  }
+  .une-main-grid.no-art {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .une-main-copy {
+    min-width: 0;
   }
 
   /* Unes secondaires — 2 colonnes côte-à-côte (Figma: "hero-secondaries") */
@@ -540,17 +563,34 @@
 
   /* Figure inline dans la une principale (style NYT : titre → image → métadonnées) */
   .hero-figure-inline {
-    margin: 22px 0 20px;
+    margin: 4px 0 0;
     width: 100%;
   }
   .hero-figure-inline .figure-frame {
-    height: 280px;
+    height: 265px;
     min-height: unset;
-    border-top: none;
+    border-top: 0.5px solid var(--rule);
   }
   .hero-figure-inline img.editorial-img {
-    height: 280px;
+    height: 265px;
+    object-position: center 34%;
   }
+  .hero-figure-inline figcaption {
+    margin-top: 8px;
+    gap: 10px;
+  }
+
+  @media (max-width: 1080px) {
+    .une-main-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 36%);
+      gap: 14px 24px;
+    }
+    .hero-figure-inline .figure-frame,
+    .hero-figure-inline img.editorial-img {
+      height: 236px;
+    }
+  }
+
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
   .une-enjeu {
     display: inline-block;
@@ -656,8 +696,9 @@
     font-size: 72px;
     line-height: 1.0;
     letter-spacing: -1.2px;
-    margin: 0 0 18px;
-    text-align: center;
+    margin: 0 0 14px;
+    text-align: left;
+    text-wrap: balance;
   }
   .une-main .dek {
     font-family: 'Source Serif 4', Georgia, serif;
@@ -678,6 +719,9 @@
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--cordovan);
+  }
+  .une-main .saillance-row {
+    margin-bottom: 8px;
   }
   .saillance-dots { display: inline-flex; gap: 4px; align-items: center; flex-shrink: 0; }
   .saillance-dots .d { width: 7px; height: 7px; border-radius: 50%; background: var(--cordovan); display: inline-block; }
@@ -1754,6 +1798,10 @@
     /* ── Figure inline dans une-main ── */
     .hero-figure-inline .figure-frame { height: 200px; }
     .hero-figure-inline img.editorial-img { height: 200px; }
+    .hero-figure-inline figcaption {
+      margin-top: 8px;
+      gap: 8px;
+    }
 
     /* ── Sub-nav ── */
     .sub-nav {
@@ -1789,6 +1837,15 @@
     }
     .hero-main .une-main {
       padding: 18px 0 20px;
+    }
+    .une-main-head {
+      gap: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .une-main-grid,
+    .une-main-grid.no-art {
+      grid-template-columns: 1fr;
+      gap: 14px;
     }
 
     /* ── Secondaires empilées sur mobile ── */
