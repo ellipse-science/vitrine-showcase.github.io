@@ -1692,7 +1692,7 @@
   .une-main h1[data-saillance="2"] { font-size: 44px; letter-spacing: -0.4px; }
   .une-main h1[data-saillance="1"] { font-size: 38px; letter-spacing: -0.2px; }
 
-  /* Légende prototype (annotations pour Hugo) */
+  /* Légende prototype */
   .legend-box {
     margin-top: 50px;
     border: 0.5px solid var(--rule);
