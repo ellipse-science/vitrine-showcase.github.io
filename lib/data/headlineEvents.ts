@@ -29,7 +29,7 @@ type RawEvent = {
   score_saillance: number | null;
   score_qc: number | null;
   extracted_objects: string | null;
-  media_ids: string; // JSON string e.g. '["LED","LAP"]'
+  media_ids: string;
   outlets_qc: number | null;
   total_outlets_qc: number | null;
   intensity_tier: string | null;
@@ -38,8 +38,8 @@ type RawEvent = {
   main_issue_text_fr: string | null;
   target_region: string | null;
   interval_convergence_score: number | null;
-  top_objects_divergence: string | null; // JSON string or "NA"
-  articles: string | null; // JSON array of {title, url, media_id, ...}
+  top_objects_divergence: string | null;
+  articles: string | null;
 };
 
 type DivergenceEntry = {
@@ -51,8 +51,6 @@ type DivergenceEntry = {
 };
 
 type ExtractedObject = { object: string; score: number };
-
-// ── Issue metadata ──────────────────────────────────────────────────────────
 
 const ISSUE_COLORS: Record<string, string> = {
   economy_and_labour: "#742630",
@@ -99,15 +97,8 @@ const MEDIA_NAMES: Record<string, string> = {
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
 
-// ── Date helpers ────────────────────────────────────────────────────────────
-
-const DAYS_FR = [
-  "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi",
-];
-const MONTHS_FR = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
+const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 function formatDateFr(dateStr: string): string {
   const parts = dateStr.split("-").map(Number);
@@ -117,8 +108,6 @@ function formatDateFr(dateStr: string): string {
   const d = new Date(year, month - 1, day);
   return `${DAYS_FR[d.getDay()]} ${day} ${MONTHS_FR[month - 1]} ${year}`;
 }
-
-// ── Tier helper (source de vérité: intensity_tier de la table) ───────────────
 
 function tierToLabelCls(tier: string | null): { label: string; cls: string } {
   switch (tier) {
@@ -130,27 +119,25 @@ function tierToLabelCls(tier: string | null): { label: string; cls: string } {
   }
 }
 
-// ── Exported types ──────────────────────────────────────────────────────────
-
 export type UneEvent = {
   title: string;
   issueFr: string;
   issueColor: string;
-  saillanceFilled: number; // = outlets_qc (1–6), drives dots + data-saillance
-  saillanceLabel: string; // = intensity_tier label from table
-  saillanceCls: string;   // CSS class derived from intensity_tier
+  saillanceFilled: number;
+  saillanceLabel: string;
+  saillanceCls: string;
   timeMtl: string;
-  representativeUrl: string | null; // URL de l'article représentatif
-  mediaPresent: { name: string; url: string | null }[]; // nom + URL par média
-  mediaAbsent: string[]; // readable names from QC_MEDIA that are absent
-  qcOutletCount: number;  // = outlets_qc from table
-  totalQcOutlets: number; // = total_outlets_qc from table
+  representativeUrl: string | null;
+  mediaPresent: { name: string; url: string | null }[];
+  mediaAbsent: string[];
+  qcOutletCount: number;
+  totalQcOutlets: number;
 };
 
 export type SolitudeStory = {
   label: string;
-  qcWidth: number; // 0–100
-  caWidth: number; // 0–100
+  qcWidth: number;
+  caWidth: number;
   qcZero: boolean;
   caZero: boolean;
 };
@@ -166,14 +153,14 @@ export type TreemapIssueTile = {
   issueKey: string;
   issueFr: string;
   color: string;
-  score: number;      // raw from issues_score_*.json
-  relScore: number;   // 0–100 relative to max tile
-  topObject: string;  // top extracted object name, or ""
-  context: string;    // event title snippet, or ""
+  score: number;
+  relScore: number;
+  topObject: string;
+  context: string;
 };
 
 export type TreemapPeriodData = {
-  tiles: TreemapIssueTile[]; // 12 issues, sorted by score desc
+  tiles: TreemapIssueTile[];
   dateLabel: string;
 };
 
@@ -191,14 +178,12 @@ export type HeadlineData = {
   solitudesRocPos: number;
   solitudesDivPct: number;
   solitudesStories: SolitudeStory[];
-  treemapTier1: TreemapTile[]; // 4 tiles
-  treemapTier2: TreemapTile[]; // 5 tiles
-  treemapTier3: TreemapTile[]; // 5 tiles
-  treemapTier4: TreemapTile[]; // 4 tiles (no context shown)
-  treemapMobile: (TreemapTile & { relWidth: number })[]; // all, sorted
+  treemapTier1: TreemapTile[];
+  treemapTier2: TreemapTile[];
+  treemapTier3: TreemapTile[];
+  treemapTier4: TreemapTile[];
+  treemapMobile: (TreemapTile & { relWidth: number })[];
 };
-
-// ── Core loader ─────────────────────────────────────────────────────────────
 
 export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   let raw: string;
@@ -210,7 +195,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   const all = JSON.parse(raw) as RawEvent[];
 
-  // Deduplicate by event_id, keep QC target_region when available
   const byId = new Map<string, RawEvent>();
   for (const e of all) {
     const existing = byId.get(e.event_id);
@@ -218,13 +202,10 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       byId.set(e.event_id, e);
     }
   }
-  const unique = Array.from(byId.values()).filter(
-    (e) => e.country_id !== "USA",
-  );
+  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
 
   if (unique.length === 0) return null;
 
-  // Find most recent time block
   const sorted = unique.slice().sort((a, b) => {
     const dA = `${a.date_utc}T${a.time_interval_utc.split("-")[0]}:00Z`;
     const dB = `${b.date_utc}T${b.time_interval_utc.split("-")[0]}:00Z`;
@@ -233,24 +214,17 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const latestDate = sorted[0].date_utc;
   const latestInterval = sorted[0].time_interval_utc;
   const latest = sorted.filter(
-    (e) =>
-      e.date_utc === latestDate && e.time_interval_utc === latestInterval,
+    (e) => e.date_utc === latestDate && e.time_interval_utc === latestInterval,
   );
 
-  const dateLabel = formatDateFr(
-    sorted[0].date_montreal_tz ?? sorted[0].date_utc,
-  );
-  const snapshotInterval =
-    sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
-
-  // ── Top 3 for Une des unes ────────────────────────────────────────────────
+  const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
+  const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
 
   const withTitles = latest
     .filter((e) => e.title)
-    .sort(
-      (a, b) =>
-        (b.score_qc ?? 0) - (a.score_qc ?? 0) ||
-        (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
+    .sort((a, b) =>
+      (b.score_qc ?? 0) - (a.score_qc ?? 0) ||
+      (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
     );
 
   const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
@@ -258,12 +232,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const qcOutletCount = e.outlets_qc ?? 0;
     const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
-    try {
-      mediaIds = JSON.parse(e.media_ids) as string[];
-    } catch {
-      // ignore
-    }
-    // Parse articles pour obtenir url par media_id (premier article par média)
+    try { mediaIds = JSON.parse(e.media_ids) as string[]; } catch { }
     type RawArticle = { media_id: string; url: string };
     const mediaIdToUrl: Record<string, string> = {};
     try {
@@ -273,9 +242,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
           mediaIdToUrl[art.media_id] = art.url;
         }
       }
-    } catch {
-      // ignore
-    }
+    } catch { }
     // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
     const mediaPresent = mediaIds
       .filter((id) => QC_MEDIA.includes(id))
@@ -283,13 +250,9 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
-
     return {
       title: e.title ?? "",
-      issueFr:
-        e.main_issue_text_fr ??
-        ISSUE_LABELS_SHORT[e.main_issue ?? ""] ??
-        "Actualité",
+      issueFr: e.main_issue_text_fr ?? ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? "Actualité",
       issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
       saillanceFilled: Math.min(6, Math.max(1, qcOutletCount)),
       saillanceLabel,
@@ -303,9 +266,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     };
   });
 
-  // ── Deux solitudes ────────────────────────────────────────────────────────
-
-  // Use Lambda-computed cosine similarity when available; fall back to proxy.
   const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
   const rawConvergence = qcRow?.interval_convergence_score ?? null;
   const rawDivergenceJson =
@@ -315,42 +275,29 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   let divergenceEntries: DivergenceEntry[] = [];
   if (rawDivergenceJson) {
-    try {
-      divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[];
-    } catch {
-      // ignore
-    }
+    try { divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[]; } catch { }
   }
 
-  // divPct: 100 - cosine similarity (real) or proxy if unavailable
   let divPct: number;
   if (rawConvergence !== null) {
     divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
   } else {
     const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const totalSaillance = eventsWithScore.reduce(
-      (sum, e) => sum + (e.score_saillance ?? 0),
-      0,
-    );
+    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_saillance ?? 0), 0);
     const totalExclusivity = eventsWithScore.reduce((sum, e) => {
       const s = e.score_saillance ?? 0;
       const q = e.score_qc ?? 0;
       const ratio = s > 0 ? q / s : 0;
       return sum + s * Math.abs(ratio - 0.5) * 2;
     }, 0);
-    divPct =
-      totalSaillance > 0
-        ? Math.round((totalExclusivity / totalSaillance) * 100)
-        : 0;
+    divPct = totalSaillance > 0 ? Math.round((totalExclusivity / totalSaillance) * 100) : 0;
   }
 
-  // Build stories from top_objects_divergence (real) or proxy top-3
-  const maxScoreForBars =
-    Math.max(
-      ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
-      ...latest.map((e) => e.score_saillance ?? 0),
-      1,
-    );
+  const maxScoreForBars = Math.max(
+    ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
+    ...latest.map((e) => e.score_saillance ?? 0),
+    1,
+  );
 
   let solitudesStories: SolitudeStory[];
   if (divergenceEntries.length > 0) {
@@ -362,28 +309,17 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         dedupedByLabel.set(d.event_label, d);
       }
     }
-    // Retrier par divergence_score décroissant après dédup
     const uniqueEntries = Array.from(dedupedByLabel.values())
       .sort((a, b) => b.divergence_score - a.divergence_score);
-
     solitudesStories = uniqueEntries.slice(0, 5).map((d) => {
-      // Label court = event_label capitalisé (ex: "alberta" → "Alberta")
-      // comme dans la maquette Figma ("Déficit Girard", "Alberta", etc.)
       const label = d.event_label.length > 0
         ? d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1)
         : d.event_title_raw;
       const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
       const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
-      return {
-        label,
-        qcWidth: Math.min(100, qcW),
-        caWidth: Math.min(100, caW),
-        qcZero: qcW <= 2,
-        caZero: caW <= 2,
-      };
+      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
     });
   } else {
-    // Proxy fallback: pick top-3 events by |qcRatio - 0.5|
     const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
     const ranked = eventsWithScore
       .filter((e) => e.title)
@@ -398,124 +334,58 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       const s = e.score_saillance ?? 0;
       const qcW = Math.round((q / maxScoreForBars) * 100);
       const caW = Math.round(((s - q) / maxScoreForBars) * 100);
-      return {
-        label: e.title ?? "",
-        qcWidth: Math.min(100, qcW),
-        caWidth: Math.min(100, caW),
-        qcZero: qcW <= 2,
-        caZero: caW <= 2,
-      };
+      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
     });
   }
 
-  // Symbol positions: spread based on divergence
   const spread = Math.round(divPct * 0.4);
   const solitudesQcPos = Math.max(5, 20 - spread);
   const solitudesRocPos = Math.min(95, 80 + spread);
 
-  // ── Treemap objects ───────────────────────────────────────────────────────
-
-  // Aggregate all extracted_objects across events, weighted by score_qc
-  const objMap = new Map<
-    string,
-    { score: number; issue: string; color: string; context: string }
-  >();
-
+  const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
     if (!e.extracted_objects) continue;
     let objects: ExtractedObject[] = [];
-    try {
-      objects = JSON.parse(e.extracted_objects) as ExtractedObject[];
-    } catch {
-      continue;
-    }
+    try { objects = JSON.parse(e.extracted_objects) as ExtractedObject[]; } catch { continue; }
     const eventWeight = e.score_qc ?? e.score_saillance ?? 0;
     const issueColor = ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E";
     const context = e.title ?? "";
-
-    // Top 8 objects per event to avoid dilution
     for (const obj of objects.slice(0, 8)) {
       const name = obj.object.trim();
       if (!name || name.length < 3) continue;
       const weighted = obj.score * eventWeight;
       const existing = objMap.get(name);
       if (!existing || weighted > existing.score) {
-        objMap.set(name, {
-          score: existing ? existing.score + weighted : weighted,
-          issue: existing?.issue ?? e.main_issue ?? "",
-          color: issueColor,
-          context: context.length > 0 ? context : existing?.context ?? "",
-        });
-      } else {
-        existing.score += weighted;
-      }
+        objMap.set(name, { score: existing ? existing.score + weighted : weighted, issue: existing?.issue ?? e.main_issue ?? "", color: issueColor, context: context.length > 0 ? context : existing?.context ?? "" });
+      } else { existing.score += weighted; }
     }
   }
 
   const allObjects = Array.from(objMap.entries())
-    .map(([name, data]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      enjeu: ISSUE_LABELS_SHORT[data.issue] ?? "Actualité",
-      color: data.color,
-      context: data.context,
-      score: data.score,
-    }))
+    .map(([name, data]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), enjeu: ISSUE_LABELS_SHORT[data.issue] ?? "Actualité", color: data.color, context: data.context, score: data.score }))
     .sort((a, b) => b.score - a.score);
 
-  // Truncate context to ~50 chars for tile display
-  const withTruncContext = allObjects.map((o) => ({
-    ...o,
-    context:
-      o.context.length > 55 ? o.context.slice(0, 52) + "…" : o.context,
-  }));
+  const withTruncContext = allObjects;
 
   const tier1 = withTruncContext.slice(0, 4);
   const tier2 = withTruncContext.slice(4, 9);
   const tier3 = withTruncContext.slice(9, 14);
   const tier4 = withTruncContext.slice(14, 18);
-
   const topScore = allObjects[0]?.score ?? 1;
-  const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({
-    ...o,
-    relWidth: Math.round((o.score / topScore) * 100),
-  }));
+  const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return {
-    dateLabel,
-    snapshotInterval,
-    top3,
-    solitudesQcPos,
-    solitudesRocPos,
-    solitudesDivPct: divPct,
-    solitudesStories,
-    treemapTier1: tier1,
-    treemapTier2: tier2,
-    treemapTier3: tier3,
-    treemapTier4: tier4,
-    treemapMobile,
-  };
+  return { dateLabel, snapshotInterval, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 }
-
-// ── Treemap by issue loader ──────────────────────────────────────────────────
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
 const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
 
 async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<Record<string, unknown>> | null> {
-  const filePath = path.resolve(
-    process.cwd(),
-    "public",
-    "data",
-    "refined",
-    period,
-    `issues_score_${period}.json`,
-  );
+  const filePath = path.resolve(process.cwd(), "public", "data", "refined", period, `issues_score_${period}.json`);
   try {
     const raw = await fs.readFile(filePath, "utf8");
     return JSON.parse(raw) as Array<Record<string, unknown>>;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
@@ -528,30 +398,18 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
   })[0] ?? null;
 }
 
-// issues_meta shape produced by radar-issues-score
 type IssueMetaEntry = { label: string; obj: string };
 type IssuesMeta = Record<string, IssueMetaEntry>;
 
 function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   if (!raw || typeof raw !== "string" || raw === "{}") return null;
-  try {
-    return JSON.parse(raw) as IssuesMeta;
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
-// Fallback: cross-reference headline-events.json for per-issue content
-// Used while issues_meta is not yet populated in issues_score JSONs.
 async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string }>> {
   const map = new Map<string, { topObject: string; context: string }>();
   let rawEvents: string;
-  try {
-    rawEvents = await fs.readFile(DATA_PATH, "utf8");
-  } catch {
-    return map;
-  }
-
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
   const byId = new Map<string, RawEvent>();
   for (const e of allRaw) {
@@ -559,14 +417,11 @@ async function loadFallbackIssueContent(): Promise<Map<string, { topObject: stri
     if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
   }
   const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
-
   const byIssue = new Map<string, RawEvent>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
     const existing = byIssue.get(key);
-    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) {
-      byIssue.set(key, e);
-    }
+    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) byIssue.set(key, e);
   }
   for (const [issueKey, e] of byIssue) {
     let topObject = "";
@@ -576,13 +431,11 @@ async function loadFallbackIssueContent(): Promise<Map<string, { topObject: stri
         const raw = objs[0]?.object?.trim() ?? "";
         if (raw.length >= 2) {
           const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
-          topObject = capped.length > 22 ? capped.slice(0, 20) + "…" : capped;
+          topObject = capped;
         }
-      } catch { /* ignore */ }
+      } catch { }
     }
-    const title = e.title ?? "";
-    const context = title.length > 55 ? title.slice(0, 52) + "…" : title;
-    map.set(issueKey, { topObject, context });
+    map.set(issueKey, { topObject, context: e.title ?? "" });
   }
   return map;
 }
@@ -599,57 +452,27 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     if (!rows) return null;
     const latest = latestIssueRow(rows);
     if (!latest) return null;
-
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
-
-    // issues_meta: GPT-generated labels from radar-issues-score (preferred)
     const meta = parseIssuesMeta(latest.issues_meta);
-
-    const scored = ISSUE_KEYS.map((issueKey) => ({
-      issueKey,
-      score: (latest[issueKey] as number) ?? 0,
-    })).sort((a, b) => b.score - a.score);
-
+    const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: (latest[issueKey] as number) ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
-
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
-      // Prefer issues_meta from the refiner; fall back to headline-events cross-ref
-      let topObject = "";
-      let context = "";
+      let topObject = ""; let context = "";
       if (meta?.[issueKey]) {
         const obj = meta[issueKey].obj ?? "";
-        const label = meta[issueKey].label ?? "";
-        topObject = obj.length > 0
-          ? obj.charAt(0).toUpperCase() + obj.slice(1)
-          : "";
-        context = label;
+        topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
+        context = meta[issueKey].label ?? "";
       } else {
         const fb = fallbackContent.get(issueKey);
-        topObject = fb?.topObject ?? "";
-        context = fb?.context ?? "";
+        topObject = fb?.topObject ?? ""; context = fb?.context ?? "";
       }
-
-      return {
-        issueKey,
-        issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey,
-        color: ISSUE_COLORS[issueKey] ?? "#463E3E",
-        score,
-        relScore: Math.round((score / maxScore) * 100),
-        topObject,
-        context,
-      };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context };
     });
-
     return { tiles, dateLabel };
   }
 
   const day = buildPeriodData(dayRows);
   if (!day) return null;
-
-  return {
-    day,
-    week: buildPeriodData(weekRows) ?? day,
-    month: buildPeriodData(monthRows) ?? day,
-  };
+  return { day, week: buildPeriodData(weekRows) ?? day, month: buildPeriodData(monthRows) ?? day };
 }
