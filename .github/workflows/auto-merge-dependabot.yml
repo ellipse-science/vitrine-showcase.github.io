@@ -4,19 +4,19 @@ on:
   pull_request_target:
     types: [opened, reopened, synchronize]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   enable-automerge:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Enable auto-merge for Dependabot PR
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
-        
+        run: gh pr merge --auto --merge "${{ github.event.pull_request.html_url }}"
+
+
 
