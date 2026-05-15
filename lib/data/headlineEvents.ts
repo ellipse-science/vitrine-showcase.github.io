@@ -431,12 +431,11 @@ async function loadFallbackIssueContent(): Promise<Map<string, { topObject: stri
         const raw = objs[0]?.object?.trim() ?? "";
         if (raw.length >= 2) {
           const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
-          topObject = capped.length > 22 ? capped.slice(0, 20) + "…" : capped;
+          topObject = capped;
         }
       } catch { }
     }
-    const title = e.title ?? "";
-    map.set(issueKey, { topObject, context: title.length > 55 ? title.slice(0, 52) + "…" : title });
+    map.set(issueKey, { topObject, context: e.title ?? "" });
   }
   return map;
 }
