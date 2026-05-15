@@ -76,7 +76,7 @@ const ISSUE_LABELS_SHORT: Record<string, string> = {
   culture_and_nationalism: "Culture",
   education: "Éducation",
   international_affairs_and_defense: "Aff. internationales",
-  law_and_crime: "Droit et criminalité",
+  law_and_crime: "Loi et crime",
   public_lands_and_agriculture: "Terres publiques",
   immigration: "Immigration",
   technology: "Technologie",
@@ -405,6 +405,9 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
     const dA = (a.date_utc as string) ?? "";
     const dB = (b.date_utc as string) ?? "";
     if (dB !== dA) return dB.localeCompare(dA);
+    const tA = (a.tag as string) ?? "";
+    const tB = (b.tag as string) ?? "";
+    if (tB !== tA) return tB.localeCompare(tA);
     return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
   })[0] ?? null;
 }
@@ -466,7 +469,17 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
-    const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: (latest[issueKey] as number) ?? 0 })).sort((a, b) => b.score - a.score);
+
+    const latestTag = (latest.tag as string) ?? "";
+    const periodRows = latestTag
+      ? rows.filter((r) => (r.tag as string) === latestTag)
+      : [latest];
+    const aggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = periodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+      return acc;
+    }, {});
+
+    const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
       let topObject = ""; let context = "";
