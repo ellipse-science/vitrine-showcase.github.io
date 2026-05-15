@@ -2,7 +2,7 @@
 
 A media-focused data showcase by [CLESSN](https://clessn.com/) (Université Laval). Tracks Quebec political coverage and parliamentary discourse, refreshed every four hours from AWS Athena.
 
-**Live:** https://vitrine-showcase.github.io/
+**Live:** https://ellipse.science/vitrine-showcase.github.io/
 
 ## Stack
 

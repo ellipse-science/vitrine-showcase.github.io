@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 # Cancel in-progress runs for the same PR when a new commit lands
 concurrency:
   group: ci-${{ github.ref }}
