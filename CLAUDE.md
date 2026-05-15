@@ -14,7 +14,7 @@ This site sits at the end of a pipeline spanning three repositories. When someth
 
 | Repo | GitHub org/URL | Purpose | Local clone path (typical) |
 |------|---------------|---------|---------------------------|
-| `vitrine-showcase.github.io` | [vitrine-showcase/vitrine-showcase.github.io](https://github.com/vitrine-showcase/vitrine-showcase.github.io) | **This repo.** Next.js static site + data fetch scripts. | `~/Dropbox/travail/CLESSN/Projets/vitrine-showcase.github.io/` |
+| `vitrine-showcase.github.io` | [ellipse-science/vitrine-showcase.github.io](https://github.com/ellipse-science/vitrine-showcase.github.io) | **This repo.** Next.js static site + data fetch scripts. | `~/Dropbox/travail/CLESSN/Projets/vitrine-showcase.github.io/` |
 | `aws-refiners` | [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners) | R Lambda functions that compute scores, aggregations, issue metadata, etc. Each refiner is a subdirectory under `refiners/`. | `~/Documents/aws-refiners/` |
 | `aws-infra` | [ellipse-science/aws-infra](https://github.com/ellipse-science/aws-infra) | AWS CDK infrastructure: EventBridge schedules, Lambda definitions, Athena databases, S3 buckets. Refiners are wired up in `lib/data-stacks/refiners/refiners.ts`. | `~/Documents/aws-infra/` |
 
@@ -129,7 +129,7 @@ npm run build   # next build → out/, then scripts/postbuild.mjs copies /presen
 
 - **Push to `main`** triggers `.github/workflows/deploy.yml` → publishes `out/` to GitHub Pages
 - **Pull requests** trigger `.github/workflows/ci.yml` → type-check + build, no deploy
-- Site at `https://vitrine-showcase.github.io/`
+- Site at `https://ellipse.science/vitrine-showcase.github.io/`
 - **No AWS credentials, no S3, no CloudFront** — zero cost
 - Cloudflare Pages migration is a separate, deferred decision (see [`docs/cloudflare-pages-migration.md`](./docs/cloudflare-pages-migration.md))
 

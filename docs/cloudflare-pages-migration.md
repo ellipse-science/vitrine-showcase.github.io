@@ -38,7 +38,7 @@ The data pipeline — cron-job.org webhook → GitHub Actions → R script → A
 ## Setup steps
 
 1. Cloudflare dashboard → **Workers & Pages → Create application → Pages → Connect to Git**.
-2. Authorize the Cloudflare GitHub App and pick the `vitrine-showcase/vitrine-showcase.github.io` repo.
+2. Authorize the Cloudflare GitHub App and pick the `ellipse-science/vitrine-showcase.github.io` repo.
 3. Configure build:
    - Production branch: `main`
    - Build command: `npm run build`
