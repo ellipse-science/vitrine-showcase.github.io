@@ -1,3 +1,4 @@
+import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 
 function SaillanceDots({ filled }: { filled: number }) {
@@ -56,14 +57,15 @@ function MainUne({ event }: { event: UneEvent }) {
         <SaillanceDots filled={event.saillanceFilled} />
         <span className="time">{event.timeMtl}h en manchette</span>
       </div>
+      {/* Hero principal : présent seulement, pas d'absent (Shannon: "Conserver logique présent/absent") */}
       <Byline mediaPresent={event.mediaPresent} mediaAbsent={[]} />
     </div>
   );
 }
 
-function SideUne({ event, side }: { event: UneEvent; side: "left" | "right" }) {
+function SideUne({ event }: { event: UneEvent }) {
   return (
-    <div className={`une-side une-side-${side}`}>
+    <div className="une-side">
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
         {event.issueFr}
       </span>
@@ -80,10 +82,8 @@ function SideUne({ event, side }: { event: UneEvent; side: "left" | "right" }) {
         <SaillanceDots filled={event.saillanceFilled} />
         <span className="time">{event.timeMtl}h en manchette</span>
       </div>
-      <Byline
-        mediaPresent={event.mediaPresent}
-        mediaAbsent={side === "right" ? event.mediaAbsent : []}
-      />
+      {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
+      <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
     </div>
   );
 }
@@ -122,7 +122,7 @@ function DeuxSolitudes({
         <span className="stat-label">de divergence aujourd&apos;hui</span>
       </div>
       <p className="sol-explain">
-        Les nouvelles dont la couverture diffère le plus entre les médias québécois et canadiens.
+        Les trois nouvelles dont la couverture diffère le plus entre les médias québécois et canadiens.
       </p>
       <div className="sol-stories">
         <div className="sol-stories-header">
@@ -149,8 +149,6 @@ function DeuxSolitudes({
   );
 }
 
-import React from "react";
-
 export async function UneDesUnesSection() {
   const data = await loadHeadlineEvents();
   if (!data || data.top3.length === 0) return null;
@@ -164,11 +162,18 @@ export async function UneDesUnesSection() {
         <span className="section-date">{data.dateLabel}</span>
       </div>
 
-      <section className="hero-trio">
+      {/* Hero principal — pleine largeur (Figma: "hero") */}
+      <section className="hero-main">
         {main && <MainUne event={main} />}
-        {sideLeft && <SideUne event={sideLeft} side="left" />}
-        {sideRight && <SideUne event={sideRight} side="right" />}
       </section>
+
+      {/* Secondaires — 2 colonnes côte-à-côte en dessous (Figma: "hero-secondaries") */}
+      {(sideLeft || sideRight) && (
+        <section className="hero-secondaries">
+          {sideLeft && <SideUne event={sideLeft} />}
+          {sideRight && <SideUne event={sideRight} />}
+        </section>
+      )}
 
       <DeuxSolitudes
         qcPos={data.solitudesQcPos}
