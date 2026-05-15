@@ -73,7 +73,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
         </div>
         <div className="tm-row tm-row-3" style={{ gridTemplateColumns: toFr(row3) }}>
           {row3.map((tile) => (
-            <IssueTile key={tile.issueKey} tile={tile} showContext={false} />
+            <IssueTile key={tile.issueKey} tile={tile} showContext={true} />
           ))}
         </div>
       </div>
