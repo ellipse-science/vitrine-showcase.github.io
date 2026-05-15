@@ -4,6 +4,13 @@ import path from "node:path";
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 
+function headlineTimeLabel(event: UneEvent): string {
+  if (event.headlineHours && event.headlineHours > 0) {
+    return `${event.headlineHours} h en manchette`;
+  }
+  return `${event.timeMtl} h en manchette`;
+}
+
 function SaillanceDots({ filled }: { filled: number }) {
   return (
     <span className="saillance-dots">
@@ -44,37 +51,48 @@ function Byline({ mediaPresent, mediaAbsent }: {
 function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?: string }) {
   return (
     <div className="une-main">
-      <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-        {event.issueFr}
-      </span>
-      <span className={`saillance-tag ${event.saillanceCls}`}>
-        {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
-      </span>
-      <h1 data-saillance={event.saillanceFilled}>
-        {event.representativeUrl ? (
-          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-        ) : event.title}
-      </h1>
-      {generatedArtUrl && (
-        <figure className="hero-figure-inline">
-          <div className="figure-frame">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={generatedArtUrl}
-              alt={event.title}
-              className="editorial-img"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          </div>
-        </figure>
-      )}
-      <div className="saillance-row">
-        <span className="region-label">Québec</span>
-        <SaillanceDots filled={event.saillanceFilled} />
-        <span className="time">{event.timeMtl}h en manchette</span>
+      <div className="une-main-head">
+        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+          {event.issueFr}
+        </span>
+        <span className={`saillance-tag ${event.saillanceCls}`}>
+          {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
+        </span>
       </div>
-      {/* Hero principal : présent seulement, pas d'absent (Shannon: "Conserver logique présent/absent") */}
-      <Byline mediaPresent={event.mediaPresent} mediaAbsent={[]} />
+
+      <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
+        <div className="une-main-copy">
+          <h1 data-saillance={event.saillanceFilled}>
+            {event.representativeUrl ? (
+              <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
+            ) : event.title}
+          </h1>
+          <div className="saillance-row">
+            <span className="region-label">Québec</span>
+            <SaillanceDots filled={event.saillanceFilled} />
+            <span className="time">{headlineTimeLabel(event)}</span>
+          </div>
+          <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
+        </div>
+
+        {generatedArtUrl && (
+          <figure className="hero-figure hero-figure-inline">
+            <div className="figure-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={generatedArtUrl}
+                alt={event.title}
+                className="editorial-img"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+            <figcaption>
+              <span className="cap-tag">Illustration</span>
+              <span className="cap-body">Synthèse visuelle des images des unes analysées.</span>
+            </figcaption>
+          </figure>
+        )}
+      </div>
     </div>
   );
 }
@@ -96,7 +114,7 @@ function SideUne({ event }: { event: UneEvent }) {
       <div className="saillance-row">
         <span className="region-label">Québec</span>
         <SaillanceDots filled={event.saillanceFilled} />
-        <span className="time">{event.timeMtl}h en manchette</span>
+        <span className="time">{headlineTimeLabel(event)}</span>
       </div>
       {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
       <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />

@@ -127,6 +127,7 @@ export type UneEvent = {
   saillanceLabel: string;
   saillanceCls: string;
   timeMtl: string;
+  headlineHours: number | null;
   representativeUrl: string | null;
   mediaPresent: { name: string; url: string | null }[];
   mediaAbsent: string[];
@@ -233,16 +234,25 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
     try { mediaIds = JSON.parse(e.media_ids) as string[]; } catch { }
-    type RawArticle = { media_id: string; url: string };
+    type RawArticle = { media_id: string; url: string; headline_minutes?: number | null };
     const mediaIdToUrl: Record<string, string> = {};
+    let totalHeadlineMinutes = 0;
     try {
       const arts = JSON.parse(e.articles ?? "[]") as RawArticle[];
       for (const art of arts) {
         if (art.media_id && art.url && !mediaIdToUrl[art.media_id]) {
           mediaIdToUrl[art.media_id] = art.url;
         }
+        const mins = Number(art.headline_minutes ?? 0);
+        if (Number.isFinite(mins) && mins > 0) {
+          totalHeadlineMinutes += mins;
+        }
       }
     } catch { }
+    const headlineHours =
+      totalHeadlineMinutes > 0
+        ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
+        : null;
     // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
     const mediaPresent = mediaIds
       .filter((id) => QC_MEDIA.includes(id))
@@ -258,6 +268,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       saillanceLabel,
       saillanceCls,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
+      headlineHours,
       representativeUrl: e.representative_url ?? null,
       mediaPresent,
       mediaAbsent,
