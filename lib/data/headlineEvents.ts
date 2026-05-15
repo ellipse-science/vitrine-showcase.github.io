@@ -78,7 +78,7 @@ const ISSUE_LABELS_SHORT: Record<string, string> = {
   culture_and_nationalism: "Culture",
   education: "Éducation",
   international_affairs_and_defense: "Aff. internationales",
-  law_and_crime: "Droit et criminalité",
+  law_and_crime: "Loi et crime",
   public_lands_and_agriculture: "Terres publiques",
   immigration: "Immigration",
   technology: "Technologie",
