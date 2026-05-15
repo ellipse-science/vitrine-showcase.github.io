@@ -297,9 +297,5 @@ The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live
 
 ## Context references
 
-- [`design_language.md`](./design_language.md) — design language specification
-- [`llm_context/vision_design_maquette.md`](./llm_context/vision_design_maquette.md) — visual design principles
-- [`llm_context/architecture_narrative_accueil.md`](./llm_context/architecture_narrative_accueil.md) — homepage narrative flow
-- [`llm_context/architecture_donnees_raffineurs.md`](./llm_context/architecture_donnees_raffineurs.md) — data pipeline overview (historical)
-- [`llm_context/best_practices_ui_ux.md`](./llm_context/best_practices_ui_ux.md) — UI/UX guidelines
-- [`docs/cloudflare-pages-migration.md`](./docs/cloudflare-pages-migration.md) — deferred plan to migrate from GitHub Pages to Cloudflare Pages
+- [`design_language.md`](./design_language.md) — palette, typographie, composants, règles visuelles (esthétique journal imprimé)
+- [`docs/cloudflare-pages-migration.md`](./docs/cloudflare-pages-migration.md) — plan différé de migration de GitHub Pages vers Cloudflare Pages

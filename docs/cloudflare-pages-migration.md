@@ -41,11 +41,11 @@ The data pipeline — cron-job.org webhook → GitHub Actions → R script → A
 2. Authorize the Cloudflare GitHub App and pick the `vitrine-showcase/vitrine-showcase.github.io` repo.
 3. Configure build:
    - Production branch: `main`
-   - Build command: `yarn build`
-   - Build output directory: `build`
+   - Build command: `npm run build`
+   - Build output directory: `out`
    - Root directory: `/` (default)
    - Environment variables:
-     - `NODE_VERSION=20` (matches what `deploy.yml` uses; CRA needs `--openssl-legacy-provider` which only the package script sets, no extra env var needed)
+     - `NODE_VERSION=20` (matches what `deploy.yml` uses)
 4. Click **Save and Deploy**. First build runs immediately. Cloudflare emits a `*.pages.dev` URL.
 5. (Optional) Settings → Custom domains → add the domain we picked above. Cloudflare walks you through DNS records.
 
@@ -88,9 +88,9 @@ Headroom is comfortable. If we ever blow through it, Pages Pro is $20/month for 
 
 1. **Add Cloudflare Pages alongside GitHub Pages.** Run both for at least a week. Same source, two deploy targets, two URLs.
 2. Smoke-test the `*.pages.dev` URL:
-   - All sections render (partis, treemap, assemblée, parole en chambre, etc.)
-   - Live data loads (the partis-couverture.js fetch hits `/data/refined/day/*.json`)
-   - Timeline tabs work
+   - All sections render (partis-couverture, treemap, assemblée, etc.)
+   - Data-bound sections show current data (all data is baked in at build time — no client-side fetches to `/data/`)
+   - Period tabs work (Aujourd'hui / Cette semaine / Ce mois)
    - Mobile breakpoints render correctly
 3. Verify Cloudflare cache headers on a few assets:
    - `curl -I https://vitrine-showcase.pages.dev/` (expect `cf-cache-status: HIT` after warm-up)
@@ -130,7 +130,7 @@ No data is at risk because both targets are read-only consumers of the same repo
 
 ## Out of scope here (but worth doing later)
 
-- **Trim the JSON payloads.** The single biggest scalability lever is independent of host: `headline_of_headlines.json` at 20 MB is excessive for a homepage. Slice it server-side in `fetch_data.R` to only the columns and rows the maquette actually shows. Goal: total assets per page load under 500 KB. This is more important than which CDN serves it.
+- **Trim the JSON payloads.** The single biggest scalability lever is independent of host. Slice large JSON files in `fetch_data.R` to only the columns and rows the site actually displays. Goal: total assets per page load under 500 KB. This is more important than which CDN serves it.
 - **Verify gzip / brotli is on.** Cloudflare Pages serves brotli automatically for text content — confirm with `curl -I -H 'Accept-Encoding: br' https://vitrine-showcase.pages.dev/data/refined/day/provincial_parties_score_day.json` and look for `content-encoding: br`.
 - **Set explicit cache headers** for `/data/` assets if we want a tighter or looser refresh rhythm than Cloudflare's defaults. Done via a `_headers` file in `public/`.
 

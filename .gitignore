@@ -30,3 +30,9 @@ npm-debug.log*
 *.swp
 *.swo
 .venv
+
+# Local build artifacts and tooling
+/build/
+/next-site/
+/.claude/
+yarn.lock

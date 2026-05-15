@@ -1,203 +1,190 @@
-# Design Language — vitrine-maquette
+# Design Language — La Vitrine démocratique
 
-This document is the contract for anyone building a module on this site. Module authors work independently and submit their work via pull request. Reviewers use this document as a checklist. Anything that violates a rule here should be flagged in the PR before merge.
-
-The site has three sections: **Citoyens**, **Décideurs**, and **Médias**. Each section contains independent modules. All modules must feel like they came from the same design system regardless of who built them.
+L'esthétique du site s'inspire du **journal imprimé classique** : papier jauni, encre sèche, règles fines, typographie editoriale rigoureuse. Chaque décision de design renforce cette métaphore — c'est une manchette, pas un dashboard.
 
 ---
 
-## 1. Color
+## 1. Palette de couleurs
 
-### Base palette — shared across all sections
+Toutes les couleurs sont définies comme CSS custom properties dans `:root` dans `app/globals.css`. Ne pas introduire de nouvelles valeurs hexadécimales en dehors de ce bloc.
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `$black` | `#000000` | Primary text, borders, default backgrounds |
-| `$white` | `#ffffff` | Page background, inverted text |
-| `$beige` | `#f5f5f0` | Secondary backgrounds, subtle fills |
-| `$grey` | `#7a7a7a` | Muted text, metadata |
-| `$grey-light` | `#f0f0f0` | Dividers, disabled fills |
-| `$red` | `#ff2b06` | Errors, alerts |
-| `$red-dark` | `#b11b00` | Error button state |
-| `$green` | `#24b03e` | Success states |
+### Couleurs de surface
 
-### Accent palette — section identity colors
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `--paper` | `#F3ECDD` | Fond de page principal — papier journal ivoire |
+| `--paper-deep` | `#ECE3CF` | Fonds secondaires (pulse-band, encadrés, solitudes) |
+| `--ink` | `#1C1917` | Texte primaire, bordures lourdes |
+| `--ink-soft` | `#433F38` | Texte secondaire, deks, bylines |
+| `--ink-softer` | `#6E685F` | Métadonnées, labels discrets, placeholders |
+| `--rule` | `#C8BDA6` | Filets horizontaux standards |
+| `--rule-faint` | `#DED3B9` | Filets très discrets, icônes inactives |
 
-Each section owns one accent color. Use it for section headers, eyebrow labels, button fills, card borders, tag backgrounds, and loading spinners within that section.
+### Couleurs d'accent
 
-| Section | Accent | Hex | Dark variant |
-|---------|--------|-----|-------------|
-| Citoyens | `$cyan` | `#65daff` | `$cyan-dark #26a3cb` |
-| Décideurs | `$pink` | `#feadff` | `$pink-dark #e976eb` |
-| Médias | `$yellow` | `#feec20` | `$yellow-dark #d2be17` |
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `--cordovan` | `#6B1E2A` | Accent principal : labels de section, tags, saillance, points live, éléments actifs |
+| `--brass` | `#A07A3D` | Accent secondaire : tag « Expert », filets de résonance internationale |
+| `--red` | `#A8302C` | Alertes, erreurs |
+| `--green` | `#3D6B3A` | États de succès |
+| `--amber` | `#B88A3D` | Usage ponctuel |
 
-### Rules
+### Tags d'annotation
 
-- Global chrome (navbar, footer, shared buttons) uses only black, white, and beige. Accents never appear there.
-- A module only uses its own section's accent. Never mix accents across sections.
-- Do not introduce new colors. If a new use case genuinely requires it, open a discussion before adding anything to `variables.module.scss`.
-- The `MediaTreemap` component is the only dark-surface exception in the site. Its dark palette (`#0c1117`, `#0f1620`) is isolated to that component. Do not extend dark-mode styling to other modules.
+| Token | Valeur | Usage |
+|-------|--------|-------|
+| `--tag-new-bg` | `#6B1E2A` | Fond du badge « Nouveau » |
+| `--tag-new-fg` | `#F3ECDD` | Texte du badge « Nouveau » |
+| `--tag-keep-fg` | `#6B1E2A` | Texte du badge « Récurrent » (fond transparent) |
+| `--tag-expert-fg` | `#A07A3D` | Texte du badge « Expert » (fond transparent, bordure brass) |
 
----
+### Règles
 
-## 2. Typography
-
-### Fonts
-
-| Font | Weight | Role |
-|------|--------|------|
-| `Superpose` Light | 300 | Body text, all headings, default |
-| `Superpose` Regular | 400 | UI labels, metadata |
-| `Superdot` Bold | 700 | Eyebrow labels, category tags, data callouts |
-
-Both fonts are licensed. Do not substitute them.
-
-### Rules
-
-- All headings default to `Superpose Light (300)`. Do not increase heading weight.
-- `Superdot` is for short strings only — under 4 words. Never use it on sentences or paragraphs. Apply it via the `%has-font-secondary` SCSS extend or `.has-font-secondary` utility class.
-- Uppercase labels always carry `letter-spacing: 0.08em – 0.16em`.
-- The `responsive-size()` scale below is mandatory. Do not freestyle font sizes in component files.
-
-### Type scale
-
-| Role | Function call | Approx range |
-|------|--------------|-------------|
-| Hero headline | `responsive-size(48, 96)` | 48–96px, `line-height: 0.92` |
-| H1 | `responsive-size(48, 94)` | 48–94px, `line-height: 1em` |
-| H2 | `responsive-size(24, 32)` | 24–32px |
-| H3 | `responsive-size(20, 28)` | 20–28px |
-| H4 | `responsive-size(18, 24)` | 18–24px |
-| Large body | `responsive-size(16, 26)` | 16–26px, `line-height: 1.5` |
-| Body | `responsive-size(16, 22)` | 16–22px, `line-height: 1.5` |
-| Metadata | `responsive-size(13, 15)` | 13–15px |
-| Eyebrow label | `responsive-size(11, 14)` | 11–14px, uppercase, `letter-spacing: 0.14em` |
-| Small label | `responsive-size(9, 12)` | 9–12px, uppercase |
-
-If a module needs a size not in this scale, propose it for addition centrally — do not solve it locally.
+- Pas de mode sombre. Le site est entièrement en mode papier clair.
+- La couleur cordovan est **l'unique accent actif**. Brass sert de couleur tertiaire pour des cas précis (tag expert, résonance internationale).
+- Les couleurs d'enjeu (treemap, `.une-enjeu`) passent via `--c` — une CSS variable locale définie par composant/data, jamais hardcodée dans le CSS global.
+- Ne pas introduire de nouvelles couleurs sans discussion.
 
 ---
 
-## 3. Spacing
+## 2. Typographie
 
-All layout spacing uses `responsive-gap($multiply)` from `variables.module.scss`. The base scales from 20px (mobile) to 49px (desktop).
+Trois familles de polices, chacune avec un rôle strict. Toutes sont chargées depuis Google Fonts dans `app/layout.tsx`.
 
-| Expression | Approx range | Typical use |
-|-----------|-------------|-------------|
-| `responsive-gap(0.5)` | 10–25px | Tight internal padding, small gaps |
-| `responsive-gap(0.75)` | 15–37px | List item gaps, card internal spacing |
-| `responsive-gap(1)` | 20–49px | Default section gap, grid column gap |
-| `responsive-gap(1.25)` | 25–61px | Card padding, medium section spacing |
-| `responsive-gap(1.5)` | 30–74px | Section bottom margins |
-| `responsive-gap(2)` | 40–98px | Major section separators |
-| `responsive-gap(3)` | 60–147px | Page-level top/bottom padding |
+### Polices
 
-### Rules
+| Police | Rôle | Caractéristiques |
+|--------|------|-----------------|
+| **Playfair Display** | Headlines, grands chiffres, drop caps | Serif d'affichage, 700–900, tracking négatif serré |
+| **Source Serif 4** | Corps de texte, deks, captions | Serif de lecture, 400–700, italic disponible |
+| **IBM Plex Mono** | UI labels, bylines, section labels, tags, métadonnées | Monospace, uppercase obligatoire, letter-spacing fort |
 
-- `responsive-gap()` is mandatory for any spacing that affects layout: section margins, card padding, grid gaps.
-- Hard-coded values (`1rem`, `8px`) are only acceptable for micro-details inside a component — icon-to-text gap, border-radius, button padding. Never for layout.
+### Hiérarchie typographique
 
----
+| Élément | Police | Taille | Poids | Notes |
+|---------|--------|--------|-------|-------|
+| Une principale (h1) | Playfair Display | 72px | 900 | `letter-spacing: -1.2px`, `line-height: 1.0` |
+| Une secondaire (h2) | Playfair Display | 19–38px selon saillance | 700 | `letter-spacing: -0.1px à -0.5px` |
+| Dek (chapeau) | Source Serif 4 | 19px | 400 italic | `line-height: 1.45`, `color: var(--ink-soft)` |
+| Dek secondaire | Source Serif 4 | 14.5px | 400 italic | |
+| Drop cap (lettrine) | Playfair Display | 56px | 900 | `color: var(--cordovan)`, `line-height: 0.85`, flottant à gauche |
+| Grand chiffre (stat) | Playfair Display | 48px | 900 | `color: var(--cordovan)`, `letter-spacing: -1.1px` |
+| Corps de texte | Source Serif 4 | 16px | 400 | `line-height: 1.5` |
+| Caption italique | Source Serif 4 | 11–12px | 400 italic | `color: var(--ink-soft)` |
+| Section label | IBM Plex Mono | 10px | 500 | uppercase, `letter-spacing: 0.3em`, cordovan |
+| Byline / meta | IBM Plex Mono | 9–10px | 400 | uppercase, `letter-spacing: 0.12–0.22em` |
+| Tags / badges | IBM Plex Mono | 8.5–10.5px | 500 | uppercase, `letter-spacing: 0.22–0.26em` |
+| Labels UI (toggle) | IBM Plex Mono | 10px | 500 | uppercase, `letter-spacing: 0.22em` |
 
-## 4. Component structure
+### Règles
 
-### Folder organization
-
-```
-src/components/
-  ├─ shared/          ← Navbar, Footer, Button, Modal, SVGs, Loading, and all reusable UI
-  ├─ citoyens/        ← Modules belonging to the Citoyens section
-  ├─ decideurs/       ← Modules belonging to the Décideurs section
-  └─ medias/          ← Modules belonging to the Médias section
-```
-
-Each component lives in its own folder:
-
-```
-src/components/citoyens/MyModule/
-  ├─ MyModule.tsx
-  └─ MyModule.scss
-```
-
-### Rules
-
-- Never put styles from one component inside another component's SCSS file.
-- Never use inline `style={}` props for anything that can be expressed in SCSS. Inline styles are only acceptable for truly dynamic values derived from data (e.g. a color value coming from an API).
-- Local SCSS variables are allowed for values specific to one component (one-off animation timings, layout magic numbers). Any value that appears in more than one component must be moved to `variables.module.scss`.
-- `shared/` components and global style files are centrally owned. Changes to them go through a separate review.
+- IBM Plex Mono est **toujours uppercase** avec un fort letter-spacing. Ne jamais l'utiliser en casse mixte pour les labels UI.
+- Playfair Display est réservé à l'affichage éditorial (headlines, chiffres héro, drop caps). Pas pour les labels.
+- Source Serif 4 en italic signale un dek, une citation ou une légende — jamais du texte de navigation.
+- Fallback stack : `Georgia, 'Times New Roman', serif` pour le corps ; `monospace` pour IBM Plex Mono.
 
 ---
 
-## 5. Borders and radius
+## 3. Filets et bordures
 
-These values are fixed. Consistent radius is one of the strongest signals of a unified system — deviating makes modules feel foreign.
+Les filets sont le langage structurel du journal imprimé. Leur poids et couleur signalent la hiérarchie.
 
-| Element | Border radius |
-|---------|--------------|
-| Cards, panels | `1.5rem` |
-| Badges, tags | `1rem` |
-| Buttons | `1.5em` |
-| Form controls (checkbox, input) | `1rem` |
+| Usage | Valeur |
+|-------|--------|
+| Séparateur de section majeur (dessus de la une) | `border-top: 2px solid var(--ink)` |
+| Double filet (`.dbl-rule`) | `border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); height: 4px` |
+| Filet standard entre colonnes | `border-right: 0.5px solid var(--rule)` |
+| Filet d'enjeu coloré (`.une-enjeu`) | `border-bottom: 2px solid var(--c)` — couleur issue data |
+| Filet résonance internationale | `border-bottom: 2px solid var(--brass)` |
+| Bordure d'encadré discret | `border: 0.5px solid var(--rule)` |
+| Toggle tab actif | `background: var(--ink); color: var(--paper)` — fond encre sur papier |
 
-| Surface | Border |
-|---------|--------|
-| Light surface | `1px solid $black` |
-| Dark surface (MediaTreemap only) | `1px solid rgba(255, 255, 255, 0.12)` |
-
-### Rules
-
-- Do not introduce new radius values without discussion.
-- No `box-shadow` on light surfaces. Box-shadow is only used for interactive hover states on dark surfaces.
+- Pas de `border-radius` sur les éléments éditoriaux (cartes, encadrés, tags saillance). Les coins sont droits — c'est délibéré.
+- Pas de `box-shadow`. Le journal n'a pas d'ombre portée.
 
 ---
 
-## 6. Motion
+## 4. Composants récurrents
 
-Motion confirms interactions. It does not decorate.
+### Section label (`.section-label`)
 
-| Interaction | Duration | Easing |
-|-------------|----------|--------|
-| Color, border, background changes | `0.4s` | `ease-in-out` |
-| Card hover lift | `180ms` | `ease` |
-| Spinner rotation | `500ms` | `linear infinite` |
+IBM Plex Mono, 10px, `letter-spacing: 0.3em`, uppercase, `color: var(--cordovan)`. Marge top importante (52px) pour respirer. Contient parfois une date à droite (Playfair Display 700, 15px) et un toggle.
 
-### Rules
+### Toggle de période (`.legend-toggle.inline`)
 
-- Only use the timings defined above. Do not introduce new durations.
-- Never use `transition: all`. Always specify exactly which properties transition.
-- Hover transforms are capped at `translateY(-2px)`. No dramatic lifts, scales, or rotations.
-- No entrance animations (fade-in, slide-in on page load) unless explicitly designed as a named feature.
-- No scroll-triggered animations unless explicitly requested.
+Bordure `0.5px solid var(--rule)`. Fond transparent, texte `var(--ink-soft)` au repos. Actif : `background: var(--ink); color: var(--paper)`. Pas d'arrondi.
+
+### Tags d'annotation (`.anno`)
+
+Trois variantes inline :
+- `.anno.keep` — bordure `0.5px solid var(--rule)`, texte `var(--ink-softer)`
+- `.anno.new` — fond cordovan, texte paper
+- `.anno.expert` — bordure brass, texte brass
+
+### Tags de saillance (`.saillance-tag`)
+
+Trois niveaux :
+- `.major` — fond `var(--ink)`, texte `var(--paper)`
+- `.fort` — fond `var(--cordovan)`, texte `var(--paper)`
+- `.notable` — fond `var(--brass)`, texte `var(--paper)`
+
+IBM Plex Mono, 10.5px, `letter-spacing: 0.26em`, uppercase. Coins droits, pas de bordure.
+
+### Dots de saillance (`.saillance-dots`)
+
+Petits cercles 7×7px. `.d` = rempli cordovan (score atteint). `.e` = transparent avec bordure `var(--rule)` (score vide). Réduits à 5×5px dans les colonnes secondaires.
+
+### Byline (`.byline`)
+
+IBM Plex Mono, 10px, uppercase, `color: var(--ink-soft)`. Liens avec `border-bottom: 0.5px solid transparent` → hover `var(--cordovan)`. Séparateur `.sep` en `var(--rule)`.
+
+### Pulse band (`.pulse-band`)
+
+Fond `var(--paper-deep)`, filets `0.5px solid var(--rule)` haut et bas, centré, padding 22px / 19px. Contient le décompte live + icônes célestes.
+
+### Décompte live (`.pulse-countdown`)
+
+- Chiffre principal : Source Serif 4, 17px, `color: var(--cordovan)`, `font-variant-numeric: lining-nums tabular-nums`
+- Secondes : IBM Plex Mono, 9px, `color: var(--ink-soft)`
+- Point live : cercle 5×5px cordovan, animation `cd-pulse` 1s infini
+
+### Drop cap / lettrine (`.dek-with-cap::first-letter`)
+
+Playfair Display 900, 56px, `color: var(--cordovan)`, `line-height: 0.85`, flottant à gauche avec `padding: 6px 10px 0 0`.
 
 ---
 
-## 7. Module independence and review
+## 5. Animations
 
-Module authors have full autonomy inside their section folder. There is no approval needed before building — work independently, then submit a pull request.
+| Élément | Animation | Durée | Easing |
+|---------|-----------|-------|--------|
+| Point live / musique | `cd-pulse` : `opacity 1→0.3`, `scale 1.05→0.6` | `1s` | `ease-in-out infinite` |
+| Transitions de lien | `color`, `border-color` | `0.15s` | `ease` |
+| Symboles « deux solitudes » | `left` (position horizontale) | `0.6s` | `ease` |
 
-### What module authors own
+- Pas d'animations d'entrée (fade-in, slide-in) au chargement.
+- Pas d'animations de scroll.
+- Les seules transitions continues sont les points live.
 
-- Everything under their section folder (`citoyens/`, `decideurs/`, `medias/`)
-- Their component SCSS files and local variables
+---
 
-### What is centrally owned — do not modify without discussion
+## 6. Mise en page
 
-- `src/components/shared/` — shared UI components
-- `src/assets/styles/variables.module.scss` — all design tokens
-- `src/assets/styles/index.scss` — global resets and base styles
-- `MainNavbar`, `MainFooter`
+- **Largeur max** : `1180px`, centré, `padding: 32px 60px 80px`
+- **Grille une principale** (`.hero-trio`) : `2fr 1fr` en deux colonnes, séparées par `0.5px solid var(--rule)`
+- La colonne principale (`.une-main`) occupe les deux rangées en `grid-area: main`
+- Colonnes secondaires avec `border-left: 0.5px solid var(--rule)` et `padding-left: 26px`
+- Pas de framework CSS. Toute la mise en page est en CSS natif dans `app/globals.css`
 
-### PR review checklist
+---
 
-Before approving a module PR, verify:
+## 7. Ce qu'il ne faut pas faire
 
-- [ ] Section accent color used correctly, no cross-section mixing
-- [ ] All headings are `Superpose Light (300)`
-- [ ] `Superdot` used only for short labels (< 4 words)
-- [ ] All font sizes use `responsive-size()` from the defined scale
-- [ ] All layout spacing uses `responsive-gap()`
-- [ ] Border radius values match the defined set
-- [ ] No `transition: all`, no new animation durations
-- [ ] No inline styles except for data-driven dynamic values
-- [ ] Component lives in the correct section folder with its own `.tsx` and `.scss`
-- [ ] No new colors introduced outside the defined palette
+- Pas de coins arrondis (`border-radius`) sur les éléments éditoriaux
+- Pas de `box-shadow`
+- Pas de couleurs en dehors de la palette définie
+- Pas d'IBM Plex Mono en casse mixte pour les labels
+- Pas de polices de substitution (pas de system-ui, pas de sans-serif en display)
+- Pas de mode sombre
+- Pas de `transition: all` — toujours spécifier la propriété exacte
