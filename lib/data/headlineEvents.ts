@@ -512,6 +512,9 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
     const dA = (a.date_utc as string) ?? "";
     const dB = (b.date_utc as string) ?? "";
     if (dB !== dA) return dB.localeCompare(dA);
+    const tA = (a.tag as string) ?? "";
+    const tB = (b.tag as string) ?? "";
+    if (tB !== tA) return tB.localeCompare(tA);
     return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
   })[0] ?? null;
 }
@@ -593,9 +596,21 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     // issues_meta: GPT-generated labels from radar-issues-score (preferred)
     const meta = parseIssuesMeta(latest.issues_meta);
 
+    // Aggregate all rows from the latest tag to get the true period-level scores.
+    // The Lambda produces one row per day within the window; summing gives the
+    // cumulative period view (week = 7-day sum, month = 29-day sum).
+    const latestTag = (latest.tag as string) ?? "";
+    const periodRows = latestTag
+      ? rows.filter((r) => (r.tag as string) === latestTag)
+      : [latest];
+    const aggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = periodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+      return acc;
+    }, {});
+
     const scored = ISSUE_KEYS.map((issueKey) => ({
       issueKey,
-      score: (latest[issueKey] as number) ?? 0,
+      score: aggregated[issueKey] ?? 0,
     })).sort((a, b) => b.score - a.score);
 
     const maxScore = scored[0]?.score || 1;
