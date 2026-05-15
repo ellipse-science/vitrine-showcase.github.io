@@ -53,12 +53,33 @@ Never merge PR #102. It exists only to keep the `pr.yml` CI pipeline runnable.
 
 ### Active refiners
 
-| Refiner | Athena table (DEV) | Schedule (Montreal local) | Source dir |
-|---------|-------------------|--------------------------|-----------|
-| `radar-issues-score` | `"vitrine_datamart-issues_score_day"` | 6×/day: 23:31, 03:31, 07:31, 11:31, 15:31, 19:31 | `aws-refiners/refiners/radar-issues-score/` |
-| `radar-party-score-salient-shadow` | `"vitrine_datamart-provincial_parties_score_day"` | 6×/day (every ~4h) | `aws-refiners/refiners/radar-party-score-salient-shadow/` |
-| `vitrine-graph-data` | various | varies | `aws-refiners/refiners/vitrine-graph-data/` |
-| `radar-headlines-issues` | headline events | varies | `aws-refiners/refiners/radar-headlines-issues/` |
+All refiners have `active: !isProd(envName)` — they run in DEV, not PROD. The pipeline runs in cascade every ~4h; each stage depends on the previous one finishing.
+
+**Pipeline infrastructure (no direct Athena output to site):**
+
+| ECR name | Schedule (Mtl local) | Role |
+|----------|---------------------|------|
+| `radar-data-preparation` | 6×/day :06 | Prepares article data from PROD |
+| `radar-salient-objects` | 6×/day :16 | Extracts salient objects |
+| `radar-object-extraction` | 6×/day :24 | Extracts objects per article |
+| `radar-salient-index` | 6×/day :42 | Builds salience index |
+| `sonar` | Daily 07:00 | Sonar analysis |
+| `sonar-heatmaps` | Wednesdays 07:30 | Heatmaps |
+
+**Data refiners (produce Athena tables consumed by the site):**
+
+| ECR name | Athena table(s) (DEV) | Schedule (Mtl local) | Source dir |
+|----------|-----------------------|---------------------|-----------|
+| `radar-issues-score` | `issues_score_day`, `issues_score_week`, `issues_score_month` | Day: 6×/day :31 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-issues-score/` |
+| `radar-headlines-issues` | `headline_events_4h` (and weekly/monthly variants) | Day: 3×/day 11:46, 15:46, 19:46 · Week: daily 19:17 · Month: daily 19:20 | `refiners/radar-headlines-issues/` |
+| `radar-party-score` | `provincial_parties_score_day/week/month`, `federal_parties_score_day/week/month` | Day: 6×/day :46 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-party-score/` |
+| `radar-party-score-salient-shadow` | `provincial_parties_score_salient_shadow_*` | Day: 6×/day :31 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-party-score-salient-shadow/` |
+| `radar-reflet-daily-weekly` | `reflet_day`, `reflet_week` | Day: 3×/day 11:46, 15:46, 19:46 · Week: daily 19:37 | `refiners/radar-reflet-daily-weekly/` |
+| `radar-reflet-monthly` | `reflet_month` | Daily 19:40 | `refiners/radar-reflet-monthly/` |
+| `radar-headline-of-headlines` | `headline_of_headlines` | 6×/day :46 | `refiners/radar-headline-of-headlines/` |
+| `radar-hot-20` | hot-20 data | Fridays 12:00 | `refiners/radar-hot-20/` |
+| `vitrine-graph-data` | graph data tables | 6×/day :57 | `refiners/vitrine-graph-data/` |
+| `agora-decideurs-qc` | `agora_decideurs_qc` | 6×/day :50 | `refiners/agora-decideurs-qc/` |
 
 ### Inspecting Athena data directly from R
 
@@ -149,9 +170,10 @@ app/                          Next.js App Router
   globals.css                 Maquette CSS, lifted verbatim
 components/
   sections/                   Async Server Components — load data at build time, render shells
+    UneDesUnesSection.tsx     Une des unes + Deux solitudes (headline-events.json)
     PartisCouvertureSection.tsx
+    TreemapSection.tsx        Treemap des enjeux par saillance (issues_score_*.json)
     AssembleeSection.tsx
-    HeadlineEventsSection.tsx
     RawMaquette.tsx           Reads a static-content/*.html chunk and inlines it
   interactive/                'use client' components — React state + behavior
     PartisCouvertureClient.tsx    today / week / month tab switcher
@@ -160,9 +182,10 @@ components/
     PulseCountdown.tsx            live countdown to next data refresh
 lib/
   data/
-    parties.ts                Loader + transformations for provincial_parties_score_day.json
-    assemblee.ts              Loader + transformations for agora_decideurs_qc.json
-    headlineEvents.ts         Loader + transformations for issues_score_day.json (treemap)
+    parties.ts                Loader for provincial_parties_score_{day,week,month}.json
+    assemblee.ts              Loader for agora_decideurs_qc.json
+    headlineEvents.ts         Two loaders: loadHeadlineEvents() (headline-events.json → UneDesUnesSection)
+                              and loadTreemap() (issues_score_{day,week,month}.json → TreemapSection)
 static-content/               Verbatim HTML chunks (masthead, treemap, partners, footer).
                               Embedded via dangerouslySetInnerHTML. Edit as plain HTML.
 public/                       Static assets — written to by the data refresher
@@ -189,9 +212,10 @@ The data loaders in `lib/data/*.ts` read from `path.resolve(cwd, 'public', 'data
 Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via `.github/workflows/refresh-data.yml` triggered externally by [cron-job.org](https://cron-job.org/). The script reads a whitelist of Athena tables from `scripts/tables.json` and writes JSON to `public/data/`.
 
 **Currently consumed by the build:**
-- `refined/day/provincial_parties_score_day.json` → `lib/data/parties.ts` → partis-couverture section
-- `agora/agora_decideurs_qc.json` → `lib/data/assemblee.ts` → assemblée section
-- `refined/day/issues_score_day.json` → `lib/data/headlineEvents.ts` → treemap section (issues)
+- `headline-events.json` → `lib/data/headlineEvents.ts` → `UneDesUnesSection` (une des unes, deux solitudes) + fallback context for treemap tiles
+- `refined/day/issues_score_day.json` + `refined/week/issues_score_week.json` + `refined/month/issues_score_month.json` → `lib/data/headlineEvents.ts` → `TreemapSection` (treemap des enjeux avec tabs jour/semaine/mois)
+- `refined/day/provincial_parties_score_day.json` + week + month → `lib/data/parties.ts` → `PartisCouvertureSection`
+- `agora/agora_decideurs_qc.json` → `lib/data/assemblee.ts` → `AssembleeSection`
 - `meta.json` → freshness metadata (no UI binding yet)
 
 **To add a new table:** edit `scripts/tables.json` — append a new entry under `tables` (or flip an existing `enabled: false` to `true`). Each entry declares the Athena source, output path, and the column whitelist. Re-fetching happens on the next 4h cron tick (or manually via the `refresh-data.yml` workflow_dispatch). For tables that need a derived/aggregated output, add a `post_process` entry pointing at one of the builders registered in `scripts/fetch_data.R`'s `POST_PROCESSORS` map.
@@ -206,35 +230,66 @@ Several table definitions sit dormant in `scripts/tables.json` with `enabled: fa
 
 ## issues_score_day schema and `issues_meta`
 
-The `radar-issues-score` refiner produces one row per `(date_utc, tag, pass, issue_key)`. Key columns:
+The `radar-issues-score` refiner produces rows in **wide format** — one row per `(date_utc, tag, pass)`, with one numeric column per issue. Consumed by `loadTreemap()` in `lib/data/headlineEvents.ts`.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `date_utc` | string `YYYY-MM-DD` | UTC date of the articles scored |
-| `tag` | string | Run tag (timestamp-like, e.g. `2026-05-14T19:31`) — latest tag = most recent run |
-| `pass` | string | `"am"`, `"noon"`, or `"pm"` — which article window was scored |
-| `issue_key` | string | e.g. `"economie"`, `"sante"`, `"education"` |
-| `score` | numeric | Raw salience score for that issue on that day/pass |
+| `date_montreal_tz` | string `YYYY-MM-DD` | Same date in Montreal timezone |
+| `tag` | string | Run tag (e.g. `2026-05-14T19:31`) — latest tag = most recent run |
+| `pass` | string | `"am"`, `"noon"`, or `"pm"` — article window scored |
 | `issues_meta` | JSON string | `{"issue_key": {"label": "...", "obj": "..."}}` — top article info per issue |
+| *(one column per issue key)* | numeric | Salience score for that issue on that date/pass |
 
-`issues_meta` is a JSON string. An empty run produces `"{}"`. `lib/data/headlineEvents.ts` calls `parseIssuesMeta()` to decode it; if empty/null, `loadFallbackIssueContent()` constructs a fallback from raw scores.
+`issues_meta` is a JSON string. An empty run produces `"{}"`. `parseIssuesMeta()` decodes it; if empty/null, `loadFallbackIssueContent()` cross-references `headline-events.json` to build fallback topObject and context.
 
-**ISSUE_KEYS with French labels:**
+`loadTreemap()` selects all rows sharing the latest `tag`, sums each issue column across those rows, and sorts descending to produce the period ranking (week = sum over 7 days in the latest tag's window, month = sum over ~29 days).
 
-| Key | French label |
-|-----|-------------|
-| `economie` | Économie |
-| `sante` | Santé |
+**ISSUE_KEYS — English column names (as in JSON and Athena) with French display labels:**
+
+| Column / key | French label (UI) |
+|-------------|------------------|
+| `economy_and_labour` | Économie et travail |
+| `governments_and_governance` | Gouvernements |
+| `health_and_social_services` | Santé |
+| `environment_and_energy` | Environnement |
+| `rights_liberties_minorities_discrimination` | Droits et libertés |
+| `culture_and_nationalism` | Culture |
 | `education` | Éducation |
-| `environnement` | Environnement |
+| `international_affairs_and_defense` | Aff. internationales |
+| `law_and_crime` | Loi et crime |
+| `public_lands_and_agriculture` | Terres publiques |
 | `immigration` | Immigration |
-| `justice` | Justice |
-| `politique` | Politique |
-| `international` | International |
-| `culture` | Culture |
-| `sport` | Sport |
-| `technologie` | Technologie |
-| `autre` | Autre |
+| `technology` | Technologie |
+
+These match `ISSUE_COLORS` and `ISSUE_LABELS_SHORT` in `lib/data/headlineEvents.ts` exactly. The `ISSUE_KEYS` constant is `Object.keys(ISSUE_COLORS)`.
+
+## headline_events_4h schema
+
+The `radar-headlines-issues` refiner produces `headline_events_4h` — one row per event per time interval per region. Published as `public/data/headline-events.json`. Consumed by `loadHeadlineEvents()` for `UneDesUnesSection`.
+
+Key columns used by the frontend:
+
+| Column | Notes |
+|--------|-------|
+| `event_id` | Deduplicated — QC `target_region` row preferred over others |
+| `country_id` | `"QC"`, `"CAN"`, `"USA"` — USA rows filtered out |
+| `date_utc`, `date_montreal_tz` | Date of the interval |
+| `time_interval_utc`, `time_interval_montreal_tz` | e.g. `"19-23"` |
+| `title` | Event headline |
+| `main_issue` | English issue key (e.g. `"economy_and_labour"`) |
+| `main_issue_text_fr` | French label from refiner |
+| `score_saillance` | Overall salience score |
+| `score_qc` | QC-specific salience |
+| `outlets_qc` | Number of QC outlets covering this event (drives dot count, 1–6) |
+| `total_outlets_qc` | Total QC outlets in panel |
+| `intensity_tier` | `"Majeur"`, `"Fort"`, `"Moyen"`, `"Faible"` |
+| `representative_url` | URL of the most representative article |
+| `media_ids` | JSON array of outlet IDs (e.g. `["LED","LAP","RCI"]`) |
+| `articles` | JSON array of `{media_id, url, title, ...}` — used for byline links |
+| `extracted_objects` | JSON array of `{object, score}` — used for treemap object tiles |
+| `interval_convergence_score` | Cosine similarity QC vs ROC (for Deux solitudes) |
+| `top_objects_divergence` | JSON array of divergence entries per event label |
 
 ---
 
