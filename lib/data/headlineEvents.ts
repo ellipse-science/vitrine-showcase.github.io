@@ -365,7 +365,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     .map(([name, data]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), enjeu: ISSUE_LABELS_SHORT[data.issue] ?? "Actualité", color: data.color, context: data.context, score: data.score }))
     .sort((a, b) => b.score - a.score);
 
-  const withTruncContext = allObjects.map((o) => ({ ...o, context: o.context.length > 55 ? o.context.slice(0, 52) + "…" : o.context }));
+  const withTruncContext = allObjects;
 
   const tier1 = withTruncContext.slice(0, 4);
   const tier2 = withTruncContext.slice(4, 9);
