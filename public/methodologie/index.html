@@ -434,7 +434,7 @@
   <header class="metho-header">
     <p class="metho-eyebrow">Vitrine Démocratique</p>
     <h1 class="metho-title">Méthodologie</h1>
-    <p class="metho-subtitle">Comment nous mesurons la saillance dans les trois sphères de l'espace public québécois et canadien.</p>
+    <p class="metho-subtitle">Comment nous mesurons la saillance médiatique et parlementaire dans l'espace public québécois.</p>
   </header>
 
   <!-- Table des matières -->
@@ -444,14 +444,11 @@
       <li><a href="#cadre-conceptuel">Cadre conceptuel</a></li>
       <li><a href="#collecte-medias">Architecture de collecte — Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
-      <li><a href="#une-des-unes">Module : La Une des Unes</a></li>
-      <li><a href="#treemap-enjeux">Module : Carte des enjeux (Treemap)</a></li>
-      <li><a href="#couverture-partis">Module : Couverture des partis (médias)</a></li>
-      <li><a href="#constellation">Module : Constellation médiatique</a></li>
+      <li><a href="#une-des-unes">Module : La Une des Unes &amp; Deux solitudes</a></li>
+      <li><a href="#treemap-enjeux">Module : Carte des enjeux</a></li>
+      <li><a href="#couverture-partis">Module : Couverture des partis politiques</a></li>
       <li><a href="#parole-en-chambre">Module : Parole en chambre</a></li>
-      <li><a href="#partis-parlement">Module : Partis politiques — Parlement</a></li>
-      <li><a href="#opinion-publique">Module : Opinion publique citoyenne</a></li>
-      <li><a href="#fenetres-temporelles">Fenêtres temporelles et pondérations</a></li>
+      <li><a href="#fenetres-temporelles">Fenêtres temporelles</a></li>
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
       <li><a href="#citation">Citation et accès aux données</a></li>
@@ -463,15 +460,14 @@
     <p class="metho-section-label">§ 01</p>
     <h2>Cadre conceptuel</h2>
     <p class="metho-body">
-      La <strong>saillance</strong> est définie comme la prépondérance relative d'un enjeu, d'un acteur ou d'une institution dans une sphère d'activité publique donnée, à un moment précis. Ce concept s'inscrit dans la tradition de la théorie de l'agenda-setting (McCombs &amp; Shaw, 1972 ; Iyengar &amp; Kinder, 1987), selon laquelle les médias, les élus et les citoyens se co-influencent mutuellement dans la construction de l'agenda public.
+      La <strong>saillance</strong> est définie comme la prépondérance relative d'un enjeu, d'un acteur ou d'une institution dans une sphère d'activité publique donnée, à un moment précis. Ce concept s'inscrit dans la tradition de la théorie de l'agenda-setting (McCombs &amp; Shaw, 1972 ; Iyengar &amp; Kinder, 1987), selon laquelle les médias et les élus se co-influencent mutuellement dans la construction de l'agenda public.
     </p>
-    <p class="metho-body">La Vitrine Démocratique mesure trois dimensions complémentaires de la saillance :</p>
+    <p class="metho-body">La Vitrine Démocratique mesure deux dimensions complémentaires de la saillance :</p>
     <ol class="metho-list">
       <li><strong>Saillance médiatique</strong> — la présence d'un enjeu ou d'un acteur sur les pages frontales des principaux médias québécois et canadiens, pondérée par la durée et la position.</li>
-      <li><strong>Saillance parlementaire</strong> — la part du discours législatif (débats à l'Assemblée nationale et à la Chambre des communes) consacrée à un enjeu ou à un acteur.</li>
-      <li><strong>Préoccupations citoyennes</strong> — les priorités déclarées des Québécois·es mesurées quotidiennement par sondage en ligne.</li>
+      <li><strong>Saillance parlementaire</strong> — la part du discours législatif (débats à l'Assemblée nationale du Québec) consacrée à un enjeu ou à un parti politique.</li>
     </ol>
-    <p class="metho-body">Ces trois mesures sont indépendantes et ne sont pas agrégées en un indice composite. Leur rapprochement sur une même interface vise à offrir une vue triangulée de l'espace public, sans présumer d'une hiérarchie entre ces sphères.</p>
+    <p class="metho-body">Ces deux mesures sont indépendantes et ne sont pas agrégées en un indice composite. Leur rapprochement sur une même interface vise à offrir une vue croisée de l'espace public québécois, sans présumer d'une hiérarchie entre ces sphères.</p>
   </section>
 
   <!-- §2 Collecte médias -->
@@ -491,7 +487,7 @@
           <tr><td>LED</td><td>Le Devoir</td><td>Français</td><td>242</td></tr>
           <tr><td>RCI</td><td>Radio-Canada Info</td><td>Français</td><td>160</td></tr>
           <tr><td>TVA</td><td>TVA Nouvelles</td><td>Français</td><td>125</td></tr>
-          <tr><td>MG</td><td>Métro</td><td>Français</td><td>241</td></tr>
+          <tr><td>MG</td><td>Montreal Gazette</td><td>Anglais</td><td>241</td></tr>
           <tr><td>CBC</td><td>CBC News</td><td>Anglais</td><td>159</td></tr>
           <tr><td>CTV</td><td>CTV News</td><td>Anglais</td><td>228</td></tr>
           <tr><td>GAM</td><td>Globe &amp; Mail</td><td>Anglais</td><td>326</td></tr>
@@ -533,60 +529,90 @@
     <p class="metho-body">Cet indice exprime quelle proportion de l'attention médiatique totale est consacrée à un objet sur un bloc de quatre heures. Il est recalculé à chaque nouveau bloc.</p>
   </section>
 
-  <!-- §4 Une des Unes -->
+  <!-- §4 Une des Unes & Deux solitudes -->
   <section id="une-des-unes" class="metho-section">
     <p class="metho-section-label">§ 04</p>
-    <h2>Module : La Une des Unes</h2>
-    <p class="metho-body">Ce module identifie, en temps quasi réel, l'objet (enjeu, personne ou institution) qui domine le plus l'agenda des médias québécois et canadiens au moment de la consultation.</p>
+    <h2>Module : La Une des Unes &amp; Deux solitudes</h2>
+    <p class="metho-body">Ce module identifie les événements qui dominent l'agenda médiatique québécois au moment de la consultation, en distinguant l'importance relative accordée par les médias francophones québécois et les médias canadiens anglophones.</p>
 
-    <h3>Algorithme</h3>
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>radar-headlines-issues</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
+
+    <h3>Algorithme — La Une des Unes</h3>
     <ol class="metho-list">
-      <li>Pour chaque bloc de quatre heures, les indices de saillance sont calculés pour l'ensemble des objets présents sur les 13 pages frontales.</li>
-      <li>Les objets sont agrégés sur les blocs récents par sommation des indices relatifs, en donnant plus de poids aux blocs les plus récents.</li>
-      <li>L'objet ayant accumulé le score agrégé le plus élevé devient la « Une des Unes ».</li>
-      <li>Pour chaque média, on vérifie si cet objet est présent sur sa page frontale et à quel niveau de saillance.</li>
+      <li>Les événements du dernier bloc de quatre heures sont dédupliqués par <code>event_id</code> (priorité à la version ciblant le Québec).</li>
+      <li>Les événements de source exclusivement américaine sont exclus.</li>
+      <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
+      <li>Pour chaque événement, le <strong>niveau de saillance</strong> est dérivé du champ <code>intensity_tier</code> calculé par le raffineur (Majeur · Fort · Moyen · Faible) et du nombre de médias québécois le couvrant (<code>outlets_qc</code>, 1 à 6).</li>
+      <li>La byline liste les médias couvrant l'événement et signale ceux qui l'ignorent.</li>
+    </ol>
+
+    <h3>Algorithme — Deux solitudes</h3>
+    <p class="metho-body">Ce panneau mesure la divergence entre l'agenda médiatique québécois et canadien sur le même bloc de quatre heures.</p>
+    <ol class="metho-list">
+      <li>Lorsque le raffineur produit un champ <code>interval_convergence_score</code> (similarité cosinus entre les vecteurs de saillance QC et ROC), le taux de divergence est calculé comme <code>100 − convergence</code>.</li>
+      <li>En l'absence de ce champ, une approximation par ratio d'exclusivité (<code>score_qc / score_saillance</code>) est utilisée.</li>
+      <li>Le champ <code>top_objects_divergence</code> fournit les cinq événements dont la couverture diffère le plus entre les deux agendas ; ils sont affichés sous forme de barres comparatives QC / Canada.</li>
     </ol>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Un résumé éditorial de l'histoire dominante, une grille indiquant quels médias la couvrent et à quelle intensité, et des liens vers des articles sources. Sélecteur Québec / Canada disponible.</p>
+    <p class="metho-body">Mise en page de type une de presse : titre éditorial, niveau de saillance par tiret coloré, byline des médias couvrant l'événement, liens vers les articles sources. Le panneau Deux solitudes présente le pourcentage de divergence du jour et un tableau des histoires les plus clivantes entre les deux agendas.</p>
   </section>
 
   <!-- §5 Treemap -->
   <section id="treemap-enjeux" class="metho-section">
     <p class="metho-section-label">§ 05</p>
-    <h2>Module : Carte des enjeux (Treemap)</h2>
-    <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée.</p>
+    <h2>Module : Carte des enjeux</h2>
+    <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
+
+    <h3>Enjeux couverts</h3>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Enjeu (affiché)</th><th>Clé interne</th></tr></thead>
+        <tbody>
+          <tr><td>Économie et travail</td><td><code>economy_and_labour</code></td></tr>
+          <tr><td>Gouvernements</td><td><code>governments_and_governance</code></td></tr>
+          <tr><td>Santé</td><td><code>health_and_social_services</code></td></tr>
+          <tr><td>Environnement</td><td><code>environment_and_energy</code></td></tr>
+          <tr><td>Droits et libertés</td><td><code>rights_liberties_minorities_discrimination</code></td></tr>
+          <tr><td>Culture</td><td><code>culture_and_nationalism</code></td></tr>
+          <tr><td>Éducation</td><td><code>education</code></td></tr>
+          <tr><td>Aff. internationales</td><td><code>international_affairs_and_defense</code></td></tr>
+          <tr><td>Loi et crime</td><td><code>law_and_crime</code></td></tr>
+          <tr><td>Terres publiques</td><td><code>public_lands_and_agriculture</code></td></tr>
+          <tr><td>Immigration</td><td><code>immigration</code></td></tr>
+          <tr><td>Technologie</td><td><code>technology</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>radar-issues-score</code> produit les tables <code>issues_score_day</code>, <code>issues_score_week</code> et <code>issues_score_month</code>. Chaque ligne correspond à une fenêtre temporelle et un bloc de collecte (<code>pass</code> : am, noon, pm). Les 12 enjeux sont encodés en colonnes numériques sur la même ligne (format large).</p>
 
     <h3>Algorithme</h3>
     <ol class="metho-list">
-      <li>Chaque article est découpé en phrases par un algorithme de segmentation basé sur la ponctuation finale.</li>
-      <li>Un <strong>dictionnaire d'enjeux à deux niveaux</strong> est appliqué à chaque phrase via la bibliothèque <code>quanteda</code>.</li>
-      <li>Pour chaque phrase contenant un terme du dictionnaire, un score de pertinence est calculé : nombre de mentions ÷ nombre total de mots.</li>
-      <li>Les scores sont agrégés par enjeu et par jour, puis pondérés temporellement (§ 11).</li>
+      <li>Le raffineur analyse le contenu textuel des articles de chaque bloc de quatre heures et calcule un score de saillance pour chacun des 12 enjeux.</li>
+      <li>Le frontend sélectionne toutes les lignes portant l'étiquette (<code>tag</code>) du run le plus récent pour la période choisie, puis additionne les scores de chaque enjeu sur l'ensemble de ces lignes.</li>
+      <li>Les scores cumulés sont normalisés par rapport au score maximal de la période pour produire un score relatif (0–100), qui détermine la largeur de chaque tuile.</li>
+      <li>Le champ <code>issues_meta</code> (produit par le raffineur) fournit, pour chaque enjeu, un objet saillant et un libellé contextuel affichés sur la tuile. En l'absence de ce champ, la table <code>headline_events_4h</code> est utilisée comme source de secours.</li>
     </ol>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Treemap où la superficie de chaque cellule est proportionnelle au score de saillance de l'enjeu. La sélection d'une cellule affiche les manchettes représentatives et un indicateur de vélocité.</p>
+    <p class="metho-body">Grille de tuiles colorées (une couleur par enjeu) dont la largeur est proportionnelle au score de saillance relatif. Chaque tuile affiche le nom de l'enjeu, l'objet le plus saillant et un extrait de titre contextuel. Trois onglets permettent de basculer entre les fenêtres jour, semaine et mois.</p>
   </section>
 
   <!-- §6 Couverture des partis -->
   <section id="couverture-partis" class="metho-section">
     <p class="metho-section-label">§ 06</p>
-    <h2>Module : Couverture des partis politiques (médias)</h2>
-    <p class="metho-body">Ce module mesure la <strong>part de voix</strong> (share of voice) et le <strong>ton</strong> des partis politiques dans la couverture médiatique québécoise et canadienne.</p>
+    <h2>Module : Couverture des partis politiques</h2>
+    <p class="metho-body">Ce module mesure la <strong>saillance</strong> (visibilité dans les médias) et le <strong>ton</strong> (valence du traitement médiatique) des partis politiques québécois dans la couverture des 13 sources d'information suivies.</p>
 
-    <h3>Partis suivis</h3>
+    <h3>Partis provinciaux suivis</h3>
     <div class="metho-table-wrap">
       <table class="metho-table">
-        <thead><tr><th>Palier</th><th>Parti</th><th>Code</th></tr></thead>
+        <thead><tr><th>Parti</th><th>Code</th></tr></thead>
         <tbody>
-          <tr><td class="td-group" rowspan="6">Fédéral</td><td>Parti libéral du Canada (PLC)</td><td><code>lpc</code></td></tr>
-          <tr><td>Parti conservateur du Canada (PCC)</td><td><code>cpc</code></td></tr>
-          <tr><td>Nouveau Parti démocratique (NPD)</td><td><code>ndp</code></td></tr>
-          <tr><td>Bloc québécois (BQ)</td><td><code>bq</code></td></tr>
-          <tr><td>Parti vert du Canada (PVC)</td><td><code>gpc</code></td></tr>
-          <tr><td>Parti populaire du Canada (PPC)</td><td><code>ppc</code></td></tr>
-          <tr><td class="td-group" rowspan="5">Provincial (QC)</td><td>Coalition avenir Québec (CAQ)</td><td><code>caq</code></td></tr>
+          <tr><td>Coalition avenir Québec (CAQ)</td><td><code>caq</code></td></tr>
           <tr><td>Parti québécois (PQ)</td><td><code>pq</code></td></tr>
           <tr><td>Parti libéral du Québec (PLQ)</td><td><code>plq</code></td></tr>
           <tr><td>Québec solidaire (QS)</td><td><code>qs</code></td></tr>
@@ -595,101 +621,68 @@
       </table>
     </div>
 
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>radar-party-score</code> produit les tables <code>provincial_parties_score_day</code>, <code>_week</code> et <code>_month</code>. Chaque ligne correspond à un parti, une date et un bloc de collecte. Les champs clés sont <code>weighted_mentions</code> (saillance) et <code>weighted_tone</code> (ton net).</p>
+
     <h3>Algorithme</h3>
     <ol class="metho-list">
-      <li>Les articles sont segmentés en phrases.</li>
-      <li>Dictionnaire de partis + dictionnaire de sentiment appliqués simultanément à chaque phrase.</li>
-      <li><strong>Score de pertinence</strong> : <code>mentions_parti / total_mots_phrase</code></li>
-      <li><strong>Ton net</strong> : <code>(positifs + nég_négatifs − négatifs − nég_positifs) / total_mots_phrase</code></li>
-      <li>Agrégation journalière puis pondération temporelle décroissante (§ 11).</li>
-      <li>Normalisation relative pour produire une part de voix.</li>
+      <li>Les articles sont segmentés en phrases. Un dictionnaire de partis et un dictionnaire de sentiment sont appliqués simultanément à chaque phrase.</li>
+      <li><strong>Saillance pondérée</strong> (<code>weighted_mentions</code>) : nombre de mentions du parti dans la phrase, divisé par le nombre total de mots, pondéré par l'indice inter-médias du média source.</li>
+      <li><strong>Ton net pondéré</strong> (<code>weighted_tone</code>) : <code>(termes positifs − termes négatifs) / total_mots</code>, pondéré de la même façon.</li>
+      <li>Agrégation journalière, puis calcul de moyennes glissantes pour les fenêtres semaine et mois.</li>
     </ol>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Classement des partis par part de voix, sparklines sur 7 jours, indicateur de ton. Sélecteur provincial / fédéral.</p>
+    <p class="metho-body">Classement des partis par saillance. Trois onglets permettent de basculer entre les fenêtres aujourd'hui, cette semaine et ce mois. Le ton est visualisé par un indicateur coloré (positif / neutre / négatif) pour chaque parti.</p>
   </section>
 
-  <!-- §7 Constellation -->
-  <section id="constellation" class="metho-section">
-    <p class="metho-section-label">§ 07</p>
-    <h2>Module : Constellation médiatique</h2>
-    <p class="metho-body">Graphe de co-occurrence des entités saillantes sur les pages frontales médiatiques.</p>
-
-    <h3>Construction du graphe</h3>
-    <ul class="metho-list">
-      <li><strong>Nœuds</strong> : chaque entité nommée ayant atteint un seuil minimal de saillance. La taille du nœud est proportionnelle à l'indice de saillance cumulé.</li>
-      <li><strong>Arêtes</strong> : une arête relie deux entités co-présentes sur la page frontale d'un même média dans le même bloc temporel. Le poids est proportionnel à la fréquence de co-occurrence, pondérée par les indices de saillance des deux entités.</li>
-    </ul>
-
-    <h3>Affichage</h3>
-    <p class="metho-body">Graphe force-directed interactif. La sélection d'un nœud affiche les articles sources et la distribution de la couverture par média. Sélecteur Québec / Canada.</p>
-  </section>
-
-  <!-- §8 Parole en chambre -->
+  <!-- §7 Parole en chambre -->
   <section id="parole-en-chambre" class="metho-section">
-    <p class="metho-section-label">§ 08</p>
+    <p class="metho-section-label">§ 07</p>
     <h2>Module : Parole en chambre</h2>
-    <p class="metho-body">Ce module mesure quels enjeux dominent les débats législatifs en termes de volume de discours.</p>
+    <p class="metho-body">Ce module mesure la présence des partis politiques dans les débats de l'Assemblée nationale du Québec (ANQ) selon trois fenêtres : la dernière période de questions (<em>last PDQ</em>), la session en cours et la législature complète.</p>
 
-    <h3>Sources</h3>
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>agora-decideurs-qc</code> traite les transcripts officiels des débats de l'ANQ et produit la table <code>agora_decideurs_qc</code>. Chaque ligne correspond à un parti et une période. Les champs clés sont :</p>
     <ul class="metho-list">
-      <li><strong>Assemblée nationale du Québec (ANQ)</strong> : journal des débats en séance plénière et en commission parlementaire.</li>
-      <li><strong>Chambre des communes du Canada</strong> : journal des débats (Hansard), extrait via les portails officiels du Parlement canadien.</li>
+      <li><code>n_interventions</code> — nombre total d'interventions du parti sur la période.</li>
+      <li><code>word_count</code> — volume total de mots prononcés.</li>
+      <li><code>lexical_richness</code> — richesse lexicale (diversité du vocabulaire).</li>
+      <li><code>tone_score</code> — ton moyen des interventions.</li>
+      <li>Un score par grand enjeu (même taxonomie que §&nbsp;05) — part des interventions portant sur chaque enjeu.</li>
     </ul>
 
-    <h3>Algorithme</h3>
-    <p class="metho-body">Même pipeline que §&nbsp;05 (segmentation, dictionnaire d'enjeux, score de pertinence, agrégation, pondération temporelle), appliqué aux transcripts parlementaires. Les métadonnées (parti, assemblée, date) permettent de ventiler les résultats.</p>
-  </section>
-
-  <!-- §9 Partis — Parlement -->
-  <section id="partis-parlement" class="metho-section">
-    <p class="metho-section-label">§ 09</p>
-    <h2>Module : Partis politiques — Parlement</h2>
-    <p class="metho-body">Version parlementaire du module §&nbsp;06. Mesure la présence et le ton des partis dans les débats législatifs. Mêmes transcripts (ANQ et Chambre des communes), même pipeline d'analyse (dictionnaires de partis et de sentiment, pondération temporelle).</p>
-  </section>
-
-  <!-- §10 Opinion publique -->
-  <section id="opinion-publique" class="metho-section">
-    <p class="metho-section-label">§ 10</p>
-    <h2>Module : Opinion publique citoyenne</h2>
-    <p class="metho-body">Ce module présente les préoccupations déclarées et les positions des Québécois·es sur les enjeux d'actualité, telles que mesurées par sondage en ligne quotidien.</p>
-
-    <h3>Collecte</h3>
-    <p class="metho-body">Les données proviennent de l'application <strong>Enju</strong> (anciennement Projet Quorum, CLESSN). Des sondages sont conduits quotidiennement sur le Web auprès d'un panel de volontaires. Chaque question est présentée sur une échelle de Likert à cinq points.</p>
-
-    <h3>Pondération</h3>
-    <p class="metho-body">Les résultats bruts sont pondérés selon le genre, l'âge et le niveau d'éducation pour assurer une représentativité approximative par rapport à la population québécoise (recensement).</p>
-
     <h3>Affichage</h3>
-    <p class="metho-body">Pour chaque enjeu, le visiteur se positionne sur l'échelle et sa réponse est comparée à la distribution du panel.</p>
+    <p class="metho-body">Classement des partis par volume de parole. Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les scores d'enjeux permettent d'identifier les thèmes privilégiés par chaque formation politique.</p>
   </section>
 
-  <!-- §11 Fenêtres temporelles -->
+  <!-- §8 Fenêtres temporelles -->
   <section id="fenetres-temporelles" class="metho-section">
-    <p class="metho-section-label">§ 11</p>
-    <h2>Fenêtres temporelles et pondérations</h2>
-    <p class="metho-body">Les modules médias et parlementaires sont disponibles selon trois fenêtres. Une pondération décroissante est appliquée dans tous les cas : les événements récents ont plus de poids, tout en conservant un contexte historique.</p>
+    <p class="metho-section-label">§ 08</p>
+    <h2>Fenêtres temporelles</h2>
+    <p class="metho-body">Les modules de couverture médiatique sont disponibles selon trois fenêtres temporelles, correspondant à trois tables Athena distinctes (<code>_day</code>, <code>_week</code>, <code>_month</code>) produites par les raffineurs.</p>
 
     <div class="metho-table-wrap">
       <table class="metho-table">
-        <thead><tr><th>Fenêtre</th><th>Portée</th><th>Pondérations (J, J−1 … J−6)</th></tr></thead>
+        <thead><tr><th>Fenêtre</th><th>Portée</th><th>Fréquence de mise à jour</th></tr></thead>
         <tbody>
-          <tr><td><strong>Jour</strong></td><td>7 derniers jours</td><td>1,00 — 0,25 — 0,20 — 0,15 — 0,10 — 0,05 — 0,02</td></tr>
-          <tr><td><strong>Semaine</strong></td><td>7 derniers jours</td><td>1,00 — 0,85 — 0,70 — 0,55 — 0,40 — 0,25 — 0,10</td></tr>
-          <tr><td><strong>Mois</strong></td><td>30 derniers jours</td><td>Décroissance linéaire de 1,00 à 0,10 sur 30 jours</td></tr>
+          <tr><td><strong>Aujourd'hui</strong></td><td>Blocs de 4 h du jour courant</td><td>6 fois par jour (00 h, 04 h, 08 h, 12 h, 16 h, 20 h, heure de Montréal)</td></tr>
+          <tr><td><strong>Cette semaine</strong></td><td>7 derniers jours glissants</td><td>1 fois par jour (19 h 35, heure de Montréal)</td></tr>
+          <tr><td><strong>Ce mois</strong></td><td>29 à 31 derniers jours glissants</td><td>1 fois par jour (19 h 39, heure de Montréal)</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="metho-body">Les raffineurs appliquent une pondération décroissante à l'intérieur de chaque fenêtre : les événements récents contribuent davantage au score final que les événements anciens.</p>
   </section>
 
-  <!-- §12 Limites -->
+  <!-- §9 Limites -->
   <section id="limites" class="metho-section">
-    <p class="metho-section-label">§ 12</p>
+    <p class="metho-section-label">§ 09</p>
     <h2>Limites reconnues</h2>
     <blockquote class="metho-quote">Aucune mesure n'est neutre. La Vitrine revendique sa rigueur en exposant aussi ses limites.</blockquote>
 
     <h3>1 · Sélection des sources médiatiques</h3>
-    <p class="metho-body">Le corpus couvre 13 médias généraux établis. Les médias alternatifs, hyperlocalaux, spécialisés et les plateformes de médias sociaux ne sont pas inclus. Ce choix sur-représente les acteurs médiatiques nationaux et les formats de presse traditionnelle.</p>
+    <p class="metho-body">Le corpus couvre 13 sources d'information générale établies. Les médias alternatifs, hyperlocalaux, spécialisés et les plateformes de médias sociaux ne sont pas inclus. Ce choix sur-représente les acteurs médiatiques nationaux et les formats de presse traditionnelle.</p>
 
     <h3>2 · Pages frontales ≠ couverture totale</h3>
     <p class="metho-body">Les pages d'accueil ne constituent qu'une fraction de la production journalistique. Certains sujets font l'objet d'une couverture approfondie sans jamais atteindre la une. L'indice mesure la <em>visibilité frontale</em>, pas l'ensemble de la couverture.</p>
@@ -703,33 +696,29 @@
     <h3>5 · Comparabilité inter-langues</h3>
     <p class="metho-body">Les indices calculés séparément pour les médias francophones et anglophones ne sont pas directement comparables en valeur absolue, en raison des différences stylistiques entre les deux groupes.</p>
 
-    <h3>6 · Représentativité du panel de sondage</h3>
-    <p class="metho-body">Les sondages Enju reposent sur un panel de volontaires. Malgré la pondération, des biais de sélection persistent : les personnes intéressées par la politique et connectées sont sur-représentées.</p>
-
-    <h3>7 · Nature statique des données publiées</h3>
-    <p class="metho-body">Dans la version actuelle hébergée sur GitHub Pages, les données sont des instantanés statiques (<em>snapshots</em>). Elles ne sont pas mises à jour en temps réel mais remplacées manuellement lors de chaque déploiement.</p>
+    <h3>6 · Instantanés statiques</h3>
+    <p class="metho-body">Les données publiées sont des instantanés (<em>snapshots</em>) mis à jour automatiquement six fois par jour par un pipeline AWS. Les scores affichés correspondent au dernier cycle de collecte et d'analyse, non à un flux continu en temps réel.</p>
   </section>
 
-  <!-- §13 Éthique -->
+  <!-- §10 Éthique -->
   <section id="ethique" class="metho-section">
-    <p class="metho-section-label">§ 13</p>
+    <p class="metho-section-label">§ 10</p>
     <h2>Éthique et transparence</h2>
     <ul class="metho-list">
       <li>La CLESSN détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
-      <li>Les données sont hébergées au Québec, dans les infrastructures de l'Université Laval. Aucune donnée personnelle n'est transmise à des tiers.</li>
+      <li>Les données sont hébergées au Québec, dans les infrastructures cloud de la CLESSN. Aucune donnée personnelle n'est transmise à des tiers.</li>
       <li>Aucune donnée permettant d'identifier un individu n'est utilisée dans le calcul des indices de saillance médiatique ou parlementaire.</li>
-      <li>Les sondages Enju sont anonymes. Aucune donnée permettant d'identifier un répondant n'est conservée dans les tables publiées.</li>
-      <li>Le code des raffineurs de données est disponible sur les dépôts GitHub publics de la CLESSN (<a href="https://github.com/clessn" target="_blank" rel="noopener">github.com/clessn</a>) et d'Ellipse Sciences.</li>
+      <li>Le code des raffineurs de données est disponible sur les dépôts GitHub publics de la CLESSN et d'Ellipse Sciences (<a href="https://github.com/ellipse-science" target="_blank" rel="noopener">github.com/ellipse-science</a>).</li>
     </ul>
   </section>
 
-  <!-- §14 Citation -->
+  <!-- §11 Citation -->
   <section id="citation" class="metho-section">
-    <p class="metho-section-label">§ 14</p>
+    <p class="metho-section-label">§ 11</p>
     <h2>Citation et accès aux données</h2>
     <p class="metho-body">Si vous utilisez les données ou les indices de la Vitrine Démocratique dans vos travaux, veuillez citer :</p>
     <div class="metho-citation">
-      CLESSN (Centre pour l'étude de la citoyenneté, de la démocratie et des inégalités). (2025). <em>Vitrine Démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrine-showcase.github.io" target="_blank" rel="noopener">https://vitrine-showcase.github.io</a>
+      CLESSN (Centre pour l'étude de la citoyenneté, de la démocratie et des inégalités). (2026). <em>La Vitrine démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrine-showcase.github.io" target="_blank" rel="noopener">https://vitrine-showcase.github.io</a>
     </div>
     <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, contactez-nous à <a href="mailto:capp@ulaval.ca">capp@ulaval.ca</a>.</p>
 
@@ -740,7 +729,7 @@
   <div class="footer-note">
     <div>
       <h4>Méthodologie</h4>
-      <p>Treize médias québécois · une principale · six mises à jour par jour.</p>
+      <p>Treize sources d'information · une principale · six mises à jour par jour.</p>
     </div>
     <div>
       <h4>Propulsé par le CAPP</h4>
