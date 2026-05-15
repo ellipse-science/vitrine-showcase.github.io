@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 
 function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
+  const tooltip = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
   return (
-    <div className="tm-tile" style={{ "--c": tile.color } as React.CSSProperties}>
+    <div className="tm-tile" style={{ "--c": tile.color } as React.CSSProperties} data-tooltip={tooltip}>
       <div className="tm-enjeu">{tile.issueFr}</div>
       {tile.topObject && <div className="tm-name">{tile.topObject}</div>}
       {showContext && tile.context && <div className="tm-context">{tile.context}</div>}
