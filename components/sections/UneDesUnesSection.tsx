@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 
@@ -38,7 +41,7 @@ function Byline({ mediaPresent, mediaAbsent }: {
   );
 }
 
-function MainUne({ event }: { event: UneEvent }) {
+function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?: string }) {
   return (
     <div className="une-main">
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
@@ -52,6 +55,19 @@ function MainUne({ event }: { event: UneEvent }) {
           <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
         ) : event.title}
       </h1>
+      {generatedArtUrl && (
+        <figure className="hero-figure-inline">
+          <div className="figure-frame">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={generatedArtUrl}
+              alt={event.title}
+              className="editorial-img"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
+        </figure>
+      )}
       <div className="saillance-row">
         <span className="region-label">Québec</span>
         <SaillanceDots filled={event.saillanceFilled} />
@@ -150,9 +166,16 @@ function DeuxSolitudes({
 }
 
 export async function UneDesUnesSection() {
-  const data = await loadHeadlineEvents();
+  const artJsonPath = path.resolve(
+    process.cwd(), "public", "data", "generated-art", "latest.json",
+  );
+  const [data, artExists] = await Promise.all([
+    loadHeadlineEvents(),
+    fs.access(artJsonPath).then(() => true).catch(() => false),
+  ]);
   if (!data || data.top3.length === 0) return null;
 
+  const generatedArtUrl = artExists ? "/data/generated-art/latest.png" : undefined;
   const [main, sideLeft, sideRight] = data.top3;
 
   return (
@@ -164,7 +187,7 @@ export async function UneDesUnesSection() {
 
       {/* Hero principal — pleine largeur (Figma: "hero") */}
       <section className="hero-main">
-        {main && <MainUne event={main} />}
+        {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} />}
       </section>
 
       {/* Secondaires — 2 colonnes côte-à-côte en dessous (Figma: "hero-secondaries") */}
