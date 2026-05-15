@@ -2,9 +2,86 @@
 
 ## Project purpose
 
-Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by CLESSN (Université Laval). Source code and deployment configuration in one place. Hosted free on **GitHub Pages**, no AWS infrastructure.
+Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by CLESSN (Université Laval). Source code and deployment configuration in one place. Hosted free on **GitHub Pages**, no AWS infrastructure in this repo.
 
-The site is a single-page editorial dashboard rendered from a designer's maquette (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), with two data-bound sections (`partis-couverture`, `assemblee-qc`) hydrated at **build time** from JSON snapshots committed to the repo by an external R script.
+The site is a single-page editorial dashboard rendered from a designer's maquette (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), with data-bound sections hydrated at **build time** from JSON snapshots committed to the repo by an external R script.
+
+---
+
+## Multi-repo ecosystem
+
+This site sits at the end of a pipeline spanning three repositories. When something looks broken, check which layer owns it.
+
+| Repo | GitHub org/URL | Purpose | Local clone path (typical) |
+|------|---------------|---------|---------------------------|
+| `vitrine-showcase.github.io` | [vitrine-showcase/vitrine-showcase.github.io](https://github.com/vitrine-showcase/vitrine-showcase.github.io) | **This repo.** Next.js static site + data fetch scripts. | `~/Dropbox/travail/CLESSN/Projets/vitrine-showcase.github.io/` |
+| `aws-refiners` | [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners) | R Lambda functions that compute scores, aggregations, issue metadata, etc. Each refiner is a subdirectory under `refiners/`. | `~/Documents/aws-refiners/` |
+| `aws-infra` | [ellipse-science/aws-infra](https://github.com/ellipse-science/aws-infra) | AWS CDK infrastructure: EventBridge schedules, Lambda definitions, Athena databases, S3 buckets. Refiners are wired up in `lib/data-stacks/refiners/refiners.ts`. | `~/Documents/aws-infra/` |
+
+A colleague may also have these repos cloned locally — check with them before changing shared infra.
+
+---
+
+## AWS backend architecture
+
+Two AWS accounts:
+- **PROD** (account `767398150629`): raw ingested data → Athena `datamarts` database
+- **DEV** (account `097610011506`): refined / published data → Athena `datamarts` database → S3 → consumed by `scripts/fetch_data.R` in this repo
+
+### How a refiner runs
+
+1. R source lives in `aws-refiners/refiners/<refiner-name>/runtime.R`
+2. `aws-infra/lib/data-stacks/refiners/refiners.ts` registers each refiner: ECR image name, EventBridge schedule(s), payload(s)
+3. EventBridge triggers the Lambda on schedule → Lambda writes output rows to Athena DEV `datamarts` tables
+4. `scripts/fetch_data.R` (in this repo) reads those Athena tables via the `tube` R package and writes JSON to `public/data/`
+5. Next.js build reads `public/data/` JSON at build time → static HTML/JS
+
+### How to deploy a refiner change (DEV)
+
+The deployment mechanism is **not** merging to `main`. Instead:
+
+1. Push your branch in `aws-refiners`
+2. Open (or update) **PR #102 "Keep open (never merge)"** — a permanent PR from `develop` → `main`
+3. Merging your branch **into `develop`** triggers `pr.yml` → ECR push → EventBridge auto-redeploy
+4. The CDK construct `RedeployServiceOnNewImagePushedToEcr` (in `aws-infra/lib/construct/redeploy-lambda-image-on-push-ecr-stack.ts`) watches ECR pushes and calls `UpdateFunctionCode` automatically
+
+Never merge PR #102. It exists only to keep the `pr.yml` CI pipeline runnable.
+
+### Schedule times
+
+**All schedule times in `aws-infra/lib/data-stacks/refiners/refiners.ts` are Montreal local time (EDT/EST), NOT UTC.** The comment at the top of that file says so explicitly. EDT = UTC−4, EST = UTC−5. A cron `{ hour: '19', minute: '31' }` fires at 19:31 EDT = 23:31 UTC in summer.
+
+### Active refiners
+
+| Refiner | Athena table (DEV) | Schedule (Montreal local) | Source dir |
+|---------|-------------------|--------------------------|-----------|
+| `radar-issues-score` | `"vitrine_datamart-issues_score_day"` | 6×/day: 23:31, 03:31, 07:31, 11:31, 15:31, 19:31 | `aws-refiners/refiners/radar-issues-score/` |
+| `radar-party-score-salient-shadow` | `"vitrine_datamart-provincial_parties_score_day"` | 6×/day (every ~4h) | `aws-refiners/refiners/radar-party-score-salient-shadow/` |
+| `vitrine-graph-data` | various | varies | `aws-refiners/refiners/vitrine-graph-data/` |
+| `radar-headlines-issues` | headline events | varies | `aws-refiners/refiners/radar-headlines-issues/` |
+
+### Inspecting Athena data directly from R
+
+If you need to verify what's actually in a DEV table, load credentials from the local `.Renviron` and query Athena directly:
+
+```r
+library(tube)
+conn <- ellipse_connect(env = "DEV", database = "datamarts")
+# Note: DEV table names use a dash — must be quoted
+df <- DBI::dbGetQuery(conn, 'SELECT * FROM "vitrine_datamart-issues_score_day" LIMIT 10')
+DBI::dbDisconnect(conn)
+```
+
+The `.Renviron` at `~/.Renviron` (or in the repo root) must contain:
+```
+AWS_ACCESS_KEY_ID_DEV=...
+AWS_SECRET_ACCESS_KEY_DEV=...
+AWS_REGION=ca-central-1
+```
+
+Never commit credentials. The same variable names are used as GitHub Actions secrets in `refresh-data.yml`.
+
+---
 
 ## Stack
 
@@ -37,6 +114,32 @@ npm run build   # next build → out/, then scripts/postbuild.mjs copies /presen
 
 To enable GitHub Pages (one-time setup): Repo Settings → Pages → Source: "GitHub Actions"
 
+### AWS safety rules (deployment only)
+
+This repo has **no AWS deployment path**. Do not add or restore any of the following:
+- `aws-actions/configure-aws-credentials` in any workflow
+- S3, CloudFront, or AWS deployment secrets
+- Any workflow that pushes `out/` to S3 or invalidates a CloudFront distribution
+
+If old docs or git history mention AWS deployment, treat that as historical context — the site was migrated to GitHub Pages. AWS credentials in this repo are **read-only data fetching** (`refresh-data.yml`), never deployment.
+
+---
+
+## What to edit (quick reference)
+
+| What | Where |
+|------|-------|
+| UI components and pages | `app/`, `components/`, `lib/` |
+| Static non-data HTML chunks | `static-content/*.html` — plain HTML, no JSX |
+| Maquette CSS | `app/globals.css` |
+| Data loaders (TypeScript) | `lib/data/*.ts` |
+| Data pipeline config | `scripts/fetch_data.R`, `scripts/tables.json` |
+| JSON data files | **Never edit by hand** — refreshed by the R script |
+
+The legacy CRA app (formerly in `src/`) and the static maquette HTML (formerly `public/index.html` + `public/js/*`) were removed in the Next.js migration — see git history.
+
+---
+
 ## Architecture
 
 ```
@@ -48,15 +151,18 @@ components/
   sections/                   Async Server Components — load data at build time, render shells
     PartisCouvertureSection.tsx
     AssembleeSection.tsx
+    HeadlineEventsSection.tsx
     RawMaquette.tsx           Reads a static-content/*.html chunk and inlines it
   interactive/                'use client' components — React state + behavior
     PartisCouvertureClient.tsx    today / week / month tab switcher
     AssembleeClient.tsx           last_pdq / session / legislature tab switcher
+    TreemapClient.tsx             issues treemap today / week / month tab switcher
     PulseCountdown.tsx            live countdown to next data refresh
 lib/
   data/
     parties.ts                Loader + transformations for provincial_parties_score_day.json
     assemblee.ts              Loader + transformations for agora_decideurs_qc.json
+    headlineEvents.ts         Loader + transformations for issues_score_day.json (treemap)
 static-content/               Verbatim HTML chunks (masthead, treemap, partners, footer).
                               Embedded via dangerouslySetInnerHTML. Edit as plain HTML.
 public/                       Static assets — written to by the data refresher
@@ -76,6 +182,8 @@ llm_context/                  Long-form design + architecture references for LLM
 
 The data loaders in `lib/data/*.ts` read from `path.resolve(cwd, 'public', 'data', ...)` — Next.js's public/ convention plus our own build-time fs reads. The R refresher writes to the same `/public/data/` and doesn't need to know anything about Next.js.
 
+---
+
 ## Data
 
 Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via `.github/workflows/refresh-data.yml` triggered externally by [cron-job.org](https://cron-job.org/). The script reads a whitelist of Athena tables from `scripts/tables.json` and writes JSON to `public/data/`.
@@ -83,15 +191,78 @@ Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via 
 **Currently consumed by the build:**
 - `refined/day/provincial_parties_score_day.json` → `lib/data/parties.ts` → partis-couverture section
 - `agora/agora_decideurs_qc.json` → `lib/data/assemblee.ts` → assemblée section
+- `refined/day/issues_score_day.json` → `lib/data/headlineEvents.ts` → treemap section (issues)
 - `meta.json` → freshness metadata (no UI binding yet)
 
 **To add a new table:** edit `scripts/tables.json` — append a new entry under `tables` (or flip an existing `enabled: false` to `true`). Each entry declares the Athena source, output path, and the column whitelist. Re-fetching happens on the next 4h cron tick (or manually via the `refresh-data.yml` workflow_dispatch). For tables that need a derived/aggregated output, add a `post_process` entry pointing at one of the builders registered in `scripts/fetch_data.R`'s `POST_PROCESSORS` map.
 
 **To auto-discover new tables published by a refiner:** run `Rscript scripts/discover_tables.R` locally. It connects to Athena, lists tables matching `_discover.match_regex` in `scripts/tables.json`, and appends disabled stub entries for any not already in the config. Existing entries are never modified. AWS creds come from the local `.Renviron` (same `AWS_*_DEV` variables `refresh-data.yml` uses).
 
-Several table definitions sit dormant in `scripts/tables.json` with `enabled: false` — the inventory of what's available to switch on when a new section is built (federal partis, issues, reflet summaries, headline events).
+Several table definitions sit dormant in `scripts/tables.json` with `enabled: false` — the inventory of what's available to switch on when a new section is built (federal partis, reflet summaries, headline events).
 
 **Note:** `scripts/fetch_data.R` currently appends `[skip ci]` to its commit messages to keep the GitHub Pages deploy from rebuilding on every 4h refresh. Whether to remove this is tied to the hosting decision; see `docs/cloudflare-pages-migration.md`.
+
+---
+
+## issues_score_day schema and `issues_meta`
+
+The `radar-issues-score` refiner produces one row per `(date_utc, tag, pass, issue_key)`. Key columns:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `date_utc` | string `YYYY-MM-DD` | UTC date of the articles scored |
+| `tag` | string | Run tag (timestamp-like, e.g. `2026-05-14T19:31`) — latest tag = most recent run |
+| `pass` | string | `"am"`, `"noon"`, or `"pm"` — which article window was scored |
+| `issue_key` | string | e.g. `"economie"`, `"sante"`, `"education"` |
+| `score` | numeric | Raw salience score for that issue on that day/pass |
+| `issues_meta` | JSON string | `{"issue_key": {"label": "...", "obj": "..."}}` — top article info per issue |
+
+`issues_meta` is a JSON string. An empty run produces `"{}"`. `lib/data/headlineEvents.ts` calls `parseIssuesMeta()` to decode it; if empty/null, `loadFallbackIssueContent()` constructs a fallback from raw scores.
+
+**ISSUE_KEYS with French labels:**
+
+| Key | French label |
+|-----|-------------|
+| `economie` | Économie |
+| `sante` | Santé |
+| `education` | Éducation |
+| `environnement` | Environnement |
+| `immigration` | Immigration |
+| `justice` | Justice |
+| `politique` | Politique |
+| `international` | International |
+| `culture` | Culture |
+| `sport` | Sport |
+| `technologie` | Technologie |
+| `autre` | Autre |
+
+---
+
+## Diagnosing frontend vs backend problems
+
+### "The treemap / section looks wrong or stale"
+
+1. **Check `public/data/`**: Is the JSON file present and recent? `ls -la public/data/refined/day/`
+2. **Check the last refresh run**: GitHub Actions → `refresh-data.yml` workflow history
+3. **Check Athena directly** (see R snippet above): Does the table have recent rows with a recent `tag`?
+4. **Is it a frontend transform bug?** Check `lib/data/headlineEvents.ts` — the `buildPeriodData` function aggregates rows. The treemap shows day/week/month tabs; if all three look identical with only a few days of data in the table, that's expected — divergence appears as history accumulates.
+5. **Is it a refiner bug?** Check the Lambda logs in CloudWatch (AWS DEV account). Log group name matches the Lambda function name from `aws-infra/lib/data-stacks/refiners/refiners.ts`.
+
+### "The section doesn't update when I click the tabs (day / week / month)"
+
+The data for all three periods is fetched at **build time** and passed as props to the client component. If the tabs appear identical, it usually means:
+- Only a few days of data exist yet (expected early on)
+- The `tag` tiebreaker in `latestIssueRow()` is picking the wrong row
+- The period aggregation in `buildPeriodData()` is summing fewer rows than expected
+
+### "A refiner stopped publishing data"
+
+1. Check AWS DEV CloudWatch for the Lambda log group
+2. Check the ECR image was pushed (did `pr.yml` in `aws-refiners` succeed?)
+3. Verify the schedule in `aws-infra/lib/data-stacks/refiners/refiners.ts` — remember times are **Montreal local**, not UTC
+4. Run the R inspection snippet above to see what's actually in Athena
+
+---
 
 ## How to add a new data-bound section
 
@@ -103,9 +274,26 @@ Several table definitions sit dormant in `scripts/tables.json` with `enabled: fa
 
 Use `lib/data/parties.ts` + `components/sections/PartisCouvertureSection.tsx` + `components/interactive/PartisCouvertureClient.tsx` as the canonical example.
 
+## How to modify a refiner
+
+1. Edit `aws-refiners/refiners/<refiner-name>/runtime.R`
+2. Test locally if possible (mock data or direct Athena query)
+3. Commit and merge to `develop` in `aws-refiners` → ECR push → auto-redeploy to DEV Lambda (via PR #102 mechanism)
+4. Inspect output in Athena DEV (R snippet above) or wait for next scheduled run
+5. Once validated: open a PR to `main` in `aws-refiners` for production
+
+## How to change a refiner schedule
+
+1. Edit `aws-infra/lib/data-stacks/refiners/refiners.ts` — find the refiner entry, change the `cron` array
+2. **Times are Montreal local (EDT/EST), not UTC**
+3. Run `yarn lint:ts && yarn lint:eslint && yarn lint:prettier` in `aws-infra` before pushing — prettier is strict (no alignment spaces)
+4. Open a PR to `develop` in `aws-infra`; CDK deploy propagates the new schedule
+
 ## How to edit a static (non-data) section
 
 The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live as raw HTML in `static-content/{top,middle,bottom}.html`. Edit them as plain HTML — they're inlined verbatim via `dangerouslySetInnerHTML`. No JSX gotchas. To make a chunk interactive, JSX-convert it into a proper component (move the markup into a `.tsx`, replace `class` → `className`, etc.) and remove the chunk from `static-content/`.
+
+---
 
 ## Context references
 
