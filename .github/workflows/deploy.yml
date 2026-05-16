@@ -37,6 +37,8 @@ jobs:
 
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
+        env:
+          NEXT_PUBLIC_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
