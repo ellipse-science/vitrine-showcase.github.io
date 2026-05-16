@@ -34,8 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          # persist-credentials must stay true (default) so checkout's SSH
+          # config survives into the "Commit updated data files" push step.
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
-          persist-credentials: false
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2

@@ -28,9 +28,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           # Push must use the deploy key: the `main` branch ruleset only
-          # bypasses a DeployKey actor (same mechanism as refresh-data.yml).
+          # bypasses a DeployKey actor. persist-credentials must stay true
+          # (default) so checkout's SSH config survives into the push step.
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
-          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v6
