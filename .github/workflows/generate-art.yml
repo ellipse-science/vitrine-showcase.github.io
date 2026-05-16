@@ -27,7 +27,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Push must use the deploy key: the `main` branch ruleset only
+          # bypasses a DeployKey actor (same mechanism as refresh-data.yml).
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -49,6 +52,8 @@ jobs:
             echo "No changes — skipping commit."
           else
             git commit -m "art: generate $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            # Authenticate with the dedicated deploy key (ruleset bypass).
+            git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
             git pull --rebase origin main
             git push
           fi
