@@ -18,6 +18,7 @@ export function IssueReporter() {
   const [description, setDescription] = useState('')
   const [reporterName, setReporterName] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function IssueReporter() {
   }, [])
 
   useEffect(() => {
-    if (uiState === 'modal') textareaRef.current?.focus()
+    if (uiState === 'modal') nameInputRef.current?.focus()
   }, [uiState])
 
   const openModal = () => {
@@ -185,8 +186,10 @@ export function IssueReporter() {
                 <p style={label}>{reportCtx.section || 'La Vitrine'}</p>
                 <h2 style={title}>Signaler un problème</h2>
                 <p style={dek}>Décrivez ce que vous avez observé. Votre signalement sera revu par l&apos;équipe.</p>
-                <p style={fieldLabel}>Votre nom</p>
+                <label htmlFor="reporter-name" style={fieldLabel}>Votre nom</label>
                 <input
+                  id="reporter-name"
+                  ref={nameInputRef}
                   type="text"
                   value={reporterName}
                   onChange={e => setReporterName(e.target.value)}
