@@ -402,10 +402,19 @@ async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
   if (rows.length === 0) return null;
   return rows.slice().sort((a, b) => {
+    const tA = (a.tag as string) ?? "";
+    const tB = (b.tag as string) ?? "";
+    if (tB !== tA) return tB.localeCompare(tA);
     const dA = (a.date_utc as string) ?? "";
     const dB = (b.date_utc as string) ?? "";
     if (dB !== dA) return dB.localeCompare(dA);
-    return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
+    const passDiff = (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
+    if (passDiff !== 0) return passDiff;
+    const metaA = (a.issues_meta as string) ?? "{}";
+    const metaB = (b.issues_meta as string) ?? "{}";
+    if (metaB !== "{}" && metaA === "{}") return 1;
+    if (metaA !== "{}" && metaB === "{}") return -1;
+    return 0;
   })[0] ?? null;
 }
 
