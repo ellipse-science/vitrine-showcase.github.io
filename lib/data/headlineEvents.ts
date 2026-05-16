@@ -312,6 +312,13 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   let solitudesStories: SolitudeStory[];
   if (divergenceEntries.length > 0) {
+    // event_label → French event title (les events ont déjà le titre traduit dans `title`)
+    const labelToTitle = new Map<string, string>();
+    for (const e of unique) {
+      if (e.event_label && e.title && !labelToTitle.has(e.event_label)) {
+        labelToTitle.set(e.event_label, e.title);
+      }
+    }
     // Dédupliquer par event_label (garder le score de divergence le plus élevé par label)
     const dedupedByLabel = new Map<string, DivergenceEntry>();
     for (const d of divergenceEntries) {
@@ -322,10 +329,13 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     }
     const uniqueEntries = Array.from(dedupedByLabel.values())
       .sort((a, b) => b.divergence_score - a.divergence_score);
-    solitudesStories = uniqueEntries.slice(0, 5).map((d) => {
-      const label = d.event_label.length > 0
-        ? d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1)
-        : d.event_title_raw;
+    solitudesStories = uniqueEntries.slice(0, 3).map((d) => {
+      const fr = labelToTitle.get(d.event_label);
+      const label = fr && fr.length > 0
+        ? fr
+        : (d.event_title_raw && d.event_title_raw.length > 0
+            ? d.event_title_raw
+            : d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1));
       const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
       const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
       return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
