@@ -16,7 +16,9 @@ export function IssueReporter() {
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const [reportCtx, setReportCtx] = useState<ReportContext>({ section: '', elementContext: '' })
   const [description, setDescription] = useState('')
+  const [reporterName, setReporterName] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export function IssueReporter() {
   }, [])
 
   useEffect(() => {
-    if (uiState === 'modal') textareaRef.current?.focus()
+    if (uiState === 'modal') nameInputRef.current?.focus()
   }, [uiState])
 
   const openModal = () => {
@@ -64,10 +66,13 @@ export function IssueReporter() {
   const handleClose = () => {
     setUiState('idle')
     setDescription('')
+    setReporterName('')
   }
 
+  const canSubmit = description.trim().length > 0 && reporterName.trim().length > 0
+
   const handleSubmit = async () => {
-    if (!description.trim()) return
+    if (!canSubmit) return
     setUiState('submitting')
     try {
       const res = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {
@@ -83,6 +88,7 @@ export function IssueReporter() {
             description: description.trim(),
             section: reportCtx.section,
             elementContext: reportCtx.elementContext,
+            reporterName: reporterName.trim(),
           },
         }),
       })
@@ -160,8 +166,8 @@ export function IssueReporter() {
             {uiState === 'success' && (
               <>
                 <p style={label}>Signalement reçu</p>
-                <h2 style={title}>Merci pour ton retour.</h2>
-                <p style={dek}>Ton signalement a été transmis à l&apos;équipe et sera traité dans les prochains jours.</p>
+                <h2 style={title}>Merci pour votre retour.</h2>
+                <p style={dek}>Votre signalement a été transmis à l&apos;équipe et sera traité dans les prochains jours.</p>
                 <button onClick={handleClose} style={btn}>Fermer</button>
               </>
             )}
@@ -170,7 +176,7 @@ export function IssueReporter() {
               <>
                 <p style={label}>Erreur</p>
                 <h2 style={title}>Envoi échoué</h2>
-                <p style={dek}>Une erreur est survenue. Réessaie dans quelques instants.</p>
+                <p style={dek}>Une erreur est survenue. Réessayez dans quelques instants.</p>
                 <button onClick={handleClose} style={btn}>Fermer</button>
               </>
             )}
@@ -179,7 +185,31 @@ export function IssueReporter() {
               <>
                 <p style={label}>{reportCtx.section || 'La Vitrine'}</p>
                 <h2 style={title}>Signaler un problème</h2>
-                <p style={dek}>Décris ce que tu as observé. Ton signalement sera revu par l&apos;équipe.</p>
+                <p style={dek}>Décrivez ce que vous avez observé. Votre signalement sera revu par l&apos;équipe.</p>
+                <label htmlFor="reporter-name" style={fieldLabel}>Votre nom</label>
+                <input
+                  id="reporter-name"
+                  ref={nameInputRef}
+                  type="text"
+                  value={reporterName}
+                  onChange={e => setReporterName(e.target.value)}
+                  disabled={uiState === 'submitting'}
+                  placeholder="Prénom et nom"
+                  style={{
+                    width: '100%',
+                    fontFamily: "'Source Serif 4', serif",
+                    fontSize: '14px',
+                    lineHeight: 1.5,
+                    color: 'var(--ink)',
+                    background: 'var(--paper-deep)',
+                    border: '0.5px solid var(--rule)',
+                    padding: '10px 12px',
+                    boxSizing: 'border-box',
+                    marginBottom: '16px',
+                    outline: 'none',
+                  }}
+                />
+                <p style={fieldLabel}>Description</p>
                 <textarea
                   ref={textareaRef}
                   value={description}
@@ -212,8 +242,8 @@ export function IssueReporter() {
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={!description.trim() || uiState === 'submitting'}
-                    style={{ ...btn, opacity: !description.trim() || uiState === 'submitting' ? 0.45 : 1 }}
+                    disabled={!canSubmit || uiState === 'submitting'}
+                    style={{ ...btn, opacity: !canSubmit || uiState === 'submitting' ? 0.45 : 1 }}
                   >
                     {uiState === 'submitting' ? 'Envoi…' : 'Envoyer →'}
                   </button>
@@ -254,6 +284,16 @@ const dek: React.CSSProperties = {
   color: 'var(--ink-soft)',
   lineHeight: 1.45,
   margin: '0 0 24px',
+}
+
+const fieldLabel: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '9px',
+  fontWeight: 500,
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-softer)',
+  margin: '0 0 6px',
 }
 
 const btn: React.CSSProperties = {

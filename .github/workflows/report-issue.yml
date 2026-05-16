@@ -17,14 +17,18 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           script: |
-            const description = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
-            const section     = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
-            const elemCtx     = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
+            const description  = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
+            const section      = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
+            const elemCtx      = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
+            const reporterName = String(context.payload.client_payload?.reporterName ?? '').slice(0, 100).trim()
 
             if (!description) {
               core.setFailed('Description vide — signalement ignoré.')
               return
             }
+
+            const PRIORITY_REPORTERS = ['yannick', 'shannon']
+            const isPriority = PRIORITY_REPORTERS.some(n => reporterName.toLowerCase().startsWith(n))
 
             const systemPrompt = `Tu es un assistant qui reformate des signalements d'utilisateurs en issues GitHub structurées pour "La Vitrine démocratique", un tableau de bord québécois de veille médiatique produit par le CAPP (Université Laval).
 
@@ -32,12 +36,13 @@ jobs:
             ## Description
             ## Composant concerné
             ## Contexte visible
+            ## Signalé par
 
             Ne rien inventer. Conserve l'information telle quelle. Réponds uniquement en français.`
 
-            const userPrompt = `Section : ${section}\nContexte visible : ${elemCtx}\nSignalement : ${description}`
+            const userPrompt = `Section : ${section}\nContexte visible : ${elemCtx}\nSignalement : ${description}\nSignalé par : ${reporterName || 'Anonyme'}`
 
-            let body = `## Description\n${description}\n\n## Composant concerné\n${section}\n\n## Contexte visible\n${elemCtx || '_Non disponible_'}`
+            let body = `## Description\n${description}\n\n## Composant concerné\n${section}\n\n## Contexte visible\n${elemCtx || '_Non disponible_'}\n\n## Signalé par\n${reporterName || '_Anonyme_'}`
 
             try {
               const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -74,5 +79,5 @@ jobs:
               repo:   'vitrine-showcase.github.io',
               title,
               body,
-              labels: ['signalement-utilisateur'],
+              labels: ['signalement-utilisateur', ...(isPriority ? ['prioritaire'] : [])],
             })
