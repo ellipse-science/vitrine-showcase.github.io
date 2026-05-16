@@ -193,6 +193,27 @@
 
   /* Masthead */
   .page { max-width: 1180px; margin: 0 auto; padding: 32px 60px 80px; }
+
+  /* ── Desktop fluid scaling (test/desktop-fluid-zoom) ──────────────
+     The maquette is a fixed 1180px px-based design. On big monitors it
+     floated as a small lonely column; on small laptops it read tiny.
+     These steps scale the whole design with the viewport so it fills
+     every desktop screen proportionally (identical proportions on a 13"
+     and a 27", just physically larger on the bigger one).
+
+     IMPORTANT: `zoom` must be a LITERAL number — Firefox supports `zoom`
+     but rejects clamp()/calc() values for it (confirmed: it fell back to
+     1). Hence stepped media queries, not a fluid clamp(). Each step is
+     <= viewport/1180 so the centered 1180px box never overflows.
+
+     < 1280px (all mobile/tablet) gets no rule -> zoom 1, untouched.
+     Six numbers = the one tunable knob. Delete this block to revert. */
+  @media (min-width: 1280px) { .page { zoom: 1.05; } }
+  @media (min-width: 1440px) { .page { zoom: 1.2;  } }
+  @media (min-width: 1680px) { .page { zoom: 1.4;  } }
+  @media (min-width: 1920px) { .page { zoom: 1.55; } }
+  @media (min-width: 2200px) { .page { zoom: 1.8;  } }
+  @media (min-width: 2560px) { .page { zoom: 2.1;  } }
   .mast {
     display: flex;
     justify-content: center;
