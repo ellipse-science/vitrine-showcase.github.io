@@ -470,13 +470,16 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     const maxScore = scored[0]?.score || 1;
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
       let topObject = ""; let context = "";
-      if (meta?.[issueKey]) {
-        const obj = meta[issueKey].obj ?? "";
+      const metaEntry = meta?.[issueKey];
+      const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
+      if (hasMetaContent) {
+        const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
-        context = meta[issueKey].label ?? "";
+        context = metaEntry.label ?? "";
       } else {
         const fb = fallbackContent.get(issueKey);
-        topObject = fb?.topObject ?? ""; context = fb?.context ?? "";
+        topObject = fb?.topObject ?? "";
+        context = fb?.context ?? "Aucune actualité saillante sur cette période.";
       }
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context };
     });
