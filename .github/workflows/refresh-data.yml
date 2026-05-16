@@ -77,6 +77,8 @@ jobs:
             git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
             # Use SSH so pushes are authenticated with the dedicated deploy key.
             git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+            # Rebase first: generate-art.yml may push to main concurrently.
+            git pull --rebase origin main
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
