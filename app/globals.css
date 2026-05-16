@@ -311,8 +311,8 @@
     background: var(--paper-deep);
     border-top: 0.5px solid var(--rule);
     border-bottom: 0.5px solid var(--rule);
-    padding: 22px 60px 19px;
-    margin: 14px -60px 22px;
+    padding: 22px 0 19px;
+    margin: 14px 0 22px;
     position: relative;
     text-align: center;
   }
@@ -1212,7 +1212,7 @@
   /* Surface = saillance de l'objet · Couleur = enjeu auquel l'objet appartient */
   .treemap {
     display: grid;
-    grid-template-rows: 55fr 34fr 18fr minmax(62px, 10fr);
+    grid-template-rows: 55fr 34fr 18fr;
     gap: 2px;
     height: 680px;
     background: var(--paper);
@@ -1238,6 +1238,27 @@
     position: relative;
   }
   .tm-tile:hover { filter: brightness(1.14); }
+  .tm-tile::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--c) 78%, #1a1410 22%);
+    color: #F3ECDD;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: 0;
+    padding: 12px 16px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .tm-tile:hover::after { opacity: 1; }
   .tm-tile .tm-enjeu {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9.5px;
@@ -1671,7 +1692,7 @@
   .une-main h1[data-saillance="2"] { font-size: 44px; letter-spacing: -0.4px; }
   .une-main h1[data-saillance="1"] { font-size: 38px; letter-spacing: -0.2px; }
 
-  /* Légende prototype (annotations pour Hugo) */
+  /* Légende prototype */
   .legend-box {
     margin-top: 50px;
     border: 0.5px solid var(--rule);
@@ -1815,8 +1836,8 @@
 
     /* ── Pulse band ── */
     .pulse-band {
-      margin: 12px -16px 16px;
-      padding: 16px 16px 14px;
+      margin: 12px 0 16px;
+      padding: 16px 0 14px;
     }
     .pulse-title { font-size: 8.5px; line-height: 1.7; }
     .pulse-countdown { gap: 4px; }
@@ -2072,7 +2093,7 @@
      ============================================================ */
   @media (max-width: 380px) {
     .page { padding: 14px 12px 56px; }
-    .pulse-band { margin: 12px -12px 14px; }
+    .pulse-band { margin: 12px 0 14px; }
     .solitudes { padding: 18px 12px 16px; }
     .alerte-consensus { padding: 22px 12px 20px; }
     .una-main h1,
