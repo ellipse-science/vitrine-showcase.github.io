@@ -70,7 +70,9 @@ def build_prompt(headline: str, main_issue_text_fr: str) -> str:
         "(palette, composition, abstraction level, artistic treatment) "
         f"depicting this news headline: «{headline}» "
         f"(topic: {main_issue_text_fr}). "
-        "No text, no logos, no photographs."
+        "Absolutely no text of any kind: no words, no letters, no numbers, "
+        "no captions, no titles, no signatures, no watermarks. "
+        "No logos, no photographs. The image must contain zero written characters."
     )
 
 

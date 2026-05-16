@@ -88,7 +88,7 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
             </div>
             <figcaption>
               <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Synthèse visuelle des images des unes analysées.</span>
+              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l’artiste Mathieu Fortin, partenaire du projet.</span>
             </figcaption>
           </figure>
         )}
