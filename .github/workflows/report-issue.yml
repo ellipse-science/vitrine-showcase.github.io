@@ -1,0 +1,78 @@
+name: Traitement des signalements utilisateurs
+
+on:
+  repository_dispatch:
+    types: [report-issue]
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Formater et créer l'issue GitHub
+        uses: actions/github-script@v7
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          script: |
+            const description = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
+            const section     = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
+            const elemCtx     = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
+
+            if (!description) {
+              core.setFailed('Description vide — signalement ignoré.')
+              return
+            }
+
+            const systemPrompt = `Tu es un assistant qui reformate des signalements d'utilisateurs en issues GitHub structurées pour "La Vitrine démocratique", un tableau de bord québécois de veille médiatique produit par le CAPP (Université Laval).
+
+            Reformate le signalement en Markdown avec exactement ces sections :
+            ## Description
+            ## Composant concerné
+            ## Contexte visible
+
+            Ne rien inventer. Conserve l'information telle quelle. Réponds uniquement en français.`
+
+            const userPrompt = `Section : ${section}\nContexte visible : ${elemCtx}\nSignalement : ${description}`
+
+            let body = `## Description\n${description}\n\n## Composant concerné\n${section}\n\n## Contexte visible\n${elemCtx || '_Non disponible_'}`
+
+            try {
+              const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4o-mini',
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user',   content: userPrompt   },
+                  ],
+                  max_tokens: 600,
+                }),
+              })
+              if (res.ok) {
+                const data = await res.json()
+                body = data.choices?.[0]?.message?.content ?? body
+              } else {
+                core.warning(`OpenAI a retourné ${res.status} — issue créée sans reformatage.`)
+              }
+            } catch (err) {
+              core.warning(`OpenAI indisponible — issue créée sans reformatage : ${err}`)
+            }
+
+            const shortDesc = description.length > 55 ? description.slice(0, 55) + '…' : description
+            const prefix    = section !== 'Non précisée' ? `${section} — ` : ''
+            const title     = `[Signalement] ${prefix}${shortDesc}`
+
+            await github.rest.issues.create({
+              owner:  'ellipse-science',
+              repo:   'vitrine-showcase.github.io',
+              title,
+              body,
+              labels: ['signalement-utilisateur'],
+            })
