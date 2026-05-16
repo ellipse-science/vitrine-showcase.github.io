@@ -412,13 +412,19 @@ async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
   if (rows.length === 0) return null;
   return rows.slice().sort((a, b) => {
-    const dA = (a.date_utc as string) ?? "";
-    const dB = (b.date_utc as string) ?? "";
-    if (dB !== dA) return dB.localeCompare(dA);
     const tA = (a.tag as string) ?? "";
     const tB = (b.tag as string) ?? "";
     if (tB !== tA) return tB.localeCompare(tA);
-    return (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
+    const dA = (a.date_utc as string) ?? "";
+    const dB = (b.date_utc as string) ?? "";
+    if (dB !== dA) return dB.localeCompare(dA);
+    const passDiff = (PASS_ORDER[b.pass as string] ?? 0) - (PASS_ORDER[a.pass as string] ?? 0);
+    if (passDiff !== 0) return passDiff;
+    const metaA = (a.issues_meta as string) ?? "{}";
+    const metaB = (b.issues_meta as string) ?? "{}";
+    if (metaB !== "{}" && metaA === "{}") return 1;
+    if (metaA !== "{}" && metaB === "{}") return -1;
+    return 0;
   })[0] ?? null;
 }
 
@@ -493,13 +499,16 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     const maxScore = scored[0]?.score || 1;
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
       let topObject = ""; let context = "";
-      if (meta?.[issueKey]) {
-        const obj = meta[issueKey].obj ?? "";
+      const metaEntry = meta?.[issueKey];
+      const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
+      if (hasMetaContent) {
+        const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
-        context = meta[issueKey].label ?? "";
+        context = metaEntry.label ?? "";
       } else {
         const fb = fallbackContent.get(issueKey);
-        topObject = fb?.topObject ?? ""; context = fb?.context ?? "";
+        topObject = fb?.topObject ?? "";
+        context = fb?.context ?? "Aucune actualité saillante sur cette période.";
       }
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context };
     });
