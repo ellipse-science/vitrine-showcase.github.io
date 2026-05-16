@@ -4,27 +4,37 @@ import { AssembleeSection } from "@/components/sections/AssembleeSection";
 import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export default function Home() {
   return (
     <div className="page">
-      {/* Masthead, sub-nav, pulse-band */}
-      <RawMaquette chunk="top" />
+      <div data-section="En-tête">
+        <RawMaquette chunk="top" />
+      </div>
 
-      {/* Une des unes + Deux solitudes — hydratés depuis headline-events.json */}
-      <UneDesUnesSection />
+      <div data-section="Une des unes">
+        <UneDesUnesSection />
+      </div>
 
-      <PartisCouvertureSection />
+      <div data-section="Partis et couverture">
+        <PartisCouvertureSection />
+      </div>
 
-      {/* Treemap objets saillants × enjeu — hydraté depuis headline-events.json */}
-      <TreemapSection />
+      <div data-section="Enjeux saillants">
+        <TreemapSection />
+      </div>
 
-      <AssembleeSection />
+      <div data-section="Assemblée nationale">
+        <AssembleeSection />
+      </div>
 
-      {/* Partenaires + footer-note */}
-      <RawMaquette chunk="bottom" />
+      <div data-section="Pied de page">
+        <RawMaquette chunk="bottom" />
+      </div>
 
       <PulseCountdown />
+      <IssueReporter />
     </div>
   );
 }
