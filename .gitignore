@@ -26,6 +26,10 @@ npm-debug.log*
 # OS
 .DS_Store
 
+# Python (scripts/generate_art.py, fetch helpers)
+__pycache__/
+*.pyc
+
 # Editor
 *.swp
 *.swo

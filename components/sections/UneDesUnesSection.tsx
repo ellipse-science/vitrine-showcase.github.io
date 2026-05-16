@@ -88,7 +88,7 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
             </div>
             <figcaption>
               <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Synthèse visuelle des images des unes analysées.</span>
+              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l’artiste Mathieu Fortin, partenaire du projet.</span>
             </figcaption>
           </figure>
         )}
@@ -143,7 +143,7 @@ function DeuxSolitudes({
         <div className="sol-axis" />
         <div className="sol-symbol qc">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="glyph fleur" src="/images/fleur-de-lys.png" alt="Québec" aria-label="Québec" />
+          <img className="glyph fleur" src="images/fleur-de-lys.png" alt="Québec" aria-label="Québec" />
           <span className="caption">Québec</span>
         </div>
         <div className="sol-symbol roc">
@@ -193,7 +193,7 @@ export async function UneDesUnesSection() {
   ]);
   if (!data || data.top3.length === 0) return null;
 
-  const generatedArtUrl = artExists ? "/data/generated-art/latest.png" : undefined;
+  const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
   const [main, sideLeft, sideRight] = data.top3;
 
   return (
