@@ -168,6 +168,14 @@ def build_prompt(headline: str, main_issue_text_fr: str, context_digest: str = "
         "balanced composition, and restraint rather than drama."
     )
     parts.append(
+        "When the subject involves people, do not attempt to portray specific, "
+        "real, or named individuals or reproduce anyone's likeness. Render any "
+        "human figures generically and abstractly — deliberately gender-neutral "
+        "and identity-ambiguous, with no clear gender, age, ethnicity, or "
+        "recognizable facial features — favouring silhouettes, figures seen from "
+        "behind, partial framing, or symbolic stand-ins rather than portraits."
+    )
+    parts.append(
         "Absolutely no text of any kind: no words, no letters, no numbers, "
         "no captions, no titles, no signatures, no watermarks. "
         "No logos, no photographs. The image must contain zero written characters."
