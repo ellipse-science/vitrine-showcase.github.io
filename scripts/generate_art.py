@@ -169,11 +169,17 @@ def build_prompt(headline: str, main_issue_text_fr: str, context_digest: str = "
     )
     parts.append(
         "When the subject involves people, do not attempt to portray specific, "
-        "real, or named individuals or reproduce anyone's likeness. Render any "
-        "human figures generically and abstractly — deliberately gender-neutral "
-        "and identity-ambiguous, with no clear gender, age, ethnicity, or "
-        "recognizable facial features — favouring silhouettes, figures seen from "
-        "behind, partial framing, or symbolic stand-ins rather than portraits."
+        "real, or named individuals or reproduce anyone's likeness. Render human "
+        "figures generically and abstractly, with no recognizable facial "
+        "features. Critically, when two or more figures appear together they "
+        "must be visually matched and interchangeable — the same silhouette, the "
+        "same hair length, the same clothing, the same build and scale — so that "
+        "none reads as a particular gender. Do not differentiate figures by "
+        "gender in any way: no long-versus-short hair contrast, no "
+        "suit-versus-skirt or suit-versus-dress pairing, no neckties, no makeup, "
+        "no differing body shapes. Favour identical androgynous silhouettes, "
+        "figures seen from behind, partial framing, or symbolic stand-ins rather "
+        "than portraits."
     )
     parts.append(
         "Absolutely no text of any kind: no words, no letters, no numbers, "
