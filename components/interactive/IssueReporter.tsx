@@ -104,10 +104,8 @@ export function IssueReporter() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const selectFile = (file: File) => {
     setScreenshotError('')
-    const file = e.target.files?.[0] ?? null
-    if (!file) return
     if (!file.type.startsWith('image/')) {
       setScreenshotError('Fichier non supporté — joignez une image.')
       return
@@ -118,6 +116,29 @@ export function IssueReporter() {
     }
     setScreenshotFile(file)
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) selectFile(file)
+  }
+
+  useEffect(() => {
+    if (uiState !== 'modal') return
+    const handlePaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find(i =>
+        i.type.startsWith('image/')
+      )
+      if (!item) return
+      const file = item.getAsFile()
+      if (file) {
+        const named = new File([file], `capture-${Date.now()}.png`, { type: file.type })
+        selectFile(named)
+      }
+    }
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uiState])
 
   const removeFile = () => {
     setScreenshotFile(null)
@@ -312,7 +333,7 @@ export function IssueReporter() {
                     disabled={uiState === 'submitting'}
                     style={attachBtn}
                   >
-                    + Joindre une capture d&apos;écran
+                    Coller (Ctrl+V) ou choisir une image
                   </button>
                 ) : (
                   <div style={attachedRow}>
