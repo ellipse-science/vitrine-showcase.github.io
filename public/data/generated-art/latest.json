@@ -1,10 +1,12 @@
 {
-  "generated_at": "2026-05-18T04:02Z",
-  "headline_fr": "Québécoises réclament équité médiatique entre le Canadien et la Victoire",
-  "headline_en": "Le Canadien et la Victoire",
-  "main_issue": "rights_liberties_minorities_discrimination",
-  "main_issue_text_fr": "Droits, libertés, minorités et discrimination",
+  "generated_at": "2026-05-18T08:02Z",
+  "headline_fr": "Un Canadien testé positif au hantavirus après une croisière",
+  "headline_en": "L’Agence de la santé publique confirme le test positif au hantavirus d’un Canadien",
+  "main_issue": "health_and_social_services",
+  "main_issue_text_fr": "Santé et services sociaux",
   "context_outlets": [
-    "LAP"
+    "LED",
+    "RCI",
+    "VS"
   ]
 }
