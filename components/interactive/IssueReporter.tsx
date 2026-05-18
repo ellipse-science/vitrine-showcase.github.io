@@ -26,7 +26,7 @@ async function compressToBase64(file: File): Promise<string | null> {
       const ctx = canvas.getContext('2d')
       if (!ctx) { resolve(null); return }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      // Start at quality 0.65 and halve until it fits the payload budget
+      // Start at quality 0.65 and reduce by 30% each iteration until it fits the payload budget
       let quality = 0.65
       let b64 = canvas.toDataURL('image/jpeg', quality).split(',')[1]
       while (b64.length > MAX_B64_CHARS && quality > 0.1) {
@@ -155,7 +155,14 @@ export function IssueReporter() {
     let screenshot: { name: string; base64: string } | null = null
     if (screenshotFile) {
       const b64 = await compressToBase64(screenshotFile)
-      if (b64) screenshot = { name: screenshotFile.name, base64: b64 }
+      if (b64) {
+        const baseName = screenshotFile.name.replace(/\.[^.]+$/, '')
+        screenshot = { name: `${baseName}.jpg`, base64: b64 }
+      } else {
+        setScreenshotError("Image trop volumineuse même après compression — elle ne sera pas jointe.")
+        setUiState('modal')
+        return
+      }
     }
 
     try {
@@ -344,6 +351,7 @@ export function IssueReporter() {
                       type="button"
                       onClick={removeFile}
                       disabled={uiState === 'submitting'}
+                      aria-label="Retirer la capture d'écran"
                       style={removeBtn}
                     >
                       ×
