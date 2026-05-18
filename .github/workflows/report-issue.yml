@@ -91,13 +91,13 @@ jobs:
                   await github.rest.repos.createOrUpdateFileContents({
                     owner:   'ellipse-science',
                     repo:    'vitrine-showcase.github.io',
-                    path:    `screenshots/${filename}`,
-                    message: `chore: add screenshot [skip ci]`,
+                    path:    filename,
+                    message: `chore: add screenshot`,
                     content: b64,
-                    branch:  'main',
+                    branch:  'screenshots',
                   })
 
-                  const imageUrl = `https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/main/screenshots/${filename}`
+                  const imageUrl = `https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/screenshots/${filename}`
                   body += `\n\n## Capture d'écran\n\n![Capture d'écran](${imageUrl})`
                 }
               } catch (err) {
