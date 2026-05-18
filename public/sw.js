@@ -22,6 +22,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== location.origin) return;
+  if (request.method !== "GET") return;
 
   // Immutable Next.js assets (content-hashed filenames) → cache first
   if (url.pathname.includes("/_next/static/")) {
@@ -38,7 +39,7 @@ async function networkFirst(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, response.clone()).catch(() => {});
     }
     return response;
   } catch {
@@ -53,7 +54,7 @@ async function cacheFirst(request) {
   const response = await fetch(request);
   if (response.ok) {
     const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
+    cache.put(request, response.clone()).catch(() => {});
   }
   return response;
 }
