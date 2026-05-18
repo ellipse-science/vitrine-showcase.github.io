@@ -76,19 +76,30 @@ jobs:
             // Committer la capture d'écran dans le repo et insérer l'URL raw dans l'issue
             if (screenshot?.base64 && screenshot?.name) {
               try {
-                const filename = `screenshot-${Date.now()}.jpg`
+                const b64 = String(screenshot.base64).slice(0, 60_000)
+                const buffer = Buffer.from(b64, 'base64')
 
-                await github.rest.repos.createOrUpdateFileContents({
-                  owner:   'ellipse-science',
-                  repo:    'vitrine-showcase.github.io',
-                  path:    `screenshots/${filename}`,
-                  message: `chore: add screenshot [skip ci]`,
-                  content: screenshot.base64,
-                  branch:  'main',
-                })
+                // Taille max ~45 Ko décodés (budget client-side)
+                if (buffer.length > 50_000) {
+                  core.warning(`Capture ignorée — trop volumineuse (${buffer.length} octets).`)
+                // Magic bytes JPEG : FF D8 FF
+                } else if (buffer[0] !== 0xFF || buffer[1] !== 0xD8 || buffer[2] !== 0xFF) {
+                  core.warning(`Capture ignorée — le payload n'est pas un JPEG valide.`)
+                } else {
+                  const filename = `screenshot-${Date.now()}.jpg`
 
-                const imageUrl = `https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/main/screenshots/${filename}`
-                body += `\n\n## Capture d'écran\n\n![Capture d'écran](${imageUrl})`
+                  await github.rest.repos.createOrUpdateFileContents({
+                    owner:   'ellipse-science',
+                    repo:    'vitrine-showcase.github.io',
+                    path:    `screenshots/${filename}`,
+                    message: `chore: add screenshot [skip ci]`,
+                    content: b64,
+                    branch:  'main',
+                  })
+
+                  const imageUrl = `https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/main/screenshots/${filename}`
+                  body += `\n\n## Capture d'écran\n\n![Capture d'écran](${imageUrl})`
+                }
               } catch (err) {
                 core.warning(`Impossible de committer la capture d'écran : ${err}`)
               }
