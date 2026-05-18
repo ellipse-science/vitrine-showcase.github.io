@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 const REPO = 'ellipse-science/vitrine-showcase.github.io'
+const MAX_B64_CHARS = 45_000 // garde une marge sous la limite de 65 535 du dispatch
 
 type UIState = 'idle' | 'menu' | 'modal' | 'submitting' | 'success' | 'error'
 
@@ -11,15 +12,46 @@ interface ReportContext {
   elementContext: string
 }
 
+async function compressToBase64(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX = 800
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { resolve(null); return }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      // Start at quality 0.65 and halve until it fits the payload budget
+      let quality = 0.65
+      let b64 = canvas.toDataURL('image/jpeg', quality).split(',')[1]
+      while (b64.length > MAX_B64_CHARS && quality > 0.1) {
+        quality = Math.round(quality * 100 * 0.7) / 100
+        b64 = canvas.toDataURL('image/jpeg', quality).split(',')[1]
+      }
+      resolve(b64.length <= MAX_B64_CHARS ? b64 : null)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+    img.src = url
+  })
+}
+
 export function IssueReporter() {
   const [uiState, setUiState] = useState<UIState>('idle')
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const [reportCtx, setReportCtx] = useState<ReportContext>({ section: '', elementContext: '' })
   const [description, setDescription] = useState('')
   const [reporterName, setReporterName] = useState('')
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [screenshotError, setScreenshotError] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -67,6 +99,30 @@ export function IssueReporter() {
     setUiState('idle')
     setDescription('')
     setReporterName('')
+    setScreenshotFile(null)
+    setScreenshotError('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setScreenshotError('')
+    const file = e.target.files?.[0] ?? null
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setScreenshotError('Fichier non supporté — joignez une image.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setScreenshotError('Image trop volumineuse (max 10 Mo).')
+      return
+    }
+    setScreenshotFile(file)
+  }
+
+  const removeFile = () => {
+    setScreenshotFile(null)
+    setScreenshotError('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const canSubmit = description.trim().length > 0 && reporterName.trim().length > 0
@@ -74,6 +130,13 @@ export function IssueReporter() {
   const handleSubmit = async () => {
     if (!canSubmit) return
     setUiState('submitting')
+
+    let screenshot: { name: string; base64: string } | null = null
+    if (screenshotFile) {
+      const b64 = await compressToBase64(screenshotFile)
+      if (b64) screenshot = { name: screenshotFile.name, base64: b64 }
+    }
+
     try {
       const res = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {
         method: 'POST',
@@ -89,6 +152,7 @@ export function IssueReporter() {
             section: reportCtx.section,
             elementContext: reportCtx.elementContext,
             reporterName: reporterName.trim(),
+            screenshot,
           },
         }),
       })
@@ -228,11 +292,50 @@ export function IssueReporter() {
                     padding: '12px',
                     resize: 'vertical',
                     boxSizing: 'border-box',
-                    marginBottom: '20px',
+                    marginBottom: '16px',
                     outline: 'none',
                   }}
                 />
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+
+                {/* Pièce jointe */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+                {!screenshotFile ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uiState === 'submitting'}
+                    style={attachBtn}
+                  >
+                    + Joindre une capture d&apos;écran
+                  </button>
+                ) : (
+                  <div style={attachedRow}>
+                    <span style={attachedName} title={screenshotFile.name}>
+                      📎 {screenshotFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeFile}
+                      disabled={uiState === 'submitting'}
+                      style={removeBtn}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                {screenshotError && (
+                  <p style={{ ...fieldLabel, color: 'var(--cordovan)', marginTop: '4px' }}>
+                    {screenshotError}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                   <button
                     onClick={handleClose}
                     disabled={uiState === 'submitting'}
@@ -307,4 +410,49 @@ const btn: React.CSSProperties = {
   border: 'none',
   padding: '10px 20px',
   cursor: 'pointer',
+}
+
+const attachBtn: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '9px',
+  fontWeight: 500,
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-softer)',
+  background: 'none',
+  border: '0.5px dashed var(--rule)',
+  padding: '8px 14px',
+  cursor: 'pointer',
+  width: '100%',
+}
+
+const attachedRow: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '8px',
+  border: '0.5px solid var(--rule)',
+  padding: '8px 12px',
+  background: 'var(--paper-deep)',
+}
+
+const attachedName: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '10px',
+  color: 'var(--ink-soft)',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
+
+const removeBtn: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '14px',
+  lineHeight: 1,
+  color: 'var(--ink-softer)',
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: '0 2px',
+  flexShrink: 0,
 }

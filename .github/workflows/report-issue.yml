@@ -15,12 +15,14 @@ jobs:
         uses: actions/github-script@v7
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const description  = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
             const section      = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
             const elemCtx      = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
             const reporterName = String(context.payload.client_payload?.reporterName ?? '').slice(0, 100).trim()
+            const screenshot   = context.payload.client_payload?.screenshot ?? null
 
             if (!description) {
               core.setFailed('Description vide — signalement ignoré.')
@@ -68,6 +70,41 @@ jobs:
               }
             } catch (err) {
               core.warning(`OpenAI indisponible — issue créée sans reformatage : ${err}`)
+            }
+
+            // Uploader la capture d'écran si présente
+            if (screenshot?.base64 && screenshot?.name) {
+              try {
+                const buffer = Buffer.from(screenshot.base64, 'base64')
+                const ext = (screenshot.name.split('.').pop() ?? 'jpg').toLowerCase()
+                const contentType = ext === 'png' ? 'image/png' : 'image/jpeg'
+                const filename = `screenshot-${Date.now()}.${ext}`
+
+                const uploadRes = await fetch(
+                  `https://uploads.github.com/repos/ellipse-science/vitrine-showcase.github.io/issues/images/${filename}`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                      'Content-Type': contentType,
+                      'Content-Length': String(buffer.length),
+                    },
+                    body: buffer,
+                  }
+                )
+
+                if (uploadRes.ok) {
+                  const uploadData = await uploadRes.json()
+                  const imageUrl = uploadData.image_url ?? uploadData.url
+                  if (imageUrl) {
+                    body += `\n\n## Capture d'écran\n\n![Capture d'écran](${imageUrl})`
+                  }
+                } else {
+                  core.warning(`Upload image échoué (${uploadRes.status}) — issue créée sans capture.`)
+                }
+              } catch (err) {
+                core.warning(`Impossible d'uploader la capture d'écran : ${err}`)
+              }
             }
 
             const shortDesc = description.length > 55 ? description.slice(0, 55) + '…' : description
