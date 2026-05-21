@@ -31,19 +31,19 @@
 
   /* Masthead : Vitrine dominant + CAPP en attribution dessous, date prééminente à droite */
   .logo-vitrine {
-    height: 120px; width: auto;
+    height: 72px; width: auto;
     display: block;
     opacity: 0.98;
   }
   .logo-capp {
-    height: 28px; width: auto;
+    height: 36px; width: auto;
     display: block;
     opacity: 0.85;
     margin-left: -5px;
   }
   .mast {
     align-items: flex-start;
-    padding: 18px 0 22px;
+    padding: 18px 0 2px;
     position: relative;
   }
   .mast .brand {
@@ -57,7 +57,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    margin-top: -36px;
+    margin-top: -28px;
   }
   .mast .capp-attribution {
     display: flex;
@@ -65,14 +65,14 @@
     align-items: center;
     gap: 0;
     text-decoration: none;
-    margin-left: 165px;
+    margin-left: 120px;
   }
   .mast .brand-footer .region {
     margin-left: auto;
   }
   .mast .capp-prefix {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 5.5px;
+    font-size: 8px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
@@ -120,7 +120,7 @@
   }
   .mast .brand-footer .region {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 8px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
@@ -838,7 +838,7 @@
     height: 64px;
     display: block;
     margin: 0 auto;
-    mix-blend-mode: multiply;
+    filter: grayscale(1) brightness(0.32) contrast(1.6);
   }
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
@@ -856,8 +856,8 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .solitudes .sol-symbol.qc  { left: var(--qc-pos, 12%); }
-  .solitudes .sol-symbol.roc { left: var(--roc-pos, 88%); }
+  .solitudes .sol-symbol.qc  { left: clamp(10%, var(--qc-pos, 12%), 90%); }
+  .solitudes .sol-symbol.roc { left: clamp(10%, var(--roc-pos, 88%), 90%); }
 
   .solitudes .sol-stat {
     margin: 10px 0 16px;
@@ -1936,7 +1936,7 @@
     .solitudes { padding: 22px 16px 20px; margin-top: 28px; }
     .solitudes .sol-title { font-size: 20px; margin-bottom: 14px; }
     .solitudes .sol-viz { height: 120px; max-width: 100%; }
-    .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; }
+    .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; filter: grayscale(1) brightness(0.32) contrast(1.6); }
     .solitudes .sol-symbol .glyph.maple { font-size: 54px; height: 64px; line-height: 64px; }
     .solitudes .sol-symbol .caption { font-size: 9px; margin-top: 6px; }
     .solitudes .sol-stat { gap: 8px; margin: 8px 0 12px; }
