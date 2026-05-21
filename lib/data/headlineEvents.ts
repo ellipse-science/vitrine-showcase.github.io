@@ -429,7 +429,7 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
   })[0] ?? null;
 }
 
-type IssueMetaEntry = { label: string; obj: string };
+type IssueMetaEntry = { label: string; obj: string; url?: string };
 type IssuesMeta = Record<string, IssueMetaEntry>;
 
 function parseIssuesMeta(raw: unknown): IssuesMeta | null {
@@ -437,16 +437,12 @@ function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
-type FallbackResult = {
-  byIssue: Map<string, { topObject: string; context: string; url: string | null }>;
-  byTitle: Map<string, string | null>;
-};
+type FallbackEntry = { topObject: string; context: string; url: string | null };
 
-async function loadFallbackIssueContent(): Promise<FallbackResult> {
-  const byIssue = new Map<string, { topObject: string; context: string; url: string | null }>();
-  const byTitle = new Map<string, string | null>();
+async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
+  const map = new Map<string, FallbackEntry>();
   let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return { byIssue, byTitle }; }
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
 
   const byId = new Map<string, RawEvent>();
@@ -456,12 +452,6 @@ async function loadFallbackIssueContent(): Promise<FallbackResult> {
   }
   const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
 
-  // byTitle: title → representative_url, for meta-path URL matching
-  for (const e of unique) {
-    if (e.title) byTitle.set(e.title, e.representative_url ?? null);
-  }
-
-  // bestByIssue: best event per issue key (highest score_qc) for fallback path
   const bestByIssue = new Map<string, RawEvent>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
@@ -477,9 +467,9 @@ async function loadFallbackIssueContent(): Promise<FallbackResult> {
         if (raw.length >= 2) topObject = raw.charAt(0).toUpperCase() + raw.slice(1);
       } catch { }
     }
-    byIssue.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
+    map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
   }
-  return { byIssue, byTitle };
+  return map;
 }
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
@@ -513,14 +503,13 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       let topObject = ""; let context = "";
       const metaEntry = meta?.[issueKey];
       const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
-      const fb = fallbackContent.byIssue.get(issueKey);
+      const fb = fallbackContent.get(issueKey);
       let url: string | null = null;
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
         context = metaEntry.label ?? "";
-        // URL via title match — only link when the source article is identified
-        url = (context && fallbackContent.byTitle.get(context)) ?? null;
+        url = metaEntry.url ?? null;
       } else {
         topObject = fb?.topObject ?? "";
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
