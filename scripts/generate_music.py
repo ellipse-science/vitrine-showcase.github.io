@@ -18,29 +18,49 @@ ROOT = Path(__file__).parent.parent
 
 
 def find_top_headlines(events: list[dict], n: int = 3) -> list[dict]:
-    """Return top n QC headlines for the latest available block."""
-    qc = [e for e in events if e.get("target_region") == "QC" and e.get("country_id") != "USA"]
-    if not qc:
-        qc = [e for e in events if e.get("country_id") == "QC"]
-    if not qc:
+    """Return top n QC headlines for the latest block.
+
+    Mirrors the selection logic of loadHeadlineEvents() in lib/data/headlineEvents.ts
+    and find_top_headline() in scripts/generate_art.py: dedupe by event_id preferring
+    target_region==QC, exclude country_id==USA, restrict to latest (date_utc,
+    time_interval_utc) bucket, then pick top n by score_qc / score_saillance.
+    """
+    by_id: dict[str, dict] = {}
+    for e in events:
+        existing = by_id.get(e.get("event_id"))
+        if existing is None or e.get("target_region") == "QC":
+            by_id[e.get("event_id")] = e
+
+    unique = [e for e in by_id.values() if e.get("country_id") != "USA"]
+    if not unique:
         return []
 
-    qc.sort(
-        key=lambda e: (e.get("date_utc", ""), (e.get("time_interval_utc") or "").split("-")[0]),
+    def dt_key(e: dict) -> str:
+        start = (e.get("time_interval_utc") or "").split("-")[0]
+        return f"{e.get('date_utc')}T{start.zfill(2)}:00Z"
+
+    unique.sort(key=dt_key, reverse=True)
+    latest_date     = unique[0].get("date_utc")
+    latest_interval = unique[0].get("time_interval_utc")
+    latest = [e for e in unique if e.get("date_utc") == latest_date and e.get("time_interval_utc") == latest_interval]
+
+    with_titles = [e for e in latest if e.get("title")]
+    with_titles.sort(
+        key=lambda e: ((e.get("score_qc") or 0), (e.get("score_saillance") or 0)),
         reverse=True,
     )
-    latest_date     = qc[0].get("date_utc")
-    latest_interval = qc[0].get("time_interval_utc")
-    latest = [e for e in qc if e.get("date_utc") == latest_date and e.get("time_interval_utc") == latest_interval]
 
-    seen, unique = set(), []
-    for e in sorted(latest, key=lambda x: x.get("score_saillance") or 0, reverse=True):
+    seen: set[str] = set()
+    result: list[dict] = []
+    for e in with_titles:
         title = e.get("title", "")
-        if title and title not in seen:
+        if title not in seen:
             seen.add(title)
-            unique.append(e)
+            result.append(e)
+        if len(result) >= n:
+            break
 
-    return unique[:n]
+    return result
 
 
 def compute_weights(events: list[dict]) -> list[int]:
@@ -76,8 +96,14 @@ def score_gems(context: str, api_key: str, date_str: str, interval_str: str) -> 
             )},
         ],
     )
-    m = re.search(r"\{[^{}]*\}", resp.choices[0].message.content)
-    return json.loads(m.group())
+    content = resp.choices[0].message.content
+    m = re.search(r"\{[^{}]*\}", content)
+    if not m:
+        raise ValueError(f"No JSON object found in GEMS response: {content!r}")
+    try:
+        return json.loads(m.group())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid GEMS JSON: {exc}") from exc
 
 
 def generate_music_prompt(context: str, gems: dict, api_key: str, date_str: str, interval_str: str) -> str:
@@ -120,14 +146,14 @@ def generate_audio(prompt: str, replicate_token: str, duration: int = 60) -> byt
         input={
             "prompt": prompt,
             "duration": duration,
-            "output_format": "wav",
+            "output_format": "mp3",
             "normalization_strategy": "loudness",
         },
     )
     if hasattr(output, "read"):
         return output.read()
     url = output if isinstance(output, str) else str(next(iter(output)))
-    with urllib.request.urlopen(url) as r:
+    with urllib.request.urlopen(url, timeout=120) as r:
         return r.read()
 
 
@@ -181,8 +207,8 @@ def main() -> None:
 
     out_dir = ROOT / "public" / "audio"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "latest.wav").write_bytes(audio_bytes)
-    print(f"Saved → {out_dir / 'latest.wav'} ({len(audio_bytes):,} bytes)")
+    (out_dir / "latest.mp3").write_bytes(audio_bytes)
+    print(f"Saved → {out_dir / 'latest.mp3'} ({len(audio_bytes):,} bytes)")
 
 
 if __name__ == "__main__":
