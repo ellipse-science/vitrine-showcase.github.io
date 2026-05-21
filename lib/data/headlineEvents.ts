@@ -437,38 +437,49 @@ function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
-async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string; url: string | null }>> {
-  const map = new Map<string, { topObject: string; context: string; url: string | null }>();
+type FallbackResult = {
+  byIssue: Map<string, { topObject: string; context: string; url: string | null }>;
+  byTitle: Map<string, string | null>;
+};
+
+async function loadFallbackIssueContent(): Promise<FallbackResult> {
+  const byIssue = new Map<string, { topObject: string; context: string; url: string | null }>();
+  const byTitle = new Map<string, string | null>();
   let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return { byIssue, byTitle }; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
+
   const byId = new Map<string, RawEvent>();
   for (const e of allRaw) {
     const existing = byId.get(e.event_id);
     if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
   }
   const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
-  const byIssue = new Map<string, RawEvent>();
+
+  // byTitle: title → representative_url, for meta-path URL matching
+  for (const e of unique) {
+    if (e.title) byTitle.set(e.title, e.representative_url ?? null);
+  }
+
+  // bestByIssue: best event per issue key (highest score_qc) for fallback path
+  const bestByIssue = new Map<string, RawEvent>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
-    const existing = byIssue.get(key);
-    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) byIssue.set(key, e);
+    const existing = bestByIssue.get(key);
+    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) bestByIssue.set(key, e);
   }
-  for (const [issueKey, e] of byIssue) {
+  for (const [issueKey, e] of bestByIssue) {
     let topObject = "";
     if (e.extracted_objects) {
       try {
         const objs = JSON.parse(e.extracted_objects) as ExtractedObject[];
         const raw = objs[0]?.object?.trim() ?? "";
-        if (raw.length >= 2) {
-          const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
-          topObject = capped;
-        }
+        if (raw.length >= 2) topObject = raw.charAt(0).toUpperCase() + raw.slice(1);
       } catch { }
     }
-    map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
+    byIssue.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
   }
-  return map;
+  return { byIssue, byTitle };
 }
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
@@ -502,16 +513,19 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       let topObject = ""; let context = "";
       const metaEntry = meta?.[issueKey];
       const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
-      const fb = fallbackContent.get(issueKey);
+      const fb = fallbackContent.byIssue.get(issueKey);
+      let url: string | null = null;
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
         context = metaEntry.label ?? "";
+        // URL via title match — only link when the source article is identified
+        url = (context && fallbackContent.byTitle.get(context)) ?? null;
       } else {
         topObject = fb?.topObject ?? "";
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
+        url = fb?.url ?? null;
       }
-      const url = fb?.url ?? null;
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
     });
     return { tiles, dateLabel };
