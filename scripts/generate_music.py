@@ -142,7 +142,7 @@ def generate_audio(prompt: str, replicate_token: str, duration: int = 60) -> byt
     import replicate
     client = replicate.Client(api_token=replicate_token)
     output = client.run(
-        "meta/musicgen",
+        "meta/musicgen:671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb",
         input={
             "prompt": prompt,
             "duration": duration,
