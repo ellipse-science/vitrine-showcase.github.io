@@ -3,6 +3,29 @@
 import { useState } from "react";
 import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 
+function SourceTip() {
+  const [open, setOpen] = useState(false);
+  return (
+    <span
+      className={`assemblee-info-tip${open ? " open" : ""}`}
+      onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      aria-label="À propos de la source"
+      role="button"
+      tabIndex={0}
+    >
+      ⓘ
+      {open && (
+        <span className="assemblee-info-bubble">
+          Les données proviennent des transcriptions officielles du Journal des débats de l&apos;Assemblée nationale.
+          Leur publication peut prendre quelques semaines après les séances — la date affichée reflète la dernière version disponible.
+        </span>
+      )}
+    </span>
+  );
+}
+
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
 export function AssembleeClient({ data }: { data: AssembleeData }) {
@@ -17,7 +40,10 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Que dit-on à l&apos;Assemblée&nbsp;?</h2>
-          <div className="period-subtitle">{view.subtitle}</div>
+          <div className="period-subtitle">
+            {view.subtitle}
+            <SourceTip />
+          </div>
         </div>
         <div className="control-block">
           <div className="legend-toggle inline">

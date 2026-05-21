@@ -1288,6 +1288,42 @@
     text-transform: uppercase;
     color: var(--ink-softer);
   }
+  .assemblee-info-tip {
+    position: relative;
+    display: inline-block;
+    margin-left: 7px;
+    cursor: pointer;
+    opacity: 0.45;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+    user-select: none;
+  }
+  .assemblee-info-tip:hover,
+  .assemblee-info-tip.open { opacity: 1; }
+  .assemblee-info-bubble {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 10px 13px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 12.5px;
+    font-style: italic;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+    line-height: 1.55;
+    z-index: 30;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(28,25,23,0.10);
+  }
 
   /* Treemap unifié : objets saillants × enjeu CAPP */
   /* Surface = saillance de l'objet · Couleur = enjeu auquel l'objet appartient */
