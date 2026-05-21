@@ -158,6 +158,7 @@ export type TreemapIssueTile = {
   relScore: number;
   topObject: string;
   context: string;
+  url: string | null;
 };
 
 export type TreemapPeriodData = {
@@ -436,8 +437,8 @@ function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
-async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string }>> {
-  const map = new Map<string, { topObject: string; context: string }>();
+async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string; url: string | null }>> {
+  const map = new Map<string, { topObject: string; context: string; url: string | null }>();
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
@@ -465,7 +466,7 @@ async function loadFallbackIssueContent(): Promise<Map<string, { topObject: stri
         }
       } catch { }
     }
-    map.set(issueKey, { topObject, context: e.title ?? "" });
+    map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
   }
   return map;
 }
@@ -501,16 +502,17 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       let topObject = ""; let context = "";
       const metaEntry = meta?.[issueKey];
       const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
+      const fb = fallbackContent.get(issueKey);
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
         context = metaEntry.label ?? "";
       } else {
-        const fb = fallbackContent.get(issueKey);
         topObject = fb?.topObject ?? "";
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
       }
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context };
+      const url = fb?.url ?? null;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
     });
     return { tiles, dateLabel };
   }

@@ -6,14 +6,14 @@ import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/d
 function SourceTip() {
   const [open, setOpen] = useState(false);
   return (
-    <span
+    <button
+      type="button"
       className={`assemblee-info-tip${open ? " open" : ""}`}
       onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       aria-label="À propos de la source"
-      role="button"
-      tabIndex={0}
+      aria-expanded={open}
     >
       ⓘ
       {open && (
@@ -22,7 +22,7 @@ function SourceTip() {
           Leur publication peut prendre quelques semaines après les séances — la date affichée reflète la dernière version disponible.
         </span>
       )}
-    </span>
+    </button>
   );
 }
 

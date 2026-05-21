@@ -1241,7 +1241,7 @@
     line-height: 1.55;
     z-index: 30;
     pointer-events: none;
-    box-shadow: 0 2px 8px rgba(28,25,23,0.10);
+    outline: 1px solid var(--rule);
   }
 
   /* Treemap unifié : objets saillants × enjeu CAPP */
