@@ -3,6 +3,7 @@ import path from "node:path";
 
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
+import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 
 function headlineTimeLabel(event: UneEvent): string {
   if (event.headlineHours && event.headlineHours > 0) {
@@ -187,19 +188,23 @@ export async function UneDesUnesSection() {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, artExists] = await Promise.all([
+  const audioPath = path.resolve(process.cwd(), "public", "audio", "latest.wav");
+  const [data, artExists, audioExists] = await Promise.all([
     loadHeadlineEvents(),
     fs.access(artJsonPath).then(() => true).catch(() => false),
+    fs.access(audioPath).then(() => true).catch(() => false),
   ]);
   if (!data || data.top3.length === 0) return null;
 
   const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
+  const audioUrl = audioExists ? "audio/latest.wav" : undefined;
   const [main, sideLeft, sideRight] = data.top3;
 
   return (
     <>
       <div className="section-label">
         <span>Les unes du jour</span>
+        {audioUrl && <AudioPlayer src={audioUrl} compact />}
         <span className="section-date">{data.dateLabel}</span>
       </div>
 

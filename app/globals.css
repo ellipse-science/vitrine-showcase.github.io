@@ -658,6 +658,87 @@
     line-height: 1.5;
   }
 
+  /* Lecteur audio ambiance du moment — version compacte (dans section-label) */
+  .une-audio-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .section-label { position: relative; }
+  .une-audio-compact-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+  .une-audio-compact .une-audio-track {
+    width: 80px;
+  }
+
+  /* Lecteur audio ambiance du moment — version complète */
+  .une-audio {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .une-audio-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-bottom: 10px;
+  }
+  .une-audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .une-audio-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 13px;
+    padding: 0;
+    line-height: 1;
+    width: 18px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .une-audio-btn:hover { color: var(--cordovan); }
+  .une-audio-track {
+    flex: 1;
+    height: 1.5px;
+    background: var(--rule);
+    cursor: pointer;
+    position: relative;
+  }
+  .une-audio-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--ink);
+    pointer-events: none;
+    transition: width 0.25s linear;
+  }
+  .une-audio-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.1em;
+    color: var(--ink-softer);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .une-audio-sep { opacity: 0.5; }
+
   /* Étiquette de saillance (tier : MAJEUR / FORT / NOTABLE) */
   .saillance-tag {
     display: inline-block;
