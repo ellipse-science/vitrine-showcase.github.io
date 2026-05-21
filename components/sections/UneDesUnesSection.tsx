@@ -188,7 +188,7 @@ export async function UneDesUnesSection() {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const audioPath = path.resolve(process.cwd(), "public", "audio", "latest.wav");
+  const audioPath = path.resolve(process.cwd(), "public", "audio", "latest.mp3");
   const [data, artExists, audioExists] = await Promise.all([
     loadHeadlineEvents(),
     fs.access(artJsonPath).then(() => true).catch(() => false),
