@@ -1301,7 +1301,12 @@
     line-height: 1;
     transition: opacity 0.15s ease;
     user-select: none;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
   }
+  .assemblee-info-tip:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
   .assemblee-info-tip:hover,
   .assemblee-info-tip.open { opacity: 1; }
   .assemblee-info-bubble {
@@ -1322,7 +1327,6 @@
     line-height: 1.55;
     z-index: 30;
     pointer-events: none;
-    box-shadow: 0 2px 8px rgba(28,25,23,0.10);
   }
 
   /* Treemap unifié : objets saillants × enjeu CAPP */
@@ -1350,10 +1354,11 @@
     flex-direction: column;
     align-items: stretch;
     overflow: hidden;
-    cursor: pointer;
+    cursor: default;
     transition: filter 0.2s ease;
     position: relative;
   }
+  a.tm-tile { cursor: pointer; text-decoration: none; }
   .tm-tile:hover { filter: brightness(1.14); }
   .tm-tile::after {
     content: attr(data-tooltip);
@@ -1863,6 +1868,13 @@
     border-bottom: 0.5px solid var(--rule-faint);
   }
   .tm-bar-item:last-child { border-bottom: none; }
+  a.tm-bar-item {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
   .tm-bar-meta {
     display: flex;
     align-items: baseline;

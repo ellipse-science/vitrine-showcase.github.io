@@ -5,13 +5,18 @@ import type { TreemapIssueTile, TreemapAllPeriods } from "@/lib/data/headlineEve
 
 function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
   const tooltip = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
-  return (
-    <div className="tm-tile" style={{ "--c": tile.color } as React.CSSProperties} data-tooltip={tooltip}>
+  const inner = (
+    <>
       <div className="tm-enjeu">{tile.issueFr}</div>
       {tile.topObject && <div className="tm-name">{tile.topObject}</div>}
       {showContext && tile.context && <div className="tm-context">{tile.context}</div>}
-    </div>
+    </>
   );
+  const shared = { className: "tm-tile", style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
+  if (tile.url) {
+    return <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>;
+  }
+  return <div {...shared}>{inner}</div>;
 }
 
 function toFr(row: TreemapIssueTile[]): string {
@@ -83,22 +88,29 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
           <span>Couleur = enjeu</span>
           <span>Largeur = score</span>
         </div>
-        {tiles.map((tile) => (
-          <div
-            key={tile.issueKey}
-            className="tm-bar-item"
-            style={{ "--c": tile.color, "--w": `${tile.relScore}%` } as React.CSSProperties}
-          >
-            <div className="tm-bar-meta">
-              <span className="tm-bar-name">{tile.issueFr}</span>
-              {tile.topObject && <span className="tm-bar-enjeu">{tile.topObject}</span>}
-            </div>
-            <div className="tm-bar-track">
-              <div className="tm-bar-fill" />
-            </div>
-            {tile.context && <span className="tm-bar-context">{tile.context}</span>}
-          </div>
-        ))}
+        {tiles.map((tile) => {
+          const barStyle = { "--c": tile.color, "--w": `${tile.relScore}%` } as React.CSSProperties;
+          const barInner = (
+            <>
+              <div className="tm-bar-meta">
+                <span className="tm-bar-name">{tile.issueFr}</span>
+                {tile.topObject && <span className="tm-bar-enjeu">{tile.topObject}</span>}
+              </div>
+              <div className="tm-bar-track">
+                <div className="tm-bar-fill" />
+              </div>
+              {tile.context && <span className="tm-bar-context">{tile.context}</span>}
+            </>
+          );
+          if (tile.url) {
+            return (
+              <a key={tile.issueKey} href={tile.url} target="_blank" rel="noopener noreferrer" className="tm-bar-item" style={barStyle}>
+                {barInner}
+              </a>
+            );
+          }
+          return <div key={tile.issueKey} className="tm-bar-item" style={barStyle}>{barInner}</div>;
+        })}
       </div>
     </>
   );
