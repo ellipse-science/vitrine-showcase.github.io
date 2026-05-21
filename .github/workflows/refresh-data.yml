@@ -34,6 +34,7 @@ jobs:
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
       OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
+      REPLICATE_API_TOKEN:   ${{ secrets.REPLICATE_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -72,7 +73,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install openai pillow python-dotenv
+        run: pip install openai pillow python-dotenv replicate
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
@@ -82,12 +83,17 @@ jobs:
         continue-on-error: true
         run: python scripts/generate_art.py
 
+      - name: Generate ambient music (best-effort, non-blocking)
+        id: music
+        continue-on-error: true
+        run: python scripts/generate_music.py
+
       - name: Commit updated data files
         id: commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/
+          git add public/data/ public/audio/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -118,5 +124,15 @@ jobs:
             RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             curl -fsS -X POST -H 'Content-Type: application/json' \
               -d "{\"text\":\"🟡 *Vitrine art generation failed* — data was refreshed and deployed normally; only the AI image is stale.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
+
+      - name: Warn Slack if music generation failed (data still published)
+        if: steps.music.outcome == 'failure'
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine music generation failed* — data was refreshed normally; only the ambient music is stale.\nRun: ${RUN_URL}\"}" \
               "$SLACK_WEBHOOK_URL"
           fi
