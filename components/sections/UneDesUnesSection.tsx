@@ -143,7 +143,7 @@ function DeuxSolitudes({
         <div className="sol-axis" />
         <div className="sol-symbol qc">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="glyph fleur" src="images/fleur-de-lys.png" alt="Québec" aria-label="Québec" />
+          <img className="glyph fleur" src="images/fleur-de-lys.svg" alt="Québec" aria-label="Québec" />
           <span className="caption">Québec</span>
         </div>
         <div className="sol-symbol roc">
