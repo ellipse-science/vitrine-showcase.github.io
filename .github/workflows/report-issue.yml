@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Formater et créer l'issue GitHub
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
