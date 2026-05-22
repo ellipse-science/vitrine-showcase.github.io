@@ -139,6 +139,7 @@ def generate_music_prompt(context: str, gems: dict, api_key: str, date_str: str,
 
 
 def generate_audio(prompt: str, replicate_token: str, duration: int = 60) -> bytes:
+    import random
     import replicate
     client = replicate.Client(api_token=replicate_token)
     output = client.run(
@@ -148,6 +149,7 @@ def generate_audio(prompt: str, replicate_token: str, duration: int = 60) -> byt
             "duration": duration,
             "output_format": "mp3",
             "normalization_strategy": "loudness",
+            "seed": random.randint(0, 2**31 - 1),
         },
     )
     if hasattr(output, "read"):
