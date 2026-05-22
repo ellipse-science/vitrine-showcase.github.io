@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 
 function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
-  const tooltip = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
+  const tooltip = tile.url
+    ? "Cliquer pour lire l'article →"
+    : [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
   const inner = (
     <>
       <div className="tm-enjeu">{tile.issueFr}</div>

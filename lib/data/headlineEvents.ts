@@ -429,7 +429,7 @@ function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, un
   })[0] ?? null;
 }
 
-type IssueMetaEntry = { label: string; obj: string };
+type IssueMetaEntry = { label: string; obj: string; url?: string };
 type IssuesMeta = Record<string, IssueMetaEntry>;
 
 function parseIssuesMeta(raw: unknown): IssuesMeta | null {
@@ -437,33 +437,34 @@ function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
-async function loadFallbackIssueContent(): Promise<Map<string, { topObject: string; context: string; url: string | null }>> {
-  const map = new Map<string, { topObject: string; context: string; url: string | null }>();
+type FallbackEntry = { topObject: string; context: string; url: string | null };
+
+async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
+  const map = new Map<string, FallbackEntry>();
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
+
   const byId = new Map<string, RawEvent>();
   for (const e of allRaw) {
     const existing = byId.get(e.event_id);
     if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
   }
   const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
-  const byIssue = new Map<string, RawEvent>();
+
+  const bestByIssue = new Map<string, RawEvent>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
-    const existing = byIssue.get(key);
-    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) byIssue.set(key, e);
+    const existing = bestByIssue.get(key);
+    if (!existing || (e.score_qc ?? 0) > (existing.score_qc ?? 0)) bestByIssue.set(key, e);
   }
-  for (const [issueKey, e] of byIssue) {
+  for (const [issueKey, e] of bestByIssue) {
     let topObject = "";
     if (e.extracted_objects) {
       try {
         const objs = JSON.parse(e.extracted_objects) as ExtractedObject[];
         const raw = objs[0]?.object?.trim() ?? "";
-        if (raw.length >= 2) {
-          const capped = raw.charAt(0).toUpperCase() + raw.slice(1);
-          topObject = capped;
-        }
+        if (raw.length >= 2) topObject = raw.charAt(0).toUpperCase() + raw.slice(1);
       } catch { }
     }
     map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
@@ -503,15 +504,17 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       const metaEntry = meta?.[issueKey];
       const hasMetaContent = metaEntry && (metaEntry.obj?.length > 0 || metaEntry.label?.length > 0);
       const fb = fallbackContent.get(issueKey);
+      let url: string | null = null;
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
         topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
         context = metaEntry.label ?? "";
+        url = metaEntry.url ?? null;
       } else {
         topObject = fb?.topObject ?? "";
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
+        url = fb?.url ?? null;
       }
-      const url = fb?.url ?? null;
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
     });
     return { tiles, dateLabel };
