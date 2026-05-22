@@ -3,6 +3,7 @@ import path from "node:path";
 
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
+import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 
 function headlineTimeLabel(event: UneEvent): string {
   if (event.headlineHours && event.headlineHours > 0) {
@@ -143,7 +144,7 @@ function DeuxSolitudes({
         <div className="sol-axis" />
         <div className="sol-symbol qc">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="glyph fleur" src="images/fleur-de-lys.png" alt="Québec" aria-label="Québec" />
+          <img className="glyph fleur" src="images/fleur-de-lys.svg" alt="Québec" aria-label="Québec" />
           <span className="caption">Québec</span>
         </div>
         <div className="sol-symbol roc">
@@ -187,9 +188,14 @@ export async function UneDesUnesSection() {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, artExists] = await Promise.all([
+  const [data, artExists, audioUrl] = await Promise.all([
     loadHeadlineEvents(),
     fs.access(artJsonPath).then(() => true).catch(() => false),
+    fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
+      .then(() => "audio/latest.mp3")
+      .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
+        .then(() => "audio/latest.wav")
+        .catch(() => undefined)),
   ]);
   if (!data || data.top3.length === 0) return null;
 
@@ -200,6 +206,7 @@ export async function UneDesUnesSection() {
     <>
       <div className="section-label">
         <span>Les unes du jour</span>
+        {audioUrl && <AudioPlayer src={audioUrl} compact />}
         <span className="section-date">{data.dateLabel}</span>
       </div>
 
