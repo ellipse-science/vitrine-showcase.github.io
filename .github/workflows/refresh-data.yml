@@ -93,9 +93,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Intentionally exclude generated audio artifacts from git to avoid
-          # repository bloat from repeatedly committing large binary WAV files.
-          git add public/data/
+          git add public/data/ public/audio/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
