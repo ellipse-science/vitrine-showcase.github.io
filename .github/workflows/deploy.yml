@@ -24,6 +24,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      # Brief pause so GitHub's HTTPS git backend has time to replicate a
+      # freshly pushed commit before checkout tries to fetch it by SHA.
+      - name: Wait for git replication
+        run: sleep 15
+
       - uses: actions/checkout@v6
 
       - name: Setup Node.js
