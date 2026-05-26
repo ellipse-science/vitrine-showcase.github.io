@@ -1360,7 +1360,10 @@
     container-type: inline-size;
   }
   a.tm-tile { cursor: pointer; text-decoration: none; }
-  .tm-tile:hover { filter: brightness(1.14); }
+  .tm-tile:hover,
+  .tm-tile:focus-visible {
+    filter: brightness(1.14);
+  }
   .tm-tile::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -1381,7 +1384,10 @@
     pointer-events: none;
     z-index: 5;
   }
-  .tm-tile:hover::after { opacity: 1; }
+  .tm-tile:hover::after,
+  .tm-tile:focus-visible::after {
+    opacity: 1;
+  }
   .tm-tile .tm-enjeu {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9.5px;
@@ -1459,12 +1465,15 @@
       letter-spacing: 0.08em !important;
       line-height: 1.2 !important;
     }
-    /* Survol : afficher un popup lisible car la tuile est trop étroite */
-    .tm-tile:hover {
+    /* Survol / Focus : afficher un popup lisible car la tuile est trop étroite */
+    .tm-tile:hover,
+    .tm-tile:focus-visible {
       overflow: visible !important;
       z-index: 10 !important;
+      outline: none;
     }
-    .tm-tile:hover::after {
+    .tm-tile:hover::after,
+    .tm-tile:focus-visible::after {
       inset: auto !important;
       width: 240px !important;
       min-height: 60px !important;
