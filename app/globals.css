@@ -1357,6 +1357,7 @@
     cursor: default;
     transition: filter 0.2s ease;
     position: relative;
+    container-type: inline-size;
   }
   a.tm-tile { cursor: pointer; text-decoration: none; }
   .tm-tile:hover { filter: brightness(1.14); }
@@ -1439,6 +1440,52 @@
     opacity: 1;
   }
   .tm-row-4 .tm-tile .tm-context { display: none; }
+
+  /* Container queries pour adapter la mise en page des tuiles étroites */
+  @container (max-width: 130px) {
+    .tm-tile .tm-context {
+      display: none !important;
+    }
+  }
+  @container (max-width: 90px) {
+    .tm-tile {
+      padding: 10px 8px !important;
+    }
+    .tm-tile .tm-name {
+      display: none !important;
+    }
+    .tm-tile .tm-enjeu {
+      font-size: 8px !important;
+      letter-spacing: 0.08em !important;
+      line-height: 1.2 !important;
+    }
+    /* Survol : afficher un popup lisible car la tuile est trop étroite */
+    .tm-tile:hover {
+      overflow: visible !important;
+      z-index: 10 !important;
+    }
+    .tm-tile:hover::after {
+      inset: auto !important;
+      width: 240px !important;
+      min-height: 60px !important;
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      padding: 12px 16px !important;
+      border: 0.5px solid var(--rule) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+      display: grid !important;
+      place-items: center !important;
+    }
+  }
+  @container (max-width: 50px) {
+    .tm-tile {
+      padding: 6px 4px !important;
+    }
+    .tm-tile .tm-enjeu {
+      display: none !important;
+    }
+  }
 
   /* Barre de période + info */
   .treemap-legend {
