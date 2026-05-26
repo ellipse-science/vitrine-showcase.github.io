@@ -1454,6 +1454,7 @@
     text-align: center;
     margin: 0;
     opacity: 1;
+    max-width: 100%; /* annule le calc(100% - 28px) de la règle de base (position static ici) */
   }
   .tm-row-4 .tm-tile .tm-context { display: none; }
 
