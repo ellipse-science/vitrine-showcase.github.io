@@ -1430,17 +1430,21 @@
     right: 14px;
     opacity: 0.78;
     margin: 0;
+    max-width: calc(100% - 28px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* Row 2 */
   .tm-row-2 .tm-tile { padding: 14px 16px; }
   .tm-row-2 .tm-enjeu { font-size: 9px; letter-spacing: 0.15em; }
   .tm-row-2 .tm-context { font-size: 15px; padding: 4px 6px 18px; }
-  .tm-row-2 .tm-name { font-size: 12px; bottom: 8px; right: 10px; }
+  .tm-row-2 .tm-name { font-size: 12px; bottom: 8px; right: 10px; max-width: calc(100% - 20px); }
   /* Row 3 */
   .tm-row-3 .tm-tile { padding: 12px 14px; }
   .tm-row-3 .tm-enjeu { font-size: 8.5px; letter-spacing: 0.14em; }
   .tm-row-3 .tm-context { font-size: 12px; padding: 3px 4px 14px; }
-  .tm-row-3 .tm-name { font-size: 10px; bottom: 6px; right: 8px; }
+  .tm-row-3 .tm-name { font-size: 10px; bottom: 6px; right: 8px; max-width: calc(100% - 16px); }
   /* Row 4 — pas de contexte, le nom reste centré */
   .tm-row-4 .tm-tile { padding: 10px 12px; align-items: center; justify-content: center; }
   .tm-row-4 .tm-tile .tm-name {
@@ -1450,6 +1454,7 @@
     text-align: center;
     margin: 0;
     opacity: 1;
+    max-width: 100%; /* annule le calc(100% - 28px) de la règle de base (position static ici) */
   }
   .tm-row-4 .tm-tile .tm-context { display: none; }
 
