@@ -1483,14 +1483,14 @@
     .tm-tile-container .tm-tile:focus-visible::after {
       inset: auto !important;
       width: 240px !important;
-      min-height: 60px !important;
+      min-height: 100% !important;
       left: 50% !important;
       top: 50% !important;
       transform: translate(-50%, -50%) !important;
       padding: 12px 16px !important;
-      background: var(--paper-deep) !important;
-      color: var(--ink) !important;
-      border: 1px solid var(--ink) !important;
+      background: color-mix(in srgb, var(--c) 78%, #1a1410 22%) !important;
+      color: #F3ECDD !important;
+      border: none !important;
       display: grid !important;
       place-items: center !important;
     }
