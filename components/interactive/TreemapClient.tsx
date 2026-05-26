@@ -25,7 +25,9 @@ function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext:
 }
 
 function toFr(row: TreemapIssueTile[]): string {
-  return row.map((t) => `${Math.max(t.relScore, 8)}fr`).join(" ");
+  const rowMax = Math.max(...row.map((t) => t.relScore), 1);
+  const minFr = Math.max(Math.ceil(rowMax * 0.30), 1);
+  return row.map((t) => `${Math.max(t.relScore, minFr)}fr`).join(" ");
 }
 
 export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
