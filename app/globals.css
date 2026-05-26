@@ -1494,6 +1494,10 @@
       display: grid !important;
       place-items: center !important;
     }
+    .tm-tile-container .tm-tile:focus-visible::after {
+      outline: 2px solid #F3ECDD !important;
+      outline-offset: -2px;
+    }
   }
   @container (max-width: 50px) {
     .tm-tile-container .tm-tile {
