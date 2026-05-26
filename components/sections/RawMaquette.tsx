@@ -19,6 +19,17 @@ export type ChunkName = "top" | "middle" | "bottom";
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
-  const html = await fs.readFile(file, "utf8");
+  let html = await fs.readFile(file, "utf8");
+
+  // Dynamically resolve relative/absolute paths for subpages (dev and prod basepath)
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+  // Replace links with basePath prefix
+  html = html.replace(/href="methodologie\/"/g, `href="${basePath}/methodologie/"`);
+  html = html.replace(/href="apropos\/"/g, `href="${basePath}/apropos/"`);
+  html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
+  html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
+  html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
+
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
