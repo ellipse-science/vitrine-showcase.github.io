@@ -16,10 +16,12 @@ function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext:
     </>
   );
   const shared = { className: "tm-tile", style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
-  if (tile.url) {
-    return <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>;
-  }
-  return <div {...shared}>{inner}</div>;
+  const content = tile.url ? (
+    <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
+  ) : (
+    <div {...shared}>{inner}</div>
+  );
+  return <div className="tm-tile-container">{content}</div>;
 }
 
 function toFr(row: TreemapIssueTile[]): string {
