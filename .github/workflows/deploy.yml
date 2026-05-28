@@ -43,6 +43,10 @@ jobs:
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
         env:
+          # Dev (GitHub Pages) is served under a repo subpath. Pin it explicitly
+          # so next.config.ts doesn't fall back to its default — prod (Cloudflare)
+          # sets NEXT_PUBLIC_BASE_PATH="" in its own build env for the root domain.
+          NEXT_PUBLIC_BASE_PATH: /vitrine-showcase.github.io
           NEXT_PUBLIC_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
 
       - name: Configure Pages
