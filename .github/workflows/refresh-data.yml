@@ -108,6 +108,33 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Sync fresh data to prod branch
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          # Dev/prod split: code is gated behind manual main→prod merges, but the
+          # public prod site must stay fresh every 4h. This copies ONLY the data
+          # payload (public/data + public/audio) from the just-pushed main onto
+          # prod — never code. Replacing (not merging) the paths means no conflicts.
+          # No-op until the prod branch exists (created during Cloudflare setup),
+          # so this is safe to merge to main before prod is stood up.
+          if ! git ls-remote --exit-code --heads origin prod >/dev/null 2>&1; then
+            echo "No prod branch yet — skipping prod data sync."
+            exit 0
+          fi
+          git fetch origin prod
+          # Use FETCH_HEAD, not origin/prod: actions/checkout configures a narrow
+          # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
+          # origin/prod may not exist. FETCH_HEAD always points at the just-fetched tip.
+          git checkout -B prod FETCH_HEAD
+          git checkout main -- public/data/ public/audio/
+          git add public/data/ public/audio/
+          if git diff --cached --quiet; then
+            echo "prod data already current — nothing to sync."
+          else
+            git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [prod data sync]"
+            git push origin prod
+          fi
+
       - name: Alert Slack on failure
         if: failure()
         run: |
