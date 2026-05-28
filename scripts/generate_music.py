@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -211,6 +212,58 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "latest.mp3").write_bytes(audio_bytes)
     print(f"Saved → {out_dir / 'latest.mp3'} ({len(audio_bytes):,} bytes)")
+
+    # Save metadata
+    metadata = {
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+        "date_utc": date_str,
+        "time_interval_utc": interval_str,
+        "prompt": music_prompt,
+        "gems": gems,
+        "headlines": [
+            {"title": e.get("title", ""), "weight": w}
+            for e, w in zip(top, weights)
+        ]
+    }
+    (out_dir / "latest.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
+    print(f"Saved metadata → {out_dir / 'latest.json'}")
+
+    # Send Slack notification if webhook URL is configured
+    slack_music_webhook = os.environ.get("SLACK_MUSIC_WEBHOOK_URL")
+    if slack_music_webhook:
+        print("Sending music prompt to Slack...")
+        stories_formatted = "\n".join(
+            f"• [{w}%] *{e.get('title', '')}* ({e.get('main_issue_text_fr', '')})"
+            for e, w in zip(top, weights)
+        )
+        
+        slack_message = (
+            f"🎵 *Nouveau rafraîchissement de la musique d'ambiance* 🎵\n"
+            f"*Bloc* : {date_str} {interval_str} UTC\n\n"
+            f"*Histoires à la une* :\n{stories_formatted}\n\n"
+            f"*Scores GEMS* :\n"
+            f"• Sublimité : {sub:.0f} (Émerveillement : {gems['wonder']}, Transcendance : {gems['transcendence']}, Tendresse : {gems['tenderness']}, Nostalgie : {gems['nostalgia']}, Paisibilité : {gems['peacefulness']})\n"
+            f"• Vitalité : {vit:.0f} (Énergie : {gems['energy']}, Activation joyeuse : {gems['joyful_activation']})\n"
+            f"• Malaise : {une:.0f} (Tension : {gems['tension']}, Tristesse : {gems['sadness']})\n\n"
+            f"*Prompt utilisé pour générer la musique (MusicGen)* :\n"
+            f">>> {music_prompt}"
+        )
+        
+        send_slack_notification(slack_music_webhook, slack_message)
+
+
+def send_slack_notification(webhook_url: str, message: str) -> None:
+    data = json.dumps({"text": message}).encode("utf-8")
+    req = urllib.request.Request(
+        webhook_url,
+        data=data,
+        headers={"Content-Type": "application/json"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            response.read()
+    except Exception as e:
+        print(f"WARNING: Failed to send Slack notification: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
