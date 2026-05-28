@@ -233,7 +233,7 @@ def main() -> None:
     if slack_music_webhook:
         print("Sending music prompt to Slack...")
         stories_formatted = "\n".join(
-            f"• [{w}%] *{e.get('title', '')}* ({e.get('main_issue_text_fr', '')})"
+            f"• [{w}%] *{escape_slack(e.get('title', ''))}* ({escape_slack(e.get('main_issue_text_fr', ''))})"
             for e, w in zip(top, weights)
         )
         
@@ -246,10 +246,16 @@ def main() -> None:
             f"• Vitalité : {vit:.0f} (Énergie : {gems['energy']}, Activation joyeuse : {gems['joyful_activation']})\n"
             f"• Malaise : {une:.0f} (Tension : {gems['tension']}, Tristesse : {gems['sadness']})\n\n"
             f"*Prompt utilisé pour générer la musique (MusicGen)* :\n"
-            f">>> {music_prompt}"
+            f">>> {escape_slack(music_prompt)}"
         )
         
         send_slack_notification(slack_music_webhook, slack_message)
+
+
+def escape_slack(text: str) -> str:
+    if not text:
+        return ""
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def send_slack_notification(webhook_url: str, message: str) -> None:
