@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-05-28T18:47Z",
+  "date_utc": "2026-05-28",
+  "time_interval_utc": "12-16",
+  "prompt": "Create a tense, energetic orchestral piece in D minor at 120 BPM. Use strings and brass for urgency, interspersed with electronic elements for modernity. Capture a sense of unease and urgency, reflecting the economic and educational challenges faced in Québec.",
+  "gems": {
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 30,
+    "joyful_activation": 25,
+    "sadness": 40,
+    "tension": 60
+  },
+  "headlines": [
+    {
+      "title": "Des médecins québécois misent sur SpaceX avec des actions prometteuses",
+      "weight": 40
+    },
+    {
+      "title": "Les économistes critiquent vivement les annonces de Fréchette",
+      "weight": 31
+    },
+    {
+      "title": "Deux tiers des cégeps québécois anticipent un déficit budgétaire",
+      "weight": 28
+    }
+  ]
+}
