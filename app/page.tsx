@@ -29,6 +29,10 @@ export default function Home() {
         <AssembleeSection />
       </div>
 
+      <div data-section="Polimètre+">
+        <RawMaquette chunk="polimeter_plus" />
+      </div>
+
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
       </div>

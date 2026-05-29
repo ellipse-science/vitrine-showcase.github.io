@@ -2391,3 +2391,266 @@
     }
   }
 
+  /* ============================================================ */
+  /* Polimètre+ — promesses les plus médiatisées (prototype)      */
+  /* Couleurs de verdict tirées du pipeline Polimètre (R).        */
+  /* Per design_language.md §1 : couleurs data exposées via       */
+  /* variables locales au composant (pattern --c), jamais :root.  */
+  /* ============================================================ */
+  .polimeter-plus {
+    --ppl-realisee:   #228B22;
+    --ppl-rompue:     #AE0101;
+    --ppl-partielle:  #F3C349;
+    --ppl-en-cours:   #FF8C00;
+    --ppl-en-suspens: #444444;
+  }
+
+  .ppl-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* --- Rail gauche : catégories d'enjeux --- */
+  .ppl-filters { display: flex; flex-direction: column; gap: 26px; }
+
+  .ppl-issues {
+    display: flex;
+    flex-direction: column;
+    border-top: 0.5px solid var(--rule);
+    padding-top: 8px;
+  }
+  .ppl-issue {
+    background: none;
+    border: 0;
+    border-left: 2px solid transparent;
+    text-align: left;
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 14.5px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .ppl-issue:hover { color: var(--ink); background: var(--paper-deep); }
+  .ppl-issue.active {
+    background: var(--paper-deep);
+    border-left-color: var(--cordovan);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* --- Rail droit : liste --- */
+  .ppl-list { min-width: 0; }
+
+  .ppl-promises {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ppl-promise {
+    display: grid;
+    grid-template-columns: 28px 16px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .ppl-promise.header {
+    border-bottom: 1px solid var(--ink);
+    padding: 6px 0 10px;
+    align-items: flex-end;
+  }
+  .ppl-promise.header div {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  .ppl-rank {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    text-align: center;
+  }
+
+  /* Status carré : couleur data, une variante par verdict */
+  .ppl-status {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    background: var(--rule);
+    cursor: help;
+    flex-shrink: 0;
+  }
+  .ppl-status--realisee   { background: var(--ppl-realisee); }
+  .ppl-status--rompue     { background: var(--ppl-rompue); }
+  .ppl-status--partielle  { background: var(--ppl-partielle); }
+  .ppl-status--en-cours   { background: var(--ppl-en-cours); }
+  .ppl-status--en-suspens { background: var(--ppl-en-suspens); }
+
+  .ppl-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -0.2px;
+    line-height: 1.25;
+  }
+  a.ppl-title {
+    border-bottom: 0.5px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  a.ppl-title:hover { color: var(--cordovan); }
+
+  .ppl-trend {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .ppl-trend--up   { color: var(--green); }
+  .ppl-trend--down { color: var(--red); }
+  .ppl-trend--flat { color: var(--ink-softer); }
+
+  /* Promesse ouverte (état déplié — encadré paper-deep) */
+  .ppl-promise--open {
+    display: block;
+    background: var(--paper-deep);
+    border: 0.5px solid var(--rule);
+    padding: 16px 18px 18px;
+    margin: 8px 0;
+  }
+  .ppl-promise__head {
+    display: grid;
+    grid-template-columns: 28px 16px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .ppl-promise__detail {
+    border-top: 0.5px solid var(--rule);
+    padding-top: 12px;
+    margin-top: 6px;
+  }
+  .ppl-detail__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+  .ppl-detail__text {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+    font-style: italic;
+  }
+  .ppl-detail__link {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--cordovan);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .ppl-detail__link:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* Footer : voir plus + methodologie */
+  .ppl-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .ppl-voir-plus {
+    background: var(--ink);
+    color: var(--paper);
+    border: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .ppl-voir-plus:hover { background: var(--cordovan); }
+  .ppl-metho {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    text-decoration: none;
+    border-bottom: 0.5px solid transparent;
+    padding-bottom: 2px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .ppl-metho:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+
+  /* Légende des verdicts (rail gauche, au-dessus des catégories) */
+  .ppl-legend {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    padding: 0 0 14px;
+    border-bottom: 0.5px solid var(--rule-faint);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .ppl-legend li {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .ppl-legend .ppl-status { cursor: default; }
+
+  @media (max-width: 820px) {
+    .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
+    .ppl-issues {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px;
+      border-top: 0.5px solid var(--rule);
+      padding-top: 10px;
+    }
+    .ppl-issue {
+      border-left: 0;
+      border-bottom: 2px solid transparent;
+      padding: 4px 10px;
+    }
+    .ppl-issue.active { border-left: 0; border-bottom-color: var(--cordovan); }
+    .ppl-promise,
+    .ppl-promise__head { grid-template-columns: 22px 14px 1fr auto; gap: 10px; }
+    .ppl-title { font-size: 16px; }
+  }
+

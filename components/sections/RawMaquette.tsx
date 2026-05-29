@@ -15,7 +15,7 @@ import path from "node:path";
 
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
-export type ChunkName = "top" | "middle" | "bottom";
+export type ChunkName = "top" | "middle" | "bottom" | "polimeter_plus";
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
