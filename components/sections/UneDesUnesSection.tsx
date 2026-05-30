@@ -4,6 +4,7 @@ import path from "node:path";
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function headlineTimeLabel(event: UneEvent): string {
   if (event.headlineHours && event.headlineHours > 0) {
@@ -207,6 +208,12 @@ export async function UneDesUnesSection() {
       <div className="section-label">
         <span>Les unes du jour</span>
         {audioUrl && <AudioPlayer src={audioUrl} compact />}
+        <ShareButton
+          title={main.title}
+          saillanceLabel={`${main.saillanceLabel} · ${main.qcOutletCount}/${main.totalQcOutlets}`}
+          section="Les unes du jour"
+          hashtags={["LaVitrineDémocratique", "Québec"]}
+        />
         <span className="section-date">{data.dateLabel}</span>
       </div>
 

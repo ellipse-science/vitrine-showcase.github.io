@@ -2391,3 +2391,56 @@
     }
   }
 
+  /* Bouton partage — inline dans section-label */
+  .share-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: 0.5px solid var(--rule);
+    padding: 3px 10px; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-softer);
+    transition: color 0.12s, border-color 0.12s;
+    position: relative;
+  }
+  .share-btn:hover { color: var(--cordovan); border-color: var(--cordovan); }
+
+  /* Panneau flottant */
+  .share-panel {
+    position: absolute; top: calc(100% + 6px); left: 0;
+    z-index: 200; background: var(--paper); border: 1px solid var(--ink);
+    box-shadow: 0 4px 18px rgba(28,25,23,0.18);
+    padding: 16px 20px; min-width: 300px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .share-panel-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--cordovan); margin: 0;
+  }
+  .share-networks { display: flex; gap: 20px; flex-wrap: wrap; }
+  .share-network-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: none; border: none; cursor: pointer; color: var(--ink-soft);
+    text-decoration: none; padding: 0;
+  }
+  .share-network-btn:hover { color: var(--cordovan); }
+  .share-network-icon { font-size: 18px; line-height: 1; }
+  .share-network-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; color: inherit;
+  }
+  .share-copy-row {
+    border-top: 0.5px solid var(--rule); padding-top: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .share-copy-url {
+    flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    color: var(--ink-softer); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .share-copy-btn {
+    background: none; border: 0.5px solid var(--rule); padding: 4px 10px;
+    cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;
+    font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-softer); white-space: nowrap; flex-shrink: 0;
+  }
+  .share-copy-btn:hover, .share-copy-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
+
