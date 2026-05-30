@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView } from "@/lib/data/parties";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 const RANGES: RangeKey[] = ["today", "week", "month"];
 
@@ -19,6 +20,12 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
         </div>
         <div className="control-block">
+          <ShareButton
+            title="Couverture médiatique des partis politiques"
+            saillanceLabel={view.tabLabel}
+            section="Couverture des partis"
+            hashtags={["LaVitrineDémocratique", "Québec"]}
+          />
           <div className="legend-toggle inline">
             {RANGES.map((r) => (
               <span

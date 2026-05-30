@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -46,6 +47,12 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
           </div>
         </div>
         <div className="control-block">
+          <ShareButton
+            title="Que dit-on à l'Assemblée nationale ?"
+            saillanceLabel={view.subtitle}
+            section="L'Assemblée nationale"
+            hashtags={["LaVitrineDémocratique", "Québec"]}
+          />
           <div className="legend-toggle inline">
             {PERIODS.map((p) => (
               <span
