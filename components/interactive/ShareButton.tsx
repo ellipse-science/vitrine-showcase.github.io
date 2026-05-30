@@ -199,7 +199,7 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
     {
       key: 'email',
       label: 'Courriel',
-      href: `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`,
+      href: null as string | null,
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <rect x="1.5" y="4" width="15" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -249,6 +249,13 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
     } catch { /* clipboard not available */ }
   }
 
+  const handleEmail = async () => {
+    await handleShareImage()
+    const bodyWithNote = `${emailBody}\n\nP.-S. : Une image de partage (PNG 1200 × 630) a été téléchargée dans vos Téléchargements — joignez-la à votre courriel.`
+    window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(bodyWithNote)}`
+    setOpen(false)
+  }
+
   const truncUrl = pageUrl.length > 48 ? pageUrl.slice(0, 45) + '…' : pageUrl
 
   return (
@@ -282,6 +289,14 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
                   <button key="instagram" type="button" className="share-network-btn" onClick={handleInstagram} title="Télécharger l'image pour Instagram">
                     <span className="share-network-icon">{n.icon}</span>
                     <span className="share-network-label" style={igCopied ? { color: 'var(--cordovan)' } : undefined}>{n.label}</span>
+                  </button>
+                )
+              }
+              if (n.key === 'email') {
+                return (
+                  <button key="email" type="button" className="share-network-btn" onClick={handleEmail} title="Télécharge l'image puis ouvre votre client courriel">
+                    <span className="share-network-icon">{n.icon}</span>
+                    <span className="share-network-label">{n.label}</span>
                   </button>
                 )
               }

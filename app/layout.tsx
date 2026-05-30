@@ -2,10 +2,27 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
 
+const SITE_URL = "https://ellipse.science/vitrine-showcase.github.io";
+
 export const metadata: Metadata = {
   title: "La Vitrine démocratique",
   description:
     "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le CAPP de l'Université Laval.",
+  openGraph: {
+    title: "La Vitrine démocratique",
+    description:
+      "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec.",
+    url: SITE_URL,
+    siteName: "La Vitrine démocratique",
+    locale: "fr_CA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "La Vitrine démocratique",
+    description:
+      "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec.",
+  },
 };
 
 export default function RootLayout({

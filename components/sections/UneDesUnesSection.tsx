@@ -60,6 +60,14 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
         <span className={`saillance-tag ${event.saillanceCls}`}>
           {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
         </span>
+        <div style={{ marginLeft: "auto" }}>
+          <ShareButton
+            title={event.title}
+            saillanceLabel={`${event.saillanceLabel} · ${event.qcOutletCount}/${event.totalQcOutlets}`}
+            section="Les unes du jour"
+            hashtags={["LaVitrineDémocratique", "Québec"]}
+          />
+        </div>
       </div>
 
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
@@ -140,7 +148,15 @@ function DeuxSolitudes({
       className="solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
-      <h3 className="sol-title">Deux solitudes ?</h3>
+      <div className="sol-title-row">
+        <h3 className="sol-title">Deux solitudes ?</h3>
+        <ShareButton
+          title={`${divPct} % de divergence dans la couverture médiatique QC–Canada`}
+          saillanceLabel="Deux solitudes"
+          section="Deux solitudes"
+          hashtags={["LaVitrineDémocratique", "Québec"]}
+        />
+      </div>
       <div className="sol-viz">
         <div className="sol-axis" />
         <div className="sol-symbol qc">
@@ -208,12 +224,6 @@ export async function UneDesUnesSection() {
       <div className="section-label">
         <span>Les unes du jour</span>
         {audioUrl && <AudioPlayer src={audioUrl} compact />}
-        <ShareButton
-          title={main.title}
-          saillanceLabel={`${main.saillanceLabel} · ${main.qcOutletCount}/${main.totalQcOutlets}`}
-          section="Les unes du jour"
-          hashtags={["LaVitrineDémocratique", "Québec"]}
-        />
         <span className="section-date">{data.dateLabel}</span>
       </div>
 

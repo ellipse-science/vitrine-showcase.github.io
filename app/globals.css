@@ -877,12 +877,21 @@
     margin-top: 40px;
     text-align: center;
   }
+  /* Rangée titre + bouton partage dans Deux solitudes */
+  .sol-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 18px;
+    text-align: left;
+  }
   .solitudes .sol-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 24px;
     font-weight: 700;
     color: var(--ink);
-    margin: 0 0 18px;
+    margin: 0;
     letter-spacing: -0.4px;
   }
   .solitudes .sol-viz {
