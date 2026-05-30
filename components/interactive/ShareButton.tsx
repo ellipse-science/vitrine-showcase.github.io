@@ -10,114 +10,20 @@ interface ShareButtonProps {
   hashtags?: string[]
 }
 
-// ── Canvas card (1200 × 630 — format OG / Instagram Stories) ──────────────
-
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, font: string): string[] {
-  ctx.font = font
-  const words = text.split(' ')
-  const lines: string[] = []
-  let line = ''
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line)
-      line = word
-    } else {
-      line = test
-    }
-  }
-  if (line) lines.push(line)
-  return lines
-}
-
-async function generateShareCard(
-  title: string,
-  saillanceLabel: string,
-  section: string,
-  url: string,
-): Promise<Blob | null> {
-  const W = 1200, H = 630, PAD = 72
-  const canvas = document.createElement('canvas')
-  canvas.width = W; canvas.height = H
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-
-  try { await document.fonts.ready } catch { /* proceed with system fonts */ }
-
-  const TITLE_FONT = '"Playfair Display", Georgia, serif'
-  const MONO_FONT = '"IBM Plex Mono", "Courier New", monospace'
-
-  // Fond papier
-  ctx.fillStyle = '#F3ECDD'
-  ctx.fillRect(0, 0, W, H)
-
-  // Filet supérieur
-  ctx.fillStyle = '#1C1917'
-  ctx.fillRect(PAD, PAD, W - PAD * 2, 3)
-
-  // Marque
-  ctx.fillStyle = '#6E685F'
-  ctx.font = `500 15px ${MONO_FONT}`
-  ctx.fillText('LA VITRINE DÉMOCRATIQUE', PAD, PAD + 36)
-
-  // Label de section (cordovan)
-  ctx.fillStyle = '#6B1E2A'
-  ctx.font = `500 13px ${MONO_FONT}`
-  ctx.fillText(section.toUpperCase(), PAD, PAD + 62)
-
-  // Filet léger sous section
-  ctx.strokeStyle = '#C8BDA6'
-  ctx.lineWidth = 0.5
-  ctx.beginPath()
-  ctx.moveTo(PAD, PAD + 78); ctx.lineTo(W - PAD, PAD + 78)
-  ctx.stroke()
-
-  // Titre (retour à la ligne automatique, 3 lignes max)
-  const lines = wrapText(ctx, title, W - PAD * 2, `700 56px ${TITLE_FONT}`)
-  let y = PAD + 78 + 64
-  for (const line of lines.slice(0, 3)) {
-    ctx.font = `700 56px ${TITLE_FONT}`
-    ctx.fillStyle = '#1C1917'
-    ctx.fillText(line, PAD, y)
-    y += 68
-  }
-
-  // Saillance
-  ctx.fillStyle = '#6E685F'
-  ctx.font = `500 15px ${MONO_FONT}`
-  ctx.fillText(saillanceLabel, PAD, H - PAD - 38)
-
-  // Filet inférieur
-  ctx.strokeStyle = '#C8BDA6'
-  ctx.lineWidth = 0.5
-  ctx.beginPath()
-  ctx.moveTo(PAD, H - PAD - 22); ctx.lineTo(W - PAD, H - PAD - 22)
-  ctx.stroke()
-
-  // URL
-  ctx.fillStyle = '#6E685F'
-  ctx.font = `400 13px ${MONO_FONT}`
-  const displayUrl = url.replace(/^https?:\/\//, '').split('?')[0].split('#')[0]
-  ctx.fillText(displayUrl, PAD, H - PAD)
-
-  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-}
-
-// ── Composant ────────────────────────────────────────────────────────────────
-
 export function ShareButton({ title, saillanceLabel, section, url, hashtags = [] }: ShareButtonProps) {
   const [open, setOpen] = useState(false)
   const [pageUrl, setPageUrl] = useState(url ?? '')
   const [copied, setCopied] = useState(false)
   const [igCopied, setIgCopied] = useState(false)
-  const [generatingImg, setGeneratingImg] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
+  // Initialisation côté client uniquement — évite le mismatch d'hydratation
   useEffect(() => {
     if (!url) setPageUrl(window.location.href)
   }, [url])
 
+  // Fermeture au clic en dehors
   useEffect(() => {
     if (!open) return
     const handleMouseDown = (e: MouseEvent) => {
@@ -132,11 +38,15 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
     return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [open])
 
+  // ── Textes de partage ─────────────────────────────────────────────────────
+
   const hashtagStr = hashtags.length > 0 ? ' ' + hashtags.map(h => `#${h}`).join(' ') : ''
   const xText = `📰 ${title} — ${saillanceLabel} | La Vitrine démocratique${hashtagStr}`
-  const whatsappText = `📰 *${title}* — ${saillanceLabel}\n\nVia La Vitrine démocratique :\n${pageUrl}`
+  const whatsappText = `📰 *${title}* — ${saillanceLabel}\n\nVia La Vitrine démocratique — ${section} :\n${pageUrl}`
   const emailSubject = `${title} — La Vitrine démocratique`
   const emailBody = `${title}\n\n${saillanceLabel} — ${section}\n\nVoir la source :\n${pageUrl}\n\nVia La Vitrine démocratique (CLESSN — Université Laval)`
+
+  // ── Réseaux ───────────────────────────────────────────────────────────────
 
   const networks = [
     {
@@ -174,18 +84,6 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
       ),
     },
     {
-      key: 'instagram',
-      label: igCopied ? 'Copié !' : 'Instagram',
-      href: null as string | null,
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <rect x="1.5" y="1.5" width="15" height="15" rx="4" stroke="currentColor" strokeWidth="1.2" />
-          <circle cx="9" cy="9" r="3.5" stroke="currentColor" strokeWidth="1.2" />
-          <circle cx="13.2" cy="4.8" r="1" fill="currentColor" />
-        </svg>
-      ),
-    },
-    {
       key: 'whatsapp',
       label: 'WhatsApp',
       href: `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`,
@@ -199,7 +97,7 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
     {
       key: 'email',
       label: 'Courriel',
-      href: null as string | null,
+      href: `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`,
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <rect x="1.5" y="4" width="15" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -209,51 +107,31 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
     },
   ]
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(pageUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch { /* clipboard not available */ }
+    } catch { /* clipboard non disponible */ }
   }
 
-  const handleShareImage = async () => {
-    if (generatingImg) return
-    setGeneratingImg(true)
-    try {
-      const blob = await generateShareCard(title, saillanceLabel, section, pageUrl)
-      if (!blob) return
-      const file = new File([blob], 'vitrine-democratique.png', { type: 'image/png' })
-      if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title, url: pageUrl })
-          setOpen(false)
-          return
-        } catch { /* annulé ou non supporté — on télécharge */ }
-      }
-      const objUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = objUrl; a.download = 'vitrine-democratique.png'; a.click()
-      URL.revokeObjectURL(objUrl)
-    } finally {
-      setGeneratingImg(false)
-    }
-  }
-
+  // Instagram : Web Share API sur mobile (ouvre la feuille native avec l'image OG),
+  // copie URL sur desktop (Instagram n'a pas d'URL de partage web).
   const handleInstagram = async () => {
-    await handleShareImage()
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, url: pageUrl })
+        setOpen(false)
+        return
+      } catch { /* annulé ou non supporté */ }
+    }
     try {
       await navigator.clipboard.writeText(pageUrl)
       setIgCopied(true)
-      setTimeout(() => setIgCopied(false), 3000)
-    } catch { /* clipboard not available */ }
-  }
-
-  const handleEmail = async () => {
-    await handleShareImage()
-    const bodyWithNote = `${emailBody}\n\nP.-S. : Une image de partage (PNG 1200 × 630) a été téléchargée dans vos Téléchargements — joignez-la à votre courriel.`
-    window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(bodyWithNote)}`
-    setOpen(false)
+      setTimeout(() => setIgCopied(false), 2000)
+    } catch { /* clipboard non disponible */ }
   }
 
   const truncUrl = pageUrl.length > 48 ? pageUrl.slice(0, 45) + '…' : pageUrl
@@ -281,56 +159,53 @@ export function ShareButton({ title, saillanceLabel, section, url, hashtags = []
         <div ref={panelRef} className="share-panel">
           <p className="share-panel-title">Partager</p>
 
-          {/* Réseaux */}
+          {/* Réseaux avec URL de partage standard */}
           <div className="share-networks">
-            {networks.map(n => {
-              if (n.key === 'instagram') {
-                return (
-                  <button key="instagram" type="button" className="share-network-btn" onClick={handleInstagram} title="Télécharger l'image pour Instagram">
-                    <span className="share-network-icon">{n.icon}</span>
-                    <span className="share-network-label" style={igCopied ? { color: 'var(--cordovan)' } : undefined}>{n.label}</span>
-                  </button>
-                )
-              }
-              if (n.key === 'email') {
-                return (
-                  <button key="email" type="button" className="share-network-btn" onClick={handleEmail} title="Télécharge l'image puis ouvre votre client courriel">
-                    <span className="share-network-icon">{n.icon}</span>
-                    <span className="share-network-label">{n.label}</span>
-                  </button>
-                )
-              }
-              return (
-                <a key={n.key} href={n.href ?? '#'} target="_blank" rel="noopener noreferrer" className="share-network-btn" onClick={() => setOpen(false)}>
-                  <span className="share-network-icon">{n.icon}</span>
-                  <span className="share-network-label">{n.label}</span>
-                </a>
-              )
-            })}
-          </div>
+            {networks.map(n => (
+              <a
+                key={n.key}
+                href={n.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="share-network-btn"
+                onClick={() => setOpen(false)}
+              >
+                <span className="share-network-icon">{n.icon}</span>
+                <span className="share-network-label">{n.label}</span>
+              </a>
+            ))}
 
-          {/* Image de partage */}
-          <div className="share-image-row">
+            {/* Instagram — Web Share API sur mobile, copie URL sur desktop */}
             <button
               type="button"
-              className="share-image-btn"
-              onClick={handleShareImage}
-              disabled={generatingImg}
+              className="share-network-btn"
+              onClick={handleInstagram}
+              title="Feuille de partage native sur mobile — copie le lien sur bureau"
             >
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                <rect x="0.5" y="1.5" width="10" height="8" rx="1" stroke="currentColor" strokeWidth="1" />
-                <circle cx="5.5" cy="5.5" r="2" stroke="currentColor" strokeWidth="1" />
-                <rect x="3" y="0.5" width="5" height="2" rx="0.5" stroke="currentColor" strokeWidth="0.8" />
-              </svg>
-              {generatingImg ? 'Génération…' : 'Télécharger l\'image'}
+              <span className="share-network-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <rect x="1.5" y="1.5" width="15" height="15" rx="4" stroke="currentColor" strokeWidth="1.2" />
+                  <circle cx="9" cy="9" r="3.5" stroke="currentColor" strokeWidth="1.2" />
+                  <circle cx="13.2" cy="4.8" r="1" fill="currentColor" />
+                </svg>
+              </span>
+              <span
+                className="share-network-label"
+                style={igCopied ? { color: 'var(--cordovan)' } : undefined}
+              >
+                {igCopied ? 'Copié !' : 'Instagram'}
+              </span>
             </button>
-            <span className="share-image-hint">PNG 1200 × 630</span>
           </div>
 
           {/* Copier le lien */}
           <div className="share-copy-row">
             <span className="share-copy-url">{truncUrl}</span>
-            <button type="button" className={`share-copy-btn${copied ? ' copied' : ''}`} onClick={handleCopy}>
+            <button
+              type="button"
+              className={`share-copy-btn${copied ? ' copied' : ''}`}
+              onClick={handleCopy}
+            >
               {copied ? 'Copié !' : 'Copier le lien'}
             </button>
           </div>

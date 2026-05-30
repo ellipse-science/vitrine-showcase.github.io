@@ -16,12 +16,22 @@ export const metadata: Metadata = {
     siteName: "La Vitrine démocratique",
     locale: "fr_CA",
     type: "website",
+    // Illustration IA du jour — régénérée toutes les 4 h par le pipeline R
+    images: [
+      {
+        url: `${SITE_URL}/data/generated-art/latest.png`,
+        width: 1200,
+        height: 630,
+        alt: "Illustration éditoriale — La Vitrine démocratique",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "La Vitrine démocratique",
     description:
       "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec.",
+    images: [`${SITE_URL}/data/generated-art/latest.png`],
   },
 };
 
