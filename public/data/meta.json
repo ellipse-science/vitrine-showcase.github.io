@@ -1,75 +1,75 @@
 {
-  "generatedAt": "2026-06-01T16:01:26Z",
-  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/26766349101",
+  "generatedAt": "2026-06-01T20:01:09Z",
+  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/26778616602",
   "tables": [
     {
       "name": "provincial_parties_score_day",
       "status": "ok",
-      "rowCount": 7240,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "rowCount": 7245,
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/day/provincial_parties_score_day.json"
     },
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 12,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     },
     {
       "name": "federal_parties_score_week",
       "status": "ok",
       "rowCount": 2214,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/week/federal_parties_score_week.json"
     },
     {
       "name": "provincial_parties_score_week",
       "status": "ok",
       "rowCount": 1845,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/week/provincial_parties_score_week.json"
     },
     {
       "name": "federal_parties_score_month",
       "status": "ok",
       "rowCount": 2196,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/month/federal_parties_score_month.json"
     },
     {
       "name": "provincial_parties_score_month",
       "status": "ok",
       "rowCount": 1830,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/month/provincial_parties_score_month.json"
     },
     {
       "name": "issues_score_day",
       "status": "ok",
-      "rowCount": 3063,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "rowCount": 3065,
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/day/issues_score_day.json"
     },
     {
       "name": "issues_score_week",
       "status": "ok",
       "rowCount": 1486,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/week/issues_score_week.json"
     },
     {
       "name": "issues_score_month",
       "status": "ok",
       "rowCount": 1532,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/refined/month/issues_score_month.json"
     },
     {
       "name": "headline_events_4h",
       "status": "ok",
-      "rowCount": 192,
-      "generatedAt": "2026-06-01T16:01:26Z",
+      "rowCount": 200,
+      "generatedAt": "2026-06-01T20:01:09Z",
       "path": "public/data/headline-events.json"
     }
   ]
