@@ -34,7 +34,7 @@ type RawEvent = {
   total_outlets_qc: number | null;
   intensity_tier: string | null;
   title: string | null;
-  text: string | null;
+  text?: string | null;
   main_issue: string | null;
   main_issue_text_fr: string | null;
   target_region: string | null;
@@ -253,7 +253,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         }
       }
     } catch { }
-    const excerpt = e.text && e.text.trim() ? e.text.trim() : null;
+    const excerpt = e.text?.trim() || null;
     const headlineHours =
       totalHeadlineMinutes > 0
         ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
