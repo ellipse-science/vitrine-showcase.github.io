@@ -34,6 +34,7 @@ type RawEvent = {
   total_outlets_qc: number | null;
   intensity_tier: string | null;
   title: string | null;
+  text: string | null;
   main_issue: string | null;
   main_issue_text_fr: string | null;
   target_region: string | null;
@@ -121,6 +122,8 @@ function tierToLabelCls(tier: string | null): { label: string; cls: string } {
 
 export type UneEvent = {
   title: string;
+  /** Lead synthétique généré par le refiner (colonne `text`) — affiché sous la 1re Une. */
+  excerpt: string | null;
   issueFr: string;
   issueColor: string;
   saillanceFilled: number;
@@ -250,6 +253,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         }
       }
     } catch { }
+    const excerpt = e.text && e.text.trim() ? e.text.trim() : null;
     const headlineHours =
       totalHeadlineMinutes > 0
         ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
@@ -263,6 +267,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     );
     return {
       title: e.title ?? "",
+      excerpt,
       issueFr: e.main_issue_text_fr ?? ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? "Actualité",
       issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
       saillanceFilled: Math.min(6, Math.max(1, qcOutletCount)),

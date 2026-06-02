@@ -68,6 +68,7 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
               <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
             ) : event.title}
           </h1>
+          {event.excerpt && <p className="dek">{event.excerpt}</p>}
           <div className="saillance-row">
             <span className="region-label">Québec</span>
             <SaillanceDots filled={event.saillanceFilled} />
