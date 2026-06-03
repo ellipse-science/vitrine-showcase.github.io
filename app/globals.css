@@ -338,48 +338,6 @@
   .header-edition .pulse-countdown .cd-big { font-size: 14px; }
   .header-edition .pulse-countdown .cd-prefix { font-size: 8.5px; }
 
-  /* Encadré d'info au survol (rythme de mise à jour) — CSS pur, sans JS */
-  .info-tip {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    margin-left: 8px;
-    color: var(--ink-softer);
-    cursor: help;
-  }
-  .info-tip .info-ico { width: 14px; height: 14px; display: block; }
-  .info-tip:hover .info-ico,
-  .info-tip:focus-visible .info-ico { color: var(--cordovan); }
-  .info-tip .info-pop {
-    position: absolute;
-    top: calc(100% + 9px);
-    right: 0;
-    width: 300px;
-    padding: 11px 13px;
-    background: var(--ink);
-    color: var(--paper);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    line-height: 1.55;
-    letter-spacing: 0.04em;
-    text-transform: none;
-    text-align: left;
-    box-shadow: 0 8px 28px rgba(28, 25, 23, 0.22);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-3px);
-    transition: opacity 0.16s ease, transform 0.16s ease;
-    z-index: 30;
-  }
-  .info-tip .info-pop em { font-style: normal; color: var(--amber); }
-  .info-tip:hover .info-pop,
-  .info-tip:focus .info-pop,
-  .info-tip:focus-within .info-pop {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-
   @media (max-width: 760px) {
     .site-header {
       grid-template-columns: 1fr;
@@ -398,10 +356,6 @@
     .header-utility .pulse-title { text-align: center; max-width: 100%; }
     /* Bande de section : pas de débordement (le margin négatif > padding mobile). */
     .section-label { margin: 0; padding: 16px 16px; flex-wrap: wrap; }
-    .info-tip .info-pop { left: 50%; right: auto; transform: translate(-50%, -3px); }
-    .info-tip:hover .info-pop,
-    .info-tip:focus .info-pop,
-    .info-tip:focus-within .info-pop { transform: translate(-50%, 0); }
   }
 
   /* Nav secondaire (liens) */
@@ -696,87 +650,6 @@
     letter-spacing: -0.4px;
     text-transform: none;
     color: var(--ink);
-  }
-  .section-label .info-tip { color: inherit; margin-left: 11px; }
-  .section-label .info-tip .info-ico { width: 15px; height: 15px; }
-  .section-label .info-pop {
-    left: 0;
-    right: auto;
-    font-weight: 400;
-  }
-  .info-pop a {
-    display: block;
-    margin-top: 9px;
-    color: var(--amber);
-    text-decoration: none;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-  }
-  .info-pop a:hover { text-decoration: underline; }
-
-  /* ─── Layout « duo » : 2 Unes Extrêmes en co-tête + 3e en bande basse (#124) ─ */
-  .unes-grid.duo {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 44px;
-    align-items: stretch;
-  }
-  .unes-grid.duo > .une-colead:first-child {
-    border-right: 0.5px solid var(--rule);
-    padding-right: 44px;
-    min-width: 0;
-  }
-  /* Colonne droite : Une #2 (co-tête) au-dessus, Une #3 dessous — remplit le
-     vide laissé quand la #2 n'a pas d'image. */
-  .duo-right {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    min-width: 0;
-  }
-  /* Dans la colonne duo, la 3e Une s'aligne proprement sous la #2 : pas de bord
-     gauche ni de retrait (ceux-ci sont réservés aux secondaires du layout solo),
-     juste un fin séparateur horizontal. */
-  .duo-right > .une-side {
-    border-left: none;
-    padding-left: 0;
-    border-top: 0.5px solid var(--rule);
-    padding-top: 18px;
-  }
-  .une-colead { min-width: 0; }
-  .une-colead .colead-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 40px;
-    line-height: 1.04;
-    letter-spacing: -0.6px;
-    margin: 6px 0 14px;
-    text-wrap: balance;
-  }
-  .une-colead .colead-title a { color: inherit; text-decoration: none; }
-  .une-colead .colead-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .une-colead .colead-figure { margin: 0 0 16px; width: 100%; }
-  .une-colead .colead-figure .figure-frame {
-    height: 220px;
-    border-top: 0.5px solid var(--rule);
-  }
-  .une-colead .colead-figure img.editorial-img { height: 220px; object-position: center 34%; }
-  .une-colead .dek {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.45;
-    color: var(--ink-soft);
-    margin: 0 0 16px;
-  }
-  @media (max-width: 760px) {
-    .unes-grid.duo { grid-template-columns: 1fr; }
-    .unes-grid.duo > .une-colead:first-child {
-      border-right: none;
-      padding-right: 0;
-      border-bottom: 0.5px solid var(--rule);
-    }
-    .une-colead .colead-title { font-size: 30px; }
   }
 
   .legend-toggle.inline {
