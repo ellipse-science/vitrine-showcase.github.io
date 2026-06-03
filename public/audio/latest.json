@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-03T16:05Z",
+  "generated_at": "2026-06-03T20:07Z",
   "date_utc": "2026-06-03",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Orchestral Tension. BPM: 120. Key: D minor. Instruments: Strings, brass, timpani. Mood: Intense and suspenseful, with an undertone of unease. Gradual crescendo building to a dramatic peak, reflecting geopolitical uncertainty and economic strain.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Orchestral; BPM: 120; Key: D minor; Instruments: Strings, brass, timpani; Mood: Tense and dramatic, with a sense of urgency and underlying unease. A crescendo of tension reflecting political and economic challenges, with fleeting moments of hopeful resolution.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 5,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 25,
     "nostalgia": 10,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 40,
-    "tension": 70
+    "peacefulness": 30,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 20,
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "L'ambassadeur américain persiste sur le 51e État lors de sa rencontre avec Fréchette",
-      "weight": 15
+      "title": "Ottawa paiera pour le contenu canadien sur Netflix et Amazon Prime",
+      "weight": 12
     },
     {
-      "title": "Cuba perd son attrait : agences de voyages québécoises en difficulté",
-      "weight": 14
+      "title": "Ottawa réagit aux nouveaux tarifs américains avec une loi sur le travail forcé",
+      "weight": 79
     },
     {
-      "title": "Washington impose des tarifs de 10 % sur le Canada et 59 autres pays",
-      "weight": 71
+      "title": "Ottawa assumera la taxe sur le contenu canadien pour les géants du web",
+      "weight": 9
     }
   ]
 }
