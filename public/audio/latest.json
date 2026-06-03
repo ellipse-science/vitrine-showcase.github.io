@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-05-28T18:47Z",
-  "date_utc": "2026-05-28",
+  "generated_at": "2026-06-03T16:05Z",
+  "date_utc": "2026-06-03",
   "time_interval_utc": "12-16",
-  "prompt": "Create a tense, energetic orchestral piece in D minor at 120 BPM. Use strings and brass for urgency, interspersed with electronic elements for modernity. Capture a sense of unease and urgency, reflecting the economic and educational challenges faced in Québec.",
+  "prompt": "Genre: Orchestral Tension. BPM: 120. Key: D minor. Instruments: Strings, brass, timpani. Mood: Intense and suspenseful, with an undertone of unease. Gradual crescendo building to a dramatic peak, reflecting geopolitical uncertainty and economic strain.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
-    "nostalgia": 5,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 5,
+    "nostalgia": 10,
     "peacefulness": 10,
     "energy": 30,
-    "joyful_activation": 25,
+    "joyful_activation": 5,
     "sadness": 40,
-    "tension": 60
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Des médecins québécois misent sur SpaceX avec des actions prometteuses",
-      "weight": 40
+      "title": "L'ambassadeur américain persiste sur le 51e État lors de sa rencontre avec Fréchette",
+      "weight": 15
     },
     {
-      "title": "Les économistes critiquent vivement les annonces de Fréchette",
-      "weight": 31
+      "title": "Cuba perd son attrait : agences de voyages québécoises en difficulté",
+      "weight": 14
     },
     {
-      "title": "Deux tiers des cégeps québécois anticipent un déficit budgétaire",
-      "weight": 28
+      "title": "Washington impose des tarifs de 10 % sur le Canada et 59 autres pays",
+      "weight": 71
     }
   ]
 }
