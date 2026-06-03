@@ -192,7 +192,7 @@
 
 
   /* Masthead */
-  .page { max-width: 1300px; margin: 0 auto; padding: 22px 48px 80px; }
+  .page { max-width: 1300px; margin: 0 auto; padding: 10px 48px 80px; }
   .mast {
     display: flex;
     justify-content: center;
@@ -234,10 +234,12 @@
      plus bas (moins collé sous le logo Vitrine). */
   .site-header .capp-attribution { margin-left: 0; }
   .site-header .brand-footer { margin-top: -8px; }
+  /* Logo CAPP remonté légèrement (le PNG a du vide en bas) — « Propulsé par le » reste centré. */
+  .site-header .logo-capp { transform: translateY(-6px); }
   /* On descend TOUTE la marque (logo + « Propulsé par le CAPP » ensemble) : le
      logo Vitrine se rapproche du CAPP, et le logo CAPP (dont le PNG a du vide
      transparent en bas) s'aligne sur le countdown. Ajustable au pixel près. */
-  .site-header .mast { transform: translateY(20px); }
+  .site-header .mast { transform: translateY(28px); }
 
   /* Centre : édition du moment (timeline + nom + date/heure), centrée sur la page */
   .header-edition {
@@ -674,23 +676,24 @@
   .section-label .date-hint { color: var(--ink-softer); letter-spacing: 0.22em; }
   .section-label .section-date {
     font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.3px;
     text-transform: none;
     color: var(--ink-soft);
     transform: translateY(-1px);
   }
   /* Titre de section — look « vieux journal » : Playfair Black, encre, casse
      normale (plus le mono rouge en capitales). */
+  /* Même police que les titres de tous les modules (.partis-title) pour
+     l'uniformité : Playfair Display 700 (taille adaptée à la bande). */
   .section-label .section-title {
     display: inline-flex;
     align-items: center;
     font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
+    font-weight: 700;
     font-size: 25px;
-    letter-spacing: 0;
+    letter-spacing: -0.4px;
     text-transform: none;
     color: var(--ink);
   }
