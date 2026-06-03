@@ -5,21 +5,12 @@ import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 
-function headlineTimeLabel(event: UneEvent): string {
-  if (event.headlineHours && event.headlineHours > 0) {
-    return `${event.headlineHours} h en manchette`;
-  }
-  return `${event.timeMtl} h en manchette`;
-}
-
-function SaillanceDots({ filled }: { filled: number }) {
-  return (
-    <span className="saillance-dots">
-      {Array.from({ length: 6 }, (_, i) => (
-        <span key={i} className={i < filled ? "d" : "e"} />
-      ))}
-    </span>
-  );
+// Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
+// Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
+function saillantLabel(event: UneEvent): string {
+  return event.saillantSince
+    ? `Saillant au Québec depuis ${event.saillantSince}`
+    : "Saillant au Québec";
 }
 
 function Byline({ mediaPresent, mediaAbsent }: {
@@ -27,25 +18,31 @@ function Byline({ mediaPresent, mediaAbsent }: {
   mediaAbsent: string[];
 }) {
   return (
-    <>
-      <div className="byline">
-        {mediaPresent.map(({ name, url }, i) => (
-          <span key={name}>
-            {url ? (
-              <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
-            ) : (
-              <span>{name}</span>
-            )}
-            {i < mediaPresent.length - 1 && <span className="sep">·</span>}
+    <div className="byline-block">
+      {mediaPresent.length > 0 && (
+        <p className="byline-line">
+          <span className="byline-label">À lire en Une sur</span>{" "}
+          <span className="byline-media">
+            {mediaPresent.map(({ name, url }, i) => (
+              <span key={name}>
+                {url ? (
+                  <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+                ) : (
+                  <span>{name}</span>
+                )}
+                {i < mediaPresent.length - 1 && <span className="sep">·</span>}
+              </span>
+            ))}
           </span>
-        ))}
-      </div>
-      {mediaAbsent.length > 0 && (
-        <div className="byline-absent">
-          Absent de {mediaAbsent.join(" · ")}
-        </div>
+        </p>
       )}
-    </>
+      {mediaAbsent.length > 0 && (
+        <p className="byline-line">
+          <span className="byline-label">Absent de la Une sur</span>{" "}
+          <span className="byline-absent-media">{mediaAbsent.join(" · ")}</span>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -57,22 +54,21 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
           {event.issueFr}
         </span>
         <span className={`saillance-tag ${event.saillanceCls}`}>
-          {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
+          Saillance {event.saillanceLabel}
         </span>
       </div>
 
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
         <div className="une-main-copy">
-          <h1 data-saillance={event.saillanceFilled}>
+          {/* La Une principale ne descend jamais sous le rang 3 pour garder l'impact du hero. */}
+          <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             {event.representativeUrl ? (
               <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
             ) : event.title}
           </h1>
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
           <div className="saillance-row">
-            <span className="region-label">Québec</span>
-            <SaillanceDots filled={event.saillanceFilled} />
-            <span className="time">{headlineTimeLabel(event)}</span>
+            <span className="time">{saillantLabel(event)}</span>
           </div>
           <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
         </div>
@@ -106,17 +102,15 @@ function SideUne({ event }: { event: UneEvent }) {
         {event.issueFr}
       </span>
       <span className={`saillance-tag ${event.saillanceCls}`}>
-        {event.saillanceLabel} · {event.qcOutletCount} / {event.totalQcOutlets}
+        Saillance {event.saillanceLabel}
       </span>
-      <h2 data-saillance={event.saillanceFilled}>
+      <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
           <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
         ) : event.title}
       </h2>
       <div className="saillance-row">
-        <span className="region-label">Québec</span>
-        <SaillanceDots filled={event.saillanceFilled} />
-        <span className="time">{headlineTimeLabel(event)}</span>
+        <span className="time">{saillantLabel(event)}</span>
       </div>
       {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
       <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
@@ -203,26 +197,35 @@ export async function UneDesUnesSection() {
   const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
   const [main, sideLeft, sideRight] = data.top3;
 
+  // Traitement « breaking » inversé (noir) quand la Une #1 atteint le point
+  // critique de saillance (Extrême = rang 6), façon vrais sites de médias
+  // (demande Shannon — Figma). Cf. #35.
+  const breaking = main?.saillanceRank === 6;
+  // « Édition du mercredi 3 juin 2026 » : la date du snapshot (sans l'heure).
+  const editionLabel = `Édition du ${data.dateLabel.toLowerCase()}`;
+
   return (
     <>
-      <div className="section-label">
-        <span>Les unes du jour</span>
-        {audioUrl && <AudioPlayer src={audioUrl} compact />}
-        <span className="section-date">{data.dateLabel}</span>
-      </div>
+      <div className={`unes-jour${breaking ? " breaking" : ""}`}>
+        <div className="section-label">
+          <span className="section-title">Les Unes {data.periodLabel}</span>
+          {audioUrl && <AudioPlayer src={audioUrl} compact />}
+          <span className="section-date">{editionLabel}</span>
+        </div>
 
-      {/* Hero principal — pleine largeur (Figma: "hero") */}
-      <section className="hero-main">
-        {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} />}
-      </section>
-
-      {/* Secondaires — 2 colonnes côte-à-côte en dessous (Figma: "hero-secondaries") */}
-      {(sideLeft || sideRight) && (
-        <section className="hero-secondaries">
-          {sideLeft && <SideUne event={sideLeft} />}
-          {sideRight && <SideUne event={sideRight} />}
+        {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3
+            en secondaires côte-à-côte. Ordre = ordre de saillance. */}
+        <section className="hero-main">
+          {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} />}
         </section>
-      )}
+
+        {(sideLeft || sideRight) && (
+          <section className="hero-secondaries">
+            {sideLeft && <SideUne event={sideLeft} />}
+            {sideRight && <SideUne event={sideRight} />}
+          </section>
+        )}
+      </div>
 
       <DeuxSolitudes
         qcPos={data.solitudesQcPos}

@@ -12,6 +12,14 @@ import { useEffect } from "react";
 // component just attaches behavior, it renders nothing.
 
 const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
+const EDITIONS = [
+  "de la nuit",
+  "du petit matin",
+  "du matin",
+  "du midi",
+  "de l’après-midi",
+  "de la soirée",
+];
 
 export function PulseCountdown() {
   useEffect(() => {
@@ -40,6 +48,10 @@ export function PulseCountdown() {
         if (i < slot) el.classList.add("past");
         else if (i === slot) el.classList.add("current");
       });
+
+      // Édition du moment : nom de la période courante (nuit → soirée).
+      const edEl = document.getElementById("edition-name");
+      if (edEl) edEl.textContent = `Édition ${EDITIONS[slot] ?? ""}`;
     }
 
     tick();
