@@ -19,7 +19,16 @@
     --tag-expert-fg: #A07A3D;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--paper); }
+  html, body {
+    margin: 0; padding: 0; background: var(--paper);
+    /* Garde-fou : aucune section ne doit jamais provoquer de défilement
+       horizontal sur mobile. Les causes réelles sont corrigées plus bas ;
+       ceci est une ceinture de sécurité. */
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  /* Médias fluides par défaut — jamais plus larges que leur conteneur. */
+  img, svg, video { max-width: 100%; }
   body {
     color: var(--ink);
     font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
@@ -338,24 +347,56 @@
   .header-edition .pulse-countdown .cd-big { font-size: 14px; }
   .header-edition .pulse-countdown .cd-prefix { font-size: 8.5px; }
 
-  @media (max-width: 760px) {
+  /* En-tête empilé : sous 900px le bandeau 3 zones devient une pile verticale
+     centrée (marque → édition → utilitaires). Au-delà, la grille desktop. */
+  @media (max-width: 900px) {
     .site-header {
       grid-template-columns: 1fr;
       justify-items: center;
-      gap: 16px;
+      gap: 18px;
       text-align: center;
-      padding: 8px 0;
+      padding: 10px 0 4px;
     }
     /* Pas de décalage vertical de la marque sur mobile (zones empilées). */
     .site-header .mast { justify-self: center; transform: none; }
-    .site-header .capp-attribution { justify-content: center; }
-    .site-header .logo-vitrine { height: 56px; }
-    .header-edition .pulse-icons { max-width: 100%; }
-    .header-utility { justify-self: center; align-items: center; text-align: center; }
+    .site-header .brand { align-items: center; }
+    .site-header .capp-attribution { justify-content: center; margin-left: 0; }
+    .site-header .brand-footer { justify-content: center; margin-top: 2px; }
+    .site-header .logo-vitrine { height: 60px; }
+    /* Logo CAPP (« CAPP / Centre d'analyse… ») : la règle desktop le fixe à 66px
+       avec une spécificité .site-header — on doit la battre ici, sinon il déborde. */
+    .site-header .logo-capp { height: 34px; transform: none; }
+    .site-header .capp-prefix { font-size: 9.5px; }
+
+    .header-edition { gap: 8px; }
+    /* Timeline : icônes réparties uniformément sur toute la largeur (comme sur
+       desktop) au lieu d'être tassées au centre. Le bloc ≤768px force
+       flex:0 0 auto → les icônes s'agglutinent ; on rétablit flex:1 ici avec une
+       spécificité .header-edition qui gagne. Les centres d'icônes s'alignent
+       alors sur les extrémités de l'arc (inset 26px). */
+    .header-edition .pulse-icons { max-width: 360px; gap: 0; }
+    .header-edition .pulse-icon { flex: 1; min-width: 0; }
+
+    .header-utility { justify-self: center; align-items: center; text-align: center; gap: 12px; }
+    .header-utility .sub-nav { font-size: 13px; }
     .header-utility .sub-nav .links { justify-content: center; }
-    .header-utility .pulse-title { text-align: center; max-width: 100%; }
-    /* Bande de section : pas de débordement (le margin négatif > padding mobile). */
-    .section-label { margin: 0; padding: 16px 16px; flex-wrap: wrap; }
+    .header-utility .pulse-title { text-align: center; max-width: 540px; }
+    /* CORRECTIF CLÉ : sur desktop ces lignes sont en nowrap (elles tiennent à
+       droite) ; empilées et centrées sur mobile elles DOIVENT pouvoir revenir à
+       la ligne, sinon « LES ANALYSES DES MÉDIAS… » élargit toute la page. */
+    .header-utility .pulse-title .pt-primary,
+    .header-utility .pulse-title .pt-secondary { white-space: normal; }
+
+    /* Bande de section « Les Unes … » : empilée et centrée (titre → lecteur →
+       date) plutôt que titre/lecteur-centré-en-absolute/date, sinon le lecteur
+       chevauche le titre sur écran étroit. Le détail (padding, centrage) est
+       finalisé dans le bloc ≤768px, qui passe APRÈS les styles de base et gagne
+       donc la cascade ; ici on ne pose que ce qui ne risque pas d'être écrasé. */
+    .section-label .une-audio-compact {
+      position: static;
+      transform: none;
+      left: auto; top: auto;
+    }
   }
 
   /* Nav secondaire (liens) */
@@ -2387,8 +2428,20 @@
     .pulse-icon svg.celestial { width: 18px; height: 18px; }
     .pulse-hour { font-size: 8px; letter-spacing: 0.14em; }
 
-    /* ── Section label ── */
-    .section-label { font-size: 9px; margin: 36px 0 16px; }
+    /* ── Bande de section « Les Unes … » : empilée, centrée, padding confortable.
+       Ce bloc passe APRÈS les styles de base (ligne ~646) → il gagne la cascade,
+       contrairement au bloc d'en-tête ≤900px placé plus haut dans le fichier. ── */
+    .section-label {
+      font-size: 9px;
+      margin: 0;
+      padding: 20px 16px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+    .section-label .section-title-wrap { justify-content: center; }
+    .section-label .section-title { font-size: 22px; }
 
     /* ── Hero principal (mobile) ── */
     .hero-main {
@@ -2448,6 +2501,15 @@
 
     .une-main .dek { font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .saillance-tag { font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; margin-bottom: 12px; }
+    /* La tag « Extrême » reste prééminente sur desktop (jusqu'à 16px) ; sur
+       mobile on la calme pour qu'elle tienne sur une ligne sans casser. */
+    .saillance-tag.s-extreme,
+    .une-main-head .saillance-tag.s-extreme {
+      font-size: 11px;
+      padding: 5px 12px;
+      letter-spacing: 0.2em;
+      white-space: nowrap;
+    }
 
     /* ── Saillance dots : plus grands sur mobile ── */
     .saillance-dots .d,
