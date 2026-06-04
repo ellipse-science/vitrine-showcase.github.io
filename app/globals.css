@@ -2391,8 +2391,8 @@
     .mast .capp-attribution { margin-left: 0; gap: 5px; }
     .mast .brand-footer .region { font-size: 6px; }
 
-    /* ── Section label + date ── */
-    .section-label { margin: 28px 0 16px; }
+    /* ── Section label + date ── (la mise en page complète de la bande est
+       définie plus bas dans ce même bloc ≤768px) ── */
     .section-label .section-date { font-size: 13px; }
 
     /* ── Figure inline dans une-main ── */
