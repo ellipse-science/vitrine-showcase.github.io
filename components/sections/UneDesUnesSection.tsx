@@ -205,9 +205,11 @@ export async function UneDesUnesSection() {
   const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
   const [main, sideLeft, sideRight] = data.top3;
 
-  // Traitement « breaking » inversé (noir) quand la Une #1 atteint le point
-  // critique de saillance (Extrême = rang 6), façon vrais sites de médias
-  // (demande Shannon — Figma). Cf. #35.
+  // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
+  // critique de saillance, façon vrais sites de médias (demande Shannon, Figma).
+  // Choix assumé : le seuil est « Extrême » = rang 6 = p95, et non p99 comme le
+  // suggéraient #124/#122, pour rester cohérent avec les 6 bandes symétriques de
+  // #35. Le noir se déclenche donc un peu plus souvent, c'est voulu. Cf. #35.
   const breaking = main?.saillanceRank === 6;
   // « Édition du mercredi 3 juin 2026 » : la date du snapshot (sans l'heure).
   const editionLabel = `Édition du ${data.dateLabel.toLowerCase()}`;

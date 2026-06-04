@@ -7,6 +7,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { editionLabel } from "@/lib/editions";
+
 const DATA_PATH = path.resolve(
   process.cwd(),
   "public",
@@ -178,12 +180,8 @@ function saillantSinceLabel(timeIntervalMtl: string | null, headlineHours: numbe
 function periodLabelFromInterval(intervalMtl: string): string {
   const start = parseInt((intervalMtl ?? "").split("-")[0] ?? "", 10);
   if (Number.isNaN(start)) return "du jour";
-  if (start < 4) return "de la nuit";
-  if (start < 8) return "du petit matin";
-  if (start < 12) return "du matin";
-  if (start < 16) return "du midi";
-  if (start < 20) return "de l’après-midi";
-  return "de la soirée";
+  // Table partagée avec PulseCountdown (client) — cf. lib/editions.ts.
+  return editionLabel(start);
 }
 
 export type UneEvent = {
