@@ -7,6 +7,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { editionLabel } from "@/lib/editions";
+
 const DATA_PATH = path.resolve(
   process.cwd(),
   "public",
@@ -110,14 +112,76 @@ function formatDateFr(dateStr: string): string {
   return `${DAYS_FR[d.getDay()]} ${day} ${MONTHS_FR[month - 1]} ${year}`;
 }
 
-function tierToLabelCls(tier: string | null): { label: string; cls: string } {
-  switch (tier) {
-    case "Majeur": return { label: "Majeur", cls: "major" };
-    case "Fort":   return { label: "Fort",   cls: "fort" };
-    case "Moyen":  return { label: "Moyen",  cls: "notable" };
-    case "Faible": return { label: "Faible", cls: "notable" };
-    default:       return { label: "–",      cls: "notable" };
-  }
+// Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
+// autant de « Très faible » que d'« Extrême », le gros au centre (courbe en
+// cloche sur échelle log). Bandes p5/p20/p50/p80/p95 = 5/15/30/30/15/5 %.
+// Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Extrême
+// (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
+// « la moyenne »).
+// Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
+// depuis le 2026-05-14, fenêtre qui s'étend). Recalibrage du 2026-06-03 sur
+// 406 Unes : p5/p20/p50/p80/p95 = 5/10/19/36/71. Illustration pédago dans
+// public/methodologie/ (et docs/). TODO(#122) : calcul glissant dans le
+// refiner pour ne plus hardcoder ici.
+const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, extreme: 71 };
+
+// `rank` (1–6) pilote aussi la taille du titre (data-saillance) : la hiérarchie
+// visuelle reflète la saillance, plus le nombre de médias.
+// `hint` : explication relative du niveau. Le cadrage BASCULE à la médiane pour
+// garder un % toujours grand et parlant : sous la médiane on compte ce qui
+// DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
+// compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
+// ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
+function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: string; rank: number; hint: string } {
+  const s = scoreQc ?? 0;
+  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Extrême",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
+  if (s >= SAL_QC_THRESHOLDS.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
+  if (s >= SAL_QC_THRESHOLDS.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
+  // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
+  // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
+  // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
+  // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
+  if (s >= SAL_QC_THRESHOLDS.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  if (s >= SAL_QC_THRESHOLDS.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+}
+
+const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
+const SAILLANT_TODAY: Record<number, string> = {
+  0: "cette nuit", 4: "tôt ce matin", 8: "ce matin",
+  12: "ce midi", 16: "cet après-midi", 20: "ce soir",
+};
+const SAILLANT_YESTERDAY: Record<number, string> = {
+  0: "cette nuit", 4: "hier, avant l’aube", 8: "hier matin",
+  12: "hier midi", 16: "hier après-midi", 20: "hier soir",
+};
+
+// « ce matin, 8 h » (#126) : estime le début de saillance à partir du bloc 4h
+// courant (heure Montréal) et de la durée en Une, arrondi à l'édition la plus
+// proche. Approximatif tant que le refiner ne fournit pas l'instant exact.
+function saillantSinceLabel(timeIntervalMtl: string | null, headlineHours: number | null): string | null {
+  if (!headlineHours || headlineHours <= 0) return null;
+  const blockStart = parseInt((timeIntervalMtl ?? "").split("-")[0] ?? "", 10);
+  if (Number.isNaN(blockStart)) return null;
+  const raw = blockStart - headlineHours;
+  const yesterday = raw < 0;
+  const start = ((raw % 24) + 24) % 24;
+  const snapped = UPDATE_HOURS_MTL.reduce(
+    (p, c) => (Math.abs(c - start) <= Math.abs(p - start) ? c : p),
+    UPDATE_HOURS_MTL[0],
+  );
+  const part = (yesterday ? SAILLANT_YESTERDAY : SAILLANT_TODAY)[snapped];
+  // Espace fine insécable avant « h » (norme typographique française).
+  return `${part}, ${snapped} h`;
+}
+
+// Label de période pour la section (#125) : change selon le bloc 4h courant.
+// « Les Unes saillantes de la soirée / du matin / … ».
+function periodLabelFromInterval(intervalMtl: string): string {
+  const start = parseInt((intervalMtl ?? "").split("-")[0] ?? "", 10);
+  if (Number.isNaN(start)) return "du jour";
+  // Table partagée avec PulseCountdown (client) — cf. lib/editions.ts.
+  return editionLabel(start);
 }
 
 export type UneEvent = {
@@ -126,11 +190,16 @@ export type UneEvent = {
   excerpt: string | null;
   issueFr: string;
   issueColor: string;
-  saillanceFilled: number;
+  /** Rang de saillance 1–6 (Très faible→1 … Extrême→6) — pilote la taille du titre. */
+  saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
+  /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
+  saillanceHint: string;
   timeMtl: string;
   headlineHours: number | null;
+  /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126). */
+  saillantSince: string | null;
   representativeUrl: string | null;
   mediaPresent: { name: string; url: string | null }[];
   mediaAbsent: string[];
@@ -178,6 +247,8 @@ export type TreemapAllPeriods = {
 export type HeadlineData = {
   dateLabel: string;
   snapshotInterval: string;
+  /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
+  periodLabel: string;
   top3: UneEvent[];
   solitudesQcPos: number;
   solitudesRocPos: number;
@@ -224,6 +295,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
 
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
+  const periodLabel = periodLabelFromInterval(snapshotInterval);
 
   const withTitles = latest
     .filter((e) => e.title)
@@ -233,7 +305,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     );
 
   const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
-    const { label: saillanceLabel, cls: saillanceCls } = tierToLabelCls(e.intensity_tier);
+    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(e.score_qc);
     const qcOutletCount = e.outlets_qc ?? 0;
     const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
@@ -258,6 +330,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       totalHeadlineMinutes > 0
         ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
         : null;
+    const saillantSince = saillantSinceLabel(e.time_interval_montreal_tz ?? null, headlineHours);
     // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
     const mediaPresent = mediaIds
       .filter((id) => QC_MEDIA.includes(id))
@@ -270,11 +343,13 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       excerpt,
       issueFr: e.main_issue_text_fr ?? ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? "Actualité",
       issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
-      saillanceFilled: Math.min(6, Math.max(1, qcOutletCount)),
+      saillanceRank,
       saillanceLabel,
       saillanceCls,
+      saillanceHint,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
+      saillantSince,
       representativeUrl: e.representative_url ?? null,
       mediaPresent,
       mediaAbsent,
@@ -401,7 +476,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, snapshotInterval, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 }
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);

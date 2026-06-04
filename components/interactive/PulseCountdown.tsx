@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 
+import { editionLabel, editionSlot } from "@/lib/editions";
+
 // Live countdown to the next data-refresh slot.
 //
-// Updates the #cd-big and #cd-next text inside the pulse-band, plus toggles
-// .past / .current classes on each .pulse-icon. Ported verbatim from the
-// inline <script> at the bottom of public/index.html. Runs every second.
+// Updates the #cd-big text inside the pulse-band, toggles .past / .current
+// classes on each .pulse-icon, et écrit le nom de l'édition courante. Runs
+// every second.
 //
 // The DOM nodes it targets live inside the RawMaquette "top" chunk; this
 // component just attaches behavior, it renders nothing.
@@ -30,16 +32,18 @@ export function PulseCountdown() {
       const mm = Math.floor((totalSec % 3600) / 60);
 
       const bigEl = document.getElementById("cd-big");
-      const nextEl = document.getElementById("cd-next");
       if (bigEl) bigEl.textContent = `${hh} h ${mm < 10 ? "0" : ""}${mm} min`;
-      if (nextEl) nextEl.textContent = rolledOver ? "minuit" : `${nextH} h`;
 
-      const slot = Math.floor(h / 4);
+      const slot = editionSlot(h);
       document.querySelectorAll(".pulse-icon").forEach((el, i) => {
         el.classList.remove("current", "past");
         if (i < slot) el.classList.add("past");
         else if (i === slot) el.classList.add("current");
       });
+
+      // Édition du moment : nom de la période courante (nuit → soirée).
+      const edEl = document.getElementById("edition-name");
+      if (edEl) edEl.textContent = `Édition ${editionLabel(h)}`;
     }
 
     tick();
