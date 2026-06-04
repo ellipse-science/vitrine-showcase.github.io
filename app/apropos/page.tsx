@@ -68,7 +68,7 @@ export default function AproposPage() {
               </p>
               <p className="apropos-text">
                 Depuis septembre 2019, le système Radar+ capte automatiquement
-                les grands titres de treize grands médias québécois et canadiens.
+                les grands titres de treize médias québécois et canadiens.
                 Ces données alimentent des indices de saillance médiatique — un
                 concept provenant de la littérature scientifique désignant
                 l'importance relative accordée par les médias aux différents
@@ -78,7 +78,7 @@ export default function AproposPage() {
               <p className="apropos-text">
                 En parallèle, les transcriptions officielles des débats de
                 l'Assemblée nationale du Québec sont analysées chaque jour de
-                séance (pour lesquels une transcription est disponible) afin
+                séance (lorsqu'une transcription est disponible) afin
                 d'analyser la participation des différents partis lors de la
                 période de questions, la présence des différents enjeux dans les
                 discours, le ton employé par les parlementaires et la richesse
