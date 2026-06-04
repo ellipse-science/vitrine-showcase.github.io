@@ -4,6 +4,8 @@ import path from "node:path";
 import React from "react";
 import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
+import { SaillanceTip } from "@/components/interactive/SaillanceTip";
+import { InfoTip } from "@/components/interactive/InfoTip";
 
 // Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
 // Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
@@ -53,8 +55,11 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
         <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
           {event.issueFr}
         </span>
-        <span className={`saillance-tag ${event.saillanceCls}`}>
-          Saillance {event.saillanceLabel}
+        <span className="saillance-tag-row">
+          <span className={`saillance-tag ${event.saillanceCls}`}>
+            Saillance {event.saillanceLabel}
+          </span>
+          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
       </div>
 
@@ -101,8 +106,11 @@ function SideUne({ event }: { event: UneEvent }) {
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
         {event.issueFr}
       </span>
-      <span className={`saillance-tag ${event.saillanceCls}`}>
-        Saillance {event.saillanceLabel}
+      <span className="saillance-tag-row">
+        <span className={`saillance-tag ${event.saillanceCls}`}>
+          Saillance {event.saillanceLabel}
+        </span>
+        <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
       </span>
       <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
@@ -208,7 +216,10 @@ export async function UneDesUnesSection() {
     <>
       <div className={`unes-jour${breaking ? " breaking" : ""}`}>
         <div className="section-label">
-          <span className="section-title">Les Unes {data.periodLabel}</span>
+          <span className="section-title-wrap">
+            <span className="section-title">Les Unes {data.periodLabel}</span>
+            <SaillanceTip />
+          </span>
           {audioUrl && <AudioPlayer src={audioUrl} compact />}
           <span className="section-date">{editionLabel}</span>
         </div>

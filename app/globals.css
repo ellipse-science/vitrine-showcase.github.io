@@ -971,9 +971,20 @@
   /* Étiquette de saillance — 6 niveaux par percentiles (#35).
      Poids visuel ∝ saillance : niveaux hauts en tags pleins, niveaux bas en
      tags fantômes (contour discret), fidèle à l'esthétique journal imprimé. */
+  /* « C'est extrême! » — la tag Extrême doit crier : plus grosse, plus grasse,
+     et carrément imposante sur le hero. */
   .saillance-tag.s-extreme {
     background: var(--cordovan);
     color: var(--paper);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 15px;
+    letter-spacing: 0.28em;
+  }
+  .une-main-head .saillance-tag.s-extreme {
+    font-size: 16px;
+    padding: 9px 20px;
+    letter-spacing: 0.3em;
   }
   .saillance-tag.s-tres-eleve {
     background: var(--red);
@@ -1032,6 +1043,71 @@
   .unes-jour.breaking .saillance-tag.s-eleve {
     color: var(--ink);
   }
+
+  /* Icône ⓘ « qu'est-ce que la saillance » (SaillanceTip), collée au titre de
+     section. Wrapper + bouton + bulle à lien cliquable. */
+  .section-title-wrap { display: inline-flex; align-items: center; gap: 10px; }
+  .saillance-info-tip { position: relative; display: inline-flex; line-height: 1; }
+  .saillance-info-btn {
+    cursor: pointer;
+    opacity: 0.6;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+    user-select: none;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    color: inherit;
+  }
+  .saillance-info-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
+  .saillance-info-tip:hover .saillance-info-btn,
+  .saillance-info-tip.open .saillance-info-btn { opacity: 1; }
+  .saillance-info-btn.info-lg { font-size: 17px; }
+  .saillance-info-btn.info-sm { font-size: 15px; opacity: 0.8; }
+  /* Tag + ⓘ centrées verticalement ensemble (sinon l'icône s'aligne sur la ligne
+     de base et flotte au-dessus du rectangle). La marge basse passe sur la rangée
+     pour ne pas décentrer l'icône. */
+  .saillance-tag-row { display: inline-flex; align-items: center; gap: 9px; }
+  .saillance-tag-row .saillance-tag { margin: 0; }
+  .une-side .saillance-tag-row { margin-bottom: 12px; }
+  .une-side .saillance-tag-row .saillance-tag { margin: 0; }
+  .saillance-info-bubble {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 300px;
+    max-width: 78vw;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    box-shadow: 0 8px 28px rgba(28, 25, 23, 0.18);
+    padding: 12px 14px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 12.5px;
+    font-style: italic;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+    line-height: 1.55;
+    z-index: 40;
+    text-align: left;
+    cursor: default;
+  }
+  .saillance-info-bubble a {
+    display: inline-block;
+    margin-top: 8px;
+    font-style: normal;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: var(--cordovan);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .saillance-info-bubble a:hover { text-decoration: underline; }
 
   .une-side .saillance-tag {
     font-size: 9px;

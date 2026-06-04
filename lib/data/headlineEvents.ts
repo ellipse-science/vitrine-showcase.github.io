@@ -111,26 +111,37 @@ function formatDateFr(dateStr: string): string {
 }
 
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
-// autant de « Très faible » que d'« Extrême », le gros au centre (courbe normale
-// en échelle log). Bandes p5/p20/p50/p80/p95 → 5/15/30/30/15/5 %.
-// Seuils calibrés sur TOUTE la donnée disponible (la table headline_events_4h
-// démarre le 2026-05-14 ; la fenêtre s'étend chaque jour → seuils de plus en
-// plus stables). Valeurs actuelles : p5≈8, p20≈12, p50≈20, p80≈39, p95≈73.
-// Voir docs/saillance-niveaux.png. TODO(#122): calcul glissant (fenêtre longue,
-// 6-12 mois à terme) dans le refiner, recalibré lentement, pour ne plus
-// hardcoder ici.
-const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 12, eleve: 20, tresEleve: 39, extreme: 73 };
+// autant de « Très faible » que d'« Extrême », le gros au centre (courbe en
+// cloche sur échelle log). Bandes p5/p20/p50/p80/p95 = 5/15/30/30/15/5 %.
+// Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Extrême
+// (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
+// « la moyenne »).
+// Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
+// depuis le 2026-05-14, fenêtre qui s'étend). Recalibrage du 2026-06-03 sur
+// 406 Unes : p5/p20/p50/p80/p95 = 5/10/19/36/71. Illustration pédago dans
+// public/methodologie/ (et docs/). TODO(#122) : calcul glissant dans le
+// refiner pour ne plus hardcoder ici.
+const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, extreme: 71 };
 
 // `rank` (1–6) pilote aussi la taille du titre (data-saillance) : la hiérarchie
 // visuelle reflète la saillance, plus le nombre de médias.
-function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: string; rank: number } {
+// `hint` : explication relative du niveau. Le cadrage BASCULE à la médiane pour
+// garder un % toujours grand et parlant : sous la médiane on compte ce qui
+// DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
+// compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
+// ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
+function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: string; rank: number; hint: string } {
   const s = scoreQc ?? 0;
-  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Extrême",     cls: "s-extreme",     rank: 6 };
-  if (s >= SAL_QC_THRESHOLDS.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5 };
-  if (s >= SAL_QC_THRESHOLDS.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4 };
-  if (s >= SAL_QC_THRESHOLDS.moyenne)   return { label: "Moyenne",     cls: "s-moyenne",     rank: 3 };
-  if (s >= SAL_QC_THRESHOLDS.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2 };
-  return { label: "Très faible", cls: "s-tres-faible", rank: 1 };
+  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Extrême",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
+  if (s >= SAL_QC_THRESHOLDS.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
+  if (s >= SAL_QC_THRESHOLDS.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
+  // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
+  // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
+  // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
+  // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
+  if (s >= SAL_QC_THRESHOLDS.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  if (s >= SAL_QC_THRESHOLDS.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
 }
 
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
@@ -185,6 +196,8 @@ export type UneEvent = {
   saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
+  /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
+  saillanceHint: string;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126). */
@@ -294,7 +307,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     );
 
   const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
-    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank } = saillanceTierFromScore(e.score_qc);
+    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(e.score_qc);
     const qcOutletCount = e.outlets_qc ?? 0;
     const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
@@ -335,6 +348,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       saillanceRank,
       saillanceLabel,
       saillanceCls,
+      saillanceHint,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
