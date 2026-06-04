@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-04T04:05Z",
+  "generated_at": "2026-06-04T08:05Z",
   "date_utc": "2026-06-04",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Cinematic orchestral; BPM: 85; Key: D minor. Instruments: Strings, brass, subtle percussion. Mood: Tense and dramatic, evoking urgency and conflict with underlying hope. Capture the weight of international decisions and the delicate dance of diplomacy and governance.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Dark ambient. BPM: 60. Key: D minor. Instruments: Synth pads, drones, low piano notes. Mood: Tense and somber, reflecting unease and sadness. Create a haunting soundscape with subtle dissonance and slow, evolving textures.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 50,
-    "joyful_activation": 20,
-    "sadness": 30,
+    "energy": 30,
+    "joyful_activation": 5,
+    "sadness": 50,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "La Chambre des représentants limite les pouvoirs de guerre de Trump en Iran",
-      "weight": 65
+      "title": "Projet Montréal débattra d'une motion condamnant Israël pour «génocide»",
+      "weight": 47
     },
     {
-      "title": "Ottawa et Québec concluent une entente de 10 milliards pour le transport",
-      "weight": 21
+      "title": "Entente Canada-Alberta: hausse possible des émissions de GES",
+      "weight": 27
     },
     {
-      "title": "Un agent de la GRC blessé par un présumé passeur à la frontière",
-      "weight": 14
+      "title": "Trump entretient le flou sur le fonds d'indemnisation de 1,8 milliard",
+      "weight": 25
     }
   ]
 }
