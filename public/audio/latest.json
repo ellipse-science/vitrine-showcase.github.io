@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-03T20:07Z",
+  "generated_at": "2026-06-04T00:04Z",
   "date_utc": "2026-06-03",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Orchestral; BPM: 120; Key: D minor; Instruments: Strings, brass, timpani; Mood: Tense and dramatic, with a sense of urgency and underlying unease. A crescendo of tension reflecting political and economic challenges, with fleeting moments of hopeful resolution.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral hybrid. BPM: 120. Key: D minor. Instruments: Strings, brass, subtle electronic elements. Mood: Tense and reflective, with an underlying sense of urgency and hope. Emphasize tension with dynamic crescendos and poignant harmonies.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 25,
-    "nostalgia": 10,
-    "peacefulness": 30,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
     "energy": 40,
-    "joyful_activation": 35,
-    "sadness": 20,
-    "tension": 60
+    "joyful_activation": 20,
+    "sadness": 30,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Ottawa paiera pour le contenu canadien sur Netflix et Amazon Prime",
-      "weight": 12
+      "title": "Trump optimiste sur l'Iran malgré le scepticisme de Téhéran",
+      "weight": 34
     },
     {
-      "title": "Ottawa réagit aux nouveaux tarifs américains avec une loi sur le travail forcé",
-      "weight": 79
+      "title": "La Chambre des représentants ordonne la fin de la guerre contre l'Iran",
+      "weight": 44
     },
     {
-      "title": "Ottawa assumera la taxe sur le contenu canadien pour les géants du web",
-      "weight": 9
+      "title": "Washington propose une révision de l'ACEUM à sens unique, selon Charest",
+      "weight": 22
     }
   ]
 }
