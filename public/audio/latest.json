@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-04T08:05Z",
+  "generated_at": "2026-06-04T12:05Z",
   "date_utc": "2026-06-04",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Dark ambient. BPM: 60. Key: D minor. Instruments: Synth pads, drones, low piano notes. Mood: Tense and somber, reflecting unease and sadness. Create a haunting soundscape with subtle dissonance and slow, evolving textures.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Orchestral; BPM: 60; Key: C Minor; Instruments: Strings, French Horns, Timpani; Mood: Tense and somber, evoking unease and sadness with a rising intensity, reflecting the gravity and escalation of international conflicts and personal struggles.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 15,
+    "tenderness": 20,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 30,
+    "energy": 40,
     "joyful_activation": 5,
-    "sadness": 50,
-    "tension": 70
+    "sadness": 70,
+    "tension": 80
   },
   "headlines": [
     {
       "title": "Projet Montréal débattra d'une motion condamnant Israël pour «génocide»",
-      "weight": 47
+      "weight": 44
     },
     {
-      "title": "Entente Canada-Alberta: hausse possible des émissions de GES",
-      "weight": 27
+      "title": "Frappes russes et réplique ukrainienne marquent un tournant dans le conflit",
+      "weight": 36
     },
     {
-      "title": "Trump entretient le flou sur le fonds d'indemnisation de 1,8 milliard",
-      "weight": 25
+      "title": "L'itinérance à Laval touche même ceux qui travaillent",
+      "weight": 21
     }
   ]
 }
