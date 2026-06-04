@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-04T00:04Z",
-  "date_utc": "2026-06-03",
-  "time_interval_utc": "20-24",
-  "prompt": "Genre: Orchestral hybrid. BPM: 120. Key: D minor. Instruments: Strings, brass, subtle electronic elements. Mood: Tense and reflective, with an underlying sense of urgency and hope. Emphasize tension with dynamic crescendos and poignant harmonies.",
+  "generated_at": "2026-06-04T04:05Z",
+  "date_utc": "2026-06-04",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Cinematic orchestral; BPM: 85; Key: D minor. Instruments: Strings, brass, subtle percussion. Mood: Tense and dramatic, evoking urgency and conflict with underlying hope. Capture the weight of international decisions and the delicate dance of diplomacy and governance.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 40,
+    "energy": 50,
     "joyful_activation": 20,
     "sadness": 30,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "Trump optimiste sur l'Iran malgré le scepticisme de Téhéran",
-      "weight": 34
+      "title": "La Chambre des représentants limite les pouvoirs de guerre de Trump en Iran",
+      "weight": 65
     },
     {
-      "title": "La Chambre des représentants ordonne la fin de la guerre contre l'Iran",
-      "weight": 44
+      "title": "Ottawa et Québec concluent une entente de 10 milliards pour le transport",
+      "weight": 21
     },
     {
-      "title": "Washington propose une révision de l'ACEUM à sens unique, selon Charest",
-      "weight": 22
+      "title": "Un agent de la GRC blessé par un présumé passeur à la frontière",
+      "weight": 14
     }
   ]
 }

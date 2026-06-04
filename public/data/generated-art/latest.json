@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-06-04T00:03Z",
-  "headline_fr": "Trump optimiste sur l'Iran malgré le scepticisme de Téhéran",
-  "headline_en": "Conflit au Moyen-Orient Aucun progrès selon l’Iran, les négociations se passent « très bien » d’après Trump",
+  "generated_at": "2026-06-04T04:03Z",
+  "headline_fr": "La Chambre des représentants limite les pouvoirs de guerre de Trump en Iran",
+  "headline_en": "U.S. House approves war powers resolution to halt military action against Iran, defying Trump",
   "main_issue": "international_affairs_and_defense",
   "main_issue_text_fr": "Affaires internationales et défense",
   "context_outlets": [
-    "LAP",
-    "RCI"
+    "RCI",
+    "LED",
+    "GAM",
+    "CNN"
   ]
 }
