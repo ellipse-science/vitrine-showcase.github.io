@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-05T12:05Z",
+  "generated_at": "2026-06-05T16:04Z",
   "date_utc": "2026-06-05",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Ambient Electronic; BPM: 60; Key: D minor; Instruments: Synth pads, soft piano, subtle strings; Mood: Tense and uneasy atmosphere reflecting energy scarcity and societal challenges, with an undertone of hope and resilience.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: Electronic; BPM: 120; Key: A minor; Instruments: Synths, bass, drums; Mood: Tense and energetic, with an undertone of urgency. Capture the tension of economic shifts, environmental challenges, and crime escalation with driving beats and haunting melodies.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
-    "tenderness": 30,
-    "nostalgia": 15,
-    "peacefulness": 25,
-    "energy": 40,
-    "joyful_activation": 20,
-    "sadness": 50,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 60,
+    "joyful_activation": 50,
+    "sadness": 30,
     "tension": 70
   },
   "headlines": [
     {
+      "title": "L'économie canadienne crée 88 000 emplois, le chômage chute à 6,6 %",
+      "weight": 52
+    },
+    {
       "title": "Réservoir Caniapiscau d'Hydro-Québec à seulement 24 % de sa capacité",
-      "weight": 42
+      "weight": 25
     },
     {
-      "title": "Les cartels mexicains intensifient le trafic de drogue vers le Canada pour la Coupe du monde",
-      "weight": 40
-    },
-    {
-      "title": "Québec abandonne le projet de contrôle des coopératives d'habitation",
-      "weight": 18
+      "title": "Les cartels mexicains intensifient l'envoi de drogue pour la Coupe du monde",
+      "weight": 24
     }
   ]
 }
