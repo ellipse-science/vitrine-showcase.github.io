@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-05T04:04Z",
+  "generated_at": "2026-06-05T08:04Z",
   "date_utc": "2026-06-05",
-  "time_interval_utc": "00-04",
-  "prompt": "Create a cinematic orchestral piece at 80 BPM in D minor. Use strings and brass to evoke tension and unease, with a touch of sadness. Layer in percussive elements to add energy and a sense of urgency.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Cinematic orchestral. BPM: 140. Key: A minor. Instruments: Strings, brass, percussion. Mood: Tense and energetic. Capture the thrill of a decisive sports moment, blending tension and triumph with a dynamic, uplifting crescendo.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
-    "tenderness": 30,
-    "nostalgia": 10,
-    "peacefulness": 40,
-    "energy": 50,
-    "joyful_activation": 30,
-    "sadness": 40,
-    "tension": 60
+    "tenderness": 15,
+    "nostalgia": 25,
+    "peacefulness": 10,
+    "energy": 60,
+    "joyful_activation": 50,
+    "sadness": 30,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Pas de pénurie de carburant d'aviation malgré la guerre au Moyen-Orient",
-      "weight": 39
+      "title": "Les cartels mexicains intensifient le trafic de drogue pour la Coupe du monde",
+      "weight": 41
     },
     {
-      "title": "Les maires réclament 3,5 G$ d'Ottawa pour lutter contre l'itinérance",
-      "weight": 33
+      "title": "Le directeur général de Pulsar, opérateur du REM, congédié",
+      "weight": 30
     },
     {
-      "title": "Problèmes techniques persistants avec le Dossier Santé Numérique au Québec",
+      "title": "Les Alouettes renversent les Tiger-Cats avec un touché décisif de Tyler Snead",
       "weight": 28
     }
   ]
