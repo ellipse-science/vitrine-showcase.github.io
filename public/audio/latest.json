@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-05T08:04Z",
+  "generated_at": "2026-06-05T12:05Z",
   "date_utc": "2026-06-05",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Cinematic orchestral. BPM: 140. Key: A minor. Instruments: Strings, brass, percussion. Mood: Tense and energetic. Capture the thrill of a decisive sports moment, blending tension and triumph with a dynamic, uplifting crescendo.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Ambient Electronic; BPM: 60; Key: D minor; Instruments: Synth pads, soft piano, subtle strings; Mood: Tense and uneasy atmosphere reflecting energy scarcity and societal challenges, with an undertone of hope and resilience.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
-    "tenderness": 15,
-    "nostalgia": 25,
-    "peacefulness": 10,
-    "energy": 60,
-    "joyful_activation": 50,
-    "sadness": 30,
+    "tenderness": 30,
+    "nostalgia": 15,
+    "peacefulness": 25,
+    "energy": 40,
+    "joyful_activation": 20,
+    "sadness": 50,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "Les cartels mexicains intensifient le trafic de drogue pour la Coupe du monde",
-      "weight": 41
+      "title": "Réservoir Caniapiscau d'Hydro-Québec à seulement 24 % de sa capacité",
+      "weight": 42
     },
     {
-      "title": "Le directeur général de Pulsar, opérateur du REM, congédié",
-      "weight": 30
+      "title": "Les cartels mexicains intensifient le trafic de drogue vers le Canada pour la Coupe du monde",
+      "weight": 40
     },
     {
-      "title": "Les Alouettes renversent les Tiger-Cats avec un touché décisif de Tyler Snead",
-      "weight": 28
+      "title": "Québec abandonne le projet de contrôle des coopératives d'habitation",
+      "weight": 18
     }
   ]
 }
