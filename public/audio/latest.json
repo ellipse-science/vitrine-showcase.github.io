@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-05T16:04Z",
+  "generated_at": "2026-06-05T20:05Z",
   "date_utc": "2026-06-05",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Electronic; BPM: 120; Key: A minor; Instruments: Synths, bass, drums; Mood: Tense and energetic, with an undertone of urgency. Capture the tension of economic shifts, environmental challenges, and crime escalation with driving beats and haunting melodies.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Orchestral Tension; BPM: 120; Key: D minor; Instruments: Strings, Brass, Percussion; Mood: Tense and Uneasy with underlying Energy. Capture the struggle between hope and uncertainty, evoking a sense of urgency and anticipation.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
     "tenderness": 15,
     "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 60,
-    "joyful_activation": 50,
-    "sadness": 30,
-    "tension": 70
+    "peacefulness": 30,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 25,
+    "tension": 50
   },
   "headlines": [
     {
-      "title": "L'économie canadienne crée 88 000 emplois, le chômage chute à 6,6 %",
-      "weight": 52
+      "title": "Québec minimise les ratés du DSN malgré les appels à l'aide des médecins",
+      "weight": 48
     },
     {
-      "title": "Réservoir Caniapiscau d'Hydro-Québec à seulement 24 % de sa capacité",
-      "weight": 25
+      "title": "L'économie canadienne crée 88 000 emplois en mai, chômage à 6,6 %",
+      "weight": 35
     },
     {
-      "title": "Les cartels mexicains intensifient l'envoi de drogue pour la Coupe du monde",
-      "weight": 24
+      "title": "Poutine rejette la rencontre avec Zelensky sans accord préalable",
+      "weight": 17
     }
   ]
 }
