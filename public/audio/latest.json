@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-04T20:04Z",
+  "generated_at": "2026-06-05T00:04Z",
   "date_utc": "2026-06-04",
-  "time_interval_utc": "16-20",
-  "prompt": "Create an uplifting orchestral piece in A major, 120 BPM. Incorporate strings, brass, and woodwinds for a sense of wonder and vitality. Evoke a feeling of optimism and energy, as if embarking on a transformative journey towards a brighter future.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Dark Ambient, BPM: 70, Key: D minor. Instruments: Synth pads, cello, subtle percussion. Mood: Tense and somber. Capture the ominous undercurrent of unease and sadness with a lingering sense of unresolved tension.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 30,
-    "tenderness": 50,
-    "nostalgia": 20,
-    "peacefulness": 45,
-    "energy": 60,
-    "joyful_activation": 55,
-    "sadness": 25,
-    "tension": 35
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 25,
+    "peacefulness": 30,
+    "energy": 40,
+    "joyful_activation": 20,
+    "sadness": 50,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Québec étend la loi 101 à la formation professionnelle et aux adultes",
-      "weight": 34
+      "title": "Québec accélère l'adoption de lois pour protéger le français",
+      "weight": 41
     },
     {
-      "title": "Québec retire le projet de loi 20 sur les coopératives d'habitation",
-      "weight": 33
+      "title": "Problèmes techniques persistants avec le Dossier Santé Numérique au Québec",
+      "weight": 31
     },
     {
-      "title": "Ottawa mise sur l'IA pour créer 250 000 emplois en cinq ans",
-      "weight": 33
+      "title": "Trois adolescents plaident non coupables pour meurtre à Montréal-Nord",
+      "weight": 28
     }
   ]
 }
