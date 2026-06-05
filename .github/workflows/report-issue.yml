@@ -20,10 +20,98 @@ jobs:
         with:
           script: |
             const description  = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
-            const section      = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
+            const sectionRaw   = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
             const elemCtx      = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
             const reporterName = String(context.payload.client_payload?.reporterName ?? '').slice(0, 100).trim()
             const screenshot   = context.payload.client_payload?.screenshot ?? null
+
+            function normalizeSectionName(value) {
+              return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim()
+            }
+
+            function mapSection(raw) {
+              const n = normalizeSectionName(raw)
+              if (n.includes('partis et couverture') || n.includes('module 3')) {
+                return {
+                  section: 'Partis et couverture',
+                  moduleLabel: {
+                    name: 'module-3-partis-couverture',
+                    color: '0969da',
+                    description: 'Signalements du module Partis et couverture',
+                  },
+                }
+              }
+              if (n.includes('enjeux saillants') || n.includes('de quoi parle-t-on') || n.includes('module 4')) {
+                return {
+                  section: 'Enjeux saillants',
+                  moduleLabel: {
+                    name: 'module-4-enjeux-saillants',
+                    color: '1a7f37',
+                    description: 'Signalements du module Enjeux saillants',
+                  },
+                }
+              }
+              if (n.includes('assemblee nationale') || n.includes('que dit-on a l\'assemblee') || n.includes('module 5')) {
+                return {
+                  section: 'Assemblée nationale',
+                  moduleLabel: {
+                    name: 'module-5-assemblee-nationale',
+                    color: 'bf8700',
+                    description: 'Signalements du module Assemblée nationale',
+                  },
+                }
+              }
+              if (n.includes('deux solitudes') || n.includes('2 solitudes') || n.includes('module 2')) {
+                return {
+                  section: 'Deux solitudes',
+                  moduleLabel: {
+                    name: 'module-2-solitudes',
+                    color: '1f6feb',
+                    description: 'Signalements du module Deux solitudes',
+                  },
+                }
+              }
+              if (n.includes('une des unes') || n.includes('unes des unes') || n.includes('module 1')) {
+                return {
+                  section: 'Une des unes',
+                  moduleLabel: {
+                    name: 'module-1-unes-des-unes',
+                    color: '8b949e',
+                    description: 'Signalements du module Une des unes',
+                  },
+                }
+              }
+              return { section: raw || 'Non précisée', moduleLabel: null }
+            }
+
+            async function ensureLabel(label) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: 'ellipse-science',
+                  repo: 'vitrine-showcase.github.io',
+                  name: label.name,
+                })
+              } catch (err) {
+                if (err?.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: 'ellipse-science',
+                    repo: 'vitrine-showcase.github.io',
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  })
+                } else {
+                  throw err
+                }
+              }
+            }
+
+            const mapped = mapSection(sectionRaw)
+            const section = mapped.section
 
             if (!description) {
               core.setFailed('Description vide — signalement ignoré.')
@@ -108,11 +196,21 @@ jobs:
             const shortDesc = description.length > 55 ? description.slice(0, 55) + '…' : description
             const prefix    = section !== 'Non précisée' ? `${section} — ` : ''
             const title     = `[Signalement] ${prefix}${shortDesc}`
+            const labels = ['signalement-utilisateur', ...(isPriority ? ['prioritaire'] : [])]
+
+            if (mapped.moduleLabel) {
+              try {
+                await ensureLabel(mapped.moduleLabel)
+                labels.push(mapped.moduleLabel.name)
+              } catch (err) {
+                core.warning(`Impossible d'ajouter le label module: ${err}`)
+              }
+            }
 
             await github.rest.issues.create({
               owner:  'ellipse-science',
               repo:   'vitrine-showcase.github.io',
               title,
               body,
-              labels: ['signalement-utilisateur', ...(isPriority ? ['prioritaire'] : [])],
+              labels,
             })

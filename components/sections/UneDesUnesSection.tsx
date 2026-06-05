@@ -140,6 +140,7 @@ function DeuxSolitudes({
   return (
     <section
       className="solitudes"
+      data-section="Deux solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
       <h3 className="sol-title">Deux solitudes ?</h3>
@@ -216,7 +217,7 @@ export async function UneDesUnesSection() {
 
   return (
     <>
-      <div className={`unes-jour${breaking ? " breaking" : ""}`}>
+      <div className={`unes-jour${breaking ? " breaking" : ""}`} data-section="Une des unes">
         <div className="section-label">
           <span className="section-title-wrap">
             <span className="section-title">Les Unes {data.periodLabel}</span>

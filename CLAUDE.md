@@ -159,6 +159,24 @@ If old docs or git history mention AWS deployment, treat that as historical cont
 
 The legacy CRA app (formerly in `src/`) and the static maquette HTML (formerly `public/index.html` + `public/js/*`) were removed in the Next.js migration — see git history.
 
+## Module naming (critical)
+
+For user reporting and triage, treat these as **distinct modules**:
+
+- **Module 1 — Une des unes**: primary and secondary front-page stories.
+- **Module 2 — Deux solitudes**: divergence block with QC/Canada symbols and three comparative bars.
+- **Module 3 — Partis et couverture**: coverage and tone by party, with period tabs.
+- **Module 4 — Enjeux saillants**: issue treemap with day/week/month tabs.
+- **Module 5 — Assemblée nationale**: chamber language overview and lexical richness.
+
+Signalement rule:
+
+- A right-click report inside the Deux solitudes block must be tagged as **Deux solitudes** and receive GitHub label `module-2-solitudes`.
+- A right-click report inside Une des unes content must be tagged as **Une des unes** and receive label `module-1-unes-des-unes`.
+- A right-click report inside Partis et couverture must receive label `module-3-partis-couverture`.
+- A right-click report inside Enjeux saillants must receive label `module-4-enjeux-saillants`.
+- A right-click report inside Assemblée nationale must receive label `module-5-assemblee-nationale`.
+
 ---
 
 ## Architecture
