@@ -129,14 +129,60 @@ function SideUne({ event }: { event: UneEvent }) {
 function DeuxSolitudes({
   qcPos,
   rocPos,
+  mode,
+  convPct,
   divPct,
+  intervalLabel,
+  focusRegion,
   stories,
 }: {
   qcPos: number;
   rocPos: number;
+  mode: "convergence" | "mixed" | "divergence";
+  convPct: number;
   divPct: number;
+  intervalLabel: string;
+  focusRegion: "qc" | "can";
   stories: SolitudeStory[];
 }) {
+  const modeWord = mode === "convergence" ? "Convergence" : mode === "mixed" ? "Mixte" : "Divergence";
+  const modePct = mode === "divergence" ? divPct : convPct;
+  const subline = mode === "convergence"
+    ? "Les médias québécois et canadiens priorisent largement les mêmes sujets."
+    : mode === "mixed"
+      ? "On observe un socle commun, mais aussi des angles distincts entre les deux espaces médiatiques."
+      : "Les priorités éditoriales divergent nettement entre les médias québécois et canadiens.";
+
+  const sharedStories = stories
+    .filter((s) => !s.qcZero && !s.caZero)
+    .slice()
+    .sort((a, b) => (b.convergencePct - a.convergencePct) || ((b.qcWidth + b.caWidth) - (a.qcWidth + a.caWidth)));
+
+  const polarizedStories = stories
+    .slice()
+    .sort((a, b) => (b.divergencePct - a.divergencePct) || ((b.qcWidth + b.caWidth) - (a.qcWidth + a.caWidth)));
+
+  const divergenceFocusStories = mode === "divergence"
+    ? stories
+      .filter((s) => s.dominantSide === focusRegion)
+      .concat(stories.filter((s) => s.dominantSide !== focusRegion))
+      .slice(0, 3)
+    : [];
+
+  const consensusStories = sharedStories.slice(0, 3);
+
+  const mixedCommonStories = sharedStories.slice(0, 2);
+  const mixedCommonSet = new Set(mixedCommonStories.map((s) => s.label));
+  const mixedQcAngle = polarizedStories.find((s) => s.dominantSide === "qc" && !mixedCommonSet.has(s.label));
+  const mixedCanAngle = polarizedStories.find((s) => s.dominantSide === "can" && !mixedCommonSet.has(s.label));
+
+  const linksFor = (s: SolitudeStory, side: "qc" | "can") => {
+    const links = side === "qc" ? s.qcLinks : s.caLinks;
+    if (links.length > 0) return links;
+    if (s.representativeUrl) return [{ name: "Lire l'article", url: s.representativeUrl }];
+    return [];
+  };
+
   return (
     <section
       className="solitudes"
@@ -157,33 +203,109 @@ function DeuxSolitudes({
         </div>
       </div>
       <div className="sol-stat">
-        <span className="stat-big">{divPct} %</span>
-        <span className="stat-label">de divergence aujourd&apos;hui</span>
+        <span className={`sol-mode-word mode-${mode}`}>{modeWord}</span>
+        <span className="sol-mode-detail">
+          à <strong>{modePct} %</strong> {intervalLabel}
+          <InfoTip size="sm" label="Définition de la convergence/différence">
+            À quel point les médias québécois et canadiens parlent des mêmes nouvelles dans ce bloc de 4 heures. 100 % = priorités identiques; 0 % = aucune nouvelle en commun.
+          </InfoTip>
+        </span>
       </div>
       <p className="sol-explain">
-        Les trois nouvelles dont la couverture diffère le plus entre les médias québécois et canadiens.
+        {subline}
       </p>
-      <div className="sol-stories">
-        <div className="sol-stories-header">
-          <span className="qc-col">Importance au Québec</span>
-          <span className="ca-col">Importance au Canada</span>
+
+      {mode === "divergence" && divergenceFocusStories.length > 0 && (
+        <div className="sol-focus mode-divergence">
+          <p className="sol-focus-title">
+            {focusRegion === "can" ? "Les médias canadiens parlent plutôt de :" : "Les médias québécois parlent plutôt de :"}
+          </p>
+          <ol className="sol-focus-list">
+            {divergenceFocusStories.map((s, idx) => {
+              const links = linksFor(s, focusRegion);
+              return (
+                <li key={`${idx}-${s.label}`}>
+                  <span className="focus-label">{s.label}</span>
+                  <span className="focus-links">
+                    {links.map((l) => (
+                      <a key={`${s.label}-${l.name}-${l.url}`} href={l.url} target="_blank" rel="noopener noreferrer" title={`Lire sur ${l.name}`}>{l.name}</a>
+                    ))}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
         </div>
-        {stories.map((s, i) => (
-          <div key={i} className="sol-story">
-            <div className="story-label">{s.label}</div>
-            <div className="story-bars">
-              <div className="bar-track qc">
-                <div className="bar-fill" style={{ width: `${s.qcWidth}%` }} />
-                {s.qcZero && <span className="zero-mark">—</span>}
-              </div>
-              <div className="bar-track ca">
-                <div className="bar-fill" style={{ width: `${s.caWidth}%` }} />
-                {s.caZero && <span className="zero-mark">—</span>}
-              </div>
+      )}
+
+      {mode === "convergence" && consensusStories.length > 0 && (
+        <div className="sol-focus mode-convergence">
+          <p className="sol-focus-title">Les médias convergent surtout sur :</p>
+          <ol className="sol-focus-list">
+            {consensusStories.map((s, idx) => (
+              <li key={`${idx}-${s.label}`}>
+                <span className="focus-label">{s.label}</span>
+                <div className="focus-links two-sides">
+                  <span className="focus-side">Québec</span>
+                  {linksFor(s, "qc").slice(0, 2).map((l) => (
+                    <a key={`${s.label}-qc-${l.name}-${l.url}`} href={l.url} target="_blank" rel="noopener noreferrer" title={`Lire sur ${l.name}`}>{l.name}</a>
+                  ))}
+                  <span className="focus-side">Canada</span>
+                  {linksFor(s, "can").slice(0, 2).map((l) => (
+                    <a key={`${s.label}-can-${l.name}-${l.url}`} href={l.url} target="_blank" rel="noopener noreferrer" title={`Lire sur ${l.name}`}>{l.name}</a>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {mode === "mixed" && (
+        <div className="sol-focus mode-mixed">
+          <p className="sol-focus-title">Convergence partielle : socle commun et angles distincts</p>
+          {mixedCommonStories.length > 0 && (
+            <>
+              <p className="sol-focus-kicker">Socle commun</p>
+              <ol className="sol-focus-list compact">
+                {mixedCommonStories.map((s, idx) => (
+                  <li key={`mix-common-${idx}-${s.label}`}>
+                    <span className="focus-label">{s.label}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+
+          {(mixedQcAngle || mixedCanAngle) && (
+            <div className="sol-focus-duo">
+              {mixedQcAngle && (
+                <div className="sol-focus-duo-item">
+                  <p className="sol-focus-kicker">Plutôt au Québec</p>
+                  <p className="focus-label">{mixedQcAngle.label}</p>
+                  <div className="focus-links">
+                    {linksFor(mixedQcAngle, "qc").slice(0, 3).map((l) => (
+                      <a key={`mix-qc-${mixedQcAngle.label}-${l.name}-${l.url}`} href={l.url} target="_blank" rel="noopener noreferrer" title={`Lire sur ${l.name}`}>{l.name}</a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {mixedCanAngle && (
+                <div className="sol-focus-duo-item">
+                  <p className="sol-focus-kicker">Plutôt au Canada</p>
+                  <p className="focus-label">{mixedCanAngle.label}</p>
+                  <div className="focus-links">
+                    {linksFor(mixedCanAngle, "can").slice(0, 3).map((l) => (
+                      <a key={`mix-can-${mixedCanAngle.label}-${l.name}-${l.url}`} href={l.url} target="_blank" rel="noopener noreferrer" title={`Lire sur ${l.name}`}>{l.name}</a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -244,7 +366,11 @@ export async function UneDesUnesSection() {
       <DeuxSolitudes
         qcPos={data.solitudesQcPos}
         rocPos={data.solitudesRocPos}
+        mode={data.solitudesMode}
+        convPct={data.solitudesConvPct}
         divPct={data.solitudesDivPct}
+        intervalLabel={data.solitudesIntervalLabel}
+        focusRegion={data.solitudesFocusRegion}
         stories={data.solitudesStories}
       />
     </>

@@ -1372,20 +1372,56 @@
   .solitudes .sol-symbol.roc { left: clamp(10%, var(--roc-pos, 88%), 90%); }
 
   .solitudes .sol-stat {
-    margin: 10px 0 16px;
+    margin: -10px 0 18px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
   }
-  .solitudes .sol-stat .stat-big {
+  .solitudes .sol-stat .sol-mode-word {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 48px;
+    font-size: 56px;
     font-weight: 900;
-    color: var(--cordovan);
-    letter-spacing: -1.1px;
+    letter-spacing: -0.8px;
     line-height: 1;
+  }
+  .solitudes .sol-stat .sol-mode-word.mode-divergence { color: var(--cordovan); }
+  .solitudes .sol-stat .sol-mode-word.mode-mixed { color: #6D5A2F; }
+  .solitudes .sol-stat .sol-mode-word.mode-convergence { color: #2E4663; }
+  .solitudes .sol-stat .sol-mode-detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+  .solitudes .sol-stat .sol-mode-detail strong {
+    font-size: 28px;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .solitudes .sol-stat .sol-mode-detail .saillance-info-tip {
+    margin-left: 2px;
+    vertical-align: middle;
+  }
+  .solitudes .sol-stat .sol-mode-detail .saillance-info-btn {
+    font-size: 16px;
+    opacity: 0.72;
+  }
+  .solitudes .sol-stat .sol-mode-detail .saillance-info-tip:hover .saillance-info-btn,
+  .solitudes .sol-stat .sol-mode-detail .saillance-info-tip.open .saillance-info-btn {
+    opacity: 1;
+  }
+  .solitudes .sol-stat .sol-mode-detail .saillance-info-bubble {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(360px, 80vw);
+    font-size: 13px;
+    line-height: 1.5;
   }
   .solitudes .sol-stat .stat-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -1405,78 +1441,102 @@
     line-height: 1.45;
   }
 
-  /* Tableau de stories avec saillance miroir QC | CA */
-  .solitudes .sol-stories {
-    max-width: 620px;
-    margin: 0 auto;
+  .solitudes .sol-focus {
+    max-width: 860px;
+    margin: 10px auto 8px;
     text-align: left;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: transparent;
+    padding: 14px 2px 12px;
   }
-  .solitudes .sol-stories-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-    border-bottom: 0.5px solid var(--rule);
+  .solitudes .sol-focus.mode-divergence { border-left: 3px solid var(--cordovan); padding-left: 14px; }
+  .solitudes .sol-focus.mode-convergence { border-left: 3px solid #2E4663; padding-left: 14px; }
+  .solitudes .sol-focus.mode-mixed { border-left: 3px solid #6D5A2F; padding-left: 14px; }
+  .solitudes .sol-focus-title {
+    margin: 0 0 10px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 0.22em;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--cordovan);
+    color: var(--ink-softer);
   }
-  .solitudes .sol-stories-header .qc-col { text-align: left; }
-  .solitudes .sol-stories-header .ca-col { text-align: right; }
-
-  .sol-story {
-    margin-bottom: 10px;
+  .solitudes .sol-focus-kicker {
+    margin: 0 0 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
   }
-  .sol-story:last-child { margin-bottom: 0; }
-  .sol-story .story-label {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 12px;
-    font-style: italic;
-    color: var(--ink);
-    text-align: center;
-    margin-bottom: 5px;
-  }
-  .sol-story .story-bars {
+  .solitudes .sol-focus-list {
+    margin: 0;
+    padding-left: 28px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    position: relative;
+    gap: 14px;
   }
-  .sol-story .story-bars::before {
-    content: '';
-    position: absolute;
-    top: -3px; bottom: -3px;
-    left: 50%;
-    width: 1px;
-    background: var(--ink);
+  .solitudes .sol-focus-list.compact {
+    gap: 8px;
+    margin-bottom: 14px;
   }
-  .sol-story .bar-track {
-    height: 7px;
-    background: var(--rule-faint);
-    position: relative;
+  .solitudes .sol-focus-list li {
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.4;
   }
-  .sol-story .bar-fill {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    background: var(--ink);
+  .solitudes .sol-focus-list .focus-label {
+    display: block;
+    font-weight: 500;
   }
-  .sol-story .bar-track.qc .bar-fill { right: 0; }
-  .sol-story .bar-track.ca .bar-fill { left: 0; }
-  /* Marqueur « — » quand la couverture est nulle d'un côté */
-  .sol-story .zero-mark {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+  .solitudes .sol-focus-list .focus-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 0;
+  }
+  .solitudes .sol-focus-list .focus-links.two-sides {
+    align-items: center;
+    gap: 7px;
+  }
+  .solitudes .sol-focus-list .focus-side {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-right: 2px;
+  }
+  .solitudes .sol-focus-list .focus-links a {
+    display: inline-flex;
+    align-items: center;
+    border: 0.5px solid color-mix(in srgb, var(--rule) 84%, var(--ink) 16%);
+    padding: 4px 9px;
+    border-radius: 999px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    color: var(--ink-softer);
-    letter-spacing: 0.08em;
-    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: #2E4663;
+    text-decoration: none;
+    background: color-mix(in srgb, #2E4663 9%, var(--paper-deep) 91%);
   }
-  .sol-story .bar-track.qc .zero-mark { right: 6px; }
-  .sol-story .bar-track.ca .zero-mark { left: 6px; }
+  .solitudes .sol-focus-list .focus-links a:hover {
+    background: color-mix(in srgb, #2E4663 16%, var(--paper-deep) 84%);
+    border-color: color-mix(in srgb, #2E4663 40%, var(--rule) 60%);
+  }
+  .solitudes .sol-focus-duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .solitudes .sol-focus-duo-item {
+    border-top: 0.5px solid var(--rule);
+    padding-top: 10px;
+  }
 
   /* Hot 20 */
   /* Hot 20 typographique : désactivé depuis la fusion avec le treemap des enjeux */
@@ -2539,12 +2599,22 @@
     .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; filter: grayscale(1) brightness(0.32) contrast(1.6); }
     .solitudes .sol-symbol .glyph.maple { font-size: 54px; height: 64px; line-height: 64px; }
     .solitudes .sol-symbol .caption { font-size: 9px; margin-top: 6px; }
-    .solitudes .sol-stat { gap: 8px; margin: 8px 0 12px; }
-    .solitudes .sol-stat .stat-big { font-size: 40px; }
+    .solitudes .sol-stat { gap: 8px; margin: 2px 0 12px; }
+    .solitudes .sol-stat .sol-mode-word { font-size: 44px; }
+    .solitudes .sol-stat .sol-mode-detail { font-size: 15px; }
+    .solitudes .sol-stat .sol-mode-detail strong { font-size: 23px; }
     .solitudes .sol-stat .stat-label { font-size: 9px; }
     .solitudes .sol-explain { font-size: 13px; }
-    .solitudes .sol-stories { max-width: 100%; }
-    .sol-story .story-label { font-size: 13px; }
+    .solitudes .sol-focus { padding: 10px 0 8px; }
+    .solitudes .sol-focus.mode-divergence,
+    .solitudes .sol-focus.mode-convergence,
+    .solitudes .sol-focus.mode-mixed { padding-left: 10px; }
+    .solitudes .sol-focus-title { font-size: 9px; }
+    .solitudes .sol-focus-list { gap: 10px; }
+    .solitudes .sol-focus-list li { font-size: 15px; }
+    .solitudes .sol-focus-list .focus-links { margin-top: 8px; display: flex; }
+    .solitudes .sol-focus-list .focus-links a { font-size: 9px; padding: 3px 7px; }
+    .solitudes .sol-focus-duo { grid-template-columns: 1fr; gap: 10px; }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {
@@ -2701,6 +2771,8 @@
     .une-main h1[data-saillance="5"] { font-size: 24px !important; }
     .partis-title { font-size: 22px; }
     .solitudes .sol-stat .stat-big { font-size: 36px; }
+    .solitudes .sol-focus-title { font-size: 9px; }
+    .solitudes .sol-focus-list li { font-size: 14px; }
     .legend-toggle.inline span { font-size: 7.5px; }
   }
 
