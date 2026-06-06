@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-06T16:04Z",
+  "generated_at": "2026-06-06T20:04Z",
   "date_utc": "2026-06-06",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Dark Ambient, BPM: 60, Key: C minor. Instruments: Synth pads, eerie strings, distant chimes. Mood: Unease, tension, and melancholic reflection. Create an atmospheric soundscape evoking mystery and unresolved tension, with subtle layers building an intense, introspective journey.",
+  "time_interval_utc": "16-20",
+  "prompt": "Create a tense orchestral piece at 120 BPM in D minor, blending strings and brass with a subtle electronic undertone. Capture the unease and tension of shifting political landscapes and economic upheaval, weaving in moments of nostalgia and peacefulness with haunting melodies.",
   "gems": {
     "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 10,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 25,
+    "peacefulness": 30,
+    "energy": 50,
+    "joyful_activation": 35,
     "sadness": 40,
     "tension": 60
   },
   "headlines": [
     {
-      "title": "Ottawa opte pour 140 avions F-35 et Gripen sans appel d'offres",
-      "weight": 38
+      "title": "Victor Pelletier, ex-président des jeunes caquistes, rejoint les Libéraux",
+      "weight": 42
     },
     {
-      "title": "Découverte macabre à Sherbrooke : une chambre en désordre intrigue",
-      "weight": 36
+      "title": "Le Parti libéral propose un plan moins coercitif pour protéger le français",
+      "weight": 34
     },
     {
-      "title": "Logements «abordables» à Québec: accessibilité remise en question",
-      "weight": 26
+      "title": "Sanctions américaines: exode massif d'entreprises étrangères à Cuba",
+      "weight": 24
     }
   ]
 }
