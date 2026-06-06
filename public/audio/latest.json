@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-06T08:04Z",
+  "generated_at": "2026-06-06T12:05Z",
   "date_utc": "2026-06-06",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Cinematic Tension, BPM: 120, Key: D Minor. Instruments: Strings, timpani, brass. Mood: Intense and dramatic. Capture the urgency of geopolitical conflict and economic stakes, with a hint of hope and resolution in the melody.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Dark Ambient, BPM: 60, Key: C minor. Instruments: Synth pads, low drones, subtle piano. Mood: Unease, tension, sadness. Capture the haunting mystery and somber atmosphere of a disordered room hinting at a tragic event.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
     "tenderness": 15,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 60,
-    "joyful_activation": 30,
+    "energy": 30,
+    "joyful_activation": 10,
     "sadness": 40,
-    "tension": 70
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Washington bombarde des radars iraniens après des menaces de drones",
-      "weight": 41
+      "title": "Le Canada envisage une flotte de 140 avions F-35 et Gripen",
+      "weight": 39
     },
     {
-      "title": "Lee Kowarski pourrait tirer profit de la finale NBA Knicks-Spurs",
-      "weight": 33
+      "title": "Logements «abordables» à Québec: accessibilité remise en question",
+      "weight": 35
     },
     {
-      "title": "Logements abordables: un accès réel dans 20 ans?",
+      "title": "Découverte macabre à Lennoxville : une chambre en désordre intrigue",
       "weight": 26
     }
   ]
