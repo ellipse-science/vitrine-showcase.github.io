@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-06T04:04Z",
+  "generated_at": "2026-06-06T08:04Z",
   "date_utc": "2026-06-06",
-  "time_interval_utc": "00-04",
-  "prompt": "Epic orchestral score, 120 BPM, D minor. Strings and brass dominate, with a tense, urgent atmosphere. Pulsating rhythms and dynamic crescendos convey the gravity of international conflict and societal change. Layers of percussion add intensity, while woodwinds introduce fleeting moments of hope.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Cinematic Tension, BPM: 120, Key: D Minor. Instruments: Strings, timpani, brass. Mood: Intense and dramatic. Capture the urgency of geopolitical conflict and economic stakes, with a hint of hope and resolution in the melody.",
   "gems": {
     "wonder": 20,
     "transcendence": 10,
-    "tenderness": 30,
-    "nostalgia": 10,
-    "peacefulness": 15,
-    "energy": 50,
-    "joyful_activation": 20,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 60,
+    "joyful_activation": 30,
     "sadness": 40,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "Québec veut interdire les boissons énergisantes aux moins de 16 ans",
-      "weight": 39
+      "title": "Washington bombarde des radars iraniens après des menaces de drones",
+      "weight": 41
     },
     {
-      "title": "Washington bombarde des sites en Iran après des tirs de missiles iraniens",
-      "weight": 39
+      "title": "Lee Kowarski pourrait tirer profit de la finale NBA Knicks-Spurs",
+      "weight": 33
     },
     {
-      "title": "Netflix : hausse de 50 $ par an contestée par l'industrie culturelle",
-      "weight": 22
+      "title": "Logements abordables: un accès réel dans 20 ans?",
+      "weight": 26
     }
   ]
 }
