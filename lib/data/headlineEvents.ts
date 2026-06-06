@@ -442,6 +442,15 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     try { divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[]; } catch { }
   }
 
+  // ⚠️ TODO (issue #143) — REFONTE Module 2. À remplacer :
+  //   1. BUG USA : `roc = score_saillance − score_qc` = score_roc + score_us
+  //      (score_saillance = qc+roc+us). Le côté « Canada » absorbe les USA pour
+  //      33 % des événements. → lire `score_roc` DIRECTEMENT (l'ajouter au type
+  //      RawEvent + scripts/tables.json), ne plus le dériver.
+  //   2. Ne plus recalculer ce Jaccard maison : consommer l'`interval_convergence_score`
+  //      OBJET produit par le refiner (aws-refiners#173). Revoir le seuil régime ≥65
+  //      (jamais atteint) → 4 niveaux 25/50/75 + seuils ROC propres pour la saillance.
+  //   Voir maquette docs/mockups/module2-deux-solitudes-mockup.html + issue #143.
   // Nouvelle logique module 2 : convergence globale = Jaccard pondérée sur
   // toutes les nouvelles du bloc 4h (pas seulement le top 3 affiché).
   const latestWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);

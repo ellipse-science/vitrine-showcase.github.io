@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Module 2 — démo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F3ECDD;--paper-deep:#ECE3CF;--ink:#231F1C;--ink-soft:#433F38;--ink-softer:#6E685F;--rule:#C8BDA6;--rule-faint:#DED3B9;--cordovan:#6B1E2A;--brass:#A07A3D;--red:#A8302C;--bleu:#2E4663;--ocre:#6D5A2F}
+*{box-sizing:border-box}
+body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',Georgia,serif;display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
+.wrap{width:100%;max-width:1180px}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:18px;justify-content:center;flex-wrap:wrap}
+.toolbar .lab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-softer)}
+.toolbar button{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 13px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;border-radius:2px}
+.toolbar button.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.solitudes{border:.5px solid var(--rule);background:var(--paper-deep);padding:40px 44px 36px;text-align:center}
+.sol-title{font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:700;margin:0 0 22px;letter-spacing:-.5px}
+.sol-viz{position:relative;height:122px;max-width:760px;margin:0 auto 8px}
+.sol-axis{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--rule)}
+.sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 12px;transition:left .6s ease;text-align:center}
+.sol-symbol svg{display:block;margin:0 auto}
+.glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;filter:grayscale(1) brightness(.34) contrast(1.5)}
+.caption{display:block;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-softer)}
+.sol-stat{display:flex;flex-direction:column;align-items:center;gap:9px;margin:4px 0 14px}
+.mode-word{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-.8px}
+.mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
+.mode-detail{font-style:italic;font-size:18px;color:var(--ink-softer)} .mode-detail strong{font-size:27px;color:var(--ink);font-style:normal}
+.block{max-width:880px;margin:0 auto;text-align:left;border-top:1px solid var(--rule);padding-top:18px}
+.block+.block{margin-top:8px;padding-top:20px}
+.block-title{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin:0 0 16px}
+.ev{display:flex;gap:14px;align-items:baseline;padding:13px 0;border-bottom:.5px solid var(--rule)}.ev:last-child{border-bottom:0}
+.ev .rk{font-family:'Playfair Display',serif;font-size:22px;color:var(--ink-softer);min-width:24px}.ev .body{flex:1}
+.ev .ttl{font-size:17px;line-height:1.35}.ev .meta{margin-top:8px}
+.saillance-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;padding:5px 12px;line-height:1.2;vertical-align:middle}
+.saillance-tag.s-extreme{background:var(--cordovan);color:var(--paper);font-size:12.5px;font-weight:600;padding:6px 15px;letter-spacing:.28em}
+.saillance-tag.s-tres-eleve{background:var(--red);color:var(--paper)}
+.saillance-tag.s-eleve{background:var(--brass);color:var(--paper)}
+.saillance-tag.s-moyenne{background:transparent;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--ink-soft)}
+.saillance-tag.s-faible{background:transparent;color:var(--ink-softer);box-shadow:inset 0 0 0 1px var(--rule)}
+.byline{margin-top:9px}
+.byline .lbl{font-family:'Source Serif 4',serif;font-style:italic;font-size:11px;color:var(--ink-softer);margin-right:6px}
+.byline-media{font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.byline-media a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
+.byline-media .sep{color:var(--rule);margin:0 6px;font-weight:400}
+.topic-label{font-family:'Playfair Display',serif;font-size:19px;margin:18px 0 10px}.topic-label:first-child{margin-top:0}
+.shared{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--rule)}
+.shared .col{padding:15px 17px}.shared .col:first-child{border-right:1px solid var(--rule)}
+.shared .colhead{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin-bottom:9px}
+.shared .ttl{font-size:16px;line-height:1.35;margin-bottom:11px}
+.shared .saillance-tag{margin:0}
+</style></head><body><div class="wrap">
+<div class="toolbar"><span class="lab">État du bloc :</span>
+<button id="b_divergent" class="active" onclick="render('divergent')">Divergence · 17%</button>
+<button id="b_convergent" onclick="render('convergent')">Convergence · 86%</button>
+<button id="b_haute" onclick="render('haute')">Convergence · 81%</button>
+<button id="b_multi" onclick="render('multi')">Les deux · 36%</button></div>
+<div id="mod"></div>
+<div id="cap" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-softer);text-align:center;margin-top:18px"></div></div>
+<script>
+const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
+	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
+	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
+	h-3.208c-0.219-2.392-0.495-4.758-0.824-7.076c-9.43-66.499-59.551-99.748-107.192-94.289
+	c-53.284,6.105-81.882,90.319,0.496,110.666c-13.399-24.813,7.443-69.477,55.583-44.167c15.656,8.232,26.561,21.383,31.072,34.866
+	h-8.065c-7.608,0-13.776,4.469-13.776,9.983c0,5.514,6.168,9.983,13.776,9.983h9.817c-0.803,4.348-2.456,8.464-5.034,12.162
+	c-11.416,16.377-49.649,7.444-28.31-28.286c-36.065-4.747-45.649,29.279-35.228,47.641c11.453,23.411,61.479,30.428,80.41-2.978
+	c4.54-8.012,6.819-18.047,7.555-28.539h3.864c-0.033,7.932-0.53,16.224-1.59,24.887c-12.647,8.146-7.717,25.725-23.735,36.234
+	c10.062,0.265,18.271-1.708,20.92-5.415c0,10.75,9.617,19.812,15.886,32.858c5.824-13.119,15.208-24.094,15.208-32.858
+	c2.648,3.707,10.857,5.68,20.92,5.415c-14.687-9.01-8.898-25.516-23.261-37.306c-1.015-8.293-1.508-16.22-1.589-23.815h3.312
+	c0.735,10.492,3.016,20.527,7.555,28.539c18.931,33.405,68.957,26.389,80.41,2.978c10.422-18.361,0.838-52.388-35.228-47.641
+	c21.34,35.73-16.894,44.663-28.31,28.286c-2.577-3.698-4.23-7.814-5.033-12.162h10.572c7.608,0,13.776-4.47,13.776-9.983
+	c0-5.515-6.168-9.983-13.776-9.983h-8.821c4.512-13.483,15.416-26.634,31.072-34.866c48.14-25.31,68.982,19.354,55.583,44.167
+	C379.573,238.124,350.974,153.91,297.69,147.804z"/></g></svg>`;
+const SCLS={"Extrême":"s-extreme","Très élevée":"s-tres-eleve","Élevée":"s-eleve","Modérée":"s-moyenne","Faible":"s-faible","Très faible":"s-tres-faible"};
+function tag(s){return `<span class="saillance-tag ${SCLS[s]||'s-faible'}">Saillance ${s.toLowerCase()}</span>`;}
+function pos(conv){const div=100-conv;const gap=8+82*Math.pow(div/100,1.4);return [50-gap/2, 50+gap/2];}
+function byl(label,media){if(!media||!media.length)return '';
+  return `<div class="byline"><span class="lbl">${label}</span><span class="byline-media">`+media.map(m=>`<a href="#">${m}</a>`).join('<span class="sep">·</span>')+`</span></div>`;}
+function blk(title,inner){return `<div class="block"><p class="block-title">${title}</p>${inner}</div>`;}
+function render(state){
+  ['divergent','convergent','haute','multi'].forEach(s=>document.getElementById('b_'+s).classList.toggle('active',s===state));
+  const o=D[state], div=100-o.conv;
+  const c=o.conv;const mode=c<25?['Divergence','mode-div']:(c<50?['Divergence partielle','mode-divp']:(c<75?['Convergence partielle','mode-convp']:['Convergence','mode-con']));
+  const verb=o.conv<50?'diverge':'converge', val=o.conv<50?div:o.conv;
+  const [qp,rp]=pos(o.conv);
+  let sections='';
+  if(o.can){
+    const inner=o.can.map((e,i)=>`<div class="ev"><span class="rk">${i+1}</span><div class="body"><div class="ttl">${e.title}</div>
+      <div class="meta">${tag(e.sail)}</div>${byl('À lire au Canada sur',e.media)}</div></div>`).join('');
+    sections+=blk('À la Une au Canada', inner);
+  }
+  if(o.shared){
+    const inner=o.shared.map(s=>`<p class="topic-label">◆ ${s.topic}</p><div class="shared">
+      <div class="col"><div class="colhead">Au Québec</div><div class="ttl">${s.qc_title}</div>${tag(s.qc_sail)}${byl('À lire sur',s.qc_media)}</div>
+      <div class="col"><div class="colhead">Au Canada</div><div class="ttl">${s.can_title}</div>${tag(s.can_sail)}${byl('À lire sur',s.can_media)}</div></div>`).join('');
+    sections+=blk(o.can?'Aussi couvert des deux côtés':'Le même sujet, couvert des deux côtés', inner);
+  }
+  document.getElementById('mod').innerHTML=`<section class="solitudes"><h3 class="sol-title">Deux solitudes&nbsp;?</h3>
+    <div class="sol-viz"><div class="sol-axis"></div>
+      <div class="sol-symbol" style="left:${qp}%">${FLEUR}<span class="caption">Québec</span></div>
+      <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
+    <div class="sol-stat"><span class="mode-word ${mode[1]}">${mode[0]}</span>
+      <span class="mode-detail">L'actualité ${verb} à <strong>${val}&nbsp;%</strong></span></div>
+    ${sections}</section>`;
+  document.getElementById('cap').textContent='Bloc '+o.date+' · données réelles (Athena DEV) · indice = cosinus-objet IDF · saillance = seuils calibrés';
+}
+render('divergent');
+</script></body></html>
