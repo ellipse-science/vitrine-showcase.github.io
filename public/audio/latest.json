@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-06T00:04Z",
-  "date_utc": "2026-06-05",
-  "time_interval_utc": "20-24",
-  "prompt": "Create a poignant orchestral piece in A minor, 70 BPM, featuring piano, strings, and soft woodwinds. Evoke deep sadness and tenderness, with a touch of nostalgia and unease, reflecting a heartfelt tribute and the weight of loss.",
+  "generated_at": "2026-06-06T04:04Z",
+  "date_utc": "2026-06-06",
+  "time_interval_utc": "00-04",
+  "prompt": "Epic orchestral score, 120 BPM, D minor. Strings and brass dominate, with a tense, urgent atmosphere. Pulsating rhythms and dynamic crescendos convey the gravity of international conflict and societal change. Layers of percussion add intensity, while woodwinds introduce fleeting moments of hope.",
   "gems": {
     "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 60,
-    "nostalgia": 40,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 10,
-    "sadness": 70,
-    "tension": 50
+    "transcendence": 10,
+    "tenderness": 30,
+    "nostalgia": 10,
+    "peacefulness": 15,
+    "energy": 50,
+    "joyful_activation": 20,
+    "sadness": 40,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Les conservateurs isolés sur l'interdiction des boissons énergisantes",
-      "weight": 51
+      "title": "Québec veut interdire les boissons énergisantes aux moins de 16 ans",
+      "weight": 39
     },
     {
-      "title": "Milliard accuse Fréchette d'engorgement législatif stratégique",
-      "weight": 28
+      "title": "Washington bombarde des sites en Iran après des tirs de missiles iraniens",
+      "weight": 39
     },
     {
-      "title": "Hommage émouvant à Conor O’Loughlin, victime d'un meurtre en 2024",
-      "weight": 20
+      "title": "Netflix : hausse de 50 $ par an contestée par l'industrie culturelle",
+      "weight": 22
     }
   ]
 }
