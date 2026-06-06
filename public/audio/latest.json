@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-05T20:05Z",
+  "generated_at": "2026-06-06T00:04Z",
   "date_utc": "2026-06-05",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Orchestral Tension; BPM: 120; Key: D minor; Instruments: Strings, Brass, Percussion; Mood: Tense and Uneasy with underlying Energy. Capture the struggle between hope and uncertainty, evoking a sense of urgency and anticipation.",
+  "time_interval_utc": "20-24",
+  "prompt": "Create a poignant orchestral piece in A minor, 70 BPM, featuring piano, strings, and soft woodwinds. Evoke deep sadness and tenderness, with a touch of nostalgia and unease, reflecting a heartfelt tribute and the weight of loss.",
   "gems": {
     "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 30,
-    "energy": 40,
-    "joyful_activation": 35,
-    "sadness": 25,
+    "transcendence": 15,
+    "tenderness": 60,
+    "nostalgia": 40,
+    "peacefulness": 10,
+    "energy": 30,
+    "joyful_activation": 10,
+    "sadness": 70,
     "tension": 50
   },
   "headlines": [
     {
-      "title": "Québec minimise les ratés du DSN malgré les appels à l'aide des médecins",
-      "weight": 48
+      "title": "Les conservateurs isolés sur l'interdiction des boissons énergisantes",
+      "weight": 51
     },
     {
-      "title": "L'économie canadienne crée 88 000 emplois en mai, chômage à 6,6 %",
-      "weight": 35
+      "title": "Milliard accuse Fréchette d'engorgement législatif stratégique",
+      "weight": 28
     },
     {
-      "title": "Poutine rejette la rencontre avec Zelensky sans accord préalable",
-      "weight": 17
+      "title": "Hommage émouvant à Conor O’Loughlin, victime d'un meurtre en 2024",
+      "weight": 20
     }
   ]
 }
