@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-06-06T20:04Z",
+  "generated_at": "2026-06-07T00:04Z",
   "date_utc": "2026-06-06",
-  "time_interval_utc": "16-20",
-  "prompt": "Create a tense orchestral piece at 120 BPM in D minor, blending strings and brass with a subtle electronic undertone. Capture the unease and tension of shifting political landscapes and economic upheaval, weaving in moments of nostalgia and peacefulness with haunting melodies.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral; BPM: 80; Key: D minor. Instruments: Strings, piano, French horn. Mood: Tense and nostalgic, with a hint of peaceful resolution. Capture the weight of political change and the hope for a revitalized future in Québec.",
   "gems": {
     "wonder": 20,
     "transcendence": 15,
-    "tenderness": 10,
-    "nostalgia": 25,
-    "peacefulness": 30,
+    "tenderness": 25,
+    "nostalgia": 30,
+    "peacefulness": 20,
     "energy": 50,
     "joyful_activation": 35,
     "sadness": 40,
@@ -16,16 +16,16 @@
   },
   "headlines": [
     {
-      "title": "Victor Pelletier, ex-président des jeunes caquistes, rejoint les Libéraux",
+      "title": "Charles Milliard promet de « réparer le Québec » face au déclin économique",
       "weight": 42
     },
     {
-      "title": "Le Parti libéral propose un plan moins coercitif pour protéger le français",
-      "weight": 34
+      "title": "L'ancien président des jeunes caquistes Victor Pelletier rejoint les libéraux",
+      "weight": 30
     },
     {
-      "title": "Sanctions américaines: exode massif d'entreprises étrangères à Cuba",
-      "weight": 24
+      "title": "Milliard rejette l'idée d'un camp du « Noui » pour un éventuel référendum",
+      "weight": 27
     }
   ]
 }
