@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-07T08:04Z",
+  "generated_at": "2026-06-07T12:05Z",
   "date_utc": "2026-06-07",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Orchestral rock fusion. BPM: 120. Key: A minor. Instruments: Electric guitar, strings, drums. Mood: Energetic and tense, with moments of nostalgia and triumph. Capture the chaos and excitement of a high-stakes game with soaring melodies and driving rhythms.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Ambient Tension; BPM: 70; Key: D minor; Instruments: Synth pads, cello, distant piano; Mood: Suspenseful, uneasy, with a hint of melancholy; Create an atmosphere of caution and underlying anxiety amidst a backdrop of unfolding news events.",
   "gems": {
     "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
+    "transcendence": 10,
+    "tenderness": 15,
     "nostalgia": 30,
     "peacefulness": 25,
-    "energy": 60,
-    "joyful_activation": 50,
-    "sadness": 20,
-    "tension": 55
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 50,
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Les libéraux du Québec visent un retour en force en Estrie",
-      "weight": 25
+      "title": "Le Parti libéral du Québec vise un retour en force en Estrie",
+      "weight": 43
     },
     {
-      "title": "Danielle Smith plaide pour une Alberta forte dans un Canada uni",
-      "weight": 63
+      "title": "Ottawa propose une réforme pour accélérer l'approbation des projets",
+      "weight": 33
     },
     {
-      "title": "Les Golden Knights triomphent des Hurricanes dans un match chaotique",
-      "weight": 12
+      "title": "Un insecticide dangereux vendu près du métro Henri-Bourassa",
+      "weight": 24
     }
   ]
 }
