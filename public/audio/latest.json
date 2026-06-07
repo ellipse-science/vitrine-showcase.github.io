@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-07T04:04Z",
+  "generated_at": "2026-06-07T08:04Z",
   "date_utc": "2026-06-07",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Dark Ambient, BPM: 70, Key: D minor. Instruments: Deep synths, echoing percussion, dissonant strings. Mood: Tense and uneasy, with a shadow of sadness. Capture the chaos of a city grappling with unexpected turmoil and uncertainty.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Orchestral rock fusion. BPM: 120. Key: A minor. Instruments: Electric guitar, strings, drums. Mood: Energetic and tense, with moments of nostalgia and triumph. Capture the chaos and excitement of a high-stakes game with soaring melodies and driving rhythms.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 20,
-    "peacefulness": 10,
-    "energy": 40,
-    "joyful_activation": 10,
-    "sadness": 60,
-    "tension": 70
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 30,
+    "peacefulness": 25,
+    "energy": 60,
+    "joyful_activation": 50,
+    "sadness": 20,
+    "tension": 55
   },
   "headlines": [
     {
-      "title": "Centre de quarantaine pour Américains au Kenya: indignation locale",
-      "weight": 33
-    },
-    {
       "title": "Les libéraux du Québec visent un retour en force en Estrie",
-      "weight": 30
+      "weight": 25
     },
     {
-      "title": "Fusillade près d'un festival à Toledo : plusieurs blessés, suspects recherchés",
-      "weight": 37
+      "title": "Danielle Smith plaide pour une Alberta forte dans un Canada uni",
+      "weight": 63
+    },
+    {
+      "title": "Les Golden Knights triomphent des Hurricanes dans un match chaotique",
+      "weight": 12
     }
   ]
 }
