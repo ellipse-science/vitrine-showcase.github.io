@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-07T16:04Z",
+  "generated_at": "2026-06-07T20:05Z",
   "date_utc": "2026-06-07",
-  "time_interval_utc": "12-16",
-  "prompt": "Create a vibrant orchestral piece at 120 BPM in C major. Blend sweeping strings with bold brass to evoke a sense of joyful celebration and hopeful transcendence. Add lively percussion to capture the bustling energy of a grand festival.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Cinematic Orchestral. BPM: 75. Key: D minor. Instruments: Strings, brass, timpani, and choir. Mood: Tense and dramatic. Capture the high-stakes tension and unease of international conflict, with underlying currents of sorrow and urgency.",
   "gems": {
-    "wonder": 60,
-    "transcendence": 50,
-    "tenderness": 70,
-    "nostalgia": 65,
-    "peacefulness": 40,
-    "energy": 75,
-    "joyful_activation": 80,
-    "sadness": 55,
-    "tension": 50
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 10,
+    "peacefulness": 5,
+    "energy": 40,
+    "joyful_activation": 10,
+    "sadness": 60,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Un réseau informel lutte contre les surdoses au Canada",
-      "weight": 40
+      "title": "Les États-Unis abattent des drones iraniens au 100e jour du conflit",
+      "weight": 91
     },
     {
-      "title": "Washington célèbre 250 ans d'indépendance avec une grande foire",
-      "weight": 36
+      "title": "Louise Arbour devient gouverneure générale du Canada, succédant à Mary Simon",
+      "weight": 5
     },
     {
-      "title": "Ottawa propose une réforme pour accélérer l'approbation des projets",
-      "weight": 24
+      "title": "Cuba face à une crise humanitaire imminente, selon un expert",
+      "weight": 4
     }
   ]
 }
