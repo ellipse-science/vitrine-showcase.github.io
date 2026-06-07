@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-07T00:04Z",
-  "date_utc": "2026-06-06",
-  "time_interval_utc": "20-24",
-  "prompt": "Genre: Orchestral; BPM: 80; Key: D minor. Instruments: Strings, piano, French horn. Mood: Tense and nostalgic, with a hint of peaceful resolution. Capture the weight of political change and the hope for a revitalized future in Québec.",
+  "generated_at": "2026-06-07T04:04Z",
+  "date_utc": "2026-06-07",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Dark Ambient, BPM: 70, Key: D minor. Instruments: Deep synths, echoing percussion, dissonant strings. Mood: Tense and uneasy, with a shadow of sadness. Capture the chaos of a city grappling with unexpected turmoil and uncertainty.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 25,
-    "nostalgia": 30,
-    "peacefulness": 20,
-    "energy": 50,
-    "joyful_activation": 35,
-    "sadness": 40,
-    "tension": 60
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 20,
+    "peacefulness": 10,
+    "energy": 40,
+    "joyful_activation": 10,
+    "sadness": 60,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Charles Milliard promet de « réparer le Québec » face au déclin économique",
-      "weight": 42
+      "title": "Centre de quarantaine pour Américains au Kenya: indignation locale",
+      "weight": 33
     },
     {
-      "title": "L'ancien président des jeunes caquistes Victor Pelletier rejoint les libéraux",
+      "title": "Les libéraux du Québec visent un retour en force en Estrie",
       "weight": 30
     },
     {
-      "title": "Milliard rejette l'idée d'un camp du « Noui » pour un éventuel référendum",
-      "weight": 27
+      "title": "Fusillade près d'un festival à Toledo : plusieurs blessés, suspects recherchés",
+      "weight": 37
     }
   ]
 }
