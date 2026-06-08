@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-08T04:04Z",
+  "generated_at": "2026-06-08T08:05Z",
   "date_utc": "2026-06-08",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Orchestral; BPM: 85; Key: D minor. Instruments: Strings, brass, deep percussion. Mood: Tense and dramatic. Evoke rising tension and unease, with powerful crescendos reflecting conflict and urgency. Intermittent moments of solemnity and reflection, capturing global turmoil and uncertainty.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Cinematic orchestral. BPM: 70. Key: D minor. Instruments: String ensemble, timpani, brass section. Mood: Tense and dramatic, with rising tension and somber undertones, reflecting international conflict and unease. Evoke a sense of urgency and impending confrontation.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 5,
+    "tenderness": 10,
     "nostalgia": 5,
     "peacefulness": 10,
     "energy": 30,
     "joyful_activation": 5,
-    "sadness": 60,
+    "sadness": 50,
     "tension": 80
   },
   "headlines": [
     {
-      "title": "Iran et Israël échangent des frappes après une attaque à Beyrouth",
-      "weight": 87
+      "title": "Des centaines d'armes saisies dans les écoles du Québec par la police",
+      "weight": 10
     },
     {
-      "title": "Six personnes poignardées à la gare Penn Station de New York",
-      "weight": 9
+      "title": "Israël frappe l'Iran après des tirs de missiles iraniens",
+      "weight": 86
     },
     {
-      "title": "Pertes financières majeures pour Noovo et TVA : plus de 86 millions en 2022",
+      "title": "Le Japon enregistre une baisse démographique de 3 millions en cinq ans",
       "weight": 4
     }
   ]
