@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-08T16:04Z",
+  "generated_at": "2026-06-08T20:04Z",
   "date_utc": "2026-06-08",
-  "time_interval_utc": "12-16",
-  "prompt": "Create a cinematic orchestral piece in D minor, 110 BPM. Use strings and brass to evoke tension and transcendence, with a touch of tenderness. Capture the duality of hope and unease, reflecting governance challenges and community division.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Orchestral Ambient; BPM: 65; Key: C Major; Instruments: Strings, piano, gentle woodwinds; Mood: Reflective and hopeful; Capture the solemnity of a historic ceremony, with subtle tension and a hopeful undertone of unity and understanding.",
   "gems": {
-    "wonder": 40,
+    "wonder": 60,
     "transcendence": 50,
-    "tenderness": 60,
-    "nostalgia": 30,
-    "peacefulness": 45,
+    "tenderness": 70,
+    "nostalgia": 40,
+    "peacefulness": 65,
     "energy": 55,
-    "joyful_activation": 50,
-    "sadness": 20,
-    "tension": 65
+    "joyful_activation": 60,
+    "sadness": 30,
+    "tension": 45
   },
   "headlines": [
     {
       "title": "Louise Arbour devient la 31e gouverneure générale du Canada",
-      "weight": 61
+      "weight": 81
     },
     {
-      "title": "Projet de train à Mirabel: entre rêve et cauchemar pour les résidents",
-      "weight": 20
+      "title": "Ottawa envisage d'assouplir l'usage des pesticides pour raisons économiques",
+      "weight": 11
     },
     {
-      "title": "Ottawa pourrait réautoriser certains pesticides interdits",
-      "weight": 18
+      "title": "Ottawa et l'UE amorcent des pourparlers pour unifier leurs marchés",
+      "weight": 9
     }
   ]
 }
