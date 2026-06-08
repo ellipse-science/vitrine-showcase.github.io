@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-08T08:05Z",
+  "generated_at": "2026-06-08T12:06Z",
   "date_utc": "2026-06-08",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Cinematic orchestral. BPM: 70. Key: D minor. Instruments: String ensemble, timpani, brass section. Mood: Tense and dramatic, with rising tension and somber undertones, reflecting international conflict and unease. Evoke a sense of urgency and impending confrontation.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Orchestral Ambient, BPM: 60, Key: D minor. Instruments: Strings, subtle piano, soft synth pads. Mood: Tension and unease with underlying sadness. Create a soundscape reflecting a community grappling with environmental, safety, and governance issues.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 10,
+    "wonder": 20,
+    "transcendence": 10,
+    "tenderness": 15,
     "nostalgia": 5,
     "peacefulness": 10,
     "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 50,
-    "tension": 80
+    "joyful_activation": 10,
+    "sadness": 40,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Des centaines d'armes saisies dans les écoles du Québec par la police",
-      "weight": 10
+      "title": "Ottawa envisage de réautoriser certains pesticides interdits",
+      "weight": 44
     },
     {
-      "title": "Israël frappe l'Iran après des tirs de missiles iraniens",
-      "weight": 86
+      "title": "Des centaines d'armes saisies dans les écoles du Québec",
+      "weight": 34
     },
     {
-      "title": "Le Japon enregistre une baisse démographique de 3 millions en cinq ans",
-      "weight": 4
+      "title": "Projet de train à Mirabel: entre rêve et cauchemar pour les résidents",
+      "weight": 22
     }
   ]
 }
