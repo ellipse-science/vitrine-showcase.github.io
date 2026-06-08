@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-08T12:06Z",
+  "generated_at": "2026-06-08T16:04Z",
   "date_utc": "2026-06-08",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Orchestral Ambient, BPM: 60, Key: D minor. Instruments: Strings, subtle piano, soft synth pads. Mood: Tension and unease with underlying sadness. Create a soundscape reflecting a community grappling with environmental, safety, and governance issues.",
+  "time_interval_utc": "12-16",
+  "prompt": "Create a cinematic orchestral piece in D minor, 110 BPM. Use strings and brass to evoke tension and transcendence, with a touch of tenderness. Capture the duality of hope and unease, reflecting governance challenges and community division.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 10,
-    "sadness": 40,
-    "tension": 70
+    "wonder": 40,
+    "transcendence": 50,
+    "tenderness": 60,
+    "nostalgia": 30,
+    "peacefulness": 45,
+    "energy": 55,
+    "joyful_activation": 50,
+    "sadness": 20,
+    "tension": 65
   },
   "headlines": [
     {
-      "title": "Ottawa envisage de réautoriser certains pesticides interdits",
-      "weight": 44
-    },
-    {
-      "title": "Des centaines d'armes saisies dans les écoles du Québec",
-      "weight": 34
+      "title": "Louise Arbour devient la 31e gouverneure générale du Canada",
+      "weight": 61
     },
     {
       "title": "Projet de train à Mirabel: entre rêve et cauchemar pour les résidents",
-      "weight": 22
+      "weight": 20
+    },
+    {
+      "title": "Ottawa pourrait réautoriser certains pesticides interdits",
+      "weight": 18
     }
   ]
 }
