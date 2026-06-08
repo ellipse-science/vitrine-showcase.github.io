@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-07T20:05Z",
+  "generated_at": "2026-06-08T00:04Z",
   "date_utc": "2026-06-07",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Cinematic Orchestral. BPM: 75. Key: D minor. Instruments: Strings, brass, timpani, and choir. Mood: Tense and dramatic. Capture the high-stakes tension and unease of international conflict, with underlying currents of sorrow and urgency.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral Tension, BPM: 120, Key: C minor. Instruments: Strings, brass, timpani, and choir. Mood: Intense, suspenseful, with a sense of looming conflict. Emphasize tension and unease with dramatic crescendos and somber melodies.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 10,
-    "peacefulness": 5,
-    "energy": 40,
+    "tenderness": 5,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 30,
     "joyful_activation": 10,
-    "sadness": 60,
-    "tension": 80
+    "sadness": 70,
+    "tension": 90
   },
   "headlines": [
     {
-      "title": "Les États-Unis abattent des drones iraniens au 100e jour du conflit",
-      "weight": 91
-    },
-    {
-      "title": "Louise Arbour devient gouverneure générale du Canada, succédant à Mary Simon",
-      "weight": 5
+      "title": "L'Iran tire des missiles sur Israël, brisant le cessez-le-feu d'avril",
+      "weight": 95
     },
     {
       "title": "Cuba face à une crise humanitaire imminente, selon un expert",
       "weight": 4
+    },
+    {
+      "title": "Les Canadiens de Montréal ciblent Dylan Larkin pour l'été",
+      "weight": 1
     }
   ]
 }
