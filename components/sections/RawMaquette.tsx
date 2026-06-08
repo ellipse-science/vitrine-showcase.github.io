@@ -31,5 +31,8 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
 
+  // Brand & partner images are vendored under public/assets — prefix basePath
+  html = html.replace(/src="assets\//g, `src="${basePath}/assets/`);
+
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
