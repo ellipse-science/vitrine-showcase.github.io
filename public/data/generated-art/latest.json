@@ -1,12 +1,13 @@
 {
-  "generated_at": "2026-06-09T16:03Z",
-  "headline_fr": "Le Parti québécois promet de retirer le Québec du projet de TGV Québec-Toronto",
-  "headline_en": "Le Parti québécois s’oppose à la mouture actuelle du TGV d’Alto reliant Québec à Toronto",
-  "main_issue": "governments_and_governance",
-  "main_issue_text_fr": "Gouvernements et gouvernance",
+  "generated_at": "2026-06-09T20:03Z",
+  "headline_fr": "Trump accuse l'Iran d'avoir abattu un hélicoptère américain à Ormuz",
+  "headline_en": "Hélicoptère américain abattu Donald Trump accuse l’Iran et promet de répliquer",
+  "main_issue": "international_affairs_and_defense",
+  "main_issue_text_fr": "Affaires internationales et défense",
   "context_outlets": [
-    "LED",
     "LAP",
-    "RCI"
+    "RCI",
+    "JDM",
+    "GAM"
   ]
 }

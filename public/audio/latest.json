@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T16:05Z",
+  "generated_at": "2026-06-09T20:04Z",
   "date_utc": "2026-06-09",
-  "time_interval_utc": "12-16",
-  "prompt": "Create a poignant orchestral piece with strings, piano, and soft woodwinds. Emphasize sadness and tension at 70 BPM in a minor key, evoking a sense of unease. Infuse moments of tenderness and peacefulness to mirror hope amidst adversity.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Orchestral tension. BPM: 110. Key: D minor. Instruments: Strings, brass, timpani. Mood: Intense, dramatic, with a sense of urgency and unease. Layers of tense strings build suspense, leading to powerful brass surges, underpinned by a relentless timpani rhythm.",
   "gems": {
     "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 40,
-    "nostalgia": 10,
+    "transcendence": 10,
+    "tenderness": 15,
+    "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 60,
+    "energy": 40,
+    "joyful_activation": 10,
+    "sadness": 30,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "Le Parti québécois promet de retirer le Québec du projet de TGV Québec-Toronto",
-      "weight": 52
+      "title": "Trump accuse l'Iran d'avoir abattu un hélicoptère américain à Ormuz",
+      "weight": 50
     },
     {
-      "title": "Rejets d'eaux usées à Les Cèdres : un décor enchanteur, une odeur putride",
+      "title": "Le Parti québécois promet de retirer le Québec du projet de TGV",
+      "weight": 21
+    },
+    {
+      "title": "Ottawa interdira les réseaux sociaux aux moins de 16 ans",
       "weight": 29
-    },
-    {
-      "title": "Le député Luc Berthold milite pour le traitement des dépendances après un drame",
-      "weight": 19
     }
   ]
 }
