@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T04:04Z",
+  "generated_at": "2026-06-09T08:04Z",
   "date_utc": "2026-06-09",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Ambient orchestral. BPM: 60. Key: C minor. Instruments: Strings, piano, soft synth pads. Mood: A delicate blend of tension and hopefulness, capturing the emotional weight of community resilience amidst environmental challenges. Evoke a serene yet poignant atmosphere.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Orchestral Ambient, BPM: 70, Key: D minor. Instruments: Strings, soft piano, gentle woodwinds. Mood: Reflective and somber, with a touch of hope. Capture the tension and tenderness of a call for change, rising with emotional intensity.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 30,
-    "nostalgia": 10,
-    "peacefulness": 25,
-    "energy": 40,
-    "joyful_activation": 35,
-    "sadness": 45,
+    "wonder": 40,
+    "transcendence": 30,
+    "tenderness": 50,
+    "nostalgia": 20,
+    "peacefulness": 30,
+    "energy": 60,
+    "joyful_activation": 40,
+    "sadness": 60,
     "tension": 50
   },
   "headlines": [
     {
-      "title": "Québec alloue 425 M$ pour aider les propriétaires menacés par les inondations",
-      "weight": 41
+      "title": "Inauguration imminente du pont international Gordie-Howe cette semaine",
+      "weight": 54
     },
     {
-      "title": "Québec alloue 70 MW d'électricité à la mine Troilus au Nord-du-Québec",
-      "weight": 30
+      "title": "Le ministre français échoue à écrire « accueil » correctement",
+      "weight": 24
     },
     {
-      "title": "Montréalais favorables à un règlement contre les insultes aux policiers",
-      "weight": 29
+      "title": "La famille d'Antoine Lavoie réclame un soutien accru pour les épileptiques",
+      "weight": 22
     }
   ]
 }
