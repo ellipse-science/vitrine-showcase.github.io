@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T12:05Z",
+  "generated_at": "2026-06-09T16:05Z",
   "date_utc": "2026-06-09",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Ambient orchestral. BPM: 70. Key: D minor. Instruments: Strings, piano, subtle synth pads. Mood: Somber and reflective, with a touch of hope. Evoke tenderness, sadness, and unease, capturing the struggle for change and healing amidst adversity.",
+  "time_interval_utc": "12-16",
+  "prompt": "Create a poignant orchestral piece with strings, piano, and soft woodwinds. Emphasize sadness and tension at 70 BPM in a minor key, evoking a sense of unease. Infuse moments of tenderness and peacefulness to mirror hope amidst adversity.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 60,
-    "nostalgia": 20,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 40,
+    "nostalgia": 10,
     "peacefulness": 10,
     "energy": 30,
     "joyful_activation": 5,
-    "sadness": 80,
+    "sadness": 60,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "La famille d'Antoine Lavoie réclame un soutien accru pour les épileptiques",
-      "weight": 46
+      "title": "Le Parti québécois promet de retirer le Québec du projet de TGV Québec-Toronto",
+      "weight": 52
     },
     {
-      "title": "Un député québécois milite pour le traitement des dépendances après un drame familial",
-      "weight": 31
+      "title": "Rejets d'eaux usées à Les Cèdres : un décor enchanteur, une odeur putride",
+      "weight": 29
     },
     {
-      "title": "Rejet d'eaux usées à Les Cèdres : un décor enchanteur masqué par une odeur nauséabonde",
-      "weight": 24
+      "title": "Le député Luc Berthold milite pour le traitement des dépendances après un drame",
+      "weight": 19
     }
   ]
 }
