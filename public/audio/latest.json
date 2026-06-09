@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T08:04Z",
+  "generated_at": "2026-06-09T12:05Z",
   "date_utc": "2026-06-09",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Orchestral Ambient, BPM: 70, Key: D minor. Instruments: Strings, soft piano, gentle woodwinds. Mood: Reflective and somber, with a touch of hope. Capture the tension and tenderness of a call for change, rising with emotional intensity.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Ambient orchestral. BPM: 70. Key: D minor. Instruments: Strings, piano, subtle synth pads. Mood: Somber and reflective, with a touch of hope. Evoke tenderness, sadness, and unease, capturing the struggle for change and healing amidst adversity.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 30,
-    "tenderness": 50,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 60,
     "nostalgia": 20,
-    "peacefulness": 30,
-    "energy": 60,
-    "joyful_activation": 40,
-    "sadness": 60,
-    "tension": 50
+    "peacefulness": 10,
+    "energy": 30,
+    "joyful_activation": 5,
+    "sadness": 80,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Inauguration imminente du pont international Gordie-Howe cette semaine",
-      "weight": 54
-    },
-    {
-      "title": "Le ministre français échoue à écrire « accueil » correctement",
-      "weight": 24
-    },
-    {
       "title": "La famille d'Antoine Lavoie réclame un soutien accru pour les épileptiques",
-      "weight": 22
+      "weight": 46
+    },
+    {
+      "title": "Un député québécois milite pour le traitement des dépendances après un drame familial",
+      "weight": 31
+    },
+    {
+      "title": "Rejet d'eaux usées à Les Cèdres : un décor enchanteur masqué par une odeur nauséabonde",
+      "weight": 24
     }
   ]
 }
