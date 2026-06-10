@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-10T04:05Z",
+  "generated_at": "2026-06-10T08:04Z",
   "date_utc": "2026-06-10",
-  "time_interval_utc": "00-04",
-  "prompt": "Epic orchestral piece, 120 BPM, D minor. Strings and brass evoke tension and unease. Percussion adds intensity. A dark, dramatic melody reflects high stakes and geopolitical conflict, with underlying sadness and urgency. Perfect for a high-stakes international news scene.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Orchestral Ambient, BPM: 60, Key: D minor. Instruments: soft strings, gentle piano, subtle choir. Mood: tender yet somber, evoking profound sadness and nostalgia, with hints of peacefulness. A delicate, emotional tribute that lingers in the heart.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 20,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 60,
     "nostalgia": 30,
-    "peacefulness": 10,
+    "peacefulness": 25,
     "energy": 50,
-    "joyful_activation": 5,
+    "joyful_activation": 40,
     "sadness": 70,
-    "tension": 80
+    "tension": 55
   },
   "headlines": [
     {
-      "title": "L'actrice québécoise Sophie Faucher s'éteint à 68 ans",
-      "weight": 14
+      "title": "Ottawa veut restreindre l'accès des jeunes aux réseaux sociaux dès 2025",
+      "weight": 40
     },
     {
-      "title": "La popularité de Mark Carney chute de huit points au Québec",
-      "weight": 8
+      "title": "Un jeu québécois vend 900 000 copies en 15 jours pour 31 millions $",
+      "weight": 31
     },
     {
-      "title": "Les Etats-Unis frappent l'Iran après la chute d'un hélicoptère américain",
-      "weight": 78
+      "title": "Des centaines de personnes rendent hommage à Ava Ciampini, 3 ans, à LaSalle",
+      "weight": 29
     }
   ]
 }
