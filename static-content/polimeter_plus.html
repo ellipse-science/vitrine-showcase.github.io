@@ -4,12 +4,11 @@
   <section class="polimeter-plus" aria-label="Polimètre+">
     <div class="partis-title-row">
       <div class="title-block">
-        <h2 class="partis-title">Promesses les plus discutées : réalisées ou rompues?</h2>
+        <h2 class="partis-title">Promesses sous la loupe médiatique&#128269;</h2>
       </div>
       <div class="control-block">
         <div class="legend-toggle inline">
-          <span class="active">Aujourd'hui</span>
-          <span>Depuis une semaine</span>
+          <span class="active">Depuis une semaine</span>
           <span>Depuis un mois</span>
         </div>
       </div>
@@ -18,13 +17,14 @@
     <div class="ppl-grid">
       <!-- Rail gauche : légende des verdicts + catégories d'enjeux -->
       <aside class="ppl-filters">
-        <ul class="ppl-legend" aria-label="Légende des verdicts">
-          <li><span class="ppl-status ppl-status--realisee"></span>Réalisée</li>
-          <li><span class="ppl-status ppl-status--partielle"></span>Partiellement réalisée</li>
-          <li><span class="ppl-status ppl-status--en-cours"></span>En cours</li>
-          <li><span class="ppl-status ppl-status--en-suspens"></span>En suspens</li>
-          <li><span class="ppl-status ppl-status--rompue"></span>Rompue</li>
-        </ul>
+        <nav class="ppl-verdicts" aria-label="Filtrer par verdict">
+          <button class="ppl-verdict active" type="button" data-verdict="all">Tous les verdicts</button>
+          <button class="ppl-verdict ppl-verdict--realisee" type="button" data-verdict="realisee">Réalisée</button>
+          <button class="ppl-verdict ppl-verdict--partielle" type="button" data-verdict="partielle">Partiellement réalisée</button>
+          <button class="ppl-verdict ppl-verdict--en-cours" type="button" data-verdict="en-cours">En cours</button>
+          <button class="ppl-verdict ppl-verdict--en-suspens" type="button" data-verdict="en-suspens">En suspens</button>
+          <button class="ppl-verdict ppl-verdict--rompue" type="button" data-verdict="rompue">Rompue</button>
+        </nav>
 
         <nav class="ppl-issues" aria-label="Catégories d'enjeux">
           <button class="ppl-issue active" type="button">Toutes les catégories</button>
@@ -45,49 +45,43 @@
       <div class="ppl-list">
         <div class="ppl-promise header" aria-hidden="true">
           <div style="text-align: center;">Position</div>
-          <div></div>
           <div style="text-align: center;">Promesse</div>
           <div style="text-align: right;">Tendance</div>
         </div>
         <ol class="ppl-promises">
-          <li class="ppl-promise">
+          <li class="ppl-promise ppl-promise--en-cours" aria-label="En cours">
             <span class="ppl-rank">1</span>
-            <span class="ppl-status ppl-status--en-cours" title="En cours"></span>
             <a class="ppl-title" href="#">Accélérer la construction du 3<sup>e</sup> lien</a>
             <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 2 rangs">▲ +2</span>
           </li>
 
-          <li class="ppl-promise">
+          <li class="ppl-promise ppl-promise--realisee" aria-label="Réalisée">
             <span class="ppl-rank">2</span>
-            <span class="ppl-status ppl-status--realisee" title="Réalisée"></span>
             <a class="ppl-title" href="#">Baisser les impôts de la classe moyenne</a>
             <span class="ppl-trend ppl-trend--flat" aria-label="Aucun changement">—</span>
           </li>
 
-          <li class="ppl-promise">
+          <li class="ppl-promise ppl-promise--partielle" aria-label="Partiellement réalisée">
             <span class="ppl-rank">3</span>
-            <span class="ppl-status ppl-status--partielle" title="Partiellement réalisée"></span>
             <a class="ppl-title" href="#">Créer Santé Québec</a>
             <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 1 rang">▲ +1</span>
           </li>
 
-          <li class="ppl-promise">
+          <li class="ppl-promise ppl-promise--rompue" aria-label="Rompue">
             <span class="ppl-rank">4</span>
-            <span class="ppl-status ppl-status--rompue" title="Rompue"></span>
             <a class="ppl-title" href="#">Rénover les écoles</a>
             <span class="ppl-trend ppl-trend--down" aria-label="Baisse de 3 rangs">▼ −3</span>
           </li>
 
           <!-- Promesse 5 : état ouvert (cf. annotation 6 de la maquette) -->
-          <li class="ppl-promise ppl-promise--open">
+          <li class="ppl-promise ppl-promise--open ppl-promise--en-suspens" aria-label="En suspens">
             <div class="ppl-promise__head">
               <span class="ppl-rank">5</span>
-              <span class="ppl-status ppl-status--en-suspens" title="En suspens"></span>
               <span class="ppl-title">Protéger la laïcité</span>
               <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 2 rangs">▲ +2</span>
             </div>
             <div class="ppl-promise__detail">
-              <p class="ppl-detail__eyebrow">Reflet du moment</p>
+              <p class="ppl-detail__eyebrow">Résumé</p>
               <p class="ppl-detail__text">
                 Le gouvernement Legault a déposé un projet de loi pour renforcer
                 la loi 21 sur la laïcité. Plusieurs groupes de la société civile
@@ -102,8 +96,7 @@
         </ol>
 
         <div class="ppl-footer">
-          <a class="ppl-website" href="https://polimeter.org/fr/legault" target="_blank" rel="noopener">Découvrir toutes les promesses ↗</a>
-          <button class="ppl-voir-plus" type="button">Voir plus</button>
+          <a class="ppl-website" href="https://polimeter.org/fr/legault" target="_blank" rel="noopener">Découvrir toutes les promesses</a>
           <a class="ppl-metho" href="https://polimeter.org/guide/GuidePolimetre2026.pdf" target="_blank" rel="noopener">Méthodologie du Polimètre ↗</a>
         </div>
       </div>
