@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T20:04Z",
+  "generated_at": "2026-06-10T00:05Z",
   "date_utc": "2026-06-09",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Orchestral tension. BPM: 110. Key: D minor. Instruments: Strings, brass, timpani. Mood: Intense, dramatic, with a sense of urgency and unease. Layers of tense strings build suspense, leading to powerful brass surges, underpinned by a relentless timpani rhythm.",
+  "time_interval_utc": "20-24",
+  "prompt": "Epic orchestral piece, 120 BPM, E minor. Tension-filled strings, powerful brass, and intense percussion evoke geopolitical conflict. Underlying sadness and nostalgia with tender woodwinds. A dramatic crescendo captures the escalating international tensions, while a somber piano melody reflects the human cost and emotional depth.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 15,
-    "nostalgia": 5,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 20,
+    "nostalgia": 15,
     "peacefulness": 10,
-    "energy": 40,
-    "joyful_activation": 10,
-    "sadness": 30,
-    "tension": 70
+    "energy": 30,
+    "joyful_activation": 5,
+    "sadness": 60,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Trump accuse l'Iran d'avoir abattu un hélicoptère américain à Ormuz",
-      "weight": 50
+      "title": "Les États-Unis frappent l'Iran après la chute d'un hélicoptère américain",
+      "weight": 79
     },
     {
-      "title": "Le Parti québécois promet de retirer le Québec du projet de TGV",
-      "weight": 21
+      "title": "Décès de l'actrice québécoise Sophie Faucher à 68 ans",
+      "weight": 12
     },
     {
-      "title": "Ottawa interdira les réseaux sociaux aux moins de 16 ans",
-      "weight": 29
+      "title": "Les revenus de la SAQ stagnent, dividende sous 1,4 milliard pour 2023",
+      "weight": 9
     }
   ]
 }
