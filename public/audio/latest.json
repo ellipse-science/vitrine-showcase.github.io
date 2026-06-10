@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-10T12:05Z",
+  "generated_at": "2026-06-10T20:05Z",
   "date_utc": "2026-06-10",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Synthwave. BPM: 120. Key: A minor. Instruments: Synthesizers, electric guitar, drum machine. Mood: Energetic yet tense, with a hint of nostalgia. Capture the thrill of rapid success and the underlying unease of digital threats and societal shifts.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Ambient Electronic, BPM: 70, Key: D minor. Instruments: Synth pads, soft piano, distant strings. Mood: Tense and somber with a touch of nostalgia. Capture the weight of political turmoil and financial uncertainty, with a subtle undercurrent of hope and resilience.",
   "gems": {
-    "wonder": 60,
-    "transcendence": 20,
-    "tenderness": 40,
-    "nostalgia": 30,
-    "peacefulness": 25,
-    "energy": 70,
-    "joyful_activation": 65,
-    "sadness": 50,
-    "tension": 55
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 10,
+    "peacefulness": 20,
+    "energy": 30,
+    "joyful_activation": 25,
+    "sadness": 40,
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Un jeu québécois rival des «Sims» vend 900 000 copies en 15 jours",
-      "weight": 36
+      "title": "Filière batterie: Fréchette blâme Legault et Fitzgibbon pour la déroute",
+      "weight": 37
     },
     {
-      "title": "Menaces sur Snapchat : une jeune Estrienne de 12 ans ciblée",
-      "weight": 34
+      "title": "Le gouvernement Fréchette relance le Programme de l'expérience québécoise",
+      "weight": 35
     },
     {
-      "title": "Ottawa veut restreindre l'accès des jeunes aux réseaux sociaux",
+      "title": "Québec a négligé les risques dans ses investissements en batteries",
       "weight": 29
     }
   ]
