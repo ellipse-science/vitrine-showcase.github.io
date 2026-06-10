@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-10T00:05Z",
-  "date_utc": "2026-06-09",
-  "time_interval_utc": "20-24",
-  "prompt": "Epic orchestral piece, 120 BPM, E minor. Tension-filled strings, powerful brass, and intense percussion evoke geopolitical conflict. Underlying sadness and nostalgia with tender woodwinds. A dramatic crescendo captures the escalating international tensions, while a somber piano melody reflects the human cost and emotional depth.",
+  "generated_at": "2026-06-10T04:05Z",
+  "date_utc": "2026-06-10",
+  "time_interval_utc": "00-04",
+  "prompt": "Epic orchestral piece, 120 BPM, D minor. Strings and brass evoke tension and unease. Percussion adds intensity. A dark, dramatic melody reflects high stakes and geopolitical conflict, with underlying sadness and urgency. Perfect for a high-stakes international news scene.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
     "tenderness": 20,
-    "nostalgia": 15,
+    "nostalgia": 30,
     "peacefulness": 10,
-    "energy": 30,
+    "energy": 50,
     "joyful_activation": 5,
-    "sadness": 60,
+    "sadness": 70,
     "tension": 80
   },
   "headlines": [
     {
-      "title": "Les États-Unis frappent l'Iran après la chute d'un hélicoptère américain",
-      "weight": 79
+      "title": "L'actrice québécoise Sophie Faucher s'éteint à 68 ans",
+      "weight": 14
     },
     {
-      "title": "Décès de l'actrice québécoise Sophie Faucher à 68 ans",
-      "weight": 12
+      "title": "La popularité de Mark Carney chute de huit points au Québec",
+      "weight": 8
     },
     {
-      "title": "Les revenus de la SAQ stagnent, dividende sous 1,4 milliard pour 2023",
-      "weight": 9
+      "title": "Les Etats-Unis frappent l'Iran après la chute d'un hélicoptère américain",
+      "weight": 78
     }
   ]
 }
