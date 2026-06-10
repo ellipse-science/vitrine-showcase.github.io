@@ -26,19 +26,22 @@
           <button class="ppl-verdict ppl-verdict--rompue" type="button" data-verdict="rompue">Rompue</button>
         </nav>
 
-        <nav class="ppl-issues" aria-label="Catégories d'enjeux">
-          <button class="ppl-issue active" type="button">Toutes les catégories</button>
-          <button class="ppl-issue" type="button">Culture et nationalisme</button>
-          <button class="ppl-issue" type="button">Droits et libertés</button>
-          <button class="ppl-issue" type="button">Économie et travail</button>
-          <button class="ppl-issue" type="button">Éducation</button>
-          <button class="ppl-issue" type="button">Environnement et énergie</button>
-          <button class="ppl-issue" type="button">Gouvernements</button>
-          <button class="ppl-issue" type="button">Immigration</button>
-          <button class="ppl-issue" type="button">Santé</button>
-          <button class="ppl-issue" type="button">Terres publiques et agriculture</button>
-          <button class="ppl-issue" type="button">Technologie</button>
-        </nav>
+        <div class="ppl-issues">
+          <label class="ppl-issues__label" for="ppl-issue-select">Catégorie d'enjeu</label>
+          <select class="ppl-issue-select" id="ppl-issue-select" aria-label="Catégories d'enjeux">
+            <option value="all" selected>Toutes les catégories</option>
+            <option value="culture">Culture et nationalisme</option>
+            <option value="droits">Droits et libertés</option>
+            <option value="economie">Économie et travail</option>
+            <option value="education">Éducation</option>
+            <option value="environnement">Environnement et énergie</option>
+            <option value="gouvernements">Gouvernements</option>
+            <option value="immigration">Immigration</option>
+            <option value="sante">Santé</option>
+            <option value="terres">Terres publiques et agriculture</option>
+            <option value="technologie">Technologie</option>
+          </select>
+        </div>
       </aside>
 
       <!-- Rail droit : liste des promesses -->

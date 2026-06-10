@@ -2418,29 +2418,31 @@
   .ppl-issues {
     display: flex;
     flex-direction: column;
+    gap: 6px;
     border-top: 0.5px solid var(--rule);
-    padding-top: 8px;
+    padding-top: 10px;
   }
-  .ppl-issue {
-    background: none;
-    border: 0;
-    border-left: 2px solid transparent;
-    text-align: left;
+  .ppl-issues__label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .ppl-issue-select {
+    appearance: none;
+    background: var(--paper-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 0.5px solid var(--rule);
     font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-    font-size: 14.5px;
-    font-weight: 400;
-    color: var(--ink-soft);
-    padding: 7px 10px;
-    cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-  }
-  .ppl-issue:hover { color: var(--ink); background: var(--paper-deep); }
-  .ppl-issue.active {
-    background: var(--paper-deep);
-    border-left-color: var(--cordovan);
+    font-size: 14px;
     color: var(--ink);
-    font-weight: 600;
+    padding: 7px 32px 7px 10px;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.15s ease;
   }
+  .ppl-issue-select:hover { border-color: var(--ink-soft); }
+  .ppl-issue-select:focus { outline: none; border-color: var(--cordovan); }
 
   /* --- Rail droit : liste --- */
   .ppl-list { min-width: 0; }
@@ -2662,19 +2664,6 @@
     .ppl-verdict--en-suspens { border-bottom-color: var(--ppl-en-suspens); }
     .ppl-verdict--rompue     { border-bottom-color: var(--ppl-rompue); }
     .ppl-verdict[data-verdict="all"].active { border-bottom-color: var(--cordovan); border-left-color: transparent; }
-    .ppl-issues {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 4px;
-      border-top: 0.5px solid var(--rule);
-      padding-top: 10px;
-    }
-    .ppl-issue {
-      border-left: 0;
-      border-bottom: 2px solid transparent;
-      padding: 4px 10px;
-    }
-    .ppl-issue.active { border-left: 0; border-bottom-color: var(--cordovan); }
     .ppl-promise,
     .ppl-promise__head { grid-template-columns: 22px 1fr auto; gap: 10px; }
     .ppl-title { font-size: 16px; }
