@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-10T08:04Z",
+  "generated_at": "2026-06-10T12:05Z",
   "date_utc": "2026-06-10",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Orchestral Ambient, BPM: 60, Key: D minor. Instruments: soft strings, gentle piano, subtle choir. Mood: tender yet somber, evoking profound sadness and nostalgia, with hints of peacefulness. A delicate, emotional tribute that lingers in the heart.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Synthwave. BPM: 120. Key: A minor. Instruments: Synthesizers, electric guitar, drum machine. Mood: Energetic yet tense, with a hint of nostalgia. Capture the thrill of rapid success and the underlying unease of digital threats and societal shifts.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 60,
+    "wonder": 60,
+    "transcendence": 20,
+    "tenderness": 40,
     "nostalgia": 30,
     "peacefulness": 25,
-    "energy": 50,
-    "joyful_activation": 40,
-    "sadness": 70,
+    "energy": 70,
+    "joyful_activation": 65,
+    "sadness": 50,
     "tension": 55
   },
   "headlines": [
     {
-      "title": "Ottawa veut restreindre l'accès des jeunes aux réseaux sociaux dès 2025",
-      "weight": 40
+      "title": "Un jeu québécois rival des «Sims» vend 900 000 copies en 15 jours",
+      "weight": 36
     },
     {
-      "title": "Un jeu québécois vend 900 000 copies en 15 jours pour 31 millions $",
-      "weight": 31
+      "title": "Menaces sur Snapchat : une jeune Estrienne de 12 ans ciblée",
+      "weight": 34
     },
     {
-      "title": "Des centaines de personnes rendent hommage à Ava Ciampini, 3 ans, à LaSalle",
+      "title": "Ottawa veut restreindre l'accès des jeunes aux réseaux sociaux",
       "weight": 29
     }
   ]
