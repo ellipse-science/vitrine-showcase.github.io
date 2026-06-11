@@ -2642,6 +2642,9 @@
 
   .ppl-verdict[data-verdict="all"].active { border-left-color: var(--cordovan); }
 
+  .ppl-verdict__full { display: block; }
+  .ppl-verdict__short { display: none; }
+
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
     .ppl-verdicts {
@@ -2658,6 +2661,8 @@
       border-bottom: 3px solid transparent;
       padding: 4px 10px;
     }
+    .ppl-verdict__full { display: none; }
+    .ppl-verdict__short { display: inline; }
     .ppl-verdict--realisee   { border-bottom-color: var(--ppl-realisee); }
     .ppl-verdict--partielle  { border-bottom-color: var(--ppl-partielle); }
     .ppl-verdict--en-cours   { border-bottom-color: var(--ppl-en-cours); }
