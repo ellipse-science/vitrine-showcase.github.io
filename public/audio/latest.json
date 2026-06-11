@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-11T08:05Z",
+  "generated_at": "2026-06-11T12:05Z",
   "date_utc": "2026-06-11",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Ambient Electronic; BPM: 70; Key: A minor. Instruments: Synth pads, soft piano, subtle strings. Mood: A blend of tension and peacefulness, with underlying unease. Create a soundscape reflecting a delicate balance between societal challenges and serene introspection.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Orchestral; BPM: 85; Key: D minor. Instruments: Strings, oboe, and timpani. Mood: Tense and reflective. Capture the unease and tension of political intrigue, with a somber yet hopeful undertone, hinting at change and resolution.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 30,
-    "nostalgia": 15,
-    "peacefulness": 25,
-    "energy": 40,
-    "joyful_activation": 35,
-    "sadness": 50,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 20,
+    "peacefulness": 10,
+    "energy": 30,
+    "joyful_activation": 5,
+    "sadness": 25,
     "tension": 60
   },
   "headlines": [
     {
-      "title": "La contraception gratuite au Québec coûterait 22 millions par an",
-      "weight": 42
-    },
-    {
-      "title": "Le mot yiddish « nosh » sur l'enseigne d'un resto montréalais critiqué",
-      "weight": 29
+      "title": "Ministère congédie un fonctionnaire pour fuite d'informations sensibles",
+      "weight": 41
     },
     {
       "title": "Québec: 2 G$ investis dans la filière batterie sans évaluation des risques",
+      "weight": 30
+    },
+    {
+      "title": "Le chien de garde linguistique du Québec vise Arthurs Nosh Bar",
       "weight": 29
     }
   ]
