@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-11T04:04Z",
+  "generated_at": "2026-06-11T08:05Z",
   "date_utc": "2026-06-11",
-  "time_interval_utc": "00-04",
-  "prompt": "Title: \"Strait Tensions\"\n\nGenre: Cinematic Tension\nBPM: 120\nKey: D Minor\nInstruments: Strings, Percussion, Synth Pads\nMood: Intense, Anxious, Dramatic\n\nCapture the escalating tension and unease of geopolitical conflict with driving rhythms and suspenseful harmonies.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Ambient Electronic; BPM: 70; Key: A minor. Instruments: Synth pads, soft piano, subtle strings. Mood: A blend of tension and peacefulness, with underlying unease. Create a soundscape reflecting a delicate balance between societal challenges and serene introspection.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 60,
-    "joyful_activation": 10,
-    "sadness": 30,
-    "tension": 80
+    "wonder": 20,
+    "transcendence": 10,
+    "tenderness": 30,
+    "nostalgia": 15,
+    "peacefulness": 25,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 50,
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Washington intensifie ses frappes contre l'Iran, tensions au détroit d'Ormuz",
-      "weight": 40
+      "title": "La contraception gratuite au Québec coûterait 22 millions par an",
+      "weight": 42
     },
     {
-      "title": "L'Iran ferme le détroit d'Ormuz, menace de cibler tout navire",
-      "weight": 17
+      "title": "Le mot yiddish « nosh » sur l'enseigne d'un resto montréalais critiqué",
+      "weight": 29
     },
     {
-      "title": "Ottawa impose la vérification d'âge sur les réseaux sociaux et sites pour adultes",
-      "weight": 43
+      "title": "Québec: 2 G$ investis dans la filière batterie sans évaluation des risques",
+      "weight": 29
     }
   ]
 }
