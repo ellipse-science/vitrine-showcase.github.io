@@ -48,7 +48,7 @@ function Byline({ mediaPresent, mediaAbsent }: {
   );
 }
 
-function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?: string }) {
+function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; generatedArtUrl?: string; audioUrl?: string }) {
   return (
     <div className="une-main">
       <div className="une-main-head">
@@ -65,7 +65,7 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
 
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
         <div className="une-main-copy">
-          {/* La Une principale ne descend jamais sous le rang 3 pour garder l'impact du hero. */}
+          {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             {event.representativeUrl ? (
               <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
@@ -77,6 +77,14 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
           </div>
           <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
         </div>
+
+        {audioUrl && generatedArtUrl && (
+          <div className="hero-audio-overlay">
+            <AudioPlayer src={audioUrl} compact />
+            <p className="hero-audio-desc"><i>Composition originale et éphémère générée par intelligence artificielle selon un morceau de l&apos;artiste Félix Doré. L&apos;humeur musicale est modulée en fonction de la une du jour, selon les recherches sur les émotions et la musique de Zentner et al. (2008). Le tout est supervisé par la professeure Josiane Bissonette de la Faculté de musique de l&apos;Université Laval.</i></p>
+            <a href="/methodologie/index.html#ambiance-musicale" className="hero-audio-metho-link">En savoir plus →</a>
+          </div>
+        )}
 
         {generatedArtUrl && (
           <figure className="hero-figure hero-figure-inline">
@@ -91,7 +99,7 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
             </div>
             <figcaption>
               <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l’artiste Mathieu Fortin, partenaire du projet.</span>
+              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l&apos;artiste Mathieu Fortin, partenaire du projet.</span>
             </figcaption>
           </figure>
         )}
@@ -103,15 +111,17 @@ function MainUne({ event, generatedArtUrl }: { event: UneEvent; generatedArtUrl?
 function SideUne({ event }: { event: UneEvent }) {
   return (
     <div className="une-side">
-      <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-        {event.issueFr}
-      </span>
-      <span className="saillance-tag-row">
-        <span className={`saillance-tag ${event.saillanceCls}`}>
-          Saillance {event.saillanceLabel}
+      <div className="une-side-head">
+        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+          {event.issueFr}
         </span>
-        <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-      </span>
+        <span className="saillance-tag-row">
+          <span className={`saillance-tag ${event.saillanceCls}`}>
+            Saillance {event.saillanceLabel}
+          </span>
+          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
+        </span>
+      </div>
       <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
           <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
@@ -211,8 +221,7 @@ export async function UneDesUnesSection() {
   // suggéraient #124/#122, pour rester cohérent avec les 6 bandes symétriques de
   // #35. Le noir se déclenche donc un peu plus souvent, c'est voulu. Cf. #35.
   const breaking = main?.saillanceRank === 6;
-  // « Édition du mercredi 3 juin 2026 » : la date du snapshot (sans l'heure).
-  const editionLabel = `Édition du ${data.dateLabel.toLowerCase()}`;
+  const editionLabel = data.dateLabel;
 
   return (
     <>
@@ -222,14 +231,13 @@ export async function UneDesUnesSection() {
             <span className="section-title">Les Unes {data.periodLabel}</span>
             <SaillanceTip />
           </span>
-          {audioUrl && <AudioPlayer src={audioUrl} compact />}
           <span className="section-date">{editionLabel}</span>
         </div>
 
         {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3
             en secondaires côte-à-côte. Ordre = ordre de saillance. */}
         <section className="hero-main">
-          {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} />}
+          {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} audioUrl={audioUrl} />}
         </section>
 
         {(sideLeft || sideRight) && (

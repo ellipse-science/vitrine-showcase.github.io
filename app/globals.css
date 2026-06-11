@@ -238,7 +238,7 @@
   }
   .site-header .logo-vitrine { height: 88px; }
   .site-header .logo-capp { height: 66px; }
-  .site-header .capp-prefix { font-size: 11.5px; white-space: nowrap; }
+  .site-header .capp-prefix { font-size: 11px; white-space: nowrap; }
   /* « Propulsé par le » aligné à gauche (sous VITRINE), pas indenté, et un peu
      plus bas (moins collé sous le logo Vitrine). */
   .site-header .capp-attribution { margin-left: 0; }
@@ -266,17 +266,25 @@
     max-width: 500px;
   }
   .header-edition .pulse-icon svg.celestial { width: 26px; height: 26px; }
-  .header-edition .pulse-hour { font-size: 9.5px; letter-spacing: 0.16em; }
+  .header-edition .pulse-hour { font-size: 10px; letter-spacing: 0.16em; }
   .header-edition .pulse-icon.current svg.celestial {
-    width: 33px;
-    height: 33px;
     color: var(--cordovan);
   }
   .header-edition .pulse-icon.current .pulse-hour {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--cordovan);
   }
+
+  /* Icônes en arc : translateY sur le SVG seulement, les labels restent à plat.
+     Profil sinusoïdal : 0 → 60% → 100% → 100% → 60% → 0 */
+  .header-edition .pulse-icons > .pulse-icon:nth-child(1) > svg.celestial { transform: translateY(0px); }
+  .header-edition .pulse-icons > .pulse-icon:nth-child(2) > svg.celestial { transform: translateY(-12px); }
+  .header-edition .pulse-icons > .pulse-icon:nth-child(3) > svg.celestial { transform: translateY(-20px); }
+  .header-edition .pulse-icons > .pulse-icon:nth-child(4) > svg.celestial { transform: translateY(-20px); }
+  .header-edition .pulse-icons > .pulse-icon:nth-child(5) > svg.celestial { transform: translateY(-12px); }
+  .header-edition .pulse-icons > .pulse-icon:nth-child(6) > svg.celestial { transform: translateY(0px); }
+
   .edition-block {
     display: flex;
     flex-direction: column;
@@ -285,7 +293,7 @@
   }
   .edition-line {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
+    font-size: 12px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--cordovan);
@@ -308,15 +316,22 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 11px;
     text-align: right;
+    margin-bottom: 4px;
   }
-  .header-utility .sub-nav { padding: 0; font-size: 15px; }
+  .header-utility .utility-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 11px;
+  }
+  .header-utility .sub-nav { padding: 0; font-size: 14px; }
   .header-utility .sub-nav .links {
     display: flex;
     align-items: center;
     gap: 18px;
     letter-spacing: 0.2em;
+    white-space: nowrap;
   }
   .nav-divider {
     display: inline-block;
@@ -332,20 +347,32 @@
   }
   .header-utility .pulse-title {
     margin: 0;
-    max-width: 600px;
-    text-align: right;
-    font-size: 10px;
+    position: relative;
+    top: 11px;
+    text-align: justify;
+    text-align-last: justify;
+    text-justify: inter-character;
+    hyphens: auto;
+    width: 340px;
+    font-size: 8px;
     letter-spacing: 0.03em;
     line-height: 1.95;
   }
   .header-utility .pulse-title .pt-primary,
-  .header-utility .pulse-title .pt-secondary { white-space: nowrap; }
+  .header-utility .pulse-title .pt-secondary {
+    white-space: normal;
+    color: var(--ink-soft);
+    display: inline;
+  }
+  .header-utility .pulse-title .pt-primary::after { content: ' '; }
+  .header-utility .pulse-title .pt-primary em,
+  .header-utility .pulse-title .pt-secondary em { color: var(--ink); }
   .header-edition .pulse-countdown {
     justify-content: center;
     margin: 3px 0 0;
   }
   .header-edition .pulse-countdown .cd-big { font-size: 14px; }
-  .header-edition .pulse-countdown .cd-prefix { font-size: 8.5px; }
+  .header-edition .pulse-countdown .cd-prefix { font-size: 9px; }
 
   /* En-tête empilé : sous 900px le bandeau 3 zones devient une pile verticale
      centrée (marque → édition → utilitaires). Au-delà, la grille desktop. */
@@ -366,7 +393,7 @@
     /* Logo CAPP (« CAPP / Centre d'analyse… ») : la règle desktop le fixe à 66px
        avec une spécificité .site-header — on doit la battre ici, sinon il déborde. */
     .site-header .logo-capp { height: 34px; transform: none; }
-    .site-header .capp-prefix { font-size: 9.5px; }
+    .site-header .capp-prefix { font-size: 9px; }
 
     .header-edition { gap: 8px; }
     /* Timeline : icônes réparties uniformément sur toute la largeur (comme sur
@@ -376,8 +403,15 @@
        alors sur les extrémités de l'arc (inset 26px). */
     .header-edition .pulse-icons { max-width: 360px; gap: 0; }
     .header-edition .pulse-icon { flex: 1; min-width: 0; }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(1) > svg.celestial { transform: translateY(0px); }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(2) > svg.celestial { transform: translateY(-7px); }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(3) > svg.celestial { transform: translateY(-12px); }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(4) > svg.celestial { transform: translateY(-12px); }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(5) > svg.celestial { transform: translateY(-7px); }
+    .header-edition .pulse-icons > .pulse-icon:nth-child(6) > svg.celestial { transform: translateY(0px); }
 
     .header-utility { justify-self: center; align-items: center; text-align: center; gap: 12px; }
+    .header-utility .utility-stack { align-items: center; }
     .header-utility .sub-nav { font-size: 13px; }
     .header-utility .sub-nav .links { justify-content: center; }
     .header-utility .pulse-title { text-align: center; max-width: 540px; }
@@ -594,13 +628,6 @@
     max-width: 540px;
     position: relative;
   }
-  .pulse-arc {
-    position: absolute;
-    left: 26px; right: 26px;
-    top: 4px; height: 22px;
-    pointer-events: none;
-  }
-  .pulse-arc svg { width: 100%; height: 100%; display: block; }
   .pulse-icon {
     display: flex;
     flex-direction: column;
@@ -634,7 +661,7 @@
   .anno {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     padding: 2px 7px;
@@ -651,7 +678,7 @@
   /* Section label */
   .section-label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14.5px;
+    font-size: 14px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--cordovan);
@@ -665,8 +692,9 @@
        le filet du hero (aucun blanc autour). Généreuse en hauteur + texte qui
        respire sur les côtés. */
     background: var(--paper-deep);
-    padding: 24px 30px;
+    padding: 12px 30px;
     margin: 0;
+    border-top: 2px solid var(--rule-faint);
   }
   .section-label .date-hint { color: var(--ink-softer); letter-spacing: 0.22em; }
   .section-label .section-date {
@@ -675,8 +703,7 @@
     font-size: 20px;
     letter-spacing: -0.3px;
     text-transform: none;
-    color: var(--ink-soft);
-    transform: translateY(-1px);
+    color: var(--ink);
   }
   /* Titre de section — look « vieux journal » : Playfair Black, encre, casse
      normale (plus le mono rouge en capitales). */
@@ -687,8 +714,8 @@
     align-items: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
-    font-size: 25px;
-    letter-spacing: -0.4px;
+    font-size: 20px;
+    letter-spacing: -0.3px;
     text-transform: none;
     color: var(--ink);
   }
@@ -714,8 +741,8 @@
 
   /* Hero principal — une pleine largeur (Figma: "hero") */
   .hero-main {
-    border-top: 2px solid var(--ink);
-    border-bottom: 0.5px solid var(--rule);
+    border-top: 2px solid var(--rule-faint);
+    border-bottom: 2px solid var(--rule-faint);
     padding: 0;
     margin-bottom: 0;
   }
@@ -751,12 +778,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: 2px solid var(--rule-faint);
     margin-bottom: 0;
   }
   .hero-secondaries .une-side:first-child {
     padding: 24px 32px 24px 0;
-    border-right: 0.5px solid var(--rule);
+    border-right: 2px solid var(--rule-faint);
     border-left: none;
   }
   .hero-secondaries .une-side:last-child {
@@ -772,16 +799,16 @@
 
   /* Figure inline dans la une principale (style NYT : titre → image → métadonnées) */
   .hero-figure-inline {
-    margin: 4px 0 0;
+    margin: 0;
     width: 100%;
   }
   .hero-figure-inline .figure-frame {
-    height: 265px;
+    height: 320px;
     min-height: unset;
     border-top: 0.5px solid var(--rule);
   }
   .hero-figure-inline img.editorial-img {
-    height: 265px;
+    height: 320px;
     object-position: center 34%;
   }
   .hero-figure-inline figcaption {
@@ -796,6 +823,32 @@
        (position:absolute) pour ne PAS imposer sa hauteur naturelle — le frame se
        contente de remplir l'espace restant, et le bas de la légende s'aligne
        pile sur le bas de la byline (« Absent de la Une »). */
+    .une-main-grid.has-art {
+      grid-template-rows: auto 1fr;
+    }
+    .une-main-grid.has-art .une-main-copy {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .une-main-grid.has-art .hero-audio-overlay {
+      grid-column: 2;
+      grid-row: 1;
+      background: none;
+      border: none;
+      padding: 0 0 8px;
+      gap: 6px;
+    }
+    .une-main-grid.has-art .hero-audio-overlay .une-audio-compact {
+      flex-wrap: nowrap;
+    }
+    .une-main-grid.has-art .hero-audio-overlay .une-audio-compact .une-audio-track {
+      flex: 1;
+      width: auto;
+    }
+    .une-main-grid.has-art .hero-figure-inline {
+      grid-column: 2;
+      grid-row: 2;
+    }
     .hero-figure-inline {
       display: flex;
       flex-direction: column;
@@ -823,7 +876,7 @@
     }
     .hero-figure-inline .figure-frame,
     .hero-figure-inline img.editorial-img {
-      height: 236px;
+      height: 290px;
     }
   }
 
@@ -831,7 +884,7 @@
   .une-enjeu {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -841,8 +894,19 @@
     line-height: 1.2;
     vertical-align: middle;
   }
+  .une-side-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .une-side-head .une-enjeu,
+  .une-side-head .saillance-tag {
+    margin-bottom: 0;
+  }
   .une-side .une-enjeu {
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.18em;
     margin-bottom: 12px;
   }
@@ -850,7 +914,7 @@
   .resonance-tag {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -861,7 +925,7 @@
     vertical-align: middle;
   }
   .une-side .resonance-tag {
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.18em;
     margin-bottom: 12px;
   }
@@ -901,17 +965,12 @@
     line-height: 1.5;
   }
 
-  /* Lecteur audio ambiance du moment — version compacte (dans section-label) */
+  /* Lecteur audio ambiance du moment — version compacte (dans hero-audio-overlay) */
   .une-audio-compact {
     display: flex;
     align-items: center;
     gap: 8px;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
   }
-  .section-label { position: relative; }
   .une-audio-compact-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -933,7 +992,7 @@
   .une-audio-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
@@ -948,6 +1007,7 @@
     background: none;
     border: none;
     cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
     color: var(--ink);
     font-size: 13px;
     padding: 0;
@@ -975,7 +1035,7 @@
   }
   .une-audio-time {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.1em;
     color: var(--ink-softer);
     white-space: nowrap;
@@ -983,11 +1043,50 @@
   }
   .une-audio-sep { opacity: 0.5; }
 
+  /* Bloc audio au-dessus de l'image de la une principale */
+  .hero-audio-overlay {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 0 16px;
+    margin-top: -22px;
+  }
+  /* Barre de lecture pleine largeur, tout sur une ligne */
+  .hero-audio-overlay .une-audio-compact {
+    flex-wrap: nowrap;
+  }
+  .hero-audio-overlay .une-audio-compact .une-audio-track {
+    flex: 1;
+    width: auto;
+  }
+  .hero-audio-desc {
+    margin: 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-softer);
+  }
+
+  /* Panneau méthodologie musique */
+  .hero-audio-metho-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .hero-audio-metho-link:hover { color: var(--cordovan); }
+
   /* Étiquette de saillance (tier : MAJEUR / FORT / NOTABLE) */
   .saillance-tag {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     font-weight: 500;
@@ -1015,9 +1114,9 @@
   /* « C'est extrême! » — la tag Extrême doit crier : plus grosse, plus grasse,
      et carrément imposante sur le hero. */
   .saillance-tag.s-extreme {
-    background: var(--cordovan);
+    background: #A85A52;
     color: var(--paper);
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 600;
     padding: 6px 15px;
     letter-spacing: 0.28em;
@@ -1028,27 +1127,24 @@
     letter-spacing: 0.3em;
   }
   .saillance-tag.s-tres-eleve {
-    background: var(--red);
+    background: #BE7C6A;
     color: var(--paper);
   }
   .saillance-tag.s-eleve {
-    background: var(--brass);
-    color: var(--paper);
+    background: #C99A76;
+    color: var(--ink);
   }
   .saillance-tag.s-moyenne {
-    background: transparent;
-    color: var(--ink-soft);
-    box-shadow: inset 0 0 0 1px var(--ink-soft);
+    background: #D2B488;
+    color: var(--ink);
   }
   .saillance-tag.s-faible {
-    background: transparent;
-    color: var(--ink-softer);
-    box-shadow: inset 0 0 0 1px var(--rule);
+    background: #DCCBA2;
+    color: var(--ink-soft);
   }
   .saillance-tag.s-tres-faible {
-    background: transparent;
-    color: var(--ink-softer);
-    box-shadow: inset 0 0 0 1px var(--rule-faint);
+    background: #E4DCC6;
+    color: var(--ink-soft);
   }
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
@@ -1056,6 +1152,7 @@
      un point critique établi ». On redéfinit ink/paper localement → tout le
      sous-arbre s'inverse automatiquement, en gardant les accents (cordovan/
      red/brass) des tags de saillance. */
+  .unes-jour { margin-top: 24px; }
   .unes-jour.breaking {
     --paper: #14110F;
     --paper-deep: #1F1B18;
@@ -1102,7 +1199,7 @@
     border: none;
     padding: 0;
     font-family: inherit;
-    color: inherit;
+    color: var(--ink-softer);
   }
   .saillance-info-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
   .saillance-info-tip:hover .saillance-info-btn,
@@ -1142,13 +1239,19 @@
     margin-top: 8px;
     font-style: normal;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: 0.04em;
     color: var(--cordovan);
     text-decoration: none;
     font-weight: 600;
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    .saillance-info-bubble {
+      max-width: calc(100vw - 32px);
+    }
+  }
 
   .une-side .saillance-tag {
     font-size: 9px;
@@ -1243,7 +1346,7 @@
   }
   .byline-media {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
+    font-size: 14px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -1363,7 +1466,7 @@
     display: block;
     margin-top: 10px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -1544,7 +1647,7 @@
   }
   .ac-explain {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     margin-top: 12px;
@@ -1598,7 +1701,7 @@
   .ac-submit:hover { color: var(--ink); }
   .ac-fineprint {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--ink-softer);
@@ -1714,7 +1817,7 @@
   }
   .period-subtitle {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--ink-softer);
@@ -1724,7 +1827,7 @@
     display: inline-block;
     margin-left: 7px;
     cursor: pointer;
-    opacity: 0.45;
+    opacity: 0.6;
     font-size: 11px;
     letter-spacing: 0;
     text-transform: none;
@@ -1736,6 +1839,7 @@
     border: none;
     padding: 0;
     font-family: inherit;
+    color: var(--ink-softer);
   }
   .assemblee-info-tip:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
   .assemblee-info-tip:hover,
@@ -1827,7 +1931,7 @@
   }
   .tm-tile .tm-enjeu {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     font-weight: 500;
@@ -1873,7 +1977,7 @@
   .tm-row-2 .tm-name { font-size: 12px; bottom: 8px; right: 10px; max-width: calc(100% - 20px); }
   /* Row 3 */
   .tm-row-3 .tm-tile { padding: 12px 14px; }
-  .tm-row-3 .tm-enjeu { font-size: 8.5px; letter-spacing: 0.14em; }
+  .tm-row-3 .tm-enjeu { font-size: 9px; letter-spacing: 0.14em; }
   .tm-row-3 .tm-context { font-size: 12px; padding: 3px 4px 14px; }
   .tm-row-3 .tm-name { font-size: 10px; bottom: 6px; right: 8px; max-width: calc(100% - 16px); }
   /* Row 4 — pas de contexte, le nom reste centré */
@@ -1946,7 +2050,7 @@
 
   .data-link {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px; letter-spacing: 0.24em; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
     color: var(--ink-softer); margin-top: 14px; display: inline-block;
   }
 
@@ -2176,7 +2280,7 @@
   }
   .lg-label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px; letter-spacing: 0.18em;
+    font-size: 10px; letter-spacing: 0.18em;
     color: var(--ink-soft); text-transform: uppercase;
   }
   .lg-swatch {
@@ -2274,7 +2378,7 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 26px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px; letter-spacing: 0.1em;
+    font-size: 10px; letter-spacing: 0.1em;
     color: var(--ink-soft);
   }
   .legend-box h5 {
@@ -2290,7 +2394,7 @@
   .legend-intro {
     margin-top: 40px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px; letter-spacing: 0.3em; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
     color: var(--ink-softer);
     text-align: center;
   }
@@ -2393,11 +2497,13 @@
 
     /* ── Section label + date ── (la mise en page complète de la bande est
        définie plus bas dans ce même bloc ≤768px) ── */
-    .section-label .section-date { font-size: 13px; }
+    .section-label .section-date { font-size: 14px; }
 
     /* ── Figure inline dans une-main ── */
-    .hero-figure-inline .figure-frame { height: 200px; }
-    .hero-figure-inline img.editorial-img { height: 200px; }
+    .hero-figure-inline { margin-top: 0; }
+    .hero-audio-overlay { margin-top: 0; }
+    .hero-figure-inline .figure-frame { height: 250px; }
+    .hero-figure-inline img.editorial-img { height: 250px; }
     .hero-figure-inline figcaption {
       margin-top: 8px;
       gap: 8px;
@@ -2418,7 +2524,7 @@
       margin: 12px 0 16px;
       padding: 16px 0 14px;
     }
-    .pulse-title { font-size: 8.5px; line-height: 1.7; }
+    .pulse-title { font-size: 9px; line-height: 1.7; }
     .pulse-countdown { gap: 4px; }
     .pulse-countdown .cd-big { font-size: 15px; }
     .pulse-countdown .cd-prefix,
@@ -2434,18 +2540,18 @@
     .section-label {
       font-size: 9px;
       margin: 0;
-      padding: 20px 16px;
+      padding: 10px 16px;
       flex-direction: column;
       align-items: center;
       text-align: center;
       gap: 12px;
     }
     .section-label .section-title-wrap { justify-content: center; }
-    .section-label .section-title { font-size: 22px; }
+    .section-label .section-title { font-size: 20px; }
 
     /* ── Hero principal (mobile) ── */
     .hero-main {
-      border-top-width: 1.5px;
+      border-top-width: 2px;
     }
     .hero-main .une-main {
       padding: 18px 0 20px;
@@ -2562,7 +2668,7 @@
     .legend-toggle.inline span {
       flex: 1;
       text-align: center;
-      font-size: 8.5px;
+      font-size: 9px;
       padding: 8px 4px;
       line-height: 1.3;
     }
@@ -2702,6 +2808,413 @@
     .partis-title { font-size: 22px; }
     .solitudes .sol-stat .stat-big { font-size: 36px; }
     .legend-toggle.inline span { font-size: 7.5px; }
+  }
+
+  /* ============================================================
+     Page Ambiance du moment
+     ============================================================ */
+  .ambiance-container { margin: 0; }
+  .ambiance-page {
+    margin: 48px 0;
+    border-top: 0.5px solid var(--rule);
+    padding-top: 48px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--ink);
+  }
+  .ambiance-empty {
+    padding: 80px 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--ink-softer);
+  }
+
+  /* Header */
+  .ambiance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+    margin-bottom: 40px;
+  }
+  .ambiance-header-text { flex: 1; }
+  .ambiance-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 54px;
+    font-weight: 900;
+    letter-spacing: -1.2px;
+    line-height: 1.05;
+    color: var(--ink);
+    margin: 0 0 20px 0;
+  }
+  .ambiance-lead {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 18px;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 680px;
+  }
+  .ambiance-meta-chip {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.1em;
+  }
+  .ambiance-chip-label { color: var(--ink-softer); text-transform: uppercase; }
+  .ambiance-chip-value { color: var(--ink); }
+  .ambiance-dbl-rule {
+    height: 0;
+    border: none;
+    border-top: 0.5px solid var(--rule);
+    margin: 0 0 40px 0;
+  }
+  .ambiance-dbl-rule + .ambiance-dbl-rule { margin-top: -38px; border-top-style: dashed; }
+
+  /* Zone audio + clusters */
+  .ambiance-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 40px;
+  }
+  .ambiance-player-col { display: flex; flex-direction: column; gap: 20px; }
+  .ambiance-source-une {
+    border-left: 3px solid var(--cordovan);
+    padding-left: 16px;
+  }
+  .ambiance-source-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-bottom: 8px;
+  }
+  .ambiance-source-quote {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--ink);
+    margin: 0;
+  }
+  .ambiance-player-wrap { margin-top: 4px; }
+
+  /* Clusters */
+  .ambiance-clusters-col {
+    border-left: 0.5px solid var(--rule);
+    padding-left: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .ambiance-section-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-bottom: 4px;
+  }
+  .ambiance-clusters { display: flex; flex-direction: column; gap: 20px; }
+  .ambiance-cluster { display: flex; flex-direction: column; gap: 8px; }
+  .ambiance-cluster-score {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .ambiance-cluster-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .ambiance-cluster-dims { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ambiance-cluster-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    padding: 2px 6px;
+    border: 0.5px solid var(--rule);
+    color: var(--ink-softer);
+  }
+  .ambiance-cluster-tag.dominant {
+    border-color: var(--cordovan);
+    color: var(--cordovan);
+    background: color-mix(in srgb, var(--cordovan) 6%, transparent);
+  }
+
+  /* Tabs */
+  .ambiance-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 36px;
+  }
+  .ambiance-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 20px 10px 0;
+    margin-bottom: -1px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .ambiance-tab:hover { color: var(--ink); }
+  .ambiance-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .ambiance-tab-content { padding-bottom: 64px; }
+
+  /* GEMS cards */
+  .ambiance-gems-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .ambiance-gems-card {
+    padding: 16px;
+    border: 0.5px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ambiance-gems-card.dominant { border-color: var(--cordovan); }
+  .agc-header { display: flex; align-items: baseline; gap: 8px; }
+  .agc-label {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    flex: 1;
+  }
+  .agc-cluster {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .agc-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .agc-track {
+    height: 3px;
+    background: var(--rule-faint);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .agc-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .agc-desc {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .agc-effect {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-softer);
+    margin: 0;
+    padding-top: 6px;
+    border-top: 0.5px solid var(--rule-faint);
+  }
+  .agc-effect em { font-style: italic; color: var(--ink-soft); }
+
+  /* Prompt */
+  .ambiance-prompt-block { margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+  .ambiance-prompt-quote {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0;
+    padding: 14px 18px;
+    border-left: 3px solid var(--rule);
+    background: var(--paper-deep);
+  }
+
+  /* Pipeline */
+  .ambiance-pipeline-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 40px;
+  }
+  .ambiance-branch-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 3px 8px;
+    margin-bottom: 12px;
+  }
+  .ambiance-branch-badge.branch-b { background: var(--cordovan); }
+  .ambiance-branch-badge.branch-synth {
+    background: none;
+    color: var(--ink-soft);
+    border: 0.5px solid var(--rule);
+    padding: 3px 8px;
+  }
+  .ambiance-branch-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 20px 0;
+  }
+  .ambiance-steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
+  .ambiance-step { display: flex; gap: 16px; }
+  .ambiance-step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-softer);
+    margin-top: 2px;
+  }
+  .ambiance-step-body { flex: 1; }
+  .ambiance-step-body strong {
+    display: block;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .ambiance-step-body p {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .ambiance-step-body code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--paper-deep);
+    padding: 1px 5px;
+    color: var(--ink);
+  }
+  .ambiance-synthese {
+    border-top: 0.5px solid var(--rule);
+    padding-top: 32px;
+    margin-top: 8px;
+  }
+  .ambiance-synthese-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 24px 0;
+    max-width: 720px;
+  }
+  .ambiance-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 20px;
+  }
+  .ambiance-flow-step {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    padding: 4px 10px;
+    border: 0.5px solid var(--rule);
+  }
+  .ambiance-flow-step.source {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* Références */
+  .ambiance-refs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .ambiance-ref-card {
+    padding: 24px;
+    border: 0.5px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ambiance-ref-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin-bottom: 4px;
+  }
+  .ambiance-ref-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
+  .ambiance-ref-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .ambiance-ref-cite {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    line-height: 1.6;
+    color: var(--ink-softer);
+    margin: 0;
+    padding-top: 10px;
+    border-top: 0.5px solid var(--rule-faint);
+  }
+  .ambiance-ref-cite em { font-style: italic; }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .ambiance-header { flex-direction: column; }
+    .ambiance-title { font-size: 38px; }
+    .ambiance-lead { font-size: 16px; }
+    .ambiance-meta-chip { text-align: left; }
+    .ambiance-top-grid { grid-template-columns: 1fr; gap: 32px; }
+    .ambiance-clusters-col { border-left: none; padding-left: 0; border-top: 0.5px solid var(--rule); padding-top: 24px; }
+    .ambiance-gems-grid { grid-template-columns: 1fr 1fr; }
+    .ambiance-pipeline-grid { grid-template-columns: 1fr; gap: 40px; }
+    .ambiance-refs-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .ambiance-gems-grid { grid-template-columns: 1fr; }
   }
 
   /* ============================================================
