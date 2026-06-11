@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-11T12:05Z",
+  "generated_at": "2026-06-11T16:05Z",
   "date_utc": "2026-06-11",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Orchestral; BPM: 85; Key: D minor. Instruments: Strings, oboe, and timpani. Mood: Tense and reflective. Capture the unease and tension of political intrigue, with a somber yet hopeful undertone, hinting at change and resolution.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: Dark Ambient. BPM: 60. Key: D minor. Instruments: Synth pads, deep bass, ethereal choir. Mood: Tense and mysterious, with a sense of unease and foreboding. Layers of sound create an atmosphere of intrigue and secrecy.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 20,
+    "wonder": 20,
+    "transcendence": 10,
+    "tenderness": 5,
+    "nostalgia": 15,
     "peacefulness": 10,
     "energy": 30,
-    "joyful_activation": 5,
+    "joyful_activation": 10,
     "sadness": 25,
     "tension": 60
   },
   "headlines": [
     {
-      "title": "Ministère congédie un fonctionnaire pour fuite d'informations sensibles",
-      "weight": 41
+      "title": "Congédiement au ministère pour fuite d'informations sur des investissements",
+      "weight": 43
     },
     {
-      "title": "Québec: 2 G$ investis dans la filière batterie sans évaluation des risques",
+      "title": "Québec ajuste sa cible de ventes de véhicules électriques",
       "weight": 30
     },
     {
-      "title": "Le chien de garde linguistique du Québec vise Arthurs Nosh Bar",
-      "weight": 29
+      "title": "Facebook : des vidéos de faux crimes québécois générées par IA",
+      "weight": 27
     }
   ]
 }
