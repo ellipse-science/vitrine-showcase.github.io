@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-10T20:05Z",
+  "generated_at": "2026-06-11T00:04Z",
   "date_utc": "2026-06-10",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Ambient Electronic, BPM: 70, Key: D minor. Instruments: Synth pads, soft piano, distant strings. Mood: Tense and somber with a touch of nostalgia. Capture the weight of political turmoil and financial uncertainty, with a subtle undercurrent of hope and resilience.",
+  "time_interval_utc": "20-24",
+  "prompt": "Create a tense, dramatic orchestral piece at 120 BPM in D minor. Use strings, brass, and percussion to convey urgency and unease. Blend moments of tranquility and tension, reflecting conflict and anticipation in a politically charged environment.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 25,
     "nostalgia": 10,
-    "peacefulness": 20,
-    "energy": 30,
-    "joyful_activation": 25,
-    "sadness": 40,
+    "peacefulness": 30,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 45,
     "tension": 60
   },
   "headlines": [
     {
-      "title": "Filière batterie: Fréchette blâme Legault et Fitzgibbon pour la déroute",
-      "weight": 37
-    },
-    {
       "title": "Le gouvernement Fréchette relance le Programme de l'expérience québécoise",
-      "weight": 35
+      "weight": 41
     },
     {
-      "title": "Québec a négligé les risques dans ses investissements en batteries",
+      "title": "Ottawa s'engage à adopter le projet de loi C-16 contre les hypertrucages sexuels",
+      "weight": 30
+    },
+    {
+      "title": "L'opposition au TGV se manifeste sur la colline du Parlement à Ottawa",
       "weight": 29
     }
   ]
