@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-11T00:04Z",
-  "date_utc": "2026-06-10",
-  "time_interval_utc": "20-24",
-  "prompt": "Create a tense, dramatic orchestral piece at 120 BPM in D minor. Use strings, brass, and percussion to convey urgency and unease. Blend moments of tranquility and tension, reflecting conflict and anticipation in a politically charged environment.",
+  "generated_at": "2026-06-11T04:04Z",
+  "date_utc": "2026-06-11",
+  "time_interval_utc": "00-04",
+  "prompt": "Title: \"Strait Tensions\"\n\nGenre: Cinematic Tension\nBPM: 120\nKey: D Minor\nInstruments: Strings, Percussion, Synth Pads\nMood: Intense, Anxious, Dramatic\n\nCapture the escalating tension and unease of geopolitical conflict with driving rhythms and suspenseful harmonies.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 25,
-    "nostalgia": 10,
-    "peacefulness": 30,
-    "energy": 40,
-    "joyful_activation": 35,
-    "sadness": 45,
-    "tension": 60
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 60,
+    "joyful_activation": 10,
+    "sadness": 30,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Le gouvernement Fréchette relance le Programme de l'expérience québécoise",
-      "weight": 41
+      "title": "Washington intensifie ses frappes contre l'Iran, tensions au détroit d'Ormuz",
+      "weight": 40
     },
     {
-      "title": "Ottawa s'engage à adopter le projet de loi C-16 contre les hypertrucages sexuels",
-      "weight": 30
+      "title": "L'Iran ferme le détroit d'Ormuz, menace de cibler tout navire",
+      "weight": 17
     },
     {
-      "title": "L'opposition au TGV se manifeste sur la colline du Parlement à Ottawa",
-      "weight": 29
+      "title": "Ottawa impose la vérification d'âge sur les réseaux sociaux et sites pour adultes",
+      "weight": 43
     }
   ]
 }
