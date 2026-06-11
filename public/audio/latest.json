@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-11T16:05Z",
+  "generated_at": "2026-06-11T20:04Z",
   "date_utc": "2026-06-11",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Dark Ambient. BPM: 60. Key: D minor. Instruments: Synth pads, deep bass, ethereal choir. Mood: Tense and mysterious, with a sense of unease and foreboding. Layers of sound create an atmosphere of intrigue and secrecy.",
+  "time_interval_utc": "16-20",
+  "prompt": "Create a tense and dramatic orchestral piece at 85 BPM in C minor. Emphasize strings and brass to convey political intrigue and urgency. Introduce subtle electronic elements to heighten unease. Build tension with crescendos, reflecting the dynamic and politically charged atmosphere.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 10,
-    "tenderness": 5,
-    "nostalgia": 15,
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 20,
     "peacefulness": 10,
     "energy": 30,
-    "joyful_activation": 10,
-    "sadness": 25,
-    "tension": 60
+    "joyful_activation": 5,
+    "sadness": 40,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Congédiement au ministère pour fuite d'informations sur des investissements",
-      "weight": 43
+      "title": "Ministère congédie un fonctionnaire pour fuite d'informations sur des investissements",
+      "weight": 44
     },
     {
-      "title": "Québec ajuste sa cible de ventes de véhicules électriques",
-      "weight": 30
+      "title": "Fréchette nie toute implication dans le congédiement d'un lanceur d'alerte",
+      "weight": 31
     },
     {
-      "title": "Facebook : des vidéos de faux crimes québécois générées par IA",
-      "weight": 27
+      "title": "Simon Jolin-Barrette abandonne le projet de constitution du Québec",
+      "weight": 25
     }
   ]
 }
