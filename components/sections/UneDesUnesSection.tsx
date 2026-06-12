@@ -78,11 +78,10 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
           <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
         </div>
 
-        {audioUrl && generatedArtUrl && (
+        {audioUrl && (
           <div className="hero-audio-overlay">
             <AudioPlayer src={audioUrl} compact />
             <p className="hero-audio-desc"><i>Composition originale et éphémère générée par intelligence artificielle selon un morceau de l&apos;artiste Félix Doré. L&apos;humeur musicale est modulée en fonction de la une du jour, selon les recherches sur les émotions et la musique de Zentner et al. (2008). Le tout est supervisé par la professeure Josiane Bissonette de la Faculté de musique de l&apos;Université Laval.</i></p>
-            <a href="/methodologie/index.html#ambiance-musicale" className="hero-audio-metho-link">En savoir plus →</a>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import React, { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 // Registre module-level : ferme tous les autres au tap mobile.
 const registry = new Set<() => void>();
