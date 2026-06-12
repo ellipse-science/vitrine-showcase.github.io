@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-04T16:04Z",
-  "date_utc": "2026-06-04",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Electronic Ambient; BPM: 70; Key: B minor; Instruments: Synth pads, subtle piano, electronic drums; Mood: Tense and reflective, with hints of unease and sadness. Create a soundscape capturing a delicate balance of hope and apprehension.",
+  "generated_at": "2026-06-12T12:04Z",
+  "date_utc": "2026-06-12",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Cinematic orchestral. BPM: 80. Key: D minor. Instruments: Strings, brass, timpani. Mood: Tense and dramatic, with an underlying sense of unease and urgency. Captures a world on edge, balancing between historical shifts and personal intrigue.",
   "gems": {
     "wonder": 40,
-    "transcendence": 30,
+    "transcendence": 50,
     "tenderness": 20,
-    "nostalgia": 10,
-    "peacefulness": 15,
-    "energy": 50,
-    "joyful_activation": 25,
-    "sadness": 60,
+    "nostalgia": 30,
+    "peacefulness": 20,
+    "energy": 60,
+    "joyful_activation": 30,
+    "sadness": 40,
     "tension": 70
   },
   "headlines": [
     {
-      "title": "Ottawa dévoile sa stratégie nationale pour l'intelligence artificielle",
-      "weight": 47
+      "title": "Mark Carney invité par Macron après son discours remarqué à Davos",
+      "weight": 44
     },
     {
-      "title": "L'Allemagne promet une livraison accélérée pour les sous-marins canadiens",
+      "title": "Trump et les 250 ans des États-Unis : une célébration controversée",
       "weight": 29
     },
     {
-      "title": "Projet Montréal débattra d'une motion condamnant Israël pour «génocide» à Gaza",
-      "weight": 24
+      "title": "Contrebande de tabac: peine à domicile pour un homme d'affaires québécois",
+      "weight": 26
     }
   ]
 }
