@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-12T12:04Z",
+  "generated_at": "2026-06-12T16:05Z",
   "date_utc": "2026-06-12",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Cinematic orchestral. BPM: 80. Key: D minor. Instruments: Strings, brass, timpani. Mood: Tense and dramatic, with an underlying sense of unease and urgency. Captures a world on edge, balancing between historical shifts and personal intrigue.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: Cinematic orchestral. BPM: 70. Key: C minor. Instruments: Strings, brass, percussion. Mood: Tense and reflective. Capture the weight of history and political tension with sweeping strings and powerful brass, evoking a sense of unease and contemplation.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 50,
-    "tenderness": 20,
-    "nostalgia": 30,
-    "peacefulness": 20,
-    "energy": 60,
-    "joyful_activation": 30,
-    "sadness": 40,
-    "tension": 70
+    "wonder": 30,
+    "transcendence": 20,
+    "tenderness": 15,
+    "nostalgia": 50,
+    "peacefulness": 25,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 30,
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Mark Carney invité par Macron après son discours remarqué à Davos",
-      "weight": 44
+      "title": "Trump et les 250 ans des États-Unis : une commémoration controversée",
+      "weight": 42
     },
     {
-      "title": "Trump et les 250 ans des États-Unis : une célébration controversée",
-      "weight": 29
+      "title": "Mark Carney courtisé par Emmanuel Macron après Davos",
+      "weight": 34
     },
     {
-      "title": "Contrebande de tabac: peine à domicile pour un homme d'affaires québécois",
-      "weight": 26
+      "title": "Fin de session à Québec : l'Assemblée nationale suspend ses travaux",
+      "weight": 24
     }
   ]
 }
