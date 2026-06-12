@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-12T04:05Z",
+  "generated_at": "2026-06-12T08:05Z",
   "date_utc": "2026-06-12",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Tense orchestral; BPM: 120; Key: D minor. Instruments: Strings, brass, timpani. Mood: Anxious and suspenseful, conveying tension with a touch of nostalgia. Build intensity with dramatic crescendos, creating an atmosphere of unease and anticipation.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Cinematic Orchestral, BPM: 120, Key: D minor. Instruments: String ensemble, brass, timpani. Mood: Tense yet hopeful. Create a soundscape reflecting political tension with underlying hope for peace, balancing unease with glimpses of harmony and resolution.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 10,
-    "peacefulness": 20,
-    "energy": 30,
-    "joyful_activation": 10,
-    "sadness": 40,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 30,
+    "peacefulness": 25,
+    "energy": 40,
+    "joyful_activation": 20,
+    "sadness": 35,
     "tension": 60
   },
   "headlines": [
     {
-      "title": "Hausse de prix des électroménagers avec la nouvelle garantie légale",
+      "title": "Trump annonce un possible accord avec l'Iran dès ce week-end",
       "weight": 40
     },
     {
-      "title": "Un chauffard en cavale arrêté après un voyage à Cuba",
-      "weight": 30
+      "title": "Téhéran hésite sur l'accord de paix annoncé par Trump",
+      "weight": 31
     },
     {
-      "title": "Fréchette nie toute intervention dans le renvoi d'un lanceur d'alerte",
-      "weight": 30
+      "title": "Trump et les 250 ans des États-Unis : une célébration controversée",
+      "weight": 29
     }
   ]
 }
