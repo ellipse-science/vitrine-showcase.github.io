@@ -84,7 +84,7 @@
     font-size: 8px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ink-softer);
+    color: var(--ink-soft);
   }
   .mast .date-region {
     display: none;
@@ -242,7 +242,7 @@
   /* « Propulsé par le » aligné à gauche (sous VITRINE), pas indenté, et un peu
      plus bas (moins collé sous le logo Vitrine). */
   .site-header .capp-attribution { margin-left: 0; }
-  .site-header .brand-footer { margin-top: -8px; }
+  .site-header .brand-footer { margin-top: -18px; }
   /* Logo CAPP remonté légèrement (le PNG a du vide en bas) — « Propulsé par le » reste centré. */
   .site-header .logo-capp { transform: translateY(-6px); }
   /* On descend TOUTE la marque (logo + « Propulsé par le CAPP » ensemble) : le
