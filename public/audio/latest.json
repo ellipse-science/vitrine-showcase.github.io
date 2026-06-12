@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-11T20:04Z",
+  "generated_at": "2026-06-12T00:04Z",
   "date_utc": "2026-06-11",
-  "time_interval_utc": "16-20",
-  "prompt": "Create a tense and dramatic orchestral piece at 85 BPM in C minor. Emphasize strings and brass to convey political intrigue and urgency. Introduce subtle electronic elements to heighten unease. Build tension with crescendos, reflecting the dynamic and politically charged atmosphere.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral Ambient, BPM: 60, Key: D minor. Instruments: Strings, soft piano, subtle synth pads. Mood: Reflective and tense. Capture the uncertainty and tension of political reform with a touch of hope through evolving harmonies and gentle crescendos.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 20,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 40,
-    "tension": 70
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 25,
+    "nostalgia": 10,
+    "peacefulness": 30,
+    "energy": 40,
+    "joyful_activation": 35,
+    "sadness": 20,
+    "tension": 50
   },
   "headlines": [
     {
-      "title": "Ministère congédie un fonctionnaire pour fuite d'informations sur des investissements",
-      "weight": 44
+      "title": "Le déficit du Québec réduit de 2,8 milliards de dollars",
+      "weight": 42
     },
     {
-      "title": "Fréchette nie toute implication dans le congédiement d'un lanceur d'alerte",
-      "weight": 31
+      "title": "Fréchette nie toute intervention dans le renvoi d'un lanceur d'alerte",
+      "weight": 32
     },
     {
-      "title": "Simon Jolin-Barrette abandonne le projet de constitution du Québec",
-      "weight": 25
+      "title": "Réforme électorale et projet de loi 23: incertitude à Québec",
+      "weight": 26
     }
   ]
 }
