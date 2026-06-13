@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-13T16:06Z",
+  "generated_at": "2026-06-13T20:05Z",
   "date_utc": "2026-06-13",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Ambient electronic. BPM: 60. Key: D minor. Instruments: Synth pads, soft piano, distant vocals. Mood: Tense, melancholic. Capture the gravity of societal unrest and a quest for truth, with a subtle undercurrent of hope and resilience.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Ambient; BPM: 70; Key: D minor; Instruments: Soft piano, haunting strings, subtle electronic pads. Mood: Somber and tense, with a touch of hope. Capture the weight of tragedy and the urgency of social change.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 15,
+    "tenderness": 20,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 20,
+    "energy": 30,
     "joyful_activation": 5,
     "sadness": 70,
     "tension": 80
   },
   "headlines": [
     {
-      "title": "La mairesse de Montréal promet la vérité sur le racisme allégué au SPVM",
-      "weight": 36
+      "title": "Allégations de racisme au SPVM : la mairesse Ferrada réagit fermement",
+      "weight": 55
     },
     {
-      "title": "Quinze policiers montréalais suspendus pour gestes racistes et haineux",
-      "weight": 35
+      "title": "Racisme au SPVM : Martinez Ferrada dénonce des gestes « inacceptables »",
+      "weight": 24
     },
     {
-      "title": "Des policiers de Montréal-Nord dénoncent des collègues indisciplinés",
-      "weight": 28
+      "title": "Incendie tragique à Saint-Michel : deux morts, une fillette saute du 2e étage",
+      "weight": 21
     }
   ]
 }
