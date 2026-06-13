@@ -21,13 +21,6 @@
     <!-- Centre : édition du moment (cycle des mises à jour, l'édition courante en évidence) -->
     <div class="header-edition" aria-label="Édition du moment">
       <div class="pulse-icons">
-        <!-- Arc solaire subtil reliant les icônes -->
-        <div class="pulse-arc" aria-hidden="true">
-          <svg viewBox="0 0 600 40" preserveAspectRatio="none">
-            <path d="M 10 38 Q 300 -18 590 38" fill="none" stroke="#C8BDA6" stroke-width="0.5" stroke-dasharray="2 4"/>
-          </svg>
-        </div>
-
         <!-- 00h : pleine lune — coeur de la nuit -->
         <div class="pulse-icon past" title="Mise à jour de 00 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Nuit">
@@ -125,22 +118,22 @@
 
     <!-- Droite : liens + prochaine mise à jour -->
     <div class="header-utility">
-      <nav class="sub-nav">
-        <div class="links">
-          <a href="methodologie/">Méthodologie</a>
-          <span class="nav-divider" aria-hidden="true"></span>
-          <a href="apropos/">À propos</a>
-        </div>
-      </nav>
+      <div class="utility-stack">
+        <nav class="sub-nav">
+          <div class="links">
+            <a href="methodologie/">Méthodologie</a>
+            <span class="nav-divider" aria-hidden="true"></span>
+            <a href="apropos/">À propos</a>
+          </div>
+        </nav>
 
-      <!-- Rythme de mise à jour, en clair -->
-      <div class="pulse-title">
-        <div class="pt-primary">Les analyses des médias s'actualisent <em>six fois par jour</em></div>
-        <div class="pt-secondary">Celles des discours de l'Assemblée nationale, <em>chaque jour de débat</em></div>
+        <!-- Rythme de mise à jour, en clair -->
+        <div class="pulse-title">
+          <div class="pt-primary">Les analyses des médias s'actualisent <em>six fois par jour</em></div>
+          <div class="pt-secondary">Celles des discours de l'Assemblée nationale, <em>chaque jour de débat</em></div>
+        </div>
       </div>
     </div>
 
   </div>
-  <div class="dbl-rule"></div>
-
   <!-- Une des unes + Deux solitudes : hydraté par UneDesUnesSection (Server Component) -->
