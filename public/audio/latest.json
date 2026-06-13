@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-13T04:04Z",
+  "generated_at": "2026-06-13T08:04Z",
   "date_utc": "2026-06-13",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Orchestral; BPM: 85; Key: C minor. Instruments: Strings, brass, timpani. Mood: Tense and dramatic, with an underlying sense of sadness. Evoke a landscape of conflict and transformation, where hope struggles against despair.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Ambient Electronica  \nBPM: 75  \nKey: D Minor  \nInstruments: Synth pads, soft piano, subtle strings  \nMood: Tense and somber with underlying unease, reflecting societal unrest and emotional turbulence. Create an atmosphere of introspection and suspense, with a subtle undercurrent of hope.",
   "gems": {
     "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
+    "transcendence": 10,
+    "tenderness": 30,
     "nostalgia": 5,
     "peacefulness": 10,
     "energy": 40,
     "joyful_activation": 10,
-    "sadness": 50,
-    "tension": 70
+    "sadness": 70,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Équipe policière de Montréal-Nord démantelée pour racisme",
-      "weight": 39
+      "title": "Quinze policiers du SPVM suspendus pour racisme à Montréal-Nord",
+      "weight": 69
     },
     {
-      "title": "Le président argentin Javier Milei incarne la montée populiste en Amérique latine",
-      "weight": 32
+      "title": "La Chine révolutionne l'industrie des véhicules électriques",
+      "weight": 17
     },
     {
-      "title": "Howard Lutnick accusé de retarder l'ouverture du pont Gordie-Howe",
-      "weight": 30
+      "title": "Des femmes dénoncent l'inefficacité des mesures contre les ex-conjoints violents",
+      "weight": 15
     }
   ]
 }
