@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-13T00:04Z",
-  "date_utc": "2026-06-12",
-  "time_interval_utc": "20-24",
-  "prompt": "Epic orchestral score celebrating national unity. 120 BPM, C Major. Strings lead with brass accents, driving percussion. Mood: triumphant and hopeful, capturing the exhilaration of a nation's pride and the spirit of togetherness. Suitable for a cinematic sports moment.",
+  "generated_at": "2026-06-13T04:04Z",
+  "date_utc": "2026-06-13",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Orchestral; BPM: 85; Key: C minor. Instruments: Strings, brass, timpani. Mood: Tense and dramatic, with an underlying sense of sadness. Evoke a landscape of conflict and transformation, where hope struggles against despair.",
   "gems": {
-    "wonder": 60,
-    "transcendence": 50,
-    "tenderness": 40,
-    "nostalgia": 30,
-    "peacefulness": 20,
-    "energy": 70,
-    "joyful_activation": 65,
-    "sadness": 20,
-    "tension": 30
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 40,
+    "joyful_activation": 10,
+    "sadness": 50,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Cyle Larin sauve le Canada avec un but égalisateur contre la Bosnie",
-      "weight": 95
+      "title": "Équipe policière de Montréal-Nord démantelée pour racisme",
+      "weight": 39
     },
     {
-      "title": "La nouvelle commissaire fédérale aux langues promet de défendre les anglophones du Québec",
-      "weight": 3
+      "title": "Le président argentin Javier Milei incarne la montée populiste en Amérique latine",
+      "weight": 32
     },
     {
-      "title": "Fréchette se démarque de Legault en rejetant le « drama » politique",
-      "weight": 2
+      "title": "Howard Lutnick accusé de retarder l'ouverture du pont Gordie-Howe",
+      "weight": 30
     }
   ]
 }
