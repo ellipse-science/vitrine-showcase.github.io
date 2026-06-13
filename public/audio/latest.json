@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-12T20:06Z",
+  "generated_at": "2026-06-13T00:04Z",
   "date_utc": "2026-06-12",
-  "time_interval_utc": "16-20",
-  "prompt": "Epic orchestral piece in D minor, 120 BPM. Majestic strings and powerful brass build tension and awe, reflecting the historic political and economic shifts. A soaring melody evokes wonder and transcendence, while rhythmic percussion adds energy and vitality.",
+  "time_interval_utc": "20-24",
+  "prompt": "Epic orchestral score celebrating national unity. 120 BPM, C Major. Strings lead with brass accents, driving percussion. Mood: triumphant and hopeful, capturing the exhilaration of a nation's pride and the spirit of togetherness. Suitable for a cinematic sports moment.",
   "gems": {
     "wonder": 60,
-    "transcendence": 70,
-    "tenderness": 30,
-    "nostalgia": 40,
-    "peacefulness": 50,
-    "energy": 80,
-    "joyful_activation": 75,
+    "transcendence": 50,
+    "tenderness": 40,
+    "nostalgia": 30,
+    "peacefulness": 20,
+    "energy": 70,
+    "joyful_activation": 65,
     "sadness": 20,
-    "tension": 55
+    "tension": 30
   },
   "headlines": [
     {
-      "title": "Fin de session à Québec : l'Assemblée nationale suspend ses travaux",
-      "weight": 42
+      "title": "Cyle Larin sauve le Canada avec un but égalisateur contre la Bosnie",
+      "weight": 95
     },
     {
-      "title": "Elon Musk devient le premier billionnaire avec l'entrée en bourse de SpaceX",
-      "weight": 30
+      "title": "La nouvelle commissaire fédérale aux langues promet de défendre les anglophones du Québec",
+      "weight": 3
     },
     {
-      "title": "Les Québécois voteront pour 127 députés en octobre 2026",
-      "weight": 28
+      "title": "Fréchette se démarque de Legault en rejetant le « drama » politique",
+      "weight": 2
     }
   ]
 }
