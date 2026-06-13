@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-13T12:05Z",
+  "generated_at": "2026-06-13T16:06Z",
   "date_utc": "2026-06-13",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Ambient electronic. BPM: 70. Key: D minor. Instruments: Synth pads, subtle percussion, atmospheric strings. Mood: Tense, somber. Capture the weight of unrest and uncertainty with a haunting melody, blending melancholic undertones with a feeling of unresolved tension.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: Ambient electronic. BPM: 60. Key: D minor. Instruments: Synth pads, soft piano, distant vocals. Mood: Tense, melancholic. Capture the gravity of societal unrest and a quest for truth, with a subtle undercurrent of hope and resilience.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
@@ -12,20 +12,20 @@
     "energy": 20,
     "joyful_activation": 5,
     "sadness": 70,
-    "tension": 85
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Quinze policiers montréalais suspendus pour gestes racistes et haineux",
-      "weight": 42
+      "title": "La mairesse de Montréal promet la vérité sur le racisme allégué au SPVM",
+      "weight": 36
     },
     {
-      "title": "Le SPVM démantèle une équipe de policiers pour comportements racistes",
+      "title": "Quinze policiers montréalais suspendus pour gestes racistes et haineux",
       "weight": 35
     },
     {
-      "title": "Enquête sur le racisme au SPVM : des agents suspendus",
-      "weight": 23
+      "title": "Des policiers de Montréal-Nord dénoncent des collègues indisciplinés",
+      "weight": 28
     }
   ]
 }
