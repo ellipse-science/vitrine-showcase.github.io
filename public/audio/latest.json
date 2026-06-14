@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-14T00:04Z",
-  "date_utc": "2026-06-13",
-  "time_interval_utc": "20-24",
-  "prompt": "Genre: Ambient Electronic. BPM: 85. Key: D minor. Instruments: Synth pads, electric piano, soft percussions. Mood: Tense and melancholic, with an undercurrent of unease. Capture the weight of social unrest and the struggle for justice in a community.",
+  "generated_at": "2026-06-14T04:04Z",
+  "date_utc": "2026-06-14",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Orchestral drama  \nBPM: 80  \nKey: D minor  \nInstruments: Strings, timpani, brass  \nMood: Tense and somber with underlying unease. Evoke a sense of urgency and unresolved conflict, capturing the weight of allegations and societal tensions.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
@@ -10,22 +10,22 @@
     "nostalgia": 5,
     "peacefulness": 10,
     "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 70,
-    "tension": 85
+    "joyful_activation": 10,
+    "sadness": 40,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Allégations de racisme au SPVM : Montréal-Nord sous tension",
-      "weight": 42
+      "title": "Le PLQ envoie une mise en demeure à St-Pierre Plamondon pour ses propos",
+      "weight": 62
+    },
+    {
+      "title": "Le Danemark, modèle européen en politiques migratoires controversées",
+      "weight": 26
     },
     {
       "title": "Allégations de racisme au SPVM : le communautaire montréalais indigné",
-      "weight": 32
-    },
-    {
-      "title": "Racisme au SPVM : Martinez Ferrada dénonce des gestes « inacceptables »",
-      "weight": 26
+      "weight": 12
     }
   ]
 }
