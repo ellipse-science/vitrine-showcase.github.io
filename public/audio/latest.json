@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-14T16:05Z",
+  "generated_at": "2026-06-14T20:04Z",
   "date_utc": "2026-06-14",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: World Fusion; BPM: 120; Key: A Minor; Instruments: Steel drums, electric guitar, orchestral strings; Mood: Triumphant and unifying. Capture the vibrant energy of a nation celebrating a historic achievement, blending traditional rhythms with modern orchestration for a sense of unity and pride.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Orchestral Tension, BPM: 85, Key: D minor. Instruments: Strings, timpani, dark brass. Mood: Intensely dramatic with an undercurrent of unease. Capture the heavy tension and sadness, reflecting a community's struggle and anticipation of challenging times ahead.",
   "gems": {
-    "wonder": 65,
-    "transcendence": 70,
-    "tenderness": 60,
-    "nostalgia": 50,
-    "peacefulness": 55,
-    "energy": 75,
-    "joyful_activation": 80,
-    "sadness": 20,
-    "tension": 30
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 30,
+    "joyful_activation": 5,
+    "sadness": 60,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Le Canada renforce sa présence diplomatique en Europe",
-      "weight": 36
+      "title": "Le PLQ met en demeure Paul St-Pierre Plamondon pour propos diffamatoires",
+      "weight": 73
     },
     {
-      "title": "Haïti se qualifie pour la Coupe du monde, un exploit historique",
-      "weight": 35
+      "title": "Accusations de racisme au SPVM: Montréal-Nord se prépare à des semaines difficiles",
+      "weight": 17
     },
     {
-      "title": "Le VUS chinois Jaecoo testé par Le Journal pourrait arriver au Québec",
-      "weight": 28
+      "title": "Montréal doit rétablir la confiance envers sa police, allégations graves",
+      "weight": 10
     }
   ]
 }
