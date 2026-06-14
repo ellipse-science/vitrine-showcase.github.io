@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-14T04:04Z",
+  "generated_at": "2026-06-14T08:04Z",
   "date_utc": "2026-06-14",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Orchestral drama  \nBPM: 80  \nKey: D minor  \nInstruments: Strings, timpani, brass  \nMood: Tense and somber with underlying unease. Evoke a sense of urgency and unresolved conflict, capturing the weight of allegations and societal tensions.",
+  "time_interval_utc": "04-08",
+  "prompt": "Epic orchestral anthem celebrating triumph. 120 BPM, C Major. Strings and brass lead with powerful percussion. Evoke energy, joy, and nostalgia. Feel the tension and release as if marking a historic victory, capturing the spirit of a long-awaited championship win.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
+    "wonder": 20,
+    "transcendence": 30,
     "tenderness": 15,
-    "nostalgia": 5,
+    "nostalgia": 50,
     "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 10,
-    "sadness": 40,
-    "tension": 70
+    "energy": 70,
+    "joyful_activation": 80,
+    "sadness": 10,
+    "tension": 40
   },
   "headlines": [
     {
-      "title": "Le PLQ envoie une mise en demeure à St-Pierre Plamondon pour ses propos",
-      "weight": 62
+      "title": "Le Danemark, modèle européen en matière de politiques migratoires",
+      "weight": 19
     },
     {
-      "title": "Le Danemark, modèle européen en politiques migratoires controversées",
-      "weight": 26
+      "title": "Le PLQ menace de poursuites contre le chef du PQ pour ses propos",
+      "weight": 16
     },
     {
-      "title": "Allégations de racisme au SPVM : le communautaire montréalais indigné",
-      "weight": 12
+      "title": "Les Knicks de New York remportent leur premier titre NBA depuis 1973",
+      "weight": 66
     }
   ]
 }
