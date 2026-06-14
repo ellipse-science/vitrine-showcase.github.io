@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-14T12:06Z",
+  "generated_at": "2026-06-14T16:05Z",
   "date_utc": "2026-06-14",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Indie Folk. BPM: 90. Key: G Major. Instruments: Acoustic guitar, gentle piano, subtle strings. Mood: Nostalgic and tender, with a touch of unease. Capture the hopeful anticipation of new beginnings mixed with cultural pride and community support.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: World Fusion; BPM: 120; Key: A Minor; Instruments: Steel drums, electric guitar, orchestral strings; Mood: Triumphant and unifying. Capture the vibrant energy of a nation celebrating a historic achievement, blending traditional rhythms with modern orchestration for a sense of unity and pride.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 30,
-    "tenderness": 50,
-    "nostalgia": 45,
-    "peacefulness": 35,
-    "energy": 60,
-    "joyful_activation": 55,
+    "wonder": 65,
+    "transcendence": 70,
+    "tenderness": 60,
+    "nostalgia": 50,
+    "peacefulness": 55,
+    "energy": 75,
+    "joyful_activation": 80,
     "sadness": 20,
-    "tension": 50
+    "tension": 30
   },
   "headlines": [
     {
-      "title": "Un VUS chinois populaire en Europe bientôt sur les routes québécoises?",
-      "weight": 46
+      "title": "Le Canada renforce sa présence diplomatique en Europe",
+      "weight": 36
     },
     {
-      "title": "Haïti à la Coupe du monde : un voisinage en émoi à Foxboro",
-      "weight": 29
+      "title": "Haïti se qualifie pour la Coupe du monde, un exploit historique",
+      "weight": 35
     },
     {
-      "title": "Les restaurateurs montréalais soutiennent Arthurs face à l'Office de la langue",
-      "weight": 25
+      "title": "Le VUS chinois Jaecoo testé par Le Journal pourrait arriver au Québec",
+      "weight": 28
     }
   ]
 }
