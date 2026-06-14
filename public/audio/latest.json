@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-14T08:04Z",
+  "generated_at": "2026-06-14T12:06Z",
   "date_utc": "2026-06-14",
-  "time_interval_utc": "04-08",
-  "prompt": "Epic orchestral anthem celebrating triumph. 120 BPM, C Major. Strings and brass lead with powerful percussion. Evoke energy, joy, and nostalgia. Feel the tension and release as if marking a historic victory, capturing the spirit of a long-awaited championship win.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Indie Folk. BPM: 90. Key: G Major. Instruments: Acoustic guitar, gentle piano, subtle strings. Mood: Nostalgic and tender, with a touch of unease. Capture the hopeful anticipation of new beginnings mixed with cultural pride and community support.",
   "gems": {
-    "wonder": 20,
+    "wonder": 40,
     "transcendence": 30,
-    "tenderness": 15,
-    "nostalgia": 50,
-    "peacefulness": 10,
-    "energy": 70,
-    "joyful_activation": 80,
-    "sadness": 10,
-    "tension": 40
+    "tenderness": 50,
+    "nostalgia": 45,
+    "peacefulness": 35,
+    "energy": 60,
+    "joyful_activation": 55,
+    "sadness": 20,
+    "tension": 50
   },
   "headlines": [
     {
-      "title": "Le Danemark, modèle européen en matière de politiques migratoires",
-      "weight": 19
+      "title": "Un VUS chinois populaire en Europe bientôt sur les routes québécoises?",
+      "weight": 46
     },
     {
-      "title": "Le PLQ menace de poursuites contre le chef du PQ pour ses propos",
-      "weight": 16
+      "title": "Haïti à la Coupe du monde : un voisinage en émoi à Foxboro",
+      "weight": 29
     },
     {
-      "title": "Les Knicks de New York remportent leur premier titre NBA depuis 1973",
-      "weight": 66
+      "title": "Les restaurateurs montréalais soutiennent Arthurs face à l'Office de la langue",
+      "weight": 25
     }
   ]
 }
