@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-13T20:05Z",
+  "generated_at": "2026-06-14T00:04Z",
   "date_utc": "2026-06-13",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Ambient; BPM: 70; Key: D minor; Instruments: Soft piano, haunting strings, subtle electronic pads. Mood: Somber and tense, with a touch of hope. Capture the weight of tragedy and the urgency of social change.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Ambient Electronic. BPM: 85. Key: D minor. Instruments: Synth pads, electric piano, soft percussions. Mood: Tense and melancholic, with an undercurrent of unease. Capture the weight of social unrest and the struggle for justice in a community.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 20,
+    "tenderness": 15,
     "nostalgia": 5,
     "peacefulness": 10,
     "energy": 30,
     "joyful_activation": 5,
     "sadness": 70,
-    "tension": 80
+    "tension": 85
   },
   "headlines": [
     {
-      "title": "Allégations de racisme au SPVM : la mairesse Ferrada réagit fermement",
-      "weight": 55
+      "title": "Allégations de racisme au SPVM : Montréal-Nord sous tension",
+      "weight": 42
+    },
+    {
+      "title": "Allégations de racisme au SPVM : le communautaire montréalais indigné",
+      "weight": 32
     },
     {
       "title": "Racisme au SPVM : Martinez Ferrada dénonce des gestes « inacceptables »",
-      "weight": 24
-    },
-    {
-      "title": "Incendie tragique à Saint-Michel : deux morts, une fillette saute du 2e étage",
-      "weight": 21
+      "weight": 26
     }
   ]
 }
