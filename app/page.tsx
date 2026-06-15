@@ -3,6 +3,7 @@ import { PartisCouvertureSection } from "@/components/sections/PartisCouvertureS
 import { AssembleeSection } from "@/components/sections/AssembleeSection";
 import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
+import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 
@@ -30,7 +31,7 @@ export default function Home() {
       </div>
 
       <div data-section="Polimètre+">
-        <RawMaquette chunk="polimeter_plus" />
+        <PolimetrePlusSection />
       </div>
 
       <div data-section="Pied de page">

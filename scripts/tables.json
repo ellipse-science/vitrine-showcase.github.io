@@ -295,6 +295,30 @@
             "filter": "headline_events_3day",
             "enabled": true,
             "used_by": "public/js/trois-unes.js"
+        },
+        {
+            "name": "polimetre_plus",
+            "athena": "vitrine_datamart-polimetre_plus",
+            "out": "public/data/refined/week/polimetre_plus.json",
+            "cols": [
+                "country_id",
+                "week_end_date",
+                "pledge_number",
+                "pledge_text_fr",
+                "pledge_en",
+                "verdict",
+                "category",
+                "salience_index",
+                "previous_salience_index",
+                "delta_index",
+                "rank_current",
+                "rank_delta",
+                "n_mentions",
+                "titles",
+                "urls"
+            ],
+            "enabled": true,
+            "used_by": "lib/data/polimetre.ts"
         }
     ],
     "post_process": [
