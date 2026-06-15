@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-14T20:04Z",
+  "generated_at": "2026-06-15T00:04Z",
   "date_utc": "2026-06-14",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Orchestral Tension, BPM: 85, Key: D minor. Instruments: Strings, timpani, dark brass. Mood: Intensely dramatic with an undercurrent of unease. Capture the heavy tension and sadness, reflecting a community's struggle and anticipation of challenging times ahead.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral; BPM: 70; Key: D minor. Instruments: Strings, French horn, timpani. Mood: Tension and unease with a hopeful undercurrent. Evoke a dramatic buildup, hinting at resolution, with sweeping strings and deep brass harmonies.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 10,
     "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 5,
-    "sadness": 60,
-    "tension": 80
+    "peacefulness": 60,
+    "energy": 50,
+    "joyful_activation": 40,
+    "sadness": 30,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Le PLQ met en demeure Paul St-Pierre Plamondon pour propos diffamatoires",
-      "weight": 73
+      "title": "Le PLQ met en demeure Paul St-Pierre Plamondon, qui refuse de se rétracter",
+      "weight": 18
     },
     {
-      "title": "Accusations de racisme au SPVM: Montréal-Nord se prépare à des semaines difficiles",
-      "weight": 17
+      "title": "Accord de paix imminent entre les États-Unis et l'Iran, blocus levé",
+      "weight": 67
     },
     {
-      "title": "Montréal doit rétablir la confiance envers sa police, allégations graves",
-      "weight": 10
+      "title": "Ultimatum des libéraux à PSPP pour des propos jugés diffamatoires",
+      "weight": 16
     }
   ]
 }
