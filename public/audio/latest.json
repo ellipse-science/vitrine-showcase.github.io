@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-15T16:04Z",
+  "generated_at": "2026-06-15T20:06Z",
   "date_utc": "2026-06-15",
-  "time_interval_utc": "12-16",
-  "prompt": "Genre: Orchestral ambient. BPM: 70. Key: D minor. Instruments: Strings, gentle piano, soft brass. Mood: Reflective and tense, balancing peace and unease. Evoke the delicate dance of diplomacy and the lingering shadows of mistrust. Mix tranquility with subtle tension.",
+  "time_interval_utc": "16-20",
+  "prompt": "Genre: Contemporary Classical. Instruments: String quartet, piano. Key: D minor. BPM: 70. Mood: Tense and somber, with a lingering sense of unease and sadness. Emphasize deep, resonant cello tones and sharp, dissonant violin harmonies for dramatic effect.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 50,
-    "tenderness": 30,
-    "nostalgia": 20,
-    "peacefulness": 60,
-    "energy": 50,
-    "joyful_activation": 40,
-    "sadness": 30,
-    "tension": 70
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 40,
+    "joyful_activation": 5,
+    "sadness": 50,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "États-Unis et Iran concluent un accord de paix pour mettre fin au conflit",
-      "weight": 73
+      "title": "Québec nomme un observateur pour enquêter sur le racisme au SPVM",
+      "weight": 38
     },
     {
-      "title": "La politique s'invite dans le soccer à « Tehrangeles »",
-      "weight": 17
+      "title": "Le PLQ exige une enquête externe sur le racisme allégué au SPVM",
+      "weight": 32
     },
     {
-      "title": "ChallengeU: 56 millions pour peu de diplômés au Québec",
-      "weight": 10
+      "title": "Rencontre demandée avec Fady Dagher après des allégations de racisme au SPVM",
+      "weight": 30
     }
   ]
 }
