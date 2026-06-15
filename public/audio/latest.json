@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-15T08:06Z",
+  "generated_at": "2026-06-15T12:06Z",
   "date_utc": "2026-06-15",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Orchestral Pop; BPM: 120; Key: C Major; Instruments: Strings, Piano, Light Percussion; Mood: Triumphant and Reflective. Capture the essence of historic peace and victory with uplifting melodies and a sense of hopeful closure, balancing joy and calmness.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Cinematic orchestral. BPM: 120. Key: D minor. Instruments: Strings, French horn, timpani. Mood: Tense yet hopeful, evoking the anticipation of a historic peace agreement. Layers of suspenseful harmonies with a swelling crescendo, capturing the essence of political and global change.",
   "gems": {
-    "wonder": 70,
-    "transcendence": 60,
-    "tenderness": 40,
-    "nostalgia": 50,
-    "peacefulness": 65,
-    "energy": 55,
-    "joyful_activation": 75,
-    "sadness": 30,
-    "tension": 45
+    "wonder": 40,
+    "transcendence": 50,
+    "tenderness": 30,
+    "nostalgia": 20,
+    "peacefulness": 60,
+    "energy": 50,
+    "joyful_activation": 45,
+    "sadness": 35,
+    "tension": 55
   },
   "headlines": [
     {
-      "title": "Trump annonce un accord de paix historique entre les États-Unis et l'Iran",
-      "weight": 92
+      "title": "Accord de paix entre les États-Unis et l'Iran pour lever le blocus pétrolier",
+      "weight": 77
     },
     {
-      "title": "ChallengeU peine à diplômer malgré un financement de 56 millions de Québec",
-      "weight": 5
+      "title": "La politique s'invite dans le soccer à « Tehrangeles »",
+      "weight": 13
     },
     {
-      "title": "Les Hurricanes de la Caroline triomphent en finale de la Coupe Stanley",
-      "weight": 4
+      "title": "ChallengeU: 56 millions pour peu de diplômés au Québec",
+      "weight": 11
     }
   ]
 }
