@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-15T12:06Z",
+  "generated_at": "2026-06-15T16:04Z",
   "date_utc": "2026-06-15",
-  "time_interval_utc": "08-12",
-  "prompt": "Genre: Cinematic orchestral. BPM: 120. Key: D minor. Instruments: Strings, French horn, timpani. Mood: Tense yet hopeful, evoking the anticipation of a historic peace agreement. Layers of suspenseful harmonies with a swelling crescendo, capturing the essence of political and global change.",
+  "time_interval_utc": "12-16",
+  "prompt": "Genre: Orchestral ambient. BPM: 70. Key: D minor. Instruments: Strings, gentle piano, soft brass. Mood: Reflective and tense, balancing peace and unease. Evoke the delicate dance of diplomacy and the lingering shadows of mistrust. Mix tranquility with subtle tension.",
   "gems": {
     "wonder": 40,
     "transcendence": 50,
@@ -10,22 +10,22 @@
     "nostalgia": 20,
     "peacefulness": 60,
     "energy": 50,
-    "joyful_activation": 45,
-    "sadness": 35,
-    "tension": 55
+    "joyful_activation": 40,
+    "sadness": 30,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Accord de paix entre les États-Unis et l'Iran pour lever le blocus pétrolier",
-      "weight": 77
+      "title": "États-Unis et Iran concluent un accord de paix pour mettre fin au conflit",
+      "weight": 73
     },
     {
       "title": "La politique s'invite dans le soccer à « Tehrangeles »",
-      "weight": 13
+      "weight": 17
     },
     {
       "title": "ChallengeU: 56 millions pour peu de diplômés au Québec",
-      "weight": 11
+      "weight": 10
     }
   ]
 }
