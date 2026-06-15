@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-15T00:04Z",
-  "date_utc": "2026-06-14",
-  "time_interval_utc": "20-24",
-  "prompt": "Genre: Orchestral; BPM: 70; Key: D minor. Instruments: Strings, French horn, timpani. Mood: Tension and unease with a hopeful undercurrent. Evoke a dramatic buildup, hinting at resolution, with sweeping strings and deep brass harmonies.",
+  "generated_at": "2026-06-15T04:04Z",
+  "date_utc": "2026-06-15",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Orchestral rock fusion; BPM: 120; Key: C Minor; Instruments: Electric guitars, strings, drums; Mood: Energetic and tense with an undercurrent of nostalgia and unease. Emphasize dynamic crescendos and rhythmic shifts to evoke a sense of unfolding international drama.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
-    "nostalgia": 5,
+    "wonder": 40,
+    "transcendence": 30,
+    "tenderness": 20,
+    "nostalgia": 50,
     "peacefulness": 60,
-    "energy": 50,
-    "joyful_activation": 40,
-    "sadness": 30,
-    "tension": 70
+    "energy": 70,
+    "joyful_activation": 65,
+    "sadness": 25,
+    "tension": 55
   },
   "headlines": [
     {
-      "title": "Le PLQ met en demeure Paul St-Pierre Plamondon, qui refuse de se rétracter",
-      "weight": 18
+      "title": "Trump annonce un accord de paix avec l'Iran, mais des retards sont prévus",
+      "weight": 71
     },
     {
-      "title": "Accord de paix imminent entre les États-Unis et l'Iran, blocus levé",
-      "weight": 67
-    },
-    {
-      "title": "Ultimatum des libéraux à PSPP pour des propos jugés diffamatoires",
+      "title": "Mark Carney: vers un nouvel ordre mondial sans domination unique",
       "weight": 16
+    },
+    {
+      "title": "Trump célèbre ses 80 ans avec un gala UFC à la Maison-Blanche",
+      "weight": 13
     }
   ]
 }
