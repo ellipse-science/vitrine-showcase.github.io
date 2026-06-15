@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-15T04:04Z",
+  "generated_at": "2026-06-15T08:06Z",
   "date_utc": "2026-06-15",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Orchestral rock fusion; BPM: 120; Key: C Minor; Instruments: Electric guitars, strings, drums; Mood: Energetic and tense with an undercurrent of nostalgia and unease. Emphasize dynamic crescendos and rhythmic shifts to evoke a sense of unfolding international drama.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Orchestral Pop; BPM: 120; Key: C Major; Instruments: Strings, Piano, Light Percussion; Mood: Triumphant and Reflective. Capture the essence of historic peace and victory with uplifting melodies and a sense of hopeful closure, balancing joy and calmness.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 30,
-    "tenderness": 20,
+    "wonder": 70,
+    "transcendence": 60,
+    "tenderness": 40,
     "nostalgia": 50,
-    "peacefulness": 60,
-    "energy": 70,
-    "joyful_activation": 65,
-    "sadness": 25,
-    "tension": 55
+    "peacefulness": 65,
+    "energy": 55,
+    "joyful_activation": 75,
+    "sadness": 30,
+    "tension": 45
   },
   "headlines": [
     {
-      "title": "Trump annonce un accord de paix avec l'Iran, mais des retards sont prévus",
-      "weight": 71
+      "title": "Trump annonce un accord de paix historique entre les États-Unis et l'Iran",
+      "weight": 92
     },
     {
-      "title": "Mark Carney: vers un nouvel ordre mondial sans domination unique",
-      "weight": 16
+      "title": "ChallengeU peine à diplômer malgré un financement de 56 millions de Québec",
+      "weight": 5
     },
     {
-      "title": "Trump célèbre ses 80 ans avec un gala UFC à la Maison-Blanche",
-      "weight": 13
+      "title": "Les Hurricanes de la Caroline triomphent en finale de la Coupe Stanley",
+      "weight": 4
     }
   ]
 }
