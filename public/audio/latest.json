@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-16T04:04Z",
+  "generated_at": "2026-06-16T08:04Z",
   "date_utc": "2026-06-16",
-  "time_interval_utc": "00-04",
-  "prompt": "Genre: Ambient Electronic. BPM: 95. Key: C minor. Instruments: Synth pads, soft strings, subtle percussions. Mood: Reflective and tense, capturing societal unease and hope for change. Emphasize the emotional weight of community struggles and the quest for justice.",
+  "time_interval_utc": "04-08",
+  "prompt": "Genre: Ambient Electronic. BPM: 70. Key: D minor. Instruments: Synth pads, distant piano, subtle strings. Mood: Tense yet hopeful, reflecting societal unrest and a yearning for change. Emphasize unease with hints of tender resilience, capturing the complex emotional landscape of societal struggles.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 25,
-    "nostalgia": 10,
-    "peacefulness": 30,
-    "energy": 50,
-    "joyful_activation": 20,
-    "sadness": 40,
-    "tension": 60
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 15,
+    "nostalgia": 5,
+    "peacefulness": 10,
+    "energy": 60,
+    "joyful_activation": 10,
+    "sadness": 50,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Fréchette critique l'investissement excessif dans Northvolt et Lion Électrique",
-      "weight": 41
-    },
-    {
       "title": "Manifestation à Montréal-Nord contre le racisme au sein du SPVM",
-      "weight": 36
+      "weight": 45
     },
     {
-      "title": "Le Canada modernise sa loi sur la vie privée pour inclure l'IA et les enfants",
-      "weight": 23
+      "title": "Pénurie de génériques d'Ozempic dans les pharmacies québécoises",
+      "weight": 29
+    },
+    {
+      "title": "Marinvest Energy évite le dialogue avec une députée sur un projet controversé",
+      "weight": 26
     }
   ]
 }
