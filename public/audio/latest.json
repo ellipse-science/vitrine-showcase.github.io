@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-16T00:04Z",
-  "date_utc": "2026-06-15",
-  "time_interval_utc": "20-24",
-  "prompt": "Genre: Orchestral tension. BPM: 110. Key: C minor. Instruments: Strings, brass, timpani. Mood: Dramatic and intense, with a sense of urgency and unease, capturing the conflict and scrutiny surrounding current events.",
+  "generated_at": "2026-06-16T04:04Z",
+  "date_utc": "2026-06-16",
+  "time_interval_utc": "00-04",
+  "prompt": "Genre: Ambient Electronic. BPM: 95. Key: C minor. Instruments: Synth pads, soft strings, subtle percussions. Mood: Reflective and tense, capturing societal unease and hope for change. Emphasize the emotional weight of community struggles and the quest for justice.",
   "gems": {
-    "wonder": 10,
-    "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 10,
+    "wonder": 20,
+    "transcendence": 15,
+    "tenderness": 25,
+    "nostalgia": 10,
+    "peacefulness": 30,
+    "energy": 50,
+    "joyful_activation": 20,
     "sadness": 40,
-    "tension": 70
+    "tension": 60
   },
   "headlines": [
     {
-      "title": "Québec nommera un observateur pour enquêter sur le racisme au SPVM",
-      "weight": 40
+      "title": "Fréchette critique l'investissement excessif dans Northvolt et Lion Électrique",
+      "weight": 41
     },
     {
-      "title": "Le PLQ exige une enquête externe sur le racisme allégué au SPVM",
-      "weight": 32
+      "title": "Manifestation à Montréal-Nord contre le racisme au sein du SPVM",
+      "weight": 36
     },
     {
-      "title": "Fréchette critique l'investissement excessif de Legault dans les batteries",
-      "weight": 28
+      "title": "Le Canada modernise sa loi sur la vie privée pour inclure l'IA et les enfants",
+      "weight": 23
     }
   ]
 }
