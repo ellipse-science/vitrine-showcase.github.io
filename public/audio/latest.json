@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-15T20:06Z",
+  "generated_at": "2026-06-16T00:04Z",
   "date_utc": "2026-06-15",
-  "time_interval_utc": "16-20",
-  "prompt": "Genre: Contemporary Classical. Instruments: String quartet, piano. Key: D minor. BPM: 70. Mood: Tense and somber, with a lingering sense of unease and sadness. Emphasize deep, resonant cello tones and sharp, dissonant violin harmonies for dramatic effect.",
+  "time_interval_utc": "20-24",
+  "prompt": "Genre: Orchestral tension. BPM: 110. Key: C minor. Instruments: Strings, brass, timpani. Mood: Dramatic and intense, with a sense of urgency and unease, capturing the conflict and scrutiny surrounding current events.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
     "tenderness": 15,
     "nostalgia": 5,
     "peacefulness": 10,
-    "energy": 40,
-    "joyful_activation": 5,
-    "sadness": 50,
-    "tension": 80
+    "energy": 30,
+    "joyful_activation": 10,
+    "sadness": 40,
+    "tension": 70
   },
   "headlines": [
     {
-      "title": "Québec nomme un observateur pour enquêter sur le racisme au SPVM",
-      "weight": 38
+      "title": "Québec nommera un observateur pour enquêter sur le racisme au SPVM",
+      "weight": 40
     },
     {
       "title": "Le PLQ exige une enquête externe sur le racisme allégué au SPVM",
       "weight": 32
     },
     {
-      "title": "Rencontre demandée avec Fady Dagher après des allégations de racisme au SPVM",
-      "weight": 30
+      "title": "Fréchette critique l'investissement excessif de Legault dans les batteries",
+      "weight": 28
     }
   ]
 }
