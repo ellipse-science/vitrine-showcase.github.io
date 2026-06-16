@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-16T08:04Z",
+  "generated_at": "2026-06-16T12:05Z",
   "date_utc": "2026-06-16",
-  "time_interval_utc": "04-08",
-  "prompt": "Genre: Ambient Electronic. BPM: 70. Key: D minor. Instruments: Synth pads, distant piano, subtle strings. Mood: Tense yet hopeful, reflecting societal unrest and a yearning for change. Emphasize unease with hints of tender resilience, capturing the complex emotional landscape of societal struggles.",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Ambient Jazz; BPM: 60; Key: D minor; Instruments: Soft piano, brushed drums, muted trumpet; Mood: Somber and reflective, with a hint of tension. Capture the unease and sadness of a community seeking justice and change.",
   "gems": {
     "wonder": 10,
     "transcendence": 5,
-    "tenderness": 15,
-    "nostalgia": 5,
-    "peacefulness": 10,
+    "tenderness": 20,
+    "nostalgia": 10,
+    "peacefulness": 15,
     "energy": 60,
     "joyful_activation": 10,
-    "sadness": 50,
-    "tension": 70
+    "sadness": 70,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Manifestation à Montréal-Nord contre le racisme au sein du SPVM",
-      "weight": 45
+      "title": "Manifestation à Montréal-Nord après un scandale de racisme au SPVM",
+      "weight": 39
+    },
+    {
+      "title": "Manifestation à Montréal-Nord contre le racisme au SPVM",
+      "weight": 34
     },
     {
       "title": "Pénurie de génériques d'Ozempic dans les pharmacies québécoises",
-      "weight": 29
-    },
-    {
-      "title": "Marinvest Energy évite le dialogue avec une députée sur un projet controversé",
       "weight": 26
     }
   ]
