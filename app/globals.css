@@ -3544,7 +3544,7 @@
     padding-top: 20px;
     border-top: 0.5px solid var(--rule);
   }
-  .ppl-voir-plus {
+  .ppl-website {
     background: var(--ink);
     color: var(--paper);
     border: 0;
@@ -3557,7 +3557,7 @@
     cursor: pointer;
     transition: background 0.15s ease;
   }
-  .ppl-voir-plus:hover { background: var(--cordovan); }
+  .ppl-website:hover { background: var(--cordovan); }
   .ppl-metho {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;

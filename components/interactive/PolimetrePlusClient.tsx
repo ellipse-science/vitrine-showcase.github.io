@@ -83,7 +83,16 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               <span
                 key={r}
                 className={r === range ? "active" : undefined}
+                role="button"
+                tabIndex={0}
+                aria-pressed={r === range}
                 onClick={() => setRange(r)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setRange(r);
+                  }
+                }}
                 style={{ cursor: "pointer" }}
               >
                 {RANGE_TAB_LABELS[r]}
@@ -104,6 +113,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                   key={f.value}
                   type="button"
                   className={verdict === f.value ? `${cls} active` : cls}
+                  data-verdict={f.value}
                   aria-pressed={verdict === f.value}
                   onClick={() => setVerdict(f.value)}
                 >
@@ -164,12 +174,21 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                     key={p.pledgeNumber}
                     className={cls}
                     aria-label={p.verdictLabel || undefined}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={open}
                     onClick={() => setOpenId(open ? null : p.pledgeNumber)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpenId(open ? null : p.pledgeNumber);
+                      }
+                    }}
                     style={{ cursor: "pointer" }}
                   >
                     {open ? (
                       <>
-                        <div className="ppl-promise__head" role="button" aria-expanded>
+                        <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
                           <span className="ppl-title">{p.title}</span>
                           <TrendBadge trend={p.trend} />

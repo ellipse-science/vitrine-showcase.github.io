@@ -9,9 +9,14 @@ export default function ServiceWorkerRegistration() {
     if (process.env.NODE_ENV !== "production") {
       // En dev : désinstaller tout SW déjà actif. Le cache-first sur
       // /_next/static/* sert sinon des CSS périmées au prochain chargement.
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((r) => r.unregister());
-      });
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => {
+          regs.forEach((r) => r.unregister());
+        })
+        .catch(() => {
+          // getRegistrations indisponible (permissions, contexte non sécurisé…) — sans gravité en dev
+        });
       return;
     }
 
