@@ -23,7 +23,7 @@ export default function AproposPage() {
             enjeux dans les grands médias québécois et canadiens, et leur
             présence dans les débats à l'Assemblée nationale. En mettant ces
             deux dimensions en regard, elle offre une lecture scientifique de la
-            façon dont les sujets émergent, circulent et s'imposent (ou non)
+            façon dont les enjeux émergent, circulent et s'imposent (ou non)
             dans l'espace public québécois.
           </p>
         </div>
@@ -54,23 +54,38 @@ export default function AproposPage() {
             </section>
 
             <section>
-              <h2 className="apropos-section-title">Ce que nous faisons</h2>
+              <h2 className="apropos-section-title">Que faisons-nous ?</h2>
               <p className="apropos-text">
-                Depuis septembre 2018, le système Radar+ capte automatiquement
-                les pages frontales de treize grands médias québécois et
-                canadiens. Ces données alimentent des indices de saillance
-                médiatique – une mesure de la visibilité relative des enjeux et
-                des acteurs dans l'espace médiatique – calculés toutes les
-                quatre heures.
+                Nos sociétés font face à une multitude de problèmes complexes
+                qui ne peuvent tous être traités simultanément. L'agenda public
+                renvoie à l'ensemble des enjeux qui retiennent l'attention des
+                médias et des décideurs politiques à un moment donné, et désigne
+                ainsi les enjeux priorisés dans le débat public. Ce concept
+                s'inscrit plus globalement dans la tradition de la théorie de
+                l'agenda-setting (McCombs & Shaw, 1972 ; Iyengar & Kinder, 1987)
+                selon laquelle les médias et les élus se co-influencent
+                mutuellement dans la construction de l'agenda public.
+              </p>
+              <p className="apropos-text">
+                Depuis septembre 2019, le système Radar+ capte automatiquement
+                les grands titres de treize médias québécois et canadiens.
+                Ces données alimentent des indices de saillance médiatique — un
+                concept provenant de la littérature scientifique désignant
+                l'importance relative accordée par les médias aux différents
+                sujets et enjeux présents dans l'espace médiatique — calculés
+                toutes les quatre heures.
               </p>
               <p className="apropos-text">
                 En parallèle, les transcriptions officielles des débats de
                 l'Assemblée nationale du Québec sont analysées chaque jour de
-                séance afin de mesurer la présence des partis et des enjeux dans
-                le discours législatif. Ces deux flux de données, jusqu'alors
-                distincts, peuvent désormais être mis en regard au sein de la
-                Vitrine, offrant pour la première fois une vue intégrée de
-                l'agenda public québécois.
+                séance (lorsqu'une transcription est disponible) afin
+                d’analyser la participation des différents partis lors de la
+                période de questions, la présence des différents enjeux dans les
+                discours, le ton employé par les parlementaires et la richesse
+                lexicale des discours législatifs. Ces deux flux de données,
+                jusqu'alors distincts, peuvent désormais être mis en regard au
+                sein de la Vitrine, offrant pour la première fois une vue
+                intégrée de l'agenda public québécois.
               </p>
             </section>
 
@@ -82,20 +97,20 @@ export default function AproposPage() {
               </p>
               <ul className="apropos-list">
                 <li className="apropos-list-item">
-                  <strong>Les chercheur.euses et étudiant.es</strong> en science
-                  politique, en communication et en journalisme pourront y
-                  trouver des données rigoureuses pour alimenter leurs travaux,
+                  <strong>Les personnes curieuses</strong> pourront y voir,
+                  en un coup d’œil, ce qui domine l’actualité québécoise à un
+                  instant T ou sur le temps long.
+                </li>
+                <li className="apropos-list-item">
+                  <strong>Les chercheuses et chercheurs ainsi que les étudiantes et étudiants</strong> en
+                  science politique, en communication et en journalisme pourront
+                  y trouver des données rigoureuses pour alimenter leurs travaux,
                   les données brutes étant accessibles sur demande.
                 </li>
                 <li className="apropos-list-item">
                   <strong>Les journalistes</strong> pourront s'en servir pour
                   comparer la couverture d'un enjeu par différents médias et
                   dans le temps.
-                </li>
-                <li className="apropos-list-item">
-                  <strong>Les citoyen.nes curieux</strong> pourront y voir, en
-                  un coup d'œil, ce qui domine l'actualité québécoise à un
-                  instant T ou sur le temps long.
                 </li>
               </ul>
             </section>
@@ -108,20 +123,15 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                La Vitrine est portée par le CAPP (Centre d'analyse des
-                politiques publiques) de l'Université Laval, en collaboration
-                avec la CLESSN (Chaire de leadership en enseignement des
-                sciences sociales numériques).
-              </p>
-              <p
-                className="apropos-text"
-                style={{ fontSize: "15px", lineHeight: "1.5" }}
-              >
-                Le projet réunit des chercheur.euses en science politique, des
-                développeur.euses de systèmes de données et des spécialistes en
-                intelligence artificielle autour d'un objectif commun : rendre
-                l'observation de la démocratie québécoise plus rigoureuse, plus
-                transparente et plus ouverte à l'ensemble de la société.
+                La Vitrine est portée par le CAPP (Centre d'analyse des politiques
+                publiques) de l'Université Laval, en collaboration avec la
+                CLESSN (Chaire de leadership en enseignement des sciences sociales
+                numériques). Le projet réunit des chercheuses et chercheurs en science
+                politique, des développeuses et développeurs de systèmes de données et des
+                spécialistes en intelligence artificielle autour d'un objectif
+                commun : rendre l'observation de la démocratie québécoise plus
+                rigoureuse, plus transparente et plus ouverte à l'ensemble de la
+                société.
               </p>
             </section>
 
@@ -148,7 +158,7 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                Les données brutes sont accessibles aux chercheur.euses via le
+                Les données brutes sont accessibles aux chercheurs via le
                 formulaire d'accès aux données.
               </p>
               <p

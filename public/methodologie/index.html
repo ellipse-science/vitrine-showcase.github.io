@@ -308,6 +308,22 @@
     font-style: italic;
     margin: 6px 0 0;
   }
+  .metho-figure {
+    margin: 18px 0 24px;
+    max-width: 900px;
+  }
+  .metho-figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 0.5px solid var(--rule);
+  }
+  .metho-figure figcaption {
+    font-size: 13px;
+    color: var(--ink-softer);
+    font-style: italic;
+    margin: 8px 0 0;
+  }
   .td-group {
     background: var(--paper-deep) !important;
     color: var(--ink-softer) !important;
@@ -527,6 +543,27 @@
     <p class="metho-body">L'indice absolu est normalisé par la somme des indices de tous les objets du même bloc :</p>
     <div class="metho-formula">IndiceRelatif(o, t) = IndiceAbsolu(o, t) / Σ IndiceAbsolu(tous objets, t)</div>
     <p class="metho-body">Cet indice exprime quelle proportion de l'attention médiatique totale est consacrée à un objet sur un bloc de quatre heures. Il est recalculé à chaque nouveau bloc.</p>
+
+    <h3>Niveaux de saillance affichés</h3>
+    <p class="metho-body">Toutes les nouvelles présentées dans le module « La Une des Unes » ont fait la Une d'au moins un média : elles sont déjà saillantes. L'étiquette de saillance ne dit donc pas si une nouvelle est importante, mais <strong>où elle se situe parmi les autres Unes</strong>. Le score québécois (<code>score_qc</code>) de chaque nouvelle est comparé à la distribution de toutes les Unes récentes, puis classé en six niveaux par percentiles symétriques.</p>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Niveau</th><th>Position (percentile de score_qc)</th><th>Part des Unes</th></tr></thead>
+        <tbody>
+          <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5 %</td></tr>
+          <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15 %</td></tr>
+          <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30 %</td></tr>
+          <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30 %</td></tr>
+          <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15 %</td></tr>
+          <tr><td>Extrême</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Extrême », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalibrés en continu sur l'ensemble de la donnée disponible ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi #122).</p>
+    <figure class="metho-figure">
+      <img src="saillance-niveaux.png" alt="Distribution du score de saillance québécois avec les six bandes de percentiles, de Très faible à Extrême.">
+      <figcaption>Distribution réelle des scores de saillance (<code>score_qc</code>) de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
+    </figure>
   </section>
 
   <!-- §4 Une des Unes & Deux solitudes -->
@@ -543,7 +580,7 @@
       <li>Les événements du dernier bloc de quatre heures sont dédupliqués par <code>event_id</code> (priorité à la version ciblant le Québec).</li>
       <li>Les événements de source exclusivement américaine sont exclus.</li>
       <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
-      <li>Pour chaque événement, le <strong>niveau de saillance</strong> est dérivé du champ <code>intensity_tier</code> calculé par le raffineur (Majeur · Fort · Moyen · Faible) et du nombre de médias québécois le couvrant (<code>outlets_qc</code>, 1 à 6).</li>
+      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Extrême ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
       <li>La byline liste les médias couvrant l'événement et signale ceux qui l'ignorent.</li>
     </ol>
 
@@ -556,7 +593,7 @@
     </ol>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Mise en page de type une de presse : titre éditorial, niveau de saillance par tiret coloré, byline des médias couvrant l'événement, liens vers les articles sources. Le panneau Deux solitudes présente le pourcentage de divergence du jour et un tableau des histoires les plus clivantes entre les deux agendas.</p>
+    <p class="metho-body">Mise en page de type une de presse : titre éditorial, étiquette de saillance, byline des médias couvrant l'événement, liens vers les articles sources. Le panneau Deux solitudes présente le pourcentage de divergence du jour et un tableau des histoires les plus clivantes entre les deux agendas.</p>
   </section>
 
   <!-- §5 Treemap -->

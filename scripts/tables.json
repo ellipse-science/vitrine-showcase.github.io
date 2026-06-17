@@ -281,6 +281,7 @@
                 "media_ids",
                 "intensity_tier",
                 "title",
+                "text",
                 "main_issue",
                 "main_issue_text_fr",
                 "main_issue_text_en",

@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-05-28T18:47Z",
-  "date_utc": "2026-05-28",
-  "time_interval_utc": "12-16",
-  "prompt": "Create a tense, energetic orchestral piece in D minor at 120 BPM. Use strings and brass for urgency, interspersed with electronic elements for modernity. Capture a sense of unease and urgency, reflecting the economic and educational challenges faced in Québec.",
+  "generated_at": "2026-06-16T12:05Z",
+  "date_utc": "2026-06-16",
+  "time_interval_utc": "08-12",
+  "prompt": "Genre: Ambient Jazz; BPM: 60; Key: D minor; Instruments: Soft piano, brushed drums, muted trumpet; Mood: Somber and reflective, with a hint of tension. Capture the unease and sadness of a community seeking justice and change.",
   "gems": {
-    "wonder": 20,
-    "transcendence": 15,
-    "tenderness": 10,
-    "nostalgia": 5,
-    "peacefulness": 10,
-    "energy": 30,
-    "joyful_activation": 25,
-    "sadness": 40,
-    "tension": 60
+    "wonder": 10,
+    "transcendence": 5,
+    "tenderness": 20,
+    "nostalgia": 10,
+    "peacefulness": 15,
+    "energy": 60,
+    "joyful_activation": 10,
+    "sadness": 70,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Des médecins québécois misent sur SpaceX avec des actions prometteuses",
-      "weight": 40
+      "title": "Manifestation à Montréal-Nord après un scandale de racisme au SPVM",
+      "weight": 39
     },
     {
-      "title": "Les économistes critiquent vivement les annonces de Fréchette",
-      "weight": 31
+      "title": "Manifestation à Montréal-Nord contre le racisme au SPVM",
+      "weight": 34
     },
     {
-      "title": "Deux tiers des cégeps québécois anticipent un déficit budgétaire",
-      "weight": 28
+      "title": "Pénurie de génériques d'Ozempic dans les pharmacies québécoises",
+      "weight": 26
     }
   ]
 }
