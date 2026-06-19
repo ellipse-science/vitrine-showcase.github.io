@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # persist-credentials must stay true (default) so checkout's SSH
           # config survives into the "Commit updated data files" push step.
