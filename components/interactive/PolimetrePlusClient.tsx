@@ -222,7 +222,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           <div className="ppl-footer">
             <a
               className="ppl-website"
-              href="https://www.polimetre.org/fr/legault"
+              href="https://polimeter.org/fr/legault"
               target="_blank"
               rel="noopener"
             >

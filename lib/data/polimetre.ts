@@ -10,7 +10,7 @@
 // Each promise carries everything the UI needs pre-computed: a short unique
 // display title (shortened pledge text), the full pledge text (tooltip), a
 // résumé placeholder (AI-generated later), verdict slug, the full French issue
-// category, a polimetre.org link, and the rank movement vs the previous window
+// category, a polimeter.org link, and the rank movement vs the previous window
 // (trend arrow — positions gained/lost).
 //
 // Returns null when the JSON is absent (refiner not yet run) so the section can
@@ -160,7 +160,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         category: category || null,
         salienceIndex: a.salience,
         nMentions: a.nMentions,
-        url: `https://www.polimetre.org/fr/legault/${num}`,
+        url: `https://polimeter.org/fr/legault/${num}`,
         trend,
       };
     })
