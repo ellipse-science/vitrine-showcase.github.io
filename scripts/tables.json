@@ -316,7 +316,8 @@
                 "rank_delta",
                 "n_mentions",
                 "titles",
-                "urls"
+                "urls",
+                "articles"
             ],
             "enabled": true,
             "used_by": "lib/data/polimetre.ts"

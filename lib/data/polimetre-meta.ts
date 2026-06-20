@@ -13,6 +13,10 @@ export type VerdictSlug =
 
 export type Trend = { dir: "up" | "down" | "flat"; delta: number };
 
+// One representative article drawn from the promise's media coverage:
+// outlet name, headline, and a link to the piece.
+export type ArticleRef = { media: string; title: string; url: string };
+
 export type RangeKey = "week" | "month";
 
 export const RANGE_TAB_LABELS: Record<RangeKey, string> = {
@@ -50,6 +54,9 @@ export type PromiseView = {
   nMentions: number;
   url: string;
   trend: Trend;
+  // A single article from the coverage, picked at random per promise at build
+  // time. null when the promise has no usable title/url pair.
+  article: ArticleRef | null;
 };
 
 export type PolimetreData = {

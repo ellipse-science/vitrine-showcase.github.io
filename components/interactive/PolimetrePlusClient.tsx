@@ -9,6 +9,7 @@ import {
   type RangeKey,
   type VerdictSlug,
 } from "@/lib/data/polimetre-meta";
+import { InfoTip } from "@/components/interactive/InfoTip";
 
 // Number of promises shown at once — the maquette has five spots.
 const TOP_N = 5;
@@ -76,6 +77,15 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Polimètre+ : promesses sous la loupe médiatique</h2>
+          <div className="period-subtitle">
+            Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
+            <InfoTip size="sm" label="À propos du Polimètre+">
+              Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
+              Polimètre+ croise les promesses de la Coalition avenir Québec, faites
+              lors de la campagne de 2022, avec leur couverture en une dans les médias
+              québécois pour faire ressortir celles qui retiennent l&apos;attention.
+            </InfoTip>
+          </div>
         </div>
         <div className="control-block">
           <div className="legend-toggle inline">
@@ -196,6 +206,19 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
                           <p className="ppl-detail__eyebrow">Résumé</p>
                           <p className="ppl-detail__text">{p.summary ?? SUMMARY_PLACEHOLDER}</p>
+                          {p.article && (
+                            <p className="ppl-detail__article">
+                              <span className="ppl-detail__article-media">{p.article.media}</span>
+                              <a
+                                className="ppl-detail__article-link"
+                                href={p.article.url}
+                                target="_blank"
+                                rel="noopener"
+                              >
+                                {p.article.title}
+                              </a>
+                            </p>
+                          )}
                           <a
                             className="ppl-detail__link"
                             href={p.url}

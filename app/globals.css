@@ -3366,8 +3366,8 @@
   .polimeter-plus {
     --ppl-realisee:   #228B22;
     --ppl-rompue:     #AE0101;
-    --ppl-partielle:  #F3C349;
-    --ppl-en-cours:   #FF8C00;
+    --ppl-partielle:  #B8860B;
+    --ppl-en-cours:   #D2691E;
     --ppl-en-suspens: #444444;
   }
 
@@ -3520,6 +3520,33 @@
     margin: 0 0 14px;
     font-style: italic;
   }
+  /* Article représentatif tiré de la couverture : média + titre cliquable. */
+  .ppl-detail__article {
+    margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--rule);
+  }
+  .ppl-detail__article-media {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .ppl-detail__article-link {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--rule);
+    transition: border-color 0.15s ease;
+  }
+  .ppl-detail__article-link:hover { border-bottom-color: var(--ink); }
+
   .ppl-detail__link {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;

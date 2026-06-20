@@ -19,6 +19,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type {
+  ArticleRef,
   PolimetreData,
   PromiseView,
   RangeKey,
@@ -27,6 +28,7 @@ import type {
 } from "@/lib/data/polimetre-meta";
 
 export type {
+  ArticleRef,
   PolimetreData,
   PromiseView,
   RangeKey,
@@ -55,6 +57,94 @@ const VERDICT_SLUG: Record<string, VerdictSlug> = {
   "Rompue": "rompue",
 };
 
+// Canonical QC francophone outlets — the exact set the refiner ingests
+// (QC_FRENCH_MEDIA in polimetre-plus/runtime.R). media_id → display name.
+const MEDIA_BY_ID: Record<string, string> = {
+  LAP: "La Presse",
+  LED: "Le Devoir",
+  JDM: "Le Journal de Montréal",
+  TVA: "TVA Nouvelles",
+  RCI: "Radio-Canada",
+};
+
+// Fallback only: derive the outlet from a URL host, for the transitional period
+// before the refiner republishes the `articles` column. Same five outlets.
+const MEDIA_BY_HOST: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "journaldemontreal.com": "Le Journal de Montréal",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "radio-canada.ca": "Radio-Canada",
+};
+
+function mediaFromUrl(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    for (const [h, name] of Object.entries(MEDIA_BY_HOST)) {
+      if (host === h || host.endsWith(`.${h}`)) return name;
+    }
+    return host;
+  } catch {
+    return null;
+  }
+}
+
+// Headlines sometimes carry a trailing " | <Média>" attribution — either the
+// display name ("| La Presse") or the outlet code ("| JDM"). Drop it (the outlet
+// is shown separately), along with the usual quoting artefacts. Only the final
+// pipe segment is removed, and only when it exactly matches a known outlet, so
+// La Presse's internal " | …" subtitles are preserved.
+const TRAILING_MEDIA = [...Object.keys(MEDIA_BY_ID), ...Object.values(MEDIA_BY_ID)].join("|");
+function cleanArticleTitle(s: string | null | undefined): string {
+  return cleanText(s)
+    .replace(new RegExp(`\\s*\\|\\s*(?:${TRAILING_MEDIA})\\s*$`), "")
+    .trim();
+}
+
+// Pick one article at random from a promise's coverage.
+//
+// Preferred source: the `articles` column — an aligned array of
+// {media_id, title, url} where outlet, headline and link are solidary. Falls
+// back to the legacy parallel `titles`/`urls` arrays (independently de-duped, so
+// only loosely aligned) when `articles` is absent, deriving the outlet from the
+// URL host.
+function pickArticle(row: Row): ArticleRef | null {
+  let articles: { media_id?: string; title?: string; url?: string }[] = [];
+  try {
+    articles = JSON.parse(row.articles || "[]") as typeof articles;
+  } catch {
+    /* leave empty */
+  }
+  const usable = articles.filter((a) => a && a.url && a.title);
+  if (usable.length > 0) {
+    const a = usable[Math.floor(Math.random() * usable.length)];
+    const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(a.url!) || "Source";
+    const title = cleanArticleTitle(a.title);
+    if (title && a.url) return { media, title, url: a.url };
+  }
+
+  // Legacy fallback: zip titles/urls over their common length.
+  let titles: string[] = [];
+  let urls: string[] = [];
+  try {
+    titles = JSON.parse(row.titles || "[]") as string[];
+  } catch {
+    /* leave empty */
+  }
+  try {
+    urls = JSON.parse(row.urls || "[]") as string[];
+  } catch {
+    /* leave empty */
+  }
+  const n = Math.min(titles.length, urls.length);
+  if (n === 0) return null;
+  const i = Math.floor(Math.random() * n);
+  const url = (urls[i] ?? "").trim();
+  const title = cleanArticleTitle(titles[i]);
+  if (!url || !title) return null;
+  return { media: mediaFromUrl(url) ?? "Source", title, url };
+}
+
 type Row = {
   country_id: string;
   week_end_date: string;
@@ -71,6 +161,7 @@ type Row = {
   n_mentions: number;
   titles: string;
   urls: string;
+  articles?: string; // JSON array of {media_id, title, url}; absent pre-redeploy
 };
 
 type Agg = { salience: number; nMentions: number; row: Row };
@@ -162,6 +253,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         nMentions: a.nMentions,
         url: `https://polimeter.org/fr/legault/${num}`,
         trend,
+        article: pickArticle(r),
       };
     })
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
