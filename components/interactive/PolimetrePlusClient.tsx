@@ -50,6 +50,19 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
   );
 }
 
+function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: string }) {
+  if (!verdict) return <span className="ppl-verdict-tag" aria-hidden="true" />;
+  return (
+    <span
+      className={`ppl-verdict-tag ppl-verdict-tag--${verdict}`}
+      title={label || undefined}
+      aria-label={label || undefined}
+    >
+      <span className="ppl-verdict-dot" aria-hidden="true" />
+    </span>
+  );
+}
+
 export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
@@ -140,33 +153,38 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
             })}
           </nav>
 
-          <div className="ppl-issues">
-            <label className="ppl-issues__label" htmlFor="ppl-issue-select">
-              Catégorie d&apos;enjeu
-            </label>
-            <select
-              className="ppl-issue-select"
-              id="ppl-issue-select"
-              aria-label="Catégories d'enjeux"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="all">Toutes les catégories</option>
-              {categoryOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="ppl-rail-head">Catégorie d&apos;enjeu</div>
+          <select
+            className="ppl-issue-select"
+            id="ppl-issue-select"
+            aria-label="Catégories d'enjeux"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="all">Toutes les catégories</option>
+            {categoryOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <a
+            className="ppl-metho-rail"
+            href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
+            target="_blank"
+            rel="noopener"
+          >
+            Méthodologie du Polimètre
+          </a>
         </aside>
 
         {/* Rail droit : liste des promesses */}
         <div className="ppl-list">
           <div className="ppl-promise header" aria-hidden="true">
-            <div style={{ textAlign: "center" }}>Position</div>
+            <div style={{ textAlign: "center" }}>Rang</div>
             <div style={{ textAlign: "center" }}>Promesse</div>
-            <div style={{ textAlign: "right" }}>Tendance</div>
+            <div style={{ textAlign: "center" }}>Verdict</div>
+            <div style={{ textAlign: "center" }}>Tendance</div>
           </div>
 
           {filtered.length === 0 ? (
@@ -201,6 +219,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
                           <span className="ppl-title">{p.title}</span>
+                          <VerdictTag verdict={p.verdict} label={p.verdictLabel} />
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -208,58 +227,56 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                           <p className="ppl-detail__text">{p.summary ?? SUMMARY_PLACEHOLDER}</p>
                           {p.article && (
                             <p className="ppl-detail__article">
-                              <span className="ppl-detail__article-media">{p.article.media}</span>
+                              <span className="ppl-detail__article-media">À lire sur</span>
                               <a
                                 className="ppl-detail__article-link"
                                 href={p.article.url}
                                 target="_blank"
                                 rel="noopener"
                               >
-                                {p.article.title}
+                                {p.article.media}
                               </a>
                             </p>
                           )}
-                          <a
-                            className="ppl-detail__link"
-                            href={p.url}
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            + d&apos;info sur l&apos;état de réalisation de cette promesse →
-                          </a>
+                          <p className="ppl-detail__article">
+                            <span className="ppl-detail__article-media">État de réalisation</span>
+                            <a
+                              className="ppl-detail__article-link"
+                              href={p.url}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              Consulter le Polimètre
+                            </a>
+                          </p>
                         </div>
                       </>
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
                         <span className="ppl-title">{p.title}</span>
+                        <VerdictTag verdict={p.verdict} label={p.verdictLabel} />
                         <TrendBadge trend={p.trend} />
                       </>
                     )}
                   </li>
                 );
               })}
+              <li className="ppl-promise ppl-promise--more">
+                <span className="ppl-rank">…</span>
+                <a
+                  className="ppl-title ppl-more-link"
+                  href="https://polimeter.org/fr/legault"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Découvrir toutes les promesses
+                </a>
+                <span aria-hidden="true" />
+                <span aria-hidden="true" />
+              </li>
             </ol>
           )}
-
-          <div className="ppl-footer">
-            <a
-              className="ppl-website"
-              href="https://polimeter.org/fr/legault"
-              target="_blank"
-              rel="noopener"
-            >
-              Découvrir toutes les promesses
-            </a>
-            <a
-              className="ppl-metho"
-              href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
-              target="_blank"
-              rel="noopener"
-            >
-              Méthodologie du Polimètre ↗
-            </a>
-          </div>
         </div>
       </div>
     </section>

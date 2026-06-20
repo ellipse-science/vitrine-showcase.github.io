@@ -2302,7 +2302,7 @@
   }
 
   /* Partenaires — REPRIS de beta.html */
-  .partners-section { margin-top: 60px; padding-top: 28px; border-top: 0.5px solid var(--rule); }
+  .partners-section { margin-top: 32px; padding-top: 28px; border-top: 0.5px solid var(--rule); }
   .partners-section h3 {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
@@ -2337,7 +2337,7 @@
   .footer-note {
     margin-top: 60px;
     padding-top: 28px;
-    border-top: 2px solid var(--ink);
+    border-top: 0.5px solid var(--rule);
     display: grid;
     grid-template-columns: 1.2fr 1fr 1fr;
     gap: 44px;
@@ -3372,22 +3372,76 @@
   }
 
   .ppl-grid {
+    position: relative;
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 224px 1fr;
     gap: 48px;
-    align-items: start;
+    /* stretch : les deux colonnes prennent la hauteur de la plus grande (le rail,
+       fixe) → la liste s'étire jusqu'au niveau des verdicts. */
+    align-items: stretch;
+    margin-top: 42px;
+    /* hauteur réservée = hauteur avec une promesse dépliée → les partenaires
+       restent toujours à la même place, dépliée ou non (espace vide assumé). */
+    min-height: 600px;
   }
 
   /* --- Rail gauche : catégories d'enjeux --- */
-  .ppl-filters { display: flex; flex-direction: column; gap: 26px; }
+  /* align-self: start → le rail garde sa hauteur naturelle et ne s'étire pas
+     quand une promesse se déplie (la méthodologie ne glisse plus vers le bas). */
+  .ppl-filters { display: flex; flex-direction: column; gap: 10px; padding: 0 10px; align-self: start; }
 
-  .ppl-issues {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    border-top: 0.5px solid var(--rule);
-    padding-top: 10px;
+  /* En-tête du rail gauche : « Catégorie d'enjeu », même typo + hauteur que
+     l'en-tête de la liste (Rang/Promesse/…), avec le filet 2px en dessous qui
+     prolonge celui de droite → une seule ligne d'en-tête continue. */
+  .ppl-rail-head {
+    order: -2;
+    position: relative;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--ink-soft);
+    font-weight: 500;
+    padding: 6px 10px 10px;
+    border-bottom: 2px solid var(--rule-faint);
+    /* compense le padding horizontal du rail → la longue ligne reste pleine
+       largeur ; margin-bottom : espace filet → select = gap (10) + 12 = 22px. */
+    margin: 0 -10px 12px;
   }
+  /* prolonge le filet de l'en-tête à travers le gap (48px) jusqu'à l'en-tête de
+     la liste — ancré au filet du rail-head, donc parfaitement aligné (pas de
+     dédoublement). bottom: -2px → même niveau que le border-bottom. */
+  .ppl-rail-head::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 100%;
+    width: 48px;
+    height: 2px;
+    background: var(--rule-faint);
+  }
+  .ppl-issue-select { order: -1; }
+
+  /* Méthodologie : encadré façon select, dans le rail sous le bloc verdicts. */
+  .ppl-metho-rail {
+    order: 1;
+    /* en retrait comme les autres blocs ; le rail est assez large (224px) pour
+       que le texte 14px tienne sur une ligne dans la largeur en retrait. */
+    margin: auto 0 0;
+    background: var(--paper-deep);
+    border: 0.5px solid var(--rule);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 14px;
+    color: var(--ink);
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 7px 8px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .ppl-metho-rail:hover { border-color: var(--cordovan); color: var(--cordovan); }
   .ppl-issues__label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9.5px;
@@ -3397,13 +3451,15 @@
   }
   .ppl-issue-select {
     appearance: none;
-    background: var(--paper-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background: var(--paper-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center;
     border: 0.5px solid var(--rule);
     font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
     font-size: 14px;
     color: var(--ink);
-    padding: 7px 32px 7px 10px;
+    text-align: center;
+    padding: 7px 24px 7px 24px;
     cursor: pointer;
+    /* même largeur que les autres blocs du rail (pleine largeur de la zone) */
     width: 100%;
     transition: border-color 0.15s ease;
   }
@@ -3411,34 +3467,67 @@
   .ppl-issue-select:focus { outline: none; border-color: var(--cordovan); }
 
   /* --- Rail droit : liste --- */
-  .ppl-list { min-width: 0; }
+  .ppl-list { min-width: 0; display: flex; flex-direction: column; }
 
   .ppl-promises {
     list-style: none;
-    margin: 0;
+    /* décalage fixe sous l'en-tête : la première promesse garde toujours la même
+       position quel que soit le nombre de promesses (pas de centrage). */
+    margin: 12px 0 0;
     padding: 0;
   }
 
   .ppl-promise {
+    position: relative;
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    /* Colonnes Verdict et Tendance à largeur fixe : sans ça, la tendance (de
+       largeur variable) décalerait les pastilles d'une ligne à l'autre.
+       minmax(0, 1fr) sur le titre : autorise la colonne à rétrécir (le titre
+       passe à la ligne) au lieu de pousser Verdict/Tendance hors du cadre. */
+    grid-template-columns: 34px minmax(0, 1fr) 120px 60px;
     gap: 14px;
     align-items: center;
-    padding: 14px 0;
+    padding: 14px 10px;
+  }
+  /* Séparateur fin entre promesses ET sous la dernière (léger retrait), plus
+     court que les filets directeurs du haut et du bas. */
+  .ppl-promises .ppl-promise:not(.ppl-promise--open):not(.ppl-promise--more)::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
     border-bottom: 0.5px solid var(--rule-faint);
   }
+  /* La ligne de fin du bloc est gérée par .ppl-grid::after (traverse toute la
+     largeur, à hauteur figée), pas par la dernière promesse. */
+  /* En-têtes et contenus centrés par colonne : tendance et pastille verdict
+     centrées dans leur colonne (alignées avec leur titre de colonne). */
+  .ppl-promise > .ppl-trend,
+  .ppl-promise__head > .ppl-trend { justify-self: center; }
+  .ppl-promise > .ppl-verdict-tag,
+  .ppl-promise__head > .ppl-verdict-tag { justify-self: center; }
+  /* Numéro de rang aligné sur la ligne de base du titre (pas centré sur tout le
+     bloc) : reste « enligné » avec la promesse, titres multi-lignes compris. */
+  .ppl-promise > .ppl-rank,
+  .ppl-promise > .ppl-title,
+  .ppl-promise__head > .ppl-rank,
+  .ppl-promise__head > .ppl-title { align-self: baseline; }
   .ppl-promise.header {
-    border-bottom: 1px solid var(--ink);
-    padding: 6px 0 10px;
+    border-bottom: 2px solid var(--rule-faint);
+    padding: 6px 10px 10px;
     align-items: flex-end;
   }
   .ppl-promise.header div {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-soft);
     font-weight: 500;
+    overflow: visible;
+    white-space: nowrap;
   }
 
   .ppl-rank {
@@ -3451,13 +3540,13 @@
   }
 
   .ppl-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px;
-    font-weight: 600;
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    font-weight: 400;
     color: var(--ink);
     text-decoration: none;
-    letter-spacing: -0.2px;
-    line-height: 1.25;
+    letter-spacing: 0;
+    line-height: 1.3;
   }
   a.ppl-title {
     border-bottom: 0.5px solid transparent;
@@ -3465,11 +3554,49 @@
   }
   a.ppl-title:hover { color: var(--cordovan); }
 
-  .ppl-promise--realisee   .ppl-title { color: var(--ppl-realisee); }
-  .ppl-promise--partielle  .ppl-title { color: var(--ppl-partielle); }
-  .ppl-promise--en-cours   .ppl-title { color: var(--ppl-en-cours); }
-  .ppl-promise--en-suspens .ppl-title { color: var(--ppl-en-suspens); }
-  .ppl-promise--rompue     .ppl-title { color: var(--ppl-rompue); }
+  /* Indicateur de verdict : pastille colorée + libellé en petites capitales mono
+     (colonne « Verdict »). Couleur + mot → sobre, éditorial et accessible. */
+  .ppl-verdict-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .ppl-verdict-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--ink-softer);
+  }
+  .ppl-verdict-tag--realisee   .ppl-verdict-dot { background: var(--ppl-realisee); }
+  .ppl-verdict-tag--partielle  .ppl-verdict-dot { background: var(--ppl-partielle); }
+  .ppl-verdict-tag--en-cours   .ppl-verdict-dot { background: var(--ppl-en-cours); }
+  .ppl-verdict-tag--en-suspens .ppl-verdict-dot { background: var(--ppl-en-suspens); }
+  .ppl-verdict-tag--rompue     .ppl-verdict-dot { background: var(--ppl-rompue); }
+
+  /* Ligne « Découvrir toutes les promesses » : rang « … » discret + lien d'accent
+     dans la colonne promesse, intégré au tableau. */
+  .ppl-promise--more .ppl-rank { color: var(--ink-softer); font-weight: 400; }
+  .ppl-more-link {
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .ppl-more-link::after {
+    content: "↗";
+    display: inline-block;
+    margin-left: 3px;
+    font-size: 0.62em;
+    color: var(--ink-softer);
+    vertical-align: 1px;
+  }
+  .ppl-more-link:hover { color: var(--cordovan); }
 
   .ppl-trend {
     font-family: 'IBM Plex Mono', monospace;
@@ -3493,7 +3620,7 @@
   }
   .ppl-promise__head {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    grid-template-columns: 34px minmax(0, 1fr) 120px 60px;
     gap: 14px;
     align-items: center;
     margin-bottom: 10px;
@@ -3506,7 +3633,7 @@
   .ppl-detail__eyebrow {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--cordovan);
     margin: 0 0 8px;
@@ -3523,14 +3650,16 @@
   /* Article représentatif tiré de la couverture : média + titre cliquable. */
   .ppl-detail__article {
     margin: 0 0 14px;
-    padding-bottom: 12px;
-    border-bottom: 0.5px solid var(--rule);
+  }
+  /* Dernier bloc du détail (État de réalisation) : pas de marge sous le lien. */
+  .ppl-promise__detail > .ppl-detail__article:last-child {
+    margin-bottom: 0;
   }
   .ppl-detail__article-media {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--cordovan);
     margin-bottom: 5px;
@@ -3540,12 +3669,12 @@
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 15px;
     line-height: 1.4;
-    color: var(--ink);
+    color: var(--ink-soft);
+    font-style: italic;
     text-decoration: none;
-    border-bottom: 0.5px solid var(--rule);
-    transition: border-color 0.15s ease;
+    transition: color 0.15s ease;
   }
-  .ppl-detail__article-link:hover { border-bottom-color: var(--ink); }
+  .ppl-detail__article-link:hover { color: var(--cordovan); }
 
   .ppl-detail__link {
     display: inline-block;
@@ -3565,22 +3694,25 @@
   .ppl-footer {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 22px;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 0.5px solid var(--rule);
+    justify-content: flex-end;
+    gap: 0;
+    margin-top: 4px;
+    padding-bottom: 20px;
+    /* la ligne longue traverse toute la largeur, sous le footer */
+    border-bottom: 2px solid var(--rule-faint);
   }
   .ppl-website {
     background: var(--ink);
     color: var(--paper);
-    border: 0;
+    /* bordure transparente 0.5px = compense la bordure des tabs range, pour une
+       hauteur identique au bloc « depuis une semaine / un mois » en haut. */
+    border: 0.5px solid transparent;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     font-weight: 500;
-    padding: 10px 22px;
+    padding: 4px 22px;
     cursor: pointer;
     transition: background 0.15s ease;
   }
@@ -3590,19 +3722,23 @@
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ink-softer);
+    color: var(--ink-soft);
+    font-weight: 500;
     text-decoration: none;
-    border-bottom: 0.5px solid transparent;
-    padding-bottom: 2px;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    /* encadré comme les tabs « depuis une semaine / un mois » (même hauteur). */
+    border: 0.5px solid var(--rule);
+    padding: 4px 11px;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
-  .ppl-metho:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .ppl-metho:hover { color: var(--cordovan); border-color: var(--cordovan); }
 
   /* Filtre des verdicts (rail gauche, au-dessus des catégories) */
   .ppl-verdicts {
     display: flex;
     flex-direction: column;
-    border-bottom: 0.5px solid var(--rule-faint);
+    border-top: 2px solid var(--rule-faint);
+    border-bottom: 2px solid var(--rule-faint);
+    padding-top: 14px;
     padding-bottom: 14px;
   }
   .ppl-verdict {
@@ -3614,7 +3750,7 @@
     font-size: 14.5px;
     font-weight: 400;
     color: var(--ink-soft);
-    padding: 7px 10px;
+    padding: 5px 10px;
     cursor: pointer;
     transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
@@ -3626,6 +3762,12 @@
   .ppl-verdict--en-cours   { border-left-color: var(--ppl-en-cours);   background: color-mix(in srgb, var(--ppl-en-cours)   10%, transparent); }
   .ppl-verdict--en-suspens { border-left-color: var(--ppl-en-suspens); background: color-mix(in srgb, var(--ppl-en-suspens) 10%, transparent); }
   .ppl-verdict--rompue     { border-left-color: var(--ppl-rompue);     background: color-mix(in srgb, var(--ppl-rompue)     10%, transparent); }
+
+  /* « Tous les verdicts » : couleur de base neutre pour qu'il ne flotte pas dans
+     le vide quand un autre filtre est actif (même traitement barre + fond).
+     :not(.active) pour préserver l'état actif (cordovan + paper-deep). */
+  .ppl-verdict[data-verdict="all"]:not(.active) { border-left-color: var(--ink-softer); background: color-mix(in srgb, var(--ink-softer) 8%, transparent); }
+  .ppl-verdict[data-verdict="all"]:not(.active):hover { background: color-mix(in srgb, var(--ink-softer) 16%, transparent); }
 
   .ppl-verdict--realisee:hover,   .ppl-verdict--realisee.active   { background: color-mix(in srgb, var(--ppl-realisee)   20%, transparent); }
   .ppl-verdict--partielle:hover,  .ppl-verdict--partielle.active  { background: color-mix(in srgb, var(--ppl-partielle)  20%, transparent); }
@@ -3640,6 +3782,7 @@
 
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
+    .ppl-rail-head::after { display: none; }
     .ppl-verdicts {
       flex-direction: row;
       flex-wrap: wrap;
@@ -3663,7 +3806,7 @@
     .ppl-verdict--rompue     { border-bottom-color: var(--ppl-rompue); }
     .ppl-verdict[data-verdict="all"].active { border-bottom-color: var(--cordovan); border-left-color: transparent; }
     .ppl-promise,
-    .ppl-promise__head { grid-template-columns: 22px 1fr auto; gap: 10px; }
+    .ppl-promise__head { grid-template-columns: 28px minmax(0, 1fr) 90px 44px; gap: 10px; }
     .ppl-title { font-size: 16px; }
   }
 
