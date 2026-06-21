@@ -281,23 +281,13 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
 
-  // Bar lengths normalize against the highest non-shadow value so the leader
-  // fills the track. Fall back to absolute max if everything is in shadow.
-  let visibleLead = 0;
-  for (const s of sorted) {
-    if (s.sov[cfg.barKey] >= SHADOW_THRESHOLD && s.sov[cfg.barKey] > visibleLead) {
-      visibleLead = s.sov[cfg.barKey];
-    }
-  }
-  if (visibleLead === 0 && sorted[0]) visibleLead = sorted[0].sov[cfg.barKey];
-
   const rows: RowView[] = sorted.map((stat, idx) => {
     const sov = stat.sov[cfg.barKey];
     const sovPct = Math.round(sov * 100);
-    const barWidthPct = visibleLead > 0 ? Math.min(100, (sov / visibleLead) * 100) : 0;
+    const barWidthPct = Math.min(100, sov * 100);
 
     const refSov = stat.sov[cfg.refKey];
-    const refLeftPct = visibleLead > 0 ? Math.min(100, (refSov / visibleLead) * 100) : 0;
+    const refLeftPct = Math.min(100, refSov * 100);
     const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
 
     const rawTone = stat.tone[cfg.toneKey] || 0;
@@ -317,7 +307,6 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
     }));
 
     const inShadow = sov < SHADOW_THRESHOLD;
-    const isLeader = idx === 0 && !inShadow;
 
     return {
       key: stat.key,
@@ -329,7 +318,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       barTitle: `${sovPct} % de part de voix`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
-      showLeaderLabel: isLeader,
+      showLeaderLabel: idx === 0 && !inShadow,
       toneLeftPct: Number(toneLeftPct.toFixed(1)),
       sparkPolyline: polyline,
       sparkCircles: circles,

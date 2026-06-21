@@ -1272,8 +1272,8 @@
     text-wrap: balance;
   }
   .une-main .dek {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: normal;
     font-size: 19px;
     line-height: 1.45;
     color: var(--ink-soft);
@@ -1282,8 +1282,8 @@
   }
   /* Lead des Unes secondaires (#2, #3) — même esprit, plus petit. */
   .une-side .dek {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: normal;
     font-size: 15px;
     line-height: 1.45;
     color: var(--ink-soft);
@@ -1385,7 +1385,7 @@
   .une-side h2[data-saillance="1"] { font-size: 19px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
-    font-style: italic;
+    font-style: normal;
     color: var(--ink-soft);
     margin: 0 0 14px;
     line-height: 1.45;
@@ -2164,11 +2164,11 @@
     position: relative;
     border: 0.5px solid var(--rule);
   }
-  .parti-row.header { border-bottom: 1px solid var(--ink); padding: 6px 0 10px; align-items: flex-end; }
+  .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
   .parti-row.header div {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-soft); font-weight: 500;
+    color: var(--ink-soft); font-weight: 500; text-align: center;
   }
   /* Encadré du nom de parti, couleur = parti */
   .parti-name-box {
@@ -2192,12 +2192,12 @@
   .parti-bar-wrap {
     position: relative;
     height: 18px;
-    background: transparent;
-    border-bottom: 0.5px solid var(--rule);
+    background: var(--paper-deep);
+    border: 0.5px solid var(--rule);
   }
   .parti-bar {
     position: absolute; left: 0; top: 0; height: 100%;
-    background: var(--ink-softer) !important;
+    opacity: 0.5;
   }
   /* Marqueur de moyenne 30 jours — fin trait vertical avec petit repère */
   .parti-bar-avg {
@@ -2244,12 +2244,17 @@
     height: auto;
     overflow: visible;
   }
-  .in-shadow { margin-top: 24px; padding-top: 14px; border-top: 0.5px solid var(--rule); }
-  .in-shadow .label {
+  .in-shadow-label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
-    color: var(--cordovan); margin-bottom: 6px; font-weight: 500;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 500;
+    margin-top: 32px; margin-bottom: 10px;
+    padding-left: 22px;
   }
+  .in-shadow { border-top: 2px solid var(--rule-faint); }
+  .in-shadow .parti-row:last-child,
+  .partis > .parti-row:last-child,
+  .partis > .parti-row:has(+ .in-shadow-label) { border-bottom: none; }
 
   /* Légende d'encodage des partis */
   .parti-encoding {
