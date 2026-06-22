@@ -35,10 +35,6 @@ const PASS_ORDER: Record<string, number> = { pm: 3, noon: 2, am: 1 };
 const SHADOW_THRESHOLD = 0.05;
 const SPARK_W = 100;
 const SPARK_H = 30;
-// Raw tone scores from the refiner are tiny (typically |tone| < 0.05); a linear
-// [-1,+1] mapping clusters every dot at the centre. Amplify (then clamp) so
-// day-to-day differences read visually.
-const TONE_AMPLIFY = 15;
 
 export type RangeKey = "today" | "week" | "month";
 
@@ -82,6 +78,7 @@ type Stat = {
   sov: Sov;
   tone: Tone;
   history: { week: number[]; weekly: number[]; month: number[]; monthly: number[] };
+  toneHistory: { daily: number[]; weekly: number[]; monthly: number[] };
 };
 
 export type RowView = {
@@ -95,7 +92,9 @@ export type RowView = {
   refLeftPct: number;
   refTitle: string;
   showLeaderLabel: boolean;
-  toneLeftPct: number;
+  toneLabel: string;
+  toneDirection: "positive" | "negative" | "neutral";
+  toneTitle: string;
   sparkPolyline: string;
   sparkCircles: { cx: number; cy: number; r: number }[];
 };
@@ -111,6 +110,25 @@ export type RangeView = {
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
 };
+
+const TONE_THRESHOLD = 0.002;
+
+function computeToneStreak(
+  history: number[],
+): { direction: "positive" | "negative" | "neutral"; count: number } {
+  if (history.length === 0) return { direction: "neutral", count: 0 };
+  const latest = history[history.length - 1];
+  const dir =
+    latest > TONE_THRESHOLD ? "positive" : latest < -TONE_THRESHOLD ? "negative" : "neutral";
+  let count = 1;
+  for (let i = history.length - 2; i >= 0; i--) {
+    const v = history[i];
+    const d = v > TONE_THRESHOLD ? "positive" : v < -TONE_THRESHOLD ? "negative" : "neutral";
+    if (d === dir) count++;
+    else break;
+  }
+  return { direction: dir, count };
+}
 
 function isoWeekStart(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00Z");
@@ -202,6 +220,14 @@ function computeStats(rows: Row[]): Stat[] | null {
   }
   const monthKeys = Object.keys(monthBuckets).sort();
 
+  const allWeekBuckets: Record<string, string[]> = Object.create(null);
+  for (const d of allDates) {
+    const wk = isoWeekStart(d);
+    if (!allWeekBuckets[wk]) allWeekBuckets[wk] = [];
+    allWeekBuckets[wk].push(d);
+  }
+  const allWeekKeys = Object.keys(allWeekBuckets).sort();
+
   function weightedToneAvg(dates: string[], party: string): number {
     let toneSum = 0;
     let mentionSum = 0;
@@ -250,6 +276,14 @@ function computeStats(rows: Row[]): Stat[] | null {
         year: weightedToneAvg(allDates, party),
       },
       history: { week: hist7, weekly: histWeekly, month: hist30, monthly: histMonthly },
+      toneHistory: {
+        daily: allDates.map((d) => {
+          const entry = dayLookup[d] && dayLookup[d][party];
+          return entry ? entry.tone || 0 : 0;
+        }),
+        weekly: allWeekKeys.map((wk) => weightedToneAvg(allWeekBuckets[wk], party)),
+        monthly: monthKeys.map((mo) => weightedToneAvg(monthBuckets[mo], party)),
+      },
     };
   });
 }
@@ -290,9 +324,29 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
     const refLeftPct = Math.min(100, refSov * 100);
     const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
 
-    const rawTone = stat.tone[cfg.toneKey] || 0;
-    const amplified = Math.max(-1, Math.min(1, rawTone * TONE_AMPLIFY));
-    const toneLeftPct = ((amplified + 1) / 2) * 100;
+    const toneHist =
+      range === "month"
+        ? stat.toneHistory.monthly
+        : range === "week"
+          ? stat.toneHistory.weekly
+          : stat.toneHistory.daily;
+    const streak = computeToneStreak(toneHist);
+    const unclamped = toneHist.length > 0 ? toneHist[toneHist.length - 1] : 0;
+    const unit =
+      range === "month" ? "mois" : range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
+    const arrow =
+      streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—";
+    const dirLabel =
+      streak.direction === "positive"
+        ? "Positif"
+        : streak.direction === "negative"
+          ? "Négatif"
+          : "Neutre";
+    const toneLabel =
+      streak.direction === "neutral" || streak.count <= 1 || range === "today"
+        ? `${arrow} ${dirLabel}`
+        : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
+    const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
 
     const rawHistory =
       range === "month" ? stat.history.monthly : range === "week" ? stat.history.weekly : stat.history.week;
@@ -319,7 +373,9 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
       showLeaderLabel: idx === 0 && !inShadow,
-      toneLeftPct: Number(toneLeftPct.toFixed(1)),
+      toneLabel,
+      toneDirection: streak.direction,
+      toneTitle,
       sparkPolyline: polyline,
       sparkCircles: circles,
     };
@@ -348,6 +404,7 @@ export async function loadParties(): Promise<PartiesData | null> {
   const rows = JSON.parse(raw) as Row[];
   const stats = computeStats(rows);
   if (!stats) return null;
+
   return {
     ranges: {
       today: buildRangeView(stats, "today"),

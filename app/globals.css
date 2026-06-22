@@ -2152,18 +2152,33 @@
   }
   .parti-row {
     display: grid;
-    grid-template-columns: 84px 1fr 140px 160px;
+    grid-template-columns: 84px 1fr 160px 140px;
     gap: 22px;
     align-items: center;
     padding: 16px 0;
     border-bottom: 0.5px solid var(--rule);
   }
-  .parti-tone {
-    height: 16px;
-    background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
-    position: relative;
-    border: 0.5px solid var(--rule);
+  .parti-name-box, .parti-bar-wrap, .parti-spark {
+    border-right: 0.5px solid var(--rule-faint);
   }
+  .parti-row.header > div:not(:last-child) {
+    border-right: 0.5px solid var(--rule-faint);
+  }
+  .parti-tone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tone-streak {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .tone-streak--positive { color: #3D6B3A; }
+  .tone-streak--negative { color: #A8302C; }
+  .tone-streak--neutral  { color: var(--ink-softer); }
   .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
   .parti-row.header div {
     font-family: 'IBM Plex Mono', monospace;
@@ -2713,7 +2728,7 @@
       margin-top: 8px;
       margin-bottom: 6px;
     }
-    .parti-row .parti-tone     { grid-column: 2; grid-row: 4; height: 8px; }
+    .parti-row .parti-tone     { grid-column: 2; grid-row: 4; }
     .parti-row .parti-spark    { display: none; }
     .parti-row.header { display: none; }
     .parti-name-box { font-size: 13px; min-width: 52px; padding: 6px 8px; letter-spacing: 1px; }

@@ -38,8 +38,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         <div className="parti-row header">
           <div>Parti</div>
           <div>Saillance</div>
-          <div>Ton de la couverture</div>
           <div>{view.sparkHeadLabel}</div>
+          <div>Ton de la couverture</div>
         </div>
 
         {visibleRows.map((row) => (
@@ -99,10 +99,6 @@ function PartiRow({
           {row.showLeaderLabel && <span className="avg-label">{refLabel}</span>}
         </div>
       </div>
-      <div className="parti-ton-label">Ton de la couverture</div>
-      <div className="parti-tone">
-        <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
-      </div>
       <div className="parti-spark">
         <svg viewBox="0 0 100 30" preserveAspectRatio="none">
           <polyline
@@ -124,6 +120,10 @@ function PartiRow({
             />
           ))}
         </svg>
+      </div>
+      <div className="parti-ton-label">Ton de la couverture</div>
+      <div className="parti-tone" title={row.toneTitle}>
+        <span className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</span>
       </div>
     </div>
   );
