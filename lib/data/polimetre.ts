@@ -101,7 +101,12 @@ function cleanArticleTitle(s: string | null | undefined): string {
     .trim();
 }
 
-// Pick one article at random from a promise's coverage.
+// Pick the representative article for a promise's coverage.
+//
+// Deterministic — like the enjeux treemap, which selects its representative item
+// by ranking rather than at random. The published `articles` array carries no
+// per-article score, so the stable equivalent is the first entry of the coverage
+// (same JSON in → same article out, across rebuilds).
 //
 // Preferred source: the `articles` column — an aligned array of
 // {media_id, title, url} where outlet, headline and link are solidary. Falls
@@ -117,7 +122,7 @@ function pickArticle(row: Row): ArticleRef | null {
   }
   const usable = articles.filter((a) => a && a.url && a.title);
   if (usable.length > 0) {
-    const a = usable[Math.floor(Math.random() * usable.length)];
+    const a = usable[0];
     const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(a.url!) || "Source";
     const title = cleanArticleTitle(a.title);
     if (title && a.url) return { media, title, url: a.url };
@@ -138,9 +143,8 @@ function pickArticle(row: Row): ArticleRef | null {
   }
   const n = Math.min(titles.length, urls.length);
   if (n === 0) return null;
-  const i = Math.floor(Math.random() * n);
-  const url = (urls[i] ?? "").trim();
-  const title = cleanArticleTitle(titles[i]);
+  const url = (urls[0] ?? "").trim();
+  const title = cleanArticleTitle(titles[0]);
   if (!url || !title) return null;
   return { media: mediaFromUrl(url) ?? "Source", title, url };
 }

@@ -225,7 +225,14 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                           <p className="ppl-detail__text">{p.summary ?? SUMMARY_PLACEHOLDER}</p>
                           {p.article && (
                             <p className="ppl-detail__article">
-                              <span className="ppl-detail__article-media">{p.article.media}</span>
+                              <span className="ppl-detail__article-media">
+                                {p.article.media}
+                                <InfoTip size="sm" label="Choix de l'article">
+                                  L&apos;article présenté est tiré de la couverture
+                                  médiatique {range === "month" ? "du mois" : "de la semaine"}{" "}
+                                  associée à cette promesse — il en illustre le traitement.
+                                </InfoTip>
+                              </span>
                               <a
                                 className="ppl-detail__article-link"
                                 href={p.article.url}
