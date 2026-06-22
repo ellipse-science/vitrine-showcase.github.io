@@ -183,7 +183,6 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           <div className="ppl-promise header" aria-hidden="true">
             <div style={{ textAlign: "center" }}>Rang</div>
             <div style={{ textAlign: "center" }}>Promesse</div>
-            <div style={{ textAlign: "center" }}>Verdict</div>
             <div style={{ textAlign: "center" }}>Tendance</div>
           </div>
 
@@ -219,7 +218,6 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
                           <span className="ppl-title">{p.title}</span>
-                          <VerdictTag verdict={p.verdict} label={p.verdictLabel} />
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -255,28 +253,24 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       <>
                         <span className="ppl-rank">{i + 1}</span>
                         <span className="ppl-title">{p.title}</span>
-                        <VerdictTag verdict={p.verdict} label={p.verdictLabel} />
                         <TrendBadge trend={p.trend} />
                       </>
                     )}
                   </li>
                 );
               })}
-              <li className="ppl-promise ppl-promise--more">
-                <span className="ppl-rank">…</span>
-                <a
-                  className="ppl-title ppl-more-link"
-                  href="https://polimeter.org/fr/legault"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  Découvrir toutes les promesses
-                </a>
-                <span aria-hidden="true" />
-                <span aria-hidden="true" />
-              </li>
             </ol>
           )}
+          <div className="ppl-discover-wrap">
+            <a
+              className="ppl-discover"
+              href="https://polimeter.org/fr/legault"
+              target="_blank"
+              rel="noopener"
+            >
+              Découvrir toutes les promesses
+            </a>
+          </div>
         </div>
       </div>
     </section>

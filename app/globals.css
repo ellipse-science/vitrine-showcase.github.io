@@ -3380,9 +3380,7 @@
        fixe) → la liste s'étire jusqu'au niveau des verdicts. */
     align-items: stretch;
     margin-top: 42px;
-    /* hauteur réservée = hauteur avec une promesse dépliée → les partenaires
-       restent toujours à la même place, dépliée ou non (espace vide assumé). */
-    min-height: 600px;
+    min-height: 390px;
   }
 
   /* --- Rail gauche : catégories d'enjeux --- */
@@ -3484,7 +3482,7 @@
        largeur variable) décalerait les pastilles d'une ligne à l'autre.
        minmax(0, 1fr) sur le titre : autorise la colonne à rétrécir (le titre
        passe à la ligne) au lieu de pousser Verdict/Tendance hors du cadre. */
-    grid-template-columns: 34px minmax(0, 1fr) 120px 60px;
+    grid-template-columns: 34px minmax(0, 1fr) 60px;
     gap: 14px;
     align-items: center;
     padding: 14px 10px;
@@ -3548,6 +3546,12 @@
     letter-spacing: 0;
     line-height: 1.3;
   }
+  .ppl-promise--open .ppl-title { font-weight: 700; }
+  .ppl-promise--realisee   .ppl-title { color: var(--ppl-realisee); }
+  .ppl-promise--partielle  .ppl-title { color: var(--ppl-partielle); }
+  .ppl-promise--en-cours   .ppl-title { color: var(--ppl-en-cours); }
+  .ppl-promise--en-suspens .ppl-title { color: var(--ppl-en-suspens); }
+  .ppl-promise--rompue     .ppl-title { color: var(--ppl-rompue); }
   a.ppl-title {
     border-bottom: 0.5px solid transparent;
     transition: color 0.15s ease, border-color 0.15s ease;
@@ -3580,23 +3584,27 @@
   .ppl-verdict-tag--en-suspens .ppl-verdict-dot { background: var(--ppl-en-suspens); }
   .ppl-verdict-tag--rompue     .ppl-verdict-dot { background: var(--ppl-rompue); }
 
-  /* Ligne « Découvrir toutes les promesses » : rang « … » discret + lien d'accent
-     dans la colonne promesse, intégré au tableau. */
-  .ppl-promise--more .ppl-rank { color: var(--ink-softer); font-weight: 400; }
-  .ppl-more-link {
+  .ppl-discover-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+    margin-left: calc(10px + 34px + 14px);
+    margin-right: calc(10px + 60px + 14px);
+  }
+  .ppl-discover {
+    border: 0.5px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
     color: var(--ink);
     text-decoration: none;
-    transition: color 0.15s ease;
+    padding: 4px 11px;
+    background: var(--ink);
+    color: var(--paper);
   }
-  .ppl-more-link::after {
-    content: "↗";
-    display: inline-block;
-    margin-left: 3px;
-    font-size: 0.62em;
-    color: var(--ink-softer);
-    vertical-align: 1px;
-  }
-  .ppl-more-link:hover { color: var(--cordovan); }
+  .ppl-discover:hover { opacity: 0.85; }
 
   .ppl-trend {
     font-family: 'IBM Plex Mono', monospace;
@@ -3620,7 +3628,7 @@
   }
   .ppl-promise__head {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 120px 60px;
+    grid-template-columns: 34px minmax(0, 1fr) 60px;
     gap: 14px;
     align-items: center;
     margin-bottom: 10px;
@@ -3755,7 +3763,12 @@
     transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
   .ppl-verdict:hover { color: var(--ink); background: var(--paper-deep); }
-  .ppl-verdict.active { background: var(--paper-deep); color: var(--ink); font-weight: 600; }
+  .ppl-verdict.active { background: var(--paper-deep); font-weight: 700; }
+  .ppl-verdict--realisee.active   { color: var(--ppl-realisee); }
+  .ppl-verdict--partielle.active  { color: var(--ppl-partielle); }
+  .ppl-verdict--en-cours.active   { color: var(--ppl-en-cours); }
+  .ppl-verdict--en-suspens.active { color: var(--ppl-en-suspens); }
+  .ppl-verdict--rompue.active     { color: var(--ppl-rompue); }
 
   .ppl-verdict--realisee   { border-left-color: var(--ppl-realisee);   background: color-mix(in srgb, var(--ppl-realisee)   10%, transparent); }
   .ppl-verdict--partielle  { border-left-color: var(--ppl-partielle);  background: color-mix(in srgb, var(--ppl-partielle)  10%, transparent); }
