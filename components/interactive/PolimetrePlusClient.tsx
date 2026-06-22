@@ -225,28 +225,25 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                           <p className="ppl-detail__text">{p.summary ?? SUMMARY_PLACEHOLDER}</p>
                           {p.article && (
                             <p className="ppl-detail__article">
-                              <span className="ppl-detail__article-media">À lire sur</span>
+                              <span className="ppl-detail__article-media">{p.article.media}</span>
                               <a
                                 className="ppl-detail__article-link"
                                 href={p.article.url}
                                 target="_blank"
                                 rel="noopener"
                               >
-                                {p.article.media}
+                                {p.article.title}
                               </a>
                             </p>
                           )}
-                          <p className="ppl-detail__article">
-                            <span className="ppl-detail__article-media">État de réalisation</span>
-                            <a
-                              className="ppl-detail__article-link"
-                              href={p.url}
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              Consulter le Polimètre
-                            </a>
-                          </p>
+                          <a
+                            className="ppl-detail__link"
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            + d&apos;info sur l&apos;état de réalisation de cette promesse →
+                          </a>
                         </div>
                       </>
                     ) : (
