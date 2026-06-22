@@ -2158,12 +2158,6 @@
     padding: 16px 0;
     border-bottom: 0.5px solid var(--rule);
   }
-  .parti-name-box, .parti-bar-wrap, .parti-spark {
-    border-right: 0.5px solid var(--rule-faint);
-  }
-  .parti-row.header > div:not(:last-child) {
-    border-right: 0.5px solid var(--rule-faint);
-  }
   .parti-tone {
     display: flex;
     align-items: center;
