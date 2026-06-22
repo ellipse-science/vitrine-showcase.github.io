@@ -3658,8 +3658,6 @@
   /* Article représentatif tiré de la couverture : média + titre cliquable. */
   .ppl-detail__article {
     margin: 0 0 14px;
-    padding-bottom: 12px;
-    border-bottom: 0.5px solid var(--rule);
   }
   .ppl-detail__article-media {
     display: block;
@@ -3674,6 +3672,7 @@
   .ppl-detail__article-link {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 15px;
+    font-style: italic;
     line-height: 1.4;
     color: var(--ink);
     text-decoration: none;
@@ -3686,15 +3685,14 @@
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    font-weight: 500;
     color: var(--cordovan);
     text-decoration: none;
-    border-bottom: 0.5px solid var(--cordovan);
-    padding-bottom: 1px;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease;
   }
-  .ppl-detail__link:hover { color: var(--ink); border-bottom-color: var(--ink); }
+  .ppl-detail__link:hover { color: var(--ink); }
 
   /* Footer : voir plus + methodologie */
   .ppl-footer {
