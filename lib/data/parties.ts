@@ -1,13 +1,16 @@
 // Build-time loader for the partis-couverture section.
 //
-// Reads /public/data/refined/day/provincial_parties_score_day.json from disk,
-// runs the same dedup + aggregation pipeline as the legacy
-// public/js/partis-couverture.js, and returns one RangeView per time window
-// (today / week / month) ready to be rendered by React.
+// Reads the three JSON files produced by the radar-party-score-salient-shadow refiner:
+//   - provincial_parties_salient_shadow_day.json   → "Aujourd'hui" view
+//   - provincial_parties_salient_shadow_week.json  → "Depuis une semaine" view
+//   - provincial_parties_salient_shadow_month.json → "Depuis un mois" view
 //
-// All numbers — bar widths, reference markers, tone-dot positions, sparkline
-// polyline points, sampled circle positions — are pre-computed here so the
-// runtime React component does no math.
+// Key difference from radar-party-score: weighted_mentions is already a SOV
+// fraction (0–1) normalised within provincial parties — no frontend normalisation
+// needed. The eclipse threshold is 2 % (vs 5 % in the previous refiner).
+//
+// Each file keeps a rolling 35-day window (one row per party per date).
+// The week file resets every Monday; the month file resets on the 1st.
 
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -31,8 +34,7 @@ export const PARTY_COLORS: Record<PartyKey, string> = {
   pcq: "#5A3B6E",
 };
 
-const PASS_ORDER: Record<string, number> = { pm: 3, noon: 2, am: 1 };
-const SHADOW_THRESHOLD = 0.05;
+const SHADOW_THRESHOLD = 0.02; // éclipse médiatique : < 2 % SOV (seuil du raffineur)
 const SPARK_W = 100;
 const SPARK_H = 30;
 
@@ -48,9 +50,9 @@ const RANGE_CONFIG: Record<
   RangeKey,
   { barKey: keyof Sov; refKey: keyof Sov; toneKey: keyof Tone; refLabel: string }
 > = {
-  today: { barKey: "today", refKey: "week", toneKey: "today", refLabel: "moyenne 7 jours" },
-  week: { barKey: "week", refKey: "month", toneKey: "week", refLabel: "moyenne du mois" },
-  month: { barKey: "month", refKey: "year", toneKey: "month", refLabel: "moyenne de l'année" },
+  today: { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne depuis lundi" },
+  week:  { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne du mois" },
+  month: { barKey: "month", refKey: "year",  toneKey: "month", refLabel: "moyenne de l'année" },
 };
 
 const TAB_LABELS: Record<RangeKey, string> = {
@@ -59,19 +61,20 @@ const TAB_LABELS: Record<RangeKey, string> = {
   month: "Depuis un mois",
 };
 
-export type Sov = { today: number; week: number; month: number; year: number };
+export type Sov  = { today: number; week: number; month: number; year: number };
 export type Tone = { today: number; week: number; month: number; year: number };
 
-type Row = {
+type ShadowRow = {
   party: string;
   date_utc: string;
-  weighted_mentions: number;
+  date_montreal_tz: string;
+  weighted_mentions: number; // already SOV (0–1)
   weighted_tone: number;
-  pass: string;
+  computed_at?: string;
 };
 
-type DayEntry = { mentions: number; tone: number };
-type DayLookup = Record<string, Record<string, DayEntry>>;
+type Entry = { mentions: number; tone: number };
+type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
 type Stat = {
   key: PartyKey;
@@ -112,6 +115,7 @@ export type PartiesData = {
 };
 
 const TONE_THRESHOLD = 0.002;
+const SPARK_CIRCLE_COUNT = 7;
 
 function computeToneStreak(
   history: number[],
@@ -128,164 +132,6 @@ function computeToneStreak(
     else break;
   }
   return { direction: dir, count };
-}
-
-function isoWeekStart(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00Z");
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() - (day - 1));
-  return d.toISOString().slice(0, 10);
-}
-
-function buildDayLookup(rows: Row[]): DayLookup {
-  // Athena rows have duplicate (date, party, pass); keep the row with highest
-  // weighted_mentions per (date, partyUpper, pass), then pick the best
-  // available pass (pm > noon > am, preferring nonzero mentions).
-  const passBest: Record<string, Row & { partyUpper: string }> = Object.create(null);
-  for (const row of rows) {
-    const partyUpper = row.party.toUpperCase();
-    const key = `${row.date_utc}|${partyUpper}|${row.pass}`;
-    const existing = passBest[key];
-    if (!existing || row.weighted_mentions > existing.weighted_mentions) {
-      passBest[key] = { ...row, partyUpper };
-    }
-  }
-
-  const grouped: Record<string, Record<string, (typeof passBest)[string][]>> = Object.create(null);
-  for (const k of Object.keys(passBest)) {
-    const row = passBest[k];
-    if (!grouped[row.date_utc]) grouped[row.date_utc] = Object.create(null);
-    if (!grouped[row.date_utc][row.partyUpper]) grouped[row.date_utc][row.partyUpper] = [];
-    grouped[row.date_utc][row.partyUpper].push(row);
-  }
-
-  const result: DayLookup = Object.create(null);
-  for (const date of Object.keys(grouped)) {
-    result[date] = Object.create(null);
-    const parties = grouped[date];
-    for (const party of Object.keys(parties)) {
-      const passes = parties[party].slice().sort(
-        (a, b) => (PASS_ORDER[b.pass] || 0) - (PASS_ORDER[a.pass] || 0),
-      );
-      const best = passes.find((r) => r.weighted_mentions > 0) || passes[0];
-      result[date][party] = { mentions: best.weighted_mentions, tone: best.weighted_tone };
-    }
-  }
-  return result;
-}
-
-function computeStats(rows: Row[]): Stat[] | null {
-  const dayLookup = buildDayLookup(rows);
-  const allDates = Object.keys(dayLookup).sort();
-  if (allDates.length === 0) return null;
-
-  const latestDate = allDates[allDates.length - 1];
-  const knownParties = PARTY_KEYS.map((k) => k.toUpperCase());
-  const last7 = allDates.slice(-7);
-  const last30 = allDates.slice(-30);
-
-  function sovOnDate(date: string): Record<string, number> {
-    const day = dayLookup[date] || {};
-    const total =
-      knownParties.reduce((s, p) => s + ((day[p] && day[p].mentions) || 0), 0) || 1;
-    const out: Record<string, number> = Object.create(null);
-    for (const p of knownParties) {
-      out[p] = ((day[p] && day[p].mentions) || 0) / total;
-    }
-    return out;
-  }
-
-  const sovCache: Record<string, Record<string, number>> = Object.create(null);
-  for (const d of last30) sovCache[d] = sovOnDate(d);
-
-  const allDatesSovCache: Record<string, Record<string, number>> = Object.create(null);
-  for (const d of allDates) allDatesSovCache[d] = sovOnDate(d);
-
-  const avg = (arr: number[]) =>
-    arr.length === 0 ? 0 : arr.reduce((s, v) => s + v, 0) / arr.length;
-
-  const weekBuckets: Record<string, string[]> = Object.create(null);
-  for (const d of last30) {
-    const wk = isoWeekStart(d);
-    if (!weekBuckets[wk]) weekBuckets[wk] = [];
-    weekBuckets[wk].push(d);
-  }
-  const weekKeys = Object.keys(weekBuckets).sort();
-
-  const monthBuckets: Record<string, string[]> = Object.create(null);
-  for (const d of allDates) {
-    const mo = d.slice(0, 7);
-    if (!monthBuckets[mo]) monthBuckets[mo] = [];
-    monthBuckets[mo].push(d);
-  }
-  const monthKeys = Object.keys(monthBuckets).sort();
-
-  const allWeekBuckets: Record<string, string[]> = Object.create(null);
-  for (const d of allDates) {
-    const wk = isoWeekStart(d);
-    if (!allWeekBuckets[wk]) allWeekBuckets[wk] = [];
-    allWeekBuckets[wk].push(d);
-  }
-  const allWeekKeys = Object.keys(allWeekBuckets).sort();
-
-  function weightedToneAvg(dates: string[], party: string): number {
-    let toneSum = 0;
-    let mentionSum = 0;
-    for (const d of dates) {
-      const entry = dayLookup[d] && dayLookup[d][party];
-      if (!entry) continue;
-      toneSum += (entry.tone || 0) * (entry.mentions || 0);
-      mentionSum += entry.mentions || 0;
-    }
-    return mentionSum > 0 ? toneSum / mentionSum : 0;
-  }
-
-  return knownParties.map((party): Stat => {
-    const hist7 = last7.map((d) => (sovCache[d] && sovCache[d][party]) || 0);
-    const hist30 = last30.map((d) => (sovCache[d] && sovCache[d][party]) || 0);
-    const histYear = allDates.map(
-      (d) => (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0,
-    );
-    const todayTone =
-      (dayLookup[latestDate] && dayLookup[latestDate][party] && dayLookup[latestDate][party].tone) || 0;
-
-    const histWeekly = weekKeys.map((wk) => {
-      const days = weekBuckets[wk];
-      const vals = days.map((d) => (sovCache[d] && sovCache[d][party]) || 0);
-      return vals.reduce((s, v) => s + v, 0) / vals.length;
-    });
-
-    const histMonthly = monthKeys.map((mo) => {
-      const days = monthBuckets[mo];
-      const vals = days.map((d) => (allDatesSovCache[d] && allDatesSovCache[d][party]) || 0);
-      return vals.reduce((s, v) => s + v, 0) / vals.length;
-    });
-
-    return {
-      key: party.toLowerCase() as PartyKey,
-      sov: {
-        today: (sovCache[latestDate] && sovCache[latestDate][party]) || 0,
-        week: avg(hist7),
-        month: avg(hist30),
-        year: avg(histYear),
-      },
-      tone: {
-        today: todayTone,
-        week: weightedToneAvg(last7, party),
-        month: weightedToneAvg(last30, party),
-        year: weightedToneAvg(allDates, party),
-      },
-      history: { week: hist7, weekly: histWeekly, month: hist30, monthly: histMonthly },
-      toneHistory: {
-        daily: allDates.map((d) => {
-          const entry = dayLookup[d] && dayLookup[d][party];
-          return entry ? entry.tone || 0 : 0;
-        }),
-        weekly: allWeekKeys.map((wk) => weightedToneAvg(allWeekBuckets[wk], party)),
-        monthly: monthKeys.map((mo) => weightedToneAvg(monthBuckets[mo], party)),
-      },
-    };
-  });
 }
 
 function sparkPoints(history: number[], w: number, h: number): [number, number][] {
@@ -309,7 +155,95 @@ function samplePoints(points: [number, number][], n: number): [number, number][]
   return out;
 }
 
-const SPARK_CIRCLE_COUNT = 7;
+// Returns the last date of each ISO week — one sparkline point per week.
+function lastDatesPerWeek(dates: string[]): string[] {
+  const last = new Map<string, string>();
+  for (const d of dates) {
+    const dt = new Date(d + "T12:00:00Z");
+    const day = dt.getUTCDay() || 7;
+    dt.setUTCDate(dt.getUTCDate() - (day - 1));
+    last.set(dt.toISOString().slice(0, 10), d);
+  }
+  return [...last.values()].sort();
+}
+
+// Returns the last date of each calendar month — one sparkline point per month.
+function lastDatesPerMonth(dates: string[]): string[] {
+  const last = new Map<string, string>();
+  for (const d of dates) last.set(d.slice(0, 7), d);
+  return [...last.values()].sort();
+}
+
+// Builds a date → party → entry lookup. Each (date, party) pair should already
+// be unique in the shadow tables, but we keep the most recent computed_at as a
+// safety net for duplicate rows.
+function buildLookup(rows: ShadowRow[]): Lookup {
+  const result: Lookup = Object.create(null);
+  for (const row of rows) {
+    const pKey = row.party.toLowerCase();
+    if (!result[row.date_utc]) result[row.date_utc] = Object.create(null);
+    const existing = result[row.date_utc][pKey];
+    if (!existing) {
+      result[row.date_utc][pKey] = { mentions: row.weighted_mentions, tone: row.weighted_tone };
+    }
+  }
+  return result;
+}
+
+function computeStats(
+  dayRows: ShadowRow[],
+  weekRows: ShadowRow[],
+  monthRows: ShadowRow[],
+): Stat[] | null {
+  const dayLookup   = buildLookup(dayRows);
+  const weekLookup  = buildLookup(weekRows);
+  const monthLookup = buildLookup(monthRows);
+
+  const allDayDates  = Object.keys(dayLookup).sort();
+  const weekDates    = Object.keys(weekLookup).sort();
+  const monthDates   = Object.keys(monthLookup).sort();
+
+  if (!allDayDates.length || !weekDates.length || !monthDates.length) return null;
+
+  const latestDay   = allDayDates[allDayDates.length - 1];
+  const latestWeek  = weekDates[weekDates.length - 1];
+  const latestMonth = monthDates[monthDates.length - 1];
+
+  const last7DayDates    = allDayDates.slice(-7);
+  const weekSampleDates  = lastDatesPerWeek(weekDates).slice(-12);
+  const monthSampleDates = lastDatesPerMonth(monthDates).slice(-12);
+
+  const avg = (arr: number[]) =>
+    arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+
+  return PARTY_KEYS.map((pKey): Stat => {
+    const todaySov  = dayLookup[latestDay]?.[pKey]?.mentions   || 0;
+    const weekSov   = weekLookup[latestWeek]?.[pKey]?.mentions  || 0;
+    const monthSov  = monthLookup[latestMonth]?.[pKey]?.mentions || 0;
+    const yearSov   = avg(allDayDates.map((d) => dayLookup[d]?.[pKey]?.mentions || 0));
+
+    const todayTone = dayLookup[latestDay]?.[pKey]?.tone   || 0;
+    const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone  || 0;
+    const monthTone = monthLookup[latestMonth]?.[pKey]?.tone || 0;
+
+    return {
+      key: pKey,
+      sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
+      tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
+      history: {
+        week:    last7DayDates.map((d)    => dayLookup[d]?.[pKey]?.mentions   || 0),
+        weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.mentions  || 0),
+        month:   [],
+        monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.mentions || 0),
+      },
+      toneHistory: {
+        daily:   allDayDates.map((d)       => dayLookup[d]?.[pKey]?.tone   || 0),
+        weekly:  weekSampleDates.map((d)   => weekLookup[d]?.[pKey]?.tone  || 0),
+        monthly: monthSampleDates.map((d)  => monthLookup[d]?.[pKey]?.tone || 0),
+      },
+    };
+  });
+}
 
 function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
   const cfg = RANGE_CONFIG[range];
@@ -349,7 +283,11 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
     const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
 
     const rawHistory =
-      range === "month" ? stat.history.monthly : range === "week" ? stat.history.weekly : stat.history.week;
+      range === "month"
+        ? stat.history.monthly
+        : range === "week"
+          ? stat.history.weekly
+          : stat.history.week;
     const pts = sparkPoints(rawHistory, SPARK_W, SPARK_H);
     const polyline = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
 
@@ -360,19 +298,17 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       r: i === sampled.length - 1 ? 3.5 : 2.5,
     }));
 
-    const inShadow = sov < SHADOW_THRESHOLD;
-
     return {
       key: stat.key,
       label: PARTY_LABELS[stat.key],
-      inShadow,
+      inShadow: sov < SHADOW_THRESHOLD,
       color: PARTY_COLORS[stat.key],
       sovPct,
       barWidthPct: Number(barWidthPct.toFixed(1)),
       barTitle: `${sovPct} % de part de voix`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
-      showLeaderLabel: idx === 0 && !inShadow,
+      showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,
       toneLabel,
       toneDirection: streak.direction,
       toneTitle,
@@ -390,26 +326,32 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
   };
 }
 
-const PARTIES_JSON_PATH = path.resolve(
-  process.cwd(),
-  "public",
-  "data",
-  "refined",
-  "day",
-  "provincial_parties_score_day.json",
-);
+const DATA_DIR = path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(): Promise<PartiesData | null> {
-  const raw = await fs.readFile(PARTIES_JSON_PATH, "utf8");
-  const rows = JSON.parse(raw) as Row[];
-  const stats = computeStats(rows);
-  if (!stats) return null;
+  try {
+    const [dayRaw, weekRaw, monthRaw] = await Promise.all([
+      fs.readFile(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_day.json"),   "utf8"),
+      fs.readFile(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_week.json"),  "utf8"),
+      fs.readFile(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_month.json"), "utf8"),
+    ]);
 
-  return {
-    ranges: {
-      today: buildRangeView(stats, "today"),
-      week: buildRangeView(stats, "week"),
-      month: buildRangeView(stats, "month"),
-    },
-  };
+    const dayRows   = JSON.parse(dayRaw)   as ShadowRow[];
+    const weekRows  = JSON.parse(weekRaw)  as ShadowRow[];
+    const monthRows = JSON.parse(monthRaw) as ShadowRow[];
+
+    const stats = computeStats(dayRows, weekRows, monthRows);
+    if (!stats) return null;
+
+    return {
+      ranges: {
+        today: buildRangeView(stats, "today"),
+        week:  buildRangeView(stats, "week"),
+        month: buildRangeView(stats, "month"),
+      },
+    };
+  } catch {
+    // Shadow files not yet fetched — section stays hidden until next data refresh
+    return null;
+  }
 }
