@@ -272,7 +272,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               target="_blank"
               rel="noopener"
             >
-              Découvrir toutes les promesses
+              Découvrir toutes les promesses sur le site Web (Vox Pop Labs)
             </a>
           </div>
         </div>
