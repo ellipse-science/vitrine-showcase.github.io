@@ -19,6 +19,20 @@
     --tag-expert-fg: #A07A3D;
   }
   * { box-sizing: border-box; }
+  /* Barres de défilement discrètes : piste transparente (se fond dans le papier),
+     pouce en filet sobre. S'applique à toute la page et aux conteneurs internes
+     (ex. le menu déroulant des catégories). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--rule);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: var(--ink-softer); }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
     /* Garde-fou : aucune section ne doit jamais provoquer de défilement
@@ -3464,6 +3478,52 @@
   .ppl-issue-select:hover { border-color: var(--ink-soft); }
   .ppl-issue-select:focus { outline: none; border-color: var(--cordovan); }
 
+  /* Menu déroulant des catégories : <select> custom pour que les options portent
+     la même police que le reste du module (impossible sur un <select> natif).
+     Les 12 catégories sont toujours listées ; celles sans donnée sur la période
+     sont grisées et non cliquables. */
+  .ppl-cat-dropdown { order: -1; position: relative; }
+  .ppl-cat-trigger { display: block; }
+  .ppl-cat-trigger[aria-expanded="true"] { border-color: var(--cordovan); }
+  .ppl-cat-menu {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 3px 0;
+    list-style: none;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .ppl-cat-option {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 12.5px;
+    line-height: 1.3;
+    color: var(--ink);
+    text-align: center;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .ppl-cat-option:hover { background: var(--paper-deep); }
+  .ppl-cat-option.active {
+    color: var(--cordovan);
+    font-weight: 600;
+    background: var(--paper-deep);
+  }
+  /* Sans donnée : grisé, non cliquable, sans effet de survol. */
+  .ppl-cat-option--empty {
+    color: var(--ink-softer);
+    opacity: 0.55;
+    cursor: default;
+  }
+  .ppl-cat-option--empty:hover { background: none; }
+
   /* --- Rail droit : liste --- */
   .ppl-list { min-width: 0; display: flex; flex-direction: column; }
 
@@ -3655,12 +3715,42 @@
     margin: 0 0 14px;
     font-style: italic;
   }
-  /* Article représentatif tiré de la couverture : média + titre cliquable. */
-  .ppl-detail__article {
+  /* Couverture médiatique : byline en ligne des médias (séparés par virgules),
+     chaque nom menant à l'article le plus récent du média — calqué sur la
+     byline « À lire en Une sur » du module Une des unes. */
+  .ppl-detail__coverage {
     margin: 0 0 14px;
     padding-bottom: 12px;
     border-bottom: 0.5px solid var(--rule);
+    line-height: 1.6;
   }
+  /* « À lire sur » : même police que l'œilleton « Résumé », sur sa propre ligne. */
+  .ppl-detail__coverage-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  /* Liste des médias : même police et même teinte que le résumé. */
+  .ppl-detail__coverage-media {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .ppl-detail__coverage-media a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--rule);
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .ppl-detail__coverage-media a:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .ppl-detail__coverage-media .sep { margin-right: 6px; }
   .ppl-detail__article-media {
     display: block;
     font-family: 'IBM Plex Mono', monospace;

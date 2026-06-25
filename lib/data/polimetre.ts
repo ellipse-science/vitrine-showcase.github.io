@@ -101,52 +101,92 @@ function cleanArticleTitle(s: string | null | undefined): string {
     .trim();
 }
 
-// Pick the representative article for a promise's coverage.
-//
-// Deterministic — like the enjeux treemap, which selects its representative item
-// by ranking rather than at random. The published `articles` array carries no
-// per-article score, so the stable equivalent is the first entry of the coverage
-// (same JSON in → same article out, across rebuilds).
+// Recency key derived from an article URL. QC outlets encode the publication
+// order in the path: La Presse / TVA / JDM carry a "/YYYY-MM-DD/" (or
+// "/YYYY/MM/DD/") date; Le Devoir and Radio-Canada carry a monotonically
+// increasing numeric article id. `date` (YYYYMMDD) sorts lexically; `id` is the
+// largest path number. Outlets use one scheme consistently, so the comparison
+// only ever runs within a single outlet's coverage.
+type Recency = { date: string | null; id: number };
+
+function recencyKey(url: string): Recency {
+  const d = url.match(/\/(20\d{2})[-/](\d{2})[-/](\d{2})\//);
+  if (d) return { date: `${d[1]}${d[2]}${d[3]}`, id: 0 };
+  const ids = [...url.matchAll(/\/(\d{5,})/g)].map((m) => Number(m[1]));
+  return { date: null, id: ids.length ? Math.max(...ids) : 0 };
+}
+
+// True when `a` is more recent than `b` (same outlet → same scheme).
+function isNewer(a: Recency, b: Recency): boolean {
+  if (a.date && b.date) return a.date > b.date;
+  if (a.date) return true;
+  if (b.date) return false;
+  return a.id > b.id;
+}
+
+// List one article per outlet that covered the promise — the most recent piece
+// from each — sorted most-recent-first.
 //
 // Preferred source: the `articles` column — an aligned array of
 // {media_id, title, url} where outlet, headline and link are solidary. Falls
 // back to the legacy parallel `titles`/`urls` arrays (independently de-duped, so
 // only loosely aligned) when `articles` is absent, deriving the outlet from the
-// URL host.
-function pickArticle(row: Row): ArticleRef | null {
+// URL host. Either way the coverage is grouped by outlet and the URL with the
+// most recent recency key wins — deterministic across rebuilds, never random.
+function pickArticlesByMedia(row: Row): ArticleRef[] {
+  type Candidate = { media: string; title: string; url: string };
+  const candidates: Candidate[] = [];
+
   let articles: { media_id?: string; title?: string; url?: string }[] = [];
   try {
     articles = JSON.parse(row.articles || "[]") as typeof articles;
   } catch {
     /* leave empty */
   }
-  const usable = articles.filter((a) => a && a.url && a.title);
-  if (usable.length > 0) {
-    const a = usable[0];
-    const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(a.url!) || "Source";
-    const title = cleanArticleTitle(a.title);
-    if (title && a.url) return { media, title, url: a.url };
+  for (const a of articles) {
+    const url = (a?.url ?? "").trim();
+    const title = cleanArticleTitle(a?.title);
+    if (!url || !title) continue;
+    const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(url) || "Source";
+    candidates.push({ media, title, url });
   }
 
-  // Legacy fallback: zip titles/urls over their common length.
-  let titles: string[] = [];
-  let urls: string[] = [];
-  try {
-    titles = JSON.parse(row.titles || "[]") as string[];
-  } catch {
-    /* leave empty */
+  if (candidates.length === 0) {
+    // Legacy fallback: zip titles/urls over their common length.
+    let titles: string[] = [];
+    let urls: string[] = [];
+    try {
+      titles = JSON.parse(row.titles || "[]") as string[];
+    } catch {
+      /* leave empty */
+    }
+    try {
+      urls = JSON.parse(row.urls || "[]") as string[];
+    } catch {
+      /* leave empty */
+    }
+    const n = Math.min(titles.length, urls.length);
+    for (let i = 0; i < n; i++) {
+      const url = (urls[i] ?? "").trim();
+      const title = cleanArticleTitle(titles[i]);
+      if (!url || !title) continue;
+      candidates.push({ media: mediaFromUrl(url) ?? "Source", title, url });
+    }
   }
-  try {
-    urls = JSON.parse(row.urls || "[]") as string[];
-  } catch {
-    /* leave empty */
+
+  // Keep the most recent candidate per outlet.
+  const byMedia = new Map<string, { article: ArticleRef; rec: Recency }>();
+  for (const c of candidates) {
+    const rec = recencyKey(c.url);
+    const cur = byMedia.get(c.media);
+    if (!cur || isNewer(rec, cur.rec)) {
+      byMedia.set(c.media, { article: { media: c.media, title: c.title, url: c.url }, rec });
+    }
   }
-  const n = Math.min(titles.length, urls.length);
-  if (n === 0) return null;
-  const url = (urls[0] ?? "").trim();
-  const title = cleanArticleTitle(titles[0]);
-  if (!url || !title) return null;
-  return { media: mediaFromUrl(url) ?? "Source", title, url };
+
+  return [...byMedia.values()]
+    .sort((x, y) => (isNewer(x.rec, y.rec) ? -1 : isNewer(y.rec, x.rec) ? 1 : 0))
+    .map((e) => e.article);
 }
 
 type Row = {
@@ -257,7 +297,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         nMentions: a.nMentions,
         url: `https://polimeter.org/fr/legault/${num}`,
         trend,
-        article: pickArticle(r),
+        articles: pickArticlesByMedia(r),
       };
     })
     .sort((x, y) => y.salienceIndex - x.salienceIndex);

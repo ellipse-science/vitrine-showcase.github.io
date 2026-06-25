@@ -13,7 +13,7 @@ export type VerdictSlug =
 
 export type Trend = { dir: "up" | "down" | "flat"; delta: number };
 
-// One representative article drawn from the promise's media coverage:
+// The most recent article from a single outlet's coverage of a promise:
 // outlet name, headline, and a link to the piece.
 export type ArticleRef = { media: string; title: string; url: string };
 
@@ -54,9 +54,9 @@ export type PromiseView = {
   nMentions: number;
   url: string;
   trend: Trend;
-  // A single article from the coverage, picked at random per promise at build
-  // time. null when the promise has no usable title/url pair.
-  article: ArticleRef | null;
+  // One article per outlet that covered the promise — the most recent piece
+  // from each. Sorted most-recent-first. Empty when no usable title/url pair.
+  articles: ArticleRef[];
 };
 
 export type PolimetreData = {
