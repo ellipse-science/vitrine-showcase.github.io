@@ -165,8 +165,15 @@ export function IssueReporter() {
       }
     }
 
+    const dispatchUrl = process.env.NEXT_PUBLIC_DISPATCH_URL
+    if (!dispatchUrl) {
+      console.error('NEXT_PUBLIC_DISPATCH_URL is not configured')
+      setUiState('error')
+      return
+    }
+
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_DISPATCH_URL}`, {
+      const res = await fetch(dispatchUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
