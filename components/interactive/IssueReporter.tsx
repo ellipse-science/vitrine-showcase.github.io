@@ -166,11 +166,9 @@ export function IssueReporter() {
     }
 
     try {
-      const res = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_DISPATCH_URL}`, {
         method: 'POST',
         headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_DISPATCH_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
