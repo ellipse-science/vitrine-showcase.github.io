@@ -1,4 +1,5 @@
 const ALLOWED_ORIGINS = new Set([
+  'https://ellipse.science',
   'https://ellipse-science.github.io',
   'https://vitrinedemocratique.com',
   'http://localhost:3000',
