@@ -165,12 +165,17 @@ export function IssueReporter() {
       }
     }
 
+    const dispatchUrl = process.env.NEXT_PUBLIC_DISPATCH_URL
+    if (!dispatchUrl) {
+      console.error('NEXT_PUBLIC_DISPATCH_URL is not configured')
+      setUiState('error')
+      return
+    }
+
     try {
-      const res = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {
+      const res = await fetch(dispatchUrl, {
         method: 'POST',
         headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_DISPATCH_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
