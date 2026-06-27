@@ -13,7 +13,11 @@ except Exception:
 
 t = data.get("tool_input", {}) or {}
 path = t.get("file_path", "") or ""
+
+# Concatène tout le contenu écrit, y compris les sous-éditions de MultiEdit.
 content = t.get("content") or t.get("new_string") or ""
+for e in (t.get("edits") or []):
+    content += "\n" + (e.get("new_string") or "")
 
 # Règle dure #1 — public/data/ est généré par scripts/fetch_data.R, jamais à la main.
 if "/public/data/" in path or path.startswith("public/data/"):
