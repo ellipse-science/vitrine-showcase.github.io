@@ -367,3 +367,13 @@ export async function loadParties(): Promise<PartiesData | null> {
     },
   };
 }
+
+// Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
+export const __test__ = {
+  isoWeekStart,
+  buildDayLookup,
+  computeStats,
+  sparkPoints,
+  samplePoints,
+  buildRangeView,
+};

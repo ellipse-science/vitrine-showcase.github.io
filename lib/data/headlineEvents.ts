@@ -54,6 +54,7 @@ type DivergenceEntry = {
 };
 
 type ExtractedObject = { object: string; score: number };
+type RawArticle = { media_id: string; url: string; headline_minutes?: number | null };
 
 const ISSUE_COLORS: Record<string, string> = {
   economy_and_labour: "#742630",
@@ -96,9 +97,13 @@ const MEDIA_NAMES: Record<string, string> = {
   CTV: "CTV",
   GN: "Global News",
   TTS: "Toronto Star",
+  NP: "National Post",
+  GAM: "The Globe and Mail",
+  VS: "Vancouver Sun",
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
+const ROC_MEDIA = ["CBC", "CTV", "GN", "TTS", "NP", "GAM", "VS"];
 
 const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -213,6 +218,12 @@ export type SolitudeStory = {
   caWidth: number;
   qcZero: boolean;
   caZero: boolean;
+  convergencePct: number;
+  divergencePct: number;
+  dominantSide: "qc" | "can";
+  qcLinks: { name: string; url: string }[];
+  caLinks: { name: string; url: string }[];
+  representativeUrl: string | null;
 };
 
 export type TreemapTile = {
@@ -252,7 +263,11 @@ export type HeadlineData = {
   top3: UneEvent[];
   solitudesQcPos: number;
   solitudesRocPos: number;
+  solitudesMode: "convergence" | "mixed" | "divergence";
+  solitudesConvPct: number;
   solitudesDivPct: number;
+  solitudesIntervalLabel: string;
+  solitudesFocusRegion: "qc" | "can";
   solitudesStories: SolitudeStory[];
   treemapTier1: TreemapTile[];
   treemapTier2: TreemapTile[];
@@ -260,6 +275,65 @@ export type HeadlineData = {
   treemapTier4: TreemapTile[];
   treemapMobile: (TreemapTile & { relWidth: number })[];
 };
+
+function intervalLabelFr(intervalMtl: string): string {
+  const parts = (intervalMtl ?? "").split("-");
+  const a = Number(parts[0]);
+  const b = Number(parts[1]);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return "en ce moment";
+  return `entre ${a} h et ${b} h`;
+}
+
+function percentile50(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid] ?? 0;
+}
+
+function mediaLinksForRegion(event: RawEvent | null, region: "qc" | "can"): { name: string; url: string }[] {
+  if (!event?.articles) return [];
+  let articles: RawArticle[] = [];
+  try {
+    articles = JSON.parse(event.articles) as RawArticle[];
+  } catch {
+    return [];
+  }
+  const wanted = region === "qc" ? QC_MEDIA : ROC_MEDIA;
+  const seen = new Set<string>();
+  const links: { name: string; url: string }[] = [];
+  const labelFromUrl = (rawUrl: string): string | null => {
+    try {
+      const hostname = new URL(rawUrl).hostname.toLowerCase();
+      if (hostname.includes("radio-canada")) return "Radio-Canada";
+      if (hostname.includes("ledevoir")) return "Le Devoir";
+      if (hostname.includes("lapresse")) return "La Presse";
+      if (hostname.includes("journaldemontreal")) return "Journal de Montréal";
+      if (hostname.includes("montrealgazette")) return "Montreal Gazette";
+      if (hostname.includes("cbc")) return "CBC";
+      if (hostname.includes("ctvnews")) return "CTV";
+      if (hostname.includes("globalnews")) return "Global News";
+      if (hostname.includes("thestar")) return "Toronto Star";
+      if (hostname.includes("nationalpost")) return "National Post";
+      if (hostname.includes("theglobeandmail")) return "The Globe and Mail";
+      if (hostname.includes("vancouversun")) return "Vancouver Sun";
+      return null;
+    } catch {
+      return null;
+    }
+  };
+  for (const a of articles) {
+    if (!a?.media_id || !a?.url) continue;
+    if (!wanted.includes(a.media_id)) continue;
+    if (seen.has(a.media_id)) continue;
+    seen.add(a.media_id);
+    links.push({ name: MEDIA_NAMES[a.media_id] ?? labelFromUrl(a.url) ?? a.media_id, url: a.url });
+  }
+  return links;
+}
 
 export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   let raw: string;
@@ -310,7 +384,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     const totalQcOutlets = e.total_outlets_qc ?? 6;
     let mediaIds: string[] = [];
     try { mediaIds = JSON.parse(e.media_ids) as string[]; } catch { }
-    type RawArticle = { media_id: string; url: string; headline_minutes?: number | null };
     const mediaIdToUrl: Record<string, string> = {};
     let totalHeadlineMinutes = 0;
     try {
@@ -359,7 +432,6 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   });
 
   const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
-  const rawConvergence = qcRow?.interval_convergence_score ?? null;
   const rawDivergenceJson =
     qcRow?.top_objects_divergence && qcRow.top_objects_divergence !== "NA"
       ? qcRow.top_objects_divergence
@@ -370,26 +442,35 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
     try { divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[]; } catch { }
   }
 
-  let divPct: number;
-  if (rawConvergence !== null) {
-    divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
-  } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_saillance ?? 0), 0);
-    const totalExclusivity = eventsWithScore.reduce((sum, e) => {
-      const s = e.score_saillance ?? 0;
-      const q = e.score_qc ?? 0;
-      const ratio = s > 0 ? q / s : 0;
-      return sum + s * Math.abs(ratio - 0.5) * 2;
-    }, 0);
-    divPct = totalSaillance > 0 ? Math.round((totalExclusivity / totalSaillance) * 100) : 0;
-  }
-
-  const maxScoreForBars = Math.max(
-    ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
-    ...latest.map((e) => e.score_saillance ?? 0),
-    1,
-  );
+  // ⚠️ TODO (issue #143) — REFONTE Module 2. À remplacer :
+  //   1. BUG USA : `roc = score_saillance − score_qc` = score_roc + score_us
+  //      (score_saillance = qc+roc+us). Le côté « Canada » absorbe les USA pour
+  //      33 % des événements. → lire `score_roc` DIRECTEMENT (l'ajouter au type
+  //      RawEvent + scripts/tables.json), ne plus le dériver.
+  //   2. Ne plus recalculer ce Jaccard maison : consommer l'`interval_convergence_score`
+  //      OBJET produit par le refiner (aws-refiners#173). Revoir le seuil régime ≥65
+  //      (jamais atteint) → 4 niveaux 25/50/75 + seuils ROC propres pour la saillance.
+  //   Voir maquette docs/mockups/module2-deux-solitudes-mockup.html + issue #143.
+  // Nouvelle logique module 2 : convergence globale = Jaccard pondérée sur
+  // toutes les nouvelles du bloc 4h (pas seulement le top 3 affiché).
+  const latestWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
+  const overlap = latestWithScore.reduce((sum, e) => {
+    const qc = Math.max(0, e.score_qc ?? 0);
+    const roc = Math.max(0, (e.score_saillance ?? 0) - qc);
+    return sum + Math.min(qc, roc);
+  }, 0);
+  const union = latestWithScore.reduce((sum, e) => {
+    const qc = Math.max(0, e.score_qc ?? 0);
+    const roc = Math.max(0, (e.score_saillance ?? 0) - qc);
+    return sum + Math.max(qc, roc);
+  }, 0);
+  const convPct = union > 0 ? Math.round((overlap / union) * 100) : 0;
+  const divPct = 100 - convPct;
+  const mode: "convergence" | "mixed" | "divergence" = convPct >= 65
+    ? "convergence"
+    : convPct >= 35
+      ? "mixed"
+      : "divergence";
 
   let solitudesStories: SolitudeStory[];
   if (divergenceEntries.length > 0) {
@@ -408,9 +489,58 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
         dedupedByLabel.set(d.event_label, d);
       }
     }
-    const uniqueEntries = Array.from(dedupedByLabel.values())
-      .sort((a, b) => b.divergence_score - a.divergence_score);
-    solitudesStories = uniqueEntries.slice(0, 3).map((d) => {
+    const uniqueEntries = Array.from(dedupedByLabel.values());
+    const withMetrics = uniqueEntries.map((d) => {
+      const max = Math.max(d.score_qc, d.score_roc);
+      const min = Math.min(d.score_qc, d.score_roc);
+      const convergencePct = max > 0 ? Math.round((min / max) * 100) : 0;
+      const divergencePct = 100 - convergencePct;
+      const prominence = d.score_qc + d.score_roc;
+      return { d, convergencePct, divergencePct, prominence };
+    });
+
+    const latestByLabel = new Map<string, RawEvent>();
+    for (const e of latest) {
+      if (!e.event_label) continue;
+      const prev = latestByLabel.get(e.event_label);
+      if (!prev || (e.score_saillance ?? 0) > (prev.score_saillance ?? 0)) {
+        latestByLabel.set(e.event_label, e);
+      }
+    }
+    const p50Prominence = percentile50(withMetrics.map((x) => x.prominence));
+    const relevant = withMetrics.filter((x) => x.prominence >= p50Prominence);
+    const pool = relevant.length > 0 ? relevant : withMetrics;
+
+    let selected = pool;
+    if (mode === "convergence") {
+      const shared = pool.filter((x) => x.d.score_qc > 0 && x.d.score_roc > 0)
+        .sort((a, b) => b.convergencePct - a.convergencePct || b.prominence - a.prominence);
+      const complement = pool.filter((x) => !(x.d.score_qc > 0 && x.d.score_roc > 0))
+        .sort((a, b) => b.convergencePct - a.convergencePct || b.prominence - a.prominence);
+      selected = [...shared, ...complement];
+    } else if (mode === "mixed") {
+      const shared = pool.filter((x) => x.d.score_qc > 0 && x.d.score_roc > 0)
+        .sort((a, b) => b.convergencePct - a.convergencePct || b.prominence - a.prominence);
+      const polarized = pool.slice().sort((a, b) => b.divergencePct - a.divergencePct || b.prominence - a.prominence);
+      const picked = [...shared.slice(0, 2)];
+      const pickedLabels = new Set(picked.map((x) => x.d.event_label));
+      const extra = polarized.find((x) => !pickedLabels.has(x.d.event_label));
+      if (extra) picked.push(extra);
+      const fallback = pool.filter((x) => !pickedLabels.has(x.d.event_label))
+        .sort((a, b) => b.prominence - a.prominence)
+        .slice(0, Math.max(0, 3 - picked.length));
+      selected = [...picked, ...fallback];
+    } else {
+      selected = pool.slice().sort((a, b) => b.divergencePct - a.divergencePct || b.prominence - a.prominence);
+    }
+    const topSelected = selected.slice(0, 3);
+
+    const maxScoreForBars = Math.max(
+      ...topSelected.map((x) => Math.max(x.d.score_qc, x.d.score_roc)),
+      1,
+    );
+
+    solitudesStories = topSelected.map(({ d, convergencePct, divergencePct }) => {
       const fr = labelToTitle.get(d.event_label);
       const label = fr && fr.length > 0
         ? fr
@@ -419,7 +549,23 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
             : d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1));
       const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
       const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
-      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
+      const event = latestByLabel.get(d.event_label) ?? null;
+      const qcLinks = mediaLinksForRegion(event, "qc");
+      const caLinks = mediaLinksForRegion(event, "can");
+      const dominantSide: "qc" | "can" = d.score_roc > d.score_qc ? "can" : "qc";
+      return {
+        label,
+        qcWidth: Math.min(100, qcW),
+        caWidth: Math.min(100, caW),
+        qcZero: qcW <= 2,
+        caZero: caW <= 2,
+        convergencePct,
+        divergencePct,
+        dominantSide,
+        qcLinks,
+        caLinks,
+        representativeUrl: event?.representative_url ?? null,
+      };
     });
   } else {
     const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
@@ -428,17 +574,56 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       .map((e) => {
         const s = e.score_saillance ?? 0;
         const q = e.score_qc ?? 0;
-        const qcRatio = s > 0 ? q / s : 0;
-        return { e, q, divergence: Math.abs(qcRatio - 0.5) * 2 };
+        const roc = Math.max(0, s - q);
+        const max = Math.max(q, roc);
+        const min = Math.min(q, roc);
+        const convergencePct = max > 0 ? Math.round((min / max) * 100) : 0;
+        const divergencePct = 100 - convergencePct;
+        const prominence = q + roc;
+        return { e, q, roc, convergencePct, divergencePct, prominence };
       })
-      .sort((a, b) => b.divergence - a.divergence);
-    solitudesStories = ranked.slice(0, 3).map(({ e, q }) => {
-      const s = e.score_saillance ?? 0;
+      .sort((a, b) => {
+        if (mode === "convergence") {
+          return b.convergencePct - a.convergencePct || b.prominence - a.prominence;
+        }
+        if (mode === "mixed") {
+          const balanceA = 100 - Math.abs(a.convergencePct - 50);
+          const balanceB = 100 - Math.abs(b.convergencePct - 50);
+          return balanceB - balanceA || b.prominence - a.prominence;
+        }
+        return b.divergencePct - a.divergencePct || b.prominence - a.prominence;
+      });
+    const topRanked = ranked.slice(0, 3);
+    const maxScoreForBars = Math.max(
+      ...topRanked.map((x) => Math.max(x.q, x.roc)),
+      1,
+    );
+    solitudesStories = topRanked.map(({ e, q, roc, convergencePct, divergencePct }) => {
       const qcW = Math.round((q / maxScoreForBars) * 100);
-      const caW = Math.round(((s - q) / maxScoreForBars) * 100);
-      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
+      const caW = Math.round((roc / maxScoreForBars) * 100);
+      const qcLinks = mediaLinksForRegion(e, "qc");
+      const caLinks = mediaLinksForRegion(e, "can");
+      const dominantSide: "qc" | "can" = roc > q ? "can" : "qc";
+      return {
+        label: e.title ?? "",
+        qcWidth: Math.min(100, qcW),
+        caWidth: Math.min(100, caW),
+        qcZero: qcW <= 2,
+        caZero: caW <= 2,
+        convergencePct,
+        divergencePct,
+        dominantSide,
+        qcLinks,
+        caLinks,
+        representativeUrl: e.representative_url ?? null,
+      };
     });
   }
+
+  const focusRegion: "qc" | "can" =
+    solitudesStories.reduce((s, x) => s + x.caWidth, 0) >= solitudesStories.reduce((s, x) => s + x.qcWidth, 0)
+      ? "can"
+      : "qc";
 
   const spread = Math.round(divPct * 0.4);
   const solitudesQcPos = Math.max(5, 20 - spread);
@@ -476,7 +661,27 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  const solitudesIntervalLabel = intervalLabelFr(snapshotInterval);
+
+  return {
+    dateLabel,
+    snapshotInterval,
+    periodLabel,
+    top3,
+    solitudesQcPos,
+    solitudesRocPos,
+    solitudesMode: mode,
+    solitudesConvPct: convPct,
+    solitudesDivPct: divPct,
+    solitudesIntervalLabel,
+    solitudesFocusRegion: focusRegion,
+    solitudesStories,
+    treemapTier1: tier1,
+    treemapTier2: tier2,
+    treemapTier3: tier3,
+    treemapTier4: tier4,
+    treemapMobile,
+  };
 }
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
@@ -604,3 +809,9 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   if (!day) return null;
   return { day, week: buildPeriodData(weekRows) ?? day, month: buildPeriodData(monthRows) ?? day };
 }
+
+// Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
+export const __test__ = {
+  latestIssueRow,
+  parseIssuesMeta,
+};
