@@ -55,7 +55,9 @@ export type PromiseView = {
   url: string;
   trend: Trend;
   // One article per outlet that covered the promise — the most recent piece
-  // from each. Sorted most-recent-first. Empty when no usable title/url pair.
+  // from each (recency is reliable within an outlet). Ordered by canonical outlet
+  // order, not cross-outlet recency (the keys aren't comparable across outlets).
+  // Empty when no usable title/url pair.
   articles: ArticleRef[];
 };
 

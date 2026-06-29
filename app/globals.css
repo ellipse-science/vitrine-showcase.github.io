@@ -20,19 +20,28 @@
   }
   * { box-sizing: border-box; }
   /* Barres de défilement discrètes : piste transparente (se fond dans le papier),
-     pouce en filet sobre. S'applique à toute la page et aux conteneurs internes
-     (ex. le menu déroulant des catégories). */
-  * {
+     pouce en filet sobre. Limité à la page (défilement racine) et au menu
+     déroulant des catégories — pas appliqué à `*`, pour ne pas écraser les
+     préférences de défilement de l'utilisateur ou du système (accessibilité). */
+  html, body, .ppl-cat-menu {
     scrollbar-width: thin;
     scrollbar-color: var(--rule) transparent;
   }
-  *::-webkit-scrollbar { width: 8px; height: 8px; }
-  *::-webkit-scrollbar-track { background: transparent; }
-  *::-webkit-scrollbar-thumb {
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .ppl-cat-menu::-webkit-scrollbar { width: 8px; height: 8px; }
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track,
+  .ppl-cat-menu::-webkit-scrollbar-track { background: transparent; }
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  .ppl-cat-menu::-webkit-scrollbar-thumb {
     background: var(--rule);
     border-radius: 4px;
   }
-  *::-webkit-scrollbar-thumb:hover { background: var(--ink-softer); }
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover,
+  .ppl-cat-menu::-webkit-scrollbar-thumb:hover { background: var(--ink-softer); }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
     /* Garde-fou : aucune section ne doit jamais provoquer de défilement
@@ -3511,6 +3520,14 @@
     transition: background 0.12s ease, color 0.12s ease;
   }
   .ppl-cat-option:hover { background: var(--paper-deep); }
+  /* Indicateur de focus clavier : le menu custom remplace un <select> natif, donc
+     l'option ciblée au clavier doit rester visible avant validation (Entrée/Espace). */
+  .ppl-cat-option:focus { outline: none; background: var(--paper-deep); }
+  .ppl-cat-option:focus-visible {
+    outline: none;
+    background: var(--paper-deep);
+    box-shadow: inset 2px 0 0 var(--cordovan);
+  }
   .ppl-cat-option.active {
     color: var(--cordovan);
     font-weight: 600;

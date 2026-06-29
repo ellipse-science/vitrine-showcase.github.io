@@ -191,11 +191,19 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               <ul className="ppl-cat-menu" role="listbox" aria-label="Catégories d'enjeux">
                 <li
                   role="option"
+                  tabIndex={0}
                   aria-selected={category === "all"}
                   className={`ppl-cat-option${category === "all" ? " active" : ""}`}
                   onClick={() => {
                     setCategory("all");
                     setCatOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setCategory("all");
+                      setCatOpen(false);
+                    }
                   }}
                 >
                   Toutes les catégories
@@ -203,18 +211,28 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                 {categoryItems.map(({ name, present }) => {
                   const active = category === name;
                   const cls = `ppl-cat-option${present ? "" : " ppl-cat-option--empty"}${active ? " active" : ""}`;
+                  const choose = () => {
+                    setCategory(name);
+                    setCatOpen(false);
+                  };
                   return (
                     <li
                       key={name}
                       role="option"
+                      // Disabled (no-data) options stay out of the tab order so
+                      // keyboard users never land on a non-interactive item.
+                      tabIndex={present ? 0 : -1}
                       aria-selected={active}
                       aria-disabled={!present}
                       className={cls}
-                      onClick={
+                      onClick={present ? choose : undefined}
+                      onKeyDown={
                         present
-                          ? () => {
-                              setCategory(name);
-                              setCatOpen(false);
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                choose();
+                              }
                             }
                           : undefined
                       }

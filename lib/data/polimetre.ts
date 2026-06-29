@@ -67,6 +67,15 @@ const MEDIA_BY_ID: Record<string, string> = {
   RCI: "Radio-Canada",
 };
 
+// Canonical display order of the outlets in the byline. Used to order outlets
+// deterministically across the coverage list, since recency keys are only
+// comparable within a single outlet. Unknown outlets sort last (alphabetically).
+const MEDIA_ORDER: string[] = Object.values(MEDIA_BY_ID);
+function mediaRank(media: string): number {
+  const i = MEDIA_ORDER.indexOf(media);
+  return i === -1 ? MEDIA_ORDER.length : i;
+}
+
 // Fallback only: derive the outlet from a URL host, for the transitional period
 // before the refiner republishes the `articles` column. Same five outlets.
 const MEDIA_BY_HOST: Record<string, string> = {
@@ -125,14 +134,19 @@ function isNewer(a: Recency, b: Recency): boolean {
 }
 
 // List one article per outlet that covered the promise — the most recent piece
-// from each — sorted most-recent-first.
+// from each. Within an outlet the recency key is reliable (one URL scheme), so
+// the chosen article is genuinely the latest. Across outlets the keys are NOT
+// comparable (date-based vs id-based schemes), so the outlets themselves are
+// ordered by the canonical QC outlet order (MEDIA_ORDER), not by recency —
+// stable and meaningful rather than implying a false cross-outlet chronology.
 //
 // Preferred source: the `articles` column — an aligned array of
 // {media_id, title, url} where outlet, headline and link are solidary. Falls
 // back to the legacy parallel `titles`/`urls` arrays (independently de-duped, so
 // only loosely aligned) when `articles` is absent, deriving the outlet from the
 // URL host. Either way the coverage is grouped by outlet and the URL with the
-// most recent recency key wins — deterministic across rebuilds, never random.
+// most recent recency key wins within that outlet — deterministic across
+// rebuilds, never random.
 function pickArticlesByMedia(row: Row): ArticleRef[] {
   type Candidate = { media: string; title: string; url: string };
   const candidates: Candidate[] = [];
@@ -184,8 +198,15 @@ function pickArticlesByMedia(row: Row): ArticleRef[] {
     }
   }
 
+  // Order outlets by the canonical byline order. Recency keys are not comparable
+  // across outlets, so they are not used here; ties (e.g. unknown outlets) fall
+  // back to outlet name for a stable order.
   return [...byMedia.values()]
-    .sort((x, y) => (isNewer(x.rec, y.rec) ? -1 : isNewer(y.rec, x.rec) ? 1 : 0))
+    .sort(
+      (x, y) =>
+        mediaRank(x.article.media) - mediaRank(y.article.media) ||
+        x.article.media.localeCompare(y.article.media, "fr"),
+    )
     .map((e) => e.article);
 }
 
