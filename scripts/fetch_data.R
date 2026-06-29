@@ -333,7 +333,13 @@ run <- function() {
     message("Skipping Healthchecks ping — ", err_count, " table(s) failed.")
   }
 
-  if (err_count > 0) quit(status = 1)
+  # Résilience : une défaillance par table (ex. une colonne whitelistée pas encore
+  # publiée par son refiner → COLUMN_NOT_FOUND) ne doit PAS bloquer le refresh de
+  # toutes les autres tables. Chaque table est déjà isolée (tryCatch ci-dessus) et
+  # les tables OK sont écrites sur disque ; on n'échoue (exit 1 → alerte Slack) que
+  # si AUCUNE n'a réussi (ex. connexion perdue). Sinon on laisse le workflow committer
+  # les données fraîches obtenues. Les erreurs par table restent visibles dans meta.json.
+  if (ok_count == 0) quit(status = 1)
 }
 
 run()
