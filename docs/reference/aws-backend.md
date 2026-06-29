@@ -67,6 +67,7 @@ All refiners have `active: !isProd(envName)` — they run in DEV, not PROD. The 
 | `radar-hot-20` | hot-20 data | Fridays 12:00 | `refiners/radar-hot-20/` |
 | `vitrine-graph-data` | graph data tables | 6×/day :57 | `refiners/vitrine-graph-data/` |
 | `agora-decideurs-qc` | `agora_decideurs_qc` | 6×/day :50 | `refiners/agora-decideurs-qc/` |
+| `polimetre-plus` | `polimetre_plus` | TBD (weekly snapshot — confirm cron in `aws-infra`) | `refiners/polimetre-plus/` |
 
 ## Inspecting Athena data directly from R
 

@@ -28,16 +28,20 @@ components/
     PartisCouvertureSection.tsx
     TreemapSection.tsx        Treemap des enjeux par saillance (issues_score_*.json)
     AssembleeSection.tsx
+    PolimetrePlusSection.tsx  Polimètre+ : couverture médiatique des promesses (polimetre_plus.json)
     RawMaquette.tsx           Reads a static-content/*.html chunk and inlines it
   interactive/                'use client' components — React state + behavior
     PartisCouvertureClient.tsx    today / week / month tab switcher
     AssembleeClient.tsx           last_pdq / session / legislature tab switcher
     TreemapClient.tsx             issues treemap today / week / month tab switcher
+    PolimetrePlusClient.tsx       week / month tab switcher + filtres catégories/média
     PulseCountdown.tsx            live countdown to next data refresh
 lib/
   data/
     parties.ts                Loader for provincial_parties_score_{day,week,month}.json
     assemblee.ts              Loader for agora_decideurs_qc.json
+    polimetre.ts              Loader for polimetre_plus.json (week + month rollup)
+    polimetre-meta.ts         Types + verdicts/catégories for the Polimètre+ section
     headlineEvents.ts         Two loaders: loadHeadlineEvents() (headline-events.json → UneDesUnesSection)
                               and loadTreemap() (issues_score_{day,week,month}.json → TreemapSection)
 static-content/               Verbatim HTML chunks (masthead, treemap, partners, footer).
