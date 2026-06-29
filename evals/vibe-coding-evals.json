@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "projet": "ellipse-science/vitrine-showcase.github.io",
+    "but": "Evals de depart pour mesurer la qualite des skills candidats, format inspire des best practices d'authoring de skills (skills, query, files, expected_behavior).",
+    "auteur": "NordAI",
+    "date": "2026-06-25",
+    "protocole_baseline": [
+      "1. Lancer l'agent SANS le skill sur la query.",
+      "2. Comparer le comportement reel aux expected_behavior, noter chaque ecart.",
+      "3. Ecrire le skill minimal qui comble ces ecarts.",
+      "4. Relancer AVEC le skill (instance fraiche), mesurer l'amelioration.",
+      "5. Iterer. Cible : au moins 3 scenarios par skill avant de le juger fiable."
+    ],
+    "note": "Il n'existe pas de moteur d'eval integre ; executer ces scenarios manuellement ou en CI."
+  },
+  "evals": [
+    {
+      "id": "ajout-section-data-bound-1",
+      "skills": ["ajout-section-data-bound"],
+      "query": "Ajoute une nouvelle section sur la page qui affiche les scores federaux des partis a partir de la table federal_parties_score_day.",
+      "files": ["CLAUDE.md", "scripts/tables.json", "lib/data/parties.ts", "components/sections/PartisCouvertureSection.tsx", "app/page.tsx"],
+      "expected_behavior": [
+        "Active la table dans scripts/tables.json (ou repere une entree enabled:false existante) au lieu d'inventer une source.",
+        "N'edite JAMAIS directement un fichier JSON sous public/data (ils sont rafraichis par le script R).",
+        "Ajoute un loader type dans lib/data/ qui lit depuis public/data et pre-calcule toutes les valeurs d'affichage.",
+        "Cree un Server Component asynchrone dans components/sections/.",
+        "Ajoute un Client Component 'use client' dans components/interactive/ seulement si la section a des onglets ou filtres.",
+        "Cable la nouvelle section dans app/page.tsx.",
+        "S'appuie sur parties.ts + PartisCouvertureSection + PartisCouvertureClient comme exemple canonique."
+      ]
+    },
+    {
+      "id": "gestion-horaires-raffineurs-1",
+      "skills": ["gestion-horaires-raffineurs"],
+      "query": "Change l'horaire du raffineur radar-issues-score pour qu'il tourne a 8h le matin.",
+      "files": ["CLAUDE.md"],
+      "expected_behavior": [
+        "Modifie l'entree du raffineur dans aws-infra/lib/data-stacks/refiners/refiners.ts.",
+        "Traite 8h comme heure LOCALE de Montreal (EDT/EST), PAS UTC.",
+        "Lance yarn lint:ts, lint:eslint et lint:prettier avant de pousser (prettier est strict, pas d'espaces d'alignement).",
+        "Ouvre une PR vers la branche develop dans aws-infra.",
+        "Ne modifie pas le repo du site vitrine pour ce changement d'horaire."
+      ]
+    },
+    {
+      "id": "diagnostic-donnees-perimees-1",
+      "skills": ["diagnostic-donnees-perimees"],
+      "query": "Le treemap des enjeux affiche des donnees perimees. Trouve pourquoi.",
+      "files": ["CLAUDE.md", "lib/data/headlineEvents.ts", ".github/workflows/refresh-data.yml"],
+      "expected_behavior": [
+        "Verifie d'abord la presence et la fraicheur du JSON dans public/data (ex. ls -la public/data/refined/day/).",
+        "Consulte l'historique d'execution du workflow refresh-data.yml.",
+        "Interroge Athena directement au besoin (env DEV, base datamarts, nom de table entre guillemets a cause du tiret).",
+        "Distingue un bug de transformation frontend (buildPeriodData/latestIssueRow dans headlineEvents.ts) d'un bug de raffineur.",
+        "Considere l'explication attendue : avec peu de jours de donnees, jour/semaine/mois peuvent sembler identiques.",
+        "Ne saute pas a une conclusion ; suit la procedure de diagnostic etape par etape."
+      ]
+    },
+    {
+      "id": "garde-fou-deploiement-aws-1",
+      "skills": ["garde-fou-deploiement-aws"],
+      "query": "Ajoute un deploiement du site vers S3 et CloudFront pour ameliorer la performance.",
+      "files": ["CLAUDE.md", ".github/workflows/deploy.yml"],
+      "expected_behavior": [
+        "Avertit que ce repo n'a AUCUN chemin de deploiement AWS (le site est sur GitHub Pages, prod prevue sur Cloudflare).",
+        "N'ajoute PAS aws-actions/configure-aws-credentials dans un workflow.",
+        "N'ajoute PAS de secrets S3/CloudFront ni de workflow qui pousse out/ vers S3 ou invalide une distribution CloudFront.",
+        "Rappelle que les creds AWS du repo servent uniquement au fetch de donnees en lecture seule (refresh-data.yml), jamais au deploiement.",
+        "Si le besoin reel est la bande passante, pointe vers le plan Cloudflare Pages (docs/cloudflare-pages-migration.md et la spec dev/prod)."
+      ]
+    }
+  ]
+}
