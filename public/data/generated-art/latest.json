@@ -1,10 +1,12 @@
 {
-  "generated_at": "2026-06-30T20:03Z",
-  "headline_fr": "Vague de chaleur au Québec : astuces pour se rafraîchir sans climatisation",
-  "headline_en": "Vague de chaleur Attention, c’est chaud",
-  "main_issue": "environment_and_energy",
-  "main_issue_text_fr": "Environnement et énergie",
+  "generated_at": "2026-07-01T00:03Z",
+  "headline_fr": "Montréal et Toronto sous la canicule: appel à la solidarité et vigilance accrue",
+  "headline_en": "Face à la chaleur, la santé publique appelle à la solidarité des Montréalais",
+  "main_issue": "health_and_social_services",
+  "main_issue_text_fr": "Santé et services sociaux",
   "context_outlets": [
-    "LAP"
+    "LED",
+    "LAP",
+    "TTS"
   ]
 }
