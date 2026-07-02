@@ -1,13 +1,11 @@
 {
-  "generated_at": "2026-07-02T04:03Z",
-  "headline_fr": "Les États-Unis refusent de renouveler l'ACEUM, déclenchant une révision annuelle",
-  "headline_en": "Les États-Unis ne renouvelleront pas l’ACEUM sous sa forme actuelle",
-  "main_issue": "international_affairs_and_defense",
-  "main_issue_text_fr": "Affaires internationales et défense",
+  "generated_at": "2026-07-02T08:03Z",
+  "headline_fr": "Avertissements d'orages violents et risque de tornade au sud-ouest du Québec",
+  "headline_en": "Plusieurs régions du Québec sont frappées par des avertissements d’orages violents",
+  "main_issue": "environment_and_energy",
+  "main_issue_text_fr": "Environnement et énergie",
   "context_outlets": [
-    "LED",
     "RCI",
-    "CTV",
-    "TTS"
+    "LAP"
   ]
 }
