@@ -1,0 +1,118 @@
+name: Auto version bump on PR merge
+
+# Bumpe package.json (la source de vérité affichée dans le footer via
+# RawMaquette) quand une PR est mergée dans main et porte l'un de ces labels :
+#   - semver:patch  → 2.0.0-beta.0 → 2.0.0-beta.1 (bêta) / 2.0.1 (hors bêta)
+#   - semver:minor  → 2.0.0-beta.0 → 2.1.0-beta.0 (bêta) / 2.1.0 (hors bêta)
+#   - semver:major  → 2.0.0-beta.0 → 3.0.0-beta.0 (bêta) / 3.0.0 (hors bêta)
+# Une PR sans label semver:* ne fait rien. Les commits « data: refresh … »
+# n'ouvrent pas de PR → jamais de bump sur le pipeline de rafraîchissement 4h.
+#
+# Pour sortir de bêta : éditer package.json à la main sur une PR normale
+# (ex. « 2.0.0-beta.5 » → « 2.0.0 »).
+#
+# PRÉREQUIS : le ruleset de `main` exige une PR pour toute modif ; ce workflow
+# pousse un commit directement sur main. `github-actions[bot]` doit donc être
+# dans la bypass-list du ruleset (Settings → Rules → main → Bypass list).
+# Voir AGENTS.md § Versionnage.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+# Sérialise les bumps entre eux : deux PR mergées coup sur coup ne se marchent
+# pas dessus (le rebase ci-dessous gère en plus les commits de refresh).
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine bump type from PR labels
+        id: bump
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          if echo "$LABELS" | grep -q '"semver:major"'; then
+            echo "type=major" >> "$GITHUB_OUTPUT"
+          elif echo "$LABELS" | grep -q '"semver:minor"'; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          elif echo "$LABELS" | grep -q '"semver:patch"'; then
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if no semver label
+        if: steps.bump.outputs.type == 'none'
+        run: echo "Aucun label semver:* sur la PR — rien à bumper."
+
+      - uses: actions/checkout@v7
+        if: steps.bump.outputs.type != 'none'
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        if: steps.bump.outputs.type != 'none'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Bump version (prerelease-aware) and push
+        if: steps.bump.outputs.type != 'none'
+        env:
+          TYPE: ${{ steps.bump.outputs.type }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          CURRENT=$(node -p "require('./package.json').version")
+          if [[ "$CURRENT" == *-beta* ]]; then
+            case "$TYPE" in
+              patch) NPM_CMD="prerelease --preid=beta" ;;
+              minor) NPM_CMD="preminor --preid=beta" ;;
+              major) NPM_CMD="premajor --preid=beta" ;;
+            esac
+          else
+            NPM_CMD="$TYPE"
+          fi
+
+          npm version $NPM_CMD --no-git-tag-version
+          NEW=$(node -p "require('./package.json').version")
+          echo "### Version bumpée : \`$NEW\` (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $NEW (PR #$PR_NUMBER)"
+
+          # main peut avancer entre le checkout et le push (commits « data:
+          # refresh … » poussés via deploy key). On rebase et on réessaie.
+          for attempt in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push réussi (tentative $attempt)."
+              exit 0
+            fi
+            echo "Push refusé (tentative $attempt) — rebase sur main puis retry."
+            git pull --rebase origin main
+          done
+          echo "::error::Impossible de pousser le bump de version après 5 tentatives."
+          exit 1
+
+      - name: Trigger Pages deploy with new version
+        # Nécessaire : un commit poussé avec GITHUB_TOKEN ne déclenche PAS les
+        # workflows on:push (garde-fou anti-récursion de GitHub). On lance donc
+        # deploy.yml explicitement pour republier avec la nouvelle version.
+        if: steps.bump.outputs.type != 'none'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main
