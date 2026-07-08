@@ -3833,4 +3833,5 @@
 }
 .share-btn:hover,
 .share-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
+.share-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
 
