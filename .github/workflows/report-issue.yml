@@ -76,18 +76,22 @@ jobs:
                   repo: 'vitrine-showcase.github.io',
                   name: label.name,
                 })
+                return
               } catch (err) {
-                if (err?.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner: 'ellipse-science',
-                    repo: 'vitrine-showcase.github.io',
-                    name: label.name,
-                    color: label.color,
-                    description: label.description,
-                  })
-                } else {
-                  throw err
-                }
+                if (err?.status !== 404) throw err
+              }
+              try {
+                await github.rest.issues.createLabel({
+                  owner: 'ellipse-science',
+                  repo: 'vitrine-showcase.github.io',
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                })
+              } catch (err) {
+                // 422 = le label a été créé entre-temps (course entre deux
+                // dispatchs simultanés) → considéré comme un succès (idempotent).
+                if (err?.status !== 422) throw err
               }
             }
 
