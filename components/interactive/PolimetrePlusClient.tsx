@@ -102,28 +102,30 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           </div>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {RANGES.map((r) => (
-              <span
-                key={r}
-                className={r === range ? "active" : undefined}
-                role="button"
-                tabIndex={0}
-                aria-pressed={r === range}
-                onClick={() => setRange(r)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setRange(r);
-                  }
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                {RANGE_TAB_LABELS[r]}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={r === range}
+                  onClick={() => setRange(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setRange(r);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {RANGE_TAB_LABELS[r]}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
           </div>
-          <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
         </div>
       </div>
 
