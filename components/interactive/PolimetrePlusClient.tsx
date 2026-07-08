@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_ORDER,
   RANGE_TAB_LABELS,
@@ -68,17 +68,39 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
   const [category, setCategory] = useState<string>("all");
+  const [catOpen, setCatOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  // Close the category dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!catOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCatOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [catOpen]);
 
   const promises = data.ranges[range];
 
-  // Category options: full French names present in the current range, ordered
-  // by the canonical taxonomy (then any extras alphabetically).
-  const categoryOptions = useMemo(() => {
+  // Category list: the 12 canonical categories are always shown, ordered
+  // alphabetically (French collation). Each is flagged present/absent for the
+  // current range — categories with no data are greyed out and non-clickable.
+  // Any extra category in the data but outside the taxonomy is included too.
+  const categoryItems = useMemo(() => {
     const present = new Set(promises.map((p) => p.category).filter((c): c is string => !!c));
-    const ordered = CATEGORY_ORDER.filter((c) => present.has(c));
-    const extras = [...present].filter((c) => !CATEGORY_ORDER.includes(c)).sort();
-    return [...ordered, ...extras];
+    const extras = [...present].filter((c) => !CATEGORY_ORDER.includes(c));
+    return [...CATEGORY_ORDER, ...extras]
+      .sort((a, b) => a.localeCompare(b, "fr"))
+      .map((c) => ({ name: c, present: present.has(c) }));
   }, [promises]);
 
   const filtered = promises
@@ -158,20 +180,75 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           </nav>
 
           <div className="ppl-rail-head">Catégorie d&apos;enjeu</div>
-          <select
-            className="ppl-issue-select"
-            id="ppl-issue-select"
-            aria-label="Catégories d'enjeux"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="all">Toutes les catégories</option>
-            {categoryOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <div className="ppl-cat-dropdown" ref={catRef}>
+            <button
+              type="button"
+              className="ppl-issue-select ppl-cat-trigger"
+              aria-haspopup="listbox"
+              aria-expanded={catOpen}
+              aria-label="Catégories d'enjeux"
+              onClick={() => setCatOpen((o) => !o)}
+            >
+              {category === "all" ? "Toutes les catégories" : category}
+            </button>
+            {catOpen && (
+              <ul className="ppl-cat-menu" role="listbox" aria-label="Catégories d'enjeux">
+                <li
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={category === "all"}
+                  className={`ppl-cat-option${category === "all" ? " active" : ""}`}
+                  onClick={() => {
+                    setCategory("all");
+                    setCatOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setCategory("all");
+                      setCatOpen(false);
+                    }
+                  }}
+                >
+                  Toutes les catégories
+                </li>
+                {categoryItems.map(({ name, present }) => {
+                  const active = category === name;
+                  const cls = `ppl-cat-option${present ? "" : " ppl-cat-option--empty"}${active ? " active" : ""}`;
+                  const choose = () => {
+                    setCategory(name);
+                    setCatOpen(false);
+                  };
+                  return (
+                    <li
+                      key={name}
+                      role="option"
+                      // Disabled (no-data) options stay out of the tab order so
+                      // keyboard users never land on a non-interactive item.
+                      tabIndex={present ? 0 : -1}
+                      aria-selected={active}
+                      aria-disabled={!present}
+                      className={cls}
+                      onClick={present ? choose : undefined}
+                      onKeyDown={
+                        present
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                choose();
+                              }
+                            }
+                          : undefined
+                      }
+                    >
+                      {name}
+                      {present ? "" : " — aucune donnée"}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
           <a
             className="ppl-metho-rail"
             href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
@@ -227,17 +304,24 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
                           <p className="ppl-detail__eyebrow">Résumé</p>
                           <p className="ppl-detail__text">{p.summary ?? SUMMARY_PLACEHOLDER}</p>
-                          {p.article && (
-                            <p className="ppl-detail__article">
-                              <span className="ppl-detail__article-media">{p.article.media}</span>
-                              <a
-                                className="ppl-detail__article-link"
-                                href={p.article.url}
-                                target="_blank"
-                                rel="noopener"
-                              >
-                                {p.article.title}
-                              </a>
+                          {p.articles.length > 0 && (
+                            <p className="ppl-detail__coverage">
+                              <span className="ppl-detail__coverage-label">À lire sur</span>{" "}
+                              <span className="ppl-detail__coverage-media">
+                                {p.articles.map((article, idx) => (
+                                  <span key={`${article.media}-${article.url}`}>
+                                    <a href={article.url} target="_blank" rel="noopener">
+                                      {article.media}
+                                    </a>
+                                    {idx < p.articles.length - 1 && <span className="sep">,</span>}
+                                  </span>
+                                ))}
+                              </span>
+                              <InfoTip size="sm" label="Choix des articles">
+                                Pour chaque média ayant couvert cette promesse{" "}
+                                {range === "month" ? "ce mois-ci" : "cette semaine"}, le lien mène
+                                vers son article le plus récent.
+                              </InfoTip>
                             </p>
                           )}
                           <a
@@ -269,7 +353,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               target="_blank"
               rel="noopener"
             >
-              Découvrir toutes les promesses
+              Découvrir toutes les promesses sur le site Web (Vox Pop Labs)
             </a>
           </div>
         </div>
