@@ -1550,8 +1550,8 @@
   .sol-story:last-child { margin-bottom: 0; }
   .sol-story .story-label {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 12px;
-    font-style: italic;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--ink);
     text-align: center;
     margin-bottom: 5px;
@@ -2668,7 +2668,7 @@
     .solitudes .sol-stat .stat-label { font-size: 9px; }
     .solitudes .sol-explain { font-size: 13px; }
     .solitudes .sol-stories { max-width: 100%; }
-    .sol-story .story-label { font-size: 13px; }
+    .sol-story .story-label { font-size: 14px; }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {

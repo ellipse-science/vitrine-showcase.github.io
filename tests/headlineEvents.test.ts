@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/headlineEvents";
 
-const { latestIssueRow, parseIssuesMeta } = __test__;
+const { latestIssueRow, parseIssuesMeta, capitalizeObject } = __test__;
 
 describe("latestIssueRow", () => {
   it("renvoie null sur une liste vide", () => {
@@ -44,5 +44,18 @@ describe("parseIssuesMeta", () => {
     const parsed = parseIssuesMeta('{"economy_and_labour":{"label":"Budget","obj":"déficit"}}');
     expect(parsed).not.toBeNull();
     expect(parsed!["economy_and_labour"].label).toBe("Budget");
+  });
+});
+
+describe("capitalizeObject", () => {
+  it("capitalise la première lettre", () => {
+    expect(capitalizeObject("déficit")).toBe("Déficit");
+  });
+  it("capitalise chaque mot, y compris après un tiret (#161)", () => {
+    expect(capitalizeObject("états-unis-iran")).toBe("États-Unis-Iran");
+    expect(capitalizeObject("accord états-unis-iran")).toBe("Accord États-Unis-Iran");
+  });
+  it("laisse une chaîne vide inchangée", () => {
+    expect(capitalizeObject("")).toBe("");
   });
 });
