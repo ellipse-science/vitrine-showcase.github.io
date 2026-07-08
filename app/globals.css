@@ -236,19 +236,19 @@
     padding: 0;
     justify-content: flex-start;
   }
-  .site-header .logo-vitrine { height: 88px; }
-  .site-header .logo-capp { height: 66px; }
+  .site-header .logo-vitrine { height: 120px; }
+  .site-header .logo-capp { height: 80px; }
   .site-header .capp-prefix { font-size: 11px; white-space: nowrap; }
   /* « Propulsé par le » aligné à gauche (sous VITRINE), pas indenté, et un peu
      plus bas (moins collé sous le logo Vitrine). */
   .site-header .capp-attribution { margin-left: 0; }
-  .site-header .brand-footer { margin-top: -18px; }
+  .site-header .brand-footer { margin-top: -24px; }
   /* Logo CAPP remonté légèrement (le PNG a du vide en bas) — « Propulsé par le » reste centré. */
   .site-header .logo-capp { transform: translateY(-6px); }
   /* On descend TOUTE la marque (logo + « Propulsé par le CAPP » ensemble) : le
      logo Vitrine se rapproche du CAPP, et le logo CAPP (dont le PNG a du vide
      transparent en bas) s'aligne sur le countdown. Ajustable au pixel près. */
-  .site-header .mast { transform: translateY(28px); }
+  .site-header .mast { transform: translateY(36px); }
 
   /* Centre : édition du moment (timeline + nom + date/heure), centrée sur la page */
   .header-edition {
@@ -1436,7 +1436,7 @@
   }
   .solitudes .sol-viz {
     position: relative;
-    height: 120px;
+    height: 140px;
     max-width: 720px;
     margin: 0 auto 6px;
   }
@@ -1465,16 +1465,16 @@
   }
   .solitudes .sol-symbol .glyph.fleur {
     width: auto;
-    height: 64px;
+    height: 84px;
     display: block;
     margin: 0 auto;
     filter: grayscale(1) brightness(0.32) contrast(1.6);
   }
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-    font-size: 54px;
-    height: 64px;
-    line-height: 64px;
+    font-size: 70px;
+    height: 84px;
+    line-height: 84px;
     filter: grayscale(1) brightness(0.32) contrast(1.6);
   }
   .solitudes .sol-symbol .caption {
@@ -1595,6 +1595,20 @@
   }
   .sol-story .bar-track.qc .zero-mark { right: 6px; }
   .sol-story .bar-track.ca .zero-mark { left: 6px; }
+  .sol-story .story-media-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 5px;
+  }
+  .sol-story .story-medias {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .sol-story .story-medias.qc { text-align: right; padding-right: 12px; }
+  .sol-story .story-medias.ca { text-align: left; padding-left: 12px; }
 
   /* Hot 20 */
   /* Hot 20 typographique : désactivé depuis la fusion avec le treemap des enjeux */
@@ -2355,7 +2369,7 @@
     padding-top: 28px;
     border-top: 0.5px solid var(--rule);
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr;
     gap: 44px;
   }
   .footer-note h4 {
@@ -2375,6 +2389,23 @@
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--ink-softer);
     display: flex; justify-content: space-between;
+  }
+  .colophon button.footer-report-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: var(--cordovan);
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+  }
+  .colophon button.footer-report-btn:hover {
+    color: var(--ink);
   }
 
   /* Taille de police h1 variable selon saillance (data-saillance="1"–"6") */

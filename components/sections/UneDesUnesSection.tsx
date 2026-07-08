@@ -193,6 +193,16 @@ function DeuxSolitudes({
                 {s.caZero && <span className="zero-mark">—</span>}
               </div>
             </div>
+            {(s.qcMedias || s.caMedias) && (
+              <div className="story-media-row">
+                <div className="story-medias qc">
+                  {s.qcMedias && s.qcMedias.length > 0 ? s.qcMedias.join(" · ") : ""}
+                </div>
+                <div className="story-medias ca">
+                  {s.caMedias && s.caMedias.length > 0 ? s.caMedias.join(" · ") : ""}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

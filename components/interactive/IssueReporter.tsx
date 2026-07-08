@@ -56,9 +56,17 @@ export function IssueReporter() {
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault()
-      const target = e.target as Element
+      if (!e.target) return
 
-      let el: Element | null = target
+      // WebKit/Safari text node fix
+      const targetNode = e.target as Node
+      const targetEl = targetNode.nodeType === Node.TEXT_NODE
+        ? (targetNode.parentNode as Element)
+        : (targetNode as Element)
+
+      if (!targetEl) return
+
+      let el: Element | null = targetEl
       let section = ''
       while (el && el !== document.body) {
         const s = el.getAttribute('data-section')
@@ -66,13 +74,26 @@ export function IssueReporter() {
         el = el.parentElement
       }
 
-      const elementContext = (target.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 200)
+      const elementContext = (targetEl.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 200)
       setReportCtx({ section, elementContext })
       setMenuPos({ x: e.clientX, y: e.clientY })
       setUiState('menu')
     }
 
     const handleClick = (e: MouseEvent) => {
+      if (!e.target) return
+      const targetNode = e.target as Node
+      const targetEl = targetNode.nodeType === Node.TEXT_NODE
+        ? (targetNode.parentNode as Element)
+        : (targetNode as Element)
+
+      if (targetEl && targetEl.classList && (targetEl.classList.contains('footer-report-btn') || (typeof targetEl.closest === 'function' && targetEl.closest('.footer-report-btn')))) {
+        e.preventDefault()
+        setReportCtx({ section: 'Pied de page', elementContext: 'Bouton de signalement du pied de page' })
+        setDescription('')
+        setUiState('modal')
+        return
+      }
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUiState(prev => prev === 'menu' ? 'idle' : prev)
       }

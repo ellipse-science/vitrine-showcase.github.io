@@ -96,6 +96,9 @@ const MEDIA_NAMES: Record<string, string> = {
   CTV: "CTV",
   GN: "Global News",
   TTS: "Toronto Star",
+  GAM: "The Globe and Mail",
+  NP: "National Post",
+  VS: "Vancouver Sun",
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
@@ -213,6 +216,8 @@ export type SolitudeStory = {
   caWidth: number;
   qcZero: boolean;
   caZero: boolean;
+  qcMedias?: string[];
+  caMedias?: string[];
 };
 
 export type TreemapTile = {
@@ -419,7 +424,23 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
             : d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1));
       const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
       const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
-      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
+
+      const matchingEvent = unique.find((ev) => ev.event_label === d.event_label);
+      let qcMedias: string[] = [];
+      let caMedias: string[] = [];
+      if (matchingEvent && matchingEvent.media_ids) {
+        try {
+          const mediaIds = JSON.parse(matchingEvent.media_ids) as string[];
+          qcMedias = mediaIds
+            .filter((id) => QC_MEDIA.includes(id))
+            .map((id) => MEDIA_NAMES[id] ?? id);
+          caMedias = mediaIds
+            .filter((id) => !QC_MEDIA.includes(id) && id !== "CNN" && id !== "FXN")
+            .map((id) => MEDIA_NAMES[id] ?? id);
+        } catch { }
+      }
+
+      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2, qcMedias, caMedias };
     });
   } else {
     const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
@@ -436,7 +457,22 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
       const s = e.score_saillance ?? 0;
       const qcW = Math.round((q / maxScoreForBars) * 100);
       const caW = Math.round(((s - q) / maxScoreForBars) * 100);
-      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
+
+      let qcMedias: string[] = [];
+      let caMedias: string[] = [];
+      if (e.media_ids) {
+        try {
+          const mediaIds = JSON.parse(e.media_ids) as string[];
+          qcMedias = mediaIds
+            .filter((id) => QC_MEDIA.includes(id))
+            .map((id) => MEDIA_NAMES[id] ?? id);
+          caMedias = mediaIds
+            .filter((id) => !QC_MEDIA.includes(id) && id !== "CNN" && id !== "FXN")
+            .map((id) => MEDIA_NAMES[id] ?? id);
+        } catch { }
+      }
+
+      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2, qcMedias, caMedias };
     });
   }
 
