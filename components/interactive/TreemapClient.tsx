@@ -70,7 +70,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
               Ce mois
             </span>
           </div>
-          <ShareButton title="De quoi parle-t-on ?" />
+          <ShareButton title="De quoi parle-t-on ?" anchor="enjeux-saillants" />
         </div>
       </div>
 

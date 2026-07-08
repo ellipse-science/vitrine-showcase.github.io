@@ -19,6 +19,9 @@
     --tag-expert-fg: #A07A3D;
   }
   * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+  }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
     /* Garde-fou : aucune section ne doit jamais provoquer de défilement
@@ -26,6 +29,13 @@
        ceci est une ceinture de sécurité. */
     max-width: 100%;
     overflow-x: hidden;
+  }
+
+  /* Cibles des liens d'ancrage par module (#deux-solitudes, etc.) — un peu
+     d'air entre le module et le haut du viewport au lieu d'un alignement à ras. */
+  #une-des-unes, #deux-solitudes, #partis-et-couverture,
+  #enjeux-saillants, #assemblee-nationale, #polimetre-plus {
+    scroll-margin-top: 20px;
   }
   /* Médias fluides par défaut — jamais plus larges que leur conteneur. */
   img, svg, video { max-width: 100%; }

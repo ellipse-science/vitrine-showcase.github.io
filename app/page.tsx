@@ -18,19 +18,19 @@ export default function Home() {
         <UneDesUnesSection />
       </div>
 
-      <div data-section="Partis et couverture">
+      <div id="partis-et-couverture" data-section="Partis et couverture">
         <PartisCouvertureSection />
       </div>
 
-      <div data-section="Enjeux saillants">
+      <div id="enjeux-saillants" data-section="Enjeux saillants">
         <TreemapSection />
       </div>
 
-      <div data-section="Assemblée nationale">
+      <div id="assemblee-nationale" data-section="Assemblée nationale">
         <AssembleeSection />
       </div>
 
-      <div data-section="Polimètre+">
+      <div id="polimetre-plus" data-section="Polimètre+">
         <PolimetrePlusSection />
       </div>
 

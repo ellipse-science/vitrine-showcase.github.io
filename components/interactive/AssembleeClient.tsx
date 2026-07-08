@@ -59,7 +59,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
               </span>
             ))}
           </div>
-          <ShareButton title="Que dit-on à l'Assemblée nationale ?" />
+          <ShareButton title="Que dit-on à l'Assemblée nationale ?" anchor="assemblee-nationale" />
         </div>
       </div>
 

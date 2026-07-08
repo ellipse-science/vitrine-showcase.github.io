@@ -32,7 +32,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
               </span>
             ))}
           </div>
-          <ShareButton title="Couverture médiatique des partis politiques" />
+          <ShareButton title="Couverture médiatique des partis politiques" anchor="partis-et-couverture" />
         </div>
       </div>
 

@@ -4,13 +4,17 @@ import { useEffect, useRef, useState } from 'react'
 
 interface ShareButtonProps {
   title: string
+  // Id de la section ciblée (ex. "partis-et-couverture") — ajouté en fragment
+  // d'URL pour que le lien partagé amène directement au module, pas juste à
+  // l'accueil.
+  anchor?: string
 }
 
 // Web Share API : ouvre la feuille de partage native du système (X, Instagram,
 // WhatsApp, Messages, courriel, etc. — tout est déjà géré par l'OS/le navigateur).
 // Repli sur la copie du lien pour les navigateurs qui ne la supportent pas,
 // ou si le partage natif échoue pour une raison autre qu'une annulation.
-export function ShareButton({ title }: ShareButtonProps) {
+export function ShareButton({ title, anchor }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const copiedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -28,7 +32,8 @@ export function ShareButton({ title }: ShareButtonProps) {
   }
 
   const handleShare = async () => {
-    const url = window.location.href
+    const { origin, pathname, search } = window.location
+    const url = anchor ? `${origin}${pathname}${search}#${anchor}` : window.location.href
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ title, url })

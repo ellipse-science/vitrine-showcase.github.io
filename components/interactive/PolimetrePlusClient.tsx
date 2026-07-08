@@ -123,7 +123,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               </span>
             ))}
           </div>
-          <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
+          <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" />
         </div>
       </div>
 
