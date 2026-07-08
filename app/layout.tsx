@@ -5,7 +5,7 @@ import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerReg
 export const metadata: Metadata = {
   title: "La Vitrine démocratique",
   description:
-    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le CAPP de l'Université Laval.",
+    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.",
 };
 
 export default function RootLayout({
