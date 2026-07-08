@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView } from "@/lib/data/parties";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { InfoTip } from "@/components/interactive/InfoTip";
 
 const RANGES: RangeKey[] = ["today", "week", "month"];
 
@@ -20,19 +21,21 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {RANGES.map((r) => (
-              <span
-                key={r}
-                className={r === range ? "active" : undefined}
-                onClick={() => setRange(r)}
-                style={{ cursor: "pointer" }}
-              >
-                {data.ranges[r].tabLabel}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  onClick={() => setRange(r)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {data.ranges[r].tabLabel}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Couverture médiatique des partis politiques" />
           </div>
-          <ShareButton title="Couverture médiatique des partis politiques" />
         </div>
       </div>
 
@@ -50,7 +53,13 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
         {shadowRows.length > 0 && (
           <>
-            <div className="in-shadow-label">Dans l'ombre médiatique</div>
+            <div className="in-shadow-label">
+              Dans l'ombre médiatique
+              <InfoTip size="sm" label="Ombre médiatique">
+                Ces partis obtiennent moins de 2&nbsp;% de la part de voix médiatique sur la période sélectionnée.
+                Leur présence dans les médias est trop faible pour être significative.
+              </InfoTip>
+            </div>
             <div className="in-shadow">
               {shadowRows.map((row) => (
                 <PartiRow

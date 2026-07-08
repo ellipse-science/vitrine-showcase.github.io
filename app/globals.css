@@ -19,6 +19,29 @@
     --tag-expert-fg: #A07A3D;
   }
   * { box-sizing: border-box; }
+  /* Barres de défilement discrètes : piste transparente (se fond dans le papier),
+     pouce en filet sobre. Limité à la page (défilement racine) et au menu
+     déroulant des catégories — pas appliqué à `*`, pour ne pas écraser les
+     préférences de défilement de l'utilisateur ou du système (accessibilité). */
+  html, body, .ppl-cat-menu {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .ppl-cat-menu::-webkit-scrollbar { width: 8px; height: 8px; }
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track,
+  .ppl-cat-menu::-webkit-scrollbar-track { background: transparent; }
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  .ppl-cat-menu::-webkit-scrollbar-thumb {
+    background: var(--rule);
+    border-radius: 4px;
+  }
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover,
+  .ppl-cat-menu::-webkit-scrollbar-thumb:hover { background: var(--ink-softer); }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
     /* Garde-fou : aucune section ne doit jamais provoquer de défilement
@@ -1550,8 +1573,8 @@
   .sol-story:last-child { margin-bottom: 0; }
   .sol-story .story-label {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 12px;
-    font-style: italic;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--ink);
     text-align: center;
     margin-bottom: 5px;
@@ -2095,6 +2118,15 @@
     align-items: flex-end;
     gap: 10px;
     flex-shrink: 0;
+  }
+  /* Onglets + bouton Partager sur une seule ligne : évite qu'un
+     control-block sur deux rangées désaligne le titre à côté (#197).
+     align-items: stretch (au lieu de center) pour que le bouton fasse
+     la même hauteur que les onglets, peu importe leur padding. */
+  .control-row {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
   }
   .partis-footer {
     display: flex;
@@ -2691,7 +2723,7 @@
     .solitudes .sol-stat .stat-label { font-size: 9px; }
     .solitudes .sol-explain { font-size: 13px; }
     .solitudes .sol-stories { max-width: 100%; }
-    .sol-story .story-label { font-size: 13px; }
+    .sol-story .story-label { font-size: 14px; }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {
@@ -2705,7 +2737,8 @@
     .tone-key-inline .strip { width: 140px; }
     .tone-key-inline .ends { width: 140px; font-size: 9px; }
     .partis-title-row .control-block { align-items: flex-start; width: 100%; }
-    .legend-toggle.inline { width: 100%; }
+    .control-row { width: 100%; }
+    .legend-toggle.inline { flex: 1; min-width: 0; }
     .legend-toggle.inline span {
       flex: 1;
       text-align: center;
@@ -3505,6 +3538,60 @@
   .ppl-issue-select:hover { border-color: var(--ink-soft); }
   .ppl-issue-select:focus { outline: none; border-color: var(--cordovan); }
 
+  /* Menu déroulant des catégories : <select> custom pour que les options portent
+     la même police que le reste du module (impossible sur un <select> natif).
+     Les 12 catégories sont toujours listées ; celles sans donnée sur la période
+     sont grisées et non cliquables. */
+  .ppl-cat-dropdown { order: -1; position: relative; }
+  .ppl-cat-trigger { display: block; }
+  .ppl-cat-trigger[aria-expanded="true"] { border-color: var(--cordovan); }
+  .ppl-cat-menu {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 3px 0;
+    list-style: none;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .ppl-cat-option {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 12.5px;
+    line-height: 1.3;
+    color: var(--ink);
+    text-align: center;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .ppl-cat-option:hover { background: var(--paper-deep); }
+  /* Indicateur de focus clavier : le menu custom remplace un <select> natif, donc
+     l'option ciblée au clavier doit rester visible avant validation (Entrée/Espace). */
+  .ppl-cat-option:focus { outline: none; background: var(--paper-deep); }
+  .ppl-cat-option:focus-visible {
+    outline: none;
+    background: var(--paper-deep);
+    box-shadow: inset 2px 0 0 var(--cordovan);
+  }
+  .ppl-cat-option.active {
+    color: var(--cordovan);
+    font-weight: 600;
+    background: var(--paper-deep);
+  }
+  /* Sans donnée : grisé, non cliquable, sans effet de survol. */
+  .ppl-cat-option--empty {
+    color: var(--ink-softer);
+    opacity: 0.55;
+    cursor: default;
+  }
+  .ppl-cat-option--empty:hover { background: none; }
+
   /* --- Rail droit : liste --- */
   .ppl-list { min-width: 0; display: flex; flex-direction: column; }
 
@@ -3696,10 +3783,42 @@
     margin: 0 0 14px;
     font-style: italic;
   }
-  /* Article représentatif tiré de la couverture : média + titre cliquable. */
-  .ppl-detail__article {
+  /* Couverture médiatique : byline en ligne des médias (séparés par virgules),
+     chaque nom menant à l'article le plus récent du média — calqué sur la
+     byline « À lire en Une sur » du module Une des unes. */
+  .ppl-detail__coverage {
     margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--rule);
+    line-height: 1.6;
   }
+  /* « À lire sur » : même police que l'œilleton « Résumé », sur sa propre ligne. */
+  .ppl-detail__coverage-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  /* Liste des médias : même police et même teinte que le résumé. */
+  .ppl-detail__coverage-media {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .ppl-detail__coverage-media a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--rule);
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .ppl-detail__coverage-media a:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .ppl-detail__coverage-media .sep { margin-right: 6px; }
   .ppl-detail__article-media {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
@@ -3731,7 +3850,9 @@
     font-weight: 500;
     color: var(--cordovan);
     text-decoration: none;
-    transition: color 0.15s ease;
+    border-bottom: 0.5px solid transparent;
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
   .ppl-detail__link:hover { color: var(--ink); }
 
@@ -3861,18 +3982,97 @@
   }
 
 /* ============================================================
-   BOUTON PARTAGE — un par titre (Une principale / secondaires)
+   BOUTON PARTAGE — un par module, icône seule pour rester discret.
+   navigator.share() en premier recours ; sinon un petit menu de
+   réseaux (desktop, où l'API n'est souvent pas supportée).
    ============================================================ */
+.share-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .share-btn {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 0.5px solid var(--rule);
-  padding: 3px 10px; cursor: pointer; flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-  font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+  width: 26px; height: 100%; min-height: 26px; padding: 0; cursor: pointer;
+  box-sizing: border-box;
   color: var(--ink-softer);
   transition: color 0.12s, border-color 0.12s;
 }
 .share-btn:hover,
 .share-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
 .share-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
+
+.share-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 0 4px 18px rgba(28, 25, 23, 0.18);
+  padding: 5px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.share-panel-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 10px;
+  text-decoration: none;
+  box-sizing: border-box;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.share-panel-item:hover,
+.share-panel-item:focus-visible {
+  background: var(--paper-deep);
+  color: var(--cordovan);
+  outline: none;
+}
+
+/* ============================================================
+   SIGNALER UN PROBLÈME — bouton flottant, mobile seulement.
+   Sur desktop, le clic droit (contextmenu) suffit. Sur iOS Safari,
+   contextmenu ne se déclenche jamais au tap long (limitation WebKit) —
+   ce bouton est donc la seule façon de signaler un problème — cf. #120.
+   ============================================================ */
+.issue-fab {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .issue-fab {
+    display: inline-flex;
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 500;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 0 2px 12px rgba(28, 25, 23, 0.16);
+    padding: 8px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .issue-fab:hover,
+  .issue-fab:focus-visible {
+    background: var(--cordovan);
+    color: var(--paper);
+    outline: none;
+  }
+}
 
