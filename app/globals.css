@@ -697,6 +697,12 @@
     border-top: 2px solid var(--rule-faint);
   }
   .section-label .date-hint { color: var(--ink-softer); letter-spacing: 0.22em; }
+  .section-label .section-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
   .section-label .section-date {
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
@@ -1412,12 +1418,20 @@
     margin-top: 40px;
     text-align: center;
   }
+  .solitudes .sol-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 0 0 18px;
+  }
   .solitudes .sol-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 24px;
     font-weight: 700;
     color: var(--ink);
-    margin: 0 0 18px;
+    margin: 0;
     letter-spacing: -0.4px;
   }
   .solitudes .sol-viz {
@@ -2314,9 +2328,11 @@
     margin: 0 0 22px; max-width: 640px;
   }
   .partners-grid {
-    display: flex; flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 28px 44px;
     align-items: center;
+    justify-items: start;
   }
   .partner-logo {
     height: 42px;
@@ -2641,7 +2657,8 @@
 
     /* ── Deux solitudes ── */
     .solitudes { padding: 22px 16px 20px; margin-top: 28px; }
-    .solitudes .sol-title { font-size: 20px; margin-bottom: 14px; }
+    .solitudes .sol-title-row { margin-bottom: 14px; }
+    .solitudes .sol-title { font-size: 20px; }
     .solitudes .sol-viz { height: 120px; max-width: 100%; }
     .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; filter: grayscale(1) brightness(0.32) contrast(1.6); }
     .solitudes .sol-symbol .glyph.maple { font-size: 54px; height: 64px; line-height: 64px; }
@@ -2777,7 +2794,7 @@
 
     /* ── Partners ── */
     .partners-section { margin-top: 40px; }
-    .partners-grid { gap: 18px 24px; }
+    .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
 
     /* ── Footer ── */
@@ -3818,4 +3835,20 @@
     .ppl-promise__head { grid-template-columns: 28px minmax(0, 1fr) 90px 44px; gap: 10px; }
     .ppl-title { font-size: 16px; }
   }
+
+/* ============================================================
+   BOUTON PARTAGE — un par titre (Une principale / secondaires)
+   ============================================================ */
+.share-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 0.5px solid var(--rule);
+  padding: 3px 10px; cursor: pointer; flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-softer);
+  transition: color 0.12s, border-color 0.12s;
+}
+.share-btn:hover,
+.share-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
+.share-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
 

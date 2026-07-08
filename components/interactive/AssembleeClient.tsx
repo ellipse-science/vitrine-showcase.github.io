@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -58,6 +59,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
               </span>
             ))}
           </div>
+          <ShareButton title="Que dit-on à l'Assemblée nationale ?" />
         </div>
       </div>
 

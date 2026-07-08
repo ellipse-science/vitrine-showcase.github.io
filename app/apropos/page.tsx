@@ -126,8 +126,8 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                La Vitrine est portée par le CAPP (Centre d'analyse des politiques
-                publiques) de l'Université Laval, en collaboration avec la
+                La Vitrine est portée par le Centre d'analyse des politiques
+                publiques (CAPP) de l'Université Laval, en collaboration avec la
                 CLESSN (Chaire de leadership en enseignement des sciences sociales
                 numériques). Le projet réunit des chercheuses et chercheurs en science
                 politique, des développeuses et développeurs de systèmes de données et des
