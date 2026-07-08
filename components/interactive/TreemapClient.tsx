@@ -44,7 +44,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">De quoi parle-t-on ?</h2>
+          <h2 className="partis-title">De quoi parle-t-on?</h2>
         </div>
         <div className="control-block">
           <div className="control-row">
@@ -71,7 +71,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
                 Ce mois
               </span>
             </div>
-            <ShareButton title="De quoi parle-t-on ?" anchor="enjeux-saillants" />
+            <ShareButton title="De quoi parle-t-on?" anchor="enjeux-saillants" />
           </div>
         </div>
       </div>

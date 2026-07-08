@@ -155,7 +155,7 @@ function DeuxSolitudes({
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
       <div className="sol-title-row">
-        <h3 className="sol-title">Deux solitudes ?</h3>
+        <h3 className="sol-title">Deux solitudes?</h3>
         <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
       </div>
       <div className="sol-viz">

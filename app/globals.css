@@ -1562,8 +1562,8 @@
   .sol-story:last-child { margin-bottom: 0; }
   .sol-story .story-label {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 12px;
-    font-style: italic;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--ink);
     text-align: center;
     margin-bottom: 5px;
@@ -2712,7 +2712,7 @@
     .solitudes .sol-stat .stat-label { font-size: 9px; }
     .solitudes .sol-explain { font-size: 13px; }
     .solitudes .sol-stories { max-width: 100%; }
-    .sol-story .story-label { font-size: 13px; }
+    .sol-story .story-label { font-size: 14px; }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {
@@ -3937,5 +3937,43 @@
   background: var(--paper-deep);
   color: var(--cordovan);
   outline: none;
+}
+
+/* ============================================================
+   SIGNALER UN PROBLÈME — bouton flottant, mobile seulement.
+   Sur desktop, le clic droit (contextmenu) suffit. Sur iOS Safari,
+   contextmenu ne se déclenche jamais au tap long (limitation WebKit) —
+   ce bouton est donc la seule façon de signaler un problème — cf. #120.
+   ============================================================ */
+.issue-fab {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .issue-fab {
+    display: inline-flex;
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 500;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 0 2px 12px rgba(28, 25, 23, 0.16);
+    padding: 8px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .issue-fab:hover,
+  .issue-fab:focus-visible {
+    background: var(--cordovan);
+    color: var(--paper);
+    outline: none;
+  }
 }
 
