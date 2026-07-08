@@ -2097,10 +2097,12 @@
     flex-shrink: 0;
   }
   /* Onglets + bouton Partager sur une seule ligne : évite qu'un
-     control-block sur deux rangées désaligne le titre à côté (#197). */
+     control-block sur deux rangées désaligne le titre à côté (#197).
+     align-items: stretch (au lieu de center) pour que le bouton fasse
+     la même hauteur que les onglets, peu importe leur padding. */
   .control-row {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 10px;
   }
   .partis-footer {
@@ -3853,7 +3855,8 @@
 .share-btn {
   display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 0.5px solid var(--rule);
-  width: 26px; height: 26px; padding: 0; cursor: pointer;
+  width: 26px; height: 100%; min-height: 26px; padding: 0; cursor: pointer;
+  box-sizing: border-box;
   color: var(--ink-softer);
   transition: color 0.12s, border-color 0.12s;
 }
