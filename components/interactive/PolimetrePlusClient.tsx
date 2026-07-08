@@ -10,6 +10,7 @@ import {
   type VerdictSlug,
 } from "@/lib/data/polimetre-meta";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 // Number of promises shown at once — the maquette has five spots.
 const TOP_N = 5;
@@ -122,6 +123,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               </span>
             ))}
           </div>
+          <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
         </div>
       </div>
 

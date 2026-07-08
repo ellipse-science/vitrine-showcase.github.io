@@ -62,9 +62,6 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
           </span>
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
-        <div style={{ marginLeft: "auto" }}>
-          <ShareButton title={event.title} />
-        </div>
       </div>
 
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
@@ -124,9 +121,6 @@ function SideUne({ event }: { event: UneEvent }) {
           </span>
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
-        <div style={{ marginLeft: "auto" }}>
-          <ShareButton title={event.title} />
-        </div>
       </div>
       <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
@@ -158,7 +152,10 @@ function DeuxSolitudes({
       className="solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
-      <h3 className="sol-title">Deux solitudes ?</h3>
+      <div className="sol-title-row">
+        <h3 className="sol-title">Deux solitudes ?</h3>
+        <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} />
+      </div>
       <div className="sol-viz">
         <div className="sol-axis" />
         <div className="sol-symbol qc">
@@ -237,7 +234,10 @@ export async function UneDesUnesSection() {
             <span className="section-title">Les Unes {data.periodLabel}</span>
             <SaillanceTip />
           </span>
-          <span className="section-date">{editionLabel}</span>
+          <span className="section-right">
+            <span className="section-date">{editionLabel}</span>
+            <ShareButton title={`Les Unes ${data.periodLabel}`} />
+          </span>
         </div>
 
         {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3
