@@ -28,6 +28,25 @@ npm run type-check # tsc --noEmit
 - **Push to `main`** → `.github/workflows/deploy.yml` runs `npm ci && npm run build` and publishes `out/` to GitHub Pages (live within ~2 min). Site: https://ellipse.science/vitrine-showcase.github.io/
 - **Pull requests** → `.github/workflows/ci.yml` runs type-check + full build, no deploy. Nothing broken reaches `main`.
 
+## Versionnage
+
+`package.json` `version` est la **source unique de vérité**. Le footer (`static-content/bottom.html`) contient le placeholder `__VERSION__`, substitué au build par `RawMaquette` :
+
+- `2.0.0-beta.3` → **« Bêta v2.0.0 (b3) »** (compteur bêta visible)
+- `2.0.0` → **« v2.0.0 »** (hors bêta)
+
+Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au merge, `.github/workflows/version-bump.yml` bumpe `package.json` sur `main` et redéploie :
+
+| Label | Effet en bêta | Effet hors bêta |
+|-------|---------------|-----------------|
+| `semver:patch` | `2.0.0-beta.0` → `2.0.0-beta.1` | → `2.0.1` |
+| `semver:minor` | → `2.1.0-beta.0` | → `2.1.0` |
+| `semver:major` | → `3.0.0-beta.0` | → `3.0.0` |
+
+- **PR sans label semver:*** → aucun bump. Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
+- **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
+- **PRÉREQUIS (une seule fois)** : le ruleset de `main` exige une PR pour toute modif, mais le workflow pousse le bump directement. `github-actions[bot]` doit donc être dans la **bypass-list du ruleset** (Settings → Rules → `main` → *Bypass list* → add *GitHub Actions*). Sans ça, le `git push origin main` du bump est refusé. Les trois labels `semver:*` doivent aussi exister dans le repo.
+
 ## Hard rules (non-negotiable)
 
 1. **Never edit JSON under `public/data/` by hand.** It is refreshed by `scripts/fetch_data.R` from Athena; hand edits get overwritten. To add data, edit `scripts/tables.json` (see [procedures](./docs/reference/procedures.md)).
