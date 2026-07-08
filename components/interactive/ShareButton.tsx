@@ -6,15 +6,37 @@ interface ShareButtonProps {
   title: string
 }
 
-// Web Share API : ouvre la feuille de partage native du système (X, Instagram,
-// WhatsApp, Messages, courriel, etc. — tout est déjà géré par l'OS/le navigateur).
-// Repli sur la copie du lien pour les navigateurs qui ne la supportent pas,
-// ou si le partage natif échoue pour une raison autre qu'une annulation.
+// Réseaux ouverts en repli quand le navigateur ne supporte pas
+// navigator.share() (la plupart des navigateurs desktop). URL de partage
+// standard, sans dépendance externe.
+function networkLinks(title: string, url: string) {
+  return [
+    { key: 'x', label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
+    { key: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+    { key: 'linkedin', label: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
+  ]
+}
+
+// Icône seule (pas de libellé) pour rester discret dans les en-têtes de
+// module. navigator.share() ouvre la feuille native (mobile, et certains
+// navigateurs desktop) ; sinon un petit menu de réseaux s'ouvre — plutôt
+// qu'une simple copie de lien silencieuse, peu utile sur desktop.
 export function ShareButton({ title }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const copiedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => () => clearTimeout(copiedTimeout.current), [])
+
+  useEffect(() => {
+    if (!panelOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setPanelOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [panelOpen])
 
   const copyLink = async (url: string) => {
     try {
@@ -27,7 +49,7 @@ export function ShareButton({ title }: ShareButtonProps) {
     }
   }
 
-  const handleShare = async () => {
+  const handleClick = async () => {
     const url = window.location.href
     if (typeof navigator.share === 'function') {
       try {
@@ -37,25 +59,60 @@ export function ShareButton({ title }: ShareButtonProps) {
         if (err instanceof Error && err.name === 'AbortError') return
         // échec autre qu'une annulation — on retombe sur la copie du lien
       }
+      await copyLink(url)
+      return
     }
-    await copyLink(url)
+    setPanelOpen((v) => !v)
   }
 
   return (
-    <button
-      type="button"
-      className={`share-btn${copied ? ' copied' : ''}`}
-      onClick={handleShare}
-      aria-label={`Partager : ${title}`}
-    >
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-        <circle cx="7.5" cy="2" r="1.5" stroke="currentColor" strokeWidth="1" />
-        <circle cx="2" cy="5" r="1.5" stroke="currentColor" strokeWidth="1" />
-        <circle cx="7.5" cy="8" r="1.5" stroke="currentColor" strokeWidth="1" />
-        <line x1="3.4" y1="4.3" x2="6.1" y2="2.7" stroke="currentColor" strokeWidth="1" />
-        <line x1="3.4" y1="5.7" x2="6.1" y2="7.3" stroke="currentColor" strokeWidth="1" />
-      </svg>
-      {copied ? 'Copié !' : 'Partager'}
-    </button>
+    <div ref={wrapperRef} className="share-wrap">
+      <button
+        type="button"
+        className={`share-btn${copied ? ' copied' : ''}`}
+        onClick={handleClick}
+        aria-label={`Partager : ${title}`}
+        aria-expanded={panelOpen}
+        title={copied ? 'Copié !' : 'Partager'}
+      >
+        {copied ? (
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M2.5 6.8L5.2 9.5L10.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <circle cx="9.5" cy="2.5" r="1.8" stroke="currentColor" strokeWidth="1.1" />
+            <circle cx="2.5" cy="6.5" r="1.8" stroke="currentColor" strokeWidth="1.1" />
+            <circle cx="9.5" cy="10.5" r="1.8" stroke="currentColor" strokeWidth="1.1" />
+            <line x1="4.2" y1="5.5" x2="7.8" y2="3.4" stroke="currentColor" strokeWidth="1.1" />
+            <line x1="4.2" y1="7.5" x2="7.8" y2="9.6" stroke="currentColor" strokeWidth="1.1" />
+          </svg>
+        )}
+      </button>
+
+      {panelOpen && (
+        <div className="share-panel">
+          {networkLinks(title, window.location.href).map((n) => (
+            <a
+              key={n.key}
+              href={n.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="share-panel-item"
+              onClick={() => setPanelOpen(false)}
+            >
+              {n.label}
+            </a>
+          ))}
+          <button
+            type="button"
+            className="share-panel-item"
+            onClick={() => { copyLink(window.location.href); setPanelOpen(false) }}
+          >
+            Copier le lien
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
