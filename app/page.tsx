@@ -7,7 +7,7 @@ import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
-import { listEditions } from "@/lib/data/headlineEvents";
+import { listEditions, loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import PaletteScrollLab from "@/components/lab/PaletteScrollLab";
 
 // Module RETIRÉ DE PROD, gardé sur dev (2026-08-20) : sa section se garde
@@ -22,9 +22,13 @@ export default async function Home() {
   // Les éditions consultables du snapshot (#434) : le bandeau de l'en-tête ne
   // devine pas ce qui existe, il le reçoit.
   const editions = await listEditions();
+  // Ambiance de la journée (#118) : le tier d'intensité dominant du dernier
+  // bloc teinte le fond via body:has(.ambiance-X) — server component, aucun JS.
+  const headlineData = await loadHeadlineEvents();
+  const tier = headlineData?.intensityTier ?? "Moyen";
 
   return (
-    <div className="page">
+    <div className={`page ambiance-${tier.toLowerCase()}`}>
       <div data-section="En-tête">
         <RawMaquette chunk="top" />
       </div>

@@ -1690,6 +1690,8 @@ export type TreemapAllPeriods = {
   month: TreemapPeriodData;
 };
 
+export type IntensityTier = "Faible" | "Moyen" | "Fort" | "Majeur";
+
 export type HeadlineData = {
   dateLabel: string;
   /** « Dernière mise à jour : mercredi 8 juillet 2026, 16 h » — date + fin du
@@ -1699,6 +1701,8 @@ export type HeadlineData = {
   snapshotInterval: string;
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
+  /** Tier d'intensité dominant du dernier intervalle — pilote la teinte de fond (#118). */
+  intensityTier: IntensityTier;
   top3: UneEvent[];
   solitudes: SolitudeData;
   treemapTier1: TreemapTile[];
@@ -2133,7 +2137,18 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  // Tier d'intensité dominant du dernier bloc (#118) : le plus fréquent parmi
+  // les événements de `latest` ; à égalité, le tier le plus élevé l'emporte.
+  const TIER_RANK: Record<string, number> = { Faible: 0, Moyen: 1, Fort: 2, Majeur: 3 };
+  const tierCounts = new Map<string, number>();
+  for (const e of latest) {
+    if (e.intensity_tier) tierCounts.set(e.intensity_tier, (tierCounts.get(e.intensity_tier) ?? 0) + 1);
+  }
+  const intensityTier = (
+    [...tierCounts.entries()].sort((a, b) => b[1] - a[1] || (TIER_RANK[b[0]] ?? 0) - (TIER_RANK[a[0]] ?? 0))[0]?.[0] ?? "Moyen"
+  ) as IntensityTier;
+
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, intensityTier, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 });
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
