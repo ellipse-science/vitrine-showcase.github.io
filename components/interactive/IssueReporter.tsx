@@ -95,10 +95,11 @@ export function IssueReporter() {
     setUiState('modal')
   }
 
-  // Bouton toujours visible : le clic droit / contextmenu ne se déclenche pas
-  // sur iOS Safari (aucun événement `contextmenu` sur appui long), ce qui
-  // rendait le signalement impossible sur ces appareils (#120). Ce bouton
-  // fonctionne partout, en plus du clic droit conservé pour le contexte riche.
+  // Bouton flottant affiché uniquement sous 900px (voir .issue-fab) : le clic
+  // droit / contextmenu ne se déclenche pas sur iOS Safari (aucun événement
+  // `contextmenu` sur appui long), ce qui rendait le signalement impossible
+  // sur ces appareils (#120). Sur desktop, le clic droit reste la seule voie
+  // et suffit — c'est le contexte riche qu'on veut y garder.
   const openModalGeneric = () => {
     setReportCtx({ section: '', elementContext: '' })
     openModal()

@@ -3941,8 +3941,8 @@
   .issue-fab {
     display: inline-flex;
     position: fixed;
-    right: 12px;
-    bottom: 12px;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 500;
     background: var(--paper);
     border: 1px solid var(--ink);
