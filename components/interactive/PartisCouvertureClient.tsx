@@ -20,28 +20,30 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {RANGES.map((r) => (
-              <span
-                key={r}
-                className={r === range ? "active" : undefined}
-                onClick={() => setRange(r)}
-                style={{ cursor: "pointer" }}
-              >
-                {data.ranges[r].tabLabel}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  onClick={() => setRange(r)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {data.ranges[r].tabLabel}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Couverture médiatique des partis politiques" />
           </div>
-          <ShareButton title="Couverture médiatique des partis politiques" />
         </div>
       </div>
 
       <section className="partis">
         <div className="parti-row header">
-          <div></div>
+          <div>Parti</div>
           <div>Saillance</div>
+          <div>{view.sparkHeadLabel}</div>
           <div>Ton de la couverture</div>
-          <div style={{ textAlign: "right" }}>{view.sparkHeadLabel}</div>
         </div>
 
         {visibleRows.map((row) => (
@@ -49,21 +51,23 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         ))}
 
         {shadowRows.length > 0 && (
-          <div className="in-shadow">
-            <div className="label">Dans l'ombre médiatique</div>
-            {shadowRows.map((row) => (
-              <PartiRow
-                key={row.key}
-                row={row}
-                refLabel={view.refLabel}
-                shadow
-              />
-            ))}
-          </div>
+          <>
+            <div className="in-shadow-label">Dans l'ombre médiatique</div>
+            <div className="in-shadow">
+              {shadowRows.map((row) => (
+                <PartiRow
+                  key={row.key}
+                  row={row}
+                  refLabel={view.refLabel}
+                  shadow
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
       <div className="partis-footer">
-        <span></span>
+        <span className="partis-last-date">Dernières données : {data.lastDate}</span>
       </div>
     </>
   );
@@ -78,10 +82,9 @@ function PartiRow({
   refLabel: string;
   shadow?: boolean;
 }) {
-  const rowStyle = shadow ? { borderBottom: "none" } : undefined;
-  const nameStyle = shadow ? { opacity: 0.7 } : undefined;
+  const nameStyle = shadow ? { opacity: 0.35 } : undefined;
   return (
-    <div className="parti-row" style={rowStyle}>
+    <div className="parti-row">
       <span className={`parti-name-box ${row.key}`} style={nameStyle}>
         {row.label}
       </span>
@@ -100,10 +103,6 @@ function PartiRow({
           {row.showLeaderLabel && <span className="avg-label">{refLabel}</span>}
         </div>
       </div>
-      <div className="parti-ton-label">Ton de la couverture</div>
-      <div className="parti-tone">
-        <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
-      </div>
       <div className="parti-spark">
         <svg viewBox="0 0 100 30" preserveAspectRatio="none">
           <polyline
@@ -119,12 +118,16 @@ function PartiRow({
               cx={c.cx}
               cy={c.cy}
               r={c.r}
-              fill="#C8BDA6"
-              stroke={i === row.sparkCircles.length - 1 ? "#1C1917" : undefined}
-              strokeWidth={i === row.sparkCircles.length - 1 ? 0.8 : undefined}
+              fill={i === row.sparkCircles.length - 1 ? "#AAA18E" : "#ECE3CF"}
+              stroke="#C8BDA6"
+              strokeWidth="0.5"
             />
           ))}
         </svg>
+      </div>
+      <div className="parti-ton-label">Ton de la couverture</div>
+      <div className="parti-tone" title={row.toneTitle}>
+        <span className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</span>
       </div>
     </div>
   );
