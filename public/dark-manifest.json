@@ -4,14 +4,14 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "dark-favicon-16x16.ico",
+      "src": "dark-favicon-16x16.png",
       "sizes": "16x16",
-      "type": "image/x-icon"
+      "type": "image/png"
     },
     {
-      "src": "dark-favicon-32x32.ico",
-      "sizes": "24x24 32x32",
-      "type": "image/x-icon"
+      "src": "dark-favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
     },
     {
       "src": "dark-favicon.ico",
