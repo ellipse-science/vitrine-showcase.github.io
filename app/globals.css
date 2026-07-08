@@ -230,25 +230,26 @@
     align-items: end;
     gap: 28px;
     padding: 2px 0 8px;
+    margin-bottom: 24px;
   }
   .site-header .mast {
     justify-self: start;
     padding: 0;
     justify-content: flex-start;
   }
-  .site-header .logo-vitrine { height: 120px; }
-  .site-header .logo-capp { height: 80px; }
-  .site-header .capp-prefix { font-size: 11px; white-space: nowrap; }
+  .site-header .logo-vitrine { height: 110px; }
+  .site-header .logo-capp { height: 72px; }
+  .site-header .capp-prefix { font-size: 12px; font-weight: 600; white-space: nowrap; }
   /* « Propulsé par le » aligné à gauche (sous VITRINE), pas indenté, et un peu
      plus bas (moins collé sous le logo Vitrine). */
   .site-header .capp-attribution { margin-left: 0; }
-  .site-header .brand-footer { margin-top: -24px; }
+  .site-header .brand-footer { margin-top: -20px; }
   /* Logo CAPP remonté légèrement (le PNG a du vide en bas) — « Propulsé par le » reste centré. */
-  .site-header .logo-capp { transform: translateY(-6px); }
+  .site-header .logo-capp { transform: translateY(-4px); }
   /* On descend TOUTE la marque (logo + « Propulsé par le CAPP » ensemble) : le
      logo Vitrine se rapproche du CAPP, et le logo CAPP (dont le PNG a du vide
      transparent en bas) s'aligne sur le countdown. Ajustable au pixel près. */
-  .site-header .mast { transform: translateY(36px); }
+  .site-header .mast { transform: translateY(16px); }
 
   /* Centre : édition du moment (timeline + nom + date/heure), centrée sur la page */
   .header-edition {
@@ -348,15 +349,12 @@
   .header-utility .pulse-title {
     margin: 0;
     position: relative;
-    top: 11px;
-    text-align: justify;
-    text-align-last: justify;
-    text-justify: inter-character;
-    hyphens: auto;
-    width: 340px;
-    font-size: 8px;
-    letter-spacing: 0.03em;
-    line-height: 1.95;
+    top: 0px;
+    text-align: right;
+    width: 380px;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
   }
   .header-utility .pulse-title .pt-primary,
   .header-utility .pulse-title .pt-secondary {

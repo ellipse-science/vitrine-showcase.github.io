@@ -42,3 +42,6 @@ yarn.lock
 
 # Agent config: share skills/hooks/settings, keep personal settings local
 /.claude/settings.local.json
+
+# Local validation helper files
+/public/validate-data.json
