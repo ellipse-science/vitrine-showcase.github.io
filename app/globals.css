@@ -1391,7 +1391,7 @@
   .une-side h2[data-saillance="1"] { font-size: 19px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
-    font-style: normal;
+    font-style: italic;
     color: var(--ink-soft);
     margin: 0 0 14px;
     line-height: 1.45;

@@ -99,11 +99,11 @@ describe("sparkPoints / samplePoints", () => {
     expect(pts[0][0]).toBe(50);
   });
   it("samplePoints: retourne au plus n points", () => {
-    const pts: [number, number][] = Array.from({ length: 20 }, (_, i) => [i, i]);
+    const pts: [number, number][] = Array.from({ length: 20 }, (_, i) => [i, i] as [number, number]);
     expect(samplePoints(pts, 7).length).toBe(7);
   });
   it("samplePoints: inclut toujours le dernier point", () => {
-    const pts: [number, number][] = Array.from({ length: 10 }, (_, i) => [i, i]);
+    const pts: [number, number][] = Array.from({ length: 10 }, (_, i) => [i, i] as [number, number]);
     const sampled = samplePoints(pts, 4);
     expect(sampled[sampled.length - 1]).toEqual(pts[pts.length - 1]);
   });
