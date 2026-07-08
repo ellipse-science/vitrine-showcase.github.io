@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
   title: "S'abonner — La Vitrine démocratique",
@@ -8,9 +9,12 @@ export const metadata: Metadata = {
 export default function AbonnementPage() {
   return (
     <div className="page">
-      <RawMaquette chunk="top" />
+      <div data-section="En-tête">
+        <RawMaquette chunk="top" />
+      </div>
 
       <section
+        data-section="Abonnement"
         style={{
           borderTop: "0.5px solid var(--rule)",
           borderBottom: "0.5px solid var(--rule)",
@@ -81,7 +85,11 @@ export default function AbonnementPage() {
         </a>
       </section>
 
-      <RawMaquette chunk="bottom" />
+      <div data-section="Pied de page">
+        <RawMaquette chunk="bottom" />
+      </div>
+
+      <IssueReporter />
     </div>
   );
 }
