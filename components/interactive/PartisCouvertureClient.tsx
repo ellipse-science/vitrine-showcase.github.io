@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView } from "@/lib/data/parties";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 const RANGES: RangeKey[] = ["today", "week", "month"];
 
@@ -31,6 +32,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
               </span>
             ))}
           </div>
+          <ShareButton title="Couverture médiatique des partis politiques" />
         </div>
       </div>
 

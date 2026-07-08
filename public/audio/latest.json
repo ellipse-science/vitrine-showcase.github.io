@@ -1,30 +1,30 @@
 {
-  "generated_at": "2026-06-12T12:04Z",
-  "date_utc": "2026-06-12",
+  "generated_at": "2026-06-16T12:05Z",
+  "date_utc": "2026-06-16",
   "time_interval_utc": "08-12",
-  "prompt": "Genre: Cinematic orchestral. BPM: 80. Key: D minor. Instruments: Strings, brass, timpani. Mood: Tense and dramatic, with an underlying sense of unease and urgency. Captures a world on edge, balancing between historical shifts and personal intrigue.",
+  "prompt": "Genre: Ambient Jazz; BPM: 60; Key: D minor; Instruments: Soft piano, brushed drums, muted trumpet; Mood: Somber and reflective, with a hint of tension. Capture the unease and sadness of a community seeking justice and change.",
   "gems": {
-    "wonder": 40,
-    "transcendence": 50,
+    "wonder": 10,
+    "transcendence": 5,
     "tenderness": 20,
-    "nostalgia": 30,
-    "peacefulness": 20,
+    "nostalgia": 10,
+    "peacefulness": 15,
     "energy": 60,
-    "joyful_activation": 30,
-    "sadness": 40,
-    "tension": 70
+    "joyful_activation": 10,
+    "sadness": 70,
+    "tension": 80
   },
   "headlines": [
     {
-      "title": "Mark Carney invité par Macron après son discours remarqué à Davos",
-      "weight": 44
+      "title": "Manifestation à Montréal-Nord après un scandale de racisme au SPVM",
+      "weight": 39
     },
     {
-      "title": "Trump et les 250 ans des États-Unis : une célébration controversée",
-      "weight": 29
+      "title": "Manifestation à Montréal-Nord contre le racisme au SPVM",
+      "weight": 34
     },
     {
-      "title": "Contrebande de tabac: peine à domicile pour un homme d'affaires québécois",
+      "title": "Pénurie de génériques d'Ozempic dans les pharmacies québécoises",
       "weight": 26
     }
   ]

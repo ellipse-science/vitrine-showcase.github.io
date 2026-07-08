@@ -72,7 +72,7 @@ PRs trigger `.github/workflows/ci.yml` which runs the type-checker and full buil
 
 Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via `.github/workflows/refresh-data.yml` triggered externally by [cron-job.org](https://cron-job.org/). The script reads the whitelist in `scripts/tables.json` and commits JSON to `public/data/`. The build then bakes those values into the page at build time — no runtime fetch.
 
-To add a new dataset, see [CLAUDE.md § Data](./CLAUDE.md#data).
+To add a new dataset, see [docs/reference/architecture.md § Data pipeline](./docs/reference/architecture.md#data-pipeline).
 
 ## Adding a new data-bound section
 

@@ -1,0 +1,123 @@
+  <!-- Polimètre+ : prototype de maquette statique. -->
+  <!-- Données inventées (verdicts/positions/reflets) en attendant le refiner. -->
+  <!-- À convertir en Server Component une fois la table Athena publiée. -->
+  <section class="polimeter-plus" aria-label="Polimètre+">
+    <div class="partis-title-row">
+      <div class="title-block">
+        <h2 class="partis-title">Polimètre+ : promesses sous la loupe médiatique</h2>
+        <div class="period-subtitle">
+          Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
+          <span class="saillance-info-tip" title="Le Polimètre (Université Laval) suit la réalisation des promesses électorales. Le Polimètre+ croise les promesses de la Coalition avenir Québec, faites lors de la campagne de 2022, avec leur couverture en une dans les médias québécois
+          pour faire ressortir celles qui retiennent l'attention.">
+            <button type="button" class="saillance-info-btn info-sm" aria-label="À propos du Polimètre+">ⓘ</button>
+          </span>
+        </div>
+      </div>
+      <div class="control-block">
+        <div class="legend-toggle inline">
+          <span class="active">Depuis une semaine</span>
+          <span>Depuis un mois</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ppl-grid">
+      <!-- Rail gauche : légende des verdicts + catégories d'enjeux -->
+      <aside class="ppl-filters">
+        <nav class="ppl-verdicts" aria-label="Filtrer par verdict">
+          <button class="ppl-verdict active" type="button" data-verdict="all">Tous les verdicts</button>
+          <button class="ppl-verdict ppl-verdict--realisee" type="button" data-verdict="realisee">Réalisée</button>
+          <button class="ppl-verdict ppl-verdict--partielle" type="button" data-verdict="partielle">
+            <span class="ppl-verdict__full">Partiellement réalisée</span>
+            <span class="ppl-verdict__short">Partiellement</span>
+          </button>
+          <button class="ppl-verdict ppl-verdict--en-cours" type="button" data-verdict="en-cours">En cours</button>
+          <button class="ppl-verdict ppl-verdict--en-suspens" type="button" data-verdict="en-suspens">En suspens</button>
+          <button class="ppl-verdict ppl-verdict--rompue" type="button" data-verdict="rompue">Rompue</button>
+        </nav>
+
+        <div class="ppl-issues">
+          <label class="ppl-issues__label" for="ppl-issue-select">Catégorie d'enjeu</label>
+          <select class="ppl-issue-select" id="ppl-issue-select" aria-label="Catégories d'enjeux">
+            <option value="all" selected>Toutes les catégories</option>
+            <option value="culture">Culture et nationalisme</option>
+            <option value="droits">Droits et libertés</option>
+            <option value="economie">Économie et travail</option>
+            <option value="education">Éducation</option>
+            <option value="environnement">Environnement et énergie</option>
+            <option value="gouvernements">Gouvernements</option>
+            <option value="immigration">Immigration</option>
+            <option value="sante">Santé</option>
+            <option value="terres">Terres publiques et agriculture</option>
+            <option value="technologie">Technologie</option>
+          </select>
+        </div>
+      </aside>
+
+      <!-- Rail droit : liste des promesses -->
+      <div class="ppl-list">
+        <div class="ppl-promise header" aria-hidden="true">
+          <div style="text-align: center;">Position</div>
+          <div style="text-align: center;">Promesse</div>
+          <div style="text-align: right;">Tendance</div>
+        </div>
+        <ol class="ppl-promises">
+          <li class="ppl-promise ppl-promise--en-cours" aria-label="En cours">
+            <span class="ppl-rank">1</span>
+            <a class="ppl-title" href="#">Accélérer la construction du 3<sup>e</sup> lien</a>
+            <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 2 rangs">▲ +2</span>
+          </li>
+
+          <li class="ppl-promise ppl-promise--realisee" aria-label="Réalisée">
+            <span class="ppl-rank">2</span>
+            <a class="ppl-title" href="#">Baisser les impôts de la classe moyenne</a>
+            <span class="ppl-trend ppl-trend--flat" aria-label="Aucun changement">—</span>
+          </li>
+
+          <li class="ppl-promise ppl-promise--partielle" aria-label="Partiellement réalisée">
+            <span class="ppl-rank">3</span>
+            <a class="ppl-title" href="#">Créer Santé Québec</a>
+            <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 1 rang">▲ +1</span>
+          </li>
+
+          <li class="ppl-promise ppl-promise--rompue" aria-label="Rompue">
+            <span class="ppl-rank">4</span>
+            <a class="ppl-title" href="#">Rénover les écoles</a>
+            <span class="ppl-trend ppl-trend--down" aria-label="Baisse de 3 rangs">▼ −3</span>
+          </li>
+
+          <!-- Promesse 5 : état ouvert (cf. annotation 6 de la maquette) -->
+          <li class="ppl-promise ppl-promise--open ppl-promise--en-suspens" aria-label="En suspens">
+            <div class="ppl-promise__head">
+              <span class="ppl-rank">5</span>
+              <span class="ppl-title">Protéger la laïcité</span>
+              <span class="ppl-trend ppl-trend--up" aria-label="Hausse de 2 rangs">▲ +2</span>
+            </div>
+            <div class="ppl-promise__detail">
+              <p class="ppl-detail__eyebrow">Résumé</p>
+              <p class="ppl-detail__text">
+                Le gouvernement Legault a déposé un projet de loi pour renforcer
+                la loi 21 sur la laïcité. Plusieurs groupes de la société civile
+                ont réagi en dénonçant un cadre qui, selon eux, déborde les
+                institutions visées initialement…
+              </p>
+              <p class="ppl-detail__article">
+                <span class="ppl-detail__article-media">Le Devoir</span>
+                <a class="ppl-detail__article-link" href="https://www.ledevoir.com/" target="_blank" rel="noopener">
+                  Laïcité : Québec élargit la portée de la loi 21
+                </a>
+              </p>
+              <a class="ppl-detail__link" href="https://www.polimeter.org/" target="_blank" rel="noopener">
+                + d'info sur l'état de réalisation de cette promesse →
+              </a>
+            </div>
+          </li>
+        </ol>
+
+        <div class="ppl-footer">
+          <a class="ppl-website" href="https://polimeter.org/fr/legault" target="_blank" rel="noopener">Découvrir toutes les promesses</a>
+          <a class="ppl-metho" href="https://polimeter.org/guide/GuidePolimetre2026.pdf" target="_blank" rel="noopener">Méthodologie du Polimètre ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>

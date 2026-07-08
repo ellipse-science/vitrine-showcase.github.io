@@ -10,7 +10,6 @@ function row(party: string, date: string, mentions: number, tone = 0): SR {
 }
 
 const DATE_A = "2026-06-10";
-const DATE_B = "2026-06-11";
 
 describe("buildLookup", () => {
   it("indexe par date puis parti en minuscules", () => {

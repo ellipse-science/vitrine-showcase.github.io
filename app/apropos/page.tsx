@@ -79,7 +79,7 @@ export default function AproposPage() {
                 En parallèle, les transcriptions officielles des débats de
                 l'Assemblée nationale du Québec sont analysées chaque jour de
                 séance (lorsqu'une transcription est disponible) afin
-                d'analyser la participation des différents partis lors de la
+                d’analyser la participation des différents partis lors de la
                 période de questions, la présence des différents enjeux dans les
                 discours, le ton employé par les parlementaires et la richesse
                 lexicale des discours législatifs. Ces deux flux de données,
@@ -97,12 +97,12 @@ export default function AproposPage() {
               </p>
               <ul className="apropos-list">
                 <li className="apropos-list-item">
-                  <strong>Les citoyens curieux</strong> pourront y voir, en un
-                  coup d'œil, ce qui domine l'actualité québécoise à un instant
-                  T ou sur le temps long.
+                  <strong>Les personnes curieuses</strong> pourront y voir,
+                  en un coup d’œil, ce qui domine l’actualité québécoise à un
+                  instant T ou sur le temps long.
                 </li>
                 <li className="apropos-list-item">
-                  <strong>Les chercheurs ainsi que les étudiants</strong> en
+                  <strong>Les chercheuses et chercheurs ainsi que les étudiantes et étudiants</strong> en
                   science politique, en communication et en journalisme pourront
                   y trouver des données rigoureuses pour alimenter leurs travaux,
                   les données brutes étant accessibles sur demande.
@@ -123,15 +123,15 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                La Vitrine est portée par le CAPP (Centre d'analyse des
-                politiques publiques) de l'Université Laval, en collaboration
-                avec la CLESSN (Chaire de leadership en enseignement des
-                sciences sociales numériques). Le projet réunit des chercheurs
-                en science politique, des développeurs de systèmes de données
-                et des spécialistes en intelligence artificielle autour d'un
-                objectif commun : rendre l'observation de la démocratie
-                québécoise plus rigoureuse, plus transparente et plus ouverte à
-                l'ensemble de la société.
+                La Vitrine est portée par le Centre d'analyse des politiques
+                publiques (CAPP) de l'Université Laval, en collaboration avec la
+                CLESSN (Chaire de leadership en enseignement des sciences sociales
+                numériques). Le projet réunit des chercheuses et chercheurs en science
+                politique, des développeuses et développeurs de systèmes de données et des
+                spécialistes en intelligence artificielle autour d'un objectif
+                commun : rendre l'observation de la démocratie québécoise plus
+                rigoureuse, plus transparente et plus ouverte à l'ensemble de la
+                société.
               </p>
             </section>
 

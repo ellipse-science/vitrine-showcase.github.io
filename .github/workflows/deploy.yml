@@ -29,7 +29,7 @@ jobs:
       - name: Wait for git replication
         run: sleep 15
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -47,7 +47,8 @@ jobs:
           # so next.config.ts doesn't fall back to its default — prod (Cloudflare)
           # sets NEXT_PUBLIC_BASE_PATH="" in its own build env for the root domain.
           NEXT_PUBLIC_BASE_PATH: /vitrine-showcase.github.io
-          NEXT_PUBLIC_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          # URL publique du Worker Cloudflare — pas un secret, juste une URL
+          NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

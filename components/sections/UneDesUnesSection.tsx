@@ -6,6 +6,7 @@ import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/dat
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 // Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
 // Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
@@ -151,7 +152,10 @@ function DeuxSolitudes({
       className="solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
-      <h3 className="sol-title">Deux solitudes ?</h3>
+      <div className="sol-title-row">
+        <h3 className="sol-title">Deux solitudes ?</h3>
+        <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} />
+      </div>
       <div className="sol-viz">
         <div className="sol-axis" />
         <div className="sol-symbol qc">
@@ -230,7 +234,10 @@ export async function UneDesUnesSection() {
             <span className="section-title">Les Unes {data.periodLabel}</span>
             <SaillanceTip />
           </span>
-          <span className="section-date">{editionLabel}</span>
+          <span className="section-right">
+            <span className="section-date">{editionLabel}</span>
+            <ShareButton title={`Les Unes ${data.periodLabel}`} />
+          </span>
         </div>
 
         {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3

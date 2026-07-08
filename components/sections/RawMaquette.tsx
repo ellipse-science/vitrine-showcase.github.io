@@ -15,7 +15,7 @@ import path from "node:path";
 
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
-export type ChunkName = "top" | "middle" | "bottom";
+export type ChunkName = "top" | "middle" | "bottom" | "polimeter_plus";
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
@@ -30,6 +30,7 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
+  html = html.replace(/src="\/images\//g, `src="${basePath}/images/`);
 
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
