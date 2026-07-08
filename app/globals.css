@@ -18,6 +18,14 @@
     --tag-expert-bg: transparent;
     --tag-expert-fg: #A07A3D;
   }
+  /* Ambiance de la journée — teintes du fond selon intensity_tier (#118).
+     La classe .ambiance-X est posée sur .page (server component) ; :has()
+     remonte pour overrider --paper sur body. Tiebreak : tier plus élevé gagne. */
+  body:has(.ambiance-faible) { --paper: #EDEAE1; --paper-deep: #E4E0D5; }
+  /* ambiance-moyen = défaut :root, aucun override nécessaire */
+  body:has(.ambiance-fort)   { --paper: #F5E6CC; --paper-deep: #EDDABC; }
+  body:has(.ambiance-majeur) { --paper: #F2DEC0; --paper-deep: #E8D1AD; }
+
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
