@@ -70,7 +70,6 @@ jobs:
 
       - name: Bump version (prerelease-aware) and push
         if: steps.bump.outputs.type != 'none'
-        id: ver
         env:
           TYPE: ${{ steps.bump.outputs.type }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -91,7 +90,7 @@ jobs:
 
           npm version $NPM_CMD --no-git-tag-version
           NEW=$(node -p "require('./package.json').version")
-          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "### Version bumpée : \`$NEW\` (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
 
           git add package.json package-lock.json
           git commit -m "chore: bump version to $NEW (PR #$PR_NUMBER)"
