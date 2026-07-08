@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 
 interface ShareButtonProps {
   title: string
+  // Id de la section ciblée (ex. "partis-et-couverture") — ajouté en fragment
+  // d'URL pour que le lien partagé amène directement au module, pas juste à
+  // l'accueil.
+  anchor?: string
 }
 
 // Réseaux ouverts en repli quand le navigateur ne supporte pas
@@ -21,7 +25,7 @@ function networkLinks(title: string, url: string) {
 // module. navigator.share() ouvre la feuille native (mobile, et certains
 // navigateurs desktop) ; sinon un petit menu de réseaux s'ouvre — plutôt
 // qu'une simple copie de lien silencieuse, peu utile sur desktop.
-export function ShareButton({ title }: ShareButtonProps) {
+export function ShareButton({ title, anchor }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const copiedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -49,8 +53,15 @@ export function ShareButton({ title }: ShareButtonProps) {
     }
   }
 
+  // Fragment d'URL pour ramener directement au module partagé, plutôt qu'à
+  // l'accueil.
+  const shareUrl = () => {
+    const { origin, pathname, search } = window.location
+    return anchor ? `${origin}${pathname}${search}#${anchor}` : window.location.href
+  }
+
   const handleClick = async () => {
-    const url = window.location.href
+    const url = shareUrl()
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ title, url })
@@ -92,7 +103,7 @@ export function ShareButton({ title }: ShareButtonProps) {
 
       {panelOpen && (
         <div className="share-panel">
-          {networkLinks(title, window.location.href).map((n) => (
+          {networkLinks(title, shareUrl()).map((n) => (
             <a
               key={n.key}
               href={n.href}
@@ -107,7 +118,7 @@ export function ShareButton({ title }: ShareButtonProps) {
           <button
             type="button"
             className="share-panel-item"
-            onClick={() => { copyLink(window.location.href); setPanelOpen(false) }}
+            onClick={() => { copyLink(shareUrl()); setPanelOpen(false) }}
           >
             Copier le lien
           </button>

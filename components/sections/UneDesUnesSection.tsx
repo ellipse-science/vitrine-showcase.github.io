@@ -149,13 +149,14 @@ function DeuxSolitudes({
 }) {
   return (
     <section
+      id="deux-solitudes"
       className="solitudes"
       data-section="Deux solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
       <div className="sol-title-row">
         <h3 className="sol-title">Deux solitudes?</h3>
-        <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} />
+        <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
       </div>
       <div className="sol-viz">
         <div className="sol-axis" />
@@ -229,7 +230,7 @@ export async function UneDesUnesSection() {
 
   return (
     <>
-      <div className={`unes-jour${breaking ? " breaking" : ""}`}>
+      <div id="une-des-unes" className={`unes-jour${breaking ? " breaking" : ""}`}>
         <div className="section-label">
           <span className="section-title-wrap">
             <span className="section-title">Les Unes {data.periodLabel}</span>
@@ -237,7 +238,7 @@ export async function UneDesUnesSection() {
           </span>
           <span className="section-right">
             <span className="section-date">{editionLabel}</span>
-            <ShareButton title={`Les Unes ${data.periodLabel}`} />
+            <ShareButton title={`Les Unes ${data.periodLabel}`} anchor="une-des-unes" />
           </span>
         </div>
 
