@@ -604,3 +604,9 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   if (!day) return null;
   return { day, week: buildPeriodData(weekRows) ?? day, month: buildPeriodData(monthRows) ?? day };
 }
+
+// Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
+export const __test__ = {
+  latestIssueRow,
+  parseIssuesMeta,
+};
