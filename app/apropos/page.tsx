@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
   title: "À propos — La Vitrine démocratique",
@@ -8,9 +9,11 @@ export const metadata: Metadata = {
 export default function AproposPage() {
   return (
     <div className="page">
-      <RawMaquette chunk="top" />
+      <div data-section="En-tête">
+        <RawMaquette chunk="top" />
+      </div>
 
-      <main className="apropos-container">
+      <main className="apropos-container" data-section="À propos">
 
 
         <div className="apropos-header">
@@ -176,7 +179,11 @@ export default function AproposPage() {
         </div>
       </main>
 
-      <RawMaquette chunk="bottom" />
+      <div data-section="Pied de page">
+        <RawMaquette chunk="bottom" />
+      </div>
+
+      <IssueReporter />
     </div>
   );
 }

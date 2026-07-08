@@ -46,6 +46,21 @@ Treat these as **distinct modules**. A right-click report inside a block must be
 | Module 3 — Partis et couverture | coverage & tone by party, period tabs | `module-3-partis-couverture` |
 | Module 4 — Enjeux saillants | issue treemap, day/week/month tabs | `module-4-enjeux-saillants` |
 | Module 5 — Assemblée nationale | chamber language + lexical richness | `module-5-assemblee-nationale` |
+| Module 6 — Polimètre+ | promise tracker block (`PolimetrePlusSection`) | `module-6-polimetre` |
+
+Reports that fall outside a module — the general site chrome and standalone pages — get their own labels:
+
+| Zone | Where | GitHub label |
+|------|-------|--------------|
+| En-tête | site header (top `RawMaquette`) | `site-header` |
+| Pied de page | site footer (bottom `RawMaquette`) | `site-footer` |
+| Page Méthodologie | `/methodologie/` (static HTML) | `page-methodologie` |
+| Page À propos | `/apropos/` | `page-apropos` |
+| Page Abonnement | `/abonnement/` | `page-abonnement` |
+
+**How the triage works.** Each zone carries a `data-section` attribute in the DOM. `IssueReporter` walks up from the right-clicked element to the nearest `data-section`, sends that string in the dispatch payload, and `.github/workflows/report-issue.yml` maps it to the label above via the **`SECTION_LABELS` table** (the single place to edit when adding/renaming a zone). Labels are created automatically on first use. Missing labels are non-fatal — the issue is still created with `signalement-utilisateur`.
+
+> **Méthodologie is a static HTML page** (`public/methodologie/`), so the React `IssueReporter` does not run there; `page-methodologie` is reserved for when reporting is wired into that page. All other zones are reportable.
 
 ## Multi-repo ecosystem
 

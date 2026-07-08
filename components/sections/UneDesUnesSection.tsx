@@ -149,6 +149,7 @@ function DeuxSolitudes({
   return (
     <section
       className="solitudes"
+      data-section="Deux solitudes"
       style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
     >
       <h3 className="sol-title">Deux solitudes ?</h3>

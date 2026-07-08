@@ -20,10 +20,79 @@ jobs:
         with:
           script: |
             const description  = String(context.payload.client_payload?.description ?? '').slice(0, 2000).trim()
-            const section      = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
+            const sectionRaw   = String(context.payload.client_payload?.section ?? 'Non précisée').slice(0, 100).trim()
             const elemCtx      = String(context.payload.client_payload?.elementContext ?? '').slice(0, 300).trim()
             const reporterName = String(context.payload.client_payload?.reporterName ?? '').slice(0, 100).trim()
             const screenshot   = context.payload.client_payload?.screenshot ?? null
+
+            // ─────────────────────────────────────────────────────────────
+            //  TRIAGE DES SIGNALEMENTS PAR ZONE
+            //
+            //  Chaque zone de la Vitrine (6 modules + habillage général) porte
+            //  un `data-section` dans le DOM. Le client envoie cette valeur ;
+            //  on la fait correspondre ici à un label GitHub.
+            //
+            //  POUR AJOUTER / RENOMMER UNE ZONE : éditer UNIQUEMENT le tableau
+            //  SECTION_LABELS ci-dessous. Rien d'autre à toucher.
+            //    - `match`   : fragments (sans accents, minuscules) reconnus
+            //    - `section` : libellé propre affiché dans l'issue
+            //    - `label`   : le label GitHub (créé automatiquement au besoin)
+            // ─────────────────────────────────────────────────────────────
+            const SECTION_LABELS = [
+              // ── Les 6 modules ──────────────────────────────────────────
+              { match: ['une des unes', 'unes des unes', 'module 1'],                    section: 'Une des unes',           label: { name: 'module-1-unes-des-unes',      color: '8b949e', description: 'Signalements du module Une des unes' } },
+              { match: ['deux solitudes', '2 solitudes', 'module 2'],                    section: 'Deux solitudes',         label: { name: 'module-2-solitudes',          color: '1f6feb', description: 'Signalements du module Deux solitudes' } },
+              { match: ['partis et couverture', 'couverture des partis', 'module 3'],    section: 'Partis et couverture',   label: { name: 'module-3-partis-couverture',  color: '0969da', description: 'Signalements du module Partis et couverture' } },
+              { match: ['enjeux saillants', 'de quoi parle', 'module 4'],                section: 'Enjeux saillants',       label: { name: 'module-4-enjeux-saillants',   color: '1a7f37', description: 'Signalements du module Enjeux saillants' } },
+              { match: ['assemblee nationale', "que dit-on a l'assemblee", 'module 5'],  section: 'Assemblée nationale',    label: { name: 'module-5-assemblee-nationale', color: 'bf8700', description: 'Signalements du module Assemblée nationale' } },
+              { match: ['polimetre', 'module 6'],                                        section: 'Polimètre+',             label: { name: 'module-6-polimetre',          color: '8250df', description: 'Signalements du module Polimètre+' } },
+              // ── Habillage général du site (hors modules) ───────────────
+              { match: ['en-tete', 'en tete', 'header'],                                 section: 'En-tête',                label: { name: 'site-header',                 color: 'c8cdd4', description: 'Signalements sur l’en-tête du site' } },
+              { match: ['pied de page', 'footer'],                                       section: 'Pied de page',           label: { name: 'site-footer',                 color: 'c8cdd4', description: 'Signalements sur le pied de page du site' } },
+              { match: ['methodolog'],                                                   section: 'Méthodologie',           label: { name: 'page-methodologie',           color: 'a8a29e', description: 'Signalements sur la page Méthodologie' } },
+              { match: ['a propos', 'apropos'],                                          section: 'À propos',               label: { name: 'page-apropos',                color: 'a8a29e', description: 'Signalements sur la page À propos' } },
+              { match: ['abonnement'],                                                   section: 'Abonnement',             label: { name: 'page-abonnement',             color: 'a8a29e', description: 'Signalements sur la page Abonnement' } },
+            ]
+
+            function normalizeSectionName(value) {
+              return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim()
+            }
+
+            function mapSection(raw) {
+              const n = normalizeSectionName(raw)
+              const hit = SECTION_LABELS.find(entry => entry.match.some(m => n.includes(m)))
+              if (hit) return { section: hit.section, moduleLabel: hit.label }
+              return { section: raw || 'Non précisée', moduleLabel: null }
+            }
+
+            async function ensureLabel(label) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: 'ellipse-science',
+                  repo: 'vitrine-showcase.github.io',
+                  name: label.name,
+                })
+              } catch (err) {
+                if (err?.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: 'ellipse-science',
+                    repo: 'vitrine-showcase.github.io',
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  })
+                } else {
+                  throw err
+                }
+              }
+            }
+
+            const mapped  = mapSection(sectionRaw)
+            const section = mapped.section
 
             if (!description) {
               core.setFailed('Description vide — signalement ignoré.')
@@ -108,11 +177,21 @@ jobs:
             const shortDesc = description.length > 55 ? description.slice(0, 55) + '…' : description
             const prefix    = section !== 'Non précisée' ? `${section} — ` : ''
             const title     = `[Signalement] ${prefix}${shortDesc}`
+            const labels    = ['signalement-utilisateur', ...(isPriority ? ['prioritaire'] : [])]
+
+            if (mapped.moduleLabel) {
+              try {
+                await ensureLabel(mapped.moduleLabel)
+                labels.push(mapped.moduleLabel.name)
+              } catch (err) {
+                core.warning(`Impossible d'ajouter le label de zone : ${err}`)
+              }
+            }
 
             await github.rest.issues.create({
               owner:  'ellipse-science',
               repo:   'vitrine-showcase.github.io',
               title,
               body,
-              labels: ['signalement-utilisateur', ...(isPriority ? ['prioritaire'] : [])],
+              labels,
             })
