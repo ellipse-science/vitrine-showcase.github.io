@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapAllPeriods } from "@/lib/data/headlineEvents";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
   const details = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
@@ -46,28 +47,31 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
           <h2 className="partis-title">De quoi parle-t-on ?</h2>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            <span
-              className={period === "day" ? "active" : undefined}
-              onClick={() => setPeriod("day")}
-              style={{ cursor: "pointer" }}
-            >
-              Aujourd&apos;hui
-            </span>
-            <span
-              className={period === "week" ? "active" : undefined}
-              onClick={() => setPeriod("week")}
-              style={{ cursor: "pointer" }}
-            >
-              Cette semaine
-            </span>
-            <span
-              className={period === "month" ? "active" : undefined}
-              onClick={() => setPeriod("month")}
-              style={{ cursor: "pointer" }}
-            >
-              Ce mois
-            </span>
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              <span
+                className={period === "day" ? "active" : undefined}
+                onClick={() => setPeriod("day")}
+                style={{ cursor: "pointer" }}
+              >
+                Aujourd&apos;hui
+              </span>
+              <span
+                className={period === "week" ? "active" : undefined}
+                onClick={() => setPeriod("week")}
+                style={{ cursor: "pointer" }}
+              >
+                Cette semaine
+              </span>
+              <span
+                className={period === "month" ? "active" : undefined}
+                onClick={() => setPeriod("month")}
+                style={{ cursor: "pointer" }}
+              >
+                Ce mois
+              </span>
+            </div>
+            <ShareButton title="De quoi parle-t-on ?" />
           </div>
         </div>
       </div>

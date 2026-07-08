@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -46,17 +47,20 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
           </div>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {PERIODS.map((p) => (
-              <span
-                key={p}
-                className={p === period ? "active" : undefined}
-                onClick={() => setPeriod(p)}
-                style={{ cursor: "pointer" }}
-              >
-                {data.periods[p].tabLabel}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {PERIODS.map((p) => (
+                <span
+                  key={p}
+                  className={p === period ? "active" : undefined}
+                  onClick={() => setPeriod(p)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {data.periods[p].tabLabel}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Que dit-on à l'Assemblée nationale ?" />
           </div>
         </div>
       </div>

@@ -2,10 +2,27 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
 
+// Icônes servies depuis public/ : jamais résolues automatiquement par le
+// navigateur (requête implicite sur /favicon.ico à la racine du domaine),
+// car le site est publié sous un basePath sur GitHub Pages.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "La Vitrine démocratique",
   description:
-    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le CAPP de l'Université Laval.",
+    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.",
+  manifest: `${basePath}/manifest.json`,
+  icons: {
+    icon: [
+      { url: `${basePath}/favicon.ico`, sizes: "any", media: "(prefers-color-scheme: light)" },
+      { url: `${basePath}/favicon-16x16.png`, sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: `${basePath}/favicon-32x32.png`, sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: `${basePath}/dark-favicon.ico`, sizes: "any", media: "(prefers-color-scheme: dark)" },
+      { url: `${basePath}/dark-favicon-16x16.png`, sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: `${basePath}/dark-favicon-32x32.png`, sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: `${basePath}/apple-touch-icon.png`,
+  },
 };
 
 export default function RootLayout({
