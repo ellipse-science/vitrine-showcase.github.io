@@ -326,6 +326,15 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
   };
 }
 
+// Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
+export const __test__ = {
+  buildLookup,
+  computeStats,
+  sparkPoints,
+  samplePoints,
+  buildRangeView,
+};
+
 const DATA_DIR = path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(): Promise<PartiesData | null> {
