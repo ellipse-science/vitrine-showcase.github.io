@@ -361,9 +361,9 @@
                 "rank_delta",
                 "n_mentions",
                 "titles",
-                "urls",
-                "articles"
+                "urls"
             ],
+            "_note": "articles column removed: absent from Athena table as of 2026-06-22; polimetre.ts falls back to host-mapping from urls",
             "enabled": true,
             "used_by": "lib/data/polimetre.ts"
         }
