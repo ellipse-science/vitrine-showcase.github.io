@@ -2344,6 +2344,7 @@
     opacity: 0.7;
     transition: opacity 0.25s ease, filter 0.25s ease;
   }
+  .partner-logo--clessn { height: 58px; }
   .partner-logo:hover {
     opacity: 1;
     filter: grayscale(0) contrast(1);
@@ -2796,6 +2797,7 @@
     .partners-section { margin-top: 40px; }
     .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
+    .partner-logo--clessn { height: 42px; }
 
     /* ── Footer ── */
     .footer-note {
