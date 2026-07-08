@@ -69,7 +69,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         )}
       </section>
       <div className="partis-footer">
-        <span></span>
+        <span className="partis-last-date">Dernières données : {data.lastDate}</span>
       </div>
     </>
   );

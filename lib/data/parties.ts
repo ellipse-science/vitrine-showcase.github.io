@@ -112,6 +112,7 @@ export type RangeView = {
 
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
+  lastDate: string; // ISO date de la dernière donnée disponible
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -352,7 +353,10 @@ export async function loadParties(): Promise<PartiesData | null> {
     const stats = computeStats(dayRows, weekRows, monthRows);
     if (!stats) return null;
 
+    const lastDate = dayRows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), "");
+
     return {
+      lastDate,
       ranges: {
         today: buildRangeView(stats, "today"),
         week:  buildRangeView(stats, "week"),

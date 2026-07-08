@@ -2117,6 +2117,13 @@
     margin-right: 3px;
   }
   .partis-footer .data-link { margin-top: 0; }
+  .partis-last-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 36px;
@@ -2289,20 +2296,6 @@
     text-align: center;
     border-bottom: 0.5px solid var(--rule-faint);
   }
-  /* État indisponible — fichiers manquants, section non supprimée */
-  .partis-unavailable {
-    padding: 0 0 24px;
-  }
-  .partis-unavailable-msg {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; letter-spacing: 0.1em;
-    color: var(--ink-soft);
-    margin: 0;
-    padding: 24px 22px;
-    border: 0.5px solid var(--rule-faint);
-    text-align: center;
-  }
-
   /* Légende d'encodage des partis */
   .parti-encoding {
     display: grid;
