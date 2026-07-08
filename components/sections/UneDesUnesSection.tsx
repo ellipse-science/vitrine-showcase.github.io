@@ -6,6 +6,7 @@ import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/dat
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 // Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
 // Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
@@ -61,6 +62,9 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
           </span>
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
+        <div style={{ marginLeft: "auto" }}>
+          <ShareButton title={event.title} />
+        </div>
       </div>
 
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
@@ -120,6 +124,9 @@ function SideUne({ event }: { event: UneEvent }) {
           </span>
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
+        <div style={{ marginLeft: "auto" }}>
+          <ShareButton title={event.title} />
+        </div>
       </div>
       <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
