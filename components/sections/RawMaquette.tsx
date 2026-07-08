@@ -13,9 +13,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import pkg from "../../package.json";
+
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
 export type ChunkName = "top" | "middle" | "bottom" | "polimeter_plus";
+
+// `package.json` est la source de vérité de la version (bumpée en CI, cf.
+// .github/workflows/version-bump.yml). Le footer contient un placeholder
+// `__VERSION__` substitué ici au build.
+//   2.0.0-beta.3 → « Bêta v2.0.0 (b3) »  (compteur bêta visible)
+//   2.0.0        → « v2.0.0 »             (hors bêta)
+function formatVersion(version: string): string {
+  const [core, pre] = version.split("-");
+  const beta = pre?.match(/^beta\.(\d+)$/);
+  return beta ? `Bêta v${core} (b${beta[1]})` : `v${core}`;
+}
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
@@ -31,6 +44,10 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
   html = html.replace(/src="\/images\//g, `src="${basePath}/images/`);
+
+  // Substitue la version (source de vérité : package.json) — no-op sur les
+  // chunks qui ne contiennent pas le placeholder.
+  html = html.replaceAll("__VERSION__", formatVersion(pkg.version));
 
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
