@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapAllPeriods } from "@/lib/data/headlineEvents";
+import { ShareButton } from "@/components/interactive/ShareButton";
 
 function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
   const details = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
@@ -69,6 +70,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
               Ce mois
             </span>
           </div>
+          <ShareButton title="De quoi parle-t-on ?" />
         </div>
       </div>
 
