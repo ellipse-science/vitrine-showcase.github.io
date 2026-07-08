@@ -2314,9 +2314,11 @@
     margin: 0 0 22px; max-width: 640px;
   }
   .partners-grid {
-    display: flex; flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 28px 44px;
     align-items: center;
+    justify-items: start;
   }
   .partner-logo {
     height: 42px;
@@ -2777,7 +2779,7 @@
 
     /* ── Partners ── */
     .partners-section { margin-top: 40px; }
-    .partners-grid { gap: 18px 24px; }
+    .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
 
     /* ── Footer ── */
