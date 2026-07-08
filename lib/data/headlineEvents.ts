@@ -115,6 +115,21 @@ function formatDateFr(dateStr: string): string {
   return `${DAYS_FR[d.getDay()]} ${day} ${MONTHS_FR[month - 1]} ${year}`;
 }
 
+function formatTopObject(raw: string): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+
+  const lowercase = trimmed.toLowerCase();
+  if (lowercase === "etats-unis" || lowercase === "états-unis") return "États-Unis";
+  if (lowercase === "etats-unis-iran" || lowercase === "états-unis-iran") return "États-Unis - Iran";
+  if (lowercase === "accord etats-unis-iran" || lowercase === "accord états-unis-iran") return "Accord États-Unis - Iran";
+
+  return trimmed.split(/([\s\-'])/).map(part => {
+    if (part.length === 0 || /[\s\-']/.test(part)) return part;
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }).join("");
+}
+
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
 // autant de « Très faible » que d'« Extrême », le gros au centre (courbe en
 // cloche sur échelle log). Bandes p5/p20/p50/p80/p95 = 5/15/30/30/15/5 %.
@@ -580,7 +595,7 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
       try {
         const objs = JSON.parse(e.extracted_objects) as ExtractedObject[];
         const raw = objs[0]?.object?.trim() ?? "";
-        if (raw.length >= 2) topObject = raw.charAt(0).toUpperCase() + raw.slice(1);
+        topObject = formatTopObject(raw);
       } catch { }
     }
     map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
@@ -623,7 +638,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       let url: string | null = null;
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
-        topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
+        topObject = formatTopObject(obj);
         context = metaEntry.label ?? "";
         url = metaEntry.url ?? null;
       } else {
