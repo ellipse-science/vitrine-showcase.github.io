@@ -44,8 +44,9 @@ lib/
     polimetre-meta.ts         Types + verdicts/catégories for the Polimètre+ section
     headlineEvents.ts         Two loaders: loadHeadlineEvents() (headline-events.json → UneDesUnesSection)
                               and loadTreemap() (issues_score_{day,week,month}.json → TreemapSection)
-static-content/               Verbatim HTML chunks (masthead, treemap, partners, footer).
-                              Embedded via dangerouslySetInnerHTML. Edit as plain HTML.
+static-content/               Verbatim HTML chunks inlined by RawMaquette (chunk name = filename):
+                              top.html (masthead), middle.html, bottom.html (partners + footer),
+                              polimeter_plus.html. Embedded via dangerouslySetInnerHTML. Edit as plain HTML.
 public/                       Static assets — written to by the data refresher
   data/                       JSON snapshots (build-time source of truth)
   logos/                      Political party logos
