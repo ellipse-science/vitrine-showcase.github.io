@@ -1288,8 +1288,8 @@
   }
   /* Lead des Unes secondaires (#2, #3) — même esprit, plus petit. */
   .une-side .dek {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: normal;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
     font-size: 15px;
     line-height: 1.45;
     color: var(--ink-soft);
@@ -2287,15 +2287,6 @@
   .partis > .parti-row:last-child,
   .partis > .parti-row:has(+ .in-shadow-label) { border-bottom: none; }
 
-  /* État vide — aucune donnée pour la période sélectionnée */
-  .partis-empty {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; letter-spacing: 0.1em;
-    color: var(--ink-soft);
-    padding: 32px 22px;
-    text-align: center;
-    border-bottom: 0.5px solid var(--rule-faint);
-  }
   /* Légende d'encodage des partis */
   .parti-encoding {
     display: grid;

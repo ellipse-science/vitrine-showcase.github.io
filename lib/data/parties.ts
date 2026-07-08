@@ -175,9 +175,8 @@ function lastDatesPerMonth(dates: string[]): string[] {
   return [...last.values()].sort();
 }
 
-// Builds a date → party → entry lookup. Each (date, party) pair should already
-// be unique in the shadow tables, but we keep the most recent computed_at as a
-// safety net for duplicate rows.
+// Builds a date → party → entry lookup. First occurrence wins for duplicate
+// (date, party) pairs — the refiner guarantees uniqueness per run.
 function buildLookup(rows: ShadowRow[]): Lookup {
   const result: Lookup = Object.create(null);
   for (const row of rows) {
@@ -363,9 +362,9 @@ export async function loadParties(): Promise<PartiesData | null> {
         month: buildRangeView(stats, "month"),
       },
     };
-  } catch {
-    // Shadow files not yet fetched — section stays hidden until next data refresh
-    return null;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
   }
 }
 
