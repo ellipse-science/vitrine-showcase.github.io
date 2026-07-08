@@ -2096,6 +2096,13 @@
     gap: 10px;
     flex-shrink: 0;
   }
+  /* Onglets + bouton Partager sur une seule ligne : évite qu'un
+     control-block sur deux rangées désaligne le titre à côté (#197). */
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
   .partis-footer {
     display: flex;
     justify-content: space-between;
@@ -2682,7 +2689,8 @@
     .tone-key-inline .strip { width: 140px; }
     .tone-key-inline .ends { width: 140px; font-size: 9px; }
     .partis-title-row .control-block { align-items: flex-start; width: 100%; }
-    .legend-toggle.inline { width: 100%; }
+    .control-row { width: 100%; }
+    .legend-toggle.inline { flex: 1; min-width: 0; }
     .legend-toggle.inline span {
       flex: 1;
       text-align: center;
