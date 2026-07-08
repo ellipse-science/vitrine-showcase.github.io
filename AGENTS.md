@@ -4,10 +4,11 @@ Universal, tool-agnostic rules for any agent or contributor touching this repo. 
 
 ## What this repo is
 
-Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by CLESSN (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted free on **GitHub Pages**. No AWS infrastructure in this repo.
+Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by the CAPP — Centre d'analyse des politiques publiques (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted free on **GitHub Pages**. No AWS infrastructure in this repo.
 
 ## Stack
 
+- **Node.js 22** — pinned in `.nvmrc` and used by CI (`npm ci`). Run `nvm use` (or `fnm`/`asdf`) before installing.
 - **Next.js 16** (App Router), static export (`output: 'export'`) → a plain `out/` directory of HTML/CSS/JS
 - **React 19** Server Components for the data-bound sections; Client Components for interactive bits (tabs, countdown)
 - **TypeScript strict**
@@ -21,7 +22,10 @@ npm install        # if node_modules missing
 npm run dev        # http://localhost:3000
 npm run build      # next build → out/, then scripts/postbuild.mjs copies /presentation
 npm run type-check # tsc --noEmit
+npm run test       # vitest — unit tests on the data loaders (tests/*.test.ts)
 ```
+
+CI (`ci.yml`) runs **type-check + build + `npm run test`** on every PR; run all three locally before pushing.
 
 ## Branches, PRs, deployment
 

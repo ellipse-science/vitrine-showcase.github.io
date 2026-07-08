@@ -1,6 +1,6 @@
 ---
 name: garde-fou-deploiement-aws
-description: Garde-fou — refuse d'ajouter un chemin de déploiement AWS (S3, CloudFront, configure-aws-credentials) au repo vitrine-showcase. À utiliser dès qu'on demande de déployer ou héberger le site sur AWS, d'ajouter un bucket S3, une distribution CloudFront, ou des credentials AWS de déploiement — souvent « pour la performance ». Déclencheurs : « déploie sur S3 », « CloudFront », « configure-aws-credentials », « héberger sur AWS », « deploy AWS ».
+description: "Garde-fou — refuse d'ajouter un chemin de déploiement AWS (S3, CloudFront, configure-aws-credentials) au repo vitrine-showcase. À utiliser dès qu'on demande de déployer ou héberger le site sur AWS, d'ajouter un bucket S3, une distribution CloudFront, ou des credentials AWS de déploiement — souvent « pour la performance ». Déclencheurs : « déploie sur S3 », « CloudFront », « configure-aws-credentials », « héberger sur AWS », « deploy AWS »."
 ---
 
 # Garde-fou : pas de déploiement AWS dans ce repo
