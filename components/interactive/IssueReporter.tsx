@@ -95,6 +95,16 @@ export function IssueReporter() {
     setUiState('modal')
   }
 
+  // Bouton flottant affiché uniquement sous 900px (voir .issue-fab) : le clic
+  // droit / contextmenu ne se déclenche pas sur iOS Safari (aucun événement
+  // `contextmenu` sur appui long), ce qui rendait le signalement impossible
+  // sur ces appareils (#120). Sur desktop, le clic droit reste la seule voie
+  // et suffit — c'est le contexte riche qu'on veut y garder.
+  const openModalGeneric = () => {
+    setReportCtx({ section: '', elementContext: '' })
+    openModal()
+  }
+
   const handleClose = () => {
     setUiState('idle')
     setDescription('')
@@ -195,10 +205,17 @@ export function IssueReporter() {
     }
   }
 
-  if (uiState === 'idle') return null
-
   return (
     <>
+      <button
+        type="button"
+        className="issue-fab"
+        onClick={openModalGeneric}
+        aria-label="Signaler un problème"
+      >
+        Signaler un problème
+      </button>
+
       {uiState === 'menu' && (
         <div
           ref={menuRef}

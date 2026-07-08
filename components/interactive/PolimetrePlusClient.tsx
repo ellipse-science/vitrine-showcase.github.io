@@ -90,7 +90,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
     <section className="polimeter-plus" aria-label="Polimètre+">
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+ : promesses sous la loupe médiatique</h2>
+          <h2 className="partis-title">Polimètre+ : promesses électorales à la une</h2>
           <div className="period-subtitle">
             Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
             <InfoTip size="sm" label="À propos du Polimètre+">
@@ -102,28 +102,30 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           </div>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {RANGES.map((r) => (
-              <span
-                key={r}
-                className={r === range ? "active" : undefined}
-                role="button"
-                tabIndex={0}
-                aria-pressed={r === range}
-                onClick={() => setRange(r)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setRange(r);
-                  }
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                {RANGE_TAB_LABELS[r]}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={r === range}
+                  onClick={() => setRange(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setRange(r);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {RANGE_TAB_LABELS[r]}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
           </div>
-          <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" />
         </div>
       </div>
 
