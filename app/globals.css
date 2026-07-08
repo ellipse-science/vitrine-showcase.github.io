@@ -19,8 +19,10 @@
     --tag-expert-fg: #A07A3D;
   }
   * { box-sizing: border-box; }
-  html {
-    scroll-behavior: smooth;
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   html, body {
     margin: 0; padding: 0; background: var(--paper);
