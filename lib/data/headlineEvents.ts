@@ -517,6 +517,15 @@ function parseIssuesMeta(raw: unknown): IssuesMeta | null {
   try { return JSON.parse(raw) as IssuesMeta; } catch { return null; }
 }
 
+// Les objets extraits (ex: « accord états-unis-iran ») sont en minuscules et
+// désignent presque toujours une entité nommée (pays, personne, organisation).
+// Une simple capitalisation de la première lettre laissait « Accord
+// états-unis-iran » — on met en majuscule chaque mot (espace ou tiret) (#161).
+function capitalizeObject(s: string): string {
+  if (s.length === 0) return s;
+  return s.replace(/(^|[\s-])(\p{Ll})/gu, (_, sep: string, c: string) => sep + c.toUpperCase());
+}
+
 type FallbackEntry = { topObject: string; context: string; url: string | null };
 
 async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
@@ -544,7 +553,7 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
       try {
         const objs = JSON.parse(e.extracted_objects) as ExtractedObject[];
         const raw = objs[0]?.object?.trim() ?? "";
-        if (raw.length >= 2) topObject = raw.charAt(0).toUpperCase() + raw.slice(1);
+        if (raw.length >= 2) topObject = capitalizeObject(raw);
       } catch { }
     }
     map.set(issueKey, { topObject, context: e.title ?? "", url: e.representative_url ?? null });
@@ -587,7 +596,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       let url: string | null = null;
       if (hasMetaContent) {
         const obj = metaEntry.obj ?? "";
-        topObject = obj.length > 0 ? obj.charAt(0).toUpperCase() + obj.slice(1) : "";
+        topObject = obj.length > 0 ? capitalizeObject(obj) : "";
         context = metaEntry.label ?? "";
         url = metaEntry.url ?? null;
       } else {
@@ -609,4 +618,5 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 export const __test__ = {
   latestIssueRow,
   parseIssuesMeta,
+  capitalizeObject,
 };

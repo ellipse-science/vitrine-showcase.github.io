@@ -67,6 +67,15 @@ const MEDIA_BY_ID: Record<string, string> = {
   RCI: "Radio-Canada",
 };
 
+// Canonical display order of the outlets in the byline. Used to order outlets
+// deterministically across the coverage list, since recency keys are only
+// comparable within a single outlet. Unknown outlets sort last (alphabetically).
+const MEDIA_ORDER: string[] = Object.values(MEDIA_BY_ID);
+function mediaRank(media: string): number {
+  const i = MEDIA_ORDER.indexOf(media);
+  return i === -1 ? MEDIA_ORDER.length : i;
+}
+
 // Fallback only: derive the outlet from a URL host, for the transitional period
 // before the refiner republishes the `articles` column. Same five outlets.
 const MEDIA_BY_HOST: Record<string, string> = {
@@ -101,48 +110,104 @@ function cleanArticleTitle(s: string | null | undefined): string {
     .trim();
 }
 
-// Pick one article at random from a promise's coverage.
+// Recency key derived from an article URL. QC outlets encode the publication
+// order in the path: La Presse / TVA / JDM carry a "/YYYY-MM-DD/" (or
+// "/YYYY/MM/DD/") date; Le Devoir and Radio-Canada carry a monotonically
+// increasing numeric article id. `date` (YYYYMMDD) sorts lexically; `id` is the
+// largest path number. Outlets use one scheme consistently, so the comparison
+// only ever runs within a single outlet's coverage.
+type Recency = { date: string | null; id: number };
+
+function recencyKey(url: string): Recency {
+  const d = url.match(/\/(20\d{2})[-/](\d{2})[-/](\d{2})\//);
+  if (d) return { date: `${d[1]}${d[2]}${d[3]}`, id: 0 };
+  const ids = [...url.matchAll(/\/(\d{5,})/g)].map((m) => Number(m[1]));
+  return { date: null, id: ids.length ? Math.max(...ids) : 0 };
+}
+
+// True when `a` is more recent than `b` (same outlet → same scheme).
+function isNewer(a: Recency, b: Recency): boolean {
+  if (a.date && b.date) return a.date > b.date;
+  if (a.date) return true;
+  if (b.date) return false;
+  return a.id > b.id;
+}
+
+// List one article per outlet that covered the promise — the most recent piece
+// from each. Within an outlet the recency key is reliable (one URL scheme), so
+// the chosen article is genuinely the latest. Across outlets the keys are NOT
+// comparable (date-based vs id-based schemes), so the outlets themselves are
+// ordered by the canonical QC outlet order (MEDIA_ORDER), not by recency —
+// stable and meaningful rather than implying a false cross-outlet chronology.
 //
 // Preferred source: the `articles` column — an aligned array of
 // {media_id, title, url} where outlet, headline and link are solidary. Falls
 // back to the legacy parallel `titles`/`urls` arrays (independently de-duped, so
 // only loosely aligned) when `articles` is absent, deriving the outlet from the
-// URL host.
-function pickArticle(row: Row): ArticleRef | null {
+// URL host. Either way the coverage is grouped by outlet and the URL with the
+// most recent recency key wins within that outlet — deterministic across
+// rebuilds, never random.
+function pickArticlesByMedia(row: Row): ArticleRef[] {
+  type Candidate = { media: string; title: string; url: string };
+  const candidates: Candidate[] = [];
+
   let articles: { media_id?: string; title?: string; url?: string }[] = [];
   try {
     articles = JSON.parse(row.articles || "[]") as typeof articles;
   } catch {
     /* leave empty */
   }
-  const usable = articles.filter((a) => a && a.url && a.title);
-  if (usable.length > 0) {
-    const a = usable[Math.floor(Math.random() * usable.length)];
-    const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(a.url!) || "Source";
-    const title = cleanArticleTitle(a.title);
-    if (title && a.url) return { media, title, url: a.url };
+  for (const a of articles) {
+    const url = (a?.url ?? "").trim();
+    const title = cleanArticleTitle(a?.title);
+    if (!url || !title) continue;
+    const media = (a.media_id && MEDIA_BY_ID[a.media_id]) || mediaFromUrl(url) || "Source";
+    candidates.push({ media, title, url });
   }
 
-  // Legacy fallback: zip titles/urls over their common length.
-  let titles: string[] = [];
-  let urls: string[] = [];
-  try {
-    titles = JSON.parse(row.titles || "[]") as string[];
-  } catch {
-    /* leave empty */
+  if (candidates.length === 0) {
+    // Legacy fallback: zip titles/urls over their common length.
+    let titles: string[] = [];
+    let urls: string[] = [];
+    try {
+      titles = JSON.parse(row.titles || "[]") as string[];
+    } catch {
+      /* leave empty */
+    }
+    try {
+      urls = JSON.parse(row.urls || "[]") as string[];
+    } catch {
+      /* leave empty */
+    }
+    const n = Math.min(titles.length, urls.length);
+    for (let i = 0; i < n; i++) {
+      const url = (urls[i] ?? "").trim();
+      const title = cleanArticleTitle(titles[i]);
+      if (!url || !title) continue;
+      candidates.push({ media: mediaFromUrl(url) ?? "Source", title, url });
+    }
   }
-  try {
-    urls = JSON.parse(row.urls || "[]") as string[];
-  } catch {
-    /* leave empty */
+
+  // Keep the most recent candidate per outlet.
+  const byMedia = new Map<string, { article: ArticleRef; rec: Recency }>();
+  for (const c of candidates) {
+    const rec = recencyKey(c.url);
+    const cur = byMedia.get(c.media);
+    if (!cur || isNewer(rec, cur.rec)) {
+      byMedia.set(c.media, { article: { media: c.media, title: c.title, url: c.url }, rec });
+    }
   }
-  const n = Math.min(titles.length, urls.length);
-  if (n === 0) return null;
-  const i = Math.floor(Math.random() * n);
-  const url = (urls[i] ?? "").trim();
-  const title = cleanArticleTitle(titles[i]);
-  if (!url || !title) return null;
-  return { media: mediaFromUrl(url) ?? "Source", title, url };
+
+  // Order outlets by the canonical byline order. Recency keys are not comparable
+  // across outlets, so they are not used here; ties (e.g. unknown outlets) fall
+  // back to outlet name for a stable order.
+  return [...byMedia.values()]
+    .sort(
+      (x, y) =>
+        mediaRank(x.article.media) - mediaRank(y.article.media) ||
+        x.article.media.localeCompare(y.article.media, "fr"),
+    )
+    .map((e) => e.article);
 }
 
 type Row = {
@@ -253,7 +318,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         nMentions: a.nMentions,
         url: `https://polimeter.org/fr/legault/${num}`,
         trend,
-        article: pickArticle(r),
+        articles: pickArticlesByMedia(r),
       };
     })
     .sort((x, y) => y.salienceIndex - x.salienceIndex);

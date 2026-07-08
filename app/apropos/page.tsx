@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
   title: "À propos — La Vitrine démocratique",
@@ -8,9 +9,11 @@ export const metadata: Metadata = {
 export default function AproposPage() {
   return (
     <div className="page">
-      <RawMaquette chunk="top" />
+      <div data-section="En-tête">
+        <RawMaquette chunk="top" />
+      </div>
 
-      <main className="apropos-container">
+      <main className="apropos-container" data-section="À propos">
 
 
         <div className="apropos-header">
@@ -33,7 +36,7 @@ export default function AproposPage() {
         <div className="apropos-grid">
           <div className="apropos-main-col">
             <section>
-              <h2 className="apropos-section-title">Pourquoi ce projet ?</h2>
+              <h2 className="apropos-section-title">Pourquoi ce projet?</h2>
               <p className="apropos-text">
                 Dans un contexte de fragmentation médiatique, de multiplication
                 des sources d'information et d'accélération des cycles
@@ -54,7 +57,7 @@ export default function AproposPage() {
             </section>
 
             <section>
-              <h2 className="apropos-section-title">Que faisons-nous ?</h2>
+              <h2 className="apropos-section-title">Que faisons-nous?</h2>
               <p className="apropos-text">
                 Nos sociétés font face à une multitude de problèmes complexes
                 qui ne peuvent tous être traités simultanément. L'agenda public
@@ -90,7 +93,7 @@ export default function AproposPage() {
             </section>
 
             <section>
-              <h2 className="apropos-section-title">Pour qui ?</h2>
+              <h2 className="apropos-section-title">Pour qui?</h2>
               <p className="apropos-text">
                 La Vitrine démocratique s'adresse à toute personne souhaitant
                 mieux comprendre l'agenda public québécois :
@@ -118,13 +121,13 @@ export default function AproposPage() {
 
           <div className="apropos-side-col">
             <section>
-              <h2 className="apropos-section-title">Qui sommes-nous ?</h2>
+              <h2 className="apropos-section-title">Qui sommes-nous?</h2>
               <p
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                La Vitrine est portée par le CAPP (Centre d'analyse des politiques
-                publiques) de l'Université Laval, en collaboration avec la
+                La Vitrine est portée par le Centre d'analyse des politiques
+                publiques (CAPP) de l'Université Laval, en collaboration avec la
                 CLESSN (Chaire de leadership en enseignement des sciences sociales
                 numériques). Le projet réunit des chercheuses et chercheurs en science
                 politique, des développeuses et développeurs de systèmes de données et des
@@ -176,7 +179,11 @@ export default function AproposPage() {
         </div>
       </main>
 
-      <RawMaquette chunk="bottom" />
+      <div data-section="Pied de page">
+        <RawMaquette chunk="bottom" />
+      </div>
+
+      <IssueReporter />
     </div>
   );
 }
