@@ -2179,7 +2179,7 @@
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--ink-soft); font-weight: 500; text-align: center;
   }
-  /* Encadré du nom de parti, couleur = parti */
+  /* Encadré du nom de parti — style commun (utilisé aussi par l'assemblée) */
   .parti-name-box {
     display: inline-block;
     background: var(--party);
@@ -2197,6 +2197,7 @@
   .parti-name-box.qs  { --party: #B85A2C; }
   .parti-name-box.pq  { --party: #1E3A5F; }
   .parti-name-box.pcq { --party: #5A3B6E; }
+
 
   .parti-bar-wrap {
     position: relative;
@@ -2264,6 +2265,29 @@
   .in-shadow .parti-row:last-child,
   .partis > .parti-row:last-child,
   .partis > .parti-row:has(+ .in-shadow-label) { border-bottom: none; }
+
+  /* État vide — aucune donnée pour la période sélectionnée */
+  .partis-empty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    padding: 32px 22px;
+    text-align: center;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  /* État indisponible — fichiers manquants, section non supprimée */
+  .partis-unavailable {
+    padding: 0 0 24px;
+  }
+  .partis-unavailable-msg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 0;
+    padding: 24px 22px;
+    border: 0.5px solid var(--rule-faint);
+    text-align: center;
+  }
 
   /* Légende d'encodage des partis */
   .parti-encoding {

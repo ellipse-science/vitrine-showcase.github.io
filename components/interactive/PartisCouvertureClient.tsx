@@ -42,6 +42,10 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <div>Ton de la couverture</div>
         </div>
 
+        {visibleRows.length === 0 && shadowRows.length === 0 && (
+          <div className="partis-empty">Aucune donnée disponible pour cette période.</div>
+        )}
+
         {visibleRows.map((row) => (
           <PartiRow key={row.key} row={row} refLabel={view.refLabel} />
         ))}
