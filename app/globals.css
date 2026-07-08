@@ -3837,7 +3837,7 @@
   }
 
 /* ============================================================
-   BOUTON PARTAGE — un par titre (Une principale / secondaires)
+   BOUTON PARTAGE — un par module
    ============================================================ */
 .share-btn {
   display: inline-flex; align-items: center; gap: 5px;
@@ -3851,4 +3851,43 @@
 .share-btn:hover,
 .share-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
 .share-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }
+
+/* ============================================================
+   SIGNALER UN PROBLÈME — bouton flottant toujours visible.
+   Complète le clic droit (contextmenu), qui ne se déclenche pas sur
+   iOS Safari (pas d'événement contextmenu au tap long) — cf. #120.
+   ============================================================ */
+.issue-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 500;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 0 2px 12px rgba(28, 25, 23, 0.16);
+  padding: 10px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.issue-fab:hover,
+.issue-fab:focus-visible {
+  background: var(--cordovan);
+  color: var(--paper);
+  outline: none;
+}
+
+@media (max-width: 900px) {
+  .issue-fab {
+    right: 12px;
+    bottom: 12px;
+    padding: 8px 12px;
+    font-size: 8px;
+  }
+}
 

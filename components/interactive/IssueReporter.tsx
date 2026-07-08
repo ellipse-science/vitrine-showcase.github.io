@@ -95,6 +95,15 @@ export function IssueReporter() {
     setUiState('modal')
   }
 
+  // Bouton toujours visible : le clic droit / contextmenu ne se déclenche pas
+  // sur iOS Safari (aucun événement `contextmenu` sur appui long), ce qui
+  // rendait le signalement impossible sur ces appareils (#120). Ce bouton
+  // fonctionne partout, en plus du clic droit conservé pour le contexte riche.
+  const openModalGeneric = () => {
+    setReportCtx({ section: '', elementContext: '' })
+    openModal()
+  }
+
   const handleClose = () => {
     setUiState('idle')
     setDescription('')
@@ -195,10 +204,17 @@ export function IssueReporter() {
     }
   }
 
-  if (uiState === 'idle') return null
-
   return (
     <>
+      <button
+        type="button"
+        className="issue-fab"
+        onClick={openModalGeneric}
+        aria-label="Signaler un problème"
+      >
+        Signaler un problème
+      </button>
+
       {uiState === 'menu' && (
         <div
           ref={menuRef}
