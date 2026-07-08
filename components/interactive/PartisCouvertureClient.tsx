@@ -20,19 +20,21 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
         </div>
         <div className="control-block">
-          <div className="legend-toggle inline">
-            {RANGES.map((r) => (
-              <span
-                key={r}
-                className={r === range ? "active" : undefined}
-                onClick={() => setRange(r)}
-                style={{ cursor: "pointer" }}
-              >
-                {data.ranges[r].tabLabel}
-              </span>
-            ))}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  onClick={() => setRange(r)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {data.ranges[r].tabLabel}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Couverture médiatique des partis politiques" anchor="partis-et-couverture" />
           </div>
-          <ShareButton title="Couverture médiatique des partis politiques" anchor="partis-et-couverture" />
         </div>
       </div>
 
