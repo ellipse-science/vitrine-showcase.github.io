@@ -2,6 +2,11 @@
 
 How the data this site renders is produced upstream. **No AWS infrastructure lives in this repo** — this is context for diagnosing data problems and for changes made in the `aws-refiners` / `aws-infra` repos. See [`AGENTS.md`](../../AGENTS.md) for the hard rules.
 
+**Diagrammes vivants du pipeline** (copies canoniques, hébergées par CE repo sous `public/docs/`, éditables par PR → en ligne ~2 min après merge) :
+- [Plan de réforme des horaires 2026](https://ellipse.science/vitrine-showcase.github.io/docs/horaire-refiners-2026.html) — la vision cible (grille 3-7, cascade Mtl) + bandeau « état réel »
+- [Swimlanes du pipeline](https://ellipse.science/vitrine-showcase.github.io/docs/workflow-vitrine-2025-swimlanes.html) — vue d'ensemble des raffineurs
+- Chantier fraîcheur + suivi 24 h de la Une : [aws-refiners#195](https://github.com/ellipse-science/aws-refiners/issues/195)
+
 ## Local clone paths (typical)
 
 | Repo | GitHub | Local clone path (typical) |
@@ -58,12 +63,13 @@ All refiners have `active: !isProd(envName)` — they run in DEV, not PROD. The 
 | ECR name | Athena table(s) (DEV) | Schedule (Mtl local) | Source dir |
 |----------|-----------------------|---------------------|-----------|
 | `radar-issues-score` | `issues_score_day`, `issues_score_week`, `issues_score_month` | Day: 6×/day :31 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-issues-score/` |
-| `radar-headlines-issues` | `headline_events_4h` (and weekly/monthly variants) | Day: 3×/day 11:46, 15:46, 19:46 · Week: daily 19:17 · Month: daily 19:20 | `refiners/radar-headlines-issues/` |
+| **`radar-event-salience`** | **`headline_events_4h`** — LA source de la Une des Unes + Deux solitudes (clustering en événements, `storyline_id` cross-blocs) | 6×/day :51 | `refiners/radar-event-salience/` |
+| `radar-headlines-issues` | `headlines_issues_day/week/month` — ⚠️ **plus consommées par le site** (servent au reflet → Slack seulement). Ne produit PAS `headline_events_4h` (erreur historique de cette doc, corrigée 2026-07-09). | Day: 3×/day 11:46, 15:46, 19:46 · Week: daily 19:17 · Month: daily 19:20 | `refiners/radar-headlines-issues/` |
 | `radar-party-score` | `provincial_parties_score_day/week/month`, `federal_parties_score_day/week/month` | Day: 6×/day :46 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-party-score/` |
 | `radar-party-score-salient-shadow` | `provincial_parties_score_salient_shadow_*` | Day: 6×/day :31 · Week: daily 19:35 · Month: daily 19:39 | `refiners/radar-party-score-salient-shadow/` |
 | `radar-reflet-daily-weekly` | `reflet_day`, `reflet_week` | Day: 3×/day 11:46, 15:46, 19:46 · Week: daily 19:37 | `refiners/radar-reflet-daily-weekly/` |
 | `radar-reflet-monthly` | `reflet_month` | Daily 19:40 | `refiners/radar-reflet-monthly/` |
-| `radar-headline-of-headlines` | `headline_of_headlines` | 6×/day :46 | `refiners/radar-headline-of-headlines/` |
+| `radar-headline-of-headlines` | `headline_of_headlines` — ⚠️ **plus consommée par le site** (remplacée par `headline_events_4h` d'event-salience) | 6×/day :46 | `refiners/radar-headline-of-headlines/` |
 | `radar-hot-20` | hot-20 data | Fridays 12:00 | `refiners/radar-hot-20/` |
 | `vitrine-graph-data` | graph data tables | 6×/day :57 | `refiners/vitrine-graph-data/` |
 | `agora-decideurs-qc` | `agora_decideurs_qc` | 6×/day :50 | `refiners/agora-decideurs-qc/` |
