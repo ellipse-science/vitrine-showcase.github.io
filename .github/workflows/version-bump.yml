@@ -19,8 +19,14 @@ name: Auto version bump on PR merge
 # par deploy key déclenche bien deploy.yml (on:push), contrairement à un push
 # GITHUB_TOKEN — donc pas besoin de relancer deploy.yml à la main.
 
+# pull_request_target (et non pull_request) : ce job manipule une deploy key
+# sensible. pull_request_target exécute TOUJOURS la version de ce workflow
+# présente sur `main` (fiable), pas celle de la branche de la PR — un
+# contributeur ne peut donc pas altérer le workflow dans sa branche pour
+# exfiltrer la clé. C'est sûr ici parce qu'on ne checkout JAMAIS le code de la
+# PR : on checkout `main` et on ne lit que les métadonnées (labels, numéro).
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     branches: [main]
 
