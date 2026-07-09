@@ -18,6 +18,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { lastUpdatedLabel } from "@/lib/dates";
 import type {
   ArticleRef,
   PolimetreData,
@@ -350,5 +351,5 @@ export async function loadPolimetre(): Promise<PolimetreData | null> {
 
   if (ranges.week.length === 0 && ranges.month.length === 0) return null;
 
-  return { weekEndDate: latestWeek, ranges };
+  return { weekEndDate: latestWeek, lastUpdated: lastUpdatedLabel(latestWeek), ranges };
 }

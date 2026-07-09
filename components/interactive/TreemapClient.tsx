@@ -123,6 +123,8 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
           return <div key={tile.issueKey} className="tm-bar-item" style={barStyle}>{barInner}</div>;
         })}
       </div>
+
+      <div className="module-last-updated">{current.lastUpdated}</div>
     </>
   );
 }
