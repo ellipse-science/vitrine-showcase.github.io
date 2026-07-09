@@ -113,9 +113,9 @@ function formatDateFr(dateStr: string): string {
 }
 
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
-// autant de « Très faible » que d'« Extrême », le gros au centre (courbe en
+// autant de « Très faible » que d'« Exceptionnelle », le gros au centre (courbe en
 // cloche sur échelle log). Bandes p5/p20/p50/p80/p95 = 5/15/30/30/15/5 %.
-// Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Extrême
+// Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Exceptionnelle
 // (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
 // « la moyenne »).
 // Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
@@ -134,7 +134,7 @@ const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, ex
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
 function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: string; rank: number; hint: string } {
   const s = scoreQc ?? 0;
-  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Extrême",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
+  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
   if (s >= SAL_QC_THRESHOLDS.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
   if (s >= SAL_QC_THRESHOLDS.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
   // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
@@ -190,7 +190,7 @@ export type UneEvent = {
   excerpt: string | null;
   issueFr: string;
   issueColor: string;
-  /** Rang de saillance 1–6 (Très faible→1 … Extrême→6) — pilote la taille du titre. */
+  /** Rang de saillance 1–6 (Très faible→1 … Exceptionnelle→6) — pilote la taille du titre. */
   saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
