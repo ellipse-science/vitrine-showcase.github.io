@@ -45,7 +45,7 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 
 - **PR sans label semver:*** → aucun bump. Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
 - **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
-- **PRÉREQUIS (une seule fois)** : le ruleset de `main` exige une PR pour toute modif, mais le workflow pousse le bump directement. `github-actions[bot]` doit donc être dans la **bypass-list du ruleset** (Settings → Rules → `main` → *Bypass list* → add *GitHub Actions*). Sans ça, le `git push origin main` du bump est refusé. Les trois labels `semver:*` doivent aussi exister dans le repo.
+- **Comment le bump contourne la protection de `main`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
 
 ## Hard rules (non-negotiable)
 
