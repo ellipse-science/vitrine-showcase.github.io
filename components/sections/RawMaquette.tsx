@@ -17,7 +17,7 @@ import pkg from "../../package.json";
 
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
-export type ChunkName = "top" | "middle" | "bottom" | "polimeter_plus";
+export type ChunkName = "top" | "bottom" | "polimeter_plus";
 
 // `package.json` est la source de vérité de la version (bumpée en CI, cf.
 // .github/workflows/version-bump.yml). Le footer contient un placeholder

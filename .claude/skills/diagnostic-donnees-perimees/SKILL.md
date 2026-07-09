@@ -1,6 +1,6 @@
 ---
 name: diagnostic-donnees-perimees
-description: Diagnostique pourquoi une section du site Vitrine (treemap des enjeux, partis, etc.) affiche des données périmées ou erronées, en distinguant un bug de transformation frontend d'un problème de raffineur/backend. À utiliser quand on signale des données « périmées », « pas à jour », « figées » ou « erronées » dans un module, ou qu'un onglet jour/semaine/mois semble incorrect. Déclencheurs : « données périmées », « pas à jour », « le treemap montre du vieux », « trouve pourquoi ».
+description: "Diagnostique pourquoi une section du site Vitrine (treemap des enjeux, partis, etc.) affiche des données périmées ou erronées, en distinguant un bug de transformation frontend d'un problème de raffineur/backend. À utiliser quand on signale des données « périmées », « pas à jour », « figées » ou « erronées » dans un module, ou qu'un onglet jour/semaine/mois semble incorrect. Déclencheurs : « données périmées », « pas à jour », « le treemap montre du vieux », « trouve pourquoi »."
 ---
 
 # Diagnostic : données périmées (frontend vs backend)

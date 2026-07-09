@@ -9,7 +9,7 @@ Avant toute modification de code ou de documentation, l'agent doit :
 3.  **Vérifier les PRs :** Lister les Pull Requests GitHub (`gh pr list`). Si une PR est assignée, l'analyser et la fusionner si elle ne crée pas de conflits.
 
 ## 2. Développement et Standardisation
-1.  **Respecter les styles :** Utiliser exclusivement les variables CSS définies dans `best_practices_ui_ux.md` et le système 8pt de Laurence.
+1.  **Respecter les styles :** Utiliser exclusivement les variables CSS définies dans `design_language.md` et le système 8pt de Laurence.
 2.  **Modularité :** Ne pas modifier les fichiers en cours d'édition par l'autre binôme (si possible) et privilégier la création de nouveaux composants ou fichiers de contexte.
 
 ## 3. Cycle de Publication Post-Modification (Commit & PR)
