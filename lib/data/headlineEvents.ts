@@ -244,11 +244,15 @@ export type TreemapAllPeriods = {
   month: TreemapPeriodData;
 };
 
+export type IntensityTier = "Faible" | "Moyen" | "Fort" | "Majeur";
+
 export type HeadlineData = {
   dateLabel: string;
   snapshotInterval: string;
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
+  /** Tier d'intensité dominant du dernier intervalle — pilote la teinte de fond (#118). */
+  intensityTier: IntensityTier;
   top3: UneEvent[];
   solitudesQcPos: number;
   solitudesRocPos: number;
@@ -476,7 +480,16 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  const TIER_RANK: Record<string, number> = { Faible: 0, Moyen: 1, Fort: 2, Majeur: 3 };
+  const tierCounts = new Map<string, number>();
+  for (const e of withTitles) {
+    if (e.intensity_tier) tierCounts.set(e.intensity_tier, (tierCounts.get(e.intensity_tier) ?? 0) + 1);
+  }
+  const intensityTier = (
+    [...tierCounts.entries()].sort((a, b) => b[1] - a[1] || (TIER_RANK[b[0]] ?? 0) - (TIER_RANK[a[0]] ?? 0))[0]?.[0] ?? "Moyen"
+  ) as IntensityTier;
+
+  return { dateLabel, snapshotInterval, periodLabel, intensityTier, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 }
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);

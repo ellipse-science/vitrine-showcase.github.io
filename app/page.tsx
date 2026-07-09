@@ -6,10 +6,13 @@ import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
+import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 
-export default function Home() {
+export default async function Home() {
+  const headlineData = await loadHeadlineEvents();
+  const tier = headlineData?.intensityTier ?? "Moyen";
   return (
-    <div className="page">
+    <div className={`page ambiance-${tier.toLowerCase()}`}>
       <div data-section="En-tête">
         <RawMaquette chunk="top" />
       </div>
