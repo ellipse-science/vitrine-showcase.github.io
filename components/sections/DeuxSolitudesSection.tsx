@@ -16,11 +16,13 @@ function DeuxSolitudes({
   rocPos,
   divPct,
   stories,
+  lastUpdated,
 }: {
   qcPos: number;
   rocPos: number;
   divPct: number;
   stories: SolitudeStory[];
+  lastUpdated: string;
 }) {
   return (
     <section
@@ -71,6 +73,7 @@ function DeuxSolitudes({
           </div>
         ))}
       </div>
+      <div className="module-last-updated">{lastUpdated}</div>
     </section>
   );
 }
@@ -85,6 +88,7 @@ export async function DeuxSolitudesSection() {
       rocPos={data.solitudesRocPos}
       divPct={data.solitudesDivPct}
       stories={data.solitudesStories}
+      lastUpdated={data.lastUpdated}
     />
   );
 }

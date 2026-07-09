@@ -63,6 +63,9 @@ export type PromiseView = {
 
 export type PolimetreData = {
   weekEndDate: string;
+  /** « Dernière mise à jour : vendredi 3 juillet 2026 » — fin du dernier
+   *  snapshot hebdomadaire (week_end_date). */
+  lastUpdated: string;
   // One ranked promise list per range. "week" = latest weekly snapshot;
   // "month" = rollup of the most recent ~4 weekly snapshots.
   ranges: Record<RangeKey, PromiseView[]>;

@@ -190,6 +190,7 @@ export async function UneDesUnesSection() {
             {sideRight && <SideUne event={sideRight} />}
           </section>
         )}
+        <div className="module-last-updated">{data.lastUpdated}</div>
     </div>
   );
 }
