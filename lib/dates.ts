@@ -30,26 +30,29 @@ export function formatDateFr(dateStr: string): string {
 }
 
 /**
- * Libellé uniforme « Dernière mise à jour : … » affiché en bas à droite de
- * chaque module (classe CSS `.module-last-updated`), branché sur le timestamp
- * de la table du module. Il gèle si le pipeline plante → détecteur de panne.
- * Donnée invalide ou absente → placeholder « — » (jamais un libellé normalisé
- * en douce).
+ * Libellé uniforme « Dernière mise à jour du module : … » affiché en bas à
+ * droite de chaque module (classe CSS `.module-last-updated`), branché sur le
+ * timestamp de la table du module. « du module » : chaque module a sa propre
+ * cadence — le libellé le rend explicite (décision Adrien 2026-07-09). Il gèle
+ * si le pipeline plante → détecteur de panne. Donnée invalide ou absente →
+ * placeholder « — » (jamais un libellé normalisé en douce).
  *
  * `blockEndHour` (fin du bloc 4h, heure Mtl) n'est fourni que par les tables
  * qui ont une granularité horaire (headline_events_4h → Une, Deux solitudes) :
- * 16 → « , 16 h » ; 24 → « , minuit ». Les tables journalières/hebdo (partis,
+ * 16 → « , 16h » ; 24 → « , minuit ». Heure compacte « 4h » (pas « 4 h ») :
+ * l'indicateur est rendu en mono-majuscules et l'espace donnait « 4 H », jugé
+ * laid — format 24 h, pas de am/pm. Les tables journalières/hebdo (partis,
  * enjeux, assemblée, polimètre) n'affichent que la date — l'heure n'existe pas
  * dans leur donnée.
  */
 export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null): string {
   const parsed = parseIsoDate(dateStr);
-  if (!parsed) return "Dernière mise à jour : —";
+  if (!parsed) return "Dernière mise à jour du module : —";
   const dateFr = formatDateFr(dateStr);
   const dateLower = dateFr.charAt(0).toLowerCase() + dateFr.slice(1);
   if (blockEndHour == null || Number.isNaN(blockEndHour)) {
-    return `Dernière mise à jour : ${dateLower}`;
+    return `Dernière mise à jour du module : ${dateLower}`;
   }
-  const hourLabel = blockEndHour >= 24 ? "minuit" : `${blockEndHour} h`;
-  return `Dernière mise à jour : ${dateLower}, ${hourLabel}`;
+  const hourLabel = blockEndHour >= 24 ? "minuit" : `${blockEndHour}h`;
+  return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
 }

@@ -169,12 +169,16 @@ export async function UneDesUnesSection() {
     <div className={`unes-jour${breaking ? " breaking" : ""}`}>
         <div className="section-label">
           <span className="section-title-wrap">
-            <span className="section-title">Les Unes {data.periodLabel}</span>
+            {/* Titre STATIQUE (décision Adrien 2026-07-09) : l'édition affichée
+                vit dans l'en-tête (#edition-name) et la fraîcheur réelle dans
+                « Dernière mise à jour du module » en bas — le titre, lui, ne
+                doit pas trahir un retard de données. */}
+            <span className="section-title">Les Unes saillantes du moment</span>
             <SaillanceTip />
           </span>
           <span className="section-right">
             <span className="section-date">{editionLabel}</span>
-            <ShareButton title={`Les Unes ${data.periodLabel}`} anchor="une-des-unes" />
+            <ShareButton title="Les Unes saillantes du moment" anchor="une-des-unes" />
           </span>
         </div>
 
