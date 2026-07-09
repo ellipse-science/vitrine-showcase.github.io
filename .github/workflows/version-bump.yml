@@ -11,10 +11,13 @@ name: Auto version bump on PR merge
 # Pour sortir de bêta : éditer package.json à la main sur une PR normale
 # (ex. « 2.0.0-beta.5 » → « 2.0.0 »).
 #
-# PRÉREQUIS : le ruleset de `main` exige une PR pour toute modif ; ce workflow
-# pousse un commit directement sur main. `github-actions[bot]` doit donc être
-# dans la bypass-list du ruleset (Settings → Rules → main → Bypass list).
-# Voir AGENTS.md § Versionnage.
+# POURQUOI UN DEPLOY KEY (et pas GITHUB_TOKEN) : le ruleset de `main` exige une
+# PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) n'est PAS
+# ajoutable à la bypass-list. On pousse donc le commit de bump avec la même
+# SSH deploy key que refresh-data.yml (secrets.REFRESH_DATA_DEPLOY_KEY) — les
+# Deploy keys SONT dans le bypass du ruleset (mode « always »). Bonus : un push
+# par deploy key déclenche bien deploy.yml (on:push), contrairement à un push
+# GITHUB_TOKEN — donc pas besoin de relancer deploy.yml à la main.
 
 on:
   pull_request:
@@ -28,8 +31,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 jobs:
   bump:
@@ -55,11 +57,13 @@ jobs:
         if: steps.bump.outputs.type == 'none'
         run: echo "Aucun label semver:* sur la PR — rien à bumper."
 
+      # Deploy key (persist-credentials par défaut = true) → le push SSH plus bas
+      # est authentifié par une clé qui bypasse le ruleset de main.
       - uses: actions/checkout@v7
         if: steps.bump.outputs.type != 'none'
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -76,6 +80,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Pousser en SSH pour utiliser la deploy key (comme refresh-data.yml).
+          git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
 
           CURRENT=$(node -p "require('./package.json').version")
           if [[ "$CURRENT" == *-beta* ]]; then
@@ -99,7 +105,7 @@ jobs:
           # refresh … » poussés via deploy key). On rebase et on réessaie.
           for attempt in 1 2 3 4 5; do
             if git push origin main; then
-              echo "Push réussi (tentative $attempt)."
+              echo "Push réussi (tentative $attempt) — deploy.yml se déclenche sur ce push."
               exit 0
             fi
             echo "Push refusé (tentative $attempt) — rebase sur main puis retry."
@@ -107,12 +113,3 @@ jobs:
           done
           echo "::error::Impossible de pousser le bump de version après 5 tentatives."
           exit 1
-
-      - name: Trigger Pages deploy with new version
-        # Nécessaire : un commit poussé avec GITHUB_TOKEN ne déclenche PAS les
-        # workflows on:push (garde-fou anti-récursion de GitHub). On lance donc
-        # deploy.yml explicitement pour republier avec la nouvelle version.
-        if: steps.bump.outputs.type != 'none'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run deploy.yml --ref main
