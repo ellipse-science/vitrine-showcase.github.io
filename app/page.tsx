@@ -2,6 +2,7 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 import { PartisCouvertureSection } from "@/components/sections/PartisCouvertureSection";
 import { AssembleeSection } from "@/components/sections/AssembleeSection";
 import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
+import { DeuxSolitudesSection } from "@/components/sections/DeuxSolitudesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
@@ -14,8 +15,12 @@ export default function Home() {
         <RawMaquette chunk="top" />
       </div>
 
-      <div data-section="Une des unes">
+      <div id="une-des-unes" data-section="Une des unes">
         <UneDesUnesSection />
+      </div>
+
+      <div id="deux-solitudes" data-section="Deux solitudes">
+        <DeuxSolitudesSection />
       </div>
 
       <div id="partis-et-couverture" data-section="Partis et couverture">

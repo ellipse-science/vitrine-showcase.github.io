@@ -83,6 +83,8 @@ Reports that fall outside a module — the general site chrome and standalone pa
 
 **How the triage works.** Each zone carries a `data-section` attribute in the DOM. `IssueReporter` walks up from the right-clicked element to the nearest `data-section`, sends that string in the dispatch payload, and `.github/workflows/report-issue.yml` maps it to the label above via the **`SECTION_LABELS` table** (the single place to edit when adding/renaming a zone). Labels are created automatically on first use. Missing labels are non-fatal — the issue is still created with `signalement-utilisateur`.
 
+**One module = one top-level section (hard convention).** Every module is its own component under `components/sections/` and gets its own wrapper in `app/page.tsx` carrying **both** the URL anchor `id` (deep links + `ShareButton`, cf. PR #199) and the `data-section` (signalement) — `#une-des-unes`, `#deux-solitudes`, `#partis-et-couverture`, `#enjeux-saillants`, `#assemblee-nationale`, `#polimetre-plus`. Modules 1 and 2 read the same table (`headline_events_4h`) but are **separate sections** (`UneDesUnesSection` / `DeuxSolitudesSection`) — never nest one module inside another.
+
 > **Méthodologie is a static HTML page** (`public/methodologie/`), so the React `IssueReporter` does not run there; `page-methodologie` is reserved for when reporting is wired into that page. All other zones are reportable.
 
 ## Multi-repo ecosystem
