@@ -45,7 +45,7 @@ lib/
     headlineEvents.ts         Two loaders: loadHeadlineEvents() (headline-events.json → UneDesUnesSection)
                               and loadTreemap() (issues_score_{day,week,month}.json → TreemapSection)
 static-content/               Verbatim HTML chunks inlined by RawMaquette (chunk name = filename):
-                              top.html (masthead), middle.html, bottom.html (partners + footer),
+                              top.html (masthead), bottom.html (partners + footer),
                               polimeter_plus.html. Embedded via dangerouslySetInnerHTML. Edit as plain HTML.
 public/                       Static assets — written to by the data refresher
   data/                       JSON snapshots (build-time source of truth)
@@ -58,6 +58,11 @@ scripts/                      R data refresher + Node build helpers
   discover_tables.R           Auto-discovers new tables published by upstream refiners
   postbuild.mjs               Copies /presentation into out/ after next build
 presentation/                 RevealJS slide deck (served at /presentation/)
+assets/                       art_images/ — style-reference PNGs ({issue}_generic{n}.png) read by
+                              scripts/generate_art.py to seed the AI hero illustration. NOT web-served
+                              (build/generation input, lives outside public/).
+workers/                      report-issue/ — standalone Cloudflare Worker proxying the report-issue
+                              dispatch (the target of NEXT_PUBLIC_DISPATCH_URL used by IssueReporter).
 docs/                         Operational docs (Cloudflare migration plan, etc.)
 llm_context/                  Long-form design + architecture references for LLMs
 ```
