@@ -18,13 +18,26 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 
 const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
 
+// Heure de MONTRÉAL, pas celle du navigateur : les blocs d'édition et l'horaire
+// de rafraîchissement sont définis en heure de Montréal (cf. lib/editions.ts,
+// AGENTS.md règle #2). Un visiteur dans un autre fuseau verrait sinon une
+// édition, une bande céleste et un compte à rebours faux (revue Copilot #214).
+function montrealTimeParts(): { h: number; m: number; s: number } {
+  const parts = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "America/Toronto",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { h: get("hour"), m: get("minute"), s: get("second") };
+}
+
 export function PulseCountdown() {
   useEffect(() => {
     function tick() {
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
-      const s = now.getSeconds();
+      const { h, m, s } = montrealTimeParts();
 
       let nextH = UPDATE_HOURS.find((x) => x > h);
       const rolledOver = nextH === undefined;
