@@ -22,8 +22,11 @@ const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
 export function PulseCountdown({ edition }: { edition?: string | null }) {
   useEffect(() => {
     // Édition = celle des données affichées (statique), écrite une fois.
+    // Fallback neutre quand les données sont indisponibles (edition null) : ne
+    // PAS laisser le texte par défaut de la maquette (« Édition de la soirée »),
+    // qui serait factuellement faux.
     const edEl = document.getElementById("edition-name");
-    if (edEl && edition) edEl.textContent = `Édition ${edition}`;
+    if (edEl) edEl.textContent = edition ? `Édition ${edition}` : "Édition du jour";
 
     function tick() {
       const now = new Date();

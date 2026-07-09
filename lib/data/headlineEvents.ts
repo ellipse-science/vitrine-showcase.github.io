@@ -6,6 +6,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cache } from "react";
 
 import { editionLabel } from "@/lib/editions";
 
@@ -261,7 +262,10 @@ export type HeadlineData = {
   treemapMobile: (TreemapTile & { relWidth: number })[];
 };
 
-export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
+// cache() : le snapshot est lu par plusieurs consommateurs du même rendu
+// (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
+// lecture/parse par build au lieu d'une par appel.
+export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -477,7 +481,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
   return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
-}
+});
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
 const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
