@@ -162,6 +162,12 @@ export async function UneDesUnesSection() {
   const breaking = main?.saillanceRank === 6;
   const editionLabel = data.dateLabel;
 
+  // Titre STATIQUE (décision Adrien 2026-07-09) : l'édition affichée vit dans
+  // l'en-tête (#edition-name) et la fraîcheur réelle dans « Dernière mise à
+  // jour du module » en bas — le titre, lui, ne doit pas trahir un retard de
+  // données. Partagé avec le ShareButton pour éviter toute divergence.
+  const sectionTitle = "Les Unes saillantes du moment";
+
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
   // section top-level distincte (DeuxSolitudesSection).
@@ -169,16 +175,12 @@ export async function UneDesUnesSection() {
     <div className={`unes-jour${breaking ? " breaking" : ""}`}>
         <div className="section-label">
           <span className="section-title-wrap">
-            {/* Titre STATIQUE (décision Adrien 2026-07-09) : l'édition affichée
-                vit dans l'en-tête (#edition-name) et la fraîcheur réelle dans
-                « Dernière mise à jour du module » en bas — le titre, lui, ne
-                doit pas trahir un retard de données. */}
-            <span className="section-title">Les Unes saillantes du moment</span>
+            <span className="section-title">{sectionTitle}</span>
             <SaillanceTip />
           </span>
           <span className="section-right">
             <span className="section-date">{editionLabel}</span>
-            <ShareButton title="Les Unes saillantes du moment" anchor="une-des-unes" />
+            <ShareButton title={sectionTitle} anchor="une-des-unes" />
           </span>
         </div>
 
