@@ -246,6 +246,10 @@ export type TreemapAllPeriods = {
 
 export type HeadlineData = {
   dateLabel: string;
+  /** « Dernière mise à jour : mercredi 8 juillet 2026, 16 h » — date + fin du
+   *  bloc 4h de la donnée la plus récente. Gèle si le pipeline plante → détecteur
+   *  de panne + « de quand sont les données ». */
+  lastUpdatedLabel: string;
   snapshotInterval: string;
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
@@ -296,6 +300,16 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
+
+  // « Dernière mise à jour » = date + fin du bloc 4h (heure Mtl) de la donnée la
+  // plus récente. Bloc « 12-16 » → « 16 h » ; « 20-24 » → « minuit ». Minuscule
+  // en milieu de phrase.
+  const endRaw = parseInt((snapshotInterval ?? "").split("-")[1] ?? "", 10);
+  const endHourLabel = Number.isNaN(endRaw) ? null : endRaw >= 24 ? "minuit" : `${endRaw} h`;
+  const dateLower = dateLabel.charAt(0).toLowerCase() + dateLabel.slice(1);
+  const lastUpdatedLabel = endHourLabel
+    ? `Dernière mise à jour : ${dateLower}, ${endHourLabel}`
+    : `Dernière mise à jour : ${dateLower}`;
 
   const withTitles = latest
     .filter((e) => e.title)
@@ -476,7 +490,7 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, lastUpdatedLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 }
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);

@@ -226,7 +226,7 @@ export async function UneDesUnesSection() {
   // suggéraient #124/#122, pour rester cohérent avec les 6 bandes symétriques de
   // #35. Le noir se déclenche donc un peu plus souvent, c'est voulu. Cf. #35.
   const breaking = main?.saillanceRank === 6;
-  const editionLabel = data.dateLabel;
+  const editionLabel = data.lastUpdatedLabel;
 
   return (
     <>
