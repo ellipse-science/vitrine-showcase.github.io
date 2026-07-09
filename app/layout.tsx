@@ -7,10 +7,40 @@ import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerReg
 // car le site est publié sous un basePath sur GitHub Pages.
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+const SITE_DESCRIPTION =
+  "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.";
+
 export const metadata: Metadata = {
+  // Base absolue pour les URLs Open Graph/Twitter (le site vit sous un
+  // basePath sur GitHub Pages — les chemins relatifs se résolvent contre elle).
+  metadataBase: new URL("https://ellipse.science/vitrine-showcase.github.io/"),
   title: "La Vitrine démocratique",
-  description:
-    "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.",
+  description: SITE_DESCRIPTION,
+  // Cartes de partage (Facebook/LinkedIn via Open Graph, X via Twitter card).
+  // NB : les réseaux ignorent le fragment #module — tous les liens partagés
+  // affichent cette carte globale. Cartes PAR module = mini-pages OG dédiées
+  // (ticket séparé).
+  openGraph: {
+    type: "website",
+    siteName: "La Vitrine démocratique",
+    title: "La Vitrine démocratique",
+    description: SITE_DESCRIPTION,
+    locale: "fr_CA",
+    images: [
+      {
+        url: "images/brand/logo_vitrinedemocratique_bg-none_theme-black.png",
+        width: 1788,
+        height: 591,
+        alt: "La Vitrine démocratique",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "La Vitrine démocratique",
+    description: SITE_DESCRIPTION,
+    images: ["images/brand/logo_vitrinedemocratique_bg-none_theme-black.png"],
+  },
   manifest: `${basePath}/manifest.json`,
   icons: {
     icon: [
