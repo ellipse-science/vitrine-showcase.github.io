@@ -461,7 +461,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 9 juillet 2026 (inclut radar-event-salience) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 9 juillet 2026 (inclut radar-event-salience) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -1006,10 +1006,8 @@
     </div>
 
     <script>
-        console.log('🔧 Script chargé');
         
         document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ DOM prêt - Initialisation...');
         
         // Modal data
         const modalData = {
@@ -2126,7 +2124,6 @@
                 'hot20-files': {
                     title: 'Hot 20 - Fichiers PNG et HTML',
                     description: '6 fichiers générés chaque vendredi à 12:00 (heure du Québec)',
-                    image: 'images_vitrine/hot20.png',
                     details: [
                         '📊 3 fichiers PNG (visualisations):',
                         '• hot20_qc.png - TOP 20 Québec',
@@ -2161,7 +2158,6 @@
                 'sonar-heatmaps': {
                     title: 'SONAR - Heatmaps de Qualité',
                     description: 'Visualisations de la qualité du scraping sur 14 jours',
-                    image: 'images_vitrine/sonar.png',
                     details: [
                         '📊 Fichiers générés:',
                         '• sonar_heatmap.png - Image statique',
@@ -2221,7 +2217,7 @@
                     title: 'Notifications Slack - AGORA SONAR',
                     description: 'Rapport qualité Agora et diffusion des heatmaps dans le canal Agora SONAR.',
                     details: [
-                        '📢 Canal Slack: agora-sonar (channel_id C0AG1QQMXNE)',
+                        '📢 Canal Slack: agora-sonar',
                         '📎 Contenu envoyé:',
                         '• résumé qualité par pays/source',
                         '• alertes critiques si présentes',
@@ -2301,7 +2297,7 @@
                     description: 'Site web public affichant toutes les analyses politiques',
                     details: [
                         '🌐 Site web: Vitrine démocratique',
-                        '🔗 URL DEV: <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" style="color: #4A90E2; font-weight: bold;">https://dev.vitrinedemocratique.com/beta.html</a>',
+                        '🔗 URL DEV: <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; font-weight: bold;">https://dev.vitrinedemocratique.com/beta.html</a>',
                         '',
                         '📊 Pages disponibles:',
                         '• Dashboard principal avec KPIs',
@@ -2394,8 +2390,9 @@
         document.querySelectorAll('.pipeline-header').forEach(header => {
             header.style.cursor = 'pointer';
             header.addEventListener('click', function(e) {
-                // Ne toggle que si on clique sur le toggle-icon ou directement sur le header
-                if (e.target.classList.contains('toggle-icon') || e.target === this) {
+                // Toggle sur tout clic dans le header (y compris ses spans),
+                // sauf sur un lien — sinon les clics sur les libellés ne faisaient rien.
+                if (!e.target.closest('a')) {
                     this.closest('.pipeline').classList.toggle('collapsed');
                 }
             });
@@ -2407,13 +2404,11 @@
         const closeBtn = document.querySelector('.close-modal');
 
         function showModal(type, key) {
-            console.log('📢 showModal appelé - type:', type, 'key:', key);
             const data = modalData[type][key];
             if (!data) {
                 console.error('❌ Aucune donnée trouvée pour:', type, key);
                 return;
             }
-            console.log('✅ Données trouvées:', data.title);
 
             let html = `<h2>${data.title}</h2>`;
             html += `<p><strong>${data.description}</strong></p>`;
@@ -2440,7 +2435,6 @@
 
             modalBody.innerHTML = html;
             modal.classList.add('show');
-            console.log('✅ Modal affichée!');
         }
 
         closeBtn.addEventListener('click', () => {
@@ -2455,19 +2449,15 @@
 
         // Add click handlers to nodes
         const tableNodes = document.querySelectorAll('[data-table]');
-        console.log('📊 Nodes [data-table] trouvés:', tableNodes.length);
         tableNodes.forEach(node => {
             node.addEventListener('click', (e) => {
-                console.log('🖱️ Clic détecté sur table:', node.dataset.table);
                 showModal('tables', node.dataset.table);
             });
         });
 
         const refinerNodes = document.querySelectorAll('[data-refiner]');
-        console.log('⚙️ Nodes [data-refiner] trouvés:', refinerNodes.length);
         refinerNodes.forEach(node => {
             node.addEventListener('click', (e) => {
-                console.log('🖱️ Clic détecté sur refiner:', node.dataset.refiner);
                 showModal('refiners', node.dataset.refiner);
             });
         });
@@ -2479,24 +2469,19 @@
         });
 
         const sourceNodes = document.querySelectorAll('[data-source]');
-        console.log('📡 Nodes [data-source] trouvés:', sourceNodes.length);
         sourceNodes.forEach(node => {
             node.addEventListener('click', (e) => {
-                console.log('🖱️ Clic détecté sur source:', node.dataset.source);
                 showModal('sources', node.dataset.source);
             });
         });
 
         const outputNodes = document.querySelectorAll('[data-output]');
-        console.log('📤 Nodes [data-output] trouvés:', outputNodes.length);
         outputNodes.forEach(node => {
             node.addEventListener('click', (e) => {
-                console.log('🖱️ Clic détecté sur output:', node.dataset.output);
                 showModal('outputs', node.dataset.output);
             });
         });
         
-        console.log('✅ Tous les event listeners attachés!');
         }); // Fin DOMContentLoaded
     </script>
 </body>
