@@ -7,13 +7,18 @@ import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerReg
 // car le site est publié sous un basePath sur GitHub Pages.
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+// Origin par hôte — même logique multi-hôte que next.config.ts (basePath) :
+//   - GitHub Pages (défaut) : https://ellipse.science + basePath /vitrine-showcase.github.io
+//   - Cloudflare Pages      : NEXT_PUBLIC_SITE_ORIGIN=https://vitrinedemocratique.com + basePath ""
+const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://ellipse.science";
+
 const SITE_DESCRIPTION =
   "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.";
 
 export const metadata: Metadata = {
-  // Base absolue pour les URLs Open Graph/Twitter (le site vit sous un
-  // basePath sur GitHub Pages — les chemins relatifs se résolvent contre elle).
-  metadataBase: new URL("https://ellipse.science/vitrine-showcase.github.io/"),
+  // Base absolue pour les URLs Open Graph/Twitter, dérivée de l'hôte + du
+  // basePath (les chemins relatifs des images OG se résolvent contre elle).
+  metadataBase: new URL(`${basePath}/`, siteOrigin),
   title: "La Vitrine démocratique",
   description: SITE_DESCRIPTION,
   // Cartes de partage (Facebook/LinkedIn via Open Graph, X via Twitter card).
