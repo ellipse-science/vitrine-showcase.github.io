@@ -461,7 +461,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 9 juillet 2026 (inclut radar-event-salience) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 10 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -1837,7 +1837,7 @@
                         '🌍 PAYS: QC, CAN, USA (clusterings indépendants)',
                         '🚫 QC: TVA exclu (duplique JDM)',
                         '',
-                        '📋 OUTPUT: headline_events_4h - 31 colonnes (22 déterministes + 9 LLM/audit), ~270 lignes/jour',
+                        '📋 OUTPUT: headline_events_4h - 58 colonnes (42 déterministes + 9 LLM/audit + 7 agrégats 24h par storyline), ~270 lignes/jour',
                         '',
                         '⏰ HORAIRES: à confirmer (~10 min après radar-salient-index)',
                         '',
