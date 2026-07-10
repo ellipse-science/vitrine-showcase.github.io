@@ -1,13 +1,15 @@
 ---
 name: synchro-methodologie
 description: >
-  Garder la page Méthodologie (public/methodologie/index.html) TOUJOURS
-  synchronisée avec le comportement réel du pipeline. À utiliser pour toute PR
-  (vitrine, aws-refiners, aws-infra) qui touche un calcul, un seuil, un
-  horaire, la collecte, une représentation graphique ou un raffineur — le
-  réflexe est de déterminer les sections impactées et de proposer la mise à
-  jour du texte. Aussi : remplir la section « Impact méthodologie » du
-  template de PR.
+  Garder la page Méthodologie (public/methodologie/index.html) ET les docs
+  vivantes du pipeline (public/docs/horaire-refiners-2026.html,
+  workflow-vitrine-2025-swimlanes.html) TOUJOURS synchronisées avec le
+  comportement réel du pipeline. À utiliser pour toute PR (vitrine,
+  aws-refiners, aws-infra) qui touche un calcul, un seuil, un horaire, la
+  collecte, une représentation graphique ou un raffineur — déterminer les
+  sections/docs impactées et proposer la mise à jour. Aussi : remplir la
+  section « Impact méthodologie » du template de PR, et vérifier la véracité
+  des déclarations des collègues avant tout merge.
 ---
 
 # Synchro méthodologie
@@ -18,8 +20,21 @@ qui change le comportement décrit doit être accompagnée de la mise à jour du
 texte — c'est une obligation d'équipe (section « Impact méthodologie » du
 template de PR, vérifiée par le workflow `garde-metho` dans les 3 repos).
 
-**Copie canonique unique** : `public/methodologie/index.html` de ce repo
-(11 sections avec des `id` stables). Ne jamais créer de copie ailleurs.
+**Trois documents couverts, tous à copie canonique unique dans ce repo** —
+ne jamais créer de copie ailleurs (la divergence des copies a causé les faux
+diagnostics de juillet 2026) :
+
+1. `public/methodologie/index.html` — la page Méthodologie publique
+   (11 sections avec des `id` stables) ;
+2. `public/docs/horaire-refiners-2026.html` — l'horaire vivant des
+   raffineurs (source : crons aws-infra) ;
+3. `public/docs/workflow-vitrine-2025-swimlanes.html` — le diagramme
+   d'architecture des pipelines (« Les pipelines de la Vitrine
+   démocratique » : chaîne raffineurs → tables → outputs).
+
+Les diagrammes portent une ligne « Dernière mise à jour le … » : la mettre à
+jour à chaque édition. Une capture/page qui montre une autre date que celle
+du fichier sur `main` = copie divergente ou cache, à retirer/signaler.
 
 ## Quand une PR a un impact métho
 
@@ -80,6 +95,34 @@ demander : « ce texte reste-t-il vrai ? »
    sensibles sont touchés).
 6. Si l'illustration `saillance-niveaux.png` cite des seuils modifiés, la
    régénérer via `scripts/generate_saillance_levels.py` (CSV Athena requis).
+
+## Impacts typiques sur les docs vivantes (en plus de la métho)
+
+| Changement | Doc à mettre à jour |
+|---|---|
+| Cron/horaire d'un raffineur (aws-infra `src/pipelines/`) | `horaire-refiners-2026.html` (+ § 02/§ 08 métho si la fréquence y est décrite) |
+| Nouveau raffineur, raffineur débranché, nouvelle table, colonnes structurantes | `workflow-vitrine-2025-swimlanes.html` |
+| Changement de modèle dans un raffineur (LLM, NER…) | `workflow-vitrine-2025-swimlanes.html` + section métho concernée |
+| Grille de blocs 4h | les deux diagrammes + § 08 métho |
+
+## Rôle d'exécuteur (Claude)
+
+L'obligation vaut pour toute l'équipe, et **Claude est le filet de sécurité
+quand un humain oublie** (demande explicite d'Adrien, 2026-07-10) :
+
+- **Avant de merger une PR** (la sienne ou celle d'un collègue) : ne pas se
+  contenter de la case cochée — vérifier sa VÉRACITÉ contre le diff. Une
+  case « aucun impact » sur une PR qui change un seuil/horaire/calcul est
+  fausse : demander la correction et NE PAS merger tant que ce n'est pas
+  réglé.
+- **En reviewant ou triant** une PR qui touche des fichiers sensibles sans
+  déclaration (ou avec une déclaration douteuse) : poster un commentaire sur
+  la PR qui nomme la section métho / le doc vivant concerné et ce qui
+  deviendrait faux, et traiter la PR comme non mergeable tant que ce n'est
+  pas résolu.
+- **En constatant un décalage déjà en prod** (métho ou diagramme qui décrit
+  autre chose que le code) : le signaler immédiatement à Adrien et proposer
+  la PR de correction — ne jamais laisser courir.
 
 ## Pièges connus
 
