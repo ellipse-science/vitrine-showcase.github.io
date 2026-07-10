@@ -40,7 +40,7 @@ These match `ISSUE_COLORS` and `ISSUE_LABELS_SHORT` in `lib/data/headlineEvents.
 
 ## `headline_events_4h` schema
 
-The `radar-headlines-issues` refiner produces `headline_events_4h` — one row per event per time interval per region. Published as `public/data/headline-events.json`. Consumed by `loadHeadlineEvents()` for `UneDesUnesSection`.
+The `radar-event-salience` refiner produces `headline_events_4h` (clustering des articles du bloc 4h en événements, `storyline_id` cross-blocs — corrigé 2026-07-09, ce doc disait `radar-headlines-issues` à tort) — one row per event per time interval per region. Published as `public/data/headline-events.json`. Consumed by `loadHeadlineEvents()` for `UneDesUnesSection`.
 
 Key columns used by the frontend:
 

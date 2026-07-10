@@ -14,5 +14,13 @@ Procédure complète : `docs/reference/procedures.md` (§ « Diagnosing frontend
 4. **Athena en direct** (pour vérifier la source) : snippet R dans `docs/reference/aws-backend.md`. **Nom de table DEV entre guillemets** (à cause du tiret) : `SELECT * FROM "vitrine_datamart-issues_score_day" LIMIT 10`.
 5. **Bug de transform frontend ?** `lib/data/headlineEvents.ts` : `latestIssueRow()` (choix de la dernière ligne) et `buildPeriodData()` (agrégation jour/semaine/mois).
 
+## Cas particulier : la Une des Unes / Deux solitudes (headline-events.json)
+**Chaîne réelle** (validée dans le code 2026-07-09 — ignorer toute doc qui dit autre chose) :
+`glue r-media-headlines (:03)` → `radar-data-preparation (:06, stepper 1 bloc 4h/run)` → `salient-objects (:16)` → `salient-index (:42)` → **`radar-event-salience (:51, 6×/jour)`** → table `headline_events_4h` → fetch du site (HH:00). Ce n'est **PAS** `radar-headlines-issues` ni `headline-of-headlines` (plus consommés par le site).
+
+**Retard « normal » connu** : la grille de blocs du code est `00-04/04-08/…` alors que le plan de réforme visait `3-7/7-11/…` → à 8 h le site montre le bloc 0-4 h, qui reste affiché jusqu'à 16 h. Une Une « en retard de 4-12 h » le matin n'est donc **pas une panne** tant que ce chantier n'est pas livré : [aws-refiners#195](https://github.com/ellipse-science/aws-refiners/issues/195) (phase A = grille ; phases B/C = suivi 24 h par storyline, union des médias, pic de saillance). L'indicateur « Dernière mise à jour du module » à l'écran reflète le bloc réellement affiché.
+
+**Vraie panne** si : le bloc affiché a > 12 h, OU `meta.json.generatedAt` est vieux (fetch cassé), OU les runs d'`event-salience`/`salient-index` échouent (CloudWatch). Bug date connu : bloc 20-24 daté +1 jour, corrigé par aws-refiners PR #197 — si observé, vérifier que #197 est déployée.
+
 ## Gotcha à considérer avant de conclure à un bug
 Avec **peu de jours de données**, les onglets **jour / semaine / mois peuvent sembler identiques** — c'est attendu ; la divergence apparaît à mesure que l'historique s'accumule. Ne conclus pas trop vite à un bug.
