@@ -1,103 +1,103 @@
 {
-  "generatedAt": "2026-07-10T04:01:54Z",
-  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/29068048162",
+  "generatedAt": "2026-07-10T08:02:11Z",
+  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/29078393987",
   "tables": [
     {
       "name": "provincial_parties_score_day",
       "status": "ok",
-      "rowCount": 8185,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "rowCount": 8190,
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/day/provincial_parties_score_day.json"
     },
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 12,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     },
     {
       "name": "federal_parties_score_week",
       "status": "ok",
       "rowCount": 2412,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/week/federal_parties_score_week.json"
     },
     {
       "name": "provincial_parties_score_week",
       "status": "ok",
       "rowCount": 2010,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/week/provincial_parties_score_week.json"
     },
     {
       "name": "federal_parties_score_month",
       "status": "ok",
       "rowCount": 2394,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/month/federal_parties_score_month.json"
     },
     {
       "name": "provincial_parties_score_month",
       "status": "ok",
       "rowCount": 1995,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/month/provincial_parties_score_month.json"
     },
     {
       "name": "provincial_parties_salient_shadow_day",
       "status": "ok",
       "rowCount": 5,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/day/provincial_parties_salient_shadow_day.json"
     },
     {
       "name": "provincial_parties_salient_shadow_week",
       "status": "ok",
       "rowCount": 5,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/week/provincial_parties_salient_shadow_week.json"
     },
     {
       "name": "provincial_parties_salient_shadow_month",
       "status": "ok",
       "rowCount": 5,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/month/provincial_parties_salient_shadow_month.json"
     },
     {
       "name": "issues_score_day",
       "status": "ok",
-      "rowCount": 3479,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "rowCount": 3482,
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/day/issues_score_day.json"
     },
     {
       "name": "issues_score_week",
       "status": "ok",
       "rowCount": 1626,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/week/issues_score_week.json"
     },
     {
       "name": "issues_score_month",
       "status": "ok",
       "rowCount": 1672,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/month/issues_score_month.json"
     },
     {
       "name": "headline_events_4h",
       "status": "ok",
-      "rowCount": 153,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "rowCount": 161,
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/headline-events.json"
     },
     {
       "name": "polimetre_plus",
       "status": "ok",
       "rowCount": 140,
-      "generatedAt": "2026-07-10T04:01:54Z",
+      "generatedAt": "2026-07-10T08:02:11Z",
       "path": "public/data/refined/week/polimetre_plus.json"
     }
   ]
