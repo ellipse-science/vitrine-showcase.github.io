@@ -15,7 +15,8 @@ visualisation publique :
       ▼
 ┌──────────────┐   Glue (Python) + EventBridge (crons, HEURE DE MONTRÉAL)
 │  aws-infra   │   AWS CDK/TypeScript : horaires, Lambdas, Athena, S3
-└──────┬───────┘   → src/pipelines/ = source de vérité des horaires
+└──────┬───────┘   → horaires des raffineurs : lib/data-stacks/refiners/refiners.ts
+       │              (pipelines Glue : src/pipelines/)
        ▼
 ┌──────────────┐   Raffineurs R (Lambda) : segmentation, objets saillants,
 │ aws-refiners │   indices de saillance, événements/storylines, scores
@@ -43,8 +44,9 @@ site ; Jules (`julespiral`) = illustrations ; Adrien (`AdriClout`) = modules
    — qui produit quelle table, avec quelles colonnes.
 3. [Horaire des raffineurs](https://ellipse.science/vitrine-showcase.github.io/docs/horaire-refiners-2026.html)
    — quand chaque étage tourne.
-4. Le fichier d'agents du repo où tu travailles (`AGENTS.md` /
-   `.claude/CLAUDE.md`) — règles dures, commandes, pièges.
+4. Le fichier d'agents du repo où tu travailles — règles dures, commandes,
+   pièges : `AGENTS.md` (vitrine, aws-infra) ou `.claude/CLAUDE.md`
+   (aws-refiners).
 
 ## Les 5 règles de survie (transversales aux 3 repos)
 
