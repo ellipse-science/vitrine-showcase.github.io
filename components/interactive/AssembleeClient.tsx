@@ -87,9 +87,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
           </div>
         )}
       </section>
-      <div className="partis-footer">
-        <span></span>
-      </div>
+      <div className="module-last-updated">{view.lastUpdated}</div>
     </>
   );
 }

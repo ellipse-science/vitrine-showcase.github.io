@@ -6,8 +6,10 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { cache } from "react";
 
 import { editionLabel } from "@/lib/editions";
+import { formatDateFr, lastUpdatedLabel } from "@/lib/dates";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -99,18 +101,6 @@ const MEDIA_NAMES: Record<string, string> = {
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
-
-const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-
-function formatDateFr(dateStr: string): string {
-  const parts = dateStr.split("-").map(Number);
-  const year = parts[0] ?? 2026;
-  const month = parts[1] ?? 1;
-  const day = parts[2] ?? 1;
-  const d = new Date(year, month - 1, day);
-  return `${DAYS_FR[d.getDay()]} ${day} ${MONTHS_FR[month - 1]} ${year}`;
-}
 
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
 // autant de « Très faible » que d'« Extrême », le gros au centre (courbe en
@@ -236,6 +226,8 @@ export type TreemapIssueTile = {
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
   dateLabel: string;
+  /** « Dernière mise à jour : mercredi 8 juillet 2026 » — table journalière, pas d'heure. */
+  lastUpdated: string;
 };
 
 export type TreemapAllPeriods = {
@@ -246,6 +238,10 @@ export type TreemapAllPeriods = {
 
 export type HeadlineData = {
   dateLabel: string;
+  /** « Dernière mise à jour : mercredi 8 juillet 2026, 16 h » — date + fin du
+   *  bloc 4h de la donnée la plus récente (cf. lib/dates.ts). Affiché en bas à
+   *  droite des modules Une des unes ET Deux solitudes (même table). */
+  lastUpdated: string;
   snapshotInterval: string;
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
@@ -261,7 +257,10 @@ export type HeadlineData = {
   treemapMobile: (TreemapTile & { relWidth: number })[];
 };
 
-export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
+// cache() : le snapshot est lu par plusieurs consommateurs du même rendu
+// (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
+// lecture/parse par build au lieu d'une par appel.
+export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -296,6 +295,12 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
+  // Fin du bloc 4h (« 12-16 » → 16 h) : granularité horaire propre à cette table.
+  const blockEnd = parseInt((snapshotInterval ?? "").split("-")[1] ?? "", 10);
+  const lastUpdated = lastUpdatedLabel(
+    sorted[0].date_montreal_tz ?? sorted[0].date_utc,
+    Number.isNaN(blockEnd) ? null : blockEnd,
+  );
 
   const withTitles = latest
     .filter((e) => e.title)
@@ -476,8 +481,8 @@ export async function loadHeadlineEvents(): Promise<HeadlineData | null> {
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
-}
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+});
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
 const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
@@ -575,6 +580,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
     if (!latest) return null;
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
+    const lastUpdated = lastUpdatedLabel(dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
     const latestTag = (latest.tag as string) ?? "";
@@ -606,7 +612,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       }
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
     });
-    return { tiles, dateLabel };
+    return { tiles, dateLabel, lastUpdated };
   }
 
   const day = buildPeriodData(dayRows);

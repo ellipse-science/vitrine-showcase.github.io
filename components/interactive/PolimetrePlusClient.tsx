@@ -358,6 +358,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           </div>
         </div>
       </div>
+      <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
 }

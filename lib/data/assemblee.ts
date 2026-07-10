@@ -9,6 +9,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PARTY_KEYS, PARTY_LABELS, type PartyKey } from "@/lib/data/parties";
+import { lastUpdatedLabel } from "@/lib/dates";
 
 const TONE_AMPLIFY = 10;
 
@@ -99,6 +100,10 @@ export type PeriodView = {
   period: PeriodKey;
   tabLabel: string;
   subtitle: string;
+  /** « Dernière mise à jour : jeudi 4 juin 2026 » — date de la dernière séance
+   *  (period_end_date). NB : la publication des transcriptions peut prendre
+   *  plusieurs semaines (cf. SourceTip) — la date reflète la séance, pas le fetch. */
+  lastUpdated: string;
   rows: AssembleeRow[];
 };
 
@@ -237,6 +242,7 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
     period,
     tabLabel: PERIOD_TAB_LABELS[period],
     subtitle: buildSubtitle(period, endDate),
+    lastUpdated: lastUpdatedLabel(endDate),
     rows: builtRows,
   };
 }

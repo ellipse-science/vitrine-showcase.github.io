@@ -2,21 +2,32 @@
 
 import { useEffect } from "react";
 
-import { editionLabel, editionSlot } from "@/lib/editions";
+import { editionSlot } from "@/lib/editions";
 
 // Live countdown to the next data-refresh slot.
 //
-// Updates the #cd-big text inside the pulse-band, toggles .past / .current
-// classes on each .pulse-icon, et écrit le nom de l'édition courante. Runs
-// every second.
+// Updates the #cd-big text inside the pulse-band and toggles .past / .current
+// classes on each .pulse-icon every second (both driven by wall-clock time —
+// they describe the *refresh schedule*, not the content).
+//
+// The edition NAME (#edition-name), au contraire, reflète le bloc des DONNÉES
+// affichées (prop `edition` = periodLabel du serveur) — sinon l'en-tête
+// contredit la section « Les Unes … » quand les données ont du retard (#136).
 //
 // The DOM nodes it targets live inside the RawMaquette "top" chunk; this
 // component just attaches behavior, it renders nothing.
 
 const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
 
-export function PulseCountdown() {
+export function PulseCountdown({ edition }: { edition?: string | null }) {
   useEffect(() => {
+    // Édition = celle des données affichées (statique), écrite une fois.
+    // Fallback neutre quand les données sont indisponibles (edition null) : ne
+    // PAS laisser le texte par défaut de la maquette (« Édition de la soirée »),
+    // qui serait factuellement faux.
+    const edEl = document.getElementById("edition-name");
+    if (edEl) edEl.textContent = edition ? `Édition ${edition}` : "Édition du jour";
+
     function tick() {
       const now = new Date();
       const h = now.getHours();
@@ -40,16 +51,12 @@ export function PulseCountdown() {
         if (i < slot) el.classList.add("past");
         else if (i === slot) el.classList.add("current");
       });
-
-      // Édition du moment : nom de la période courante (nuit → soirée).
-      const edEl = document.getElementById("edition-name");
-      if (edEl) edEl.textContent = `Édition ${editionLabel(h)}`;
     }
 
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [edition]);
 
   return null;
 }

@@ -15,6 +15,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { lastUpdatedLabel } from "@/lib/dates";
+
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
 
@@ -113,6 +115,8 @@ export type RangeView = {
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
   lastDate: string; // ISO date de la dernière donnée disponible
+  /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
+  lastUpdated: string;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -356,6 +360,7 @@ export async function loadParties(): Promise<PartiesData | null> {
 
     return {
       lastDate,
+      lastUpdated: lastUpdatedLabel(lastDate),
       ranges: {
         today: buildRangeView(stats, "today"),
         week:  buildRangeView(stats, "week"),
