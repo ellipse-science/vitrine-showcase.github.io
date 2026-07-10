@@ -4,10 +4,11 @@ Universal, tool-agnostic rules for any agent or contributor touching this repo. 
 
 ## What this repo is
 
-Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by CLESSN (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted free on **GitHub Pages**. No AWS infrastructure in this repo.
+Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by the CAPP — Centre d'analyse des politiques publiques (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted free on **GitHub Pages**. No AWS infrastructure in this repo.
 
 ## Stack
 
+- **Node.js 22** — pinned in `.nvmrc` and used by CI (`npm ci`). Run `nvm use` (or `fnm`/`asdf`) before installing.
 - **Next.js 16** (App Router), static export (`output: 'export'`) → a plain `out/` directory of HTML/CSS/JS
 - **React 19** Server Components for the data-bound sections; Client Components for interactive bits (tabs, countdown)
 - **TypeScript strict**
@@ -21,7 +22,10 @@ npm install        # if node_modules missing
 npm run dev        # http://localhost:3000
 npm run build      # next build → out/, then scripts/postbuild.mjs copies /presentation
 npm run type-check # tsc --noEmit
+npm run test       # vitest — unit tests on the data loaders (tests/*.test.ts)
 ```
+
+CI (`ci.yml`) runs **type-check + build + `npm run test`** on every PR; run all three locally before pushing.
 
 ## Branches, PRs, deployment
 
@@ -45,7 +49,7 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 
 - **PR sans label semver:*** → aucun bump. Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
 - **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
-- **PRÉREQUIS (une seule fois)** : le ruleset de `main` exige une PR pour toute modif, mais le workflow pousse le bump directement. `github-actions[bot]` doit donc être dans la **bypass-list du ruleset** (Settings → Rules → `main` → *Bypass list* → add *GitHub Actions*). Sans ça, le `git push origin main` du bump est refusé. Les trois labels `semver:*` doivent aussi exister dans le repo.
+- **Comment le bump contourne la protection de `main`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
 
 ## Hard rules (non-negotiable)
 
@@ -53,6 +57,7 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 2. **Schedule times are Montreal local (EDT/EST), not UTC** — everywhere schedules appear (here and in `aws-infra`).
 3. **No AWS deployment path in this repo.** Do not add `aws-actions/configure-aws-credentials`, S3/CloudFront secrets, or any workflow that pushes `out/` to S3 or invalidates a CloudFront distribution. AWS credentials in this repo are **read-only data fetching** (`refresh-data.yml`) only. The site is on GitHub Pages; Cloudflare Pages is a separate, deferred decision ([`docs/cloudflare-pages-migration.md`](./docs/cloudflare-pages-migration.md)).
 4. **Never commit credentials.** Secrets live in environment variables / GitHub Actions secrets, never in source.
+5. **FAIT vs VISION — jamais d'intention au présent de l'indicatif.** Toute doc (md, HTML, Notion) qui décrit le système doit distinguer explicitement ce qui **EST implémenté** (vérifié dans le code, avec date d'audit) de ce qui est **PLANIFIÉ** (vision/spec, avec marqueur d'état : VISION / EN COURS / LIVRÉ). Ne jamais écrire « le raffineur utilise X » tant que X n'est pas dans le code. Une intention documentée au présent devient un « fait » pour le prochain agent IA — c'est ce qui a causé les faux diagnostics de juillet 2026 (réforme des horaires lue comme complète, GLiNER décrit comme livré). Corollaire : la source de vérité du pipeline = **le code des 3 repos** (`vitrine` + `aws-refiners` + `aws-infra`) ; toute doc rédigée à partir d'un seul repo est suspecte et doit être auditée contre les deux autres avant d'être crue.
 
 ## Module naming + signalement labels (triage)
 
@@ -78,6 +83,8 @@ Reports that fall outside a module — the general site chrome and standalone pa
 | Page Abonnement | `/abonnement/` | `page-abonnement` |
 
 **How the triage works.** Each zone carries a `data-section` attribute in the DOM. `IssueReporter` walks up from the right-clicked element to the nearest `data-section`, sends that string in the dispatch payload, and `.github/workflows/report-issue.yml` maps it to the label above via the **`SECTION_LABELS` table** (the single place to edit when adding/renaming a zone). Labels are created automatically on first use. Missing labels are non-fatal — the issue is still created with `signalement-utilisateur`.
+
+**One module = one top-level section (hard convention).** Every module is its own component under `components/sections/` and gets its own wrapper in `app/page.tsx` carrying **both** the URL anchor `id` (deep links + `ShareButton`, cf. PR #199) and the `data-section` (signalement) — `#une-des-unes`, `#deux-solitudes`, `#partis-et-couverture`, `#enjeux-saillants`, `#assemblee-nationale`, `#polimetre-plus`. Modules 1 and 2 read the same table (`headline_events_4h`) but are **separate sections** (`UneDesUnesSection` / `DeuxSolitudesSection`) — never nest one module inside another.
 
 > **Méthodologie is a static HTML page** (`public/methodologie/`), so the React `IssueReporter` does not run there; `page-methodologie` is reserved for when reporting is wired into that page. All other zones are reportable.
 

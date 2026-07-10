@@ -2140,28 +2140,13 @@
     align-items: stretch;
     gap: 10px;
   }
-  .partis-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-top: 14px;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .partis-footer .marker-hint {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-  }
-  .partis-footer .marker-hint .arrow {
-    color: var(--ink);
-    font-size: 13px;
-    margin-right: 3px;
-  }
-  .partis-footer .data-link { margin-top: 0; }
-  .partis-last-date {
+  /* Indicateur uniforme « Dernière mise à jour : … » — bas-droite de CHAQUE
+     module, branché sur le timestamp de sa table (cf. lib/dates.ts). Même
+     police / taille / couleur partout ; il gèle si le pipeline plante. */
+  .module-last-updated {
+    display: block;
+    margin-top: 18px;
+    text-align: right;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.2em;

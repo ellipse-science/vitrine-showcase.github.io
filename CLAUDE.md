@@ -17,6 +17,7 @@
 | Data schemas: `issues_score_day`, `headline_events_4h`, ISSUE_KEYS | [`docs/reference/data-schemas.md`](./docs/reference/data-schemas.md) |
 | AWS backend: refiner lifecycle, deploy, schedules, active refiners, Athena | [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md) |
 | Procedures (skill candidates): add a section, diagnose stale data, modify/schedule a refiner, edit static HTML | [`docs/reference/procedures.md`](./docs/reference/procedures.md) |
+| Automated guardrails: the `PreToolUse` hook (`.claude/hooks/guard.py`) that blocks `public/data/` edits + AWS deploy paths | [`docs/reference/guardrails.md`](./docs/reference/guardrails.md) |
 | Visual / editorial design language | [`design_language.md`](./design_language.md) |
 | Long-form vision & architecture references | [`llm_context/`](./llm_context/) |
 | Design specs (constitution-style decisions, alternatives rejected, acceptance criteria) | [`docs/superpowers/specs/`](./docs/superpowers/specs/) |

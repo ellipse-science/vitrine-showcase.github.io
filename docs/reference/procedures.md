@@ -55,4 +55,4 @@ Use `lib/data/parties.ts` + `components/sections/PartisCouvertureSection.tsx` + 
 
 ## How to edit a static (non-data) section
 
-The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live as raw HTML in `static-content/{top,middle,bottom}.html`. Edit them as plain HTML — they're inlined verbatim via `dangerouslySetInnerHTML`. No JSX gotchas. To make a chunk interactive, JSX-convert it into a proper component (move the markup into a `.tsx`, replace `class` → `className`, etc.) and remove the chunk from `static-content/`.
+The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live as raw HTML in `static-content/{top,bottom,polimeter_plus}.html`. Edit them as plain HTML — they're inlined verbatim via `dangerouslySetInnerHTML`. No JSX gotchas. To make a chunk interactive, JSX-convert it into a proper component (move the markup into a `.tsx`, replace `class` → `className`, etc.) and remove the chunk from `static-content/`.

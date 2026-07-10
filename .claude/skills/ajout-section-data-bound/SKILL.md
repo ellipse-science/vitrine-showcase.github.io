@@ -1,6 +1,6 @@
 ---
 name: ajout-section-data-bound
-description: Ajoute une nouvelle section data-bound au site Vitrine (afficher une table Athena sur la page). À utiliser quand on demande d'ajouter ou d'afficher une section, un module ou un bloc alimenté par des données (scores de partis, enjeux, etc.), de brancher une nouvelle table, ou d'activer une table dormante de scripts/tables.json. Déclencheurs : « ajoute une section », « affiche la table X », « nouveau module data », « branche les données ».
+description: "Ajoute une nouvelle section data-bound au site Vitrine (afficher une table Athena sur la page). À utiliser quand on demande d'ajouter ou d'afficher une section, un module ou un bloc alimenté par des données (scores de partis, enjeux, etc.), de brancher une nouvelle table, ou d'activer une table dormante de scripts/tables.json. Déclencheurs : « ajoute une section », « affiche la table X », « nouveau module data », « branche les données »."
 ---
 
 # Ajouter une section data-bound

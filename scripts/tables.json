@@ -18,7 +18,7 @@
                 "pass"
             ],
             "enabled": true,
-            "used_by": "public/js/partis-couverture.js"
+            "used_by": "lib/data/parties.ts + components/sections/PartisCouvertureSection.tsx"
         },
         {
             "name": "agora_decideurs_qc",
@@ -48,7 +48,7 @@
                 "editorial_angle"
             ],
             "enabled": true,
-            "used_by": "public/js/assemblee-qc.js"
+            "used_by": "lib/data/assemblee.ts + components/sections/AssembleeSection.tsx"
         },
         {
             "name": "federal_parties_score_day",
@@ -190,7 +190,7 @@
                 "tag"
             ],
             "enabled": true,
-            "used_by": "public/js/enjeux.js"
+            "used_by": "lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx"
         },
         {
             "name": "issues_score_week",
@@ -215,7 +215,7 @@
                 "tag"
             ],
             "enabled": true,
-            "used_by": "public/js/enjeux.js"
+            "used_by": "lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx"
         },
         {
             "name": "issues_score_month",
@@ -240,7 +240,7 @@
                 "tag"
             ],
             "enabled": true,
-            "used_by": "public/js/enjeux.js"
+            "used_by": "lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx"
         },
         {
             "name": "reflet_day",
@@ -340,7 +340,7 @@
             "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
             "filter": "headline_events_3day",
             "enabled": true,
-            "used_by": "public/js/trois-unes.js"
+            "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx"
         },
         {
             "name": "polimetre_plus",

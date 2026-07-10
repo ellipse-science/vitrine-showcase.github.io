@@ -2,20 +2,30 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 import { PartisCouvertureSection } from "@/components/sections/PartisCouvertureSection";
 import { AssembleeSection } from "@/components/sections/AssembleeSection";
 import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
+import { DeuxSolitudesSection } from "@/components/sections/DeuxSolitudesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
+import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 
-export default function Home() {
+export default async function Home() {
+  // L'en-tête affiche l'édition du BLOC des données de la Une (pas l'heure
+  // murale), pour rester cohérent avec la section « Les Unes … » (#136).
+  const headline = await loadHeadlineEvents();
+
   return (
     <div className="page">
       <div data-section="En-tête">
         <RawMaquette chunk="top" />
       </div>
 
-      <div data-section="Une des unes">
+      <div id="une-des-unes" data-section="Une des unes">
         <UneDesUnesSection />
+      </div>
+
+      <div id="deux-solitudes" data-section="Deux solitudes">
+        <DeuxSolitudesSection />
       </div>
 
       <div id="partis-et-couverture" data-section="Partis et couverture">
@@ -38,7 +48,7 @@ export default function Home() {
         <RawMaquette chunk="bottom" />
       </div>
 
-      <PulseCountdown />
+      <PulseCountdown edition={headline?.periodLabel ?? null} />
       <IssueReporter />
     </div>
   );

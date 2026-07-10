@@ -136,72 +136,6 @@ function SideUne({ event }: { event: UneEvent }) {
   );
 }
 
-function DeuxSolitudes({
-  qcPos,
-  rocPos,
-  divPct,
-  stories,
-}: {
-  qcPos: number;
-  rocPos: number;
-  divPct: number;
-  stories: SolitudeStory[];
-}) {
-  return (
-    <section
-      id="deux-solitudes"
-      className="solitudes"
-      data-section="Deux solitudes"
-      style={{ "--qc-pos": `${qcPos}%`, "--roc-pos": `${rocPos}%` } as React.CSSProperties}
-    >
-      <div className="sol-title-row">
-        <h3 className="sol-title">Deux solitudes?</h3>
-        <ShareButton title={`Deux solitudes — ${divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
-      </div>
-      <div className="sol-viz">
-        <div className="sol-axis" />
-        <div className="sol-symbol qc">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="glyph fleur" src="images/fleur-de-lys.svg" alt="Québec" aria-label="Québec" />
-          <span className="caption">Québec</span>
-        </div>
-        <div className="sol-symbol roc">
-          <span className="glyph maple" aria-label="Canada">🍁</span>
-          <span className="caption">Canada</span>
-        </div>
-      </div>
-      <div className="sol-stat">
-        <span className="stat-big">{divPct} %</span>
-        <span className="stat-label">de divergence aujourd&apos;hui</span>
-      </div>
-      <p className="sol-explain">
-        Les trois nouvelles dont la couverture diffère le plus entre les médias québécois et canadiens.
-      </p>
-      <div className="sol-stories">
-        <div className="sol-stories-header">
-          <span className="qc-col">Importance au Québec</span>
-          <span className="ca-col">Importance au Canada</span>
-        </div>
-        {stories.map((s, i) => (
-          <div key={i} className="sol-story">
-            <div className="story-label">{s.label}</div>
-            <div className="story-bars">
-              <div className="bar-track qc">
-                <div className="bar-fill" style={{ width: `${s.qcWidth}%` }} />
-                {s.qcZero && <span className="zero-mark">—</span>}
-              </div>
-              <div className="bar-track ca">
-                <div className="bar-fill" style={{ width: `${s.caWidth}%` }} />
-                {s.caZero && <span className="zero-mark">—</span>}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export async function UneDesUnesSection() {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
@@ -228,9 +162,11 @@ export async function UneDesUnesSection() {
   const breaking = main?.saillanceRank === 6;
   const editionLabel = data.dateLabel;
 
+  // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
+  // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
+  // section top-level distincte (DeuxSolitudesSection).
   return (
-    <>
-      <div id="une-des-unes" className={`unes-jour${breaking ? " breaking" : ""}`}>
+    <div className={`unes-jour${breaking ? " breaking" : ""}`}>
         <div className="section-label">
           <span className="section-title-wrap">
             <span className="section-title">Les Unes {data.periodLabel}</span>
@@ -254,14 +190,7 @@ export async function UneDesUnesSection() {
             {sideRight && <SideUne event={sideRight} />}
           </section>
         )}
-      </div>
-
-      <DeuxSolitudes
-        qcPos={data.solitudesQcPos}
-        rocPos={data.solitudesRocPos}
-        divPct={data.solitudesDivPct}
-        stories={data.solitudesStories}
-      />
-    </>
+        <div className="module-last-updated">{data.lastUpdated}</div>
+    </div>
   );
 }
