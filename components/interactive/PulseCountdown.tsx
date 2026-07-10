@@ -2,37 +2,42 @@
 
 import { useEffect } from "react";
 
-import { editionSlot } from "@/lib/editions";
+import { editionLabel, editionSlot } from "@/lib/editions";
 
 // Live countdown to the next data-refresh slot.
 //
-// Updates the #cd-big text inside the pulse-band and toggles .past / .current
-// classes on each .pulse-icon every second (both driven by wall-clock time —
-// they describe the *refresh schedule*, not the content).
-//
-// The edition NAME (#edition-name), au contraire, reflète le bloc des DONNÉES
-// affichées (prop `edition` = periodLabel du serveur) — sinon l'en-tête
-// contredit la section « Les Unes … » quand les données ont du retard (#136).
+// TOUT ici est piloté par l'heure murale : le compte à rebours (#cd-big), la
+// bande céleste (.pulse-icon) ET le nom d'édition (#edition-name). L'édition
+// est celle du SITE — le site entier se rafraîchit 6×/jour — pas celle d'un
+// module (décision Adrien 2026-07-09) : elle doit toujours « fitter » avec le
+// soleil/la lune allumés juste au-dessus. La fraîcheur réelle de chaque module
+// est affichée module par module (« Dernière mise à jour du module : … »).
 //
 // The DOM nodes it targets live inside the RawMaquette "top" chunk; this
 // component just attaches behavior, it renders nothing.
 
 const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
 
-export function PulseCountdown({ edition }: { edition?: string | null }) {
-  useEffect(() => {
-    // Édition = celle des données affichées (statique), écrite une fois.
-    // Fallback neutre quand les données sont indisponibles (edition null) : ne
-    // PAS laisser le texte par défaut de la maquette (« Édition de la soirée »),
-    // qui serait factuellement faux.
-    const edEl = document.getElementById("edition-name");
-    if (edEl) edEl.textContent = edition ? `Édition ${edition}` : "Édition du jour";
+// Heure de MONTRÉAL, pas celle du navigateur : les blocs d'édition et l'horaire
+// de rafraîchissement sont définis en heure de Montréal (cf. lib/editions.ts,
+// AGENTS.md règle #2). Un visiteur dans un autre fuseau verrait sinon une
+// édition, une bande céleste et un compte à rebours faux (revue Copilot #214).
+function montrealTimeParts(): { h: number; m: number; s: number } {
+  const parts = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "America/Toronto",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { h: get("hour"), m: get("minute"), s: get("second") };
+}
 
+export function PulseCountdown() {
+  useEffect(() => {
     function tick() {
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
-      const s = now.getSeconds();
+      const { h, m, s } = montrealTimeParts();
 
       let nextH = UPDATE_HOURS.find((x) => x > h);
       const rolledOver = nextH === undefined;
@@ -51,12 +56,16 @@ export function PulseCountdown({ edition }: { edition?: string | null }) {
         if (i < slot) el.classList.add("past");
         else if (i === slot) el.classList.add("current");
       });
+
+      // Édition du site = bloc horaire courant (noms officiels, lib/editions.ts).
+      const edEl = document.getElementById("edition-name");
+      if (edEl) edEl.textContent = `Édition ${editionLabel(h)}`;
     }
 
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [edition]);
+  }, []);
 
   return null;
 }
