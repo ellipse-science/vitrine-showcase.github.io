@@ -555,13 +555,13 @@
           <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30 %</td></tr>
           <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30 %</td></tr>
           <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15 %</td></tr>
-          <tr><td>Extrême</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5 %</td></tr>
+          <tr><td>Exceptionnelle</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5 %</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Extrême », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalibrés en continu sur l'ensemble de la donnée disponible ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi #122).</p>
+    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalibrés en continu sur l'ensemble de la donnée disponible ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi #122).</p>
     <figure class="metho-figure">
-      <img src="saillance-niveaux.png" alt="Distribution du score de saillance québécois avec les six bandes de percentiles, de Très faible à Extrême.">
+      <img src="saillance-niveaux.png" alt="Distribution du score de saillance québécois découpée en six bandes de percentiles, de la plus faible à la plus élevée.">
       <figcaption>Distribution réelle des scores de saillance (<code>score_qc</code>) de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
     </figure>
   </section>
@@ -573,14 +573,14 @@
     <p class="metho-body">Ce module identifie les événements qui dominent l'agenda médiatique québécois au moment de la consultation, en distinguant l'importance relative accordée par les médias francophones québécois et les médias canadiens anglophones.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le raffineur <code>radar-headlines-issues</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
+    <p class="metho-body">Le raffineur <code>radar-event-salience</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
 
     <h3>Algorithme — La Une des Unes</h3>
     <ol class="metho-list">
       <li>Les événements du dernier bloc de quatre heures sont dédupliqués par <code>event_id</code> (priorité à la version ciblant le Québec).</li>
       <li>Les événements de source exclusivement américaine sont exclus.</li>
       <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
-      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Extrême ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
+      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
       <li>La byline liste les médias couvrant l'événement et signale ceux qui l'ignorent.</li>
     </ol>
 

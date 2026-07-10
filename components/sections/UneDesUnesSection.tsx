@@ -156,7 +156,7 @@ export async function UneDesUnesSection() {
 
   // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
   // critique de saillance, façon vrais sites de médias (demande Shannon, Figma).
-  // Choix assumé : le seuil est « Extrême » = rang 6 = p95, et non p99 comme le
+  // Choix assumé : le seuil est « Exceptionnelle » = rang 6 = p95, et non p99 comme le
   // suggéraient #124/#122, pour rester cohérent avec les 6 bandes symétriques de
   // #35. Le noir se déclenche donc un peu plus souvent, c'est voulu. Cf. #35.
   const breaking = main?.saillanceRank === 6;
