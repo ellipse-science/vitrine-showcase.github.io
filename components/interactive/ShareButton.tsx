@@ -4,11 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 
 interface ShareButtonProps {
   title: string
-  // Id de la section ciblée (ex. "partis-et-couverture") — ajouté en fragment
-  // d'URL pour que le lien partagé amène directement au module, pas juste à
-  // l'accueil.
+  // Slug du module partagé (ex. "partis-et-couverture"), aussi utilisé comme
+  // ancre d'accueil (#199). Pointe vers sa mini-page /partage/<slug>/, qui
+  // porte ses propres balises OG/Twitter puis redirige vers #<slug> — les
+  // réseaux ignorent le fragment d'URL pour construire l'aperçu, donc
+  // partager l'URL brute de la page montrerait toujours la carte globale du
+  // site plutôt que celle du module (#210).
   anchor?: string
 }
+
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
 // Réseaux ouverts en repli quand le navigateur ne supporte pas
 // navigator.share() (la plupart des navigateurs desktop). URL de partage
@@ -53,11 +58,12 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
     }
   }
 
-  // Fragment d'URL pour ramener directement au module partagé, plutôt qu'à
-  // l'accueil.
+  // Mini-page /partage/<anchor>/ (carte OG dédiée + redirection vers
+  // #<anchor>) plutôt que l'URL à fragment, ignorée par les réseaux sociaux
+  // pour l'aperçu de lien (#210).
   const shareUrl = () => {
-    const { origin, pathname, search } = window.location
-    return anchor ? `${origin}${pathname}${search}#${anchor}` : window.location.href
+    if (!anchor) return window.location.href
+    return `${window.location.origin}${basePath}/partage/${anchor}/`
   }
 
   const handleClick = async () => {

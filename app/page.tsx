@@ -7,13 +7,8 @@ import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { PulseCountdown } from "@/components/interactive/PulseCountdown";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
-import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 
-export default async function Home() {
-  // L'en-tête affiche l'édition du BLOC des données de la Une (pas l'heure
-  // murale), pour rester cohérent avec la section « Les Unes … » (#136).
-  const headline = await loadHeadlineEvents();
-
+export default function Home() {
   return (
     <div className="page">
       <div data-section="En-tête">
@@ -48,7 +43,7 @@ export default async function Home() {
         <RawMaquette chunk="bottom" />
       </div>
 
-      <PulseCountdown edition={headline?.periodLabel ?? null} />
+      <PulseCountdown />
       <IssueReporter />
     </div>
   );
