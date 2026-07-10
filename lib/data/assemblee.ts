@@ -261,3 +261,13 @@ export async function loadAssemblee(): Promise<AssembleeData | null> {
     },
   };
 }
+
+// Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
+export const __test__ = {
+  fmtDateFr,
+  fmtWords,
+  computeRichnessLevels,
+  buildEnjeuStack,
+  buildSubtitle,
+  buildPeriodView,
+};

@@ -38,5 +38,7 @@ __pycache__/
 # Local build artifacts and tooling
 /build/
 /next-site/
-/.claude/
 yarn.lock
+
+# Agent config: share skills/hooks/settings, keep personal settings local
+/.claude/settings.local.json
