@@ -2,7 +2,7 @@
 """Génère l'illustration pédagogique des niveaux de saillance (#35).
 
 Histogramme de `score_qc` (échelle log) avec les 6 bandes de percentiles
-(Très faible / Faible / Modérée / Élevée / Très élevée / Extrême = 5/15/30/30/15/5 %).
+(Très faible / Faible / Modérée / Élevée / Très élevée / Exceptionnelle = 5/15/30/30/15/5 %).
 Sert à la page méthodologie (§03) ET à l'équipe.
 
 DONNÉES — les valeurs de `score_qc` viennent de la table Athena DEV
@@ -34,7 +34,7 @@ OUT = [
 # Seuils recalibrés (2026-06-03, 406 Unes) = SAL_QC_THRESHOLDS côté frontend.
 TH = [5, 10, 19, 36, 71]                  # p5 / p20 / p50 / p80 / p95
 PLABELS = ["p5", "p20", "p50", "p80", "p95"]
-BANDS = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Extrême"]
+BANDS = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Exceptionnelle"]
 PCTS = ["5 %", "15 %", "30 %", "30 %", "15 %", "5 %"]
 # Sable (calme) -> cordovan (chaud) : la saillance « chauffe » vers la droite.
 COLORS = ["#E4DCC6", "#DCCBA2", "#D2B488", "#C99A76", "#BE7C6A", "#A85A52"]
@@ -105,7 +105,7 @@ fig.text(0.055, 0.95, "Comment on calcule les niveaux de saillance",
          fontsize=25, fontweight="bold", color=INK, ha="left", va="top")
 fig.text(0.055, 0.895,
          "Chaque Une reçoit un score de saillance (score_qc). On le situe dans la distribution de TOUTES les Unes\n"
-         "récentes : des bandes par percentiles, autant de « Très faible » que d'« Extrême », le gros au centre (cloche en échelle log).",
+         "récentes : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », le gros au centre (cloche en échelle log).",
          fontsize=13, color="#5B544A", ha="left", va="top")
 fig.text(0.055, 0.028,
          f"n = {n} Unes depuis le 14 mai 2026 (toute la donnée dispo, fenêtre qui s'étend).  "
