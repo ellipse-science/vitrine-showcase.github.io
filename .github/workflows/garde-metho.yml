@@ -1,0 +1,39 @@
+# Garde-fou : la page Méthodologie ne doit jamais être périmée.
+# Si la PR touche des fichiers qui peuvent changer ce que la métho décrit
+# (calculs, seuils, tables, graphiques), son corps doit contenir la section
+# « Impact méthodologie » du template avec UNE case cochée.
+# Le check se relance quand le corps de la PR est édité (type `edited`).
+name: garde-metho
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  impact-methodologie:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la déclaration d'impact méthodologie
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          files=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')
+          echo "Fichiers modifiés :"
+          echo "$files"
+          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|public/methodologie/)'; then
+            echo "Aucun fichier sensible métho — rien à déclarer."
+            exit 0
+          fi
+          if printf '%s' "$PR_BODY" | grep -q "Impact méthodologie" && \
+             printf '%s' "$PR_BODY" | grep -qE -- '- \[[xX]\] (Aucun impact métho|Métho mise à jour|PR métho séparée)'; then
+            echo "Déclaration d'impact métho présente — OK."
+            exit 0
+          fi
+          echo "::error::Cette PR touche des fichiers qui peuvent affecter la page Méthodologie (lib/, scripts/, components/sections/, public/methodologie/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Guide : .claude/skills/synchro-methodologie/SKILL.md"
+          exit 1
