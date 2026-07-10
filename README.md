@@ -4,6 +4,8 @@ A media-focused data showcase by the [CAPP](https://capp-ulaval.ca/) — Centre 
 
 **Live:** https://ellipse.science/vitrine-showcase.github.io/
 
+**Nouveau dans l'équipe ?** Commence par [ONBOARDING.md](./ONBOARDING.md) — la carte des 3 repos, les règles de survie et le workflow de PR.
+
 ## Stack
 
 - **Next.js 16** (App Router) with **static export** — produces a plain `out/` directory served by GitHub Pages
