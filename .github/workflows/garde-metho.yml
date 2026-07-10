@@ -1,4 +1,5 @@
-# Garde-fou : la page Méthodologie ne doit jamais être périmée.
+# Garde-fou : la page Méthodologie et les docs vivantes du pipeline
+# (public/docs/*.html) ne doivent jamais être périmées.
 # Si la PR touche des fichiers qui peuvent changer ce que la métho décrit
 # (calculs, seuils, tables, graphiques), son corps doit contenir la section
 # « Impact méthodologie » du template avec UNE case cochée.
@@ -26,7 +27,7 @@ jobs:
           files=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')
           echo "Fichiers modifiés :"
           echo "$files"
-          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|public/methodologie/)'; then
+          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|public/methodologie/|public/docs/)'; then
             echo "Aucun fichier sensible métho — rien à déclarer."
             exit 0
           fi
@@ -39,5 +40,5 @@ jobs:
             echo "::error::Section « Impact méthodologie » : $checked cases cochées — les 3 options sont mutuellement exclusives, n'en cochez qu'UNE."
             exit 1
           fi
-          echo "::error::Cette PR touche des fichiers qui peuvent affecter la page Méthodologie (lib/, scripts/, components/sections/, public/methodologie/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Guide : .claude/skills/synchro-methodologie/SKILL.md"
+          echo "::error::Cette PR touche des fichiers qui peuvent affecter la page Méthodologie ou les docs vivantes du pipeline (lib/, scripts/, components/sections/, public/methodologie/, public/docs/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Guide : .claude/skills/synchro-methodologie/SKILL.md"
           exit 1
