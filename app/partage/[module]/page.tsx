@@ -3,14 +3,10 @@ import { notFound } from "next/navigation";
 
 import { SHARE_MODULE_SLUGS, getShareModuleContent, isShareModuleSlug } from "@/lib/shareModules";
 
-// basePath/origin multi-hôte — même logique que next.config.ts / #209 :
-//   - GitHub Pages : origin https://ellipse.science + basePath /vitrine-showcase.github.io
-//   - Cloudflare Pages : NEXT_PUBLIC_SITE_ORIGIN=https://vitrinedemocratique.com + basePath ""
+// basePath multi-hôte — même logique que next.config.ts / app/layout.tsx :
+//   - GitHub Pages : NEXT_PUBLIC_BASE_PATH=/vitrine-showcase.github.io
+//   - Cloudflare Pages / dev : ""
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://ellipse.science";
-// Sans metadataBase, Next résout les images OG relatives (dont
-// opengraph-image.tsx) contre localhost:3000 même en build de prod.
-const metadataBase = new URL(`${basePath}/`, siteOrigin);
 
 export function generateStaticParams() {
   return SHARE_MODULE_SLUGS.map((module) => ({ module }));
@@ -24,7 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { title, description } = await getShareModuleContent(module);
 
   return {
-    metadataBase,
+    // metadataBase est hérité de app/layout.tsx (#209) — pas besoin de le
+    // redéfinir ici pour résoudre l'URL absolue de opengraph-image.tsx.
     title: `${title} — La Vitrine démocratique`,
     description,
     openGraph: {
