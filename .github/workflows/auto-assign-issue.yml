@@ -1,0 +1,77 @@
+name: Auto-assign issues by module
+
+# Assigne automatiquement chaque issue à son ou ses propriétaires selon le label
+# de module, dès qu'elle est ouverte ou labellisée (le label est posé par le
+# reporter du site via report-issue.yml, ou à la main sur GitHub).
+#
+# ── OWNERSHIP VIVANT ──────────────────────────────────────────────────────────
+# L'ownership change avec l'équipe. La SEULE chose à éditer = la table OWNERS
+# (et les pools habillage) dans le script ci-dessous. Garder synchro avec
+# AGENTS.md § Module naming et la mémoire de triage.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign owner(s) from module label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // ── Table déclarative (label → propriétaires GitHub) ──────────────
+            const OWNERS = {
+              'module-1-unes-des-unes':      ['AdriClout'],
+              'module-2-solitudes':          ['AdriClout'],
+              'module-3-partis-couverture':  ['etienneprx', 'julespiral'],
+              'module-4-enjeux-saillants':   ['laurenceomfoisy'],
+              'module-5-assemblee-nationale':['etienneprx'],
+              'module-6-polimetre':          ['SkelAlex'],
+            };
+            // Habillage = un peu tout le monde → tirage stable dans ce pool.
+            const HABILLAGE_LABELS = ['site-header', 'site-footer', 'page-methodologie', 'page-apropos', 'page-abonnement'];
+            const HABILLAGE_POOL = ['AdriClout', 'capel201', 'etienneprx', 'julespiral'];
+
+            const issue = context.payload.issue;
+            if (!issue) return;
+
+            // Ne jamais écraser une assignation manuelle (le triage humain gagne).
+            if (issue.assignees && issue.assignees.length > 0) {
+              core.info('Issue déjà assignée — on ne touche pas.');
+              return;
+            }
+
+            const labels = (issue.labels || []).map(l => (typeof l === 'string' ? l : l.name));
+
+            let assignees = null;
+            for (const [label, owners] of Object.entries(OWNERS)) {
+              if (labels.includes(label)) { assignees = owners; break; }
+            }
+            if (!assignees) {
+              if (labels.some(l => HABILLAGE_LABELS.includes(l))) {
+                // Tirage reproductible basé sur le numéro d'issue.
+                assignees = [HABILLAGE_POOL[issue.number % HABILLAGE_POOL.length]];
+              }
+            }
+            if (!assignees || assignees.length === 0) {
+              core.info('Aucun label module/habillage reconnu — pas d’assignation auto.');
+              return;
+            }
+
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                assignees,
+              });
+              core.info('Assigné à : ' + assignees.join(', '));
+            } catch (e) {
+              // Un handle sans accès au repo est ignoré par l'API — on log, on ne bloque pas.
+              core.warning('Échec assignation (' + assignees.join(', ') + ') : ' + e.message);
+            }
