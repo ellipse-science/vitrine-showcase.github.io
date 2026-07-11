@@ -45,6 +45,14 @@ type RawEvent = {
   interval_convergence_score: number | null;
   top_objects_divergence: string | null;
   articles: string | null;
+  // Agrégats 24h par storyline (aws-refiners#195 phase B, PR #199) — optionnels :
+  // absents des lignes publiées avant le 2026-07-10 (Athena renvoie null).
+  storyline_id?: string | null;
+  media_ids_24h?: string | null;
+  articles_24h?: string | null;
+  score_qc_peak_24h?: number | null;
+  first_seen_utc?: string | null;
+  n_blocks_24h?: number | null;
 };
 
 type DivergenceEntry = {
@@ -146,9 +154,60 @@ const SAILLANT_YESTERDAY: Record<number, string> = {
   12: "hier midi", 16: "hier après-midi", 20: "hier soir",
 };
 
-// « ce matin, 8 h » (#126) : estime le début de saillance à partir du bloc 4h
-// courant (heure Montréal) et de la durée en Une, arrondi à l'édition la plus
-// proche. Approximatif tant que le refiner ne fournit pas l'instant exact.
+// Conversion UTC → Montréal sans dépendance : Intl gère EDT/EST.
+const MTL_DATE_HOUR_FMT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Montreal",
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", hourCycle: "h23",
+});
+
+function mtlDateAndHour(d: Date): { dateIso: string; hour: number } {
+  const parts = MTL_DATE_HOUR_FMT.formatToParts(d);
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? "";
+  return {
+    dateIso: `${get("year")}-${get("month")}-${get("day")}`,
+    hour: Number(get("hour")),
+  };
+}
+
+// Jour UTC entier d'une date ISO « YYYY-MM-DD » — pour compter des écarts de
+// jours calendaires sans passer par le fuseau de la machine de build.
+function isoDay(dateIso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateIso ?? "");
+  if (!m) return null;
+  return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) / 86_400_000;
+}
+
+// « ce matin, 8 h » (#126) — version EXACTE : `first_seen_utc` (début du premier
+// bloc 4h où la storyline figurait parmi les Unes saillantes, cf.
+// aws-refiners#195 phase B) converti en heure de Montréal. « aujourd'hui/hier »
+// est relatif à la DATE DU BLOC affiché (date_montreal_tz), pas à l'heure du
+// build — le libellé reste juste même si le site est reconstruit en retard.
+// Au-delà d'hier : date en toutes lettres. L'heure est arrondie à l'édition la
+// plus proche (les blocs tombent pile sur les éditions en EDT, à 1 h près en EST).
+function firstSeenSaillantLabel(firstSeenUtc: string | null | undefined, blockDateMtl: string | null): string | null {
+  if (!firstSeenUtc || !blockDateMtl) return null;
+  const t = new Date(firstSeenUtc);
+  if (Number.isNaN(t.getTime())) return null;
+  const { dateIso, hour } = mtlDateAndHour(t);
+  const seenDay = isoDay(dateIso);
+  const blockDay = isoDay(blockDateMtl);
+  if (seenDay === null || blockDay === null) return null;
+  const snapped = UPDATE_HOURS_MTL.reduce(
+    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p),
+    UPDATE_HOURS_MTL[0],
+  );
+  const dayDiff = blockDay - seenDay;
+  // Espace fine insécable avant « h » (norme typographique française).
+  if (dayDiff <= 0) return `${SAILLANT_TODAY[snapped]}, ${snapped} h`;
+  if (dayDiff === 1) return `${SAILLANT_YESTERDAY[snapped]}, ${snapped} h`;
+  const dateFr = formatDateFr(dateIso);
+  return `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+}
+
+// Estimation historique (#126) : début de saillance déduit du bloc 4h courant
+// et de la durée en Une. Conservée en SECOURS pour les lignes sans
+// `first_seen_utc` (données antérieures au 2026-07-10).
 function saillantSinceLabel(timeIntervalMtl: string | null, headlineHours: number | null): string | null {
   if (!headlineHours || headlineHours <= 0) return null;
   const blockStart = parseInt((timeIntervalMtl ?? "").split("-")[0] ?? "", 10);
@@ -188,13 +247,24 @@ export type UneEvent = {
   saillanceHint: string;
   timeMtl: string;
   headlineHours: number | null;
-  /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126). */
+  /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
+   *  Exact (first_seen_utc) quand la donnée 24h existe, sinon estimation. */
   saillantSince: string | null;
   representativeUrl: string | null;
-  mediaPresent: { name: string; url: string | null }[];
+  /** Union 24h des médias QC ayant mis la storyline en Une (media_ids_24h,
+   *  #213/#215/#51) — remplace l'ancienne liste limitée au bloc courant ;
+   *  retombe sur les médias du bloc courant si la donnée 24h manque
+   *  (lignes antérieures au 2026-07-10). */
+  mediaToday: { name: string; url: string | null }[];
   mediaAbsent: string[];
   qcOutletCount: number;
   totalQcOutlets: number;
+  /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
+  storylineId: string | null;
+  /** Pic de score_qc sur la fenêtre 24h — base de l'étiquette phase C (#122). */
+  scoreQcPeak24h: number | null;
+  /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
+  nBlocks24h: number | null;
 };
 
 export type SolitudeStory = {
@@ -335,12 +405,43 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       totalHeadlineMinutes > 0
         ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
         : null;
-    const saillantSince = saillantSinceLabel(e.time_interval_montreal_tz ?? null, headlineHours);
+    // Exact (first_seen_utc) si la donnée 24h existe, sinon l'estimation historique.
+    const saillantSince =
+      firstSeenSaillantLabel(e.first_seen_utc, e.date_montreal_tz) ??
+      saillantSinceLabel(e.time_interval_montreal_tz ?? null, headlineHours);
+
+    // Fenêtre 24h (aws-refiners#195 phase B) : union des médias + dernier
+    // article par média (articles_24h est déjà dédupliqué par le refiner,
+    // du bloc le plus récent au plus ancien).
+    // JSON.parse("null") ou un objet ne lèvent pas d'exception : on exige un
+    // tableau explicitement, sinon .length/.includes/for..of planteraient au build.
+    let mediaIds24h: string[] = [];
+    try {
+      const parsed = JSON.parse(e.media_ids_24h ?? "[]");
+      if (Array.isArray(parsed)) mediaIds24h = parsed as string[];
+    } catch { }
+    const latestUrlByMedia: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(e.articles_24h ?? "[]");
+      const arts24 = Array.isArray(parsed) ? (parsed as RawArticle[]) : [];
+      for (const art of arts24) {
+        if (art.media_id && art.url && !latestUrlByMedia[art.media_id]) {
+          latestUrlByMedia[art.media_id] = art.url;
+        }
+      }
+    } catch { }
+    // Lien média = dernier article mis en Une par CE média sur la storyline,
+    // même s'il vient d'un bloc précédent (#129) ; secours : article du bloc.
+    const urlFor = (id: string) => latestUrlByMedia[id] ?? mediaIdToUrl[id] ?? null;
+    const union24h = mediaIds24h.length > 0 ? mediaIds24h : mediaIds;
+
     // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
-    const mediaPresent = mediaIds
-      .filter((id) => QC_MEDIA.includes(id))
-      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: mediaIdToUrl[id] ?? null }));
-    const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
+    const mediaToday = QC_MEDIA.filter((id) => union24h.includes(id)).map(
+      (id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlFor(id) }),
+    );
+    // « Absent de la Une sur » = jamais mis en Une sur TOUTE la fenêtre 24h
+    // (#129) — plus juste que l'absence du seul bloc courant.
+    const mediaAbsent = QC_MEDIA.filter((id) => !union24h.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
     return {
@@ -356,10 +457,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       headlineHours,
       saillantSince,
       representativeUrl: e.representative_url ?? null,
-      mediaPresent,
+      mediaToday,
       mediaAbsent,
       qcOutletCount,
       totalQcOutlets,
+      storylineId: e.storyline_id ?? null,
+      scoreQcPeak24h: e.score_qc_peak_24h ?? null,
+      nBlocks24h: e.n_blocks_24h ?? null,
     };
   });
 
@@ -625,4 +729,5 @@ export const __test__ = {
   latestIssueRow,
   parseIssuesMeta,
   capitalizeObject,
+  firstSeenSaillantLabel,
 };
