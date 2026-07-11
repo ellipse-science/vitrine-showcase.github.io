@@ -1366,7 +1366,7 @@
                         'tag - Timestamp publication YYYY-MM-DD HH:MM'
                     ],
                     details: [
-                        '📊 58 colonnes au total (42 déterministes + 9 LLM/audit + 7 agrégats 24h par storyline)',
+                        '📊 63 colonnes au total (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag)',
                         '🎯 Granularité: 1 ligne = 1 événement (cluster d\'articles) dans un bloc 4h par pays',
                         '📈 Volume estimé: ~270 lignes/jour (9-15 events × 3 pays × 6 blocs)',
                         '🔬 Méthode clustering: BFS + similarité cosinus pondérée par saillance (Salton & McGill 1983)',
@@ -1854,7 +1854,7 @@
                         '🌍 PAYS: QC, CAN, USA (clusterings indépendants)',
                         '🚫 QC: TVA exclu (duplique JDM)',
                         '',
-                        '📋 OUTPUT: headline_events_4h - 58 colonnes (42 déterministes + 9 LLM/audit + 7 agrégats 24h par storyline), ~270 lignes/jour',
+                        '📋 OUTPUT: headline_events_4h - 63 colonnes (45 déterministes + 7 agrégats 24h par storyline + 8 LLM/audit + 2 divergence + tag), ~270 lignes/jour',
                         '',
                         '⏰ HORAIRES: à confirmer (~10 min après radar-salient-index)',
                         '',
