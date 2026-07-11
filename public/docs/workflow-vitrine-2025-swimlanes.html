@@ -461,7 +461,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 9 juillet 2026 (inclut radar-event-salience) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 10 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -1336,6 +1336,23 @@
                         'articles - JSON array détaillé (title, url, media_id, language, author, headline_minutes, body_preview)',
                         'absent_from_media_ids - JSON array des médias éligibles du pays N\'AYANT PAS couvert l\'événement (pour le frontend « Absent de... »)',
                         '',
+                        '🗺️ BREAKDOWN RÉGIONAL + PROJECTION (mai 2026):',
+                        'score_qc / score_roc / score_us - Score de saillance par région (Σ salient_index de la région)',
+                        'primary_region + primary_country_id - Région primaire (couverture max)',
+                        'target_region + score_region + event_rank_in_region - Carte projetée par pays cible (top 3)',
+                        'outlets_qc/roc/us + total_outlets_qc/roc/us - Couverture par région (dots frontend)',
+                        'media_ids_qc/roc/us + absent_qc/roc/us - Médias couvrants/absents par région',
+                        'intensity_tier + intensity_ratio_pct - Majeur/Fort/Moyen/Faible (ratio de couverture)',
+                        'resonance_internationale - ≥1 outlet US couvre l\'événement (0/1)',
+                        'interval_convergence_score + top_objects_divergence - Divergence QC vs CAN du bloc',
+                        '',
+                        '🕐 AGRÉGATS 24H PAR STORYLINE (juillet 2026, aws-refiners#199):',
+                        'media_ids_24h - Union des médias de la storyline sur 24h (« À la Une aujourd\'hui sur... »)',
+                        'articles_24h - Dernier article par média sur 24h (+ block_utc de provenance)',
+                        'score_qc_peak_24h / score_roc_peak_24h / score_us_peak_24h - Pic de score sur 24h (base étiquette phase C)',
+                        'first_seen_utc - Premier bloc de la storyline pour ce pays (hérité de bloc en bloc, ISO 8601)',
+                        'n_blocks_24h - Nombre de blocs de la fenêtre où la storyline était parmi les Unes',
+                        '',
                         '🤖 GÉNÉRATION LLM (top 3 par pays uniquement, NULL ailleurs):',
                         'title - Titre journalistique FR canadien (60-90 char)',
                         'text - Lead court FR canadien (150-280 char)',
@@ -1349,7 +1366,7 @@
                         'tag - Timestamp publication YYYY-MM-DD HH:MM'
                     ],
                     details: [
-                        '📊 31 colonnes au total (22 déterministes + 9 LLM/audit)',
+                        '📊 58 colonnes au total (42 déterministes + 9 LLM/audit + 7 agrégats 24h par storyline)',
                         '🎯 Granularité: 1 ligne = 1 événement (cluster d\'articles) dans un bloc 4h par pays',
                         '📈 Volume estimé: ~270 lignes/jour (9-15 events × 3 pays × 6 blocs)',
                         '🔬 Méthode clustering: BFS + similarité cosinus pondérée par saillance (Salton & McGill 1983)',
@@ -1837,7 +1854,7 @@
                         '🌍 PAYS: QC, CAN, USA (clusterings indépendants)',
                         '🚫 QC: TVA exclu (duplique JDM)',
                         '',
-                        '📋 OUTPUT: headline_events_4h - 31 colonnes (22 déterministes + 9 LLM/audit), ~270 lignes/jour',
+                        '📋 OUTPUT: headline_events_4h - 58 colonnes (42 déterministes + 9 LLM/audit + 7 agrégats 24h par storyline), ~270 lignes/jour',
                         '',
                         '⏰ HORAIRES: à confirmer (~10 min après radar-salient-index)',
                         '',
