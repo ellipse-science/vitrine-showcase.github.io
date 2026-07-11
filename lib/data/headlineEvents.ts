@@ -413,11 +413,17 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // Fenêtre 24h (aws-refiners#195 phase B) : union des médias + dernier
     // article par média (articles_24h est déjà dédupliqué par le refiner,
     // du bloc le plus récent au plus ancien).
+    // JSON.parse("null") ou un objet ne lèvent pas d'exception : on exige un
+    // tableau explicitement, sinon .length/.includes/for..of planteraient au build.
     let mediaIds24h: string[] = [];
-    try { mediaIds24h = JSON.parse(e.media_ids_24h ?? "[]") as string[]; } catch { }
+    try {
+      const parsed = JSON.parse(e.media_ids_24h ?? "[]");
+      if (Array.isArray(parsed)) mediaIds24h = parsed as string[];
+    } catch { }
     const latestUrlByMedia: Record<string, string> = {};
     try {
-      const arts24 = JSON.parse(e.articles_24h ?? "[]") as RawArticle[];
+      const parsed = JSON.parse(e.articles_24h ?? "[]");
+      const arts24 = Array.isArray(parsed) ? (parsed as RawArticle[]) : [];
       for (const art of arts24) {
         if (art.media_id && art.url && !latestUrlByMedia[art.media_id]) {
           latestUrlByMedia[art.media_id] = art.url;
