@@ -16,27 +16,38 @@ function saillantLabel(event: UneEvent): string {
     : "Saillant au Québec";
 }
 
-function Byline({ mediaPresent, mediaAbsent }: {
-  mediaPresent: { name: string; url: string | null }[];
+function MediaLinkList({ media }: { media: { name: string; url: string | null }[] }) {
+  return (
+    <span className="byline-media">
+      {media.map(({ name, url }, i) => (
+        <span key={name}>
+          {url ? (
+            <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+          ) : (
+            <span>{name}</span>
+          )}
+          {i < media.length - 1 && <span className="sep">·</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Byline({ mediaToday, mediaAbsent }: {
+  mediaToday: { name: string; url: string | null }[];
   mediaAbsent: string[];
 }) {
+  // Une seule ligne de présence (décision Adrien 2026-07-11) : « À la Une
+  // aujourd'hui sur » = union des médias QC ayant mis l'histoire en Une sur la
+  // fenêtre 24h (#213/#215/#51) — remplace l'ancien « À lire en Une sur »,
+  // limité au bloc 4h courant. Les liens pointent vers le DERNIER article mis
+  // en Une par chaque média, même s'il vient d'un bloc précédent (#129).
   return (
     <div className="byline-block">
-      {mediaPresent.length > 0 && (
+      {mediaToday.length > 0 && (
         <p className="byline-line">
-          <span className="byline-label">À lire en Une sur</span>{" "}
-          <span className="byline-media">
-            {mediaPresent.map(({ name, url }, i) => (
-              <span key={name}>
-                {url ? (
-                  <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
-                ) : (
-                  <span>{name}</span>
-                )}
-                {i < mediaPresent.length - 1 && <span className="sep">·</span>}
-              </span>
-            ))}
-          </span>
+          <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
+          <MediaLinkList media={mediaToday} />
         </p>
       )}
       {mediaAbsent.length > 0 && (
@@ -76,7 +87,7 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
           <div className="saillance-row">
             <span className="time">{saillantLabel(event)}</span>
           </div>
-          <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
+          <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
         </div>
 
         {audioUrl && (
@@ -131,7 +142,7 @@ function SideUne({ event }: { event: UneEvent }) {
         <span className="time">{saillantLabel(event)}</span>
       </div>
       {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
-      <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
+      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
     </div>
   );
 }
