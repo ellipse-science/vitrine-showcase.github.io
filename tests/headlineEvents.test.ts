@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/headlineEvents";
 
-const { latestIssueRow, parseIssuesMeta, capitalizeObject } = __test__;
+const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel } = __test__;
 
 describe("latestIssueRow", () => {
   it("renvoie null sur une liste vide", () => {
@@ -44,6 +44,35 @@ describe("parseIssuesMeta", () => {
     const parsed = parseIssuesMeta('{"economy_and_labour":{"label":"Budget","obj":"déficit"}}');
     expect(parsed).not.toBeNull();
     expect(parsed!["economy_and_labour"].label).toBe("Budget");
+  });
+});
+
+// « aujourd'hui/hier » est relatif à la date Montréal du bloc affiché (2e
+// argument), pas à l'horloge du build.   = espace fine insécable avant « h ».
+describe("firstSeenSaillantLabel", () => {
+  it("renvoie null si first_seen_utc ou la date du bloc manquent", () => {
+    expect(firstSeenSaillantLabel(null, "2026-07-11")).toBeNull();
+    expect(firstSeenSaillantLabel(undefined, "2026-07-11")).toBeNull();
+    expect(firstSeenSaillantLabel("2026-07-11T12:00:00Z", null)).toBeNull();
+  });
+  it("renvoie null sur un timestamp invalide", () => {
+    expect(firstSeenSaillantLabel("pas-une-date", "2026-07-11")).toBeNull();
+  });
+  it("même jour : 12h UTC = 8h Montréal (EDT) → « ce matin, 8 h »", () => {
+    expect(firstSeenSaillantLabel("2026-07-11T12:00:00Z", "2026-07-11"))
+      .toBe("ce matin, 8 h");
+  });
+  it("veille : 0h UTC le 11 = 20h Montréal le 10 → « hier soir, 20 h »", () => {
+    expect(firstSeenSaillantLabel("2026-07-11T00:00:00Z", "2026-07-11"))
+      .toBe("hier soir, 20 h");
+  });
+  it("arrondit à l'édition la plus proche en heure d'hiver (EST : 0h UTC = 19h)", () => {
+    expect(firstSeenSaillantLabel("2026-01-15T00:00:00Z", "2026-01-15"))
+      .toBe("hier soir, 20 h");
+  });
+  it("au-delà d'hier : date en toutes lettres", () => {
+    expect(firstSeenSaillantLabel("2026-07-08T12:00:00Z", "2026-07-11"))
+      .toBe("le mercredi 8 juillet 2026");
   });
 });
 

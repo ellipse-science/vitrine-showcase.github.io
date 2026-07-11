@@ -574,6 +574,7 @@
 
     <h3>Source des données</h3>
     <p class="metho-body">Le raffineur <code>radar-event-salience</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
+    <p class="metho-body">Le raffineur suit aussi chaque histoire d'un bloc de quatre heures à l'autre (identifiant de <em>storyline</em>) et agrège, sur une fenêtre glissante de 24 heures, l'union des médias l'ayant mise en Une, le dernier article mis en Une par chaque média et le moment de sa première apparition parmi les Unes saillantes (hérité de bloc en bloc tant que l'histoire reste en Une).</p>
 
     <h3>Algorithme — La Une des Unes</h3>
     <ol class="metho-list">
@@ -581,7 +582,8 @@
       <li>Les événements de source exclusivement américaine sont exclus.</li>
       <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
       <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
-      <li>La byline liste les médias couvrant l'événement et signale ceux qui l'ignorent.</li>
+      <li>La mention « Saillant au Québec depuis … » indique le début du premier bloc de quatre heures où l'histoire est apparue parmi les Unes saillantes du Québec, en heure de Montréal.</li>
+      <li>La byline « À la Une aujourd'hui sur » liste les médias québécois qui ont mis l'histoire en Une au cours des 24 dernières heures — pas seulement dans le bloc courant ; « Absent de la Une sur » désigne ceux qui ne l'ont mise en Une à aucun moment de cette fenêtre. Chaque nom de média pointe vers le dernier article que ce média a mis en Une sur l'histoire.</li>
     </ol>
 
     <h3>Algorithme — Deux solitudes</h3>
