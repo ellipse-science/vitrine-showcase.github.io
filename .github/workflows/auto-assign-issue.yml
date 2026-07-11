@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Assign owner(s) from module label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             // ── Table déclarative (label → propriétaires GitHub) ──────────────
@@ -46,7 +46,10 @@ jobs:
               return;
             }
 
-            const labels = (issue.labels || []).map(l => (typeof l === 'string' ? l : l.name));
+            // Normalise + filtre les labels vides (un label objet sans `name`).
+            const labels = (issue.labels || [])
+              .map(l => (typeof l === 'string' ? l : l && l.name))
+              .filter(Boolean);
 
             let assignees = null;
             for (const [label, owners] of Object.entries(OWNERS)) {
