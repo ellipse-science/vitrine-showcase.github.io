@@ -45,11 +45,15 @@ aucune erreur de build (piège de cascade documenté plus bas).
 
 ## Pièges connus de ce repo
 
-- **Ordre de cascade dans `globals.css`** (~4000 lignes, media queries
-  dispersées) : une override mobile ne gagne que si elle est dans le **bloc
-  `@media (max-width: 768px)` de fin de fichier** (il passe après les styles
-  de base). Le bloc ≤900px du haut (~350) est AVANT la plupart des bases : n'y
-  surcharger que ce qui est défini plus haut que lui.
+- **Ordre de cascade dans `globals.css`** (~4000 lignes) : les media queries
+  sont **dispersées en plusieurs blocs** — `grep -n "@media" app/globals.css`
+  pour la carte du moment (au 2026-07-12 : ≤768px vers ~1292 et ~2544, ≤900px
+  vers ~414, ~3277, ~3412 et ~4048). Une règle dans une media query ne gagne
+  PAS automatiquement sur une règle de base : à spécificité égale, c'est
+  l'ordre source qui tranche. Placer l'override mobile dans un bloc situé
+  **APRÈS la règle de base qu'elle surcharge** — le plus sûr pour les
+  composants de section est le **dernier** bloc ≤768px ; les blocs du haut ne
+  fonctionnent que pour des styles définis avant eux.
 - **`:first-child` ET `:last-child`** : un enfant devenu unique matche les
   deux règles du duo ; à spécificité égale, la déclarée en dernier gagne —
   imposer la propriété complète (pas seulement un côté du padding).
