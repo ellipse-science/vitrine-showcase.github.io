@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-07-12T04:03Z",
-  "headline_fr": "Trump assigne des journalistes du NY Times pour fuite sur Air Force One",
-  "headline_en": "Révélations sur le nouvel Air Force One Des journalistes assignés à comparaître",
+  "generated_at": "2026-07-12T08:04Z",
+  "headline_fr": "Fusillade mortelle à Toronto : 2 morts et 6 blessés au festival Salsa",
+  "headline_en": "Two people are dead as police search for an active shooter at Salsa on St. Clair festival. Live updates here.",
   "main_issue": "law_and_crime",
   "main_issue_text_fr": "Droit et criminalité",
   "context_outlets": [
+    "RCI",
     "LAP",
-    "FXN"
+    "LED",
+    "CTV"
   ]
 }
