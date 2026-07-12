@@ -201,8 +201,12 @@ export async function UneDesUnesSection() {
           {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} audioUrl={audioUrl} />}
         </section>
 
+        {/* Mise en page 1 à 3 Unes (#124 obj. 2, phase C) : le module vise
+            toujours 3 Unes, mais quand les données n'en offrent que 2 (dédup
+            storyline #231, bloc creux), la secondaire restante prend toute la
+            largeur (.solo) ; à 1 seule Une, pas de rangée secondaire du tout. */}
         {(sideLeft || sideRight) && (
-          <section className="hero-secondaries">
+          <section className={`hero-secondaries${sideLeft && sideRight ? "" : " solo"}`}>
             {sideLeft && <SideUne event={sideLeft} />}
             {sideRight && <SideUne event={sideRight} />}
           </section>

@@ -144,6 +144,23 @@ function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: s
   return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
 }
 
+// Dédup storyline-aware (#231, ancien signalement #211 « la 1re et la 2e
+// nouvelle sont la même ») : le clustering amont peut scinder une même histoire
+// en deux événements du même bloc, et la garantie « 3 cartes par bloc/pays » du
+// refiner peut réintroduire un quasi-doublon pourtant détecté. On garde la
+// première occurrence (la plus saillante — la liste arrive triée par score_qc
+// décroissant). Un storyline_id absent (lignes antérieures au 2026-07-10)
+// n'est jamais traité comme doublon : deux lignes sans storyline sont gardées.
+function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T[]): T[] {
+  const seen = new Set<string>();
+  return events.filter((e) => {
+    if (!e.storyline_id) return true;
+    if (seen.has(e.storyline_id)) return false;
+    seen.add(e.storyline_id);
+    return true;
+  });
+}
+
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
 const SAILLANT_TODAY: Record<number, string> = {
   0: "cette nuit", 4: "tôt ce matin", 8: "ce matin",
@@ -379,7 +396,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
     );
 
-  const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
+  // Dédup AVANT la coupe du top-3 : si le bloc contenait un doublon en 4e
+  // position, l'événement distinct suivant serait promu. En pratique la table
+  // ne publie que 3 cartes par bloc/pays : un doublon éliminé donne 2 Unes —
+  // la mise en page s'adapte (1 à 3 Unes, cf. UneDesUnesSection / #124).
+  const top3: UneEvent[] = dedupeByStoryline(withTitles).slice(0, 3).map((e) => {
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(e.score_qc);
     const qcOutletCount = e.outlets_qc ?? 0;
     const totalQcOutlets = e.total_outlets_qc ?? 6;
@@ -730,4 +751,5 @@ export const __test__ = {
   parseIssuesMeta,
   capitalizeObject,
   firstSeenSaillantLabel,
+  dedupeByStoryline,
 };
