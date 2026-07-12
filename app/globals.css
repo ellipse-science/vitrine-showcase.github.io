@@ -831,30 +831,17 @@
     padding: 24px 0 24px 32px;
     border-left: none;
   }
-  /* Une seule secondaire (#124 obj. 2 / #231) : quand la dédup storyline ou un
-     bloc creux ne laisse que 2 Unes, la secondaire restante prend toute la
-     largeur, sans la colonne fantôme ni le filet vertical du duo. */
-  .hero-secondaries.solo {
-    grid-template-columns: 1fr;
-  }
-  .hero-secondaries.solo .une-side:first-child {
-    border-right: none;
-    /* Carte unique = à la fois :first-child ET :last-child — à spécificité
-       égale, le padding-left 32px du duo (règle :last-child, déclarée après la
-       règle :first-child) gagnerait : on impose le padding complet pour
-       aligner sur la Une principale. */
-    padding: 24px 0;
-  }
-  /* Carte large : titre à gauche, lead + byline à droite — remplit la pleine
-     largeur au lieu de laisser la moitié droite vide. */
-  .une-side-wide-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: 12px 64px;
-    align-items: start;
-  }
-  .une-side-wide .dek {
-    margin-top: 2px;
+  /* À 2 Unes : la 2e nouvelle s'empile SOUS la 1re dans la colonne de gauche
+     du hero (décision Adrien 2026-07-12 — pas de rangée secondaire pleine
+     largeur, elle laissait un vide) ; l'illustration garde toute la hauteur
+     des deux nouvelles à droite. Filet horizontal de séparation, pas le filet
+     vertical du duo. */
+  .une-side.une-second {
+    border-left: none;
+    padding-left: 0;
+    border-top: 0.5px solid var(--rule);
+    margin-top: 26px;
+    padding-top: 20px;
   }
 
   /* À 2 Unes (a fortiori 1), le module a moins de contenu : l'illustration
@@ -2680,20 +2667,6 @@
     .hero-secondaries .une-side:last-child {
       padding: 20px 0;
       border-left: none;
-    }
-    /* Secondaire seule : le filet du bas sépare deux cartes empilées ;
-       sans 2e carte il devient un trait orphelin. Le padding réaligne sur les
-       20px mobiles (la règle .solo desktop, plus spécifique que les règles
-       mobiles à 2 classes, imposerait sinon ses 24px). (Règle ici, en fin de
-       fichier, pour passer APRÈS le base — cf. ordre de cascade.) */
-    .hero-secondaries.solo .une-side:first-child {
-      border-bottom: none;
-      padding: 20px 0;
-    }
-    /* Carte large : les 2 colonnes (titre | lead+byline) s'empilent. */
-    .une-side-wide-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
     }
     .hero-figure figcaption { gap: 8px; }
 

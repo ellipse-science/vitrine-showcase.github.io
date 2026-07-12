@@ -60,7 +60,16 @@ function Byline({ mediaToday, mediaAbsent }: {
   );
 }
 
-function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; generatedArtUrl?: string; audioUrl?: string }) {
+function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
+  event: UneEvent;
+  /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
+   *  première dans la colonne de gauche — sans lead — et l'illustration garde
+   *  toute la hauteur des deux à droite. (L'essai « carte large » pleine
+   *  largeur sous le hero laissait un vide, rejeté.) */
+  secondEvent?: UneEvent;
+  generatedArtUrl?: string;
+  audioUrl?: string;
+}) {
   return (
     <div className="une-main">
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
@@ -92,6 +101,30 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
             <span className="time">{saillantLabel(event)}</span>
           </div>
           <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+          {secondEvent && (
+            <div className="une-side une-second">
+              <div className="une-side-head">
+                <span className="une-enjeu" style={{ "--c": secondEvent.issueColor } as React.CSSProperties}>
+                  {secondEvent.issueFr}
+                </span>
+                <span className="saillance-tag-row">
+                  <span className={`saillance-tag ${secondEvent.saillanceCls}`}>
+                    Saillance {secondEvent.saillanceLabel}
+                  </span>
+                  <InfoTip size="sm" label="Détail du niveau de saillance">{secondEvent.saillanceHint}</InfoTip>
+                </span>
+              </div>
+              <h2 data-saillance={secondEvent.saillanceRank}>
+                {secondEvent.representativeUrl ? (
+                  <a href={secondEvent.representativeUrl} target="_blank" rel="noopener noreferrer">{secondEvent.title}</a>
+                ) : secondEvent.title}
+              </h2>
+              <div className="saillance-row">
+                <span className="time">{saillantLabel(secondEvent)}</span>
+              </div>
+              <Byline mediaToday={secondEvent.mediaToday} mediaAbsent={secondEvent.mediaAbsent} />
+            </div>
+          )}
         </div>
 
         {audioUrl && (
@@ -123,23 +156,9 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
   );
 }
 
-function SideUne({ event, wide = false }: { event: UneEvent; wide?: boolean }) {
-  const heading = (
-    <h2 data-saillance={event.saillanceRank}>
-      {event.representativeUrl ? (
-        <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-      ) : event.title}
-    </h2>
-  );
-  const saillantRow = (
-    <div className="saillance-row">
-      <span className="time">{saillantLabel(event)}</span>
-    </div>
-  );
-  // QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux"
-  const byline = <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />;
+function SideUne({ event }: { event: UneEvent }) {
   return (
-    <div className={`une-side${wide ? " une-side-wide" : ""}`}>
+    <div className="une-side">
       <div className="une-side-head">
         <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
           {event.issueFr}
@@ -151,27 +170,16 @@ function SideUne({ event, wide = false }: { event: UneEvent; wide?: boolean }) {
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
       </div>
-      {wide ? (
-        // Secondaire seule (2 Unes) : la carte occupe toute la largeur — le
-        // titre à gauche, le lead (généré pour chaque Une mais affiché
-        // seulement ici, l'espace le permet) et la byline à droite.
-        <div className="une-side-wide-grid">
-          <div>
-            {heading}
-            {saillantRow}
-          </div>
-          <div>
-            {event.excerpt && <p className="dek">{event.excerpt}</p>}
-            {byline}
-          </div>
-        </div>
-      ) : (
-        <>
-          {heading}
-          {saillantRow}
-          {byline}
-        </>
-      )}
+      <h2 data-saillance={event.saillanceRank}>
+        {event.representativeUrl ? (
+          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
+        ) : event.title}
+      </h2>
+      <div className="saillance-row">
+        <span className="time">{saillantLabel(event)}</span>
+      </div>
+      {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
+      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
     </div>
   );
 }
@@ -231,18 +239,26 @@ export async function UneDesUnesSection() {
 
         {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3
             en secondaires côte-à-côte. Ordre = ordre de saillance. */}
+        {/* Mise en page 1 à 3 Unes (#124 obj. 2, phase C) : le module vise
+            toujours 3 Unes. À 3 : hero + 2 secondaires côte-à-côte. À 2 : la
+            2e s'empile sous la 1re dans la colonne de gauche du hero,
+            l'illustration prend toute la hauteur à droite (pas de rangée
+            secondaire). À 1 : le hero seul. */}
         <section className="hero-main">
-          {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} audioUrl={audioUrl} />}
+          {main && (
+            <MainUne
+              event={main}
+              secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
+              generatedArtUrl={generatedArtUrl}
+              audioUrl={audioUrl}
+            />
+          )}
         </section>
 
-        {/* Mise en page 1 à 3 Unes (#124 obj. 2, phase C) : le module vise
-            toujours 3 Unes, mais quand les données n'en offrent que 2 (dédup
-            storyline #231, bloc creux), la secondaire restante prend toute la
-            largeur (.solo) ; à 1 seule Une, pas de rangée secondaire du tout. */}
-        {(sideLeft || sideRight) && (
-          <section className={`hero-secondaries${sideLeft && sideRight ? "" : " solo"}`}>
-            {sideLeft && <SideUne event={sideLeft} wide={!sideRight} />}
-            {sideRight && <SideUne event={sideRight} />}
+        {sideLeft && sideRight && (
+          <section className="hero-secondaries">
+            <SideUne event={sideLeft} />
+            <SideUne event={sideRight} />
           </section>
         )}
         <div className="module-last-updated">{data.lastUpdated}</div>
