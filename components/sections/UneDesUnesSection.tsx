@@ -63,20 +63,24 @@ function Byline({ mediaToday, mediaAbsent }: {
 function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; generatedArtUrl?: string; audioUrl?: string }) {
   return (
     <div className="une-main">
-      <div className="une-main-head">
-        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-          {event.issueFr}
-        </span>
-        <span className="saillance-tag-row">
-          <span className={`saillance-tag ${event.saillanceCls}`}>
-            Saillance {event.saillanceLabel}
-          </span>
-          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-        </span>
-      </div>
-
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
         <div className="une-main-copy">
+          {/* L'en-tête (enjeu + tag) vit DANS la colonne de gauche : hors de la
+              grille, il s'étendait sous le bloc Ambiance (remonté en marge
+              négative) et le tag « Exceptionnelle » agrandi finissait par le
+              chevaucher quand l'enjeu était long. Ici, le chevauchement est
+              impossible par construction. */}
+          <div className="une-main-head">
+            <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+              {event.issueFr}
+            </span>
+            <span className="saillance-tag-row">
+              <span className={`saillance-tag ${event.saillanceCls}`}>
+                Saillance {event.saillanceLabel}
+              </span>
+              <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
+            </span>
+          </div>
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             {event.representativeUrl ? (

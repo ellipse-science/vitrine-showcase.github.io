@@ -1116,15 +1116,16 @@
   }
   .une-audio-sep { opacity: 0.5; }
 
-  /* Bloc audio au-dessus de l'image de la une principale */
+  /* Bloc audio au-dessus de l'image de la une principale. Plus de marge
+     négative : l'en-tête (enjeu + tag) vit dans la colonne de gauche de la
+     grille, le haut de la grille EST la bande de l'en-tête — l'alignement
+     avec l'Ambiance est naturel. */
   .hero-audio-overlay {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 0 0 16px;
-    margin-top: -22px;
   }
-  .une-main-grid.no-art .hero-audio-overlay { margin-top: 0; }
   /* Barre de lecture pleine largeur, tout sur une ligne */
   .hero-audio-overlay .une-audio-compact {
     flex-wrap: nowrap;
