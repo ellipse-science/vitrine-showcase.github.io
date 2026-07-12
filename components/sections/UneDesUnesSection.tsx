@@ -119,9 +119,23 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
   );
 }
 
-function SideUne({ event }: { event: UneEvent }) {
+function SideUne({ event, wide = false }: { event: UneEvent; wide?: boolean }) {
+  const heading = (
+    <h2 data-saillance={event.saillanceRank}>
+      {event.representativeUrl ? (
+        <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
+      ) : event.title}
+    </h2>
+  );
+  const saillantRow = (
+    <div className="saillance-row">
+      <span className="time">{saillantLabel(event)}</span>
+    </div>
+  );
+  // QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux"
+  const byline = <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />;
   return (
-    <div className="une-side">
+    <div className={`une-side${wide ? " une-side-wide" : ""}`}>
       <div className="une-side-head">
         <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
           {event.issueFr}
@@ -133,16 +147,27 @@ function SideUne({ event }: { event: UneEvent }) {
           <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
         </span>
       </div>
-      <h2 data-saillance={event.saillanceRank}>
-        {event.representativeUrl ? (
-          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-        ) : event.title}
-      </h2>
-      <div className="saillance-row">
-        <span className="time">{saillantLabel(event)}</span>
-      </div>
-      {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
-      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+      {wide ? (
+        // Secondaire seule (2 Unes) : la carte occupe toute la largeur — le
+        // titre à gauche, le lead (généré pour chaque Une mais affiché
+        // seulement ici, l'espace le permet) et la byline à droite.
+        <div className="une-side-wide-grid">
+          <div>
+            {heading}
+            {saillantRow}
+          </div>
+          <div>
+            {event.excerpt && <p className="dek">{event.excerpt}</p>}
+            {byline}
+          </div>
+        </div>
+      ) : (
+        <>
+          {heading}
+          {saillantRow}
+          {byline}
+        </>
+      )}
     </div>
   );
 }
@@ -182,8 +207,13 @@ export async function UneDesUnesSection() {
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
   // section top-level distincte (DeuxSolitudesSection).
+  // À 2 ou 1 Unes (dédup storyline / bloc creux), le module a moins de
+  // contenu : l'illustration s'élargit pour garder une page pleine (#124).
+  const countCls =
+    data.top3.length === 2 ? " deux-unes" : data.top3.length === 1 ? " une-seule" : "";
+
   return (
-    <div className={`unes-jour${breaking ? " breaking" : ""}`}>
+    <div className={`unes-jour${breaking ? " breaking" : ""}${countCls}`}>
         <div className="section-label">
           <span className="section-title-wrap">
             <span className="section-title">{sectionTitle}</span>
@@ -207,7 +237,7 @@ export async function UneDesUnesSection() {
             largeur (.solo) ; à 1 seule Une, pas de rangée secondaire du tout. */}
         {(sideLeft || sideRight) && (
           <section className={`hero-secondaries${sideLeft && sideRight ? "" : " solo"}`}>
-            {sideLeft && <SideUne event={sideLeft} />}
+            {sideLeft && <SideUne event={sideLeft} wide={!sideRight} />}
             {sideRight && <SideUne event={sideRight} />}
           </section>
         )}

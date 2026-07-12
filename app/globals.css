@@ -839,10 +839,29 @@
   }
   .hero-secondaries.solo .une-side:first-child {
     border-right: none;
-    /* Carte unique = à la fois :first-child ET :last-child — le padding-left
-       32px du duo (règle :last-child, plus bas dans la source) gagnerait :
-       on impose le padding complet pour aligner sur la Une principale. */
+    /* Carte unique = à la fois :first-child ET :last-child — à spécificité
+       égale, le padding-left 32px du duo (règle :last-child, déclarée après la
+       règle :first-child) gagnerait : on impose le padding complet pour
+       aligner sur la Une principale. */
     padding: 24px 0;
+  }
+  /* Carte large : titre à gauche, lead + byline à droite — remplit la pleine
+     largeur au lieu de laisser la moitié droite vide. */
+  .une-side-wide-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 12px 64px;
+    align-items: start;
+  }
+  .une-side-wide .dek {
+    margin-top: 2px;
+  }
+
+  /* À 2 Unes (a fortiori 1), le module a moins de contenu : l'illustration
+     s'élargit pour garder le hero plein (#124 — « grossir l'image »). */
+  .unes-jour.deux-unes .une-main-grid.has-art,
+  .unes-jour.une-seule .une-main-grid.has-art {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 48%);
   }
 
   /* Rétrocompat: .hero-trio conservé pour éviter erreurs si référencé ailleurs */
@@ -2669,6 +2688,11 @@
     .hero-secondaries.solo .une-side:first-child {
       border-bottom: none;
       padding: 20px 0;
+    }
+    /* Carte large : les 2 colonnes (titre | lead+byline) s'empilent. */
+    .une-side-wide-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
     .hero-figure figcaption { gap: 8px; }
 
