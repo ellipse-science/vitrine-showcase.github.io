@@ -389,8 +389,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     Number.isNaN(blockEnd) ? null : blockEnd,
   );
 
+  // Unes du QUÉBEC seulement : au moins un média QC doit avoir mis l'histoire
+  // en Une (outlets_qc > 0). Sans ce filtre, la dédup storyline libère des
+  // places que le tri par score_qc comble avec des cartes ROC à score
+  // québécois ≈ 0 (« Très faible ») — vu sur le bloc du 2026-07-07 20-24
+  // (décès de Marc Messier : 3 cartes QC = 1 storyline). Avant la dédup le
+  // problème était invisible : les 3 cartes QC occupaient toujours le top-3.
   const withTitles = latest
-    .filter((e) => e.title)
+    .filter((e) => e.title && (e.outlets_qc ?? 0) > 0)
     .sort((a, b) =>
       (b.score_qc ?? 0) - (a.score_qc ?? 0) ||
       (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
@@ -398,7 +404,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   // Dédup AVANT la coupe du top-3 : si le bloc contenait un doublon en 4e
   // position, l'événement distinct suivant serait promu. En pratique la table
-  // ne publie que 3 cartes par bloc/pays : un doublon éliminé donne 2 Unes —
+  // ne publie que 3 cartes par bloc/pays : un doublon éliminé donne 1-2 Unes —
   // la mise en page s'adapte (1 à 3 Unes, cf. UneDesUnesSection / #124).
   const top3: UneEvent[] = dedupeByStoryline(withTitles).slice(0, 3).map((e) => {
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(e.score_qc);
