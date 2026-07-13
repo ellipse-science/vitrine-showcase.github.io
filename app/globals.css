@@ -2407,7 +2407,7 @@
     padding-top: 28px;
     border-top: 0.5px solid var(--rule);
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     gap: 44px;
   }
   .footer-note h4 {
