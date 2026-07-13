@@ -1,116 +1,106 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Module 2 — démo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#F3ECDD;--paper-deep:#ECE3CF;--ink:#231F1C;--ink-soft:#433F38;--ink-softer:#6E685F;--rule:#C8BDA6;--rule-faint:#DED3B9;--cordovan:#6B1E2A;--brass:#A07A3D;--red:#A8302C;--bleu:#2E4663;--ocre:#6D5A2F}
 *{box-sizing:border-box}
 body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',Georgia,serif;display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
-.wrap{width:100%;max-width:1180px}
+/* Grain papier (Financial Times / Monocle) : bruit fractal très discret
+   par-dessus tout, en multiply — enlève l'effet « page HTML » */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:40;opacity:.05;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")}
+.wrap{width:100%;max-width:1180px;position:relative;z-index:1}
 .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:18px;justify-content:center;flex-wrap:wrap}
 .toolbar .lab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-softer)}
 .toolbar button{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 13px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;border-radius:2px}
 .toolbar button.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.solitudes{border:.5px solid var(--rule);background:var(--paper-deep);padding:40px 44px 36px;text-align:center}
-.sol-title{font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:700;margin:0 0 22px;letter-spacing:-.5px}
-/* Axe fleur/érable : les symboles se rapprochent quand la convergence augmente */
-.sol-viz{position:relative;height:122px;max-width:760px;margin:0 auto 18px}
-.sol-axis{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--rule)}
-.sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 12px;transition:left .6s ease;text-align:center}
+
+/* Grandes marges : esthétique affiche éditoriale, pas dashboard */
+.solitudes{border:.5px solid var(--rule);background:var(--paper-deep);padding:64px 56px 56px;text-align:center}
+.sol-title{font-family:'Playfair Display',Georgia,serif;font-size:40px;font-weight:900;margin:0 0 10px;letter-spacing:-.6px}
+.sol-sub{font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink-softer);margin:0 auto 34px;max-width:480px}
+.sol-sub .when{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;display:block;margin-top:7px;color:var(--ink-soft)}
+
+/* Axe bipolaire : ligne graduée bleu → neutre → rouge, symboles mobiles */
+.sol-viz{position:relative;height:122px;max-width:760px;margin:0 auto 30px}
+.sol-axis{position:absolute;top:50%;left:0;right:0;height:2px;transform:translateY(-50%);
+  background:linear-gradient(90deg,rgba(46,70,99,.5) 0%,rgba(46,70,99,.16) 25%,var(--rule-faint) 45%,var(--rule-faint) 55%,rgba(168,48,44,.16) 75%,rgba(168,48,44,.5) 100%)}
+.sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 14px;transition:left .6s ease;text-align:center}
 .sol-symbol svg{display:block;margin:0 auto}
-/* Érable laissé en couleur émoji, ajusté vers le rouge brique du radar (--red) */
-/* Silhouette plate rouge brique : l'emoji devient transparent, son ombre
-   portée (blur 0) dessine la forme dans la couleur du radar (--red) */
+/* Silhouette plate rouge brique : emoji transparent, l'ombre portée (blur 0)
+   dessine la forme dans la couleur du radar */
 .glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;color:transparent;text-shadow:0 0 0 var(--red)}
 .caption{display:block;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-softer)}
-/* Flèches de mouvement : s'éloignent quand ça diverge (← fleur … érable →),
-   se rapprochent quand ça converge (fleur → … ← érable) */
-.sol-arrow{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:21px;font-weight:600;background:var(--paper-deep);padding:0 5px;transition:left .6s ease;line-height:1}
+/* Flèches de mouvement, plus affirmées : s'éloignent quand ça diverge,
+   se rapprochent quand ça converge. Toujours à l'extérieur des symboles. */
+.sol-arrow{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:27px;font-weight:700;padding:0 6px;transition:left .6s ease;line-height:1}
 .sol-arrow.qc{color:var(--bleu)} .sol-arrow.can{color:var(--red)}
 .sol-arrow.dL{animation:driftL 2.2s ease-in-out infinite}
 .sol-arrow.dR{animation:driftR 2.2s ease-in-out infinite}
 @keyframes driftL{50%{transform:translate(calc(-50% - 5px),-50%)}}
 @keyframes driftR{50%{transform:translate(calc(-50% + 5px),-50%)}}
-@media (prefers-reduced-motion:reduce){.sol-arrow{animation:none !important}}
-/* Radar « qui parle de quoi » — 2 ombrages QC (bleu) / CAN (rouge), axes = actualités du bloc */
-.sol-radar{max-width:640px;margin:0 auto 4px}
+
+/* Radar : halo qui fixe le regard, grille effacée, surfaces dominantes */
+.sol-radar{max-width:760px;margin:0 auto 4px}
 .sol-radar svg{display:block;width:100%;height:auto;overflow:visible}
-.radar-grid{fill:none;stroke:var(--rule);stroke-width:.7}
-.radar-spoke{stroke:var(--rule-faint);stroke-width:.7}
-.radar-qc{fill:rgba(46,70,99,.30);stroke:var(--bleu);stroke-width:1.6;stroke-linejoin:round}
-.radar-can{fill:rgba(168,48,44,.24);stroke:var(--red);stroke-width:1.6;stroke-linejoin:round}
+.radar-halo{fill:rgba(35,31,28,.045)}
+.radar-grid{fill:none;stroke:rgba(35,31,28,.10);stroke-width:.7}
+.radar-spoke{stroke:rgba(35,31,28,.07);stroke-width:.7}
+.radar-qc{fill:rgba(46,70,99,.32);stroke:var(--bleu);stroke-width:1.7;stroke-linejoin:round}
+.radar-can{fill:rgba(168,48,44,.26);stroke:var(--red);stroke-width:1.7;stroke-linejoin:round}
 .radar-dot-qc{fill:var(--bleu)} .radar-dot-can{fill:var(--red)}
-.radar-lab{font-family:'Source Serif 4',Georgia,serif;font-size:12.5px;fill:var(--ink-soft)}
-.radar-lab .strong{font-weight:600;fill:var(--ink)}
-/* Pastilles-sigles des médias sous chaque sujet — cliquables vers le
-   dernier article publié par ce média sur le sujet */
-.m-chip rect{fill:var(--paper);stroke:var(--rule);stroke-width:.8;rx:3}
-.m-chip text{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.08em;fill:var(--ink-soft);text-anchor:middle}
+/* Entrée « Bloomberg » : le rouge paraît, puis le bleu, puis le score */
+.radar-can,.radar-dot-can{transform-box:fill-box;transform-origin:center;animation:polyIn .5s ease .08s both}
+.radar-qc,.radar-dot-qc{transform-box:fill-box;transform-origin:center;animation:polyIn .5s ease .34s both}
+@keyframes polyIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+.radar-lab{font-family:'Source Serif 4',Georgia,serif;font-size:13px;fill:var(--ink-soft)}
+.radar-lab.strong{font-weight:600;fill:var(--ink)}
+
+/* Badges médias : carrés monochromes identiques (le luxe est dans
+   l'uniformité), cliquables vers le dernier article du média sur le sujet.
+   Survol : inversion encre/papier + nom complet en byline. */
+.m-chip rect{fill:var(--paper);stroke:var(--ink-soft);stroke-width:.9;rx:2}
+.m-chip text{font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:.05em;font-weight:600;fill:var(--ink-soft);text-anchor:middle}
+.m-chip g{transform-box:fill-box;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.m-chip:hover g{transform:scale(1.3)}
 .m-chip:hover rect{fill:var(--ink);stroke:var(--ink)}
 .m-chip:hover text:not(.m-name){fill:var(--paper)}
-/* Survol : le logo grossit (affordance de clic) et le nom du média
-   apparaît à côté, dans le style byline du module 1 */
-.m-chip image{transform-box:fill-box;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
-.m-chip:hover image{transform:scale(1.55)}
-.m-chip .m-name{opacity:0;pointer-events:none;transition:opacity .15s ease;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;font-weight:600;fill:var(--ink)}
+.m-chip .m-name{opacity:0;pointer-events:none;transition:opacity .15s ease;font-size:9.5px;letter-spacing:.09em;fill:var(--ink)}
 .m-chip:hover .m-name{opacity:1}
-.sol-legend{display:flex;justify-content:center;gap:26px;align-items:center;margin:0 0 10px}
-.sol-legend .li{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
-.sol-legend .li.qc{color:var(--bleu)} .sol-legend .li.can{color:var(--red)}
-.sol-legend .sw{width:14px;height:14px;border-radius:2px;display:inline-block}
-.sol-legend .sw.qc{background:rgba(46,70,99,.30);box-shadow:inset 0 0 0 1.5px var(--bleu)}
-.sol-legend .sw.can{background:rgba(168,48,44,.24);box-shadow:inset 0 0 0 1.5px var(--red)}
-.sol-legend .glyph{font-size:17px;line-height:1;filter:grayscale(1) brightness(.34) contrast(1.5)}
-.sol-legend svg{display:inline-block;vertical-align:middle}
-.sol-stat{display:flex;flex-direction:column;align-items:center;gap:9px;margin:4px 0 14px}
-.mode-word{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-.8px}
+
+/* Le score, signature Radar+ : énorme chiffre, libellé dessous */
+.sol-stat{display:flex;flex-direction:column;align-items:center;gap:0;margin:18px 0 0;animation:fadeUp .5s ease .62s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.score-num{font-family:'Playfair Display',Georgia,serif;font-size:88px;font-weight:900;line-height:.95;letter-spacing:-2px}
+.score-num sup{font-size:40px;letter-spacing:0;vertical-align:14px}
+.score-lab{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-soft);margin-top:10px}
 .mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
-.mode-detail{font-style:italic;font-size:18px;color:var(--ink-softer)} .mode-detail strong{font-size:27px;color:var(--ink);font-style:normal}
-/* Le verbe diverge/converge reprend le style de l'ancien grand mot, en plus petit */
-.mode-verb{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-style:normal;font-size:23px;letter-spacing:-.2px;line-height:1;margin:0 8px}
-/* Lecture RELATIVE (feedback Yannick 2026-06-08) : plus/moins que d'habitude, et de combien */
-.rel-line{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);margin-top:2px}
-.rel-line strong{font-weight:600;color:var(--ink)}
-.rel-strip{position:relative;width:280px;height:40px;margin:10px auto 0}
-.rel-strip .track{position:absolute;top:28px;left:0;right:0;height:1px;background:var(--rule)}
-.rel-strip .tick{position:absolute;top:25px;width:1px;height:7px;background:var(--rule)}
-.rel-strip .tick.median{top:23px;height:11px;background:var(--ink-softer)}
-.rel-strip .marker{position:absolute;top:28px;width:9px;height:9px;transform:translate(-50%,-50%) rotate(45deg);transition:left .6s ease}
-.rel-strip .lbl{position:absolute;top:0;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-softer)}
-.rel-strip .lbl.l{left:0} .rel-strip .lbl.r{right:0} .rel-strip .lbl.m{left:50%;transform:translateX(-50%)}
-.sol-note{font-family:'Source Serif 4',serif;font-style:italic;font-size:12.5px;color:var(--ink-softer);margin:10px auto 0;max-width:560px}
-.block{max-width:880px;margin:0 auto;text-align:left;border-top:1px solid var(--rule);padding-top:18px}
-.block+.block{margin-top:8px;padding-top:20px}
-.block-title{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin:0 0 16px}
-.ev{display:flex;gap:14px;align-items:baseline;padding:13px 0;border-bottom:.5px solid var(--rule)}.ev:last-child{border-bottom:0}
-.ev .rk{font-family:'Playfair Display',serif;font-size:22px;color:var(--ink-softer);min-width:24px}.ev .body{flex:1}
-.ev .ttl{font-size:17px;line-height:1.35}.ev .meta{margin-top:8px}
-.saillance-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;padding:5px 12px;line-height:1.2;vertical-align:middle}
-.saillance-tag.s-extreme{background:var(--cordovan);color:var(--paper);font-size:12.5px;font-weight:600;padding:6px 15px;letter-spacing:.28em}
-.saillance-tag.s-tres-eleve{background:var(--red);color:var(--paper)}
-.saillance-tag.s-eleve{background:var(--brass);color:var(--paper)}
-.saillance-tag.s-moyenne{background:transparent;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--ink-soft)}
-.saillance-tag.s-faible{background:transparent;color:var(--ink-softer);box-shadow:inset 0 0 0 1px var(--rule)}
-.byline{margin-top:9px}
-.byline .lbl{font-family:'Source Serif 4',serif;font-style:italic;font-size:11px;color:var(--ink-softer);margin-right:6px}
-.byline-media{font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
-.byline-media a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
-.byline-media .sep{color:var(--rule);margin:0 6px;font-weight:400}
-.topic-label{font-family:'Playfair Display',serif;font-size:19px;margin:18px 0 10px}.topic-label:first-child{margin-top:0}
-.shared{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--rule)}
-.shared .col{padding:15px 17px}.shared .col:first-child{border-right:1px solid var(--rule)}
-.shared .colhead{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin-bottom:9px}
-.shared .ttl{font-size:16px;line-height:1.35;margin-bottom:11px}
-.shared .saillance-tag{margin:0}
-/* Mobile : symboles et légendes réduits pour que fleur+érable « collés »
-   (gap min 18 %) tiennent sans se rogner sur ~320-640px */
+/* Phrase éditoriale : la visualisation raconte, pas seulement affiche */
+.edito{font-size:17px;line-height:1.6;color:var(--ink-soft);max-width:520px;margin:22px auto 0}
+
+/* Jauge : gradient rouge → neutre → bleu, point plein */
+.rel-strip{position:relative;width:320px;height:44px;margin:26px auto 0}
+.rel-strip .track{position:absolute;top:30px;left:0;right:0;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,var(--red),var(--rule) 38%,var(--rule) 62%,var(--bleu))}
+.rel-strip .tick{position:absolute;top:26px;width:1px;height:11px;background:rgba(35,31,28,.28)}
+.rel-strip .marker{position:absolute;top:31.5px;width:12px;height:12px;border-radius:50%;border:2px solid var(--paper-deep);transform:translate(-50%,-50%);transition:left .6s ease;box-shadow:0 0 0 1px rgba(35,31,28,.25)}
+.rel-strip .lbl{position:absolute;top:0;font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-softer)}
+.rel-strip .lbl.l{left:0;color:var(--red)} .rel-strip .lbl.r{right:0;color:var(--bleu)}
+.rel-strip .lbl.m{left:50%;transform:translateX(-50%)}
+
+@media (prefers-reduced-motion:reduce){.sol-arrow,.radar-can,.radar-qc,.radar-dot-can,.radar-dot-qc,.sol-stat{animation:none !important}}
+/* Mobile : symboles et typographie réduits, rien ne se rogne à ~320-640px */
 @media (max-width:640px){
-  .sol-viz{height:92px;margin-bottom:12px}
+  .solitudes{padding:40px 20px 36px}
+  .sol-viz{height:92px;margin-bottom:18px}
   .sol-symbol{padding:0 6px}
   .sol-symbol svg{height:40px;width:39px}
   .glyph-maple{font-size:34px;line-height:40px;height:40px}
   .caption{font-size:8px;letter-spacing:.14em;margin-top:6px}
-  .sol-title{font-size:26px}
-  .mode-detail{font-size:15px}.mode-detail strong{font-size:22px}
+  .sol-title{font-size:28px}
+  .sol-arrow{font-size:21px}
+  .score-num{font-size:56px}.score-num sup{font-size:26px;vertical-align:9px}
+  .edito{font-size:15px}
   .radar-lab{font-size:11px}
 }
 </style></head><body><div class="wrap">
@@ -125,55 +115,61 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 <script>
 // pct = percentile de convergence du bloc vs fenêtre glissante 6 mois (démo:
 // valeurs plausibles tirées de la distribution annuelle du red-team, médiane 18).
-// cov_qc/cov_can = coverage_qc_in_can / coverage_can_in_qc (colonnes refiners#211).
-// axes = radar « qui parle de quoi » : saillance QC/CAN par actualité du bloc
-// (démo : valeurs indicatives, prod = top_objects_divergence + salient_index).
-const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48, "cov_qc": 8, "cov_can": 6,
- "axes": [
+// edito = phrase éditoriale ; en prod, générée par règles simples depuis le
+// nombre de sujets partagés + le niveau relatif (pas de LLM requis).
+// axes = radar « qui parle de quoi » : saillance QC/CAN par ÉVÉNEMENT du bloc
+// (démo : scores indicatifs ; état réel : sortie brute du refiner #211).
+const D={
+"divergent":{"date":"2 juin · 16 h – 20 h","conv":17,"pct":48,
+ "edito":"Pendant ce bloc, les médias québécois et canadiens ont mis l'accent sur des enjeux presque entièrement différents.",
+ "axes":[
   {"label":"ACEUM","qc":4,"can":80,"media":["CBC","CTV","GAM"]},
   {"label":"« 51e État »","qc":6,"can":52,"media":["CBC","NP"]},
   {"label":"Séparation Alberta","qc":0,"can":28,"media":["NP"]},
   {"label":"Grand Prix de Mtl","qc":22,"can":6,"media":["LAP","JDM"]},
   {"label":"Urgences au Québec","qc":18,"can":0,"media":["LED","RCI","TVA"]},
-  {"label":"Tramway de Québec","qc":15,"can":0,"media":["LED","RCI"]}
- ], "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "pct": 100, "cov_qc": 71, "cov_can": 64,
- "axes": [
+  {"label":"Tramway de Québec","qc":15,"can":0,"media":["LED","RCI"]}]},
+"convergent":{"date":"18 mai · 12 h – 16 h","conv":86,"pct":100,
+ "edito":"Fait rare : les deux espaces médiatiques regardent la même histoire, chacun avec ses propres mots.",
+ "axes":[
   {"label":"Comité défense CA–US","qc":34,"can":60,"media":["LAP","LED","RCI","CTV"]},
   {"label":"Tarifs Trump","qc":13,"can":30,"media":["CBC","GAM","LAP"]},
   {"label":"Mark Carney","qc":10,"can":24,"media":["RCI","CTV"]},
   {"label":"Gaza","qc":8,"can":12,"media":["LED","CBC"]},
   {"label":"Séries LNH","qc":9,"can":10,"media":["JDM","TVA","GN"]},
-  {"label":"Feux Alberta","qc":3,"can":14,"media":["GN","CBC"]}
- ], "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "pct": 99, "cov_qc": 66, "cov_can": 58,
- "axes": [
+  {"label":"Feux Alberta","qc":3,"can":14,"media":["GN","CBC"]}]},
+"haute":{"date":"16 mai · 16 h – 20 h","conv":81,"pct":99,
+ "edito":"Une même éclosion traverse la frontière médiatique — la convergence reste l'exception qui confirme la règle.",
+ "axes":[
   {"label":"Hantavirus en C.-B.","qc":38,"can":60,"media":["JDM","LAP","LED","RCI","CBC","GAM"]},
   {"label":"Mark Carney","qc":9,"can":26,"media":["RCI","CBC"]},
   {"label":"Ukraine","qc":7,"can":16,"media":["LED","GAM"]},
   {"label":"Essence & inflation","qc":6,"can":18,"media":["TVA","CTV"]},
   {"label":"Grands Prix","qc":8,"can":8,"media":["JDM","LAP"]},
-  {"label":"Logement","qc":5,"can":12,"media":["LED","GN"]}
- ], "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "pct": 81, "cov_qc": 39, "cov_can": 31,
- "axes": [
+  {"label":"Logement","qc":5,"can":12,"media":["LED","GN"]}]},
+"multi":{"date":"29 mai · 8 h – 12 h","conv":36,"pct":81,
+ "edito":"Quelques grandes histoires traversent la frontière ; le reste des deux agendas se croise à peine.",
+ "axes":[
   {"label":"Récession technique","qc":8,"can":44,"media":["LED","RCI","CBC","CTV","GN"]},
   {"label":"Drone russe","qc":6,"can":10,"media":["RCI","GAM"]},
   {"label":"PIB & guerre en Iran","qc":2,"can":24,"media":["GN","CBC"]},
   {"label":"Pénurie de lits","qc":0,"can":20,"media":["NP","CTV"]},
   {"label":"CHSLD","qc":16,"can":0,"media":["LAP","LED","TVA"]},
-  {"label":"Rentrée à l'Assemblée","qc":12,"can":4,"media":["RCI","LED"]}
- ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; // État RÉEL : sortie brute du refiner #211 (test local DEV, bloc 2026-07-13
+  {"label":"Rentrée à l'Assemblée","qc":12,"can":4,"media":["RCI","LED"]}]},
+// État RÉEL : sortie brute du refiner #211 (test local DEV, bloc 2026-07-13
 // 08-12 UTC) — scores et URLs authentiques, aucun sujet partagé QC/CAN.
 // Libellés = ÉVÉNEMENTS (titres courts FR rédigés depuis event_title_raw ;
-// le test tournait sans LLM, donc `title` FR était vide et `event_label`
-// n'est que l'objet du cluster — en prod, on affiche le titre FR généré).
-D["reel"]={"date":"13 juil · 8 h – 12 h (réel, refiner #211)","conv":2,"pct":5,"cov_qc":8,"cov_can":1,
+// le test tournait sans LLM — en prod, on affiche le titre FR généré).
+"reel":{"date":"13 juil · 8 h – 12 h (réel, refiner #211)","conv":2,"pct":5,
+ "edito":"Aucun sujet ne figure à la fois parmi les Unes québécoises et canadiennes de ce bloc — deux conversations parallèles.",
  "axes":[
   {"label":"L'Alberta et le renouveau canadien","qc":0,"can":40.1,"media":[{"id":"NP","url":"https://nationalpost.com/news/albertan-mark-milke-wants-to-reinvigorate-canada-not-leave-it"}]},
   {"label":"Fusillade au festival de Toronto","qc":0,"can":24.7,"media":[{"id":"GAM","url":"https://www.theglobeandmail.com/canada/article-toronto-festival-salsa-on-st-clair-shooting/"},{"id":"TTS","url":"https://www.thestar.com/news/gta/three-shot-dead-10-injured-as-weekend-wave-of-gun-violence-hits-toronto/article_7c3e9024-0d88-4732-9509-c4ac0c79f760.html"}]},
   {"label":"Famille séparée par des passeurs","qc":0,"can":24.5,"media":[{"id":"TTS","url":"https://www.thestar.com/news/gta/smugglers-separated-this-toronto-man-and-his-family-20-years-later-theyre-still-fighting-to-reunite-in-canada/article_a3853c99-b0e1-454f-b62e-a2be4d0c9fc3.html"}]},
   {"label":"La banlieue américaine désenchantée","qc":14.5,"can":0,"media":[{"id":"LED","url":"https://www.ledevoir.com/monde/etats-unis/994406/etats-unis-banlieue-ne-fait-plus-forcement-bonheur"}]},
   {"label":"Frappes américaines en Iran","qc":10,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/international/etats-unis/2026-07-13/decryptage/le-president-dans-son-labyrinthe.php"}]},
-  {"label":"De l'eau potable des eaux usées","qc":7,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/actualites/environnement/2026-07-13/cesser-de-jeter-l-eau-potable-aux-toilettes.php"}]}
- ]};
+  {"label":"De l'eau potable des eaux usées","qc":7,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/actualites/environnement/2026-07-13/cesser-de-jeter-l-eau-potable-aux-toilettes.php"}]}]}
+};
 const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#2E4663"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
 	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
@@ -188,8 +184,8 @@ const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-la
 	c21.34,35.73-16.894,44.663-28.31,28.286c-2.577-3.698-4.23-7.814-5.033-12.162h10.572c7.608,0,13.776-4.47,13.776-9.983
 	c0-5.515-6.168-9.983-13.776-9.983h-8.821c4.512-13.483,15.416-26.634,31.072-34.866c48.14-25.31,68.982,19.354,55.583,44.167
 	C379.573,238.124,350.974,153.91,297.69,147.804z"/></g></svg>`;
-const SCLS={"Extrême":"s-extreme","Très élevée":"s-tres-eleve","Élevée":"s-eleve","Modérée":"s-moyenne","Faible":"s-faible","Très faible":"s-tres-faible"};
-// ÉCHELLE RADIALE DU RADAR = percentile de saillance du sujet dans la
+
+// ÉCHELLE RADIALE DU RADAR = percentile de saillance de l'événement dans la
 // distribution des Unes publiées de SA région (headline_events_4h,
 // historique complet depuis 2026-05-14). Défendable métho : même famille
 // que l'étiquette de saillance (#35, percentiles) et que la lecture
@@ -205,28 +201,18 @@ function pctile(v,cal){
     return y0+(v-x0)/(x1-x0)*(y1-y0); } }
   return 100;
 }
-const LOGO_DIR='../../public/logos/medias/';
-const MEDIA_LOGOS=new Set(['LED','LAP','RCI','TVA','JDM','MG','CBC','CTV','GN','TTS','GAM','NP','VS']);
+// Badges monochromes identiques (carrés) — initiales courtes par média.
+const MEDIA_BADGE={LED:'LD',LAP:'LP',RCI:'RC',TVA:'TVA',JDM:'JdM',MG:'MG',CBC:'CBC',CTV:'CTV',GN:'GN',TTS:'TS',GAM:'GM',NP:'NP',VS:'VS'};
 const MEDIA_FULL={LED:'Le Devoir',LAP:'La Presse',RCI:'Radio-Canada',TVA:'TVA Nouvelles',JDM:'Journal de Montréal',MG:'Montreal Gazette',CBC:'CBC',CTV:'CTV News',GN:'Global News',TTS:'Toronto Star',GAM:'The Globe and Mail',NP:'National Post',VS:'Vancouver Sun'};
-function tag(s){return `<span class="saillance-tag ${SCLS[s]||'s-faible'}">Saillance ${s.toLowerCase()}</span>`;}
+
 // gap minimal 15 % : à convergence maximale les symboles se touchent
-// (« collés ») sans se masquer l'un l'autre ni fusionner leurs légendes.
+// (« collés ») sans se masquer ni fusionner leurs légendes.
 function pos(conv){const div=100-conv;const gap=18+72*Math.pow(div/100,1.4);return [50-gap/2, 50+gap/2];}
-function byl(label,media){if(!media||!media.length)return '';
-  return `<div class="byline"><span class="lbl">${label}</span><span class="byline-media">`+media.map(m=>`<a href="#">${m}</a>`).join('<span class="sep">·</span>')+`</span></div>`;}
-function blk(title,inner){return `<div class="block"><p class="block-title">${title}</p>${inner}</div>`;}
-// Lecture relative (feedback Yannick) : « plus ou moins que d'hab, et de combien ».
-// pct = percentile de convergence dans la fenêtre glissante.
-function relSentence(pct){
-  if(pct>=99) return `Le bloc le plus convergent des <strong>six derniers mois</strong>`;
-  if(pct>=60) return `Plus convergent que <strong>${pct}&nbsp;%</strong> des blocs des six derniers mois`;
-  if(pct<=40) return `Plus divergent que <strong>${100-pct}&nbsp;%</strong> des blocs des six derniers mois`;
-  return `Dans la norme des six derniers mois — la divergence est la règle`;
-}
-// Radar « qui parle de quoi » : N axes = actualités du bloc, 2 polygones
-// QC (bleu) / CAN (rouge). Échelle commune normalisée sur le max des 2 séries.
+
+// Radar « qui parle de quoi » : axes = événements saillants du bloc,
+// 2 polygones QC (bleu) / CAN (rouge).
 function radar(axes){
-  const W=560,H=400,CX=W/2,CY=H/2,R=128,R0=6;
+  const W=640,H=470,CX=W/2,CY=H/2,R=150,R0=6;
   // Valeurs radiales = PERCENTILES dans la distribution de chaque région
   // (échelle fixe 0-100, anneaux = p25/p50/p75). Pas de normalisation par
   // le max du bloc : la grille garde le même sens d'un bloc à l'autre.
@@ -241,7 +227,7 @@ function radar(axes){
     return `<line class="radar-spoke" x1="${CX}" y1="${CY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;}).join('');
   const poly=(cls,key)=>'<polygon class="'+cls+'" points="'+vals.map((v,i)=>pt(i,v[key]).map(c=>c.toFixed(1)).join(',')).join(' ')+'"/>';
   const dots=(cls,key)=>vals.map((v,i)=>{const [x,y]=pt(i,v[key]);
-    return v[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`:'';}).join('');
+    return v[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.8"/>`:'';}).join('');
   const maxVal=Math.max(...vals.flatMap(v=>[v.vqc,v.vcan]),1);
   const wrapLab=s=>{
     if(s.length<=19) return [s];
@@ -251,91 +237,64 @@ function radar(axes){
     return best<0?[s]:[s.slice(0,best),s.slice(best+1)];
   };
   const labels=axes.map((a,i)=>{const ang=-Math.PI/2+i*2*Math.PI/n;
-    const lx=CX+(R+26)*Math.cos(ang), ly=CY+(R+26)*Math.sin(ang);
+    const lx=CX+(R+15)*Math.cos(ang), ly=CY+(R+15)*Math.sin(ang);
     const anchor=Math.abs(Math.cos(ang))<.35?'middle':(Math.cos(ang)>0?'start':'end');
-    const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?11:-4);
+    const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?12:-6);
     const lines=wrapLab(a.label);
     const strong=Math.max(vals[i].vqc,vals[i].vcan)===maxVal?' strong':'';
-    // Pastilles-logos des médias couvrants, cliquables vers le dernier
-    // article du média sur le sujet. Logos: public/logos/medias/<SIGLE>.png
-    // (favicons officiels). Repli pastille-sigle si logo inconnu. Placées du
-    // côté extérieur : au-dessus du libellé pour les sujets du haut, sinon
-    // en dessous.
-    const CHH=16, CHGAP=5;
-    const chips=(a.media||[]).map(m=>{
-      const c=typeof m==='string'?{id:m,url:'#'}:m;
-      const logo=MEDIA_LOGOS.has(c.id);
-      return {...c, logo, w: logo?16:8+c.id.length*5.4, off:0};
-    });
-    let tot=0; chips.forEach(c=>{c.off=tot; tot+=c.w+CHGAP;}); tot-=CHGAP;
+    const BW=20, CHGAP=5;
+    const chips=(a.media||[]).map(m=> typeof m==='string'?{id:m,url:'#'}:m);
+    const tot=chips.length*BW+(chips.length-1)*CHGAP;
     const rowX = anchor==='middle'? lx-tot/2 : (anchor==='start'? lx : lx-tot);
     const topSide = Math.sin(ang)<-.35;
     const labY = ly+dy;
     const labH = (lines.length-1)*14;
-    const rowY = topSide ? labY-13-CHH : labY+labH+8;
-    const chipsSvg=chips.map(c=>{
+    const rowY = topSide ? labY-14-BW : labY+labH+8;
+    const chipsSvg=chips.map((c,k)=>{
       const ext=c.url!=='#'?' target="_blank" rel="noopener"':'';
-      const cx0=rowX+c.off;
-      const inner=c.logo
-        ? `<image x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="16" height="16" href="${LOGO_DIR}${c.id}.png"/>`
-        : `<rect x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="${c.w.toFixed(1)}" height="${CHH}" rx="3"/>
-           <text x="${(cx0+c.w/2).toFixed(1)}" y="${(rowY+CHH/2+2.8).toFixed(1)}">${c.id}</text>`;
-      // Nom du média révélé au survol (style byline module 1), du côté
-      // extérieur de la rangée pour ne rien masquer.
-      const nameY = topSide ? rowY-6 : rowY+CHH+12;
-      const name=`<text class="m-name" x="${(cx0+c.w/2).toFixed(1)}" y="${nameY.toFixed(1)}" text-anchor="middle">${(MEDIA_FULL[c.id]||c.id).toUpperCase()}</text>`;
-      return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${MEDIA_FULL[c.id]||c.id} sur ${a.label}"><g>${inner}${name}</g></a>`;}).join('');
+      const cx0=rowX+k*(BW+CHGAP);
+      const nameY = topSide ? rowY-7 : rowY+BW+13;
+      return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${MEDIA_FULL[c.id]||c.id} sur ${a.label}"><g>
+        <rect x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="${BW}" height="${BW}" rx="2"/>
+        <text x="${(cx0+BW/2).toFixed(1)}" y="${(rowY+BW/2+2.8).toFixed(1)}">${MEDIA_BADGE[c.id]||c.id}</text></g>
+        <text class="m-name" x="${(cx0+BW/2).toFixed(1)}" y="${nameY.toFixed(1)}" text-anchor="middle">${(MEDIA_FULL[c.id]||c.id).toUpperCase()}</text></a>`;}).join('');
     const labSvg=lines.map((ln,k)=>`<text class="radar-lab${strong}" x="${lx.toFixed(1)}" y="${(labY+k*14).toFixed(1)}" text-anchor="${anchor}">${ln}</text>`).join('');
     return labSvg+chipsSvg;}).join('');
-  return `<div class="sol-radar"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Qui parle de quoi : saillance de chaque actualité au Québec et au Canada">
+  return `<div class="sol-radar"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Qui parle de quoi : saillance de chaque événement au Québec et au Canada, en percentile de sa région">
+    <circle class="radar-halo" cx="${CX}" cy="${CY}" r="${R+10}"/>
     ${ring(1)}${ring(.75)}${ring(.5)}${ring(.25)}${spokes}
     ${poly('radar-can','vcan')}${poly('radar-qc','vqc')}
     ${dots('radar-dot-can','vcan')}${dots('radar-dot-qc','vqc')}
     ${labels}</svg></div>`;
-}
-function legend(){
-  const fleurBleue=FLEUR.replace('height="58" width="57"','height="18" width="18"').replace('fill="#231F1C"','fill="#2E4663"');
-  return `<div class="sol-legend">
-    <span class="li qc">${fleurBleue}<span class="sw qc"></span> Québec</span>
-    <span class="li can"><span class="glyph">&#127809;</span><span class="sw can"></span> Canada</span></div>`;
 }
 function relStrip(pct,modeCls){
   const color={'mode-div':'var(--cordovan)','mode-divp':'#9A5A3C','mode-convp':'#4E6374','mode-con':'var(--bleu)'}[modeCls]||'var(--ink)';
   return `<div class="rel-strip" aria-hidden="true">
     <span class="lbl l">plus divergent</span><span class="lbl m" title="Échelle en percentiles des six derniers mois : le centre est la médiane — un bloc « habituel », même si l'actualité y diverge fortement en absolu (c'est la règle).">habituel</span><span class="lbl r">plus convergent</span>
     <div class="track"></div>
-    <div class="tick" style="left:25%"></div><div class="tick median" style="left:50%"></div><div class="tick" style="left:75%"></div>
+    <div class="tick" style="left:50%"></div>
     <div class="marker" style="left:${pct}%;background:${color}"></div></div>`;
 }
 function render(state){
   ['divergent','convergent','haute','multi','reel'].forEach(s=>document.getElementById('b_'+s).classList.toggle('active',s===state));
   const o=D[state], div=100-o.conv;
   const c=o.conv;const mode=c<25?['Divergence','mode-div']:(c<50?['Divergence partielle','mode-divp']:(c<75?['Convergence partielle','mode-convp']:['Convergence','mode-con']));
-  const verb=o.conv<50?'diverge':'converge', val=o.conv<50?div:o.conv;
+  const verb=o.conv<50?'divergence':'convergence', val=o.conv<50?div:o.conv;
   const [qp,rp]=pos(o.conv);
-  let sections='';
-  if(o.can){
-    const inner=o.can.map((e,i)=>`<div class="ev"><span class="rk">${i+1}</span><div class="body"><div class="ttl">${e.title}</div>
-      <div class="meta">${tag(e.sail)}</div>${byl('À lire au Canada sur',e.media)}</div></div>`).join('');
-    sections+=blk('À la Une au Canada', inner);
-  }
-  if(o.shared){
-    const inner=o.shared.map(s=>`<p class="topic-label">◆ ${s.topic}</p><div class="shared">
-      <div class="col"><div class="colhead">Au Québec</div><div class="ttl">${s.qc_title}</div>${tag(s.qc_sail)}${byl('À lire sur',s.qc_media)}</div>
-      <div class="col"><div class="colhead">Au Canada</div><div class="ttl">${s.can_title}</div>${tag(s.can_sail)}${byl('À lire sur',s.can_media)}</div></div>`).join('');
-    sections+=blk(o.can?'Aussi couvert des deux côtés':'Le même sujet, couvert des deux côtés', inner);
-  }
   document.getElementById('mod').innerHTML=`<section class="solitudes"><h3 class="sol-title">Deux solitudes&nbsp;?</h3>
+    <p class="sol-sub">Les sujets qui dominent l'actualité québécoise et canadienne.<span class="when">Bloc du ${o.date}</span></p>
     <div class="sol-viz"><div class="sol-axis"></div>
-      <span class="sol-arrow qc ${o.conv<50?'dL':'dR'}" style="left:calc(${qp}% - 52px)">${o.conv<50?'&larr;':'&rarr;'}</span>
-      <span class="sol-arrow can ${o.conv<50?'dR':'dL'}" style="left:calc(${rp}% + 52px)">${o.conv<50?'&rarr;':'&larr;'}</span>
+      <span class="sol-arrow qc ${o.conv<50?'dL':'dR'}" style="left:calc(${qp}% - 54px)">${o.conv<50?'&larr;':'&rarr;'}</span>
+      <span class="sol-arrow can ${o.conv<50?'dR':'dL'}" style="left:calc(${rp}% + 54px)">${o.conv<50?'&rarr;':'&larr;'}</span>
       <div class="sol-symbol" style="left:${qp}%">${FLEUR}<span class="caption">Québec</span></div>
       <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
     ${radar(o.axes)}
     <div class="sol-stat">
-      <span class="mode-detail">L'actualité <span class="mode-verb ${mode[1]}">${verb}</span> à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
-      ${relStrip(o.pct,mode[1])}</div></section>`;
-  document.getElementById('cap').textContent='Bloc '+o.date+' · radar : distance au centre = PERCENTILE de saillance du sujet parmi les Unes de SA région (calibré sur 953 Unes QC / 954 CAN, headline_events_4h depuis 2026-05-14 ; anneaux = p25/p50/p75) · états démo : scores indicatifs · indice = cosinus-objet (sans IDF), stoplist géo · jauge = percentile de convergence, centre = médiane 6 mois';
+      <span class="score-num ${mode[1]}" title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés. Mesure : les mêmes SUJETS saillants (personnes, lieux, organisations), pas les mêmes articles.">${val}<sup>%</sup></span>
+      <span class="score-lab">de ${verb}</span>
+      ${relStrip(o.pct,mode[1])}
+      <p class="edito">${o.edito}</p></div></section>`;
+  document.getElementById('cap').textContent='Bloc '+o.date+' · radar : distance au centre = PERCENTILE de saillance de l\'événement parmi les Unes de SA région (calibré sur 953 Unes QC / 954 CAN, headline_events_4h depuis 2026-05-14 ; anneaux = p25/p50/p75) · états démo : scores indicatifs · indice = cosinus-objet (sans IDF), stoplist géo · jauge = percentile de convergence, centre = médiane 6 mois';
 }
 render('divergent');
 </script></body></html>
