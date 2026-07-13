@@ -282,7 +282,7 @@ function render(state){
   const verb=o.conv<50?'divergence':'convergence', val=o.conv<50?div:o.conv;
   const [qp,rp]=pos(o.conv);
   document.getElementById('mod').innerHTML=`<section class="solitudes"><h3 class="sol-title">Deux solitudes&nbsp;?</h3>
-    <p class="sol-sub">Les sujets qui dominent l'actualité québécoise et canadienne.<span class="when">Bloc du ${o.date}</span></p>
+    <p class="sol-sub">Les sujets qui dominent l'actualité québécoise et canadienne.<span class="when">Bloc du ${o.date.replace(/(\d) h/g,'$1&nbsp;h').replace(/ – /g,'&nbsp;–&nbsp;')}</span></p>
     <div class="sol-viz"><div class="sol-axis"></div>
       <span class="sol-arrow qc ${o.conv<50?'dL':'dR'}" style="left:calc(${qp}% - 54px)">${o.conv<50?'&larr;':'&rarr;'}</span>
       <span class="sol-arrow can ${o.conv<50?'dR':'dL'}" style="left:calc(${rp}% + 54px)">${o.conv<50?'&rarr;':'&larr;'}</span>
