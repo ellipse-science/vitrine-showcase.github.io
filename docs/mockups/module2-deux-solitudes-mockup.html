@@ -112,7 +112,8 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 <button id="b_divergent" class="active" onclick="render('divergent')">Divergence · 17%</button>
 <button id="b_convergent" onclick="render('convergent')">Convergence · 86%</button>
 <button id="b_haute" onclick="render('haute')">Convergence · 81%</button>
-<button id="b_multi" onclick="render('multi')">Les deux · 36%</button></div>
+<button id="b_multi" onclick="render('multi')">Les deux · 36%</button>
+<button id="b_reel" onclick="render('reel')">RÉEL 13 juil · 2%</button></div>
 <div id="mod"></div>
 <div id="cap" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-softer);text-align:center;margin-top:18px"></div></div>
 <script>
@@ -153,7 +154,18 @@ const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48,
   {"label":"Pénurie de lits","qc":0,"can":10,"media":["NP","CTV"]},
   {"label":"CHSLD","qc":16,"can":0,"media":["LAP","LED","TVA"]},
   {"label":"Rentrée à l'Assemblée","qc":12,"can":2,"media":["RCI","LED"]}
- ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#2E4663"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
+ ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; // État RÉEL : sortie brute du refiner #211 (test local DEV, bloc 2026-07-13
+// 08-12 UTC) — scores et URLs authentiques, aucun sujet partagé QC/CAN.
+D["reel"]={"date":"13 juil · 8 h – 12 h (réel, refiner #211)","conv":2,"pct":5,"cov_qc":8,"cov_can":1,
+ "axes":[
+  {"label":"Alberta","qc":0,"can":40.1,"media":[{"id":"NP","url":"https://nationalpost.com/news/albertan-mark-milke-wants-to-reinvigorate-canada-not-leave-it"}]},
+  {"label":"Myron Demkiw","qc":0,"can":24.7,"media":[{"id":"GAM","url":"https://www.theglobeandmail.com/canada/article-toronto-festival-salsa-on-st-clair-shooting/"},{"id":"TTS","url":"https://www.thestar.com/news/gta/three-shot-dead-10-injured-as-weekend-wave-of-gun-violence-hits-toronto/article_7c3e9024-0d88-4732-9509-c4ac0c79f760.html"}]},
+  {"label":"Mo Youssufi","qc":0,"can":24.5,"media":[{"id":"TTS","url":"https://www.thestar.com/news/gta/smugglers-separated-this-toronto-man-and-his-family-20-years-later-theyre-still-fighting-to-reunite-in-canada/article_a3853c99-b0e1-454f-b62e-a2be4d0c9fc3.html"}]},
+  {"label":"Donald Trump","qc":14.5,"can":0,"media":[{"id":"LED","url":"https://www.ledevoir.com/monde/etats-unis/994406/etats-unis-banlieue-ne-fait-plus-forcement-bonheur"}]},
+  {"label":"Iran","qc":10,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/international/etats-unis/2026-07-13/decryptage/le-president-dans-son-labyrinthe.php"}]},
+  {"label":"Sherbrooke","qc":7,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/actualites/environnement/2026-07-13/cesser-de-jeter-l-eau-potable-aux-toilettes.php"}]}
+ ]};
+const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#2E4663"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
 	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
 	h-3.208c-0.219-2.392-0.495-4.758-0.824-7.076c-9.43-66.499-59.551-99.748-107.192-94.289
@@ -168,6 +180,9 @@ const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48,
 	c0-5.515-6.168-9.983-13.776-9.983h-8.821c4.512-13.483,15.416-26.634,31.072-34.866c48.14-25.31,68.982,19.354,55.583,44.167
 	C379.573,238.124,350.974,153.91,297.69,147.804z"/></g></svg>`;
 const SCLS={"Extrême":"s-extreme","Très élevée":"s-tres-eleve","Élevée":"s-eleve","Modérée":"s-moyenne","Faible":"s-faible","Très faible":"s-tres-faible"};
+const LOGO_DIR='../../public/logos/medias/';
+const MEDIA_LOGOS=new Set(['LED','LAP','RCI','TVA','JDM','MG','CBC','CTV','GN','TTS','GAM','NP','VS']);
+const MEDIA_FULL={LED:'Le Devoir',LAP:'La Presse',RCI:'Radio-Canada',TVA:'TVA Nouvelles',JDM:'Journal de Montréal',MG:'Montreal Gazette',CBC:'CBC',CTV:'CTV News',GN:'Global News',TTS:'Toronto Star',GAM:'The Globe and Mail',NP:'National Post',VS:'Vancouver Sun'};
 function tag(s){return `<span class="saillance-tag ${SCLS[s]||'s-faible'}">Saillance ${s.toLowerCase()}</span>`;}
 // gap minimal 15 % : à convergence maximale les symboles se touchent
 // (« collés ») sans se masquer l'un l'autre ni fusionner leurs légendes.
@@ -203,21 +218,28 @@ function radar(axes){
     const anchor=Math.abs(Math.cos(ang))<.35?'middle':(Math.cos(ang)>0?'start':'end');
     const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?11:-4);
     const strong=Math.max(a.qc,a.can)===max?' strong':'';
-    // Pastilles-sigles des médias couvrants, cliquables (démo : href #).
-    // Placées du côté extérieur : au-dessus du libellé pour les sujets du
-    // haut, en dessous pour les autres.
-    const CHW=8, CHH=14, CHGAP=4;
-    const chips=(a.media||[]).map((m,k)=>{
-      const w=CHW+m.length*5.4;
-      return {m,w,off:0};
+    // Pastilles-logos des médias couvrants, cliquables vers le dernier
+    // article du média sur le sujet. Logos: public/logos/medias/<SIGLE>.png
+    // (favicons officiels). Repli pastille-sigle si logo inconnu. Placées du
+    // côté extérieur : au-dessus du libellé pour les sujets du haut, sinon
+    // en dessous.
+    const CHH=16, CHGAP=5;
+    const chips=(a.media||[]).map(m=>{
+      const c=typeof m==='string'?{id:m,url:'#'}:m;
+      const logo=MEDIA_LOGOS.has(c.id);
+      return {...c, logo, w: logo?16:8+c.id.length*5.4, off:0};
     });
     let tot=0; chips.forEach(c=>{c.off=tot; tot+=c.w+CHGAP;}); tot-=CHGAP;
     const rowX = anchor==='middle'? lx-tot/2 : (anchor==='start'? lx : lx-tot);
     const labY = ly+dy;
     const rowY = Math.sin(ang)<-.35 ? labY-13-CHH : labY+8;
-    const chipsSvg=chips.map(c=>`<a class="m-chip" href="#" aria-label="Dernier article de ${c.m} sur ${a.label}"><g>
-      <rect x="${(rowX+c.off).toFixed(1)}" y="${rowY.toFixed(1)}" width="${c.w.toFixed(1)}" height="${CHH}" rx="3"/>
-      <text x="${(rowX+c.off+c.w/2).toFixed(1)}" y="${(rowY+CHH/2+2.8).toFixed(1)}">${c.m}</text></g></a>`).join('');
+    const chipsSvg=chips.map(c=>{
+      const ext=c.url!=='#'?' target="_blank" rel="noopener"':'';
+      const inner=c.logo
+        ? `<image x="${(rowX+c.off).toFixed(1)}" y="${rowY.toFixed(1)}" width="16" height="16" href="${LOGO_DIR}${c.id}.png"/>`
+        : `<rect x="${(rowX+c.off).toFixed(1)}" y="${rowY.toFixed(1)}" width="${c.w.toFixed(1)}" height="${CHH}" rx="3"/>
+           <text x="${(rowX+c.off+c.w/2).toFixed(1)}" y="${(rowY+CHH/2+2.8).toFixed(1)}">${c.id}</text>`;
+      return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${c.id} sur ${a.label}"><g><title>${MEDIA_FULL[c.id]||c.id}</title>${inner}</g></a>`;}).join('');
     return `<text class="radar-lab${strong}" x="${lx.toFixed(1)}" y="${labY.toFixed(1)}" text-anchor="${anchor}">${a.label}</text>${chipsSvg}`;}).join('');
   return `<div class="sol-radar"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Qui parle de quoi : saillance de chaque actualité au Québec et au Canada">
     ${ring(1)}${ring(2/3)}${ring(1/3)}${spokes}
@@ -240,7 +262,7 @@ function relStrip(pct,modeCls){
     <div class="marker" style="left:${pct}%;background:${color}"></div></div>`;
 }
 function render(state){
-  ['divergent','convergent','haute','multi'].forEach(s=>document.getElementById('b_'+s).classList.toggle('active',s===state));
+  ['divergent','convergent','haute','multi','reel'].forEach(s=>document.getElementById('b_'+s).classList.toggle('active',s===state));
   const o=D[state], div=100-o.conv;
   const c=o.conv;const mode=c<25?['Divergence','mode-div']:(c<50?['Divergence partielle','mode-divp']:(c<75?['Convergence partielle','mode-convp']:['Convergence','mode-con']));
   const verb=o.conv<50?'diverge':'converge', val=o.conv<50?div:o.conv;
