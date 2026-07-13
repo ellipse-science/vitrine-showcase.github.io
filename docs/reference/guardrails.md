@@ -17,6 +17,10 @@ Il s'applique à tout agent travaillant dans le repo (après acceptation des ré
 
 `.github/workflows/ci.yml` exécute, sur toute PR vers `main` : **type-check → test → build**. Rien qui casse la compilation, la logique de données (tests `lib/data/`) ou le build n'atteint `main`.
 
+## Garde attribution humaine (sur chaque PR)
+
+`.github/workflows/garde-attribution.yml` échoue si un commit de la PR est attribué à une IA : auteur/committer avec adresse IA, ou trailer `Co-Authored-By` pointant vers `noreply@anthropic.com`, Copilot, etc. (règle dure #7, issue #235). Complément préventif : `includeCoAuthoredBy: false` dans `.claude/settings.json` empêche Claude Code de générer le trailer. La détection se fait par adresse courriel, pas par prénom.
+
 ## Auto-merge Dependabot
 
 `.github/workflows/auto-merge-dependabot.yml` approuve puis active l'auto-merge (`gh pr merge --auto`) des PRs Dependabot. **L'auto-merge ne fusionne que si la protection de branche de `main` exige le check CI en succès.**

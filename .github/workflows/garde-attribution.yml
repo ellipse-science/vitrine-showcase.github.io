@@ -1,0 +1,48 @@
+# Garde-fou : aucun commit attribué à une IA (issue #235).
+# Les commits sont attribués à la personne humaine qui a fait le travail —
+# ni auteur/committer IA, ni trailer « Co-Authored-By » pointant vers une IA.
+# Pourquoi : GitHub crédite les co-auteurs dans le graphe Contributors ;
+# noreply@anthropic.com est rattaché au compte GitHub « claude », qui
+# apparaissait comme 2e contributeur du repo.
+# Le check inspecte les commits de la PR ; il se relance à chaque push
+# (type `synchronize`). Détection par adresse courriel (domaines IA connus),
+# pas par prénom — un humain nommé Claude ne déclenche rien.
+name: garde-attribution
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  attribution-humaine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier qu'aucun commit n'est attribué à une IA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # NB : doubles backslashes pour que jq voie \. dans la regex ;
+          # dans jq (Oniguruma), ^ n'ancre que le début de chaîne, d'où (^|\n).
+          ai_pattern='anthropic\\.com|^claude@|copilot|openai\\.com|chatgpt'
+          if ! bad=$(gh api "repos/$REPO/pulls/$PR_NUMBER/commits" --paginate --jq '
+                .[]
+                | select(
+                    ([.commit.author.email, .commit.committer.email] | any(test("'"$ai_pattern"'"; "i")))
+                    or (.commit.message | test("(^|\\n)\\s*co-authored-by:.*('"$ai_pattern"')"; "i"))
+                  )
+                | .sha[0:8] + "  " + (.commit.message | split("\n")[0])'); then
+            echo "::error::Impossible de lister les commits de la PR (gh api a échoué) — check en échec par prudence plutôt que de laisser passer."
+            exit 1
+          fi
+          if [ -n "$bad" ]; then
+            echo "Commits fautifs :"
+            echo "$bad"
+            echo "::error::Des commits de cette PR sont attribués à une IA (auteur/committer ou trailer Co-Authored-By). Réécrivez-les (git rebase -i puis reword/--reset-author) pour les attribuer à la personne humaine. Pour ne plus générer le trailer : includeCoAuthoredBy=false est déjà dans .claude/settings.json — assurez-vous que votre outil le respecte. Règle : AGENTS.md, hard rule #7 (issue #235)."
+            exit 1
+          fi
+          echo "Tous les commits de la PR sont attribués à des humains — OK."

@@ -27,5 +27,6 @@
 - **Never hand-edit `public/data/`** — it is overwritten by `scripts/fetch_data.R`.
 - **Schedule times are Montreal local**, not UTC.
 - **No AWS deployment path** in this repo — GitHub Pages only.
+- **No AI attribution on commits** — never add `Co-Authored-By: Claude …` trailers (hard rule #7; `includeCoAuthoredBy` is already off in `.claude/settings.json`, and the `garde-attribution` check enforces it on every PR).
 
 Full detail and rationale: [`AGENTS.md`](./AGENTS.md). To inspect Athena directly (read-only), see the R snippet in [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md).
