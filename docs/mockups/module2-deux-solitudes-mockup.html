@@ -17,11 +17,14 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .sol-axis{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--rule)}
 .sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 12px;transition:left .6s ease;text-align:center}
 .sol-symbol svg{display:block;margin:0 auto}
-.glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;filter:grayscale(1) brightness(.34) contrast(1.5)}
+/* Érable laissé en couleur émoji, ajusté vers le rouge brique du radar (--red) */
+/* Silhouette plate rouge brique : l'emoji devient transparent, son ombre
+   portée (blur 0) dessine la forme dans la couleur du radar (--red) */
+.glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;color:transparent;text-shadow:0 0 0 var(--red)}
 .caption{display:block;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-softer)}
 /* Radar « qui parle de quoi » — 2 ombrages QC (bleu) / CAN (rouge), axes = actualités du bloc */
 .sol-radar{max-width:640px;margin:0 auto 4px}
-.sol-radar svg{display:block;width:100%;height:auto}
+.sol-radar svg{display:block;width:100%;height:auto;overflow:visible}
 .radar-grid{fill:none;stroke:var(--rule);stroke-width:.7}
 .radar-spoke{stroke:var(--rule-faint);stroke-width:.7}
 .radar-qc{fill:rgba(46,70,99,.30);stroke:var(--bleu);stroke-width:1.6;stroke-linejoin:round}
@@ -41,15 +44,17 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .mode-word{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-.8px}
 .mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
 .mode-detail{font-style:italic;font-size:18px;color:var(--ink-softer)} .mode-detail strong{font-size:27px;color:var(--ink);font-style:normal}
+/* Le verbe diverge/converge reprend le style de l'ancien grand mot, en plus petit */
+.mode-verb{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-style:normal;font-size:30px;letter-spacing:-.4px;line-height:1}
 /* Lecture RELATIVE (feedback Yannick 2026-06-08) : plus/moins que d'habitude, et de combien */
 .rel-line{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);margin-top:2px}
 .rel-line strong{font-weight:600;color:var(--ink)}
-.rel-strip{position:relative;width:260px;height:22px;margin:6px auto 0}
-.rel-strip .track{position:absolute;top:10px;left:0;right:0;height:1px;background:var(--rule)}
-.rel-strip .tick{position:absolute;top:7px;width:1px;height:7px;background:var(--rule)}
-.rel-strip .tick.median{top:5px;height:11px;background:var(--ink-softer)}
-.rel-strip .marker{position:absolute;top:10px;width:9px;height:9px;transform:translate(-50%,-50%) rotate(45deg);transition:left .6s ease}
-.rel-strip .lbl{position:absolute;top:-11px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-softer)}
+.rel-strip{position:relative;width:280px;height:40px;margin:10px auto 0}
+.rel-strip .track{position:absolute;top:28px;left:0;right:0;height:1px;background:var(--rule)}
+.rel-strip .tick{position:absolute;top:25px;width:1px;height:7px;background:var(--rule)}
+.rel-strip .tick.median{top:23px;height:11px;background:var(--ink-softer)}
+.rel-strip .marker{position:absolute;top:28px;width:9px;height:9px;transform:translate(-50%,-50%) rotate(45deg);transition:left .6s ease}
+.rel-strip .lbl{position:absolute;top:0;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-softer)}
 .rel-strip .lbl.l{left:0} .rel-strip .lbl.r{right:0} .rel-strip .lbl.m{left:50%;transform:translateX(-50%)}
 .sol-note{font-family:'Source Serif 4',serif;font-style:italic;font-size:12.5px;color:var(--ink-softer);margin:10px auto 0;max-width:560px}
 .block{max-width:880px;margin:0 auto;text-align:left;border-top:1px solid var(--rule);padding-top:18px}
@@ -133,7 +138,7 @@ const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48,
   {"label":"Pénurie de lits","qc":0,"can":10},
   {"label":"CHSLD","qc":16,"can":0},
   {"label":"Rentrée à l'Assemblée","qc":12,"can":2}
- ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
+ ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#2E4663"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
 	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
 	h-3.208c-0.219-2.392-0.495-4.758-0.824-7.076c-9.43-66.499-59.551-99.748-107.192-94.289
@@ -179,7 +184,7 @@ function radar(axes){
   const dots=(cls,key)=>axes.map((a,i)=>{const [x,y]=pt(i,a[key]);
     return a[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`:'';}).join('');
   const labels=axes.map((a,i)=>{const ang=-Math.PI/2+i*2*Math.PI/n;
-    const lx=CX+(R+16)*Math.cos(ang), ly=CY+(R+16)*Math.sin(ang);
+    const lx=CX+(R+24)*Math.cos(ang), ly=CY+(R+24)*Math.sin(ang);
     const anchor=Math.abs(Math.cos(ang))<.35?'middle':(Math.cos(ang)>0?'start':'end');
     const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?11:-4);
     const strong=Math.max(a.qc,a.can)===max?' strong':'';
@@ -228,7 +233,7 @@ function render(state){
       <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
     ${radar(o.axes)}
     <div class="sol-stat">
-      <span class="mode-detail">L'actualité ${verb} à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
+      <span class="mode-detail">L'actualité <span class="mode-verb ${mode[1]}">${verb}</span> à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
       ${relStrip(o.pct,mode[1])}</div></section>`;
   document.getElementById('cap').textContent='Bloc '+o.date+' · listes = données réelles (Athena DEV) · radar : valeurs indicatives pour la démo (prod = salience par sujet, salient_index) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
 }
