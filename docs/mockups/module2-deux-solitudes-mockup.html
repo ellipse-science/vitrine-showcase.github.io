@@ -22,6 +22,17 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .mode-word{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-.8px}
 .mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
 .mode-detail{font-style:italic;font-size:18px;color:var(--ink-softer)} .mode-detail strong{font-size:27px;color:var(--ink);font-style:normal}
+/* Lecture RELATIVE (feedback Yannick 2026-06-08) : plus/moins que d'habitude, et de combien */
+.rel-line{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);margin-top:2px}
+.rel-line strong{font-weight:600;color:var(--ink)}
+.rel-strip{position:relative;width:260px;height:22px;margin:6px auto 0}
+.rel-strip .track{position:absolute;top:10px;left:0;right:0;height:1px;background:var(--rule)}
+.rel-strip .tick{position:absolute;top:7px;width:1px;height:7px;background:var(--rule)}
+.rel-strip .tick.median{top:5px;height:11px;background:var(--ink-softer)}
+.rel-strip .marker{position:absolute;top:10px;width:9px;height:9px;transform:translate(-50%,-50%) rotate(45deg);transition:left .6s ease}
+.rel-strip .lbl{position:absolute;top:-11px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-softer)}
+.rel-strip .lbl.l{left:0} .rel-strip .lbl.r{right:0} .rel-strip .lbl.m{left:50%;transform:translateX(-50%)}
+.sol-note{font-family:'Source Serif 4',serif;font-style:italic;font-size:12.5px;color:var(--ink-softer);margin:10px auto 0;max-width:560px}
 .block{max-width:880px;margin:0 auto;text-align:left;border-top:1px solid var(--rule);padding-top:18px}
 .block+.block{margin-top:8px;padding-top:20px}
 .block-title{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin:0 0 16px}
@@ -54,7 +65,10 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 <div id="mod"></div>
 <div id="cap" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-softer);text-align:center;margin-top:18px"></div></div>
 <script>
-const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
+// pct = percentile de convergence du bloc vs fenêtre glissante 6 mois (démo:
+// valeurs plausibles tirées de la distribution annuelle du red-team, médiane 18).
+// cov_qc/cov_can = coverage_qc_in_can / coverage_can_in_qc (colonnes refiners#211).
+const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48, "cov_qc": 8, "cov_can": 6, "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "pct": 100, "cov_qc": 71, "cov_can": 64, "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "pct": 99, "cov_qc": 66, "cov_can": 58, "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "pct": 81, "cov_qc": 39, "cov_can": 31, "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
 	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
 	h-3.208c-0.219-2.392-0.495-4.758-0.824-7.076c-9.43-66.499-59.551-99.748-107.192-94.289
@@ -74,6 +88,22 @@ function pos(conv){const div=100-conv;const gap=8+82*Math.pow(div/100,1.4);retur
 function byl(label,media){if(!media||!media.length)return '';
   return `<div class="byline"><span class="lbl">${label}</span><span class="byline-media">`+media.map(m=>`<a href="#">${m}</a>`).join('<span class="sep">·</span>')+`</span></div>`;}
 function blk(title,inner){return `<div class="block"><p class="block-title">${title}</p>${inner}</div>`;}
+// Lecture relative (feedback Yannick) : « plus ou moins que d'hab, et de combien ».
+// pct = percentile de convergence dans la fenêtre glissante.
+function relSentence(pct){
+  if(pct>=99) return `Le bloc le plus convergent des <strong>six derniers mois</strong>`;
+  if(pct>=60) return `Plus convergent que <strong>${pct}&nbsp;%</strong> des blocs des six derniers mois`;
+  if(pct<=40) return `Plus divergent que <strong>${100-pct}&nbsp;%</strong> des blocs des six derniers mois`;
+  return `Dans la norme des six derniers mois — la divergence est la règle`;
+}
+function relStrip(pct,modeCls){
+  const color={'mode-div':'var(--cordovan)','mode-divp':'#9A5A3C','mode-convp':'#4E6374','mode-con':'var(--bleu)'}[modeCls]||'var(--ink)';
+  return `<div class="rel-strip" aria-hidden="true">
+    <span class="lbl l">divergent</span><span class="lbl m">habituel</span><span class="lbl r">convergent</span>
+    <div class="track"></div>
+    <div class="tick" style="left:25%"></div><div class="tick median" style="left:50%"></div><div class="tick" style="left:75%"></div>
+    <div class="marker" style="left:${pct}%;background:${color}"></div></div>`;
+}
 function render(state){
   ['divergent','convergent','haute','multi'].forEach(s=>document.getElementById('b_'+s).classList.toggle('active',s===state));
   const o=D[state], div=100-o.conv;
@@ -96,10 +126,13 @@ function render(state){
     <div class="sol-viz"><div class="sol-axis"></div>
       <div class="sol-symbol" style="left:${qp}%">${FLEUR}<span class="caption">Québec</span></div>
       <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
-    <div class="sol-stat"><span class="mode-word ${mode[1]}">${mode[0]}</span>
-      <span class="mode-detail">L'actualité ${verb} à <strong>${val}&nbsp;%</strong></span></div>
+    <div class="sol-stat"><span class="mode-word ${mode[1]}" title="Mesure : les mêmes SUJETS saillants des deux côtés (personnes, lieux, organisations), pas les mêmes articles.">${mode[0]}</span>
+      <span class="mode-detail">L'actualité ${verb} à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
+      <span class="rel-line">${relSentence(o.pct)}</span>
+      ${relStrip(o.pct,mode[1])}
+      <span class="sol-note">Le Québec consacre ${o.cov_qc}&nbsp;% de son attention à des sujets aussi saillants au Canada&nbsp;; le Canada, ${o.cov_can}&nbsp;% aux sujets saillants au Québec.</span></div>
     ${sections}</section>`;
-  document.getElementById('cap').textContent='Bloc '+o.date+' · données réelles (Athena DEV) · indice = cosinus-objet IDF · saillance = seuils calibrés';
+  document.getElementById('cap').textContent='Bloc '+o.date+' · données réelles (Athena DEV) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
 }
 render('divergent');
 </script></body></html>
