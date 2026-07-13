@@ -26,14 +26,31 @@ description: Règles de rédaction de TOUT texte public de la Vitrine — libell
   « fossé », « guerre », « fracture », « choc ») : les agendas
   « divergent », « se croisent », « convergent », « s'ignorent ».
 
+## Anti-style IA (demande d'Adrien, 2026-07-13)
+
+Le texte doit sonner comme celui de nos autres projets (Datagotchi,
+Polimètre, Projet Quorum), pas comme une sortie de modèle. Marqueurs
+bannis :
+
+- **Le tiret cadratin (—)**, y compris pour les incises et les chutes de
+  phrase. Le remplacer par deux phrases, un deux-points ou des
+  parenthèses.
+- Les constructions « ce n'est pas X, c'est Y » et « non seulement…
+  mais aussi… » en cadence systématique.
+- Les triades décoratives (« clair, précis et efficace ») quand une
+  seule épithète suffit.
+- Les intensificateurs creux : « véritable », « incontournable »,
+  « fascinant », « crucial ».
+- Les conclusions qui sur-expliquent (« en somme », « au final », « ce
+  qui montre bien que »).
+
 ## Français et typographie
 
 - Français québécois soigné ; anglicismes évités (« infolettre », pas
   « newsletter » ; « à la une », pas « en headline »).
 - **Typographie française** : espace insécable avant `%`, `:`, `;`, `?`,
-  `!` et à l'intérieur des guillemets « … » ; tiret cadratin — avec
-  espaces pour les incises ; nombres : espace insécable comme séparateur
-  de milliers.
+  `!` et à l'intérieur des guillemets « … » ; nombres : espace insécable
+  comme séparateur de milliers.
 - Heures : `8 h`, `16 h – 20 h` (h minuscule, espaces, tiret demi-cadratin
   pour les plages). Dates : `13 juillet`, sans zéro initial.
 - Majuscules : « la Une » (l'objet de presse) prend la majuscule ; les
