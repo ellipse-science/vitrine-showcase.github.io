@@ -46,7 +46,13 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .m-chip rect{fill:var(--paper);stroke:var(--rule);stroke-width:.8;rx:3}
 .m-chip text{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.08em;fill:var(--ink-soft);text-anchor:middle}
 .m-chip:hover rect{fill:var(--ink);stroke:var(--ink)}
-.m-chip:hover text{fill:var(--paper)}
+.m-chip:hover text:not(.m-name){fill:var(--paper)}
+/* Survol : le logo grossit (affordance de clic) et le nom du média
+   apparaît à côté, dans le style byline du module 1 */
+.m-chip image{transform-box:fill-box;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.m-chip:hover image{transform:scale(1.55)}
+.m-chip .m-name{opacity:0;pointer-events:none;transition:opacity .15s ease;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;font-weight:600;fill:var(--ink)}
+.m-chip:hover .m-name{opacity:1}
 .sol-legend{display:flex;justify-content:center;gap:26px;align-items:center;margin:0 0 10px}
 .sol-legend .li{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
 .sol-legend .li.qc{color:var(--bleu)} .sol-legend .li.can{color:var(--red)}
@@ -124,46 +130,49 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 // (démo : valeurs indicatives, prod = top_objects_divergence + salient_index).
 const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48, "cov_qc": 8, "cov_can": 6,
  "axes": [
-  {"label":"ACEUM","qc":4,"can":40,"media":["CBC","CTV","GAM"]},
-  {"label":"« 51e État »","qc":6,"can":26,"media":["CBC","NP"]},
-  {"label":"Séparation Alberta","qc":0,"can":14,"media":["NP"]},
-  {"label":"Grand Prix de Mtl","qc":22,"can":3,"media":["LAP","JDM"]},
+  {"label":"ACEUM","qc":4,"can":80,"media":["CBC","CTV","GAM"]},
+  {"label":"« 51e État »","qc":6,"can":52,"media":["CBC","NP"]},
+  {"label":"Séparation Alberta","qc":0,"can":28,"media":["NP"]},
+  {"label":"Grand Prix de Mtl","qc":22,"can":6,"media":["LAP","JDM"]},
   {"label":"Urgences au Québec","qc":18,"can":0,"media":["LED","RCI","TVA"]},
   {"label":"Tramway de Québec","qc":15,"can":0,"media":["LED","RCI"]}
  ], "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "pct": 100, "cov_qc": 71, "cov_can": 64,
  "axes": [
-  {"label":"Comité défense CA–US","qc":34,"can":30,"media":["LAP","LED","RCI","CTV"]},
-  {"label":"Tarifs Trump","qc":13,"can":15,"media":["CBC","GAM","LAP"]},
-  {"label":"Mark Carney","qc":10,"can":12,"media":["RCI","CTV"]},
-  {"label":"Gaza","qc":8,"can":6,"media":["LED","CBC"]},
-  {"label":"Séries LNH","qc":9,"can":5,"media":["JDM","TVA","GN"]},
-  {"label":"Feux Alberta","qc":3,"can":7,"media":["GN","CBC"]}
+  {"label":"Comité défense CA–US","qc":34,"can":60,"media":["LAP","LED","RCI","CTV"]},
+  {"label":"Tarifs Trump","qc":13,"can":30,"media":["CBC","GAM","LAP"]},
+  {"label":"Mark Carney","qc":10,"can":24,"media":["RCI","CTV"]},
+  {"label":"Gaza","qc":8,"can":12,"media":["LED","CBC"]},
+  {"label":"Séries LNH","qc":9,"can":10,"media":["JDM","TVA","GN"]},
+  {"label":"Feux Alberta","qc":3,"can":14,"media":["GN","CBC"]}
  ], "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "pct": 99, "cov_qc": 66, "cov_can": 58,
  "axes": [
-  {"label":"Hantavirus en C.-B.","qc":38,"can":30,"media":["JDM","LAP","LED","RCI","CBC","GAM"]},
-  {"label":"Mark Carney","qc":9,"can":13,"media":["RCI","CBC"]},
-  {"label":"Ukraine","qc":7,"can":8,"media":["LED","GAM"]},
-  {"label":"Essence & inflation","qc":6,"can":9,"media":["TVA","CTV"]},
-  {"label":"Grands Prix","qc":8,"can":4,"media":["JDM","LAP"]},
-  {"label":"Logement","qc":5,"can":6,"media":["LED","GN"]}
+  {"label":"Hantavirus en C.-B.","qc":38,"can":60,"media":["JDM","LAP","LED","RCI","CBC","GAM"]},
+  {"label":"Mark Carney","qc":9,"can":26,"media":["RCI","CBC"]},
+  {"label":"Ukraine","qc":7,"can":16,"media":["LED","GAM"]},
+  {"label":"Essence & inflation","qc":6,"can":18,"media":["TVA","CTV"]},
+  {"label":"Grands Prix","qc":8,"can":8,"media":["JDM","LAP"]},
+  {"label":"Logement","qc":5,"can":12,"media":["LED","GN"]}
  ], "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "pct": 81, "cov_qc": 39, "cov_can": 31,
  "axes": [
-  {"label":"Récession technique","qc":8,"can":22,"media":["LED","RCI","CBC","CTV","GN"]},
-  {"label":"Drone russe","qc":6,"can":5,"media":["RCI","GAM"]},
-  {"label":"PIB & guerre en Iran","qc":2,"can":12,"media":["GN","CBC"]},
-  {"label":"Pénurie de lits","qc":0,"can":10,"media":["NP","CTV"]},
+  {"label":"Récession technique","qc":8,"can":44,"media":["LED","RCI","CBC","CTV","GN"]},
+  {"label":"Drone russe","qc":6,"can":10,"media":["RCI","GAM"]},
+  {"label":"PIB & guerre en Iran","qc":2,"can":24,"media":["GN","CBC"]},
+  {"label":"Pénurie de lits","qc":0,"can":20,"media":["NP","CTV"]},
   {"label":"CHSLD","qc":16,"can":0,"media":["LAP","LED","TVA"]},
-  {"label":"Rentrée à l'Assemblée","qc":12,"can":2,"media":["RCI","LED"]}
+  {"label":"Rentrée à l'Assemblée","qc":12,"can":4,"media":["RCI","LED"]}
  ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; // État RÉEL : sortie brute du refiner #211 (test local DEV, bloc 2026-07-13
 // 08-12 UTC) — scores et URLs authentiques, aucun sujet partagé QC/CAN.
+// Libellés = ÉVÉNEMENTS (titres courts FR rédigés depuis event_title_raw ;
+// le test tournait sans LLM, donc `title` FR était vide et `event_label`
+// n'est que l'objet du cluster — en prod, on affiche le titre FR généré).
 D["reel"]={"date":"13 juil · 8 h – 12 h (réel, refiner #211)","conv":2,"pct":5,"cov_qc":8,"cov_can":1,
  "axes":[
-  {"label":"Alberta","qc":0,"can":40.1,"media":[{"id":"NP","url":"https://nationalpost.com/news/albertan-mark-milke-wants-to-reinvigorate-canada-not-leave-it"}]},
-  {"label":"Myron Demkiw","qc":0,"can":24.7,"media":[{"id":"GAM","url":"https://www.theglobeandmail.com/canada/article-toronto-festival-salsa-on-st-clair-shooting/"},{"id":"TTS","url":"https://www.thestar.com/news/gta/three-shot-dead-10-injured-as-weekend-wave-of-gun-violence-hits-toronto/article_7c3e9024-0d88-4732-9509-c4ac0c79f760.html"}]},
-  {"label":"Mo Youssufi","qc":0,"can":24.5,"media":[{"id":"TTS","url":"https://www.thestar.com/news/gta/smugglers-separated-this-toronto-man-and-his-family-20-years-later-theyre-still-fighting-to-reunite-in-canada/article_a3853c99-b0e1-454f-b62e-a2be4d0c9fc3.html"}]},
-  {"label":"Donald Trump","qc":14.5,"can":0,"media":[{"id":"LED","url":"https://www.ledevoir.com/monde/etats-unis/994406/etats-unis-banlieue-ne-fait-plus-forcement-bonheur"}]},
-  {"label":"Iran","qc":10,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/international/etats-unis/2026-07-13/decryptage/le-president-dans-son-labyrinthe.php"}]},
-  {"label":"Sherbrooke","qc":7,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/actualites/environnement/2026-07-13/cesser-de-jeter-l-eau-potable-aux-toilettes.php"}]}
+  {"label":"L'Alberta et le renouveau canadien","qc":0,"can":40.1,"media":[{"id":"NP","url":"https://nationalpost.com/news/albertan-mark-milke-wants-to-reinvigorate-canada-not-leave-it"}]},
+  {"label":"Fusillade au festival de Toronto","qc":0,"can":24.7,"media":[{"id":"GAM","url":"https://www.theglobeandmail.com/canada/article-toronto-festival-salsa-on-st-clair-shooting/"},{"id":"TTS","url":"https://www.thestar.com/news/gta/three-shot-dead-10-injured-as-weekend-wave-of-gun-violence-hits-toronto/article_7c3e9024-0d88-4732-9509-c4ac0c79f760.html"}]},
+  {"label":"Famille séparée par des passeurs","qc":0,"can":24.5,"media":[{"id":"TTS","url":"https://www.thestar.com/news/gta/smugglers-separated-this-toronto-man-and-his-family-20-years-later-theyre-still-fighting-to-reunite-in-canada/article_a3853c99-b0e1-454f-b62e-a2be4d0c9fc3.html"}]},
+  {"label":"La banlieue américaine désenchantée","qc":14.5,"can":0,"media":[{"id":"LED","url":"https://www.ledevoir.com/monde/etats-unis/994406/etats-unis-banlieue-ne-fait-plus-forcement-bonheur"}]},
+  {"label":"Frappes américaines en Iran","qc":10,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/international/etats-unis/2026-07-13/decryptage/le-president-dans-son-labyrinthe.php"}]},
+  {"label":"De l'eau potable des eaux usées","qc":7,"can":0,"media":[{"id":"LAP","url":"https://www.lapresse.ca/actualites/environnement/2026-07-13/cesser-de-jeter-l-eau-potable-aux-toilettes.php"}]}
  ]};
 const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#2E4663"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
@@ -180,6 +189,22 @@ const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-la
 	c0-5.515-6.168-9.983-13.776-9.983h-8.821c4.512-13.483,15.416-26.634,31.072-34.866c48.14-25.31,68.982,19.354,55.583,44.167
 	C379.573,238.124,350.974,153.91,297.69,147.804z"/></g></svg>`;
 const SCLS={"Extrême":"s-extreme","Très élevée":"s-tres-eleve","Élevée":"s-eleve","Modérée":"s-moyenne","Faible":"s-faible","Très faible":"s-tres-faible"};
+// ÉCHELLE RADIALE DU RADAR = percentile de saillance du sujet dans la
+// distribution des Unes publiées de SA région (headline_events_4h,
+// historique complet depuis 2026-05-14). Défendable métho : même famille
+// que l'étiquette de saillance (#35, percentiles) et que la lecture
+// relative (Yannick 2026-06-08). Corrige le biais d'échelle brute
+// (ROC ≈ 2× QC : panels et salient_index différents — cf. #143).
+// Calibration RÉELLE (Athena DEV, 2026-07-13, n=953 Unes QC / 954 CAN) :
+const CAL_QC =[[0,0],[7.4,5],[11,20],[18.2,50],[30.6,80],[63.8,95],[193.4,100]];
+const CAL_ROC=[[0,0],[15.3,5],[22,20],[39,50],[68.5,80],[128.9,95],[293.4,100]];
+function pctile(v,cal){
+  if(!(v>0)) return 0;
+  for(let i=1;i<cal.length;i++){ if(v<=cal[i][0]){
+    const [x0,y0]=cal[i-1],[x1,y1]=cal[i];
+    return y0+(v-x0)/(x1-x0)*(y1-y0); } }
+  return 100;
+}
 const LOGO_DIR='../../public/logos/medias/';
 const MEDIA_LOGOS=new Set(['LED','LAP','RCI','TVA','JDM','MG','CBC','CTV','GN','TTS','GAM','NP','VS']);
 const MEDIA_FULL={LED:'Le Devoir',LAP:'La Presse',RCI:'Radio-Canada',TVA:'TVA Nouvelles',JDM:'Journal de Montréal',MG:'Montreal Gazette',CBC:'CBC',CTV:'CTV News',GN:'Global News',TTS:'Toronto Star',GAM:'The Globe and Mail',NP:'National Post',VS:'Vancouver Sun'};
@@ -202,22 +227,35 @@ function relSentence(pct){
 // QC (bleu) / CAN (rouge). Échelle commune normalisée sur le max des 2 séries.
 function radar(axes){
   const W=560,H=400,CX=W/2,CY=H/2,R=128,R0=6;
-  const n=axes.length, max=Math.max(...axes.flatMap(a=>[a.qc,a.can]),1);
-  const pt=(i,v)=>{const ang=-Math.PI/2+i*2*Math.PI/n;const r=R0+(v/max)*(R-R0);
+  // Valeurs radiales = PERCENTILES dans la distribution de chaque région
+  // (échelle fixe 0-100, anneaux = p25/p50/p75). Pas de normalisation par
+  // le max du bloc : la grille garde le même sens d'un bloc à l'autre.
+  const vals=axes.map(a=>({vqc:pctile(a.qc,CAL_QC), vcan:pctile(a.can,CAL_ROC)}));
+  const n=axes.length;
+  const pt=(i,v)=>{const ang=-Math.PI/2+i*2*Math.PI/n;const r=R0+(v/100)*(R-R0);
     return [CX+r*Math.cos(ang), CY+r*Math.sin(ang)];};
   const ring=f=>'<polygon class="radar-grid" points="'+axes.map((_,i)=>{
     const ang=-Math.PI/2+i*2*Math.PI/n;const r=R0+f*(R-R0);
     return (CX+r*Math.cos(ang)).toFixed(1)+','+(CY+r*Math.sin(ang)).toFixed(1);}).join(' ')+'"/>';
-  const spokes=axes.map((_,i)=>{const [x,y]=pt(i,max);
+  const spokes=axes.map((_,i)=>{const [x,y]=pt(i,100);
     return `<line class="radar-spoke" x1="${CX}" y1="${CY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;}).join('');
-  const poly=(cls,key)=>'<polygon class="'+cls+'" points="'+axes.map((a,i)=>pt(i,a[key]).map(c=>c.toFixed(1)).join(',')).join(' ')+'"/>';
-  const dots=(cls,key)=>axes.map((a,i)=>{const [x,y]=pt(i,a[key]);
-    return a[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`:'';}).join('');
+  const poly=(cls,key)=>'<polygon class="'+cls+'" points="'+vals.map((v,i)=>pt(i,v[key]).map(c=>c.toFixed(1)).join(',')).join(' ')+'"/>';
+  const dots=(cls,key)=>vals.map((v,i)=>{const [x,y]=pt(i,v[key]);
+    return v[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`:'';}).join('');
+  const maxVal=Math.max(...vals.flatMap(v=>[v.vqc,v.vcan]),1);
+  const wrapLab=s=>{
+    if(s.length<=19) return [s];
+    const mid=Math.floor(s.length/2);
+    let best=-1;
+    for(let j=0;j<s.length;j++) if(s[j]===' ' && (best<0||Math.abs(j-mid)<Math.abs(best-mid))) best=j;
+    return best<0?[s]:[s.slice(0,best),s.slice(best+1)];
+  };
   const labels=axes.map((a,i)=>{const ang=-Math.PI/2+i*2*Math.PI/n;
-    const lx=CX+(R+24)*Math.cos(ang), ly=CY+(R+24)*Math.sin(ang);
+    const lx=CX+(R+26)*Math.cos(ang), ly=CY+(R+26)*Math.sin(ang);
     const anchor=Math.abs(Math.cos(ang))<.35?'middle':(Math.cos(ang)>0?'start':'end');
     const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?11:-4);
-    const strong=Math.max(a.qc,a.can)===max?' strong':'';
+    const lines=wrapLab(a.label);
+    const strong=Math.max(vals[i].vqc,vals[i].vcan)===maxVal?' strong':'';
     // Pastilles-logos des médias couvrants, cliquables vers le dernier
     // article du média sur le sujet. Logos: public/logos/medias/<SIGLE>.png
     // (favicons officiels). Repli pastille-sigle si logo inconnu. Placées du
@@ -231,20 +269,28 @@ function radar(axes){
     });
     let tot=0; chips.forEach(c=>{c.off=tot; tot+=c.w+CHGAP;}); tot-=CHGAP;
     const rowX = anchor==='middle'? lx-tot/2 : (anchor==='start'? lx : lx-tot);
+    const topSide = Math.sin(ang)<-.35;
     const labY = ly+dy;
-    const rowY = Math.sin(ang)<-.35 ? labY-13-CHH : labY+8;
+    const labH = (lines.length-1)*14;
+    const rowY = topSide ? labY-13-CHH : labY+labH+8;
     const chipsSvg=chips.map(c=>{
       const ext=c.url!=='#'?' target="_blank" rel="noopener"':'';
+      const cx0=rowX+c.off;
       const inner=c.logo
-        ? `<image x="${(rowX+c.off).toFixed(1)}" y="${rowY.toFixed(1)}" width="16" height="16" href="${LOGO_DIR}${c.id}.png"/>`
-        : `<rect x="${(rowX+c.off).toFixed(1)}" y="${rowY.toFixed(1)}" width="${c.w.toFixed(1)}" height="${CHH}" rx="3"/>
-           <text x="${(rowX+c.off+c.w/2).toFixed(1)}" y="${(rowY+CHH/2+2.8).toFixed(1)}">${c.id}</text>`;
-      return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${c.id} sur ${a.label}"><g><title>${MEDIA_FULL[c.id]||c.id}</title>${inner}</g></a>`;}).join('');
-    return `<text class="radar-lab${strong}" x="${lx.toFixed(1)}" y="${labY.toFixed(1)}" text-anchor="${anchor}">${a.label}</text>${chipsSvg}`;}).join('');
+        ? `<image x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="16" height="16" href="${LOGO_DIR}${c.id}.png"/>`
+        : `<rect x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="${c.w.toFixed(1)}" height="${CHH}" rx="3"/>
+           <text x="${(cx0+c.w/2).toFixed(1)}" y="${(rowY+CHH/2+2.8).toFixed(1)}">${c.id}</text>`;
+      // Nom du média révélé au survol (style byline module 1), du côté
+      // extérieur de la rangée pour ne rien masquer.
+      const nameY = topSide ? rowY-6 : rowY+CHH+12;
+      const name=`<text class="m-name" x="${(cx0+c.w/2).toFixed(1)}" y="${nameY.toFixed(1)}" text-anchor="middle">${(MEDIA_FULL[c.id]||c.id).toUpperCase()}</text>`;
+      return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${MEDIA_FULL[c.id]||c.id} sur ${a.label}"><g>${inner}${name}</g></a>`;}).join('');
+    const labSvg=lines.map((ln,k)=>`<text class="radar-lab${strong}" x="${lx.toFixed(1)}" y="${(labY+k*14).toFixed(1)}" text-anchor="${anchor}">${ln}</text>`).join('');
+    return labSvg+chipsSvg;}).join('');
   return `<div class="sol-radar"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Qui parle de quoi : saillance de chaque actualité au Québec et au Canada">
-    ${ring(1)}${ring(2/3)}${ring(1/3)}${spokes}
-    ${poly('radar-can','can')}${poly('radar-qc','qc')}
-    ${dots('radar-dot-can','can')}${dots('radar-dot-qc','qc')}
+    ${ring(1)}${ring(.75)}${ring(.5)}${ring(.25)}${spokes}
+    ${poly('radar-can','vcan')}${poly('radar-qc','vqc')}
+    ${dots('radar-dot-can','vcan')}${dots('radar-dot-qc','vqc')}
     ${labels}</svg></div>`;
 }
 function legend(){
@@ -256,7 +302,7 @@ function legend(){
 function relStrip(pct,modeCls){
   const color={'mode-div':'var(--cordovan)','mode-divp':'#9A5A3C','mode-convp':'#4E6374','mode-con':'var(--bleu)'}[modeCls]||'var(--ink)';
   return `<div class="rel-strip" aria-hidden="true">
-    <span class="lbl l">divergent</span><span class="lbl m">habituel</span><span class="lbl r">convergent</span>
+    <span class="lbl l">plus divergent</span><span class="lbl m" title="Échelle en percentiles des six derniers mois : le centre est la médiane — un bloc « habituel », même si l'actualité y diverge fortement en absolu (c'est la règle).">habituel</span><span class="lbl r">plus convergent</span>
     <div class="track"></div>
     <div class="tick" style="left:25%"></div><div class="tick median" style="left:50%"></div><div class="tick" style="left:75%"></div>
     <div class="marker" style="left:${pct}%;background:${color}"></div></div>`;
@@ -289,7 +335,7 @@ function render(state){
     <div class="sol-stat">
       <span class="mode-detail">L'actualité <span class="mode-verb ${mode[1]}">${verb}</span> à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
       ${relStrip(o.pct,mode[1])}</div></section>`;
-  document.getElementById('cap').textContent='Bloc '+o.date+' · listes = données réelles (Athena DEV) · radar : valeurs indicatives pour la démo (prod = salience par sujet, salient_index) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
+  document.getElementById('cap').textContent='Bloc '+o.date+' · radar : distance au centre = PERCENTILE de saillance du sujet parmi les Unes de SA région (calibré sur 953 Unes QC / 954 CAN, headline_events_4h depuis 2026-05-14 ; anneaux = p25/p50/p75) · états démo : scores indicatifs · indice = cosinus-objet (sans IDF), stoplist géo · jauge = percentile de convergence, centre = médiane 6 mois';
 }
 render('divergent');
 </script></body></html>
