@@ -573,15 +573,15 @@
     <p class="metho-body">Ce module identifie les événements qui dominent l'agenda médiatique québécois au moment de la consultation, en distinguant l'importance relative accordée par les médias francophones québécois et les médias canadiens anglophones.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le raffineur <code>radar-event-salience</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
-    <p class="metho-body">Le raffineur suit aussi chaque histoire d'un bloc de quatre heures à l'autre (identifiant de <em>storyline</em>) et agrège, sur une fenêtre glissante de 24 heures, l'union des médias l'ayant mise en Une, le dernier article mis en Une par chaque média et le moment de sa première apparition parmi les Unes saillantes (hérité de bloc en bloc tant que l'histoire reste en Une).</p>
+    <p class="metho-body">Le système regroupe les articles qui traitent d'un même fait d'actualité, à partir des captures des pages d'accueil des médias et des articles qui y figurent. Chaque regroupement, appelé « événement », reçoit un enjeu principal et un <strong>score de saillance</strong> (son importance médiatique), mesuré à la fois à l'échelle de l'ensemble des médias suivis et spécifiquement pour les médias québécois.</p>
+    <p class="metho-body">Le système suit aussi chaque histoire au fil de la journée. Sur une fenêtre glissante de 24 heures, il rassemble l'ensemble des médias qui l'ont mise en Une, le dernier article mis en Une par chacun d'eux, et le moment où elle est apparue pour la première fois parmi les Unes saillantes.</p>
 
     <h3>Algorithme — La Une des Unes</h3>
     <ol class="metho-list">
-      <li>Les événements du dernier bloc de quatre heures sont dédupliqués par <code>event_id</code> (priorité à la version ciblant le Québec).</li>
-      <li>Les événements de source exclusivement américaine sont exclus.</li>
-      <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
-      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
+      <li>Les événements du dernier bloc de quatre heures sont regroupés par histoire (une seule version par fait d'actualité, en priorisant la lecture québécoise).</li>
+      <li>Les événements provenant uniquement de médias américains sont écartés.</li>
+      <li>Les trois événements les plus saillants au Québec sont retenus et présentés en mise en page éditoriale (une principale et deux secondaires).</li>
+      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
       <li>La mention « Saillant au Québec depuis … » situe le moment où l'histoire est apparue pour la première fois parmi les Unes saillantes du Québec, arrondi à l'édition la plus proche (nuit, matin, midi, après-midi, soir), en heure de Montréal.</li>
       <li>La byline « À la Une aujourd'hui sur » liste les médias québécois qui ont mis l'histoire en Une au cours des 24 dernières heures — pas seulement dans le bloc courant ; « Absent de la Une sur » désigne ceux qui ne l'ont mise en Une à aucun moment de cette fenêtre. Chaque nom de média pointe vers le dernier article que ce média a mis en Une sur l'histoire.</li>
     </ol>
@@ -589,9 +589,9 @@
     <h3>Algorithme — Deux solitudes</h3>
     <p class="metho-body">Ce panneau mesure la divergence entre l'agenda médiatique québécois et canadien sur le même bloc de quatre heures.</p>
     <ol class="metho-list">
-      <li>Lorsque le raffineur produit un champ <code>interval_convergence_score</code> (similarité cosinus entre les vecteurs de saillance QC et ROC), le taux de divergence est calculé comme <code>100 − convergence</code>.</li>
-      <li>En l'absence de ce champ, une approximation par ratio d'exclusivité (<code>score_qc / score_saillance</code>) est utilisée.</li>
-      <li>Le champ <code>top_objects_divergence</code> fournit les cinq événements dont la couverture diffère le plus entre les deux agendas ; ils sont affichés sous forme de barres comparatives QC / Canada.</li>
+      <li>La divergence part de la similarité entre les priorités des deux agendas : plus le Québec et le Canada couvrent les mêmes sujets avec la même intensité, plus la convergence est forte ; le taux de divergence en est le complément.</li>
+      <li>À défaut de cette mesure, une approximation fondée sur l'exclusivité de la couverture québécoise est utilisée.</li>
+      <li>Les cinq histoires dont la couverture diffère le plus entre les deux agendas sont affichées sous forme de barres comparatives Québec / Canada.</li>
     </ol>
 
     <h3>Affichage</h3>
