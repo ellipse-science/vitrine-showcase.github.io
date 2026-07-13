@@ -6,8 +6,9 @@ description: Règles de rédaction de TOUT texte public de la Vitrine — libell
 # Rédaction éditoriale — règles de la Vitrine démocratique
 
 > **ÉTAT : V1 (DRAFT) — rédigée le 2026-07-13** à partir du corpus existant du
-> site, du rapport red-team du Module 2 (`docs/red-team-convergence-module2-2026-06-05.md`)
-> et du design language. **À valider et amender par Helena (contenu
+> site, du rapport red-team du Module 2 (`docs/red-team-convergence-module2-2026-06-05.md`),
+> du design language **et du Guide de rédaction CAPP/CLESSN** (Notion,
+> 2020-2024 — voir la section Héritage pour le tri repris/adapté/à réviser). **À valider et amender par Helena (contenu
 > éditorial) et Adrien avant de retirer ce bandeau.** Ce fichier est la
 > copie canonique unique des règles de rédaction (corollaire de la règle
 > métho : une seule source, jamais de copies).
@@ -37,6 +38,10 @@ description: Règles de rédaction de TOUT texte public de la Vitrine — libell
   pour les plages). Dates : `13 juillet`, sans zéro initial.
 - Majuscules : « la Une » (l'objet de presse) prend la majuscule ; les
   noms de modules sont en romain sans guillemets dans le corps.
+- **Italique** (règle CAPP/CLESSN) : termes techniques et termes anglais
+  en italique (mais prioriser le français) ; JAMAIS d'italique pour les
+  noms de nos projets (Vitrine démocratique, Radar+) ni les noms
+  d'entreprises (GitHub, Slack…).
 
 ## Lexique canonique (toujours ces mots, jamais leurs voisins)
 
@@ -54,6 +59,16 @@ description: Règles de rédaction de TOUT texte public de la Vitrine — libell
 - Côté public, « Canada » signifie **Canada hors Québec, sans les
   États-Unis** (cf. bug #143) — si l'ambiguïté gêne, écrire « médias
   canadiens hors Québec » une fois, puis « au Canada ».
+
+- **Noms officiels des partis (Québec)**, casse comprise (source :
+  Élections Québec ; règle CAPP/CLESSN) : Coalition avenir Québec (CAQ),
+  Parti libéral du Québec (PLQ), Québec solidaire (QS), Parti québécois
+  (PQ), Parti vert du Québec (PVQ), Parti conservateur du Québec (PCQ).
+  Jamais de surnom de campagne (« l'équipe François Legault »).
+- **Noms institutionnels** : « Vitrine démocratique » (EN : *The Vitrine
+  Démocratique*) ; CLESSN = Chaire de leadership en enseignement des
+  sciences sociales numériques (majuscule à « la Chaire ») ; CAPP =
+  Centre d'analyse des politiques publiques (majuscule au « Centre »).
 
 ## Honnêteté méthodologique (issu du red-team — non négociable)
 
@@ -82,6 +97,24 @@ description: Règles de rédaction de TOUT texte public de la Vitrine — libell
   et canadiennes de ce bloc »).
 - Les gabarits nouveaux ou modifiés passent par une review de la
   propriétaire du contenu éditorial (Helena) avant merge.
+
+## Héritage du Guide de rédaction CAPP/CLESSN (Notion, 2020-2024)
+
+Source : [Guide de rédaction CAPP/CLESSN](https://app.notion.com/p/clessn/Guide-de-r-daction-CAPP-CLESSN-3b17f2f4adeb4f829d23fd281d6c92c8)
+(fiches datées 2022-2023, page verrouillée). Tri fait le 2026-07-13 :
+
+- **Repris tel quel** : nom du projet, italique, noms des partis, sigles
+  CLESSN/CAPP (intégrés ci-dessus).
+- **Adapté** : « Bourse de l'humeur : dire optimisme/pessimisme, jamais
+  positif/négatif » — le module a disparu, mais l'esprit reste : pour le
+  ton médiatique (module partis), dire « ton favorable/défavorable »,
+  pas « positif/négatif ».
+- **⚠️ À RÉVISER par Helena/Adrien** (fiches 2022 qui contredisent
+  l'usage 2026) : « ne jamais utiliser Radar+ (dire : les médias) » —
+  contredit radarplus.org et la communication actuelle ; « Civimètre+ →
+  citoyens », « Agora+ → décideurs (jamais “décideurs publics”) » —
+  toujours pertinents pour le module Assemblée ? Trancher, puis mettre à
+  jour le Notion OU ce fichier (une seule source doit rester canonique).
 
 ## Checklist avant merge (tout texte public)
 
