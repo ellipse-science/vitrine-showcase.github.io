@@ -12,12 +12,24 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .toolbar button.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .solitudes{border:.5px solid var(--rule);background:var(--paper-deep);padding:40px 44px 36px;text-align:center}
 .sol-title{font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:700;margin:0 0 22px;letter-spacing:-.5px}
-.sol-viz{position:relative;height:122px;max-width:760px;margin:0 auto 8px}
-.sol-axis{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--rule)}
-.sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 12px;transition:left .6s ease;text-align:center}
-.sol-symbol svg{display:block;margin:0 auto}
-.glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;filter:grayscale(1) brightness(.34) contrast(1.5)}
-.caption{display:block;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-softer)}
+/* Radar « qui parle de quoi » — 2 ombrages QC (bleu) / CAN (rouge), axes = actualités du bloc */
+.sol-radar{max-width:640px;margin:0 auto 4px}
+.sol-radar svg{display:block;width:100%;height:auto}
+.radar-grid{fill:none;stroke:var(--rule);stroke-width:.7}
+.radar-spoke{stroke:var(--rule-faint);stroke-width:.7}
+.radar-qc{fill:rgba(46,70,99,.30);stroke:var(--bleu);stroke-width:1.6;stroke-linejoin:round}
+.radar-can{fill:rgba(168,48,44,.24);stroke:var(--red);stroke-width:1.6;stroke-linejoin:round}
+.radar-dot-qc{fill:var(--bleu)} .radar-dot-can{fill:var(--red)}
+.radar-lab{font-family:'Source Serif 4',Georgia,serif;font-size:12.5px;fill:var(--ink-soft)}
+.radar-lab .strong{font-weight:600;fill:var(--ink)}
+.sol-legend{display:flex;justify-content:center;gap:26px;align-items:center;margin:0 0 10px}
+.sol-legend .li{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.sol-legend .li.qc{color:var(--bleu)} .sol-legend .li.can{color:var(--red)}
+.sol-legend .sw{width:14px;height:14px;border-radius:2px;display:inline-block}
+.sol-legend .sw.qc{background:rgba(46,70,99,.30);box-shadow:inset 0 0 0 1.5px var(--bleu)}
+.sol-legend .sw.can{background:rgba(168,48,44,.24);box-shadow:inset 0 0 0 1.5px var(--red)}
+.sol-legend .glyph{font-size:17px;line-height:1;filter:grayscale(1) brightness(.34) contrast(1.5)}
+.sol-legend svg{display:inline-block;vertical-align:middle}
 .sol-stat{display:flex;flex-direction:column;align-items:center;gap:9px;margin:4px 0 14px}
 .mode-word{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-.8px}
 .mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
@@ -68,7 +80,41 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 // pct = percentile de convergence du bloc vs fenêtre glissante 6 mois (démo:
 // valeurs plausibles tirées de la distribution annuelle du red-team, médiane 18).
 // cov_qc/cov_can = coverage_qc_in_can / coverage_can_in_qc (colonnes refiners#211).
-const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48, "cov_qc": 8, "cov_can": 6, "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "pct": 100, "cov_qc": 71, "cov_can": 64, "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "pct": 99, "cov_qc": 66, "cov_can": 58, "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "pct": 81, "cov_qc": 39, "cov_can": 31, "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
+// axes = radar « qui parle de quoi » : saillance QC/CAN par actualité du bloc
+// (démo : valeurs indicatives, prod = top_objects_divergence + salient_index).
+const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48, "cov_qc": 8, "cov_can": 6,
+ "axes": [
+  {"label":"ACEUM","qc":4,"can":40},
+  {"label":"« 51e État »","qc":6,"can":26},
+  {"label":"Séparation Alberta","qc":0,"can":14},
+  {"label":"Grand Prix de Mtl","qc":22,"can":3},
+  {"label":"Urgences au Québec","qc":18,"can":0},
+  {"label":"Tramway de Québec","qc":15,"can":0}
+ ], "can": [{"title": "Le Canada veut renouveler l'ACEUM pour 16 ans sans révision annuelle", "sail": "Extrême", "media": ["CBC", "CTV", "The Globe and Mail"]}, {"title": "Carney ignore la pique de Trump sur le « 51e État » lors des pourparlers commerciaux", "sail": "Très élevée", "media": ["CBC"]}, {"title": "Preston Manning critique le statu quo face à la séparation de l'Alberta", "sail": "Élevée", "media": ["National Post"]}]}, "convergent": {"date": "18 mai · 12 h – 16 h", "conv": 86, "pct": 100, "cov_qc": 71, "cov_can": 64,
+ "axes": [
+  {"label":"Comité défense CA–US","qc":34,"can":30},
+  {"label":"Tarifs Trump","qc":13,"can":15},
+  {"label":"Mark Carney","qc":10,"can":12},
+  {"label":"Gaza","qc":8,"can":6},
+  {"label":"Séries LNH","qc":9,"can":5},
+  {"label":"Feux Alberta","qc":3,"can":7}
+ ], "shared": [{"topic": "Comité militaire Canada–États-Unis suspendu", "qc_title": "Washington suspend un comité de collaboration canado-américain sur la défense", "can_title": "Les États-Unis suspendent un comité militaire de longue date avec le Canada", "qc_sail": "Très élevée", "can_sail": "Très élevée", "qc_media": ["La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CTV"]}]}, "haute": {"date": "16 mai · 16 h – 20 h", "conv": 81, "pct": 99, "cov_qc": 66, "cov_can": 58,
+ "axes": [
+  {"label":"Hantavirus en C.-B.","qc":38,"can":30},
+  {"label":"Mark Carney","qc":9,"can":13},
+  {"label":"Ukraine","qc":7,"can":8},
+  {"label":"Essence & inflation","qc":6,"can":9},
+  {"label":"Grands Prix","qc":8,"can":4},
+  {"label":"Logement","qc":5,"can":6}
+ ], "shared": [{"topic": "Éclosion d'hantavirus en Colombie-Britannique", "qc_title": "Hantavirus : un cas confirmé parmi les personnes isolées à Victoria", "can_title": "Un Canadien en isolement en C.-B. obtient un résultat « présomptif positif » à l'hantavirus", "qc_sail": "Extrême", "can_sail": "Très élevée", "qc_media": ["Journal de Montréal", "La Presse", "Le Devoir", "Radio-Canada"], "can_media": ["CBC", "The Globe and Mail", "Vancouver Sun"]}]}, "multi": {"date": "29 mai · 8 h – 12 h", "conv": 36, "pct": 81, "cov_qc": 39, "cov_can": 31,
+ "axes": [
+  {"label":"Récession technique","qc":8,"can":22},
+  {"label":"Drone russe","qc":6,"can":5},
+  {"label":"PIB & guerre en Iran","qc":2,"can":12},
+  {"label":"Pénurie de lits","qc":0,"can":10},
+  {"label":"CHSLD","qc":16,"can":0},
+  {"label":"Rentrée à l'Assemblée","qc":12,"can":2}
+ ], "can": [{"title": "Le PIB du Canada dévoilera l'impact de la guerre en Iran sur l'économie", "sail": "Modérée", "media": ["Global News"]}, {"title": "Pénurie de lits : des patients soignés dans des lieux insolites en Ontario", "sail": "Modérée", "media": ["National Post"]}], "shared": [{"topic": "Le Canada en récession technique", "qc_title": "Le Canada entre en récession technique alors que l’économie stagne au 1er trimestre", "can_title": "Le Canada glisse en récession technique, la croissance stagne au 1er trimestre", "qc_sail": "Faible", "can_sail": "Élevée", "qc_media": ["Le Devoir", "Radio-Canada"], "can_media": ["CBC", "CTV", "Global News"]}, {"topic": "Drone russe en Roumanie", "qc_title": "La Roumanie affirme qu’un drone russe a frappé un immeuble sur son territoire", "can_title": "Un drone russe frappe la Roumanie, membre de l’OTAN, faisant deux blessés", "qc_sail": "Faible", "can_sail": "Faible", "qc_media": ["Radio-Canada"], "can_media": ["The Globe and Mail"]}]}}; const FLEUR=`<svg viewBox="-0.864 -0.333 350 359" height="58" width="57" aria-label="Québec"><g fill="#231F1C"><path d="M297.69,147.804c-47.642-5.459-97.763,27.791-107.192,94.289c-0.329,2.318-0.605,4.685-0.824,7.076h-2.81
 	c4.056-45.102,22.727-76.399,33.905-97.214c14.49-26.98,2.729-53.559-2.997-65.452C211.276,73.013,181.848,18.486,174.354,0
 	c-7.494,18.486-36.702,73.013-43.198,86.503c-5.728,11.893-17.488,38.472-2.998,65.452c11.103,20.673,29.87,52.316,34.226,97.214
 	h-3.208c-0.219-2.392-0.495-4.758-0.824-7.076c-9.43-66.499-59.551-99.748-107.192-94.289
@@ -95,6 +141,39 @@ function relSentence(pct){
   if(pct>=60) return `Plus convergent que <strong>${pct}&nbsp;%</strong> des blocs des six derniers mois`;
   if(pct<=40) return `Plus divergent que <strong>${100-pct}&nbsp;%</strong> des blocs des six derniers mois`;
   return `Dans la norme des six derniers mois — la divergence est la règle`;
+}
+// Radar « qui parle de quoi » : N axes = actualités du bloc, 2 polygones
+// QC (bleu) / CAN (rouge). Échelle commune normalisée sur le max des 2 séries.
+function radar(axes){
+  const W=560,H=360,CX=W/2,CY=H/2+4,R=128,R0=6;
+  const n=axes.length, max=Math.max(...axes.flatMap(a=>[a.qc,a.can]),1);
+  const pt=(i,v)=>{const ang=-Math.PI/2+i*2*Math.PI/n;const r=R0+(v/max)*(R-R0);
+    return [CX+r*Math.cos(ang), CY+r*Math.sin(ang)];};
+  const ring=f=>'<polygon class="radar-grid" points="'+axes.map((_,i)=>{
+    const ang=-Math.PI/2+i*2*Math.PI/n;const r=R0+f*(R-R0);
+    return (CX+r*Math.cos(ang)).toFixed(1)+','+(CY+r*Math.sin(ang)).toFixed(1);}).join(' ')+'"/>';
+  const spokes=axes.map((_,i)=>{const [x,y]=pt(i,max);
+    return `<line class="radar-spoke" x1="${CX}" y1="${CY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;}).join('');
+  const poly=(cls,key)=>'<polygon class="'+cls+'" points="'+axes.map((a,i)=>pt(i,a[key]).map(c=>c.toFixed(1)).join(',')).join(' ')+'"/>';
+  const dots=(cls,key)=>axes.map((a,i)=>{const [x,y]=pt(i,a[key]);
+    return a[key]>0?`<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`:'';}).join('');
+  const labels=axes.map((a,i)=>{const ang=-Math.PI/2+i*2*Math.PI/n;
+    const lx=CX+(R+16)*Math.cos(ang), ly=CY+(R+16)*Math.sin(ang);
+    const anchor=Math.abs(Math.cos(ang))<.35?'middle':(Math.cos(ang)>0?'start':'end');
+    const dy=Math.abs(Math.sin(ang))<.35?4:(Math.sin(ang)>0?11:-4);
+    const strong=Math.max(a.qc,a.can)===max?' strong':'';
+    return `<text class="radar-lab${strong}" x="${lx.toFixed(1)}" y="${(ly+dy).toFixed(1)}" text-anchor="${anchor}">${a.label}</text>`;}).join('');
+  return `<div class="sol-radar"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Qui parle de quoi : saillance de chaque actualité au Québec et au Canada">
+    ${ring(1)}${ring(2/3)}${ring(1/3)}${spokes}
+    ${poly('radar-can','can')}${poly('radar-qc','qc')}
+    ${dots('radar-dot-can','can')}${dots('radar-dot-qc','qc')}
+    ${labels}</svg></div>`;
+}
+function legend(){
+  const fleurBleue=FLEUR.replace('height="58" width="57"','height="18" width="18"').replace('fill="#231F1C"','fill="#2E4663"');
+  return `<div class="sol-legend">
+    <span class="li qc">${fleurBleue}<span class="sw qc"></span> Québec</span>
+    <span class="li can"><span class="glyph">&#127809;</span><span class="sw can"></span> Canada</span></div>`;
 }
 function relStrip(pct,modeCls){
   const color={'mode-div':'var(--cordovan)','mode-divp':'#9A5A3C','mode-convp':'#4E6374','mode-con':'var(--bleu)'}[modeCls]||'var(--ink)';
@@ -123,16 +202,15 @@ function render(state){
     sections+=blk(o.can?'Aussi couvert des deux côtés':'Le même sujet, couvert des deux côtés', inner);
   }
   document.getElementById('mod').innerHTML=`<section class="solitudes"><h3 class="sol-title">Deux solitudes&nbsp;?</h3>
-    <div class="sol-viz"><div class="sol-axis"></div>
-      <div class="sol-symbol" style="left:${qp}%">${FLEUR}<span class="caption">Québec</span></div>
-      <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
+    ${legend()}
+    ${radar(o.axes)}
     <div class="sol-stat"><span class="mode-word ${mode[1]}" title="Mesure : les mêmes SUJETS saillants des deux côtés (personnes, lieux, organisations), pas les mêmes articles.">${mode[0]}</span>
       <span class="mode-detail">L'actualité ${verb} à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
       <span class="rel-line">${relSentence(o.pct)}</span>
       ${relStrip(o.pct,mode[1])}
       <span class="sol-note">Le Québec consacre ${o.cov_qc}&nbsp;% de son attention à des sujets aussi saillants au Canada&nbsp;; le Canada, ${o.cov_can}&nbsp;% aux sujets saillants au Québec.</span></div>
     ${sections}</section>`;
-  document.getElementById('cap').textContent='Bloc '+o.date+' · données réelles (Athena DEV) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
+  document.getElementById('cap').textContent='Bloc '+o.date+' · listes = données réelles (Athena DEV) · radar : valeurs indicatives pour la démo (prod = salience par sujet, salient_index) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
 }
 render('divergent');
 </script></body></html>
