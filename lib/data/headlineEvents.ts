@@ -77,7 +77,10 @@ type ExtractedObject = { object: string; score: number };
 // (≤ 1 rafraîchissement de 4 h après déploiement) — ce repli réintroduit
 // score_us dans le côté Canada, à retirer une fois la colonne en place.
 function rocScore(e: RawEvent): number {
-  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0));
+  return (
+    e.score_roc ??
+    Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0))
+  );
 }
 
 const ISSUE_COLORS: Record<string, string> = {
