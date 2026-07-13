@@ -12,6 +12,13 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .toolbar button.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .solitudes{border:.5px solid var(--rule);background:var(--paper-deep);padding:40px 44px 36px;text-align:center}
 .sol-title{font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:700;margin:0 0 22px;letter-spacing:-.5px}
+/* Axe fleur/érable : les symboles se rapprochent quand la convergence augmente */
+.sol-viz{position:relative;height:122px;max-width:760px;margin:0 auto 18px}
+.sol-axis{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--rule)}
+.sol-symbol{position:absolute;top:50%;transform:translate(-50%,-50%);background:var(--paper-deep);padding:0 12px;transition:left .6s ease;text-align:center}
+.sol-symbol svg{display:block;margin:0 auto}
+.glyph-maple{font-size:50px;line-height:58px;height:58px;display:block;filter:grayscale(1) brightness(.34) contrast(1.5)}
+.caption{display:block;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-softer)}
 /* Radar « qui parle de quoi » — 2 ombrages QC (bleu) / CAN (rouge), axes = actualités du bloc */
 .sol-radar{max-width:640px;margin:0 auto 4px}
 .sol-radar svg{display:block;width:100%;height:auto}
@@ -68,6 +75,18 @@ body{margin:0;background:#e7ddc7;color:var(--ink);font-family:'Source Serif 4',G
 .shared .colhead{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-softer);margin-bottom:9px}
 .shared .ttl{font-size:16px;line-height:1.35;margin-bottom:11px}
 .shared .saillance-tag{margin:0}
+/* Mobile : symboles et légendes réduits pour que fleur+érable « collés »
+   (gap min 18 %) tiennent sans se rogner sur ~320-640px */
+@media (max-width:640px){
+  .sol-viz{height:92px;margin-bottom:12px}
+  .sol-symbol{padding:0 6px}
+  .sol-symbol svg{height:40px;width:39px}
+  .glyph-maple{font-size:34px;line-height:40px;height:40px}
+  .caption{font-size:8px;letter-spacing:.14em;margin-top:6px}
+  .sol-title{font-size:26px}
+  .mode-detail{font-size:15px}.mode-detail strong{font-size:22px}
+  .radar-lab{font-size:11px}
+}
 </style></head><body><div class="wrap">
 <div class="toolbar"><span class="lab">État du bloc :</span>
 <button id="b_divergent" class="active" onclick="render('divergent')">Divergence · 17%</button>
@@ -130,7 +149,9 @@ const D={"divergent": {"date": "2 juin · 16 h – 20 h", "conv": 17, "pct": 48,
 	C379.573,238.124,350.974,153.91,297.69,147.804z"/></g></svg>`;
 const SCLS={"Extrême":"s-extreme","Très élevée":"s-tres-eleve","Élevée":"s-eleve","Modérée":"s-moyenne","Faible":"s-faible","Très faible":"s-tres-faible"};
 function tag(s){return `<span class="saillance-tag ${SCLS[s]||'s-faible'}">Saillance ${s.toLowerCase()}</span>`;}
-function pos(conv){const div=100-conv;const gap=8+82*Math.pow(div/100,1.4);return [50-gap/2, 50+gap/2];}
+// gap minimal 15 % : à convergence maximale les symboles se touchent
+// (« collés ») sans se masquer l'un l'autre ni fusionner leurs légendes.
+function pos(conv){const div=100-conv;const gap=18+72*Math.pow(div/100,1.4);return [50-gap/2, 50+gap/2];}
 function byl(label,media){if(!media||!media.length)return '';
   return `<div class="byline"><span class="lbl">${label}</span><span class="byline-media">`+media.map(m=>`<a href="#">${m}</a>`).join('<span class="sep">·</span>')+`</span></div>`;}
 function blk(title,inner){return `<div class="block"><p class="block-title">${title}</p>${inner}</div>`;}
@@ -202,14 +223,13 @@ function render(state){
     sections+=blk(o.can?'Aussi couvert des deux côtés':'Le même sujet, couvert des deux côtés', inner);
   }
   document.getElementById('mod').innerHTML=`<section class="solitudes"><h3 class="sol-title">Deux solitudes&nbsp;?</h3>
-    ${legend()}
+    <div class="sol-viz"><div class="sol-axis"></div>
+      <div class="sol-symbol" style="left:${qp}%">${FLEUR}<span class="caption">Québec</span></div>
+      <div class="sol-symbol" style="left:${rp}%"><span class="glyph-maple">&#127809;</span><span class="caption">Canada</span></div></div>
     ${radar(o.axes)}
-    <div class="sol-stat"><span class="mode-word ${mode[1]}" title="Mesure : les mêmes SUJETS saillants des deux côtés (personnes, lieux, organisations), pas les mêmes articles.">${mode[0]}</span>
+    <div class="sol-stat">
       <span class="mode-detail">L'actualité ${verb} à <strong title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés">${val}&nbsp;%</strong></span>
-      <span class="rel-line">${relSentence(o.pct)}</span>
-      ${relStrip(o.pct,mode[1])}
-      <span class="sol-note">Le Québec consacre ${o.cov_qc}&nbsp;% de son attention à des sujets aussi saillants au Canada&nbsp;; le Canada, ${o.cov_can}&nbsp;% aux sujets saillants au Québec.</span></div>
-    ${sections}</section>`;
+      ${relStrip(o.pct,mode[1])}</div></section>`;
   document.getElementById('cap').textContent='Bloc '+o.date+' · listes = données réelles (Athena DEV) · radar : valeurs indicatives pour la démo (prod = salience par sujet, salient_index) · indice = cosinus-objet pondéré saillance (sans IDF), stoplist géo · lecture relative = percentile sur fenêtre glissante';
 }
 render('divergent');
