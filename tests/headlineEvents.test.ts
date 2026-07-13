@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/headlineEvents";
 
-const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel } = __test__;
+const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline } = __test__;
 
 describe("latestIssueRow", () => {
   it("renvoie null sur une liste vide", () => {
@@ -73,6 +73,47 @@ describe("firstSeenSaillantLabel", () => {
   it("au-delà d'hier : date en toutes lettres", () => {
     expect(firstSeenSaillantLabel("2026-07-08T12:00:00Z", "2026-07-11"))
       .toBe("le mercredi 8 juillet 2026");
+  });
+});
+
+// La liste arrive triée par score décroissant : garder la 1re occurrence
+// d'une storyline = garder la plus saillante (#231, ancien signalement #211).
+describe("dedupeByStoryline", () => {
+  it("élimine la 2e occurrence d'une même storyline (la plus saillante gagne)", () => {
+    const events = [
+      { title: "Trêve rompue avec l'Iran", storyline_id: "story-iran-1" },
+      { title: "Explosions sur les côtes iraniennes", storyline_id: "story-iran-1" },
+      { title: "Budget provincial", storyline_id: "story-budget-2" },
+    ];
+    expect(dedupeByStoryline(events).map((e) => e.title)).toEqual([
+      "Trêve rompue avec l'Iran",
+      "Budget provincial",
+    ]);
+  });
+  it("après dédup + coupe top-3, l'événement distinct suivant est promu", () => {
+    const events = [
+      { title: "A", storyline_id: "s1" },
+      { title: "A-doublon", storyline_id: "s1" },
+      { title: "B", storyline_id: "s2" },
+      { title: "C", storyline_id: "s3" },
+    ];
+    expect(dedupeByStoryline(events).slice(0, 3).map((e) => e.title)).toEqual(["A", "B", "C"]);
+  });
+  it("ne traite jamais un storyline_id absent comme doublon (données pré-2026-07-10)", () => {
+    const events = [
+      { title: "A", storyline_id: null },
+      { title: "B", storyline_id: null },
+      { title: "C", storyline_id: undefined },
+    ];
+    expect(dedupeByStoryline(events)).toHaveLength(3);
+  });
+  it("laisse une liste sans doublon inchangée", () => {
+    const events = [
+      { title: "A", storyline_id: "s1" },
+      { title: "B", storyline_id: "s2" },
+      { title: "C", storyline_id: "s3" },
+    ];
+    expect(dedupeByStoryline(events)).toEqual(events);
   });
 });
 
