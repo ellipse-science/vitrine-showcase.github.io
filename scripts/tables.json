@@ -317,6 +317,8 @@
         "representative_media_id",
         "score_saillance",
         "score_qc",
+        "score_roc",
+        "score_us",
         "extracted_objects",
         "cluster_confidence",
         "article_count",

@@ -53,8 +53,10 @@ Key columns used by the frontend:
 | `title` | Event headline |
 | `main_issue` | English issue key (e.g. `"economy_and_labour"`) |
 | `main_issue_text_fr` | French label from refiner |
-| `score_saillance` | Overall salience score |
+| `score_saillance` | Overall salience score = `score_qc + score_roc + score_us` exactement |
 | `score_qc` | QC-specific salience |
+| `score_roc` | Canada-hors-Québec salience — lu directement ; ne jamais dériver `saillance − qc` (inclurait les USA, cf. #143) |
+| `score_us` | USA salience (gardé séparé, jamais dans le côté « Canada ») |
 | `outlets_qc` | Number of QC outlets covering this event (drives dot count, 1–6) |
 | `total_outlets_qc` | Total QC outlets in panel |
 | `intensity_tier` | `"Majeur"`, `"Fort"`, `"Moyen"`, `"Faible"` |

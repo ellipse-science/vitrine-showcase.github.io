@@ -32,6 +32,13 @@ type RawEvent = {
   representative_media_id: string | null;
   score_saillance: number | null;
   score_qc: number | null;
+  // score_saillance = score_qc + score_roc + score_us exactement (vérifié
+  // empiriquement, cf. #143) : ne jamais dériver le ROC par soustraction,
+  // sinon le côté « Canada » absorbe la saillance américaine (33 % des
+  // événements ont score_us > 0). Optionnels : absents du JSON publié avant
+  // l'ajout des colonnes à scripts/tables.json (≤ 1 rafraîchissement de 4 h).
+  score_roc?: number | null;
+  score_us?: number | null;
   extracted_objects: string | null;
   media_ids: string;
   outlets_qc: number | null;
@@ -64,6 +71,14 @@ type DivergenceEntry = {
 };
 
 type ExtractedObject = { object: string; score: number };
+
+// Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
+// UNIQUEMENT tant que le JSON publié n'a pas la colonne `score_roc`
+// (≤ 1 rafraîchissement de 4 h après déploiement) — ce repli réintroduit
+// score_us dans le côté Canada, à retirer une fois la colonne en place.
+function rocScore(e: RawEvent): number {
+  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0));
+}
 
 const ISSUE_COLORS: Record<string, string> = {
   economy_and_labour: "#742630",
@@ -483,11 +498,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   if (rawConvergence !== null) {
     divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
   } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_saillance ?? 0), 0);
+    const eventsWithScore = latest.filter((e) => (e.score_qc ?? 0) + rocScore(e) > 0);
+    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_qc ?? 0) + rocScore(e), 0);
     const totalExclusivity = eventsWithScore.reduce((sum, e) => {
-      const s = e.score_saillance ?? 0;
       const q = e.score_qc ?? 0;
+      const s = q + rocScore(e);
       const ratio = s > 0 ? q / s : 0;
       return sum + s * Math.abs(ratio - 0.5) * 2;
     }, 0);
@@ -496,7 +511,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   const maxScoreForBars = Math.max(
     ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
-    ...latest.map((e) => e.score_saillance ?? 0),
+    ...latest.map((e) => Math.max(e.score_qc ?? 0, rocScore(e))),
     1,
   );
 
@@ -531,20 +546,19 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
     });
   } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
+    const eventsWithScore = latest.filter((e) => (e.score_qc ?? 0) + rocScore(e) > 0);
     const ranked = eventsWithScore
       .filter((e) => e.title)
       .map((e) => {
-        const s = e.score_saillance ?? 0;
         const q = e.score_qc ?? 0;
+        const s = q + rocScore(e);
         const qcRatio = s > 0 ? q / s : 0;
         return { e, q, divergence: Math.abs(qcRatio - 0.5) * 2 };
       })
       .sort((a, b) => b.divergence - a.divergence);
     solitudesStories = ranked.slice(0, 3).map(({ e, q }) => {
-      const s = e.score_saillance ?? 0;
       const qcW = Math.round((q / maxScoreForBars) * 100);
-      const caW = Math.round(((s - q) / maxScoreForBars) * 100);
+      const caW = Math.round((rocScore(e) / maxScoreForBars) * 100);
       return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
     });
   }
