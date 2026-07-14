@@ -19,7 +19,7 @@ Il s'applique à tout agent travaillant dans le repo (après acceptation des ré
 
 ## Garde attribution humaine (sur chaque PR)
 
-`.github/workflows/garde-attribution.yml` échoue si un commit de la PR est attribué à une IA : auteur/committer avec adresse IA, ou trailer `Co-Authored-By` pointant vers `noreply@anthropic.com`, Copilot, etc. (règle dure #7, issue #235). Complément préventif : `includeCoAuthoredBy: false` dans `.claude/settings.json` empêche Claude Code de générer le trailer. La détection se fait par adresse courriel, pas par prénom.
+`.github/workflows/garde-attribution.yml` échoue si un commit de la PR est attribué à une IA : auteur/committer avec adresse IA, ou trailer `Co-Authored-By` pointant vers `noreply@anthropic.com`, Copilot, etc. (règle dure #7, issue #235). Complément préventif : `"includeCoAuthoredBy": false` dans `.claude/settings.json` empêche Claude Code de générer le trailer. La détection se fait par adresse courriel, pas par prénom.
 
 ## Auto-merge Dependabot
 

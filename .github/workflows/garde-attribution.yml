@@ -28,12 +28,25 @@ jobs:
         run: |
           # NB : doubles backslashes pour que jq voie \. dans la regex ;
           # dans jq (Oniguruma), ^ n'ancre que le début de chaîne, d'où (^|\n).
-          ai_pattern='anthropic\\.com|^claude@|copilot|openai\\.com|chatgpt'
+          #
+          # Deux patterns distincts (retour Copilot #236) :
+          # - email_pattern : testé seul contre une adresse courriel complète
+          #   (author/committer.email) -> ^claude@ ancre correctement le début
+          #   de cette chaîne autonome.
+          # - trailer_pattern : le motif IA doit matcher DANS le <...> du
+          #   trailer Co-Authored-By, jamais dans le nom affiché avant '<' —
+          #   sinon un nom contenant "copilot"/"chatgpt" déclencherait le
+          #   garde-fou par le prénom, pas par l'adresse (contraire au doc).
+          #   ^claude@ y est donc remplacé par claude@ (sans ancre, puisque
+          #   le motif est déjà borné par [^>]*...[^>]* à l'intérieur des
+          #   chevrons, qui jouent le rôle d'ancre).
+          email_pattern='anthropic\\.com|^claude@|copilot|openai\\.com|chatgpt'
+          trailer_pattern='anthropic\\.com|claude@|copilot|openai\\.com|chatgpt'
           if ! bad=$(gh api "repos/$REPO/pulls/$PR_NUMBER/commits" --paginate --jq '
                 .[]
                 | select(
-                    ([.commit.author.email, .commit.committer.email] | any(test("'"$ai_pattern"'"; "i")))
-                    or (.commit.message | test("(^|\\n)\\s*co-authored-by:.*('"$ai_pattern"')"; "i"))
+                    ([.commit.author.email, .commit.committer.email] | any(test("'"$email_pattern"'"; "i")))
+                    or (.commit.message | test("(^|\\n)\\s*co-authored-by:[^<\\n]*<[^>]*('"$trailer_pattern"')[^>]*>"; "i"))
                   )
                 | .sha[0:8] + "  " + (.commit.message | split("\n")[0])'); then
             echo "::error::Impossible de lister les commits de la PR (gh api a échoué) — check en échec par prudence plutôt que de laisser passer."
