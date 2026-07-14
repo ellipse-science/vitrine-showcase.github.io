@@ -131,7 +131,23 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, blockKey, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+
+describe("sameStory (dédup cross-langue, stopgap #213)", () => {
+  it("fusionne deux cadrages de la même fusillade de Toronto", () => {
+    const a = titleTokens("Fusillade mortelle au festival Salsa on St. Clair à Toronto : 2 morts, 4 blessés");
+    const b = titleTokens("Tir mortel lors d'un festival à Toronto : 2 morts et 4 blessés");
+    expect(sameStory(a, b)).toBe(true);
+  });
+  it("ne fusionne pas deux histoires sans rapport partageant un mot", () => {
+    const a = titleTokens("Carney optimiste sur le pipeline lors du Stampede de Calgary");
+    const b = titleTokens("Trump annonce un blocus naval au détroit d'Ormuz");
+    expect(sameStory(a, b)).toBe(false);
+  });
+  it("ne fusionne pas des titres trop courts (< 3 tokens)", () => {
+    expect(sameStory(titleTokens("Iran attaque"), titleTokens("Iran riposte"))).toBe(false);
+  });
+});
 
 describe("pctile (jauge de convergence)", () => {
   it("renvoie 0 pour une valeur nulle ou négative", () => {

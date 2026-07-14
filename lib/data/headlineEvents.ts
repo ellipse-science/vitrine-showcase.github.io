@@ -198,6 +198,34 @@ function blockKey(e: RawEvent): string {
   return `${e.date_utc}T${start}`;
 }
 
+// Signature de titre pour la dédup cross-langue (stopgap aws-refiners#213) :
+// tokens significatifs (sans accents, stopwords FR/EN, mots courts).
+const TITLE_STOP = new Set([
+  "le", "la", "les", "un", "une", "des", "de", "du", "au", "aux", "et", "ou", "en",
+  "sur", "pour", "dans", "par", "avec", "sans", "sous", "vers", "chez", "que", "qui",
+  "the", "and", "for", "with", "from", "that", "this", "into", "over", "after",
+]);
+function titleTokens(s: string): Set<string> {
+  return new Set(
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !TITLE_STOP.has(w)),
+  );
+}
+// Deux titres décrivent la même histoire s'ils partagent AU MOINS 3 tokens
+// significatifs ET un Jaccard ≥ 0,4. Le minimum de 3 évite de fusionner deux
+// sujets sans rapport qui partageraient un seul mot commun.
+function sameStory(a: Set<string>, b: Set<string>): boolean {
+  if (a.size < 3 || b.size < 3) return false;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  if (inter < 3) return false;
+  return inter / (a.size + b.size - inter) >= 0.4;
+}
+
 // Construit tout l'état du module « Deux solitudes » (radar + jauge + édito).
 // `latest` = événements du bloc courant (pour l'indice de convergence) ;
 // `allEvents` = tous les blocs publiés (3 jours), pour agréger la part
@@ -225,27 +253,7 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
   const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
 
   // Résolution des liens par média (dernier article sur la storyline si dispo,
-  // sinon article du bloc). Même logique que la byline du Module 1.
   type RawArticle = { media_id: string; url: string };
-  const buildMedia = (e: RawEvent, ids: string[]): SolitudeAxis["media"] => {
-    const urlByMedia: Record<string, string> = {};
-    for (const key of ["articles_24h", "articles"] as const) {
-      try {
-        const parsed = JSON.parse((e[key] as string) ?? "[]");
-        if (Array.isArray(parsed)) {
-          for (const a of parsed as RawArticle[]) {
-            if (a.media_id && a.url && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
-          }
-        }
-      } catch { /* champ absent ou malformé */ }
-    }
-    return ids.map((id) => ({
-      id,
-      name: MEDIA_NAMES[id] ?? id,
-      badge: MEDIA_BADGE[id] ?? id,
-      url: urlByMedia[id] ?? null,
-    }));
-  };
   const parseIds = (json: string | null | undefined): string[] => {
     try {
       const p = JSON.parse(json ?? "[]");
@@ -263,51 +271,102 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
   const window24h = new Set(blocks.slice(0, 6));
   const windowEvents = allEvents.filter((e) => window24h.has(blockKey(e)));
 
-  type Agg = { rep: RawEvent; repKey: string; qc: number; roc: number };
+  // Accumule, par storyline, la saillance + les médias/URLs par région (union
+  // sur tous les blocs 24 h) et un jeu de tokens de titre pour la dédup.
+  type Agg = {
+    label: string; repKey: string; qc: number; roc: number;
+    qcMedia: Set<string>; canMedia: Set<string>;
+    urlByMedia: Record<string, string>; tok: Set<string>;
+  };
   const byStory = new Map<string, Agg>();
   for (const e of windowEvents) {
     if (!e.title) continue;
     const key = e.storyline_id ?? e.event_label ?? e.event_id;
     const bk = blockKey(e);
-    const cur = byStory.get(key);
+    const qcIds = e.media_ids_qc !== undefined
+      ? parseIds(e.media_ids_qc)
+      : parseIds(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+    const canIds = e.media_ids_roc !== undefined
+      ? parseIds(e.media_ids_roc)
+      : parseIds(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
+    let cur = byStory.get(key);
     if (!cur) {
-      byStory.set(key, { rep: e, repKey: bk, qc: e.score_qc ?? 0, roc: rocScore(e) });
+      cur = { label: e.title ?? "", repKey: bk, qc: 0, roc: 0,
+        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? "") };
+      byStory.set(key, cur);
+    }
+    cur.qc += e.score_qc ?? 0;
+    cur.roc += rocScore(e);
+    qcIds.forEach((id) => cur!.qcMedia.add(id));
+    canIds.forEach((id) => cur!.canMedia.add(id));
+    for (const k of ["articles_24h", "articles"] as const) {
+      try {
+        const parsed = JSON.parse((e[k] as string) ?? "[]");
+        if (Array.isArray(parsed)) for (const a of parsed as RawArticle[]) {
+          if (a.media_id && a.url && !cur.urlByMedia[a.media_id]) cur.urlByMedia[a.media_id] = a.url;
+        }
+      } catch { /* champ absent ou malformé */ }
+    }
+    // Représentant = titre/tokens du bloc le plus récent.
+    if (bk > cur.repKey) { cur.repKey = bk; cur.label = e.title ?? ""; cur.tok = titleTokens(e.title ?? ""); }
+  }
+
+  // Dédup cross-langue (STOPGAP, aws-refiners#213) : le refiner scinde parfois
+  // une histoire en plusieurs storylines (cadrage FR/EN). On fusionne celles
+  // dont les titres se recoupent fortement (Jaccard ≥ 0,5), en additionnant la
+  // saillance et l'union des médias — ce qui corrige aussi la divergence
+  // artificielle (une histoire QC-only + sa version CAN-only redeviennent une
+  // seule histoire couverte des deux côtés).
+  const merged: Agg[] = [];
+  for (const a of Array.from(byStory.values()).sort((x, y) => y.qc + y.roc - (x.qc + x.roc))) {
+    const host = merged.find((m) => sameStory(m.tok, a.tok));
+    if (host) {
+      host.qc += a.qc; host.roc += a.roc;
+      a.qcMedia.forEach((id) => host.qcMedia.add(id));
+      a.canMedia.forEach((id) => host.canMedia.add(id));
+      for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
     } else {
-      cur.qc += e.score_qc ?? 0;
-      cur.roc += rocScore(e);
-      // Représentant = l'occurrence du bloc le plus récent (titre/médias frais).
-      if (bk > cur.repKey) { cur.rep = e; cur.repKey = bk; }
+      merged.push(a);
     }
   }
 
-  const aggs = Array.from(byStory.values()).filter((a) => a.qc + a.roc > 0);
+  const aggs = merged.filter((a) => a.qc + a.roc > 0);
   const totalQc = aggs.reduce((s, a) => s + a.qc, 0);
   const totalRoc = aggs.reduce((s, a) => s + a.roc, 0);
   const maxQc = Math.max(...aggs.map((a) => a.qc), 1);
   const maxRoc = Math.max(...aggs.map((a) => a.roc), 1);
 
-  const axes: SolitudeAxis[] = aggs
-    .sort((a, b) => b.qc + b.roc - (a.qc + a.roc))
-    .slice(0, 6)
-    .map((a) => {
-      const e = a.rep;
-      const qcIds = e.media_ids_qc !== undefined
-        ? parseIds(e.media_ids_qc)
-        : parseIds(e.media_ids).filter((id) => QC_MEDIA.includes(id));
-      const canIds = e.media_ids_roc !== undefined
-        ? parseIds(e.media_ids_roc)
-        : parseIds(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
-      const qcRadial = Math.round((a.qc / maxQc) * 100);
-      const canRadial = Math.round((a.roc / maxRoc) * 100);
-      return {
-        label: e.title ?? "",
-        qcRadial, canRadial,
-        qcShare: totalQc > 0 ? Math.round((a.qc / totalQc) * 100) : 0,
-        canShare: totalRoc > 0 ? Math.round((a.roc / totalRoc) * 100) : 0,
-        side: (qcRadial >= canRadial ? "qc" : "can") as "qc" | "can",
-        media: buildMedia(e, [...qcIds, ...canIds]),
-      };
-    });
+  // Sélection ÉQUILIBRÉE : union du top-3 québécois et du top-3 canadien, pour
+  // que les deux agendas soient représentés (sinon le Canada, à l'échelle 2,8×
+  // plus grande, monopolise les 6 axes — cf. observation d'Adrien 2026-07-14).
+  const topQc = [...aggs].sort((a, b) => b.qc - a.qc).slice(0, 3);
+  const topRoc = [...aggs].sort((a, b) => b.roc - a.roc).slice(0, 3);
+  const picked: Agg[] = [];
+  for (const a of [...topQc, ...topRoc]) if (!picked.includes(a)) picked.push(a);
+  // Complète jusqu'à 6 par saillance combinée si l'union en donne moins.
+  for (const a of [...aggs].sort((x, y) => y.qc + y.roc - (x.qc + x.roc))) {
+    if (picked.length >= 6) break;
+    if (!picked.includes(a)) picked.push(a);
+  }
+
+  const buildMediaFor = (a: Agg): SolitudeAxis["media"] =>
+    [...a.qcMedia, ...a.canMedia].map((id) => ({
+      id, name: MEDIA_NAMES[id] ?? id, badge: MEDIA_BADGE[id] ?? id,
+      url: a.urlByMedia[id] ?? null,
+    }));
+
+  const axes: SolitudeAxis[] = picked.map((a) => {
+    const qcRadial = Math.round((a.qc / maxQc) * 100);
+    const canRadial = Math.round((a.roc / maxRoc) * 100);
+    return {
+      label: a.label,
+      qcRadial, canRadial,
+      qcShare: totalQc > 0 ? Math.round((a.qc / totalQc) * 100) : 0,
+      canShare: totalRoc > 0 ? Math.round((a.roc / totalRoc) * 100) : 0,
+      side: (qcRadial >= canRadial ? "qc" : "can") as "qc" | "can",
+      media: buildMediaFor(a),
+    };
+  });
 
   const shared = axes.filter((a) => a.qcRadial > 0 && a.canRadial > 0).length;
 
@@ -928,5 +987,7 @@ export const __test__ = {
   symbolPositions,
   buildSolitudes,
   blockKey,
+  titleTokens,
+  sameStory,
   CAL_CONV,
 };
