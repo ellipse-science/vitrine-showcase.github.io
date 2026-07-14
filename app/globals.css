@@ -831,6 +831,25 @@
     padding: 24px 0 24px 32px;
     border-left: none;
   }
+  /* À 2 Unes : la 2e nouvelle s'empile SOUS la 1re dans la colonne de gauche
+     du hero (décision Adrien 2026-07-12 — pas de rangée secondaire pleine
+     largeur, elle laissait un vide) ; l'illustration garde toute la hauteur
+     des deux nouvelles à droite. Filet horizontal de séparation, pas le filet
+     vertical du duo. */
+  .une-side.une-second {
+    border-left: none;
+    padding-left: 0;
+    border-top: 0.5px solid var(--rule);
+    margin-top: 26px;
+    padding-top: 20px;
+  }
+
+  /* À 2 Unes (a fortiori 1), le module a moins de contenu : l'illustration
+     s'élargit pour garder le hero plein (#124 — « grossir l'image »). */
+  .unes-jour.deux-unes .une-main-grid.has-art,
+  .unes-jour.une-seule .une-main-grid.has-art {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 48%);
+  }
 
   /* Rétrocompat: .hero-trio conservé pour éviter erreurs si référencé ailleurs */
   .hero-trio {
@@ -1084,15 +1103,16 @@
   }
   .une-audio-sep { opacity: 0.5; }
 
-  /* Bloc audio au-dessus de l'image de la une principale */
+  /* Bloc audio au-dessus de l'image de la une principale. Plus de marge
+     négative : l'en-tête (enjeu + tag) vit dans la colonne de gauche de la
+     grille, le haut de la grille EST la bande de l'en-tête — l'alignement
+     avec l'Ambiance est naturel. */
   .hero-audio-overlay {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 0 0 16px;
-    margin-top: -22px;
   }
-  .une-main-grid.no-art .hero-audio-overlay { margin-top: 0; }
   /* Barre de lecture pleine largeur, tout sur une ligne */
   .hero-audio-overlay .une-audio-compact {
     flex-wrap: nowrap;
@@ -2407,7 +2427,7 @@
     padding-top: 28px;
     border-top: 0.5px solid var(--rule);
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     gap: 44px;
   }
   .footer-note h4 {
