@@ -207,12 +207,12 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                   // Cliquable seulement s'il y a un article ; sinon un simple
                   // groupe (pas de href="#" qui ferait sauter la page).
                   return m.url ? (
-                    <a key={m.id} className="m-chip" href={m.url} target="_blank" rel="noopener noreferrer"
+                    <a key={m.id} className={`m-chip chip-${m.region}`} href={m.url} target="_blank" rel="noopener noreferrer"
                       aria-label={`Dernier article de ${m.name} sur ${a.label}`}>
                       {inner}
                     </a>
                   ) : (
-                    <g key={m.id} className="m-chip" role="img" aria-label={`${m.name} a couvert : ${a.label}`}>
+                    <g key={m.id} className={`m-chip chip-${m.region}`} role="img" aria-label={`${m.name} a couvert : ${a.label}`}>
                       {inner}
                     </g>
                   );

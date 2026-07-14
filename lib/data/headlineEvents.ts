@@ -349,11 +349,16 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
     if (!picked.includes(a)) picked.push(a);
   }
 
-  const buildMediaFor = (a: Agg): SolitudeAxis["media"] =>
-    [...a.qcMedia, ...a.canMedia].map((id) => ({
+  const buildMediaFor = (a: Agg): SolitudeAxis["media"] => {
+    const mk = (id: string, region: "qc" | "can") => ({
       id, name: MEDIA_NAMES[id] ?? id, badge: MEDIA_BADGE[id] ?? id,
-      url: a.urlByMedia[id] ?? null,
-    }));
+      url: a.urlByMedia[id] ?? null, region,
+    });
+    return [
+      ...[...a.qcMedia].map((id) => mk(id, "qc" as const)),
+      ...[...a.canMedia].map((id) => mk(id, "can" as const)),
+    ];
+  };
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qcRadial = Math.round((a.qc / maxQc) * 100);
@@ -573,8 +578,10 @@ export type SolitudeAxis = {
   canShare: number;
   /** Camp dominant (couleur du libellé). */
   side: "qc" | "can";
-  /** Médias couvrants + lien vers leur dernier article sur le sujet. */
-  media: { id: string; name: string; badge: string; url: string | null }[];
+  /** Médias couvrants + lien vers leur dernier article sur le sujet.
+   *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
+   *  deux côtés montre les deux couleurs. */
+  media: { id: string; name: string; badge: string; url: string | null; region: "qc" | "can" }[];
 };
 
 export type SolitudeData = {
