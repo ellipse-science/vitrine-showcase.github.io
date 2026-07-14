@@ -460,11 +460,11 @@
       <li><a href="#cadre-conceptuel">Cadre conceptuel</a></li>
       <li><a href="#collecte-medias">Architecture de collecte — Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
-      <li><a href="#une-des-unes">Module : La Une des Unes &amp; Deux solitudes</a></li>
-      <li><a href="#treemap-enjeux">Module : Carte des enjeux</a></li>
-      <li><a href="#couverture-partis">Module : Couverture des partis politiques</a></li>
-      <li><a href="#parole-en-chambre">Module : Parole en chambre</a></li>
-      <li><a href="#suivi-promesses">Module : Suivi des promesses (Polimètre+)</a></li>
+      <li><a href="#une-des-unes">Module : Les Unes saillantes du moment &amp; Deux solitudes?</a></li>
+      <li><a href="#partis-et-couverture">Module : Couverture médiatique des partis politiques</a></li>
+      <li><a href="#enjeux-saillants">Module : De quoi parle-t-on?</a></li>
+      <li><a href="#assemblee-nationale">Module : Que dit-on à l'Assemblée?</a></li>
+      <li><a href="#polimetre-plus">Module : Polimètre+ : promesses électorales à la une</a></li>
       <li><a href="#fenetres-temporelles">Fenêtres temporelles</a></li>
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
@@ -570,7 +570,7 @@
   <!-- §4 Une des Unes & Deux solitudes -->
   <section id="une-des-unes" class="metho-section">
     <p class="metho-section-label">§ 04</p>
-    <h2>Module : La Une des Unes &amp; Deux solitudes</h2>
+    <h2>Module : Les Unes saillantes du moment &amp; Deux solitudes?</h2>
     <p class="metho-body">Ce module identifie les événements qui dominent l'agenda médiatique québécois au moment de la consultation, en distinguant l'importance relative accordée par les médias francophones québécois et les médias canadiens anglophones.</p>
 
     <h3>Source des données</h3>
@@ -608,10 +608,45 @@
     <p class="metho-body">Un radar à deux formes superposées — le Québec en bleu, le Canada en rouge — montre d'un coup d'œil qui parle de quoi : plus les deux formes se recouvrent, plus les agendas convergent. Autour, chaque sujet porte les logos des médias qui l'ont couvert, cliquables vers leur dernier article. Un grand pourcentage rappelle le niveau de divergence ou de convergence du bloc, situé par la jauge relative.</p>
   </section>
 
-  <!-- §5 Treemap -->
-  <section id="treemap-enjeux" class="metho-section">
+  <!-- §5 Couverture des partis -->
+  <section id="partis-et-couverture" class="metho-section">
     <p class="metho-section-label">§ 05</p>
-    <h2>Module : Carte des enjeux</h2>
+    <h2>Module : Couverture médiatique des partis politiques</h2>
+    <p class="metho-body">Ce module mesure la <strong>saillance</strong> (visibilité dans les médias) et le <strong>ton</strong> (valence du traitement médiatique) des partis politiques québécois dans la couverture des 13 sources d'information suivies.</p>
+
+    <h3>Partis provinciaux suivis</h3>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Parti</th><th>Code</th></tr></thead>
+        <tbody>
+          <tr><td>Coalition avenir Québec (CAQ)</td><td><code>caq</code></td></tr>
+          <tr><td>Parti québécois (PQ)</td><td><code>pq</code></td></tr>
+          <tr><td>Parti libéral du Québec (PLQ)</td><td><code>plq</code></td></tr>
+          <tr><td>Québec solidaire (QS)</td><td><code>qs</code></td></tr>
+          <tr><td>Parti conservateur du Québec (PCQ)</td><td><code>pcq</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>radar-party-score</code> produit les tables <code>provincial_parties_score_day</code>, <code>_week</code> et <code>_month</code>. Chaque ligne correspond à un parti, une date et un bloc de collecte. Les champs clés sont <code>weighted_mentions</code> (saillance) et <code>weighted_tone</code> (ton net).</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li>Les articles sont segmentés en phrases. Un dictionnaire de partis et un dictionnaire de sentiment sont appliqués simultanément à chaque phrase.</li>
+      <li><strong>Saillance pondérée</strong> (<code>weighted_mentions</code>) : nombre de mentions du parti dans la phrase, divisé par le nombre total de mots, pondéré par l'indice inter-médias du média source.</li>
+      <li><strong>Ton net pondéré</strong> (<code>weighted_tone</code>) : <code>(termes positifs − termes négatifs) / total_mots</code>, pondéré de la même façon.</li>
+      <li>Agrégation journalière, puis calcul de moyennes glissantes pour les fenêtres semaine et mois.</li>
+    </ol>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Classement des partis par saillance. Trois onglets permettent de basculer entre les fenêtres aujourd'hui, cette semaine et ce mois. Le ton est visualisé par un indicateur coloré (positif / neutre / négatif) pour chaque parti.</p>
+  </section>
+
+  <!-- §6 Enjeux (treemap) -->
+  <section id="enjeux-saillants" class="metho-section">
+    <p class="metho-section-label">§ 06</p>
+    <h2>Module : De quoi parle-t-on?</h2>
     <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
 
     <h3>Enjeux couverts</h3>
@@ -650,45 +685,10 @@
     <p class="metho-body">Grille de tuiles colorées (une couleur par enjeu) dont la largeur est proportionnelle au score de saillance relatif. Chaque tuile affiche le nom de l'enjeu, l'objet le plus saillant et un extrait de titre contextuel. Trois onglets permettent de basculer entre les fenêtres jour, semaine et mois.</p>
   </section>
 
-  <!-- §6 Couverture des partis -->
-  <section id="couverture-partis" class="metho-section">
-    <p class="metho-section-label">§ 06</p>
-    <h2>Module : Couverture des partis politiques</h2>
-    <p class="metho-body">Ce module mesure la <strong>saillance</strong> (visibilité dans les médias) et le <strong>ton</strong> (valence du traitement médiatique) des partis politiques québécois dans la couverture des 13 sources d'information suivies.</p>
-
-    <h3>Partis provinciaux suivis</h3>
-    <div class="metho-table-wrap">
-      <table class="metho-table">
-        <thead><tr><th>Parti</th><th>Code</th></tr></thead>
-        <tbody>
-          <tr><td>Coalition avenir Québec (CAQ)</td><td><code>caq</code></td></tr>
-          <tr><td>Parti québécois (PQ)</td><td><code>pq</code></td></tr>
-          <tr><td>Parti libéral du Québec (PLQ)</td><td><code>plq</code></td></tr>
-          <tr><td>Québec solidaire (QS)</td><td><code>qs</code></td></tr>
-          <tr><td>Parti conservateur du Québec (PCQ)</td><td><code>pcq</code></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Source des données</h3>
-    <p class="metho-body">Le raffineur <code>radar-party-score</code> produit les tables <code>provincial_parties_score_day</code>, <code>_week</code> et <code>_month</code>. Chaque ligne correspond à un parti, une date et un bloc de collecte. Les champs clés sont <code>weighted_mentions</code> (saillance) et <code>weighted_tone</code> (ton net).</p>
-
-    <h3>Algorithme</h3>
-    <ol class="metho-list">
-      <li>Les articles sont segmentés en phrases. Un dictionnaire de partis et un dictionnaire de sentiment sont appliqués simultanément à chaque phrase.</li>
-      <li><strong>Saillance pondérée</strong> (<code>weighted_mentions</code>) : nombre de mentions du parti dans la phrase, divisé par le nombre total de mots, pondéré par l'indice inter-médias du média source.</li>
-      <li><strong>Ton net pondéré</strong> (<code>weighted_tone</code>) : <code>(termes positifs − termes négatifs) / total_mots</code>, pondéré de la même façon.</li>
-      <li>Agrégation journalière, puis calcul de moyennes glissantes pour les fenêtres semaine et mois.</li>
-    </ol>
-
-    <h3>Affichage</h3>
-    <p class="metho-body">Classement des partis par saillance. Trois onglets permettent de basculer entre les fenêtres aujourd'hui, cette semaine et ce mois. Le ton est visualisé par un indicateur coloré (positif / neutre / négatif) pour chaque parti.</p>
-  </section>
-
-  <!-- §7 Parole en chambre -->
-  <section id="parole-en-chambre" class="metho-section">
+  <!-- §7 Assemblée nationale -->
+  <section id="assemblee-nationale" class="metho-section">
     <p class="metho-section-label">§ 07</p>
-    <h2>Module : Parole en chambre</h2>
+    <h2>Module : Que dit-on à l'Assemblée?</h2>
     <p class="metho-body">Ce module mesure la présence des partis politiques dans les débats de l'Assemblée nationale du Québec (ANQ) selon trois fenêtres : la dernière période de questions (<em>last PDQ</em>), la session en cours et la législature complète.</p>
 
     <h3>Source des données</h3>
@@ -705,10 +705,10 @@
     <p class="metho-body">Classement des partis par volume de parole. Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les scores d'enjeux permettent d'identifier les thèmes privilégiés par chaque formation politique.</p>
   </section>
 
-  <!-- §8 Suivi des promesses (Polimètre+) -->
-  <section id="suivi-promesses" class="metho-section">
+  <!-- §8 Polimètre+ -->
+  <section id="polimetre-plus" class="metho-section">
     <p class="metho-section-label">§ 08</p>
-    <h2>Module : Suivi des promesses (Polimètre+)</h2>
+    <h2>Module : Polimètre+ : promesses électorales à la une</h2>
     <p class="metho-body">Ce module suit la <strong>couverture médiatique des promesses électorales de la Coalition avenir Québec (CAQ)</strong> : il identifie chaque semaine les promesses les plus <strong>saillantes</strong> (les plus présentes dans l'actualité) et celles en plus forte <strong>progression</strong> par rapport à la semaine précédente.</p>
 
     <h3>Source des données</h3>
