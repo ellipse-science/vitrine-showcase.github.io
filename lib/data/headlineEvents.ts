@@ -333,8 +333,6 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
   const aggs = merged.filter((a) => a.qc + a.roc > 0);
   const totalQc = aggs.reduce((s, a) => s + a.qc, 0);
   const totalRoc = aggs.reduce((s, a) => s + a.roc, 0);
-  const maxQc = Math.max(...aggs.map((a) => a.qc), 1);
-  const maxRoc = Math.max(...aggs.map((a) => a.roc), 1);
 
   // Sélection ÉQUILIBRÉE : union du top-3 québécois et du top-3 canadien, pour
   // que les deux agendas soient représentés (sinon le Canada, à l'échelle 2,8×
@@ -360,15 +358,24 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
     ];
   };
 
+  // Le rayon = la VRAIE part d'attention de la région (% de son total 24h),
+  // pour que les anneaux étiquetés « 5 % / 10 %… » aient un sens. Échelle
+  // commune adaptative : plafond arrondi au multiple de 5 supérieur au plus
+  // gros sujet affiché (min 10 %), pour que le plus gros remplisse le radar.
+  const qcShareOf = (a: Agg) => (totalQc > 0 ? (a.qc / totalQc) * 100 : 0);
+  const canShareOf = (a: Agg) => (totalRoc > 0 ? (a.roc / totalRoc) * 100 : 0);
+  const maxShare = Math.max(...picked.flatMap((a) => [qcShareOf(a), canShareOf(a)]), 1);
+  const axisScale = Math.max(10, Math.ceil(maxShare / 5) * 5);
+
   const axes: SolitudeAxis[] = picked.map((a) => {
-    const qcRadial = Math.round((a.qc / maxQc) * 100);
-    const canRadial = Math.round((a.roc / maxRoc) * 100);
+    const qs = qcShareOf(a), cs = canShareOf(a);
     return {
       label: a.label,
-      qcRadial, canRadial,
-      qcShare: totalQc > 0 ? Math.round((a.qc / totalQc) * 100) : 0,
-      canShare: totalRoc > 0 ? Math.round((a.roc / totalRoc) * 100) : 0,
-      side: (qcRadial >= canRadial ? "qc" : "can") as "qc" | "can",
+      qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
+      canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
+      qcShare: Math.round(qs),
+      canShare: Math.round(cs),
+      side: (qs >= cs ? "qc" : "can") as "qc" | "can",
       media: buildMediaFor(a),
     };
   });
@@ -385,6 +392,7 @@ function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
     qcSymbolPos, canSymbolPos,
+    axisScale,
     axes,
   };
 }
@@ -605,6 +613,9 @@ export type SolitudeData = {
   /** Positions de la fleur-de-lys et de l'érable sur l'axe (%). */
   qcSymbolPos: number;
   canSymbolPos: number;
+  /** Part d'attention représentée par le bord du radar (%). Les anneaux
+   *  valent 25/50/75/100 % de cette échelle → labels 1/4, 1/2… de axisScale. */
+  axisScale: number;
   axes: SolitudeAxis[];
 };
 
