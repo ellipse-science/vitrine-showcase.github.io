@@ -22,7 +22,7 @@ export async function DeuxSolitudesSection() {
     <>
       <section className="solitudes">
         <div className="sol-title-row">
-          <h3 className="sol-title">Deux solitudes&nbsp;?</h3>
+          <h3 className="sol-title">Deux solitudes?</h3>
           <ShareButton title={`Deux solitudes — ${s.divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
         </div>
         <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise et canadienne.</p>
