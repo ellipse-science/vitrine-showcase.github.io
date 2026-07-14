@@ -894,4 +894,13 @@ export const __test__ = {
   capitalizeObject,
   firstSeenSaillantLabel,
   dedupeByStoryline,
+  pctile,
+  rocScore,
+  convMode,
+  solitudesEdito,
+  symbolPositions,
+  buildSolitudes,
+  CAL_QC,
+  CAL_ROC,
+  CAL_CONV,
 };

@@ -587,15 +587,23 @@
     </ol>
 
     <h3>Algorithme — Deux solitudes</h3>
-    <p class="metho-body">Ce panneau mesure la divergence entre l'agenda médiatique québécois et canadien sur le même bloc de quatre heures.</p>
+    <p class="metho-body">Ce panneau compare, sur le même bloc de quatre heures, ce que mettent de l'avant les médias québécois et les médias canadiens (hors Québec). Il mesure si les deux espaces médiatiques accordent leur attention aux mêmes <strong>sujets saillants</strong> — les personnes, lieux et organisations qui dominent l'actualité — et non aux mêmes articles.</p>
     <ol class="metho-list">
-      <li>La divergence part de la similarité entre les priorités des deux agendas : plus le Québec et le Canada couvrent les mêmes sujets avec la même intensité, plus la convergence est forte ; le taux de divergence en est le complément.</li>
-      <li>À défaut de cette mesure, une approximation fondée sur l'exclusivité de la couverture québécoise est utilisée.</li>
-      <li>Les cinq histoires dont la couverture diffère le plus entre les deux agendas sont affichées sous forme de barres comparatives Québec / Canada.</li>
+      <li>Pour chaque bloc, on construit un vecteur des sujets saillants du Québec et un vecteur des sujets saillants du Canada, pondérés par leur importance. L'<strong>indice de convergence</strong> est la similarité (cosinus) entre ces deux vecteurs, de 0 (agendas opposés) à 100 (mêmes priorités). La divergence affichée en est le complément.</li>
+      <li>Le calcul écarte une courte liste de termes géographiques génériques (Canada, États-Unis, Québec, Ottawa), qui gonfleraient artificiellement la ressemblance sans rien dire de l'actualité.</li>
+      <li>Chaque axe du radar est un événement saillant du bloc. Sa distance au centre est le <strong>percentile de saillance</strong> de l'événement dans la distribution des Unes de sa propre région sur les derniers mois — la même logique relative que l'étiquette de saillance de la Une des Unes. Comme les deux espaces médiatiques n'ont ni le même nombre de médias ni la même échelle, chaque côté est comparé à sa propre distribution, jamais à celle de l'autre.</li>
+      <li>Sous le radar, une jauge situe le bloc courant par rapport aux six derniers mois : « plus divergent », « habituel » ou « plus convergent » que la médiane. Un bloc peut afficher une forte divergence tout en restant habituel — entre le Québec et le Canada, la divergence est la règle et la convergence l'exception.</li>
     </ol>
 
+    <h3>Limites et honnêteté</h3>
+    <ul class="metho-list">
+      <li>L'indice mesure les <strong>mêmes sujets saillants</strong>, pas les mêmes histoires : deux médias peuvent parler de la même personne pour des raisons différentes, ou de la même histoire en la rattachant à des objets différents.</li>
+      <li>Environ un dixième des sujets québécois portent du texte français résiduel non apparié côté canadien, ce qui abaisse légèrement la convergence mesurée.</li>
+      <li>Les seuils de percentiles sont pour l'instant fixés sur une longue fenêtre calibrée manuellement ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi <a href="https://github.com/ellipse-science/aws-refiners/issues/212">aws-refiners#212</a>), comme pour la saillance de la Une des Unes.</li>
+    </ul>
+
     <h3>Affichage</h3>
-    <p class="metho-body">Mise en page de type une de presse : titre éditorial, étiquette de saillance, byline des médias couvrant l'événement, liens vers les articles sources. Le panneau Deux solitudes présente le pourcentage de divergence du jour et un tableau des histoires les plus clivantes entre les deux agendas.</p>
+    <p class="metho-body">Un radar à deux formes superposées — le Québec en bleu, le Canada en rouge — montre d'un coup d'œil qui parle de quoi : plus les deux formes se recouvrent, plus les agendas convergent. Autour, chaque sujet porte les logos des médias qui l'ont couvert, cliquables vers leur dernier article. Un grand pourcentage rappelle le niveau de divergence ou de convergence du bloc, situé par la jauge relative.</p>
   </section>
 
   <!-- §5 Treemap -->
