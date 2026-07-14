@@ -712,7 +712,7 @@
     <p class="metho-body">Ce module suit la <strong>couverture médiatique des promesses électorales de la Coalition avenir Québec (CAQ)</strong> : il identifie chaque semaine les promesses les plus <strong>saillantes</strong> (les plus présentes dans l'actualité) et celles en plus forte <strong>progression</strong> par rapport à la semaine précédente.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le raffineur <code>polimetre-plus</code> produit la table <code>polimetre_plus</code>. Il croise la couverture médiatique Radar+ avec la liste officielle des promesses de la CAQ. L'appariement entre un article et une promesse repose <strong>entièrement sur des expressions régulières validées manuellement</strong> — c'est la source de vérité de l'identification.</p>
+    <p class="metho-body">Le module croise la couverture médiatique avec la liste officielle des promesses de la CAQ. L'appariement entre un article et une promesse repose <strong>entièrement sur des expressions régulières validées manuellement</strong> — c'est la source de vérité de l'identification.</p>
 
     <h3>Algorithme</h3>
     <ol class="metho-list">
@@ -722,7 +722,7 @@
       <li>Les promesses sont classées par saillance et par progression pour la semaine se terminant à la date du traitement.</li>
     </ol>
 
-    <h3>Enrichissement génératif (best-effort)</h3>
+    <h3>Enrichissement génératif (optionnel)</h3>
     <p class="metho-body">En complément — et sans jamais intervenir dans l'identification, qui demeure entièrement à base de règles — un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage : un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Cet enrichissement est optionnel : si le service n'est pas disponible, ces champs restent vides et le reste du module est publié normalement.</p>
 
     <h3>Affichage</h3>
