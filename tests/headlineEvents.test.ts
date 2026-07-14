@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
 
 describe("sameStory (dédup cross-langue, stopgap #213)", () => {
   it("fusionne deux cadrages de la même fusillade de Toronto", () => {
@@ -249,17 +249,52 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
   });
 });
 
+describe("windowConvergence (convergence 24h, moyenne pondérée des blocs)", () => {
+  it("pondère par l'attention : un bloc chargé pèse plus qu'un bloc creux", () => {
+    // Bloc 16-20 : indice 80, forte attention (qc+roc = 100) ;
+    // bloc 12-16 : indice 0, faible attention (qc+roc = 4).
+    const rows = [
+      ev({ interval_convergence_score: 80, score_qc: 60, score_roc: 40, time_interval_utc: "16-20" }),
+      ev({ interval_convergence_score: 0, score_qc: 2, score_roc: 2, time_interval_utc: "12-16" }),
+    ];
+    // (80·100 + 0·4) / (100 + 4) ≈ 76,9 — bien au-dessus de la moyenne simple 40.
+    expect(windowConvergence(rows as never)).toBeCloseTo((80 * 100) / 104, 5);
+  });
+  it("renvoie null si aucun bloc de la fenêtre n'a d'indice publié", () => {
+    const rows = [ev({ interval_convergence_score: null, score_qc: 10, score_roc: 5 })];
+    expect(windowConvergence(rows as never)).toBeNull();
+  });
+  it("repli sur la moyenne simple quand les blocs à indice sont sans saillance", () => {
+    const rows = [
+      ev({ interval_convergence_score: 40, score_qc: 0, score_roc: 0, time_interval_utc: "16-20" }),
+      ev({ interval_convergence_score: 60, score_qc: 0, score_roc: 0, time_interval_utc: "12-16" }),
+    ];
+    expect(windowConvergence(rows as never)).toBe(50);
+  });
+});
+
 describe("buildSolitudes", () => {
   const sol = (latest: unknown[], all: unknown[]) =>
-    buildSolitudes(latest as never, storiesFrom24h(all as never));
+    buildSolitudes(latest as never, storiesFrom24h(all as never), windowConvergence(all as never));
 
-  it("lit l'indice de convergence objet et calcule divPct = 100 − conv", () => {
+  it("lit l'indice de convergence objet (24h) et calcule divPct = 100 − conv", () => {
     const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
     const s = sol([row], [row]);
     expect(s.convPct).toBe(80);
     expect(s.divPct).toBe(20);
     expect(s.verb).toBe("convergence");
     expect(s.scoreValue).toBe(80);
+  });
+
+  it("repli 24h : sans indice publié, exclusivité pondérée des histoires (pas du bloc)", () => {
+    // Aucun indice objet → repli. Une histoire quasi exclusivement QC ⇒ divergence.
+    const rows = [
+      ev({ storyline_id: "qc", title: "QC", score_qc: 90, score_roc: 0, interval_convergence_score: null }),
+      ev({ storyline_id: "ca", title: "CA", score_qc: 0, score_saillance: 80, interval_convergence_score: null, country_id: "CAN", media_ids: '["CBC"]' }),
+    ];
+    const s = sol(rows, rows);
+    expect(s.convPct).toBeLessThan(50);
+    expect(s.verb).toBe("divergence");
   });
 
   it("garde au plus 6 axes, la plus grosse histoire en tête", () => {

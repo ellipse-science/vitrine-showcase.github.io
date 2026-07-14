@@ -180,8 +180,8 @@ function convMode(convPct: number): { word: string; cls: string } {
 function solitudesEdito(convPct: number, shared: number): string {
   if (convPct < 25) {
     return shared === 0
-      ? "Aucun sujet ne figure à la fois parmi les Unes québécoises et canadiennes de ce bloc. Deux conversations parallèles."
-      : "Pendant ce bloc, les médias québécois et canadiens ont mis l'accent sur des sujets presque entièrement différents.";
+      ? "Aucun sujet ne figure à la fois parmi les Unes québécoises et canadiennes des 24 dernières heures. Deux conversations parallèles."
+      : "Sur les 24 dernières heures, les médias québécois et canadiens ont mis l'accent sur des sujets presque entièrement différents.";
   }
   if (convPct < 50) {
     return "Quelques grandes histoires traversent la frontière ; le reste des deux agendas se croise à peine.";
@@ -314,19 +314,53 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[]): SolitudeData {
-  // Indice de convergence OBJET (0-100), publié sur les lignes QC/CAN par le
-  // refiner (#211). Repli sur l'exclusivité pondérée tant qu'il est absent.
+// Convergence OBJET sur la fenêtre glissante 24 h (mêmes 6 blocs que
+// storiesFrom24h) : moyenne des indices de convergence des blocs, PONDÉRÉE par
+// l'attention de chaque bloc (Σ score_qc + ROC) — un bloc creux ne pèse pas
+// autant qu'un bloc chargé. Comme le radar et la Une, le grand chiffre couvre
+// donc les 24 h, plus un seul bloc de 4 h (décision d'équipe 2026-07-14, Y3).
+// null si aucun bloc de la fenêtre n'a d'indice publié → repli en aval.
+// PROVISOIRE : la convergence glissante « officielle » viendra du refiner (#212).
+function windowConvergence(allEvents: RawEvent[]): number | null {
+  const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
+  const window24h = new Set(blocks.slice(0, 6));
+  const byBlock = new Map<string, { idx: number | null; wt: number }>();
+  for (const e of allEvents) {
+    const bk = blockKey(e);
+    if (!window24h.has(bk)) continue;
+    let b = byBlock.get(bk);
+    if (!b) { b = { idx: null, wt: 0 }; byBlock.set(bk, b); }
+    // Même valeur d'indice pour toutes les lignes d'un bloc : on prend la 1re.
+    if (b.idx === null && e.interval_convergence_score != null) {
+      b.idx = Math.max(0, Math.min(100, e.interval_convergence_score));
+    }
+    b.wt += (e.score_qc ?? 0) + rocScore(e);
+  }
+  let num = 0, den = 0, plainNum = 0, plainCount = 0;
+  for (const { idx, wt } of byBlock.values()) {
+    if (idx === null) continue;
+    const w = wt > 0 ? wt : 0;
+    num += idx * w; den += w;
+    plainNum += idx; plainCount += 1;
+  }
+  if (plainCount === 0) return null;
+  // Repli sur la moyenne simple si tous les blocs à indice sont sans saillance.
+  return den > 0 ? num / den : plainNum / plainCount;
+}
+
+function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null): SolitudeData {
+  // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
+  // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
+  // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
   const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
-  const rawConvergence = qcRow?.interval_convergence_score ?? null;
   let convPct: number;
-  if (rawConvergence !== null) {
-    convPct = Math.max(0, Math.min(100, rawConvergence));
+  if (conv24h !== null) {
+    // Moyenne pondérée = flottant → arrondi pour un pourcentage entier à l'écran.
+    convPct = Math.round(Math.max(0, Math.min(100, conv24h)));
   } else {
-    const withScore = latest.filter((e) => (e.score_qc ?? 0) + rocScore(e) > 0);
-    const total = withScore.reduce((s, e) => s + (e.score_qc ?? 0) + rocScore(e), 0);
-    const excl = withScore.reduce((s, e) => {
-      const q = e.score_qc ?? 0, tot = q + rocScore(e);
+    const total = stories.reduce((s, a) => s + a.sumQc + a.sumRoc, 0);
+    const excl = stories.reduce((s, a) => {
+      const q = a.sumQc, tot = a.sumQc + a.sumRoc;
       return s + tot * Math.abs((tot > 0 ? q / tot : 0) - 0.5) * 2;
     }, 0);
     convPct = total > 0 ? Math.round(100 - (excl / total) * 100) : 0;
@@ -781,7 +815,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     };
   });
 
-  const solitudes = buildSolitudes(latest, stories);
+  const conv24h = windowConvergence(unique);
+  const solitudes = buildSolitudes(latest, stories, conv24h);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -968,6 +1003,7 @@ export const __test__ = {
   symbolPositions,
   buildSolitudes,
   storiesFrom24h,
+  windowConvergence,
   blockKey,
   titleTokens,
   sameStory,

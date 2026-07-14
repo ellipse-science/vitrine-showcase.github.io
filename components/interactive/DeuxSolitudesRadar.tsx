@@ -234,7 +234,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       <div className="sol-stat">
         <span
           className={`score-num ${s.modeCls}`}
-          title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés. Mesure : les mêmes sujets saillants, pas les mêmes articles."
+          title="Convergence des priorités sur les 24 dernières heures. 0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés. Mesure : les mêmes sujets saillants, pas les mêmes articles."
         >
           {s.scoreValue}
           <sup>%</sup>
