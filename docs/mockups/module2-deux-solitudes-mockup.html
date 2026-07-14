@@ -276,13 +276,16 @@ function radar(axes){
     const tot=chips.length*BW+(chips.length-1)*CHGAP;
     const rowX = anchor==='middle'? lx-tot/2 : (anchor==='start'? lx : lx-tot);
     const topSide = Math.sin(ang)<-.35;
-    const labY = ly+dy;
     const labH = (lines.length-1)*14;
-    const rowY = topSide ? labY-14-BW : labY+labH+8;
+    // Ordre uniforme sur tous les axes : titre AU-DESSUS, badges médias
+    // en dessous. Pour l'axe du haut, on remonte le bloc pour que les
+    // badges (placés sous le titre) dégagent quand même le radar.
+    const labY = topSide ? ly+dy-(labH+8+BW) : ly+dy;
+    const rowY = labY+labH+8;
     const chipsSvg=chips.map((c,k)=>{
       const ext=c.url!=='#'?' target="_blank" rel="noopener"':'';
       const cx0=rowX+k*(BW+CHGAP);
-      const nameY = topSide ? rowY-7 : rowY+BW+13;
+      const nameY = rowY+BW+13;
       return `<a class="m-chip" href="${c.url}"${ext} aria-label="Dernier article de ${MEDIA_FULL[c.id]||c.id} sur ${a.label}"><g>
         <rect x="${cx0.toFixed(1)}" y="${rowY.toFixed(1)}" width="${BW}" height="${BW}" rx="2"/>
         <text x="${(cx0+BW/2).toFixed(1)}" y="${(rowY+BW/2+2.8).toFixed(1)}">${MEDIA_BADGE[c.id]||c.id}</text></g>
