@@ -48,10 +48,16 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:40;opa
 .radar-spoke{stroke:rgba(35,31,28,.07);stroke-width:.7}
 .radar-qc{fill:rgba(46,70,99,.32);stroke:var(--bleu);stroke-width:1.7;stroke-linejoin:round}
 .radar-can{fill:rgba(168,48,44,.26);stroke:var(--red);stroke-width:1.7;stroke-linejoin:round}
-.dot .hit{fill:transparent;cursor:help}
+.dot .hit{fill:transparent;cursor:pointer}
 .dot .pip{pointer-events:none;transform-box:fill-box;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
-.dot:hover .pip{transform:scale(2.1)}
+.dot:hover .pip{transform:scale(2.3)}
 .dot.radar-dot-qc .pip{fill:var(--bleu)} .dot.radar-dot-can .pip{fill:var(--red)}
+/* Infobulle des points, pilotée en JS (le <title> SVG natif est lent et
+   peu fiable). Suit le curseur, apparaît instantanément. */
+.dot-tip{position:fixed;z-index:60;max-width:260px;background:var(--ink);color:var(--paper);font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.45;padding:10px 13px;border-radius:3px;box-shadow:0 3px 14px rgba(35,31,28,.28);pointer-events:none;opacity:0;transition:opacity .12s ease}
+.dot-tip.on{opacity:1}
+.dot-tip .k{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.dot-tip.qc .k{color:#9DB4D0} .dot-tip.can .k{color:#E6A6A2}
 /* Étiquettes colorées par camp dominant : bleu = plus discuté au Québec,
    rouge = plus discuté au Canada */
 .radar-lab.side-qc,.radar-lab.strong.side-qc{fill:var(--bleu)}
@@ -60,14 +66,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:40;opa
 .radar-can,.radar-dot-can{transform-box:fill-box;transform-origin:center;animation:polyIn .5s ease .08s both}
 .radar-qc,.radar-dot-qc{transform-box:fill-box;transform-origin:center;animation:polyIn .5s ease .34s both}
 @keyframes polyIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
-.radar-lab{font-family:'Source Serif 4',Georgia,serif;font-size:13px;fill:var(--ink-soft)}
+.radar-lab{font-family:'Source Serif 4',Georgia,serif;font-size:16px;fill:var(--ink-soft)}
 .radar-lab.strong{font-weight:600}
 
 /* Badges médias : carrés monochromes identiques (le luxe est dans
    l'uniformité), cliquables vers le dernier article du média sur le sujet.
    Survol : inversion encre/papier + nom complet en byline. */
 .m-chip rect{fill:var(--paper);stroke:var(--ink-soft);stroke-width:.9;rx:2}
-.m-chip text{font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:.05em;font-weight:600;fill:var(--ink-soft);text-anchor:middle}
+.m-chip text{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.05em;font-weight:600;fill:var(--ink-soft);text-anchor:middle}
 .m-chip g{transform-box:fill-box;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
 .m-chip:hover g{transform:scale(1.3)}
 .m-chip:hover rect{fill:var(--ink);stroke:var(--ink)}
@@ -84,9 +90,11 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:40;opa
 .mode-div{color:var(--cordovan)} .mode-divp{color:#9A5A3C} .mode-convp{color:#4E6374} .mode-con{color:var(--bleu)}
 /* Bulle d'info éditoriale (pattern des bulles du module 1) : la phrase
    apparaît au survol/focus du ⓘ à côté du libellé du score */
-.info-dot{position:relative;display:inline-block;margin-left:8px;font-size:13px;letter-spacing:0;color:var(--ink-softer);cursor:help;vertical-align:1px}
+.info-dot{position:relative;display:inline-block;margin-left:9px;font-size:15px;letter-spacing:0;color:var(--ink-softer);cursor:help;vertical-align:1px}
 .info-dot:hover,.info-dot:focus{color:var(--ink)}
-.info-bubble{position:absolute;bottom:140%;left:50%;transform:translateX(-50%);width:300px;background:var(--paper);border:1px solid var(--rule);box-shadow:0 2px 10px rgba(35,31,28,.12);padding:12px 14px;font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.55;letter-spacing:0;text-transform:none;color:var(--ink-soft);opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:5}
+.info-bubble{position:absolute;bottom:calc(100% + 22px);left:50%;transform:translateX(-50%);width:400px;max-width:88vw;background:var(--paper);border:1px solid var(--rule);box-shadow:0 3px 16px rgba(35,31,28,.16);padding:20px 24px;font-family:'Source Serif 4',Georgia,serif;font-size:17px;line-height:1.6;letter-spacing:0;text-transform:none;color:var(--ink-soft);opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:6}
+/* Flèche du bas, sous le cadre, qui ne le fait pas chevaucher le texte */
+.info-bubble::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--paper);filter:drop-shadow(0 1px 0 var(--rule))}
 .info-dot:hover .info-bubble,.info-dot:focus .info-bubble{opacity:1}
 
 /* Jauge : gradient rouge → neutre → bleu, point plein */
@@ -241,11 +249,12 @@ function radar(axes){
   // (événement, percentile dans SA région, score brut).
   const dots=(cls,key)=>vals.map((v,i)=>{const [x,y]=pt(i,v[key]);
     if(!(v[key]>0)) return '';
+    const side=key==='vqc'?'qc':'can';
     const region=key==='vqc'?'québécoises':'canadiennes';
-    const raw=key==='vqc'?axes[i].qc:axes[i].can;
-    const tip=`${axes[i].label} — plus saillant que ${Math.round(v[key])} % des Unes ${region} des derniers mois (saillance ${raw})`;
-    return `<g class="dot ${cls}"><title>${tip}</title>
-      <circle class="hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"/>
+    const kk=key==='vqc'?'Au Québec':'Au Canada';
+    const tip=`${axes[i].label} : plus saillant que ${Math.round(v[key])} % des Unes ${region} des six derniers mois.`;
+    return `<g class="dot ${cls}" data-side="${side}" data-k="${kk}" data-tip="${tip.replace(/"/g,'&quot;')}">
+      <circle class="hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13"/>
       <circle class="pip" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.8"/></g>`;}).join('');
   const maxVal=Math.max(...vals.flatMap(v=>[v.vqc,v.vcan]),1);
   const wrapLab=s=>{
@@ -316,4 +325,21 @@ function render(state){
   document.getElementById('cap').textContent='Bloc '+o.date+' · radar : distance au centre = PERCENTILE de saillance de l\'événement parmi les Unes de SA région (calibré sur 953 Unes QC / 954 CAN, headline_events_4h depuis 2026-05-14 ; anneaux = p25/p50/p75) · états démo : scores indicatifs · indice = cosinus-objet (sans IDF), stoplist géo · jauge = percentile de convergence, centre = médiane 6 mois';
 }
 render('divergent');
+
+// Infobulle des points du radar, pilotée en JS (délégation sur #mod, qui
+// persiste entre les rendus). Le <title> SVG natif était lent et souvent
+// invisible ; ici la bulle suit le curseur et apparaît instantanément.
+const tipEl=document.createElement('div');tipEl.className='dot-tip';document.body.appendChild(tipEl);
+const mod=document.getElementById('mod');
+function place(e){const pad=14;let x=e.clientX+16,y=e.clientY+16;
+  const r=tipEl.getBoundingClientRect();
+  if(x+r.width>innerWidth-pad)x=e.clientX-r.width-16;
+  if(y+r.height>innerHeight-pad)y=e.clientY-r.height-16;
+  x=Math.max(pad,x);y=Math.max(pad,y);
+  tipEl.style.left=x+'px';tipEl.style.top=y+'px';}
+mod.addEventListener('mouseover',e=>{const g=e.target.closest('.dot');if(!g)return;
+  tipEl.innerHTML=`<span class="k">${g.dataset.k}</span>${g.dataset.tip}`;
+  tipEl.className='dot-tip on '+g.dataset.side;place(e);});
+mod.addEventListener('mousemove',e=>{if(tipEl.classList.contains('on')&&e.target.closest('.dot'))place(e);});
+mod.addEventListener('mouseout',e=>{if(e.target.closest('.dot'))tipEl.classList.remove('on');});
 </script></body></html>
