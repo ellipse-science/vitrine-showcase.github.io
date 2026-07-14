@@ -464,6 +464,7 @@
       <li><a href="#treemap-enjeux">Module : Carte des enjeux</a></li>
       <li><a href="#couverture-partis">Module : Couverture des partis politiques</a></li>
       <li><a href="#parole-en-chambre">Module : Parole en chambre</a></li>
+      <li><a href="#suivi-promesses">Module : Suivi des promesses (Polimètre+)</a></li>
       <li><a href="#fenetres-temporelles">Fenêtres temporelles</a></li>
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
@@ -704,9 +705,33 @@
     <p class="metho-body">Classement des partis par volume de parole. Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les scores d'enjeux permettent d'identifier les thèmes privilégiés par chaque formation politique.</p>
   </section>
 
-  <!-- §8 Fenêtres temporelles -->
-  <section id="fenetres-temporelles" class="metho-section">
+  <!-- §8 Suivi des promesses (Polimètre+) -->
+  <section id="suivi-promesses" class="metho-section">
     <p class="metho-section-label">§ 08</p>
+    <h2>Module : Suivi des promesses (Polimètre+)</h2>
+    <p class="metho-body">Ce module suit la <strong>couverture médiatique des promesses électorales de la Coalition avenir Québec (CAQ)</strong> : il identifie chaque semaine les promesses les plus <strong>saillantes</strong> (les plus présentes dans l'actualité) et celles en plus forte <strong>progression</strong> par rapport à la semaine précédente.</p>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le raffineur <code>polimetre-plus</code> produit la table <code>polimetre_plus</code>. Il croise la couverture médiatique Radar+ avec la liste officielle des promesses de la CAQ. L'appariement entre un article et une promesse repose <strong>entièrement sur des expressions régulières validées manuellement</strong> — c'est la source de vérité de l'identification.</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li><strong>Identification (règles)</strong> : chaque titre et texte d'article est confronté à un jeu d'expressions régulières validées, une par promesse, pour déterminer quelles promesses y sont mentionnées.</li>
+      <li><strong>Indice de saillance</strong> : pour chaque promesse, nombre d'articles la mentionnant multiplié par le temps de présence en Une pondéré entre médias (même pondération inter-médias que l'indice de saillance décrit au § 03).</li>
+      <li><strong>Progression hebdomadaire</strong> : écart entre l'indice de saillance de la semaine courante et celui de la semaine précédente, permettant de repérer les promesses dont la couverture s'intensifie.</li>
+      <li>Les promesses sont classées par saillance et par progression pour la semaine se terminant à la date du traitement.</li>
+    </ol>
+
+    <h3>Enrichissement génératif (best-effort)</h3>
+    <p class="metho-body">En complément — et sans jamais intervenir dans l'identification, qui demeure entièrement à base de règles — un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage : un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Cet enrichissement est optionnel : si le service n'est pas disponible, ces champs restent vides et le reste du module est publié normalement.</p>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Classement des promesses de la CAQ les plus saillantes de la semaine, avec l'indication de leur progression et, lorsque disponible, un libellé court et un résumé de la couverture médiatique récente.</p>
+  </section>
+
+  <!-- §9 Fenêtres temporelles -->
+  <section id="fenetres-temporelles" class="metho-section">
+    <p class="metho-section-label">§ 09</p>
     <h2>Fenêtres temporelles</h2>
     <p class="metho-body">Les modules de couverture médiatique sont disponibles selon trois fenêtres temporelles, correspondant à trois tables Athena distinctes (<code>_day</code>, <code>_week</code>, <code>_month</code>) produites par les raffineurs.</p>
 
@@ -723,9 +748,9 @@
     <p class="metho-body">Les raffineurs appliquent une pondération décroissante à l'intérieur de chaque fenêtre : les événements récents contribuent davantage au score final que les événements anciens.</p>
   </section>
 
-  <!-- §9 Limites -->
+  <!-- §10 Limites -->
   <section id="limites" class="metho-section">
-    <p class="metho-section-label">§ 09</p>
+    <p class="metho-section-label">§ 10</p>
     <h2>Limites reconnues</h2>
     <blockquote class="metho-quote">Aucune mesure n'est neutre. La Vitrine revendique sa rigueur en exposant aussi ses limites.</blockquote>
 
@@ -748,9 +773,9 @@
     <p class="metho-body">Les données publiées sont des instantanés (<em>snapshots</em>) mis à jour automatiquement six fois par jour par un pipeline AWS. Les scores affichés correspondent au dernier cycle de collecte et d'analyse, non à un flux continu en temps réel.</p>
   </section>
 
-  <!-- §10 Éthique -->
+  <!-- §11 Éthique -->
   <section id="ethique" class="metho-section">
-    <p class="metho-section-label">§ 10</p>
+    <p class="metho-section-label">§ 11</p>
     <h2>Éthique et transparence</h2>
     <ul class="metho-list">
       <li>Le CAPP détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
@@ -760,9 +785,9 @@
     </ul>
   </section>
 
-  <!-- §11 Citation -->
+  <!-- §12 Citation -->
   <section id="citation" class="metho-section">
-    <p class="metho-section-label">§ 11</p>
+    <p class="metho-section-label">§ 12</p>
     <h2>Citation et accès aux données</h2>
     <p class="metho-body">Si vous utilisez les données ou les indices de la Vitrine Démocratique dans vos travaux, veuillez citer :</p>
     <div class="metho-citation">
