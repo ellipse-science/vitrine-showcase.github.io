@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import React from "react";
-import { loadHeadlineEvents, type UneEvent, type SolitudeStory } from "@/lib/data/headlineEvents";
+import { loadHeadlineEvents, type UneEvent } from "@/lib/data/headlineEvents";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -16,27 +16,38 @@ function saillantLabel(event: UneEvent): string {
     : "Saillant au Québec";
 }
 
-function Byline({ mediaPresent, mediaAbsent }: {
-  mediaPresent: { name: string; url: string | null }[];
+function MediaLinkList({ media }: { media: { name: string; url: string | null }[] }) {
+  return (
+    <span className="byline-media">
+      {media.map(({ name, url }, i) => (
+        <span key={name}>
+          {url ? (
+            <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+          ) : (
+            <span>{name}</span>
+          )}
+          {i < media.length - 1 && <span className="sep">·</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Byline({ mediaToday, mediaAbsent }: {
+  mediaToday: { name: string; url: string | null }[];
   mediaAbsent: string[];
 }) {
+  // Une seule ligne de présence (décision Adrien 2026-07-11) : « À la Une
+  // aujourd'hui sur » = union des médias QC ayant mis l'histoire en Une sur la
+  // fenêtre 24h (#213/#215/#51) — remplace l'ancien « À lire en Une sur »,
+  // limité au bloc 4h courant. Les liens pointent vers le DERNIER article mis
+  // en Une par chaque média, même s'il vient d'un bloc précédent (#129).
   return (
     <div className="byline-block">
-      {mediaPresent.length > 0 && (
+      {mediaToday.length > 0 && (
         <p className="byline-line">
-          <span className="byline-label">À lire en Une sur</span>{" "}
-          <span className="byline-media">
-            {mediaPresent.map(({ name, url }, i) => (
-              <span key={name}>
-                {url ? (
-                  <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
-                ) : (
-                  <span>{name}</span>
-                )}
-                {i < mediaPresent.length - 1 && <span className="sep">·</span>}
-              </span>
-            ))}
-          </span>
+          <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
+          <MediaLinkList media={mediaToday} />
         </p>
       )}
       {mediaAbsent.length > 0 && (
@@ -49,23 +60,36 @@ function Byline({ mediaPresent, mediaAbsent }: {
   );
 }
 
-function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; generatedArtUrl?: string; audioUrl?: string }) {
+function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
+  event: UneEvent;
+  /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
+   *  première dans la colonne de gauche — sans lead — et l'illustration garde
+   *  toute la hauteur des deux à droite. (L'essai « carte large » pleine
+   *  largeur sous le hero laissait un vide, rejeté.) */
+  secondEvent?: UneEvent;
+  generatedArtUrl?: string;
+  audioUrl?: string;
+}) {
   return (
     <div className="une-main">
-      <div className="une-main-head">
-        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-          {event.issueFr}
-        </span>
-        <span className="saillance-tag-row">
-          <span className={`saillance-tag ${event.saillanceCls}`}>
-            Saillance {event.saillanceLabel}
-          </span>
-          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-        </span>
-      </div>
-
       <div className={`une-main-grid ${generatedArtUrl ? "has-art" : "no-art"}`}>
         <div className="une-main-copy">
+          {/* L'en-tête (enjeu + tag) vit DANS la colonne de gauche : hors de la
+              grille, il s'étendait sous le bloc Ambiance (remonté en marge
+              négative) et le tag « Exceptionnelle » agrandi finissait par le
+              chevaucher quand l'enjeu était long. Ici, le chevauchement est
+              impossible par construction. */}
+          <div className="une-main-head">
+            <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+              {event.issueFr}
+            </span>
+            <span className="saillance-tag-row">
+              <span className={`saillance-tag ${event.saillanceCls}`}>
+                Saillance {event.saillanceLabel}
+              </span>
+              <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
+            </span>
+          </div>
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             {event.representativeUrl ? (
@@ -76,7 +100,31 @@ function MainUne({ event, generatedArtUrl, audioUrl }: { event: UneEvent; genera
           <div className="saillance-row">
             <span className="time">{saillantLabel(event)}</span>
           </div>
-          <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
+          <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+          {secondEvent && (
+            <div className="une-side une-second">
+              <div className="une-side-head">
+                <span className="une-enjeu" style={{ "--c": secondEvent.issueColor } as React.CSSProperties}>
+                  {secondEvent.issueFr}
+                </span>
+                <span className="saillance-tag-row">
+                  <span className={`saillance-tag ${secondEvent.saillanceCls}`}>
+                    Saillance {secondEvent.saillanceLabel}
+                  </span>
+                  <InfoTip size="sm" label="Détail du niveau de saillance">{secondEvent.saillanceHint}</InfoTip>
+                </span>
+              </div>
+              <h2 data-saillance={secondEvent.saillanceRank}>
+                {secondEvent.representativeUrl ? (
+                  <a href={secondEvent.representativeUrl} target="_blank" rel="noopener noreferrer">{secondEvent.title}</a>
+                ) : secondEvent.title}
+              </h2>
+              <div className="saillance-row">
+                <span className="time">{saillantLabel(secondEvent)}</span>
+              </div>
+              <Byline mediaToday={secondEvent.mediaToday} mediaAbsent={secondEvent.mediaAbsent} />
+            </div>
+          )}
         </div>
 
         {audioUrl && (
@@ -131,7 +179,7 @@ function SideUne({ event }: { event: UneEvent }) {
         <span className="time">{saillantLabel(event)}</span>
       </div>
       {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
-      <Byline mediaPresent={event.mediaPresent} mediaAbsent={event.mediaAbsent} />
+      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
     </div>
   );
 }
@@ -171,8 +219,13 @@ export async function UneDesUnesSection() {
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
   // section top-level distincte (DeuxSolitudesSection).
+  // À 2 ou 1 Unes (dédup storyline / bloc creux), le module a moins de
+  // contenu : l'illustration s'élargit pour garder une page pleine (#124).
+  const countCls =
+    data.top3.length === 2 ? " deux-unes" : data.top3.length === 1 ? " une-seule" : "";
+
   return (
-    <div className={`unes-jour${breaking ? " breaking" : ""}`}>
+    <div className={`unes-jour${breaking ? " breaking" : ""}${countCls}`}>
         <div className="section-label">
           <span className="section-title-wrap">
             <span className="section-title">{sectionTitle}</span>
@@ -186,14 +239,26 @@ export async function UneDesUnesSection() {
 
         {/* Disposition simple : Une #1 (la plus saillante) en grand, #2 et #3
             en secondaires côte-à-côte. Ordre = ordre de saillance. */}
+        {/* Mise en page 1 à 3 Unes (#124 obj. 2, phase C) : le module vise
+            toujours 3 Unes. À 3 : hero + 2 secondaires côte-à-côte. À 2 : la
+            2e s'empile sous la 1re dans la colonne de gauche du hero,
+            l'illustration prend toute la hauteur à droite (pas de rangée
+            secondaire). À 1 : le hero seul. */}
         <section className="hero-main">
-          {main && <MainUne event={main} generatedArtUrl={generatedArtUrl} audioUrl={audioUrl} />}
+          {main && (
+            <MainUne
+              event={main}
+              secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
+              generatedArtUrl={generatedArtUrl}
+              audioUrl={audioUrl}
+            />
+          )}
         </section>
 
-        {(sideLeft || sideRight) && (
+        {sideLeft && sideRight && (
           <section className="hero-secondaries">
-            {sideLeft && <SideUne event={sideLeft} />}
-            {sideRight && <SideUne event={sideRight} />}
+            <SideUne event={sideLeft} />
+            <SideUne event={sideRight} />
           </section>
         )}
         <div className="module-last-updated">{data.lastUpdated}</div>

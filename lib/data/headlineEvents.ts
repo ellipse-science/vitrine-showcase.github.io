@@ -45,14 +45,26 @@ type RawEvent = {
   interval_convergence_score: number | null;
   top_objects_divergence: string | null;
   articles: string | null;
-};
-
-type DivergenceEntry = {
-  event_label: string;
-  event_title_raw: string;
-  score_qc: number;
-  score_roc: number;
-  divergence_score: number;
+  // Deux solitudes — breakdown régional par événement (radar). Optionnels :
+  // score_saillance = score_qc + score_roc + score_us (vérifié empiriquement,
+  // cf. #143) — ne jamais dériver le ROC par soustraction, sinon le côté
+  // Canada absorbe les USA. Le repli transitoire soustrait tant que score_roc
+  // n'est pas publié (≤ 1 rafraîchissement de 4 h après le déploiement de
+  // #237). coverage_* et media_ids_qc/roc arrivent avec le refiner #211.
+  score_roc?: number | null;
+  score_us?: number | null;
+  coverage_qc_in_can?: number | null;
+  coverage_can_in_qc?: number | null;
+  media_ids_qc?: string | null;
+  media_ids_roc?: string | null;
+  // Agrégats 24h par storyline (aws-refiners#195 phase B, PR #199) — optionnels :
+  // absents des lignes publiées avant le 2026-07-10 (Athena renvoie null).
+  storyline_id?: string | null;
+  media_ids_24h?: string | null;
+  articles_24h?: string | null;
+  score_qc_peak_24h?: number | null;
+  first_seen_utc?: string | null;
+  n_blocks_24h?: number | null;
 };
 
 type ExtractedObject = { object: string; score: number };
@@ -95,12 +107,287 @@ const MEDIA_NAMES: Record<string, string> = {
   JDM: "Journal de Montréal",
   MG: "Montreal Gazette",
   CBC: "CBC",
-  CTV: "CTV",
+  CTV: "CTV News",
   GN: "Global News",
   TTS: "Toronto Star",
+  GAM: "The Globe and Mail",
+  NP: "National Post",
+  VS: "Vancouver Sun",
+};
+
+// Sigle court affiché dans le badge carré du radar (Deux solitudes).
+const MEDIA_BADGE: Record<string, string> = {
+  LED: "LD", LAP: "LP", RCI: "RC", TVA: "TVA", JDM: "JdM", MG: "MG",
+  CBC: "CBC", CTV: "CTV", GN: "GN", TTS: "TS", GAM: "GM", NP: "NP", VS: "VS",
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
+// Médias US — exclus du côté « Canada » dans le repli transitoire (avant que
+// media_ids_roc soit publié par le refiner #211) pour ne pas afficher une
+// source américaine comme canadienne.
+const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
+
+// ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
+// L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
+// calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
+// distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
+// percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
+// 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
+// conv=14→p50, 25→p63, 50→p80, 75→p93. À recalibrer sur données réelles une fois
+// le refiner #211 déployé, puis remplacer par la publication glissante (#212).
+const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
+
+function pctile(v: number, cal: [number, number][]): number {
+  if (!(v > 0)) return 0;
+  for (let i = 1; i < cal.length; i++) {
+    if (v <= cal[i][0]) {
+      const [x0, y0] = cal[i - 1], [x1, y1] = cal[i];
+      return y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+    }
+  }
+  return 100;
+}
+
+// Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
+// UNIQUEMENT tant que la colonne score_roc n'est pas publiée (≤ 1 rafraîchissement
+// de 4 h après #237) : on soustrait score_qc ET score_us (quand dispo) pour ne
+// PAS réabsorber les USA côté Canada. À retirer une fois score_roc publié.
+function rocScore(e: RawEvent): number {
+  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0));
+}
+
+// Positions des symboles sur l'axe : collés au centre quand ça converge,
+// aux extrémités quand ça diverge. gap min 18 % pour ne pas les superposer.
+function symbolPositions(convPct: number): [number, number] {
+  const div = 100 - convPct;
+  const gap = 18 + 72 * Math.pow(div / 100, 1.4);
+  return [50 - gap / 2, 50 + gap / 2];
+}
+
+// 4 niveaux symétriques sur la convergence (seuils 25/50/75). Le mot et la
+// couleur pilotent le grand chiffre. Cf. red-team + design de la maquette.
+function convMode(convPct: number): { word: string; cls: string } {
+  if (convPct < 25) return { word: "Divergence", cls: "mode-div" };
+  if (convPct < 50) return { word: "Divergence partielle", cls: "mode-divp" };
+  if (convPct < 75) return { word: "Convergence partielle", cls: "mode-convp" };
+  return { word: "Convergence", cls: "mode-con" };
+}
+
+// Phrase éditoriale : GABARITS FINIS choisis par règles (aucun LLM en prod),
+// conformes au skill redaction-editoriale (mêmes « sujets », pas de tiret
+// cadratin, formulation honnête). `shared` = nb de sujets du radar couverts
+// des deux côtés.
+function solitudesEdito(convPct: number, shared: number): string {
+  if (convPct < 25) {
+    return shared === 0
+      ? "Aucun sujet ne figure à la fois parmi les Unes québécoises et canadiennes de ce bloc. Deux conversations parallèles."
+      : "Pendant ce bloc, les médias québécois et canadiens ont mis l'accent sur des sujets presque entièrement différents.";
+  }
+  if (convPct < 50) {
+    return "Quelques grandes histoires traversent la frontière ; le reste des deux agendas se croise à peine.";
+  }
+  if (convPct < 75) {
+    return "Une bonne partie de l'actualité est suivie des deux côtés, chacun avec ses propres mots.";
+  }
+  return "Fait rare : les deux espaces médiatiques mettent de l'avant surtout les mêmes sujets.";
+}
+
+// Clé de bloc triable (date + heure de début du créneau 4h).
+function blockKey(e: RawEvent): string {
+  const start = (e.time_interval_utc ?? "").split("-")[0].padStart(2, "0");
+  return `${e.date_utc}T${start}`;
+}
+
+// Signature de titre pour la dédup cross-langue (stopgap aws-refiners#213) :
+// tokens significatifs (sans accents, stopwords FR/EN, mots courts).
+const TITLE_STOP = new Set([
+  "le", "la", "les", "un", "une", "des", "de", "du", "au", "aux", "et", "ou", "en",
+  "sur", "pour", "dans", "par", "avec", "sans", "sous", "vers", "chez", "que", "qui",
+  "the", "and", "for", "with", "from", "that", "this", "into", "over", "after",
+]);
+function titleTokens(s: string): Set<string> {
+  return new Set(
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !TITLE_STOP.has(w)),
+  );
+}
+// Deux titres décrivent la même histoire s'ils partagent AU MOINS 3 tokens
+// significatifs ET un Jaccard ≥ 0,4. Le minimum de 3 évite de fusionner deux
+// sujets sans rapport qui partageraient un seul mot commun.
+function sameStory(a: Set<string>, b: Set<string>): boolean {
+  if (a.size < 3 || b.size < 3) return false;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  if (inter < 3) return false;
+  return inter / (a.size + b.size - inter) >= 0.4;
+}
+
+// Construit tout l'état du module « Deux solitudes » (radar + jauge + édito).
+// `latest` = événements du bloc courant (pour l'indice de convergence) ;
+// `allEvents` = tous les blocs publiés (3 jours), pour agréger la part
+// d'attention sur la fenêtre glissante de 24 h.
+function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData {
+  // Indice de convergence OBJET (0-100), publié sur les lignes QC/CAN par le
+  // refiner (#211). Repli sur l'exclusivité pondérée tant qu'il est absent.
+  const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
+  const rawConvergence = qcRow?.interval_convergence_score ?? null;
+  let convPct: number;
+  if (rawConvergence !== null) {
+    convPct = Math.max(0, Math.min(100, rawConvergence));
+  } else {
+    const withScore = latest.filter((e) => (e.score_qc ?? 0) + rocScore(e) > 0);
+    const total = withScore.reduce((s, e) => s + (e.score_qc ?? 0) + rocScore(e), 0);
+    const excl = withScore.reduce((s, e) => {
+      const q = e.score_qc ?? 0, tot = q + rocScore(e);
+      return s + tot * Math.abs((tot > 0 ? q / tot : 0) - 0.5) * 2;
+    }, 0);
+    convPct = total > 0 ? Math.round(100 - (excl / total) * 100) : 0;
+  }
+  const divPct = Math.max(0, Math.min(100, 100 - convPct));
+  const relPct = Math.round(pctile(convPct, CAL_CONV));
+  const mode = convMode(convPct);
+  const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
+
+  // Résolution des liens par média (dernier article sur la storyline si dispo,
+  type RawArticle = { media_id: string; url: string };
+  const parseIds = (json: string | null | undefined): string[] => {
+    try {
+      const p = JSON.parse(json ?? "[]");
+      return Array.isArray(p) ? (p as string[]) : [];
+    } catch { return []; }
+  };
+
+  // ── Fenêtre glissante 24 h : part d'attention par histoire ────────────────
+  // On agrège la saillance par storyline sur les 6 blocs de 4h les plus récents
+  // (= 24 h), pour chaque région. La valeur radiale d'un sujet est sa part
+  // rapportée au sujet le plus couvert de sa région (le plus gros du jour touche
+  // le bord). Même fenêtre 24 h que le suivi de la Une des Unes → les deux
+  // modules montrent les mêmes histoires, comparables.
+  const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
+  const window24h = new Set(blocks.slice(0, 6));
+  const windowEvents = allEvents.filter((e) => window24h.has(blockKey(e)));
+
+  // Accumule, par storyline, la saillance + les médias/URLs par région (union
+  // sur tous les blocs 24 h) et un jeu de tokens de titre pour la dédup.
+  type Agg = {
+    label: string; repKey: string; qc: number; roc: number;
+    qcMedia: Set<string>; canMedia: Set<string>;
+    urlByMedia: Record<string, string>; tok: Set<string>;
+  };
+  const byStory = new Map<string, Agg>();
+  for (const e of windowEvents) {
+    if (!e.title) continue;
+    const key = e.storyline_id ?? e.event_label ?? e.event_id;
+    const bk = blockKey(e);
+    const qcIds = e.media_ids_qc !== undefined
+      ? parseIds(e.media_ids_qc)
+      : parseIds(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+    const canIds = e.media_ids_roc !== undefined
+      ? parseIds(e.media_ids_roc)
+      : parseIds(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
+    let cur = byStory.get(key);
+    if (!cur) {
+      cur = { label: e.title ?? "", repKey: bk, qc: 0, roc: 0,
+        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? "") };
+      byStory.set(key, cur);
+    }
+    cur.qc += e.score_qc ?? 0;
+    cur.roc += rocScore(e);
+    qcIds.forEach((id) => cur!.qcMedia.add(id));
+    canIds.forEach((id) => cur!.canMedia.add(id));
+    for (const k of ["articles_24h", "articles"] as const) {
+      try {
+        const parsed = JSON.parse((e[k] as string) ?? "[]");
+        if (Array.isArray(parsed)) for (const a of parsed as RawArticle[]) {
+          if (a.media_id && a.url && !cur.urlByMedia[a.media_id]) cur.urlByMedia[a.media_id] = a.url;
+        }
+      } catch { /* champ absent ou malformé */ }
+    }
+    // Représentant = titre/tokens du bloc le plus récent.
+    if (bk > cur.repKey) { cur.repKey = bk; cur.label = e.title ?? ""; cur.tok = titleTokens(e.title ?? ""); }
+  }
+
+  // Dédup cross-langue (STOPGAP, aws-refiners#213) : le refiner scinde parfois
+  // une histoire en plusieurs storylines (cadrage FR/EN). On fusionne celles
+  // dont les titres se recoupent fortement (Jaccard ≥ 0,5), en additionnant la
+  // saillance et l'union des médias — ce qui corrige aussi la divergence
+  // artificielle (une histoire QC-only + sa version CAN-only redeviennent une
+  // seule histoire couverte des deux côtés).
+  const merged: Agg[] = [];
+  for (const a of Array.from(byStory.values()).sort((x, y) => y.qc + y.roc - (x.qc + x.roc))) {
+    const host = merged.find((m) => sameStory(m.tok, a.tok));
+    if (host) {
+      host.qc += a.qc; host.roc += a.roc;
+      a.qcMedia.forEach((id) => host.qcMedia.add(id));
+      a.canMedia.forEach((id) => host.canMedia.add(id));
+      for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
+    } else {
+      merged.push(a);
+    }
+  }
+
+  const aggs = merged.filter((a) => a.qc + a.roc > 0);
+  const totalQc = aggs.reduce((s, a) => s + a.qc, 0);
+  const totalRoc = aggs.reduce((s, a) => s + a.roc, 0);
+  const maxQc = Math.max(...aggs.map((a) => a.qc), 1);
+  const maxRoc = Math.max(...aggs.map((a) => a.roc), 1);
+
+  // Sélection ÉQUILIBRÉE : union du top-3 québécois et du top-3 canadien, pour
+  // que les deux agendas soient représentés (sinon le Canada, à l'échelle 2,8×
+  // plus grande, monopolise les 6 axes — cf. observation d'Adrien 2026-07-14).
+  const topQc = [...aggs].sort((a, b) => b.qc - a.qc).slice(0, 3);
+  const topRoc = [...aggs].sort((a, b) => b.roc - a.roc).slice(0, 3);
+  const picked: Agg[] = [];
+  for (const a of [...topQc, ...topRoc]) if (!picked.includes(a)) picked.push(a);
+  // Complète jusqu'à 6 par saillance combinée si l'union en donne moins.
+  for (const a of [...aggs].sort((x, y) => y.qc + y.roc - (x.qc + x.roc))) {
+    if (picked.length >= 6) break;
+    if (!picked.includes(a)) picked.push(a);
+  }
+
+  const buildMediaFor = (a: Agg): SolitudeAxis["media"] => {
+    const mk = (id: string, region: "qc" | "can") => ({
+      id, name: MEDIA_NAMES[id] ?? id, badge: MEDIA_BADGE[id] ?? id,
+      url: a.urlByMedia[id] ?? null, region,
+    });
+    return [
+      ...[...a.qcMedia].map((id) => mk(id, "qc" as const)),
+      ...[...a.canMedia].map((id) => mk(id, "can" as const)),
+    ];
+  };
+
+  const axes: SolitudeAxis[] = picked.map((a) => {
+    const qcRadial = Math.round((a.qc / maxQc) * 100);
+    const canRadial = Math.round((a.roc / maxRoc) * 100);
+    return {
+      label: a.label,
+      qcRadial, canRadial,
+      qcShare: totalQc > 0 ? Math.round((a.qc / totalQc) * 100) : 0,
+      canShare: totalRoc > 0 ? Math.round((a.roc / totalRoc) * 100) : 0,
+      side: (qcRadial >= canRadial ? "qc" : "can") as "qc" | "can",
+      media: buildMediaFor(a),
+    };
+  });
+
+  const shared = axes.filter((a) => a.qcRadial > 0 && a.canRadial > 0).length;
+
+  return {
+    divPct, convPct,
+    scoreValue: convPct < 50 ? divPct : convPct,
+    verb: convPct < 50 ? "divergence" : "convergence",
+    modeWord: mode.word, modeCls: mode.cls,
+    relPct,
+    coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
+    coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
+    edito: solitudesEdito(convPct, shared),
+    qcSymbolPos, canSymbolPos,
+    axes,
+  };
+}
 
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
 // autant de « Très faible » que d'« Exceptionnelle », le gros au centre (courbe en
@@ -136,6 +423,23 @@ function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: s
   return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
 }
 
+// Dédup storyline-aware (#231, ancien signalement #211 « la 1re et la 2e
+// nouvelle sont la même ») : le clustering amont peut scinder une même histoire
+// en deux événements du même bloc, et la garantie « 3 cartes par bloc/pays » du
+// refiner peut réintroduire un quasi-doublon pourtant détecté. On garde la
+// première occurrence (la plus saillante — la liste arrive triée par score_qc
+// décroissant). Un storyline_id absent (lignes antérieures au 2026-07-10)
+// n'est jamais traité comme doublon : deux lignes sans storyline sont gardées.
+function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T[]): T[] {
+  const seen = new Set<string>();
+  return events.filter((e) => {
+    if (!e.storyline_id) return true;
+    if (seen.has(e.storyline_id)) return false;
+    seen.add(e.storyline_id);
+    return true;
+  });
+}
+
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
 const SAILLANT_TODAY: Record<number, string> = {
   0: "cette nuit", 4: "tôt ce matin", 8: "ce matin",
@@ -146,9 +450,60 @@ const SAILLANT_YESTERDAY: Record<number, string> = {
   12: "hier midi", 16: "hier après-midi", 20: "hier soir",
 };
 
-// « ce matin, 8 h » (#126) : estime le début de saillance à partir du bloc 4h
-// courant (heure Montréal) et de la durée en Une, arrondi à l'édition la plus
-// proche. Approximatif tant que le refiner ne fournit pas l'instant exact.
+// Conversion UTC → Montréal sans dépendance : Intl gère EDT/EST.
+const MTL_DATE_HOUR_FMT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Montreal",
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", hourCycle: "h23",
+});
+
+function mtlDateAndHour(d: Date): { dateIso: string; hour: number } {
+  const parts = MTL_DATE_HOUR_FMT.formatToParts(d);
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? "";
+  return {
+    dateIso: `${get("year")}-${get("month")}-${get("day")}`,
+    hour: Number(get("hour")),
+  };
+}
+
+// Jour UTC entier d'une date ISO « YYYY-MM-DD » — pour compter des écarts de
+// jours calendaires sans passer par le fuseau de la machine de build.
+function isoDay(dateIso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateIso ?? "");
+  if (!m) return null;
+  return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) / 86_400_000;
+}
+
+// « ce matin, 8 h » (#126) — version EXACTE : `first_seen_utc` (début du premier
+// bloc 4h où la storyline figurait parmi les Unes saillantes, cf.
+// aws-refiners#195 phase B) converti en heure de Montréal. « aujourd'hui/hier »
+// est relatif à la DATE DU BLOC affiché (date_montreal_tz), pas à l'heure du
+// build — le libellé reste juste même si le site est reconstruit en retard.
+// Au-delà d'hier : date en toutes lettres. L'heure est arrondie à l'édition la
+// plus proche (les blocs tombent pile sur les éditions en EDT, à 1 h près en EST).
+function firstSeenSaillantLabel(firstSeenUtc: string | null | undefined, blockDateMtl: string | null): string | null {
+  if (!firstSeenUtc || !blockDateMtl) return null;
+  const t = new Date(firstSeenUtc);
+  if (Number.isNaN(t.getTime())) return null;
+  const { dateIso, hour } = mtlDateAndHour(t);
+  const seenDay = isoDay(dateIso);
+  const blockDay = isoDay(blockDateMtl);
+  if (seenDay === null || blockDay === null) return null;
+  const snapped = UPDATE_HOURS_MTL.reduce(
+    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p),
+    UPDATE_HOURS_MTL[0],
+  );
+  const dayDiff = blockDay - seenDay;
+  // Espace fine insécable avant « h » (norme typographique française).
+  if (dayDiff <= 0) return `${SAILLANT_TODAY[snapped]}, ${snapped} h`;
+  if (dayDiff === 1) return `${SAILLANT_YESTERDAY[snapped]}, ${snapped} h`;
+  const dateFr = formatDateFr(dateIso);
+  return `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+}
+
+// Estimation historique (#126) : début de saillance déduit du bloc 4h courant
+// et de la durée en Une. Conservée en SECOURS pour les lignes sans
+// `first_seen_utc` (données antérieures au 2026-07-10).
 function saillantSinceLabel(timeIntervalMtl: string | null, headlineHours: number | null): string | null {
   if (!headlineHours || headlineHours <= 0) return null;
   const blockStart = parseInt((timeIntervalMtl ?? "").split("-")[0] ?? "", 10);
@@ -188,21 +543,69 @@ export type UneEvent = {
   saillanceHint: string;
   timeMtl: string;
   headlineHours: number | null;
-  /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126). */
+  /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
+   *  Exact (first_seen_utc) quand la donnée 24h existe, sinon estimation. */
   saillantSince: string | null;
   representativeUrl: string | null;
-  mediaPresent: { name: string; url: string | null }[];
+  /** Union 24h des médias QC ayant mis la storyline en Une (media_ids_24h,
+   *  #213/#215/#51) — remplace l'ancienne liste limitée au bloc courant ;
+   *  retombe sur les médias du bloc courant si la donnée 24h manque
+   *  (lignes antérieures au 2026-07-10). */
+  mediaToday: { name: string; url: string | null }[];
   mediaAbsent: string[];
   qcOutletCount: number;
   totalQcOutlets: number;
+  /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
+  storylineId: string | null;
+  /** Pic de score_qc sur la fenêtre 24h — base de l'étiquette phase C (#122). */
+  scoreQcPeak24h: number | null;
+  /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
+  nBlocks24h: number | null;
 };
 
-export type SolitudeStory = {
+/** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
+export type SolitudeAxis = {
+  /** Titre FR de l'histoire (storyline). */
   label: string;
-  qcWidth: number;
-  caWidth: number;
-  qcZero: boolean;
-  caZero: boolean;
+  /** Valeur radiale de dessin (0-100) : part de l'attention 24h de la région
+   *  rapportée au sujet le plus couvert de cette région (le plus gros sujet du
+   *  jour touche le bord). Rend les deux formes comparables malgré l'écart
+   *  d'échelle QC/ROC. */
+  qcRadial: number;
+  canRadial: number;
+  /** Part réelle de l'attention 24h de la région (%), pour l'infobulle. */
+  qcShare: number;
+  canShare: number;
+  /** Camp dominant (couleur du libellé). */
+  side: "qc" | "can";
+  /** Médias couvrants + lien vers leur dernier article sur le sujet.
+   *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
+   *  deux côtés montre les deux couleurs. */
+  media: { id: string; name: string; badge: string; url: string | null; region: "qc" | "can" }[];
+};
+
+export type SolitudeData = {
+  /** Divergence affichée (0-100) = 100 − convergence. */
+  divPct: number;
+  convPct: number;
+  /** Le grand chiffre + son verbe (« divergence » / « convergence »). */
+  scoreValue: number;
+  verb: "divergence" | "convergence";
+  /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
+  modeWord: string;
+  modeCls: string;
+  /** Percentile de convergence dans la distribution des blocs (position de la
+   *  jauge « plus divergent / habituel / plus convergent »). */
+  relPct: number;
+  /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
+  coverageQcInCan: number | null;
+  coverageCanInQc: number | null;
+  /** Phrase éditoriale (gabarit fini, choisi par règles — pas de LLM). */
+  edito: string;
+  /** Positions de la fleur-de-lys et de l'érable sur l'axe (%). */
+  qcSymbolPos: number;
+  canSymbolPos: number;
+  axes: SolitudeAxis[];
 };
 
 export type TreemapTile = {
@@ -246,10 +649,7 @@ export type HeadlineData = {
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
   top3: UneEvent[];
-  solitudesQcPos: number;
-  solitudesRocPos: number;
-  solitudesDivPct: number;
-  solitudesStories: SolitudeStory[];
+  solitudes: SolitudeData;
   treemapTier1: TreemapTile[];
   treemapTier2: TreemapTile[];
   treemapTier3: TreemapTile[];
@@ -302,14 +702,24 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     Number.isNaN(blockEnd) ? null : blockEnd,
   );
 
+  // Unes du QUÉBEC seulement : au moins un média QC doit avoir mis l'histoire
+  // en Une (outlets_qc > 0). Sans ce filtre, la dédup storyline libère des
+  // places que le tri par score_qc comble avec des cartes ROC à score
+  // québécois ≈ 0 (« Très faible ») — vu sur le bloc du 2026-07-07 20-24
+  // (décès de Marc Messier : 3 cartes QC = 1 storyline). Avant la dédup le
+  // problème était invisible : les 3 cartes QC occupaient toujours le top-3.
   const withTitles = latest
-    .filter((e) => e.title)
+    .filter((e) => e.title && (e.outlets_qc ?? 0) > 0)
     .sort((a, b) =>
       (b.score_qc ?? 0) - (a.score_qc ?? 0) ||
       (b.score_saillance ?? 0) - (a.score_saillance ?? 0),
     );
 
-  const top3: UneEvent[] = withTitles.slice(0, 3).map((e) => {
+  // Dédup AVANT la coupe du top-3 : si le bloc contenait un doublon en 4e
+  // position, l'événement distinct suivant serait promu. En pratique la table
+  // ne publie que 3 cartes par bloc/pays : un doublon éliminé donne 1-2 Unes —
+  // la mise en page s'adapte (1 à 3 Unes, cf. UneDesUnesSection / #124).
+  const top3: UneEvent[] = dedupeByStoryline(withTitles).slice(0, 3).map((e) => {
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(e.score_qc);
     const qcOutletCount = e.outlets_qc ?? 0;
     const totalQcOutlets = e.total_outlets_qc ?? 6;
@@ -335,12 +745,43 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       totalHeadlineMinutes > 0
         ? Math.max(1, Math.round(totalHeadlineMinutes / 60))
         : null;
-    const saillantSince = saillantSinceLabel(e.time_interval_montreal_tz ?? null, headlineHours);
+    // Exact (first_seen_utc) si la donnée 24h existe, sinon l'estimation historique.
+    const saillantSince =
+      firstSeenSaillantLabel(e.first_seen_utc, e.date_montreal_tz) ??
+      saillantSinceLabel(e.time_interval_montreal_tz ?? null, headlineHours);
+
+    // Fenêtre 24h (aws-refiners#195 phase B) : union des médias + dernier
+    // article par média (articles_24h est déjà dédupliqué par le refiner,
+    // du bloc le plus récent au plus ancien).
+    // JSON.parse("null") ou un objet ne lèvent pas d'exception : on exige un
+    // tableau explicitement, sinon .length/.includes/for..of planteraient au build.
+    let mediaIds24h: string[] = [];
+    try {
+      const parsed = JSON.parse(e.media_ids_24h ?? "[]");
+      if (Array.isArray(parsed)) mediaIds24h = parsed as string[];
+    } catch { }
+    const latestUrlByMedia: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(e.articles_24h ?? "[]");
+      const arts24 = Array.isArray(parsed) ? (parsed as RawArticle[]) : [];
+      for (const art of arts24) {
+        if (art.media_id && art.url && !latestUrlByMedia[art.media_id]) {
+          latestUrlByMedia[art.media_id] = art.url;
+        }
+      }
+    } catch { }
+    // Lien média = dernier article mis en Une par CE média sur la storyline,
+    // même s'il vient d'un bloc précédent (#129) ; secours : article du bloc.
+    const urlFor = (id: string) => latestUrlByMedia[id] ?? mediaIdToUrl[id] ?? null;
+    const union24h = mediaIds24h.length > 0 ? mediaIds24h : mediaIds;
+
     // QC media seulement (Shannon: "Médias Qc seulement", "Supprimer ROC, US pour les deux")
-    const mediaPresent = mediaIds
-      .filter((id) => QC_MEDIA.includes(id))
-      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: mediaIdToUrl[id] ?? null }));
-    const mediaAbsent = QC_MEDIA.filter((id) => !mediaIds.includes(id)).map(
+    const mediaToday = QC_MEDIA.filter((id) => union24h.includes(id)).map(
+      (id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlFor(id) }),
+    );
+    // « Absent de la Une sur » = jamais mis en Une sur TOUTE la fenêtre 24h
+    // (#129) — plus juste que l'absence du seul bloc courant.
+    const mediaAbsent = QC_MEDIA.filter((id) => !union24h.includes(id)).map(
       (id) => MEDIA_NAMES[id] ?? id,
     );
     return {
@@ -356,98 +797,17 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       headlineHours,
       saillantSince,
       representativeUrl: e.representative_url ?? null,
-      mediaPresent,
+      mediaToday,
       mediaAbsent,
       qcOutletCount,
       totalQcOutlets,
+      storylineId: e.storyline_id ?? null,
+      scoreQcPeak24h: e.score_qc_peak_24h ?? null,
+      nBlocks24h: e.n_blocks_24h ?? null,
     };
   });
 
-  const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
-  const rawConvergence = qcRow?.interval_convergence_score ?? null;
-  const rawDivergenceJson =
-    qcRow?.top_objects_divergence && qcRow.top_objects_divergence !== "NA"
-      ? qcRow.top_objects_divergence
-      : null;
-
-  let divergenceEntries: DivergenceEntry[] = [];
-  if (rawDivergenceJson) {
-    try { divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[]; } catch { }
-  }
-
-  let divPct: number;
-  if (rawConvergence !== null) {
-    divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
-  } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_saillance ?? 0), 0);
-    const totalExclusivity = eventsWithScore.reduce((sum, e) => {
-      const s = e.score_saillance ?? 0;
-      const q = e.score_qc ?? 0;
-      const ratio = s > 0 ? q / s : 0;
-      return sum + s * Math.abs(ratio - 0.5) * 2;
-    }, 0);
-    divPct = totalSaillance > 0 ? Math.round((totalExclusivity / totalSaillance) * 100) : 0;
-  }
-
-  const maxScoreForBars = Math.max(
-    ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
-    ...latest.map((e) => e.score_saillance ?? 0),
-    1,
-  );
-
-  let solitudesStories: SolitudeStory[];
-  if (divergenceEntries.length > 0) {
-    // event_label → French event title (les events ont déjà le titre traduit dans `title`)
-    const labelToTitle = new Map<string, string>();
-    for (const e of unique) {
-      if (e.event_label && e.title && !labelToTitle.has(e.event_label)) {
-        labelToTitle.set(e.event_label, e.title);
-      }
-    }
-    // Dédupliquer par event_label (garder le score de divergence le plus élevé par label)
-    const dedupedByLabel = new Map<string, DivergenceEntry>();
-    for (const d of divergenceEntries) {
-      const existing = dedupedByLabel.get(d.event_label);
-      if (!existing || d.divergence_score > existing.divergence_score) {
-        dedupedByLabel.set(d.event_label, d);
-      }
-    }
-    const uniqueEntries = Array.from(dedupedByLabel.values())
-      .sort((a, b) => b.divergence_score - a.divergence_score);
-    solitudesStories = uniqueEntries.slice(0, 3).map((d) => {
-      const fr = labelToTitle.get(d.event_label);
-      const label = fr && fr.length > 0
-        ? fr
-        : (d.event_title_raw && d.event_title_raw.length > 0
-            ? d.event_title_raw
-            : d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1));
-      const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
-      const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
-      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
-    });
-  } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const ranked = eventsWithScore
-      .filter((e) => e.title)
-      .map((e) => {
-        const s = e.score_saillance ?? 0;
-        const q = e.score_qc ?? 0;
-        const qcRatio = s > 0 ? q / s : 0;
-        return { e, q, divergence: Math.abs(qcRatio - 0.5) * 2 };
-      })
-      .sort((a, b) => b.divergence - a.divergence);
-    solitudesStories = ranked.slice(0, 3).map(({ e, q }) => {
-      const s = e.score_saillance ?? 0;
-      const qcW = Math.round((q / maxScoreForBars) * 100);
-      const caW = Math.round(((s - q) / maxScoreForBars) * 100);
-      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
-    });
-  }
-
-  const spread = Math.round(divPct * 0.4);
-  const solitudesQcPos = Math.max(5, 20 - spread);
-  const solitudesRocPos = Math.min(95, 80 + spread);
+  const solitudes = buildSolitudes(latest, unique);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -481,7 +841,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 });
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
@@ -625,4 +985,16 @@ export const __test__ = {
   latestIssueRow,
   parseIssuesMeta,
   capitalizeObject,
+  firstSeenSaillantLabel,
+  dedupeByStoryline,
+  pctile,
+  rocScore,
+  convMode,
+  solitudesEdito,
+  symbolPositions,
+  buildSolitudes,
+  blockKey,
+  titleTokens,
+  sameStory,
+  CAL_CONV,
 };

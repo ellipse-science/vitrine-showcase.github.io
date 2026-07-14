@@ -69,7 +69,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
     if (data) {
       return {
         title: STATIC_CONTENT[slug].title,
-        description: `${data.solitudesDivPct} % de divergence aujourd'hui entre les médias québécois et canadiens.`,
+        description: `${data.solitudes.divPct} % de divergence aujourd'hui entre les médias québécois et canadiens.`,
       };
     }
   }

@@ -573,27 +573,38 @@
     <p class="metho-body">Ce module identifie les événements qui dominent l'agenda médiatique québécois au moment de la consultation, en distinguant l'importance relative accordée par les médias francophones québécois et les médias canadiens anglophones.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le raffineur <code>radar-event-salience</code> produit une table d'événements (<code>headline_events_4h</code>) à partir des captures de pages frontales et des articles extraits. Chaque événement représente un regroupement d'articles couvrant le même fait d'actualité, caractérisé par un identifiant unique, un enjeu principal, un score de saillance global (<code>score_saillance</code>) et un score de saillance québécois (<code>score_qc</code>).</p>
+    <p class="metho-body">Le système regroupe les articles qui traitent d'un même fait d'actualité, à partir des captures des pages d'accueil des médias et des articles qui y figurent. Chaque regroupement, appelé « événement », reçoit un enjeu principal et un <strong>score de saillance</strong> (son importance médiatique), mesuré à la fois à l'échelle de l'ensemble des médias suivis et spécifiquement pour les médias québécois.</p>
+    <p class="metho-body">Le système suit aussi chaque histoire au fil de la journée. Sur une fenêtre glissante de 24 heures, il rassemble l'ensemble des médias qui l'ont mise en Une, le dernier article mis en Une par chacun d'eux, et le moment où elle est apparue pour la première fois parmi les Unes saillantes.</p>
 
     <h3>Algorithme — La Une des Unes</h3>
     <ol class="metho-list">
-      <li>Les événements du dernier bloc de quatre heures sont dédupliqués par <code>event_id</code> (priorité à la version ciblant le Québec).</li>
-      <li>Les événements de source exclusivement américaine sont exclus.</li>
-      <li>Les trois événements au score <code>score_qc</code> le plus élevé sont sélectionnés et présentés en mise en page éditoriale (une principale + deux secondaires).</li>
-      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement de <code>score_qc</code> par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
-      <li>La byline liste les médias couvrant l'événement et signale ceux qui l'ignorent.</li>
+      <li>Les événements du dernier bloc de quatre heures sont regroupés par histoire (une seule version par fait d'actualité, en priorisant la lecture québécoise).</li>
+      <li>Les événements provenant uniquement de médias américains sont écartés.</li>
+      <li>Les événements les plus saillants au Québec sont retenus et présentés en mise en page éditoriale (jusqu'à trois manchettes : une principale et des secondaires). Quand deux des événements les plus saillants du bloc sont identifiés comme une seule et même histoire, un seul — le plus saillant — est retenu ; cette identification est automatisée et peut occasionnellement laisser passer un doublon. Le module présente donc habituellement trois manchettes, mais peut n'en montrer que deux, voire une seule, lorsque l'actualité du moment est dominée par une ou deux histoires.</li>
+      <li>Pour chaque événement, le <strong>niveau de saillance</strong> affiché (de « Très faible » à « Exceptionnelle ») provient du classement par percentiles décrit au § 03. La taille du titre et de l'image suit ce niveau : plus une nouvelle est saillante, plus elle occupe d'espace.</li>
+      <li>La mention « Saillant au Québec depuis … » situe le moment où l'histoire est apparue pour la première fois parmi les Unes saillantes du Québec, arrondi à l'édition la plus proche (nuit, matin, midi, après-midi, soir), en heure de Montréal.</li>
+      <li>La byline « À la Une aujourd'hui sur » liste les médias québécois qui ont mis l'histoire en Une au cours des 24 dernières heures — pas seulement dans le bloc courant ; « Absent de la Une sur » désigne ceux qui ne l'ont mise en Une à aucun moment de cette fenêtre. Chaque nom de média pointe vers le dernier article que ce média a mis en Une sur l'histoire.</li>
     </ol>
 
     <h3>Algorithme — Deux solitudes</h3>
-    <p class="metho-body">Ce panneau mesure la divergence entre l'agenda médiatique québécois et canadien sur le même bloc de quatre heures.</p>
+    <p class="metho-body">Ce panneau compare, sur le même bloc de quatre heures, ce que mettent de l'avant les médias québécois et les médias canadiens (hors Québec). Il mesure si les deux espaces médiatiques accordent leur attention aux mêmes <strong>sujets saillants</strong> — les personnes, lieux et organisations qui dominent l'actualité — et non aux mêmes articles.</p>
     <ol class="metho-list">
-      <li>Lorsque le raffineur produit un champ <code>interval_convergence_score</code> (similarité cosinus entre les vecteurs de saillance QC et ROC), le taux de divergence est calculé comme <code>100 − convergence</code>.</li>
-      <li>En l'absence de ce champ, une approximation par ratio d'exclusivité (<code>score_qc / score_saillance</code>) est utilisée.</li>
-      <li>Le champ <code>top_objects_divergence</code> fournit les cinq événements dont la couverture diffère le plus entre les deux agendas ; ils sont affichés sous forme de barres comparatives QC / Canada.</li>
+      <li>Pour chaque bloc, on construit un vecteur des sujets saillants du Québec et un vecteur des sujets saillants du Canada, pondérés par leur importance. L'<strong>indice de convergence</strong> est la similarité (cosinus) entre ces deux vecteurs, de 0 (agendas opposés) à 100 (mêmes priorités). La divergence affichée en est le complément.</li>
+      <li>Le calcul écarte une courte liste de termes géographiques génériques (Canada, États-Unis, Québec, Ottawa), qui gonfleraient artificiellement la ressemblance sans rien dire de l'actualité.</li>
+      <li>Chaque axe du radar est une <strong>histoire saillante des 24 dernières heures</strong> — les mêmes que celles suivies par la Une des Unes. Sa distance au centre est la <strong>part d'attention</strong> que la région lui a consacrée sur cette fenêtre glissante de 24 h, rapportée à l'histoire la plus couverte de la région (la plus grosse du jour touche le bord). Comme chaque côté est ramené à sa propre échelle, les deux formes sont directement comparables malgré le nombre de médias différent.</li>
+      <li>Sous le radar, une jauge situe le bloc courant par rapport aux six derniers mois : « plus divergent », « habituel » ou « plus convergent » que la médiane. Un bloc peut afficher une forte divergence tout en restant habituel — entre le Québec et le Canada, la divergence est la règle et la convergence l'exception.</li>
     </ol>
 
+    <h3>Limites et honnêteté</h3>
+    <ul class="metho-list">
+      <li>L'indice mesure les <strong>mêmes sujets saillants</strong>, pas les mêmes histoires : deux médias peuvent parler de la même personne pour des raisons différentes, ou de la même histoire en la rattachant à des objets différents.</li>
+      <li>Environ un dixième des sujets québécois portent du texte français résiduel non apparié côté canadien, ce qui abaisse légèrement la convergence mesurée.</li>
+      <li>Les événements sont regroupés à partir des médias québécois, canadiens et américains ensemble ; c'est ce qui permet de reconnaître qu'une même histoire est couverte des deux côtés de la frontière. Le radar n'en affiche toutefois que les parts québécoise et canadienne.</li>
+      <li>Le seuil de la jauge « plus ou moins que d'habitude » est pour l'instant calibré manuellement sur une longue fenêtre ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi <a href="https://github.com/ellipse-science/aws-refiners/issues/212">aws-refiners#212</a>), comme pour la saillance de la Une des Unes.</li>
+    </ul>
+
     <h3>Affichage</h3>
-    <p class="metho-body">Mise en page de type une de presse : titre éditorial, étiquette de saillance, byline des médias couvrant l'événement, liens vers les articles sources. Le panneau Deux solitudes présente le pourcentage de divergence du jour et un tableau des histoires les plus clivantes entre les deux agendas.</p>
+    <p class="metho-body">Un radar à deux formes superposées — le Québec en bleu, le Canada en rouge — montre d'un coup d'œil qui parle de quoi : plus les deux formes se recouvrent, plus les agendas convergent. Autour, chaque sujet porte les logos des médias qui l'ont couvert, cliquables vers leur dernier article. Un grand pourcentage rappelle le niveau de divergence ou de convergence du bloc, situé par la jauge relative.</p>
   </section>
 
   <!-- §5 Treemap -->

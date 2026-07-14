@@ -9,6 +9,7 @@
     --cordovan: #6B1E2A;
     --brass: #A07A3D;
     --red: #A8302C;
+    --bleu: #2E4663;
     --green: #3D6B3A;
     --amber: #B88A3D;
     --tag-new-bg: #6B1E2A;
@@ -831,6 +832,25 @@
     padding: 24px 0 24px 32px;
     border-left: none;
   }
+  /* À 2 Unes : la 2e nouvelle s'empile SOUS la 1re dans la colonne de gauche
+     du hero (décision Adrien 2026-07-12 — pas de rangée secondaire pleine
+     largeur, elle laissait un vide) ; l'illustration garde toute la hauteur
+     des deux nouvelles à droite. Filet horizontal de séparation, pas le filet
+     vertical du duo. */
+  .une-side.une-second {
+    border-left: none;
+    padding-left: 0;
+    border-top: 0.5px solid var(--rule);
+    margin-top: 26px;
+    padding-top: 20px;
+  }
+
+  /* À 2 Unes (a fortiori 1), le module a moins de contenu : l'illustration
+     s'élargit pour garder le hero plein (#124 — « grossir l'image »). */
+  .unes-jour.deux-unes .une-main-grid.has-art,
+  .unes-jour.une-seule .une-main-grid.has-art {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 48%);
+  }
 
   /* Rétrocompat: .hero-trio conservé pour éviter erreurs si référencé ailleurs */
   .hero-trio {
@@ -1084,15 +1104,16 @@
   }
   .une-audio-sep { opacity: 0.5; }
 
-  /* Bloc audio au-dessus de l'image de la une principale */
+  /* Bloc audio au-dessus de l'image de la une principale. Plus de marge
+     négative : l'en-tête (enjeu + tag) vit dans la colonne de gauche de la
+     grille, le haut de la grille EST la bande de l'en-tête — l'alignement
+     avec l'Ambiance est naturel. */
   .hero-audio-overlay {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 0 0 16px;
-    margin-top: -22px;
   }
-  .une-main-grid.no-art .hero-audio-overlay { margin-top: 0; }
   /* Barre de lecture pleine largeur, tout sur une ligne */
   .hero-audio-overlay .une-audio-compact {
     flex-wrap: nowrap;
@@ -1445,11 +1466,11 @@
   /* « Saillant au Québec depuis … » garde sa taille (info importante) même dans les secondaires. */
   .une-side .saillance-row .time { margin-left: 0; }
 
-  /* Deux solitudes — version visuelle avec symboles QC/Canada qui s'écartent */
+  /* Deux solitudes — radar « qui parle de quoi » QC/CAN (refonte #143). */
   .solitudes {
     border: 0.5px solid var(--rule);
     background: var(--paper-deep);
-    padding: 36px 40px 32px;
+    padding: 56px 48px 48px;
     margin-top: 40px;
     text-align: center;
   }
@@ -1459,177 +1480,168 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 14px;
-    margin: 0 0 18px;
+    margin: 0 0 8px;
   }
   .solitudes .sol-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 34px;
+    font-weight: 900;
     color: var(--ink);
     margin: 0;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.5px;
   }
+  .solitudes .sol-sub {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: var(--ink-softer);
+    max-width: 480px;
+    margin: 0 auto 30px;
+  }
+
+  /* Axe fleur/érable : symboles mobiles + flèches de mouvement */
   .solitudes .sol-viz {
     position: relative;
-    height: 120px;
-    max-width: 720px;
-    margin: 0 auto 6px;
+    height: 122px;
+    max-width: 760px;
+    margin: 0 auto 26px;
   }
   .solitudes .sol-axis {
     position: absolute;
     top: 50%;
     left: 0; right: 0;
-    height: 1px;
-    background: var(--rule);
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, rgba(46,70,99,0.5) 0%, rgba(46,70,99,0.16) 25%, var(--rule-faint) 45%, var(--rule-faint) 55%, rgba(168,48,44,0.16) 75%, rgba(168,48,44,0.5) 100%);
   }
   .solitudes .sol-symbol {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    color: var(--ink);
     transition: left 0.6s ease;
     background: var(--paper-deep);
-    padding: 0 6px;
+    padding: 0 14px;
   }
-  .solitudes .sol-symbol .glyph {
-    display: block;
-    margin: 0 auto;
-    line-height: 1;
-    text-align: center;
-  }
-  .solitudes .sol-symbol .glyph.fleur {
-    width: auto;
-    height: 64px;
-    display: block;
-    margin: 0 auto;
-    filter: grayscale(1) brightness(0.32) contrast(1.6);
-  }
+  .solitudes .sol-symbol .glyph { display: block; margin: 0 auto; line-height: 1; }
+  /* Fleur bleue : SVG inline (fill --bleu) rendu par le composant */
+  .solitudes .sol-symbol .glyph.fleur { width: 57px; height: 58px; }
+  .solitudes .sol-symbol .glyph.fleur svg { display: block; width: 100%; height: 100%; }
+  /* Érable rouge : silhouette plate (emoji transparent, ombre portée blur 0) */
   .solitudes .sol-symbol .glyph.maple {
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-    font-size: 54px;
-    height: 64px;
-    line-height: 64px;
-    filter: grayscale(1) brightness(0.32) contrast(1.6);
+    font-size: 50px; height: 58px; line-height: 58px;
+    color: transparent;
+    text-shadow: 0 0 0 var(--red);
   }
   .solitudes .sol-symbol .caption {
     display: block;
-    margin-top: 10px;
+    margin-top: 9px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 9.5px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--ink-soft);
+    color: var(--ink-softer);
   }
-  .solitudes .sol-symbol.qc  { left: clamp(10%, var(--qc-pos, 12%), 90%); }
-  .solitudes .sol-symbol.roc { left: clamp(10%, var(--roc-pos, 88%), 90%); }
-
-  .solitudes .sol-stat {
-    margin: 10px 0 16px;
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .solitudes .sol-stat .stat-big {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 48px;
-    font-weight: 900;
-    color: var(--cordovan);
-    letter-spacing: -1.1px;
-    line-height: 1;
-  }
-  .solitudes .sol-stat .stat-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
-  /* Phrase explicative entre le grand chiffre et le tableau */
-  .solitudes .sol-explain {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    color: var(--ink-soft);
-    max-width: 540px;
-    margin: 4px auto 16px;
-    line-height: 1.45;
-  }
-
-  /* Tableau de stories avec saillance miroir QC | CA */
-  .solitudes .sol-stories {
-    max-width: 620px;
-    margin: 0 auto;
-    text-align: left;
-  }
-  .solitudes .sol-stories-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-    border-bottom: 0.5px solid var(--rule);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--cordovan);
-  }
-  .solitudes .sol-stories-header .qc-col { text-align: left; }
-  .solitudes .sol-stories-header .ca-col { text-align: right; }
-
-  .sol-story {
-    margin-bottom: 10px;
-  }
-  .sol-story:last-child { margin-bottom: 0; }
-  .sol-story .story-label {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ink);
-    text-align: center;
-    margin-bottom: 5px;
-  }
-  .sol-story .story-bars {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    position: relative;
-  }
-  .sol-story .story-bars::before {
-    content: '';
-    position: absolute;
-    top: -3px; bottom: -3px;
-    left: 50%;
-    width: 1px;
-    background: var(--ink);
-  }
-  .sol-story .bar-track {
-    height: 7px;
-    background: var(--rule-faint);
-    position: relative;
-  }
-  .sol-story .bar-fill {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    background: var(--ink);
-  }
-  .sol-story .bar-track.qc .bar-fill { right: 0; }
-  .sol-story .bar-track.ca .bar-fill { left: 0; }
-  /* Marqueur « — » quand la couverture est nulle d'un côté */
-  .sol-story .zero-mark {
+  .solitudes .sol-arrow {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-softer);
-    letter-spacing: 0.08em;
+    transform: translate(-50%, -50%);
+    font-size: 27px;
+    font-weight: 700;
     line-height: 1;
+    padding: 0 6px;
+    transition: left 0.6s ease;
   }
-  .sol-story .bar-track.qc .zero-mark { right: 6px; }
-  .sol-story .bar-track.ca .zero-mark { left: 6px; }
+  .solitudes .sol-arrow.qc { color: var(--bleu); }
+  .solitudes .sol-arrow.can { color: var(--red); }
+  .solitudes .sol-arrow.dL { animation: solDriftL 2.2s ease-in-out infinite; }
+  .solitudes .sol-arrow.dR { animation: solDriftR 2.2s ease-in-out infinite; }
+  @keyframes solDriftL { 50% { transform: translate(calc(-50% - 5px), -50%); } }
+  @keyframes solDriftR { 50% { transform: translate(calc(-50% + 5px), -50%); } }
+
+  /* Radar */
+  .solitudes .sol-radar { max-width: 760px; margin: 0 auto 24px; }
+  .solitudes .sol-radar svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .solitudes .radar-halo { fill: rgba(28,25,23,0.045); }
+  /* Balayage : rotation lente et discrète autour du centre du radar */
+  .solitudes .radar-sweep { animation: radarSweep 7s linear infinite; }
+  @keyframes radarSweep { to { transform: rotate(360deg); } }
+  .solitudes .radar-grid { fill: none; stroke: rgba(28,25,23,0.10); stroke-width: 0.7; }
+  .solitudes .radar-spoke { stroke: rgba(28,25,23,0.07); stroke-width: 0.7; }
+  .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
+  .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
+  .solitudes .dot .hit { fill: transparent; cursor: pointer; }
+  .solitudes .dot .pip { pointer-events: none; transform-box: fill-box; transform-origin: center; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+  .solitudes .dot:hover .pip,
+  .solitudes .dot:focus-visible .pip { transform: scale(2.3); }
+  .solitudes .dot { outline: none; }
+  .solitudes .dot:focus-visible .hit { fill: rgba(28,25,23,0.06); }
+  .solitudes .dot.radar-dot-qc .pip { fill: var(--bleu); }
+  .solitudes .dot.radar-dot-can .pip { fill: var(--red); }
+  .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; fill: var(--ink-soft); }
+  .solitudes .radar-lab.strong { font-weight: 600; }
+  .solitudes .radar-lab.side-qc  { fill: var(--bleu); }
+  .solitudes .radar-lab.side-can { fill: var(--red); }
+  /* Entrée « Bloomberg » : rouge, puis bleu, puis score */
+  .solitudes .radar-can { animation: solPolyIn 0.5s ease 0.08s both; transform-box: fill-box; transform-origin: center; }
+  .solitudes .radar-qc  { animation: solPolyIn 0.5s ease 0.34s both; transform-box: fill-box; transform-origin: center; }
+  @keyframes solPolyIn { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: scale(1); } }
+
+  /* Badges médias : carrés colorés par région (bleu QC / rouge CAN) — un sujet
+     couvert des deux côtés montre les deux couleurs. */
+  .solitudes .m-chip rect { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 0.9; }
+  .solitudes .m-chip text { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.05em; font-weight: 600; fill: var(--ink-soft); text-anchor: middle; }
+  .solitudes .m-chip.chip-qc rect  { stroke: var(--bleu); }
+  .solitudes .m-chip.chip-qc text:not(.m-name)  { fill: var(--bleu); }
+  .solitudes .m-chip.chip-can rect { stroke: var(--red); }
+  .solitudes .m-chip.chip-can text:not(.m-name) { fill: var(--red); }
+  .solitudes .m-chip g { transform-box: fill-box; transform-origin: center; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+  .solitudes .m-chip:hover g { transform: scale(1.3); }
+  .solitudes .m-chip.chip-qc:hover rect  { fill: var(--bleu); stroke: var(--bleu); }
+  .solitudes .m-chip.chip-can:hover rect { fill: var(--red); stroke: var(--red); }
+  .solitudes .m-chip:hover text:not(.m-name) { fill: var(--paper); }
+  .solitudes .m-chip .m-name { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; font-size: 9.5px; letter-spacing: 0.09em; fill: var(--ink); }
+  .solitudes .m-chip:hover .m-name { opacity: 1; }
+
+  /* Score signature : chiffre géant + libellé */
+  .solitudes .sol-stat { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 18px 0 0; animation: solFadeUp 0.5s ease 0.62s both; }
+  @keyframes solFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .solitudes .score-num { font-family: 'Playfair Display', Georgia, serif; font-size: 88px; font-weight: 900; line-height: 0.95; letter-spacing: -2px; }
+  .solitudes .score-num sup { font-size: 40px; letter-spacing: 0; vertical-align: 14px; }
+  .solitudes .score-lab { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--ink-soft); margin-top: 10px; }
+  .solitudes .mode-div { color: var(--cordovan); }
+  .solitudes .mode-divp { color: #9A5A3C; }
+  .solitudes .mode-convp { color: #4E6374; }
+  .solitudes .mode-con { color: var(--bleu); }
+
+  /* Bulle d'info éditoriale (pattern des bulles du module 1) */
+  .solitudes .info-dot { position: relative; display: inline-block; margin-left: 9px; font-size: 15px; letter-spacing: 0; color: var(--ink-softer); cursor: help; vertical-align: 1px; }
+  .solitudes .info-dot:hover, .solitudes .info-dot:focus { color: var(--ink); }
+  .solitudes .info-bubble { position: absolute; bottom: calc(100% + 22px); left: 50%; transform: translateX(-50%); width: 400px; max-width: 88vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 20px 24px; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; letter-spacing: 0; text-transform: none; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
+  .solitudes .info-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-top-color: var(--paper); filter: drop-shadow(0 1px 0 var(--rule)); }
+  .solitudes .info-dot:hover .info-bubble, .solitudes .info-dot:focus .info-bubble { opacity: 1; }
+
+  /* Jauge relative : gradient rouge → neutre → bleu, point plein */
+  .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 44px; margin: 26px auto 0; }
+  .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--rule) 38%, var(--rule) 62%, var(--bleu)); }
+  .solitudes .rel-strip .tick { position: absolute; top: 26px; width: 1px; height: 11px; background: rgba(28,25,23,0.28); }
+  .solitudes .rel-strip .marker { position: absolute; top: 31.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper-deep); transform: translate(-50%, -50%); transition: left 0.6s ease; box-shadow: 0 0 0 1px rgba(28,25,23,0.25); background: var(--ink); }
+  .solitudes .rel-strip .lbl { position: absolute; top: 0; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-softer); }
+  .solitudes .rel-strip .lbl.l { left: 0; color: var(--red); }
+  .solitudes .rel-strip .lbl.r { right: 0; color: var(--bleu); }
+  .solitudes .rel-strip .lbl.m { left: 50%; transform: translateX(-50%); }
+
+  /* Infobulle des points, pilotée en React (suit le curseur) */
+  .dot-tip { position: fixed; z-index: 60; max-width: 260px; background: var(--ink); color: var(--paper); font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; line-height: 1.45; padding: 10px 13px; border-radius: 3px; box-shadow: 0 3px 14px rgba(28,25,23,0.28); pointer-events: none; }
+  .dot-tip .k { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
+  .dot-tip.qc .k { color: #9DB4D0; }
+  .dot-tip.can .k { color: #E6A6A2; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .solitudes .sol-arrow, .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat { animation: none !important; }
+  }
 
   /* Hot 20 */
   /* Hot 20 typographique : désactivé depuis la fusion avec le treemap des enjeux */
@@ -2407,7 +2419,7 @@
     padding-top: 28px;
     border-top: 0.5px solid var(--rule);
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     gap: 44px;
   }
   .footer-note h4 {
@@ -2707,20 +2719,20 @@
     .une-side .saillance-dots .e { width: 8px; height: 8px; }
     .une-side .byline { font-size: 11px; }
 
-    /* ── Deux solitudes ── */
-    .solitudes { padding: 22px 16px 20px; margin-top: 28px; }
-    .solitudes .sol-title-row { margin-bottom: 14px; }
-    .solitudes .sol-title { font-size: 20px; }
-    .solitudes .sol-viz { height: 120px; max-width: 100%; }
-    .solitudes .sol-symbol .glyph.fleur { width: auto; height: 64px; filter: grayscale(1) brightness(0.32) contrast(1.6); }
-    .solitudes .sol-symbol .glyph.maple { font-size: 54px; height: 64px; line-height: 64px; }
-    .solitudes .sol-symbol .caption { font-size: 9px; margin-top: 6px; }
-    .solitudes .sol-stat { gap: 8px; margin: 8px 0 12px; }
-    .solitudes .sol-stat .stat-big { font-size: 40px; }
-    .solitudes .sol-stat .stat-label { font-size: 9px; }
-    .solitudes .sol-explain { font-size: 13px; }
-    .solitudes .sol-stories { max-width: 100%; }
-    .sol-story .story-label { font-size: 14px; }
+    /* ── Deux solitudes (radar) ── */
+    .solitudes { padding: 32px 16px 28px; margin-top: 28px; }
+    .solitudes .sol-title-row { margin-bottom: 8px; }
+    .solitudes .sol-title { font-size: 26px; }
+    .solitudes .sol-sub { font-size: 14px; margin-bottom: 20px; }
+    .solitudes .sol-viz { height: 96px; max-width: 100%; }
+    .solitudes .sol-symbol { padding: 0 6px; }
+    .solitudes .sol-symbol .glyph.fleur { width: 39px; height: 40px; }
+    .solitudes .sol-symbol .glyph.maple { font-size: 34px; height: 40px; line-height: 40px; }
+    .solitudes .sol-symbol .caption { font-size: 8px; letter-spacing: 0.14em; margin-top: 6px; }
+    .solitudes .sol-arrow { font-size: 21px; }
+    .solitudes .radar-lab { font-size: 12px; }
+    .solitudes .score-num { font-size: 58px; }
+    .solitudes .score-num sup { font-size: 27px; vertical-align: 9px; }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {
@@ -2878,7 +2890,8 @@
     .une-main h1[data-saillance="6"],
     .une-main h1[data-saillance="5"] { font-size: 24px !important; }
     .partis-title { font-size: 22px; }
-    .solitudes .sol-stat .stat-big { font-size: 36px; }
+    .solitudes .score-num { font-size: 48px; }
+    .solitudes .radar-lab { font-size: 11px; }
     .legend-toggle.inline span { font-size: 7.5px; }
   }
 
