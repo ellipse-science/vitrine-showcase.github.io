@@ -109,7 +109,7 @@ fig.text(0.055, 0.895,
          fontsize=13, color="#5B544A", ha="left", va="top")
 fig.text(0.055, 0.028,
          f"n = {n} Unes depuis le 14 mai 2026 (toute la donnée dispo, fenêtre qui s'étend).  "
-         "Source : headline_events_4h (DEV).  Seuils recalibrés en continu (#122).",
+         "Source : headline_events_4h (DEV).  Seuils du frontend calibrés à la main le 2026-06-03 (le recalcul automatique dans le refiner = #122, à venir).",
          fontsize=10.5, color="#8A8474", ha="left", va="bottom")
 
 plt.subplots_adjust(left=0.055, right=0.965, top=0.80, bottom=0.20)
