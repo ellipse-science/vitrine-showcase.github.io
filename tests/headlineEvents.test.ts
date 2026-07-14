@@ -129,3 +129,138 @@ describe("capitalizeObject", () => {
     expect(capitalizeObject("")).toBe("");
   });
 });
+
+// ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+
+describe("sameStory (dédup cross-langue, stopgap #213)", () => {
+  it("fusionne deux cadrages de la même fusillade de Toronto", () => {
+    const a = titleTokens("Fusillade mortelle au festival Salsa on St. Clair à Toronto : 2 morts, 4 blessés");
+    const b = titleTokens("Tir mortel lors d'un festival à Toronto : 2 morts et 4 blessés");
+    expect(sameStory(a, b)).toBe(true);
+  });
+  it("ne fusionne pas deux histoires sans rapport partageant un mot", () => {
+    const a = titleTokens("Carney optimiste sur le pipeline lors du Stampede de Calgary");
+    const b = titleTokens("Trump annonce un blocus naval au détroit d'Ormuz");
+    expect(sameStory(a, b)).toBe(false);
+  });
+  it("ne fusionne pas des titres trop courts (< 3 tokens)", () => {
+    expect(sameStory(titleTokens("Iran attaque"), titleTokens("Iran riposte"))).toBe(false);
+  });
+});
+
+describe("pctile (jauge de convergence)", () => {
+  it("renvoie 0 pour une valeur nulle ou négative", () => {
+    expect(pctile(0, CAL_CONV)).toBe(0);
+    expect(pctile(-5, CAL_CONV)).toBe(0);
+  });
+  it("place la médiane de convergence (14) au centre de la jauge (p50)", () => {
+    expect(pctile(14, CAL_CONV)).toBeCloseTo(50, 5);
+  });
+  it("plafonne à 100", () => {
+    expect(pctile(999, CAL_CONV)).toBe(100);
+  });
+});
+
+describe("rocScore", () => {
+  it("lit score_roc directement quand présent", () => {
+    expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);
+  });
+  it("repli transitoire : saillance − qc − us (ne réabsorbe pas les USA)", () => {
+    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(17);
+  });
+  it("repli plancher à 0", () => {
+    expect(rocScore({ score_saillance: 5, score_qc: 8 } as never)).toBe(0);
+  });
+});
+
+describe("convMode", () => {
+  it("mappe les 4 niveaux sur les seuils 25/50/75", () => {
+    expect(convMode(10).word).toBe("Divergence");
+    expect(convMode(40).word).toBe("Divergence partielle");
+    expect(convMode(60).word).toBe("Convergence partielle");
+    expect(convMode(90).word).toBe("Convergence");
+  });
+});
+
+describe("solitudesEdito", () => {
+  it("distingue « aucun sujet partagé » de la divergence simple", () => {
+    expect(solitudesEdito(5, 0)).toMatch(/Aucun sujet/);
+    expect(solitudesEdito(5, 2)).toMatch(/presque entièrement différents/);
+  });
+  it("dit « sujets » et jamais « histoires » à la convergence", () => {
+    expect(solitudesEdito(90, 3)).toMatch(/mêmes sujets/);
+    expect(solitudesEdito(90, 3)).not.toMatch(/mêmes histoires/);
+  });
+  it("ne contient jamais de tiret cadratin (skill redaction-editoriale)", () => {
+    for (const conv of [5, 40, 60, 90]) {
+      expect(solitudesEdito(conv, 1)).not.toContain("—");
+    }
+  });
+});
+
+describe("symbolPositions", () => {
+  it("colle les symboles au centre à convergence maximale (gap min 18)", () => {
+    const [qc, roc] = symbolPositions(100);
+    expect(roc - qc).toBeCloseTo(18, 5);
+  });
+  it("les écarte à divergence maximale", () => {
+    const [qc, roc] = symbolPositions(0);
+    expect(roc - qc).toBeCloseTo(90, 5);
+  });
+});
+
+describe("blockKey", () => {
+  it("produit une clé triable date + heure de début", () => {
+    expect(blockKey({ date_utc: "2026-07-13", time_interval_utc: "08-12" } as never)).toBe("2026-07-13T08");
+    expect(blockKey({ date_utc: "2026-07-13", time_interval_utc: "4-8" } as never)).toBe("2026-07-13T04");
+  });
+});
+
+describe("buildSolitudes", () => {
+  const ev = (over: Record<string, unknown>) => ({
+    country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
+    media_ids: "[]", articles: "[]", interval_convergence_score: null,
+    date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
+    ...over,
+  });
+
+  it("lit l'indice de convergence objet et calcule divPct = 100 − conv", () => {
+    const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
+    const s = buildSolitudes([row] as never, [row] as never);
+    expect(s.convPct).toBe(80);
+    expect(s.divPct).toBe(20);
+    expect(s.verb).toBe("convergence");
+    expect(s.scoreValue).toBe(80);
+  });
+
+  it("agrège la part d'attention 24h par storyline et garde au plus 6 axes", () => {
+    const rows = Array.from({ length: 9 }, (_, i) =>
+      ev({ event_id: `e${i}`, storyline_id: `s${i}`, title: `Histoire ${i}`, score_qc: i + 1, score_roc: 0, interval_convergence_score: 10 }),
+    );
+    const s = buildSolitudes(rows as never, rows as never);
+    expect(s.axes.length).toBe(6);
+    expect(s.axes[0].label).toBe("Histoire 8"); // la plus couverte en tête
+    expect(s.axes[0].qcRadial).toBe(100); // le plus gros sujet touche le bord
+    // Les parts (share) somment de façon cohérente (chaque part <= 100)
+    expect(s.axes.every((a) => a.qcShare >= 0 && a.qcShare <= 100)).toBe(true);
+  });
+
+  it("somme la saillance d'une storyline sur plusieurs blocs (fenêtre 24h)", () => {
+    const rows = [
+      ev({ event_id: "a1", storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
+      ev({ event_id: "a2", storyline_id: "sA", title: "A", score_qc: 6, time_interval_utc: "12-16" }),
+      ev({ event_id: "b1", storyline_id: "sB", title: "B", score_qc: 4, time_interval_utc: "16-20" }),
+    ];
+    const s = buildSolitudes([rows[0], rows[2]] as never, rows as never);
+    // sA agrège 10+6=16 sur 24h → domine sB (4)
+    expect(s.axes[0].label).toBe("A");
+    expect(s.axes[0].qcShare).toBe(80); // 16 / (16+4)
+  });
+
+  it("attribue le camp dominant (side) par valeur radiale", () => {
+    const row = ev({ title: "Sujet QC", score_qc: 30, score_roc: 5, interval_convergence_score: 10 });
+    const s = buildSolitudes([row] as never, [row] as never);
+    expect(s.axes[0].side).toBe("qc");
+  });
+});
