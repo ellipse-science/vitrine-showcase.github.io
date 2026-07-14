@@ -352,7 +352,7 @@
       "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
       "filter": "headline_events_3day",
       "enabled": true,
-      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + DeuxSolitudesSection.tsx"
+      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx"
     },
     {
       "name": "polimetre_plus",

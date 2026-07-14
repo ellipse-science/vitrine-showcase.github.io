@@ -73,6 +73,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
   const place = (e: React.MouseEvent, side: "qc" | "can", k: string, body: string) =>
     setTip({ x: e.clientX, y: e.clientY, side, k, body });
+  // Focus clavier : positionne l'infobulle sur le point lui-même.
+  const placeAtRect = (el: SVGGElement, side: "qc" | "can", k: string, body: string) => {
+    const r = el.getBoundingClientRect();
+    setTip({ x: r.left + r.width / 2, y: r.top + r.height / 2, side, k, body });
+  };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
   const diverge = s.convPct < 50;
@@ -101,7 +106,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
       {/* Radar */}
       <div className="sol-radar">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Saillance de chaque événement au Québec et au Canada, en percentile de sa région">
+        <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Saillance de chaque événement au Québec et au Canada, en percentile de sa région">
           <circle className="radar-halo" cx={CX} cy={CY} r={R + 10} />
           {/* Balayage radar discret (clin d'œil radarplus.org) : un secteur
               qui tourne lentement, dégradé bleu très léger, sous la grille. */}
@@ -133,13 +138,20 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               const isQc = key === "vqc";
               const region = isQc ? "québécoises" : "canadiennes";
               const body = `${axes[i].label} : plus saillant que ${Math.round(v[key])} % des Unes ${region} des six derniers mois.`;
+              const kk = isQc ? "Au Québec" : "Au Canada";
+              const sideKey = isQc ? "qc" : "can";
               return (
                 <g
                   key={`${key}-${i}`}
                   className={`dot ${isQc ? "radar-dot-qc" : "radar-dot-can"}`}
-                  onMouseEnter={(e) => place(e, isQc ? "qc" : "can", isQc ? "Au Québec" : "Au Canada", body)}
-                  onMouseMove={(e) => place(e, isQc ? "qc" : "can", isQc ? "Au Québec" : "Au Canada", body)}
+                  tabIndex={0}
+                  role="img"
+                  aria-label={`${kk} : ${body}`}
+                  onMouseEnter={(e) => place(e, sideKey, kk, body)}
+                  onMouseMove={(e) => place(e, sideKey, kk, body)}
                   onMouseLeave={() => setTip(null)}
+                  onFocus={(e) => placeAtRect(e.currentTarget, sideKey, kk, body)}
+                  onBlur={() => setTip(null)}
                 >
                   <circle className="hit" cx={x.toFixed(1)} cy={y.toFixed(1)} r={13} />
                   <circle className="pip" cx={x.toFixed(1)} cy={y.toFixed(1)} r={2.8} />
@@ -180,14 +192,8 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                 ))}
                 {media.map((m, k) => {
                   const cx0 = rowX + k * (BW + CHGAP);
-                  return (
-                    <a
-                      key={m.id}
-                      className="m-chip"
-                      href={m.url ?? "#"}
-                      {...(m.url ? { target: "_blank", rel: "noopener" } : {})}
-                      aria-label={`Dernier article de ${m.name} sur ${a.label}`}
-                    >
+                  const inner = (
+                    <>
                       <g>
                         <rect x={cx0.toFixed(1)} y={rowY.toFixed(1)} width={BW} height={BW} rx={2} />
                         <text x={(cx0 + BW / 2).toFixed(1)} y={(rowY + BW / 2 + 2.8).toFixed(1)}>{m.badge}</text>
@@ -195,7 +201,19 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                       <text className="m-name" x={(cx0 + BW / 2).toFixed(1)} y={(rowY + BW + 13).toFixed(1)} textAnchor="middle">
                         {m.name.toUpperCase()}
                       </text>
+                    </>
+                  );
+                  // Cliquable seulement s'il y a un article ; sinon un simple
+                  // groupe (pas de href="#" qui ferait sauter la page).
+                  return m.url ? (
+                    <a key={m.id} className="m-chip" href={m.url} target="_blank" rel="noopener noreferrer"
+                      aria-label={`Dernier article de ${m.name} sur ${a.label}`}>
+                      {inner}
                     </a>
+                  ) : (
+                    <g key={m.id} className="m-chip" role="img" aria-label={`${m.name} a couvert : ${a.label}`}>
+                      {inner}
+                    </g>
                   );
                 })}
               </g>

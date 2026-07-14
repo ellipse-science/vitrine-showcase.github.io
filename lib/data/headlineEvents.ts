@@ -161,7 +161,8 @@ function pctile(v: number, cal: [number, number][]): number {
 
 // Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
 // UNIQUEMENT tant que la colonne score_roc n'est pas publiée (≤ 1 rafraîchissement
-// de 4 h après #237) — ce repli réintroduit score_us, à retirer ensuite.
+// de 4 h après #237) : on soustrait score_qc ET score_us (quand dispo) pour ne
+// PAS réabsorber les USA côté Canada. À retirer une fois score_roc publié.
 function rocScore(e: RawEvent): number {
   return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0));
 }
@@ -199,7 +200,7 @@ function solitudesEdito(convPct: number, shared: number): string {
   if (convPct < 75) {
     return "Une bonne partie de l'actualité est suivie des deux côtés, chacun avec ses propres mots.";
   }
-  return "Fait rare : les deux espaces médiatiques regardent surtout les mêmes histoires.";
+  return "Fait rare : les deux espaces médiatiques mettent de l'avant surtout les mêmes sujets.";
 }
 
 // Construit tout l'état du module « Deux solitudes » (radar + jauge + édito)

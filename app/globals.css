@@ -1574,7 +1574,10 @@
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .dot .hit { fill: transparent; cursor: pointer; }
   .solitudes .dot .pip { pointer-events: none; transform-box: fill-box; transform-origin: center; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
-  .solitudes .dot:hover .pip { transform: scale(2.3); }
+  .solitudes .dot:hover .pip,
+  .solitudes .dot:focus-visible .pip { transform: scale(2.3); }
+  .solitudes .dot { outline: none; }
+  .solitudes .dot:focus-visible .hit { fill: rgba(28,25,23,0.06); }
   .solitudes .dot.radar-dot-qc .pip { fill: var(--bleu); }
   .solitudes .dot.radar-dot-can .pip { fill: var(--red); }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; fill: var(--ink-soft); }
