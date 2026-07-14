@@ -695,11 +695,17 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
-  // Fin du bloc 4h (« 12-16 » → 16 h) : granularité horaire propre à cette table.
+  // Le tag public affiche l'HEURE DE PUBLICATION, pas la fin du bloc de données.
+  // Réforme #195 : le bloc de données 15-19 est servi à 20 h (après ~1 h de
+  // pipeline), donc heure de publication = fin du bloc + 1 h. Les gens voient
+  // « 20 h » (l'heure où c'est en ligne) ; la fenêtre de données 15-19 n'est
+  // expliquée que dans la Méthodologie. « 19-23 » → 23 + 1 = 24 → « minuit »
+  // (géré par lastUpdatedLabel ≥ 24) ; « 23-03 » → 3 + 1 = 4 → « 4 h ».
   const blockEnd = parseInt((snapshotInterval ?? "").split("-")[1] ?? "", 10);
+  const publicationHour = Number.isNaN(blockEnd) ? null : blockEnd + 1;
   const lastUpdated = lastUpdatedLabel(
     sorted[0].date_montreal_tz ?? sorted[0].date_utc,
-    Number.isNaN(blockEnd) ? null : blockEnd,
+    publicationHour,
   );
 
   // Unes du QUÉBEC seulement : au moins un média QC doit avoir mis l'histoire
