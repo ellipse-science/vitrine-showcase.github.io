@@ -87,7 +87,7 @@ bannis :
   sciences sociales numériques (majuscule à « la Chaire ») ; CAPP =
   Centre d'analyse des politiques publiques (majuscule au « Centre »).
 
-## Honnêteté méthodologique (issu du red-team — non négociable)
+## Honnêteté méthodologique (issue du red-team — non négociable)
 
 - L'indice de convergence mesure les **mêmes sujets saillants**, jamais
   « les mêmes nouvelles » ni « les mêmes histoires ».
@@ -135,7 +135,7 @@ Source : [Guide de rédaction CAPP/CLESSN](https://app.notion.com/p/clessn/Guide
 
 ## Checklist avant merge (tout texte public)
 
-- [ ] Espaces insécables posées (`&nbsp;` en HTML/JSX) devant % : ; ? ! et dans « »
+- [ ] Espaces insécables posés (`&nbsp;` en HTML/JSX) devant % : ; ? ! et dans « »
 - [ ] Lexique canonique respecté (tableau ci-dessus) ; aucun « ROC » public
 - [ ] Formulations honnêtes (« sujets », « sur-quantifiée », superlatifs calibrés)
 - [ ] Phrases générées : toutes les variantes listées + condition + relecture éditoriale
