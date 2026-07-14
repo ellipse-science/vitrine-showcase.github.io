@@ -1562,9 +1562,12 @@
   @keyframes solDriftR { 50% { transform: translate(calc(-50% + 5px), -50%); } }
 
   /* Radar */
-  .solitudes .sol-radar { max-width: 760px; margin: 0 auto 4px; }
+  .solitudes .sol-radar { max-width: 760px; margin: 0 auto 24px; }
   .solitudes .sol-radar svg { display: block; width: 100%; height: auto; overflow: visible; }
   .solitudes .radar-halo { fill: rgba(28,25,23,0.045); }
+  /* Balayage : rotation lente et discrète autour du centre du radar */
+  .solitudes .radar-sweep { animation: radarSweep 7s linear infinite; }
+  @keyframes radarSweep { to { transform: rotate(360deg); } }
   .solitudes .radar-grid { fill: none; stroke: rgba(28,25,23,0.10); stroke-width: 0.7; }
   .solitudes .radar-spoke { stroke: rgba(28,25,23,0.07); stroke-width: 0.7; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
