@@ -54,7 +54,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
   const axes = s.axes;
   const n = Math.max(axes.length, 1);
-  const vals = axes.map((a) => ({ vqc: a.qcPct, vcan: a.canPct }));
+  const vals = axes.map((a) => ({ vqc: a.qcRadial, vcan: a.canRadial }));
   const maxVal = Math.max(...vals.flatMap((v) => [v.vqc, v.vcan]), 1);
 
   const pt = (i: number, v: number): [number, number] => {
@@ -136,8 +136,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               if (!(v[key] > 0)) return null;
               const [x, y] = pt(i, v[key]);
               const isQc = key === "vqc";
-              const region = isQc ? "québécoises" : "canadiennes";
-              const body = `${axes[i].label} : plus saillant que ${Math.round(v[key])} % des Unes ${region} des six derniers mois.`;
+              const region = isQc ? "québécoise" : "canadienne";
+              const share = isQc ? axes[i].qcShare : axes[i].canShare;
+              const body = `${axes[i].label} : ${share} % de l'attention médiatique ${region} des 24 dernières heures.`;
               const kk = isQc ? "Au Québec" : "Au Canada";
               const sideKey = isQc ? "qc" : "can";
               return (

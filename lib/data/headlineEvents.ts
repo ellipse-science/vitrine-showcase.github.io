@@ -127,25 +127,14 @@ const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
 // source américaine comme canadienne.
 const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 
-// ── Deux solitudes — calibration des percentiles (échelle relative) ──────────
-// Reproduit le pattern de l'étiquette de saillance du Module 1 (SAL_QC_THRESHOLDS,
-// #35) : on hardcode ici des bornes de percentiles calibrées sur les vraies
-// données, en attendant que le refiner les publie sur fenêtre glissante
-// (aws-refiners#212, généralisation du TODO #122). Interpolation linéaire par
-// morceaux : [valeur brute, percentile].
-//
-// CAL_QC / CAL_ROC : distribution de score_qc / score_roc des Unes publiées de
-// chaque région. Athena DEV, 2026-07-13, n=953 Unes QC / 954 CAN. L'échelle ROC
-// ≈ 2× QC (panels différents) — d'où deux calibrations distinctes plutôt qu'une
-// échelle commune, qui écraserait visuellement le Québec (cf. #143).
-const CAL_QC: [number, number][] = [[0, 0], [7.4, 5], [11, 20], [18.2, 50], [30.6, 80], [63.8, 95], [193.4, 100]];
-const CAL_ROC: [number, number][] = [[0, 0], [15.3, 5], [22, 20], [39, 50], [68.5, 80], [128.9, 95], [293.4, 100]];
-// CAL_CONV : distribution de l'indice de convergence OBJET (0-100). PROVISOIRE —
-// dérivée des bandes 13 mois du red-team (Divergence 63 % · Div. part. 17 % ·
-// Conv. part. 13 % · Convergence 7 %, médiane 14) : conv=14→p50, 25→p63,
-// 50→p80, 75→p93. À recalibrer sur données réelles une fois le refiner #211
-// déployé (l'indice objet n'existe pas encore dans Athena), puis remplacer par
-// la publication glissante du refiner (#212).
+// ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
+// L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
+// calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
+// distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
+// percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
+// 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
+// conv=14→p50, 25→p63, 50→p80, 75→p93. À recalibrer sur données réelles une fois
+// le refiner #211 déployé, puis remplacer par la publication glissante (#212).
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -203,9 +192,17 @@ function solitudesEdito(convPct: number, shared: number): string {
   return "Fait rare : les deux espaces médiatiques mettent de l'avant surtout les mêmes sujets.";
 }
 
-// Construit tout l'état du module « Deux solitudes » (radar + jauge + édito)
-// à partir des événements du bloc le plus récent.
-function buildSolitudes(latest: RawEvent[]): SolitudeData {
+// Clé de bloc triable (date + heure de début du créneau 4h).
+function blockKey(e: RawEvent): string {
+  const start = (e.time_interval_utc ?? "").split("-")[0].padStart(2, "0");
+  return `${e.date_utc}T${start}`;
+}
+
+// Construit tout l'état du module « Deux solitudes » (radar + jauge + édito).
+// `latest` = événements du bloc courant (pour l'indice de convergence) ;
+// `allEvents` = tous les blocs publiés (3 jours), pour agréger la part
+// d'attention sur la fenêtre glissante de 24 h.
+function buildSolitudes(latest: RawEvent[], allEvents: RawEvent[]): SolitudeData {
   // Indice de convergence OBJET (0-100), publié sur les lignes QC/CAN par le
   // refiner (#211). Repli sur l'exclusivité pondérée tant qu'il est absent.
   const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
@@ -256,35 +253,63 @@ function buildSolitudes(latest: RawEvent[]): SolitudeData {
     } catch { return []; }
   };
 
-  // Axes = top 6 événements du bloc par saillance combinée (QC + ROC).
-  const axes: SolitudeAxis[] = latest
-    .filter((e) => e.title && (e.score_qc ?? 0) + rocScore(e) > 0)
-    .map((e) => {
-      const qcRaw = Math.round((e.score_qc ?? 0) * 10) / 10;
-      const canRaw = Math.round(rocScore(e) * 10) / 10;
-      // Médias par région : media_ids_qc / media_ids_roc si publiés (refiner
-      // #211), sinon repli sur media_ids filtré par le panel QC.
+  // ── Fenêtre glissante 24 h : part d'attention par histoire ────────────────
+  // On agrège la saillance par storyline sur les 6 blocs de 4h les plus récents
+  // (= 24 h), pour chaque région. La valeur radiale d'un sujet est sa part
+  // rapportée au sujet le plus couvert de sa région (le plus gros du jour touche
+  // le bord). Même fenêtre 24 h que le suivi de la Une des Unes → les deux
+  // modules montrent les mêmes histoires, comparables.
+  const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
+  const window24h = new Set(blocks.slice(0, 6));
+  const windowEvents = allEvents.filter((e) => window24h.has(blockKey(e)));
+
+  type Agg = { rep: RawEvent; repKey: string; qc: number; roc: number };
+  const byStory = new Map<string, Agg>();
+  for (const e of windowEvents) {
+    if (!e.title) continue;
+    const key = e.storyline_id ?? e.event_label ?? e.event_id;
+    const bk = blockKey(e);
+    const cur = byStory.get(key);
+    if (!cur) {
+      byStory.set(key, { rep: e, repKey: bk, qc: e.score_qc ?? 0, roc: rocScore(e) });
+    } else {
+      cur.qc += e.score_qc ?? 0;
+      cur.roc += rocScore(e);
+      // Représentant = l'occurrence du bloc le plus récent (titre/médias frais).
+      if (bk > cur.repKey) { cur.rep = e; cur.repKey = bk; }
+    }
+  }
+
+  const aggs = Array.from(byStory.values()).filter((a) => a.qc + a.roc > 0);
+  const totalQc = aggs.reduce((s, a) => s + a.qc, 0);
+  const totalRoc = aggs.reduce((s, a) => s + a.roc, 0);
+  const maxQc = Math.max(...aggs.map((a) => a.qc), 1);
+  const maxRoc = Math.max(...aggs.map((a) => a.roc), 1);
+
+  const axes: SolitudeAxis[] = aggs
+    .sort((a, b) => b.qc + b.roc - (a.qc + a.roc))
+    .slice(0, 6)
+    .map((a) => {
+      const e = a.rep;
       const qcIds = e.media_ids_qc !== undefined
         ? parseIds(e.media_ids_qc)
         : parseIds(e.media_ids).filter((id) => QC_MEDIA.includes(id));
       const canIds = e.media_ids_roc !== undefined
         ? parseIds(e.media_ids_roc)
         : parseIds(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
-      const qcPct = pctile(qcRaw, CAL_QC);
-      const canPct = pctile(canRaw, CAL_ROC);
+      const qcRadial = Math.round((a.qc / maxQc) * 100);
+      const canRadial = Math.round((a.roc / maxRoc) * 100);
       return {
         label: e.title ?? "",
-        qcPct, canPct, qcRaw, canRaw,
-        side: (qcPct >= canPct ? "qc" : "can") as "qc" | "can",
+        qcRadial, canRadial,
+        qcShare: totalQc > 0 ? Math.round((a.qc / totalQc) * 100) : 0,
+        canShare: totalRoc > 0 ? Math.round((a.roc / totalRoc) * 100) : 0,
+        side: (qcRadial >= canRadial ? "qc" : "can") as "qc" | "can",
         media: buildMedia(e, [...qcIds, ...canIds]),
-        _sal: (e.score_qc ?? 0) + rocScore(e),
       };
-    })
-    .sort((a, b) => b._sal - a._sal)
-    .slice(0, 6)
-    .map(({ _sal, ...axis }) => axis); // eslint-disable-line @typescript-eslint/no-unused-vars
+    });
 
-  const shared = axes.filter((a) => a.qcRaw > 0 && a.canRaw > 0).length;
+  const shared = axes.filter((a) => a.qcRadial > 0 && a.canRadial > 0).length;
 
   return {
     divPct, convPct,
@@ -474,18 +499,19 @@ export type UneEvent = {
   nBlocks24h: number | null;
 };
 
-/** Un axe du radar « Deux solitudes » = un événement saillant du bloc. */
+/** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
 export type SolitudeAxis = {
-  /** Titre FR de l'événement. */
+  /** Titre FR de l'histoire (storyline). */
   label: string;
-  /** Percentile de saillance de l'événement dans la distribution des Unes de
-   *  SA région (0-100). Échelle radiale — même famille que l'étiquette de
-   *  saillance du Module 1 (#35). */
-  qcPct: number;
-  canPct: number;
-  /** Scores bruts, pour l'infobulle. */
-  qcRaw: number;
-  canRaw: number;
+  /** Valeur radiale de dessin (0-100) : part de l'attention 24h de la région
+   *  rapportée au sujet le plus couvert de cette région (le plus gros sujet du
+   *  jour touche le bord). Rend les deux formes comparables malgré l'écart
+   *  d'échelle QC/ROC. */
+  qcRadial: number;
+  canRadial: number;
+  /** Part réelle de l'attention 24h de la région (%), pour l'infobulle. */
+  qcShare: number;
+  canShare: number;
   /** Camp dominant (couleur du libellé). */
   side: "qc" | "can";
   /** Médias couvrants + lien vers leur dernier article sur le sujet. */
@@ -715,7 +741,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     };
   });
 
-  const solitudes = buildSolitudes(latest);
+  const solitudes = buildSolitudes(latest, unique);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -901,7 +927,6 @@ export const __test__ = {
   solitudesEdito,
   symbolPositions,
   buildSolitudes,
-  CAL_QC,
-  CAL_ROC,
+  blockKey,
   CAL_CONV,
 };

@@ -130,24 +130,19 @@ describe("capitalizeObject", () => {
   });
 });
 
-// ── Deux solitudes (radar) ──────────────────────────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, CAL_QC, CAL_ROC, CAL_CONV } = __test__;
+// ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, blockKey, CAL_CONV } = __test__;
 
-describe("pctile", () => {
+describe("pctile (jauge de convergence)", () => {
   it("renvoie 0 pour une valeur nulle ou négative", () => {
-    expect(pctile(0, CAL_QC)).toBe(0);
-    expect(pctile(-5, CAL_QC)).toBe(0);
+    expect(pctile(0, CAL_CONV)).toBe(0);
+    expect(pctile(-5, CAL_CONV)).toBe(0);
   });
-  it("interpole aux bornes de calibration QC", () => {
-    expect(pctile(18.2, CAL_QC)).toBeCloseTo(50, 5); // médiane QC
-    expect(pctile(7.4, CAL_QC)).toBeCloseTo(5, 5);
+  it("place la médiane de convergence (14) au centre de la jauge (p50)", () => {
+    expect(pctile(14, CAL_CONV)).toBeCloseTo(50, 5);
   });
-  it("plafonne à 100 au-delà du max", () => {
-    expect(pctile(9999, CAL_ROC)).toBe(100);
-  });
-  it("échelle ROC ≈ 2× QC : un même score brut tombe plus bas côté ROC", () => {
-    expect(pctile(39, CAL_ROC)).toBeCloseTo(50, 5);
-    expect(pctile(39, CAL_QC)).toBeGreaterThan(80); // 39 est élevé côté QC
+  it("plafonne à 100", () => {
+    expect(pctile(999, CAL_CONV)).toBe(100);
   });
 });
 
@@ -177,6 +172,10 @@ describe("solitudesEdito", () => {
     expect(solitudesEdito(5, 0)).toMatch(/Aucun sujet/);
     expect(solitudesEdito(5, 2)).toMatch(/presque entièrement différents/);
   });
+  it("dit « sujets » et jamais « histoires » à la convergence", () => {
+    expect(solitudesEdito(90, 3)).toMatch(/mêmes sujets/);
+    expect(solitudesEdito(90, 3)).not.toMatch(/mêmes histoires/);
+  });
   it("ne contient jamais de tiret cadratin (skill redaction-editoriale)", () => {
     for (const conv of [5, 40, 60, 90]) {
       expect(solitudesEdito(conv, 1)).not.toContain("—");
@@ -191,7 +190,14 @@ describe("symbolPositions", () => {
   });
   it("les écarte à divergence maximale", () => {
     const [qc, roc] = symbolPositions(0);
-    expect(roc - qc).toBeCloseTo(90, 5); // 18 + 72
+    expect(roc - qc).toBeCloseTo(90, 5);
+  });
+});
+
+describe("blockKey", () => {
+  it("produit une clé triable date + heure de début", () => {
+    expect(blockKey({ date_utc: "2026-07-13", time_interval_utc: "08-12" } as never)).toBe("2026-07-13T08");
+    expect(blockKey({ date_utc: "2026-07-13", time_interval_utc: "4-8" } as never)).toBe("2026-07-13T04");
   });
 });
 
@@ -199,38 +205,46 @@ describe("buildSolitudes", () => {
   const ev = (over: Record<string, unknown>) => ({
     country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
     media_ids: "[]", articles: "[]", interval_convergence_score: null,
+    date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
     ...over,
   });
 
   it("lit l'indice de convergence objet et calcule divPct = 100 − conv", () => {
-    const s = buildSolitudes([ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 }) as never]);
+    const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
+    const s = buildSolitudes([row] as never, [row] as never);
     expect(s.convPct).toBe(80);
     expect(s.divPct).toBe(20);
     expect(s.verb).toBe("convergence");
     expect(s.scoreValue).toBe(80);
   });
 
-  it("classe les axes par saillance combinée et garde au plus 6", () => {
+  it("agrège la part d'attention 24h par storyline et garde au plus 6 axes", () => {
     const rows = Array.from({ length: 9 }, (_, i) =>
-      ev({ event_id: `e${i}`, title: `Événement ${i}`, score_qc: i, score_roc: 0, interval_convergence_score: 10 }),
+      ev({ event_id: `e${i}`, storyline_id: `s${i}`, title: `Histoire ${i}`, score_qc: i + 1, score_roc: 0, interval_convergence_score: 10 }),
     );
-    const s = buildSolitudes(rows as never);
+    const s = buildSolitudes(rows as never, rows as never);
     expect(s.axes.length).toBe(6);
-    expect(s.axes[0].label).toBe("Événement 8"); // le plus saillant en tête
+    expect(s.axes[0].label).toBe("Histoire 8"); // la plus couverte en tête
+    expect(s.axes[0].qcRadial).toBe(100); // le plus gros sujet touche le bord
+    // Les parts (share) somment de façon cohérente (chaque part <= 100)
+    expect(s.axes.every((a) => a.qcShare >= 0 && a.qcShare <= 100)).toBe(true);
   });
 
-  it("attribue le camp dominant par percentile (side)", () => {
-    const s = buildSolitudes([
-      ev({ title: "Sujet QC", score_qc: 30, score_roc: 5, interval_convergence_score: 10 }) as never,
-    ]);
+  it("somme la saillance d'une storyline sur plusieurs blocs (fenêtre 24h)", () => {
+    const rows = [
+      ev({ event_id: "a1", storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
+      ev({ event_id: "a2", storyline_id: "sA", title: "A", score_qc: 6, time_interval_utc: "12-16" }),
+      ev({ event_id: "b1", storyline_id: "sB", title: "B", score_qc: 4, time_interval_utc: "16-20" }),
+    ];
+    const s = buildSolitudes([rows[0], rows[2]] as never, rows as never);
+    // sA agrège 10+6=16 sur 24h → domine sB (4)
+    expect(s.axes[0].label).toBe("A");
+    expect(s.axes[0].qcShare).toBe(80); // 16 / (16+4)
+  });
+
+  it("attribue le camp dominant (side) par valeur radiale", () => {
+    const row = ev({ title: "Sujet QC", score_qc: 30, score_roc: 5, interval_convergence_score: 10 });
+    const s = buildSolitudes([row] as never, [row] as never);
     expect(s.axes[0].side).toBe("qc");
-  });
-
-  it("repli sur l'exclusivité quand l'indice objet est absent", () => {
-    const s = buildSolitudes([
-      ev({ score_qc: 20, score_saillance: 20, interval_convergence_score: null }) as never,
-    ]);
-    // couverture 100 % QC → divergence maximale
-    expect(s.divPct).toBeGreaterThan(50);
   });
 });

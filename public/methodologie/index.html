@@ -591,7 +591,7 @@
     <ol class="metho-list">
       <li>Pour chaque bloc, on construit un vecteur des sujets saillants du Québec et un vecteur des sujets saillants du Canada, pondérés par leur importance. L'<strong>indice de convergence</strong> est la similarité (cosinus) entre ces deux vecteurs, de 0 (agendas opposés) à 100 (mêmes priorités). La divergence affichée en est le complément.</li>
       <li>Le calcul écarte une courte liste de termes géographiques génériques (Canada, États-Unis, Québec, Ottawa), qui gonfleraient artificiellement la ressemblance sans rien dire de l'actualité.</li>
-      <li>Chaque axe du radar est un événement saillant du bloc. Sa distance au centre est le <strong>percentile de saillance</strong> de l'événement dans la distribution des Unes de sa propre région sur les derniers mois — la même logique relative que l'étiquette de saillance de la Une des Unes. Comme les deux espaces médiatiques n'ont ni le même nombre de médias ni la même échelle, chaque côté est comparé à sa propre distribution, jamais à celle de l'autre.</li>
+      <li>Chaque axe du radar est une <strong>histoire saillante des 24 dernières heures</strong> — les mêmes que celles suivies par la Une des Unes. Sa distance au centre est la <strong>part d'attention</strong> que la région lui a consacrée sur cette fenêtre glissante de 24 h, rapportée à l'histoire la plus couverte de la région (la plus grosse du jour touche le bord). Comme chaque côté est ramené à sa propre échelle, les deux formes sont directement comparables malgré le nombre de médias différent.</li>
       <li>Sous le radar, une jauge situe le bloc courant par rapport aux six derniers mois : « plus divergent », « habituel » ou « plus convergent » que la médiane. Un bloc peut afficher une forte divergence tout en restant habituel — entre le Québec et le Canada, la divergence est la règle et la convergence l'exception.</li>
     </ol>
 
@@ -599,7 +599,8 @@
     <ul class="metho-list">
       <li>L'indice mesure les <strong>mêmes sujets saillants</strong>, pas les mêmes histoires : deux médias peuvent parler de la même personne pour des raisons différentes, ou de la même histoire en la rattachant à des objets différents.</li>
       <li>Environ un dixième des sujets québécois portent du texte français résiduel non apparié côté canadien, ce qui abaisse légèrement la convergence mesurée.</li>
-      <li>Les seuils de percentiles sont pour l'instant fixés sur une longue fenêtre calibrée manuellement ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi <a href="https://github.com/ellipse-science/aws-refiners/issues/212">aws-refiners#212</a>), comme pour la saillance de la Une des Unes.</li>
+      <li>Les événements sont regroupés à partir des médias québécois, canadiens et américains ensemble ; c'est ce qui permet de reconnaître qu'une même histoire est couverte des deux côtés de la frontière. Le radar n'en affiche toutefois que les parts québécoise et canadienne.</li>
+      <li>Le seuil de la jauge « plus ou moins que d'habitude » est pour l'instant calibré manuellement sur une longue fenêtre ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi <a href="https://github.com/ellipse-science/aws-refiners/issues/212">aws-refiners#212</a>), comme pour la saillance de la Une des Unes.</li>
     </ul>
 
     <h3>Affichage</h3>
