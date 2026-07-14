@@ -242,6 +242,7 @@
         .pipeline-events .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-hot20 .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-sonar .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
+        .pipeline-polimetre .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-vitrine .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
 
         .toggle-icon {
@@ -461,7 +462,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 10 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 14 juillet 2026 (ajout du pipeline Polimètre+ — suivi des promesses CAQ) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -961,6 +962,34 @@
             </div>
         </div>
 
+        <!-- POLIMÈTRE+ (SUIVI DES PROMESSES) -->
+        <div class="pipeline pipeline-polimetre" data-pipeline="polimetre">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🗳️ Polimètre+ (Suivi des promesses CAQ)</span>
+                <span class="frequency">Hebdomadaire (analyse par semaine glissante)</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
+                    r-media-headlines
+                    <div class="node-detail">Glue Job Python + liste des promesses CAQ (mastersheet) + regex validées</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus">
+                    polimetre-plus.R
+                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo ; enrichissement LLM best-effort (Gemma 3 : libellés courts + résumés)</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_plus" data-env-output="DEV">
+                    polimetre_plus
+                    <div class="node-detail">Promesses CAQ saillantes de la semaine + progression + enrichissement LLM</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+            </div>
+        </div>
+
         <!-- PUBLICATION VITRINE -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
@@ -1012,6 +1041,38 @@
         // Modal data
         const modalData = {
             tables: {
+                'polimetre_plus': {
+                    title: 'Table: polimetre_plus',
+                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification 100 % regex ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
+                    columns: [
+                        '📍 IDENTIFIANTS:',
+                        'country_id - Pays (QC)',
+                        'week_end_date - Date de fin de la semaine analysée',
+                        'pledge_number - Numéro de la promesse (format 9.99.999)',
+                        'pledge_text_fr - Libellé officiel FR de la promesse',
+                        'pledge_short_fr - Libellé court FR (LLM, best-effort)',
+                        'pledge_en - Libellé EN de la promesse',
+                        'verdict - Verdict de réalisation (source Polimètre)',
+                        'category - Catégorie de la promesse',
+                        '',
+                        '📈 SAILLANCE + PROGRESSION:',
+                        'n_mentions - Nombre d\'articles mentionnant la promesse',
+                        'salience_index - Indice de saillance (n_mentions × temps en Une pondéré inter-médias)',
+                        'previous_salience_index - Indice de saillance de la semaine précédente',
+                        'delta_index - Progression (salience_index − previous_salience_index)',
+                        'rank_current - Rang par saillance',
+                        'rank_delta - Rang par progression',
+                        '',
+                        '📝 ENRICHISSEMENT LLM (best-effort):',
+                        'coverage_summary_week - Résumé journalistique de la couverture hebdo (LLM)',
+                        'coverage_summary_month - Synthèse mensuelle des résumés hebdo (LLM)',
+                        '',
+                        '🔗 SOURCES:',
+                        'titles - Titres des articles (JSON)',
+                        'urls - URLs des articles (JSON)',
+                        'articles - Array [{media_id, title, url}] (JSON)'
+                    ]
+                },
                 'headlines_objects_extracted': {
                     title: 'Table: headlines_objects_extracted',
                     description: 'Headlines enrichis par radar-object-extraction.R (GLiNER + Gemma3). Schéma pass-through depuis radar_annotated + colonnes NER bilingues.',
@@ -1486,6 +1547,28 @@
                 }
             },
             refiners: {
+                'polimetre-plus': {
+                    title: 'Refiner: polimetre-plus.R',
+                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification 100 % regex (source de vérité) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
+                    details: [
+                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation »)',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
+                        '',
+                        '⚙️ TRAITEMENT (hebdomadaire, semaine glissante):',
+                        '• Identification : appariement article ↔ promesse par expressions régulières validées (une par promesse) — 100 % à base de règles',
+                        '• Saillance : n_mentions × somme du temps en Une pondéré inter-médias (même pondération que l\'indice de saillance)',
+                        '• Progression : delta_index = salience_index − saillance de la semaine précédente',
+                        '• Classement par saillance (rank_current) et par progression (rank_delta)',
+                        '',
+                        '🔧 ENRICHISSEMENT LLM (best-effort, Ollama/Gemma via infer-api):',
+                        '• Gemma3 → /ollama/generate — libellé court (pledge_short_fr) + résumé de couverture par promesse (coverage_summary_week/month)',
+                        '• N\'intervient JAMAIS dans l\'identification ; si l\'infer-api est indisponible, ces colonnes sortent à NA et la publication continue',
+                        '• Plafond optionnel SUMMARY_TOP_N (défaut : toutes les promesses)',
+                        '',
+                        '🎯 UTILITÉ: suivi médiatique des promesses électorales de la CAQ (module Polimètre+)',
+                        '→ Publie polimetre_plus, lue par le frontend de la Vitrine'
+                    ]
+                },
                 'articles-segmented': {
                     title: 'Refiner: radar-data-preparation.R',
                     description: 'Segmentation WTPSPLIT + annotation CAP themes + partis politiques + sentiment via INFER API. Publie radar_annotated (19 colonnes).',
