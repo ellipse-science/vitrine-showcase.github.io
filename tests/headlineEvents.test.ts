@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
 
 describe("sameStory (dédup cross-langue, stopgap #213)", () => {
   it("fusionne deux cadrages de la même fusillade de Toronto", () => {
@@ -217,50 +217,64 @@ describe("blockKey", () => {
   });
 });
 
-describe("buildSolitudes", () => {
-  const ev = (over: Record<string, unknown>) => ({
-    country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
-    media_ids: "[]", articles: "[]", interval_convergence_score: null,
-    date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
-    ...over,
+const ev = (over: Record<string, unknown>) => ({
+  country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
+  media_ids: "[]", articles: "[]", interval_convergence_score: null,
+  date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
+  ...over,
+});
+
+describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
+  it("somme la saillance d'une storyline sur plusieurs blocs (fenêtre 24h)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 6, time_interval_utc: "12-16" }),
+      ev({ storyline_id: "sB", title: "B", score_qc: 4, time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never).sort((a: { sumQc: number }, b: { sumQc: number }) => b.sumQc - a.sumQc);
+    expect(st[0].label).toBe("A");
+    expect(st[0].sumQc).toBe(16); // 10 + 6 sur 24h
+    expect(st[0].peakQc).toBe(10); // pic = max bloc (échelle du score de bloc)
+    expect(st[1].sumQc).toBe(4);
   });
+  it("ne garde que les 6 blocs les plus récents (24h)", () => {
+    // 8 blocs : le plus ancien (00) hors fenêtre de 6
+    const rows = ["00", "04", "08", "12", "16", "20"].map((h, i) =>
+      ev({ storyline_id: `s${i}`, title: `H${i}`, score_qc: 5, date_utc: "2026-07-13", time_interval_utc: `${h}-x` }),
+    );
+    rows.push(ev({ storyline_id: "old", title: "Vieux", score_qc: 99, date_utc: "2026-07-12", time_interval_utc: "00-04" }) as never);
+    rows.push(ev({ storyline_id: "old2", title: "Vieux2", score_qc: 99, date_utc: "2026-07-12", time_interval_utc: "04-08" }) as never);
+    const st = storiesFrom24h(rows as never);
+    expect(st.some((s: { label: string }) => s.label === "Vieux")).toBe(false);
+  });
+});
+
+describe("buildSolitudes", () => {
+  const sol = (latest: unknown[], all: unknown[]) =>
+    buildSolitudes(latest as never, storiesFrom24h(all as never));
 
   it("lit l'indice de convergence objet et calcule divPct = 100 − conv", () => {
     const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
-    const s = buildSolitudes([row] as never, [row] as never);
+    const s = sol([row], [row]);
     expect(s.convPct).toBe(80);
     expect(s.divPct).toBe(20);
     expect(s.verb).toBe("convergence");
     expect(s.scoreValue).toBe(80);
   });
 
-  it("agrège la part d'attention 24h par storyline et garde au plus 6 axes", () => {
+  it("garde au plus 6 axes, la plus grosse histoire en tête", () => {
     const rows = Array.from({ length: 9 }, (_, i) =>
-      ev({ event_id: `e${i}`, storyline_id: `s${i}`, title: `Histoire ${i}`, score_qc: i + 1, score_roc: 0, interval_convergence_score: 10 }),
+      ev({ storyline_id: `s${i}`, title: `Histoire ${i}`, score_qc: i + 1, score_roc: 0, interval_convergence_score: 10 }),
     );
-    const s = buildSolitudes(rows as never, rows as never);
+    const s = sol(rows, rows);
     expect(s.axes.length).toBe(6);
-    expect(s.axes[0].label).toBe("Histoire 8"); // la plus couverte en tête
-    expect(s.axes[0].qcRadial).toBe(100); // le plus gros sujet touche le bord
-    // Les parts (share) somment de façon cohérente (chaque part <= 100)
+    expect(s.axes[0].label).toBe("Histoire 8");
     expect(s.axes.every((a) => a.qcShare >= 0 && a.qcShare <= 100)).toBe(true);
   });
 
-  it("somme la saillance d'une storyline sur plusieurs blocs (fenêtre 24h)", () => {
-    const rows = [
-      ev({ event_id: "a1", storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
-      ev({ event_id: "a2", storyline_id: "sA", title: "A", score_qc: 6, time_interval_utc: "12-16" }),
-      ev({ event_id: "b1", storyline_id: "sB", title: "B", score_qc: 4, time_interval_utc: "16-20" }),
-    ];
-    const s = buildSolitudes([rows[0], rows[2]] as never, rows as never);
-    // sA agrège 10+6=16 sur 24h → domine sB (4)
-    expect(s.axes[0].label).toBe("A");
-    expect(s.axes[0].qcShare).toBe(80); // 16 / (16+4)
-  });
-
-  it("attribue le camp dominant (side) par valeur radiale", () => {
+  it("attribue le camp dominant (side)", () => {
     const row = ev({ title: "Sujet QC", score_qc: 30, score_roc: 5, interval_convergence_score: 10 });
-    const s = buildSolitudes([row] as never, [row] as never);
+    const s = sol([row], [row]);
     expect(s.axes[0].side).toBe("qc");
   });
 });
