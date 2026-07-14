@@ -45,6 +45,18 @@ type RawEvent = {
   interval_convergence_score: number | null;
   top_objects_divergence: string | null;
   articles: string | null;
+  // Deux solitudes — breakdown régional par événement (radar). Optionnels :
+  // score_saillance = score_qc + score_roc + score_us (vérifié empiriquement,
+  // cf. #143) — ne jamais dériver le ROC par soustraction, sinon le côté
+  // Canada absorbe les USA. Le repli transitoire soustrait tant que score_roc
+  // n'est pas publié (≤ 1 rafraîchissement de 4 h après le déploiement de
+  // #237). coverage_* et media_ids_qc/roc arrivent avec le refiner #211.
+  score_roc?: number | null;
+  score_us?: number | null;
+  coverage_qc_in_can?: number | null;
+  coverage_can_in_qc?: number | null;
+  media_ids_qc?: string | null;
+  media_ids_roc?: string | null;
   // Agrégats 24h par storyline (aws-refiners#195 phase B, PR #199) — optionnels :
   // absents des lignes publiées avant le 2026-07-10 (Athena renvoie null).
   storyline_id?: string | null;
@@ -53,14 +65,6 @@ type RawEvent = {
   score_qc_peak_24h?: number | null;
   first_seen_utc?: string | null;
   n_blocks_24h?: number | null;
-};
-
-type DivergenceEntry = {
-  event_label: string;
-  event_title_raw: string;
-  score_qc: number;
-  score_roc: number;
-  divergence_score: number;
 };
 
 type ExtractedObject = { object: string; score: number };
@@ -103,12 +107,197 @@ const MEDIA_NAMES: Record<string, string> = {
   JDM: "Journal de Montréal",
   MG: "Montreal Gazette",
   CBC: "CBC",
-  CTV: "CTV",
+  CTV: "CTV News",
   GN: "Global News",
   TTS: "Toronto Star",
+  GAM: "The Globe and Mail",
+  NP: "National Post",
+  VS: "Vancouver Sun",
+};
+
+// Sigle court affiché dans le badge carré du radar (Deux solitudes).
+const MEDIA_BADGE: Record<string, string> = {
+  LED: "LD", LAP: "LP", RCI: "RC", TVA: "TVA", JDM: "JdM", MG: "MG",
+  CBC: "CBC", CTV: "CTV", GN: "GN", TTS: "TS", GAM: "GM", NP: "NP", VS: "VS",
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
+// Médias US — exclus du côté « Canada » dans le repli transitoire (avant que
+// media_ids_roc soit publié par le refiner #211) pour ne pas afficher une
+// source américaine comme canadienne.
+const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
+
+// ── Deux solitudes — calibration des percentiles (échelle relative) ──────────
+// Reproduit le pattern de l'étiquette de saillance du Module 1 (SAL_QC_THRESHOLDS,
+// #35) : on hardcode ici des bornes de percentiles calibrées sur les vraies
+// données, en attendant que le refiner les publie sur fenêtre glissante
+// (aws-refiners#212, généralisation du TODO #122). Interpolation linéaire par
+// morceaux : [valeur brute, percentile].
+//
+// CAL_QC / CAL_ROC : distribution de score_qc / score_roc des Unes publiées de
+// chaque région. Athena DEV, 2026-07-13, n=953 Unes QC / 954 CAN. L'échelle ROC
+// ≈ 2× QC (panels différents) — d'où deux calibrations distinctes plutôt qu'une
+// échelle commune, qui écraserait visuellement le Québec (cf. #143).
+const CAL_QC: [number, number][] = [[0, 0], [7.4, 5], [11, 20], [18.2, 50], [30.6, 80], [63.8, 95], [193.4, 100]];
+const CAL_ROC: [number, number][] = [[0, 0], [15.3, 5], [22, 20], [39, 50], [68.5, 80], [128.9, 95], [293.4, 100]];
+// CAL_CONV : distribution de l'indice de convergence OBJET (0-100). PROVISOIRE —
+// dérivée des bandes 13 mois du red-team (Divergence 63 % · Div. part. 17 % ·
+// Conv. part. 13 % · Convergence 7 %, médiane 14) : conv=14→p50, 25→p63,
+// 50→p80, 75→p93. À recalibrer sur données réelles une fois le refiner #211
+// déployé (l'indice objet n'existe pas encore dans Athena), puis remplacer par
+// la publication glissante du refiner (#212).
+const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
+
+function pctile(v: number, cal: [number, number][]): number {
+  if (!(v > 0)) return 0;
+  for (let i = 1; i < cal.length; i++) {
+    if (v <= cal[i][0]) {
+      const [x0, y0] = cal[i - 1], [x1, y1] = cal[i];
+      return y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+    }
+  }
+  return 100;
+}
+
+// Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
+// UNIQUEMENT tant que la colonne score_roc n'est pas publiée (≤ 1 rafraîchissement
+// de 4 h après #237) — ce repli réintroduit score_us, à retirer ensuite.
+function rocScore(e: RawEvent): number {
+  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0));
+}
+
+// Positions des symboles sur l'axe : collés au centre quand ça converge,
+// aux extrémités quand ça diverge. gap min 18 % pour ne pas les superposer.
+function symbolPositions(convPct: number): [number, number] {
+  const div = 100 - convPct;
+  const gap = 18 + 72 * Math.pow(div / 100, 1.4);
+  return [50 - gap / 2, 50 + gap / 2];
+}
+
+// 4 niveaux symétriques sur la convergence (seuils 25/50/75). Le mot et la
+// couleur pilotent le grand chiffre. Cf. red-team + design de la maquette.
+function convMode(convPct: number): { word: string; cls: string } {
+  if (convPct < 25) return { word: "Divergence", cls: "mode-div" };
+  if (convPct < 50) return { word: "Divergence partielle", cls: "mode-divp" };
+  if (convPct < 75) return { word: "Convergence partielle", cls: "mode-convp" };
+  return { word: "Convergence", cls: "mode-con" };
+}
+
+// Phrase éditoriale : GABARITS FINIS choisis par règles (aucun LLM en prod),
+// conformes au skill redaction-editoriale (mêmes « sujets », pas de tiret
+// cadratin, formulation honnête). `shared` = nb de sujets du radar couverts
+// des deux côtés.
+function solitudesEdito(convPct: number, shared: number): string {
+  if (convPct < 25) {
+    return shared === 0
+      ? "Aucun sujet ne figure à la fois parmi les Unes québécoises et canadiennes de ce bloc. Deux conversations parallèles."
+      : "Pendant ce bloc, les médias québécois et canadiens ont mis l'accent sur des sujets presque entièrement différents.";
+  }
+  if (convPct < 50) {
+    return "Quelques grandes histoires traversent la frontière ; le reste des deux agendas se croise à peine.";
+  }
+  if (convPct < 75) {
+    return "Une bonne partie de l'actualité est suivie des deux côtés, chacun avec ses propres mots.";
+  }
+  return "Fait rare : les deux espaces médiatiques regardent surtout les mêmes histoires.";
+}
+
+// Construit tout l'état du module « Deux solitudes » (radar + jauge + édito)
+// à partir des événements du bloc le plus récent.
+function buildSolitudes(latest: RawEvent[]): SolitudeData {
+  // Indice de convergence OBJET (0-100), publié sur les lignes QC/CAN par le
+  // refiner (#211). Repli sur l'exclusivité pondérée tant qu'il est absent.
+  const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
+  const rawConvergence = qcRow?.interval_convergence_score ?? null;
+  let convPct: number;
+  if (rawConvergence !== null) {
+    convPct = Math.max(0, Math.min(100, rawConvergence));
+  } else {
+    const withScore = latest.filter((e) => (e.score_qc ?? 0) + rocScore(e) > 0);
+    const total = withScore.reduce((s, e) => s + (e.score_qc ?? 0) + rocScore(e), 0);
+    const excl = withScore.reduce((s, e) => {
+      const q = e.score_qc ?? 0, tot = q + rocScore(e);
+      return s + tot * Math.abs((tot > 0 ? q / tot : 0) - 0.5) * 2;
+    }, 0);
+    convPct = total > 0 ? Math.round(100 - (excl / total) * 100) : 0;
+  }
+  const divPct = Math.max(0, Math.min(100, 100 - convPct));
+  const relPct = Math.round(pctile(convPct, CAL_CONV));
+  const mode = convMode(convPct);
+  const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
+
+  // Résolution des liens par média (dernier article sur la storyline si dispo,
+  // sinon article du bloc). Même logique que la byline du Module 1.
+  type RawArticle = { media_id: string; url: string };
+  const buildMedia = (e: RawEvent, ids: string[]): SolitudeAxis["media"] => {
+    const urlByMedia: Record<string, string> = {};
+    for (const key of ["articles_24h", "articles"] as const) {
+      try {
+        const parsed = JSON.parse((e[key] as string) ?? "[]");
+        if (Array.isArray(parsed)) {
+          for (const a of parsed as RawArticle[]) {
+            if (a.media_id && a.url && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+          }
+        }
+      } catch { /* champ absent ou malformé */ }
+    }
+    return ids.map((id) => ({
+      id,
+      name: MEDIA_NAMES[id] ?? id,
+      badge: MEDIA_BADGE[id] ?? id,
+      url: urlByMedia[id] ?? null,
+    }));
+  };
+  const parseIds = (json: string | null | undefined): string[] => {
+    try {
+      const p = JSON.parse(json ?? "[]");
+      return Array.isArray(p) ? (p as string[]) : [];
+    } catch { return []; }
+  };
+
+  // Axes = top 6 événements du bloc par saillance combinée (QC + ROC).
+  const axes: SolitudeAxis[] = latest
+    .filter((e) => e.title && (e.score_qc ?? 0) + rocScore(e) > 0)
+    .map((e) => {
+      const qcRaw = Math.round((e.score_qc ?? 0) * 10) / 10;
+      const canRaw = Math.round(rocScore(e) * 10) / 10;
+      // Médias par région : media_ids_qc / media_ids_roc si publiés (refiner
+      // #211), sinon repli sur media_ids filtré par le panel QC.
+      const qcIds = e.media_ids_qc !== undefined
+        ? parseIds(e.media_ids_qc)
+        : parseIds(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      const canIds = e.media_ids_roc !== undefined
+        ? parseIds(e.media_ids_roc)
+        : parseIds(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
+      const qcPct = pctile(qcRaw, CAL_QC);
+      const canPct = pctile(canRaw, CAL_ROC);
+      return {
+        label: e.title ?? "",
+        qcPct, canPct, qcRaw, canRaw,
+        side: (qcPct >= canPct ? "qc" : "can") as "qc" | "can",
+        media: buildMedia(e, [...qcIds, ...canIds]),
+        _sal: (e.score_qc ?? 0) + rocScore(e),
+      };
+    })
+    .sort((a, b) => b._sal - a._sal)
+    .slice(0, 6)
+    .map(({ _sal, ...axis }) => axis); // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  const shared = axes.filter((a) => a.qcRaw > 0 && a.canRaw > 0).length;
+
+  return {
+    divPct, convPct,
+    scoreValue: convPct < 50 ? divPct : convPct,
+    verb: convPct < 50 ? "divergence" : "convergence",
+    modeWord: mode.word, modeCls: mode.cls,
+    relPct,
+    coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
+    coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
+    edito: solitudesEdito(convPct, shared),
+    qcSymbolPos, canSymbolPos,
+    axes,
+  };
+}
 
 // Étiquette de saillance par percentiles SYMÉTRIQUES du score_qc (cf. #35) :
 // autant de « Très faible » que d'« Exceptionnelle », le gros au centre (courbe en
@@ -284,12 +473,46 @@ export type UneEvent = {
   nBlocks24h: number | null;
 };
 
-export type SolitudeStory = {
+/** Un axe du radar « Deux solitudes » = un événement saillant du bloc. */
+export type SolitudeAxis = {
+  /** Titre FR de l'événement. */
   label: string;
-  qcWidth: number;
-  caWidth: number;
-  qcZero: boolean;
-  caZero: boolean;
+  /** Percentile de saillance de l'événement dans la distribution des Unes de
+   *  SA région (0-100). Échelle radiale — même famille que l'étiquette de
+   *  saillance du Module 1 (#35). */
+  qcPct: number;
+  canPct: number;
+  /** Scores bruts, pour l'infobulle. */
+  qcRaw: number;
+  canRaw: number;
+  /** Camp dominant (couleur du libellé). */
+  side: "qc" | "can";
+  /** Médias couvrants + lien vers leur dernier article sur le sujet. */
+  media: { id: string; name: string; badge: string; url: string | null }[];
+};
+
+export type SolitudeData = {
+  /** Divergence affichée (0-100) = 100 − convergence. */
+  divPct: number;
+  convPct: number;
+  /** Le grand chiffre + son verbe (« divergence » / « convergence »). */
+  scoreValue: number;
+  verb: "divergence" | "convergence";
+  /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
+  modeWord: string;
+  modeCls: string;
+  /** Percentile de convergence dans la distribution des blocs (position de la
+   *  jauge « plus divergent / habituel / plus convergent »). */
+  relPct: number;
+  /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
+  coverageQcInCan: number | null;
+  coverageCanInQc: number | null;
+  /** Phrase éditoriale (gabarit fini, choisi par règles — pas de LLM). */
+  edito: string;
+  /** Positions de la fleur-de-lys et de l'érable sur l'axe (%). */
+  qcSymbolPos: number;
+  canSymbolPos: number;
+  axes: SolitudeAxis[];
 };
 
 export type TreemapTile = {
@@ -333,10 +556,7 @@ export type HeadlineData = {
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
   top3: UneEvent[];
-  solitudesQcPos: number;
-  solitudesRocPos: number;
-  solitudesDivPct: number;
-  solitudesStories: SolitudeStory[];
+  solitudes: SolitudeData;
   treemapTier1: TreemapTile[];
   treemapTier2: TreemapTile[];
   treemapTier3: TreemapTile[];
@@ -494,91 +714,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     };
   });
 
-  const qcRow = latest.find((e) => e.country_id === "QC" || e.country_id === "CAN");
-  const rawConvergence = qcRow?.interval_convergence_score ?? null;
-  const rawDivergenceJson =
-    qcRow?.top_objects_divergence && qcRow.top_objects_divergence !== "NA"
-      ? qcRow.top_objects_divergence
-      : null;
-
-  let divergenceEntries: DivergenceEntry[] = [];
-  if (rawDivergenceJson) {
-    try { divergenceEntries = JSON.parse(rawDivergenceJson) as DivergenceEntry[]; } catch { }
-  }
-
-  let divPct: number;
-  if (rawConvergence !== null) {
-    divPct = Math.max(0, Math.min(100, 100 - rawConvergence));
-  } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const totalSaillance = eventsWithScore.reduce((sum, e) => sum + (e.score_saillance ?? 0), 0);
-    const totalExclusivity = eventsWithScore.reduce((sum, e) => {
-      const s = e.score_saillance ?? 0;
-      const q = e.score_qc ?? 0;
-      const ratio = s > 0 ? q / s : 0;
-      return sum + s * Math.abs(ratio - 0.5) * 2;
-    }, 0);
-    divPct = totalSaillance > 0 ? Math.round((totalExclusivity / totalSaillance) * 100) : 0;
-  }
-
-  const maxScoreForBars = Math.max(
-    ...divergenceEntries.map((d) => Math.max(d.score_qc, d.score_roc)),
-    ...latest.map((e) => e.score_saillance ?? 0),
-    1,
-  );
-
-  let solitudesStories: SolitudeStory[];
-  if (divergenceEntries.length > 0) {
-    // event_label → French event title (les events ont déjà le titre traduit dans `title`)
-    const labelToTitle = new Map<string, string>();
-    for (const e of unique) {
-      if (e.event_label && e.title && !labelToTitle.has(e.event_label)) {
-        labelToTitle.set(e.event_label, e.title);
-      }
-    }
-    // Dédupliquer par event_label (garder le score de divergence le plus élevé par label)
-    const dedupedByLabel = new Map<string, DivergenceEntry>();
-    for (const d of divergenceEntries) {
-      const existing = dedupedByLabel.get(d.event_label);
-      if (!existing || d.divergence_score > existing.divergence_score) {
-        dedupedByLabel.set(d.event_label, d);
-      }
-    }
-    const uniqueEntries = Array.from(dedupedByLabel.values())
-      .sort((a, b) => b.divergence_score - a.divergence_score);
-    solitudesStories = uniqueEntries.slice(0, 3).map((d) => {
-      const fr = labelToTitle.get(d.event_label);
-      const label = fr && fr.length > 0
-        ? fr
-        : (d.event_title_raw && d.event_title_raw.length > 0
-            ? d.event_title_raw
-            : d.event_label.charAt(0).toUpperCase() + d.event_label.slice(1));
-      const qcW = Math.round((d.score_qc / maxScoreForBars) * 100);
-      const caW = Math.round((d.score_roc / maxScoreForBars) * 100);
-      return { label, qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
-    });
-  } else {
-    const eventsWithScore = latest.filter((e) => (e.score_saillance ?? 0) > 0);
-    const ranked = eventsWithScore
-      .filter((e) => e.title)
-      .map((e) => {
-        const s = e.score_saillance ?? 0;
-        const q = e.score_qc ?? 0;
-        const qcRatio = s > 0 ? q / s : 0;
-        return { e, q, divergence: Math.abs(qcRatio - 0.5) * 2 };
-      })
-      .sort((a, b) => b.divergence - a.divergence);
-    solitudesStories = ranked.slice(0, 3).map(({ e, q }) => {
-      const s = e.score_saillance ?? 0;
-      const qcW = Math.round((q / maxScoreForBars) * 100);
-      const caW = Math.round(((s - q) / maxScoreForBars) * 100);
-      return { label: e.title ?? "", qcWidth: Math.min(100, qcW), caWidth: Math.min(100, caW), qcZero: qcW <= 2, caZero: caW <= 2 };
-    });
-  }
-
-  const spread = Math.round(divPct * 0.4);
-  const solitudesQcPos = Math.max(5, 20 - spread);
-  const solitudesRocPos = Math.min(95, 80 + spread);
+  const solitudes = buildSolitudes(latest);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -612,7 +748,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudesQcPos, solitudesRocPos, solitudesDivPct: divPct, solitudesStories, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 });
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);

@@ -317,6 +317,8 @@
         "representative_media_id",
         "score_saillance",
         "score_qc",
+        "score_roc",
+        "score_us",
         "extracted_objects",
         "cluster_confidence",
         "article_count",
@@ -324,6 +326,10 @@
         "outlets_qc",
         "total_outlets_qc",
         "media_ids",
+        "media_ids_qc",
+        "media_ids_roc",
+        "coverage_qc_in_can",
+        "coverage_can_in_qc",
         "intensity_tier",
         "title",
         "text",
@@ -346,7 +352,7 @@
       "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
       "filter": "headline_events_3day",
       "enabled": true,
-      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx"
+      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + DeuxSolitudesSection.tsx"
     },
     {
       "name": "polimetre_plus",
