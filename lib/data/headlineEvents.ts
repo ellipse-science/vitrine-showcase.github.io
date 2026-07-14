@@ -133,8 +133,12 @@ const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 // distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
 // percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
 // 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
-// conv=14→p50, 25→p63, 50→p80, 75→p93. À recalibrer sur données réelles une fois
-// le refiner #211 déployé, puis remplacer par la publication glissante (#212).
+// conv=14→p50, 25→p63, 50→p80, 75→p93.
+// MàJ 2026-07-14 : l'indice objet #211 est désormais publié, mais uniquement sur
+// la fenêtre 3 jours du JSON (~21 blocs, médiane observée ≈ 23 ≠ 14). 3 jours ne
+// font pas une « habitude » : on GARDE la calibration prototype 13 mois plutôt
+// que de figer un instantané instable qui dériverait à chaque rafraîchissement.
+// Vrai correctif = base glissante ≥ 6 mois publiée par le refiner (#212).
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
 function pctile(v: number, cal: [number, number][]): number {
