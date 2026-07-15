@@ -134,11 +134,11 @@ const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 // percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
 // 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
 // conv=14→p50, 25→p63, 50→p80, 75→p93.
-// MàJ 2026-07-14 : l'indice objet #211 est désormais publié, mais uniquement sur
-// la fenêtre courte (~3 jours) du JSON. Trois jours ne font pas une « habitude » :
-// on GARDE la calibration prototype 13 mois plutôt que de figer un instantané
-// instable (trop peu de blocs) qui dériverait à chaque rafraîchissement.
-// Vrai correctif = base glissante ≥ 6 mois publiée par le refiner (#212).
+// Depuis cette PR, CAL_CONV n'est plus que le REPLI : quand la calibration
+// glissante publiée (salience_calibration.json) est présente, la jauge se cale
+// sur sa vraie distribution (cf. bloc « Calibration glissante publiée » ci-dessous
+// et calConvFrom). Le prototype 13 mois reste le défaut tant que le fichier
+// manque ou qu'une métrique est absente. Suivi refiner = aws-refiners#212.
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -150,6 +150,56 @@ function pctile(v: number, cal: [number, number][]): number {
     }
   }
   return 100;
+}
+
+// ── Calibration glissante publiée (suivi aws-refiners#212) ────────────────────────────────
+// scripts/fetch_data.R publie public/data/salience_calibration.json à chaque
+// refresh : percentiles de score_qc / score_roc / interval_convergence_score sur
+// une fenêtre glissante (≈ 12 mois). Quand il est présent, on en dérive les
+// seuils de saillance (Module 1) et la calibration de la jauge (Module 2) — sinon
+// on retombe silencieusement sur les valeurs codées ci-dessous. Donne enfin un
+// « plus/moins que d'habitude » ancré sur une vraie distribution (demande Yannick).
+type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; p50: number; p80: number; p95: number };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric } };
+
+const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
+
+const loadCalibration = cache(async (): Promise<Calibration | null> => {
+  try {
+    return JSON.parse(await fs.readFile(CALIBRATION_PATH, "utf8")) as Calibration;
+  } catch {
+    return null; // fichier absent (pas encore publié) → repli sur les seuils codés
+  }
+});
+
+// Seuils de saillance depuis les percentiles publiés (p5→faible … p95→extreme).
+// null si la métrique manque ou n'est pas monotone croissante (repli).
+function salThresholdsFrom(m: CalMetric | undefined): typeof SAL_QC_THRESHOLDS | null {
+  if (!m) return null;
+  const vals = [m.p5, m.p20, m.p50, m.p80, m.p95];
+  if (!vals.every((v) => typeof v === "number" && Number.isFinite(v))) return null;
+  for (let i = 1; i < vals.length; i++) if (!(vals[i] >= vals[i - 1])) return null;
+  return { faible: m.p5, moyenne: m.p20, eleve: m.p50, tresEleve: m.p80, extreme: m.p95 };
+}
+
+// Table de calibration de la jauge depuis les percentiles de convergence.
+// Construit des ancres (valeur → percentile) STRICTEMENT croissantes : le bas de
+// la distribution est souvent dégénéré (beaucoup de blocs à 0 → p5=p20=0), on
+// écrase alors ces ex æquo dans l'ancre de départ [0,0]. null si trop plat.
+function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
+  if (!m) return null;
+  const pts: [number, number][] = [[m.p5, 5], [m.p20, 20], [m.p50, 50], [m.p80, 80], [m.p95, 95]];
+  const anchors: [number, number][] = [[0, 0]];
+  for (const [x, y] of pts) {
+    if (typeof x !== "number" || !Number.isFinite(x)) continue;
+    const cx = Math.max(0, Math.min(100, x));
+    const last = anchors[anchors.length - 1];
+    // cx < 100 : un percentile qui plafonne à 100 (ex. p95 = 100) ne doit pas
+    // occuper l'ancre terminale, sinon pctile(100) rendrait 95 au lieu de 100.
+    if (cx > last[0] && cx < 100 && y > last[1]) anchors.push([cx, y]);
+  }
+  anchors.push([100, 100]); // ancre terminale systématique : l'échelle atteint p100
+  return anchors.length >= 3 ? anchors : null; // besoin d'≥ 1 point interne
 }
 
 // Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
@@ -331,7 +381,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
 // autant qu'un bloc chargé. Comme le radar et la Une, le grand chiffre couvre
 // donc les 24 h, plus un seul bloc de 4 h (décision d'équipe 2026-07-14, Y3).
 // null si aucun bloc de la fenêtre n'a d'indice publié → repli en aval.
-// PROVISOIRE : la convergence glissante « officielle » viendra du refiner (#212).
+// PROVISOIRE : la convergence glissante « officielle » viendra du refiner (aws-refiners#212).
 function windowConvergence(allEvents: RawEvent[]): number | null {
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
@@ -359,7 +409,7 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
   return den > 0 ? num / den : plainNum / plainCount;
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null): SolitudeData {
+function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV, convCalibrated = false): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -377,7 +427,7 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     convPct = total > 0 ? Math.round(100 - (excl / total) * 100) : 0;
   }
   const divPct = Math.max(0, Math.min(100, 100 - convPct));
-  const relPct = Math.round(pctile(convPct, CAL_CONV));
+  const relPct = Math.round(pctile(convPct, calConv));
   const mode = convMode(convPct);
   const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
 
@@ -438,7 +488,7 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     scoreValue: convPct < 50 ? divPct : convPct,
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
-    relPct,
+    relPct, convCalibrated,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -468,17 +518,17 @@ const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, ex
 // DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
 // compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
-function saillanceTierFromScore(scoreQc: number | null): { label: string; cls: string; rank: number; hint: string } {
+function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS): { label: string; cls: string; rank: number; hint: string } {
   const s = scoreQc ?? 0;
-  if (s >= SAL_QC_THRESHOLDS.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
-  if (s >= SAL_QC_THRESHOLDS.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
-  if (s >= SAL_QC_THRESHOLDS.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
+  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
+  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
+  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
   // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
   // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
   // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
   // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
-  if (s >= SAL_QC_THRESHOLDS.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  if (s >= SAL_QC_THRESHOLDS.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
   return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
 }
 
@@ -656,6 +706,10 @@ export type SolitudeData = {
   /** Percentile de convergence dans la distribution des blocs (position de la
    *  jauge « plus divergent / habituel / plus convergent »). */
   relPct: number;
+  /** true si la jauge est calibrée sur la fenêtre glissante publiée
+   *  (salience_calibration.json), false si repli sur les seuils codés. Pilote le
+   *  libellé de l'infobulle (« douze derniers mois » vs générique). */
+  convCalibrated: boolean;
   /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
   coverageQcInCan: number | null;
   coverageCanInQc: number | null;
@@ -769,6 +823,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // heures, classées par saillance QC CUMULÉE (sumQc), depuis la MÊME liste que
   // le radar → les deux modules montrent les mêmes histoires. Filtre : au moins
   // un média QC a couvert l'histoire sur la fenêtre.
+  // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
+  // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
+  const calibration = await loadCalibration();
+  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  const calConvPublished = calConvFrom(calibration?.metrics?.convergence);
+  const calConv = calConvPublished ?? CAL_CONV;
+
   const stories = storiesFrom24h(unique);
   const qcStories = stories
     .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
@@ -779,7 +840,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
     // Pastille de saillance sur le PIC 24 h : même échelle que le score de bloc
     // (c'est un score_qc), donc les seuils SAL_QC_THRESHOLDS restent valides.
-    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc);
+    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;
@@ -827,7 +888,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   });
 
   const conv24h = windowConvergence(unique);
-  const solitudes = buildSolitudes(latest, stories, conv24h);
+  const solitudes = buildSolitudes(latest, stories, conv24h, calConv, calConvPublished !== null);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -1015,6 +1076,9 @@ export const __test__ = {
   buildSolitudes,
   storiesFrom24h,
   windowConvergence,
+  salThresholdsFrom,
+  calConvFrom,
+  SAL_QC_THRESHOLDS,
   blockKey,
   titleTokens,
   sameStory,
