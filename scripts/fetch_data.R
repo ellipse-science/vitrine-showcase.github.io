@@ -324,10 +324,13 @@ calibration_event_convergence <- function(conn, cut_date) {
     df <- as.data.frame(DBI::dbGetQuery(conn, sql))
 
     num <- function(x) suppressWarnings(as.numeric(x))
-    # Mêmes 2 filtres que loadHeadlineEvents (frontend, L817-824) AVANT toute
-    # agrégation : (1) dédup par event_id en préférant la ligne target_region=="QC" ;
-    # (2) exclusion des Unes américaines (country_id=="USA"). Sans eux la médiane est
-    # sur-estimée (39 % vs 28 % réel).
+    # Mêmes filtres que le frontend AVANT toute agrégation, pour une distribution
+    # comparable (sans eux la médiane est sur-estimée, ~39 % vs 28 %) :
+    #  (1) dédup par event_id en préférant la ligne target_region=="QC" et
+    #  (2) exclusion des Unes américaines (country_id=="USA") — comme la dédup de
+    #      loadHeadlineEvents (byId + filter country_id !== "USA") ;
+    #  (3) exclusion des lignes sans titre — comme storiesFrom24h qui saute
+    #      `if (!e.title) continue` avant d'agréger une histoire.
     df <- df %>%
       mutate(qc_pref = ifelse(!is.na(target_region) & target_region == "QC", 0L, 1L)) %>%
       arrange(event_id, qc_pref) %>%
@@ -341,9 +344,14 @@ calibration_event_convergence <- function(conn, cut_date) {
         # score_roc publié (refiner #211) sinon repli par soustraction, comme
         # rocScore côté frontend : max(0, saillance - QC - US).
         roc = ifelse(is.na(num(score_roc)), pmax(0, sal - qc - us), num(score_roc)),
+        # Zero-pad de l'heure de début du bloc pour un tri lexical correct.
+        # NB : sprintf("%02s", ...) NE zero-pad PAS en R (le flag 0 est ignoré
+        # pour %s → " 4"), ce qui casserait l'ordre des blocs. On parse l'heure en
+        # entier et on utilise %02d.
         block = paste0(date_utc, "T",
-                       sprintf("%02s", sub("-.*$", "",
-                               ifelse(is.na(time_interval_utc), "", time_interval_utc)))),
+                       sprintf("%02d", suppressWarnings(as.integer(
+                               sub("-.*$", "",
+                                   ifelse(is.na(time_interval_utc), "", time_interval_utc)))))),
         # Clé d'histoire = storyline_id ?? event_label ?? event_id (frontend).
         story = dplyr::coalesce(
           ifelse(storyline_id == "", NA, storyline_id),
@@ -351,17 +359,26 @@ calibration_event_convergence <- function(conn, cut_date) {
           event_id))
     if (nrow(df) == 0) return(NULL)
 
-    # Convergence event-level d'UNE fenêtre (ensemble de blocs).
+    # Pré-agrégation UNE seule fois par (block, story) : la saillance QC/ROC de
+    # chaque histoire dans chaque bloc. Le rolling 24 h se fait ensuite sur cette
+    # table réduite (au lieu de re-grouper tout `df` à chaque fenêtre → évitait
+    # un coût O(n_fenêtres × n_lignes) et un risque de timeout CI sur 365 j).
+    by_bs <- df %>% group_by(block, story) %>%
+      summarise(sumQc = sum(qc), sumRoc = sum(roc), .groups = "drop") %>%
+      filter(sumQc + sumRoc > 0)
+
+    # Convergence event-level d'UNE fenêtre : somme par histoire sur les 6 blocs,
+    # puis moyenne des deux parts d'attention bilatérales. `rowsum` (base R) est
+    # bien plus léger qu'un group_by dplyr répété ~2 000 fois.
     window_conv <- function(win_blocks) {
-      w <- df[df$block %in% win_blocks, , drop = FALSE]
+      w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
       if (nrow(w) == 0) return(NA_real_)
-      agg <- w %>% group_by(story) %>%
-        summarise(sumQc = sum(qc), sumRoc = sum(roc), .groups = "drop") %>%
-        filter(sumQc + sumRoc > 0)
-      totalQc <- sum(agg$sumQc); totalRoc <- sum(agg$sumRoc)
+      qc  <- rowsum(w$sumQc,  w$story)[, 1]
+      roc <- rowsum(w$sumRoc, w$story)[, 1]
+      totalQc <- sum(qc); totalRoc <- sum(roc)
       if (totalQc <= 0 || totalRoc <= 0) return(NA_real_)
-      bi <- agg %>% filter(sumQc > 0 & sumRoc > 0)
-      round(((sum(bi$sumQc) / totalQc) + (sum(bi$sumRoc) / totalRoc)) / 2 * 100)
+      bi <- qc > 0 & roc > 0
+      round(((sum(qc[bi]) / totalQc) + (sum(roc[bi]) / totalRoc)) / 2 * 100)
     }
 
     # Une lecture « as-of » par bloc : fenêtre = ce bloc + les 5 précédents (6 blocs
