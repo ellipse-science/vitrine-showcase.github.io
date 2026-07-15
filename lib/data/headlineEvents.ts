@@ -137,6 +137,24 @@ const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 // le refiner #211 déployé, puis remplacer par la publication glissante (#212).
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
+// Repère « habituel » de la jauge = convergence EVENT-level MÉDIANE (là où se
+// place le marqueur en temps normal). ATTENTION : c'est la médiane du score au
+// niveau HISTOIRE (windowEventConvergence), PAS la métrique `convergence` de la
+// calibration glissante, qui reste l'ancienne convergence OBJET (interval_convergence_score,
+// médiane ≈ 3 %). Mesuré le 2026-07-15 en rejouant le VRAI code du loader
+// (dédup par event_id avec préférence QC + filtre country_id≠USA, puis
+// storiesFrom24h + windowEventConvergence) sur chaque fenêtre glissante 24 h de
+// l'historique DEV (headline_events_4h, 2026-05-14 → 2026-07-15, 323 fenêtres) :
+// p50 = 31 % (p20=16, p80=42 ; fenêtre la plus récente = 37). NB : sans la dédup
+// event_id ni le filtre USA, on obtient 41 % — c'est ce que la PROD affiche
+// aujourd'hui (le JSON prod n'a pas encore score_roc/score_us, donc roc=saillance−qc
+// inclut les USA, bug #237/#211) ; le marqueur live s'alignera sur l'échelle
+// « propre » quand #211 sera déployé. PROVISOIRE jusqu'à ce que la calibration
+// glissante publie `event_convergence` (suivi backend) : dès qu'elle existe, on
+// prend son p50 (cf. loader) ; ce p50 doit être calculé AVEC la dédup + le filtre
+// USA, sinon il vaudra ~41 au lieu de ~31.
+const HABITUAL_EVENT_CONV = 31;
+
 function pctile(v: number, cal: [number, number][]): number {
   if (!(v > 0)) return 0;
   for (let i = 1; i < cal.length; i++) {
@@ -156,7 +174,12 @@ function pctile(v: number, cal: [number, number][]): number {
 // on retombe silencieusement sur les valeurs codées ci-dessous. Donne enfin un
 // « plus/moins que d'habitude » ancré sur une vraie distribution (demande Yannick).
 type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; p50: number; p80: number; p95: number };
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric } };
+// `convergence` = convergence OBJET (interval_convergence_score) — calibre la
+// table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
+// HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
+// quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
+// « habituel » (suivi backend).
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -411,7 +434,7 @@ function windowEventConvergence(stories: Story[]): number | null {
   return Math.round(((biQc / totalQc) + (biRoc / totalRoc)) / 2 * 100);
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV): SolitudeData {
+function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV, habitualConvPct: number = HABITUAL_EVENT_CONV): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -495,6 +518,7 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
     relPct,
+    habitualConvPct,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -715,6 +739,10 @@ export type SolitudeData = {
   /** Percentile de convergence dans la distribution des blocs (position de la
    *  jauge « plus divergent / habituel / plus convergent »). */
   relPct: number;
+  /** Position du repère « habituel » sur l'échelle absolue (= convergence
+   *  event-level médiane, en %). Le marqueur live est à `convPct` ; sa position
+   *  vs `habitualConvPct` dit si aujourd'hui est plus/moins convergent que d'ordinaire. */
+  habitualConvPct: number;
   /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
   coverageQcInCan: number | null;
   coverageCanInQc: number | null;
@@ -833,6 +861,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const calibration = await loadCalibration();
   const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
   const calConv = calConvFrom(calibration?.metrics?.convergence) ?? CAL_CONV;
+  // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
+  // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
+  const evConvP50 = calibration?.metrics?.event_convergence?.p50;
+  const habitualConvPct =
+    typeof evConvP50 === "number" && Number.isFinite(evConvP50)
+      ? Math.round(Math.max(0, Math.min(100, evConvP50)))
+      : HABITUAL_EVENT_CONV;
 
   const stories = storiesFrom24h(unique);
   const qcStories = stories
@@ -894,7 +929,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // PROTOTYPE : score = convergence au niveau HISTOIRE (windowEventConvergence)
   // au lieu du cosinus-objet (windowConvergence). Le reste du module est inchangé.
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, calConv);
+  const solitudes = buildSolitudes(latest, stories, conv24h, calConv, habitualConvPct);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {

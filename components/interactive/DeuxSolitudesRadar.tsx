@@ -290,21 +290,22 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             <span className="info-bubble">{s.edito}</span>
           </span>
         </span>
-        {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel (~25 %)
+        {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel
             → 100 % convergence (droite). Marqueur = convergence réelle du bloc.
-            Le repère « habituel » = médiane des derniers mois (provisoire). */}
+            Le repère « habituel » = convergence event-level médiane des derniers
+            mois (s.habitualConvPct), mesurée sur la fenêtre glissante. */}
         <div className="rel-strip" aria-hidden>
           <span className="lbl l">divergent</span>
           <span className="lbl r">convergent</span>
           <div className="track" />
           <div
             className="hab"
-            style={{ left: "25%" }}
-            title="« Habituel » = la convergence médiane des derniers mois (~25 %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle."
+            style={{ left: `${s.habitualConvPct}%` }}
+            title={`« Habituel » = la convergence médiane des derniers mois (~${s.habitualConvPct} %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle.`}
           />
           <div className="marker" style={{ left: `${s.convPct}%` }} />
           <span className="grad g0">100&nbsp;%</span>
-          <span className="grad gm" style={{ left: "25%" }}>habituel</span>
+          <span className="grad gm" style={{ left: `${s.habitualConvPct}%` }}>habituel</span>
           <span className="grad g1">100&nbsp;%</span>
         </div>
       </div>

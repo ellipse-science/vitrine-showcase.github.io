@@ -356,4 +356,13 @@ describe("buildSolitudes", () => {
     const s = sol([row], [row]);
     expect(s.axes[0].side).toBe("qc");
   });
+
+  it("repère « habituel » = médiane event-level (défaut mesuré, sinon param calibré)", () => {
+    const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
+    // Défaut = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV = 31 %).
+    expect(sol([row], [row]).habitualConvPct).toBe(31);
+    // Câblé : quand la calibration glissante publiera event_convergence.p50, il prime.
+    const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, CAL_CONV, 44);
+    expect(calibré.habitualConvPct).toBe(44);
+  });
 });
