@@ -156,6 +156,13 @@ describe("calConvFrom (#212 — jauge depuis percentiles de convergence)", () =>
     expect(calConvFrom({ p5: 0, p20: 0, p50: 0, p80: 0, p95: 0 })).toBeNull();
     expect(calConvFrom(undefined)).toBeNull();
   });
+  it("un percentile qui plafonne à 100 ne vole pas l'ancre terminale → pctile(100)=100", () => {
+    // p95 = 100 : sans le garde cx<100, l'ancre serait [100,95] et pctile(100)
+    // rendrait 95. On garantit [100,100] terminal.
+    const anchors = calConvFrom({ p5: 0, p20: 0, p50: 40, p80: 90, p95: 100 });
+    expect(anchors![anchors!.length - 1]).toEqual([100, 100]);
+    expect(pctile(100, anchors!)).toBe(100);
+  });
 });
 
 describe("sameStory (dédup cross-langue, stopgap #213)", () => {
