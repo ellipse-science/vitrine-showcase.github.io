@@ -124,6 +124,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {[1, 0.75, 0.5, 0.25].map((f) => (
             <polygon key={f} className="radar-grid" points={ringPts(f)} />
           ))}
+          {/* Labels % pâles sur l'axe vertical du haut : le rayon = part
+              d'attention 24h de la région (le bord = axisScale %). */}
+          {[0.25, 0.5, 0.75, 1].map((f) => (
+            <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
+              {Math.round(s.axisScale * f)}&nbsp;%
+            </text>
+          ))}
           {axes.map((_, i) => {
             const [x, y] = pt(i, 100);
             return <line key={i} className="radar-spoke" x1={CX} y1={CY} x2={x.toFixed(1)} y2={y.toFixed(1)} />;
