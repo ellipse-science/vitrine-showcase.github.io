@@ -1644,7 +1644,7 @@
   .solitudes .info-dot:hover .info-bubble, .solitudes .info-dot:focus .info-bubble { opacity: 1; }
 
   /* Échelle absolue graduée : rouge (100 % divergence) → bleu (100 % convergence),
-     repère « habituel » sous la ligne, marqueur = convergence réelle du bloc. */
+     repère « habituel » sous la ligne, marqueur = convergence sur la fenêtre 24 h. */
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 58px; margin: 26px auto 0; }
   .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--rule) 45%, var(--bleu)); }
   .solitudes .rel-strip .hab { position: absolute; top: 25px; width: 1px; height: 13px; background: rgba(28,25,23,0.42); }

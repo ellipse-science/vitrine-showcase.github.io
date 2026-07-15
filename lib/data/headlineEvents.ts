@@ -434,7 +434,7 @@ function windowEventConvergence(stories: Story[]): number | null {
   return Math.round(((biQc / totalQc) + (biRoc / totalRoc)) / 2 * 100);
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV, habitualConvPct: number = HABITUAL_EVENT_CONV): SolitudeData {
+function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, habitualConvPct: number = HABITUAL_EVENT_CONV): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -452,7 +452,13 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     convPct = total > 0 ? Math.round(100 - (excl / total) * 100) : 0;
   }
   const divPct = Math.max(0, Math.min(100, 100 - convPct));
-  const relPct = Math.round(pctile(convPct, calConv));
+  // NB : plus de `relPct`/`calConv` ici. La jauge est passée à une échelle
+  // ABSOLUE (marqueur = convPct, repère = habitualConvPct), donc le percentile
+  // pctile(convPct, calConv) n'a plus lieu d'être : calConv est calibré sur la
+  // convergence OBJET (interval_convergence_score), alors que convPct vient
+  // désormais de windowEventConvergence (niveau HISTOIRE) — les mélanger donnait
+  // une position fausse. calConvFrom reste pour la calibration Module 2 « objet »
+  // si on la ré-expose un jour ; la saillance (Module 1) passe par salThresholds.
   const mode = convMode(convPct);
   const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
 
@@ -517,7 +523,6 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     scoreValue: convPct < 50 ? divPct : convPct,
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
-    relPct,
     habitualConvPct,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
@@ -736,9 +741,6 @@ export type SolitudeData = {
   /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
   modeWord: string;
   modeCls: string;
-  /** Percentile de convergence dans la distribution des blocs (position de la
-   *  jauge « plus divergent / habituel / plus convergent »). */
-  relPct: number;
   /** Position du repère « habituel » sur l'échelle absolue (= convergence
    *  event-level médiane, en %). Le marqueur live est à `convPct` ; sa position
    *  vs `habitualConvPct` dit si aujourd'hui est plus/moins convergent que d'ordinaire. */
@@ -860,7 +862,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
   const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
-  const calConv = calConvFrom(calibration?.metrics?.convergence) ?? CAL_CONV;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -929,7 +930,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // PROTOTYPE : score = convergence au niveau HISTOIRE (windowEventConvergence)
   // au lieu du cosinus-objet (windowConvergence). Le reste du module est inchangé.
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, calConv, habitualConvPct);
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {

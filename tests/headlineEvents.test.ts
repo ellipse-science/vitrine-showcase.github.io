@@ -362,7 +362,7 @@ describe("buildSolitudes", () => {
     // Défaut = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV = 31 %).
     expect(sol([row], [row]).habitualConvPct).toBe(31);
     // Câblé : quand la calibration glissante publiera event_convergence.p50, il prime.
-    const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, CAL_CONV, 44);
+    const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
   });
 });

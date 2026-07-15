@@ -61,9 +61,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
   // Sur écran étroit, le radar garde une largeur plancher (CSS) et son conteneur
   // devient scrollable horizontalement. Le radar étant symétrique (QC à gauche,
-  // CAN à droite), on centre le défilement au montage + au resize pour que les
-  // deux solitudes soient équidistantes du regard, plutôt que de n'en montrer
-  // qu'une par défaut. Aucun effet quand tout tient à l'écran (extra <= 0).
+  // CAN à droite), on centre le défilement pour que les deux solitudes soient
+  // équidistantes du regard, plutôt que de n'en montrer qu'une par défaut. Aucun
+  // effet quand tout tient à l'écran (extra <= 0). Un ResizeObserver sur le
+  // conteneur couvre montage, rotation d'écran et tout relayout — plus fiable que
+  // window.resize (qui rate certains changements de dimension du conteneur seul).
   const radarRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = radarRef.current;
@@ -73,8 +75,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       if (extra > 0) el.scrollLeft = extra / 2;
     };
     center();
-    window.addEventListener("resize", center);
-    return () => window.removeEventListener("resize", center);
+    const ro = new ResizeObserver(center);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   const axes = s.axes;
@@ -309,9 +312,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           </span>
         </span>
         {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel
-            → 100 % convergence (droite). Marqueur = convergence réelle du bloc.
-            Le repère « habituel » = convergence event-level médiane des derniers
-            mois (s.habitualConvPct), mesurée sur la fenêtre glissante. */}
+            → 100 % convergence (droite). Marqueur = convergence sur la fenêtre
+            glissante 24 h (s.convPct), pas un bloc 4 h. Le repère « habituel »
+            = convergence event-level médiane des derniers mois (s.habitualConvPct). */}
         <div className="rel-strip" aria-hidden>
           <span className="lbl l">divergent</span>
           <span className="lbl r">convergent</span>

@@ -23,7 +23,10 @@ export async function DeuxSolitudesSection() {
       <section className="solitudes">
         <div className="sol-title-row">
           <h3 className="sol-title">Deux solitudes&nbsp;?</h3>
-          <ShareButton title={`Deux solitudes — ${s.divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
+          {/* Le partage suit la sémantique du grand chiffre (scoreValue/verb) :
+              sur une journée convergente il annonce la convergence, pas une
+              divergence figée. */}
+          <ShareButton title={`Deux solitudes — ${s.scoreValue} % de ${s.verb} aujourd'hui`} anchor="deux-solitudes" />
         </div>
         <div className="sol-rule" aria-hidden />
         <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise<br />et canadienne des 24 dernières heures.</p>
