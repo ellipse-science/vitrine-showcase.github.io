@@ -247,6 +247,19 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     const st = storiesFrom24h(rows as never);
     expect(st.some((s: { label: string }) => s.label === "Vieux")).toBe(false);
   });
+  it("urlByMedia garde l'URL du bloc le plus récent, quel que soit l'ordre du JSON", () => {
+    // JSON ordonné du plus ANCIEN au plus récent : sans tri interne, le
+    // « premier URL conservé » serait le vieux.
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 5, time_interval_utc: "12-16",
+        articles: JSON.stringify([{ media_id: "LED", url: "https://led/vieux" }]) }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 5, time_interval_utc: "16-20",
+        articles: JSON.stringify([{ media_id: "LED", url: "https://led/frais" }]) }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    expect(st[0].urlByMedia["LED"]).toBe("https://led/frais");
+    expect(st[0].repKey).toBe("2026-07-13T16"); // rep = bloc le plus récent aussi
+  });
 });
 
 describe("buildSolitudes", () => {
