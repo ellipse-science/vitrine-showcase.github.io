@@ -10,7 +10,10 @@ import type { SolitudeData } from "@/lib/data/headlineEvents";
 // aucune donnée n'est chargée ici, elle arrive en props depuis le server
 // component DeuxSolitudesSection.
 
-const W = 640, H = 470, CX = W / 2, CY = H / 2, R = 150, R0 = 6;
+const W = 840, H = 680, CX = W / 2, CY = H / 2, R = 160, R0 = 6;
+// Distance radiale des libellés : plus loin sur les côtés (place horizontale),
+// plus près en haut/bas (sinon le bloc titre déborde verticalement).
+const labelR = (cosA: number) => (Math.abs(cosA) < 0.35 ? R + 58 : R + 152);
 
 // Secteur du balayage radar (~48°, en tête vers le haut). Géométrie statique ;
 // la rotation est en CSS.
@@ -36,15 +39,19 @@ function Fleur() {
   );
 }
 
-// Coupe un libellé long en 2 lignes au séparateur le plus proche du milieu.
+// Coupe un titre en lignes étroites (~26 caractères) : 2-3 lignes centrées,
+// comme la maquette, pour que le bloc ne déborde pas sur le radar.
 function wrapLabel(s: string): string[] {
-  if (s.length <= 19) return [s];
-  const mid = Math.floor(s.length / 2);
-  let best = -1;
-  for (let j = 0; j < s.length; j++) {
-    if (s[j] === " " && (best < 0 || Math.abs(j - mid) < Math.abs(best - mid))) best = j;
+  const words = s.split(" ");
+  const maxLen = 26;
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if (cur && (cur + " " + w).length > maxLen) { lines.push(cur); cur = w; }
+    else cur = cur ? cur + " " + w : w;
   }
-  return best < 0 ? [s] : [s.slice(0, best), s.slice(best + 1)];
+  if (cur) lines.push(cur);
+  return lines;
 }
 
 type Tip = { x: number; y: number; side: "qc" | "can"; k: string; body: string };
@@ -80,20 +87,16 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
-  const diverge = s.convPct < 50;
 
   return (
     <div className="sol-body">
-      {/* Axe fleur/érable : les symboles se rapprochent quand ça converge, les
-          flèches montrent le mouvement */}
+      {/* Axe fleur/érable : les symboles se rapprochent quand ça converge et
+          s'éloignent quand ça diverge — la distance encode la convergence. */}
       <div className="sol-viz">
         <div className="sol-axis" />
-        <span className={`sol-arrow qc ${diverge ? "dL" : "dR"}`} style={{ left: `calc(${qp}% - 54px)` }} aria-hidden>
-          {diverge ? "←" : "→"}
-        </span>
-        <span className={`sol-arrow can ${diverge ? "dR" : "dL"}`} style={{ left: `calc(${rp}% + 54px)` }} aria-hidden>
-          {diverge ? "→" : "←"}
-        </span>
+        <span className="sol-arrowhead left" aria-hidden />
+        <span className="sol-axis-tick" aria-hidden />
+        <span className="sol-arrowhead right" aria-hidden />
         <div className="sol-symbol qc" style={{ left: `${qp}%` }}>
           <span className="glyph fleur" aria-label="Québec"><Fleur /></span>
           <span className="caption">Québec</span>
@@ -135,6 +138,31 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const [x, y] = pt(i, 100);
             return <line key={i} className="radar-spoke" x1={CX} y1={CY} x2={x.toFixed(1)} y2={y.toFixed(1)} />;
           })}
+          {/* Leaders en COUDE (2 segments) pointillés colorés : du point de données,
+              une diagonale puis un court segment horizontal qui rentre dans le libellé,
+              avec un point au coude et au bout. Axes haut/bas = ligne droite. */}
+          {axes.map((a, i) => {
+            const mv = Math.max(vals[i].vqc, vals[i].vcan);
+            if (!(mv > 0)) return null;
+            const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+            const cosA = Math.cos(ang), sinA = Math.sin(ang);
+            const [dx, dy] = pt(i, mv);
+            const or = labelR(cosA) - 42;              // arrivée, près du libellé (radial)
+            const e2x = CX + or * cosA, e2y = CY + or * sinA;
+            const mid = Math.abs(cosA) < 0.35;         // axes du haut / du bas
+            const dir = cosA >= 0 ? 1 : -1;
+            const e1x = e2x - dir * 30, e1y = e2y;     // coude : 30 px horizontaux avant le bout
+            const pts = mid
+              ? `${dx.toFixed(1)},${dy.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`
+              : `${dx.toFixed(1)},${dy.toFixed(1)} ${e1x.toFixed(1)},${e1y.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`;
+            return (
+              <g key={`ldr-${i}`} className={`radar-leader side-${a.side}`}>
+                <polyline points={pts} />
+                {!mid && <circle className="ldr-dot" cx={e1x.toFixed(1)} cy={e1y.toFixed(1)} r={2.2} />}
+                <circle className="ldr-dot" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={2.8} />
+              </g>
+            );
+          })}
           <polygon className="radar-can" points={polyPts("vcan")} />
           <polygon className="radar-qc" points={polyPts("vqc")} />
           {/* Points : bleu = QC, rouge = CAN, survolables (infobulle) */}
@@ -167,46 +195,62 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               );
             }),
           )}
-          {/* Libellés d'événements + badges des médias couvrants */}
+          {/* Libellés d'événements + badges — TOUT centré sur l'axe. Le bloc se
+              place au-dessus du point (axe du haut), en dessous (axe du bas) ou
+              centré verticalement (côtés). */}
           {axes.map((a, i) => {
             const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-            const lx = CX + (R + 15) * Math.cos(ang);
-            const ly = CY + (R + 15) * Math.sin(ang);
-            const anchor = Math.abs(Math.cos(ang)) < 0.35 ? "middle" : Math.cos(ang) > 0 ? "start" : "end";
-            const dyBase = Math.abs(Math.sin(ang)) < 0.35 ? 4 : Math.sin(ang) > 0 ? 12 : -6;
+            const cosA = Math.cos(ang), sinA = Math.sin(ang);
+            const lx = CX + labelR(cosA) * cosA;
+            const ly = CY + labelR(cosA) * sinA;
             const lines = wrapLabel(a.label);
             const strong = Math.max(vals[i].vqc, vals[i].vcan) === maxVal;
             const side = a.side;
-            const BW = 20, CHGAP = 5;
+            const BW = 26, CHGAP = 6, LINE_H = 20, EYE_GAP = 16, TB_GAP = 15;
             const media = a.media;
             const tot = media.length * BW + (media.length - 1) * CHGAP;
-            const rowX = anchor === "middle" ? lx - tot / 2 : anchor === "start" ? lx : lx - tot;
-            const topSide = Math.sin(ang) < -0.35;
-            const labH = (lines.length - 1) * 14;
-            const labY = topSide ? ly + dyBase - (labH + 8 + BW) : ly + dyBase;
-            const rowY = labY + labH + 8;
+            const rowX = lx - tot / 2;                       // rangée de badges centrée
+            const eyeH = a.eyebrow ? EYE_GAP : 0;
+            const titleH = lines.length * LINE_H;
+            const blockH = eyeH + titleH + TB_GAP + 20;      // eyebrow + titres + badges
+            // Haut du bloc selon la position de l'axe.
+            const top = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
+            const eyebrowY = top + 11;
+            const title1Y = top + eyeH + 14;                 // 1re ligne de titre
+            const rowY = title1Y + (lines.length - 1) * LINE_H + TB_GAP;
             return (
               <g key={`lab-${i}`}>
+                {a.eyebrow && (
+                  <text
+                    className={`radar-eyebrow side-${side}`}
+                    x={lx.toFixed(1)}
+                    y={eyebrowY.toFixed(1)}
+                    textAnchor="middle"
+                  >
+                    {a.eyebrow.toUpperCase()}
+                  </text>
+                )}
                 {lines.map((ln, k) => (
                   <text
                     key={k}
                     className={`radar-lab${strong ? " strong" : ""} side-${side}`}
                     x={lx.toFixed(1)}
-                    y={(labY + k * 14).toFixed(1)}
-                    textAnchor={anchor}
+                    y={(title1Y + k * LINE_H).toFixed(1)}
+                    textAnchor="middle"
                   >
                     {ln}
                   </text>
                 ))}
                 {media.map((m, k) => {
                   const cx0 = rowX + k * (BW + CHGAP);
+                  const cxm = cx0 + BW / 2;
                   const inner = (
                     <>
                       <g>
-                        <rect x={cx0.toFixed(1)} y={rowY.toFixed(1)} width={BW} height={BW} rx={2} />
-                        <text x={(cx0 + BW / 2).toFixed(1)} y={(rowY + BW / 2 + 2.8).toFixed(1)}>{m.badge}</text>
+                        <text className="m-code" x={cxm.toFixed(1)} y={(rowY + 11).toFixed(1)} textAnchor="middle">{m.badge}</text>
+                        <line className="m-underline" x1={(cx0 + BW * 0.14).toFixed(1)} y1={(rowY + 16).toFixed(1)} x2={(cx0 + BW * 0.86).toFixed(1)} y2={(rowY + 16).toFixed(1)} />
                       </g>
-                      <text className="m-name" x={(cx0 + BW / 2).toFixed(1)} y={(rowY + BW + 13).toFixed(1)} textAnchor="middle">
+                      <text className="m-name" x={cxm.toFixed(1)} y={(rowY + 30).toFixed(1)} textAnchor="middle">
                         {m.name.toUpperCase()}
                       </text>
                     </>
@@ -246,18 +290,22 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             <span className="info-bubble">{s.edito}</span>
           </span>
         </span>
+        {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel (~25 %)
+            → 100 % convergence (droite). Marqueur = convergence réelle du bloc.
+            Le repère « habituel » = médiane des derniers mois (provisoire). */}
         <div className="rel-strip" aria-hidden>
-          <span className="lbl l">plus divergent</span>
-          <span
-            className="lbl m"
-            title="Position de ces 24 h dans la distribution des douze derniers mois (percentiles sur une fenêtre glissante). Le centre marque un niveau médian, « habituel ». La divergence reste la règle, même à un niveau habituel."
-          >
-            habituel
-          </span>
-          <span className="lbl r">plus convergent</span>
+          <span className="lbl l">divergent</span>
+          <span className="lbl r">convergent</span>
           <div className="track" />
-          <div className="tick" style={{ left: "50%" }} />
-          <div className="marker" style={{ left: `${s.relPct}%` }} />
+          <div
+            className="hab"
+            style={{ left: "25%" }}
+            title="« Habituel » = la convergence médiane des derniers mois (~25 %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle."
+          />
+          <div className="marker" style={{ left: `${s.convPct}%` }} />
+          <span className="grad g0">100&nbsp;%</span>
+          <span className="grad gm" style={{ left: "25%" }}>habituel</span>
+          <span className="grad g1">100&nbsp;%</span>
         </div>
       </div>
 

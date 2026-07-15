@@ -396,6 +396,21 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
   return den > 0 ? num / den : plainNum / plainCount;
 }
 
+// PROTOTYPE — convergence au niveau HISTOIRE (au lieu du cosinus-objet).
+// « De combien de l'attention des deux régions va aux MÊMES histoires ? »
+// Une histoire est bilatérale si elle a de la saillance des deux côtés
+// (sumQc>0 ET sumRoc>0) sur la fenêtre 24 h. Convergence = moyenne des deux
+// parts (QC couvert par CAN, CAN couvert par QC). null si un côté est vide.
+function windowEventConvergence(stories: Story[]): number | null {
+  const totalQc = stories.reduce((s, a) => s + a.sumQc, 0);
+  const totalRoc = stories.reduce((s, a) => s + a.sumRoc, 0);
+  if (totalQc <= 0 || totalRoc <= 0) return null;
+  const bi = stories.filter((a) => a.sumQc > 0 && a.sumRoc > 0);
+  const biQc = bi.reduce((s, a) => s + a.sumQc, 0);
+  const biRoc = bi.reduce((s, a) => s + a.sumRoc, 0);
+  return Math.round(((biQc / totalQc) + (biRoc / totalRoc)) / 2 * 100);
+}
+
 function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
@@ -459,6 +474,7 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     const qs = qcShareOf(a), cs = canShareOf(a);
     return {
       label: a.label,
+      eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
       qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
       canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
       qcShare: Math.round(qs),
@@ -472,6 +488,9 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 
   return {
     divPct, convPct,
+    // Le grand chiffre = le camp qui gagne (divergence si divPct l'emporte, sinon
+    // convergence). Cohérent avec les flèches/logos et avec l'échelle absolue : le
+    // marqueur à gauche du milieu = divergent, sa position vs « habituel » nuance.
     scoreValue: convPct < 50 ? divPct : convPct,
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
@@ -663,6 +682,9 @@ export type UneEvent = {
 export type SolitudeAxis = {
   /** Titre FR de l'histoire (storyline). */
   label: string;
+  /** Étiquette « rubrique » au-dessus du titre : catégorie d'enjeu (FR, toujours
+   *  exacte). null si l'enjeu est inconnu. */
+  eyebrow: string | null;
   /** Valeur radiale de dessin (0-100) : part de l'attention 24h de la région
    *  rapportée au sujet le plus couvert de cette région (le plus gros sujet du
    *  jour touche le bord). Rend les deux formes comparables malgré l'écart
@@ -869,7 +891,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     };
   });
 
-  const conv24h = windowConvergence(unique);
+  // PROTOTYPE : score = convergence au niveau HISTOIRE (windowEventConvergence)
+  // au lieu du cosinus-objet (windowConvergence). Le reste du module est inchangé.
+  const conv24h = windowEventConvergence(stories);
   const solitudes = buildSolitudes(latest, stories, conv24h, calConv);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
@@ -1058,6 +1082,7 @@ export const __test__ = {
   buildSolitudes,
   storiesFrom24h,
   windowConvergence,
+  windowEventConvergence,
   salThresholdsFrom,
   calConvFrom,
   SAL_QC_THRESHOLDS,

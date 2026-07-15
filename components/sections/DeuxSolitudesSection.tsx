@@ -25,7 +25,8 @@ export async function DeuxSolitudesSection() {
           <h3 className="sol-title">Deux solitudes&nbsp;?</h3>
           <ShareButton title={`Deux solitudes — ${s.divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
         </div>
-        <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise et canadienne.</p>
+        <div className="sol-rule" aria-hidden />
+        <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise<br />et canadienne des 24 dernières heures.</p>
         <DeuxSolitudesRadar solitudes={s} />
       </section>
       {/* Hors du cadre, comme la Une des Unes (uniformité inter-modules). */}

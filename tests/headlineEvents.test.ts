@@ -131,7 +131,26 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+
+describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
+  it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
+    // Histoire A bilatérale (qc 60 / roc 40) ; histoire B QC-only (qc 40 / roc 0).
+    // couverture_qc = 60/100 = 60 % ; couverture_roc = 40/40 = 100 % → moyenne 80.
+    const stories = [
+      { sumQc: 60, sumRoc: 40 },
+      { sumQc: 40, sumRoc: 0 },
+    ];
+    expect(windowEventConvergence(stories as never)).toBe(80);
+  });
+  it("0 quand aucune histoire n'est couverte des deux côtés", () => {
+    const stories = [{ sumQc: 90, sumRoc: 0 }, { sumQc: 0, sumRoc: 70 }];
+    expect(windowEventConvergence(stories as never)).toBe(0);
+  });
+  it("null si un côté n'a aucune attention", () => {
+    expect(windowEventConvergence([{ sumQc: 10, sumRoc: 0 }] as never)).toBeNull();
+  });
+});
 
 describe("salThresholdsFrom (#212 — seuils saillance depuis percentiles publiés)", () => {
   it("mappe p5/p20/p50/p80/p95 → faible…extreme", () => {
