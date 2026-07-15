@@ -1,12 +1,18 @@
-# Garde-fou : aucun commit attribué à une IA (issue #235).
-# Les commits sont attribués à la personne humaine qui a fait le travail —
-# ni auteur/committer IA, ni trailer « Co-Authored-By » pointant vers une IA.
-# Pourquoi : GitHub crédite les co-auteurs dans le graphe Contributors ;
-# noreply@anthropic.com est rattaché au compte GitHub « claude », qui
-# apparaissait comme 2e contributeur du repo.
-# Le check inspecte les commits de la PR ; il se relance à chaque push
-# (type `synchronize`). Détection par adresse courriel (domaines IA connus),
-# pas par prénom — un humain nommé Claude ne déclenche rien.
+# Garde-fou : aucune IA en PATERNITÉ d'un commit (issue #235).
+# On distingue paternité et provenance :
+#   • PATERNITÉ (bloquée) — auteur/committer IA, ou trailer « Co-Authored-By »
+#     pointant vers une IA. GitHub parse ces signaux comme de la co-signature et
+#     crédite le co-auteur dans le graphe Contributors : noreply@anthropic.com est
+#     rattaché au compte GitHub « claude », qui apparaissait comme 2e contributeur
+#     du repo. Un livrable scientifique n'a pas d'auteur non humain.
+#   • PROVENANCE (permise, encouragée) — trailer « Assisted-by: » / « Generated-with: »
+#     documentant l'outil qui a assisté le travail. GitHub NE le parse PAS comme une
+#     co-signature : le graphe reste propre, l'humain reste seul auteur, et l'assistance
+#     machine est tout de même tracée de façon transparente (cf. AGENTS.md hard rule #8).
+# Ce check ne bloque QUE la paternité — les trailers de provenance passent.
+# Il inspecte les commits de la PR ; il se relance à chaque push (type `synchronize`).
+# Détection par adresse courriel (domaines IA connus), pas par prénom — un humain
+# nommé Claude ne déclenche rien.
 name: garde-attribution
 
 on:
@@ -40,6 +46,11 @@ jobs:
           #   ^claude@ y est donc remplacé par claude@ (sans ancre, puisque
           #   le motif est déjà borné par [^>]*...[^>]* à l'intérieur des
           #   chevrons, qui jouent le rôle d'ancre).
+          #
+          # Le test de message cible spécifiquement le trailer « co-authored-by: »
+          # (PATERNITÉ). Un trailer de PROVENANCE « assisted-by: » / « generated-with: »
+          # ne correspond donc pas et passe volontairement — c'est la forme sanctionnée
+          # pour tracer l'assistance machine sans créer de co-auteur.
           email_pattern='anthropic\\.com|^claude@|copilot|openai\\.com|chatgpt'
           trailer_pattern='anthropic\\.com|claude@|copilot|openai\\.com|chatgpt'
           if ! bad=$(gh api "repos/$REPO/pulls/$PR_NUMBER/commits" --paginate --jq '
@@ -55,7 +66,7 @@ jobs:
           if [ -n "$bad" ]; then
             echo "Commits fautifs :"
             echo "$bad"
-            echo "::error::Des commits de cette PR sont attribués à une IA (auteur/committer ou trailer Co-Authored-By). Réécrivez-les (git rebase -i puis reword/--reset-author) pour les attribuer à la personne humaine. Pour ne plus générer le trailer : includeCoAuthoredBy=false est déjà dans .claude/settings.json — assurez-vous que votre outil le respecte. Règle : AGENTS.md, hard rule #7 (issue #235)."
+            echo "::error::Des commits de cette PR mettent une IA en PATERNITÉ (auteur/committer, ou trailer Co-Authored-By). Réécrivez-les (git rebase -i puis reword/--reset-author) pour les attribuer à la personne humaine. Pour ne plus générer le trailer : includeCoAuthoredBy=false est déjà dans .claude/settings.json — assurez-vous que votre outil le respecte. NB : documenter l'assistance machine reste permis et encouragé via un trailer de PROVENANCE 'Assisted-by: Claude Code (Opus 4.8)' (non compté comme co-auteur). Règle : AGENTS.md, hard rule #8 (issue #235)."
             exit 1
           fi
           echo "Tous les commits de la PR sont attribués à des humains — OK."
