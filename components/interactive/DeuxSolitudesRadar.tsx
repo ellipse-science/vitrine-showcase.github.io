@@ -250,7 +250,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <span className="lbl l">plus divergent</span>
           <span
             className="lbl m"
-            title="Échelle en percentiles des six derniers mois : le centre est la médiane, un bloc « habituel ». La divergence reste la règle, même à un niveau habituel."
+            title="Position de ces 24 h dans la distribution des douze derniers mois (percentiles sur une fenêtre glissante). Le centre marque un niveau médian, « habituel ». La divergence reste la règle, même à un niveau habituel."
           >
             habituel
           </span>

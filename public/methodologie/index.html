@@ -559,7 +559,7 @@
         </tbody>
       </table>
     </div>
-    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalibrés en continu sur l'ensemble de la donnée disponible ; à terme, ce calcul se fera dans le raffineur sur une fenêtre glissante (suivi #122).</p>
+    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalculés à chaque mise à jour sur une fenêtre glissante d'environ douze mois : les percentiles sont dérivés de tout l'historique récent, de sorte que « habituel » suit l'évolution réelle de l'actualité plutôt qu'une saison figée.</p>
     <figure class="metho-figure">
       <img src="saillance-niveaux.png" alt="Distribution du score de saillance québécois découpée en six bandes de percentiles, de la plus faible à la plus élevée.">
       <figcaption>Distribution réelle des scores de saillance (<code>score_qc</code>) de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
@@ -592,7 +592,7 @@
       <li>Pour chaque bloc de quatre heures, on construit un vecteur des sujets saillants du Québec et un du Canada, pondérés par leur importance ; leur similarité (cosinus), de 0 (agendas opposés) à 100 (mêmes priorités), donne l'<strong>indice de convergence</strong> du bloc. Le grand chiffre affiché est la <strong>moyenne de ces indices sur les 24 dernières heures</strong>, pondérée par l'activité de chaque bloc. La divergence affichée en est le complément.</li>
       <li>Le calcul écarte une courte liste de termes géographiques génériques (Canada, États-Unis, Québec, Ottawa), qui gonfleraient artificiellement la ressemblance sans rien dire de l'actualité.</li>
       <li>Chaque axe du radar est une <strong>histoire saillante des 24 dernières heures</strong> — les mêmes que celles suivies par la Une des Unes. Sa distance au centre est la <strong>part d'attention</strong> que la région lui a consacrée sur cette fenêtre glissante de 24 h, exprimée en pourcentage de toute l'attention de la région (les anneaux du radar en indiquent l'échelle). Comme chaque côté est ramené à sa propre attention totale, les deux formes sont directement comparables malgré le nombre de médias différent.</li>
-      <li>Sous le radar, une jauge situe ces 24 heures sur une échelle relative : « plus divergent », « habituel » ou « plus convergent » que la normale. Cette échelle est provisoire et sera affinée à mesure que l'historique s'étoffe. Une période peut afficher une forte divergence tout en restant habituelle — entre le Québec et le Canada, la divergence est la règle et la convergence l'exception.</li>
+      <li>Sous le radar, une jauge situe ces 24 heures par rapport aux douze derniers mois (percentiles sur une fenêtre glissante) : « plus divergent », « habituel » ou « plus convergent » que la normale. Une période peut afficher une forte divergence tout en restant habituelle — entre le Québec et le Canada, la divergence est la règle et la convergence l'exception.</li>
     </ol>
 
     <h3>Limites et honnêteté</h3>

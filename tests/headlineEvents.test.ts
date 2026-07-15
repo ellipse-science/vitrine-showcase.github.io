@@ -131,7 +131,32 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+
+describe("salThresholdsFrom (#212 — seuils saillance depuis percentiles publiés)", () => {
+  it("mappe p5/p20/p50/p80/p95 → faible…extreme", () => {
+    const m = { p5: 5.21, p20: 9.45, p50: 16.66, p80: 31.09, p95: 67.14 };
+    expect(salThresholdsFrom(m)).toEqual({ faible: 5.21, moyenne: 9.45, eleve: 16.66, tresEleve: 31.09, extreme: 67.14 });
+  });
+  it("null si métrique absente ou non monotone (repli sur les seuils codés)", () => {
+    expect(salThresholdsFrom(undefined)).toBeNull();
+    expect(salThresholdsFrom({ p5: 5, p20: 3, p50: 16, p80: 31, p95: 67 })).toBeNull();
+  });
+});
+
+describe("calConvFrom (#212 — jauge depuis percentiles de convergence)", () => {
+  it("écrase les ex æquo à 0 du bas de distribution (p5=p20=0)", () => {
+    // Distribution réelle 365j (DEV) : p5=0, p20=0, p50=3, p80=33.4, p95=62.85.
+    const anchors = calConvFrom({ p5: 0, p20: 0, p50: 3, p80: 33.4, p95: 62.85 });
+    expect(anchors).toEqual([[0, 0], [3, 50], [33.4, 80], [62.85, 95], [100, 100]]);
+    // x strictement croissant → interpolable par pctile.
+    for (let i = 1; i < anchors!.length; i++) expect(anchors![i][0]).toBeGreaterThan(anchors![i - 1][0]);
+  });
+  it("null si trop plat (aucun point interne)", () => {
+    expect(calConvFrom({ p5: 0, p20: 0, p50: 0, p80: 0, p95: 0 })).toBeNull();
+    expect(calConvFrom(undefined)).toBeNull();
+  });
+});
 
 describe("sameStory (dédup cross-langue, stopgap #213)", () => {
   it("fusionne deux cadrages de la même fusillade de Toronto", () => {

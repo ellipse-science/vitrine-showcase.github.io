@@ -4,6 +4,11 @@
     "_comment": "Used by scripts/discover_tables.R (triggered manually via .github/workflows/discover-tables.yml). Tables matching match_regex on Athena that are not already in 'tables' below get appended as disabled stubs.",
     "match_regex": "^(vitrine_datamart|agora_datamart)-"
   },
+  "_calibration": {
+    "_comment": "NOT a table projection — computed by build_salience_calibration() in fetch_data.R (issue #212). Publishes rolling-window percentiles (p5/p20/p50/p80/p95) of score_qc, score_roc and interval_convergence_score to public/data/salience_calibration.json. The frontend (lib/data/headlineEvents.ts) derives SAL_QC_THRESHOLDS and CAL_CONV from it, falling back to hardcoded values if the file is absent or a metric is missing.",
+    "out": "public/data/salience_calibration.json",
+    "window_days": 365
+  },
   "tables": [
     {
       "name": "provincial_parties_score_day",

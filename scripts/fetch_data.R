@@ -254,6 +254,70 @@ dispatch_post_process <- function(entry, table_outputs) {
   fn(source_path, entry$out)
 }
 
+# ── Calibration glissante (issue #212) ────────────────────────────────────────
+# Publie les percentiles de score_qc / score_roc / interval_convergence_score sur
+# une fenêtre glissante, pour que le frontend cesse de hardcoder ses seuils
+# (SAL_QC_THRESHOLDS, CAL_CONV) et affiche un « plus/moins que d'habitude » stable
+# (demande Yannick, 2026-06-08). Interroge l'historique COMPLET de
+# headline_events_4h (pas le filtre 3 jours). Chaque métrique est requêtée
+# séparément et tolère une colonne absente (score_roc n'arrive qu'avec le refiner
+# #211) : une métrique manquante est simplement omise → repli frontend sur les
+# valeurs codées. PROVISOIRE : à terme le refiner publiera ces bornes (#212).
+CAL_TABLE       <- "vitrine_datamart-headline_events_4h"
+CAL_WINDOW_DAYS <- 365L
+CAL_MIN_N       <- 60L
+CAL_PROBS       <- c(p5 = 0.05, p20 = 0.20, p50 = 0.50, p80 = 0.80, p95 = 0.95)
+
+# Percentiles d'un vecteur ; NULL si trop peu de points (repli frontend).
+# keep_zero : 0 est une vraie valeur pour la convergence (bloc pleinement
+# divergent) — on la garde ; pour score_qc/roc, 0 = « pas une Une de la région »,
+# on l'exclut.
+calibration_pctiles <- function(x, keep_zero = FALSE) {
+  x <- x[is.finite(x)]
+  x <- if (keep_zero) x[x >= 0] else x[x > 0]
+  if (length(x) < CAL_MIN_N) return(NULL)
+  qs  <- as.numeric(stats::quantile(x, probs = CAL_PROBS, names = FALSE, type = 7))
+  out <- as.list(round(qs, 2)); names(out) <- names(CAL_PROBS)
+  c(list(n = length(x)), out)
+}
+
+# Requête gardée d'UNE métrique. distinct_block : dédup par bloc (la convergence
+# est une valeur par bloc, pas par événement). Colonne absente → NULL (pas d'échec).
+# `date_utc` est de type DATE dans Athena → littéral DATE 'AAAA-MM-JJ' (pas un
+# entier ; l'entier ne sert qu'au filtre côté R après fetch, cf. apply_filter).
+calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_block = FALSE) {
+  tryCatch({
+    sel <- if (distinct_block) {
+      sprintf('SELECT DISTINCT date_utc, time_interval_utc, "%s" AS v', col)
+    } else {
+      sprintf('SELECT "%s" AS v', col)
+    }
+    sql <- sprintf("%s FROM \"%s\" WHERE date_utc >= DATE '%s'", sel, CAL_TABLE, cut_date)
+    df  <- as.data.frame(DBI::dbGetQuery(conn, sql))
+    calibration_pctiles(df$v, keep_zero = keep_zero)
+  }, error = function(e) {
+    message("   (calibration: colonne « ", col, " » indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
+build_salience_calibration <- function(conn, out_path) {
+  cut_date <- format(Sys.Date() - CAL_WINDOW_DAYS, "%Y-%m-%d")
+  metrics <- list()
+  qc  <- calibration_metric(conn, "score_qc", cut_date)
+  if (!is.null(qc))  metrics$score_qc  <- c(list(region = "QC"),  qc)
+  roc <- calibration_metric(conn, "score_roc", cut_date)
+  if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
+  cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,
+                            keep_zero = TRUE, distinct_block = TRUE)
+  if (!is.null(cv))  metrics$convergence <- c(list(region = NA), cv)
+
+  payload <- list(window_days = CAL_WINDOW_DAYS, computed_utc = NOW_UTC, metrics = metrics)
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(payload, out_path, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  list(n_metrics = length(metrics), path = out_path)
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 run <- function() {
@@ -301,6 +365,22 @@ run <- function() {
         message("  !! Could not build ", pp$name, ": ", conditionMessage(e))
       })
   }
+
+  # Calibration glissante (#212) — nécessite `conn` (ce n'est pas un post-process
+  # sur fichier). Résiliente : un échec n'empêche pas le commit des autres données ;
+  # le frontend retombe sur ses seuils codés si le fichier manque ou est partiel.
+  cal_res <- tryCatch({
+    r <- build_salience_calibration(conn, "public/data/salience_calibration.json")
+    message("[", format(Sys.time(), "%H:%M:%S"), "] Calibration: ",
+            r$n_metrics, " métrique(s) -> ", r$path)
+    list(name = "salience_calibration", status = "ok",
+         metrics = r$n_metrics, generatedAt = NOW_UTC, path = r$path)
+  }, error = function(e) {
+    message("  !! Calibration FAILED: ", conditionMessage(e))
+    list(name = "salience_calibration", status = "error",
+         error = conditionMessage(e), generatedAt = NOW_UTC)
+  })
+  results[[length(results) + 1]] <- cal_res
 
   # Always write meta.json for the /status page
   run_url <- paste0(
