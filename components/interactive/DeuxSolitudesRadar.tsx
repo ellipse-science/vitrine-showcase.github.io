@@ -11,8 +11,13 @@ import type { SolitudeData } from "@/lib/data/headlineEvents";
 // component DeuxSolitudesSection.
 
 const W = 840, H = 680, CX = W / 2, CY = H / 2, R = 160, R0 = 6;
-// Distance radiale des libellés : plus loin sur les côtés (place horizontale),
-// plus près en haut/bas (sinon le bloc titre déborde verticalement).
+// Distance radiale des libellés selon l'orientation de l'axe. cosA ∈ [-1, 1] est
+// le cosinus de l'angle de l'axe : |cosA| ≈ 0 = axe vertical (haut/bas), |cosA| ≈ 1
+// = axe horizontal (côtés). Le seuil 0.35 (≈ 20° de part et d'autre de la verticale)
+// sépare les deux régimes : en haut/bas on rapproche le libellé (R+58) car le bloc
+// titre s'empile verticalement et déborderait sinon ; sur les côtés on l'éloigne
+// (R+152) pour profiter de la place horizontale et ne pas chevaucher le radar.
+// Offsets fixés visuellement à ce viewBox (840×680) — à revoir s'il change.
 const labelR = (cosA: number) => (Math.abs(cosA) < 0.35 ? R + 58 : R + 152);
 
 // Secteur du balayage radar (~48°, en tête vers le haut). Géométrie statique ;
