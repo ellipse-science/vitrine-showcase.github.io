@@ -1621,9 +1621,19 @@
   .solitudes .info-dot { position: relative; display: inline-block; margin-left: 9px; font-size: 15px; letter-spacing: 0; color: var(--ink-softer); cursor: help; vertical-align: 1px; }
   .solitudes .info-dot:hover, .solitudes .info-dot:focus { color: var(--ink); }
   /* Bulle à DROITE du ⓘ, dans l'espace vide du module (demande Adrien). */
-  .solitudes .info-bubble { position: absolute; left: calc(100% + 16px); top: 50%; transform: translateY(-50%); width: 340px; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 18px 22px; font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; line-height: 1.55; letter-spacing: 0; text-transform: none; text-align: left; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
+  .solitudes .info-bubble { position: absolute; left: calc(100% + 16px); top: 50%; transform: translateY(-50%); width: 340px; max-width: 78vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 18px 22px; font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; line-height: 1.55; letter-spacing: 0; text-transform: none; text-align: left; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
   .solitudes .info-bubble::after { content: ''; position: absolute; top: 50%; left: -8px; transform: translateY(-50%); border: 8px solid transparent; border-right-color: var(--paper); filter: drop-shadow(-1px 0 0 var(--rule)); }
   .solitudes .info-dot:hover .info-bubble, .solitudes .info-dot:focus .info-bubble { opacity: 1; }
+  /* Sous ~960px, la bulle ancrée à droite du ⓘ (340px) déborde du viewport
+     (mesuré : elle ne tient qu'à partir de ~890px, marge pour les libellés
+     longs). On la passe SOUS le bloc stat, centrée sur lui — pas sur le ⓘ,
+     excentré à droite, qui la pousserait hors viewport sur mobile. */
+  @media (max-width: 960px) {
+    .solitudes .sol-stat { position: relative; }
+    .solitudes .info-dot { position: static; }
+    .solitudes .info-bubble { left: 50%; top: calc(100% + 14px); transform: translateX(-50%); }
+    .solitudes .info-bubble::after { top: -8px; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-bottom-color: var(--paper); border-right-color: transparent; filter: drop-shadow(0 -1px 0 var(--rule)); }
+  }
 
   /* Jauge relative : gradient rouge → neutre → bleu, point plein */
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 44px; margin: 26px auto 0; }

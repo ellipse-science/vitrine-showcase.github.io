@@ -128,7 +128,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               d'attention 24h de la région (le bord = axisScale %). */}
           {[0.25, 0.5, 0.75, 1].map((f) => (
             <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
-              {Math.round(s.axisScale * f)}%
+              {Math.round(s.axisScale * f)}&nbsp;%
             </text>
           ))}
           {axes.map((_, i) => {
@@ -250,7 +250,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <span className="lbl l">plus divergent</span>
           <span
             className="lbl m"
-            title="Échelle en percentiles des six derniers mois : le centre est la médiane, un bloc « habituel ». La divergence reste la règle, même à un niveau habituel."
+            title="Échelle relative provisoire : « plus divergent », « habituel » ou « plus convergent » que la normale. Le centre marque un bloc médian ; cette calibration provisoire pourra être affinée. La divergence reste la règle, même à un niveau habituel."
           >
             habituel
           </span>
