@@ -301,6 +301,84 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
   })
 }
 
+# Convergence EVENT-level (au niveau HISTOIRE) — calibre le repère « habituel »
+# de la jauge du module Deux solitudes. Reproduit windowEventConvergence du
+# frontend (lib/data/headlineEvents.ts) : pour CHAQUE bloc « as-of » de
+# l'historique on reconstruit la fenêtre glissante de 6 blocs (24 h), on agrège la
+# saillance par histoire (storyline_id ?? event_label ?? event_id), on garde les
+# histoires bilatérales (sumQc>0 ET sumRoc>0) et on prend la moyenne des deux parts
+# d'attention. La distribution de ces valeurs `as-of` = exactement les nombres que
+# la jauge aurait affichés à chaque rafraîchissement de 4 h → son p50 remplace la
+# constante de repli HABITUAL_EVENT_CONV côté frontend (calibration.metrics
+# .event_convergence.p50). Applique les mêmes filtres que le frontend (dédup event_id
+# préf-QC + exclusion USA) ; ne reproduit PAS la dédup cross-langue par titre
+# (STOPGAP aws-refiners#213) → légère SOUS-estimation résiduelle. p50 mesuré sur DEV
+# = 28 % (cf. measure_event_convergence). Colonne absente / échec → NULL (repli frontend).
+calibration_event_convergence <- function(conn, cut_date) {
+  tryCatch({
+    sql <- sprintf(paste(
+      "SELECT date_utc, time_interval_utc, storyline_id, event_label, event_id,",
+      "target_region, country_id,",
+      "title, score_qc, score_roc, score_saillance, score_us",
+      "FROM \"%s\" WHERE date_utc >= DATE '%s'"), CAL_TABLE, cut_date)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+
+    num <- function(x) suppressWarnings(as.numeric(x))
+    # Mêmes 2 filtres que loadHeadlineEvents (frontend, L817-824) AVANT toute
+    # agrégation : (1) dédup par event_id en préférant la ligne target_region=="QC" ;
+    # (2) exclusion des Unes américaines (country_id=="USA"). Sans eux la médiane est
+    # sur-estimée (39 % vs 28 % réel).
+    df <- df %>%
+      mutate(qc_pref = ifelse(!is.na(target_region) & target_region == "QC", 0L, 1L)) %>%
+      arrange(event_id, qc_pref) %>%
+      distinct(event_id, .keep_all = TRUE) %>%
+      filter(is.na(country_id) | country_id != "USA") %>%
+      filter(!is.na(title), title != "") %>%
+      mutate(
+        qc  = ifelse(is.na(num(score_qc)),        0, num(score_qc)),
+        sal = ifelse(is.na(num(score_saillance)), 0, num(score_saillance)),
+        us  = ifelse(is.na(num(score_us)),        0, num(score_us)),
+        # score_roc publié (refiner #211) sinon repli par soustraction, comme
+        # rocScore côté frontend : max(0, saillance - QC - US).
+        roc = ifelse(is.na(num(score_roc)), pmax(0, sal - qc - us), num(score_roc)),
+        block = paste0(date_utc, "T",
+                       sprintf("%02s", sub("-.*$", "",
+                               ifelse(is.na(time_interval_utc), "", time_interval_utc)))),
+        # Clé d'histoire = storyline_id ?? event_label ?? event_id (frontend).
+        story = dplyr::coalesce(
+          ifelse(storyline_id == "", NA, storyline_id),
+          ifelse(event_label  == "", NA, event_label),
+          event_id))
+    if (nrow(df) == 0) return(NULL)
+
+    # Convergence event-level d'UNE fenêtre (ensemble de blocs).
+    window_conv <- function(win_blocks) {
+      w <- df[df$block %in% win_blocks, , drop = FALSE]
+      if (nrow(w) == 0) return(NA_real_)
+      agg <- w %>% group_by(story) %>%
+        summarise(sumQc = sum(qc), sumRoc = sum(roc), .groups = "drop") %>%
+        filter(sumQc + sumRoc > 0)
+      totalQc <- sum(agg$sumQc); totalRoc <- sum(agg$sumRoc)
+      if (totalQc <= 0 || totalRoc <= 0) return(NA_real_)
+      bi <- agg %>% filter(sumQc > 0 & sumRoc > 0)
+      round(((sum(bi$sumQc) / totalQc) + (sum(bi$sumRoc) / totalRoc)) / 2 * 100)
+    }
+
+    # Une lecture « as-of » par bloc : fenêtre = ce bloc + les 5 précédents (6 blocs
+    # = 24 h pleines). On ignore les fenêtres partielles du début de l'historique.
+    blocks_desc <- sort(unique(df$block), decreasing = TRUE)
+    n <- length(blocks_desc)
+    if (n < 6) return(NULL)
+    convs <- vapply(seq_len(n - 5L),
+                    function(i) window_conv(blocks_desc[i:(i + 5L)]), numeric(1))
+    # 0 est une vraie valeur (fenêtre sans histoire bilatérale) → keep_zero.
+    calibration_pctiles(convs, keep_zero = TRUE)
+  }, error = function(e) {
+    message("   (calibration: event_convergence indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
 build_salience_calibration <- function(conn, out_path) {
   cut_date <- format(Sys.Date() - CAL_WINDOW_DAYS, "%Y-%m-%d")
   metrics <- list()
@@ -311,6 +389,10 @@ build_salience_calibration <- function(conn, out_path) {
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,
                             keep_zero = TRUE, distinct_block = TRUE)
   if (!is.null(cv))  metrics$convergence <- c(list(region = NA), cv)
+  # Convergence au niveau HISTOIRE (fenêtre glissante 24 h) — repère « habituel »
+  # de la jauge du module Deux solitudes (frontend : event_convergence.p50).
+  ev  <- calibration_event_convergence(conn, cut_date)
+  if (!is.null(ev))  metrics$event_convergence <- c(list(region = NA), ev)
 
   payload <- list(window_days = CAL_WINDOW_DAYS, computed_utc = NOW_UTC, metrics = metrics)
   dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
