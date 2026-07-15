@@ -175,6 +175,13 @@ describe("calConvFrom (#212 — jauge depuis percentiles de convergence)", () =>
     expect(calConvFrom({ p5: 0, p20: 0, p50: 0, p80: 0, p95: 0 })).toBeNull();
     expect(calConvFrom(undefined)).toBeNull();
   });
+  it("un percentile qui plafonne à 100 ne vole pas l'ancre terminale → pctile(100)=100", () => {
+    // p95 = 100 : sans le garde cx<100, l'ancre serait [100,95] et pctile(100)
+    // rendrait 95. On garantit [100,100] terminal.
+    const anchors = calConvFrom({ p5: 0, p20: 0, p50: 40, p80: 90, p95: 100 });
+    expect(anchors![anchors!.length - 1]).toEqual([100, 100]);
+    expect(pctile(100, anchors!)).toBe(100);
+  });
 });
 
 describe("sameStory (dédup cross-langue, stopgap #213)", () => {
@@ -290,6 +297,19 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     rows.push(ev({ storyline_id: "old2", title: "Vieux2", score_qc: 99, date_utc: "2026-07-12", time_interval_utc: "04-08" }) as never);
     const st = storiesFrom24h(rows as never);
     expect(st.some((s: { label: string }) => s.label === "Vieux")).toBe(false);
+  });
+  it("urlByMedia garde l'URL du bloc le plus récent, quel que soit l'ordre du JSON", () => {
+    // JSON ordonné du plus ANCIEN au plus récent : sans tri interne, le
+    // « premier URL conservé » serait le vieux.
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 5, time_interval_utc: "12-16",
+        articles: JSON.stringify([{ media_id: "LED", url: "https://led/vieux" }]) }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 5, time_interval_utc: "16-20",
+        articles: JSON.stringify([{ media_id: "LED", url: "https://led/frais" }]) }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    expect(st[0].urlByMedia["LED"]).toBe("https://led/frais");
+    expect(st[0].repKey).toBe("2026-07-13T16"); // rep = bloc le plus récent aussi
   });
 });
 
