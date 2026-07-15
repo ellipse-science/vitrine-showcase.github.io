@@ -9,7 +9,7 @@ import path from "node:path";
 import { cache } from "react";
 
 import { editionLabel } from "@/lib/editions";
-import { formatDateFr, lastUpdatedLabel } from "@/lib/dates";
+import { formatDateFr, lastUpdatedLabel, publicationHourFromInterval } from "@/lib/dates";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -859,11 +859,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
-  // Fin du bloc 4h (« 12-16 » → 16 h) : granularité horaire propre à cette table.
-  const blockEnd = parseInt((snapshotInterval ?? "").split("-")[1] ?? "", 10);
+  // Le tag public affiche l'HEURE DE PUBLICATION, pas la fin du bloc de données.
+  // Réforme #195 : le bloc de données 15-19 est servi à 20h (après ~1 h de
+  // pipeline), donc heure de publication = fin du bloc + 1 h (cf.
+  // publicationHourFromInterval + ses tests pour la normalisation du bord à 24).
+  const publicationHour = publicationHourFromInterval(snapshotInterval);
   const lastUpdated = lastUpdatedLabel(
     sorted[0].date_montreal_tz ?? sorted[0].date_utc,
-    Number.isNaN(blockEnd) ? null : blockEnd,
+    publicationHour,
   );
 
   // ── Sélection 24 h (partagée avec Deux solitudes) ─────────────────────────
