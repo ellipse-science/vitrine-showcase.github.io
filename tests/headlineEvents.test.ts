@@ -131,7 +131,26 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+
+describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
+  it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
+    // Histoire A bilatérale (qc 60 / roc 40) ; histoire B QC-only (qc 40 / roc 0).
+    // couverture_qc = 60/100 = 60 % ; couverture_roc = 40/40 = 100 % → moyenne 80.
+    const stories = [
+      { sumQc: 60, sumRoc: 40 },
+      { sumQc: 40, sumRoc: 0 },
+    ];
+    expect(windowEventConvergence(stories as never)).toBe(80);
+  });
+  it("0 quand aucune histoire n'est couverte des deux côtés", () => {
+    const stories = [{ sumQc: 90, sumRoc: 0 }, { sumQc: 0, sumRoc: 70 }];
+    expect(windowEventConvergence(stories as never)).toBe(0);
+  });
+  it("null si un côté n'a aucune attention", () => {
+    expect(windowEventConvergence([{ sumQc: 10, sumRoc: 0 }] as never)).toBeNull();
+  });
+});
 
 describe("salThresholdsFrom (#212 — seuils saillance depuis percentiles publiés)", () => {
   it("mappe p5/p20/p50/p80/p95 → faible…extreme", () => {
@@ -356,5 +375,14 @@ describe("buildSolitudes", () => {
     const row = ev({ title: "Sujet QC", score_qc: 30, score_roc: 5, interval_convergence_score: 10 });
     const s = sol([row], [row]);
     expect(s.axes[0].side).toBe("qc");
+  });
+
+  it("repère « habituel » = médiane event-level (défaut mesuré, sinon param calibré)", () => {
+    const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
+    // Défaut = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV = 31 %).
+    expect(sol([row], [row]).habitualConvPct).toBe(31);
+    // Câblé : quand la calibration glissante publiera event_convergence.p50, il prime.
+    const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
+    expect(calibré.habitualConvPct).toBe(44);
   });
 });
