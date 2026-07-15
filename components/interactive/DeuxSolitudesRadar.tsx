@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import type { SolitudeData } from "@/lib/data/headlineEvents";
 
@@ -59,6 +59,24 @@ type Tip = { x: number; y: number; side: "qc" | "can"; k: string; body: string }
 export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }) {
   const [tip, setTip] = useState<Tip | null>(null);
 
+  // Sur écran étroit, le radar garde une largeur plancher (CSS) et son conteneur
+  // devient scrollable horizontalement. Le radar étant symétrique (QC à gauche,
+  // CAN à droite), on centre le défilement au montage + au resize pour que les
+  // deux solitudes soient équidistantes du regard, plutôt que de n'en montrer
+  // qu'une par défaut. Aucun effet quand tout tient à l'écran (extra <= 0).
+  const radarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = radarRef.current;
+    if (!el) return;
+    const center = () => {
+      const extra = el.scrollWidth - el.clientWidth;
+      if (extra > 0) el.scrollLeft = extra / 2;
+    };
+    center();
+    window.addEventListener("resize", center);
+    return () => window.removeEventListener("resize", center);
+  }, []);
+
   const axes = s.axes;
   const n = Math.max(axes.length, 1);
   const vals = axes.map((a) => ({ vqc: a.qcRadial, vcan: a.canRadial }));
@@ -108,7 +126,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       </div>
 
       {/* Radar */}
-      <div className="sol-radar">
+      <div className="sol-radar" ref={radarRef}>
         <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Saillance de chaque événement au Québec et au Canada, en percentile de sa région">
           <circle className="radar-halo" cx={CX} cy={CY} r={R + 10} />
           {/* Balayage radar discret (clin d'œil radarplus.org) : un secteur

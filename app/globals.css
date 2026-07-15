@@ -2760,7 +2760,14 @@
     .solitudes .sol-symbol .glyph.maple { font-size: 34px; height: 40px; line-height: 40px; }
     .solitudes .sol-symbol .caption { font-size: 10px; letter-spacing: 0.14em; margin-top: 6px; }
     .solitudes .sol-arrow { font-size: 21px; }
-    .solitudes .radar-lab { font-size: 13.5px; }
+    /* Radar : géométrie SVG figée (viewBox 840, LINE_H et police en unités du
+       viewBox). Sous ~600px, tout scale uniformément → texte à 5-6px illisible.
+       Plutôt que de rétrécir la police (ce que faisait l'ancien override 13.5px,
+       périmé depuis la refonte #251), on garde une largeur plancher lisible
+       (~12px pour les titres) et on rend le radar scrollable horizontalement
+       (swipe). Le reste du module (axe fleur/érable, jauge) reste fluide. */
+    .solitudes .sol-radar { overflow-x: auto; overflow-y: hidden; padding: 10px 0; -webkit-overflow-scrolling: touch; }
+    .solitudes .sol-radar svg { min-width: 600px; }
     .solitudes .score-num { font-size: 58px; }
     .solitudes .score-num sup { font-size: 27px; vertical-align: 9px; }
     /* Pas de place à droite sur mobile : la bulle passe sous le ⓘ, centrée. */
@@ -2924,7 +2931,8 @@
     .une-main h1[data-saillance="5"] { font-size: 24px !important; }
     .partis-title { font-size: 22px; }
     .solitudes .score-num { font-size: 48px; }
-    .solitudes .radar-lab { font-size: 12.5px; }
+    /* radar-lab : plus d'override de police ici — la largeur plancher + scroll
+       (bloc ≤768px) garde le texte lisible sans le rétrécir. */
     .legend-toggle.inline span { font-size: 7.5px; }
   }
 
