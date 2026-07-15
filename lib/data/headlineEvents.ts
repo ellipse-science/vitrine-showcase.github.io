@@ -432,7 +432,8 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
   return den > 0 ? num / den : plainNum / plainCount;
 }
 
-// PROTOTYPE — convergence au niveau HISTOIRE (au lieu du cosinus-objet).
+// Score du module = convergence au niveau HISTOIRE (décision ratifiée 2026-07-15 :
+// event-level plutôt que cosinus-objet, plus lisible et cohérent avec le radar).
 // « De combien de l'attention des deux régions va aux MÊMES histoires ? »
 // Une histoire est bilatérale si elle a de la saillance des deux côtés
 // (sumQc>0 ET sumRoc>0) sur la fenêtre 24 h. Convergence = moyenne des deux
@@ -943,8 +944,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     };
   });
 
-  // PROTOTYPE : score = convergence au niveau HISTOIRE (windowEventConvergence)
-  // au lieu du cosinus-objet (windowConvergence). Le reste du module est inchangé.
+  // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
+  // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct);
 
