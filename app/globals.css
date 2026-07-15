@@ -1570,6 +1570,7 @@
   @keyframes radarSweep { to { transform: rotate(360deg); } }
   .solitudes .radar-grid { fill: none; stroke: rgba(28,25,23,0.10); stroke-width: 0.7; }
   .solitudes .radar-spoke { stroke: rgba(28,25,23,0.07); stroke-width: 0.7; }
+  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; fill: rgba(28,25,23,0.34); text-anchor: start; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .dot .hit { fill: transparent; cursor: pointer; }
@@ -1619,9 +1620,20 @@
   /* Bulle d'info éditoriale (pattern des bulles du module 1) */
   .solitudes .info-dot { position: relative; display: inline-block; margin-left: 9px; font-size: 15px; letter-spacing: 0; color: var(--ink-softer); cursor: help; vertical-align: 1px; }
   .solitudes .info-dot:hover, .solitudes .info-dot:focus { color: var(--ink); }
-  .solitudes .info-bubble { position: absolute; bottom: calc(100% + 22px); left: 50%; transform: translateX(-50%); width: 400px; max-width: 88vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 20px 24px; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; letter-spacing: 0; text-transform: none; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
-  .solitudes .info-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-top-color: var(--paper); filter: drop-shadow(0 1px 0 var(--rule)); }
+  /* Bulle à DROITE du ⓘ, dans l'espace vide du module (demande Adrien). */
+  .solitudes .info-bubble { position: absolute; left: calc(100% + 16px); top: 50%; transform: translateY(-50%); width: 340px; max-width: 78vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 18px 22px; font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; line-height: 1.55; letter-spacing: 0; text-transform: none; text-align: left; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
+  .solitudes .info-bubble::after { content: ''; position: absolute; top: 50%; left: -8px; transform: translateY(-50%); border: 8px solid transparent; border-right-color: var(--paper); filter: drop-shadow(-1px 0 0 var(--rule)); }
   .solitudes .info-dot:hover .info-bubble, .solitudes .info-dot:focus .info-bubble { opacity: 1; }
+  /* Sous ~960px, la bulle ancrée à droite du ⓘ (340px) déborde du viewport
+     (mesuré : elle ne tient qu'à partir de ~890px, marge pour les libellés
+     longs). On la passe SOUS le bloc stat, centrée sur lui — pas sur le ⓘ,
+     excentré à droite, qui la pousserait hors viewport sur mobile. */
+  @media (max-width: 960px) {
+    .solitudes .sol-stat { position: relative; }
+    .solitudes .info-dot { position: static; }
+    .solitudes .info-bubble { left: 50%; top: calc(100% + 14px); transform: translateX(-50%); }
+    .solitudes .info-bubble::after { top: -8px; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-bottom-color: var(--paper); border-right-color: transparent; filter: drop-shadow(0 -1px 0 var(--rule)); }
+  }
 
   /* Jauge relative : gradient rouge → neutre → bleu, point plein */
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 44px; margin: 26px auto 0; }
@@ -2733,6 +2745,9 @@
     .solitudes .radar-lab { font-size: 12px; }
     .solitudes .score-num { font-size: 58px; }
     .solitudes .score-num sup { font-size: 27px; vertical-align: 9px; }
+    /* Pas de place à droite sur mobile : la bulle passe sous le ⓘ, centrée. */
+    .solitudes .info-bubble { left: 50%; top: calc(100% + 14px); transform: translateX(-50%); width: 84vw; font-size: 15px; }
+    .solitudes .info-bubble::after { top: -8px; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-bottom-color: var(--paper); filter: drop-shadow(0 -1px 0 var(--rule)); }
 
     /* ── Section partis : titre + contrôles ── */
     .partis-title-row {

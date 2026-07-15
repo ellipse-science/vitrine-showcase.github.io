@@ -124,6 +124,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {[1, 0.75, 0.5, 0.25].map((f) => (
             <polygon key={f} className="radar-grid" points={ringPts(f)} />
           ))}
+          {/* Labels % pâles sur l'axe vertical du haut : le rayon = part
+              d'attention 24h de la région (le bord = axisScale %). */}
+          {[0.25, 0.5, 0.75, 1].map((f) => (
+            <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
+              {Math.round(s.axisScale * f)}&nbsp;%
+            </text>
+          ))}
           {axes.map((_, i) => {
             const [x, y] = pt(i, 100);
             return <line key={i} className="radar-spoke" x1={CX} y1={CY} x2={x.toFixed(1)} y2={y.toFixed(1)} />;
@@ -227,7 +234,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       <div className="sol-stat">
         <span
           className={`score-num ${s.modeCls}`}
-          title="0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés. Mesure : les mêmes sujets saillants, pas les mêmes articles."
+          title={"Convergence des priorités sur les 24 dernières heures. 0\u00A0% = aucun sujet saillant partagé · 100\u00A0% = mêmes priorités des deux côtés. Mesure\u00A0: les mêmes sujets saillants, pas les mêmes articles."}
         >
           {s.scoreValue}
           <sup>%</sup>
@@ -243,7 +250,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <span className="lbl l">plus divergent</span>
           <span
             className="lbl m"
-            title="Échelle en percentiles des six derniers mois : le centre est la médiane, un bloc « habituel ». La divergence reste la règle, même à un niveau habituel."
+            title="Échelle relative provisoire : « plus divergent », « habituel » ou « plus convergent » que la normale. Le centre marque un bloc médian ; cette calibration provisoire pourra être affinée. La divergence reste la règle, même à un niveau habituel."
           >
             habituel
           </span>
