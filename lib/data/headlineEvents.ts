@@ -133,8 +133,12 @@ const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 // distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
 // percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
 // 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
-// conv=14→p50, 25→p63, 50→p80, 75→p93. À recalibrer sur données réelles une fois
-// le refiner #211 déployé, puis remplacer par la publication glissante (#212).
+// conv=14→p50, 25→p63, 50→p80, 75→p93.
+// Depuis cette PR, CAL_CONV n'est plus que le REPLI : quand la calibration
+// glissante publiée (salience_calibration.json) est présente, la jauge se cale
+// sur sa vraie distribution (cf. bloc « Calibration glissante publiée » ci-dessous
+// et calConvFrom). Le prototype 13 mois reste le défaut tant que le fichier
+// manque ou qu'une métrique est absente. Suivi refiner = aws-refiners#212.
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -148,7 +152,7 @@ function pctile(v: number, cal: [number, number][]): number {
   return 100;
 }
 
-// ── Calibration glissante publiée (issue #212) ────────────────────────────────
+// ── Calibration glissante publiée (suivi aws-refiners#212) ────────────────────────────────
 // scripts/fetch_data.R publie public/data/salience_calibration.json à chaque
 // refresh : percentiles de score_qc / score_roc / interval_convergence_score sur
 // une fenêtre glissante (≈ 12 mois). Quand il est présent, on en dérive les
@@ -190,9 +194,11 @@ function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
     if (typeof x !== "number" || !Number.isFinite(x)) continue;
     const cx = Math.max(0, Math.min(100, x));
     const last = anchors[anchors.length - 1];
-    if (cx > last[0] && y > last[1]) anchors.push([cx, y]);
+    // cx < 100 : un percentile qui plafonne à 100 (ex. p95 = 100) ne doit pas
+    // occuper l'ancre terminale, sinon pctile(100) rendrait 95 au lieu de 100.
+    if (cx > last[0] && cx < 100 && y > last[1]) anchors.push([cx, y]);
   }
-  if (anchors[anchors.length - 1][0] < 100) anchors.push([100, 100]);
+  anchors.push([100, 100]); // ancre terminale systématique : l'échelle atteint p100
   return anchors.length >= 3 ? anchors : null; // besoin d'≥ 1 point interne
 }
 
@@ -307,7 +313,11 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
-  const windowEvents = allEvents.filter((e) => window24h.has(blockKey(e)));
+  // Blocs récents d'abord : l'ordre du JSON n'est pas garanti, et le « premier
+  // URL conservé » par média (ci-dessous) doit venir du bloc le plus frais.
+  const windowEvents = allEvents
+    .filter((e) => window24h.has(blockKey(e)))
+    .sort((a, b) => (blockKey(a) < blockKey(b) ? 1 : blockKey(a) > blockKey(b) ? -1 : 0));
 
   const byStory = new Map<string, Story>();
   for (const e of windowEvents) {
@@ -345,7 +355,10 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
 
   // Dédup cross-langue (STOPGAP aws-refiners#213) : fusionne les storylines
   // d'une même histoire scindée FR/EN (titres très proches). Sommes additionnées,
-  // pics au max, médias en union ; représentant = plus forte saillance.
+  // pics au max, médias en union ; représentant = celui de la storyline la PLUS
+  // SAILLANTE (host), délibérément NON réévalué à la fusion : basculer vers la
+  // jumelle (souvent l'autre langue) ferait changer la langue du titre affiché.
+  // À l'intérieur d'une storyline, rep = bloc le plus récent (boucle ci-dessus).
   const merged: Story[] = [];
   for (const a of Array.from(byStory.values()).sort((x, y) => y.sumQc + y.sumRoc - (x.sumQc + x.sumRoc))) {
     const host = merged.find((m) => sameStory(m.tok, a.tok));
@@ -368,7 +381,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
 // autant qu'un bloc chargé. Comme le radar et la Une, le grand chiffre couvre
 // donc les 24 h, plus un seul bloc de 4 h (décision d'équipe 2026-07-14, Y3).
 // null si aucun bloc de la fenêtre n'a d'indice publié → repli en aval.
-// PROVISOIRE : la convergence glissante « officielle » viendra du refiner (#212).
+// PROVISOIRE : la convergence glissante « officielle » viendra du refiner (aws-refiners#212).
 function windowConvergence(allEvents: RawEvent[]): number | null {
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
@@ -396,7 +409,7 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
   return den > 0 ? num / den : plainNum / plainCount;
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV): SolitudeData {
+function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, calConv: [number, number][] = CAL_CONV, convCalibrated = false): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -475,7 +488,7 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     scoreValue: convPct < 50 ? divPct : convPct,
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
-    relPct,
+    relPct, convCalibrated,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -693,6 +706,10 @@ export type SolitudeData = {
   /** Percentile de convergence dans la distribution des blocs (position de la
    *  jauge « plus divergent / habituel / plus convergent »). */
   relPct: number;
+  /** true si la jauge est calibrée sur la fenêtre glissante publiée
+   *  (salience_calibration.json), false si repli sur les seuils codés. Pilote le
+   *  libellé de l'infobulle (« douze derniers mois » vs générique). */
+  convCalibrated: boolean;
   /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
   coverageQcInCan: number | null;
   coverageCanInQc: number | null;
@@ -806,11 +823,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // heures, classées par saillance QC CUMULÉE (sumQc), depuis la MÊME liste que
   // le radar → les deux modules montrent les mêmes histoires. Filtre : au moins
   // un média QC a couvert l'histoire sur la fenêtre.
-  // Calibration glissante publiée (#212) : seuils de saillance + jauge dérivés de
+  // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
   const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
-  const calConv = calConvFrom(calibration?.metrics?.convergence) ?? CAL_CONV;
+  const calConvPublished = calConvFrom(calibration?.metrics?.convergence);
+  const calConv = calConvPublished ?? CAL_CONV;
 
   const stories = storiesFrom24h(unique);
   const qcStories = stories
@@ -870,7 +888,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   });
 
   const conv24h = windowConvergence(unique);
-  const solitudes = buildSolitudes(latest, stories, conv24h, calConv);
+  const solitudes = buildSolitudes(latest, stories, conv24h, calConv, calConvPublished !== null);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {

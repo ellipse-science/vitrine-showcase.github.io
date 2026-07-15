@@ -254,7 +254,7 @@ dispatch_post_process <- function(entry, table_outputs) {
   fn(source_path, entry$out)
 }
 
-# ── Calibration glissante (issue #212) ────────────────────────────────────────
+# ── Calibration glissante (suivi aws-refiners#212) ────────────────────────────────────────
 # Publie les percentiles de score_qc / score_roc / interval_convergence_score sur
 # une fenêtre glissante, pour que le frontend cesse de hardcoder ses seuils
 # (SAL_QC_THRESHOLDS, CAL_CONV) et affiche un « plus/moins que d'habitude » stable
@@ -262,7 +262,7 @@ dispatch_post_process <- function(entry, table_outputs) {
 # headline_events_4h (pas le filtre 3 jours). Chaque métrique est requêtée
 # séparément et tolère une colonne absente (score_roc n'arrive qu'avec le refiner
 # #211) : une métrique manquante est simplement omise → repli frontend sur les
-# valeurs codées. PROVISOIRE : à terme le refiner publiera ces bornes (#212).
+# valeurs codées. PROVISOIRE : à terme le refiner publiera ces bornes (aws-refiners#212).
 CAL_TABLE       <- "vitrine_datamart-headline_events_4h"
 CAL_WINDOW_DAYS <- 365L
 CAL_MIN_N       <- 60L
@@ -465,18 +465,22 @@ run <- function() {
       })
   }
 
-  # Calibration glissante (#212) — nécessite `conn` (ce n'est pas un post-process
+  # Calibration glissante (suivi aws-refiners#212) — nécessite `conn` (ce n'est pas un post-process
   # sur fichier). Résiliente : un échec n'empêche pas le commit des autres données ;
   # le frontend retombe sur ses seuils codés si le fichier manque ou est partiel.
+  # `optional = TRUE` : reste dans meta.json (page /status) mais est EXCLU du
+  # comptage ok/err qui pilote le heartbeat Healthchecks — un échec de calibration
+  # ne doit pas marquer le refresh comme partiellement en échec (le frontend
+  # retombe proprement sur ses seuils codés).
   cal_res <- tryCatch({
     r <- build_salience_calibration(conn, "public/data/salience_calibration.json")
     message("[", format(Sys.time(), "%H:%M:%S"), "] Calibration: ",
             r$n_metrics, " métrique(s) -> ", r$path)
-    list(name = "salience_calibration", status = "ok",
+    list(name = "salience_calibration", status = "ok", optional = TRUE,
          metrics = r$n_metrics, generatedAt = NOW_UTC, path = r$path)
   }, error = function(e) {
     message("  !! Calibration FAILED: ", conditionMessage(e))
-    list(name = "salience_calibration", status = "error",
+    list(name = "salience_calibration", status = "error", optional = TRUE,
          error = conditionMessage(e), generatedAt = NOW_UTC)
   })
   results[[length(results) + 1]] <- cal_res
@@ -498,9 +502,12 @@ run <- function() {
     auto_unbox = TRUE, pretty = TRUE, na = "null")
   message("[", format(Sys.time(), "%H:%M:%S"), "] Written public/data/meta.json")
 
-  ok_count  <- sum(sapply(results, function(r) identical(r$status, "ok")))
-  err_count <- length(results) - ok_count
-  message("\nDone: ", ok_count, " ok, ", err_count, " failed out of ", length(results), " tables.")
+  # Comptage sur les tables CORE seulement (les entrées `optional = TRUE`, ex.
+  # calibration glissante, sont dans meta.json mais ne pilotent pas le heartbeat).
+  core_results <- Filter(function(r) !isTRUE(r$optional), results)
+  ok_count  <- sum(sapply(core_results, function(r) identical(r$status, "ok")))
+  err_count <- length(core_results) - ok_count
+  message("\nDone: ", ok_count, " ok, ", err_count, " failed out of ", length(core_results), " core tables.")
 
   # Ping Healthchecks.io heartbeat (only on full success)
   hc_url <- Sys.getenv("HEALTHCHECKS_URL", "")

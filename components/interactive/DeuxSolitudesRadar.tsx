@@ -128,7 +128,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               d'attention 24h de la région (le bord = axisScale %). */}
           {[0.25, 0.5, 0.75, 1].map((f) => (
             <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
-              {Math.round(s.axisScale * f)}%
+              {Math.round(s.axisScale * f)}&nbsp;%
             </text>
           ))}
           {axes.map((_, i) => {
@@ -234,7 +234,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       <div className="sol-stat">
         <span
           className={`score-num ${s.modeCls}`}
-          title="Convergence des priorités sur les 24 dernières heures. 0 % = aucun sujet saillant partagé · 100 % = mêmes priorités des deux côtés. Mesure : les mêmes sujets saillants, pas les mêmes articles."
+          title={"Convergence des priorités sur les 24 dernières heures. 0\u00A0% = aucun sujet saillant partagé · 100\u00A0% = mêmes priorités des deux côtés. Mesure\u00A0: les mêmes sujets saillants, pas les mêmes articles."}
         >
           {s.scoreValue}
           <sup>%</sup>
@@ -250,7 +250,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <span className="lbl l">plus divergent</span>
           <span
             className="lbl m"
-            title="Position de ces 24 h dans la distribution des douze derniers mois (percentiles sur une fenêtre glissante). Le centre marque un niveau médian, « habituel ». La divergence reste la règle, même à un niveau habituel."
+            title={
+              s.convCalibrated
+                ? "Position de ces 24 h dans la distribution des douze derniers mois (percentiles sur une fenêtre glissante). Le centre marque un niveau médian, « habituel ». La divergence reste la règle, même à un niveau habituel."
+                : "Position de ces 24 h sur une échelle relative de référence. Le centre marque un niveau médian, « habituel ». La divergence reste la règle, même à un niveau habituel."
+            }
           >
             habituel
           </span>
