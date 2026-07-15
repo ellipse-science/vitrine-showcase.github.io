@@ -133,8 +133,12 @@ const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
 // distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
 // percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
 // 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
-// conv=14→p50, 25→p63, 50→p80, 75→p93. À recalibrer sur données réelles une fois
-// le refiner #211 déployé, puis remplacer par la publication glissante (suivi aws-refiners#212).
+// conv=14→p50, 25→p63, 50→p80, 75→p93.
+// Depuis cette PR, CAL_CONV n'est plus que le REPLI : quand la calibration
+// glissante publiée (salience_calibration.json) est présente, la jauge se cale
+// sur sa vraie distribution (cf. bloc « Calibration glissante publiée » ci-dessous
+// et calConvFrom). Le prototype 13 mois reste le défaut tant que le fichier
+// manque ou qu'une métrique est absente. Suivi refiner = aws-refiners#212.
 const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -309,7 +313,11 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
-  const windowEvents = allEvents.filter((e) => window24h.has(blockKey(e)));
+  // Blocs récents d'abord : l'ordre du JSON n'est pas garanti, et le « premier
+  // URL conservé » par média (ci-dessous) doit venir du bloc le plus frais.
+  const windowEvents = allEvents
+    .filter((e) => window24h.has(blockKey(e)))
+    .sort((a, b) => (blockKey(a) < blockKey(b) ? 1 : blockKey(a) > blockKey(b) ? -1 : 0));
 
   const byStory = new Map<string, Story>();
   for (const e of windowEvents) {
@@ -347,7 +355,10 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
 
   // Dédup cross-langue (STOPGAP aws-refiners#213) : fusionne les storylines
   // d'une même histoire scindée FR/EN (titres très proches). Sommes additionnées,
-  // pics au max, médias en union ; représentant = plus forte saillance.
+  // pics au max, médias en union ; représentant = celui de la storyline la PLUS
+  // SAILLANTE (host), délibérément NON réévalué à la fusion : basculer vers la
+  // jumelle (souvent l'autre langue) ferait changer la langue du titre affiché.
+  // À l'intérieur d'une storyline, rep = bloc le plus récent (boucle ci-dessus).
   const merged: Story[] = [];
   for (const a of Array.from(byStory.values()).sort((x, y) => y.sumQc + y.sumRoc - (x.sumQc + x.sumRoc))) {
     const host = merged.find((m) => sameStory(m.tok, a.tok));

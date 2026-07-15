@@ -1392,12 +1392,13 @@
       <header>
         <h1>📅 Réforme des horaires pour une Vitrine démocratique Bêta 2.0</h1>
         <p class="subtitle">Système de mise à jour 6 fois/jour - Architecture complète (Heure de Montréal)</p>
-        <div style="margin:1rem auto;max-width:900px;padding:1rem 1.2rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.95em;line-height:1.55">
+        <div style="margin:1rem auto;max-width:900px;padding:1rem 1.2rem;border:2px solid #10b981;border-radius:8px;background:rgba(16,185,129,.08);text-align:left;font-size:.95em;line-height:1.55">
           <strong>📌 Document vivant — copie canonique.</strong> Hébergé sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>) : modifiez-le par PR, il est en ligne ~2 min après le merge. Ne plus téléverser de copies ailleurs.<br><br>
-          <strong>⚠️ État réel au 9 juillet 2026 (audit code vs plan)</strong> — ce plan reste LA vision cible, mais :
+          <strong>✅ État réel au 14 juillet 2026 — réforme des horaires LIVRÉE (grille de blocs ancrée Montréal)</strong> :
           <ul style="margin:.5rem 0 0 1.2rem;padding:0">
-            <li>La <strong>grille de blocs 3-7/7-11/…</strong> décrite ici n'a <strong>jamais été portée</strong> dans <code>radar-data-preparation</code> (resté 00-04/04-08) → à 8h le site montre 0-4h, pas 3-7h. Chantier : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a> (phase A).</li>
-            <li>Les <strong>passes à 6 valeurs</strong> (midnight/morning/…) ont été <strong>revertées le 23 mars</strong> (aws-infra <code>254f41fa</code>) — les raffineurs ne les traitaient pas ; retour à am/noon/pm.</li>
+            <li><strong>✅ Les crons sont réformés et déployés</strong> : construct <code>LocalCronLambdaScheduler</code> (tz <code>America/Toronto</code>) — PR #369 (Patrick) ; cascade des raffineurs → <code>{23,3,7,11,15,19}</code> Mtl — PR #370 (Adrien). Le « revert du 23 mars » (<code>254f41fa</code>) ne portait QUE sur les payloads <code>pass</code> (→ am/noon/pm), <strong>pas</strong> sur les heures de crons.</li>
+            <li><strong>✅ LIVRÉ (14 juillet 2026) — la grille de blocs est portée sur l'heure de Montréal</strong> (<code>03-07/07-11/11-15/15-19/19-23/23-03</code>) : <a href="https://github.com/ellipse-science/aws-refiners/pull/214">aws-refiners#214</a> (closes <a href="https://github.com/ellipse-science/aws-refiners/issues/195">#195</a> phase A). 3 raffineurs de la chaîne de la Une ré-ancrés ensemble — <code>radar-salient-objects</code> (fenêtre + étiquettes dérivées d'un bloc unique), <code>radar-salient-index</code> (stepper grid-aware + chargement par intervalle datetime), <code>radar-event-salience</code> (chargement du bloc par intervalle <code>[début, +4h)</code>, robuste au bloc du soir 19-23 Mtl qui traverse minuit UTC). Crons et grille sont désormais alignés → fraîcheur ~1h (à 20h, le site sert le bloc 15-19).</li>
+            <li><strong>🎯 Tag public = heure de publication</strong> (bloc 15-19 → « 20h », vitrine <a href="https://github.com/ellipse-science/vitrine-showcase.github.io/pull/244">#244</a>), pas la fin de bloc ; la fenêtre de données (15-19) est documentée dans la métho (§03 <em>indice-saillance</em> pour les blocs 4h, §08 <em>fenêtres-temporelles</em> pour la lecture « Aujourd'hui »).</li>
             <li><strong><code>radar-event-salience</code> est ABSENT de ce plan</strong> (créé après, mai 2026) : c'est lui qui produit la Une (<code>headline_events_4h</code>, 6×/jour à :51, storyline_id inclus). <code>headline_of_headlines</code> n'alimente plus le site.</li>
             <li>L'étape « GLiNER + Gemma3 » de <code>radar-salient-objects</code> n'a <strong>pas été réalisée</strong> (toujours GPT-4o) — à re-prioriser.</li>
           </ul>
@@ -1405,7 +1406,7 @@
         <div class="meta">
           <div class="meta-item">
             <span>📅</span>
-            <span class="badge">15 mars 2026</span>
+            <span class="badge">14 juillet 2026</span>
           </div>
           <div class="meta-item">
             <span>🎯</span>
@@ -3366,8 +3367,8 @@
               </div>
 
               <div class="timeline-item">
-                <h4>Mise à jour de tous les raffineurs (EN COURS)</h4>
-                <p>Migration UTC → heure locale Montréal - Application du nouvel horaire - Ajout du 6ème bloc (minuit) - Mise à jour des payloads</p>
+                <h4>✅ Mise à jour de tous les raffineurs (LIVRÉ — 14 juillet 2026)</h4>
+                <p>Migration UTC → heure locale Montréal de la grille de blocs (aws-refiners#214, chaîne de la Une : salient-objects, salient-index, event-salience) - Application du nouvel horaire (crons livrés en mars, PR #369/#370) - Payloads <code>pass</code> : maintien assumé de am/noon/pm (décision 2026-07-14 — étiquette interne sans effet sur les calculs)</p>
               </div>
 
               <div class="timeline-item">
@@ -3386,7 +3387,7 @@
           </div>
 
           <footer>
-            <p><strong>Version:</strong> Bêta 2.0 | <strong>Dernière mise à jour:</strong> 15 mars 2026</p>
+            <p><strong>Version:</strong> Bêta 2.0 | <strong>Dernière mise à jour:</strong> 14 juillet 2026</p>
           </footer>
         </div>
 
