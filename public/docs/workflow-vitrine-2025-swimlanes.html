@@ -461,7 +461,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 10 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 16 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -616,7 +616,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="headlines_issues" data-env-output="DEV">
                     headlines_issues_* ⛔
-                    <div class="node-detail">plus alimenté (raffineur déprécié)</div>
+                    <div class="node-detail">n'est plus alimentée (raffineur déprécié)</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
@@ -713,7 +713,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>💭 Reflet (Synthèses LLM par Enjeu) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16)</span>
-                <span class="frequency">Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
             </div>
             <div class="pipeline-content" style="display: grid; grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto; gap: 15px; align-items: center;">
                 <!-- Ligne 1: Quotidien/Hebdo -->
@@ -768,7 +768,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📰 Headline of Headlines (Une des Unes) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16) — la Une vient de radar-event-salience</span>
-                <span class="frequency">6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — 6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -1621,7 +1621,7 @@
                     ]
                 },
                 'headlines-issues': {
-                    title: 'Refiner: radar-headlines-issues.R',
+                    title: 'Refiner: radar-headlines-issues.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Classifie les headlines selon 12 catégories d\'enjeux via deep learning, génère 3 versions (quotidien, hebdomadaire, mensuel).',
                     details: [
                         '📥 SOURCE: <span class="badge-prod">PROD</span>/datawarehouse - Table r-media-headlines',
@@ -1656,7 +1656,7 @@
                     title: 'Refiner: radar-issues-score.R',
                     description: 'Agrège les classifications d\'enjeux par période en proportions normalisées (somme=1.0).',
                     details: [
-                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables headlines_issues_day/week/month',
+                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table radar_annotated (⚠️ corrigé — lit radar_annotated, PAS headlines_issues)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Tables issues_score_day/week/month',
                         '',
                         '⚙️ TRAITEMENT (calculs statistiques):',
@@ -1739,7 +1739,7 @@
                     ]
                 },
                 'reflet-daily-weekly': {
-                    title: 'Refiner: radar-reflet-daily-weekly.R',
+                    title: 'Refiner: radar-reflet-daily-weekly.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Génère des synthèses textuelles (LLM) quotidiennes et hebdomadaires par enjeu via GPT-4o.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables salient_headlines_objects, headlines_issues_day/week',
@@ -1771,7 +1771,7 @@
                     ]
                 },
                 'reflet-monthly': {
-                    title: 'Refiner: radar-reflet-monthly.R',
+                    title: 'Refiner: radar-reflet-monthly.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Génère des synthèses textuelles (LLM) mensuelles par enjeu via GPT-4o.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables headlines_issues_month',
@@ -1797,7 +1797,7 @@
                     ]
                 },
                 'headline-of-headlines': {
-                    title: 'Refiner: radar-headline-of-headlines.R',
+                    title: 'Refiner: radar-headline-of-headlines.R ⛔ DÉPRÉCIÉ (active:false, #428) — la Une vient de radar-event-salience',
                     description: 'Génère une "Une des Unes" synthétique (headline principal) pour chaque période de 4h via LLM.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table salient_headlines_objects',
@@ -2024,7 +2024,7 @@
             },
             dicts: {
                 'issues': {
-                    title: 'Dictionnaire: dict-issues-two-categories',
+                    title: 'Dictionnaire: dict-issues-two-categories ⛔ SUPPRIMÉ (remplacé par dict-issues-capp-cap-lexicoder)',
                     description: 'Définit les 12 catégories d\'enjeux politiques utilisées pour classifier les headlines.',
                     details: [
                         '1. Economy and Labour (Économie et travail)',
