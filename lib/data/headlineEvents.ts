@@ -434,7 +434,7 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
 
 // Score du module = convergence au niveau HISTOIRE (décision ratifiée 2026-07-15 :
 // event-level plutôt que cosinus-objet, plus lisible et cohérent avec le radar).
-// « De combien de l'attention des deux régions va aux MÊMES histoires ? »
+// « De combien d'attention des deux régions va aux MÊMES histoires ? »
 // Une histoire est bilatérale si elle a de la saillance des deux côtés
 // (sumQc>0 ET sumRoc>0) sur la fenêtre 24 h. Convergence = moyenne des deux
 // parts (QC couvert par CAN, CAN couvert par QC). null si un côté est vide.
