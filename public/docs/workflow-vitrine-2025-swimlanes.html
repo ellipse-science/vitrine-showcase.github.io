@@ -603,25 +603,26 @@
                 </div>
                 <div class="arrow">+</div>
                 <div class="node node-dict" data-type="dict" data-dict="issues">
-                    dict-issues-two-categories
-                    <div class="node-detail">12 catégories</div>
+                    dict-issues-two-categories ⛔
+                    <div class="node-detail">SUPPRIMÉ (dict retiré — remplacé par dict-issues-capp-cap-lexicoder)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="headlines-issues">
-                    radar-headlines-issues.R
-                    <div class="node-detail">Classifie headlines</div>
+                    radar-headlines-issues.R ⛔
+                    <div class="node-detail">DÉPRÉCIÉ (active:false, aws-infra #428) — n'alimente plus le site</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="headlines_issues" data-env-output="DEV">
-                    headlines_issues_*
-                    <div class="node-detail">quotidien/hebdo/mensuel</div>
+                    headlines_issues_* ⛔
+                    <div class="node-detail">plus alimenté (raffineur déprécié)</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="issues-score">
                     radar-issues-score.R
+                    <div class="node-detail">✅ VIVANT — lit radar_annotated (PAS headlines_issues)</div>
                     <div class="node-schedule">⏰ 07:09, 11:09, 15:09</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
@@ -711,7 +712,7 @@
         <div class="pipeline pipeline-reflet" data-pipeline="reflet">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>💭 Reflet (Synthèses LLM par Enjeu)</span>
+                <span>💭 Reflet (Synthèses LLM par Enjeu) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16)</span>
                 <span class="frequency">Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
             </div>
             <div class="pipeline-content" style="display: grid; grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto; gap: 15px; align-items: center;">
@@ -766,7 +767,7 @@
         <div class="pipeline pipeline-headline" data-pipeline="headline">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>📰 Headline of Headlines (Une des Unes)</span>
+                <span>📰 Headline of Headlines (Une des Unes) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16) — la Une vient de radar-event-salience</span>
                 <span class="frequency">6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
