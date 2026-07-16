@@ -63,6 +63,12 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 
 7. **Règles de rédaction obligatoires pour tout texte public.** Tout texte affiché sur le site (libellés, phrases éditoriales générées, infobulles, méthodo, billets) suit les règles canoniques de [`.claude/skills/redaction-editoriale/SKILL.md`](./.claude/skills/redaction-editoriale/SKILL.md) — voix sobre, typographie française, lexique canonique (jamais « ROC » en public), formulations honnêtes issues du red-team, superlatifs calibrés sur les percentiles. Les gabarits de phrases générées doivent être finis, listés dans le code et relus par la propriétaire du contenu éditorial avant merge.
 
+8. **Attribution humaine des commits — l'humain est auteur, l'IA est tracée comme provenance.** On distingue deux choses que le débat confond souvent :
+   - **Paternité (interdite à l'IA).** Aucun auteur/committer IA, aucun trailer `Co-Authored-By` pointant vers une IA (`noreply@anthropic.com`, Copilot, etc.) — vérifiez `git config user.name` / `user.email` dans vos environnements d'agents. Pourquoi : GitHub parse ces signaux comme une **co-signature** et crédite le co-auteur dans le graphe Contributors — le compte `claude` y apparaissait comme 2e contributeur du repo. Un livrable scientifique n'a pas d'auteur non humain ; c'est la personne qui commande, supervise et assume qui est l'autrice.
+   - **Provenance (permise, encouragée).** Documenter l'outil qui a assisté le travail via un trailer `Assisted-by: Claude Code (Opus 4.8)` (ou `Generated-with:`). GitHub **ne le parse pas** comme une co-signature : le graphe Contributors reste propre, l'humain reste seul auteur, et l'assistance machine est tout de même reconnue et traçable — sans en faire un co-auteur. C'est la manière sanctionnée de créditer honnêtement l'outil, en cohérence avec la transparence méthodologique (les outils employés sont déjà mentionnés dans la méthodo, pour la reproductibilité).
+
+   Appliqué mécaniquement : `includeCoAuthoredBy: false` dans `.claude/settings.json` (Claude Code n'émet plus le trailer de paternité) + check CI `garde-attribution` sur chaque PR — qui **bloque la paternité mais laisse passer la provenance**. Contexte : [issue #235](https://github.com/ellipse-science/vitrine-showcase.github.io/issues/235).
+
 ## Module naming + signalement labels (triage)
 
 Treat these as **distinct modules**. A right-click report inside a block must be tagged to that module and receive its GitHub label:

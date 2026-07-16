@@ -17,6 +17,15 @@ Il s'applique à tout agent travaillant dans le repo (après acceptation des ré
 
 `.github/workflows/ci.yml` exécute, sur toute PR vers `main` : **type-check → test → build**. Rien qui casse la compilation, la logique de données (tests `lib/data/`) ou le build n'atteint `main`.
 
+## Garde attribution humaine (sur chaque PR)
+
+`.github/workflows/garde-attribution.yml` échoue si un commit de la PR met une IA en **paternité** : auteur/committer avec adresse IA, ou trailer `Co-Authored-By` pointant vers `noreply@anthropic.com`, Copilot, etc. (règle dure #8, issue #235). La distinction est volontaire :
+
+- **Paternité (bloquée)** — GitHub parse l'auteur/committer et `Co-Authored-By` comme une co-signature et crédite le co-auteur dans le graphe Contributors. Pas d'auteur non humain sur un livrable scientifique.
+- **Provenance (permise)** — un trailer `Assisted-by: Claude Code (Opus 4.8)` (ou `Generated-with:`) documente l'outil sans être compté comme co-auteur par GitHub. C'est la forme sanctionnée pour reconnaître l'assistance machine ; le check la laisse passer.
+
+Complément préventif : `"includeCoAuthoredBy": false` dans `.claude/settings.json` empêche Claude Code de générer le trailer de paternité. La détection se fait par adresse courriel, pas par prénom.
+
 ## Auto-merge Dependabot
 
 `.github/workflows/auto-merge-dependabot.yml` approuve puis active l'auto-merge (`gh pr merge --auto`) des PRs Dependabot. **L'auto-merge ne fusionne que si la protection de branche de `main` exige le check CI en succès.**
