@@ -1,13 +1,11 @@
 {
-  "generated_at": "2026-07-17T12:03Z",
-  "headline_fr": "Trump dénonce des failles électorales, tensions avec l'Iran s'intensifient",
+  "generated_at": "2026-07-17T16:03Z",
+  "headline_fr": "Trump dénonce les failles du système électoral américain",
   "headline_en": "Donald Trump livre un discours à la nation",
-  "main_issue": "international_affairs_and_defense",
-  "main_issue_text_fr": "Affaires internationales et défense",
+  "main_issue": "governments_and_governance",
+  "main_issue_text_fr": "Gouvernements et gouvernance",
   "context_outlets": [
     "RCI",
-    "LAP",
-    "CBC",
-    "FXN"
+    "LAP"
   ]
 }
