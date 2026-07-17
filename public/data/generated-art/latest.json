@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-07-17T08:03Z",
-  "headline_fr": "Trump dénonce des failles électorales et accuse la Chine d'ingérence",
-  "headline_en": "Trump s’adressera aux Américains ce soir et promet des révélations sur le système électoral avant les élections de mi-mandat",
+  "generated_at": "2026-07-17T12:03Z",
+  "headline_fr": "Trump dénonce des failles électorales, tensions avec l'Iran s'intensifient",
+  "headline_en": "Donald Trump livre un discours à la nation",
   "main_issue": "international_affairs_and_defense",
   "main_issue_text_fr": "Affaires internationales et défense",
   "context_outlets": [
-    "LED",
-    "JDM",
     "RCI",
-    "LAP"
+    "LAP",
+    "CBC",
+    "FXN"
   ]
 }
