@@ -1,12 +1,13 @@
 {
-  "generated_at": "2026-07-16T20:04Z",
-  "headline_fr": "Lacunes sur la voie ferrée à Repentigny : le BST pointe des pièces manquantes",
-  "headline_en": "Déraillement à Repentigny Plusieurs lacunes sur la voie ferrée, soulève le BST",
-  "main_issue": "governments_and_governance",
-  "main_issue_text_fr": "Gouvernements et gouvernance",
+  "generated_at": "2026-07-17T00:04Z",
+  "headline_fr": "Carney critique Trudeau sur le climat alors que les feux ravagent l'Ontario",
+  "headline_en": "Le premier ministre, Mark Carney, blâme le gouvernement Trudeau pour le bilan climatique du Canada",
+  "main_issue": "environment_and_energy",
+  "main_issue_text_fr": "Environnement et énergie",
   "context_outlets": [
-    "LAP",
     "LED",
-    "RCI"
+    "RCI",
+    "CBC",
+    "GN"
   ]
 }
