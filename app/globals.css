@@ -2686,6 +2686,14 @@
       grid-template-columns: 1fr;
       gap: 14px;
     }
+    /* À 2 ou 1 Unes, la règle « illustration élargie » (4 classes, définie en
+       base ~l.850) bat le 1fr ci-dessus par spécificité et écrase la colonne
+       texte à 0px sur mobile — état jamais vu tant que le module forçait
+       3 Unes (#273). Même spécificité ici, déclarée après : mobile reste 1fr. */
+    .unes-jour.deux-unes .une-main-grid.has-art,
+    .unes-jour.une-seule .une-main-grid.has-art {
+      grid-template-columns: 1fr;
+    }
 
     /* ── Secondaires empilées sur mobile ── */
     .hero-secondaries {

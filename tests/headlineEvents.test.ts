@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -310,6 +310,33 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     const st = storiesFrom24h(rows as never);
     expect(st[0].urlByMedia["LED"]).toBe("https://led/frais");
     expect(st[0].repKey).toBe("2026-07-13T16"); // rep = bloc le plus récent aussi
+  });
+});
+
+describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3)", () => {
+  // selectTopUnes ne lit que sumQc et qcMedia ; le reste de Story est superflu ici.
+  const story = (label: string, sumQc: number, nQcMedia: number) =>
+    ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)) });
+
+  it("garde les 3 Unes quand les secondaires sont multi-médias", () => {
+    const st = [story("A", 30, 4), story("B", 20, 2), story("C", 10, 3)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
+  });
+  it("cas du 16-17 juillet : héros multi-médias + 2 secondaires mono-média → une seule Une", () => {
+    const st = [story("Argentine", 30, 4), story("Montréal vibre", 20, 1), story("Tiques", 10, 1)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Argentine"]);
+  });
+  it("le héros reste affiché même mono-média (le module a toujours ≥ 1 Une)", () => {
+    const st = [story("Seule", 8, 1), story("Autre", 5, 1)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule"]);
+  });
+  it("tronque SANS repêcher : une multi-média hors top-3 ne remonte pas (sélection partagée avec le radar)", () => {
+    const st = [story("A", 30, 4), story("B", 20, 1), story("C", 10, 2), story("D", 5, 5)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "C"]);
+  });
+  it("classe par saillance cumulée décroissante et ignore les histoires sans média QC", () => {
+    const st = [story("Faible", 5, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Forte", "Faible"]);
   });
 });
 
