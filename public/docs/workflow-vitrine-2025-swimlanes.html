@@ -1063,7 +1063,7 @@
                     columns: [
                         '📍 IDENTIFIANTS ARTICLE:',
                         'id - Identifiant unique article (depuis radar_annotated)',
-                        'media_id - Identifiant du média (JDM, LAP, LED, CBC, CTV, etc. - EXCLUT TVA)',
+                        'media_id - Identifiant du média (JDM, LAP, LED, TVA, CBC, CTV, etc. — TVA réintégré le 2026-07-18, copie syndiquée JDM dédupliquée)',
                         'country_id - Pays (QC/CAN/USA)',
                         'language - Langue du headline (fr/en/autre)',
                         '',
@@ -1852,7 +1852,7 @@
                         '🔬 Reference: Salton & McGill (1983), Introduction to Modern Information Retrieval, ch. 3 (vector space model + cosine similarity)',
                         '',
                         '🌍 PAYS: QC, CAN, USA (clusterings indépendants)',
-                        '🚫 QC: TVA exclu (duplique JDM)',
+                        '♻️ QC: TVA réintégré (2026-07-18) — sa copie syndiquée JDM (titre identique, même bloc) est dédupliquée en amont par radar-salient-objects',
                         '',
                         '📋 OUTPUT: headline_events_4h - 63 colonnes (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag), ~270 lignes/jour',
                         '',
