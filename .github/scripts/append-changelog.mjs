@@ -13,6 +13,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const CHANGELOG = "static-content/changelog.json";
 const PLACEHOLDER = "À remplacer";
+// Une note de journal = 1-2 phrases. Au-delà, on tronque : le corps de la PR
+// est une entrée non fiable et la page /journal doit rester lisible.
+const MAX_NOTE_LENGTH = 400;
 
 const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
 const pr = event.pull_request;
@@ -23,11 +26,15 @@ function extractNote(body) {
   if (!body) return null;
   const match = body.match(/^##\s*Note de journal\s*$([\s\S]*?)(?=^##\s|\n*$(?![\s\S]))/m);
   if (!match) return null;
-  const note = match[1]
+  let note = match[1]
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/^\s*>\s?/gm, "")
+    .replace(/\s+/g, " ")
     .trim();
   if (!note || note.includes(PLACEHOLDER)) return null;
+  if (note.length > MAX_NOTE_LENGTH) {
+    note = note.slice(0, MAX_NOTE_LENGTH).replace(/\s+\S*$/, "") + "…";
+  }
   return note;
 }
 
