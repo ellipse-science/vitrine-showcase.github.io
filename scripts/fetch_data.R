@@ -305,7 +305,8 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
 # de la jauge du module Deux solitudes. Reproduit windowEventConvergence du
 # frontend (lib/data/headlineEvents.ts) : pour CHAQUE bloc « as-of » de
 # l'historique on reconstruit la fenêtre glissante de 6 blocs (24 h), on agrège la
-# saillance par histoire (storyline_id ?? event_label ?? event_id), on garde les
+# saillance par histoire (storyline_id ?? event_label ?? event_id) avec la MÊME
+# pondération de récence que le frontend (demi-vie 10 h, vitrine #274), on garde les
 # histoires bilatérales (sumQc>0 ET sumRoc>0) et on prend la moyenne des deux parts
 # d'attention. La distribution de ces valeurs `as-of` = exactement les nombres que
 # la jauge aurait affichés à chaque rafraîchissement de 4 h → son p50 remplace la
@@ -370,11 +371,19 @@ calibration_event_convergence <- function(conn, cut_date) {
     # Convergence event-level d'UNE fenêtre : somme par histoire sur les 6 blocs,
     # puis moyenne des deux parts d'attention bilatérales. `rowsum` (base R) est
     # bien plus léger qu'un group_by dplyr répété ~2 000 fois.
+    # Pondération de récence (vitrine #274, banc #282) : comme storiesFrom24h,
+    # le poids d'un bloc décroît en 2^(-âge/10 h) par rapport au bloc le plus
+    # récent de la fenêtre — sans elle, le p50 publié dériverait du module.
+    HALF_LIFE_H <- 10
+    block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
+                                                  format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
     window_conv <- function(win_blocks) {
       w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
       if (nrow(w) == 0) return(NA_real_)
-      qc  <- rowsum(w$sumQc,  w$story)[, 1]
-      roc <- rowsum(w$sumRoc, w$story)[, 1]
+      newest <- max(vapply(win_blocks, block_ms, numeric(1)))
+      wt <- 2^((vapply(w$block, block_ms, numeric(1)) - newest) / 3600 / HALF_LIFE_H)
+      qc  <- rowsum(w$sumQc  * wt, w$story)[, 1]
+      roc <- rowsum(w$sumRoc * wt, w$story)[, 1]
       totalQc <- sum(qc); totalRoc <- sum(roc)
       if (totalQc <= 0 || totalRoc <= 0) return(NA_real_)
       bi <- qc > 0 & roc > 0
