@@ -315,9 +315,9 @@ type Story = {
   rep: RawEvent;           // occurrence du bloc le plus récent (titre, médias, articles frais)
   repKey: string;
   label: string;
-  sumQc: number;           // Σ score_qc sur la fenêtre — sert au CLASSEMENT (attention cumulée)
+  sumQc: number;           // Σ score_qc pondérée par récence (demi-vie HALF_LIFE_H) — sert au CLASSEMENT
   sumRoc: number;
-  peakQc: number;          // max score_qc sur la fenêtre — sert à la PASTILLE de saillance
+  peakQc: number;          // max score_qc BRUT sur la fenêtre — sert à la PASTILLE de saillance
   peakRoc: number;         // (même échelle que le score de bloc → seuils inchangés)
   qcMedia: Set<string>;
   canMedia: Set<string>;
@@ -332,10 +332,24 @@ function parseIdList(json: string | null | undefined): string[] {
   } catch { return []; }
 }
 
+// Pondération de récence du CLASSEMENT (vitrine #274, arbitrage d'Adrien sur le
+// banc d'essai #282 du 2026-07-20) : à l'intérieur de la fenêtre 24 h, le poids
+// d'un bloc décroît exponentiellement avec son âge — demi-vie de 10 h, donc une
+// Une d'il y a 10 h pèse moitié moins qu'une Une en cours. Ne touche QUE les
+// sommes (sumQc/sumRoc → classement, parts d'attention, convergence) ; le pic
+// (peakQc → pastille) reste BRUT : l'étiquette décrit ce que l'histoire a été à
+// son sommet sur 24 h, le rang décrit ce qui domine l'attention maintenant.
+// Chiffres du banc (juin 2026) : âge moyen du pic du n°1 10,1 h → 5,5 h, churn
+// 37 % (cible < 35-40 %), convergence Deux solitudes quasi inchangée (Δp50 ≤ 1).
+const HALF_LIFE_H = 10;
+const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
+
 function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
+  // Référence de la décroissance = bloc le plus récent de la fenêtre (âge 0).
+  const newestMs = blocks.length ? blockStartMs(blocks[0]) : 0;
   // Blocs récents d'abord : l'ordre du JSON n'est pas garanti, et le « premier
   // URL conservé » par média (ci-dessous) doit venir du bloc le plus frais.
   const windowEvents = allEvents
@@ -347,6 +361,8 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     if (!e.title) continue;
     const key = e.storyline_id ?? e.event_label ?? e.event_id;
     const bk = blockKey(e);
+    // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
+    const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
     const qc = e.score_qc ?? 0;
     const roc = rocScore(e);
     const qcIds = e.media_ids_qc !== undefined
@@ -361,7 +377,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
         qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? "") };
       byStory.set(key, cur);
     }
-    cur.sumQc += qc; cur.sumRoc += roc;
+    cur.sumQc += qc * w; cur.sumRoc += roc * w;
     cur.peakQc = Math.max(cur.peakQc, qc); cur.peakRoc = Math.max(cur.peakRoc, roc);
     qcIds.forEach((id) => cur!.qcMedia.add(id));
     canIds.forEach((id) => cur!.canMedia.add(id));

@@ -276,7 +276,9 @@ const ev = (over: Record<string, unknown>) => ({
 });
 
 describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
-  it("somme la saillance d'une storyline sur plusieurs blocs (fenêtre 24h)", () => {
+  // Poids de récence d'un bloc vieux de `h` heures (demi-vie 10 h, #274).
+  const w = (h: number) => Math.pow(2, -h / 10);
+  it("somme la saillance d'une storyline sur plusieurs blocs, pondérée par récence", () => {
     const rows = [
       ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
       ev({ storyline_id: "sA", title: "A", score_qc: 6, time_interval_utc: "12-16" }),
@@ -284,9 +286,34 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     ];
     const st = storiesFrom24h(rows as never).sort((a: { sumQc: number }, b: { sumQc: number }) => b.sumQc - a.sumQc);
     expect(st[0].label).toBe("A");
-    expect(st[0].sumQc).toBe(16); // 10 + 6 sur 24h
-    expect(st[0].peakQc).toBe(10); // pic = max bloc (échelle du score de bloc)
-    expect(st[1].sumQc).toBe(4);
+    expect(st[0].sumQc).toBeCloseTo(10 + 6 * w(4), 6); // bloc frais plein poids, bloc −4h atténué
+    expect(st[0].peakQc).toBe(10); // pic = max bloc BRUT (échelle du score de bloc, pastille)
+    expect(st[1].sumQc).toBeCloseTo(4, 6);
+  });
+  it("la récence peut inverser le classement : pic d'hier soir contre histoire en cours (#274)", () => {
+    // "Vieille" domine en cumul plat (30 vs 24) mais tout son score date de
+    // 20 h ; "Fraîche" est en cours. Avec la demi-vie 10 h, Fraîche passe devant,
+    // et Vieille garde le peakQc le plus haut (la pastille reste honnête).
+    const rows = [
+      ev({ storyline_id: "sV", title: "Vieille", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "00-04" }),
+      ev({ storyline_id: "sF", title: "Fraîche", score_qc: 24, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const vieille = st.find((s: { label: string }) => s.label === "Vieille")!;
+    const fraiche = st.find((s: { label: string }) => s.label === "Fraîche")!;
+    expect(fraiche.sumQc).toBeGreaterThan(vieille.sumQc); // 24 > 30·2^(-2) = 7,5
+    expect(vieille.sumQc).toBeCloseTo(30 * w(20), 6);
+    expect(vieille.peakQc).toBe(30);
+  });
+  it("le poids de récence se mesure en heures calendaires, pas en rangs de blocs", () => {
+    // Trou dans la grille (bloc 16-20 absent) : le bloc 12-16 reste vieux de 8 h
+    // par rapport à 20-24, pas de 4 h.
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "12-16" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    expect(st[0].sumQc).toBeCloseTo(10 + 10 * w(8), 6);
   });
   it("ne garde que les 6 blocs les plus récents (24h)", () => {
     // 8 blocs : le plus ancien (00) hors fenêtre de 6
