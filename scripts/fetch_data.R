@@ -377,11 +377,15 @@ calibration_event_convergence <- function(conn, cut_date) {
     HALF_LIFE_H <- 10
     block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
                                                   format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+    # Chaque bloc est parsé UNE seule fois : les mêmes blocs reviennent dans
+    # ~2 000 fenêtres glissantes, re-parser à chaque fenêtre coûterait cher
+    # (même souci de timeout CI que la pré-agrégation ci-dessus).
+    block_ms_tab <- vapply(unique(df$block), block_ms, numeric(1))
     window_conv <- function(win_blocks) {
       w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
       if (nrow(w) == 0) return(NA_real_)
-      newest <- max(vapply(win_blocks, block_ms, numeric(1)))
-      wt <- 2^((vapply(w$block, block_ms, numeric(1)) - newest) / 3600 / HALF_LIFE_H)
+      newest <- max(block_ms_tab[win_blocks], na.rm = TRUE)
+      wt <- 2^((block_ms_tab[w$block] - newest) / 3600 / HALF_LIFE_H)
       qc  <- rowsum(w$sumQc  * wt, w$story)[, 1]
       roc <- rowsum(w$sumRoc * wt, w$story)[, 1]
       totalQc <- sum(qc); totalRoc <- sum(roc)
