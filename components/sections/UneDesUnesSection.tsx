@@ -6,14 +6,32 @@ import { loadHeadlineEvents, type UneEvent } from "@/lib/data/headlineEvents";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { SaillanceTrend } from "@/components/interactive/SaillanceTrend";
+import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
 
-// Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
-// Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
-function saillantLabel(event: UneEvent): string {
-  return event.saillantSince
-    ? `Saillant au Québec depuis ${event.saillantSince}`
-    : "Saillant au Québec";
+// En-tête d'une Une : rubrique (enjeu) → badge de saillance (au pic 24 h) + ⓘ →
+// trajectoire (#274). Le badge tombe toujours sous l'enjeu (CSS flex-basis 100 %),
+// et la trajectoire prend sa propre ligne dessous. Factorisé : hero et secondaires
+// partagent exactement la même structure (seule la classe du conteneur change).
+function SaillanceHead({ event, className }: { event: UneEvent; className: string }) {
+  return (
+    <div className={className}>
+      <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+        {event.issueFr}
+      </span>
+      <span className="saillance-tag-row">
+        <span className={`saillance-tag ${event.saillanceCls}`}>
+          Saillance {event.saillanceLabel}
+        </span>
+        <InfoTip size="sm" label="Détail du niveau de saillance">
+          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel}
+            peak={event.scoreQcPeak24h} thresholds={event.salThresholds} />
+        </InfoTip>
+      </span>
+      {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} />}
+    </div>
+  );
 }
 
 function MediaLinkList({ media }: { media: { name: string; url: string | null }[] }) {
@@ -79,17 +97,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
               négative) et le tag « Exceptionnelle » agrandi finissait par le
               chevaucher quand l'enjeu était long. Ici, le chevauchement est
               impossible par construction. */}
-          <div className="une-main-head">
-            <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-              {event.issueFr}
-            </span>
-            <span className="saillance-tag-row">
-              <span className={`saillance-tag ${event.saillanceCls}`}>
-                Saillance {event.saillanceLabel}
-              </span>
-              <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-            </span>
-          </div>
+          <SaillanceHead event={event} className="une-main-head" />
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             {event.representativeUrl ? (
@@ -97,31 +105,15 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
             ) : event.title}
           </h1>
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
-          <div className="saillance-row">
-            <span className="time">{saillantLabel(event)}</span>
-          </div>
           <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
           {secondEvent && (
             <div className="une-side une-second">
-              <div className="une-side-head">
-                <span className="une-enjeu" style={{ "--c": secondEvent.issueColor } as React.CSSProperties}>
-                  {secondEvent.issueFr}
-                </span>
-                <span className="saillance-tag-row">
-                  <span className={`saillance-tag ${secondEvent.saillanceCls}`}>
-                    Saillance {secondEvent.saillanceLabel}
-                  </span>
-                  <InfoTip size="sm" label="Détail du niveau de saillance">{secondEvent.saillanceHint}</InfoTip>
-                </span>
-              </div>
+              <SaillanceHead event={secondEvent} className="une-side-head" />
               <h2 data-saillance={secondEvent.saillanceRank}>
                 {secondEvent.representativeUrl ? (
                   <a href={secondEvent.representativeUrl} target="_blank" rel="noopener noreferrer">{secondEvent.title}</a>
                 ) : secondEvent.title}
               </h2>
-              <div className="saillance-row">
-                <span className="time">{saillantLabel(secondEvent)}</span>
-              </div>
               <Byline mediaToday={secondEvent.mediaToday} mediaAbsent={secondEvent.mediaAbsent} />
             </div>
           )}
@@ -159,25 +151,12 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
 function SideUne({ event }: { event: UneEvent }) {
   return (
     <div className="une-side">
-      <div className="une-side-head">
-        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-          {event.issueFr}
-        </span>
-        <span className="saillance-tag-row">
-          <span className={`saillance-tag ${event.saillanceCls}`}>
-            Saillance {event.saillanceLabel}
-          </span>
-          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-        </span>
-      </div>
+      <SaillanceHead event={event} className="une-side-head" />
       <h2 data-saillance={event.saillanceRank}>
         {event.representativeUrl ? (
           <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
         ) : event.title}
       </h2>
-      <div className="saillance-row">
-        <span className="time">{saillantLabel(event)}</span>
-      </div>
       {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
       <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
     </div>

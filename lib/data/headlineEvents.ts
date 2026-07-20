@@ -323,6 +323,13 @@ type Story = {
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
   tok: Set<string>;
+  // Score QC BRUT (non pondéré) par bloc 4 h de la fenêtre — sert à la
+  // trajectoire de saillance (#274). max par bloc, comme peakQc mais conservé
+  // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
+  byBlock: Map<string, number>;
+  /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
+   *  storyline était absente de ce bloc. Alimente la sparkline + le survol. */
+  series: { blockUtc: string; qc: number }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -374,11 +381,13 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     let cur = byStory.get(key);
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
-        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? "") };
+        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? ""),
+        byBlock: new Map(), series: [] };
       byStory.set(key, cur);
     }
     cur.sumQc += qc * w; cur.sumRoc += roc * w;
     cur.peakQc = Math.max(cur.peakQc, qc); cur.peakRoc = Math.max(cur.peakRoc, roc);
+    cur.byBlock.set(bk, Math.max(cur.byBlock.get(bk) ?? 0, qc)); // score BRUT par bloc (trajectoire)
     qcIds.forEach((id) => cur!.qcMedia.add(id));
     canIds.forEach((id) => cur!.canMedia.add(id));
     for (const k of ["articles_24h", "articles"] as const) {
@@ -407,9 +416,16 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
       a.qcMedia.forEach((id) => host.qcMedia.add(id));
       a.canMedia.forEach((id) => host.canMedia.add(id));
       for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
+      for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
     } else {
       merged.push(a);
     }
+  }
+  // Série par bloc sur les 6 blocs de la fenêtre, du plus ANCIEN au plus récent
+  // (0 quand la storyline était absente du bloc) — pour la trajectoire #274.
+  const windowBlocksAsc = blocks.slice(0, 6).slice().reverse();
+  for (const s of merged) {
+    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0 }));
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
@@ -724,6 +740,87 @@ function periodLabelFromInterval(intervalMtl: string): string {
   return editionLabel(start);
 }
 
+// ── Trajectoire de saillance (#274) ─────────────────────────────────────────
+// Un point de la courbe des 6 derniers blocs : l'heure, le NIVEAU de saillance
+// qu'affichait la nouvelle à ce moment (pas le score brut — décision Adrien) et
+// des repères (première apparition / sommet / en ce moment).
+export type SalienceTrendPoint = {
+  timeLabel: string;   // « hier 19 h »
+  level: string;       // « Exceptionnelle »
+  levelCls: string;    // « s-extreme » (couleur de bande)
+  score: number;       // score_qc du bloc, arrondi (alimente la sparkline)
+  isFirst: boolean;    // premier bloc où la nouvelle est apparue en Une
+  isPeak: boolean;     // bloc du sommet
+  isNow: boolean;      // bloc courant
+};
+export type SalienceTrend = {
+  dir: "up" | "down" | "flat";
+  // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
+  capLabel: string;
+  points: SalienceTrendPoint[];
+};
+
+// Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
+// (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
+// la journée et l'heure arrondie à l'édition la plus proche.
+function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
+  { dayWord: string; moment: string; hour: number } | null {
+  if (!blockDateMtl) return null;
+  const t = new Date(`${blockUtc}:00:00Z`);
+  if (Number.isNaN(t.getTime())) return null;
+  const { dateIso, hour } = mtlDateAndHour(t);   // heure MTL RÉELLE du bloc (gère EDT/EST)
+  const blockDay = isoDay(dateIso), refDay = isoDay(blockDateMtl);
+  if (blockDay === null || refDay === null) return null;
+  // Moment de la journée (« hier soir ») = heure arrondie à l'édition la plus
+  // proche, pour le libellé de tendance. L'heure exacte (`hour`) sert au survol.
+  const snapped = UPDATE_HOURS_MTL.reduce(
+    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p), UPDATE_HOURS_MTL[0]);
+  const dayDiff = refDay - blockDay;
+  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[snapped], hour };
+  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[snapped], hour };
+  const dateFr = formatDateFr(dateIso);
+  const asDate = `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+  return { dayWord: asDate, moment: asDate, hour };
+}
+
+// Construit la trajectoire à partir de la série 6 blocs. Étiquette chaque bloc à
+// son propre niveau (mêmes seuils que la pastille). Tendance : « en déclin » si
+// le sommet n'est plus le dernier bloc et que le score a chuté sous 70 % du pic ;
+// « en progression » si le dernier bloc dépasse le précédent d'au moins 25 %.
+// null s'il n'y a qu'un bloc actif (rien à raconter).
+function buildSalienceTrend(
+  series: { blockUtc: string; qc: number }[],
+  thresholds: typeof SAL_QC_THRESHOLDS,
+  blockDateMtl: string | null,
+): SalienceTrend | null {
+  if (series.length < 2 || series.every((p) => p.qc <= 0)) return null;
+  const vals = series.map((p) => p.qc);
+  let peakIdx = 0;
+  for (let i = 1; i < vals.length; i++) if (vals[i] > vals[peakIdx]) peakIdx = i;
+  const firstIdx = series.findIndex((p) => p.qc > 0);
+  const last = vals[vals.length - 1], prev = vals[vals.length - 2] ?? 0, peak = vals[peakIdx];
+  const down = peakIdx < vals.length - 1 && last < 0.7 * peak;
+  const up = !down && last > 1.25 * Math.max(prev, 0.001) && last > 0;
+  const dir: SalienceTrend["dir"] = down ? "down" : up ? "up" : "flat";
+  const peakMoment = blockLabelParts(series[peakIdx].blockUtc, blockDateMtl)?.moment;
+  const prevMoment = blockLabelParts(series[vals.length - 2].blockUtc, blockDateMtl)?.moment;
+  const capLabel = down && peakMoment ? `En déclin depuis ${peakMoment}`
+    : up && prevMoment ? `En progression depuis ${prevMoment}`
+    : "Stable";
+  const points: SalienceTrendPoint[] = series.map((p, i) => {
+    const parts = blockLabelParts(p.blockUtc, blockDateMtl);
+    const tier = saillanceTierFromScore(p.qc, thresholds);
+    // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
+    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
+    return {
+      timeLabel,
+      level: tier.label, levelCls: tier.cls, score: Math.round(p.qc),
+      isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
+    };
+  });
+  return { dir, capLabel, points };
+}
+
 export type UneEvent = {
   title: string;
   /** Lead synthétique généré par le refiner (colonne `text`) — affiché sous la 1re Une. */
@@ -756,6 +853,12 @@ export type UneEvent = {
   scoreQcPeak24h: number | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
+  /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
+   *  courbe survolable. null si rien à raconter (un seul bloc actif). */
+  salienceTrend: SalienceTrend | null;
+  /** Seuils de saillance en vigueur [p5, p20, p50, p80, p95] — pour situer la
+   *  nouvelle sur la courbe de distribution dans la bulle ⓘ (#274). */
+  salThresholds: number[];
 };
 
 /** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
@@ -934,6 +1037,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // Pastille de saillance sur le PIC 24 h : même échelle que le score de bloc
     // (c'est un score_qc), donc les seuils SAL_QC_THRESHOLDS restent valides.
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
+    // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
+    // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
+    const salienceTrend = buildSalienceTrend(s.series, salThresholds, e.date_montreal_tz);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;
@@ -977,6 +1083,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       storylineId: e.storyline_id ?? null,
       scoreQcPeak24h: s.peakQc,
       nBlocks24h: e.n_blocks_24h ?? null,
+      salienceTrend,
+      salThresholds: [salThresholds.faible, salThresholds.moyenne, salThresholds.eleve, salThresholds.tresEleve, salThresholds.extreme],
     };
   });
 
@@ -1170,6 +1278,7 @@ export const __test__ = {
   symbolPositions,
   buildSolitudes,
   storiesFrom24h,
+  buildSalienceTrend,
   selectTopUnes,
   MIN_QC_MEDIA_SECONDARY,
   windowConvergence,

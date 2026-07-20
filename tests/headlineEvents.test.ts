@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -337,6 +337,62 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     const st = storiesFrom24h(rows as never);
     expect(st[0].urlByMedia["LED"]).toBe("https://led/frais");
     expect(st[0].repKey).toBe("2026-07-13T16"); // rep = bloc le plus récent aussi
+  });
+});
+
+describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
+  it("expose la série brute des 6 blocs de la fenêtre, 0 si absente d'un bloc", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 10, date_utc: "2026-07-13", time_interval_utc: "12-16" }),
+      // Une autre histoire occupe le bloc 16-20 ; A y est absente → 0 dans sa série.
+      ev({ storyline_id: "sB", title: "B", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const s = st.find((x: { label: string }) => x.label === "A")!;
+    // série ordonnée du plus ancien au plus récent ; le score par bloc est BRUT.
+    const scores = s.series.map((p: { qc: number }) => p.qc);
+    expect(scores[scores.length - 1]).toBe(30); // bloc le plus récent (20-24)
+    expect(scores.filter((v: number) => v === 10)).toHaveLength(1); // bloc 12-16
+    expect(scores.filter((v: number) => v === 0).length).toBeGreaterThan(0); // A absente du bloc 16-20
+  });
+});
+
+describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
+  const thr = SAL_QC_THRESHOLDS; // {faible:5, moyenne:10, eleve:19, tresEleve:36, extreme:71}
+  const decline = [
+    { blockUtc: "2026-07-19T19", qc: 0 }, { blockUtc: "2026-07-19T23", qc: 90 },
+    { blockUtc: "2026-07-20T03", qc: 50 }, { blockUtc: "2026-07-20T07", qc: 12 },
+    { blockUtc: "2026-07-20T11", qc: 0 },
+  ];
+  it("détecte le déclin (sommet passé + chute sous 70 % du pic)", () => {
+    const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("down");
+    expect(t.capLabel).toMatch(/^En déclin depuis /);
+  });
+  it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
+    const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
+    const peak = t.points.find((p: { isPeak: boolean }) => p.isPeak)!;
+    expect(peak.score).toBe(90);
+    expect(peak.level).toBe("Exceptionnelle");
+    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Très faible"); // 0 → bas
+    expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 36 ≤ 50 < 71
+    expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 10 ≤ 12 < 19
+    // première apparition = premier bloc à score > 0
+    expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
+    expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(90);
+  });
+  it("détecte la progression (dernier bloc > 1,25 × le précédent)", () => {
+    const rise = [
+      { blockUtc: "2026-07-20T03", qc: 4 }, { blockUtc: "2026-07-20T07", qc: 9 },
+      { blockUtc: "2026-07-20T11", qc: 20 },
+    ];
+    const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("up");
+    expect(t.capLabel).toMatch(/^En progression/);
+  });
+  it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
+    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0 }] as never, thr, "2026-07-20")).toBeNull();
   });
 });
 
