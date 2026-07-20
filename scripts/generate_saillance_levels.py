@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""Génère l'illustration pédagogique des niveaux de saillance (#35).
+"""Génère l'illustration pédagogique des niveaux de saillance (#35, recalibré #281).
 
-Histogramme de `score_qc` (échelle log) avec les 6 bandes de percentiles
+Histogramme du PIC de saillance 24 h (échelle log) avec les 6 bandes de percentiles
 (Très faible / Faible / Modérée / Élevée / Très élevée / Exceptionnelle = 5/15/30/30/15/5 %).
 Sert à la page méthodologie (§03) ET à l'équipe.
 
-DONNÉES — les valeurs de `score_qc` viennent de la table Athena DEV
-`headline_events_4h` (toute la donnée dispo). Pour rafraîchir le CSV source :
+DONNÉES — la pastille étiquette le PIC 24 h d'une histoire, donc l'illustration
+montre la distribution des pics par storyline QC, période POST-FUSION (≥ 2026-07-17,
+aws-refiners#227). Pour rafraîchir le CSV source :
 
     Rscript -e 'readRenviron("~/.Renviron"); library(tube); library(DBI);
       conn <- ellipse_connect(env="DEV", database="datamarts");
-      df <- DBI::dbGetQuery(conn, paste0(\"SELECT score_qc, event_id FROM \",
-        chr(34), \"vitrine_datamart-headline_events_4h\", chr(34)));
-      d <- df[!is.na(df$score_qc) & df$score_qc>0, ];
-      d <- d[!duplicated(d$event_id), ];
-      writeLines(paste(d$score_qc, collapse=\",\"), \"/tmp/score_qc_dedup.csv\")'
+      df <- DBI::dbGetQuery(conn, paste0(\"SELECT max(score_qc_peak_24h) v FROM \",
+        chr(34), \"vitrine_datamart-headline_events_4h\", chr(34),
+        \" WHERE date_utc >= DATE '2026-07-17' AND storyline_id IS NOT NULL GROUP BY storyline_id\"));
+      d <- df$v[!is.na(df$v) & df$v>0];
+      writeLines(paste(d, collapse=\",\"), \"/tmp/score_qc_peak.csv\")'
 
 Usage :  python3 scripts/generate_saillance_levels.py [chemin_csv]
 """
@@ -31,8 +32,9 @@ OUT = [
     "docs/saillance-niveaux.png",
 ]
 
-# Seuils recalibrés (2026-06-03, 406 Unes) = SAL_QC_THRESHOLDS côté frontend.
-TH = [5, 10, 19, 36, 71]                  # p5 / p20 / p50 / p80 / p95
+# Seuils recalibrés (#281, 2026-07-20) = SAL_QC_THRESHOLDS côté frontend :
+# distribution des PICS 24 h par storyline QC, période POST-FUSION (≥ 2026-07-17).
+TH = [8, 11, 19, 48, 95]                   # p5 / p20 / p50 / p80 / p95
 PLABELS = ["p5", "p20", "p50", "p80", "p95"]
 BANDS = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Exceptionnelle"]
 PCTS = ["5 %", "15 %", "30 %", "30 %", "15 %", "5 %"]
@@ -89,7 +91,9 @@ ax.set_xlim(xleft, xright)
 ax.set_ylim(0, band_top)
 ax.set_xticks([1, 5, 10, 20, 40, 80, 160])
 ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-ax.set_yticks([0, 10, 20, 30])
+# Ticks Y adaptatifs au volume (l'échantillon post-fusion est encore mince).
+_yt = [t for t in [0, 10, 20, 30, 40] if t <= band_top]
+ax.set_yticks(_yt if len(_yt) >= 2 else [0, max(1, int(round(ymax)))])
 ax.tick_params(colors="#5B544A", labelsize=11)
 ax.tick_params(axis="x", pad=22)
 for s in ["top", "right"]:
@@ -104,12 +108,12 @@ ax.set_xlabel("Score de saillance au Québec  (échelle log)",
 fig.text(0.055, 0.95, "Comment on calcule les niveaux de saillance",
          fontsize=25, fontweight="bold", color=INK, ha="left", va="top")
 fig.text(0.055, 0.895,
-         "Chaque Une reçoit un score de saillance (score_qc). On le situe dans la distribution de TOUTES les Unes\n"
+         "L'étiquette situe le PIC de saillance atteint par l'histoire sur 24 h dans la distribution de TOUTES les Unes\n"
          "récentes : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », le gros au centre (cloche en échelle log).",
          fontsize=13, color="#5B544A", ha="left", va="top")
 fig.text(0.055, 0.028,
-         f"n = {n} Unes depuis le 14 mai 2026 (toute la donnée dispo, fenêtre qui s'étend).  "
-         "Source : headline_events_4h (DEV).  Seuils du frontend calibrés à la main le 2026-06-03 (le recalcul automatique dans le refiner = #122, à venir).",
+         f"n = {n} histoires (pic 24 h par storyline QC) depuis le 2026-07-17, après la fusion des événements.  "
+         "Source : headline_events_4h (DEV).  Seuils recalibrés le 2026-07-20 (#281) ; recalcul glissant automatique côté données (fetch_data.R).",
          fontsize=10.5, color="#8A8474", ha="left", va="bottom")
 
 plt.subplots_adjust(left=0.055, right=0.965, top=0.80, bottom=0.20)

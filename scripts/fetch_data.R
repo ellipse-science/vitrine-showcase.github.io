@@ -301,6 +301,29 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
   })
 }
 
+# La pastille de saillance étiquette le PIC 24 h d'une histoire (peakQc côté
+# frontend), pas un score de bloc — il faut donc calibrer sur la distribution des
+# PICS, un par storyline (sinon les blocs répétés d'une même histoire pèsent en
+# double). Fenêtre POST-FUSION uniquement (aws-refiners#227, 2026-07-17) : la
+# fusion a nettement remonté les scores en agrégeant la couverture des fragments,
+# donc mélanger le pré-fusion abaisserait faussement les seuils (#281). NULL si
+# trop peu de storylines → repli frontend sur les seuils codés post-fusion.
+SAL_PEAK_CAL_FROM <- "2026-07-17"  # déploiement de la fusion prominence
+calibration_peak <- function(conn, cut_date) {
+  tryCatch({
+    from <- max(cut_date, SAL_PEAK_CAL_FROM)
+    sql <- sprintf(paste(
+      "SELECT max(score_qc_peak_24h) AS v FROM \"%s\"",
+      "WHERE date_utc >= DATE '%s' AND storyline_id IS NOT NULL GROUP BY storyline_id"),
+      CAL_TABLE, from)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+    calibration_pctiles(df$v)  # exclut les storylines jamais Une QC (pic 0)
+  }, error = function(e) {
+    message("   (calibration: score_qc_peak_24h indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
 # Convergence EVENT-level (au niveau HISTOIRE) — calibre le repère « habituel »
 # de la jauge du module Deux solitudes. Reproduit windowEventConvergence du
 # frontend (lib/data/headlineEvents.ts) : pour CHAQUE bloc « as-of » de
@@ -414,6 +437,9 @@ build_salience_calibration <- function(conn, out_path) {
   metrics <- list()
   qc  <- calibration_metric(conn, "score_qc", cut_date)
   if (!is.null(qc))  metrics$score_qc  <- c(list(region = "QC"),  qc)
+  # Pics 24 h par storyline (post-fusion) — réfèrent la pastille de saillance (#281).
+  pk  <- calibration_peak(conn, cut_date)
+  if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = SAL_PEAK_CAL_FROM), pk)
   roc <- calibration_metric(conn, "score_roc", cut_date)
   if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,

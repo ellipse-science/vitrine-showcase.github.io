@@ -546,7 +546,7 @@
     <p class="metho-body">Cet indice exprime quelle proportion de l'attention médiatique totale est consacrée à un objet sur un bloc de quatre heures. Il est recalculé à chaque nouveau bloc.</p>
 
     <h3>Niveaux de saillance affichés</h3>
-    <p class="metho-body">Toutes les nouvelles présentées dans le module « La Une des Unes » ont fait la Une d'au moins un média : elles sont déjà saillantes. L'étiquette de saillance ne dit donc pas si une nouvelle est importante, mais <strong>où elle se situe parmi les autres Unes</strong>. Le score québécois (<code>score_qc</code>) de chaque nouvelle est comparé à la distribution de toutes les Unes récentes, puis classé en six niveaux par percentiles symétriques.</p>
+    <p class="metho-body">Toutes les nouvelles présentées dans le module « La Une des Unes » ont fait la Une d'au moins un média : elles sont déjà saillantes. L'étiquette de saillance ne dit donc pas si une nouvelle est importante, mais <strong>où elle se situe parmi les autres Unes</strong>. Le <strong>sommet de saillance</strong> atteint par chaque histoire sur 24 heures — son plus haut score québécois (<code>score_qc</code>) — est comparé à la distribution des sommets de toutes les Unes récentes, puis classé en six niveaux par percentiles symétriques.</p>
     <div class="metho-table-wrap">
       <table class="metho-table">
         <thead><tr><th>Niveau</th><th>Position (percentile de score_qc)</th><th>Part des Unes</th></tr></thead>
@@ -560,7 +560,7 @@
         </tbody>
       </table>
     </div>
-    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Lorsque l'historique récent est disponible, les seuils sont recalculés à chaque mise à jour sur une fenêtre glissante d'environ douze mois : les percentiles sont dérivés de tout l'historique récent, de sorte que « habituel » suit l'évolution réelle de l'actualité plutôt qu'une saison figée. À défaut, on retombe sur des seuils de référence fixes.</p>
+    <p class="metho-body">Les bandes sont symétriques : autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalculés à chaque mise à jour sur l'historique récent disponible, de sorte qu'« habituel » suit l'évolution réelle de l'actualité plutôt qu'une saison figée ; à défaut, on retombe sur des seuils de référence fixes. Lorsque la façon de mesurer la saillance change, cet historique de référence repart de ce changement — c'est pourquoi la distribution ci-dessous ne couvre pour l'instant que la période récente.</p>
     <figure class="metho-figure">
       <img src="saillance-niveaux.png" alt="Distribution du score de saillance québécois découpée en six bandes de percentiles, de la plus faible à la plus élevée.">
       <figcaption>Distribution réelle des scores de saillance (<code>score_qc</code>) de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
