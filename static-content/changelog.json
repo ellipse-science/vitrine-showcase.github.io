@@ -1,5 +1,11 @@
 [
   {
+    "pr": 283,
+    "date": "2026-07-20T18:09:01Z",
+    "note": "Une des Unes : pondération de récence du classement 24 h (demi-vie 10 h, #274)",
+    "version": "2.7.0-beta.0"
+  },
+  {
     "pr": 284,
     "date": "2026-07-20T18:01:03Z",
     "note": "Un journal des mises à jour est maintenant accessible en cliquant sur le numéro de version au bas du site : chaque amélioration y est expliquée simplement, avec un lien vers le détail technique.",
