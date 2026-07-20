@@ -598,6 +598,27 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
   });
 }
 
+// Seuil éditorial (#273) : le module affiche 1 à 3 Unes, pas toujours 3.
+// La position héros revient toujours à l'histoire la plus saillante, mais une
+// Une SECONDAIRE doit être portée par au moins MIN_QC_MEDIA_SECONDARY médias
+// QC sur la fenêtre 24 h. Critère « nombre de médias » plutôt que niveau de
+// saillance : tant que la formule amont gonfle la durée-en-Une d'un seul média
+// (aws-refiners#205), la pastille peut afficher « Très élevée » pour une
+// histoire vue chez un seul média (constat live du 16-17 juillet, cf. #273).
+// On tronque le top-3 SANS repêcher d'histoire moins saillante : les modules 1
+// et 2 puisent dans le même pool d'histoires 24 h (storiesFrom24h), si bien que
+// chaque manchette retenue ici figure aussi parmi les axes du radar « Deux
+// solitudes » — le radar peut en revanche montrer des histoires de plus (top
+// canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
+const MIN_QC_MEDIA_SECONDARY = 2;
+function selectTopUnes(stories: Story[], max = 3): Story[] {
+  return stories
+    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
+    .sort((a, b) => b.sumQc - a.sumQc)
+    .slice(0, max)
+    .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
+}
+
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
 const SAILLANT_TODAY: Record<number, string> = {
   0: "cette nuit", 4: "tôt ce matin", 8: "ce matin",
@@ -888,10 +909,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       : HABITUAL_EVENT_CONV;
 
   const stories = storiesFrom24h(unique);
-  const qcStories = stories
-    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
-    .sort((a, b) => b.sumQc - a.sumQc)
-    .slice(0, 3);
+  // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
+  // portées par ≥ MIN_QC_MEDIA_SECONDARY médias QC → 1 à 3 Unes.
+  const qcStories = selectTopUnes(stories);
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
@@ -1134,6 +1154,8 @@ export const __test__ = {
   symbolPositions,
   buildSolitudes,
   storiesFrom24h,
+  selectTopUnes,
+  MIN_QC_MEDIA_SECONDARY,
   windowConvergence,
   windowEventConvergence,
   salThresholdsFrom,
