@@ -1,0 +1,830 @@
+[
+  {
+    "pr": 279,
+    "date": "2026-07-20T05:11:52Z",
+    "note": "La Une des Unes affiche désormais de une à trois Unes selon leur mérite réel, plutôt que trois systématiquement.",
+    "version": "2.5.0-beta.0"
+  },
+  {
+    "pr": 280,
+    "date": "2026-07-20T05:10:43Z",
+    "note": "La page Méthodologie explique comment les manchettes republiées par plusieurs médias d'un même groupe sont dédoublonnées, avec la réintégration de TVA Nouvelles.",
+    "version": "2.4.0-beta.1"
+  },
+  {
+    "pr": 270,
+    "date": "2026-07-17T00:14:59Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 255,
+    "date": "2026-07-16T01:07:52Z",
+    "note": "Nettoyage de la documentation du module Deux solitudes après la ratification de son score par événement.",
+    "version": null
+  },
+  {
+    "pr": 236,
+    "date": "2026-07-16T01:05:08Z",
+    "note": "Les commits du projet sont désormais toujours attribués aux membres de l'équipe, avec une vérification automatique à chaque contribution.",
+    "version": null
+  },
+  {
+    "pr": 244,
+    "date": "2026-07-15T22:15:15Z",
+    "note": "Chaque Une affiche l'heure de sa publication (par exemple « 20 h ») plutôt qu'une étiquette de bloc technique.",
+    "version": null
+  },
+  {
+    "pr": 251,
+    "date": "2026-07-15T21:43:19Z",
+    "note": "Refonte du module Deux solitudes : le score compare désormais les histoires couvertes de part et d'autre, sur une échelle absolue, avec une présentation graphique retravaillée.",
+    "version": null
+  },
+  {
+    "pr": 253,
+    "date": "2026-07-15T21:41:03Z",
+    "note": "Correction d'une date de livraison dans la documentation publique du pipeline.",
+    "version": null
+  },
+  {
+    "pr": 254,
+    "date": "2026-07-15T21:39:34Z",
+    "note": "Le repère « habituel » du module Deux solitudes est maintenant calculé à partir de l'historique réel des données plutôt que fixé à la main.",
+    "version": null
+  },
+  {
+    "pr": 249,
+    "date": "2026-07-15T21:33:48Z",
+    "note": "Les seuils et la jauge du module Deux solitudes s'appuient désormais sur des centiles calculés en continu à partir des données.",
+    "version": null
+  },
+  {
+    "pr": 248,
+    "date": "2026-07-15T18:27:38Z",
+    "note": "Le module Deux solitudes affiche la convergence, une jauge et les logos des médias sur une fenêtre glissante de 24 heures.",
+    "version": null
+  },
+  {
+    "pr": 243,
+    "date": "2026-07-15T18:22:00Z",
+    "note": "Les modules Une des Unes et Deux solitudes sélectionnent désormais leurs contenus sur la même fenêtre glissante de 24 heures, à partir d'une source commune.",
+    "version": "2.4.0-beta.0"
+  },
+  {
+    "pr": 242,
+    "date": "2026-07-15T18:17:09Z",
+    "note": "Ajout des pourcentages sur le graphique radar du module Deux solitudes et d'une bulle explicative à droite.",
+    "version": "2.3.0-beta.3"
+  },
+  {
+    "pr": 247,
+    "date": "2026-07-15T18:04:35Z",
+    "note": "Retrait d'une affirmation inexacte sur la période de référence de la jauge de convergence dans la page Méthodologie.",
+    "version": null
+  },
+  {
+    "pr": 241,
+    "date": "2026-07-15T17:30:19Z",
+    "note": "Vérification des sources primaires de l'horaire du pipeline et documentation des décisions qui en découlent.",
+    "version": null
+  },
+  {
+    "pr": 223,
+    "date": "2026-07-14T18:53:14Z",
+    "note": "Mise à jour du graphique des niveaux de saillance dans la page Méthodologie (nouveau libellé « Exceptionnelle »).",
+    "version": "2.3.0-beta.2"
+  },
+  {
+    "pr": 239,
+    "date": "2026-07-14T18:09:56Z",
+    "note": "Adoption de règles de rédaction communes pour tous les textes publics du site (ton, lexique, typographie).",
+    "version": "2.3.0-beta.1"
+  },
+  {
+    "pr": 240,
+    "date": "2026-07-14T18:03:17Z",
+    "note": "Le module Deux solitudes prend la forme d'un graphique radar qui compare les sujets saillants des médias québécois et canadiens.",
+    "version": "2.3.0-beta.0"
+  },
+  {
+    "pr": 238,
+    "date": "2026-07-14T17:54:17Z",
+    "note": "Reconstitution du rapport d'évaluation critique du module Deux solitudes dans la documentation interne.",
+    "version": "2.2.0-beta.2"
+  },
+  {
+    "pr": 226,
+    "date": "2026-07-14T00:19:45Z",
+    "note": "Adoption de règles d'écriture pour garder la page Méthodologie accessible au grand public.",
+    "version": null
+  },
+  {
+    "pr": 234,
+    "date": "2026-07-14T00:14:39Z",
+    "note": "Chaque modification visuelle du site passe désormais par une vérification systématique du rendu sur mobile et tablette.",
+    "version": "2.2.0-beta.1"
+  },
+  {
+    "pr": 233,
+    "date": "2026-07-13T23:56:56Z",
+    "note": "La Une des Unes évite maintenant de répéter la même histoire dans son top 3 et adapte sa mise en page de une à trois Unes.",
+    "version": "2.2.0-beta.0"
+  },
+  {
+    "pr": 229,
+    "date": "2026-07-13T01:26:07Z",
+    "note": "Simplification d'une section de la page Méthodologie pour la rendre accessible au grand public.",
+    "version": "2.1.0-beta.3"
+  },
+  {
+    "pr": 228,
+    "date": "2026-07-13T01:23:52Z",
+    "note": "Retrait du bouton « S'abonner » du pied de page, le service n'étant pas encore offert.",
+    "version": "2.1.0-beta.2"
+  },
+  {
+    "pr": 227,
+    "date": "2026-07-13T01:22:56Z",
+    "note": "Les signalements des visiteurs sont désormais dirigés automatiquement vers la bonne personne de l'équipe selon le module visé.",
+    "version": null
+  },
+  {
+    "pr": 224,
+    "date": "2026-07-12T19:42:18Z",
+    "note": "Mise à jour du décompte des colonnes dans un diagramme de la documentation publique du pipeline.",
+    "version": "2.1.0-beta.1"
+  },
+  {
+    "pr": 225,
+    "date": "2026-07-11T21:41:00Z",
+    "note": "La Une des Unes suit chaque histoire sur 24 heures à travers l'ensemble des médias, indique depuis quand elle est saillante et pointe vers l'article le plus récent.",
+    "version": "2.1.0-beta.0"
+  },
+  {
+    "pr": 222,
+    "date": "2026-07-11T15:31:07Z",
+    "note": "Nouveau guide d'accueil commun pour les personnes qui rejoignent le projet.",
+    "version": "2.0.0-beta.11"
+  },
+  {
+    "pr": 221,
+    "date": "2026-07-11T15:21:59Z",
+    "note": "Chaque contribution doit désormais déclarer son impact sur la page Méthodologie (règle d'équipe).",
+    "version": "2.0.0-beta.10"
+  },
+  {
+    "pr": 220,
+    "date": "2026-07-10T19:52:16Z",
+    "note": "Mise à jour d'un diagramme de la documentation publique du pipeline (agrégats sur 24 heures).",
+    "version": "2.0.0-beta.9"
+  },
+  {
+    "pr": 219,
+    "date": "2026-07-10T19:17:19Z",
+    "note": "Chaque contribution passe par une vérification automatique de son impact sur la page Méthodologie.",
+    "version": "2.0.0-beta.8"
+  },
+  {
+    "pr": 214,
+    "date": "2026-07-10T19:07:24Z",
+    "note": "La Une des Unes affiche un titre stable (« du moment ») et l'heure de dernière mise à jour du module dans un format compact.",
+    "version": "2.0.0-beta.7"
+  },
+  {
+    "pr": 204,
+    "date": "2026-07-10T17:32:40Z",
+    "note": "Le niveau de saillance le plus élevé s'appelle désormais « Exceptionnelle » plutôt qu'« Extrême ».",
+    "version": "2.0.0-beta.6"
+  },
+  {
+    "pr": 216,
+    "date": "2026-07-10T17:30:26Z",
+    "note": "Les diagrammes de référence du pipeline sont maintenant hébergés sur le site, avec une correction de la chaîne de traitement de la Une.",
+    "version": "2.0.0-beta.5"
+  },
+  {
+    "pr": 217,
+    "date": "2026-07-10T17:28:39Z",
+    "note": "Chaque module a sa propre carte d'aperçu lorsqu'un lien est partagé sur les réseaux sociaux.",
+    "version": null
+  },
+  {
+    "pr": 209,
+    "date": "2026-07-10T16:01:32Z",
+    "note": "Le site génère des cartes d'aperçu pour le partage sur les réseaux sociaux.",
+    "version": "2.0.0-beta.4"
+  },
+  {
+    "pr": 208,
+    "date": "2026-07-09T15:06:32Z",
+    "note": "Les six modules affichent une mention « Dernière mise à jour » uniforme, tirée directement des données.",
+    "version": "2.0.0-beta.3"
+  },
+  {
+    "pr": 207,
+    "date": "2026-07-09T14:57:47Z",
+    "note": "Le module Deux solitudes devient une section à part entière, accessible par son propre lien d'ancrage.",
+    "version": "2.0.0-beta.2"
+  },
+  {
+    "pr": 205,
+    "date": "2026-07-09T14:52:17Z",
+    "note": "Les éditions des médias affichent leur nom officiel et l'en-tête correspond à l'édition des données présentées.",
+    "version": "2.0.0-beta.1"
+  },
+  {
+    "pr": 202,
+    "date": "2026-07-09T01:28:19Z",
+    "note": "Nettoyage de la documentation d'accueil du projet.",
+    "version": null
+  },
+  {
+    "pr": 203,
+    "date": "2026-07-09T01:24:24Z",
+    "note": "Correction technique du mécanisme qui met à jour automatiquement le numéro de version du site.",
+    "version": null
+  },
+  {
+    "pr": 199,
+    "date": "2026-07-08T21:38:24Z",
+    "note": "Chaque module a maintenant son lien d'ancrage : on peut pointer directement vers une section précise du site.",
+    "version": null
+  },
+  {
+    "pr": 185,
+    "date": "2026-07-08T21:31:59Z",
+    "note": "Correction d'une erreur de chargement des données du module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 90,
+    "date": "2026-07-08T21:30:37Z",
+    "note": "Mise en place du versionnage automatique du site : le numéro affiché au pied de page se met à jour à chaque amélioration.",
+    "version": null
+  },
+  {
+    "pr": 160,
+    "date": "2026-07-08T21:14:30Z",
+    "note": "Arrivée du module Polimètre+, qui suit la réalisation des promesses électorales du gouvernement.",
+    "version": null
+  },
+  {
+    "pr": 195,
+    "date": "2026-07-08T21:09:53Z",
+    "note": "Série de petits correctifs d'affichage signalés par l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 193,
+    "date": "2026-07-08T21:05:40Z",
+    "note": "Le bouton de signalement d'un problème reste visible en tout temps.",
+    "version": null
+  },
+  {
+    "pr": 200,
+    "date": "2026-07-08T21:03:43Z",
+    "note": "Ajout d'une infobulle qui explique la notion d'ombre médiatique dans le module des partis.",
+    "version": null
+  },
+  {
+    "pr": 197,
+    "date": "2026-07-08T20:50:48Z",
+    "note": "Bouton de partage plus discret : icône seule, avec repli des réseaux sur ordinateur.",
+    "version": null
+  },
+  {
+    "pr": 198,
+    "date": "2026-07-08T20:45:01Z",
+    "note": "Titre plus court pour le module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 196,
+    "date": "2026-07-08T20:35:40Z",
+    "note": "Correction de l'icône du site qui ne s'affichait pas dans certains navigateurs.",
+    "version": null
+  },
+  {
+    "pr": 194,
+    "date": "2026-07-08T20:23:37Z",
+    "note": "Réorganisation des logos partenaires au pied de page.",
+    "version": null
+  },
+  {
+    "pr": 191,
+    "date": "2026-07-08T20:21:50Z",
+    "note": "Le module des partis affiche un message clair lorsque les données sont indisponibles.",
+    "version": null
+  },
+  {
+    "pr": 142,
+    "date": "2026-07-08T19:57:13Z",
+    "note": "Les signalements des visiteurs précisent la zone du site concernée (six modules et habillage général).",
+    "version": null
+  },
+  {
+    "pr": 192,
+    "date": "2026-07-08T19:45:12Z",
+    "note": "La page Méthodologie attribue correctement le projet au CAPP et nomme l'organisme au long au premier usage.",
+    "version": null
+  },
+  {
+    "pr": 190,
+    "date": "2026-07-08T19:28:11Z",
+    "note": "Un seul bouton de partage par module, pour une interface plus claire.",
+    "version": null
+  },
+  {
+    "pr": 189,
+    "date": "2026-07-08T19:13:59Z",
+    "note": "Les logos partenaires sont hébergés sur le site et la Chaire de recherche s'ajoute au pied de page.",
+    "version": null
+  },
+  {
+    "pr": 188,
+    "date": "2026-07-08T18:56:14Z",
+    "note": "Simplification du bouton de partage.",
+    "version": null
+  },
+  {
+    "pr": 184,
+    "date": "2026-07-08T18:14:58Z",
+    "note": "La documentation d'équipe référence la démarche d'évaluation des outils d'automatisation.",
+    "version": null
+  },
+  {
+    "pr": 182,
+    "date": "2026-07-03T00:15:08Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 163,
+    "date": "2026-06-29T19:00:46Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 174,
+    "date": "2026-06-29T18:59:12Z",
+    "note": "Ajout de garde-fous automatiques pour encadrer le travail des outils d'automatisation de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 173,
+    "date": "2026-06-29T18:57:43Z",
+    "note": "Ajout de tests automatisés sur le chargement des données, exécutés à chaque contribution.",
+    "version": null
+  },
+  {
+    "pr": 172,
+    "date": "2026-06-29T18:55:03Z",
+    "note": "Fondation de l'infrastructure d'automatisation du projet : documentation de référence, évaluations et procédures outillées.",
+    "version": null
+  },
+  {
+    "pr": 179,
+    "date": "2026-06-29T17:31:53Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 178,
+    "date": "2026-06-29T17:29:55Z",
+    "note": "Le rafraîchissement des données est plus résilient : un module en erreur ne gèle plus la mise à jour des autres.",
+    "version": null
+  },
+  {
+    "pr": 170,
+    "date": "2026-06-26T17:26:07Z",
+    "note": "Correction du formulaire de signalement pour le nouveau domaine du site.",
+    "version": null
+  },
+  {
+    "pr": 167,
+    "date": "2026-06-26T17:14:34Z",
+    "note": "Renforcement de la sécurité du formulaire de signalement : un jeton exposé a été remplacé par un relais sécurisé.",
+    "version": null
+  },
+  {
+    "pr": 162,
+    "date": "2026-06-26T00:14:30Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 116,
+    "date": "2026-06-22T15:31:01Z",
+    "note": "Première version du module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 151,
+    "date": "2026-06-19T00:14:34Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 146,
+    "date": "2026-06-13T15:18:09Z",
+    "note": "Améliorations d'interface : en-tête, bordures, infobulles, lecteur audio et rendu mobile.",
+    "version": null
+  },
+  {
+    "pr": 144,
+    "date": "2026-06-13T14:59:56Z",
+    "note": "Mise à jour du contenu de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 145,
+    "date": "2026-06-12T00:15:01Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 141,
+    "date": "2026-06-05T00:15:24Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 132,
+    "date": "2026-06-04T15:14:56Z",
+    "note": "Mise à jour du contenu textuel de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 131,
+    "date": "2026-06-04T05:19:51Z",
+    "note": "Corrections du rendu mobile : débordements, en-tête, bande de manchettes et ligne du temps.",
+    "version": null
+  },
+  {
+    "pr": 130,
+    "date": "2026-06-04T03:52:39Z",
+    "note": "Refonte éditoriale de la Une des Unes : mise en avant de la saillance, en-tête intégré et allure de journal.",
+    "version": null
+  },
+  {
+    "pr": 121,
+    "date": "2026-06-02T23:42:32Z",
+    "note": "La première Une affiche le premier paragraphe de la nouvelle sous son titre.",
+    "version": null
+  },
+  {
+    "pr": 92,
+    "date": "2026-05-29T00:39:12Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 114,
+    "date": "2026-05-28T21:56:00Z",
+    "note": "Séparation des environnements de développement et de production du site.",
+    "version": null
+  },
+  {
+    "pr": 110,
+    "date": "2026-05-28T18:40:52Z",
+    "note": "Le thème musical du moment est partagé automatiquement avec l'équipe à chaque rafraîchissement.",
+    "version": null
+  },
+  {
+    "pr": 105,
+    "date": "2026-05-26T18:44:18Z",
+    "note": "Ajout de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 103,
+    "date": "2026-05-26T17:45:43Z",
+    "note": "Correction de l'affichage des noms d'enjeux trop longs dans le graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 102,
+    "date": "2026-05-26T17:33:50Z",
+    "note": "Ajustement de la largeur des colonnes du graphique des enjeux pour éviter les tuiles trop étroites.",
+    "version": null
+  },
+  {
+    "pr": 101,
+    "date": "2026-05-26T17:13:35Z",
+    "note": "Amélioration de l'affichage des infobulles dans les colonnes étroites du graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 100,
+    "date": "2026-05-26T16:56:01Z",
+    "note": "Correction d'un débordement de texte dans le graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 98,
+    "date": "2026-05-23T16:44:34Z",
+    "note": "Ajustement technique du déploiement pour fiabiliser la publication du site.",
+    "version": null
+  },
+  {
+    "pr": 97,
+    "date": "2026-05-22T18:45:02Z",
+    "note": "Correction du rafraîchissement automatique pour inclure les fichiers audio.",
+    "version": null
+  },
+  {
+    "pr": 87,
+    "date": "2026-05-22T14:10:57Z",
+    "note": "Correction de liens erronés dans le graphique des enjeux et ajout d'une infobulle d'invitation au survol.",
+    "version": null
+  },
+  {
+    "pr": 93,
+    "date": "2026-05-22T13:51:25Z",
+    "note": "La musique d'ambiance varie désormais à chaque génération.",
+    "version": null
+  },
+  {
+    "pr": 91,
+    "date": "2026-05-22T00:27:32Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 89,
+    "date": "2026-05-21T17:30:27Z",
+    "note": "Mise à jour de la planification de sprint de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 88,
+    "date": "2026-05-21T17:26:41Z",
+    "note": "Stabilisation de la génération musicale sur une version précise du modèle.",
+    "version": null
+  },
+  {
+    "pr": 86,
+    "date": "2026-05-21T17:10:53Z",
+    "note": "Génération automatique d'une musique d'ambiance à partir de l'actualité du moment.",
+    "version": null
+  },
+  {
+    "pr": 85,
+    "date": "2026-05-21T16:53:27Z",
+    "note": "Les tuiles du graphique des enjeux sont cliquables et mènent à un article représentatif.",
+    "version": null
+  },
+  {
+    "pr": 83,
+    "date": "2026-05-21T15:53:41Z",
+    "note": "Ajout d'une infobulle sur la source et les délais du Journal des débats dans le module de l'Assemblée.",
+    "version": null
+  },
+  {
+    "pr": 84,
+    "date": "2026-05-21T15:52:16Z",
+    "note": "Ajout d'un lecteur audio d'ambiance dans la Une des Unes.",
+    "version": null
+  },
+  {
+    "pr": 80,
+    "date": "2026-05-21T15:33:43Z",
+    "note": "Ajustement de l'alignement de la fleur de lys dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 78,
+    "date": "2026-05-21T14:59:10Z",
+    "note": "Résumé de la planification de sprint de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 76,
+    "date": "2026-05-21T14:45:19Z",
+    "note": "Correction technique de l'envoi des captures d'écran lors d'un signalement.",
+    "version": null
+  },
+  {
+    "pr": 74,
+    "date": "2026-05-18T22:25:11Z",
+    "note": "Correction de l'envoi de captures d'écran dans le formulaire de signalement.",
+    "version": null
+  },
+  {
+    "pr": 72,
+    "date": "2026-05-18T22:11:17Z",
+    "note": "On peut joindre une capture d'écran à un signalement de problème.",
+    "version": null
+  },
+  {
+    "pr": 71,
+    "date": "2026-05-18T22:01:29Z",
+    "note": "Le site se met à jour automatiquement dans le navigateur, sans rechargement forcé.",
+    "version": null
+  },
+  {
+    "pr": 56,
+    "date": "2026-05-16T23:23:20Z",
+    "note": "Formulaire de signalement retravaillé : vouvoiement, nom obligatoire et meilleure priorisation des demandes.",
+    "version": null
+  },
+  {
+    "pr": 55,
+    "date": "2026-05-16T22:55:13Z",
+    "note": "Les illustrations générées représentent les personnes de façon symbolique, sans figures identifiables.",
+    "version": null
+  },
+  {
+    "pr": 54,
+    "date": "2026-05-16T22:26:22Z",
+    "note": "Les personnages des illustrations générées sont neutres et interchangeables.",
+    "version": null
+  },
+  {
+    "pr": 53,
+    "date": "2026-05-16T22:09:58Z",
+    "note": "Les illustrations générées ne tentent jamais de reproduire le visage de personnes réelles.",
+    "version": null
+  },
+  {
+    "pr": 44,
+    "date": "2026-05-16T21:46:10Z",
+    "note": "Correction du graphique des enjeux lorsque certaines métadonnées sont vides.",
+    "version": null
+  },
+  {
+    "pr": 41,
+    "date": "2026-05-16T15:33:56Z",
+    "note": "L'illustration générée illustre la manchette réellement affichée, avec un cadrage neutre.",
+    "version": null
+  },
+  {
+    "pr": 42,
+    "date": "2026-05-16T15:09:16Z",
+    "note": "On peut signaler un problème directement depuis le site, d'un clic droit.",
+    "version": null
+  },
+  {
+    "pr": 36,
+    "date": "2026-05-16T14:36:33Z",
+    "note": "Ajout d'une page d'abonnement « en construction ».",
+    "version": null
+  },
+  {
+    "pr": 39,
+    "date": "2026-05-16T01:49:53Z",
+    "note": "Les illustrations générées ne contiennent aucun texte et créditent leur auteur.",
+    "version": null
+  },
+  {
+    "pr": 38,
+    "date": "2026-05-16T01:33:24Z",
+    "note": "Simplification du pipeline : la génération d'illustrations est intégrée au rafraîchissement des données.",
+    "version": null
+  },
+  {
+    "pr": 37,
+    "date": "2026-05-16T01:12:49Z",
+    "note": "Fiabilisation du rafraîchissement automatique des données (anti-collision entre tâches).",
+    "version": null
+  },
+  {
+    "pr": 33,
+    "date": "2026-05-16T01:06:52Z",
+    "note": "Correction du mécanisme de publication automatique des données et des illustrations.",
+    "version": null
+  },
+  {
+    "pr": 32,
+    "date": "2026-05-16T00:02:51Z",
+    "note": "Le module Deux solitudes présente trois histoires avec des titres en français.",
+    "version": null
+  },
+  {
+    "pr": 31,
+    "date": "2026-05-15T20:52:03Z",
+    "note": "Nettoyage technique : retrait des dernières traces de l'ancien moteur du site.",
+    "version": null
+  },
+  {
+    "pr": 30,
+    "date": "2026-05-15T20:50:52Z",
+    "note": "Correction de la description du site affichée lors d'un partage de lien.",
+    "version": null
+  },
+  {
+    "pr": 27,
+    "date": "2026-05-15T20:49:49Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 29,
+    "date": "2026-05-15T20:47:30Z",
+    "note": "Les mises à jour de dépendances techniques sont fusionnées automatiquement après vérification.",
+    "version": null
+  },
+  {
+    "pr": 26,
+    "date": "2026-05-15T20:46:26Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 28,
+    "date": "2026-05-15T20:33:17Z",
+    "note": "Restauration de contributions écrasées par erreur.",
+    "version": null
+  },
+  {
+    "pr": 25,
+    "date": "2026-05-15T19:24:57Z",
+    "note": "Regroupement des mises à jour de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 24,
+    "date": "2026-05-15T19:14:26Z",
+    "note": "Correction du rendu du site sous son adresse de publication.",
+    "version": null
+  },
+  {
+    "pr": 14,
+    "date": "2026-05-15T18:56:46Z",
+    "note": "Renforcement de la protection de la branche principale du site.",
+    "version": null
+  },
+  {
+    "pr": 13,
+    "date": "2026-05-15T18:06:22Z",
+    "note": "Amélioration des motifs visuels des Unes et de l'affichage de la durée en manchette.",
+    "version": null
+  },
+  {
+    "pr": 12,
+    "date": "2026-05-14T20:45:13Z",
+    "note": "Ajustement de la taille et de l'alignement de la fleur de lys dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 11,
+    "date": "2026-05-14T20:31:08Z",
+    "note": "Harmonisation de la taille des emblèmes du module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 10,
+    "date": "2026-05-14T20:14:20Z",
+    "note": "Remplacement du glyphe de la fleur de lys par une image dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 8,
+    "date": "2026-05-14T19:59:49Z",
+    "note": "Grand ménage du code : structure aplanie, documentation d'accueil et vérification continue.",
+    "version": null
+  },
+  {
+    "pr": 7,
+    "date": "2026-05-14T19:37:54Z",
+    "note": "Migration du site vers un cadre technique moderne (Next.js).",
+    "version": null
+  },
+  {
+    "pr": 6,
+    "date": "2026-05-14T19:35:54Z",
+    "note": "Ajout de mesures de convergence et de divergence aux données qui alimentent le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 5,
+    "date": "2026-05-14T19:21:45Z",
+    "note": "Ajustements du rendu mobile des étiquettes de plusieurs modules.",
+    "version": null
+  },
+  {
+    "pr": 4,
+    "date": "2026-05-14T02:52:13Z",
+    "note": "Le module de l'Assemblée nationale est branché sur les données réelles des débats.",
+    "version": null
+  },
+  {
+    "pr": 3,
+    "date": "2026-05-14T02:30:09Z",
+    "note": "Le module Parole en Chambre offre des onglets par période (dernière séance, session, législature).",
+    "version": null
+  },
+  {
+    "pr": 2,
+    "date": "2026-05-14T02:17:39Z",
+    "note": "Mise en place du chargement des données des débats parlementaires.",
+    "version": null
+  },
+  {
+    "pr": 1,
+    "date": "2026-05-13T21:04:04Z",
+    "note": "Mise en place du pipeline de rafraîchissement automatique des données du site.",
+    "version": null
+  }
+]
