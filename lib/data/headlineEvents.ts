@@ -606,8 +606,10 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // (aws-refiners#205), la pastille peut afficher « Très élevée » pour une
 // histoire vue chez un seul média (constat live du 16-17 juillet, cf. #273).
 // On tronque le top-3 SANS repêcher d'histoire moins saillante : les modules 1
-// et 2 partagent la même sélection (« les deux modules montrent les mêmes
-// histoires »), le module 1 en montre simplement un sous-ensemble.
+// et 2 puisent dans le même pool d'histoires 24 h (storiesFrom24h), si bien que
+// chaque manchette retenue ici figure aussi parmi les axes du radar « Deux
+// solitudes » — le radar peut en revanche montrer des histoires de plus (top
+// canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
 function selectTopUnes(stories: Story[], max = 3): Story[] {
   return stories
