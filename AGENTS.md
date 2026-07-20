@@ -47,7 +47,20 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 | `semver:minor` | → `2.1.0-beta.0` | → `2.1.0` |
 | `semver:major` | → `3.0.0-beta.0` | → `3.0.0` |
 
-- **PR sans label semver:*** → aucun bump. Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
+**Quel label choisir ?** Le critère est ce qu'un **visiteur du site** perçoit :
+
+| Label | Quand | Exemples |
+|-------|-------|----------|
+| *(aucun)* | Rien ne change pour le visiteur | docs, CI, tests, refactor sans effet visible, tooling |
+| `semver:patch` | Correctif ou retouche d'un module existant | bug d'affichage, ajustement CSS/responsive, reformulation d'un libellé, correction de la métho |
+| `semver:minor` | Nouveauté ou évolution visible | nouveau module/section, nouvelle donnée affichée, changement notable d'un visuel ou d'un calcul présenté |
+| `semver:major` | Refonte ou rupture | redesign global, restructuration du site, changement de méthodologie qui invalide les lectures antérieures |
+
+En cas d'hésitation entre deux niveaux, prends le plus bas.
+
+**Journal des mises à jour (`/journal`)** : chaque PR mergée dans main crée une entrée dans `static-content/changelog.json` (même workflow, script `.github/scripts/append-changelog.mjs`), affichée sur la page `/journal` (accessible en cliquant le badge de version du footer). La note vient de la section « Note de journal » du template de PR : 1-2 phrases grand public, sans jargon interne (règles : `.claude/skills/redaction-editoriale/SKILL.md`). Section vide ou laissée telle quelle → le titre de la PR est utilisé ; PR de bot → note générique. Ne jamais éditer `changelog.json` à la main sauf pour corriger une note.
+
+- **PR sans label semver:*** → aucun bump (mais une entrée de journal quand même). Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
 - **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
 - **Comment le bump contourne la protection de `main`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
 

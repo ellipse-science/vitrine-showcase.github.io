@@ -2,6 +2,32 @@
 
 ## Quoi
 
+## Note de journal
+
+<!--
+1 à 2 phrases GRAND PUBLIC pour le Journal des mises à jour (/journal).
+Extraites automatiquement au merge (version-bump.yml) — écrivez ce que la
+PR change pour le site, en langage simple, sans jargon interne (pas de noms
+de tables, de raffineurs ni de colonnes). Règles d'écriture :
+.claude/skills/redaction-editoriale/SKILL.md. Section vide ou inchangée →
+le titre de la PR est utilisé tel quel.
+-->
+
+À remplacer : une ou deux phrases qui expliquent ce que cette PR change pour le site.
+
+## Version (label `semver:*`)
+
+<!--
+Le bump est piloté par le LABEL de la PR, pas par cette case — la case sert
+d'aide-mémoire. Critère : ce qu'un VISITEUR du site perçoit.
+Guide complet : AGENTS.md § Versionnage. En cas d'hésitation, le plus bas.
+-->
+
+- [ ] Aucun label — rien ne change pour le visiteur (docs, CI, tests, refactor)
+- [ ] `semver:patch` — correctif ou retouche d'un module existant
+- [ ] `semver:minor` — nouveauté ou évolution visible (module, donnée, visuel, calcul)
+- [ ] `semver:major` — refonte ou rupture
+
 ## Impact méthodologie
 
 <!--
