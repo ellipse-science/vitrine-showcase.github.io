@@ -1,5 +1,11 @@
 [
   {
+    "pr": 284,
+    "date": "2026-07-20T18:01:03Z",
+    "note": "Un journal des mises à jour est maintenant accessible en cliquant sur le numéro de version au bas du site : chaque amélioration y est expliquée simplement, avec un lien vers le détail technique.",
+    "version": "2.6.0-beta.0"
+  },
+  {
     "pr": 279,
     "date": "2026-07-20T05:11:52Z",
     "note": "La Une des Unes affiche désormais de une à trois Unes selon leur mérite réel, plutôt que trois systématiquement.",
