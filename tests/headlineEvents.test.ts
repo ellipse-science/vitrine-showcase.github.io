@@ -440,6 +440,17 @@ describe("plancher de récence (dossier fenêtre — la Une montre le MOMENT)", 
   it("isStaleForUne : absente mais pic au bloc précédent (saut d'un bloc) → PAS périmée", () => {
     expect(isStaleForUne(withSeries("saut d'un bloc", 20, 2, [0, 0, 0, 30, 0]) as never)).toBe(false);
   });
+  it("garde toujours ≥ 1 Une : si TOUTES les histoires sont retombées, repli sur le classement", () => {
+    const st = [
+      withSeries("morte A", 74, 3, [90, 54, 21, 10, 0]),
+      withSeries("morte B", 40, 2, [50, 30, 8, 4, 0]),
+    ];
+    // les deux sont périmées → le plancher les retirerait toutes → repli : la Une
+    // n'est jamais vide, et le héros reste la plus saillante au cumul.
+    const unes = selectTopUnes(st as never).map((s: { label: string }) => s.label);
+    expect(unes.length).toBeGreaterThan(0);
+    expect(unes[0]).toBe("morte A");
+  });
   it("le cas inflation vs soccer : une histoire fraîche coiffe une morte de plus gros cumul", () => {
     const st = [
       withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul mais mort

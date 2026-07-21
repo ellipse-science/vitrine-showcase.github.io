@@ -669,8 +669,13 @@ function isStaleForUne(s: Story): boolean {
 }
 
 function selectTopUnes(stories: Story[], max = 3): Story[] {
-  return stories
-    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0 && !isStaleForUne(s))
+  const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
+  const fresh = eligible.filter((s) => !isStaleForUne(s));
+  // Le plancher retire les histoires retombées, MAIS le module garde toujours ≥ 1
+  // Une : si tout est retombé (jour très creux), on retombe sur le classement
+  // complet plutôt que d'afficher une Une vide.
+  const pool = fresh.length > 0 ? fresh : eligible;
+  return pool
     .sort((a, b) => b.sumQc - a.sumQc)
     .slice(0, max)
     .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
