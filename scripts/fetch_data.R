@@ -309,9 +309,8 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
 # donc mélanger le pré-fusion abaisserait faussement les seuils (#281). NULL si
 # trop peu de storylines → repli frontend sur les seuils codés post-fusion.
 SAL_PEAK_CAL_FROM <- "2026-07-17"  # déploiement de la fusion prominence
-calibration_peak <- function(conn, cut_date) {
+calibration_peak <- function(conn, from) {
   tryCatch({
-    from <- max(cut_date, SAL_PEAK_CAL_FROM)
     sql <- sprintf(paste(
       "SELECT max(score_qc_peak_24h) AS v FROM \"%s\"",
       "WHERE date_utc >= DATE '%s' AND storyline_id IS NOT NULL GROUP BY storyline_id"),
@@ -438,8 +437,12 @@ build_salience_calibration <- function(conn, out_path) {
   qc  <- calibration_metric(conn, "score_qc", cut_date)
   if (!is.null(qc))  metrics$score_qc  <- c(list(region = "QC"),  qc)
   # Pics 24 h par storyline (post-fusion) — réfèrent la pastille de saillance (#281).
-  pk  <- calibration_peak(conn, cut_date)
-  if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = SAL_PEAK_CAL_FROM), pk)
+  # Plancher post-fusion, mais jamais avant le début de la fenêtre 365 j : `since`
+  # annonce la vraie borne utilisée (quand la fenêtre dépassera 2026-07-17, elle
+  # deviendra cut_date).
+  peak_from <- max(cut_date, SAL_PEAK_CAL_FROM)
+  pk  <- calibration_peak(conn, peak_from)
+  if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = peak_from), pk)
   roc <- calibration_metric(conn, "score_roc", cut_date)
   if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,

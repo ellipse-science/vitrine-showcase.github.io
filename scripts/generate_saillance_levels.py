@@ -26,7 +26,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-CSV = sys.argv[1] if len(sys.argv) > 1 else "/tmp/score_qc_dedup.csv"
+CSV = sys.argv[1] if len(sys.argv) > 1 else "/tmp/score_qc_peak.csv"
 OUT = [
     "public/methodologie/saillance-niveaux.png",
     "docs/saillance-niveaux.png",
@@ -100,8 +100,8 @@ for s in ["top", "right"]:
     ax.spines[s].set_visible(False)
 for s in ["left", "bottom"]:
     ax.spines[s].set_color(RULE)
-ax.set_ylabel("Nombre de Unes", color="#5B544A", fontsize=11)
-ax.set_xlabel("Score de saillance au Québec  (échelle log)",
+ax.set_ylabel("Nombre d'histoires", color="#5B544A", fontsize=11)
+ax.set_xlabel("Sommet de saillance au Québec sur 24 h  (échelle log)",
               color="#5B544A", fontsize=12, labelpad=30)
 
 # Titre + sous-titre + pied (sans em-dash).
