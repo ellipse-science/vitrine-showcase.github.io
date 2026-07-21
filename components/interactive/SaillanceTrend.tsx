@@ -32,6 +32,10 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
 
   const active = hover !== null ? pts[hover] : null;
 
+  // Tendance « stable » : rien à raconter, on n'affiche pas la ligne (garde le
+  // hero épuré ; la trajectoire ne sert qu'à signaler un déclin ou une montée).
+  if (trend.dir === "flat") return null;
+
   return (
     <div className={`saillance-trend trend-${trend.dir}`}>
       <Arrow dir={trend.dir} />

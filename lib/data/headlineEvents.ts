@@ -1034,8 +1034,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
-    // Pastille de saillance sur le PIC 24 h : même échelle que le score de bloc
-    // (c'est un score_qc), donc les seuils SAL_QC_THRESHOLDS restent valides.
+    // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils doivent venir de
+    // la distribution des PICS, pas des scores par bloc — sinon le max de ~6 blocs
+    // surclasse tout (mismatch corrigé par le recalibrage #281).
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
     // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
     // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
