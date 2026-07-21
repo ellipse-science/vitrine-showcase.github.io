@@ -183,7 +183,7 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
 // quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
 // « habituel » (suivi backend).
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -586,12 +586,18 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 // Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Exceptionnelle
 // (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
 // « la moyenne »).
-// Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
-// depuis le 2026-05-14, fenêtre qui s'étend). Recalibrage du 2026-06-03 sur
-// 406 Unes : p5/p20/p50/p80/p95 = 5/10/19/36/71. Illustration pédago dans
-// public/methodologie/ (et docs/). TODO(#122) : calcul glissant dans le
-// refiner pour ne plus hardcoder ici.
-const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, extreme: 71 };
+// La pastille étiquette le PIC de saillance 24 h de l'histoire (peakQc, #231),
+// donc les seuils doivent venir de la distribution des PICS, pas des scores par
+// bloc — et sur la période POST-FUSION (aws-refiners#227, déployée 2026-07-17),
+// qui a nettement remonté les scores en agrégeant la couverture des fragments.
+// Recalibrage 2026-07-20 (#281) sur les pics 24 h par storyline QC depuis le
+// 2026-07-17 (n=44) : p5/p20/p50/p80/p95 = 8/11/19/48/95. L'ancien 5/10/19/36/71
+// (recalibrage 2026-06-03, événements fragmentés, distribution PAR BLOC) faisait
+// dépasser p95 à presque toutes les Unes affichées → « Exceptionnelle » en
+// continu. Repli seulement : la valeur vive vient de la calibration glissante
+// `metrics.score_qc_peak_24h` (fetch_data.R) dès qu'elle a assez de points.
+// Illustration pédago régénérée dans public/methodologie/ (et docs/).
+const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, extreme: 95 };
 
 // `rank` (1–6) pilote aussi la taille du titre (data-saillance) : la hiérarchie
 // visuelle reflète la saillance, plus le nombre de médias.
@@ -1025,7 +1031,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
-  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // La pastille étiquette le PIC 24 h (peakQc) → seuils calibrés sur la
+  // distribution des PICS (metrics.score_qc_peak_24h), pas sur les scores par
+  // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
+  // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
+  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -1041,9 +1051,10 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
-    // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils doivent venir de
-    // la distribution des PICS, pas des scores par bloc — sinon le max de ~6 blocs
-    // surclasse tout (mismatch corrigé par le recalibrage #281).
+    // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
+    // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
+    // ~6 blocs est plus haut qu'un score de bloc, donc les étiqueter avec des
+    // seuils par bloc surclasserait tout le monde (#281).
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
     // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
     // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
