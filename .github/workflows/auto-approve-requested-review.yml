@@ -1,0 +1,31 @@
+name: Auto-approve requested review
+
+on:
+  pull_request_target:
+    types:
+      - review_requested
+
+permissions: {}
+
+jobs:
+  auto-approve:
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.user.login != 'laurenceomfoisy' &&
+      github.event.requested_reviewer.login == 'laurenceomfoisy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve pull request
+        env:
+          PR_AUTO_APPROVE_TOKEN: ${{ secrets.PR_AUTO_APPROVE_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${PR_AUTO_APPROVE_TOKEN:?PR_AUTO_APPROVE_TOKEN secret is required}"
+
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer ${PR_AUTO_APPROVE_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+            --data '{"event":"APPROVE","body":"Automatic approval: review was explicitly requested from laurenceomfoisy, so this workflow records that approval without checking out pull request code."}'
