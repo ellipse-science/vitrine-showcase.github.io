@@ -39,23 +39,13 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   // hero épuré ; la trajectoire ne sert qu'à signaler un déclin ou une montée).
   if (trend.dir === "flat") return null;
 
-  // Réserve juste assez de largeur pour le PLUS LONG texte que CE libellé
-  // affichera (tendance au repos OU lecture d'un bloc au survol) : la courbe
-  // reste collée au texte sans trou, et ne se décale pas au survol. Calculé par
-  // ligne (≠ largeur fixe globale, qui gonflait l'espace pour les libellés courts).
-  const capCh = Math.max(
-    trend.capLabel.length,
-    ...pts.map((p) => `${p.timeLabel} · ${p.level}`.length),
-  );
-
+  // ORDRE : courbe → flèche → libellé (décision Adrien 2026-07-20). La courbe
+  // vient en TÊTE, donc sa position ne dépend plus de la longueur du texte : elle
+  // est ANCRÉE. Deux conséquences — au survol, quand le libellé s'allonge en
+  // lecture de bloc, rien ne bouge (plus besoin de réserver une largeur) ; et les
+  // trajectoires de plusieurs Unes s'alignent verticalement entre elles.
   return (
     <div className={`saillance-trend trend-${trend.dir}`}>
-      <Arrow dir={trend.dir} />
-      <span className="trend-cap" aria-live="polite" style={{ minWidth: `${capCh}ch` }}>
-        {active
-          ? <>{active.timeLabel} · <b>{active.level}</b></>
-          : trend.capLabel}
-      </span>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
           role="img" aria-label={`Trajectoire de la saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
@@ -76,6 +66,15 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
             />
           ))}
         </svg>
+      </span>
+      <Arrow dir={trend.dir} />
+      {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
+          survol. En dernière position, il peut s'allonger librement — la courbe,
+          en amont, ne bouge pas. */}
+      <span className="trend-cap" aria-live="polite">
+        {active
+          ? <>{active.timeLabel} · <b>{active.level}</b></>
+          : trend.capLabel}
       </span>
     </div>
   );

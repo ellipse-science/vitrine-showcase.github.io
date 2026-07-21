@@ -1241,9 +1241,9 @@
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     display: inline-block;
-    /* Largeur réservée par ligne via style inline (minWidth = plus long libellé
-       de CETTE trajectoire) → la courbe colle au texte sans trou ET ne bouge pas
-       au survol. Le 0 ici n'est qu'un plancher ; l'inline prend le dessus. */
+    /* Aucune largeur à réserver : la courbe est EN AMONT du libellé (ordre
+       courbe → flèche → texte), donc elle est ancrée et le texte peut s'allonger
+       au survol sans rien déplacer. */
     min-width: 0;
   }
   .saillance-trend .trend-cap b { font-weight: 600; }
@@ -1262,12 +1262,13 @@
   .saillance-trend .trend-pt.is-absent.is-hover { fill: var(--paper); stroke: var(--ink); }
   .saillance-trend .trend-pt:focus { outline: none; }
 
-  /* Mobile / colonnes étroites : la courbe passe SOUS le libellé plutôt que de se
-     comprimer. Le libellé lâche sa largeur réservée (le survol tactile suffit). */
+  /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
+     tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
+     courbe est déjà au bord gauche. */
   @media (max-width: 620px) {
     .saillance-trend { flex-wrap: wrap; row-gap: 4px; }
-    .saillance-trend .trend-cap { min-width: 0; white-space: normal; }
-    .saillance-trend .trend-spark-wrap { flex-basis: 100%; margin-left: 27px; }
+    .saillance-trend .trend-cap { white-space: normal; }
+    .saillance-trend .trend-spark-wrap { flex-basis: 100%; }
   }
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
