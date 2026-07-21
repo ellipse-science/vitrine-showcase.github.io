@@ -7,7 +7,10 @@ import type { SalienceTrend } from "@/lib/data/headlineEvents";
 // clair, puis mini-courbe des 6 derniers blocs. Chaque point est survolable (tap
 // sur mobile) et révèle le NIVEAU qu'affichait la nouvelle à ce bloc — le badge,
 // lui, reste au pic 24 h. Rien n'est rendu si la tendance est « stable ».
-const W = 124, H = 34, PADX = 5, PADY = 5;
+// Boîte volontairement basse : une sparkline trop haute lit « en dessous » du
+// texte (sa masse — les blocs au plancher — s'enfonce sous la ligne de base).
+// Compacte, elle s'aligne optiquement avec le libellé.
+const W = 124, H = 24, PADX = 5, PADY = 4;
 
 // Flèche directionnelle (↘ / ↗) — un chemin SVG, colorée par la classe parente.
 function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
@@ -32,16 +35,17 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
 
   const active = hover !== null ? pts[hover] : null;
 
+  // Tendance « stable » : rien à raconter, on n'affiche pas la ligne (garde le
+  // hero épuré ; la trajectoire ne sert qu'à signaler un déclin ou une montée).
+  if (trend.dir === "flat") return null;
+
+  // ORDRE : courbe → flèche → libellé (décision Adrien 2026-07-20). La courbe
+  // vient en TÊTE, donc sa position ne dépend plus de la longueur du texte : elle
+  // est ANCRÉE. Deux conséquences — au survol, quand le libellé s'allonge en
+  // lecture de bloc, rien ne bouge (plus besoin de réserver une largeur) ; et les
+  // trajectoires de plusieurs Unes s'alignent verticalement entre elles.
   return (
     <div className={`saillance-trend trend-${trend.dir}`}>
-      <Arrow dir={trend.dir} />
-      {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
-          survol. Largeur minimale fixe (CSS) pour que la courbe ne se décale pas. */}
-      <span className="trend-cap" aria-live="polite">
-        {active
-          ? <>{active.timeLabel} · <b>{active.level}</b></>
-          : trend.capLabel}
-      </span>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
           role="img" aria-label={`Trajectoire de la saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
@@ -49,7 +53,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           {pts.map((p, i) => (
             <circle
               key={i}
-              className={`trend-pt${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
+              className={`trend-pt${p.isAbsent ? " is-absent" : ""}${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
               cx={xs(i).toFixed(1)} cy={ys(p.score).toFixed(1)}
               r={i === hover ? 5 : p.isPeak || p.isNow ? 3.4 : 2.4}
               tabIndex={0}
@@ -62,6 +66,15 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
             />
           ))}
         </svg>
+      </span>
+      <Arrow dir={trend.dir} />
+      {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
+          survol. En dernière position, il peut s'allonger librement — la courbe,
+          en amont, ne bouge pas. */}
+      <span className="trend-cap" aria-live="polite">
+        {active
+          ? <>{active.timeLabel} · <b>{active.level}</b></>
+          : trend.capLabel}
       </span>
     </div>
   );

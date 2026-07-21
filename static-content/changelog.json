@@ -1,5 +1,17 @@
 [
   {
+    "pr": 286,
+    "date": "2026-07-21T15:03:15Z",
+    "note": "Une des Unes : trajectoire de saillance + bulle de distribution (#274, bloquée par #281)",
+    "version": "2.8.0-beta.0"
+  },
+  {
+    "pr": 287,
+    "date": "2026-07-21T14:59:13Z",
+    "note": "Saillance : recalibrer la pastille sur les pics 24 h post-fusion (closes #281)",
+    "version": "2.7.0-beta.1"
+  },
+  {
     "pr": 283,
     "date": "2026-07-20T18:09:01Z",
     "note": "Une des Unes : pondération de récence du classement 24 h (demi-vie 10 h, #274)",

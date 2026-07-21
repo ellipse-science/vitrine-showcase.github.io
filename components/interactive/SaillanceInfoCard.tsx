@@ -34,7 +34,10 @@ export function SaillanceInfoCard({ rank, level, peak, thresholds }: {
   const px = (v: number) => ((log10(v) - x0) / (x1 - x0)) * W;
   // Ajustement log-normal sur les seuils publiés (p50 = médiane, p95 → 1,645 σ).
   const mu = valid ? log10(thresholds[2]) : log10(19);
-  const sigma = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  const rawSigma = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  // Repli si les seuils sont dégénérés (ex. p50 == p95 → σ = 0) : évite une
+  // division par zéro et des coordonnées NaN dans le SVG.
+  const sigma = rawSigma > 1e-3 ? rawSigma : (log10(71) - log10(19)) / 1.645;
   const gauss = (lx: number) => Math.exp(-0.5 * Math.pow((lx - mu) / sigma, 2));
 
   // Courbe.

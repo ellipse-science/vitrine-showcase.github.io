@@ -183,7 +183,7 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
 // quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
 // « habituel » (suivi backend).
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -328,8 +328,9 @@ type Story = {
   // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
   byBlock: Map<string, number>;
   /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
-   *  storyline était absente de ce bloc. Alimente la sparkline + le survol. */
-  series: { blockUtc: string; qc: number }[];
+   *  storyline était absente de ce bloc. `present` distingue « pas à la Une »
+   *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol. */
+  series: { blockUtc: string; qc: number; present: boolean }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -425,7 +426,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   // (0 quand la storyline était absente du bloc) — pour la trajectoire #274.
   const windowBlocksAsc = blocks.slice(0, 6).slice().reverse();
   for (const s of merged) {
-    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0 }));
+    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0, present: s.byBlock.has(b) }));
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
@@ -585,12 +586,18 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 // Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Exceptionnelle
 // (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
 // « la moyenne »).
-// Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
-// depuis le 2026-05-14, fenêtre qui s'étend). Recalibrage du 2026-06-03 sur
-// 406 Unes : p5/p20/p50/p80/p95 = 5/10/19/36/71. Illustration pédago dans
-// public/methodologie/ (et docs/). TODO(#122) : calcul glissant dans le
-// refiner pour ne plus hardcoder ici.
-const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, extreme: 71 };
+// La pastille étiquette le PIC de saillance 24 h de l'histoire (peakQc, #231),
+// donc les seuils doivent venir de la distribution des PICS, pas des scores par
+// bloc — et sur la période POST-FUSION (aws-refiners#227, déployée 2026-07-17),
+// qui a nettement remonté les scores en agrégeant la couverture des fragments.
+// Recalibrage 2026-07-20 (#281) sur les pics 24 h par storyline QC depuis le
+// 2026-07-17 (n=44) : p5/p20/p50/p80/p95 = 8/11/19/48/95. L'ancien 5/10/19/36/71
+// (recalibrage 2026-06-03, événements fragmentés, distribution PAR BLOC) faisait
+// dépasser p95 à presque toutes les Unes affichées → « Exceptionnelle » en
+// continu. Repli seulement : la valeur vive vient de la calibration glissante
+// `metrics.score_qc_peak_24h` (fetch_data.R) dès qu'elle a assez de points.
+// Illustration pédago régénérée dans public/methodologie/ (et docs/).
+const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, extreme: 95 };
 
 // `rank` (1–6) pilote aussi la taille du titre (data-saillance) : la hiérarchie
 // visuelle reflète la saillance, plus le nombre de médias.
@@ -782,6 +789,7 @@ export type SalienceTrendPoint = {
   isFirst: boolean;    // premier bloc où la nouvelle est apparue en Une
   isPeak: boolean;     // bloc du sommet
   isNow: boolean;      // bloc courant
+  isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
 };
 export type SalienceTrend = {
   dir: "up" | "down" | "flat";
@@ -819,7 +827,7 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
 // « en progression » si le dernier bloc dépasse le précédent d'au moins 25 %.
 // null s'il n'y a qu'un bloc actif (rien à raconter).
 function buildSalienceTrend(
-  series: { blockUtc: string; qc: number }[],
+  series: { blockUtc: string; qc: number; present: boolean }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
   blockDateMtl: string | null,
 ): SalienceTrend | null {
@@ -839,13 +847,19 @@ function buildSalienceTrend(
     : "Stable";
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
-    const tier = saillanceTierFromScore(p.qc, thresholds);
+    // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
+    // « Très faible ». Ne pas peindre l'absence comme une saillance faible mais
+    // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
+    const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
     const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
     return {
       timeLabel,
-      level: tier.label, levelCls: tier.cls, score: Math.round(p.qc),
+      level: tier ? tier.label : "Absente",
+      levelCls: tier ? tier.cls : "s-absent",
+      score: Math.round(p.qc),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
+      isAbsent: !p.present,
     };
   });
   return { dir, capLabel, points };
@@ -874,7 +888,6 @@ export type UneEvent = {
    *  retombe sur les médias du bloc courant si la donnée 24h manque
    *  (lignes antérieures au 2026-07-10). */
   mediaToday: { name: string; url: string | null }[];
-  mediaAbsent: string[];
   qcOutletCount: number;
   totalQcOutlets: number;
   /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
@@ -1048,7 +1061,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
-  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // La pastille étiquette le PIC 24 h (peakQc) → seuils calibrés sur la
+  // distribution des PICS (metrics.score_qc_peak_24h), pas sur les scores par
+  // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
+  // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
+  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -1064,8 +1081,10 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
-    // Pastille de saillance sur le PIC 24 h : même échelle que le score de bloc
-    // (c'est un score_qc), donc les seuils SAL_QC_THRESHOLDS restent valides.
+    // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
+    // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
+    // ~6 blocs est plus haut qu'un score de bloc, donc les étiqueter avec des
+    // seuils par bloc surclasserait tout le monde (#281).
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
     // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
     // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
@@ -1091,7 +1110,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // depuis l'agrégat de la story ; lien = dernier article du média (#129).
     const qcCovering = QC_MEDIA.filter((id) => s.qcMedia.has(id));
     const mediaToday = qcCovering.map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: s.urlByMedia[id] ?? null }));
-    const mediaAbsent = QC_MEDIA.filter((id) => !s.qcMedia.has(id)).map((id) => MEDIA_NAMES[id] ?? id);
 
     return {
       title: e.title ?? "",
@@ -1107,7 +1125,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillantSince,
       representativeUrl: e.representative_url ?? null,
       mediaToday,
-      mediaAbsent,
       qcOutletCount: qcCovering.length,
       totalQcOutlets: QC_MEDIA.length,
       storylineId: e.storyline_id ?? null,

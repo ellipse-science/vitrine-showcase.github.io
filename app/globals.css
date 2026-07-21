@@ -1241,23 +1241,34 @@
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     display: inline-block;
-    min-width: 15.5em;   /* réserve la place du libellé → la courbe ne bouge pas au survol */
+    /* Aucune largeur à réserver : la courbe est EN AMONT du libellé (ordre
+       courbe → flèche → texte), donc elle est ancrée et le texte peut s'allonger
+       au survol sans rien déplacer. */
+    min-width: 0;
   }
   .saillance-trend .trend-cap b { font-weight: 600; }
-  .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; }
+  /* Nudge optique : le centre de gravité d'une police serif est au-dessus du
+     milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
+     sur la hauteur d'x du libellé, pas sur la boîte. */
+  .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; transform: translateY(-2px); }
   .saillance-trend .trend-line { stroke: var(--acc); }
   .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
   .saillance-trend .trend-pt.is-peak,
   .saillance-trend .trend-pt.is-now { fill: var(--ink); }
   .saillance-trend .trend-pt.is-hover { fill: var(--ink); }
+  /* Bloc « Absente » : anneau creux couleur papier → l'œil lit « pas là »,
+     pas « faiblement saillante ». Placé après is-hover pour gagner la cascade. */
+  .saillance-trend .trend-pt.is-absent { fill: var(--paper); stroke: var(--ink-softer); stroke-width: 1.1px; }
+  .saillance-trend .trend-pt.is-absent.is-hover { fill: var(--paper); stroke: var(--ink); }
   .saillance-trend .trend-pt:focus { outline: none; }
 
-  /* Mobile / colonnes étroites : la courbe passe SOUS le libellé plutôt que de se
-     comprimer. Le libellé lâche sa largeur réservée (le survol tactile suffit). */
+  /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
+     tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
+     courbe est déjà au bord gauche. */
   @media (max-width: 620px) {
     .saillance-trend { flex-wrap: wrap; row-gap: 4px; }
-    .saillance-trend .trend-cap { min-width: 0; white-space: normal; }
-    .saillance-trend .trend-spark-wrap { flex-basis: 100%; margin-left: 27px; }
+    .saillance-trend .trend-cap { white-space: normal; }
+    .saillance-trend .trend-spark-wrap { flex-basis: 100%; }
   }
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
