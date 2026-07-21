@@ -359,11 +359,13 @@ describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
 });
 
 describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
-  const thr = SAL_QC_THRESHOLDS; // {faible:5, moyenne:10, eleve:19, tresEleve:36, extreme:71}
+  const thr = SAL_QC_THRESHOLDS; // recalibré #287 (pics) : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
+  // present = la nouvelle a fait la Une à ce bloc (byBlock.has). qc:0 + present:false
+  // = absente du bloc (≠ faible saillance réelle).
   const decline = [
-    { blockUtc: "2026-07-19T19", qc: 0 }, { blockUtc: "2026-07-19T23", qc: 90 },
-    { blockUtc: "2026-07-20T03", qc: 50 }, { blockUtc: "2026-07-20T07", qc: 12 },
-    { blockUtc: "2026-07-20T11", qc: 0 },
+    { blockUtc: "2026-07-19T19", qc: 0, present: false }, { blockUtc: "2026-07-19T23", qc: 100, present: true },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true }, { blockUtc: "2026-07-20T07", qc: 12, present: true },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false },
   ];
   it("détecte le déclin (sommet passé + chute sous 70 % du pic)", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
@@ -373,26 +375,38 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
   it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     const peak = t.points.find((p: { isPeak: boolean }) => p.isPeak)!;
-    expect(peak.score).toBe(90);
-    expect(peak.level).toBe("Exceptionnelle");
-    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Très faible"); // 0 → bas
-    expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 36 ≤ 50 < 71
-    expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 10 ≤ 12 < 19
+    expect(peak.score).toBe(100);
+    expect(peak.level).toBe("Exceptionnelle"); // 100 ≥ extreme(95)
+    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Absente"); // bloc sans Une → absente, pas « faible »
+    expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 48 ≤ 50 < 95
+    expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 11 ≤ 12 < 19
     // première apparition = premier bloc à score > 0
     expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
-    expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(90);
+    expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
   });
   it("détecte la progression (dernier bloc > 1,25 × le précédent)", () => {
     const rise = [
-      { blockUtc: "2026-07-20T03", qc: 4 }, { blockUtc: "2026-07-20T07", qc: 9 },
-      { blockUtc: "2026-07-20T11", qc: 20 },
+      { blockUtc: "2026-07-20T03", qc: 4, present: true }, { blockUtc: "2026-07-20T07", qc: 9, present: true },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true },
     ];
     const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
     expect(t.capLabel).toMatch(/^En progression/);
   });
+  it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
+    const trend = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 0, present: false },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true },   // à la Une mais faible (< seuil faible=5)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true },
+    ] as never, thr, "2026-07-20")!;
+    const absent = trend.points[0], faible = trend.points[1];
+    expect(absent.level).toBe("Absente");
+    expect(absent.isAbsent).toBe(true);
+    expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
+    expect(faible.isAbsent).toBe(false);
+  });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
-    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0 }] as never, thr, "2026-07-20")).toBeNull();
+    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
   });
 });
 

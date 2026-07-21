@@ -1241,7 +1241,10 @@
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     display: inline-block;
-    min-width: 15.5em;   /* réserve la place du libellé → la courbe ne bouge pas au survol */
+    /* Largeur réservée par ligne via style inline (minWidth = plus long libellé
+       de CETTE trajectoire) → la courbe colle au texte sans trou ET ne bouge pas
+       au survol. Le 0 ici n'est qu'un plancher ; l'inline prend le dessus. */
+    min-width: 0;
   }
   .saillance-trend .trend-cap b { font-weight: 600; }
   .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; }
@@ -1250,6 +1253,10 @@
   .saillance-trend .trend-pt.is-peak,
   .saillance-trend .trend-pt.is-now { fill: var(--ink); }
   .saillance-trend .trend-pt.is-hover { fill: var(--ink); }
+  /* Bloc « Absente » : anneau creux couleur papier → l'œil lit « pas là »,
+     pas « faiblement saillante ». Placé après is-hover pour gagner la cascade. */
+  .saillance-trend .trend-pt.is-absent { fill: var(--paper); stroke: var(--ink-softer); stroke-width: 1.1px; }
+  .saillance-trend .trend-pt.is-absent.is-hover { fill: var(--paper); stroke: var(--ink); }
   .saillance-trend .trend-pt:focus { outline: none; }
 
   /* Mobile / colonnes étroites : la courbe passe SOUS le libellé plutôt que de se

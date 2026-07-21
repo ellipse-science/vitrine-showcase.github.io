@@ -328,8 +328,9 @@ type Story = {
   // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
   byBlock: Map<string, number>;
   /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
-   *  storyline était absente de ce bloc. Alimente la sparkline + le survol. */
-  series: { blockUtc: string; qc: number }[];
+   *  storyline était absente de ce bloc. `present` distingue « pas à la Une »
+   *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol. */
+  series: { blockUtc: string; qc: number; present: boolean }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -425,7 +426,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   // (0 quand la storyline était absente du bloc) — pour la trajectoire #274.
   const windowBlocksAsc = blocks.slice(0, 6).slice().reverse();
   for (const s of merged) {
-    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0 }));
+    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0, present: s.byBlock.has(b) }));
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
@@ -752,6 +753,7 @@ export type SalienceTrendPoint = {
   isFirst: boolean;    // premier bloc où la nouvelle est apparue en Une
   isPeak: boolean;     // bloc du sommet
   isNow: boolean;      // bloc courant
+  isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
 };
 export type SalienceTrend = {
   dir: "up" | "down" | "flat";
@@ -789,7 +791,7 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
 // « en progression » si le dernier bloc dépasse le précédent d'au moins 25 %.
 // null s'il n'y a qu'un bloc actif (rien à raconter).
 function buildSalienceTrend(
-  series: { blockUtc: string; qc: number }[],
+  series: { blockUtc: string; qc: number; present: boolean }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
   blockDateMtl: string | null,
 ): SalienceTrend | null {
@@ -809,13 +811,19 @@ function buildSalienceTrend(
     : "Stable";
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
-    const tier = saillanceTierFromScore(p.qc, thresholds);
+    // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
+    // « Très faible ». Ne pas peindre l'absence comme une saillance faible mais
+    // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
+    const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
     const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
     return {
       timeLabel,
-      level: tier.label, levelCls: tier.cls, score: Math.round(p.qc),
+      level: tier ? tier.label : "Absente",
+      levelCls: tier ? tier.cls : "s-absent",
+      score: Math.round(p.qc),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
+      isAbsent: !p.present,
     };
   });
   return { dir, capLabel, points };

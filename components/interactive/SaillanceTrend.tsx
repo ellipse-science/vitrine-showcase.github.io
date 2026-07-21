@@ -36,12 +36,19 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   // hero épuré ; la trajectoire ne sert qu'à signaler un déclin ou une montée).
   if (trend.dir === "flat") return null;
 
+  // Réserve juste assez de largeur pour le PLUS LONG texte que CE libellé
+  // affichera (tendance au repos OU lecture d'un bloc au survol) : la courbe
+  // reste collée au texte sans trou, et ne se décale pas au survol. Calculé par
+  // ligne (≠ largeur fixe globale, qui gonflait l'espace pour les libellés courts).
+  const capCh = Math.max(
+    trend.capLabel.length,
+    ...pts.map((p) => `${p.timeLabel} · ${p.level}`.length),
+  );
+
   return (
     <div className={`saillance-trend trend-${trend.dir}`}>
       <Arrow dir={trend.dir} />
-      {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
-          survol. Largeur minimale fixe (CSS) pour que la courbe ne se décale pas. */}
-      <span className="trend-cap" aria-live="polite">
+      <span className="trend-cap" aria-live="polite" style={{ minWidth: `${capCh}ch` }}>
         {active
           ? <>{active.timeLabel} · <b>{active.level}</b></>
           : trend.capLabel}
@@ -53,7 +60,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           {pts.map((p, i) => (
             <circle
               key={i}
-              className={`trend-pt${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
+              className={`trend-pt${p.isAbsent ? " is-absent" : ""}${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
               cx={xs(i).toFixed(1)} cy={ys(p.score).toFixed(1)}
               r={i === hover ? 5 : p.isPeak || p.isNow ? 3.4 : 2.4}
               tabIndex={0}
