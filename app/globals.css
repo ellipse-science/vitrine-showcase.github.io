@@ -1247,7 +1247,10 @@
     min-width: 0;
   }
   .saillance-trend .trend-cap b { font-weight: 600; }
-  .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; }
+  /* Nudge optique : le centre de gravité d'une police serif est au-dessus du
+     milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
+     sur la hauteur d'x du libellé, pas sur la boîte. */
+  .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; transform: translateY(-2px); }
   .saillance-trend .trend-line { stroke: var(--acc); }
   .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
   .saillance-trend .trend-pt.is-peak,

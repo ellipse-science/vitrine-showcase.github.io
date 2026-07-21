@@ -852,7 +852,6 @@ export type UneEvent = {
    *  retombe sur les médias du bloc courant si la donnée 24h manque
    *  (lignes antérieures au 2026-07-10). */
   mediaToday: { name: string; url: string | null }[];
-  mediaAbsent: string[];
   qcOutletCount: number;
   totalQcOutlets: number;
   /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
@@ -1070,7 +1069,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // depuis l'agrégat de la story ; lien = dernier article du média (#129).
     const qcCovering = QC_MEDIA.filter((id) => s.qcMedia.has(id));
     const mediaToday = qcCovering.map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: s.urlByMedia[id] ?? null }));
-    const mediaAbsent = QC_MEDIA.filter((id) => !s.qcMedia.has(id)).map((id) => MEDIA_NAMES[id] ?? id);
 
     return {
       title: e.title ?? "",
@@ -1086,7 +1084,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillantSince,
       representativeUrl: e.representative_url ?? null,
       mediaToday,
-      mediaAbsent,
       qcOutletCount: qcCovering.length,
       totalQcOutlets: QC_MEDIA.length,
       storylineId: e.storyline_id ?? null,

@@ -7,7 +7,10 @@ import type { SalienceTrend } from "@/lib/data/headlineEvents";
 // clair, puis mini-courbe des 6 derniers blocs. Chaque point est survolable (tap
 // sur mobile) et révèle le NIVEAU qu'affichait la nouvelle à ce bloc — le badge,
 // lui, reste au pic 24 h. Rien n'est rendu si la tendance est « stable ».
-const W = 124, H = 34, PADX = 5, PADY = 5;
+// Boîte volontairement basse : une sparkline trop haute lit « en dessous » du
+// texte (sa masse — les blocs au plancher — s'enfonce sous la ligne de base).
+// Compacte, elle s'aligne optiquement avec le libellé.
+const W = 124, H = 24, PADX = 5, PADY = 4;
 
 // Flèche directionnelle (↘ / ↗) — un chemin SVG, colorée par la classe parente.
 function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {

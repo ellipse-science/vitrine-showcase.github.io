@@ -9,6 +9,18 @@ import { InfoTip } from "@/components/interactive/InfoTip";
 import { SaillanceTrend } from "@/components/interactive/SaillanceTrend";
 import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { HeadlineLink } from "@/components/interactive/HeadlineLink";
+
+// Titre cliquable d'une Une : ouvre un article au hasard parmi les médias QC
+// qui la couvrent (chance égale). Repli sur l'article représentatif si besoin.
+// Rendu en texte simple si aucun lien connu.
+function HeadlineTitle({ event, children }: { event: UneEvent; children: React.ReactNode }) {
+  const urls = event.mediaToday.map((m) => m.url).filter((u): u is string => !!u);
+  const fallback = event.representativeUrl ?? urls[0];
+  return fallback
+    ? <HeadlineLink urls={urls} fallback={fallback}>{children}</HeadlineLink>
+    : <>{children}</>;
+}
 
 // En-tête d'une Une : rubrique (enjeu) → badge de saillance (au pic 24 h) + ⓘ →
 // trajectoire (#274). Le badge tombe toujours sous l'enjeu (CSS flex-basis 100 %),
@@ -51,29 +63,21 @@ function MediaLinkList({ media }: { media: { name: string; url: string | null }[
   );
 }
 
-function Byline({ mediaToday, mediaAbsent }: {
+function Byline({ mediaToday }: {
   mediaToday: { name: string; url: string | null }[];
-  mediaAbsent: string[];
 }) {
-  // Une seule ligne de présence (décision Adrien 2026-07-11) : « À la Une
-  // aujourd'hui sur » = union des médias QC ayant mis l'histoire en Une sur la
-  // fenêtre 24h (#213/#215/#51) — remplace l'ancien « À lire en Une sur »,
-  // limité au bloc 4h courant. Les liens pointent vers le DERNIER article mis
-  // en Une par chaque média, même s'il vient d'un bloc précédent (#129).
+  // Une seule ligne de présence : « À la Une aujourd'hui sur » = union des
+  // médias QC ayant mis l'histoire en Une sur la fenêtre 24h (#213/#215/#51).
+  // Les liens pointent vers le DERNIER article mis en Une par chaque média,
+  // même s'il vient d'un bloc précédent (#129). (« Absent de la Une sur »
+  // retiré 2026-07-20 — décision Adrien, peu utile.)
+  if (mediaToday.length === 0) return null;
   return (
     <div className="byline-block">
-      {mediaToday.length > 0 && (
-        <p className="byline-line">
-          <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
-          <MediaLinkList media={mediaToday} />
-        </p>
-      )}
-      {mediaAbsent.length > 0 && (
-        <p className="byline-line">
-          <span className="byline-label">Absent de la Une sur</span>{" "}
-          <span className="byline-absent-media">{mediaAbsent.join(" · ")}</span>
-        </p>
-      )}
+      <p className="byline-line">
+        <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
+        <MediaLinkList media={mediaToday} />
+      </p>
     </div>
   );
 }
@@ -100,21 +104,17 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
           <SaillanceHead event={event} className="une-main-head" />
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
-            {event.representativeUrl ? (
-              <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-            ) : event.title}
+            <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
-          <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+          <Byline mediaToday={event.mediaToday} />
           {secondEvent && (
             <div className="une-side une-second">
               <SaillanceHead event={secondEvent} className="une-side-head" />
               <h2 data-saillance={secondEvent.saillanceRank}>
-                {secondEvent.representativeUrl ? (
-                  <a href={secondEvent.representativeUrl} target="_blank" rel="noopener noreferrer">{secondEvent.title}</a>
-                ) : secondEvent.title}
+                <HeadlineTitle event={secondEvent}>{secondEvent.title}</HeadlineTitle>
               </h2>
-              <Byline mediaToday={secondEvent.mediaToday} mediaAbsent={secondEvent.mediaAbsent} />
+              <Byline mediaToday={secondEvent.mediaToday} />
             </div>
           )}
         </div>
@@ -153,12 +153,10 @@ function SideUne({ event }: { event: UneEvent }) {
     <div className="une-side">
       <SaillanceHead event={event} className="une-side-head" />
       <h2 data-saillance={event.saillanceRank}>
-        {event.representativeUrl ? (
-          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-        ) : event.title}
+        <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
       </h2>
-      {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
-      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+      {/* QC seulement — Shannon: "Médias Qc seulement" */}
+      <Byline mediaToday={event.mediaToday} />
     </div>
   );
 }
