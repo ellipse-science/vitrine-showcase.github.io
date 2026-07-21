@@ -650,9 +650,39 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // solitudes » — le radar peut en revanche montrer des histoires de plus (top
 // canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
+
+// Plancher de récence (dossier fenêtre, arbitrage Adrien 2026-07-20) : la Une
+// montre le saillant DU MOMENT. Le classement par cumul 24 h (w10) peut, un jour
+// creux, garder en tête une histoire retombée qui a « laissé la place à autre
+// chose » (cas mesuré : le soccer, pic la veille à 19 h, coiffait la Une à 0 sur
+// le bloc courant, masquant l'inflation live). On EXCLUT donc de la Une une
+// histoire qui est À LA FOIS absente du bloc courant ET dont le pic date d'au
+// moins 2 blocs (≥ 8 h) — un déclin installé. On ne punit PAS un simple saut d'un
+// bloc (pic récent), et le signal est l'ÂGE DU PIC, pas « présent/absent » (le
+// soccer avait encore un petit score 4 h avant : viser le déclin, pas l'absence).
+// Mesuré sur juin : corrige 67 % des jours à héros-mort, aucune Une vidée ; le
+// churn monte (34 → 62 %) mais c'est la Une qui suit l'actualité, pas du bruit.
+// N'affecte QUE la sélection des Unes ; le radar Deux solitudes garde ces
+// histoires (leur part d'attention 24 h reste légitime).
+const STALE_PEAK_MIN_BLOCKS = 2;
+function isStaleForUne(s: Story): boolean {
+  if (s.series.length === 0) return false;
+  const cur = s.series[s.series.length - 1].qc;
+  if (cur > 0) return false; // encore présente dans le bloc courant → jamais périmée
+  let peak = 0, peakIdx = 0;
+  s.series.forEach((p, i) => { if (p.qc >= peak) { peak = p.qc; peakIdx = i; } });
+  const peakAgeBlocks = (s.series.length - 1) - peakIdx;
+  return peak > 0 && peakAgeBlocks >= STALE_PEAK_MIN_BLOCKS;
+}
+
 function selectTopUnes(stories: Story[], max = 3): Story[] {
-  return stories
-    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
+  const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
+  const fresh = eligible.filter((s) => !isStaleForUne(s));
+  // Le plancher retire les histoires retombées, MAIS le module garde toujours ≥ 1
+  // Une : si tout est retombé (jour très creux), on retombe sur le classement
+  // complet plutôt que d'afficher une Une vide.
+  const pool = fresh.length > 0 ? fresh : eligible;
+  return pool
     .sort((a, b) => b.sumQc - a.sumQc)
     .slice(0, max)
     .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
@@ -1297,6 +1327,7 @@ export const __test__ = {
   storiesFrom24h,
   buildSalienceTrend,
   selectTopUnes,
+  isStaleForUne,
   MIN_QC_MEDIA_SECONDARY,
   windowConvergence,
   windowEventConvergence,
