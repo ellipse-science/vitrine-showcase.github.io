@@ -7,6 +7,24 @@ import { InfoTip } from "@/components/interactive/InfoTip";
 
 const RANGES: RangeKey[] = ["today", "week", "month"];
 
+// Titre du partage (bouton + intention X) — reprend le meneur du jour et le
+// ton de sa couverture, comme la carte /partage/partis-et-couverture/, plutôt
+// que le libellé générique du module. Toujours "today", peu importe l'onglet
+// affiché, pour rester cohérent avec ce que montre la carte de partage.
+function shareTitle(data: PartiesData): string {
+  const leader = data.ranges.today.rows[0];
+  if (!leader || leader.sovPct === 0 || leader.inShadow) {
+    return "Couverture médiatique des partis politiques";
+  }
+  const tone =
+    leader.toneDirection === "positive"
+      ? "on en parle en bien"
+      : leader.toneDirection === "negative"
+        ? "on en parle en mal"
+        : "l'important, c'est qu'on en parle";
+  return `${leader.label} domine la couverture (${leader.sovPct} %) : ${tone}`;
+}
+
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const [range, setRange] = useState<RangeKey>("today");
   const view: RangeView = data.ranges[range];
@@ -34,7 +52,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Couverture médiatique des partis politiques" anchor="partis-et-couverture" />
+            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" />
           </div>
         </div>
       </div>
