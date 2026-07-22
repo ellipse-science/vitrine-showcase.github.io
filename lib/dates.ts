@@ -56,3 +56,16 @@ export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null):
   const hourLabel = blockEndHour >= 24 ? "minuit" : `${blockEndHour}h`;
   return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
 }
+
+/**
+ * Heure de PUBLICATION à partir d'un intervalle de bloc « HH-HH » (réforme #195).
+ * Le bloc de données est servi ~1 h après sa fin → heure = fin + 1 h.
+ * Un bord de bloc à 24 (« 20-24 », legacy/UTC) EST déjà minuit : on le normalise
+ * à 0 avant +1, sinon 24+1=25 (≥ 24) réafficherait « minuit » au lieu de « 1h ».
+ * La valeur 24 (issue d'une fin à 23) reste 24 → « minuit » via lastUpdatedLabel.
+ * Retourne null si l'intervalle n'a pas de borne de fin numérique.
+ */
+export function publicationHourFromInterval(interval: string | null | undefined): number | null {
+  const blockEnd = parseInt((interval ?? "").split("-")[1] ?? "", 10);
+  return Number.isNaN(blockEnd) ? null : (blockEnd % 24) + 1;
+}

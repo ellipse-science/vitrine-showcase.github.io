@@ -47,7 +47,20 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 | `semver:minor` | → `2.1.0-beta.0` | → `2.1.0` |
 | `semver:major` | → `3.0.0-beta.0` | → `3.0.0` |
 
-- **PR sans label semver:*** → aucun bump. Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
+**Quel label choisir ?** Le critère est ce qu'un **visiteur du site** perçoit :
+
+| Label | Quand | Exemples |
+|-------|-------|----------|
+| *(aucun)* | Rien ne change pour le visiteur | docs, CI, tests, refactor sans effet visible, tooling |
+| `semver:patch` | Correctif ou retouche d'un module existant | bug d'affichage, ajustement CSS/responsive, reformulation d'un libellé, correction de la métho |
+| `semver:minor` | Nouveauté ou évolution visible | nouveau module/section, nouvelle donnée affichée, changement notable d'un visuel ou d'un calcul présenté |
+| `semver:major` | Refonte ou rupture | redesign global, restructuration du site, changement de méthodologie qui invalide les lectures antérieures |
+
+En cas d'hésitation entre deux niveaux, prends le plus bas.
+
+**Journal des mises à jour (`/journal`)** : chaque PR mergée dans main crée une entrée dans `static-content/changelog.json` (même workflow, script `.github/scripts/append-changelog.mjs`), affichée sur la page `/journal` (accessible en cliquant le badge de version du footer). La note vient de la section « Note de journal » du template de PR : 1-2 phrases grand public, sans jargon interne (règles : `.claude/skills/redaction-editoriale/SKILL.md`). Section vide ou laissée telle quelle → le titre de la PR est utilisé ; PR de bot → note générique. Ne jamais éditer `changelog.json` à la main sauf pour corriger une note.
+
+- **PR sans label semver:*** → aucun bump (mais une entrée de journal quand même). Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
 - **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
 - **Comment le bump contourne la protection de `main`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
 
@@ -62,6 +75,12 @@ Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au m
 6. **Impact méthodologie obligatoire sur chaque PR.** La page Méthodologie (`public/methodologie/index.html`) et les docs vivantes du pipeline (`public/docs/horaire-refiners-2026.html`, `public/docs/workflow-vitrine-2025-swimlanes.html`) ne doivent JAMAIS être périmées. Toute PR (de ce repo ou des repos AWS) qui change un calcul, un seuil, un horaire, la collecte ou une représentation met le texte à jour ou déclare explicitement l'absence d'impact — section « Impact méthodologie » du template de PR, vérifiée par le check `garde-metho`. Deux skills encadrent ce travail : [`synchro-methodologie`](./.claude/skills/synchro-methodologie/SKILL.md) (QUOI/QUAND mettre à jour — mapping sections ↔ code, véracité, timing) et [`redaction-methodologie`](./.claude/skills/redaction-methodologie/SKILL.md) (COMMENT l'écrire — registre grand public, pas de jargon interne comme les noms de raffineurs/tables/colonnes, transparence sans exposer la PI ni les droits des médias). Les employer ensemble. Timing : pour un changement aws-refiners/aws-infra, la PR métho se merge quand le changement est **déployé** (corollaire de FAIT vs VISION).
 
 7. **Règles de rédaction obligatoires pour tout texte public.** Tout texte affiché sur le site (libellés, phrases éditoriales générées, infobulles, méthodo, billets) suit les règles canoniques de [`.claude/skills/redaction-editoriale/SKILL.md`](./.claude/skills/redaction-editoriale/SKILL.md) — voix sobre, typographie française, lexique canonique (jamais « ROC » en public), formulations honnêtes issues du red-team, superlatifs calibrés sur les percentiles. Les gabarits de phrases générées doivent être finis, listés dans le code et relus par la propriétaire du contenu éditorial avant merge.
+
+8. **Attribution humaine des commits — l'humain est auteur, l'IA est tracée comme provenance.** On distingue deux choses que le débat confond souvent :
+   - **Paternité (interdite à l'IA).** Aucun auteur/committer IA, aucun trailer `Co-Authored-By` pointant vers une IA (`noreply@anthropic.com`, Copilot, etc.) — vérifiez `git config user.name` / `user.email` dans vos environnements d'agents. Pourquoi : GitHub parse ces signaux comme une **co-signature** et crédite le co-auteur dans le graphe Contributors — le compte `claude` y apparaissait comme 2e contributeur du repo. Un livrable scientifique n'a pas d'auteur non humain ; c'est la personne qui commande, supervise et assume qui est l'autrice.
+   - **Provenance (permise, encouragée).** Documenter l'outil qui a assisté le travail via un trailer `Assisted-by: Claude Code (Opus 4.8)` (ou `Generated-with:`). GitHub **ne le parse pas** comme une co-signature : le graphe Contributors reste propre, l'humain reste seul auteur, et l'assistance machine est tout de même reconnue et traçable — sans en faire un co-auteur. C'est la manière sanctionnée de créditer honnêtement l'outil, en cohérence avec la transparence méthodologique (les outils employés sont déjà mentionnés dans la méthodo, pour la reproductibilité).
+
+   Appliqué mécaniquement : `includeCoAuthoredBy: false` dans `.claude/settings.json` (Claude Code n'émet plus le trailer de paternité) + check CI `garde-attribution` sur chaque PR — qui **bloque la paternité mais laisse passer la provenance**. Contexte : [issue #235](https://github.com/ellipse-science/vitrine-showcase.github.io/issues/235).
 
 ## Module naming + signalement labels (triage)
 

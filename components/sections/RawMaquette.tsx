@@ -24,7 +24,7 @@ export type ChunkName = "top" | "bottom" | "polimeter_plus";
 // `__VERSION__` substitué ici au build.
 //   2.0.0-beta.3 → « Bêta v2.0.0 (b3) »  (compteur bêta visible)
 //   2.0.0        → « v2.0.0 »             (hors bêta)
-function formatVersion(version: string): string {
+export function formatVersion(version: string): string {
   const [core, pre] = version.split("-");
   const beta = pre?.match(/^beta\.(\d+)$/);
   return beta ? `Bêta v${core} (b${beta[1]})` : `v${core}`;
@@ -42,6 +42,7 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="apropos\/"/g, `href="${basePath}/apropos/"`);
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
+  html = html.replace(/href="journal\/"/g, `href="${basePath}/journal/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
   html = html.replace(/src="\/images\//g, `src="${basePath}/images/`);
 

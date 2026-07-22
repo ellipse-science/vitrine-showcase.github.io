@@ -1,12 +1,19 @@
-name: Auto version bump on PR merge
+name: Version bump + journal on PR merge
 
-# Bumpe package.json (la source de vérité affichée dans le footer via
-# RawMaquette) quand une PR est mergée dans main et porte l'un de ces labels :
+# À chaque PR mergée dans main, ce workflow fait deux choses en un commit :
+#
+# 1. JOURNAL (toutes les PR) : ajoute une entrée à static-content/changelog.json
+#    (affiché sur /journal) via .github/scripts/append-changelog.mjs — note
+#    tirée de la section « Note de journal » du template de PR (fallback :
+#    titre de la PR ; PR de bot → note générique).
+#
+# 2. BUMP (PR avec label semver:* seulement) : bumpe package.json (la source
+#    de vérité affichée dans le footer via RawMaquette) :
 #   - semver:patch  → 2.0.0-beta.0 → 2.0.0-beta.1 (bêta) / 2.0.1 (hors bêta)
 #   - semver:minor  → 2.0.0-beta.0 → 2.1.0-beta.0 (bêta) / 2.1.0 (hors bêta)
 #   - semver:major  → 2.0.0-beta.0 → 3.0.0-beta.0 (bêta) / 3.0.0 (hors bêta)
-# Une PR sans label semver:* ne fait rien. Les commits « data: refresh … »
-# n'ouvrent pas de PR → jamais de bump sur le pipeline de rafraîchissement 4h.
+# Les commits « data: refresh … » n'ouvrent pas de PR → jamais de bump ni
+# d'entrée de journal sur le pipeline de rafraîchissement 4h.
 #
 # Pour sortir de bêta : éditer package.json à la main sur une PR normale
 # (ex. « 2.0.0-beta.5 » → « 2.0.0 »).
@@ -24,13 +31,15 @@ name: Auto version bump on PR merge
 # présente sur `main` (fiable), pas celle de la branche de la PR — un
 # contributeur ne peut donc pas altérer le workflow dans sa branche pour
 # exfiltrer la clé. C'est sûr ici parce qu'on ne checkout JAMAIS le code de la
-# PR : on checkout `main` et on ne lit que les métadonnées (labels, numéro).
+# PR : on checkout `main` et on ne lit que les métadonnées de l'événement
+# (labels, numéro, corps de la PR — traité comme du texte, jamais évalué,
+# jamais interpolé dans le shell).
 on:
   pull_request_target:
     types: [closed]
     branches: [main]
 
-# Sérialise les bumps entre eux : deux PR mergées coup sur coup ne se marchent
+# Sérialise les runs entre eux : deux PR mergées coup sur coup ne se marchent
 # pas dessus (le rebase ci-dessous gère en plus les commits de refresh).
 concurrency:
   group: version-bump
@@ -59,27 +68,20 @@ jobs:
             echo "type=none" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Skip if no semver label
-        if: steps.bump.outputs.type == 'none'
-        run: echo "Aucun label semver:* sur la PR — rien à bumper."
-
       # Deploy key (persist-credentials par défaut = true) → le push SSH plus bas
       # est authentifié par une clé qui bypasse le ruleset de main.
       - uses: actions/checkout@v7
-        if: steps.bump.outputs.type != 'none'
         with:
           ref: main
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        if: steps.bump.outputs.type != 'none'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Bump version (prerelease-aware) and push
-        if: steps.bump.outputs.type != 'none'
+      - name: Bump version (prerelease-aware), append journal entry and push
         env:
           TYPE: ${{ steps.bump.outputs.type }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -89,23 +91,34 @@ jobs:
           # Pousser en SSH pour utiliser la deploy key (comme refresh-data.yml).
           git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
 
-          CURRENT=$(node -p "require('./package.json').version")
-          if [[ "$CURRENT" == *-beta* ]]; then
-            case "$TYPE" in
-              patch) NPM_CMD="prerelease --preid=beta" ;;
-              minor) NPM_CMD="preminor --preid=beta" ;;
-              major) NPM_CMD="premajor --preid=beta" ;;
-            esac
+          NEW=""
+          if [ "$TYPE" != "none" ]; then
+            CURRENT=$(node -p "require('./package.json').version")
+            if [[ "$CURRENT" == *-beta* ]]; then
+              case "$TYPE" in
+                patch) NPM_CMD="prerelease --preid=beta" ;;
+                minor) NPM_CMD="preminor --preid=beta" ;;
+                major) NPM_CMD="premajor --preid=beta" ;;
+              esac
+            else
+              NPM_CMD="$TYPE"
+            fi
+            npm version $NPM_CMD --no-git-tag-version
+            NEW=$(node -p "require('./package.json').version")
+            echo "### Version bumpée : \`$NEW\` (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
           else
-            NPM_CMD="$TYPE"
+            echo "### Pas de label semver:* — entrée de journal seulement (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          npm version $NPM_CMD --no-git-tag-version
-          NEW=$(node -p "require('./package.json').version")
-          echo "### Version bumpée : \`$NEW\` (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+          # Entrée du Journal des mises à jour (/journal) — toutes les PR.
+          NEW_VERSION="$NEW" node .github/scripts/append-changelog.mjs
 
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to $NEW (PR #$PR_NUMBER)"
+          git add package.json package-lock.json static-content/changelog.json
+          if [ -n "$NEW" ]; then
+            git commit -m "chore: bump version to $NEW (PR #$PR_NUMBER)"
+          else
+            git commit -m "chore(journal): entrée pour la PR #$PR_NUMBER"
+          fi
 
           # main peut avancer entre le checkout et le push (commits « data:
           # refresh … » poussés via deploy key). On rebase et on réessaie.
