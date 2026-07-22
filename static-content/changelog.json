@@ -32,7 +32,7 @@
   {
     "pr": 283,
     "date": "2026-07-20T18:09:01Z",
-    "note": "Une des Unes : pondération de récence du classement 24 h (demi-vie 10 h, #274)",
+    "note": "La Une des Unes accorde plus de poids aux dernières heures dans son classement : une histoire encore chaude passe devant une histoire qui s’essouffle.",
     "version": "2.7.0-beta.0"
   },
   {
