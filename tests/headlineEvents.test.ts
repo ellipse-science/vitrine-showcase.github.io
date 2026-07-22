@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, isStaleForUne, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -340,10 +340,82 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
   });
 });
 
+describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
+  it("expose la série brute des 6 blocs de la fenêtre, 0 si absente d'un bloc", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sA", title: "A", score_qc: 10, date_utc: "2026-07-13", time_interval_utc: "12-16" }),
+      // Une autre histoire occupe le bloc 16-20 ; A y est absente → 0 dans sa série.
+      ev({ storyline_id: "sB", title: "B", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const s = st.find((x: { label: string }) => x.label === "A")!;
+    // série ordonnée du plus ancien au plus récent ; le score par bloc est BRUT.
+    const scores = s.series.map((p: { qc: number }) => p.qc);
+    expect(scores[scores.length - 1]).toBe(30); // bloc le plus récent (20-24)
+    expect(scores.filter((v: number) => v === 10)).toHaveLength(1); // bloc 12-16
+    expect(scores.filter((v: number) => v === 0).length).toBeGreaterThan(0); // A absente du bloc 16-20
+  });
+});
+
+describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
+  const thr = SAL_QC_THRESHOLDS; // recalibré #287 (pics) : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
+  // present = la nouvelle a fait la Une à ce bloc (byBlock.has). qc:0 + present:false
+  // = absente du bloc (≠ faible saillance réelle).
+  const decline = [
+    { blockUtc: "2026-07-19T19", qc: 0, present: false }, { blockUtc: "2026-07-19T23", qc: 100, present: true },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true }, { blockUtc: "2026-07-20T07", qc: 12, present: true },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false },
+  ];
+  it("détecte le déclin (sommet passé + chute sous 70 % du pic)", () => {
+    const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("down");
+    expect(t.capLabel).toMatch(/^En déclin depuis /);
+  });
+  it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
+    const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
+    const peak = t.points.find((p: { isPeak: boolean }) => p.isPeak)!;
+    expect(peak.score).toBe(100);
+    expect(peak.level).toBe("Exceptionnelle"); // 100 ≥ extreme(95)
+    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Absente"); // bloc sans Une → absente, pas « faible »
+    expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 48 ≤ 50 < 95
+    expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 11 ≤ 12 < 19
+    // première apparition = premier bloc à score > 0
+    expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
+    expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
+  });
+  it("détecte la progression (dernier bloc > 1,25 × le précédent)", () => {
+    const rise = [
+      { blockUtc: "2026-07-20T03", qc: 4, present: true }, { blockUtc: "2026-07-20T07", qc: 9, present: true },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true },
+    ];
+    const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("up");
+    expect(t.capLabel).toMatch(/^En progression/);
+  });
+  it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
+    const trend = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 0, present: false },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true },   // à la Une mais faible (< seuil faible=5)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true },
+    ] as never, thr, "2026-07-20")!;
+    const absent = trend.points[0], faible = trend.points[1];
+    expect(absent.level).toBe("Absente");
+    expect(absent.isAbsent).toBe(true);
+    expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
+    expect(faible.isAbsent).toBe(false);
+  });
+  it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
+    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
+  });
+});
+
 describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3)", () => {
-  // selectTopUnes ne lit que sumQc et qcMedia ; le reste de Story est superflu ici.
+  // selectTopUnes lit sumQc, qcMedia et series (plancher de récence). Par défaut,
+  // une série d'un bloc VIVANT (qc>0) → jamais périmée : le plancher n'interfère pas.
   const story = (label: string, sumQc: number, nQcMedia: number) =>
-    ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)) });
+    ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
+       series: [{ blockUtc: "2026-07-20T15", qc: Math.max(1, sumQc) }] });
 
   it("garde les 3 Unes quand les secondaires sont multi-médias", () => {
     const st = [story("A", 30, 4), story("B", 20, 2), story("C", 10, 3)];
@@ -364,6 +436,42 @@ describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3
   it("classe par saillance cumulée décroissante et ignore les histoires sans média QC", () => {
     const st = [story("Faible", 5, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Forte", "Faible"]);
+  });
+});
+
+describe("plancher de récence (dossier fenêtre — la Une montre le MOMENT)", () => {
+  const B = ["2026-07-19T23", "2026-07-20T03", "2026-07-20T07", "2026-07-20T11", "2026-07-20T15"];
+  const withSeries = (label: string, sumQc: number, nQcMedia: number, scores: number[]) =>
+    ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
+       series: B.slice(-scores.length).map((b, i) => ({ blockUtc: b, qc: scores[i] })) });
+
+  it("isStaleForUne : absente du bloc courant ET pic ≥ 2 blocs → périmée", () => {
+    expect(isStaleForUne(withSeries("soccer mort", 74, 3, [90, 54, 21, 10, 0]) as never)).toBe(true);
+  });
+  it("isStaleForUne : présente dans le bloc courant → jamais périmée", () => {
+    expect(isStaleForUne(withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]) as never)).toBe(false);
+  });
+  it("isStaleForUne : absente mais pic au bloc précédent (saut d'un bloc) → PAS périmée", () => {
+    expect(isStaleForUne(withSeries("saut d'un bloc", 20, 2, [0, 0, 0, 30, 0]) as never)).toBe(false);
+  });
+  it("garde toujours ≥ 1 Une : si TOUTES les histoires sont retombées, repli sur le classement", () => {
+    const st = [
+      withSeries("morte A", 74, 3, [90, 54, 21, 10, 0]),
+      withSeries("morte B", 40, 2, [50, 30, 8, 4, 0]),
+    ];
+    // les deux sont périmées → le plancher les retirerait toutes → repli : la Une
+    // n'est jamais vide, et le héros reste la plus saillante au cumul.
+    const unes = selectTopUnes(st as never).map((s: { label: string }) => s.label);
+    expect(unes.length).toBeGreaterThan(0);
+    expect(unes[0]).toBe("morte A");
+  });
+  it("le cas inflation vs soccer : une histoire fraîche coiffe une morte de plus gros cumul", () => {
+    const st = [
+      withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul mais mort
+      withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]),   // frais, cumul plus bas
+    ];
+    // sans plancher, soccer serait #1 (sumQc 74 > 14) ; avec, il est exclu.
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["inflation"]);
   });
 });
 
