@@ -237,12 +237,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // couverte (11 médias = 346 px sur une ligne) débordait sur les
             // libellés des axes voisins. 6 par rangée ≈ 186 px, soit la largeur
             // d'un titre (wrapLabel plafonne à 26 caractères). Les rangées sont
-            // ÉQUILIBRÉES (11 → 6+5, pas 6+5 déséquilibré en 6+1+4) pour rester
-            // centrées sous le titre.
+            // ÉQUILIBRÉES : on fixe d'abord le NOMBRE de rangées, puis on
+            // répartit uniformément — 7 médias → 4+3 (pas 6+1), 11 → 6+5 —
+            // pour que chaque rangée reste centrée sous le titre.
             const MAX_PER_ROW = 6, ROW_H = 34;
             const media = a.media;
-            const rowsCount = Math.max(1, Math.ceil(media.length / MAX_PER_ROW));
-            const perRow = Math.ceil(media.length / rowsCount);
+            const rowsCount = Math.ceil(media.length / MAX_PER_ROW); // 0 si aucun badge
+            const perRow = rowsCount > 0 ? Math.ceil(media.length / rowsCount) : 0;
             const mediaRows = Array.from({ length: rowsCount }, (_, r) =>
               media.slice(r * perRow, (r + 1) * perRow),
             ).filter((r) => r.length > 0);
@@ -251,7 +252,10 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges :
             // sans ça, le positionnement vertical (top) ignorerait les rangées
             // supplémentaires et les axes du bas mordraient sur le radar.
-            const blockH = eyeH + titleH + TB_GAP + 20 + (mediaRows.length - 1) * ROW_H;
+            // Math.max(0, …) : un axe SANS badge garde la hauteur d'avant (la
+            // rangée vide était déjà comptée 20 px) au lieu de perdre 34 px et
+            // de remonter sur le radar.
+            const blockH = eyeH + titleH + TB_GAP + 20 + Math.max(0, mediaRows.length - 1) * ROW_H;
             // Haut du bloc selon la position de l'axe.
             const top = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
             const eyebrowY = top + 11;
