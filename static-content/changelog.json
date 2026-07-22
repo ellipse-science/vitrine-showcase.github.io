@@ -1,5 +1,11 @@
 [
   {
+    "pr": 256,
+    "date": "2026-07-22T03:43:56Z",
+    "note": "docs(pipeline): synchroniser les diagrammes vivants avec la dépréciation #428",
+    "version": null
+  },
+  {
     "pr": 285,
     "date": "2026-07-22T03:35:27Z",
     "note": "Reformulation d'une entrée de ce journal en langage plus simple.",
