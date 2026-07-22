@@ -61,7 +61,7 @@ horizontal, TOUS les états dynamiques du composant).
 Règle dure #8 (AGENTS.md). L'humain reste seul AUTEUR : aucun commit/trailer
 Co-Authored-By pointant vers une IA (bloqué par le check garde-attribution).
 La PROVENANCE est obligatoire dès qu'une IA a aidé, TOUJOURS EN FRANÇAIS :
-- commits → trailer « Assisté par: Claude Code (Opus 4.8) »
+- commits → trailer « Assisté par : Claude Code (Opus 4.8) »
 - corps de PR, issues, réponses/commentaires → ligne « 🤖 Assisté par … »
 Remplacer tout libellé anglais par défaut (p. ex. « Generated with Claude Code »).
 -->
