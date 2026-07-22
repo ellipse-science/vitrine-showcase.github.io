@@ -1,5 +1,11 @@
 [
   {
+    "pr": 293,
+    "date": "2026-07-22T03:31:34Z",
+    "note": "fix(deux solitudes) : enrouler les badges de médias sur plusieurs rangées",
+    "version": null
+  },
+  {
     "pr": 290,
     "date": "2026-07-21T21:21:05Z",
     "note": "docs(métho) : vérification d'appartenance des articles (§ 04, aws-refiners#236)",
