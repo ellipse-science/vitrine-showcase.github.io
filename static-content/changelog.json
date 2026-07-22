@@ -1,5 +1,11 @@
 [
   {
+    "pr": 300,
+    "date": "2026-07-22T20:25:29Z",
+    "note": "Métho : le regroupement des événements passe à un modèle de langue (suit aws-refiners#243)",
+    "version": null
+  },
+  {
     "pr": 298,
     "date": "2026-07-22T19:20:04Z",
     "note": "Les cartes qu'on partage sur les réseaux sociaux sont maintenant plus visuelles : un chiffre clé bien en vue, et un format vertical pensé pour Instagram.",
