@@ -774,6 +774,9 @@
 
     <h3>6 · Instantanés statiques</h3>
     <p class="metho-body">Les données publiées sont des instantanés (<em>snapshots</em>) mis à jour automatiquement six fois par jour par un pipeline AWS. Les scores affichés correspondent au dernier cycle de collecte et d'analyse, non à un flux continu en temps réel.</p>
+
+    <h3>7 · Regroupement non reproductible à l'identique</h3>
+    <p class="metho-body">Le regroupement des articles en histoires est confié à un modèle de langue. Deux exécutions sur les mêmes articles s'accordent à environ 97&nbsp;%, sans être identiques&nbsp;: recalculer une journée passée ne redonnerait donc pas exactement les mêmes histoires. Le découpage publié est une décision datée, figée au moment de la publication. Les indices de saillance des objets, eux, restent calculés de façon déterministe et sont reproductibles (§&nbsp;03).</p>
   </section>
 
   <!-- §11 Éthique -->
@@ -782,7 +785,6 @@
     <h2>Éthique et transparence</h2>
     <ul class="metho-list">
       <li>Le CAPP détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
-      <li><strong>7 · Regroupement non reproductible à l'identique</strong><br>Le regroupement des articles en histoires est confié à un modèle de langue. Deux exécutions sur les mêmes articles s'accordent à environ 97&nbsp;%, sans être identiques&nbsp;: recalculer une journée passée ne redonnerait donc pas exactement les mêmes histoires. Le découpage publié est une décision datée, figée au moment de la publication. Les indices de saillance des objets, eux, restent calculés de façon déterministe et sont reproductibles (§&nbsp;03).</li>
       <li>Les données sont hébergées au Québec, dans les infrastructures cloud du CAPP. Aucune donnée personnelle n'est transmise à des tiers.</li>
       <li>Aucune donnée permettant d'identifier un individu n'est utilisée dans le calcul des indices de saillance médiatique ou parlementaire.</li>
       <li>Le code de traitement des données est disponible sur les dépôts GitHub publics du CAPP et d'Ellipse Sciences (<a href="https://github.com/ellipse-science" target="_blank" rel="noopener">github.com/ellipse-science</a>).</li>

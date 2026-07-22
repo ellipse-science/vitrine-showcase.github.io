@@ -462,7 +462,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 22 juillet 2026 (regroupement des événements par LLM et retrait du garde d'appartenance, aws-refiners#213 ; pipeline Polimètre+ ; badges de dépréciation aws-infra #428) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 22 juillet 2026 (regroupement des événements par LLM et retrait du garde d'appartenance, aws-refiners#243 ; pipeline Polimètre+ ; badges de dépréciation aws-infra #428) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -1432,9 +1432,9 @@
                         '📊 63 colonnes au total (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag)',
                         '🎯 Granularité: 1 ligne = 1 événement (cluster d\'articles) dans un bloc 4h par pays',
                         '📈 Volume estimé: ~270 lignes/jour (9-15 events × 3 pays × 6 blocs)',
-                        '🔬 Méthode regroupement: 1 appel LLM par bloc (aws-refiners#213) — regroupe les articles ET dit lesquels continuent une histoire des 24 h. Le cosinus BFS ne sert plus que de repli si l\'appel échoue.',
+                        '🔬 Méthode regroupement: 1 appel LLM par bloc (aws-refiners#243) — regroupe les articles ET dit lesquels continuent une histoire des 24 h. Le cosinus BFS ne sert plus que de repli si l\'appel échoue.',
                         '⚙️ Garantie minimum: 3 événements par bloc/pays',
-                        '🤖 LLM: gpt-4o, ~18 appels par run (3 events × 3 pays × 2 appels: titre/texte + main_issue). Pattern hérité de headline-of-headlines.',
+                        '🤖 LLM: gpt-4o, ~19 appels par run (1 regroupement des articles en événements + 3 events × 3 pays × 2 appels: titre/texte + main_issue). Pattern hérité de headline-of-headlines.',
                         'ℹ️ Consommée par le nouveau frontend Vitrine (« Les Unes du jour »)'
                     ]
                 },
@@ -1928,7 +1928,7 @@
                         '',
                         '🤖 MÉTHODOLOGIE — 2. LLM (top 3 par pays uniquement):',
                         '• Modèle: gpt-4o via ellipsellm (temperature = 0)',
-                        '• GARDE D\'APPARTENANCE (aws-refiners#235): RETIRÉ le 2026-07-22 (#213). Mesuré sur 11 semaines: il défaisait plus de regroupements justes qu\'il ne corrigeait d\'erreurs (il jugeait chaque article contre le SEUL titre de la manchette, donc écartait les autres facettes du dossier). Sa consigne négative est passée dans le prompt de regroupement.',
+                        '• GARDE D\'APPARTENANCE (aws-refiners#235): RETIRÉ le 2026-07-22 (PR #243, issue #213). Mesuré sur 11 semaines: il défaisait plus de regroupements justes qu\'il ne corrigeait d\'erreurs (il jugeait chaque article contre le SEUL titre de la manchette, donc écartait les autres facettes du dossier). Sa consigne négative est passée dans le prompt de regroupement.',
                         '• Appel 2: titre journalistique FR canadien (60-90 char) + lead (150-280 char)',
                         '• Appel 3: classification main_issue parmi 12 enjeux CAP',
                         '• Volume: ~19 appels par run = 1 regroupement + (3 events × 3 pays × 2 appels). Le garde retiré économise ~8,5 appels/bloc.',
