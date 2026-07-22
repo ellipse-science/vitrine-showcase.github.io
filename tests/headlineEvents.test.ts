@@ -371,6 +371,7 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
     expect(t.capLabel).toMatch(/^En déclin depuis /);
+    expect(t.deltaPct).toBe(100); // chute pic(100) → dernier bloc absent(0)
   });
   it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
@@ -392,6 +393,7 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
     expect(t.capLabel).toMatch(/^En progression/);
+    expect(t.deltaPct).toBe(122); // (20/9 - 1) × 100, arrondi
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([
@@ -404,6 +406,24 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(absent.isAbsent).toBe(true);
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
+  });
+  it("apparition depuis un bloc absent : deltaPct null (pas de base à pourcenter)", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 0, present: false },
+      { blockUtc: "2026-07-20T07", qc: 0, present: false },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("up");
+    expect(t.deltaPct).toBeNull();
+  });
+  it("« stable » : rien à chiffrer (deltaPct null)", () => {
+    const stable = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 20, present: true },
+      { blockUtc: "2026-07-20T07", qc: 20, present: true },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true },
+    ] as never, thr, "2026-07-20")!;
+    expect(stable.dir).toBe("flat");
+    expect(stable.deltaPct).toBeNull();
   });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
     expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();

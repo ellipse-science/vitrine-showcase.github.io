@@ -795,6 +795,11 @@ export type SalienceTrend = {
   dir: "up" | "down" | "flat";
   // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
   capLabel: string;
+  /** Ampleur du mouvement, en % (demande Yannick 2026-07-22, cf. graphique
+   *  enjeux de Laurence-Olivier) : chute depuis le pic (down) ou hausse depuis
+   *  le bloc précédent (up), même base que les seuils de direction ci-dessous.
+   *  null quand « stable » — rien à chiffrer. */
+  deltaPct: number | null;
   points: SalienceTrendPoint[];
 };
 
@@ -845,6 +850,13 @@ function buildSalienceTrend(
   const capLabel = down && peakMoment ? `En déclin depuis ${peakMoment}`
     : up && prevMoment ? `En progression depuis ${prevMoment}`
     : "Stable";
+  // Même base que les seuils de direction ci-dessus (0.7×pic / 1.25×précédent) :
+  // le chiffre affiché explique pourquoi la flèche a basculé, pas un autre calcul.
+  // « up » depuis un bloc absent/à 0 (apparition, pas hausse) n'a pas de base à
+  // pourcenter — deltaPct reste null, la flèche seule suffit à raconter ça.
+  const deltaPct = down ? Math.round((1 - last / peak) * 100)
+    : up && prev > 0 ? Math.round((last / prev - 1) * 100)
+    : null;
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
     // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
@@ -862,7 +874,7 @@ function buildSalienceTrend(
       isAbsent: !p.present,
     };
   });
-  return { dir, capLabel, points };
+  return { dir, capLabel, deltaPct, points };
 }
 
 export type UneEvent = {

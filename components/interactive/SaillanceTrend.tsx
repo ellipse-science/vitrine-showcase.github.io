@@ -67,7 +67,15 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           ))}
         </svg>
       </span>
-      <Arrow dir={trend.dir} />
+      <span className="trend-delta">
+        <Arrow dir={trend.dir} />
+        {/* Ampleur du mouvement à côté de la flèche (demande Yannick 2026-07-22,
+            même esprit que le graphique enjeux de Laurence-Olivier) : même base
+            que le seuil qui a fait basculer la direction, pas un autre calcul. */}
+        {trend.deltaPct !== null && (
+          <b className="trend-pct">{trend.dir === "down" ? "−" : "+"}{trend.deltaPct}&nbsp;%</b>
+        )}
+      </span>
       {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
           survol. En dernière position, il peut s'allonger librement — la courbe,
           en amont, ne bouge pas. */}
