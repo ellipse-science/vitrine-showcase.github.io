@@ -1,5 +1,11 @@
 [
   {
+    "pr": 285,
+    "date": "2026-07-22T03:35:27Z",
+    "note": "Reformulation d'une entrée de ce journal en langage plus simple.",
+    "version": null
+  },
+  {
     "pr": 293,
     "date": "2026-07-22T03:31:34Z",
     "note": "fix(deux solitudes) : enrouler les badges de médias sur plusieurs rangées",
