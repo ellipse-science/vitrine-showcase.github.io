@@ -1,5 +1,11 @@
 [
   {
+    "pr": 245,
+    "date": "2026-07-22T19:02:56Z",
+    "note": "Métho + swimlanes : documenter le module Polimètre+ (suivi des promesses CAQ)",
+    "version": null
+  },
+  {
     "pr": 256,
     "date": "2026-07-22T03:43:56Z",
     "note": "docs(pipeline): synchroniser les diagrammes vivants avec la dépréciation #428",
