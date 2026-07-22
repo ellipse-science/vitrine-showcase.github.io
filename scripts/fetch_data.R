@@ -301,11 +301,34 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
   })
 }
 
+# La pastille de saillance étiquette le PIC 24 h d'une histoire (peakQc côté
+# frontend), pas un score de bloc — il faut donc calibrer sur la distribution des
+# PICS, un par storyline (sinon les blocs répétés d'une même histoire pèsent en
+# double). Fenêtre POST-FUSION uniquement (aws-refiners#227, 2026-07-17) : la
+# fusion a nettement remonté les scores en agrégeant la couverture des fragments,
+# donc mélanger le pré-fusion abaisserait faussement les seuils (#281). NULL si
+# trop peu de storylines → repli frontend sur les seuils codés post-fusion.
+SAL_PEAK_CAL_FROM <- "2026-07-17"  # déploiement de la fusion prominence
+calibration_peak <- function(conn, from) {
+  tryCatch({
+    sql <- sprintf(paste(
+      "SELECT max(score_qc_peak_24h) AS v FROM \"%s\"",
+      "WHERE date_utc >= DATE '%s' AND storyline_id IS NOT NULL GROUP BY storyline_id"),
+      CAL_TABLE, from)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+    calibration_pctiles(df$v)  # exclut les storylines jamais Une QC (pic 0)
+  }, error = function(e) {
+    message("   (calibration: score_qc_peak_24h indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
 # Convergence EVENT-level (au niveau HISTOIRE) — calibre le repère « habituel »
 # de la jauge du module Deux solitudes. Reproduit windowEventConvergence du
 # frontend (lib/data/headlineEvents.ts) : pour CHAQUE bloc « as-of » de
 # l'historique on reconstruit la fenêtre glissante de 6 blocs (24 h), on agrège la
-# saillance par histoire (storyline_id ?? event_label ?? event_id), on garde les
+# saillance par histoire (storyline_id ?? event_label ?? event_id) avec la MÊME
+# pondération de récence que le frontend (demi-vie 10 h, vitrine #274), on garde les
 # histoires bilatérales (sumQc>0 ET sumRoc>0) et on prend la moyenne des deux parts
 # d'attention. La distribution de ces valeurs `as-of` = exactement les nombres que
 # la jauge aurait affichés à chaque rafraîchissement de 4 h → son p50 remplace la
@@ -370,11 +393,23 @@ calibration_event_convergence <- function(conn, cut_date) {
     # Convergence event-level d'UNE fenêtre : somme par histoire sur les 6 blocs,
     # puis moyenne des deux parts d'attention bilatérales. `rowsum` (base R) est
     # bien plus léger qu'un group_by dplyr répété ~2 000 fois.
+    # Pondération de récence (vitrine #274, banc #282) : comme storiesFrom24h,
+    # le poids d'un bloc décroît en 2^(-âge/10 h) par rapport au bloc le plus
+    # récent de la fenêtre — sans elle, le p50 publié dériverait du module.
+    HALF_LIFE_H <- 10
+    block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
+                                                  format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+    # Chaque bloc est parsé UNE seule fois : les mêmes blocs reviennent dans
+    # ~2 000 fenêtres glissantes, re-parser à chaque fenêtre coûterait cher
+    # (même souci de timeout CI que la pré-agrégation ci-dessus).
+    block_ms_tab <- vapply(unique(df$block), block_ms, numeric(1))
     window_conv <- function(win_blocks) {
       w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
       if (nrow(w) == 0) return(NA_real_)
-      qc  <- rowsum(w$sumQc,  w$story)[, 1]
-      roc <- rowsum(w$sumRoc, w$story)[, 1]
+      newest <- max(block_ms_tab[win_blocks], na.rm = TRUE)
+      wt <- 2^((block_ms_tab[w$block] - newest) / 3600 / HALF_LIFE_H)
+      qc  <- rowsum(w$sumQc  * wt, w$story)[, 1]
+      roc <- rowsum(w$sumRoc * wt, w$story)[, 1]
       totalQc <- sum(qc); totalRoc <- sum(roc)
       if (totalQc <= 0 || totalRoc <= 0) return(NA_real_)
       bi <- qc > 0 & roc > 0
@@ -401,6 +436,13 @@ build_salience_calibration <- function(conn, out_path) {
   metrics <- list()
   qc  <- calibration_metric(conn, "score_qc", cut_date)
   if (!is.null(qc))  metrics$score_qc  <- c(list(region = "QC"),  qc)
+  # Pics 24 h par storyline (post-fusion) — réfèrent la pastille de saillance (#281).
+  # Plancher post-fusion, mais jamais avant le début de la fenêtre 365 j : `since`
+  # annonce la vraie borne utilisée (quand la fenêtre dépassera 2026-07-17, elle
+  # deviendra cut_date).
+  peak_from <- max(cut_date, SAL_PEAK_CAL_FROM)
+  pk  <- calibration_peak(conn, peak_from)
+  if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = peak_from), pk)
   roc <- calibration_metric(conn, "score_roc", cut_date)
   if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,

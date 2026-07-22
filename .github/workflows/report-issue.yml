@@ -52,6 +52,7 @@ jobs:
               { match: ['methodolog'],                                                   section: 'Méthodologie',           label: { name: 'page-methodologie',           color: 'a8a29e', description: 'Signalements sur la page Méthodologie' } },
               { match: ['a propos', 'apropos'],                                          section: 'À propos',               label: { name: 'page-apropos',                color: 'a8a29e', description: 'Signalements sur la page À propos' } },
               { match: ['abonnement'],                                                   section: 'Abonnement',             label: { name: 'page-abonnement',             color: 'a8a29e', description: 'Signalements sur la page Abonnement' } },
+              { match: ['journal'],                                                      section: 'Journal',                label: { name: 'page-journal',                color: 'a8a29e', description: 'Signalements sur la page Journal des mises à jour' } },
             ]
 
             function normalizeSectionName(value) {

@@ -1210,6 +1210,67 @@
     color: var(--ink-soft);
   }
 
+  /* ── Trajectoire de saillance (#274) ─────────────────────────────────────
+     Ligne SOUS le badge : flèche de tendance → libellé en clair → mini-courbe
+     des 6 derniers blocs (survolable). Le badge reste au pic ; la courbe raconte
+     le déclin / la montée. Couleurs par direction, adaptées au fond clair ET au
+     fond « breaking » sombre via des tokens redéfinis. L'enjeu passe en pleine
+     largeur pour que le badge tombe toujours sur la ligne suivante (héros ET
+     secondaire), et la trajectoire prend encore la ligne d'après. */
+  .une-main-head .une-enjeu,
+  .une-side-head .une-enjeu { flex-basis: 100%; }
+
+  .saillance-trend {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 0;
+    --trend-down: var(--red);
+    --trend-up: var(--green);
+    --acc: var(--ink-softer);
+  }
+  .unes-jour.breaking .saillance-trend { --trend-down: #DB8A7F; --trend-up: #8FBF9C; }
+  .saillance-trend.trend-down { --acc: var(--trend-down); }
+  .saillance-trend.trend-up { --acc: var(--trend-up); }
+  .saillance-trend .trend-arrow { stroke: var(--acc); flex: none; }
+  .saillance-trend .trend-cap {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    color: var(--acc);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    display: inline-block;
+    /* Aucune largeur à réserver : la courbe est EN AMONT du libellé (ordre
+       courbe → flèche → texte), donc elle est ancrée et le texte peut s'allonger
+       au survol sans rien déplacer. */
+    min-width: 0;
+  }
+  .saillance-trend .trend-cap b { font-weight: 600; }
+  /* Nudge optique : le centre de gravité d'une police serif est au-dessus du
+     milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
+     sur la hauteur d'x du libellé, pas sur la boîte. */
+  .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; transform: translateY(-2px); }
+  .saillance-trend .trend-line { stroke: var(--acc); }
+  .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
+  .saillance-trend .trend-pt.is-peak,
+  .saillance-trend .trend-pt.is-now { fill: var(--ink); }
+  .saillance-trend .trend-pt.is-hover { fill: var(--ink); }
+  /* Bloc « Absente » : anneau creux couleur papier → l'œil lit « pas là »,
+     pas « faiblement saillante ». Placé après is-hover pour gagner la cascade. */
+  .saillance-trend .trend-pt.is-absent { fill: var(--paper); stroke: var(--ink-softer); stroke-width: 1.1px; }
+  .saillance-trend .trend-pt.is-absent.is-hover { fill: var(--paper); stroke: var(--ink); }
+  .saillance-trend .trend-pt:focus { outline: none; }
+
+  /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
+     tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
+     courbe est déjà au bord gauche. */
+  @media (max-width: 620px) {
+    .saillance-trend { flex-wrap: wrap; row-gap: 4px; }
+    .saillance-trend .trend-cap { white-space: normal; }
+    .saillance-trend .trend-spark-wrap { flex-basis: 100%; }
+  }
+
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
      Demande Shannon (Figma) : « couleur noir inversé lorsque saillance atteint
      un point critique établi ». On redéfinit ink/paper localement → tout le
@@ -1309,6 +1370,23 @@
     font-weight: 600;
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
+
+  /* Fiche de la bulle ⓘ (#274) : mini-distribution + micro-métho + lien. */
+  .saillance-info-card { display: block; }
+  .saillance-info-card .sic-kicker {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-bottom: 9px;
+  }
+  .saillance-info-card .sic-curve { display: block; width: 100%; height: auto; margin-bottom: 10px; }
+  .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
+  .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }
+  .saillance-info-card .sic-text { display: block; }
 
   @media (max-width: 768px) {
     .saillance-info-bubble {
@@ -2685,6 +2763,14 @@
     .une-main-grid.no-art {
       grid-template-columns: 1fr;
       gap: 14px;
+    }
+    /* À 2 ou 1 Unes, la règle « illustration élargie » (4 classes, définie en
+       base ~l.850) bat le 1fr ci-dessus par spécificité et écrase la colonne
+       texte à 0px sur mobile — état jamais vu tant que le module forçait
+       3 Unes (#273). Même spécificité ici, déclarée après : mobile reste 1fr. */
+    .unes-jour.deux-unes .une-main-grid.has-art,
+    .unes-jour.une-seule .une-main-grid.has-art {
+      grid-template-columns: 1fr;
     }
 
     /* ── Secondaires empilées sur mobile ── */
@@ -4143,3 +4229,161 @@
   }
 }
 
+/* ============================================================
+   Page Journal des mises à jour (/journal)
+   Une entrée par PR mergée — données : static-content/changelog.json
+   ============================================================ */
+.journal-container {
+  margin: 48px 0;
+  border-top: 0.5px solid var(--rule);
+  padding-top: 48px;
+  max-width: 860px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  color: var(--ink);
+}
+
+.journal-header {
+  margin-bottom: 40px;
+}
+
+.journal-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 54px;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 24px 0;
+}
+
+.journal-lead {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.journal-month {
+  margin-bottom: 48px;
+}
+
+.journal-month-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+  margin: 0 0 16px 0;
+  border-bottom: 1px solid var(--rule-faint);
+  padding-bottom: 8px;
+}
+
+.journal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.journal-entry {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+
+.journal-entry:last-child {
+  border-bottom: none;
+}
+
+.journal-entry-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.journal-entry-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding-top: 3px;
+}
+
+.journal-entry-version {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--cordovan);
+  border: 0.5px solid var(--cordovan);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.journal-entry-note {
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0 0 6px 0;
+  color: var(--ink);
+}
+
+.journal-entry-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+  text-decoration: none;
+  border-bottom: 0.5px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.journal-entry-link:hover,
+.journal-entry-link:focus-visible {
+  border-bottom-color: var(--cordovan);
+  outline: none;
+}
+
+/* Le badge de version du colophon est cliquable → /journal */
+.colophon-version-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+  transition: color 0.15s ease;
+}
+
+.colophon-version-link:hover,
+.colophon-version-link:focus-visible {
+  color: var(--cordovan);
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .journal-title {
+    font-size: 40px;
+  }
+  .journal-lead {
+    font-size: 18px;
+  }
+  .journal-entry {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .journal-entry-meta {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .journal-entry-date {
+    padding-top: 0;
+  }
+}

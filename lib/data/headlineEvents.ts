@@ -183,7 +183,7 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
 // quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
 // « habituel » (suivi backend).
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -315,14 +315,22 @@ type Story = {
   rep: RawEvent;           // occurrence du bloc le plus récent (titre, médias, articles frais)
   repKey: string;
   label: string;
-  sumQc: number;           // Σ score_qc sur la fenêtre — sert au CLASSEMENT (attention cumulée)
+  sumQc: number;           // Σ score_qc pondérée par récence (demi-vie HALF_LIFE_H) — sert au CLASSEMENT
   sumRoc: number;
-  peakQc: number;          // max score_qc sur la fenêtre — sert à la PASTILLE de saillance
+  peakQc: number;          // max score_qc BRUT sur la fenêtre — sert à la PASTILLE de saillance
   peakRoc: number;         // (même échelle que le score de bloc → seuils inchangés)
   qcMedia: Set<string>;
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
   tok: Set<string>;
+  // Score QC BRUT (non pondéré) par bloc 4 h de la fenêtre — sert à la
+  // trajectoire de saillance (#274). max par bloc, comme peakQc mais conservé
+  // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
+  byBlock: Map<string, number>;
+  /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
+   *  storyline était absente de ce bloc. `present` distingue « pas à la Une »
+   *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol. */
+  series: { blockUtc: string; qc: number; present: boolean }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -332,10 +340,24 @@ function parseIdList(json: string | null | undefined): string[] {
   } catch { return []; }
 }
 
+// Pondération de récence du CLASSEMENT (vitrine #274, arbitrage d'Adrien sur le
+// banc d'essai #282 du 2026-07-20) : à l'intérieur de la fenêtre 24 h, le poids
+// d'un bloc décroît exponentiellement avec son âge — demi-vie de 10 h, donc une
+// Une d'il y a 10 h pèse moitié moins qu'une Une en cours. Ne touche QUE les
+// sommes (sumQc/sumRoc → classement, parts d'attention, convergence) ; le pic
+// (peakQc → pastille) reste BRUT : l'étiquette décrit ce que l'histoire a été à
+// son sommet sur 24 h, le rang décrit ce qui domine l'attention maintenant.
+// Chiffres du banc (juin 2026) : âge moyen du pic du n°1 10,1 h → 5,5 h, churn
+// 37 % (cible < 35-40 %), convergence Deux solitudes quasi inchangée (Δp50 ≤ 1).
+const HALF_LIFE_H = 10;
+const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
+
 function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
+  // Référence de la décroissance = bloc le plus récent de la fenêtre (âge 0).
+  const newestMs = blocks.length ? blockStartMs(blocks[0]) : 0;
   // Blocs récents d'abord : l'ordre du JSON n'est pas garanti, et le « premier
   // URL conservé » par média (ci-dessous) doit venir du bloc le plus frais.
   const windowEvents = allEvents
@@ -347,6 +369,8 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     if (!e.title) continue;
     const key = e.storyline_id ?? e.event_label ?? e.event_id;
     const bk = blockKey(e);
+    // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
+    const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
     const qc = e.score_qc ?? 0;
     const roc = rocScore(e);
     const qcIds = e.media_ids_qc !== undefined
@@ -358,11 +382,13 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     let cur = byStory.get(key);
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
-        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? "") };
+        qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? ""),
+        byBlock: new Map(), series: [] };
       byStory.set(key, cur);
     }
-    cur.sumQc += qc; cur.sumRoc += roc;
+    cur.sumQc += qc * w; cur.sumRoc += roc * w;
     cur.peakQc = Math.max(cur.peakQc, qc); cur.peakRoc = Math.max(cur.peakRoc, roc);
+    cur.byBlock.set(bk, Math.max(cur.byBlock.get(bk) ?? 0, qc)); // score BRUT par bloc (trajectoire)
     qcIds.forEach((id) => cur!.qcMedia.add(id));
     canIds.forEach((id) => cur!.canMedia.add(id));
     for (const k of ["articles_24h", "articles"] as const) {
@@ -391,9 +417,16 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
       a.qcMedia.forEach((id) => host.qcMedia.add(id));
       a.canMedia.forEach((id) => host.canMedia.add(id));
       for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
+      for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
     } else {
       merged.push(a);
     }
+  }
+  // Série par bloc sur les 6 blocs de la fenêtre, du plus ANCIEN au plus récent
+  // (0 quand la storyline était absente du bloc) — pour la trajectoire #274.
+  const windowBlocksAsc = blocks.slice(0, 6).slice().reverse();
+  for (const s of merged) {
+    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0, present: s.byBlock.has(b) }));
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
@@ -553,12 +586,18 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 // Labels : Très faible, Faible, Modérée, Élevée, Très élevée, Exceptionnelle
 // (la médiane tombe entre Modérée et Élevée ; aucune bande ne prétend être
 // « la moyenne »).
-// Seuils recalibrés sur TOUTE la donnée disponible (table headline_events_4h
-// depuis le 2026-05-14, fenêtre qui s'étend). Recalibrage du 2026-06-03 sur
-// 406 Unes : p5/p20/p50/p80/p95 = 5/10/19/36/71. Illustration pédago dans
-// public/methodologie/ (et docs/). TODO(#122) : calcul glissant dans le
-// refiner pour ne plus hardcoder ici.
-const SAL_QC_THRESHOLDS = { faible: 5, moyenne: 10, eleve: 19, tresEleve: 36, extreme: 71 };
+// La pastille étiquette le PIC de saillance 24 h de l'histoire (peakQc, #231),
+// donc les seuils doivent venir de la distribution des PICS, pas des scores par
+// bloc — et sur la période POST-FUSION (aws-refiners#227, déployée 2026-07-17),
+// qui a nettement remonté les scores en agrégeant la couverture des fragments.
+// Recalibrage 2026-07-20 (#281) sur les pics 24 h par storyline QC depuis le
+// 2026-07-17 (n=44) : p5/p20/p50/p80/p95 = 8/11/19/48/95. L'ancien 5/10/19/36/71
+// (recalibrage 2026-06-03, événements fragmentés, distribution PAR BLOC) faisait
+// dépasser p95 à presque toutes les Unes affichées → « Exceptionnelle » en
+// continu. Repli seulement : la valeur vive vient de la calibration glissante
+// `metrics.score_qc_peak_24h` (fetch_data.R) dès qu'elle a assez de points.
+// Illustration pédago régénérée dans public/methodologie/ (et docs/).
+const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, extreme: 95 };
 
 // `rank` (1–6) pilote aussi la taille du titre (data-saillance) : la hiérarchie
 // visuelle reflète la saillance, plus le nombre de médias.
@@ -596,6 +635,57 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
     seen.add(e.storyline_id);
     return true;
   });
+}
+
+// Seuil éditorial (#273) : le module affiche 1 à 3 Unes, pas toujours 3.
+// La position héros revient toujours à l'histoire la plus saillante, mais une
+// Une SECONDAIRE doit être portée par au moins MIN_QC_MEDIA_SECONDARY médias
+// QC sur la fenêtre 24 h. Critère « nombre de médias » plutôt que niveau de
+// saillance : tant que la formule amont gonfle la durée-en-Une d'un seul média
+// (aws-refiners#205), la pastille peut afficher « Très élevée » pour une
+// histoire vue chez un seul média (constat live du 16-17 juillet, cf. #273).
+// On tronque le top-3 SANS repêcher d'histoire moins saillante : les modules 1
+// et 2 puisent dans le même pool d'histoires 24 h (storiesFrom24h), si bien que
+// chaque manchette retenue ici figure aussi parmi les axes du radar « Deux
+// solitudes » — le radar peut en revanche montrer des histoires de plus (top
+// canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
+const MIN_QC_MEDIA_SECONDARY = 2;
+
+// Plancher de récence (dossier fenêtre, arbitrage Adrien 2026-07-20) : la Une
+// montre le saillant DU MOMENT. Le classement par cumul 24 h (w10) peut, un jour
+// creux, garder en tête une histoire retombée qui a « laissé la place à autre
+// chose » (cas mesuré : le soccer, pic la veille à 19 h, coiffait la Une à 0 sur
+// le bloc courant, masquant l'inflation live). On EXCLUT donc de la Une une
+// histoire qui est À LA FOIS absente du bloc courant ET dont le pic date d'au
+// moins 2 blocs (≥ 8 h) — un déclin installé. On ne punit PAS un simple saut d'un
+// bloc (pic récent), et le signal est l'ÂGE DU PIC, pas « présent/absent » (le
+// soccer avait encore un petit score 4 h avant : viser le déclin, pas l'absence).
+// Mesuré sur juin : corrige 67 % des jours à héros-mort, aucune Une vidée ; le
+// churn monte (34 → 62 %) mais c'est la Une qui suit l'actualité, pas du bruit.
+// N'affecte QUE la sélection des Unes ; le radar Deux solitudes garde ces
+// histoires (leur part d'attention 24 h reste légitime).
+const STALE_PEAK_MIN_BLOCKS = 2;
+function isStaleForUne(s: Story): boolean {
+  if (s.series.length === 0) return false;
+  const cur = s.series[s.series.length - 1].qc;
+  if (cur > 0) return false; // encore présente dans le bloc courant → jamais périmée
+  let peak = 0, peakIdx = 0;
+  s.series.forEach((p, i) => { if (p.qc >= peak) { peak = p.qc; peakIdx = i; } });
+  const peakAgeBlocks = (s.series.length - 1) - peakIdx;
+  return peak > 0 && peakAgeBlocks >= STALE_PEAK_MIN_BLOCKS;
+}
+
+function selectTopUnes(stories: Story[], max = 3): Story[] {
+  const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
+  const fresh = eligible.filter((s) => !isStaleForUne(s));
+  // Le plancher retire les histoires retombées, MAIS le module garde toujours ≥ 1
+  // Une : si tout est retombé (jour très creux), on retombe sur le classement
+  // complet plutôt que d'afficher une Une vide.
+  const pool = fresh.length > 0 ? fresh : eligible;
+  return pool
+    .sort((a, b) => b.sumQc - a.sumQc)
+    .slice(0, max)
+    .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
 }
 
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
@@ -687,6 +777,94 @@ function periodLabelFromInterval(intervalMtl: string): string {
   return editionLabel(start);
 }
 
+// ── Trajectoire de saillance (#274) ─────────────────────────────────────────
+// Un point de la courbe des 6 derniers blocs : l'heure, le NIVEAU de saillance
+// qu'affichait la nouvelle à ce moment (pas le score brut — décision Adrien) et
+// des repères (première apparition / sommet / en ce moment).
+export type SalienceTrendPoint = {
+  timeLabel: string;   // « hier 19 h »
+  level: string;       // « Exceptionnelle »
+  levelCls: string;    // « s-extreme » (couleur de bande)
+  score: number;       // score_qc du bloc, arrondi (alimente la sparkline)
+  isFirst: boolean;    // premier bloc où la nouvelle est apparue en Une
+  isPeak: boolean;     // bloc du sommet
+  isNow: boolean;      // bloc courant
+  isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
+};
+export type SalienceTrend = {
+  dir: "up" | "down" | "flat";
+  // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
+  capLabel: string;
+  points: SalienceTrendPoint[];
+};
+
+// Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
+// (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
+// la journée et l'heure arrondie à l'édition la plus proche.
+function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
+  { dayWord: string; moment: string; hour: number } | null {
+  if (!blockDateMtl) return null;
+  const t = new Date(`${blockUtc}:00:00Z`);
+  if (Number.isNaN(t.getTime())) return null;
+  const { dateIso, hour } = mtlDateAndHour(t);   // heure MTL RÉELLE du bloc (gère EDT/EST)
+  const blockDay = isoDay(dateIso), refDay = isoDay(blockDateMtl);
+  if (blockDay === null || refDay === null) return null;
+  // Moment de la journée (« hier soir ») = heure arrondie à l'édition la plus
+  // proche, pour le libellé de tendance. L'heure exacte (`hour`) sert au survol.
+  const snapped = UPDATE_HOURS_MTL.reduce(
+    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p), UPDATE_HOURS_MTL[0]);
+  const dayDiff = refDay - blockDay;
+  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[snapped], hour };
+  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[snapped], hour };
+  const dateFr = formatDateFr(dateIso);
+  const asDate = `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+  return { dayWord: asDate, moment: asDate, hour };
+}
+
+// Construit la trajectoire à partir de la série 6 blocs. Étiquette chaque bloc à
+// son propre niveau (mêmes seuils que la pastille). Tendance : « en déclin » si
+// le sommet n'est plus le dernier bloc et que le score a chuté sous 70 % du pic ;
+// « en progression » si le dernier bloc dépasse le précédent d'au moins 25 %.
+// null s'il n'y a qu'un bloc actif (rien à raconter).
+function buildSalienceTrend(
+  series: { blockUtc: string; qc: number; present: boolean }[],
+  thresholds: typeof SAL_QC_THRESHOLDS,
+  blockDateMtl: string | null,
+): SalienceTrend | null {
+  if (series.length < 2 || series.every((p) => p.qc <= 0)) return null;
+  const vals = series.map((p) => p.qc);
+  let peakIdx = 0;
+  for (let i = 1; i < vals.length; i++) if (vals[i] > vals[peakIdx]) peakIdx = i;
+  const firstIdx = series.findIndex((p) => p.qc > 0);
+  const last = vals[vals.length - 1], prev = vals[vals.length - 2] ?? 0, peak = vals[peakIdx];
+  const down = peakIdx < vals.length - 1 && last < 0.7 * peak;
+  const up = !down && last > 1.25 * Math.max(prev, 0.001) && last > 0;
+  const dir: SalienceTrend["dir"] = down ? "down" : up ? "up" : "flat";
+  const peakMoment = blockLabelParts(series[peakIdx].blockUtc, blockDateMtl)?.moment;
+  const prevMoment = blockLabelParts(series[vals.length - 2].blockUtc, blockDateMtl)?.moment;
+  const capLabel = down && peakMoment ? `En déclin depuis ${peakMoment}`
+    : up && prevMoment ? `En progression depuis ${prevMoment}`
+    : "Stable";
+  const points: SalienceTrendPoint[] = series.map((p, i) => {
+    const parts = blockLabelParts(p.blockUtc, blockDateMtl);
+    // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
+    // « Très faible ». Ne pas peindre l'absence comme une saillance faible mais
+    // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
+    const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
+    // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
+    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
+    return {
+      timeLabel,
+      level: tier ? tier.label : "Absente",
+      levelCls: tier ? tier.cls : "s-absent",
+      score: Math.round(p.qc),
+      isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
+      isAbsent: !p.present,
+    };
+  });
+  return { dir, capLabel, points };
+}
+
 export type UneEvent = {
   title: string;
   /** Lead synthétique généré par le refiner (colonne `text`) — affiché sous la 1re Une. */
@@ -710,7 +888,6 @@ export type UneEvent = {
    *  retombe sur les médias du bloc courant si la donnée 24h manque
    *  (lignes antérieures au 2026-07-10). */
   mediaToday: { name: string; url: string | null }[];
-  mediaAbsent: string[];
   qcOutletCount: number;
   totalQcOutlets: number;
   /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
@@ -719,6 +896,12 @@ export type UneEvent = {
   scoreQcPeak24h: number | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
+  /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
+   *  courbe survolable. null si rien à raconter (un seul bloc actif). */
+  salienceTrend: SalienceTrend | null;
+  /** Seuils de saillance en vigueur [p5, p20, p50, p80, p95] — pour situer la
+   *  nouvelle sur la courbe de distribution dans la bulle ⓘ (#274). */
+  salThresholds: number[];
 };
 
 /** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
@@ -878,7 +1061,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
-  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // La pastille étiquette le PIC 24 h (peakQc) → seuils calibrés sur la
+  // distribution des PICS (metrics.score_qc_peak_24h), pas sur les scores par
+  // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
+  // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
+  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -888,16 +1075,20 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       : HABITUAL_EVENT_CONV;
 
   const stories = storiesFrom24h(unique);
-  const qcStories = stories
-    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
-    .sort((a, b) => b.sumQc - a.sumQc)
-    .slice(0, 3);
+  // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
+  // portées par ≥ MIN_QC_MEDIA_SECONDARY médias QC → 1 à 3 Unes.
+  const qcStories = selectTopUnes(stories);
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
-    // Pastille de saillance sur le PIC 24 h : même échelle que le score de bloc
-    // (c'est un score_qc), donc les seuils SAL_QC_THRESHOLDS restent valides.
+    // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
+    // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
+    // ~6 blocs est plus haut qu'un score de bloc, donc les étiqueter avec des
+    // seuils par bloc surclasserait tout le monde (#281).
     const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
+    // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
+    // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
+    const salienceTrend = buildSalienceTrend(s.series, salThresholds, e.date_montreal_tz);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;
@@ -919,7 +1110,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // depuis l'agrégat de la story ; lien = dernier article du média (#129).
     const qcCovering = QC_MEDIA.filter((id) => s.qcMedia.has(id));
     const mediaToday = qcCovering.map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: s.urlByMedia[id] ?? null }));
-    const mediaAbsent = QC_MEDIA.filter((id) => !s.qcMedia.has(id)).map((id) => MEDIA_NAMES[id] ?? id);
 
     return {
       title: e.title ?? "",
@@ -935,12 +1125,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillantSince,
       representativeUrl: e.representative_url ?? null,
       mediaToday,
-      mediaAbsent,
       qcOutletCount: qcCovering.length,
       totalQcOutlets: QC_MEDIA.length,
       storylineId: e.storyline_id ?? null,
       scoreQcPeak24h: s.peakQc,
       nBlocks24h: e.n_blocks_24h ?? null,
+      salienceTrend,
+      salThresholds: [salThresholds.faible, salThresholds.moyenne, salThresholds.eleve, salThresholds.tresEleve, salThresholds.extreme],
     };
   });
 
@@ -1134,6 +1325,10 @@ export const __test__ = {
   symbolPositions,
   buildSolitudes,
   storiesFrom24h,
+  buildSalienceTrend,
+  selectTopUnes,
+  isStaleForUne,
+  MIN_QC_MEDIA_SECONDARY,
   windowConvergence,
   windowEventConvergence,
   salThresholdsFrom,
