@@ -39,6 +39,12 @@ export type ShareModuleStat = {
   // (couleur du parti en tête, de l'enjeu dominant...) quand elle existe, jamais
   // inventée. Absente ⇒ le rendu retombe sur le cordovan par défaut.
   color?: string;
+  // Petite étiquette au-dessus du titre (l'enjeu CAP) — une-des-unes affiche
+  // le titre en gros plutôt qu'un chiffre (c'est une manchette, pas une
+  // statistique) ; les générateurs d'image branchent sur sa présence.
+  kicker?: string;
+  // Lead synthétique (UneEvent.excerpt) affiché sous le titre pour ce même cas.
+  excerpt?: string;
 };
 
 export type ShareModuleContent = {
@@ -97,6 +103,8 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
           value: `${top.qcOutletCount}/${top.totalQcOutlets}`,
           label: "médias québécois en parlent",
           context: top.title,
+          excerpt: top.excerpt ?? undefined,
+          kicker: top.issueFr,
           color: top.issueColor,
         },
       };

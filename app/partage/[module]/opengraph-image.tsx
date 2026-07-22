@@ -103,60 +103,84 @@ export default async function Image({ params }: { params: Promise<{ module: stri
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            position: "relative",
-            alignItems: "center",
-            padding: "0 64px",
-            gap: 48,
-          }}
-        >
-          <div style={{ display: "flex", position: "relative", alignItems: "center" }}>
-            {!bgDataUri && (
-              <div
-                style={{
-                  display: "flex",
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  fontSize: 320,
-                  fontWeight: 900,
-                  color: INK,
-                  opacity: 0.14,
-                  lineHeight: 1,
-                  letterSpacing: -4,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {watermark}
+        {stat.kicker ? (
+          // Une des unes est une manchette, pas une statistique : le titre
+          // domine, le ratio « X/Y médias » devient une preuve de second plan.
+          <div style={{ display: "flex", flex: 1, position: "relative", flexDirection: "column", justifyContent: "center", padding: "0 64px", gap: 14 }}>
+            <div style={{ display: "flex", background: INK, color: PAPER, fontSize: 16, letterSpacing: 2, textTransform: "uppercase", padding: "6px 16px", alignSelf: "flex-start" }}>
+              {stat.kicker}
+            </div>
+            <div style={{ display: "flex", fontSize: 46, fontWeight: 900, color: PAPER, lineHeight: 1.15, maxWidth: 1000 }}>
+              {truncate(stat.context ?? "", 100)}
+            </div>
+            {stat.excerpt && (
+              <div style={{ display: "flex", fontSize: 20, fontStyle: "italic", color: PAPER, opacity: 0.82, lineHeight: 1.4, maxWidth: 980 }}>
+                {truncate(stat.excerpt, 140)}
               </div>
             )}
-            <div style={{ display: "flex", fontSize: 176, fontWeight: 900, color: PAPER, lineHeight: 1, letterSpacing: -6 }}>
-              {stat.value}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "flex", fontSize: 28, fontWeight: 900, color: PAPER }}>{stat.value}</div>
+              <div style={{ display: "flex", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: PAPER, opacity: 0.85 }}>
+                {stat.label}
+              </div>
             </div>
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 620 }}>
-            <div style={{ display: "flex", fontSize: 30, letterSpacing: 1, textTransform: "uppercase", color: PAPER, lineHeight: 1.3 }}>
-              {stat.label}
-            </div>
-            {stat.context && (
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 10 }}>
-                <div style={{ display: "flex", fontSize: 24, fontStyle: "italic", color: PAPER, opacity: 0.78, lineHeight: 1.4 }}>
-                  {truncate(stat.context, 110)}
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              position: "relative",
+              alignItems: "center",
+              padding: "0 64px",
+              gap: 48,
+            }}
+          >
+            <div style={{ display: "flex", position: "relative", alignItems: "center" }}>
+              {!bgDataUri && (
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: 320,
+                    fontWeight: 900,
+                    color: INK,
+                    opacity: 0.14,
+                    lineHeight: 1,
+                    letterSpacing: -4,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {watermark}
                 </div>
-                {stat.contextHighlight && (
-                  <div style={{ display: "flex", background: INK, color: PAPER, fontWeight: 900, fontSize: 24, padding: "1px 10px" }}>
-                    {stat.contextHighlight}
-                  </div>
-                )}
+              )}
+              <div style={{ display: "flex", fontSize: 176, fontWeight: 900, color: PAPER, lineHeight: 1, letterSpacing: -6 }}>
+                {stat.value}
               </div>
-            )}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 620 }}>
+              <div style={{ display: "flex", fontSize: 30, letterSpacing: 1, textTransform: "uppercase", color: PAPER, lineHeight: 1.3 }}>
+                {stat.label}
+              </div>
+              {stat.context && (
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 10 }}>
+                  <div style={{ display: "flex", fontSize: 24, fontStyle: "italic", color: PAPER, opacity: 0.78, lineHeight: 1.4 }}>
+                    {truncate(stat.context, 110)}
+                  </div>
+                  {stat.contextHighlight && (
+                    <div style={{ display: "flex", background: INK, color: PAPER, fontWeight: 900, fontSize: 24, padding: "1px 10px" }}>
+                      {stat.contextHighlight}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ display: "flex", background: INK, padding: "16px 0", overflow: "hidden" }}>
           <div style={{ display: "flex", fontSize: 17, letterSpacing: 3, textTransform: "uppercase", color: PAPER, opacity: 0.8, whiteSpace: "nowrap" }}>

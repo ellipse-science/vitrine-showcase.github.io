@@ -126,74 +126,102 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mod
             padding: "0 32px",
           }}
         >
-          {!bgDataUri && (
-            <div
-              style={{
-                display: "flex",
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                fontSize: 680,
-                fontWeight: 900,
-                color: INK,
-                opacity: 0.14,
-                lineHeight: 1,
-                letterSpacing: -6,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {watermark}
-            </div>
-          )}
-
-          <div
-            style={{
-              display: "flex",
-              fontSize: 340,
-              fontWeight: 900,
-              color: PAPER,
-              lineHeight: 1,
-              letterSpacing: -10,
-            }}
-          >
-            {stat.value}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              marginTop: 36,
-              fontSize: 38,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: PAPER,
-              textAlign: "center",
-              maxWidth: 880,
-            }}
-          >
-            {stat.label}
-          </div>
-          {stat.context && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "baseline",
-                gap: 12,
-                marginTop: 28,
-                maxWidth: 860,
-              }}
-            >
-              <div style={{ display: "flex", fontSize: 32, fontStyle: "italic", color: PAPER, opacity: 0.78, lineHeight: 1.45 }}>
-                {truncate(stat.context, 150)}
+          {stat.kicker ? (
+            // Une des unes est une manchette, pas une statistique : le titre
+            // domine, le ratio « X/Y médias » devient une preuve de second
+            // plan plutôt que le chiffre géant (retour utilisateur — l'ancien
+            // gabarit numérique rendait ce module moins informatif).
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
+              <div style={{ display: "flex", background: INK, color: PAPER, fontSize: 26, letterSpacing: 3, textTransform: "uppercase", padding: "9px 22px" }}>
+                {stat.kicker}
               </div>
-              {stat.contextHighlight && (
-                <div style={{ display: "flex", background: INK, color: PAPER, fontWeight: 900, fontSize: 32, lineHeight: 1.3, padding: "2px 14px" }}>
-                  {stat.contextHighlight}
+              <div style={{ display: "flex", fontSize: 84, fontWeight: 900, color: PAPER, lineHeight: 1.15, textAlign: "center", maxWidth: 920 }}>
+                {truncate(stat.context ?? "", 140)}
+              </div>
+              {stat.excerpt && (
+                <div style={{ display: "flex", fontSize: 34, fontStyle: "italic", color: PAPER, opacity: 0.82, textAlign: "center", maxWidth: 860, lineHeight: 1.45 }}>
+                  {truncate(stat.excerpt, 170)}
                 </div>
               )}
+              <div style={{ display: "flex", marginTop: 14, alignItems: "baseline", gap: 14 }}>
+                <div style={{ display: "flex", fontSize: 48, fontWeight: 900, color: PAPER, lineHeight: 1 }}>{stat.value}</div>
+                <div style={{ display: "flex", fontSize: 26, letterSpacing: 1, textTransform: "uppercase", color: PAPER, opacity: 0.85 }}>
+                  {stat.label}
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              {!bgDataUri && (
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: 680,
+                    fontWeight: 900,
+                    color: INK,
+                    opacity: 0.14,
+                    lineHeight: 1,
+                    letterSpacing: -6,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {watermark}
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 340,
+                  fontWeight: 900,
+                  color: PAPER,
+                  lineHeight: 1,
+                  letterSpacing: -10,
+                }}
+              >
+                {stat.value}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  marginTop: 36,
+                  fontSize: 38,
+                  letterSpacing: 2,
+                  textTransform: "uppercase",
+                  color: PAPER,
+                  textAlign: "center",
+                  maxWidth: 880,
+                }}
+              >
+                {stat.label}
+              </div>
+              {stat.context && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    alignItems: "baseline",
+                    gap: 12,
+                    marginTop: 28,
+                    maxWidth: 860,
+                  }}
+                >
+                  <div style={{ display: "flex", fontSize: 32, fontStyle: "italic", color: PAPER, opacity: 0.78, lineHeight: 1.45 }}>
+                    {truncate(stat.context, 150)}
+                  </div>
+                  {stat.contextHighlight && (
+                    <div style={{ display: "flex", background: INK, color: PAPER, fontWeight: 900, fontSize: 32, lineHeight: 1.3, padding: "2px 14px" }}>
+                      {stat.contextHighlight}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 
