@@ -233,12 +233,25 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const strong = Math.max(vals[i].vqc, vals[i].vcan) === maxVal;
             const side = a.side;
             const BW = 26, CHGAP = 6, LINE_H = 20, EYE_GAP = 16, TB_GAP = 15;
+            // Les badges s'enroulent sur plusieurs rangées : une histoire très
+            // couverte (11 médias = 346 px sur une ligne) débordait sur les
+            // libellés des axes voisins. 6 par rangée ≈ 186 px, soit la largeur
+            // d'un titre (wrapLabel plafonne à 26 caractères). Les rangées sont
+            // ÉQUILIBRÉES (11 → 6+5, pas 6+5 déséquilibré en 6+1+4) pour rester
+            // centrées sous le titre.
+            const MAX_PER_ROW = 6, ROW_H = 34;
             const media = a.media;
-            const tot = media.length * BW + (media.length - 1) * CHGAP;
-            const rowX = lx - tot / 2;                       // rangée de badges centrée
+            const rowsCount = Math.max(1, Math.ceil(media.length / MAX_PER_ROW));
+            const perRow = Math.ceil(media.length / rowsCount);
+            const mediaRows = Array.from({ length: rowsCount }, (_, r) =>
+              media.slice(r * perRow, (r + 1) * perRow),
+            ).filter((r) => r.length > 0);
             const eyeH = a.eyebrow ? EYE_GAP : 0;
             const titleH = lines.length * LINE_H;
-            const blockH = eyeH + titleH + TB_GAP + 20;      // eyebrow + titres + badges
+            // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges :
+            // sans ça, le positionnement vertical (top) ignorerait les rangées
+            // supplémentaires et les axes du bas mordraient sur le radar.
+            const blockH = eyeH + titleH + TB_GAP + 20 + (mediaRows.length - 1) * ROW_H;
             // Haut du bloc selon la position de l'axe.
             const top = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
             const eyebrowY = top + 11;
@@ -267,16 +280,21 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                     {ln}
                   </text>
                 ))}
-                {media.map((m, k) => {
+                {mediaRows.flatMap((row, r) => {
+                  // Chaque rangée est centrée sur l'axe indépendamment.
+                  const tot = row.length * BW + (row.length - 1) * CHGAP;
+                  const rowX = lx - tot / 2;
+                  const ry = rowY + r * ROW_H;
+                  return row.map((m, k) => {
                   const cx0 = rowX + k * (BW + CHGAP);
                   const cxm = cx0 + BW / 2;
                   const inner = (
                     <>
                       <g>
-                        <text className="m-code" x={cxm.toFixed(1)} y={(rowY + 11).toFixed(1)} textAnchor="middle">{m.badge}</text>
-                        <line className="m-underline" x1={(cx0 + BW * 0.14).toFixed(1)} y1={(rowY + 16).toFixed(1)} x2={(cx0 + BW * 0.86).toFixed(1)} y2={(rowY + 16).toFixed(1)} />
+                        <text className="m-code" x={cxm.toFixed(1)} y={(ry + 11).toFixed(1)} textAnchor="middle">{m.badge}</text>
+                        <line className="m-underline" x1={(cx0 + BW * 0.14).toFixed(1)} y1={(ry + 16).toFixed(1)} x2={(cx0 + BW * 0.86).toFixed(1)} y2={(ry + 16).toFixed(1)} />
                       </g>
-                      <text className="m-name" x={cxm.toFixed(1)} y={(rowY + 30).toFixed(1)} textAnchor="middle">
+                      <text className="m-name" x={cxm.toFixed(1)} y={(ry + 30).toFixed(1)} textAnchor="middle">
                         {m.name.toUpperCase()}
                       </text>
                     </>
@@ -293,6 +311,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                       {inner}
                     </g>
                   );
+                  });
                 })}
               </g>
             );
