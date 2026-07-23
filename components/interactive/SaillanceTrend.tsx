@@ -36,11 +36,10 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
 
   const active = hover !== null ? pts[hover] : null;
 
-  // Ampleur formatée : baisse « −X », hausse « +X », stable « 0 » (le symbole =
-  // porte déjà la stabilité). Toujours affichée (décision Adrien #304).
-  const pctText = trend.dir === "flat"
-    ? "0"
-    : `${trend.dir === "up" ? "+" : "−"}${Math.abs(trend.deltaPct)}`;
+  // Ampleur chiffrée UNIQUEMENT quand ça bouge : baisse « −X », hausse « +X ».
+  // Stable → aucun chiffre (le symbole = et le mot « Stable » suffisent ; un
+  // « 0 % » serait redondant et se confondrait avec un niveau — décision Adrien #304).
+  const pctText = `${trend.dir === "up" ? "+" : "−"}${Math.abs(trend.deltaPct)}`;
 
   // ORDRE : courbe → flèche → libellé (+ ampleur entre parenthèses). La courbe
   // vient en TÊTE, donc ANCRÉE (sa position ne dépend pas du texte ; les
@@ -71,15 +70,15 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
         </svg>
       </span>
       <Arrow dir={trend.dir} />
-      {/* Le libellé fait double emploi : tendance + ampleur (%) au repos, lecture
-          du bloc pointé au survol. Le % chiffre l'ampleur du mouvement (chute
-          depuis le pic / hausse depuis le bloc précédent) ; il s'efface au survol
-          (il décrit la tendance globale, pas le bloc pointé) et est absent quand
-          il n'y a pas de base à pourcenter (apparition depuis un bloc absent). */}
+      {/* Le libellé fait double emploi : tendance + ampleur au repos, lecture du
+          bloc pointé au survol. L'ampleur (variation de la part d'attention depuis
+          le bloc précédent) ne s'affiche QUE si ça bouge — stable = « Stable »
+          seul, sans chiffre. Elle s'efface aussi au survol (décrit la tendance
+          globale, pas le bloc pointé). */}
       <span className="trend-cap" aria-live="polite">
         {active
           ? <>{active.timeLabel} · <b>{active.level}</b></>
-          : <>{trend.capLabel} (<b className="trend-pct">{pctText}&nbsp;%</b>)</>}
+          : <>{trend.capLabel}{trend.dir !== "flat" && <> (<b className="trend-pct">{pctText}&nbsp;%</b>)</>}</>}
       </span>
     </div>
   );
