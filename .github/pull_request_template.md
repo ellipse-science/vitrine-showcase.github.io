@@ -13,7 +13,7 @@ de tables, de raffineurs ni de colonnes). Règles d'écriture :
 le titre de la PR est utilisé tel quel.
 -->
 
-À remplacer&nbsp;: une ou deux phrases qui expliquent ce que cette PR change pour le site.
+À remplacer : une ou deux phrases qui expliquent ce que cette PR change pour le site.
 
 ## Version (label `semver:*`)
 
@@ -39,9 +39,9 @@ Cochez UNE case (le workflow garde-metho la vérifie si la PR touche des
 fichiers sensibles). Guide : .claude/skills/synchro-methodologie/SKILL.md
 -->
 
-- [ ] Aucun impact métho — ne change ni calcul, ni seuil, ni horaire, ni collecte, ni représentation (justification&nbsp;: …)
-- [ ] Métho mise à jour dans cette PR (sections/docs&nbsp;: …)
-- [ ] PR métho séparée&nbsp;: #… (à merger avec/après le déploiement de celle-ci)
+- [ ] Aucun impact métho — ne change ni calcul, ni seuil, ni horaire, ni collecte, ni représentation (justification : …)
+- [ ] Métho mise à jour dans cette PR (sections/docs : …)
+- [ ] PR métho séparée : #… (à merger avec/après le déploiement de celle-ci)
 
 ## Vérification responsive
 
@@ -52,8 +52,8 @@ statique de public/. Guide : .claude/skills/verification-responsive/SKILL.md
 horizontal, TOUS les états dynamiques du composant).
 -->
 
-- [ ] Vérifiée en preview (viewports et états testés&nbsp;: …)
-- [ ] Sans objet — la PR ne change rien au rendu (justification&nbsp;: …)
+- [ ] Vérifiée en preview (viewports et états testés : …)
+- [ ] Sans objet — la PR ne change rien au rendu (justification : …)
 
 ## Apport de l'IA
 
@@ -66,5 +66,5 @@ La PROVENANCE est obligatoire dès qu'une IA a aidé, TOUJOURS EN FRANÇAIS :
 Remplacer tout libellé anglais par défaut (p. ex. « Generated with Claude Code »).
 -->
 
-- [ ] IA impliquée — provenance en français fournie (trailer sur les commits + «&nbsp;🤖 Assisté par …&nbsp;» dans ce corps de PR)
+- [ ] IA impliquée — provenance en français fournie (trailer sur les commits + « 🤖 Assisté par … » dans ce corps de PR)
 - [ ] Aucun apport d'IA
