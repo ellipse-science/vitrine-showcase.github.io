@@ -337,6 +337,9 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
 }
 
+// Exported for unit testing only — not part of the public API.
+export const __test__ = { realText, shortenPledge };
+
 export async function loadPolimetre(): Promise<PolimetreData | null> {
   let raw: string;
   try {
