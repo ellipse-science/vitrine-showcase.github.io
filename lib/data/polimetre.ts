@@ -323,7 +323,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         pledgeNumber: num,
         title: realText(r.pledge_short_fr) ?? shortenPledge(r.pledge_text_fr),
         fullTitle: cleanText(r.pledge_text_fr),
-        summary: realText(r.coverage_summary_week),
+        summary: realText(currentWeeks.length > 1 ? r.coverage_summary_month : r.coverage_summary_week),
         verdict: VERDICT_SLUG[r.verdict] ?? null,
         verdictLabel: r.verdict ?? "",
         category: category || null,
