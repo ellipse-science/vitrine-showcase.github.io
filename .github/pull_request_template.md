@@ -54,3 +54,17 @@ horizontal, TOUS les états dynamiques du composant).
 
 - [ ] Vérifiée en preview (viewports et états testés : …)
 - [ ] Sans objet — la PR ne change rien au rendu (justification : …)
+
+## Apport de l'IA
+
+<!--
+Règle dure #8 (AGENTS.md). L'humain reste seul AUTEUR : aucun commit/trailer
+Co-Authored-By pointant vers une IA (bloqué par le check garde-attribution).
+La PROVENANCE est obligatoire dès qu'une IA a aidé, TOUJOURS EN FRANÇAIS :
+- commits → trailer « Assisté par : Claude Code (Opus 4.8) »
+- corps de PR, issues, réponses/commentaires → ligne « 🤖 Assisté par … »
+Remplacer tout libellé anglais par défaut (p. ex. « Generated with Claude Code »).
+-->
+
+- [ ] IA impliquée — provenance en français fournie (trailer sur les commits + « 🤖 Assisté par … » dans ce corps de PR)
+- [ ] Aucun apport d'IA
