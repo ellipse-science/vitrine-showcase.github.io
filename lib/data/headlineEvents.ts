@@ -330,7 +330,7 @@ type Story = {
   /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
    *  storyline était absente de ce bloc. `present` distingue « pas à la Une »
    *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol. */
-  series: { blockUtc: string; qc: number; present: boolean }[];
+  series: { blockUtc: string; qc: number; present: boolean; share: number }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -425,8 +425,22 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
   // Série par bloc sur les 6 blocs de la fenêtre, du plus ANCIEN au plus récent
   // (0 quand la storyline était absente du bloc) — pour la trajectoire #274.
   const windowBlocksAsc = blocks.slice(0, 6).slice().reverse();
+  // Total QC par bloc (toutes histoires du bloc) → part d'attention QC de chaque
+  // histoire, bloc par bloc. Sert à la tendance #304 : « combien d'espace média
+  // occupe cette histoire, et comment ça bouge d'un bloc à l'autre ». Même base
+  // que Deux solitudes (part = qc de l'histoire / qc total du bloc).
+  const blockTotalQc = new Map<string, number>();
+  for (const b of windowBlocksAsc) {
+    let tot = 0;
+    for (const s of merged) tot += s.byBlock.get(b) ?? 0;
+    blockTotalQc.set(b, tot);
+  }
   for (const s of merged) {
-    s.series = windowBlocksAsc.map((b) => ({ blockUtc: b, qc: s.byBlock.get(b) ?? 0, present: s.byBlock.has(b) }));
+    s.series = windowBlocksAsc.map((b) => {
+      const qc = s.byBlock.get(b) ?? 0;
+      const tot = blockTotalQc.get(b) ?? 0;
+      return { blockUtc: b, qc, present: s.byBlock.has(b), share: tot > 0 ? (qc / tot) * 100 : 0 };
+    });
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
 }
@@ -787,6 +801,12 @@ export type SalienceTrend = {
   dir: "up" | "down" | "flat";
   // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
   capLabel: string;
+  /** Ampleur du mouvement (#304, décision Adrien) : variation de la PART
+   *  d'attention QC entre le bloc précédent et le bloc courant, en POINTS de
+   *  pourcentage (ex. 25 %→15 % = −10). Signé : hausse > 0, baisse < 0, 0 =
+   *  stable. Toujours affiché (0 % avec un symbole de stabilité si stable).
+   *  Bornée [−100, +100], cohérente avec la part d'attention de Deux solitudes. */
+  deltaPct: number;
   points: SalienceTrendPoint[];
 };
 
@@ -813,13 +833,14 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   return { dayWord: asDate, moment: asDate, hour };
 }
 
-// Construit la trajectoire à partir de la série 6 blocs. Étiquette chaque bloc à
-// son propre niveau (mêmes seuils que la pastille). Tendance : « en déclin » si
-// le sommet n'est plus le dernier bloc et que le score a chuté sous 70 % du pic ;
-// « en progression » si le dernier bloc dépasse le précédent d'au moins 25 %.
-// null s'il n'y a qu'un bloc actif (rien à raconter).
+// Construit la trajectoire à partir de la série 6 blocs. La mini-courbe et le
+// niveau par bloc (survol) restent basés sur le score de saillance (comme la
+// pastille). La TENDANCE (#304, décision Adrien) chiffre la variation de la PART
+// d'attention QC entre le bloc précédent et le bloc courant, en points de %
+// (ex. 25 %→15 % = −10) : baisse (↘ −X), hausse (↗ +X) ou stable (= 0), toujours
+// affichée. null seulement s'il n'y a pas 2 blocs à comparer ou aucune saillance.
 function buildSalienceTrend(
-  series: { blockUtc: string; qc: number; present: boolean }[],
+  series: { blockUtc: string; qc: number; present: boolean; share: number }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
   blockDateMtl: string | null,
 ): SalienceTrend | null {
@@ -828,15 +849,15 @@ function buildSalienceTrend(
   let peakIdx = 0;
   for (let i = 1; i < vals.length; i++) if (vals[i] > vals[peakIdx]) peakIdx = i;
   const firstIdx = series.findIndex((p) => p.qc > 0);
-  const last = vals[vals.length - 1], prev = vals[vals.length - 2] ?? 0, peak = vals[peakIdx];
-  const down = peakIdx < vals.length - 1 && last < 0.7 * peak;
-  const up = !down && last > 1.25 * Math.max(prev, 0.001) && last > 0;
-  const dir: SalienceTrend["dir"] = down ? "down" : up ? "up" : "flat";
-  const peakMoment = blockLabelParts(series[peakIdx].blockUtc, blockDateMtl)?.moment;
-  const prevMoment = blockLabelParts(series[vals.length - 2].blockUtc, blockDateMtl)?.moment;
-  const capLabel = down && peakMoment ? `En déclin depuis ${peakMoment}`
-    : up && prevMoment ? `En progression depuis ${prevMoment}`
-    : "Stable";
+  // Tendance = variation de la part d'attention QC depuis le bloc précédent
+  // (bloc courant − bloc précédent, en points). Bornée [−100, +100], cohérente
+  // avec Deux solitudes ; toujours affichée (0 = stable, avec symbole =).
+  const deltaPct = Math.round(series[series.length - 1].share - series[series.length - 2].share);
+  const dir: SalienceTrend["dir"] = deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat";
+  const prevMoment = blockLabelParts(series[series.length - 2].blockUtc, blockDateMtl)?.moment;
+  const capLabel = dir === "flat" ? "Stable"
+    : dir === "up" ? (prevMoment ? `En progression depuis ${prevMoment}` : "En progression")
+    : (prevMoment ? `En déclin depuis ${prevMoment}` : "En déclin");
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
     // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
@@ -854,7 +875,7 @@ function buildSalienceTrend(
       isAbsent: !p.present,
     };
   });
-  return { dir, capLabel, points };
+  return { dir, capLabel, deltaPct, points };
 }
 
 export type UneEvent = {

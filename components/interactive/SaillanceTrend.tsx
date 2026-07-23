@@ -12,11 +12,12 @@ import type { SalienceTrend } from "@/lib/data/headlineEvents";
 // Compacte, elle s'aligne optiquement avec le libellé.
 const W = 124, H = 24, PADX = 5, PADY = 4;
 
-// Flèche directionnelle (↘ / ↗) — un chemin SVG, colorée par la classe parente.
+// Symbole de tendance — chemin SVG, coloré par la classe parente : flèche ↘
+// (baisse) / ↗ (hausse) / « = » (stable, deux traits parallèles).
 function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
   const d = dir === "down" ? "M3,3 L14,14 M14,14 L14,7.5 M14,14 L7.5,14"
     : dir === "up" ? "M3,14 L14,3 M14,3 L7.5,3 M14,3 L14,9.5"
-    : "M3,8.5 L14,8.5 M14,8.5 L9.5,4.5 M14,8.5 L9.5,12.5";
+    : "M3,6.3 L14,6.3 M3,10.7 L14,10.7";
   return (
     <svg className="trend-arrow" width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"
       fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -35,15 +36,17 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
 
   const active = hover !== null ? pts[hover] : null;
 
-  // Tendance « stable » : rien à raconter, on n'affiche pas la ligne (garde le
-  // hero épuré ; la trajectoire ne sert qu'à signaler un déclin ou une montée).
-  if (trend.dir === "flat") return null;
+  // Ampleur formatée : baisse « −X », hausse « +X », stable « 0 » (le symbole =
+  // porte déjà la stabilité). Toujours affichée (décision Adrien #304).
+  const pctText = trend.dir === "flat"
+    ? "0"
+    : `${trend.dir === "up" ? "+" : "−"}${Math.abs(trend.deltaPct)}`;
 
-  // ORDRE : courbe → flèche → libellé (décision Adrien 2026-07-20). La courbe
-  // vient en TÊTE, donc sa position ne dépend plus de la longueur du texte : elle
-  // est ANCRÉE. Deux conséquences — au survol, quand le libellé s'allonge en
-  // lecture de bloc, rien ne bouge (plus besoin de réserver une largeur) ; et les
-  // trajectoires de plusieurs Unes s'alignent verticalement entre elles.
+  // ORDRE : courbe → flèche → libellé (+ ampleur entre parenthèses). La courbe
+  // vient en TÊTE, donc ANCRÉE (sa position ne dépend pas du texte ; les
+  // trajectoires de plusieurs Unes s'alignent verticalement). La flèche garde sa
+  // place devant le libellé ; le chiffre d'ampleur suit le libellé, entre
+  // parenthèses (demande Yannick #304, placement ajusté avec Adrien).
   return (
     <div className={`saillance-trend trend-${trend.dir}`}>
       <span className="trend-spark-wrap">
@@ -68,13 +71,15 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
         </svg>
       </span>
       <Arrow dir={trend.dir} />
-      {/* Le libellé fait double emploi : tendance au repos, lecture du bloc au
-          survol. En dernière position, il peut s'allonger librement — la courbe,
-          en amont, ne bouge pas. */}
+      {/* Le libellé fait double emploi : tendance + ampleur (%) au repos, lecture
+          du bloc pointé au survol. Le % chiffre l'ampleur du mouvement (chute
+          depuis le pic / hausse depuis le bloc précédent) ; il s'efface au survol
+          (il décrit la tendance globale, pas le bloc pointé) et est absent quand
+          il n'y a pas de base à pourcenter (apparition depuis un bloc absent). */}
       <span className="trend-cap" aria-live="polite">
         {active
           ? <>{active.timeLabel} · <b>{active.level}</b></>
-          : trend.capLabel}
+          : <>{trend.capLabel} (<b className="trend-pct">{pctText}&nbsp;%</b>)</>}
       </span>
     </div>
   );

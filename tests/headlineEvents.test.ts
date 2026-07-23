@@ -358,18 +358,21 @@ describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
   });
 });
 
-describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
-  const thr = SAL_QC_THRESHOLDS; // recalibré #287 (pics) : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
-  // present = la nouvelle a fait la Une à ce bloc (byBlock.has). qc:0 + present:false
-  // = absente du bloc (≠ faible saillance réelle).
+describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
+  const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
+  // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du
+  // bloc (qc histoire / qc total du bloc), calculée en amont (storiesFrom24h). La
+  // TENDANCE (#304) compare la part des DEUX derniers blocs ; la mini-courbe et les
+  // niveaux par bloc restent, eux, basés sur `qc`.
   const decline = [
-    { blockUtc: "2026-07-19T19", qc: 0, present: false }, { blockUtc: "2026-07-19T23", qc: 100, present: true },
-    { blockUtc: "2026-07-20T03", qc: 50, present: true }, { blockUtc: "2026-07-20T07", qc: 12, present: true },
-    { blockUtc: "2026-07-20T11", qc: 0, present: false },
+    { blockUtc: "2026-07-19T19", qc: 0, present: false, share: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, share: 55 },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true, share: 40 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 25 },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 },
   ];
-  it("détecte le déclin (sommet passé + chute sous 70 % du pic)", () => {
+  it("détecte le déclin (part qui baisse d'un bloc au suivant : 25 → 0 = −25)", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
+    expect(t.deltaPct).toBe(-25);
     expect(t.capLabel).toMatch(/^En déclin depuis /);
   });
   it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
@@ -384,20 +387,46 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
     expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
   });
-  it("détecte la progression (dernier bloc > 1,25 × le précédent)", () => {
-    const rise = [
-      { blockUtc: "2026-07-20T03", qc: 4, present: true }, { blockUtc: "2026-07-20T07", qc: 9, present: true },
-      { blockUtc: "2026-07-20T11", qc: 20, present: true },
-    ];
-    const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
+  it("détecte la progression (part qui monte d'un bloc au suivant : 15 → 32 = +17)", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 4, present: true, share: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, share: 15 },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true, share: 32 },
+    ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
+    expect(t.deltaPct).toBe(17);
     expect(t.capLabel).toMatch(/^En progression/);
+  });
+  // Ampleur = variation de la PART d'attention entre les deux derniers blocs (#304).
+  it("deltaPct baisse : 25 % → 15 % = −10 points", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 25 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 15 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("down");
+    expect(t.deltaPct).toBe(-10);
+  });
+  it("deltaPct hausse : 10 % → 22 % = +12 points", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 10 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 22 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("up");
+    expect(t.deltaPct).toBe(12);
+  });
+  it("stable : part inchangée d'un bloc au suivant → dir flat, deltaPct 0, « Stable »", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 30 },
+      { blockUtc: "2026-07-20T11", qc: 42, present: true, share: 30 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("flat");
+    expect(t.deltaPct).toBe(0);
+    expect(t.capLabel).toBe("Stable");
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 0, present: false },  // pas à la Une → Absente
-      { blockUtc: "2026-07-20T07", qc: 3, present: true },   // à la Une mais faible (< seuil faible=5)
-      { blockUtc: "2026-07-20T11", qc: 40, present: true },
+      { blockUtc: "2026-07-20T03", qc: 0, present: false, share: 0 },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true, share: 5 },   // à la Une mais faible (< seuil faible=8)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true, share: 30 },
     ] as never, thr, "2026-07-20")!;
     const absent = trend.points[0], faible = trend.points[1];
     expect(absent.level).toBe("Absente");
@@ -406,7 +435,7 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(faible.isAbsent).toBe(false);
   });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
-    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
+    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 }] as never, thr, "2026-07-20")).toBeNull();
   });
 });
 
