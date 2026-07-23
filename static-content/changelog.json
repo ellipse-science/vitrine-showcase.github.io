@@ -1,5 +1,11 @@
 [
   {
+    "pr": 269,
+    "date": "2026-07-23T18:18:10Z",
+    "note": "fix(polimetre+): tendance masquée sur mobile + refonte couleur des verdicts (#267, #268)",
+    "version": null
+  },
+  {
     "pr": 294,
     "date": "2026-07-23T16:09:52Z",
     "note": "docs : reconnaissance de l'apport de l'IA — provenance en français (issues + réponses de PR)",
