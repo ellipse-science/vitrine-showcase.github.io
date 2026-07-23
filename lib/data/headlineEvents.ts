@@ -661,8 +661,8 @@ const MIN_QC_MEDIA_SECONDARY = 2;
 //
 // Historique : un plancher `isStaleForUne` (arbitrage 2026-07-20) excluait toute
 // histoire absente du bloc courant dont le pic datait de ≥ 8 h. RETIRÉ 2026-07-23
-// (arbitrage Adrien) : le banc sur 10 semaines (427 blocs, replay dans
-// _chantiers-vitrine/banc-235/replay_stale_une.py) montre qu'il DÉSACCORDAIT la Une
+// (arbitrage Adrien) : un banc de mesure interne sur 10 semaines (427 blocs)
+// montre qu'il DÉSACCORDAIT la Une
 // du radar (cohérence 67 % → 100 % sans lui), appauvrissait les fronts (jours à
 // 1 seule Une 52 % → 23 %) et AUGMENTAIT le churn du héros (60 % → 35 % sans lui —
 // il éjectait le leader d'un coup à chaque bloc raté). Le seul coût — quelques

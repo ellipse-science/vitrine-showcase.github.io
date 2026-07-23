@@ -458,7 +458,7 @@ describe("classement pur : la Une suit la saillance pondérée 24 h comme le rad
   });
   it("tradeoff assumé : une histoire retombée au plus gros cumul coiffe une fraîche plus petite", () => {
     // Ancien « cas soccer » : sans plancher, la plus grosse au cumul reste #1, la
-    // fraîche plus petite passe #2 — comportement voulu (banc replay_stale_une.py :
+    // fraîche plus petite passe #2 — comportement voulu (banc de mesure interne :
     // la moyenne pondérée fait décroître le soccer d'elle-même en quelques blocs).
     const st = [
       withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul, retombé
