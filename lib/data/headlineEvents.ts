@@ -651,38 +651,30 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
 
-// Plancher de récence (dossier fenêtre, arbitrage Adrien 2026-07-20) : la Une
-// montre le saillant DU MOMENT. Le classement par cumul 24 h (w10) peut, un jour
-// creux, garder en tête une histoire retombée qui a « laissé la place à autre
-// chose » (cas mesuré : le soccer, pic la veille à 19 h, coiffait la Une à 0 sur
-// le bloc courant, masquant l'inflation live). On EXCLUT donc de la Une une
-// histoire qui est À LA FOIS absente du bloc courant ET dont le pic date d'au
-// moins 2 blocs (≥ 8 h) — un déclin installé. On ne punit PAS un simple saut d'un
-// bloc (pic récent), et le signal est l'ÂGE DU PIC, pas « présent/absent » (le
-// soccer avait encore un petit score 4 h avant : viser le déclin, pas l'absence).
-// Mesuré sur juin : corrige 67 % des jours à héros-mort, aucune Une vidée ; le
-// churn monte (34 → 62 %) mais c'est la Une qui suit l'actualité, pas du bruit.
-// N'affecte QUE la sélection des Unes ; le radar Deux solitudes garde ces
-// histoires (leur part d'attention 24 h reste légitime).
-const STALE_PEAK_MIN_BLOCKS = 2;
-function isStaleForUne(s: Story): boolean {
-  if (s.series.length === 0) return false;
-  const cur = s.series[s.series.length - 1].qc;
-  if (cur > 0) return false; // encore présente dans le bloc courant → jamais périmée
-  let peak = 0, peakIdx = 0;
-  s.series.forEach((p, i) => { if (p.qc >= peak) { peak = p.qc; peakIdx = i; } });
-  const peakAgeBlocks = (s.series.length - 1) - peakIdx;
-  return peak > 0 && peakAgeBlocks >= STALE_PEAK_MIN_BLOCKS;
-}
-
+// Sélection des Unes : classement PUR par saillance QC cumulée 24 h (sumQc,
+// demi-vie w10), depuis le MÊME pool que le radar Deux solitudes → les deux modules
+// montrent exactement le même classement (le héros de la Une = la nouvelle #1 du
+// radar). Aucun plancher de récence : la moyenne pondérée fait déjà décroître une
+// histoire en douceur à mesure qu'elle vieillit et que de plus grosses émergent,
+// comme un vrai journal. Une histoire qui a culminé pendant la nuit reste donc à la
+// Une le lendemain matin, puis glisse d'elle-même en #2, #3, puis sort.
+//
+// Historique : un plancher `isStaleForUne` (arbitrage 2026-07-20) excluait toute
+// histoire absente du bloc courant dont le pic datait de ≥ 8 h. RETIRÉ 2026-07-23
+// (arbitrage Adrien) : le banc sur 10 semaines (427 blocs, replay dans
+// _chantiers-vitrine/banc-235/replay_stale_une.py) montre qu'il DÉSACCORDAIT la Une
+// du radar (cohérence 67 % → 100 % sans lui), appauvrissait les fronts (jours à
+// 1 seule Une 52 % → 23 %) et AUGMENTAIT le churn du héros (60 % → 35 % sans lui —
+// il éjectait le leader d'un coup à chaque bloc raté). Le seul coût — quelques
+// « héros retombés » les nuits creuses — est assumé : c'est aussi ce que font les
+// médias quand rien de neuf n'émerge. Déclencheur : cas Oliver Jones (mort culturelle
+// de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
 function selectTopUnes(stories: Story[], max = 3): Story[] {
+  // Héros toujours affiché ; une Une SECONDAIRE doit être portée par ≥
+  // MIN_QC_MEDIA_SECONDARY médias QC (seuil éditorial #273 conservé). On tronque au
+  // top-3 par saillance cumulée SANS repêcher (le pool est partagé avec le radar).
   const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
-  const fresh = eligible.filter((s) => !isStaleForUne(s));
-  // Le plancher retire les histoires retombées, MAIS le module garde toujours ≥ 1
-  // Une : si tout est retombé (jour très creux), on retombe sur le classement
-  // complet plutôt que d'afficher une Une vide.
-  const pool = fresh.length > 0 ? fresh : eligible;
-  return pool
+  return eligible
     .sort((a, b) => b.sumQc - a.sumQc)
     .slice(0, max)
     .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
@@ -1327,7 +1319,6 @@ export const __test__ = {
   storiesFrom24h,
   buildSalienceTrend,
   selectTopUnes,
-  isStaleForUne,
   MIN_QC_MEDIA_SECONDARY,
   windowConvergence,
   windowEventConvergence,
