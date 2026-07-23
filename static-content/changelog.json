@@ -1,5 +1,47 @@
 [
   {
+    "pr": 300,
+    "date": "2026-07-22T20:25:29Z",
+    "note": "Métho : le regroupement des événements passe à un modèle de langue (suit aws-refiners#243)",
+    "version": null
+  },
+  {
+    "pr": 298,
+    "date": "2026-07-22T19:20:04Z",
+    "note": "Les cartes qu'on partage sur les réseaux sociaux sont maintenant plus visuelles : un chiffre clé bien en vue, et un format vertical pensé pour Instagram.",
+    "version": "2.10.0-beta.0"
+  },
+  {
+    "pr": 245,
+    "date": "2026-07-22T19:02:56Z",
+    "note": "Métho + swimlanes : documenter le module Polimètre+ (suivi des promesses CAQ)",
+    "version": null
+  },
+  {
+    "pr": 256,
+    "date": "2026-07-22T03:43:56Z",
+    "note": "docs(pipeline): synchroniser les diagrammes vivants avec la dépréciation #428",
+    "version": null
+  },
+  {
+    "pr": 285,
+    "date": "2026-07-22T03:35:27Z",
+    "note": "Reformulation d'une entrée de ce journal en langage plus simple.",
+    "version": null
+  },
+  {
+    "pr": 293,
+    "date": "2026-07-22T03:31:34Z",
+    "note": "fix(deux solitudes) : enrouler les badges de médias sur plusieurs rangées",
+    "version": null
+  },
+  {
+    "pr": 290,
+    "date": "2026-07-21T21:21:05Z",
+    "note": "docs(métho) : vérification d'appartenance des articles (§ 04, aws-refiners#236)",
+    "version": null
+  },
+  {
     "pr": 288,
     "date": "2026-07-21T15:05:38Z",
     "note": "Une des Unes : plancher de récence — montrer le saillant du moment (dossier fenêtre)",
@@ -20,7 +62,7 @@
   {
     "pr": 283,
     "date": "2026-07-20T18:09:01Z",
-    "note": "Une des Unes : pondération de récence du classement 24 h (demi-vie 10 h, #274)",
+    "note": "La Une des Unes accorde plus de poids aux dernières heures dans son classement : une histoire encore chaude passe devant une histoire qui s’essouffle.",
     "version": "2.7.0-beta.0"
   },
   {

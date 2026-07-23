@@ -242,6 +242,7 @@
         .pipeline-events .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-hot20 .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-sonar .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
+        .pipeline-polimetre .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
         .pipeline-vitrine .pipeline-header { background: linear-gradient(135deg, #555 0%, #333 100%); }
 
         .toggle-icon {
@@ -461,7 +462,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 10 juillet 2026 (agrégats 24h par storyline dans headline_events_4h) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 22 juillet 2026 (regroupement des événements par LLM et retrait du garde d'appartenance, aws-refiners#243 ; pipeline Polimètre+ ; badges de dépréciation aws-infra #428) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -474,6 +475,7 @@
             <button class="btn" data-filter="events">Event Salience</button>
             <button class="btn" data-filter="hot20">Hot 20</button>
             <button class="btn" data-filter="sonar">SONAR</button>
+            <button class="btn" data-filter="polimetre">Polimètre+</button>
             <button class="btn" data-filter="vitrine">Publication</button>
         </div>
 
@@ -603,25 +605,26 @@
                 </div>
                 <div class="arrow">+</div>
                 <div class="node node-dict" data-type="dict" data-dict="issues">
-                    dict-issues-two-categories
-                    <div class="node-detail">12 catégories</div>
+                    dict-issues-two-categories ⛔
+                    <div class="node-detail">À SUPPRIMER (suppression débloquée par aws-infra #428, pas encore faite — remplacé par dict-issues-capp-cap-lexicoder)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="headlines-issues">
-                    radar-headlines-issues.R
-                    <div class="node-detail">Classifie headlines</div>
+                    radar-headlines-issues.R ⛔
+                    <div class="node-detail">DÉPRÉCIÉ (active:false, aws-infra #428) — n'alimente plus le site</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="headlines_issues" data-env-output="DEV">
-                    headlines_issues_*
-                    <div class="node-detail">quotidien/hebdo/mensuel</div>
+                    headlines_issues_* ⛔
+                    <div class="node-detail">n'est plus alimentée (raffineur déprécié)</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="issues-score">
                     radar-issues-score.R
+                    <div class="node-detail">✅ VIVANT — lit radar_annotated (PAS headlines_issues)</div>
                     <div class="node-schedule">⏰ 07:09, 11:09, 15:09</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
@@ -711,8 +714,8 @@
         <div class="pipeline pipeline-reflet" data-pipeline="reflet">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>💭 Reflet (Synthèses LLM par Enjeu)</span>
-                <span class="frequency">Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
+                <span>💭 Reflet (Synthèses LLM par Enjeu) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16)</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
             </div>
             <div class="pipeline-content" style="display: grid; grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto; gap: 15px; align-items: center;">
                 <!-- Ligne 1: Quotidien/Hebdo -->
@@ -766,8 +769,8 @@
         <div class="pipeline pipeline-headline" data-pipeline="headline">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>📰 Headline of Headlines (Une des Unes)</span>
-                <span class="frequency">6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
+                <span>📰 Headline of Headlines (Une des Unes) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16) — la Une vient de radar-event-salience</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — 6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -961,6 +964,34 @@
             </div>
         </div>
 
+        <!-- POLIMÈTRE+ (SUIVI DES PROMESSES) -->
+        <div class="pipeline pipeline-polimetre" data-pipeline="polimetre">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🗳️ Polimètre+ (Suivi des promesses CAQ)</span>
+                <span class="frequency">Quotidien: 12:30 (heure du Québec) • analyse par semaine glissante</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
+                    r-media-headlines
+                    <div class="node-detail">Glue Job Python + liste des promesses CAQ (mastersheet) + regex validées</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus">
+                    polimetre-plus.R
+                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo ; enrichissement LLM best-effort (Gemma 3 : libellés courts + résumés)</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_plus" data-env-output="DEV">
+                    polimetre_plus
+                    <div class="node-detail">Promesses CAQ saillantes de la semaine + progression + enrichissement LLM</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+            </div>
+        </div>
+
         <!-- PUBLICATION VITRINE -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
@@ -1012,6 +1043,38 @@
         // Modal data
         const modalData = {
             tables: {
+                'polimetre_plus': {
+                    title: 'Table: polimetre_plus',
+                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification 100 % regex ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
+                    columns: [
+                        '📍 IDENTIFIANTS:',
+                        'country_id - Pays (QC)',
+                        'week_end_date - Date de fin de la semaine analysée',
+                        'pledge_number - Numéro de la promesse (format 9.99.999)',
+                        'pledge_text_fr - Libellé officiel FR de la promesse',
+                        'pledge_short_fr - Libellé court FR (LLM, best-effort)',
+                        'pledge_en - Libellé EN de la promesse',
+                        'verdict - Verdict de réalisation (source Polimètre)',
+                        'category - Catégorie de la promesse',
+                        '',
+                        '📈 SAILLANCE + PROGRESSION:',
+                        'n_mentions - Nombre d\'articles mentionnant la promesse',
+                        'salience_index - Indice de saillance (n_mentions × temps en Une pondéré inter-médias)',
+                        'previous_salience_index - Indice de saillance de la semaine précédente',
+                        'delta_index - Progression (salience_index − previous_salience_index)',
+                        'rank_current - Rang par saillance',
+                        'rank_delta - Rang par progression',
+                        '',
+                        '📝 ENRICHISSEMENT LLM (best-effort):',
+                        'coverage_summary_week - Résumé journalistique de la couverture hebdo (LLM)',
+                        'coverage_summary_month - Synthèse mensuelle des résumés hebdo (LLM)',
+                        '',
+                        '🔗 SOURCES:',
+                        'titles - Titres des articles (JSON)',
+                        'urls - URLs des articles (JSON)',
+                        'articles - Array [{media_id, title, url}] (JSON)'
+                    ]
+                },
                 'headlines_objects_extracted': {
                     title: 'Table: headlines_objects_extracted',
                     description: 'Headlines enrichis par radar-object-extraction.R (GLiNER + Gemma3). Schéma pass-through depuis radar_annotated + colonnes NER bilingues.',
@@ -1369,9 +1432,9 @@
                         '📊 63 colonnes au total (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag)',
                         '🎯 Granularité: 1 ligne = 1 événement (cluster d\'articles) dans un bloc 4h par pays',
                         '📈 Volume estimé: ~270 lignes/jour (9-15 events × 3 pays × 6 blocs)',
-                        '🔬 Méthode clustering: BFS + similarité cosinus pondérée par saillance (Salton & McGill 1983)',
+                        '🔬 Méthode regroupement: 1 appel LLM par bloc (aws-refiners#243) — regroupe les articles ET dit lesquels continuent une histoire des 24 h. Le cosinus BFS ne sert plus que de repli si l\'appel échoue.',
                         '⚙️ Garantie minimum: 3 événements par bloc/pays',
-                        '🤖 LLM: gpt-4o, ~18 appels par run (3 events × 3 pays × 2 appels: titre/texte + main_issue). Pattern hérité de headline-of-headlines.',
+                        '🤖 LLM: gpt-4o, ~19 appels par run (1 regroupement des articles en événements + 3 events × 3 pays × 2 appels: titre/texte + main_issue). Pattern hérité de headline-of-headlines.',
                         'ℹ️ Consommée par le nouveau frontend Vitrine (« Les Unes du jour »)'
                     ]
                 },
@@ -1486,6 +1549,28 @@
                 }
             },
             refiners: {
+                'polimetre-plus': {
+                    title: 'Refiner: polimetre-plus.R',
+                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification 100 % regex (source de vérité) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
+                    details: [
+                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation »)',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
+                        '',
+                        '⚙️ TRAITEMENT (hebdomadaire, semaine glissante):',
+                        '• Identification : appariement article ↔ promesse par expressions régulières validées (une par promesse) — 100 % à base de règles',
+                        '• Saillance : n_mentions × somme du temps en Une pondéré inter-médias (même pondération que l\'indice de saillance)',
+                        '• Progression : delta_index = salience_index − saillance de la semaine précédente',
+                        '• Classement par saillance (rank_current) et par progression (rank_delta)',
+                        '',
+                        '🔧 ENRICHISSEMENT LLM (best-effort, Ollama/Gemma via infer-api):',
+                        '• Gemma3 → /ollama/generate — libellé court (pledge_short_fr) + résumé de couverture par promesse (coverage_summary_week/month)',
+                        '• N\'intervient JAMAIS dans l\'identification ; si l\'infer-api est indisponible, ces colonnes sortent à NA et la publication continue',
+                        '• Plafond optionnel SUMMARY_TOP_N (défaut : toutes les promesses)',
+                        '',
+                        '🎯 UTILITÉ: suivi médiatique des promesses électorales de la CAQ (module Polimètre+)',
+                        '→ Publie polimetre_plus, lue par le frontend de la Vitrine'
+                    ]
+                },
                 'articles-segmented': {
                     title: 'Refiner: radar-data-preparation.R',
                     description: 'Segmentation WTPSPLIT + annotation CAP themes + partis politiques + sentiment via INFER API. Publie radar_annotated (19 colonnes).',
@@ -1620,7 +1705,7 @@
                     ]
                 },
                 'headlines-issues': {
-                    title: 'Refiner: radar-headlines-issues.R',
+                    title: 'Refiner: radar-headlines-issues.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Classifie les headlines selon 12 catégories d\'enjeux via deep learning, génère 3 versions (quotidien, hebdomadaire, mensuel).',
                     details: [
                         '📥 SOURCE: <span class="badge-prod">PROD</span>/datawarehouse - Table r-media-headlines',
@@ -1655,7 +1740,7 @@
                     title: 'Refiner: radar-issues-score.R',
                     description: 'Agrège les classifications d\'enjeux par période en proportions normalisées (somme=1.0).',
                     details: [
-                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables headlines_issues_day/week/month',
+                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table radar_annotated (⚠️ corrigé — lit radar_annotated, PAS headlines_issues)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Tables issues_score_day/week/month',
                         '',
                         '⚙️ TRAITEMENT (calculs statistiques):',
@@ -1738,7 +1823,7 @@
                     ]
                 },
                 'reflet-daily-weekly': {
-                    title: 'Refiner: radar-reflet-daily-weekly.R',
+                    title: 'Refiner: radar-reflet-daily-weekly.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Génère des synthèses textuelles (LLM) quotidiennes et hebdomadaires par enjeu via GPT-4o.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables salient_headlines_objects, headlines_issues_day/week',
@@ -1770,7 +1855,7 @@
                     ]
                 },
                 'reflet-monthly': {
-                    title: 'Refiner: radar-reflet-monthly.R',
+                    title: 'Refiner: radar-reflet-monthly.R ⛔ DÉPRÉCIÉ (active:false, #428)',
                     description: 'Génère des synthèses textuelles (LLM) mensuelles par enjeu via GPT-4o.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Tables headlines_issues_month',
@@ -1796,7 +1881,7 @@
                     ]
                 },
                 'headline-of-headlines': {
-                    title: 'Refiner: radar-headline-of-headlines.R',
+                    title: 'Refiner: radar-headline-of-headlines.R ⛔ DÉPRÉCIÉ (active:false, #428) — la Une vient de radar-event-salience',
                     description: 'Génère une "Une des Unes" synthétique (headline principal) pour chaque période de 4h via LLM.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table salient_headlines_objects',
@@ -1835,7 +1920,7 @@
                         '• Représentation d\'article: vecteur d\'objets v_A pondéré par S(o) depuis salient_index',
                         '• Similarité par paire: pair_score = 0.70 × cos_sim(v_A, v_B) + 0.30 × jaccard(title_A, title_B)',
                         '• Lien si pair_score ≥ 0.30 → graphe → composantes connexes via BFS = événements',
-                        '• 2e passe: agrégation vecteurs par événement, cosinus event-level, fusion si ≥ 0.40',
+                        '• 2e passe cosinus event-level (fusion si ≥ 0.40): désactivée — le regroupement LLM la remplace (repli seulement).',
                         '• Garantie min 3 events: split du plus gros cluster si <3',
                         '• Score événement: Σ absolute_normalized_index des objets uniques du cluster',
                         '• storyline_id: lookup 24h (6 blocs précédents), Jaccard ≥ 0.30 → hérite, sinon nouveau',
@@ -1843,11 +1928,12 @@
                         '',
                         '🤖 MÉTHODOLOGIE — 2. LLM (top 3 par pays uniquement):',
                         '• Modèle: gpt-4o via ellipsellm (temperature = 0)',
-                        '• Appel 1: titre journalistique FR canadien (60-90 char) + lead (150-280 char)',
-                        '• Appel 2: classification main_issue parmi 12 enjeux CAP',
-                        '• Volume: ~18 appels par run = 3 events × 3 pays × 2 appels',
+                        '• GARDE D\'APPARTENANCE (aws-refiners#235): RETIRÉ le 2026-07-22 (PR #243, issue #213). Mesuré sur 11 semaines: il défaisait plus de regroupements justes qu\'il ne corrigeait d\'erreurs (il jugeait chaque article contre le SEUL titre de la manchette, donc écartait les autres facettes du dossier). Sa consigne négative est passée dans le prompt de regroupement.',
+                        '• Appel 2: titre journalistique FR canadien (60-90 char) + lead (150-280 char)',
+                        '• Appel 3: classification main_issue parmi 12 enjeux CAP',
+                        '• Volume: ~19 appels par run = 1 regroupement + (3 events × 3 pays × 2 appels). Le garde retiré économise ~8,5 appels/bloc.',
                         '• Pattern hérité de radar-headline-of-headlines (mêmes prompts adaptés au niveau événement)',
-                        '• Robustesse: try-catch par appel, fallback NA si échec, le reste continue',
+                        '• Robustesse: try-catch par appel, fallback NA si échec, le reste continue. Garde: 1 reprise après pause, puis fail-open journalisé (« gate skipped »); un verdict partiel conserve les articles non mentionnés; un événement n\'est jamais vidé.',
                         '',
                         '🔬 Reference: Salton & McGill (1983), Introduction to Modern Information Retrieval, ch. 3 (vector space model + cosine similarity)',
                         '',
@@ -2023,7 +2109,7 @@
             },
             dicts: {
                 'issues': {
-                    title: 'Dictionnaire: dict-issues-two-categories',
+                    title: 'Dictionnaire: dict-issues-two-categories ⛔ À SUPPRIMER (suppression débloquée par aws-infra #428, pas encore faite — remplacé par dict-issues-capp-cap-lexicoder)',
                     description: 'Définit les 12 catégories d\'enjeux politiques utilisées pour classifier les headlines.',
                     details: [
                         '1. Economy and Labour (Économie et travail)',

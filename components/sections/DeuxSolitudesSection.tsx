@@ -22,7 +22,7 @@ export async function DeuxSolitudesSection() {
     <>
       <section className="solitudes">
         <div className="sol-title-row">
-          <h3 className="sol-title">Deux solitudes&nbsp;?</h3>
+          <h3 className="sol-title">Deux solitudes?</h3>
           {/* Le partage suit la sémantique du grand chiffre (scoreValue/verb) :
               sur une journée convergente il annonce la convergence, pas une
               divergence figée. */}

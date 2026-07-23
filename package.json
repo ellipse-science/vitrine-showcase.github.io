@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.9.0-beta.0",
+  "version": "2.10.0-beta.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "next": "16.2.10",
+    "next": "16.2.11",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
