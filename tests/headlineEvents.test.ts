@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, isStaleForUne, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
+const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -405,14 +405,46 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
   });
+  it("étiquette l'heure de chaque point par sa PUBLICATION (fin + 1 h, réforme #195), pas son début", () => {
+    // Bloc UTC 07 = 03:00–07:00 Montréal (EDT) → PUBLIÉ à 8 h : le label doit dire
+    // « 8 h », jamais « 3 h » (l'heure de début), cohérent avec le pied de module.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl → publié 4 h
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
+    expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
+  });
+  it("bloc de nuit 23-03 (publié à 4 h LE LENDEMAIN) → « aujourd’hui 4 h », jamais « hier » (jour = publication, #317)", () => {
+    // Le bloc 23-03 commence à 23 h la VEILLE mais est publié à 4 h le jour de
+    // référence : le mot-jour doit suivre la publication, pas le début du bloc.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl (début 23 h le 23) → publié 4 h le 24
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h le 24
+    ] as never, thr, "2026-07-24")!;
+    const overnight = t.points[t.points.length - 2];   // le point 23-03
+    expect(overnight.timeLabel).toMatch(/4\s*h/);       // heure de publication
+    expect(overnight.timeLabel).toContain("aujourd");   // « aujourd’hui », jour de publication
+    expect(overnight.timeLabel).not.toContain("hier");  // surtout pas le jour du début
+  });
+  it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T19", qc: 20, present: true },  // 15-19 Mtl → publié 20 h
+      { blockUtc: "2026-07-24T23", qc: 30, present: true },  // 19-23 Mtl → publié minuit
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toContain("minuit");
+  });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
     expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
   });
 });
 
 describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3)", () => {
-  // selectTopUnes lit sumQc, qcMedia et series (plancher de récence). Par défaut,
-  // une série d'un bloc VIVANT (qc>0) → jamais périmée : le plancher n'interfère pas.
+  // selectTopUnes classe par sumQc (saillance QC cumulée 24 h) et applique le
+  // seuil éditorial ≥ 2 médias QC pour les secondaires. Classement pur, sans
+  // plancher de récence (retiré 2026-07-23) — cf. describe « classement pur » plus bas.
   const story = (label: string, sumQc: number, nQcMedia: number) =>
     ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
        series: [{ blockUtc: "2026-07-20T15", qc: Math.max(1, sumQc) }] });
@@ -439,39 +471,41 @@ describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3
   });
 });
 
-describe("plancher de récence (dossier fenêtre — la Une montre le MOMENT)", () => {
+describe("classement pur : la Une suit la saillance pondérée 24 h comme le radar (plancher retiré 2026-07-23)", () => {
   const B = ["2026-07-19T23", "2026-07-20T03", "2026-07-20T07", "2026-07-20T11", "2026-07-20T15"];
   const withSeries = (label: string, sumQc: number, nQcMedia: number, scores: number[]) =>
     ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
        series: B.slice(-scores.length).map((b, i) => ({ blockUtc: b, qc: scores[i] })) });
 
-  it("isStaleForUne : absente du bloc courant ET pic ≥ 2 blocs → périmée", () => {
-    expect(isStaleForUne(withSeries("soccer mort", 74, 3, [90, 54, 21, 10, 0]) as never)).toBe(true);
-  });
-  it("isStaleForUne : présente dans le bloc courant → jamais périmée", () => {
-    expect(isStaleForUne(withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]) as never)).toBe(false);
-  });
-  it("isStaleForUne : absente mais pic au bloc précédent (saut d'un bloc) → PAS périmée", () => {
-    expect(isStaleForUne(withSeries("saut d'un bloc", 20, 2, [0, 0, 0, 30, 0]) as never)).toBe(false);
-  });
-  it("garde toujours ≥ 1 Une : si TOUTES les histoires sont retombées, repli sur le classement", () => {
+  it("une histoire au plus gros cumul reste le héros même absente du bloc courant (cas Oliver Jones)", () => {
+    // Pic ~record pendant la nuit, retombé le matin, mais toujours #1 au cumul
+    // pondéré 24 h → doit rester le héros (le radar Deux solitudes le montre en gras).
     const st = [
-      withSeries("morte A", 74, 3, [90, 54, 21, 10, 0]),
-      withSeries("morte B", 40, 2, [50, 30, 8, 4, 0]),
+      withSeries("Oliver Jones", 117, 5, [0, 26, 105, 60, 0]),  // absent du bloc courant
+      withSeries("tarifs", 90, 3, [0, 37, 0, 0, 33]),           // frais mais cumul plus bas
     ];
-    // les deux sont périmées → le plancher les retirerait toutes → repli : la Une
-    // n'est jamais vide, et le héros reste la plus saillante au cumul.
-    const unes = selectTopUnes(st as never).map((s: { label: string }) => s.label);
-    expect(unes.length).toBeGreaterThan(0);
-    expect(unes[0]).toBe("morte A");
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
+      .toEqual(["Oliver Jones", "tarifs"]);
   });
-  it("le cas inflation vs soccer : une histoire fraîche coiffe une morte de plus gros cumul", () => {
+  it("tradeoff assumé : une histoire retombée au plus gros cumul coiffe une fraîche plus petite", () => {
+    // Ancien « cas soccer » : sans plancher, la plus grosse au cumul reste #1, la
+    // fraîche plus petite passe #2 — comportement voulu (banc de mesure interne :
+    // la moyenne pondérée fait décroître le soccer d'elle-même en quelques blocs).
     const st = [
-      withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul mais mort
+      withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul, retombé
       withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]),   // frais, cumul plus bas
     ];
-    // sans plancher, soccer serait #1 (sumQc 74 > 14) ; avec, il est exclu.
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["inflation"]);
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
+      .toEqual(["soccer", "inflation"]);
+  });
+  it("garde toujours ≥ 1 Une et le héros = plus gros cumul QC", () => {
+    const st = [
+      withSeries("A", 74, 3, [90, 54, 21, 10, 0]),
+      withSeries("B", 40, 2, [50, 30, 8, 4, 0]),
+    ];
+    const unes = selectTopUnes(st as never).map((s: { label: string }) => s.label);
+    expect(unes.length).toBeGreaterThan(0);
+    expect(unes[0]).toBe("A");
   });
 });
 
