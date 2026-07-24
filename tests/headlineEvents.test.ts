@@ -405,6 +405,25 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
   });
+  it("étiquette l'heure de chaque point par sa PUBLICATION (fin + 1 h, réforme #195), pas son début", () => {
+    // Bloc UTC 07 = 03:00–07:00 Montréal (EDT) → PUBLIÉ à 8 h : le label doit dire
+    // « 8 h », jamais « 3 h » (l'heure de début), cohérent avec le pied de module.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl → publié 4 h
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
+    expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
+  });
+  it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T19", qc: 20, present: true },  // 15-19 Mtl → publié 20 h
+      { blockUtc: "2026-07-24T23", qc: 30, present: true },  // 19-23 Mtl → publié minuit
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toContain("minuit");
+  });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
     expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
   });
