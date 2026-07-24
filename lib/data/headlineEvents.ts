@@ -860,15 +860,16 @@ function buildSalienceTrend(
     : (prevMoment ? `En déclin depuis ${prevMoment}` : "En déclin");
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
-    // Bloc où la nouvelle n'a PAS fait la Une : « Absente » (point creux), pas
-    // « Très faible ». Ne pas peindre l'absence comme une saillance faible mais
-    // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
+    // Bloc où la nouvelle n'a PAS fait la Une : « Pas à la Une » (point creux),
+    // pas « Très faible ». Ne pas peindre l'absence comme une saillance faible
+    // mais réelle — sinon on laisse croire qu'elle était là (retour Adrien).
+    // « Pas à la Une » plutôt qu'« Absente » (moins abrupt, cohérent « À la Une… »).
     const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
     const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
     return {
       timeLabel,
-      level: tier ? tier.label : "Absente",
+      level: tier ? tier.label : "Pas à la Une",
       levelCls: tier ? tier.cls : "s-absent",
       score: Math.round(p.qc),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
