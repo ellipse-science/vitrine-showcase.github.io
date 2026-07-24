@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { useKonamiCode } from "./useKonamiCode";
+import { FlappyEnjeux } from "./FlappyEnjeux";
 
 // --- Treemap de croissance (vue Aujourd'hui) : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
@@ -330,6 +332,8 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 
 export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  const [secret, setSecret] = useState(false);
+  useKonamiCode(() => { setPeriod("month"); setSecret(true); });
   const current = data[period];
   const tiles = current.tiles;
 
@@ -407,6 +411,8 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
             })}
           </div>
         </>
+      ) : secret && period === "month" ? (
+        <FlappyEnjeux tiles={tiles} onExit={() => setSecret(false)} />
       ) : (
         <IssuesRankChart tiles={tiles} history={current.history} period={period} />
       )}

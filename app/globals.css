@@ -4646,3 +4646,33 @@
     padding-top: 0;
   }
 }
+
+/* ===== Easter egg : Flappy Enjeux ===== */
+.flappy { display: flex; justify-content: center; }
+.flappy-stage { position: relative; width: 100%; max-width: 640px; }
+.flappy-canvas {
+  width: 100%; height: auto; display: block; border-radius: 8px;
+  border: 1px solid rgba(70, 62, 62, 0.25); touch-action: none; cursor: pointer;
+}
+.flappy-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px;
+  align-items: center; justify-content: center; text-align: center;
+  background: rgba(247, 244, 239, 0.82); border-radius: 8px; padding: 16px;
+}
+.flappy-title { font-weight: 700; font-size: 1.25rem; margin: 0; }
+.flappy-hint, .flappy-score { margin: 0; font-size: 0.9rem; }
+.flappy-initials { display: flex; gap: 8px; align-items: center; }
+.flappy-initials input {
+  width: 4rem; text-transform: uppercase; text-align: center; letter-spacing: 0.3em;
+  font-size: 1.1rem; padding: 4px; border: 1px solid #463E3E; border-radius: 4px;
+}
+.flappy-board { list-style: none; padding: 0; margin: 4px 0; width: 200px; }
+.flappy-board li { display: grid; grid-template-columns: 2rem 1fr 3rem; gap: 8px; padding: 2px 0; }
+.flappy-board li.is-new { font-weight: 700; color: #B00020; }
+.flappy-actions { display: flex; gap: 8px; }
+.flappy-actions button, .flappy-initials button {
+  padding: 4px 12px; border: 1px solid #463E3E; border-radius: 4px; background: #fff; cursor: pointer;
+}
+@media (prefers-color-scheme: dark) {
+  .flappy-canvas { border-color: rgba(255,255,255,0.2); }
+}
