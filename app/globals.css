@@ -2283,6 +2283,33 @@
     text-transform: uppercase;
     color: var(--ink-softer);
   }
+
+  /* Panneau « À la une » du graphique de rang : liste d'actualités cliquables. */
+  .fil-article {
+    display: block;
+    text-decoration: none;
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .fil-article:first-child { padding-top: 0; }
+  .fil-article:last-child { border-bottom: none; }
+  .fil-article .fil-titre {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.34;
+    color: var(--ink);
+    transition: color 0.15s ease;
+  }
+  a.fil-article:hover .fil-titre { color: var(--cordovan); }
+  .fil-article .fil-source {
+    display: block;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 36px;
