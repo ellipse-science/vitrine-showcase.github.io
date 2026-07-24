@@ -964,6 +964,10 @@ export type TreemapIssueTile = {
   topObject: string;
   context: string;
   url: string | null;
+  /** -1 (baisse), 0 (stable), 1 (hausse) de la saillance vs le bloc (tag) précédent. */
+  velocity: number;
+  /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
+  growth: number | null;
   /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
   articles: { title: string; url: string | null }[];
 };
@@ -1327,6 +1331,16 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       return acc;
     }, {});
 
+    // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
+    const prevRows = latestTag ? rows.filter((r) => (r.tag as string) !== latestTag) : [];
+    const prevLatest = prevRows.length > 0 ? latestIssueRow(prevRows) : null;
+    const prevTag = prevLatest ? ((prevLatest.tag as string) ?? "") : "";
+    const prevPeriodRows = prevTag ? prevRows.filter((r) => (r.tag as string) === prevTag) : [];
+    const prevAggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = prevPeriodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+      return acc;
+    }, {});
+
     const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
@@ -1345,7 +1359,10 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, articles: articlesByIssue.get(issueKey) ?? [] };
+      const prevScore = prevAggregated[issueKey] ?? 0;
+      const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
+      const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey) ?? [] };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).

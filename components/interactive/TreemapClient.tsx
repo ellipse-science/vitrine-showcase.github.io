@@ -4,31 +4,100 @@ import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 
-function IssueTile({ tile, showContext }: { tile: TreemapIssueTile; showContext: boolean }) {
+// --- Treemap de croissance (vue Aujourd'hui) : partition + tuiles Proto A avec % de croissance ---
+interface Rect { x: number; y: number; w: number; h: number; }
+interface LayoutNode extends TreemapIssueTile { rect: Rect; }
+
+// Partition récursive (« slice-and-dice » équilibré) : rectangles proportionnels au score.
+function computeTreemapLayout(tiles: TreemapIssueTile[]): LayoutNode[] {
+  const nodes: LayoutNode[] = tiles.map((t) => ({ ...t, rect: { x: 0, y: 0, w: 0, h: 0 } }));
+  function partition(slice: LayoutNode[], rect: Rect) {
+    if (slice.length === 0) return;
+    if (slice.length === 1) { slice[0].rect = rect; return; }
+    const total = slice.reduce((s, t) => s + Math.max(t.score, 0.001), 0);
+    let leftSum = 0, splitIdx = 1, minDiff = Infinity;
+    for (let i = 0; i < slice.length - 1; i++) {
+      leftSum += Math.max(slice[i].score, 0.001);
+      const diff = Math.abs(leftSum - total / 2);
+      if (diff < minDiff) { minDiff = diff; splitIdx = i + 1; }
+    }
+    const leftSlice = slice.slice(0, splitIdx);
+    const rightSlice = slice.slice(splitIdx);
+    const ratio = leftSlice.reduce((s, t) => s + Math.max(t.score, 0.001), 0) / total;
+    if (rect.w > rect.h) {
+      const wLeft = rect.w * ratio;
+      partition(leftSlice, { x: rect.x, y: rect.y, w: wLeft, h: rect.h });
+      partition(rightSlice, { x: rect.x + wLeft, y: rect.y, w: rect.w - wLeft, h: rect.h });
+    } else {
+      const hTop = rect.h * ratio;
+      partition(leftSlice, { x: rect.x, y: rect.y, w: rect.w, h: hTop });
+      partition(rightSlice, { x: rect.x, y: rect.y + hTop, w: rect.w, h: rect.h - hTop });
+    }
+  }
+  partition(nodes, { x: 0, y: 0, w: 100, h: 100 });
+  return nodes;
+}
+
+// « +7,8 % » / « −22,0 % » — virgule décimale, un chiffre, espace insécable avant le %.
+function formatGrowth(growth: number): string {
+  const sign = growth > 0 ? "+" : growth < 0 ? "−" : "";
+  return `${sign}${Math.abs(growth).toFixed(1).replace(".", ",")} %`;
+}
+
+function GrowthTile({ tile }: { tile: LayoutNode }) {
+  const area = tile.rect.w * tile.rect.h;
+  const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
+  const isTiny = size === "tiny";
+  const isSmall = size === "small";
   const details = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
-  const tooltip = tile.url
-    ? `${details} · Cliquer pour lire l'article →`
-    : details;
-  const inner = (
+  const tooltip = tile.url ? `${details} · Cliquer pour lire l'article →` : details;
+
+  const growthSpan = (
+    <span className="gt-pct">
+      {tile.velocity === 1 && <span className="gt-up">▲</span>}
+      {tile.velocity === -1 && <span className="gt-down">▼</span>}
+      {tile.growth === null ? (tile.velocity === 1 ? "nouv." : "") : formatGrowth(tile.growth)}
+    </span>
+  );
+
+  const inner = isTiny ? (
+    <div className="gt-compact">
+      <span className="gt-enjeu">{tile.issueFr}</span>
+      {growthSpan}
+    </div>
+  ) : (
     <>
-      <div className="tm-enjeu">{tile.issueFr}</div>
-      {tile.topObject && <div className="tm-name">{tile.topObject}</div>}
-      {showContext && tile.context && <div className="tm-context">{tile.context}</div>}
+      <div className="gt-head">
+        <span className="gt-labels">
+          <span className="gt-enjeu">{tile.issueFr}</span>
+          {tile.topObject && <span className="gt-name">{tile.topObject}</span>}
+        </span>
+        {growthSpan}
+      </div>
+      {!isSmall && tile.context && <div className="gt-context">{tile.context}</div>}
     </>
   );
-  const shared = { className: "tm-tile", style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
+
+  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (
     <div {...shared}>{inner}</div>
   );
-  return <div className="tm-tile-container">{content}</div>;
-}
 
-function toFr(row: TreemapIssueTile[]): string {
-  const rowMax = Math.max(...row.map((t) => t.relScore), 1);
-  const minFr = Math.max(Math.ceil(rowMax * 0.30), 1);
-  return row.map((t) => `${Math.max(t.relScore, minFr)}fr`).join(" ");
+  return (
+    <div
+      className="gt-container"
+      style={{
+        left: `${tile.rect.x.toFixed(2)}%`,
+        top: `${tile.rect.y.toFixed(2)}%`,
+        width: `${tile.rect.w.toFixed(2)}%`,
+        height: `${tile.rect.h.toFixed(2)}%`
+      }}
+    >
+      {content}
+    </div>
+  );
 }
 
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -264,10 +333,6 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const current = data[period];
   const tiles = current.tiles;
 
-  const row1 = tiles.slice(0, 4);
-  const row2 = tiles.slice(4, 8);
-  const row3 = tiles.slice(8, 12);
-
   return (
     <>
       <div className="partis-title-row">
@@ -306,22 +371,10 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
 
       {period === "day" ? (
         <>
-          <div className="treemap">
-            <div className="tm-row tm-row-1" style={{ gridTemplateColumns: toFr(row1) }}>
-              {row1.map((tile) => (
-                <IssueTile key={tile.issueKey} tile={tile} showContext={true} />
-              ))}
-            </div>
-            <div className="tm-row tm-row-2" style={{ gridTemplateColumns: toFr(row2) }}>
-              {row2.map((tile) => (
-                <IssueTile key={tile.issueKey} tile={tile} showContext={true} />
-              ))}
-            </div>
-            <div className="tm-row tm-row-3" style={{ gridTemplateColumns: toFr(row3) }}>
-              {row3.map((tile) => (
-                <IssueTile key={tile.issueKey} tile={tile} showContext={true} />
-              ))}
-            </div>
+          <div className="treemap-growth">
+            {computeTreemapLayout(tiles).map((t) => (
+              <GrowthTile key={t.issueKey} tile={t} />
+            ))}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">
