@@ -975,13 +975,24 @@ export type TreemapIssueTile = {
   topObject: string;
   context: string;
   url: string | null;
+  /** -1 (baisse), 0 (stable), 1 (hausse) de la saillance vs le bloc (tag) précédent. */
+  velocity: number;
+  /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
+  growth: number | null;
+  /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
+  articles: { title: string; url: string | null }[];
 };
+
+/** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
+export type TreemapHistoryPoint = { date: string; ranks: Record<string, number> };
 
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
   dateLabel: string;
   /** « Dernière mise à jour : mercredi 8 juillet 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
+  /** Classement des 12 enjeux dans le temps (un point par tag), pour le graphique de rang. */
+  history: TreemapHistoryPoint[];
 };
 
 export type TreemapAllPeriods = {
@@ -1260,12 +1271,57 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
   return map;
 }
 
+// Jusqu'à 5 actualités récentes par enjeu (événements distincts), pour le panneau « À la une »
+// du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
+// décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
+// (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
+async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: string | null }[]>> {
+  const map = new Map<string, { title: string; url: string | null }[]>();
+  let rawEvents: string;
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
+  const allRaw = JSON.parse(rawEvents) as RawEvent[];
+
+  const byId = new Map<string, RawEvent>();
+  for (const e of allRaw) {
+    const existing = byId.get(e.event_id);
+    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
+  }
+  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+
+  const byIssue = new Map<string, RawEvent[]>();
+  for (const e of unique) {
+    const key = e.main_issue ?? "";
+    if (!key) continue;
+    if (!byIssue.has(key)) byIssue.set(key, []);
+    byIssue.get(key)!.push(e);
+  }
+
+  for (const [issueKey, events] of byIssue) {
+    const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
+    const seen = new Set<string>();
+    const list: { title: string; url: string | null }[] = [];
+    for (const e of sorted) {
+      const title = (e.title ?? "").trim();
+      if (!title) continue;
+      const url = e.representative_url ?? null;
+      const dedupKey = url ?? title;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
+      list.push({ title, url });
+      if (list.length >= 5) break;
+    }
+    map.set(issueKey, list);
+  }
+  return map;
+}
+
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
-  const [dayRows, weekRows, monthRows, fallbackContent] = await Promise.all([
+  const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
     loadIssueScores("day"),
     loadIssueScores("week"),
     loadIssueScores("month"),
     loadFallbackIssueContent(),
+    loadArticlesByIssue(),
   ]);
 
   function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {
@@ -1283,6 +1339,16 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       : [latest];
     const aggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
       acc[key] = periodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+      return acc;
+    }, {});
+
+    // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
+    const prevRows = latestTag ? rows.filter((r) => (r.tag as string) !== latestTag) : [];
+    const prevLatest = prevRows.length > 0 ? latestIssueRow(prevRows) : null;
+    const prevTag = prevLatest ? ((prevLatest.tag as string) ?? "") : "";
+    const prevPeriodRows = prevTag ? prevRows.filter((r) => (r.tag as string) === prevTag) : [];
+    const prevAggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = prevPeriodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
       return acc;
     }, {});
 
@@ -1304,9 +1370,35 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
+      const prevScore = prevAggregated[issueKey] ?? 0;
+      const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
+      const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey) ?? [] };
     });
-    return { tiles, dateLabel, lastUpdated };
+
+    // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
+    const groupedByTag: Record<string, typeof rows> = {};
+    for (const r of rows) {
+      const tag = (r.tag as string) ?? "";
+      if (!tag) continue;
+      if (!groupedByTag[tag]) groupedByTag[tag] = [];
+      groupedByTag[tag].push(r);
+    }
+    const history: TreemapHistoryPoint[] = Object.keys(groupedByTag)
+      .sort((a, b) => a.localeCompare(b))
+      .map((tag) => {
+        const tagRows = groupedByTag[tag];
+        const date = (tagRows[0].date_montreal_tz as string) ?? (tagRows[0].date_utc as string) ?? "";
+        const ranked = ISSUE_KEYS.map((key) => ({
+          key,
+          score: tagRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0),
+        })).sort((a, b) => b.score - a.score);
+        const ranks: Record<string, number> = {};
+        ranked.forEach((e, i) => { ranks[e.key] = i + 1; });
+        return { date, ranks };
+      });
+
+    return { tiles, dateLabel, lastUpdated, history };
   }
 
   const day = buildPeriodData(dayRows);
