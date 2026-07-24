@@ -22,20 +22,26 @@ function headlineOf(t: TreemapIssueTile | undefined): string {
   const h = (t.context && t.context.trim()) || (t.topObject && t.topObject.trim()) || t.issueFr;
   return h.length > 78 ? h.slice(0, 77) + "…" : h;
 }
+// couleur de texte lisible (aplat) sur une pastille de couleur
+function readableOn(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return CREAM;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? INK : CREAM;
+}
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; c: string; r: number };
 
 export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onExit: () => void }) {
   const weights = useMemo(() => tiles.map((t) => Math.max(1, t.relScore || 1)), [tiles]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const grainRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<GameState>(newGame());
   const flapRef = useRef(false);
   const awardedRef = useRef<Set<number>>(new Set());
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   const targetRef = useRef(0);
-  const trailRef = useRef<{ x: number; y: number }[]>([]);
   const partRef = useRef<Particle[]>([]);
   const shakeRef = useRef(0);
 
@@ -51,19 +57,6 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const [saved, setSaved] = useState(false);
   const scoopTimer = useRef<number | null>(null);
 
-  // grain papier (une fois)
-  useEffect(() => {
-    const g = document.createElement("canvas"); g.width = FIELD.width; g.height = FIELD.height;
-    const gx = g.getContext("2d");
-    if (gx) {
-      for (let i = 0; i < 2600; i++) {
-        gx.fillStyle = `rgba(70,55,40,${0.015 + Math.random() * 0.03})`;
-        gx.fillRect(Math.random() * FIELD.width, Math.random() * FIELD.height, 1.4, 1.4);
-      }
-    }
-    grainRef.current = g;
-  }, []);
-
   const startTarget = useCallback(() => {
     const t = nextTarget(weights, Math.floor(performance.now()) || 1, -1);
     targetRef.current = t; setTargetIdx(t);
@@ -71,7 +64,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
 
   const reset = useCallback(() => {
     stateRef.current = newGame(); awardedRef.current = new Set();
-    scoreRef.current = 0; comboRef.current = 0; trailRef.current = []; partRef.current = [];
+    scoreRef.current = 0; comboRef.current = 0; partRef.current = [];
     shakeRef.current = 0; setScore(0); setCombo(0); setScoop(null); startTarget();
   }, [startTarget]);
 
@@ -88,69 +81,48 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
     const diff = difficultyFor(scoreRef.current);
     ctx.save();
     if (shakeRef.current > 0) ctx.translate((Math.random() - 0.5) * shakeRef.current, (Math.random() - 0.5) * shakeRef.current);
+    // fond plat
     ctx.fillStyle = CREAM; ctx.fillRect(0, 0, FIELD.width, FIELD.height);
-    if (grainRef.current) ctx.drawImage(grainRef.current, 0, 0);
 
-    // colonnes de journal
+    // colonnes d'enjeu — aplats de couleur, contour net, aucun effet
     for (const p of s.pipes) {
       const tile = tiles[p.issueIndex % Math.max(tiles.length, 1)];
       const col = tile?.color ?? "#463E3E";
+      const ink = readableOn(col);
       const topH = p.gapY - diff.gap / 2;
       const botY = p.gapY + diff.gap / 2;
       const drawCol = (yTop: number, h: number) => {
         if (h <= 0) return;
-        ctx.fillStyle = INK; ctx.fillRect(p.x, yTop, FIELD.pipeW, h);
-        // texture de lignes de texte
-        ctx.strokeStyle = "rgba(247,244,239,0.10)"; ctx.lineWidth = 1;
-        for (let yy = yTop + 8; yy < yTop + h - 4; yy += 7) {
-          ctx.beginPath(); ctx.moveTo(p.x + 8, yy + 0.5); ctx.lineTo(p.x + FIELD.pipeW - 8, yy + 0.5); ctx.stroke();
-        }
+        ctx.fillStyle = col; ctx.fillRect(p.x, yTop, FIELD.pipeW, h);
+        ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, yTop + 1, FIELD.pipeW - 2, h - 2);
       };
       drawCol(0, topH);
       drawCol(botY, FIELD.height - botY);
-      // bandeaux de couleur au bord de l'ouverture
-      ctx.fillStyle = col;
-      if (topH > 0) ctx.fillRect(p.x, topH - 14, FIELD.pipeW, 14);
-      ctx.fillRect(p.x, botY, FIELD.pipeW, 14);
       // nom de l'enjeu, imprimé verticalement sur la colonne pleine, hors de l'ouverture
       const label = (tile?.issueFr ?? "").toUpperCase();
-      ctx.fillStyle = "rgba(247,244,239,0.92)";
+      ctx.fillStyle = ink;
       ctx.font = "700 15px Georgia, 'Times New Roman', serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       const putLabel = (cy: number, avail: number) => {
         if (avail < 90) return;
         ctx.save(); ctx.translate(p.x + FIELD.pipeW / 2, cy); ctx.rotate(-Math.PI / 2); ctx.fillText(label, 0, 0); ctx.restore();
       };
-      putLabel((topH - 14) / 2, topH - 14);
-      putLabel(botY + 14 + (FIELD.height - botY - 14) / 2, FIELD.height - botY - 14);
+      putLabel(topH / 2, topH);
+      putLabel(botY + (FIELD.height - botY) / 2, FIELD.height - botY);
     }
 
-    // traînée + oiseau
-    trailRef.current.forEach((pt, i) => {
-      const a = (i + 1) / (trailRef.current.length + 1) * 0.35;
-      ctx.globalAlpha = a; ctx.font = "30px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("📰", pt.x, pt.y);
-    });
-    ctx.globalAlpha = 1;
-    // ombre
-    ctx.fillStyle = "rgba(38,34,30,0.16)"; ctx.beginPath();
-    ctx.ellipse(FIELD.birdX, Math.min(s.bird.y + 26, FIELD.height - 6), 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // oiseau — aplat, sans ombre ni traînée
     ctx.save(); ctx.translate(FIELD.birdX, s.bird.y);
     ctx.rotate(Math.max(-0.5, Math.min(0.7, s.bird.vy * 0.9)));
     ctx.font = "34px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("📰", 0, 0);
     ctx.restore();
 
-    // particules
+    // confettis (aplats) sur un scoop
     for (const q of partRef.current) {
       ctx.globalAlpha = Math.max(0, q.life);
       ctx.fillStyle = q.c; ctx.fillRect(q.x, q.y, q.r, q.r);
     }
     ctx.globalAlpha = 1;
-
-    // vignette
-    const vg = ctx.createRadialGradient(FIELD.width / 2, FIELD.height / 2, FIELD.height * 0.3, FIELD.width / 2, FIELD.height / 2, FIELD.height * 0.75);
-    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(40,30,18,0.22)");
-    ctx.fillStyle = vg; ctx.fillRect(0, 0, FIELD.width, FIELD.height);
     ctx.restore();
   }, [tiles]);
 
@@ -191,8 +163,6 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
           setPhase("over");
         } else {
           stateRef.current = next;
-          trailRef.current.push({ x: FIELD.birdX, y: next.bird.y });
-          if (trailRef.current.length > 7) trailRef.current.shift();
         }
       }
       // particules + shake decay (toujours)
