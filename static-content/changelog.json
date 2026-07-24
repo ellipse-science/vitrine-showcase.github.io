@@ -1,5 +1,11 @@
 [
   {
+    "pr": 327,
+    "date": "2026-07-24T22:09:14Z",
+    "note": "feat: easter egg Flappy Enjeux (code Konami dans « De quoi parle-t-on? »)",
+    "version": "2.13.0-beta.1"
+  },
+  {
     "pr": 313,
     "date": "2026-07-24T19:46:31Z",
     "note": "Le module « Que dit-on à l'Assemblée? » se joue maintenant comme une partie de billard : visez une bille-parti vers une poche pour découvrir son profil.",
