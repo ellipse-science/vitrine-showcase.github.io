@@ -1,5 +1,11 @@
 [
   {
+    "pr": 317,
+    "date": "2026-07-24T16:44:35Z",
+    "note": "Une des Unes : la trajectoire de saillance affiche désormais l'heure de publication, cohérente avec la dernière mise à jour du module.",
+    "version": "2.11.0-beta.1"
+  },
+  {
     "pr": 312,
     "date": "2026-07-23T20:08:11Z",
     "note": "Les Unes suivent maintenant fidèlement la saillance des 24 dernières heures, comme le radar « Deux solitudes » : une grande nouvelle de la nuit reste en Une le lendemain matin puis glisse tranquillement vers les manchettes secondaires, au lieu de disparaître d'un coup.",
