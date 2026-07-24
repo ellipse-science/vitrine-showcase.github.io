@@ -4741,3 +4741,107 @@
     padding-top: 0;
   }
 }
+
+/* ===== Easter egg : Flappy Enjeux — « Chasse à la une » (presse deluxe) ===== */
+.flappy-cabinet {
+  --ink: #26221e; --cream: #f7f4ef; --gold: #c29a45;
+  max-width: 900px; margin: 0 auto; background: var(--cream);
+  border: 2px solid var(--ink); border-radius: 10px; overflow: hidden;
+  animation: flappy-in 420ms ease both;
+}
+@keyframes flappy-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .flappy-cabinet { animation: none; } }
+
+.flappy-masthead {
+  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+  background: var(--ink); color: var(--cream);
+  border-bottom: 2px solid var(--gold);
+}
+.flappy-brand {
+  font-family: Georgia, "Times New Roman", serif; font-weight: 700;
+  letter-spacing: 0.14em; font-size: 0.82rem; text-transform: uppercase;
+}
+.flappy-score-hud { margin-left: auto; font-family: Georgia, serif; font-size: 0.9rem; }
+.flappy-score-hud b { color: var(--gold); font-size: 1.05rem; }
+.flappy-score-hud em { color: var(--gold); font-style: normal; }
+.flappy-quit {
+  background: transparent; color: var(--cream); border: 1px solid rgba(247, 244, 239, 0.4);
+  border-radius: 4px; width: 26px; height: 26px; cursor: pointer; line-height: 1;
+}
+.flappy-quit:hover { background: rgba(247, 244, 239, 0.15); }
+
+.flappy-target {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px 14px;
+  border-bottom: 1px solid rgba(38, 34, 30, 0.18); background: rgba(194, 154, 69, 0.08);
+}
+.flappy-target-kicker { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.flappy-target-head { font-family: Georgia, serif; font-style: italic; font-size: 1.02rem; color: var(--ink); }
+
+.flappy-stage { position: relative; width: 100%; line-height: 0; }
+.flappy-canvas {
+  width: 100%; height: auto; display: block; touch-action: none; cursor: pointer;
+  background: var(--cream);
+}
+
+.flappy-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px;
+  align-items: center; justify-content: center; text-align: center; padding: 24px;
+  background: rgba(247, 244, 239, 0.9); line-height: 1.5;
+}
+.flappy-title {
+  font-family: Georgia, serif; font-weight: 700; font-size: 1.7rem; margin: 0; color: var(--ink);
+  border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+}
+.flappy-hint { margin: 0; font-size: 0.92rem; max-width: 46ch; color: var(--ink); }
+.flappy-score { margin: 0; font-size: 1.1rem; font-family: Georgia, serif; }
+.flappy-score b { color: var(--gold); font-size: 1.6rem; }
+
+.flappy-cta {
+  padding: 8px 22px; border: 2px solid var(--ink); border-radius: 6px; cursor: pointer;
+  background: var(--gold); color: var(--ink); font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; font-size: 0.9rem;
+}
+.flappy-cta:hover { background: var(--ink); color: var(--cream); }
+
+.flappy-initials { display: flex; gap: 8px; align-items: center; }
+.flappy-initials label { font-size: 0.85rem; }
+.flappy-initials input {
+  width: 4.2rem; text-transform: uppercase; text-align: center; letter-spacing: 0.35em;
+  font-size: 1.2rem; padding: 4px; border: 2px solid var(--ink); border-radius: 4px; font-family: Georgia, serif;
+}
+.flappy-initials button { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; cursor: pointer; }
+.flappy-board { list-style: none; padding: 0; margin: 0; width: 240px; font-family: Georgia, serif; }
+.flappy-board li { display: grid; grid-template-columns: 2rem 1fr 3rem; gap: 8px; padding: 3px 0; border-bottom: 1px dotted rgba(38,34,30,0.25); }
+.flappy-board li span:last-child { text-align: right; color: var(--gold); font-weight: 700; }
+.flappy-board li.is-new { color: #B00020; font-weight: 700; }
+.flappy-actions { display: flex; gap: 10px; }
+.flappy-actions button:not(.flappy-cta) { padding: 8px 16px; border: 1px solid var(--ink); border-radius: 6px; background: #fff; cursor: pointer; }
+
+.flappy-scoop {
+  position: absolute; top: 16%; left: 50%; transform: translateX(-50%) rotate(-6deg);
+  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  animation: flappy-scoop 1100ms ease-out both;
+}
+.flappy-scoop-stamp {
+  font-family: Georgia, serif; font-weight: 800; font-size: 2.2rem; letter-spacing: 0.08em;
+  color: var(--gold); -webkit-text-stroke: 1.5px var(--ink); text-stroke: 1.5px var(--ink);
+}
+.flappy-scoop-issue { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); }
+@keyframes flappy-scoop {
+  0% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(0.4); }
+  25% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1.1); }
+  70% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(1); }
+}
+
+.flappy-foot { margin: 0; padding: 6px 14px; font-size: 0.72rem; color: rgba(38,34,30,0.6); border-top: 1px solid rgba(38,34,30,0.14); text-align: center; }
+
+@media (max-width: 640px) {
+  .flappy-brand { font-size: 0.66rem; letter-spacing: 0.08em; }
+  .flappy-target-head { font-size: 0.9rem; }
+  .flappy-title { font-size: 1.3rem; }
+  .flappy-hint { font-size: 0.82rem; }
+}
