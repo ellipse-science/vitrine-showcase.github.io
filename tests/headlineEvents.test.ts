@@ -416,6 +416,18 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
     expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
   });
+  it("bloc de nuit 23-03 (publié à 4 h LE LENDEMAIN) → « aujourd’hui 4 h », jamais « hier » (jour = publication, #317)", () => {
+    // Le bloc 23-03 commence à 23 h la VEILLE mais est publié à 4 h le jour de
+    // référence : le mot-jour doit suivre la publication, pas le début du bloc.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl (début 23 h le 23) → publié 4 h le 24
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h le 24
+    ] as never, thr, "2026-07-24")!;
+    const overnight = t.points[t.points.length - 2];   // le point 23-03
+    expect(overnight.timeLabel).toMatch(/4\s*h/);       // heure de publication
+    expect(overnight.timeLabel).toContain("aujourd");   // « aujourd’hui », jour de publication
+    expect(overnight.timeLabel).not.toContain("hier");  // surtout pas le jour du début
+  });
   it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
     const t = buildSalienceTrend([
       { blockUtc: "2026-07-24T19", qc: 20, present: true },  // 15-19 Mtl → publié 20 h

@@ -798,21 +798,27 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   if (!blockDateMtl) return null;
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
-  const { dateIso } = mtlDateAndHour(t);   // date MTL du DÉBUT du bloc (ancre le jour)
-  // Heure affichée AU PUBLIC = heure de PUBLICATION du bloc = fin (+4 h) + 1 h
-  // (réforme #195, même règle que publicationHourFromInterval / le pied de module).
-  // JAMAIS l'heure de début : un bloc 03-07 Mtl est PUBLIÉ à 8 h, pas « 3 h ».
-  const endHourMtl = mtlDateAndHour(new Date(t.getTime() + 4 * 3_600_000)).hour;
-  const pubHour = (endHourMtl % 24) + 1;   // {7,11,15,19,23,3} → {8,12,16,20,24=minuit,4}
-  const blockDay = isoDay(dateIso), refDay = isoDay(blockDateMtl);
+  // Jour ET heure affichés AU PUBLIC = l'instant de PUBLICATION du bloc = fin
+  // (+4 h) + 1 h (réforme #195, même règle que publicationHourFromInterval / le
+  // pied de module). JAMAIS le début : un bloc 03-07 Mtl est PUBLIÉ à 8 h, pas
+  // « 3 h ». Le JOUR doit suivre la publication, pas le début : sinon un bloc de
+  // nuit 23-03 (publié à 4 h LE LENDEMAIN) s'étiquette « hier 4 h » (retour Copilot).
+  const { dateIso: pubDateIso, hour: pubHourReal } = mtlDateAndHour(new Date(t.getTime() + 5 * 3_600_000));
+  // Publication pile à minuit (bloc du soir 19-23) : affichée « minuit » (24 h) et
+  // rattachée au jour qui vient de finir (celui du bloc), pas au petit matin du
+  // lendemain — le « moment » reste « cette nuit ».
+  const isMidnight = pubHourReal === 0;
+  const pubHour = isMidnight ? 24 : pubHourReal;   // {8,12,16,20,minuit,4}
+  const anchorIso = isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso;
+  const blockDay = isoDay(anchorIso), refDay = isoDay(blockDateMtl);
   if (blockDay === null || refDay === null) return null;
   const dayDiff = refDay - blockDay;
   // Les heures de PUBLICATION tombent PILE sur la grille d'éditions {0,4,8,12,16,20}
-  // (24 → minuit → 0) : plus besoin de « snapper » comme le faisait l'heure de début.
+  // (minuit → 0) : plus besoin de « snapper » comme le faisait l'heure de début.
   const momentHour = pubHour % 24;
   if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[momentHour], hour: pubHour };
   if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[momentHour], hour: pubHour };
-  const dateFr = formatDateFr(dateIso);
+  const dateFr = formatDateFr(anchorIso);
   const asDate = `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
   return { dayWord: asDate, moment: asDate, hour: pubHour };
 }
