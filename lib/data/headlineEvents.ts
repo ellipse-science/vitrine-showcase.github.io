@@ -792,25 +792,35 @@ export type SalienceTrend = {
 
 // Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
 // (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
-// la journée et l'heure arrondie à l'édition la plus proche.
+// la journée et l'heure de PUBLICATION du bloc (fin + 1 h, réforme #195).
 function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   { dayWord: string; moment: string; hour: number } | null {
   if (!blockDateMtl) return null;
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
-  const { dateIso, hour } = mtlDateAndHour(t);   // heure MTL RÉELLE du bloc (gère EDT/EST)
-  const blockDay = isoDay(dateIso), refDay = isoDay(blockDateMtl);
+  // Jour ET heure affichés AU PUBLIC = l'instant de PUBLICATION du bloc = fin
+  // (+4 h) + 1 h (réforme #195, même règle que publicationHourFromInterval / le
+  // pied de module). JAMAIS le début : un bloc 03-07 Mtl est PUBLIÉ à 8 h, pas
+  // « 3 h ». Le JOUR doit suivre la publication, pas le début : sinon un bloc de
+  // nuit 23-03 (publié à 4 h LE LENDEMAIN) s'étiquette « hier 4 h » (retour Copilot).
+  const { dateIso: pubDateIso, hour: pubHourReal } = mtlDateAndHour(new Date(t.getTime() + 5 * 3_600_000));
+  // Publication pile à minuit (bloc du soir 19-23) : affichée « minuit » (24 h) et
+  // rattachée au jour qui vient de finir (celui du bloc), pas au petit matin du
+  // lendemain — le « moment » reste « cette nuit ».
+  const isMidnight = pubHourReal === 0;
+  const pubHour = isMidnight ? 24 : pubHourReal;   // {8,12,16,20,minuit,4}
+  const anchorIso = isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso;
+  const blockDay = isoDay(anchorIso), refDay = isoDay(blockDateMtl);
   if (blockDay === null || refDay === null) return null;
-  // Moment de la journée (« hier soir ») = heure arrondie à l'édition la plus
-  // proche, pour le libellé de tendance. L'heure exacte (`hour`) sert au survol.
-  const snapped = UPDATE_HOURS_MTL.reduce(
-    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p), UPDATE_HOURS_MTL[0]);
   const dayDiff = refDay - blockDay;
-  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[snapped], hour };
-  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[snapped], hour };
-  const dateFr = formatDateFr(dateIso);
+  // Les heures de PUBLICATION tombent PILE sur la grille d'éditions {0,4,8,12,16,20}
+  // (minuit → 0) : plus besoin de « snapper » comme le faisait l'heure de début.
+  const momentHour = pubHour % 24;
+  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[momentHour], hour: pubHour };
+  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[momentHour], hour: pubHour };
+  const dateFr = formatDateFr(anchorIso);
   const asDate = `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
-  return { dayWord: asDate, moment: asDate, hour };
+  return { dayWord: asDate, moment: asDate, hour: pubHour };
 }
 
 // Construit la trajectoire à partir de la série 6 blocs. Étiquette chaque bloc à
@@ -844,7 +854,8 @@ function buildSalienceTrend(
     // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
     const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
-    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
+    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
+      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour} h`}`;
     return {
       timeLabel,
       level: tier ? tier.label : "Absente",
