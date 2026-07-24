@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   KONAMI, matchKonami, stepPhysics, hitTest, insertScore, sanitizeInitials,
-  CFG, type GameState, type ScoreEntry,
+  difficultyFor, nextTarget, comboPoints, newGame, FIELD, PHYS,
+  type GameState, type ScoreEntry, type Diff,
 } from "../lib/flappy";
 
-const fresh = (): GameState => ({ bird: { y: 100, vy: 0 }, pipes: [], score: 0, over: false, t: 0 });
+const W = [1, 1, 1, 1]; // poids uniformes (4 enjeux)
+const easy: Diff = difficultyFor(0);
 
 describe("matchKonami", () => {
   it("matches the full sequence at the tail", () => {
@@ -17,49 +19,100 @@ describe("matchKonami", () => {
   });
 });
 
+describe("difficultyFor", () => {
+  it("narrows the gap and speeds up as score rises", () => {
+    const a = difficultyFor(0), b = difficultyFor(50);
+    expect(b.gap).toBeLessThan(a.gap);
+    expect(b.speed).toBeGreaterThan(a.speed);
+    expect(b.spawnMs).toBeLessThan(a.spawnMs);
+  });
+  it("clamps to sane floors at very high score", () => {
+    const d = difficultyFor(10000);
+    expect(d.gap).toBeGreaterThanOrEqual(155);
+    expect(d.speed).toBeLessThanOrEqual(0.46);
+    expect(d.spawnMs).toBeGreaterThanOrEqual(950);
+  });
+});
+
+describe("nextTarget", () => {
+  it("returns an in-range index", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const t = nextTarget(W, seed, -1);
+      expect(t).toBeGreaterThanOrEqual(0);
+      expect(t).toBeLessThan(W.length);
+    }
+  });
+  it("avoids the given index", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      expect(nextTarget(W, seed, 2)).not.toBe(2);
+    }
+  });
+  it("is deterministic for a given seed", () => {
+    expect(nextTarget(W, 7, -1)).toBe(nextTarget(W, 7, -1));
+  });
+});
+
+describe("comboPoints", () => {
+  it("grows with combo then caps", () => {
+    expect(comboPoints(0)).toBe(2);
+    expect(comboPoints(1)).toBe(3);
+    expect(comboPoints(100)).toBe(9);
+  });
+});
+
 describe("stepPhysics", () => {
   it("applies gravity when not flapping", () => {
-    const s = stepPhysics(fresh(), 16, false, 12);
+    const s = stepPhysics(newGame(), 16, false, easy, W);
     expect(s.bird.vy).toBeGreaterThan(0);
-    expect(s.bird.y).toBeGreaterThan(100);
+    expect(s.bird.y).toBeGreaterThan(FIELD.height / 2);
   });
   it("flap sets an upward velocity", () => {
-    const s = stepPhysics(fresh(), 16, true, 12);
-    expect(s.bird.vy).toBe(CFG.flapV);
+    const s = stepPhysics(newGame(), 16, true, easy, W);
+    expect(s.bird.vy).toBe(PHYS.flapV);
   });
-  it("spawns pipes over time and scrolls them left", () => {
-    let s = fresh();
-    for (let i = 0; i < 120; i++) s = stepPhysics(s, 16, false, 12);
+  it("spawns pipes over time (with valid issue index) and scrolls them left", () => {
+    let s = newGame();
+    for (let i = 0; i < 140; i++) s = stepPhysics(s, 16, false, easy, W);
     expect(s.pipes.length).toBeGreaterThan(0);
+    expect(s.pipes[0].issueIndex).toBeGreaterThanOrEqual(0);
+    expect(s.pipes[0].issueIndex).toBeLessThan(W.length);
     const x0 = s.pipes[0].x;
-    s = stepPhysics(s, 16, false, 12);
+    s = stepPhysics(s, 16, false, easy, W);
     expect(s.pipes[0].x).toBeLessThan(x0);
   });
+  it("keeps spawned gaps within the playable band", () => {
+    let s = newGame();
+    for (let i = 0; i < 400; i++) s = stepPhysics(s, 16, false, easy, W);
+    for (const p of s.pipes) {
+      expect(p.gapY - easy.gap / 2).toBeGreaterThanOrEqual(FIELD.pad - 1);
+      expect(p.gapY + easy.gap / 2).toBeLessThanOrEqual(FIELD.height - FIELD.pad + 1);
+    }
+  });
   it("does not mutate the input state", () => {
-    const s = fresh(); const y = s.bird.y;
-    stepPhysics(s, 16, true, 12);
+    const s = newGame(); const y = s.bird.y;
+    stepPhysics(s, 16, true, easy, W);
     expect(s.bird.y).toBe(y);
   });
 });
 
 describe("hitTest", () => {
   it("is false when the bird is in open space", () => {
-    expect(hitTest(fresh())).toBe(false);
+    expect(hitTest(newGame(), easy)).toBe(false);
   });
   it("is true when the bird hits the floor", () => {
-    const s = fresh(); s.bird.y = CFG.height + 10;
-    expect(hitTest(s)).toBe(true);
+    const s = newGame(); s.bird.y = FIELD.height + 10;
+    expect(hitTest(s, easy)).toBe(true);
   });
   it("is true when overlapping a pipe outside its gap", () => {
-    const s = fresh();
-    s.bird.y = 5; // near ceiling, above any reasonable gap
-    s.pipes = [{ x: CFG.birdX, gapY: 200, issueIndex: 0, passed: false }];
-    expect(hitTest(s)).toBe(true);
+    const s = newGame();
+    s.bird.y = 5;
+    s.pipes = [{ id: 1, x: FIELD.birdX, gapY: 300, issueIndex: 0, passed: false }];
+    expect(hitTest(s, easy)).toBe(true);
   });
   it("is false when passing through the gap", () => {
-    const s = fresh();
-    s.pipes = [{ x: CFG.birdX, gapY: s.bird.y, issueIndex: 0, passed: false }];
-    expect(hitTest(s)).toBe(false);
+    const s = newGame();
+    s.pipes = [{ id: 1, x: FIELD.birdX, gapY: s.bird.y, issueIndex: 0, passed: false }];
+    expect(hitTest(s, easy)).toBe(false);
   });
 });
 
