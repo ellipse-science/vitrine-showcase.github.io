@@ -1894,6 +1894,101 @@
   .parti-ton-label { display: none; }
   .parti-sail-label { display: none; }
 
+  /* Mini-jeu de billard — remplace l'ancien tableau CSS Grid des partis actifs
+     (puis l'ancien nuage de points ton × richesse, peu lisible — retour
+     utilisateur du 2026-07-23). SVG fait main, même esprit que .sol-radar
+     (DeuxSolitudesRadar), mais la position des billes est pilotée image par
+     image par la boucle de physique (AssembleeBilliard.tsx) : PAS de
+     transition CSS sur .billiard-ball, elle retarderait chaque frame et
+     rendrait le mouvement visqueux. */
+  .ass-billiard-wrap { position: relative; max-width: 900px; margin: 8px auto 20px; touch-action: none; }
+  .ass-billiard { display: block; width: 100%; height: auto; overflow: visible; }
+  .billiard-table { fill: var(--paper-deep); stroke: var(--rule); stroke-width: 1; }
+  .billiard-pocket { fill: var(--ink); opacity: 0.85; }
+  .billiard-pocket-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+  .billiard-aim-line { stroke: var(--cordovan); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0.7; pointer-events: none; }
+  .billiard-ball { cursor: grab; }
+  .billiard-ball:active { cursor: grabbing; }
+  .billiard-ball:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .ball-shadow { fill: var(--ink); opacity: 0.14; }
+  .ball-ring { fill: none; stroke-width: 3; }
+  .ball-bg { fill: var(--paper); }
+
+  /* Banc « hors chambre » : partis sans siège (ex. PCQ), donc sans donnée de
+     présence à jouer. Bille en pointillé et translucide (pas d'ombre : elle
+     n'est pas « sur » la table) plutôt que retirée — reste visible et
+     rattachée au même vocabulaire visuel que le jeu, sans fausse promesse
+     d'interaction — retour utilisateur du 2026-07-24. */
+  .billiard-bench-rule { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }
+  .billiard-bench-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+  .billiard-ghost-ball { opacity: 0.55; }
+  .ghost-ring { fill: none; stroke-width: 3; stroke-dasharray: 3 3; }
+  .ghost-bg { fill: var(--paper-deep); }
+  .billiard-ghost-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+
+  .billiard-popup {
+    position: absolute;
+    z-index: 60;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 320px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 22px 24px;
+    border: 1px solid var(--paper);
+  }
+  .billiard-popup .k {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--paper);
+    margin-bottom: 8px;
+  }
+  .billiard-popup .pocket-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+  .billiard-popup .pocket-body { margin: 0; opacity: 0.92; }
+  .billiard-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--paper);
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+  }
+  .billiard-popup-close:hover { opacity: 1; }
+
   .ass-row {
     display: grid;
     grid-template-columns: 84px 1fr 140px 92px 76px;
