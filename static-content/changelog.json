@@ -1,5 +1,11 @@
 [
   {
+    "pr": 318,
+    "date": "2026-07-24T17:07:48Z",
+    "note": "Le module des enjeux saillants est repensé : la vue du jour montre la croissance de la saillance de chaque enjeu, et deux nouvelles vues (« Cette semaine », « Ce mois ») retracent l'évolution du classement dans le temps avec, au survol, les dernières actualités liées à chaque enjeu.",
+    "version": "2.12.0-beta.0"
+  },
+  {
     "pr": 317,
     "date": "2026-07-24T16:44:35Z",
     "note": "Une des Unes : la trajectoire de saillance affiche désormais l'heure de publication, cohérente avec la dernière mise à jour du module.",
