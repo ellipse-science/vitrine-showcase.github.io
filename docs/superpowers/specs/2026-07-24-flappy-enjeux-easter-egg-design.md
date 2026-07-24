@@ -91,3 +91,35 @@ Branche `feat/easter-egg-flappy-enjeux`, PR vers `main`. Vérifs : `tsc --noEmit
 `next build`, `vitest run`, essai manuel (Konami → jeu → score → tableau), desktop + mobile.
 Étiquettes module/signalement selon le protocole du dépôt ; provenance IA (trailer `Assisted-by`),
 jamais de co-auteur. Registre méthodologie : easter egg sans impact données → aucune mise à jour métho.
+
+---
+
+## v2 — « Chasse à la une » (rehaul AAA)
+
+Itération validée avec l'utilisateur : rendre le jeu plus grand, plus beau, **informatif**, et
+« AAA » rejouable.
+
+**Mécanique (informative).** Flappy classique **à une seule ouverture**, qui **durcit avec le
+score** (comme le Flappy Bird original) : l'écart rétrécit, la vitesse et la cadence d'apparition
+montent. Chaque tuyau est un **enjeu réel** (fréquence pondérée par la saillance). Le HUD affiche
+une **manchette cible** (`À LA UNE ▸ {enjeu} — «{manchette}»`) tirée des vraies données. Franchir
+le tuyau de **l'enjeu cible** = **SCOOP** (points × combo, tampon doré, nouvelle cible) ; franchir
+un autre enjeu casse le combo (le « coût »). On apprend l'agenda et ses manchettes en jouant.
+
+**Esthétique presse deluxe** (tout dessiné au canvas, sans asset externe → CSP-safe) : fond crème
++ grain papier + vignette ; tuyaux = **colonnes de journal** encrées avec bandeau de couleur de
+l'enjeu et **nom imprimé verticalement sur la colonne pleine, jamais en travers de l'ouverture** ;
+oiseau **📰 avec traînée** ; accents **or**, typo à empattement pour le HUD ; bandeau **« ÉDITION
+SPÉCIALE »**. Juice : tampon SCOOP, confettis de papier journal, léger screen-shake sur erreur.
+
+**Correctifs demandés.** Stage plus **grand** et responsive (jusqu'à ~900 px, 3:2) ; **cadre**
+« cabinet de presse » autour du jeu (bordure + masthead + filet doré + ombre) ; **libellés hors
+des ouvertures** ; **transition fluide** data-viz → jeu (le graphique de rang s'efface/glisse
+pendant que le cabinet apparaît en zoom + balayage de masthead, ~600 ms, réversible).
+
+**Architecture.** `lib/flappy.ts` étendu (modèle sans score interne : `Bird/Pipe/GameState`,
+`difficultyFor(score)`, `nextTarget(weights, seed, avoid)`, `comboPoints(combo)`, `stepPhysics`
+paramétré par la difficulté, `hitTest`) + tests vitest. `FlappyEnjeux.tsx` redessiné (presse
+deluxe, HUD HTML crisp + canvas de jeu, cible/scoops/combos, particules, cabinet, transition).
+CSS `.flappy-*` (cabinet, masthead, keyframes). Aucune dépendance ajoutée ; rendu seulement en
+mode secret ; oiseau 📰 conservé.
