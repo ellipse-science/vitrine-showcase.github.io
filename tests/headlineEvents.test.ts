@@ -434,6 +434,37 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
   });
+  it("étiquette l'heure de chaque point par sa PUBLICATION (fin + 1 h, réforme #195), pas son début", () => {
+    // Bloc UTC 07 = 03:00–07:00 Montréal (EDT) → PUBLIÉ à 8 h : le label doit dire
+    // « 8 h », jamais « 3 h » (l'heure de début), cohérent avec le pied de module.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl → publié 4 h
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
+    expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
+  });
+  it("bloc de nuit 23-03 (publié à 4 h LE LENDEMAIN) → « aujourd’hui 4 h », jamais « hier » (jour = publication, #317)", () => {
+    // Le bloc 23-03 commence à 23 h la VEILLE mais est publié à 4 h le jour de
+    // référence : le mot-jour doit suivre la publication, pas le début du bloc.
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T03", qc: 30, present: true },  // 23-03 Mtl (début 23 h le 23) → publié 4 h le 24
+      { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h le 24
+    ] as never, thr, "2026-07-24")!;
+    const overnight = t.points[t.points.length - 2];   // le point 23-03
+    expect(overnight.timeLabel).toMatch(/4\s*h/);       // heure de publication
+    expect(overnight.timeLabel).toContain("aujourd");   // « aujourd’hui », jour de publication
+    expect(overnight.timeLabel).not.toContain("hier");  // surtout pas le jour du début
+  });
+  it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-24T19", qc: 20, present: true },  // 15-19 Mtl → publié 20 h
+      { blockUtc: "2026-07-24T23", qc: 30, present: true },  // 19-23 Mtl → publié minuit
+    ] as never, thr, "2026-07-24")!;
+    const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
+    expect(now.timeLabel).toContain("minuit");
+  });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
     expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 }] as never, thr, "2026-07-20")).toBeNull();
   });

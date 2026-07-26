@@ -1898,6 +1898,101 @@
   .parti-ton-label { display: none; }
   .parti-sail-label { display: none; }
 
+  /* Mini-jeu de billard — remplace l'ancien tableau CSS Grid des partis actifs
+     (puis l'ancien nuage de points ton × richesse, peu lisible — retour
+     utilisateur du 2026-07-23). SVG fait main, même esprit que .sol-radar
+     (DeuxSolitudesRadar), mais la position des billes est pilotée image par
+     image par la boucle de physique (AssembleeBilliard.tsx) : PAS de
+     transition CSS sur .billiard-ball, elle retarderait chaque frame et
+     rendrait le mouvement visqueux. */
+  .ass-billiard-wrap { position: relative; max-width: 900px; margin: 8px auto 20px; touch-action: none; }
+  .ass-billiard { display: block; width: 100%; height: auto; overflow: visible; }
+  .billiard-table { fill: var(--paper-deep); stroke: var(--rule); stroke-width: 1; }
+  .billiard-pocket { fill: var(--ink); opacity: 0.85; }
+  .billiard-pocket-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+  .billiard-aim-line { stroke: var(--cordovan); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0.7; pointer-events: none; }
+  .billiard-ball { cursor: grab; }
+  .billiard-ball:active { cursor: grabbing; }
+  .billiard-ball:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .ball-shadow { fill: var(--ink); opacity: 0.14; }
+  .ball-ring { fill: none; stroke-width: 3; }
+  .ball-bg { fill: var(--paper); }
+
+  /* Banc « hors chambre » : partis sans siège (ex. PCQ), donc sans donnée de
+     présence à jouer. Bille en pointillé et translucide (pas d'ombre : elle
+     n'est pas « sur » la table) plutôt que retirée — reste visible et
+     rattachée au même vocabulaire visuel que le jeu, sans fausse promesse
+     d'interaction — retour utilisateur du 2026-07-24. */
+  .billiard-bench-rule { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }
+  .billiard-bench-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+  .billiard-ghost-ball { opacity: 0.55; }
+  .ghost-ring { fill: none; stroke-width: 3; stroke-dasharray: 3 3; }
+  .ghost-bg { fill: var(--paper-deep); }
+  .billiard-ghost-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    fill: var(--ink-softer);
+    text-anchor: middle;
+  }
+
+  .billiard-popup {
+    position: absolute;
+    z-index: 60;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 320px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 22px 24px;
+    border: 1px solid var(--paper);
+  }
+  .billiard-popup .k {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--paper);
+    margin-bottom: 8px;
+  }
+  .billiard-popup .pocket-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+  .billiard-popup .pocket-body { margin: 0; opacity: 0.92; }
+  .billiard-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--paper);
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+  }
+  .billiard-popup-close:hover { opacity: 1; }
+
   .ass-row {
     display: grid;
     grid-template-columns: 84px 1fr 140px 92px 76px;
@@ -2287,6 +2382,183 @@
     text-transform: uppercase;
     color: var(--ink-softer);
   }
+
+  /* Panneau « À la une » du graphique de rang : liste d'actualités cliquables. */
+  .fil-article {
+    display: block;
+    text-decoration: none;
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .fil-article:first-child { padding-top: 0; }
+  .fil-article:last-child { border-bottom: none; }
+  .fil-article .fil-titre {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.34;
+    color: var(--ink);
+    transition: color 0.15s ease;
+  }
+  a.fil-article:hover .fil-titre { color: var(--cordovan); }
+  .fil-article .fil-source {
+    display: block;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+
+  /* --- Treemap de croissance (vue Aujourd'hui) : tuiles pleines + % de croissance --- */
+  .treemap-growth {
+    position: relative;
+    height: 680px;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .treemap-growth .gt-container {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 1px;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), top 0.6s cubic-bezier(0.16, 1, 0.3, 1), width 0.6s cubic-bezier(0.16, 1, 0.3, 1), height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .treemap-growth .gt-tile {
+    flex: 1;
+    min-height: 0;
+    background: var(--c);
+    color: #F3ECDD;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    text-decoration: none;
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    transition: filter 0.2s ease;
+  }
+  a.gt-tile { cursor: pointer; }
+  .treemap-growth .gt-tile:hover { filter: brightness(1.12); }
+  .treemap-growth .gt-tile::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--c) 78%, #1a1410 22%);
+    color: #F3ECDD;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 12px 16px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .treemap-growth .gt-tile:hover::after { opacity: 1; }
+  .treemap-growth .gt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
+  .treemap-growth .gt-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .treemap-growth .gt-enjeu {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #F3ECDD;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .treemap-growth .gt-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    color: #F3ECDD;
+    opacity: 0.9;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .treemap-growth .gt-pct {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: #F3ECDD;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+  .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
+  .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
+  .treemap-growth .gt-context {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    color: #F3ECDD;
+    opacity: 0.92;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    margin: 0;
+    padding-top: 8px;
+  }
+  .treemap-growth .gt-compact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+  }
+  .treemap-growth .gt-compact .gt-enjeu { font-size: 8px; opacity: 0.85; }
+  /* tailles */
+  .treemap-growth .gt-large { padding: 16px 18px; }
+  .treemap-growth .gt-large .gt-enjeu { font-size: 10px; }
+  .treemap-growth .gt-large .gt-name { font-size: 15px; }
+  .treemap-growth .gt-large .gt-pct { font-size: 28px; }
+  .treemap-growth .gt-large .gt-context { font-size: 18px; }
+  .treemap-growth .gt-medium { padding: 13px 15px; }
+  .treemap-growth .gt-medium .gt-enjeu { font-size: 9px; }
+  .treemap-growth .gt-medium .gt-name { font-size: 13px; }
+  .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
+  .treemap-growth .gt-medium .gt-context { font-size: 14px; }
+  .treemap-growth .gt-small { padding: 11px 12px; }
+  .treemap-growth .gt-small .gt-enjeu { font-size: 8.5px; }
+  .treemap-growth .gt-small .gt-name { font-size: 11px; }
+  .treemap-growth .gt-small .gt-pct { font-size: 16px; }
+  .treemap-growth .gt-tiny { padding: 6px 8px; }
+  .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 36px;
@@ -2947,6 +3219,7 @@
 
     /* ── Treemap desktop → caché ; liste mobile → visible ── */
     .treemap { display: none; }
+    .treemap-growth { display: none; }
     .treemap-mobile { display: block; margin-top: 4px; }
     .treemap-legend { display: none; }
 
@@ -4471,4 +4744,108 @@
   .journal-entry-date {
     padding-top: 0;
   }
+}
+
+/* ===== Easter egg : Flappy Enjeux — « Chasse à la une » (presse deluxe) ===== */
+.flappy-cabinet {
+  --ink: #26221e; --cream: #f7f4ef; --gold: #c29a45;
+  max-width: 900px; margin: 0 auto; background: var(--cream);
+  border: 2px solid var(--ink); border-radius: 10px; overflow: hidden;
+  animation: flappy-in 420ms ease both;
+}
+@keyframes flappy-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .flappy-cabinet { animation: none; } }
+
+.flappy-masthead {
+  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+  background: var(--ink); color: var(--cream);
+  border-bottom: 2px solid var(--gold);
+}
+.flappy-brand {
+  font-family: Georgia, "Times New Roman", serif; font-weight: 700;
+  letter-spacing: 0.14em; font-size: 0.82rem; text-transform: uppercase;
+}
+.flappy-score-hud { margin-left: auto; font-family: Georgia, serif; font-size: 0.9rem; }
+.flappy-score-hud b { color: var(--gold); font-size: 1.05rem; }
+.flappy-score-hud em { color: var(--gold); font-style: normal; }
+.flappy-quit {
+  background: transparent; color: var(--cream); border: 1px solid rgba(247, 244, 239, 0.4);
+  border-radius: 4px; width: 26px; height: 26px; cursor: pointer; line-height: 1;
+}
+.flappy-quit:hover { background: rgba(247, 244, 239, 0.15); }
+
+.flappy-target {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px 14px;
+  border-bottom: 1px solid rgba(38, 34, 30, 0.18); background: rgba(194, 154, 69, 0.08);
+}
+.flappy-target-kicker { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.flappy-target-head { font-family: Georgia, serif; font-style: italic; font-size: 1.02rem; color: var(--ink); }
+
+.flappy-stage { position: relative; width: 100%; line-height: 0; }
+.flappy-canvas {
+  width: 100%; height: auto; display: block; touch-action: none; cursor: pointer;
+  background: var(--cream);
+}
+
+.flappy-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px;
+  align-items: center; justify-content: center; text-align: center; padding: 24px;
+  background: rgba(247, 244, 239, 0.9); line-height: 1.5;
+}
+.flappy-title {
+  font-family: Georgia, serif; font-weight: 700; font-size: 1.7rem; margin: 0; color: var(--ink);
+  border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+}
+.flappy-hint { margin: 0; font-size: 0.92rem; max-width: 46ch; color: var(--ink); }
+.flappy-score { margin: 0; font-size: 1.1rem; font-family: Georgia, serif; }
+.flappy-score b { color: var(--gold); font-size: 1.6rem; }
+
+.flappy-cta {
+  padding: 8px 22px; border: 2px solid var(--ink); border-radius: 6px; cursor: pointer;
+  background: var(--gold); color: var(--ink); font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; font-size: 0.9rem;
+}
+.flappy-cta:hover { background: var(--ink); color: var(--cream); }
+
+.flappy-initials { display: flex; gap: 8px; align-items: center; }
+.flappy-initials label { font-size: 0.85rem; }
+.flappy-initials input {
+  width: 4.2rem; text-transform: uppercase; text-align: center; letter-spacing: 0.35em;
+  font-size: 1.2rem; padding: 4px; border: 2px solid var(--ink); border-radius: 4px; font-family: Georgia, serif;
+}
+.flappy-initials button { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; cursor: pointer; }
+.flappy-board { list-style: none; padding: 0; margin: 0; width: 240px; font-family: Georgia, serif; }
+.flappy-board li { display: grid; grid-template-columns: 2rem 1fr 3rem; gap: 8px; padding: 3px 0; border-bottom: 1px dotted rgba(38,34,30,0.25); }
+.flappy-board li span:last-child { text-align: right; color: var(--gold); font-weight: 700; }
+.flappy-board li.is-new { color: #B00020; font-weight: 700; }
+.flappy-actions { display: flex; gap: 10px; }
+.flappy-actions button:not(.flappy-cta) { padding: 8px 16px; border: 1px solid var(--ink); border-radius: 6px; background: #fff; cursor: pointer; }
+
+.flappy-scoop {
+  position: absolute; top: 16%; left: 50%; transform: translateX(-50%) rotate(-6deg);
+  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  animation: flappy-scoop 1100ms ease-out both;
+}
+.flappy-scoop-stamp {
+  font-family: Georgia, serif; font-weight: 800; font-size: 2.2rem; letter-spacing: 0.08em;
+  color: var(--gold); -webkit-text-stroke: 1.5px var(--ink); text-stroke: 1.5px var(--ink);
+}
+.flappy-scoop-issue { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); }
+@keyframes flappy-scoop {
+  0% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(0.4); }
+  25% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1.1); }
+  70% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(1); }
+}
+
+.flappy-foot { margin: 0; padding: 6px 14px; font-size: 0.72rem; color: rgba(38,34,30,0.6); border-top: 1px solid rgba(38,34,30,0.14); text-align: center; }
+
+@media (max-width: 640px) {
+  .flappy-brand { font-size: 0.66rem; letter-spacing: 0.08em; }
+  .flappy-target-head { font-size: 0.9rem; }
+  .flappy-title { font-size: 1.3rem; }
+  .flappy-hint { font-size: 0.82rem; }
 }
