@@ -338,7 +338,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
 }
 
 // Exported for unit testing only — not part of the public API.
-export const __test__ = { realText, shortenPledge };
+export const __test__ = { realText, shortenPledge, buildView };
 
 export async function loadPolimetre(): Promise<PolimetreData | null> {
   let raw: string;
