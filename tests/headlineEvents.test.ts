@@ -358,6 +358,79 @@ describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
   });
 });
 
+// La PART d'attention par bloc (#304) est produite ici, en amont de la tendance :
+// c'est elle qui borne le chiffre affiché sous la Une. Les tests de
+// buildSalienceTrend la reçoivent déjà calculée — sans ces cas-ci, une régression
+// sur le dénominateur (total QC du bloc) passerait inaperçue.
+describe("storiesFrom24h — part d'attention par bloc (#304)", () => {
+  const shareAt = (s: { series: { blockUtc: string; share: number }[] }, block: string) =>
+    s.series.find((p) => p.blockUtc === block)!.share;
+
+  it("part = qc de l'histoire / qc total du bloc (30 contre 10 → 75 % / 25 %)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 10, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    expect(shareAt(st.find((x: { label: string }) => x.label === "Alpha")!, "2026-07-13T20")).toBeCloseTo(75, 6);
+    expect(shareAt(st.find((x: { label: string }) => x.label === "Bravo")!, "2026-07-13T20")).toBeCloseTo(25, 6);
+  });
+
+  it("les parts d'un même bloc somment à 100 % (dénominateur = TOUTES les histoires du bloc)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 7, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 11, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sC", title: "Charlie", score_qc: 3, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const total = st.reduce(
+      (acc: number, s: { series: { blockUtc: string; share: number }[] }) => acc + shareAt(s, "2026-07-13T16"), 0);
+    expect(total).toBeCloseTo(100, 6);
+  });
+
+  it("une histoire absente d'un bloc y a une part de 0 (pas la part de son bloc voisin)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 20, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const alpha = st.find((x: { label: string }) => x.label === "Alpha")!;
+    expect(shareAt(alpha, "2026-07-13T20")).toBeCloseTo(100, 6); // seule au bloc 20-24
+    expect(shareAt(alpha, "2026-07-13T16")).toBe(0);             // absente du bloc 16-20
+  });
+
+  it("bloc sans aucune saillance QC : part 0, jamais NaN (division par zéro)", () => {
+    // Bloc 16-20 présent dans la fenêtre mais à saillance QC nulle → dénominateur 0.
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 20, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 0, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const alpha = st.find((x: { label: string }) => x.label === "Alpha")!;
+    const zero = shareAt(alpha, "2026-07-13T16");
+    expect(Number.isNaN(zero)).toBe(false);
+    expect(zero).toBe(0);
+  });
+
+  it("toute part reste dans [0, 100] — c'est ce qui borne le chiffre affiché (bug #301)", () => {
+    const rows = [
+      // Écart extrême entre deux histoires : le rapport de scores explose (2000×),
+      // la PART, elle, reste bornée — c'est précisément ce que la variation
+      // relative du prototype #301 ne garantissait pas (« +4 145 410 % »).
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 2000, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 1, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 0.001, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    for (const s of st) {
+      for (const p of s.series as { share: number }[]) {
+        expect(p.share).toBeGreaterThanOrEqual(0);
+        expect(p.share).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+});
+
 describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
   const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
   // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du

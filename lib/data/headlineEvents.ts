@@ -329,7 +329,11 @@ type Story = {
   byBlock: Map<string, number>;
   /** 6 blocs de la fenêtre, du plus ANCIEN au plus récent ; qc = 0 si la
    *  storyline était absente de ce bloc. `present` distingue « pas à la Une »
-   *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol. */
+   *  (absente) d'une faible saillance réelle. Alimente la sparkline + le survol.
+   *  `share` = PART d'attention QC de l'histoire dans ce bloc, en % (qc de
+   *  l'histoire / qc total du bloc × 100), donc dans [0, 100] et 0 quand le bloc
+   *  n'a aucune saillance QC. Sert à chiffrer la tendance (#304) — le `qc` brut,
+   *  lui, reste la base de la courbe et du niveau au survol. */
   series: { blockUtc: string; qc: number; present: boolean; share: number }[];
 };
 
@@ -804,7 +808,8 @@ export type SalienceTrend = {
   /** Ampleur du mouvement (#304, décision Adrien) : variation de la PART
    *  d'attention QC entre le bloc précédent et le bloc courant, en POINTS de
    *  pourcentage (ex. 25 %→15 % = −10). Signé : hausse > 0, baisse < 0, 0 =
-   *  stable. Toujours affiché (0 % avec un symbole de stabilité si stable).
+   *  stable. Affiché UNIQUEMENT quand ça bouge — à l'état stable, le symbole « = »
+   *  et le mot « Stable » suffisent, un « 0 % » serait redondant (décision Adrien).
    *  Bornée [−100, +100], cohérente avec la part d'attention de Deux solitudes. */
   deltaPct: number;
   points: SalienceTrendPoint[];
