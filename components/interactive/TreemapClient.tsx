@@ -81,7 +81,14 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
     </>
   );
 
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: tile.issueFr };
+  // Infobulle native : nom complet + manchette + médias — utile quand la tuile est trop
+  // petite pour tout afficher (le survol révèle toute l'information).
+  const titleAttr = [
+    tile.issueFr,
+    tile.context,
+    tile.outlets.length ? tile.outlets.map((o) => o.name).join(" · ") : "",
+  ].filter(Boolean).join("\n");
+  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: titleAttr };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (
