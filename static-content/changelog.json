@@ -1,5 +1,41 @@
 [
   {
+    "pr": 319,
+    "date": "2026-07-27T01:54:17Z",
+    "note": "Aucun changement visible pour les visiteurs : mise à jour des règles internes de rédaction (typographie, langage inclusif) et de la documentation d'équipe.",
+    "version": null
+  },
+  {
+    "pr": 327,
+    "date": "2026-07-24T22:09:14Z",
+    "note": "feat: easter egg Flappy Enjeux (code Konami dans « De quoi parle-t-on? »)",
+    "version": "2.13.0-beta.1"
+  },
+  {
+    "pr": 313,
+    "date": "2026-07-24T19:46:31Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » se joue maintenant comme une partie de billard : visez une bille-parti vers une poche pour découvrir son profil.",
+    "version": "2.13.0-beta.0"
+  },
+  {
+    "pr": 318,
+    "date": "2026-07-24T17:07:48Z",
+    "note": "Le module des enjeux saillants est repensé : la vue du jour montre la croissance de la saillance de chaque enjeu, et deux nouvelles vues (« Cette semaine », « Ce mois ») retracent l'évolution du classement dans le temps avec, au survol, les dernières actualités liées à chaque enjeu.",
+    "version": "2.12.0-beta.0"
+  },
+  {
+    "pr": 317,
+    "date": "2026-07-24T16:44:35Z",
+    "note": "Une des Unes : la trajectoire de saillance affiche désormais l'heure de publication, cohérente avec la dernière mise à jour du module.",
+    "version": "2.11.0-beta.1"
+  },
+  {
+    "pr": 312,
+    "date": "2026-07-23T20:08:11Z",
+    "note": "Les Unes suivent maintenant fidèlement la saillance des 24 dernières heures, comme le radar « Deux solitudes » : une grande nouvelle de la nuit reste en Une le lendemain matin puis glisse tranquillement vers les manchettes secondaires, au lieu de disparaître d'un coup.",
+    "version": "2.11.0-beta.0"
+  },
+  {
     "pr": 269,
     "date": "2026-07-23T18:18:10Z",
     "note": "fix(polimetre+): tendance masquée sur mobile + refonte couleur des verdicts (#267, #268)",

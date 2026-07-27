@@ -651,38 +651,30 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
 
-// Plancher de récence (dossier fenêtre, arbitrage Adrien 2026-07-20) : la Une
-// montre le saillant DU MOMENT. Le classement par cumul 24 h (w10) peut, un jour
-// creux, garder en tête une histoire retombée qui a « laissé la place à autre
-// chose » (cas mesuré : le soccer, pic la veille à 19 h, coiffait la Une à 0 sur
-// le bloc courant, masquant l'inflation live). On EXCLUT donc de la Une une
-// histoire qui est À LA FOIS absente du bloc courant ET dont le pic date d'au
-// moins 2 blocs (≥ 8 h) — un déclin installé. On ne punit PAS un simple saut d'un
-// bloc (pic récent), et le signal est l'ÂGE DU PIC, pas « présent/absent » (le
-// soccer avait encore un petit score 4 h avant : viser le déclin, pas l'absence).
-// Mesuré sur juin : corrige 67 % des jours à héros-mort, aucune Une vidée ; le
-// churn monte (34 → 62 %) mais c'est la Une qui suit l'actualité, pas du bruit.
-// N'affecte QUE la sélection des Unes ; le radar Deux solitudes garde ces
-// histoires (leur part d'attention 24 h reste légitime).
-const STALE_PEAK_MIN_BLOCKS = 2;
-function isStaleForUne(s: Story): boolean {
-  if (s.series.length === 0) return false;
-  const cur = s.series[s.series.length - 1].qc;
-  if (cur > 0) return false; // encore présente dans le bloc courant → jamais périmée
-  let peak = 0, peakIdx = 0;
-  s.series.forEach((p, i) => { if (p.qc >= peak) { peak = p.qc; peakIdx = i; } });
-  const peakAgeBlocks = (s.series.length - 1) - peakIdx;
-  return peak > 0 && peakAgeBlocks >= STALE_PEAK_MIN_BLOCKS;
-}
-
+// Sélection des Unes : classement PUR par saillance QC cumulée 24 h (sumQc,
+// demi-vie w10), depuis le MÊME pool que le radar Deux solitudes → les deux modules
+// montrent exactement le même classement (le héros de la Une = la nouvelle #1 du
+// radar). Aucun plancher de récence : la moyenne pondérée fait déjà décroître une
+// histoire en douceur à mesure qu'elle vieillit et que de plus grosses émergent,
+// comme un vrai journal. Une histoire qui a culminé pendant la nuit reste donc à la
+// Une le lendemain matin, puis glisse d'elle-même en #2, #3, puis sort.
+//
+// Historique : un plancher `isStaleForUne` (arbitrage 2026-07-20) excluait toute
+// histoire absente du bloc courant dont le pic datait de ≥ 8 h. RETIRÉ 2026-07-23
+// (arbitrage Adrien) : un banc de mesure interne sur 10 semaines (427 blocs)
+// montre qu'il DÉSACCORDAIT la Une
+// du radar (cohérence 67 % → 100 % sans lui), appauvrissait les fronts (jours à
+// 1 seule Une 52 % → 23 %) et AUGMENTAIT le churn du héros (60 % → 35 % sans lui —
+// il éjectait le leader d'un coup à chaque bloc raté). Le seul coût — quelques
+// « héros retombés » les nuits creuses — est assumé : c'est aussi ce que font les
+// médias quand rien de neuf n'émerge. Déclencheur : cas Oliver Jones (mort culturelle
+// de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
 function selectTopUnes(stories: Story[], max = 3): Story[] {
+  // Héros toujours affiché ; une Une SECONDAIRE doit être portée par ≥
+  // MIN_QC_MEDIA_SECONDARY médias QC (seuil éditorial #273 conservé). On tronque au
+  // top-3 par saillance cumulée SANS repêcher (le pool est partagé avec le radar).
   const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
-  const fresh = eligible.filter((s) => !isStaleForUne(s));
-  // Le plancher retire les histoires retombées, MAIS le module garde toujours ≥ 1
-  // Une : si tout est retombé (jour très creux), on retombe sur le classement
-  // complet plutôt que d'afficher une Une vide.
-  const pool = fresh.length > 0 ? fresh : eligible;
-  return pool
+  return eligible
     .sort((a, b) => b.sumQc - a.sumQc)
     .slice(0, max)
     .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
@@ -800,25 +792,35 @@ export type SalienceTrend = {
 
 // Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
 // (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
-// la journée et l'heure arrondie à l'édition la plus proche.
+// la journée et l'heure de PUBLICATION du bloc (fin + 1 h, réforme #195).
 function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   { dayWord: string; moment: string; hour: number } | null {
   if (!blockDateMtl) return null;
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
-  const { dateIso, hour } = mtlDateAndHour(t);   // heure MTL RÉELLE du bloc (gère EDT/EST)
-  const blockDay = isoDay(dateIso), refDay = isoDay(blockDateMtl);
+  // Jour ET heure affichés AU PUBLIC = l'instant de PUBLICATION du bloc = fin
+  // (+4 h) + 1 h (réforme #195, même règle que publicationHourFromInterval / le
+  // pied de module). JAMAIS le début : un bloc 03-07 Mtl est PUBLIÉ à 8 h, pas
+  // « 3 h ». Le JOUR doit suivre la publication, pas le début : sinon un bloc de
+  // nuit 23-03 (publié à 4 h LE LENDEMAIN) s'étiquette « hier 4 h » (retour Copilot).
+  const { dateIso: pubDateIso, hour: pubHourReal } = mtlDateAndHour(new Date(t.getTime() + 5 * 3_600_000));
+  // Publication pile à minuit (bloc du soir 19-23) : affichée « minuit » (24 h) et
+  // rattachée au jour qui vient de finir (celui du bloc), pas au petit matin du
+  // lendemain — le « moment » reste « cette nuit ».
+  const isMidnight = pubHourReal === 0;
+  const pubHour = isMidnight ? 24 : pubHourReal;   // {8,12,16,20,minuit,4}
+  const anchorIso = isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso;
+  const blockDay = isoDay(anchorIso), refDay = isoDay(blockDateMtl);
   if (blockDay === null || refDay === null) return null;
-  // Moment de la journée (« hier soir ») = heure arrondie à l'édition la plus
-  // proche, pour le libellé de tendance. L'heure exacte (`hour`) sert au survol.
-  const snapped = UPDATE_HOURS_MTL.reduce(
-    (p, c) => (Math.abs(c - hour) <= Math.abs(p - hour) ? c : p), UPDATE_HOURS_MTL[0]);
   const dayDiff = refDay - blockDay;
-  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[snapped], hour };
-  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[snapped], hour };
-  const dateFr = formatDateFr(dateIso);
+  // Les heures de PUBLICATION tombent PILE sur la grille d'éditions {0,4,8,12,16,20}
+  // (minuit → 0) : plus besoin de « snapper » comme le faisait l'heure de début.
+  const momentHour = pubHour % 24;
+  if (dayDiff <= 0) return { dayWord: "aujourd’hui", moment: SAILLANT_TODAY[momentHour], hour: pubHour };
+  if (dayDiff === 1) return { dayWord: "hier", moment: SAILLANT_YESTERDAY[momentHour], hour: pubHour };
+  const dateFr = formatDateFr(anchorIso);
   const asDate = `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
-  return { dayWord: asDate, moment: asDate, hour };
+  return { dayWord: asDate, moment: asDate, hour: pubHour };
 }
 
 // Construit la trajectoire à partir de la série 6 blocs. Étiquette chaque bloc à
@@ -852,7 +854,8 @@ function buildSalienceTrend(
     // réelle — sinon on laisse croire qu'elle était là (retour Adrien).
     const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
-    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord : `${parts.dayWord} ${parts.hour} h`;
+    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
+      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour} h`}`;
     return {
       timeLabel,
       level: tier ? tier.label : "Absente",
@@ -972,13 +975,24 @@ export type TreemapIssueTile = {
   topObject: string;
   context: string;
   url: string | null;
+  /** -1 (baisse), 0 (stable), 1 (hausse) de la saillance vs le bloc (tag) précédent. */
+  velocity: number;
+  /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
+  growth: number | null;
+  /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
+  articles: { title: string; url: string | null }[];
 };
+
+/** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
+export type TreemapHistoryPoint = { date: string; ranks: Record<string, number> };
 
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
   dateLabel: string;
   /** « Dernière mise à jour : mercredi 8 juillet 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
+  /** Classement des 12 enjeux dans le temps (un point par tag), pour le graphique de rang. */
+  history: TreemapHistoryPoint[];
 };
 
 export type TreemapAllPeriods = {
@@ -1257,12 +1271,57 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
   return map;
 }
 
+// Jusqu'à 5 actualités récentes par enjeu (événements distincts), pour le panneau « À la une »
+// du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
+// décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
+// (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
+async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: string | null }[]>> {
+  const map = new Map<string, { title: string; url: string | null }[]>();
+  let rawEvents: string;
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
+  const allRaw = JSON.parse(rawEvents) as RawEvent[];
+
+  const byId = new Map<string, RawEvent>();
+  for (const e of allRaw) {
+    const existing = byId.get(e.event_id);
+    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
+  }
+  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+
+  const byIssue = new Map<string, RawEvent[]>();
+  for (const e of unique) {
+    const key = e.main_issue ?? "";
+    if (!key) continue;
+    if (!byIssue.has(key)) byIssue.set(key, []);
+    byIssue.get(key)!.push(e);
+  }
+
+  for (const [issueKey, events] of byIssue) {
+    const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
+    const seen = new Set<string>();
+    const list: { title: string; url: string | null }[] = [];
+    for (const e of sorted) {
+      const title = (e.title ?? "").trim();
+      if (!title) continue;
+      const url = e.representative_url ?? null;
+      const dedupKey = url ?? title;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
+      list.push({ title, url });
+      if (list.length >= 5) break;
+    }
+    map.set(issueKey, list);
+  }
+  return map;
+}
+
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
-  const [dayRows, weekRows, monthRows, fallbackContent] = await Promise.all([
+  const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
     loadIssueScores("day"),
     loadIssueScores("week"),
     loadIssueScores("month"),
     loadFallbackIssueContent(),
+    loadArticlesByIssue(),
   ]);
 
   function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {
@@ -1280,6 +1339,16 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
       : [latest];
     const aggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
       acc[key] = periodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+      return acc;
+    }, {});
+
+    // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
+    const prevRows = latestTag ? rows.filter((r) => (r.tag as string) !== latestTag) : [];
+    const prevLatest = prevRows.length > 0 ? latestIssueRow(prevRows) : null;
+    const prevTag = prevLatest ? ((prevLatest.tag as string) ?? "") : "";
+    const prevPeriodRows = prevTag ? prevRows.filter((r) => (r.tag as string) === prevTag) : [];
+    const prevAggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = prevPeriodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
       return acc;
     }, {});
 
@@ -1301,9 +1370,35 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url };
+      const prevScore = prevAggregated[issueKey] ?? 0;
+      const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
+      const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey) ?? [] };
     });
-    return { tiles, dateLabel, lastUpdated };
+
+    // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
+    const groupedByTag: Record<string, typeof rows> = {};
+    for (const r of rows) {
+      const tag = (r.tag as string) ?? "";
+      if (!tag) continue;
+      if (!groupedByTag[tag]) groupedByTag[tag] = [];
+      groupedByTag[tag].push(r);
+    }
+    const history: TreemapHistoryPoint[] = Object.keys(groupedByTag)
+      .sort((a, b) => a.localeCompare(b))
+      .map((tag) => {
+        const tagRows = groupedByTag[tag];
+        const date = (tagRows[0].date_montreal_tz as string) ?? (tagRows[0].date_utc as string) ?? "";
+        const ranked = ISSUE_KEYS.map((key) => ({
+          key,
+          score: tagRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0),
+        })).sort((a, b) => b.score - a.score);
+        const ranks: Record<string, number> = {};
+        ranked.forEach((e, i) => { ranks[e.key] = i + 1; });
+        return { date, ranks };
+      });
+
+    return { tiles, dateLabel, lastUpdated, history };
   }
 
   const day = buildPeriodData(dayRows);
@@ -1327,7 +1422,6 @@ export const __test__ = {
   storiesFrom24h,
   buildSalienceTrend,
   selectTopUnes,
-  isStaleForUne,
   MIN_QC_MEDIA_SECONDARY,
   windowConvergence,
   windowEventConvergence,

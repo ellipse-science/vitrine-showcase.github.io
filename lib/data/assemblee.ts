@@ -8,7 +8,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PARTY_KEYS, PARTY_LABELS, type PartyKey } from "@/lib/data/parties";
+import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 
 const TONE_AMPLIFY = 10;
@@ -74,6 +74,10 @@ type AgoraRow = IssueShares & {
   lexical_richness: number;
   tone_score: number;
   editorial_angle: string;
+  // Pas encore publiées par le raffineur (dépend de agora-decideurs-qc-phrases,
+  // en attente de son premier run réussi) — toujours optionnelles côté JSON.
+  signature_word?: string;
+  signature_word_context?: string;
 };
 
 export type EnjeuSegment = {
@@ -87,13 +91,19 @@ export type EnjeuSegment = {
 export type AssembleeRow = {
   key: PartyKey;
   label: string;
+  color: string;
   inShadow: boolean;
   // Active-row fields (when not in shadow):
   enjeuStack?: EnjeuSegment[];
   editorialAngle?: string;
   toneLeftPct?: number;
   wordsFormatted?: string;
+  wordsRaw?: number;
   richnessLevel?: number;
+  // Mot distinctif (TF-IDF inter-partis) — absent tant que le raffineur ne
+  // le publie pas ; le composant masque simplement cette info le cas échéant.
+  signatureWord?: string;
+  signatureWordContext?: string;
 };
 
 export type PeriodView = {
@@ -222,19 +232,23 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
   const builtRows: AssembleeRow[] = sorted.map((item): AssembleeRow => {
     const isShadow = !(item.interventions > 0 && item.data);
     if (isShadow || !item.data) {
-      return { key: item.key, label: PARTY_LABELS[item.key], inShadow: true };
+      return { key: item.key, label: PARTY_LABELS[item.key], color: PARTY_COLORS[item.key], inShadow: true };
     }
     const d = item.data;
     const amplified = Math.max(-1, Math.min(1, Number(d.tone_score || 0) * TONE_AMPLIFY));
     return {
       key: item.key,
       label: PARTY_LABELS[item.key],
+      color: PARTY_COLORS[item.key],
       inShadow: false,
       enjeuStack: buildEnjeuStack(d),
       editorialAngle: d.editorial_angle && d.editorial_angle !== "NA" ? d.editorial_angle : "",
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       wordsFormatted: fmtWords(d.word_count),
+      wordsRaw: Number(d.word_count || 0),
       richnessLevel: richnessLevels[item.key] || 1,
+      signatureWord: d.signature_word || undefined,
+      signatureWordContext: d.signature_word_context || undefined,
     };
   });
 
