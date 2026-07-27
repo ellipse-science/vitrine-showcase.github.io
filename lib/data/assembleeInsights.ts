@@ -65,11 +65,11 @@ export function facetResult(row: AssembleeRow, kind: FacetKind, allRows: Assembl
         others.map((r) => r.toneLeftPct ?? 50),
         pct,
         3,
-        (avg) => `Plus favorable que la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
-        (avg) => `Plus défavorable que la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
-        (avg) => `Comparable à la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
+        (avg) => `Plus favorable que la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
+        (avg) => `Plus défavorable que la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
+        (avg) => `Comparable à la moyenne des autres partis actifs (${Math.round(avg)} % en moyenne).`,
       );
-      return { title: "Ton en chambre", body: `${row.label} tient un ton ${dir} (${Math.round(pct)} % vers le pôle favorable de l'échelle). ${compare}` };
+      return { title: "Ton en chambre", body: `${row.label} tient un ton ${dir} (${Math.round(pct)} % vers le pôle favorable de l'échelle). ${compare}` };
     }
     case "richness": {
       const lvl = row.richnessLevel ?? 1;

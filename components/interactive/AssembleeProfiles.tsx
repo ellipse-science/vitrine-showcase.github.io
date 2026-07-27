@@ -31,9 +31,13 @@ function PartyCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[
     <article className="ass-card">
       <div className="ass-card-head">
         <span className={`parti-name-box ${row.key}`}>{row.label}</span>
-        <span className="ass-card-figure" title={`${row.wordsFormatted} mots prononcés cette période`}>
-          {row.wordsFormatted}
-          <span className="unit">mots</span>
+        <span
+          className="ass-card-figure"
+          title={`${row.wordsFormatted ?? "0"} mots prononcés cette période`}
+          aria-label={`${row.wordsFormatted ?? "0"} mots prononcés cette période`}
+        >
+          {row.wordsFormatted ?? "0"}
+          <span className="unit" aria-hidden="true">mots</span>
         </span>
       </div>
 
@@ -60,7 +64,7 @@ function PartyCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[
         <div className="ass-card-block">
           <span className="stat-label">Ton en chambre</span>
           <div className="ass-tone" title={tone.body}>
-            <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
+            <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct ?? 50}%` }} />
           </div>
           <p className="ass-card-caption">{tone.body}</p>
         </div>

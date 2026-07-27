@@ -281,6 +281,7 @@ export function AssembleeBilliard({ rows, shadowRows = [] }: { rows: AssembleeRo
   const svgHeight = H + (shadowRows.length > 0 ? BENCH_H : 0);
   const benchCy = H + 55;
   const benchPos = benchPositions(shadowRows.length, benchCy);
+  const popupResult = popup ? facetResult(popup.row, popup.kind, rows) : null;
 
   return (
     <div className="ass-billiard-wrap">
@@ -390,8 +391,8 @@ export function AssembleeBilliard({ rows, shadowRows = [] }: { rows: AssembleeRo
             ✕
           </button>
           <span className="k">{popup.row.label}</span>
-          <p className="pocket-title">{facetResult(popup.row, popup.kind, rows).title}</p>
-          <p className="pocket-body">{facetResult(popup.row, popup.kind, rows).body}</p>
+          <p className="pocket-title">{popupResult?.title}</p>
+          <p className="pocket-body">{popupResult?.body}</p>
         </div>
       )}
     </div>
