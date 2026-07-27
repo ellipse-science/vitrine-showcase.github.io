@@ -46,7 +46,7 @@ function formatGrowth(growth: number): string {
   return `${sign}${Math.abs(growth).toFixed(1).replace(".", ",")} %`;
 }
 
-function GrowthTile({ tile }: { tile: LayoutNode }) {
+function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutNode | null) => void }) {
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
@@ -81,14 +81,10 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
     </>
   );
 
-  // Infobulle native : nom complet + manchette + médias — utile quand la tuile est trop
-  // petite pour tout afficher (le survol révèle toute l'information).
-  const titleAttr = [
-    tile.issueFr,
-    tile.context,
-    tile.outlets.length ? tile.outlets.map((o) => o.name).join(" · ") : "",
-  ].filter(Boolean).join("\n");
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: titleAttr };
+  // Petites tuiles (texte tronqué) : on révèle tout via une infobulle stylée flottante
+  // (gérée par le parent) ; grandes/moyennes : révélation dans la tuile (déjà en place).
+  const needsTip = size === "small" || isTiny;
+  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: needsTip ? undefined : tile.issueFr };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (
@@ -104,8 +100,33 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
         width: `${tile.rect.w.toFixed(2)}%`,
         height: `${tile.rect.h.toFixed(2)}%`
       }}
+      onMouseEnter={needsTip && onHover ? () => onHover(tile) : undefined}
+      onMouseLeave={needsTip && onHover ? () => onHover(null) : undefined}
     >
       {content}
+    </div>
+  );
+}
+
+// Infobulle stylée flottante pour les petites tuiles : nom + manchette + médias,
+// positionnée près de la tuile (bascule vers l'intérieur selon sa position).
+function GrowthTip({ tile }: { tile: LayoutNode }) {
+  const cx = tile.rect.x + tile.rect.w / 2;
+  const cy = tile.rect.y + tile.rect.h / 2;
+  const rightSide = cx > 58;
+  const bottomSide = cy > 52;
+  const style: React.CSSProperties = { position: "absolute" };
+  if (rightSide) style.right = `${(100 - (tile.rect.x + tile.rect.w)).toFixed(2)}%`;
+  else style.left = `${tile.rect.x.toFixed(2)}%`;
+  if (bottomSide) style.bottom = `${(100 - tile.rect.y).toFixed(2)}%`;
+  else style.top = `${(tile.rect.y + tile.rect.h).toFixed(2)}%`;
+  return (
+    <div className="gt-tip" style={style}>
+      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
+      {tile.context && <div className="gt-tip-head">{tile.context}</div>}
+      {tile.outlets.length > 0 && (
+        <div className="gt-tip-media">{tile.outlets.map((o) => o.name).join(" · ")}</div>
+      )}
     </div>
   );
 }
@@ -342,6 +363,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
   const [secret, setSecret] = useState(false);
   useKonamiCode(() => { setPeriod("month"); setSecret(true); });
+  const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const current = data[period];
   const tiles = current.tiles;
 
@@ -385,8 +407,9 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
         <>
           <div className="treemap-growth">
             {computeTreemapLayout(tiles).map((t) => (
-              <GrowthTile key={t.issueKey} tile={t} />
+              <GrowthTile key={t.issueKey} tile={t} onHover={setTipTile} />
             ))}
+            {tipTile && <GrowthTip tile={tipTile} />}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">

@@ -2595,6 +2595,43 @@
   .treemap-growth .gt-small .gt-pct { font-size: 16px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
   .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
+  /* infobulle flottante des petites tuiles (nom + manchette + médias) */
+  .treemap-growth .gt-tip {
+    z-index: 20;
+    pointer-events: none;
+    max-width: 300px;
+    min-width: 170px;
+    margin: 5px;
+    background: #26221e;
+    color: #F3ECDD;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    padding: 10px 12px;
+    box-shadow: 0 6px 18px rgba(28, 25, 23, 0.3);
+  }
+  .treemap-growth .gt-tip-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.15;
+    margin-bottom: 6px;
+    border-left: 3px solid var(--c, #463E3E);
+    padding-left: 8px;
+  }
+  .treemap-growth .gt-tip-head {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .treemap-growth .gt-tip-media {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    opacity: 0.75;
+    line-height: 1.4;
+    margin-top: 6px;
+  }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 36px;
