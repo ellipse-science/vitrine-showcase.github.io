@@ -60,15 +60,15 @@ describe("firstSeenSaillantLabel", () => {
   });
   it("même jour : 12h UTC = 8h Montréal (EDT) → « ce matin, 8 h »", () => {
     expect(firstSeenSaillantLabel("2026-07-11T12:00:00Z", "2026-07-11"))
-      .toBe("ce matin, 8 h");
+      .toBe("ce matin, 8h");
   });
   it("veille : 0h UTC le 11 = 20h Montréal le 10 → « hier soir, 20 h »", () => {
     expect(firstSeenSaillantLabel("2026-07-11T00:00:00Z", "2026-07-11"))
-      .toBe("hier soir, 20 h");
+      .toBe("hier soir, 20h");
   });
   it("arrondit à l'édition la plus proche en heure d'hiver (EST : 0h UTC = 19h)", () => {
     expect(firstSeenSaillantLabel("2026-01-15T00:00:00Z", "2026-01-15"))
-      .toBe("hier soir, 20 h");
+      .toBe("hier soir, 20h");
   });
   it("au-delà d'hier : date en toutes lettres", () => {
     expect(firstSeenSaillantLabel("2026-07-08T12:00:00Z", "2026-07-11"))
@@ -439,49 +439,300 @@ describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
   });
 });
 
-describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
-  const thr = SAL_QC_THRESHOLDS; // recalibré #287 (pics) : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
-  // present = la nouvelle a fait la Une à ce bloc (byBlock.has). qc:0 + present:false
-  // = absente du bloc (≠ faible saillance réelle).
+// La PART d'attention par bloc (#304) est produite ici, en amont de la tendance :
+// c'est elle qui borne le chiffre affiché sous la Une. Les tests de
+// buildSalienceTrend la reçoivent déjà calculée — sans ces cas-ci, une régression
+// sur le dénominateur (total QC du bloc) passerait inaperçue.
+describe("storiesFrom24h — part d'attention par bloc (#304)", () => {
+  const shareAt = (s: { series: { blockUtc: string; share: number }[] }, block: string) =>
+    s.series.find((p) => p.blockUtc === block)!.share;
+
+  it("part = qc de l'histoire / qc total du bloc (30 contre 10 → 75 % / 25 %)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 10, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    expect(shareAt(st.find((x: { label: string }) => x.label === "Alpha")!, "2026-07-13T20")).toBeCloseTo(75, 6);
+    expect(shareAt(st.find((x: { label: string }) => x.label === "Bravo")!, "2026-07-13T20")).toBeCloseTo(25, 6);
+  });
+
+  it("les parts d'un même bloc somment à 100 % (dénominateur = TOUTES les histoires du bloc)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 7, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 11, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sC", title: "Charlie", score_qc: 3, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const total = st.reduce(
+      (acc: number, s: { series: { blockUtc: string; share: number }[] }) => acc + shareAt(s, "2026-07-13T16"), 0);
+    expect(total).toBeCloseTo(100, 6);
+  });
+
+  it("une histoire absente d'un bloc y a une part de 0 (pas la part de son bloc voisin)", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 20, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const alpha = st.find((x: { label: string }) => x.label === "Alpha")!;
+    expect(shareAt(alpha, "2026-07-13T20")).toBeCloseTo(100, 6); // seule au bloc 20-24
+    expect(shareAt(alpha, "2026-07-13T16")).toBe(0);             // absente du bloc 16-20
+  });
+
+  it("bloc sans aucune saillance QC : part 0, jamais NaN (division par zéro)", () => {
+    // Bloc 16-20 présent dans la fenêtre mais à saillance QC nulle → dénominateur 0.
+    const rows = [
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 20, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 0, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    const alpha = st.find((x: { label: string }) => x.label === "Alpha")!;
+    const zero = shareAt(alpha, "2026-07-13T16");
+    expect(Number.isNaN(zero)).toBe(false);
+    expect(zero).toBe(0);
+  });
+
+  it("toute part reste dans [0, 100] — c'est ce qui borne le chiffre affiché (bug #301)", () => {
+    const rows = [
+      // Écart extrême entre deux histoires : le rapport de scores explose (2000×),
+      // la PART, elle, reste bornée — c'est précisément ce que la variation
+      // relative du prototype #301 ne garantissait pas (« +4 145 410 % »).
+      ev({ storyline_id: "sA", title: "Alpha", score_qc: 2000, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 1, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+      ev({ storyline_id: "sB", title: "Bravo", score_qc: 0.001, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+    ];
+    const st = storiesFrom24h(rows as never);
+    for (const s of st) {
+      for (const p of s.series as { share: number }[]) {
+        expect(p.share).toBeGreaterThanOrEqual(0);
+        expect(p.share).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+});
+
+// Le badge suit la saillance CUMULÉE 24 h, qui décroît d'elle-même. Sans
+// hystérésis elle change de bande une édition sur deux (mesuré : 52 % des
+// transitions sur l'historique DEV, dont 5,6 % de sauts de 2 bandes).
+// La grille du badge vient de calibration_sum_qc (fetch_data.R). Elle reste
+// NULL tant que la fenêtre post-fusion n'a pas 60 Unes distinctes (~23 au
+// 2026-07-27) : le repli codé en dur sert donc pour de vrai, pas seulement en
+// théorie. On verrouille les deux branches.
+describe("grille du badge : calibration publiée sinon repli (#314)", () => {
+  const { salThresholdsFrom, SUM_QC_THRESHOLDS } = __test__;
+
+  it("métrique absente → repli sur SUM_QC_THRESHOLDS", () => {
+    expect(salThresholdsFrom(undefined)).toBeNull();
+    // Le loader fait `salThresholdsFrom(...) ?? SUM_QC_THRESHOLDS`.
+    expect(salThresholdsFrom(undefined) ?? SUM_QC_THRESHOLDS).toBe(SUM_QC_THRESHOLDS);
+  });
+
+  it("métrique publiée → elle gagne sur le repli", () => {
+    const publiee = { p5: 25.5, p20: 41.4, p50: 67.5, p80: 149.8, p95: 253.5 };
+    expect(salThresholdsFrom(publiee) ?? SUM_QC_THRESHOLDS).toEqual({
+      faible: 25.5, moyenne: 41.4, eleve: 67.5, tresEleve: 149.8, extreme: 253.5,
+    });
+  });
+
+  it("métrique non monotone → repli (garde-fou contre une calibration dégénérée)", () => {
+    const cassee = { p5: 25, p20: 10, p50: 67, p80: 149, p95: 253 };
+    expect(salThresholdsFrom(cassee) ?? SUM_QC_THRESHOLDS).toBe(SUM_QC_THRESHOLDS);
+  });
+
+  it("le repli garde l'ordre attendu des bandes", () => {
+    const t = SUM_QC_THRESHOLDS;
+    expect(t.faible).toBeLessThan(t.moyenne);
+    expect(t.moyenne).toBeLessThan(t.eleve);
+    expect(t.eleve).toBeLessThan(t.tresEleve);
+    expect(t.tresEleve).toBeLessThan(t.extreme);
+  });
+});
+
+// Le rejeu des éditions est la pièce la plus délicate du badge : c'est lui qui
+// reconstitue le niveau de l'édition précédente (l'hystérésis n'a pas d'état
+// persistant à lire) et qui produit l'historique affiché au survol.
+describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
+  const { badgeRanksWithHysteresis, SUM_QC_THRESHOLDS } = __test__;
+  // Une histoire seule dans chaque bloc : sumQc = score du bloc + traînée
+  // pondérée des précédents (demi-vie 10 h), donc strictement croissante ici.
+  const bloc = (h: string, qc: number) =>
+    ev({ storyline_id: "sA", title: "Alpha", score_qc: qc,
+      date_utc: "2026-07-13", time_interval_utc: `${h}-x`,
+      articles: JSON.stringify([{ media_id: "LED", url: "https://led/a" }]) });
+
+  it("accumule un historique : une entrée par édition rejouée", () => {
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    expect(a).toBeDefined();
+    // 3 blocs = 3 éditions rejouées, donc 3 niveaux mémorisés.
+    expect(a.history.size).toBe(3);
+    expect([...a.history.keys()]).toEqual(
+      ["2026-07-13T00", "2026-07-13T04", "2026-07-13T08"]);
+  });
+
+  it("le sommet se fixe sur l'édition où le cumul est le plus haut", () => {
+    // Le cumul culmine au dernier bloc (la traînée s'ajoute au plus gros score).
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    expect(a.peakBlock).toBe("2026-07-13T08");
+    expect(a.peakSum).toBeGreaterThan(90); // 90 + traînée des blocs précédents
+
+    // Si le gros score est au MILIEU, le sommet reste sur ce bloc-là même si
+    // des éditions plus récentes suivent — c'est ce qui permet au ⓘ de dire
+    // « plus haut niveau à telle heure » après le déclin.
+    const declin = badgeRanksWithHysteresis(
+      [bloc("00", 20), bloc("04", 200), bloc("08", 5)] as never, SUM_QC_THRESHOLDS);
+    expect(declin.get("sA")!.peakBlock).toBe("2026-07-13T04");
+  });
+
+  it("le rang final est celui de la dernière édition, et il a suivi la montée", () => {
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 5), bloc("04", 40), bloc("08", 260)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    const rangs = [...a.history.values()];
+    expect(a.rank).toBe(rangs[rangs.length - 1]);
+    // Monotone croissant ici : le cumul ne fait que grimper.
+    expect(rangs[0]).toBeLessThanOrEqual(rangs[rangs.length - 1]);
+    expect(a.rank).toBeGreaterThan(rangs[0]);
+  });
+
+  it("aucun événement → aucune entrée (pas de plantage)", () => {
+    expect(badgeRanksWithHysteresis([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
+  });
+});
+
+describe("hysteresisRank (lissage du badge cumulé)", () => {
+  const T = __test__.SUM_QC_THRESHOLDS; // {faible:21.4, moyenne:31, eleve:47.9, tresEleve:102.4, extreme:192.8}
+  const { rawRank, hysteresisRank } = __test__;
+
+  it("sans niveau précédent, rend le niveau brut", () => {
+    expect(hysteresisRank(undefined, 50, T)).toBe(rawRank(50, T)); // 47.9 ≤ 50 → rang 4
+    expect(hysteresisRank(undefined, 50, T)).toBe(4);
+  });
+
+  it("ne monte pas d'une bande pour un franchissement de justesse", () => {
+    // 48 dépasse le seuil « Élevée » (47.9) mais pas de 8 % → reste à 3.
+    expect(rawRank(48, T)).toBe(4);
+    expect(hysteresisRank(3, 48, T)).toBe(3);
+  });
+
+  it("monte quand la marge est franchie", () => {
+    expect(hysteresisRank(3, 47.9 * 1.09, T)).toBe(4);
+  });
+
+  it("ne redescend pas pour un repli de justesse sous le seuil quitté", () => {
+    // 47 est juste sous 47.9 : le badge « Élevée » tient.
+    expect(rawRank(47, T)).toBe(3);
+    expect(hysteresisRank(4, 47, T)).toBe(4);
+  });
+
+  it("redescend quand le repli est net", () => {
+    expect(hysteresisRank(4, 47.9 * 0.91, T)).toBe(3);
+  });
+
+  it("un aller-retour de frontière ne fait bouger le badge ni à l'aller ni au retour", () => {
+    let r = 3;
+    for (const v of [48, 47, 48.5, 46.5, 48]) r = hysteresisRank(r, v, T);
+    expect(r).toBe(3);
+  });
+
+  it("laisse passer une vraie décroissance, bande après bande", () => {
+    // Trajectoire réelle (tarifs, 23-24 juillet) : 261 → 198 → 150 → 110 → 68 → 34
+    const suite = [261.8, 198.4, 150.4, 110.5, 68.1, 33.8];
+    let r: number | undefined = undefined;
+    const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
+    expect(rangs).toEqual([6, 6, 5, 5, 4, 3]); // le badge redescend avec l'histoire
+  });
+});
+
+describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
+  const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
+  // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du
+  // bloc (qc histoire / qc total du bloc), calculée en amont (storiesFrom24h). La
+  // TENDANCE (#304) compare la part des DEUX derniers blocs ; la mini-courbe et les
+  // niveaux par bloc restent, eux, basés sur `qc`.
   const decline = [
-    { blockUtc: "2026-07-19T19", qc: 0, present: false }, { blockUtc: "2026-07-19T23", qc: 100, present: true },
-    { blockUtc: "2026-07-20T03", qc: 50, present: true }, { blockUtc: "2026-07-20T07", qc: 12, present: true },
-    { blockUtc: "2026-07-20T11", qc: 0, present: false },
+    { blockUtc: "2026-07-19T19", qc: 0, present: false, share: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, share: 55 },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true, share: 40 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 25 },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 },
   ];
-  it("détecte le déclin (sommet passé + chute sous 70 % du pic)", () => {
+  it("absente du bloc courant : l'attention est retombée, JAMAIS « plus à la Une »", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
-    expect(t.capLabel).toMatch(/^En déclin depuis /);
+    expect(t.deltaPct).toBe(-25);
+    expect(t.situation).toBe("retombee");
+    // Grammaire arrêtée : [ce que l'attention fait] puis l'ancre au sommet en incise.
+    expect(t.capLabel).toMatch(/^L’attention est retombée depuis .+ \(Sommet .+\)$/);
+    // La carte EST une Une : la phrase ne doit jamais nier cette appartenance.
+    expect(t.capLabel).not.toMatch(/à la Une/);
   });
   it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     const peak = t.points.find((p: { isPeak: boolean }) => p.isPeak)!;
     expect(peak.score).toBe(100);
     expect(peak.level).toBe("Exceptionnelle"); // 100 ≥ extreme(95)
-    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Absente"); // bloc sans Une → absente, pas « faible »
+    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Hors du radar"); // bloc sans Une → absente, pas « faible »
     expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 48 ≤ 50 < 95
     expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 11 ≤ 12 < 19
     // première apparition = premier bloc à score > 0
     expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
     expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
   });
-  it("détecte la progression (dernier bloc > 1,25 × le précédent)", () => {
-    const rise = [
-      { blockUtc: "2026-07-20T03", qc: 4, present: true }, { blockUtc: "2026-07-20T07", qc: 9, present: true },
-      { blockUtc: "2026-07-20T11", qc: 20, present: true },
-    ];
-    const t = buildSalienceTrend(rise as never, thr, "2026-07-20")!;
+  it("détecte la progression (part qui monte d'un bloc au suivant : 15 → 32 = +17)", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T03", qc: 4, present: true, share: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, share: 15 },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true, share: 32 },
+    ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
-    expect(t.capLabel).toMatch(/^En progression/);
+    expect(t.deltaPct).toBe(17);
+    // Part la plus haute de la fenêtre → « au plus haut du jour », pas d'ancre
+    // au sommet (elle EST le sommet).
+    expect(t.situation).toBe("sommet");
+    // Seul cas où l'écart se compte depuis le BLOC PRÉCÉDENT : au sommet,
+    // « sous le sommet » n'a pas de sens, la question est « de combien elle a monté ».
+    // Notation en % (et non « points »), alignée sur le module des enjeux.
+    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+17 % depuis /);
+  });
+  // Ampleur = variation de la PART d'attention entre les deux derniers blocs (#304).
+  it("deltaPct baisse : 25 % → 15 % = −10 points", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 25 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 15 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("down");
+    expect(t.deltaPct).toBe(-10);
+  });
+  it("deltaPct hausse : 10 % → 22 % = +12 points", () => {
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 10 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 22 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("up");
+    expect(t.deltaPct).toBe(12);
+  });
+  it("stable : part inchangée → dir flat, et le SCORE qui monte ne fait pas un sommet", () => {
+    // qc monte (40 → 42) mais la part ne bouge pas : la boîte parle de PART,
+    // donc ce n'est pas « au plus haut du jour ».
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 30 },
+      { blockUtc: "2026-07-20T11", qc: 42, present: true, share: 30 },
+    ] as never, thr, "2026-07-20")!;
+    expect(t.dir).toBe("flat");
+    expect(t.deltaPct).toBe(0);
+    expect(t.situation).toBe("stable");
+    expect(t.capLabel).toMatch(/^Se maintient \(Sommet .+\)$/);
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 0, present: false },  // pas à la Une → Absente
-      { blockUtc: "2026-07-20T07", qc: 3, present: true },   // à la Une mais faible (< seuil faible=5)
-      { blockUtc: "2026-07-20T11", qc: 40, present: true },
+      { blockUtc: "2026-07-20T03", qc: 0, present: false, share: 0 },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true, share: 5 },   // à la Une mais faible (< seuil faible=8)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true, share: 30 },
     ] as never, thr, "2026-07-20")!;
     const absent = trend.points[0], faible = trend.points[1];
-    expect(absent.level).toBe("Absente");
+    expect(absent.level).toBe("Hors du radar");
     expect(absent.isAbsent).toBe(true);
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
@@ -518,7 +769,7 @@ describe("buildSalienceTrend (#274 — flèche + niveau par bloc)", () => {
     expect(now.timeLabel).toContain("minuit");
   });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
-    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false }] as never, thr, "2026-07-20")).toBeNull();
+    expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 }] as never, thr, "2026-07-20")).toBeNull();
   });
 });
 
