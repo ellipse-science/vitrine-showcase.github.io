@@ -638,6 +638,98 @@ function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_Q
   return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
 }
 
+// ── Badge de saillance CUMULÉE 24 h (essai) ─────────────────────────────────
+// Le badge ne décrit plus le SOMMET (figé, ne redescend jamais) ni le BLOC
+// COURANT (absent 38 % du temps pour la manchette principale, mesuré sur
+// l'historique DEV) : il décrit la saillance cumulée sur 24 h pondérée par
+// récence — `sumQc`, la grandeur qui décide DÉJÀ de l'ordre des cartes. Elle
+// existe toujours, elle décroît d'elle-même avec les heures, et le badge dit
+// enfin la même chose que le classement.
+//
+// GRILLE « B » mesurée sur l'historique DEV (2026-05-14 → 2026-07-26, 206
+// histoires, un point par storyline comme la calibration des pics).
+// PROVISOIRE : à publier par fetch_data.R (metrics.score_qc_sum_24h) au même
+// titre que score_qc_peak_24h — ici en dur le temps de l'essai.
+const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
+
+// Hystérésis : sans elle le badge change de bande une édition sur deux (mesuré :
+// 52 % des transitions, dont 5,6 % de sauts de 2 bandes). Il faut dépasser la
+// frontière de HYST_MARGIN pour que le libellé bouge ; sinon on garde le niveau
+// de l'édition précédente. Les allers-retours de frontière disparaissent, la
+// vraie décroissance passe.
+const HYST_MARGIN = 0.08;
+
+const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
+  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une." },
+  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." },
+  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." },
+  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+};
+
+// Bornes basses des bandes, du rang 1 au rang 6 (rang 1 = pas de borne basse).
+const bandLow = (t: typeof SUM_QC_THRESHOLDS) =>
+  [-Infinity, -Infinity, t.faible, t.moyenne, t.eleve, t.tresEleve, t.extreme];
+
+function rawRank(v: number, t: typeof SUM_QC_THRESHOLDS): number {
+  const low = bandLow(t);
+  for (let r = 6; r >= 2; r--) if (v >= low[r]) return r;
+  return 1;
+}
+
+// Niveau affiché = niveau brut, SAUF si le changement n'a pas franchi la
+// frontière avec la marge — auquel cas on conserve le niveau précédent.
+function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_THRESHOLDS): number {
+  const raw = rawRank(v, t);
+  if (prev === undefined || raw === prev) return raw;
+  const low = bandLow(t);
+  if (raw > prev) {
+    // Monte : il faut dépasser la borne basse de la bande visée d'une marge.
+    return v >= low[raw] * (1 + HYST_MARGIN) ? raw : prev;
+  }
+  // Descend : il faut passer sous la borne basse de la bande QUITTÉE d'une marge.
+  return v <= low[prev] * (1 - HYST_MARGIN) ? raw : prev;
+}
+
+// L'hystérésis a besoin du niveau de l'édition PRÉCÉDENTE. Le site est rebâti
+// à neuf toutes les 4 h, sans état persistant — on le reconstitue donc en
+// rejouant les éditions du snapshot (3 jours ≈ 18 fenêtres), du plus ancien au
+// plus récent. Déterministe : même snapshot → même badge, sans fichier d'état.
+function badgeRanksWithHysteresis(
+  events: RawEvent[],
+): Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }> {
+  const blocks = Array.from(new Set(events.map(blockKey))).sort();
+  const byBlock = new Map<string, RawEvent[]>();
+  for (const e of events) {
+    const b = blockKey(e);
+    if (!byBlock.has(b)) byBlock.set(b, []);
+    byBlock.get(b)!.push(e);
+  }
+  const out = new Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }>();
+  for (let i = 0; i < blocks.length; i++) {
+    const rows = blocks.slice(Math.max(0, i - 5), i + 1).flatMap((b) => byBlock.get(b) ?? []);
+    if (rows.length === 0) continue;
+    for (const s of storiesFrom24h(rows)) {
+      const key = s.rep.storyline_id ?? s.label;
+      const prev = out.get(key);
+      // La même passe sert au SOMMET de l'indice cumulé : la plus haute valeur
+      // que ce badge ait atteinte, et l'édition où c'est arrivé. Elle vit sur la
+      // MÊME échelle que la valeur courante — donc plaçable sur la même figure.
+      const peakSum = Math.max(prev?.peakSum ?? 0, s.sumQc);
+      const peakBlock = !prev || s.sumQc > prev.peakSum ? blocks[i] : prev.peakBlock;
+      const rank = hysteresisRank(prev?.rank, s.sumQc, SUM_QC_THRESHOLDS);
+      // …et à l'HISTORIQUE du badge, édition par édition : c'est lui qu'affiche
+      // le survol de la trajectoire, pour que le niveau lu sur un point soit le
+      // niveau que le badge portait à ce moment-là — même grandeur, même échelle.
+      const history = prev?.history ?? new Map<string, number>();
+      history.set(blocks[i], rank);
+      out.set(key, { rank, peakSum, peakBlock, history });
+    }
+  }
+  return out;
+}
+
 // Dédup storyline-aware (#231, ancien signalement #211 « la 1re et la 2e
 // nouvelle sont la même ») : le clustering amont peut scinder une même histoire
 // en deux événements du même bloc, et la garantie « 3 cartes par bloc/pays » du
@@ -795,7 +887,16 @@ export type SalienceTrendPoint = {
   timeLabel: string;   // « hier 19 h »
   level: string;       // « Exceptionnelle »
   levelCls: string;    // « s-extreme » (couleur de bande)
-  score: number;       // score_qc du bloc, arrondi (alimente la sparkline)
+  /** Palier de saillance du bloc, 1 (Très faible) → 6 (Exceptionnelle) ; 0 si la
+   *  nouvelle n'était pas à la Une. Pilote le DIAMÈTRE du point sur la courbe. */
+  rank: number;
+  score: number;       // score_qc du bloc, arrondi
+  /** Part de l'attention QC du bloc, en % — CE QUE TRACE LA COURBE (essai #304).
+   *  Toute la boîte de trajectoire parle désormais de part d'attention : courbe,
+   *  flèche et chiffre. Le vocabulaire de NIVEAU (« Très faible »…) redevient
+   *  exclusif au badge — c'est la contradiction relevée par Laurence-Olivier
+   *  (deux échelles, un seul encadré) qui disparaît par construction. */
+  share: number;
   isFirst: boolean;    // premier bloc où la nouvelle est apparue en Une
   isPeak: boolean;     // bloc du sommet
   isNow: boolean;      // bloc courant
@@ -812,6 +913,10 @@ export type SalienceTrend = {
    *  et le mot « Stable » suffisent, un « 0 % » serait redondant (décision Adrien).
    *  Bornée [−100, +100], cohérente avec la part d'attention de Deux solitudes. */
   deltaPct: number;
+  /** Situation de l'histoire à cette édition — pilote la phrase. Fréquences
+   *  mesurées sur l'historique DEV (708 cartes) : retombee 46 %, baisse 18 %,
+   *  nouvelle 14 %, sommet 14 %, remonte 5 %, stable 2 %, retour 1 %. */
+  situation: "nouvelle" | "sommet" | "baisse" | "remonte" | "retour" | "retombee" | "stable";
   points: SalienceTrendPoint[];
 };
 
@@ -858,28 +963,113 @@ function buildSalienceTrend(
   series: { blockUtc: string; qc: number; present: boolean; share: number }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
   blockDateMtl: string | null,
+  /** Niveau du BADGE édition par édition. Quand il est fourni, c'est lui qui
+   *  étiquette les points — sinon le survol annoncerait un niveau calculé sur
+   *  une autre grandeur (le score du bloc) et une autre échelle que la pastille,
+   *  et les deux se contrediraient à l'écran. */
+  badgeHistory?: Map<string, number>,
 ): SalienceTrend | null {
   if (series.length < 2 || series.every((p) => p.qc <= 0)) return null;
   const vals = series.map((p) => p.qc);
+  // Sommet marqué sur la courbe = sommet de la PART d'attention, puisque c'est
+  // elle que la courbe trace (essai #304). Le badge, lui, reste au sommet du
+  // SCORE : deux repères distincts, sur deux objets explicitement distincts.
   let peakIdx = 0;
-  for (let i = 1; i < vals.length; i++) if (vals[i] > vals[peakIdx]) peakIdx = i;
+  for (let i = 1; i < series.length; i++) if (series[i].share > series[peakIdx].share) peakIdx = i;
   const firstIdx = series.findIndex((p) => p.qc > 0);
   // Tendance = variation de la part d'attention QC depuis le bloc précédent
   // (bloc courant − bloc précédent, en points). Bornée [−100, +100], cohérente
   // avec Deux solitudes ; toujours affichée (0 = stable, avec symbole =).
   const deltaPct = Math.round(series[series.length - 1].share - series[series.length - 2].share);
+
+  // ── Situation, et phrase qui la dit ────────────────────────────────────────
+  // RÈGLE : ne JAMAIS nier le présent. Le mot « Une » désigne deux choses à
+  // l'écran — la sélection éditoriale 24 h (ce que la carte EST) et la présence
+  // en manchette dans le bloc de 4 h. Une phrase du type « plus à la Une » sur
+  // une carte affichée COMME une Une est incompréhensible (retour Adrien). On
+  // parle donc toujours de l'ATTENTION, jamais de l'appartenance.
+  // Grammaire unique, arrêtée avec Adrien :
+  //     [quand elle a culminé] · [ce que l'attention fait depuis]
+  // Un SEUL écart chiffré, et seulement quand il dit quelque chose (cas 2 et 4).
+  // Citer aussi la part courante ET celle du sommet allongeait chaque phrase
+  // d'une demi-ligne pour un gain de précision que la courbe donne déjà.
+  const last = series.length - 1;
+  const presents = series.map((p) => p.present);
+  const firstPresent = presents.indexOf(true);
+  // Sommet évalué sur la PART, pas sur le score : c'est la part que la courbe
+  // trace et que la phrase cite (« sommet cette nuit à 65 % »). Mélanger les
+  // deux ferait dire « au plus haut du jour » à une histoire dont la part n'a
+  // pas bougé, simplement parce que son score brut a monté.
+  const shares = series.map((p) => p.share);
+  const maxShare = Math.max(...shares);
+  const maxAvant = Math.max(...shares.slice(0, last));
+  const part = Math.round(series[last].share);
+
+  // Heure d'un bloc, forme courte : « à minuit », « à 16 h », « hier 20 h ».
+  const heure = (i: number) => {
+    const p = blockLabelParts(series[i].blockUtc, blockDateMtl);
+    if (!p) return null;
+    const h = p.hour >= 24 ? "minuit" : `${p.hour} h`;
+    if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
+    // « à » dans les deux cas : « à minuit », « hier à minuit » (retour Adrien).
+    return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+  };
+  const hSommet = heure(peakIdx);
+  const ancre = hSommet ? `Sommet ${hSommet}` : "Sommet du jour";
+  const hCourant = heure(last);
+  const momentPrec = blockLabelParts(series[last - 1].blockUtc, blockDateMtl)?.moment;
+  // Écart au sommet, en points de part, mais NOTÉ en % — même notation que le
+  // module des enjeux de Laurence-Olivier (décision Adrien), pour que les deux
+  // modules parlent pareil.
+  const reculSommet = Math.round(Math.max(0, Math.round(series[peakIdx].share) - part));
+  // Depuis quand l'attention est retombée = début de la série d'absences finale.
+  let debutAbsence = last;
+  while (debutAbsence > 0 && !presents[debutAbsence - 1]) debutAbsence--;
+  const momentRetombee = blockLabelParts(series[debutAbsence].blockUtc, blockDateMtl)?.moment;
+
+  let situation: SalienceTrend["situation"];
+  if (!presents[last]) situation = "retombee";
+  else if (firstPresent === last) situation = "nouvelle";
+  else if (shares[last] === maxShare && shares[last] > maxAvant) situation = "sommet";
+  else if (!presents[last - 1]) situation = "retour";
+  else if (deltaPct > 0) situation = "remonte";
+  else if (deltaPct < 0) situation = "baisse";
+  else situation = "stable";
+
+  // ORDRE (décision Adrien) : le MOUVEMENT en tête, l'ancre au sommet en incise
+  // entre parenthèses. Le lecteur reçoit d'abord ce qui se passe, puis le
+  // repère qui le situe — et non l'inverse.
+  const incise = `(${ancre})`;
+  const capLabel =
+    situation === "nouvelle" ? (hCourant ? `Nouveau (arrivée ${hCourant})` : "Nouveau")
+      : situation === "sommet" ? (momentPrec
+        ? `Nouveau sommet aujourd’hui (+${Math.abs(deltaPct)} % depuis ${momentPrec})`
+        : "Nouveau sommet aujourd’hui")
+        : situation === "retombee" ? (momentRetombee
+          ? `L’attention est retombée depuis ${momentRetombee} ${incise}`
+          : `L’attention est retombée ${incise}`)
+          : situation === "retour" ? `Retour ${incise}`
+            : situation === "remonte" ? (momentPrec
+              ? `Remonte depuis ${momentPrec} ${incise}`
+              : `Remonte ${incise}`)
+              : situation === "stable" ? `Se maintient ${incise}`
+                : `En recul de ${reculSommet} % ${incise}`;
+
+  // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis
+  // du sommet : une histoire qui revient (0 → 25 %) monte visiblement à l'écran,
+  // une flèche rouge à côté d'un segment qui grimpe se lit comme une erreur.
+  // L'écart au sommet, lui, est dit par les mots.
   const dir: SalienceTrend["dir"] = deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat";
-  const prevMoment = blockLabelParts(series[series.length - 2].blockUtc, blockDateMtl)?.moment;
-  const capLabel = dir === "flat" ? "Stable"
-    : dir === "up" ? (prevMoment ? `En progression depuis ${prevMoment}` : "En progression")
-    : (prevMoment ? `En déclin depuis ${prevMoment}` : "En déclin");
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
     // Bloc où la nouvelle n'a PAS fait la Une : « Pas à la Une » (point creux),
     // pas « Très faible ». Ne pas peindre l'absence comme une saillance faible
     // mais réelle — sinon on laisse croire qu'elle était là (retour Adrien).
     // « Pas à la Une » plutôt qu'« Absente » (moins abrupt, cohérent « À la Une… »).
-    const tier = p.present ? saillanceTierFromScore(p.qc, thresholds) : null;
+    const badgeRank = badgeHistory?.get(p.blockUtc);
+    const tier = !p.present ? null
+      : badgeRank ? TIER_BY_RANK[badgeRank]
+        : saillanceTierFromScore(p.qc, thresholds);
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
     const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
       : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour} h`}`;
@@ -887,12 +1077,14 @@ function buildSalienceTrend(
       timeLabel,
       level: tier ? tier.label : "Pas à la Une",
       levelCls: tier ? tier.cls : "s-absent",
+      rank: tier ? (badgeRank ?? (tier as { rank?: number }).rank ?? 0) : 0,
       score: Math.round(p.qc),
+      share: Math.round(p.share),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
       isAbsent: !p.present,
     };
   });
-  return { dir, capLabel, deltaPct, points };
+  return { dir, capLabel, deltaPct, situation, points };
 }
 
 export type UneEvent = {
@@ -907,6 +1099,18 @@ export type UneEvent = {
   saillanceCls: string;
   /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
   saillanceHint: string;
+  /** Poids visuel du badge selon l'écart au sommet 24 h (essai) : 0 = plein,
+   *  1 = atténué, 2 = contour seul. Le libellé et la taille ne changent JAMAIS. */
+  saillanceFade: 0 | 1 | 2;
+  /** Badge « EN CE MOMENT » : niveau au bloc COURANT, sur la même règle que le
+   *  badge « SOMMET 24 H » — il ne peut donc jamais le dépasser.
+   *  « Pas à la Une » quand l'histoire est absente du bloc courant. */
+  liveLabel: string;
+  liveCls: string;
+  liveRank: number;
+  /** « nouveau » = première apparition de la fenêtre 24 h à ce bloc ; « retour » =
+   *  absente au bloc précédent, déjà vue avant ; null = continuité. */
+  freshness: "nouveau" | "retour" | null;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -924,6 +1128,12 @@ export type UneEvent = {
   storylineId: string | null;
   /** Pic de score_qc sur la fenêtre 24h — base de l'étiquette phase C (#122). */
   scoreQcPeak24h: number | null;
+  /** Saillance CUMULÉE 24 h pondérée par récence — la grandeur du badge. */
+  scoreQcSum24h: number | null;
+  /** Plus haute valeur atteinte par cet indice cumulé, et l'édition où elle l'a
+   *  été (« à minuit », « hier à 20 h »). null si l'histoire est à son sommet. */
+  sommetSum: number | null;
+  sommetLabel: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -1107,6 +1317,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
   // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
   const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
+  // Niveau d'un BLOC (lecture au survol de la trajectoire) : calibré sur la
+  // distribution des scores PAR BLOC — sa vraie population de référence, la
+  // mieux fournie du fichier (n≈1500 sur un an, contre 106 pour les sommets).
+  // Deux échelles cohabitent donc, mais sans jamais pouvoir se contredire : le
+  // badge parle du CUMUL 24 h, le survol d'un BLOC — deux objets distincts, à
+  // deux endroits distincts. (C'était impossible du temps des deux badges
+  // côte à côte, où « en ce moment » pouvait dépasser « sommet 24 h ».)
+  const blockThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -1114,6 +1332,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     typeof evConvP50 === "number" && Number.isFinite(evConvP50)
       ? Math.round(Math.max(0, Math.min(100, evConvP50)))
       : HABITUAL_EVENT_CONV;
+
+  // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
+  const badgeRanks = badgeRanksWithHysteresis(unique);
 
   const stories = storiesFrom24h(unique);
   // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
@@ -1126,10 +1347,60 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
     // ~6 blocs est plus haut qu'un score de bloc, donc les étiqueter avec des
     // seuils par bloc surclasserait tout le monde (#281).
-    const { label: saillanceLabel, cls: saillanceCls, rank: saillanceRank, hint: saillanceHint } = saillanceTierFromScore(s.peakQc, salThresholds);
+    // Badge = saillance CUMULÉE 24 h pondérée par récence, lissée par hystérésis
+    // (cf. SUM_QC_THRESHOLDS). Le sommet ne pilote plus le badge : il est nommé
+    // dans la phrase de trajectoire, sous le badge.
+    const storyKey = s.rep.storyline_id ?? s.label;
+    const suivi = badgeRanks.get(storyKey);
+    const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, SUM_QC_THRESHOLDS);
+    const { label: saillanceLabel, cls: saillanceCls, hint: saillanceHint } = TIER_BY_RANK[saillanceRank];
+    // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
+    // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
+    const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
+    const sommetLabel = sommetSum != null && suivi
+      ? (() => {
+        const p = blockLabelParts(suivi.peakBlock, e.date_montreal_tz);
+        if (!p) return null;
+        const h = p.hour >= 24 ? "minuit" : `${p.hour} h`;
+        if (p.dayWord.startsWith("le ")) return p.dayWord;
+        return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+      })()
+      : null;
+    // Atténuation du badge en déclin (essai, demande de Jules) : le badge garde
+    // son libellé et sa taille — c'est bien le sommet des 24 h qu'il décrit —
+    // mais son poids visuel décroît quand l'histoire n'est plus à son sommet.
+    // 0 = plein (au sommet ou proche), 1 = atténué, 2 = contour seul.
+    const nowQc = s.series.length > 0 ? s.series[s.series.length - 1].qc : 0;
+    const peakRatio = s.peakQc > 0 ? nowQc / s.peakQc : 0;
+    const saillanceFade: 0 | 1 | 2 = peakRatio >= 0.7 ? 0 : peakRatio >= 0.3 ? 1 : 2;
+
+    // ── Badge « EN CE MOMENT » : niveau du bloc COURANT, sur la MÊME règle que
+    // le badge du sommet (cf. plus haut) — donc jamais au-dessus de lui.
+    // Deux badges plutôt qu'un (demande Adrien) : le sommet dit ce que l'histoire
+    // A ÉTÉ dans la journée, le second dit ce qu'elle EST à cette édition. Les
+    // deux étaient déjà dans les données ; un seul était affiché, d'où l'écart
+    // apparent entre le badge et la trajectoire.
+    const nowPresent = s.series.length > 0 && s.series[s.series.length - 1].present;
+    const liveTier = nowPresent ? saillanceTierFromScore(nowQc, salThresholds) : null;
+    const liveLabel = liveTier ? liveTier.label : "Pas à la Une";
+    const liveCls = liveTier ? liveTier.cls : "s-absent";
+    const liveRank = liveTier ? liveTier.rank : 0;
+
+    // Fraîcheur : « Nouveau » = l'histoire apparaît pour la première fois de la
+    // fenêtre 24 h à ce bloc ; « De retour » = elle était absente au bloc
+    // précédent mais avait déjà été à la Une avant. Sans ça, une histoire
+    // réapparue s'annonce « En progression depuis ce midi » alors qu'elle
+    // n'était tout simplement pas là à midi.
+    const lastIdx = s.series.length - 1;
+    const firstPresentIdx = s.series.findIndex((p) => p.present);
+    const freshness: "nouveau" | "retour" | null =
+      !nowPresent || lastIdx < 0 ? null
+        : firstPresentIdx === lastIdx ? "nouveau"
+          : lastIdx >= 1 && !s.series[lastIdx - 1].present ? "retour"
+            : null;
     // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
     // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
-    const salienceTrend = buildSalienceTrend(s.series, salThresholds, e.date_montreal_tz);
+    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, e.date_montreal_tz, suivi?.history);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;
@@ -1161,6 +1432,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceLabel,
       saillanceCls,
       saillanceHint,
+      saillanceFade,
+      liveLabel,
+      liveCls,
+      liveRank,
+      freshness,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
@@ -1170,9 +1446,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       totalQcOutlets: QC_MEDIA.length,
       storylineId: e.storyline_id ?? null,
       scoreQcPeak24h: s.peakQc,
+      scoreQcSum24h: s.sumQc,
+      sommetSum,
+      sommetLabel,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
-      salThresholds: [salThresholds.faible, salThresholds.moyenne, salThresholds.eleve, salThresholds.tresEleve, salThresholds.extreme],
+      // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
+      // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
+      salThresholds: [SUM_QC_THRESHOLDS.faible, SUM_QC_THRESHOLDS.moyenne, SUM_QC_THRESHOLDS.eleve, SUM_QC_THRESHOLDS.tresEleve, SUM_QC_THRESHOLDS.extreme],
     };
   });
 
@@ -1455,6 +1736,9 @@ export const __test__ = {
   salThresholdsFrom,
   calConvFrom,
   SAL_QC_THRESHOLDS,
+  SUM_QC_THRESHOLDS,
+  rawRank,
+  hysteresisRank,
   blockKey,
   titleTokens,
   sameStory,

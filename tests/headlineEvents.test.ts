@@ -431,6 +431,53 @@ describe("storiesFrom24h — part d'attention par bloc (#304)", () => {
   });
 });
 
+// Le badge suit la saillance CUMULÉE 24 h, qui décroît d'elle-même. Sans
+// hystérésis elle change de bande une édition sur deux (mesuré : 52 % des
+// transitions sur l'historique DEV, dont 5,6 % de sauts de 2 bandes).
+describe("hysteresisRank (lissage du badge cumulé)", () => {
+  const T = __test__.SUM_QC_THRESHOLDS; // {faible:21.4, moyenne:31, eleve:47.9, tresEleve:102.4, extreme:192.8}
+  const { rawRank, hysteresisRank } = __test__;
+
+  it("sans niveau précédent, rend le niveau brut", () => {
+    expect(hysteresisRank(undefined, 50, T)).toBe(rawRank(50, T)); // 47.9 ≤ 50 → rang 4
+    expect(hysteresisRank(undefined, 50, T)).toBe(4);
+  });
+
+  it("ne monte pas d'une bande pour un franchissement de justesse", () => {
+    // 48 dépasse le seuil « Élevée » (47.9) mais pas de 8 % → reste à 3.
+    expect(rawRank(48, T)).toBe(4);
+    expect(hysteresisRank(3, 48, T)).toBe(3);
+  });
+
+  it("monte quand la marge est franchie", () => {
+    expect(hysteresisRank(3, 47.9 * 1.09, T)).toBe(4);
+  });
+
+  it("ne redescend pas pour un repli de justesse sous le seuil quitté", () => {
+    // 47 est juste sous 47.9 : le badge « Élevée » tient.
+    expect(rawRank(47, T)).toBe(3);
+    expect(hysteresisRank(4, 47, T)).toBe(4);
+  });
+
+  it("redescend quand le repli est net", () => {
+    expect(hysteresisRank(4, 47.9 * 0.91, T)).toBe(3);
+  });
+
+  it("un aller-retour de frontière ne fait bouger le badge ni à l'aller ni au retour", () => {
+    let r = 3;
+    for (const v of [48, 47, 48.5, 46.5, 48]) r = hysteresisRank(r, v, T);
+    expect(r).toBe(3);
+  });
+
+  it("laisse passer une vraie décroissance, bande après bande", () => {
+    // Trajectoire réelle (tarifs, 23-24 juillet) : 261 → 198 → 150 → 110 → 68 → 34
+    const suite = [261.8, 198.4, 150.4, 110.5, 68.1, 33.8];
+    let r: number | undefined = undefined;
+    const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
+    expect(rangs).toEqual([6, 6, 5, 5, 4, 3]); // le badge redescend avec l'histoire
+  });
+});
+
 describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
   const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
   // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du
@@ -442,11 +489,15 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     { blockUtc: "2026-07-20T03", qc: 50, present: true, share: 40 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 25 },
     { blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 },
   ];
-  it("détecte le déclin (part qui baisse d'un bloc au suivant : 25 → 0 = −25)", () => {
+  it("absente du bloc courant : l'attention est retombée, JAMAIS « plus à la Une »", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
     expect(t.deltaPct).toBe(-25);
-    expect(t.capLabel).toMatch(/^En déclin depuis /);
+    expect(t.situation).toBe("retombee");
+    // Grammaire arrêtée : [ce que l'attention fait] puis l'ancre au sommet en incise.
+    expect(t.capLabel).toMatch(/^L’attention est retombée depuis .+ \(Sommet .+\)$/);
+    // La carte EST une Une : la phrase ne doit jamais nier cette appartenance.
+    expect(t.capLabel).not.toMatch(/à la Une/);
   });
   it("étiquette chaque bloc à SON niveau (pas le pic), marque sommet / première Une / maintenant", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
@@ -467,7 +518,13 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
     expect(t.deltaPct).toBe(17);
-    expect(t.capLabel).toMatch(/^En progression/);
+    // Part la plus haute de la fenêtre → « au plus haut du jour », pas d'ancre
+    // au sommet (elle EST le sommet).
+    expect(t.situation).toBe("sommet");
+    // Seul cas où l'écart se compte depuis le BLOC PRÉCÉDENT : au sommet,
+    // « sous le sommet » n'a pas de sens, la question est « de combien elle a monté ».
+    // Notation en % (et non « points »), alignée sur le module des enjeux.
+    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+17 % depuis /);
   });
   // Ampleur = variation de la PART d'attention entre les deux derniers blocs (#304).
   it("deltaPct baisse : 25 % → 15 % = −10 points", () => {
@@ -486,14 +543,17 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     expect(t.dir).toBe("up");
     expect(t.deltaPct).toBe(12);
   });
-  it("stable : part inchangée d'un bloc au suivant → dir flat, deltaPct 0, « Stable »", () => {
+  it("stable : part inchangée → dir flat, et le SCORE qui monte ne fait pas un sommet", () => {
+    // qc monte (40 → 42) mais la part ne bouge pas : la boîte parle de PART,
+    // donc ce n'est pas « au plus haut du jour ».
     const t = buildSalienceTrend([
       { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 30 },
       { blockUtc: "2026-07-20T11", qc: 42, present: true, share: 30 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("flat");
     expect(t.deltaPct).toBe(0);
-    expect(t.capLabel).toBe("Stable");
+    expect(t.situation).toBe("stable");
+    expect(t.capLabel).toMatch(/^Se maintient \(Sommet .+\)$/);
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([

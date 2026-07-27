@@ -14,6 +14,18 @@ import type { SalienceTrend } from "@/lib/data/headlineEvents";
 // Compacte, elle s'aligne optiquement avec le libellé.
 const W = 124, H = 24, PADX = 5, PADY = 4;
 
+// Diamètre d'un point = PALIER DE SAILLANCE de ce bloc (demande Adrien) : la
+// courbe dit la part d'attention par sa hauteur, la grosseur dit à quel niveau
+// la nouvelle se trouvait. Écart volontairement marqué — 1,9 px à 4,8 px entre
+// « Très faible » et « Exceptionnelle » — pour que la différence se voie à cette
+// échelle. Un bloc sans Une garde un petit anneau creux, lisible mais discret.
+// Les repères sommet / maintenant passent par la COULEUR (cf. CSS), pas par la
+// taille, pour que le diamètre n'encode qu'une seule chose.
+function rayon(p: { rank: number; isAbsent: boolean }, survol: boolean) {
+  const base = p.isAbsent ? 2 : 1.9 + (Math.max(1, p.rank) - 1) * 0.58;
+  return Number((survol ? base + 1.8 : base).toFixed(2));
+}
+
 // Symbole de tendance — chemin SVG, coloré par la classe parente : flèche ↘
 // (baisse) / ↗ (hausse) / « = » (stable, deux traits parallèles).
 function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
@@ -31,38 +43,44 @@ function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
 export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   const [hover, setHover] = useState<number | null>(null);
   const pts = trend.points;
-  const max = Math.max(1, ...pts.map((p) => p.score));
+  // La courbe trace la PART D'ATTENTION, pas le score (essai #304) : une seule
+  // grandeur dans toute la boîte — courbe, flèche et chiffre disent la même chose.
+  const max = Math.max(1, ...pts.map((p) => p.share));
   const xs = (i: number) => PADX + i * ((W - 2 * PADX) / Math.max(1, pts.length - 1));
   const ys = (v: number) => H - PADY - (v / max) * (H - 2 * PADY);
-  const line = pts.map((p, i) => `${xs(i).toFixed(1)},${ys(p.score).toFixed(1)}`).join(" ");
+  const line = pts.map((p, i) => `${xs(i).toFixed(1)},${ys(p.share).toFixed(1)}`).join(" ");
 
   const active = hover !== null ? pts[hover] : null;
 
-  // Ampleur chiffrée UNIQUEMENT quand ça bouge : baisse « −X », hausse « +X ».
-  // Stable → aucun chiffre (le symbole = et le mot « Stable » suffisent ; un
-  // « 0 % » serait redondant et se confondrait avec un niveau — décision Adrien #304).
-  const pctText = `${trend.dir === "up" ? "+" : "−"}${Math.abs(trend.deltaPct)}`;
+  // Les nombres vivent maintenant DANS la phrase (part actuelle + part au
+  // sommet), pas dans une parenthèse séparée : « −40 % » était ambigu (points
+  // de part ou chute relative?). Deux valeurs nommées ne peuvent pas se lire de
+  // travers.
 
   // ORDRE : courbe → flèche → libellé (+ ampleur entre parenthèses). La courbe
   // vient en TÊTE, donc ANCRÉE (sa position ne dépend pas du texte ; les
   // trajectoires de plusieurs Unes s'alignent verticalement). La flèche garde sa
   // place devant le libellé ; le chiffre d'ampleur suit le libellé, entre
   // parenthèses (demande Yannick #304, placement ajusté avec Adrien).
+  // <span> et non <div> : la trajectoire vit maintenant DANS la bande de
+  // saillance, elle-même un <span> (un div y serait un imbriquement invalide).
   return (
-    <div className={`saillance-trend trend-${trend.dir}`}>
+    <span className={`saillance-trend trend-${trend.dir}`}>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
-          role="img" aria-label={`Trajectoire de la saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
+          role="img" aria-label={`Part de l’attention médiatique sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
           <polyline points={line} fill="none" className="trend-line" strokeWidth="1.9" strokeLinejoin="round" />
           {pts.map((p, i) => (
             <circle
               key={i}
               className={`trend-pt${p.isAbsent ? " is-absent" : ""}${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
-              cx={xs(i).toFixed(1)} cy={ys(p.score).toFixed(1)}
-              r={i === hover ? 5 : p.isPeak || p.isNow ? 3.4 : 2.4}
+              cx={xs(i).toFixed(1)} cy={ys(p.share).toFixed(1)}
+              r={rayon(p, i === hover)}
               tabIndex={0}
               role="img"
-              aria-label={`${p.timeLabel} : ${p.level}`}
+              aria-label={p.isAbsent
+                ? `${p.timeLabel} : aucune couverture`
+                : `${p.timeLabel} : saillance ${p.level}, ${p.share} % de l’attention`}
               onPointerEnter={() => setHover(i)}
               onPointerLeave={() => setHover((h) => (h === i ? null : h))}
               onFocus={() => setHover(i)}
@@ -71,17 +89,25 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           ))}
         </svg>
       </span>
-      <Arrow dir={trend.dir} />
+      {/* Flèche et libellé dans le MÊME bloc de retour à la ligne : en mobile, la
+          phrase passe sous la courbe, et une flèche laissée seule au bout de la
+          première ligne se lit comme un défaut d'affichage. */}
+      <span className="trend-say"><Arrow dir={trend.dir} />
       {/* Le libellé fait double emploi : tendance + ampleur au repos, lecture du
-          bloc pointé au survol. L'ampleur (variation de la part d'attention depuis
-          le bloc précédent) ne s'affiche QUE si ça bouge — stable = « Stable »
-          seul, sans chiffre. Elle s'efface aussi au survol (décrit la tendance
-          globale, pas le bloc pointé). */}
+          bloc pointé au survol. Au survol on donne la PART du bloc pointé — plus
+          le niveau (« Très faible »), qui parlait l'échelle du badge et créait la
+          contradiction relevée par Laurence-Olivier. L'ampleur ne s'affiche QUE
+          si ça bouge — stable = « Stable » seul, sans chiffre. */}
       <span className="trend-cap" aria-live="polite">
         {active
-          ? <>{active.timeLabel} · <b>{active.level}</b></>
-          : <>{trend.capLabel}{trend.dir !== "flat" && <> (<b className="trend-pct">{pctText}&nbsp;%</b>)</>}</>}
+          ? (active.isAbsent
+            ? <>{active.timeLabel} · <b>aucune couverture</b></>
+            // Le NIVEAU que la nouvelle affichait à ce bloc (demande Adrien, #274),
+            // puis la part qui explique la hauteur du point sur la courbe.
+            : <>{active.timeLabel} · <b>{active.level}</b> · {active.share}&nbsp;% de l’attention</>)
+          : trend.capLabel}
       </span>
-    </div>
+      </span>
+    </span>
   );
 }

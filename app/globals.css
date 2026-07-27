@@ -1177,38 +1177,97 @@
   /* « C'est extrême! » — la tag Extrême doit crier : plus grosse, plus grasse,
      et carrément imposante sur le hero. */
   .saillance-tag.s-extreme {
-    background: #A85A52;
+    --tag: #A85A52;
+    background: var(--tag);
     color: var(--paper);
     font-size: 12px;
     font-weight: 600;
     padding: 6px 15px;
     letter-spacing: 0.28em;
   }
-  .une-main-head .saillance-tag.s-extreme {
-    font-size: 16px;
-    padding: 9px 20px;
-    letter-spacing: 0.3em;
-  }
+  /* Plus de grossissement sur le héro (décision Adrien) : la pastille a la MÊME
+     taille partout, hero comme manchette secondaire. Ce qui hiérarchise les
+     Unes, c'est le titre et l'image — pas l'étiquette, qui doit rester
+     comparable d'une carte à l'autre pour qu'on puisse lire les niveaux
+     côte à côte. */
   .saillance-tag.s-tres-eleve {
-    background: #BE7C6A;
+    --tag: #BE7C6A;
+    background: var(--tag);
     color: var(--paper);
   }
   .saillance-tag.s-eleve {
-    background: #C99A76;
+    --tag: #C99A76;
+    background: var(--tag);
     color: var(--ink);
   }
   .saillance-tag.s-moyenne {
-    background: #D2B488;
+    --tag: #D2B488;
+    background: var(--tag);
     color: var(--ink);
   }
   .saillance-tag.s-faible {
-    background: #DCCBA2;
+    --tag: #DCCBA2;
+    background: var(--tag);
     color: var(--ink-soft);
   }
   .saillance-tag.s-tres-faible {
-    background: #E4DCC6;
+    --tag: #E4DCC6;
+    background: var(--tag);
     color: var(--ink-soft);
   }
+
+  /* ── Badge atténué en déclin (essai, demande de Jules dans #02_vitrine_vibecode) ──
+     « elle doit rester en premier sur la une et être la plus grosse, mais le noir
+     doit disparaître ». Le LIBELLÉ et la TAILLE ne bougent pas — le badge dit
+     toujours le sommet des 24 h, et le classement (pondéré par récence) fait
+     déjà décroître le rang. Seul le POIDS VISUEL décroît, en deux paliers, selon
+     l'écart entre le bloc courant et le sommet. */
+  .saillance-tag.fade-1 {
+    background: color-mix(in srgb, var(--tag, #A85A52) 34%, transparent);
+    color: var(--ink);
+  }
+  .saillance-tag.fade-2 {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag, #A85A52) 65%, transparent);
+    color: var(--ink-soft);
+  }
+
+  /* ── Deux badges : « SOMMET 24 H » et « EN CE MOMENT » ────────────────────
+     Le préfixe nomme l'INSTANT décrit ; sans lui, deux niveaux côte à côte
+     seraient encore plus déroutants qu'un seul. Il est volontairement plus
+     petit et moins contrasté que le niveau : on lit d'abord le niveau. */
+  .saillance-tag .tag-quand {
+    font-weight: 400;
+    opacity: 0.72;
+    letter-spacing: 0.16em;
+    margin-right: 0.55em;
+  }
+  /* Le badge « en ce moment » reste toujours PLEIN : c'est lui qui porte l'état
+     courant, pendant que le badge du sommet s'efface avec le déclin. */
+  .saillance-tag.tag-live { font-size: 10px; font-weight: 500; padding: 5px 12px; letter-spacing: 0.26em; }
+  .une-main-head .saillance-tag.tag-live { font-size: 11px; padding: 6px 14px; }
+  /* Histoire absente du bloc courant : aucune couleur de palier à porter. */
+  .saillance-tag.s-absent {
+    --tag: var(--ink-softer);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--rule);
+    color: var(--ink-softer);
+  }
+  /* Fraîcheur — n'apparaît que quand il y a quelque chose à signaler. */
+  .saillance-tag.tag-fresh {
+    font-size: 9.5px;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .saillance-tag.tag-fresh.fresh-retour {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--ink-softer);
+    color: var(--ink-soft);
+  }
+  /* Trois badges + le ⓘ ne tiennent pas sur une ligne en mobile : on passe à la
+     ligne proprement plutôt que de déborder. */
+  .saillance-tag-row { flex-wrap: wrap; row-gap: 6px; }
 
   /* ── Trajectoire de saillance (#274) ─────────────────────────────────────
      Ligne SOUS le badge : flèche de tendance → libellé en clair → mini-courbe
@@ -1221,11 +1280,15 @@
   .une-side-head .une-enjeu { flex-basis: 100%; }
 
   .saillance-trend {
+    /* La trajectoire — courbe, flèche, phrase — reste un bloc d'un seul tenant
+       SOUS le badge (décision Adrien). Un temps la courbe est montée à côté de
+       la pastille via `display: contents` ; le badge et la courbe se disputaient
+       alors la même ligne alors qu'ils ne racontent pas la même chose. */
     flex-basis: 100%;
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 2px 0 0;
+    margin: 0;
     --trend-down: var(--red);
     --trend-up: var(--green);
     --acc: var(--ink-softer);
@@ -1234,6 +1297,13 @@
   .saillance-trend.trend-down { --acc: var(--trend-down); }
   .saillance-trend.trend-up { --acc: var(--trend-up); }
   .saillance-trend .trend-arrow { stroke: var(--acc); flex: none; }
+  /* Flèche + phrase : un seul bloc insécable, à droite de la courbe. Les deux
+     restent solidaires au retour à la ligne — une flèche laissée seule au bout
+     d'une ligne se lit comme un défaut d'affichage. */
+  .saillance-trend .trend-say {
+    display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1 1 auto;
+  }
+  .saillance-trend .trend-say .trend-arrow { position: relative; top: 3px; }
   /* Ampleur du mouvement, en parenthèses après le libellé (#304, Yannick +
      Adrien). Chiffre en gras, couleur de la tendance ; les parenthèses héritent
      du libellé. */
@@ -1241,7 +1311,10 @@
   .saillance-trend .trend-cap {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 15px;
-    color: var(--acc);
+    /* Texte en encre neutre : la couleur de tendance est portée par la COURBE et
+       la FLÈCHE, pas par la phrase. Une pastille colorée + une phrase entière en
+       vert ou en rouge faisaient deux aplats de couleur pour une seule idée. */
+    color: var(--ink-soft);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     display: inline-block;
@@ -1270,9 +1343,10 @@
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
      courbe est déjà au bord gauche. */
   @media (max-width: 620px) {
-    .saillance-trend { flex-wrap: wrap; row-gap: 4px; }
+    /* La phrase peut se replier sur deux lignes ; la bande garde sa structure
+       (coup d'œil au-dessus, lecture en dessous), la courbe ne descend plus
+       seule sur une ligne à elle. */
     .saillance-trend .trend-cap { white-space: normal; }
-    .saillance-trend .trend-spark-wrap { flex-basis: 100%; }
   }
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
@@ -1337,7 +1411,16 @@
   /* Tag + ⓘ centrées verticalement ensemble (sinon l'icône s'aligne sur la ligne
      de base et flotte au-dessus du rectangle). La marge basse passe sur la rangée
      pour ne pas décentrer l'icône. */
-  .saillance-tag-row { display: inline-flex; align-items: center; gap: 9px; }
+  /* Bande de saillance : pastille → trajectoire → ⓘ, sur une seule ligne.
+     flex-basis 100 % pour qu'elle prenne sa propre rangée sous la rubrique. */
+  .saillance-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    row-gap: 5px;
+  }
   .saillance-tag-row .saillance-tag { margin: 0; }
   .une-side .saillance-tag-row { margin-bottom: 12px; }
   .une-side .saillance-tag-row .saillance-tag { margin: 0; }
@@ -1385,12 +1468,37 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-softer);
-    margin-bottom: 9px;
+    margin-bottom: 4px;
+  }
+  /* EN TÊTE — l'explication simple du niveau affiché. Pleine taille, encre
+     pleine : c'est la réponse à « ça veut dire quoi, Élevée? ». */
+  .saillance-info-card .sic-lede {
+    display: block;
+    color: var(--ink);
+    margin-bottom: 10px;
   }
   .saillance-info-card .sic-curve { display: block; width: 100%; height: auto; margin-bottom: 10px; }
   .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
   .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }
-  .saillance-info-card .sic-text { display: block; }
+  /* Le sommet est un repère secondaire : même graisse, encre plus pâle. */
+  .saillance-info-card .sic-marker-som { fill: var(--ink-softer); }
+  /* Les faits de cette Une : encre pleine — c'est le concret. */
+  .saillance-info-card .sic-fait {
+    display: block;
+    margin-top: 2px;
+    color: var(--ink);
+  }
+  /* EN PIED — la définition de l'indice. Secondaire : plus petite, plus pâle,
+     séparée par un filet. Pour qui veut savoir ce qu'on mesure au juste. */
+  .saillance-info-card .sic-def {
+    display: block;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--rule);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--ink-softer);
+  }
 
   @media (max-width: 768px) {
     .saillance-info-bubble {
@@ -1398,10 +1506,9 @@
     }
   }
 
+  /* Idem côté secondaires : seule la marge basse reste propre à ce contexte,
+     la taille de la pastille ne change pas. */
   .une-side .saillance-tag {
-    font-size: 9px;
-    letter-spacing: 0.22em;
-    padding: 4px 10px;
     margin-bottom: 12px;
   }
 
