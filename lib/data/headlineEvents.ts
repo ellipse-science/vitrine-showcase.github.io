@@ -183,7 +183,7 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
 // quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
 // « habituel » (suivi backend).
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -648,8 +648,17 @@ function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_Q
 //
 // GRILLE « B » mesurée sur l'historique DEV (2026-05-14 → 2026-07-26, 206
 // histoires, un point par storyline comme la calibration des pics).
-// PROVISOIRE : à publier par fetch_data.R (metrics.score_qc_sum_24h) au même
-// titre que score_qc_peak_24h — ici en dur le temps de l'essai.
+//
+// REPLI seulement : `fetch_data.R` publie désormais `metrics.score_qc_sum_24h`
+// (calibration_sum_qc) et le loader le préfère quand il est là. La métrique
+// reste NULL tant que la fenêtre POST-FUSION ne contient pas assez de Unes
+// distinctes (CAL_MIN_N = 60 ; ~23 au 2026-07-27) — d'ici là ces valeurs
+// servent, et le basculement se fera tout seul.
+//
+// Population de référence = les Unes AFFICHÉES, pas toutes les storylines.
+// Mesuré : calibrer sur toutes les storylines mettrait 93 % des cartes dans les
+// 3 bandes du haut et 0 % dans les 2 du bas — exactement le tassement de
+// l'ancien badge au pic. Sur les affichées : 43 % / 25 %.
 const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
 
 // Hystérésis : sans elle le badge change de bande une édition sur deux (mesuré :
@@ -698,6 +707,7 @@ function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_TH
 // plus récent. Déterministe : même snapshot → même badge, sans fichier d'état.
 function badgeRanksWithHysteresis(
   events: RawEvent[],
+  sumThresholds: typeof SUM_QC_THRESHOLDS,
 ): Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }> {
   const blocks = Array.from(new Set(events.map(blockKey))).sort();
   const byBlock = new Map<string, RawEvent[]>();
@@ -718,7 +728,7 @@ function badgeRanksWithHysteresis(
       // MÊME échelle que la valeur courante — donc plaçable sur la même figure.
       const peakSum = Math.max(prev?.peakSum ?? 0, s.sumQc);
       const peakBlock = !prev || s.sumQc > prev.peakSum ? blocks[i] : prev.peakBlock;
-      const rank = hysteresisRank(prev?.rank, s.sumQc, SUM_QC_THRESHOLDS);
+      const rank = hysteresisRank(prev?.rank, s.sumQc, sumThresholds);
       // …et à l'HISTORIQUE du badge, édition par édition : c'est lui qu'affiche
       // le survol de la trajectoire, pour que le niveau lu sur un point soit le
       // niveau que le badge portait à ce moment-là — même grandeur, même échelle.
@@ -1334,6 +1344,9 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // deux endroits distincts. (C'était impossible du temps des deux badges
   // côte à côte, où « en ce moment » pouvait dépasser « sommet 24 h ».)
   const blockThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_qc dans
+  // fetch_data.R ; repli sur les valeurs mesurées tant qu'elle manque.
+  const sumThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConvP50 = calibration?.metrics?.event_convergence?.p50;
@@ -1343,7 +1356,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       : HABITUAL_EVENT_CONV;
 
   // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
-  const badgeRanks = badgeRanksWithHysteresis(unique);
+  const badgeRanks = badgeRanksWithHysteresis(unique, sumThresholds);
 
   const stories = storiesFrom24h(unique);
   // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
@@ -1361,7 +1374,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // dans la phrase de trajectoire, sous le badge.
     const storyKey = s.rep.storyline_id ?? s.label;
     const suivi = badgeRanks.get(storyKey);
-    const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, SUM_QC_THRESHOLDS);
+    const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
     const { label: saillanceLabel, cls: saillanceCls, hint: saillanceHint } = TIER_BY_RANK[saillanceRank];
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
@@ -1462,7 +1475,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
       // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
-      salThresholds: [SUM_QC_THRESHOLDS.faible, SUM_QC_THRESHOLDS.moyenne, SUM_QC_THRESHOLDS.eleve, SUM_QC_THRESHOLDS.tresEleve, SUM_QC_THRESHOLDS.extreme],
+      salThresholds: [sumThresholds.faible, sumThresholds.moyenne, sumThresholds.eleve, sumThresholds.tresEleve, sumThresholds.extreme],
     };
   });
 

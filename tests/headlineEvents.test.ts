@@ -434,6 +434,40 @@ describe("storiesFrom24h — part d'attention par bloc (#304)", () => {
 // Le badge suit la saillance CUMULÉE 24 h, qui décroît d'elle-même. Sans
 // hystérésis elle change de bande une édition sur deux (mesuré : 52 % des
 // transitions sur l'historique DEV, dont 5,6 % de sauts de 2 bandes).
+// La grille du badge vient de calibration_sum_qc (fetch_data.R). Elle reste
+// NULL tant que la fenêtre post-fusion n'a pas 60 Unes distinctes (~23 au
+// 2026-07-27) : le repli codé en dur sert donc pour de vrai, pas seulement en
+// théorie. On verrouille les deux branches.
+describe("grille du badge : calibration publiée sinon repli (#314)", () => {
+  const { salThresholdsFrom, SUM_QC_THRESHOLDS } = __test__;
+
+  it("métrique absente → repli sur SUM_QC_THRESHOLDS", () => {
+    expect(salThresholdsFrom(undefined)).toBeNull();
+    // Le loader fait `salThresholdsFrom(...) ?? SUM_QC_THRESHOLDS`.
+    expect(salThresholdsFrom(undefined) ?? SUM_QC_THRESHOLDS).toBe(SUM_QC_THRESHOLDS);
+  });
+
+  it("métrique publiée → elle gagne sur le repli", () => {
+    const publiee = { p5: 25.5, p20: 41.4, p50: 67.5, p80: 149.8, p95: 253.5 };
+    expect(salThresholdsFrom(publiee) ?? SUM_QC_THRESHOLDS).toEqual({
+      faible: 25.5, moyenne: 41.4, eleve: 67.5, tresEleve: 149.8, extreme: 253.5,
+    });
+  });
+
+  it("métrique non monotone → repli (garde-fou contre une calibration dégénérée)", () => {
+    const cassee = { p5: 25, p20: 10, p50: 67, p80: 149, p95: 253 };
+    expect(salThresholdsFrom(cassee) ?? SUM_QC_THRESHOLDS).toBe(SUM_QC_THRESHOLDS);
+  });
+
+  it("le repli garde l'ordre attendu des bandes", () => {
+    const t = SUM_QC_THRESHOLDS;
+    expect(t.faible).toBeLessThan(t.moyenne);
+    expect(t.moyenne).toBeLessThan(t.eleve);
+    expect(t.eleve).toBeLessThan(t.tresEleve);
+    expect(t.tresEleve).toBeLessThan(t.extreme);
+  });
+});
+
 describe("hysteresisRank (lissage du badge cumulé)", () => {
   const T = __test__.SUM_QC_THRESHOLDS; // {faible:21.4, moyenne:31, eleve:47.9, tresEleve:102.4, extreme:192.8}
   const { rawRank, hysteresisRank } = __test__;
