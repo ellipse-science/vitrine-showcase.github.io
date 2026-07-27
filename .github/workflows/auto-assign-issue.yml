@@ -4,6 +4,13 @@ name: Auto-assign issues by module
 # de module, dès qu'elle est ouverte ou labellisée (le label est posé par le
 # reporter du site via report-issue.yml, ou à la main sur GitHub).
 #
+# ── DEUX PORTES D'ENTRÉE ──────────────────────────────────────────────────────
+# 1. `issues` (opened/labeled) : issues créées par un HUMAIN sur GitHub.
+# 2. `workflow_call`           : appelé explicitement par report-issue.yml.
+#    Nécessaire parce qu'une issue créée par un workflow avec le GITHUB_TOKEN
+#    ne déclenche AUCUN autre workflow (garde-fou anti-boucle de GitHub) — les
+#    signalements du site n'étaient donc jamais assignés.
+#
 # ── OWNERSHIP VIVANT ──────────────────────────────────────────────────────────
 # L'ownership change avec l'équipe. La SEULE chose à éditer = la table OWNERS
 # (et les pools habillage) dans le script ci-dessous. Garder synchro avec
@@ -12,6 +19,12 @@ name: Auto-assign issues by module
 on:
   issues:
     types: [opened, labeled]
+  workflow_call:
+    inputs:
+      issue_number:
+        description: Numéro de l'issue à assigner
+        required: true
+        type: number
 
 permissions:
   issues: write
@@ -22,6 +35,9 @@ jobs:
     steps:
       - name: Assign owner(s) from module label
         uses: actions/github-script@v9
+        env:
+          # `inputs` est vide sur un déclenchement `issues` → on retombe sur le payload.
+          ISSUE_NUMBER: ${{ inputs.issue_number || github.event.issue.number }}
         with:
           script: |
             // ── Table déclarative (label → propriétaires GitHub) ──────────────
@@ -34,11 +50,23 @@ jobs:
               'module-6-polimetre':          ['SkelAlex'],
             };
             // Habillage = un peu tout le monde → tirage stable dans ce pool.
-            const HABILLAGE_LABELS = ['site-header', 'site-footer', 'page-methodologie', 'page-apropos', 'page-abonnement'];
+            const HABILLAGE_LABELS = ['site-header', 'site-footer', 'page-methodologie', 'page-apropos', 'page-abonnement', 'page-journal'];
             const HABILLAGE_POOL = ['AdriClout', 'capel201', 'etienneprx', 'julespiral'];
 
-            const issue = context.payload.issue;
-            if (!issue) return;
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+              core.info('Aucun numéro d’issue exploitable — rien à faire.');
+              return;
+            }
+
+            // On relit l'issue via l'API plutôt que le payload : c'est la seule
+            // source fiable quand on est appelé par un autre workflow, et ça
+            // reflète les labels/assignations posés depuis l'événement.
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
 
             // Ne jamais écraser une assignation manuelle (le triage humain gagne).
             if (issue.assignees && issue.assignees.length > 0) {
@@ -58,7 +86,7 @@ jobs:
             if (!assignees) {
               if (labels.some(l => HABILLAGE_LABELS.includes(l))) {
                 // Tirage reproductible basé sur le numéro d'issue.
-                assignees = [HABILLAGE_POOL[issue.number % HABILLAGE_POOL.length]];
+                assignees = [HABILLAGE_POOL[issueNumber % HABILLAGE_POOL.length]];
               }
             }
             if (!assignees || assignees.length === 0) {
@@ -70,7 +98,7 @@ jobs:
               await github.rest.issues.addAssignees({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
+                issue_number: issueNumber,
                 assignees,
               });
               core.info('Assigné à : ' + assignees.join(', '));
