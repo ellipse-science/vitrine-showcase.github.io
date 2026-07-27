@@ -1,5 +1,11 @@
 [
   {
+    "pr": 347,
+    "date": "2026-07-27T22:02:05Z",
+    "note": "feat(flappy): déverrouillage tactile mobile et refonte esthétique éditoriale de Flappy Enjeux",
+    "version": null
+  },
+  {
     "pr": 345,
     "date": "2026-07-27T21:43:07Z",
     "note": "feat(enjeux): refonte du module De quoi parle-t-on (tuiles centrées, noms complets, infobulle ⓘ et palette CAPP)",
