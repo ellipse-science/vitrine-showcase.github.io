@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { InfoTip } from "@/components/interactive/InfoTip";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
@@ -46,13 +47,10 @@ function formatGrowth(growth: number): string {
   return `${sign}${Math.abs(growth).toFixed(1).replace(".", ",")} %`;
 }
 
-function GrowthTile({ tile }: { tile: LayoutNode }) {
+function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutNode | null) => void }) {
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
-  const isSmall = size === "small";
-  const details = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
-  const tooltip = tile.url ? `${details} · Cliquer pour lire l'article →` : details;
 
   const growthSpan = (
     <span className="gt-pct">
@@ -62,25 +60,42 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
     </span>
   );
 
+  const hasNews = Boolean(tile.context);
+
+  const mediaLabel = tile.outlets.length > 0
+    ? tile.outlets.map((o) => o.name).join(" · ")
+    : null;
+
   const inner = isTiny ? (
     <div className="gt-compact">
-      <span className="gt-enjeu">{tile.issueFr}</span>
+      <span className="gt-title">{tile.issueFr}</span>
       {growthSpan}
     </div>
   ) : (
     <>
       <div className="gt-head">
-        <span className="gt-labels">
-          <span className="gt-enjeu">{tile.issueFr}</span>
-          {tile.topObject && <span className="gt-name">{tile.topObject}</span>}
-        </span>
         {growthSpan}
       </div>
-      {!isSmall && tile.context && <div className="gt-context">{tile.context}</div>}
+      <div className="gt-body">
+        <div className="gt-title">{tile.issueFr}</div>
+        {hasNews && (
+          <div className="gt-news">
+            <span className="gt-news-head">{tile.context}</span>
+            {mediaLabel && <span className="gt-news-media">{mediaLabel}</span>}
+          </div>
+        )}
+      </div>
     </>
   );
 
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
+  // Petites tuiles (texte tronqué) : on révèle tout via une infobulle stylée flottante
+  // (gérée par le parent) ; grandes/moyennes : révélation dans la tuile (déjà en place).
+  const needsTip = size === "small" || isTiny;
+  const shared = {
+    className: `gt-tile gt-${size}${hasNews ? " gt-has-news" : ""}`,
+    style: { "--c": tile.color } as React.CSSProperties,
+    title: needsTip ? undefined : tile.issueFr
+  };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (
@@ -96,8 +111,34 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
         width: `${tile.rect.w.toFixed(2)}%`,
         height: `${tile.rect.h.toFixed(2)}%`
       }}
+      onMouseEnter={needsTip && onHover ? () => onHover(tile) : undefined}
+      onMouseLeave={needsTip && onHover ? () => onHover(null) : undefined}
     >
       {content}
+    </div>
+  );
+}
+
+// Infobulle stylée flottante pour les petites tuiles : nom + manchette + médias,
+// positionnée près de la tuile (bascule vers l'intérieur selon sa position).
+function GrowthTip({ tile }: { tile: LayoutNode }) {
+  const cx = tile.rect.x + tile.rect.w / 2;
+  const cy = tile.rect.y + tile.rect.h / 2;
+  const rightSide = cx > 58;
+  const bottomSide = cy > 52;
+  const style: React.CSSProperties = { position: "absolute" };
+  if (rightSide) style.right = `${(100 - (tile.rect.x + tile.rect.w)).toFixed(2)}%`;
+  else style.left = `${tile.rect.x.toFixed(2)}%`;
+  if (bottomSide) style.bottom = `${(100 - tile.rect.y).toFixed(2)}%`;
+  else style.top = `${(tile.rect.y + tile.rect.h).toFixed(2)}%`;
+  const mediaLabel = tile.outlets.length > 0
+    ? tile.outlets.map((o) => o.name).join(" · ")
+    : null;
+  return (
+    <div className="gt-tip" style={style}>
+      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
+      {tile.context && <div className="gt-tip-head">{tile.context}</div>}
+      {mediaLabel && <div className="gt-tip-media">{mediaLabel}</div>}
     </div>
   );
 }
@@ -334,6 +375,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
   const [secret, setSecret] = useState(false);
   useKonamiCode(() => { setPeriod("month"); setSecret(true); });
+  const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const current = data[period];
   const tiles = current.tiles;
 
@@ -341,7 +383,15 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">De quoi parle-t-on?</h2>
+          <h2 className="partis-title">
+            De quoi parle-t-on?{" "}
+            <InfoTip size="lg" label="Comment interpréter cette visualisation">
+              <b>Comment interpréter cette visualisation :</b><br /><br />
+              • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent.<br /><br />
+              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes.
+              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
+            </InfoTip>
+          </h2>
         </div>
         <div className="control-block">
           <div className="control-row">
@@ -377,8 +427,9 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
         <>
           <div className="treemap-growth">
             {computeTreemapLayout(tiles).map((t) => (
-              <GrowthTile key={t.issueKey} tile={t} />
+              <GrowthTile key={t.issueKey} tile={t} onHover={setTipTile} />
             ))}
+            {tipTile && <GrowthTip tile={tipTile} />}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">
