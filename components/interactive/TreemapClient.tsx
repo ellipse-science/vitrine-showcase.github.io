@@ -62,6 +62,10 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
 
   const hasNews = Boolean(tile.context);
 
+  const mediaLabel = tile.outlets.length > 0
+    ? tile.outlets.map((o) => o.name).join(" · ")
+    : domainOf(tile.url);
+
   const inner = isTiny ? (
     <div className="gt-compact">
       <span className="gt-title">{tile.issueFr}</span>
@@ -77,9 +81,7 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
         {hasNews && (
           <div className="gt-news">
             <span className="gt-news-head">{tile.context}</span>
-            {tile.outlets.length > 0 && (
-              <span className="gt-news-media">{tile.outlets.map((o) => o.name).join(" · ")}</span>
-            )}
+            {mediaLabel && <span className="gt-news-media">{mediaLabel}</span>}
           </div>
         )}
       </div>
@@ -129,13 +131,14 @@ function GrowthTip({ tile }: { tile: LayoutNode }) {
   else style.left = `${tile.rect.x.toFixed(2)}%`;
   if (bottomSide) style.bottom = `${(100 - tile.rect.y).toFixed(2)}%`;
   else style.top = `${(tile.rect.y + tile.rect.h).toFixed(2)}%`;
+  const mediaLabel = tile.outlets.length > 0
+    ? tile.outlets.map((o) => o.name).join(" · ")
+    : domainOf(tile.url);
   return (
     <div className="gt-tip" style={style}>
       <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
       {tile.context && <div className="gt-tip-head">{tile.context}</div>}
-      {tile.outlets.length > 0 && (
-        <div className="gt-tip-media">{tile.outlets.map((o) => o.name).join(" · ")}</div>
-      )}
+      {mediaLabel && <div className="gt-tip-media">{mediaLabel}</div>}
     </div>
   );
 }

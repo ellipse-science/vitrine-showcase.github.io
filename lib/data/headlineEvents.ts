@@ -1635,11 +1635,12 @@ async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
         const dedupKey = url ?? title;
         if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
       }
-      // médias QC couvrant cet événement (même logique que storiesFrom24h)
-      const ids = e.media_ids_qc !== undefined
-        ? parseIdList(e.media_ids_qc)
-        : parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
-      ids.forEach((id) => qcIds.add(id));
+      // Médias couvrant cet événement : media_ids_qc en priorité, sinon media_ids
+      let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
+      if (ids.length === 0 && e.media_ids) ids = parseIdList(e.media_ids);
+      ids.forEach((id) => {
+        if (MEDIA_NAMES[id]) qcIds.add(id);
+      });
       for (const k of ["articles_24h", "articles"] as const) {
         try {
           const parsed = JSON.parse((e[k] as string) ?? "[]");
@@ -1649,9 +1650,9 @@ async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
         } catch { /* champ absent ou malformé */ }
       }
     }
-    const outlets = QC_MEDIA
+    const outlets = Object.keys(MEDIA_NAMES)
       .filter((id) => qcIds.has(id))
-      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
+      .map((id) => ({ name: MEDIA_NAMES[id], url: urlByMedia[id] ?? null }));
     map.set(issueKey, { articles: list.slice(0, 5), outlets });
   }
   return map;
