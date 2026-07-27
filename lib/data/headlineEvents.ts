@@ -844,9 +844,10 @@ function firstSeenSaillantLabel(firstSeenUtc: string | null | undefined, blockDa
     UPDATE_HOURS_MTL[0],
   );
   const dayDiff = blockDay - seenDay;
-  // Espace fine insécable avant « h » (norme typographique française).
-  if (dayDiff <= 0) return `${SAILLANT_TODAY[snapped]}, ${snapped} h`;
-  if (dayDiff === 1) return `${SAILLANT_YESTERDAY[snapped]}, ${snapped} h`;
+  // Pas d'espace avant « h » : « 20h », règle typographique retenue par Adrien
+  // (2026-07-26) pour tout le module — les heures sont des repères, pas du texte.
+  if (dayDiff <= 0) return `${SAILLANT_TODAY[snapped]}, ${snapped}h`;
+  if (dayDiff === 1) return `${SAILLANT_YESTERDAY[snapped]}, ${snapped}h`;
   const dateFr = formatDateFr(dateIso);
   return `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
 }
@@ -866,8 +867,9 @@ function saillantSinceLabel(timeIntervalMtl: string | null, headlineHours: numbe
     UPDATE_HOURS_MTL[0],
   );
   const part = (yesterday ? SAILLANT_YESTERDAY : SAILLANT_TODAY)[snapped];
-  // Espace fine insécable avant « h » (norme typographique française).
-  return `${part}, ${snapped} h`;
+  // Pas d'espace avant « h » : « 20h », règle typographique retenue par Adrien
+  // (2026-07-26) pour tout le module — les heures sont des repères, pas du texte.
+  return `${part}, ${snapped}h`;
 }
 
 // Label de période pour la section (#125) : change selon le bloc 4h courant.
@@ -1014,7 +1016,7 @@ function buildSalienceTrend(
   const heure = (i: number, avecA = true) => {
     const p = blockLabelParts(series[i].blockUtc, blockDateMtl);
     if (!p) return null;
-    const h = p.hour >= 24 ? "minuit" : `${p.hour} h`;
+    const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
     if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
     const jour = p.dayWord === "aujourd’hui" ? "" : `${p.dayWord} `;
     return avecA ? `${jour}à ${h}` : `${jour}${h}`;
@@ -1077,7 +1079,7 @@ function buildSalienceTrend(
         : saillanceTierFromScore(p.qc, thresholds);
     // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
     const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
-      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour} h`}`;
+      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour}h`}`;
     return {
       timeLabel,
       // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
@@ -1368,7 +1370,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? (() => {
         const p = blockLabelParts(suivi.peakBlock, e.date_montreal_tz);
         if (!p) return null;
-        const h = p.hour >= 24 ? "minuit" : `${p.hour} h`;
+        const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
         return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
       })()

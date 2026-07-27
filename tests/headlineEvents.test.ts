@@ -60,15 +60,15 @@ describe("firstSeenSaillantLabel", () => {
   });
   it("même jour : 12h UTC = 8h Montréal (EDT) → « ce matin, 8 h »", () => {
     expect(firstSeenSaillantLabel("2026-07-11T12:00:00Z", "2026-07-11"))
-      .toBe("ce matin, 8 h");
+      .toBe("ce matin, 8h");
   });
   it("veille : 0h UTC le 11 = 20h Montréal le 10 → « hier soir, 20 h »", () => {
     expect(firstSeenSaillantLabel("2026-07-11T00:00:00Z", "2026-07-11"))
-      .toBe("hier soir, 20 h");
+      .toBe("hier soir, 20h");
   });
   it("arrondit à l'édition la plus proche en heure d'hiver (EST : 0h UTC = 19h)", () => {
     expect(firstSeenSaillantLabel("2026-01-15T00:00:00Z", "2026-01-15"))
-      .toBe("hier soir, 20 h");
+      .toBe("hier soir, 20h");
   });
   it("au-delà d'hier : date en toutes lettres", () => {
     expect(firstSeenSaillantLabel("2026-07-08T12:00:00Z", "2026-07-11"))
