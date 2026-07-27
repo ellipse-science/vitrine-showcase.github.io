@@ -1,11 +1,18 @@
-import { ScoreEntry, insertScore } from "./flappy";
+import { ScoreEntry, insertScore, sanitizeInitials } from "./flappy";
 
 const LOCAL_KEY = "vitrine-flappy-scores";
 
-// URL de l'API globale du leaderboard (peut être définie via la variable d'environnement NEXT_PUBLIC_FLAPPY_LEADERBOARD_URL)
-const API_URL =
-  process.env.NEXT_PUBLIC_FLAPPY_LEADERBOARD_URL ||
-  "/api/flappy-leaderboard";
+const UPSTASH_URL =
+  process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL ||
+  process.env.UPSTASH_REDIS_REST_URL ||
+  "https://fond-jaguar-183203.upstash.io";
+
+const UPSTASH_TOKEN =
+  process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN ||
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  "gQAAAAAAAsujAAIgcDI4Y2RlN2NhZTI2NTI0MzYzOGE0NjI0YTQ2MmJiN2ZkNg";
+
+const REDIS_KEY = "vitrine-flappy-global-board";
 
 export function loadLocalBoard(): ScoreEntry[] {
   if (typeof window === "undefined") return [];
@@ -28,21 +35,21 @@ export function saveLocalBoard(board: ScoreEntry[]): void {
 export async function fetchLeaderboard(): Promise<{ board: ScoreEntry[]; isGlobal: boolean }> {
   const local = loadLocalBoard();
 
-  // Si nous sommes sur un site statique sans URL API globale configurée, on retourne la version locale
-  if (!process.env.NEXT_PUBLIC_FLAPPY_LEADERBOARD_URL && typeof window !== "undefined" && !window.location.origin.includes("localhost")) {
-    return { board: local.slice(0, 10), isGlobal: false };
-  }
-
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(API_URL, { signal: controller.signal });
+
+    const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: controller.signal,
+    });
     clearTimeout(timer);
 
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data?.board)) {
-        let merged = data.board as ScoreEntry[];
+      const raw = data.result ? JSON.parse(data.result) : [];
+      if (Array.isArray(raw)) {
+        let merged = raw as ScoreEntry[];
         for (const entry of local) {
           merged = insertScore(merged, entry);
         }
@@ -50,7 +57,7 @@ export async function fetchLeaderboard(): Promise<{ board: ScoreEntry[]; isGloba
       }
     }
   } catch {
-    /* Repli sur le stockage local si déconnecté ou erreur API */
+    /* Repli sur le stockage local si déconnecté */
   }
 
   return { board: local.slice(0, 10), isGlobal: false };
@@ -62,27 +69,43 @@ export async function submitScoreToLeaderboard(entry: ScoreEntry): Promise<{ boa
   const updatedLocal = insertScore(currentLocal, entry);
   saveLocalBoard(updatedLocal);
 
-  // 2. Publication vers l'API globale
-  if (!process.env.NEXT_PUBLIC_FLAPPY_LEADERBOARD_URL && typeof window !== "undefined" && !window.location.origin.includes("localhost")) {
-    return { board: updatedLocal.slice(0, 10), isGlobal: false };
-  }
-
   try {
+    const sanitizedEntry: ScoreEntry = {
+      initials: sanitizeInitials(entry.initials),
+      score: Number(entry.score),
+      date: entry.date || new Date().toISOString().slice(0, 10),
+    };
+
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(API_URL, {
+    const timer = setTimeout(() => controller.abort(), 3500);
+
+    // Récupération préalable du classement mondial
+    const getRes = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: controller.signal,
+    });
+    let currentGlobal: ScoreEntry[] = [];
+    if (getRes.ok) {
+      const data = await getRes.json();
+      currentGlobal = data.result ? JSON.parse(data.result) : [];
+    }
+
+    const updatedGlobal = insertScore(currentGlobal, sanitizedEntry);
+
+    // Publication de la liste mise à jour dans Upstash Redis
+    const setRes = await fetch(`${UPSTASH_URL}/set/${REDIS_KEY}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(entry),
+      headers: {
+        Authorization: `Bearer ${UPSTASH_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(JSON.stringify(updatedGlobal)),
       signal: controller.signal,
     });
     clearTimeout(timer);
 
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data?.board)) {
-        return { board: (data.board as ScoreEntry[]).slice(0, 10), isGlobal: true };
-      }
+    if (setRes.ok) {
+      return { board: updatedGlobal.slice(0, 10), isGlobal: true };
     }
   } catch {
     /* Repli sur le stockage local */
