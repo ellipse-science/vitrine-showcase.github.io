@@ -256,8 +256,16 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // rangée vide était déjà comptée 20 px) au lieu de perdre 34 px et
             // de remonter sur le radar.
             const blockH = eyeH + titleH + TB_GAP + 20 + Math.max(0, mediaRows.length - 1) * ROW_H;
-            // Haut du bloc selon la position de l'axe.
-            const top = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
+            // Haut du bloc selon la position de l'axe, borné dans la zone de
+            // dessin (#299). Le bloc grandit vers le HAUT sur l'axe du haut :
+            // un titre qui passe à 4 lignes le fait sortir par le dessus
+            // (mesuré : étiquette de catégorie à y = -9 pour un viewBox qui
+            // commence à 0), et sous 768 px le conteneur rogne en Y — la
+            // catégorie était coupée en deux. Symétrique en bas. La marge
+            // regagnée reste très inférieure à l'espace libre entre le bloc et
+            // le disque (≈ 48 px), donc rien ne vient mordre sur le radar.
+            const rawTop = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
+            const top = Math.max(2, Math.min(rawTop, H - blockH - 2));
             const eyebrowY = top + 11;
             const title1Y = top + eyeH + 14;                 // 1re ligne de titre
             const rowY = title1Y + (lines.length - 1) * LINE_H + TB_GAP;
