@@ -32,16 +32,33 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
         {event.issueFr}
       </span>
+      {/* UN SEUL badge : la saillance cumulée sur 24 h pondérée par récence — la
+          grandeur qui décide déjà de l'ordre des cartes. Elle existe toujours
+          (contrairement au bloc courant, absent 38 % du temps) et elle décroît
+          d'elle-même (contrairement au sommet, figé). Le sommet, lui, est nommé
+          dans la phrase de trajectoire juste dessous. */}
+      {/* UNE SEULE bande de saillance, en deux temps :
+            ligne 1 — le COUP D'ŒIL : pastille de niveau, ⓘ, courbe
+            ligne 2 — la LECTURE  : flèche + phrase
+          Une seule ligne pour tout serait plus compact, mais la phrase varie de
+          35 à 60 caractères selon la situation : elle déborderait une fois sur
+          deux et la bande sauterait d'une hauteur à l'autre d'une édition à
+          l'autre. Deux lignes stables valent mieux qu'une ligne intermittente.
+          La courbe reste AVANT la phrase : elle est ancrée et ne bouge pas
+          quand le libellé s'allonge au survol (décision #286). */}
       <span className="saillance-tag-row">
         <span className={`saillance-tag ${event.saillanceCls}`}>
           Saillance {event.saillanceLabel}
         </span>
         <InfoTip size="sm" label="Détail du niveau de saillance">
           <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel}
-            peak={event.scoreQcPeak24h} thresholds={event.salThresholds} />
+            peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
+            thresholds={event.salThresholds}
+            qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
+            since={event.saillantSince} />
         </InfoTip>
+        {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} />}
       </span>
-      {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} />}
     </div>
   );
 }
