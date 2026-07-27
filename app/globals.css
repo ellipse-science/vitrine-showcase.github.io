@@ -2044,39 +2044,56 @@
   }
   .billiard-popup-close:hover { opacity: 1; }
 
-  .ass-row {
-    display: grid;
-    grid-template-columns: 84px 1fr 140px 92px 76px;
-    gap: 22px;
-    align-items: start;
-    padding: 16px 0;
+  /* Vue principale : une fiche par parti (pas un tableau CSS Grid) — chaque
+     mesure garde son propre canal visuel plutôt que d'être compressée dans
+     une forme abstraite unique (cf. commentaire d'en-tête AssembleeProfiles.tsx). */
+  .ass-profiles { display: flex; flex-direction: column; }
+  .ass-card {
+    padding: 22px 0;
     border-bottom: 0.5px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  /* Pour aligner verticalement la party-box, le ton, les mots et la richesse sur la barre des enjeux */
-  .ass-row .parti-name-box,
-  .ass-row .ass-tone,
-  .ass-row .ass-words,
-  .ass-row .ass-richness {
-    align-self: start;
+  .ass-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
   }
-  .ass-row.header {
-    border-bottom: 1px solid var(--ink);
-    padding: 6px 0 10px;
-    align-items: flex-end;
+  .ass-card-figure {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 34px;
+    color: var(--cordovan);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
   }
-  .ass-row.header > div {
+  .ass-card-figure .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 6px;
+  }
+  .ass-card-angle {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.45;
+    margin: 0;
+  }
+  .ass-card-block { display: flex; flex-direction: column; gap: 6px; }
+  .stat-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ink-soft);
+    color: var(--ink-softer);
     font-weight: 500;
-    line-height: 1.4;
-  }
-  .ass-issue {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
   }
   /* Barre empilée des enjeux : largeur = proportion des mots du parti */
   .enjeu-stack {
@@ -2104,12 +2121,17 @@
     background: var(--rule-faint);
     color: var(--ink-softer);
   }
-  .ass-angle {
+  .ass-card-caption {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 13.5px;
+    font-size: 13px;
     color: var(--ink-soft);
-    line-height: 1.35;
+    line-height: 1.4;
+    margin: 0;
+  }
+  .ass-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
   }
   .ass-tone {
     height: 16px;
@@ -2124,27 +2146,60 @@
     width: 3px;
     background: var(--ink);
   }
-  .ass-words {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px;
-    text-align: right;
-    font-weight: 400;
-  }
   .ass-richness {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 15px;
     color: var(--ink);
-    letter-spacing: 2px;
-    text-align: center;
-    line-height: 1;
+    letter-spacing: 3px;
   }
   .ass-richness .empty { color: var(--rule); }
+  .ass-card-sigword {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0;
+  }
+  .ass-card-sigword .stat-label { display: block; margin-bottom: 4px; }
+  .ass-card-shadow {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 0;
+  }
+  .ass-card-shadow .parti-name-box { opacity: 0.5; }
   .ass-empty {
     font-family: 'Source Serif 4', Georgia, serif;
     font-style: italic;
     font-size: 14px;
     color: var(--ink-softer);
+    margin: 0;
   }
+  .ass-easter-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 0 0 10px;
+    opacity: 0.45;
+    vertical-align: middle;
+    transition: opacity 0.15s ease;
+  }
+  .ass-easter-btn:hover, .ass-easter-btn:focus-visible { opacity: 1; }
+  .ass-back-btn {
+    display: block;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0 0 12px;
+  }
+  .ass-back-btn:hover { color: var(--cordovan); }
   .period-subtitle {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -3275,37 +3330,12 @@
     .treemap-legend { display: none; }
 
     /* ── Assemblée nationale : cartes ── */
-    .ass-row.header { display: none; }
-    .ass-row {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 18px 0;
-      border-bottom: 0.5px solid var(--rule);
-    }
-    .ass-row .parti-name-box { align-self: flex-start; }
-    .ass-row .ass-issue { width: 100%; }
+    .ass-card { padding: 18px 0; gap: 10px; }
+    .ass-card-figure { font-size: 26px; }
     .enjeu-stack { height: 20px; }
     .enjeu-stack .seg { font-size: 8px; padding: 0 6px; }
-    .ass-angle { font-size: 14px; margin-top: 6px; display: block; }
-    .ass-ton-label {
-      display: block;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 8px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--ink-softer);
-      white-space: nowrap;
-      margin-bottom: 6px;
-    }
-    .ass-row .ass-tone {
-      display: block;
-      height: 14px;
-      width: 100%;
-    }
-    .ass-row .ass-tone::before { content: none; }
-    .ass-row .ass-words,
-    .ass-row .ass-richness { display: none; }
+    .ass-card-angle { font-size: 14px; }
+    .ass-card-stats { grid-template-columns: 1fr; gap: 14px; }
     .period-subtitle { font-size: 10px; margin-top: 4px; }
     .in-shadow .ass-empty { font-size: 13px; }
 
