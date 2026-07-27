@@ -1005,19 +1005,24 @@ function buildSalienceTrend(
   const maxAvant = Math.max(...shares.slice(0, last));
   const part = Math.round(series[last].share);
 
-  // Heure d'un bloc, forme courte : « à minuit », « à 16 h », « hier 20 h ».
-  const heure = (i: number) => {
+  // Heure d'un bloc. Deux formes, selon la préposition qui précède (Adrien) :
+  //   avecA = true  → « à 16 h », « hier à minuit »   (après « Sommet », « arrivée »)
+  //   avecA = false → « 16 h », « hier 20 h »          (après « depuis »)
+  // TOUJOURS une heure, jamais le moment de la journée : « depuis cet
+  // après-midi » était plus vague que « depuis 16 h » pour le même nombre de
+  // signes, et la grille d'éditions est déjà horaire.
+  const heure = (i: number, avecA = true) => {
     const p = blockLabelParts(series[i].blockUtc, blockDateMtl);
     if (!p) return null;
     const h = p.hour >= 24 ? "minuit" : `${p.hour} h`;
     if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
-    // « à » dans les deux cas : « à minuit », « hier à minuit » (retour Adrien).
-    return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+    const jour = p.dayWord === "aujourd’hui" ? "" : `${p.dayWord} `;
+    return avecA ? `${jour}à ${h}` : `${jour}${h}`;
   };
   const hSommet = heure(peakIdx);
   const ancre = hSommet ? `Sommet ${hSommet}` : "Sommet du jour";
   const hCourant = heure(last);
-  const momentPrec = blockLabelParts(series[last - 1].blockUtc, blockDateMtl)?.moment;
+  const hPrec = heure(last - 1, false);
   // Écart au sommet, en points de part, mais NOTÉ en % — même notation que le
   // module des enjeux de Laurence-Olivier (décision Adrien), pour que les deux
   // modules parlent pareil.
@@ -1025,7 +1030,7 @@ function buildSalienceTrend(
   // Depuis quand l'attention est retombée = début de la série d'absences finale.
   let debutAbsence = last;
   while (debutAbsence > 0 && !presents[debutAbsence - 1]) debutAbsence--;
-  const momentRetombee = blockLabelParts(series[debutAbsence].blockUtc, blockDateMtl)?.moment;
+  const hRetombee = heure(debutAbsence, false);
 
   let situation: SalienceTrend["situation"];
   if (!presents[last]) situation = "retombee";
@@ -1042,15 +1047,15 @@ function buildSalienceTrend(
   const incise = `(${ancre})`;
   const capLabel =
     situation === "nouvelle" ? (hCourant ? `Nouveau (arrivée ${hCourant})` : "Nouveau")
-      : situation === "sommet" ? (momentPrec
-        ? `Nouveau sommet aujourd’hui (+${Math.abs(deltaPct)} % depuis ${momentPrec})`
+      : situation === "sommet" ? (hPrec
+        ? `Nouveau sommet aujourd’hui (+${Math.abs(deltaPct)} % depuis ${hPrec})`
         : "Nouveau sommet aujourd’hui")
-        : situation === "retombee" ? (momentRetombee
-          ? `L’attention est retombée depuis ${momentRetombee} ${incise}`
+        : situation === "retombee" ? (hRetombee
+          ? `L’attention est retombée depuis ${hRetombee} ${incise}`
           : `L’attention est retombée ${incise}`)
           : situation === "retour" ? `Retour ${incise}`
-            : situation === "remonte" ? (momentPrec
-              ? `Remonte depuis ${momentPrec} ${incise}`
+            : situation === "remonte" ? (hPrec
+              ? `Remonte depuis ${hPrec} ${incise}`
               : `Remonte ${incise}`)
               : situation === "stable" ? `Se maintient ${incise}`
                 : `En recul de ${reculSommet} % ${incise}`;
