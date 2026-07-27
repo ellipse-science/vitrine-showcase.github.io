@@ -85,7 +85,14 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
   // laissait le libellé du sommet déborder du cadre.
   const CAR = 5.8;
   // Deux lignes par repère : le nom, puis le moment entre parenthèses.
-  const somL1 = "Sommet", somL2 = sommetLabel ? `(${sommetLabel})` : null;
+  // « Plus haut niveau » et NON « Sommet » : la phrase de trajectoire, juste
+  // au-dessus, dit déjà « (Sommet à 16h) » — mais elle parle du pic de PART
+  // D'ATTENTION sur les 24 h, alors que ce repère-ci marque le plus haut
+  // NIVEAU de badge atteint sur toute la vie de l'histoire. Mesuré sur 715
+  // cartes de l'historique DEV : les deux tombent sur des heures différentes
+  // 45,6 % du temps (écart max 1040 h). Deux mots distincts pour deux
+  // grandeurs distinctes, sinon le lecteur lit une contradiction.
+  const somL1 = "Plus haut niveau", somL2 = sommetLabel ? `(${sommetLabel})` : null;
   const nowL1 = "Cette Une", nowL2 = "(maintenant)";
   const demi = (...l: (string | null)[]) => (Math.max(...l.map((s) => (s ?? "").length)) * CAR) / 2;
   const demiNow = demi(nowL1, nowL2);
