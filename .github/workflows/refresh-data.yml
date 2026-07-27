@@ -95,6 +95,32 @@ jobs:
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
 
+      # Node n'était pas installé dans ce job : il l'est maintenant pour une
+      # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
+      # au lieu de la laisser deviner par le script d'illustration (issue #259).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      # Écrit public/data/hero-selection.json — l'illustration s'y réfère.
+      # Non bloquant : si ça échoue, generate_art.py reprend son heuristique.
+      #
+      # On EFFACE le fichier d'abord. Il est commité à chaque rafraîchissement,
+      # donc en cas d'échec une version PÉRIMÉE traînerait sur le disque et
+      # generate_art.py illustrerait une Une passée en croyant suivre le site —
+      # précisément le bug que cette étape corrige. Absent, le repli heuristique
+      # joue ; périmé, il ne joue pas. Mieux vaut pas de fichier qu'un vieux.
+      - name: Designate the hero headline
+        continue-on-error: true
+        run: |
+          rm -f public/data/hero-selection.json
+          npm run select-hero
+
       - name: Generate AI art (best-effort, non-blocking)
         id: art
         continue-on-error: true

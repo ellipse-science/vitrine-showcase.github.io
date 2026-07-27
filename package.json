@@ -8,7 +8,8 @@
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "select-hero": "npx --yes tsx@4 scripts/select_hero.ts"
   },
   "dependencies": {
     "next": "16.2.11",

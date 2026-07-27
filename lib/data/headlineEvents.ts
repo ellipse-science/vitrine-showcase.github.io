@@ -20,7 +20,7 @@ const DATA_PATH = path.resolve(
 
 // ── Raw JSON shape ──────────────────────────────────────────────────────────
 
-type RawEvent = {
+export type RawEvent = {
   country_id: string | null;
   date_utc: string;
   time_interval_utc: string;
@@ -66,6 +66,25 @@ type RawEvent = {
   first_seen_utc?: string | null;
   n_blocks_24h?: number | null;
 };
+
+// Pré-filtre COMMUN à tous les consommateurs du snapshot : une seule ligne par
+// événement (on garde la variante `target_region = "QC"` quand elle existe),
+// puis on écarte les événements purement américains.
+//
+// Exporté parce que `scripts/select_hero.ts` s'en sert pour désigner la Une n°1
+// à `generate_art.py` : l'illustration DOIT représenter la même histoire que le
+// hero, et la seule façon de le garantir est que les deux passent par ce code-ci
+// (issue #259). Cette fonction était recopiée trois fois dans ce fichier et une
+// quatrième en Python — c'est cette duplication qui a laissé les sélecteurs
+// diverger.
+export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
+  const byId = new Map<string, RawEvent>();
+  for (const e of all) {
+    const existing = byId.get(e.event_id);
+    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
+  }
+  return Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+}
 
 type ExtractedObject = { object: string; score: number };
 
@@ -800,6 +819,45 @@ function selectTopUnes(stories: Story[], max = 3): Story[] {
     .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
 }
 
+/** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs
+ *  hors rendu (aujourd'hui `scripts/select_hero.ts` → `generate_art.py`). */
+export type HeroSelection = {
+  event_id: string;
+  storyline_id: string | null;
+  title: string | null;
+  main_issue: string | null;
+  date_utc: string;
+  time_interval_utc: string;
+  /** Traces de contrôle : permettent de voir, dans le JSON produit, que le hero
+   *  vient d'un bloc antérieur au bloc courant — le cas fréquent (38 %). */
+  sum_qc: number;
+  peak_qc: number;
+};
+
+// API PUBLIQUE et stable de la sélection du hero. Le script d'illustration
+// passait par `__test__`, qui est explicitement documenté comme réservé aux
+// tests : un simple renommage interne du loader aurait cassé la synchro
+// illustration ↔ hero sans que rien ne le signale (retour Copilot). Le contrat
+// vit désormais ici, avec les autres exports du module.
+export function selectHeroFromRawEvents(all: RawEvent[]): HeroSelection | null {
+  const stories = storiesFrom24h(uniqueQcEvents(all));
+  const hero = selectTopUnes(stories)[0];
+  if (!hero) return null;
+  // `rep` = l'occurrence de l'histoire dans le bloc le plus récent où elle est
+  // présente ; c'est elle qui porte le titre et les articles que le site affiche.
+  const rep = hero.rep;
+  return {
+    event_id: rep.event_id,
+    storyline_id: rep.storyline_id ?? null,
+    title: rep.title ?? null,
+    main_issue: rep.main_issue ?? null,
+    date_utc: rep.date_utc,
+    time_interval_utc: rep.time_interval_utc,
+    sum_qc: Number(hero.sumQc.toFixed(3)),
+    peak_qc: Number(hero.peakQc.toFixed(3)),
+  };
+}
+
 const UPDATE_HOURS_MTL = [0, 4, 8, 12, 16, 20];
 const SAILLANT_TODAY: Record<number, string> = {
   0: "cette nuit", 4: "tôt ce matin", 8: "ce matin",
@@ -1273,15 +1331,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   }
 
   const all = JSON.parse(raw) as RawEvent[];
-
-  const byId = new Map<string, RawEvent>();
-  for (const e of all) {
-    const existing = byId.get(e.event_id);
-    if (!existing || e.target_region === "QC") {
-      byId.set(e.event_id, e);
-    }
-  }
-  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+  const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
 
@@ -1523,12 +1573,7 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
 
-  const byId = new Map<string, RawEvent>();
-  for (const e of allRaw) {
-    const existing = byId.get(e.event_id);
-    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
-  }
-  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+  const unique = uniqueQcEvents(allRaw);
 
   const bestByIssue = new Map<string, RawEvent>();
   for (const e of unique) {
@@ -1560,12 +1605,7 @@ async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: 
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
 
-  const byId = new Map<string, RawEvent>();
-  for (const e of allRaw) {
-    const existing = byId.get(e.event_id);
-    if (!existing || e.target_region === "QC") byId.set(e.event_id, e);
-  }
-  const unique = Array.from(byId.values()).filter((e) => e.country_id !== "USA");
+  const unique = uniqueQcEvents(allRaw);
 
   const byIssue = new Map<string, RawEvent[]>();
   for (const e of unique) {
@@ -1711,6 +1751,7 @@ export const __test__ = {
   rawRank,
   hysteresisRank,
   badgeRanksWithHysteresis,
+  uniqueQcEvents,
   blockKey,
   titleTokens,
   sameStory,
