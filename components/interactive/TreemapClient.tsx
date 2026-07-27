@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -375,6 +375,24 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
   const [secret, setSecret] = useState(false);
   useKonamiCode(() => { setPeriod("month"); setSecret(true); });
+
+  // Déverrouillage mobile / tactile : 3 clics/taps rapides sur le titre du module
+  const tapCount = useRef(0);
+  const tapTimer = useRef<number | null>(null);
+  const handleTitleTap = () => {
+    tapCount.current += 1;
+    if (tapTimer.current) window.clearTimeout(tapTimer.current);
+    if (tapCount.current >= 3) {
+      tapCount.current = 0;
+      setPeriod("month");
+      setSecret(true);
+    } else {
+      tapTimer.current = window.setTimeout(() => {
+        tapCount.current = 0;
+      }, 1000);
+    }
+  };
+
   const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const current = data[period];
   const tiles = current.tiles;
@@ -383,7 +401,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">
+          <h2 className="partis-title" onClick={handleTitleTap} style={{ cursor: "pointer" }}>
             De quoi parle-t-on?{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation :</b><br /><br />
