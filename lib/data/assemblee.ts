@@ -180,7 +180,7 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
       color: seg.meta.color,
       widthPct: pct,
       label: seg.meta.label,
-      title: `${seg.meta.title} · ${pct} %`,
+      title: `${seg.meta.title} · ${pct} %`,
     };
   });
 
@@ -191,7 +191,7 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
       color: "",
       widthPct: pct,
       label: "Reste",
-      title: `Autres enjeux · ${pct} %`,
+      title: `Autres enjeux · ${pct} %`,
       isReste: true,
     });
   }
