@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { InfoTip } from "@/components/interactive/InfoTip";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
@@ -379,7 +380,15 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">De quoi parle-t-on?</h2>
+          <h2 className="partis-title">
+            De quoi parle-t-on?{" "}
+            <InfoTip size="lg" label="Comment interpréter cette visualisation">
+              <b>Comment interpréter cette visualisation :</b><br /><br />
+              • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent.<br /><br />
+              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes.
+              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
+            </InfoTip>
+          </h2>
         </div>
         <div className="control-block">
           <div className="control-row">
