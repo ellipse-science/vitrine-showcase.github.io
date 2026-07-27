@@ -1,5 +1,11 @@
 [
   {
+    "pr": 345,
+    "date": "2026-07-27T21:43:07Z",
+    "note": "feat(enjeux): refonte du module De quoi parle-t-on (tuiles centrées, noms complets, infobulle ⓘ et palette CAPP)",
+    "version": null
+  },
+  {
     "pr": 332,
     "date": "2026-07-27T21:20:18Z",
     "note": "Les signalements envoyés depuis le site sont désormais dirigés automatiquement vers la personne responsable du module concerné.",
