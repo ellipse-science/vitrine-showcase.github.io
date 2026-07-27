@@ -50,9 +50,6 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
-  const isSmall = size === "small";
-  const details = [tile.context, tile.topObject].filter(Boolean).join(" · ") || tile.issueFr;
-  const tooltip = tile.url ? `${details} · Cliquer pour lire l'article →` : details;
 
   const growthSpan = (
     <span className="gt-pct">
@@ -64,23 +61,20 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
 
   const inner = isTiny ? (
     <div className="gt-compact">
-      <span className="gt-enjeu">{tile.issueFr}</span>
+      <span className="gt-title">{tile.issueFr}</span>
       {growthSpan}
     </div>
   ) : (
     <>
       <div className="gt-head">
-        <span className="gt-labels">
-          <span className="gt-enjeu">{tile.issueFr}</span>
-          {tile.topObject && <span className="gt-name">{tile.topObject}</span>}
-        </span>
+        {tile.context && <span className="gt-news">{tile.context}</span>}
         {growthSpan}
       </div>
-      {!isSmall && tile.context && <div className="gt-context">{tile.context}</div>}
+      <div className="gt-title">{tile.issueFr}</div>
     </>
   );
 
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, "data-tooltip": tooltip };
+  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (

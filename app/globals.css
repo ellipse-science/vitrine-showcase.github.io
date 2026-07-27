@@ -2493,63 +2493,45 @@
   }
   a.gt-tile { cursor: pointer; }
   .treemap-growth .gt-tile:hover { filter: brightness(1.12); }
-  .treemap-growth .gt-tile::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    inset: 0;
-    background: color-mix(in srgb, var(--c) 78%, #1a1410 22%);
-    color: #F3ECDD;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 13px;
-    line-height: 1.5;
-    padding: 12px 16px;
-    display: grid;
-    place-items: center;
-    text-align: center;
-    opacity: 0;
-    transition: opacity 0.18s ease;
-    pointer-events: none;
-    z-index: 5;
-  }
-  .treemap-growth .gt-tile:hover::after { opacity: 1; }
   .treemap-growth .gt-head {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     width: 100%;
-    gap: 8px;
+    gap: 10px;
     position: relative;
     z-index: 2;
   }
-  .treemap-growth .gt-labels {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-  .treemap-growth .gt-enjeu {
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
+  /* manchette (actualité) : haut-gauche, révélée au survol de la tuile */
+  .treemap-growth .gt-news {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
     color: #F3ECDD;
-    opacity: 0.8;
-    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
   }
-  .treemap-growth .gt-name {
+  .treemap-growth .gt-tile:hover .gt-news { opacity: 0.95; }
+  /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
+  .treemap-growth .gt-title {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
     color: #F3ECDD;
-    opacity: 0.9;
-    line-height: 1.1;
-    white-space: nowrap;
+    line-height: 1.08;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    padding: 6px 4px;
   }
   .treemap-growth .gt-pct {
     font-family: 'Playfair Display', serif;
@@ -2564,21 +2546,6 @@
   }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
-  .treemap-growth .gt-context {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    color: #F3ECDD;
-    opacity: 0.92;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-    margin: 0;
-    padding-top: 8px;
-  }
   .treemap-growth .gt-compact {
     display: flex;
     flex-direction: column;
@@ -2592,21 +2559,19 @@
     position: relative;
     z-index: 2;
   }
-  .treemap-growth .gt-compact .gt-enjeu { font-size: 8px; opacity: 0.85; }
+  .treemap-growth .gt-compact .gt-title { font-size: 11px; line-height: 1.05; padding: 0; }
   /* tailles */
   .treemap-growth .gt-large { padding: 16px 18px; }
-  .treemap-growth .gt-large .gt-enjeu { font-size: 10px; }
-  .treemap-growth .gt-large .gt-name { font-size: 15px; }
+  .treemap-growth .gt-large .gt-news { font-size: 15px; }
+  .treemap-growth .gt-large .gt-title { font-size: 30px; }
   .treemap-growth .gt-large .gt-pct { font-size: 28px; }
-  .treemap-growth .gt-large .gt-context { font-size: 18px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
-  .treemap-growth .gt-medium .gt-enjeu { font-size: 9px; }
-  .treemap-growth .gt-medium .gt-name { font-size: 13px; }
+  .treemap-growth .gt-medium .gt-news { font-size: 13px; }
+  .treemap-growth .gt-medium .gt-title { font-size: 22px; }
   .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
-  .treemap-growth .gt-medium .gt-context { font-size: 14px; }
   .treemap-growth .gt-small { padding: 11px 12px; }
-  .treemap-growth .gt-small .gt-enjeu { font-size: 8.5px; }
-  .treemap-growth .gt-small .gt-name { font-size: 11px; }
+  .treemap-growth .gt-small .gt-news { font-size: 11px; -webkit-line-clamp: 1; }
+  .treemap-growth .gt-small .gt-title { font-size: 15px; }
   .treemap-growth .gt-small .gt-pct { font-size: 16px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
   .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
