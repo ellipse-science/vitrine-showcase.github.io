@@ -38,7 +38,11 @@ export function InfoTip({
   // tourne avant la peinture : aucun saut, et plus de dépendance au fait qu'une
   // frame soit planifiée.
   useIsoLayoutEffect(() => {
-    if (!open) { setBubbleStyle({}); return; }
+    // Rien à faire à la fermeture : la bulle n'est pas rendue, et la prochaine
+    // ouverture recalcule le style avant la peinture. Remettre l'objet à vide
+    // ici forçait un rendu + commit synchrones de plus à chaque fermeture (un
+    // littéral n'est jamais Object.is-égal au précédent, donc pas de bail-out).
+    if (!open) return;
     if (!wrapRef.current) return;
     const wrap = wrapRef.current.getBoundingClientRect();
     const vw   = window.innerWidth;

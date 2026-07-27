@@ -1407,7 +1407,12 @@
      pseudo-élément DE LA BULLE, donc survoler le vide compte comme survoler un
      descendant du conteneur — `pointerleave` ne se déclenche plus. Il suit la
      bulle quand elle est recentrée (left inline), et couvre toute sa largeur :
-     un déplacement en diagonale reste rattrapé. */
+     un déplacement en diagonale reste rattrapé.
+     9 px et non 8 : le pixel supplémentaire recouvre le bas de la pastille pour
+     absorber les demi-pixels du zoom fractionnaire (110 %, 125 %) et des écrans
+     à DPR non entier, où un pont exact laisserait une couture par laquelle
+     `pointerleave` repart — la panne même que ce pont corrige. Le recouvrement
+     ne coûte rien : il n'existe que pendant que la bulle est ouverte. */
   .saillance-info-bubble::before {
     content: "";
     position: absolute;
