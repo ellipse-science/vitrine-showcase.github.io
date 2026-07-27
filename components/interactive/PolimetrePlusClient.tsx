@@ -51,6 +51,19 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
   );
 }
 
+/* Chevron d'affordance (#—) : signale que le rang est dépliable. Pivote de 180°
+   à l'ouverture (voir .ppl-promise--open .ppl-chevron dans globals.css).
+   aria-hidden : l'état est déjà porté par aria-expanded sur le <li>. */
+function Chevron() {
+  return (
+    <span className="ppl-chevron" aria-hidden="true">
+      <svg viewBox="0 0 12 12" width="12" height="12" fill="none">
+        <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
 function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: string }) {
   if (!verdict) return <span className="ppl-verdict-tag" aria-hidden="true" />;
   return (
@@ -298,7 +311,12 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <span className="ppl-title">{p.title}</span>
+                          <span className="ppl-title">
+                            <span className="ppl-title__text">
+                              {p.title}
+                              <Chevron />
+                            </span>
+                          </span>
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -337,7 +355,12 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <span className="ppl-title">{p.title}</span>
+                        <span className="ppl-title">
+                          <span className="ppl-title__text">
+                            {p.title}
+                            <Chevron />
+                          </span>
+                        </span>
                         <TrendBadge trend={p.trend} />
                       </>
                     )}
