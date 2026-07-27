@@ -1276,6 +1276,14 @@
     min-width: 0;
   }
   .saillance-trend .trend-cap > * { grid-area: 1 / 1; }
+  /* Les deux Unes secondaires sont CÔTE À CÔTE : leurs titres doivent partir de
+     la même ligne. Or la hauteur réservée dépend du texte de chaque carte — l'une
+     tenait sur une ligne, l'autre sur deux, et les deux titres se retrouvaient
+     décalés de 22 px (constat Adrien). On leur donne donc le même plancher de
+     deux lignes. C'est le prix de l'alignement : aligné ET sans réserve vide
+     supposerait que le plus long texte tienne sur une ligne dans une colonne de
+     430 px, ce qui n'est pas le cas. */
+  .une-side .saillance-trend .trend-cap { min-height: 2lh; }
   /* `visibility: hidden` et non `display: none` : la doublure doit continuer à
      occuper sa place — c'est tout son rôle. `aria-hidden` côté JSX la retire des
      lecteurs d'écran, qui ne lisent que le texte vivant. */
@@ -3172,6 +3180,10 @@
     .hero-secondaries {
       grid-template-columns: 1fr;
     }
+    /* Empilées = plus de titres à aligner l'un à côté de l'autre : le plancher
+       de deux lignes de la trajectoire n'a plus de raison d'être et ne ferait
+       qu'ajouter du vide. Chaque bande reprend la hauteur de son propre texte. */
+    .une-side .saillance-trend .trend-cap { min-height: 0; }
     .hero-secondaries .une-side:first-child {
       padding: 20px 0;
       border-right: none;
