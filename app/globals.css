@@ -4842,11 +4842,11 @@
   --paper-deep: #ECE3CF;
   --cordovan: #6B1E2A;
   --rule: #C8BDA6;
-  max-width: 900px;
+  max-width: 100%;
   margin: 0 auto;
   background: var(--paper);
-  border: 1px solid var(--rule);
-  box-shadow: 0 8px 30px rgba(28, 25, 23, 0.12);
+  border: none;
+  box-shadow: none;
   overflow: hidden;
   animation: flappy-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
