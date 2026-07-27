@@ -105,15 +105,15 @@ const ISSUE_COLORS: Record<string, string> = {
 
 const ISSUE_LABELS_SHORT: Record<string, string> = {
   economy_and_labour: "Économie et travail",
-  governments_and_governance: "Gouvernements",
-  health_and_social_services: "Santé",
-  environment_and_energy: "Environnement",
-  rights_liberties_minorities_discrimination: "Droits et libertés",
-  culture_and_nationalism: "Culture",
+  governments_and_governance: "Gouvernements et gouvernance",
+  health_and_social_services: "Santé et services sociaux",
+  environment_and_energy: "Environnement et énergie",
+  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
+  culture_and_nationalism: "Culture et nationalisme",
   education: "Éducation",
-  international_affairs_and_defense: "Aff. internationales",
-  law_and_crime: "Loi et crime",
-  public_lands_and_agriculture: "Terres publiques",
+  international_affairs_and_defense: "Affaires internationales et défense",
+  law_and_crime: "Droit et criminalité",
+  public_lands_and_agriculture: "Terres publiques et agriculture",
   immigration: "Immigration",
   technology: "Technologie",
 };
