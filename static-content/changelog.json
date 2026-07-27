@@ -1,5 +1,11 @@
 [
   {
+    "pr": 314,
+    "date": "2026-07-27T18:35:17Z",
+    "note": "Le niveau de saillance affiché sous chaque manchette suit maintenant l'attention des 24 dernières heures et redescend à mesure qu'une histoire s'éteint, au lieu de rester bloqué sur le sommet atteint dans la journée. La petite courbe indique la part de l'attention médiatique captée, et une phrase résume où en est l'histoire par rapport à son sommet.",
+    "version": "2.14.0-beta.0"
+  },
+  {
     "pr": 330,
     "date": "2026-07-27T16:02:06Z",
     "note": "La page Méthodologie annonçait que la saillance médiatique tenait compte de la position des manchettes sur la page frontale. Ce n'est pas le cas : elle repose sur le temps passé en Une, ajusté au rythme de chaque média. La description a été corrigée.",
