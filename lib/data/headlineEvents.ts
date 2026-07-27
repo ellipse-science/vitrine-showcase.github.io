@@ -708,16 +708,30 @@ function rawRank(v: number, t: typeof SUM_QC_THRESHOLDS): number {
 
 // Niveau affiché = niveau brut, SAUF si le changement n'a pas franchi la
 // frontière avec la marge — auquel cas on conserve le niveau précédent.
+//
+// UNE BANDE À LA FOIS, dans les deux sens. L'ancienne version comparait la
+// valeur à la borne de la bande VISÉE et, si la marge n'y était pas, annulait
+// TOUT le mouvement. Un cumul qui saute de plusieurs bandes d'un coup restait
+// donc figé tout en bas : mesuré le 2026-07-27, la Une « logements » affichait
+// « Très faible » (rang 1) avec sumQc = 48,6, soit en pleine bande « Élevée »
+// (≥ 47,9) — les bandes 2 (23,1) et 3 (33,5) étaient pourtant franchies très
+// largement. Le badge se débloquait après le sommet, si bien que la trajectoire
+// gardait « Très faible » sur le point du sommet et « Modérée » sur le déclin :
+// le sommet paraissait plus faible que le creux (constat Adrien).
+// En avançant bande par bande, la marge freine encore chaque frontière (l'effet
+// anti-clignotement est intact) mais le badge ne peut plus rester à plus d'une
+// bande de la réalité.
 function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_THRESHOLDS): number {
   const raw = rawRank(v, t);
   if (prev === undefined || raw === prev) return raw;
   const low = bandLow(t);
-  if (raw > prev) {
-    // Monte : il faut dépasser la borne basse de la bande visée d'une marge.
-    return v >= low[raw] * (1 + HYST_MARGIN) ? raw : prev;
-  }
-  // Descend : il faut passer sous la borne basse de la bande QUITTÉE d'une marge.
-  return v <= low[prev] * (1 - HYST_MARGIN) ? raw : prev;
+  let r = prev;
+  // Monte : chaque bande gagnée demande de dépasser SA borne basse d'une marge.
+  while (r < raw && v >= low[r + 1] * (1 + HYST_MARGIN)) r++;
+  // Descend : on ne quitte une bande qu'en passant sous SA borne basse, marge
+  // comprise — symétrique de la montée.
+  while (r > raw && v <= low[r] * (1 - HYST_MARGIN)) r--;
+  return r;
 }
 
 // L'hystérésis a besoin du niveau de l'édition PRÉCÉDENTE. Le site est rebâti
@@ -989,12 +1003,11 @@ export type SalienceTrend = {
   points: SalienceTrendPoint[];
 };
 
-// Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
-// (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
-// la journée et l'heure de PUBLICATION du bloc (fin + 1 h, réforme #195).
-function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
-  { dayWord: string; moment: string; hour: number } | null {
-  if (!blockDateMtl) return null;
+// Jour de PUBLICATION d'un bloc, en heure de Montréal (« YYYY-MM-DD »), et
+// heure publique associée. C'est LE repère commun : le jour d'un bloc et le
+// jour de l'édition courante doivent se calculer avec la même règle, sinon
+// « aujourd'hui » ne veut plus dire la même chose des deux côtés.
+function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } | null {
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
   // Jour ET heure affichés AU PUBLIC = l'instant de PUBLICATION du bloc = fin
@@ -1007,9 +1020,31 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   // rattachée au jour qui vient de finir (celui du bloc), pas au petit matin du
   // lendemain — le « moment » reste « cette nuit ».
   const isMidnight = pubHourReal === 0;
-  const pubHour = isMidnight ? 24 : pubHourReal;   // {8,12,16,20,minuit,4}
-  const anchorIso = isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso;
-  const blockDay = isoDay(anchorIso), refDay = isoDay(blockDateMtl);
+  return {
+    anchorIso: isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso,
+    pubHour: isMidnight ? 24 : pubHourReal,   // {8,12,16,20,minuit,4}
+  };
+}
+
+// Étiquette d'un bloc en heure de Montréal, relative au jour de l'ÉDITION
+// courante. Renvoie le mot-jour, le moment de la journée et l'heure de
+// PUBLICATION du bloc (fin + 1 h, réforme #195).
+//
+// `refDayIso` = jour de publication de l'édition affichée (blockAnchor du bloc
+// le plus récent du snapshot), PAS la date de la storyline. On passait avant
+// `e.date_montreal_tz`, la date du dernier bloc où CETTE histoire était à la
+// Une : pour une histoire retombée du radar, ce repère est en retard d'un jour
+// et tous ses blocs s'étiquetaient « aujourd'hui ». Mesuré le 2026-07-27 à
+// l'édition de 12h : les six mêmes blocs se lisaient « hier 16h / hier 20h /
+// hier minuit… » sur la 1re Une et « aujourd'hui 16h / 20h / minuit… » sur la
+// 3e, qui annonçait un « Sommet à 20h » encore à venir dans la journée.
+function blockLabelParts(blockUtc: string, refDayIso: string | null):
+  { dayWord: string; moment: string; hour: number } | null {
+  if (!refDayIso) return null;
+  const anchor = blockAnchor(blockUtc);
+  if (!anchor) return null;
+  const { anchorIso, pubHour } = anchor;
+  const blockDay = isoDay(anchorIso), refDay = isoDay(refDayIso);
   if (blockDay === null || refDay === null) return null;
   const dayDiff = refDay - blockDay;
   // Les heures de PUBLICATION tombent PILE sur la grille d'éditions {0,4,8,12,16,20}
@@ -1031,7 +1066,9 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
 function buildSalienceTrend(
   series: { blockUtc: string; qc: number; present: boolean; share: number }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
-  blockDateMtl: string | null,
+  /** Jour de publication de l'ÉDITION courante (cf. blockLabelParts) — c'est
+   *  lui qui décide de « aujourd'hui » vs « hier », pas la date de l'histoire. */
+  refDayIso: string | null,
   /** Niveau du BADGE édition par édition. Quand il est fourni, c'est lui qui
    *  étiquette les points — sinon le survol annoncerait un niveau calculé sur
    *  une autre grandeur (le score du bloc) et une autre échelle que la pastille,
@@ -1081,7 +1118,7 @@ function buildSalienceTrend(
   // après-midi » était plus vague que « depuis 16 h » pour le même nombre de
   // signes, et la grille d'éditions est déjà horaire.
   const heure = (i: number, avecA = true) => {
-    const p = blockLabelParts(series[i].blockUtc, blockDateMtl);
+    const p = blockLabelParts(series[i].blockUtc, refDayIso);
     if (!p) return null;
     const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
     if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
@@ -1135,7 +1172,7 @@ function buildSalienceTrend(
   // L'écart au sommet, lui, est dit par les mots.
   const dir: SalienceTrend["dir"] = deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat";
   const points: SalienceTrendPoint[] = series.map((p, i) => {
-    const parts = blockLabelParts(p.blockUtc, blockDateMtl);
+    const parts = blockLabelParts(p.blockUtc, refDayIso);
     // Bloc où la nouvelle n'a PAS fait la Une : « Hors du radar » (point creux),
     // pas « Très faible ». Ne pas peindre l'absence comme une saillance faible
     // mais réelle — sinon on laisse croire qu'elle était là (retour Adrien).
@@ -1346,6 +1383,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     (e) => e.date_utc === latestDate && e.time_interval_utc === latestInterval,
   );
 
+  // Jour de publication de l'ÉDITION affichée : le seul repère de « aujourd'hui »
+  // pour TOUTES les trajectoires. Une histoire retombée du radar n'a plus de bloc
+  // récent à elle ; si on lui laissait sa propre date comme repère, ses points
+  // s'étiquetteraient « aujourd'hui » un jour trop tard (cf. blockLabelParts).
+  const editionRefDayIso = blockAnchor(blockKey(sorted[0]))?.anchorIso ?? null;
+
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
@@ -1417,7 +1460,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
     const sommetLabel = sommetSum != null && suivi
       ? (() => {
-        const p = blockLabelParts(suivi.peakBlock, e.date_montreal_tz);
+        const p = blockLabelParts(suivi.peakBlock, editionRefDayIso);
         if (!p) return null;
         const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
@@ -1426,7 +1469,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
-    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, e.date_montreal_tz, suivi?.history);
+    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;

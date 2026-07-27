@@ -1257,14 +1257,29 @@
        (retour Adrien) : le vert et le rouge sont ce qui rend le sens de la
        trajectoire lisible d'un coup d'œil, avant même d'avoir lu les mots. */
     color: var(--acc);
-    white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    display: inline-block;
+    /* Le libellé SE REPLIE au lieu de déborder. En `nowrap`, le texte de survol
+       — bien plus long que celui du repos — sortait de sa colonne et se peignait
+       par-dessus la Une voisine (mesuré : 428 px de texte dans 331 px de boîte,
+       97 px par-dessus le filet). Rien ne le coupait : la bande n'a pas
+       d'`overflow` et aucun ancêtre n'en pose. */
+    white-space: normal;
+    /* HAUTEUR RÉSERVÉE. Les doublures invisibles (un par texte possible) sont
+       empilées avec le texte vivant dans la MÊME cellule de grille : la hauteur
+       de la boîte est celle du plus long à la largeur courante. Elle ne dépend
+       donc d'aucun nombre magique, s'adapte à toutes les largeurs de colonne, et
+       ne bouge pas d'un pixel entre le repos et le survol. */
+    display: grid;
     /* Aucune largeur à réserver : la courbe est EN AMONT du libellé (ordre
        courbe → flèche → texte), donc elle est ancrée et le texte peut s'allonger
        au survol sans rien déplacer. */
     min-width: 0;
   }
+  .saillance-trend .trend-cap > * { grid-area: 1 / 1; }
+  /* `visibility: hidden` et non `display: none` : la doublure doit continuer à
+     occuper sa place — c'est tout son rôle. `aria-hidden` côté JSX la retire des
+     lecteurs d'écran, qui ne lisent que le texte vivant. */
+  .saillance-trend .trend-cap-ghost { visibility: hidden; }
   .saillance-trend .trend-cap b { font-weight: 600; }
   /* Nudge optique : le centre de gravité d'une police serif est au-dessus du
      milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
@@ -1284,12 +1299,10 @@
   /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
      courbe est déjà au bord gauche. */
-  @media (max-width: 620px) {
-    /* La phrase peut se replier sur deux lignes ; la bande garde sa structure
-       (coup d'œil au-dessus, lecture en dessous), la courbe ne descend plus
-       seule sur une ligne à elle. */
-    .saillance-trend .trend-cap { white-space: normal; }
-  }
+  /* Le repli sur deux lignes n'est plus une exception mobile : il est devenu la
+     règle à toutes les largeurs (cf. .trend-cap). Le problème n'a jamais été la
+     taille de la FENÊTRE mais celle de la COLONNE — une Une secondaire est
+     étroite même sur un grand écran, et c'est là que le texte débordait. */
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
      Demande Shannon (Figma) : « couleur noir inversé lorsque saillance atteint
