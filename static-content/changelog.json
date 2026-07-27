@@ -1,5 +1,23 @@
 [
   {
+    "pr": 332,
+    "date": "2026-07-27T21:20:18Z",
+    "note": "Les signalements envoyés depuis le site sont désormais dirigés automatiquement vers la personne responsable du module concerné.",
+    "version": null
+  },
+  {
+    "pr": 334,
+    "date": "2026-07-27T20:16:59Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » présente maintenant une fiche par parti (mots prononcés, enjeux, ton, richesse lexicale) en un coup d'œil ; le jeu de billard devient un easter egg accessible via un petit bouton 🎱.",
+    "version": "2.15.0-beta.0"
+  },
+  {
+    "pr": 337,
+    "date": "2026-07-27T20:07:28Z",
+    "note": "La pastille numérotée de chaque promesse du Polimètre+ est maintenant cerclée de la couleur de son verdict, ce qui rend le classement plus lisible d'un coup d'œil.",
+    "version": "2.14.0-beta.1"
+  },
+  {
     "pr": 314,
     "date": "2026-07-27T18:35:17Z",
     "note": "Le niveau de saillance affiché sous chaque manchette suit maintenant l'attention des 24 dernières heures et redescend à mesure qu'une histoire s'éteint, au lieu de rester bloqué sur le sommet atteint dans la journée. La petite courbe indique la part de l'attention médiatique captée, et une phrase résume où en est l'histoire par rapport à son sommet.",
