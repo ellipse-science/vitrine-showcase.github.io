@@ -1,5 +1,11 @@
 [
   {
+    "pr": 332,
+    "date": "2026-07-27T21:20:18Z",
+    "note": "Les signalements envoyés depuis le site sont désormais dirigés automatiquement vers la personne responsable du module concerné.",
+    "version": null
+  },
+  {
     "pr": 334,
     "date": "2026-07-27T20:16:59Z",
     "note": "Le module « Que dit-on à l'Assemblée? » présente maintenant une fiche par parti (mots prononcés, enjeux, ton, richesse lexicale) en un coup d'œil ; le jeu de billard devient un easter egg accessible via un petit bouton 🎱.",
