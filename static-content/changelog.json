@@ -1,5 +1,11 @@
 [
   {
+    "pr": 334,
+    "date": "2026-07-27T20:16:59Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » présente maintenant une fiche par parti (mots prononcés, enjeux, ton, richesse lexicale) en un coup d'œil ; le jeu de billard devient un easter egg accessible via un petit bouton 🎱.",
+    "version": "2.15.0-beta.0"
+  },
+  {
     "pr": 337,
     "date": "2026-07-27T20:07:28Z",
     "note": "La pastille numérotée de chaque promesse du Polimètre+ est maintenant cerclée de la couleur de son verdict, ce qui rend le classement plus lisible d'un coup d'œil.",
