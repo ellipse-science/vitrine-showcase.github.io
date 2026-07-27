@@ -468,6 +468,61 @@ describe("grille du badge : calibration publiée sinon repli (#314)", () => {
   });
 });
 
+// Le rejeu des éditions est la pièce la plus délicate du badge : c'est lui qui
+// reconstitue le niveau de l'édition précédente (l'hystérésis n'a pas d'état
+// persistant à lire) et qui produit l'historique affiché au survol.
+describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
+  const { badgeRanksWithHysteresis, SUM_QC_THRESHOLDS } = __test__;
+  // Une histoire seule dans chaque bloc : sumQc = score du bloc + traînée
+  // pondérée des précédents (demi-vie 10 h), donc strictement croissante ici.
+  const bloc = (h: string, qc: number) =>
+    ev({ storyline_id: "sA", title: "Alpha", score_qc: qc,
+      date_utc: "2026-07-13", time_interval_utc: `${h}-x`,
+      articles: JSON.stringify([{ media_id: "LED", url: "https://led/a" }]) });
+
+  it("accumule un historique : une entrée par édition rejouée", () => {
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    expect(a).toBeDefined();
+    // 3 blocs = 3 éditions rejouées, donc 3 niveaux mémorisés.
+    expect(a.history.size).toBe(3);
+    expect([...a.history.keys()]).toEqual(
+      ["2026-07-13T00", "2026-07-13T04", "2026-07-13T08"]);
+  });
+
+  it("le sommet se fixe sur l'édition où le cumul est le plus haut", () => {
+    // Le cumul culmine au dernier bloc (la traînée s'ajoute au plus gros score).
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    expect(a.peakBlock).toBe("2026-07-13T08");
+    expect(a.peakSum).toBeGreaterThan(90); // 90 + traînée des blocs précédents
+
+    // Si le gros score est au MILIEU, le sommet reste sur ce bloc-là même si
+    // des éditions plus récentes suivent — c'est ce qui permet au ⓘ de dire
+    // « plus haut niveau à telle heure » après le déclin.
+    const declin = badgeRanksWithHysteresis(
+      [bloc("00", 20), bloc("04", 200), bloc("08", 5)] as never, SUM_QC_THRESHOLDS);
+    expect(declin.get("sA")!.peakBlock).toBe("2026-07-13T04");
+  });
+
+  it("le rang final est celui de la dernière édition, et il a suivi la montée", () => {
+    const suivi = badgeRanksWithHysteresis(
+      [bloc("00", 5), bloc("04", 40), bloc("08", 260)] as never, SUM_QC_THRESHOLDS);
+    const a = suivi.get("sA")!;
+    const rangs = [...a.history.values()];
+    expect(a.rank).toBe(rangs[rangs.length - 1]);
+    // Monotone croissant ici : le cumul ne fait que grimper.
+    expect(rangs[0]).toBeLessThanOrEqual(rangs[rangs.length - 1]);
+    expect(a.rank).toBeGreaterThan(rangs[0]);
+  });
+
+  it("aucun événement → aucune entrée (pas de plantage)", () => {
+    expect(badgeRanksWithHysteresis([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
+  });
+});
+
 describe("hysteresisRank (lissage du badge cumulé)", () => {
   const T = __test__.SUM_QC_THRESHOLDS; // {faible:21.4, moyenne:31, eleve:47.9, tresEleve:102.4, extreme:192.8}
   const { rawRank, hysteresisRank } = __test__;

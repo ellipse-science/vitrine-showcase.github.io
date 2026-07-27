@@ -898,7 +898,6 @@ function periodLabelFromInterval(intervalMtl: string): string {
 export type SalienceTrendPoint = {
   timeLabel: string;   // « hier 19 h »
   level: string;       // « Exceptionnelle »
-  levelCls: string;    // « s-extreme » (couleur de bande)
   /** Palier de saillance du bloc, 1 (Très faible) → 6 (Exceptionnelle) ; 0 si la
    *  nouvelle n'était pas à la Une. Pilote le DIAMÈTRE du point sur la courbe. */
   rank: number;
@@ -1095,7 +1094,6 @@ function buildSalienceTrend(
       // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
       // Radar+ dit l'absence de couverture sans nier que la carte EST une Une.
       level: tier ? tier.label : "Hors du radar",
-      levelCls: tier ? tier.cls : "s-absent",
       rank: tier ? (badgeRank ?? (tier as { rank?: number }).rank ?? 0) : 0,
       score: Math.round(p.qc),
       share: Math.round(p.share),
@@ -1118,18 +1116,6 @@ export type UneEvent = {
   saillanceCls: string;
   /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
   saillanceHint: string;
-  /** Poids visuel du badge selon l'écart au sommet 24 h (essai) : 0 = plein,
-   *  1 = atténué, 2 = contour seul. Le libellé et la taille ne changent JAMAIS. */
-  saillanceFade: 0 | 1 | 2;
-  /** Badge « EN CE MOMENT » : niveau au bloc COURANT, sur la même règle que le
-   *  badge « SOMMET 24 H » — il ne peut donc jamais le dépasser.
-   *  « Pas à la Une » quand l'histoire est absente du bloc courant. */
-  liveLabel: string;
-  liveCls: string;
-  liveRank: number;
-  /** « nouveau » = première apparition de la fenêtre 24 h à ce bloc ; « retour » =
-   *  absente au bloc précédent, déjà vue avant ; null = continuité. */
-  freshness: "nouveau" | "retour" | null;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -1388,40 +1374,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
         return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
       })()
       : null;
-    // Atténuation du badge en déclin (essai, demande de Jules) : le badge garde
-    // son libellé et sa taille — c'est bien le sommet des 24 h qu'il décrit —
-    // mais son poids visuel décroît quand l'histoire n'est plus à son sommet.
-    // 0 = plein (au sommet ou proche), 1 = atténué, 2 = contour seul.
-    const nowQc = s.series.length > 0 ? s.series[s.series.length - 1].qc : 0;
-    const peakRatio = s.peakQc > 0 ? nowQc / s.peakQc : 0;
-    const saillanceFade: 0 | 1 | 2 = peakRatio >= 0.7 ? 0 : peakRatio >= 0.3 ? 1 : 2;
-
-    // ── Badge « EN CE MOMENT » : niveau du bloc COURANT, sur la MÊME règle que
-    // le badge du sommet (cf. plus haut) — donc jamais au-dessus de lui.
-    // Deux badges plutôt qu'un (demande Adrien) : le sommet dit ce que l'histoire
-    // A ÉTÉ dans la journée, le second dit ce qu'elle EST à cette édition. Les
-    // deux étaient déjà dans les données ; un seul était affiché, d'où l'écart
-    // apparent entre le badge et la trajectoire.
-    const nowPresent = s.series.length > 0 && s.series[s.series.length - 1].present;
-    const liveTier = nowPresent ? saillanceTierFromScore(nowQc, salThresholds) : null;
-    const liveLabel = liveTier ? liveTier.label : "Pas à la Une";
-    const liveCls = liveTier ? liveTier.cls : "s-absent";
-    const liveRank = liveTier ? liveTier.rank : 0;
-
-    // Fraîcheur : « Nouveau » = l'histoire apparaît pour la première fois de la
-    // fenêtre 24 h à ce bloc ; « De retour » = elle était absente au bloc
-    // précédent mais avait déjà été à la Une avant. Sans ça, une histoire
-    // réapparue s'annonce « En progression depuis ce midi » alors qu'elle
-    // n'était tout simplement pas là à midi.
-    const lastIdx = s.series.length - 1;
-    const firstPresentIdx = s.series.findIndex((p) => p.present);
-    const freshness: "nouveau" | "retour" | null =
-      !nowPresent || lastIdx < 0 ? null
-        : firstPresentIdx === lastIdx ? "nouveau"
-          : lastIdx >= 1 && !s.series[lastIdx - 1].present ? "retour"
-            : null;
-    // Trajectoire 24 h (#274) : chaque bloc étiqueté à son propre niveau ; la
-    // pastille (ci-dessus) reste au PIC, la courbe raconte le déclin/la montée.
+    // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
+    // point porte le niveau que le BADGE affichait à cette édition-là.
     const salienceTrend = buildSalienceTrend(s.series, blockThresholds, e.date_montreal_tz, suivi?.history);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
@@ -1454,11 +1408,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceLabel,
       saillanceCls,
       saillanceHint,
-      saillanceFade,
-      liveLabel,
-      liveCls,
-      liveRank,
-      freshness,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
@@ -1761,6 +1710,7 @@ export const __test__ = {
   SUM_QC_THRESHOLDS,
   rawRank,
   hysteresisRank,
+  badgeRanksWithHysteresis,
   blockKey,
   titleTokens,
   sameStory,

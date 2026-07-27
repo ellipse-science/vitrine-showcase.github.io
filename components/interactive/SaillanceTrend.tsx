@@ -3,12 +3,12 @@
 import { useState } from "react";
 import type { SalienceTrend } from "@/lib/data/headlineEvents";
 
-// Trajectoire de saillance sous le badge (#274) : flèche de tendance, libellé en
-// clair (+ ampleur chiffrée depuis #304), puis mini-courbe des 6 derniers blocs.
-// Chaque point est survolable (tap sur mobile) et révèle le NIVEAU qu'affichait
-// la nouvelle à ce bloc — le badge, lui, reste au pic 24 h. La trajectoire est
-// TOUJOURS rendue, y compris « stable » (elle ne l'était pas avant #304) ; seul
-// le chiffre d'ampleur s'efface à l'état stable.
+// Trajectoire de saillance sous le badge (#274) : mini-courbe des 6 derniers
+// blocs, flèche de tendance, puis la phrase (#304). La courbe trace la PART
+// D'ATTENTION ; chaque point est survolable (tap sur mobile) et révèle le
+// niveau que le BADGE portait à ce bloc — même grandeur, même échelle que la
+// pastille, qui suit désormais la saillance cumulée 24 h et non plus le pic.
+// La trajectoire est TOUJOURS rendue, y compris « stable ».
 // Boîte volontairement basse : une sparkline trop haute lit « en dessous » du
 // texte (sa masse — les blocs au plancher — s'enfonce sous la ligne de base).
 // Compacte, elle s'aligne optiquement avec le libellé.

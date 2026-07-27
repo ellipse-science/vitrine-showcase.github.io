@@ -1177,8 +1177,7 @@
   /* « C'est extrême! » — la tag Extrême doit crier : plus grosse, plus grasse,
      et carrément imposante sur le hero. */
   .saillance-tag.s-extreme {
-    --tag: #A85A52;
-    background: var(--tag);
+    background: #A85A52;
     color: var(--paper);
     font-size: 12px;
     font-weight: 600;
@@ -1191,83 +1190,26 @@
      comparable d'une carte à l'autre pour qu'on puisse lire les niveaux
      côte à côte. */
   .saillance-tag.s-tres-eleve {
-    --tag: #BE7C6A;
-    background: var(--tag);
+    background: #BE7C6A;
     color: var(--paper);
   }
   .saillance-tag.s-eleve {
-    --tag: #C99A76;
-    background: var(--tag);
+    background: #C99A76;
     color: var(--ink);
   }
   .saillance-tag.s-moyenne {
-    --tag: #D2B488;
-    background: var(--tag);
+    background: #D2B488;
     color: var(--ink);
   }
   .saillance-tag.s-faible {
-    --tag: #DCCBA2;
-    background: var(--tag);
+    background: #DCCBA2;
     color: var(--ink-soft);
   }
   .saillance-tag.s-tres-faible {
-    --tag: #E4DCC6;
-    background: var(--tag);
+    background: #E4DCC6;
     color: var(--ink-soft);
   }
 
-  /* ── Badge atténué en déclin (essai, demande de Jules dans #02_vitrine_vibecode) ──
-     « elle doit rester en premier sur la une et être la plus grosse, mais le noir
-     doit disparaître ». Le LIBELLÉ et la TAILLE ne bougent pas — le badge dit
-     toujours le sommet des 24 h, et le classement (pondéré par récence) fait
-     déjà décroître le rang. Seul le POIDS VISUEL décroît, en deux paliers, selon
-     l'écart entre le bloc courant et le sommet. */
-  .saillance-tag.fade-1 {
-    background: color-mix(in srgb, var(--tag, #A85A52) 34%, transparent);
-    color: var(--ink);
-  }
-  .saillance-tag.fade-2 {
-    background: transparent;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag, #A85A52) 65%, transparent);
-    color: var(--ink-soft);
-  }
-
-  /* ── Deux badges : « SOMMET 24 H » et « EN CE MOMENT » ────────────────────
-     Le préfixe nomme l'INSTANT décrit ; sans lui, deux niveaux côte à côte
-     seraient encore plus déroutants qu'un seul. Il est volontairement plus
-     petit et moins contrasté que le niveau : on lit d'abord le niveau. */
-  .saillance-tag .tag-quand {
-    font-weight: 400;
-    opacity: 0.72;
-    letter-spacing: 0.16em;
-    margin-right: 0.55em;
-  }
-  /* Le badge « en ce moment » reste toujours PLEIN : c'est lui qui porte l'état
-     courant, pendant que le badge du sommet s'efface avec le déclin. */
-  .saillance-tag.tag-live { font-size: 10px; font-weight: 500; padding: 5px 12px; letter-spacing: 0.26em; }
-  .une-main-head .saillance-tag.tag-live { font-size: 11px; padding: 6px 14px; }
-  /* Histoire absente du bloc courant : aucune couleur de palier à porter. */
-  .saillance-tag.s-absent {
-    --tag: var(--ink-softer);
-    background: transparent;
-    box-shadow: inset 0 0 0 1px var(--rule);
-    color: var(--ink-softer);
-  }
-  /* Fraîcheur — n'apparaît que quand il y a quelque chose à signaler. */
-  .saillance-tag.tag-fresh {
-    font-size: 9.5px;
-    padding: 4px 10px;
-    background: var(--ink);
-    color: var(--paper);
-  }
-  .saillance-tag.tag-fresh.fresh-retour {
-    background: transparent;
-    box-shadow: inset 0 0 0 1px var(--ink-softer);
-    color: var(--ink-soft);
-  }
-  /* Trois badges + le ⓘ ne tiennent pas sur une ligne en mobile : on passe à la
-     ligne proprement plutôt que de déborder. */
-  .saillance-tag-row { flex-wrap: wrap; row-gap: 6px; }
 
   /* ── Trajectoire de saillance (#274) ─────────────────────────────────────
      Ligne SOUS le badge : flèche de tendance → libellé en clair → mini-courbe
