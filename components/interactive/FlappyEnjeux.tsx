@@ -5,18 +5,12 @@ import {
   FIELD, newGame, difficultyFor, stepPhysics, hitTest, nextTarget, comboPoints,
   insertScore, sanitizeInitials, type GameState, type ScoreEntry,
 } from "@/lib/flappy";
+import { fetchLeaderboard, submitScoreToLeaderboard } from "@/lib/flappyLeaderboard";
 
-const KEY = "vitrine-flappy-scores";
 const INK = "#1C1917";
 const CREAM = "#F3ECDD";
 const CORDOVAN = "#6B1E2A";
 
-function loadBoard(): ScoreEntry[] {
-  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
-}
-function saveBoard(b: ScoreEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* quota / privé : on ignore */ }
-}
 function headlineOf(t: TreemapIssueTile | undefined): string {
   if (!t) return "";
   const h = (t.context && t.context.trim()) || (t.topObject && t.topObject.trim()) || t.issueFr;
@@ -53,9 +47,18 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const [scoop, setScoop] = useState<{ label: string; head: string } | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [board, setBoard] = useState<ScoreEntry[]>([]);
+  const [isGlobalBoard, setIsGlobalBoard] = useState(false);
   const [initials, setInitials] = useState("");
   const [saved, setSaved] = useState(false);
   const scoopTimer = useRef<number | null>(null);
+
+  // Charger le classement (global ou local) au montage
+  useEffect(() => {
+    fetchLeaderboard().then(({ board: b, isGlobal }) => {
+      setBoard(b);
+      setIsGlobalBoard(isGlobal);
+    });
+  }, []);
 
   const startTarget = useCallback(() => {
     const t = nextTarget(weights, Math.floor(performance.now()) || 1, -1);
@@ -159,7 +162,12 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         }
         if (hitTest(next, diff)) {
           shakeRef.current = 14;
-          setFinalScore(scoreRef.current); setBoard(loadBoard()); setSaved(false); setInitials("");
+          setFinalScore(scoreRef.current);
+          fetchLeaderboard().then(({ board: b, isGlobal }) => {
+            setBoard(b);
+            setIsGlobalBoard(isGlobal);
+          });
+          setSaved(false); setInitials("");
           setPhase("over");
         } else {
           stateRef.current = next;
@@ -194,8 +202,16 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const qualifies = insertScore(board, { initials: "___", score: finalScore, date: "" })
     .some((e) => e.initials === "___" && e.score === finalScore) && finalScore > 0;
   const save = () => {
-    const nb = insertScore(board, { initials: sanitizeInitials(initials) || "AAA", score: finalScore, date: new Date().toISOString().slice(0, 10) });
-    saveBoard(nb); setBoard(nb); setSaved(true);
+    const entry: ScoreEntry = {
+      initials: sanitizeInitials(initials) || "AAA",
+      score: finalScore,
+      date: new Date().toISOString().slice(0, 10),
+    };
+    submitScoreToLeaderboard(entry).then(({ board: b, isGlobal }) => {
+      setBoard(b);
+      setIsGlobalBoard(isGlobal);
+      setSaved(true);
+    });
   };
 
   const targetTile = tiles[targetIdx];
@@ -245,13 +261,16 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
               </div>
             )}
             {(saved || !qualifies) && board.length > 0 && (
-              <ol className="flappy-board">
-                {board.map((e, i) => (
-                  <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>
-                    <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
-                  </li>
-                ))}
-              </ol>
+              <div className="flappy-board-wrap">
+                <span className="flappy-board-title">{isGlobalBoard ? "CLASSEMENT GLOBAL 🌐" : "CLASSEMENT LOCAL"}</span>
+                <ol className="flappy-board">
+                  {board.map((e, i) => (
+                    <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>
+                      <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
             <div className="flappy-actions">
               <button type="button" className="flappy-cta" onClick={restart}>Rejouer</button>
