@@ -1,5 +1,17 @@
 [
   {
+    "pr": 306,
+    "date": "2026-07-27T12:58:37Z",
+    "note": "feat(polimetre+) : afficher le libellé court et le résumé IA",
+    "version": null
+  },
+  {
+    "pr": 319,
+    "date": "2026-07-27T01:54:17Z",
+    "note": "Aucun changement visible pour les visiteurs : mise à jour des règles internes de rédaction (typographie, langage inclusif) et de la documentation d'équipe.",
+    "version": null
+  },
+  {
     "pr": 327,
     "date": "2026-07-24T22:09:14Z",
     "note": "feat: easter egg Flappy Enjeux (code Konami dans « De quoi parle-t-on? »)",

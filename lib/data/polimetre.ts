@@ -227,6 +227,9 @@ type Row = {
   n_mentions: number;
   titles: string;
   urls: string;
+  pledge_short_fr?: string; // AI short label; literal "NA" when LLM unavailable
+  coverage_summary_week?: string; // AI weekly summary; literal "NA" when unavailable
+  coverage_summary_month?: string; // AI monthly summary; literal "NA" when unavailable
   articles?: string; // JSON array of {media_id, title, url}; absent pre-redeploy
 };
 
@@ -241,6 +244,15 @@ function cleanText(s: string | null | undefined): string {
     .trim()
     .replace(/^["']+|["']+$/g, "")
     .trim();
+}
+
+// The refiner writes the literal string "NA" (not null) when the LLM enrichment
+// (AI short label, AI coverage summary) is unavailable — e.g. the infer-api is
+// down during a run. Treat "NA"/empty as "no value" so the title and summary
+// fall back gracefully instead of showing a literal "NA".
+function realText(s: string | null | undefined): string | null {
+  const t = (s ?? "").trim();
+  return t && t.toUpperCase() !== "NA" ? t : null;
 }
 
 // Build a short, unique display title from the full pledge text: drop the
@@ -309,9 +321,9 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
 
       return {
         pledgeNumber: num,
-        title: shortenPledge(r.pledge_text_fr),
+        title: realText(r.pledge_short_fr) ?? shortenPledge(r.pledge_text_fr),
         fullTitle: cleanText(r.pledge_text_fr),
-        summary: null, // résumé AI à venir
+        summary: realText(currentWeeks.length > 1 ? r.coverage_summary_month : r.coverage_summary_week),
         verdict: VERDICT_SLUG[r.verdict] ?? null,
         verdictLabel: r.verdict ?? "",
         category: category || null,
@@ -324,6 +336,9 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     })
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
 }
+
+// Exported for unit testing only — not part of the public API.
+export const __test__ = { realText, shortenPledge, buildView };
 
 export async function loadPolimetre(): Promise<PolimetreData | null> {
   let raw: string;
