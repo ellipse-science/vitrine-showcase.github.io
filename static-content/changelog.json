@@ -1,5 +1,11 @@
 [
   {
+    "pr": 328,
+    "date": "2026-07-27T15:30:18Z",
+    "note": "L'illustration qui accompagne la manchette principale représente désormais toujours la bonne histoire : elle est désignée par le même code que celui qui choisit la manchette, au lieu d'être devinée séparément.",
+    "version": null
+  },
+  {
     "pr": 306,
     "date": "2026-07-27T12:58:37Z",
     "note": "feat(polimetre+) : afficher le libellé court et le résumé IA",
