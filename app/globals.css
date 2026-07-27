@@ -962,8 +962,14 @@
     gap: 10px 14px;
     margin-bottom: 14px;
   }
-  .une-side-head .une-enjeu,
-  .une-side-head .saillance-tag {
+  /* `.une-side` en tête : sans lui, la règle `.une-side .une-enjeu` déclarée
+     plus bas (même spécificité, donc gagnante par l'ordre) remet 12 px de marge
+     sous l'enjeu ALORS QUE l'en-tête espace déjà ses rangées par `gap`. On
+     mesurait 22 px entre l'enjeu et le badge contre 10 px entre le badge et la
+     trajectoire — un double espacement jamais voulu, la règle ci-dessous
+     n'ayant simplement jamais pris. */
+  .une-side .une-side-head .une-enjeu,
+  .une-side .une-side-head .saillance-tag {
     margin-bottom: 0;
   }
   .une-side .une-enjeu {
@@ -1387,7 +1393,13 @@
     row-gap: 11px;
   }
   .saillance-tag-row .saillance-tag { margin: 0; }
-  .une-side .saillance-tag-row { margin-bottom: 12px; }
+  /* Marge retirée : l'en-tête de la carte pose déjà 14 px sous lui. Les deux
+     s'additionnaient, d'où 26 px entre la trajectoire et le titre sur les Unes
+     secondaires contre 14 px sur la Une principale — les petites cartes se
+     lisaient PLUS détachées que la grande, à l'envers de la hiérarchie
+     (constat Adrien). Ce reliquat datait d'avant la trajectoire, quand la
+     rangée du badge était la dernière de l'en-tête. */
+  .une-side .saillance-tag-row { margin-bottom: 0; }
   .une-side .saillance-tag-row .saillance-tag { margin: 0; }
   .saillance-info-bubble {
     position: absolute;
@@ -1593,12 +1605,18 @@
     letter-spacing: -0.3px;
     margin: 0 0 12px;
   }
+  /* Échelle rang → taille (#35). Le plancher remonte de 19 à 22 px : à 19 px
+     dans une colonne de 600 px, une manchette secondaire se lisait comme une
+     légende (constat Adrien). Le haut de l'échelle ne bouge pas — l'écart entre
+     une Une exceptionnelle et une Une très faible reste lu d'un coup d'œil — et
+     les barreaux gardent un pas régulier de 3 px, pour que la taille continue
+     d'encoder le rang plutôt que de se tasser en bas. */
   .une-side h2[data-saillance="6"] { font-size: 38px; letter-spacing: -0.5px; }
   .une-side h2[data-saillance="5"] { font-size: 34px; letter-spacing: -0.4px; }
-  .une-side h2[data-saillance="4"] { font-size: 30px; letter-spacing: -0.2px; }
-  .une-side h2[data-saillance="3"] { font-size: 26px; letter-spacing: -0.1px; }
-  .une-side h2[data-saillance="2"] { font-size: 22px; letter-spacing: 0; }
-  .une-side h2[data-saillance="1"] { font-size: 19px; letter-spacing: 0; }
+  .une-side h2[data-saillance="4"] { font-size: 31px; letter-spacing: -0.2px; }
+  .une-side h2[data-saillance="3"] { font-size: 28px; letter-spacing: -0.1px; }
+  .une-side h2[data-saillance="2"] { font-size: 25px; letter-spacing: 0; }
+  .une-side h2[data-saillance="1"] { font-size: 22px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
     font-style: italic;
