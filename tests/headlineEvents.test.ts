@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { __test__ } from "@/lib/data/headlineEvents";
+import { __test__, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
 
 const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline } = __test__;
 
@@ -265,6 +265,45 @@ describe("symbolPositions", () => {
 // désigne la Une à illustrer). Il était recopié trois fois dans le loader et une
 // quatrième en Python : c'est cette duplication qui a laissé l'illustration
 // diverger du hero (#259). Une seule implémentation, donc des tests dessus.
+// API publique consommée par scripts/select_hero.ts, qui alimente l'illustration
+// (#259). Elle a remplacé un accès à `__test__` — documenté comme réservé aux
+// tests — pour qu'un renommage interne du loader ne puisse pas casser en silence
+// la synchro illustration ↔ hero (retour Copilot).
+describe("selectHeroFromRawEvents (API de sélection du hero, #259)", () => {
+  it("désigne la Une n°1 = celle qui a la plus forte saillance cumulée", () => {
+    const hero = selectHeroFromRawEvents([
+      ev({ event_id: "e1", storyline_id: "sPetite", title: "Petite", score_qc: 5,
+        date_utc: "2026-07-13", time_interval_utc: "20-24",
+        media_ids_qc: JSON.stringify(["LED", "LAP"]) }),
+      ev({ event_id: "e2", storyline_id: "sGrosse", title: "Grosse", score_qc: 80,
+        date_utc: "2026-07-13", time_interval_utc: "20-24",
+        media_ids_qc: JSON.stringify(["LED", "LAP", "RCI"]) }),
+    ] as never);
+    expect(hero).not.toBeNull();
+    expect(hero!.title).toBe("Grosse");
+    expect(hero!.storyline_id).toBe("sGrosse");
+    // Traces de contrôle exposées pour lire le JSON produit.
+    expect(hero!.sum_qc).toBeGreaterThan(0);
+    expect(hero!.date_utc).toBe("2026-07-13");
+  });
+
+  it("applique les filtres du loader : les Unes américaines sont écartées", () => {
+    const hero = selectHeroFromRawEvents([
+      ev({ event_id: "e3", storyline_id: "sUS", title: "Américaine", score_qc: 900,
+        country_id: "USA", date_utc: "2026-07-13", time_interval_utc: "20-24",
+        media_ids_qc: JSON.stringify(["LED", "LAP"]) }),
+      ev({ event_id: "e4", storyline_id: "sQC", title: "Québécoise", score_qc: 10,
+        date_utc: "2026-07-13", time_interval_utc: "20-24",
+        media_ids_qc: JSON.stringify(["LED", "LAP"]) }),
+    ] as never);
+    expect(hero!.title).toBe("Québécoise");
+  });
+
+  it("aucune Une exploitable → null (le script d'art bascule alors sur son repli)", () => {
+    expect(selectHeroFromRawEvents([] as never)).toBeNull();
+  });
+});
+
 describe("uniqueQcEvents (pré-filtre commun, #259)", () => {
   const { uniqueQcEvents } = __test__;
 

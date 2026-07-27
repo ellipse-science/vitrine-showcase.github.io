@@ -12,15 +12,14 @@
 // ces cas-là le script d'art ne POUVAIT PAS la choisir, puisqu'il ne regardait
 // que ce bloc.
 //
-// Ici, aucune ré-implémentation : on appelle les mêmes fonctions que le loader
-// du site (`uniqueQcEvents` → `storiesFrom24h` → `selectTopUnes`). Si un jour le
-// classement change, l'illustration suit sans qu'on ait à y penser.
+// Ici, aucune ré-implémentation : tout le travail est fait par
+// `selectHeroFromRawEvents`, l'API PUBLIQUE du loader, qui appelle les mêmes
+// fonctions que le rendu du site. Si le classement change un jour,
+// l'illustration suit sans qu'on ait à y penser.
 import fs from "node:fs";
 import path from "node:path";
 
-import { uniqueQcEvents, __test__, type RawEvent } from "@/lib/data/headlineEvents";
-
-const { storiesFrom24h, selectTopUnes } = __test__;
+import { selectHeroFromRawEvents, type RawEvent } from "@/lib/data/headlineEvents";
 
 const DATA = path.resolve(process.cwd(), "public", "data", "headline-events.json");
 const OUT = path.resolve(process.cwd(), "public", "data", "hero-selection.json");
@@ -34,28 +33,11 @@ function main() {
     process.exit(1);
   }
 
-  const stories = storiesFrom24h(uniqueQcEvents(JSON.parse(raw) as RawEvent[]));
-  const hero = selectTopUnes(stories)[0];
-  if (!hero) {
+  const selection = selectHeroFromRawEvents(JSON.parse(raw) as RawEvent[]);
+  if (!selection) {
     console.error("select_hero: aucune Une sélectionnée — rien à écrire.");
     process.exit(1);
   }
-
-  // `rep` = l'occurrence de l'histoire dans le bloc le plus récent où elle est
-  // présente ; c'est elle qui porte le titre et les articles que le site affiche.
-  const rep = hero.rep;
-  const selection = {
-    event_id: rep.event_id,
-    storyline_id: rep.storyline_id ?? null,
-    title: rep.title ?? null,
-    main_issue: rep.main_issue ?? null,
-    date_utc: rep.date_utc,
-    time_interval_utc: rep.time_interval_utc,
-    // Traces de contrôle : permettent de voir, dans le JSON commité, si le hero
-    // vient d'un bloc antérieur au bloc courant (le cas fréquent).
-    sum_qc: Number(hero.sumQc.toFixed(3)),
-    peak_qc: Number(hero.peakQc.toFixed(3)),
-  };
 
   fs.writeFileSync(OUT, `${JSON.stringify(selection, null, 2)}\n`, "utf8");
   console.log(

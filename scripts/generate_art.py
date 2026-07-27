@@ -37,7 +37,24 @@ def read_hero_selection(events: list[dict]) -> dict | None:
         print(f"WARNING: hero-selection.json illisible ({exc}) — repli heuristique", file=sys.stderr)
         return None
 
+    # Le fichier peut être du JSON VALIDE sans être la structure attendue (liste,
+    # nombre, objet sans event_id...). Sans ce contrôle, `.get` lèverait une
+    # AttributeError et on perdrait le caractère best-effort de l'étape.
+    if not isinstance(selection, dict):
+        print(
+            f"WARNING: hero-selection.json n'est pas un objet ({type(selection).__name__}) — repli heuristique",
+            file=sys.stderr,
+        )
+        return None
+
     event_id = selection.get("event_id")
+    if not isinstance(event_id, str) or not event_id:
+        print(
+            "WARNING: hero-selection.json sans event_id exploitable — repli heuristique",
+            file=sys.stderr,
+        )
+        return None
+
     for event in events:
         if event.get("event_id") == event_id:
             return event
