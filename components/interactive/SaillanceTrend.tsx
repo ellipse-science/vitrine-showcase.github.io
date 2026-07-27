@@ -79,7 +79,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
               tabIndex={0}
               role="img"
               aria-label={p.isAbsent
-                ? `${p.timeLabel} : aucune couverture`
+                ? `${p.timeLabel} : hors du radar`
                 : `${p.timeLabel} : saillance ${p.level}, ${p.share} % de l’attention`}
               onPointerEnter={() => setHover(i)}
               onPointerLeave={() => setHover((h) => (h === i ? null : h))}
@@ -101,7 +101,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
       <span className="trend-cap" aria-live="polite">
         {active
           ? (active.isAbsent
-            ? <>{active.timeLabel} · <b>aucune couverture</b></>
+            ? <>{active.timeLabel} · <b>hors du radar</b></>
             // Le NIVEAU que la nouvelle affichait à ce bloc (demande Adrien, #274),
             // puis la part qui explique la hauteur du point sur la courbe.
             : <>{active.timeLabel} · <b>{active.level}</b> · {active.share}&nbsp;% de l’attention</>)

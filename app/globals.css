@@ -1311,10 +1311,10 @@
   .saillance-trend .trend-cap {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 15px;
-    /* Texte en encre neutre : la couleur de tendance est portée par la COURBE et
-       la FLÈCHE, pas par la phrase. Une pastille colorée + une phrase entière en
-       vert ou en rouge faisaient deux aplats de couleur pour une seule idée. */
-    color: var(--ink-soft);
+    /* La phrase reprend la couleur de la tendance, comme sur le site en ligne
+       (retour Adrien) : le vert et le rouge sont ce qui rend le sens de la
+       trajectoire lisible d'un coup d'œil, avant même d'avoir lu les mots. */
+    color: var(--acc);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     display: inline-block;
@@ -1419,7 +1419,9 @@
     gap: 12px;
     flex-basis: 100%;
     flex-wrap: wrap;
-    row-gap: 5px;
+    /* La trajectoire respire sous la pastille : collées, les deux se lisaient
+       comme un seul bloc compact et la courbe semblait accrochée au badge. */
+    row-gap: 11px;
   }
   .saillance-tag-row .saillance-tag { margin: 0; }
   .une-side .saillance-tag-row { margin-bottom: 12px; }

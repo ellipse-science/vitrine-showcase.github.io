@@ -1062,7 +1062,7 @@ function buildSalienceTrend(
   const dir: SalienceTrend["dir"] = deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat";
   const points: SalienceTrendPoint[] = series.map((p, i) => {
     const parts = blockLabelParts(p.blockUtc, blockDateMtl);
-    // Bloc où la nouvelle n'a PAS fait la Une : « Pas à la Une » (point creux),
+    // Bloc où la nouvelle n'a PAS fait la Une : « Hors du radar » (point creux),
     // pas « Très faible ». Ne pas peindre l'absence comme une saillance faible
     // mais réelle — sinon on laisse croire qu'elle était là (retour Adrien).
     // « Pas à la Une » plutôt qu'« Absente » (moins abrupt, cohérent « À la Une… »).
@@ -1075,7 +1075,9 @@ function buildSalienceTrend(
       : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour} h`}`;
     return {
       timeLabel,
-      level: tier ? tier.label : "Pas à la Une",
+      // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
+      // Radar+ dit l'absence de couverture sans nier que la carte EST une Une.
+      level: tier ? tier.label : "Hors du radar",
       levelCls: tier ? tier.cls : "s-absent",
       rank: tier ? (badgeRank ?? (tier as { rank?: number }).rank ?? 0) : 0,
       score: Math.round(p.qc),

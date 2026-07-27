@@ -504,7 +504,7 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     const peak = t.points.find((p: { isPeak: boolean }) => p.isPeak)!;
     expect(peak.score).toBe(100);
     expect(peak.level).toBe("Exceptionnelle"); // 100 ≥ extreme(95)
-    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Pas à la Une"); // bloc sans Une → absente, pas « faible »
+    expect(t.points.find((p: { isNow: boolean }) => p.isNow)!.level).toBe("Hors du radar"); // bloc sans Une → absente, pas « faible »
     expect(t.points.find((p: { score: number }) => p.score === 50)!.level).toBe("Très élevée"); // 48 ≤ 50 < 95
     expect(t.points.find((p: { score: number }) => p.score === 12)!.level).toBe("Modérée"); // 11 ≤ 12 < 19
     // première apparition = premier bloc à score > 0
@@ -562,7 +562,7 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
       { blockUtc: "2026-07-20T11", qc: 40, present: true, share: 30 },
     ] as never, thr, "2026-07-20")!;
     const absent = trend.points[0], faible = trend.points[1];
-    expect(absent.level).toBe("Pas à la Une");
+    expect(absent.level).toBe("Hors du radar");
     expect(absent.isAbsent).toBe(true);
     expect(faible.level).toBe("Très faible");   // présente mais faible ≠ absente
     expect(faible.isAbsent).toBe(false);
