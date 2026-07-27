@@ -59,6 +59,8 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
     </span>
   );
 
+  const hasNews = Boolean(tile.context);
+
   const inner = isTiny ? (
     <div className="gt-compact">
       <span className="gt-title">{tile.issueFr}</span>
@@ -67,24 +69,30 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
   ) : (
     <>
       <div className="gt-head">
-        {tile.context && (
-          <span className="gt-news">
+        {growthSpan}
+      </div>
+      <div className="gt-body">
+        <div className="gt-title">{tile.issueFr}</div>
+        {hasNews && (
+          <div className="gt-news">
             <span className="gt-news-head">{tile.context}</span>
             {tile.outlets.length > 0 && (
               <span className="gt-news-media">{tile.outlets.map((o) => o.name).join(" · ")}</span>
             )}
-          </span>
+          </div>
         )}
-        {growthSpan}
       </div>
-      <div className="gt-title">{tile.issueFr}</div>
     </>
   );
 
   // Petites tuiles (texte tronqué) : on révèle tout via une infobulle stylée flottante
   // (gérée par le parent) ; grandes/moyennes : révélation dans la tuile (déjà en place).
   const needsTip = size === "small" || isTiny;
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: needsTip ? undefined : tile.issueFr };
+  const shared = {
+    className: `gt-tile gt-${size}${hasNews ? " gt-has-news" : ""}`,
+    style: { "--c": tile.color } as React.CSSProperties,
+    title: needsTip ? undefined : tile.issueFr
+  };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (
