@@ -98,8 +98,16 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
     const mq = window.matchMedia("(max-width: 768px)");
     const sync = () => setNarrow(mq.matches);
     sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    // addEventListener sur un MediaQueryList n'existe qu'à partir de Safari 14
+    // (iOS 14). Sans le repli, un iOS plus ancien lève « addEventListener is not
+    // a function » DANS l'effet, ce qui casse tout le module — précisément en
+    // mobile, le cas que cette version sert.
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
   }, []);
 
   const axes = s.axes;
