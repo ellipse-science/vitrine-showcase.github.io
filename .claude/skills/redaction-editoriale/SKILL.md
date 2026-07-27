@@ -57,17 +57,21 @@ bannis :
 
 - Français québécois soigné ; anglicismes évités (« infolettre », pas
   « newsletter » ; « à la une », pas « en headline »).
-- **Espaces insécables (OQLF).** En HTML/JSX, l'insécable s'écrit `&nbsp;` :
-  - **avant** `:`, avant `%`, et dans l'unité d'heure (`14 h`) ;
+- **Espaces insécables.** En HTML/JSX, l'insécable s'écrit `&nbsp;` :
+  - **avant** `:` et avant `%` ;
   - **à l'intérieur** des guillemets français : « exemple » ;
   - comme **séparateur de milliers** (`12 000`) ;
-  - **PAS d'espace avant `;`, `?`, `!`** — norme québécoise (OQLF), à l'inverse
+  - **PAS d'espace avant `;`, `?`, `!`** — norme québécoise, à l'inverse
     de la France. (`;` ratifié par la PR #246 ; l'entrée Notion cite
     explicitement `?` et `!`.)
+  - **PAS d'espace dans l'heure** : `16h`, `14h30` — **jamais** `16 h` ni
+    `14 h 30`. L'entrée Notion « Espaces insécables » est explicite : *« L'OQLF
+    dit d'en mettre, mais on ne le fait pas. »* C'est donc un écart ASSUMÉ à
+    l'OQLF, pas un oubli — ne pas le « corriger » vers la norme.
 - **Exceptions assumées** (PR #246) : le séparateur du `<title>` et la
   numérotation CSS de la table des matières gardent leur format.
-- Heures : `8 h`, `16 h – 20 h` (h minuscule, tiret demi-cadratin pour les
-  plages). Dates : `13 juillet`, sans zéro initial.
+- Heures : `8h`, `16h – 20h`, `14h30` (h minuscule, collé au chiffre, tiret
+  demi-cadratin pour les plages). Dates : `13 juillet`, sans zéro initial.
 - **Langage inclusif** (section Générale) : formulation neutre **courte** quand
   elle n'alourdit pas (« la population québécoise ») ; sinon `Québécois.es`,
   `Canadien.ne.s` ; tout le reste au masculin pluriel. Éviter les doublets
@@ -154,8 +158,8 @@ utiles côté Vitrine :
 
 ## Checklist avant merge (tout texte public, y compris les graphiques)
 
-- [ ] Insécables OQLF : `&nbsp;` avant `:` et `%`, dans « », et pour `14 h` ;
-      **aucun espace avant `;` `?` `!`**
+- [ ] Insécables : `&nbsp;` avant `:` et `%`, dans « » ; **aucun espace avant
+      `;` `?` `!`** ; **heures collées** (`16h`, `14h30`)
 - [ ] Projets jamais en italique ; italique réservé aux termes techniques/anglais
 - [ ] Langage inclusif (formulation neutre courte, sinon `.es`)
 - [ ] Lexique respecté ; aucun « ROC » public ; « Une des Unes » (pas « Unes »)
