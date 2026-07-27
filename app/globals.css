@@ -960,7 +960,10 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 10px 14px;
-    margin-bottom: 14px;
+    /* 10 px et non 14 comme le héros : le titre secondaire est deux fois plus
+       petit, donc le même blanc y pèse deux fois plus lourd. L'espacement suit
+       la taille du texte qu'il sépare, pas une constante de page. */
+    margin-bottom: 10px;
   }
   /* `.une-side` en tête : sans lui, la règle `.une-side .une-enjeu` déclarée
      plus bas (même spécificité, donc gagnante par l'ordre) remet 12 px de marge
@@ -1612,11 +1615,11 @@
      les barreaux gardent un pas régulier de 3 px, pour que la taille continue
      d'encoder le rang plutôt que de se tasser en bas. */
   .une-side h2[data-saillance="6"] { font-size: 38px; letter-spacing: -0.5px; }
-  .une-side h2[data-saillance="5"] { font-size: 34px; letter-spacing: -0.4px; }
-  .une-side h2[data-saillance="4"] { font-size: 31px; letter-spacing: -0.2px; }
-  .une-side h2[data-saillance="3"] { font-size: 28px; letter-spacing: -0.1px; }
-  .une-side h2[data-saillance="2"] { font-size: 25px; letter-spacing: 0; }
-  .une-side h2[data-saillance="1"] { font-size: 22px; letter-spacing: 0; }
+  .une-side h2[data-saillance="5"] { font-size: 35px; letter-spacing: -0.4px; }
+  .une-side h2[data-saillance="4"] { font-size: 32px; letter-spacing: -0.2px; }
+  .une-side h2[data-saillance="3"] { font-size: 30px; letter-spacing: -0.1px; }
+  .une-side h2[data-saillance="2"] { font-size: 27px; letter-spacing: 0; }
+  .une-side h2[data-saillance="1"] { font-size: 24px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
     font-style: italic;
