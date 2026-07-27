@@ -67,14 +67,21 @@ function GrowthTile({ tile }: { tile: LayoutNode }) {
   ) : (
     <>
       <div className="gt-head">
-        {tile.context && <span className="gt-news">{tile.context}</span>}
+        {tile.context && (
+          <span className="gt-news">
+            <span className="gt-news-head">{tile.context}</span>
+            {tile.outlets.length > 0 && (
+              <span className="gt-news-media">{tile.outlets.map((o) => o.name).join(" · ")}</span>
+            )}
+          </span>
+        )}
         {growthSpan}
       </div>
       <div className="gt-title">{tile.issueFr}</div>
     </>
   );
 
-  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties };
+  const shared = { className: `gt-tile gt-${size}`, style: { "--c": tile.color } as React.CSSProperties, title: tile.issueFr };
   const content = tile.url ? (
     <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
   ) : (

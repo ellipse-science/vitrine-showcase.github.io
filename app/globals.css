@@ -2504,20 +2504,38 @@
   }
   /* manchette (actualité) : haut-gauche, révélée au survol de la tuile */
   .treemap-growth .gt-news {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
     color: #F3ECDD;
     opacity: 0;
     transition: opacity 0.18s ease;
     flex: 1 1 auto;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .treemap-growth .gt-tile:hover .gt-news { opacity: 0.95; }
+  .treemap-growth .gt-news-head {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .treemap-growth .gt-tile:hover .gt-news { opacity: 0.95; }
+  /* médias couvrant l'enjeu (comme la byline « Une des unes ») */
+  .treemap-growth .gt-news-media {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.66em;
+    opacity: 0.72;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
   .treemap-growth .gt-title {
     flex: 1;
@@ -2570,7 +2588,9 @@
   .treemap-growth .gt-medium .gt-title { font-size: 22px; }
   .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
   .treemap-growth .gt-small { padding: 11px 12px; }
-  .treemap-growth .gt-small .gt-news { font-size: 11px; -webkit-line-clamp: 1; }
+  .treemap-growth .gt-small .gt-news { font-size: 11px; }
+  .treemap-growth .gt-small .gt-news-head { -webkit-line-clamp: 1; }
+  .treemap-growth .gt-small .gt-news-media { -webkit-line-clamp: 1; }
   .treemap-growth .gt-small .gt-title { font-size: 15px; }
   .treemap-growth .gt-small .gt-pct { font-size: 16px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
