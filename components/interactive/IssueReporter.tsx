@@ -134,6 +134,12 @@ export function IssueReporter() {
   }
 
   const handleClose = () => {
+    // Pendant l'envoi, le bouton « Annuler » est déjà désactivé, mais le clic sur
+    // l'arrière-plan, lui, passait encore. La requête, elle, continue : au retour
+    // elle repassait le composant en success/error sur un modal que la personne
+    // venait de fermer, et le brouillon avait déjà été jeté au passage. Tant que
+    // l'envoi est en cours, fermer ne veut rien dire — on attend la réponse.
+    if (uiState === 'submitting') return
     setUiState('idle')
     setCopied(false)
     if (!failureKind) discardDraft()
@@ -382,7 +388,18 @@ export function IssueReporter() {
                 </p>
 
                 <p style={fieldLabel}>Votre signalement</p>
-                <p style={draftBox}>{description.trim()}</p>
+                {/* tabIndex + role : la boîte défile (maxHeight + overflowY) et
+                    un conteneur défilant doit être atteignable au clavier —
+                    sinon la fin d'un long signalement est hors de portée pour
+                    qui ne peut pas faire défiler à la souris (WCAG 2.1.1). */}
+                <p
+                  style={draftBox}
+                  tabIndex={0}
+                  role="group"
+                  aria-label="Votre signalement, conservé tel quel"
+                >
+                  {description.trim()}
+                </p>
 
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
                   <a href={mailtoHref()} style={{ ...btn, textDecoration: 'none', display: 'inline-block' }}>
