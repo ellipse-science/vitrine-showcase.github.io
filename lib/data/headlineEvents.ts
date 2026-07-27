@@ -106,7 +106,7 @@ const ISSUE_COLORS: Record<string, string> = {
 const ISSUE_LABELS_SHORT: Record<string, string> = {
   economy_and_labour: "Économie et travail",
   governments_and_governance: "Gouvernements et gouvernance",
-  health_and_social_services: "Santé et services sociaux",
+  health_and_social_services: "Santé et politiques sociales",
   environment_and_energy: "Environnement et énergie",
   rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
   culture_and_nationalism: "Culture et nationalisme",
