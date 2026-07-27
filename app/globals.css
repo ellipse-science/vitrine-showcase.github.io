@@ -4264,7 +4264,8 @@
 
   /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
      très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
-     survol du rang, et pivoté de 180° quand la promesse est ouverte.
+     survol du rang, et pivoté de 180° quand la promesse est ouverte (voir le
+     bloc prefers-reduced-motion plus bas pour le sort de l'animation).
      Il vit DANS le flux du libellé (.ppl-title__text) : il suit le dernier mot
      et se replace tout seul quand le titre passe à la ligne — d'où l'inline-flex
      + vertical-align plutôt qu'une colonne de grille dédiée. */
@@ -4285,6 +4286,11 @@
   .ppl-promises .ppl-promise:not(.ppl-promise--open):hover .ppl-title {
     border-left-color: var(--cordovan);
   }
+  /* Mouvement réduit : on retire `transform` de la liste des transitions, donc
+     le chevron BASCULE INSTANTANÉMENT au lieu de pivoter. La rotation elle-même
+     est conservée volontairement — c'est l'indicateur d'état ouvert/fermé, pas
+     une décoration. La supprimer priverait du signal les personnes qui ont
+     justement demandé moins d'animation. */
   @media (prefers-reduced-motion: reduce) {
     .ppl-chevron { transition: color 0.15s ease; }
   }
