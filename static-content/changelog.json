@@ -1,5 +1,11 @@
 [
   {
+    "pr": 330,
+    "date": "2026-07-27T16:02:06Z",
+    "note": "La page Méthodologie annonçait que la saillance médiatique tenait compte de la position des manchettes sur la page frontale. Ce n'est pas le cas : elle repose sur le temps passé en Une, ajusté au rythme de chaque média. La description a été corrigée.",
+    "version": null
+  },
+  {
     "pr": 328,
     "date": "2026-07-27T15:30:18Z",
     "note": "L'illustration qui accompagne la manchette principale représente désormais toujours la bonne histoire : elle est désignée par le même code que celui qui choisit la manchette, au lieu d'être devinée séparément.",
