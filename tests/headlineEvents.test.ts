@@ -261,6 +261,48 @@ describe("symbolPositions", () => {
   });
 });
 
+// Pré-filtre partagé par le loader du site ET par scripts/select_hero.ts (qui
+// désigne la Une à illustrer). Il était recopié trois fois dans le loader et une
+// quatrième en Python : c'est cette duplication qui a laissé l'illustration
+// diverger du hero (#259). Une seule implémentation, donc des tests dessus.
+describe("uniqueQcEvents (pré-filtre commun, #259)", () => {
+  const { uniqueQcEvents } = __test__;
+
+  it("garde une seule ligne par event_id", () => {
+    const out = uniqueQcEvents([
+      { event_id: "e1", target_region: "ROC", country_id: "CAN" },
+      { event_id: "e1", target_region: "ROC", country_id: "CAN" },
+      { event_id: "e2", target_region: "QC", country_id: "CAN" },
+    ] as never);
+    expect(out.map((e: { event_id: string }) => e.event_id)).toEqual(["e1", "e2"]);
+  });
+
+  it("préfère la variante QC quel que soit son rang dans la liste", () => {
+    const avant = uniqueQcEvents([
+      { event_id: "e1", target_region: "ROC", country_id: "CAN", title: "roc" },
+      { event_id: "e1", target_region: "QC", country_id: "CAN", title: "qc" },
+    ] as never);
+    const apres = uniqueQcEvents([
+      { event_id: "e1", target_region: "QC", country_id: "CAN", title: "qc" },
+      { event_id: "e1", target_region: "ROC", country_id: "CAN", title: "roc" },
+    ] as never);
+    expect(avant[0].title).toBe("qc");
+    expect(apres[0].title).toBe("qc");
+  });
+
+  it("écarte les événements purement américains", () => {
+    const out = uniqueQcEvents([
+      { event_id: "e1", target_region: "QC", country_id: "USA" },
+      { event_id: "e2", target_region: "QC", country_id: "CAN" },
+    ] as never);
+    expect(out.map((e: { event_id: string }) => e.event_id)).toEqual(["e2"]);
+  });
+
+  it("liste vide → liste vide", () => {
+    expect(uniqueQcEvents([] as never)).toEqual([]);
+  });
+});
+
 describe("blockKey", () => {
   it("produit une clé triable date + heure de début", () => {
     expect(blockKey({ date_utc: "2026-07-13", time_interval_utc: "08-12" } as never)).toBe("2026-07-13T08");

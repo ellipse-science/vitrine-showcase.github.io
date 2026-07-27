@@ -95,6 +95,24 @@ jobs:
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
 
+      # Node n'était pas installé dans ce job : il l'est maintenant pour une
+      # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
+      # au lieu de la laisser deviner par le script d'illustration (issue #259).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      # Écrit public/data/hero-selection.json — l'illustration s'y réfère.
+      # Non bloquant : si ça échoue, generate_art.py reprend son heuristique.
+      - name: Designate the hero headline
+        continue-on-error: true
+        run: npm run select-hero
+
       - name: Generate AI art (best-effort, non-blocking)
         id: art
         continue-on-error: true
