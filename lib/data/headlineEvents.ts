@@ -89,18 +89,18 @@ export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
 type ExtractedObject = { object: string; score: number };
 
 const ISSUE_COLORS: Record<string, string> = {
-  economy_and_labour: "#742630",
-  governments_and_governance: "#6F5828",
-  health_and_social_services: "#7D5358",
-  environment_and_energy: "#5F6E36",
-  rights_liberties_minorities_discrimination: "#5F4E78",
-  culture_and_nationalism: "#35604E",
-  education: "#7A5A23",
-  international_affairs_and_defense: "#304860",
-  law_and_crime: "#463E3E",
-  public_lands_and_agriculture: "#7D5132",
-  immigration: "#8B6914",
-  technology: "#3A5F70",
+  economy_and_labour: "#94781B",
+  governments_and_governance: "#234E78",
+  health_and_social_services: "#852244",
+  environment_and_energy: "#3D6B3A",
+  rights_liberties_minorities_discrimination: "#553278",
+  culture_and_nationalism: "#384873",
+  education: "#752373",
+  international_affairs_and_defense: "#1F5E66",
+  law_and_crime: "#993322",
+  public_lands_and_agriculture: "#5E731F",
+  immigration: "#9E541B",
+  technology: "#997018",
 };
 
 const ISSUE_LABELS_SHORT: Record<string, string> = {
