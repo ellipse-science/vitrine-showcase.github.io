@@ -10,9 +10,12 @@ jobs:
     permissions:
       issues: write
       contents: write
+    outputs:
+      issue_number: ${{ steps.creer.outputs.issue_number }}
 
     steps:
       - name: Formater et créer l'issue GitHub
+        id: creer
         uses: actions/github-script@v9
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -193,10 +196,26 @@ jobs:
               }
             }
 
-            await github.rest.issues.create({
+            const created = await github.rest.issues.create({
               owner:  'ellipse-science',
               repo:   'vitrine-showcase.github.io',
               title,
               body,
               labels,
             })
+
+            // Transmis au job `assigner` : une issue créée avec le GITHUB_TOKEN
+            // ne déclenche aucun workflow `on: issues`, il faut donc appeler
+            // l'auto-assignation nous-mêmes.
+            core.setOutput('issue_number', created.data.number)
+
+  # Assigne le ou les propriétaires selon le label de module posé ci-dessus.
+  # Table d'ownership : voir .github/workflows/auto-assign-issue.yml.
+  assigner:
+    needs: create-issue
+    if: needs.create-issue.outputs.issue_number != ''
+    permissions:
+      issues: write
+    uses: ./.github/workflows/auto-assign-issue.yml
+    with:
+      issue_number: ${{ fromJSON(needs.create-issue.outputs.issue_number) }}

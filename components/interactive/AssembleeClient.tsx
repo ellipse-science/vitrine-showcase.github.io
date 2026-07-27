@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { AssembleeBilliard } from "@/components/interactive/AssembleeBilliard";
+import { AssembleeProfiles } from "@/components/interactive/AssembleeProfiles";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -32,6 +33,7 @@ const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
 export function AssembleeClient({ data }: { data: AssembleeData }) {
   const [period, setPeriod] = useState<PeriodKey>("last_pdq");
+  const [playing, setPlaying] = useState(false);
   const view: PeriodView = data.periods[period];
 
   const visibleRows = view.rows.filter((r) => !r.inShadow);
@@ -67,9 +69,31 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
       </div>
 
       <section className="assemblee">
-        <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
+        {playing ? (
+          <>
+            <button type="button" className="ass-back-btn" onClick={() => setPlaying(false)}>
+              ← Retour aux profils
+            </button>
+            <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
+          </>
+        ) : (
+          <AssembleeProfiles rows={visibleRows} shadowRows={shadowRows} />
+        )}
       </section>
-      <div className="module-last-updated">{view.lastUpdated}</div>
+      <div className="module-last-updated">
+        {view.lastUpdated}
+        {!playing && (
+          <button
+            type="button"
+            className="ass-easter-btn"
+            onClick={() => setPlaying(true)}
+            aria-label="Easter egg : jeu de billard"
+            title="🎱"
+          >
+            🎱
+          </button>
+        )}
+      </div>
     </>
   );
 }
