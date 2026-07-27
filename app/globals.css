@@ -4878,104 +4878,282 @@
 
 /* ===== Easter egg : Flappy Enjeux — « Chasse à la une » (presse deluxe) ===== */
 .flappy-cabinet {
-  --ink: #26221e; --cream: #f7f4ef; --gold: #c29a45;
-  max-width: 900px; margin: 0 auto; background: var(--cream);
-  border: 2px solid var(--ink); border-radius: 10px; overflow: hidden;
-  animation: flappy-in 420ms ease both;
+  --ink: #1C1917;
+  --paper: #F3ECDD;
+  --paper-deep: #ECE3CF;
+  --cordovan: #6B1E2A;
+  --rule: #C8BDA6;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: 0 8px 30px rgba(28, 25, 23, 0.12);
+  overflow: hidden;
+  animation: flappy-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes flappy-in {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) { .flappy-cabinet { animation: none; } }
 
 .flappy-masthead {
-  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
-  background: var(--ink); color: var(--cream);
-  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 2px solid var(--cordovan);
 }
 .flappy-brand {
-  font-family: Georgia, "Times New Roman", serif; font-weight: 700;
-  letter-spacing: 0.14em; font-size: 0.82rem; text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--paper);
 }
-.flappy-score-hud { margin-left: auto; font-family: Georgia, serif; font-size: 0.9rem; }
-.flappy-score-hud b { color: var(--gold); font-size: 1.05rem; }
-.flappy-score-hud em { color: var(--gold); font-style: normal; }
+.flappy-score-hud {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-deep);
+}
+.flappy-score-hud b {
+  color: #A3E635;
+  font-size: 14px;
+}
+.flappy-score-hud em {
+  color: #FFAAAA;
+  font-style: normal;
+}
 .flappy-quit {
-  background: transparent; color: var(--cream); border: 1px solid rgba(247, 244, 239, 0.4);
-  border-radius: 4px; width: 26px; height: 26px; cursor: pointer; line-height: 1;
+  background: transparent;
+  color: var(--paper);
+  border: 0.5px solid rgba(243, 236, 221, 0.3);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  line-height: 1;
+  font-family: sans-serif;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
 }
-.flappy-quit:hover { background: rgba(247, 244, 239, 0.15); }
+.flappy-quit:hover { background: rgba(243, 236, 221, 0.15); }
 
 .flappy-target {
-  display: flex; flex-direction: column; gap: 2px; padding: 8px 14px;
-  border-bottom: 1px solid rgba(38, 34, 30, 0.18); background: rgba(194, 154, 69, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 18px;
+  border-bottom: 0.5px solid var(--rule);
+  background: var(--paper-deep);
 }
-.flappy-target-kicker { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
-.flappy-target-head { font-family: Georgia, serif; font-style: italic; font-size: 1.02rem; color: var(--ink); }
+.flappy-target-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+.flappy-target-head {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.35;
+}
 
 .flappy-stage { position: relative; width: 100%; line-height: 0; }
 .flappy-canvas {
-  width: 100%; height: auto; display: block; touch-action: none; cursor: pointer;
-  background: var(--cream);
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+  background: var(--paper);
 }
 
 .flappy-overlay {
-  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px;
-  align-items: center; justify-content: center; text-align: center; padding: 24px;
-  background: rgba(247, 244, 239, 0.9); line-height: 1.5;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
+  line-height: 1.5;
+  backdrop-filter: blur(2px);
 }
 .flappy-title {
-  font-family: Georgia, serif; font-weight: 700; font-size: 1.7rem; margin: 0; color: var(--ink);
-  border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 30px;
+  margin: 0;
+  color: var(--ink);
+  border-bottom: 2px solid var(--cordovan);
+  padding-bottom: 6px;
 }
-.flappy-hint { margin: 0; font-size: 0.92rem; max-width: 46ch; color: var(--ink); }
-.flappy-score { margin: 0; font-size: 1.1rem; font-family: Georgia, serif; }
-.flappy-score b { color: var(--gold); font-size: 1.6rem; }
+.flappy-hint {
+  margin: 0;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  max-width: 48ch;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.flappy-score {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.flappy-score b { color: var(--cordovan); font-size: 24px; font-family: 'Playfair Display', serif; }
 
 .flappy-cta {
-  padding: 8px 22px; border: 2px solid var(--ink); border-radius: 6px; cursor: pointer;
-  background: var(--gold); color: var(--ink); font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; font-size: 0.9rem;
+  padding: 10px 26px;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  background: var(--cordovan);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+  transition: background 0.18s ease, color 0.18s ease;
 }
-.flappy-cta:hover { background: var(--ink); color: var(--cream); }
+.flappy-cta:hover { background: var(--ink); color: var(--paper); }
 
-.flappy-initials { display: flex; gap: 8px; align-items: center; }
-.flappy-initials label { font-size: 0.85rem; }
-.flappy-initials input {
-  width: 4.2rem; text-transform: uppercase; text-align: center; letter-spacing: 0.35em;
-  font-size: 1.2rem; padding: 4px; border: 2px solid var(--ink); border-radius: 4px; font-family: Georgia, serif;
+.flappy-initials { display: flex; gap: 10px; align-items: center; }
+.flappy-initials label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
-.flappy-initials button { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; cursor: pointer; }
-.flappy-board { list-style: none; padding: 0; margin: 0; width: 240px; font-family: Georgia, serif; }
-.flappy-board li { display: grid; grid-template-columns: 2rem 1fr 3rem; gap: 8px; padding: 3px 0; border-bottom: 1px dotted rgba(38,34,30,0.25); }
-.flappy-board li span:last-child { text-align: right; color: var(--gold); font-weight: 700; }
-.flappy-board li.is-new { color: #B00020; font-weight: 700; }
+.flappy-initials input {
+  width: 4.8rem;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.35em;
+  font-size: 1.2rem;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.flappy-initials button {
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.flappy-initials button:hover { background: var(--ink); color: var(--paper); }
+
+.flappy-board {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 260px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+.flappy-board li {
+  display: grid;
+  grid-template-columns: 2rem 1fr 4rem;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.flappy-board li span:last-child { text-align: right; color: var(--cordovan); font-weight: 700; }
+.flappy-board li.is-new { color: var(--cordovan); font-weight: 700; background: rgba(107, 30, 42, 0.08); }
 .flappy-actions { display: flex; gap: 10px; }
-.flappy-actions button:not(.flappy-cta) { padding: 8px 16px; border: 1px solid var(--ink); border-radius: 6px; background: #fff; cursor: pointer; }
+.flappy-actions button:not(.flappy-cta) {
+  padding: 10px 18px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.flappy-actions button:not(.flappy-cta):hover { border-color: var(--ink); color: var(--cordovan); }
 
 .flappy-scoop {
-  position: absolute; top: 16%; left: 50%; transform: translateX(-50%) rotate(-6deg);
-  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
   animation: flappy-scoop 1100ms ease-out both;
 }
 .flappy-scoop-stamp {
-  font-family: Georgia, serif; font-weight: 800; font-size: 2.2rem; letter-spacing: 0.08em;
-  color: var(--gold); -webkit-text-stroke: 1.5px var(--ink); text-stroke: 1.5px var(--ink);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 800;
+  font-size: 2.4rem;
+  letter-spacing: 0.08em;
+  color: var(--cordovan);
+  -webkit-text-stroke: 1px var(--paper);
+  text-stroke: 1px var(--paper);
 }
-.flappy-scoop-issue { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); }
+.flappy-scoop-issue {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: var(--paper);
+  padding: 2px 8px;
+  border: 0.5px solid var(--rule);
+  margin-top: 4px;
+}
 @keyframes flappy-scoop {
-  0% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(0.4); }
-  25% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1.1); }
-  70% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(1); }
+  0% { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(0.4); }
+  25% { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(1.1); }
+  70% { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(1); }
 }
 
-.flappy-foot { margin: 0; padding: 6px 14px; font-size: 0.72rem; color: rgba(38,34,30,0.6); border-top: 1px solid rgba(38,34,30,0.14); text-align: center; }
+.flappy-foot {
+  margin: 0;
+  padding: 8px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  border-top: 0.5px solid var(--rule-faint);
+  text-align: center;
+}
 
 @media (max-width: 640px) {
-  .flappy-brand { font-size: 0.66rem; letter-spacing: 0.08em; }
-  .flappy-target-head { font-size: 0.9rem; }
-  .flappy-title { font-size: 1.3rem; }
-  .flappy-hint { font-size: 0.82rem; }
+  .flappy-brand { font-size: 9.5px; letter-spacing: 0.14em; }
+  .flappy-target-head { font-size: 13.5px; }
+  .flappy-title { font-size: 22px; }
+  .flappy-hint { font-size: 13px; }
 }

@@ -7,9 +7,9 @@ import {
 } from "@/lib/flappy";
 
 const KEY = "vitrine-flappy-scores";
-const INK = "#26221e";
-const CREAM = "#F7F4EF";
-const GOLD = "#C29A45";
+const INK = "#1C1917";
+const CREAM = "#F3ECDD";
+const CORDOVAN = "#6B1E2A";
 
 function loadBoard(): ScoreEntry[] {
   try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
@@ -72,7 +72,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
     for (let i = 0; i < 16; i++) {
       const a = Math.random() * Math.PI * 2, sp = 0.1 + Math.random() * 0.35;
       partRef.current.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 0.1,
-        life: 1, c: i % 3 === 0 ? GOLD : (i % 3 === 1 ? color : CREAM), r: 2 + Math.random() * 3 });
+        life: 1, c: i % 3 === 0 ? CORDOVAN : (i % 3 === 1 ? color : CREAM), r: 2 + Math.random() * 3 });
     }
   };
 
@@ -94,14 +94,14 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
       const drawCol = (yTop: number, h: number) => {
         if (h <= 0) return;
         ctx.fillStyle = col; ctx.fillRect(p.x, yTop, FIELD.pipeW, h);
-        ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, yTop + 1, FIELD.pipeW - 2, h - 2);
+        ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(p.x + 1, yTop + 1, FIELD.pipeW - 2, h - 2);
       };
       drawCol(0, topH);
       drawCol(botY, FIELD.height - botY);
       // nom de l'enjeu, imprimé verticalement sur la colonne pleine, hors de l'ouverture
       const label = (tile?.issueFr ?? "").toUpperCase();
       ctx.fillStyle = ink;
-      ctx.font = "700 15px Georgia, 'Times New Roman', serif";
+      ctx.font = "700 15px 'Playfair Display', Georgia, serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       const putLabel = (cy: number, avail: number) => {
         if (avail < 90) return;
@@ -148,7 +148,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             if (p.issueIndex === targetRef.current) {
               scoreRef.current += comboPoints(comboRef.current); comboRef.current += 1;
               const tile = tiles[p.issueIndex]; flashScoop(tile);
-              burst(FIELD.birdX + 40, stateRef.current.bird.y, tile?.color ?? GOLD);
+              burst(FIELD.birdX + 40, stateRef.current.bird.y, tile?.color ?? CORDOVAN);
               targetRef.current = nextTarget(weights, p.id * 2246822519, targetRef.current);
               setTargetIdx(targetRef.current);
             } else {
@@ -228,7 +228,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         {phase === "ready" && (
           <div className="flappy-overlay">
             <p className="flappy-title">Chasse à la une</p>
-            <p className="flappy-hint">Fais voler le 📰 (Espace / ↑ / clic) et franchis l&apos;enjeu <b>à la une</b> pour décrocher le scoop. Ça accélère avec le score. Échap pour quitter.</p>
+            <p className="flappy-hint">Fais voler le journal 📰 (Espace / ↑ / touchez l&apos;écran) et franchis l&apos;enjeu <b>à la une</b> pour décrocher le scoop. Ça accélère avec le score. Échap ou ✕ pour quitter.</p>
             <button type="button" className="flappy-cta" onClick={flap}>Commencer</button>
           </div>
         )}
