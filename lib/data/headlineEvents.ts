@@ -1635,28 +1635,39 @@ async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
         const dedupKey = url ?? title;
         if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
       }
-      // Médias couvrant cet événement : media_ids_qc en priorité, sinon media_ids
+      // Médias QC couvrant cet événement (exclusivité médias québécois)
       let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
-      if (ids.length === 0 && e.media_ids) ids = parseIdList(e.media_ids);
+      if (ids.length === 0 && e.media_ids) {
+        ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      }
       ids.forEach((id) => {
-        if (MEDIA_NAMES[id]) qcIds.add(id);
+        if (QC_MEDIA.includes(id)) qcIds.add(id);
       });
       for (const k of ["articles_24h", "articles"] as const) {
         try {
           const parsed = JSON.parse((e[k] as string) ?? "[]");
           if (Array.isArray(parsed)) for (const a of parsed as { media_id?: string; url?: string }[]) {
-            if (a.media_id && a.url && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+            if (a.media_id && a.url && QC_MEDIA.includes(a.media_id) && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
           }
         } catch { /* champ absent ou malformé */ }
       }
     }
-    const outlets = Object.keys(MEDIA_NAMES)
+    const outlets = QC_MEDIA
       .filter((id) => qcIds.has(id))
-      .map((id) => ({ name: MEDIA_NAMES[id], url: urlByMedia[id] ?? null }));
+      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
     map.set(issueKey, { articles: list.slice(0, 5), outlets });
   }
   return map;
 }
+
+const QC_MEDIA_DOMAINS: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "radio-canada.ca": "Radio-Canada",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "journaldemontreal.com": "Journal de Montréal",
+  "montrealgazette.com": "Montreal Gazette",
+};
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
@@ -1713,10 +1724,19 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
+      let outlets = articlesByIssue.get(issueKey)?.outlets ?? [];
+      if (outlets.length === 0 && url) {
+        for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
+          if (url.includes(domain)) {
+            outlets = [{ name, url }];
+            break;
+          }
+        }
+      }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets: articlesByIssue.get(issueKey)?.outlets ?? [] };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).

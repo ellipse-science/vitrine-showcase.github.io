@@ -64,7 +64,7 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
 
   const mediaLabel = tile.outlets.length > 0
     ? tile.outlets.map((o) => o.name).join(" · ")
-    : domainOf(tile.url);
+    : null;
 
   const inner = isTiny ? (
     <div className="gt-compact">
@@ -133,7 +133,7 @@ function GrowthTip({ tile }: { tile: LayoutNode }) {
   else style.top = `${(tile.rect.y + tile.rect.h).toFixed(2)}%`;
   const mediaLabel = tile.outlets.length > 0
     ? tile.outlets.map((o) => o.name).join(" · ")
-    : domainOf(tile.url);
+    : null;
   return (
     <div className="gt-tip" style={style}>
       <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
