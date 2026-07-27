@@ -263,7 +263,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // commence à 0), et sous 768 px le conteneur rogne en Y — la
             // catégorie était coupée en deux. Symétrique en bas. La marge
             // regagnée reste très inférieure à l'espace libre entre le bloc et
-            // le disque (≈ 48 px), donc rien ne vient mordre sur le radar.
+            // le disque, donc rien ne vient mordre sur le radar : cet espace
+            // vaut labelR(0) − (R + 10) = 218 − 170 = 48 px sur l'axe du haut
+            // (le bas du bloc est à ly = CY − labelR(0), le halo commence à
+            // CY − (R + 10)). Écrit sous forme de calcul et non de constante :
+            // si labelR ou R bougent, l'écart se recalcule à la lecture.
             const rawTop = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
             const top = Math.max(2, Math.min(rawTop, H - blockH - 2));
             const eyebrowY = top + 11;
