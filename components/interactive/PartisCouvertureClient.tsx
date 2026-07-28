@@ -1,16 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView } from "@/lib/data/parties";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { DoomGame } from "@/components/interactive/DoomGame";
 
 const RANGES: RangeKey[] = ["today", "week", "month"];
 
-// Titre du partage (bouton + intention X) — reprend le meneur du jour et le
-// ton de sa couverture, comme la carte /partage/partis-et-couverture/, plutôt
-// que le libellé générique du module. Toujours "today", peu importe l'onglet
-// affiché, pour rester cohérent avec ce que montre la carte de partage.
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   if (!leader || leader.sovPct === 0 || leader.inShadow) {
@@ -27,10 +24,31 @@ function shareTitle(data: PartiesData): string {
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const [range, setRange] = useState<RangeKey>("today");
-  const view: RangeView = data.ranges[range];
+  const [showDoom, setShowDoom] = useState(false);
+  const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
+  const handlePcqTap = () => {
+    const now = performance.now();
+    if (now - pcqTapRef.current.lastTime < 1500) {
+      pcqTapRef.current.count += 1;
+    } else {
+      pcqTapRef.current.count = 1;
+    }
+    pcqTapRef.current.lastTime = now;
+
+    if (pcqTapRef.current.count >= 3) {
+      pcqTapRef.current.count = 0;
+      setShowDoom(true);
+    }
+  };
+
+  const view: RangeView = data.ranges[range];
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
+
+  if (showDoom) {
+    return <DoomGame onExit={() => setShowDoom(false)} />;
+  }
 
   return (
     <>
@@ -66,7 +84,12 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
 
         {visibleRows.map((row) => (
-          <PartiRow key={row.key} row={row} refLabel={view.refLabel} />
+          <PartiRow
+            key={row.key}
+            row={row}
+            refLabel={view.refLabel}
+            onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
+          />
         ))}
 
         {shadowRows.length > 0 && (
@@ -85,6 +108,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
                   row={row}
                   refLabel={view.refLabel}
                   shadow
+                  onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
                 />
               ))}
             </div>
@@ -100,15 +124,27 @@ function PartiRow({
   row,
   refLabel,
   shadow,
+  onPcqTap,
 }: {
   row: RowView;
   refLabel: string;
   shadow?: boolean;
+  onPcqTap?: () => void;
 }) {
-  const nameStyle = shadow ? { opacity: 0.35 } : undefined;
+  const isPcq = row.key === "pcq";
+  const nameStyle = {
+    ...(shadow ? { opacity: 0.35 } : {}),
+    ...(isPcq ? { cursor: "pointer", userSelect: "none" as const } : {}),
+  };
+
   return (
     <div className="parti-row">
-      <span className={`parti-name-box ${row.key}`} style={nameStyle}>
+      <span
+        className={`parti-name-box ${row.key}`}
+        style={nameStyle}
+        onClick={isPcq ? onPcqTap : undefined}
+        title={isPcq ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
+      >
         {row.label}
       </span>
       <div className="parti-sail-label">Saillance</div>

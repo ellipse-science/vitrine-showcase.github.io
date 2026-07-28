@@ -5197,3 +5197,113 @@
   .flappy-actions { gap: 8px; margin-top: 4px; }
   .flappy-actions button { padding: 8px 14px; font-size: 10px; }
 }
+
+/* DOOM PCQ Easter Egg Cabinet */
+.doom-cabinet {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+  margin-top: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.doom-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--cordovan);
+  color: var(--paper);
+  border-bottom: 1px solid var(--ink);
+}
+
+.doom-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doom-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #F87171;
+}
+
+.doom-subtitle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.doom-quit {
+  background: transparent;
+  color: var(--paper);
+  border: 0.5px solid rgba(243, 236, 221, 0.4);
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.15s ease;
+}
+.doom-quit:hover {
+  background: rgba(243, 236, 221, 0.2);
+}
+
+.doom-hint-bar {
+  background: #1C1917;
+  color: #D6D3D1;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 8px 16px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
+
+.doom-stage {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: #000000;
+}
+
+.doom-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.doom-foot {
+  margin: 0;
+  padding: 8px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border-top: 0.5px solid var(--rule-faint);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .doom-stage {
+    height: 380px;
+  }
+  .doom-subtitle {
+    font-size: 12px;
+  }
+  .doom-hint-bar {
+    font-size: 9.5px;
+    padding: 6px 10px;
+  }
+}
