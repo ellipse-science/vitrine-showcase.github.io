@@ -1,10 +1,10 @@
 {
-  "event_id": "20260727T190000Z-evt-elsie-lefebvre-tente-retour-politique-06655443",
-  "storyline_id": "story-elsie-lefebvre-0037a3f5",
-  "title": "Elsie Lefebvre vise un retour en politique avec le Parti québécois",
-  "main_issue": "governments_and_governance",
-  "date_utc": "2026-07-27",
-  "time_interval_utc": "19-23",
-  "sum_qc": 23.643,
-  "peak_qc": 31.197
+  "event_id": "20260728T030000Z-evt-suspect-avait-deja-menace-mort-4b49ac47",
+  "storyline_id": "story-philippe-benoit-1ff01bff",
+  "title": "Un père tue son fils à Shawinigan après des menaces antérieures",
+  "main_issue": "law_and_crime",
+  "date_utc": "2026-07-28",
+  "time_interval_utc": "03-07",
+  "sum_qc": 26.876,
+  "peak_qc": 16.243
 }
