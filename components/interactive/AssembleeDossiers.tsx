@@ -132,14 +132,24 @@ function DossierCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRo
   );
 }
 
+// Un caucus majoritaire compte des dizaines de députés (75 pour la CAQ sur la
+// législature) : tout afficher d'emblée étirait le tableau sur quatre écrans,
+// avec une colonne centrale vide. On montre donc les voix les plus présentes,
+// le reste sur demande — rien n'est retiré, seulement replié.
+const FICHES_VISIBLE = 10;
+
 function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[] }) {
   const [expandedDeputy, setExpandedDeputy] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const deputies = row.deputies ?? [];
   const maxWords = deputies.reduce((m, d) => Math.max(m, d.wordsRaw), 0);
+
+  const shown = showAll ? deputies : deputies.slice(0, FICHES_VISIBLE);
+  const hiddenCount = deputies.length - shown.length;
   // Alternance gauche/droite (les députés arrivent triés par mots décroissants
   // du loader) : les plus prolixes se répartissent des deux côtés du dossier.
-  const left = deputies.filter((_, i) => i % 2 === 0);
-  const right = deputies.filter((_, i) => i % 2 === 1);
+  const left = shown.filter((_, i) => i % 2 === 0);
+  const right = shown.filter((_, i) => i % 2 === 1);
 
   const fiche = (d: DeputyRow) => (
     <DeputyFiche
@@ -153,11 +163,25 @@ function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeR
   );
 
   return (
-    <div className="ass-board">
-      {left.length > 0 && <div className="ass-board-col left">{left.map(fiche)}</div>}
-      <DossierCard row={row} allRows={allRows} />
-      {right.length > 0 && <div className="ass-board-col right">{right.map(fiche)}</div>}
-    </div>
+    <>
+      <div className="ass-board">
+        {left.length > 0 && <div className="ass-board-col left">{left.map(fiche)}</div>}
+        <DossierCard row={row} allRows={allRows} />
+        {right.length > 0 && <div className="ass-board-col right">{right.map(fiche)}</div>}
+      </div>
+      {(hiddenCount > 0 || showAll) && (
+        <button
+          type="button"
+          className="ass-board-more"
+          onClick={() => setShowAll((v) => !v)}
+          aria-expanded={showAll}
+        >
+          {showAll
+            ? "Replier les députés"
+            : `Voir les ${hiddenCount} autres députés`}
+        </button>
+      )}
+    </>
   );
 }
 

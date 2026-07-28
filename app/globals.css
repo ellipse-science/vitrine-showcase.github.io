@@ -2430,6 +2430,22 @@
     padding-top: 8px;
   }
   .ass-fiche-more .ass-tone { height: 10px; }
+  .ass-board-more {
+    align-self: center;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0 2px 3px;
+    margin: -4px auto 0;
+  }
+  .ass-board-more:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .ass-board-more:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
 
   .ass-card-shadow {
     flex-direction: row;
