@@ -1,5 +1,11 @@
 [
   {
+    "pr": 357,
+    "date": "2026-07-28T16:19:36Z",
+    "note": "feat(doom): intégrer l'Easter Egg DOOM PCQ « Knee-Deep in the Media » sans bordures noires",
+    "version": null
+  },
+  {
     "pr": 356,
     "date": "2026-07-28T15:56:56Z",
     "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
