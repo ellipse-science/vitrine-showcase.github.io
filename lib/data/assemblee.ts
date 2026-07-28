@@ -109,11 +109,8 @@ export type DeputyRow = {
   name: string;
   wordsFormatted: string;
   wordsRaw: number;
-  // Palier de taille (1 = plus discret, 3 = plus proéminent) dérivé du poids
-  // relatif du député au sein de son parti pour la période — alimente la
-  // taille des cartes satellites dans le tableau d'enquête.
-  sizeLevel: 1 | 2 | 3;
   richnessLevel: number;
+  toneLeftPct: number;
   signatureWord?: string;
   signatureWordContext?: string;
 };
@@ -231,17 +228,6 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
   return stack;
 }
 
-// Paliers de taille des cartes satellites, relatifs au député le plus
-// prolixe du parti pour la période (pas de comparaison inter-partis — chaque
-// dossier a sa propre échelle, comme les enjeux le sont déjà).
-function deputySizeLevel(wordCount: number, maxWordCount: number): 1 | 2 | 3 {
-  if (maxWordCount <= 0) return 1;
-  const ratio = wordCount / maxWordCount;
-  if (ratio >= 0.66) return 3;
-  if (ratio >= 0.33) return 2;
-  return 1;
-}
-
 function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: DeputyAgoraRow[]): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -249,21 +235,23 @@ function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: Depu
   if (rows.length === 0) return [];
 
   const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
-  const maxWordCount = sorted[0]?.word_count || 0;
 
   const mattrs: Record<string, number> = {};
   for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
   const richnessLevels = computeRichnessLevels(mattrs);
 
-  return sorted.map((r) => ({
-    name: r.deputy,
-    wordsFormatted: fmtWords(r.word_count),
-    wordsRaw: Number(r.word_count || 0),
-    sizeLevel: deputySizeLevel(Number(r.word_count || 0), maxWordCount),
-    richnessLevel: richnessLevels[r.deputy] || 1,
-    signatureWord: r.signature_word || undefined,
-    signatureWordContext: r.signature_word_context || undefined,
-  }));
+  return sorted.map((r) => {
+    const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
+    return {
+      name: r.deputy,
+      wordsFormatted: fmtWords(r.word_count),
+      wordsRaw: Number(r.word_count || 0),
+      richnessLevel: richnessLevels[r.deputy] || 1,
+      toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
+      signatureWord: r.signature_word || undefined,
+      signatureWordContext: r.signature_word_context || undefined,
+    };
+  });
 }
 
 function buildSubtitle(periodType: PeriodKey, endDate: string): string {

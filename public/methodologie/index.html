@@ -701,18 +701,11 @@
     <p class="metho-body">Ce module mesure la présence des partis politiques dans les débats de l'Assemblée nationale du Québec (ANQ) selon trois fenêtres&nbsp;: la dernière période de questions (<em>last PDQ</em>), la session en cours et la législature complète.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le système traite les transcriptions officielles des débats de l'ANQ et produit, pour chaque parti et chaque période, plusieurs mesures&nbsp;:</p>
-    <ul class="metho-list">
-      <li>le nombre total d'interventions du parti sur la période;</li>
-      <li>le volume total de mots prononcés;</li>
-      <li>la richesse lexicale (diversité du vocabulaire);</li>
-      <li>le ton moyen des interventions;</li>
-      <li>un score par grand enjeu (même taxonomie qu'au §&nbsp;06)&nbsp;: part des interventions portant sur chaque enjeu.</li>
-    </ul>
+    <p class="metho-body">Le système traite les transcriptions officielles des débats de l'ANQ et produit, pour chaque parti et chaque période, plusieurs mesures&nbsp;: le nombre total d'interventions, le volume total de mots prononcés, la richesse lexicale (diversité du vocabulaire), le ton moyen des interventions, un score par grand enjeu (même taxonomie qu'au §&nbsp;06) et un mot distinctif (le mot qui distingue le plus ce parti des autres, calculé par TF-IDF sur l'ensemble des interventions de la période). Les mêmes mesures sont aussi calculées par député, à l'exception de l'angle éditorial (non généré au niveau individuel).</p>
     <p class="metho-body">Les nouvelles séances sont traitées chaque mardi. Lorsque l'Assemblée ne siège pas (relâche estivale ou parlementaire), les chiffres affichés restent ceux de la dernière séance connue.</p>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Chaque parti actif a sa fiche&nbsp;: le volume de mots prononcés, la répartition par enjeu, le ton en chambre et la richesse lexicale y sont affichés directement, avec une phrase qui situe le parti par rapport à la moyenne des autres partis actifs. Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les partis sans siège à la législature courante sont affichés à part, sous l'intitulé «&nbsp;Hors chambre&nbsp;». Un jeu de billard caché propose une seconde façon d'explorer ces mêmes données&nbsp;: chaque parti y est une bille qu'on peut envoyer vers l'une de six poches, chacune révélant une facette différente de sa présence.</p>
+    <p class="metho-body">Le module se présente comme un hémicycle stylisé&nbsp;: un quartier par parti actif, dont la largeur suit son poids réel en mots pour la période choisie, et un point par député, dont la taille suit son propre poids en mots au sein de la chambre. <strong>Ce n'est pas un plan de sièges officiel</strong>&nbsp;: nous ne disposons d'aucune donnée sur l'attribution réelle des sièges à l'ANQ, seulement du volume de parole mesuré dans les transcriptions. La disposition est donc une représentation, pas un relevé. Cliquer un quartier ou un point ouvre le détail complet (répartition par enjeu, ton en chambre, richesse lexicale, mot distinctif) pour le parti ou le député sélectionné, un seul à la fois. Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les partis sans siège à la législature courante sont affichés à part, sous l'intitulé «&nbsp;Hors chambre&nbsp;». Un jeu de billard caché propose une seconde façon d'explorer les données de parti&nbsp;: chaque parti y est une bille qu'on peut envoyer vers l'une de six poches, chacune révélant une facette différente de sa présence.</p>
   </section>
 
   <!-- §8 Polimètre+ -->

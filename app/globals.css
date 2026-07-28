@@ -2107,10 +2107,10 @@
   }
   .billiard-popup-close:hover { opacity: 1; }
 
-  /* Vue principale : une fiche par parti (pas un tableau CSS Grid) — chaque
-     mesure garde son propre canal visuel plutôt que d'être compressée dans
-     une forme abstraite unique (cf. commentaire d'en-tête AssembleeProfiles.tsx). */
-  .ass-profiles { display: flex; flex-direction: column; }
+  /* Panneau de détail de l'hémicycle : le corps réutilise les mêmes classes
+     qu'avant (enjeu-stack, ass-tone, ass-richness…), seul le conteneur change
+     — cf. AssembleeHemicycle.tsx. .ass-card / .ass-card-shadow restent aussi
+     utilisées pour la liste « Hors chambre ». */
   .ass-card {
     position: relative;
     padding: 26px 0 22px;
@@ -2129,12 +2129,6 @@
     width: 46px;
     height: 5px;
     background: var(--c);
-  }
-  .ass-card-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
   }
   .ass-card-figure {
     font-family: 'Playfair Display', Georgia, serif;
@@ -2236,125 +2230,78 @@
     margin: 0;
   }
   .ass-card-sigword .stat-label { display: block; margin-bottom: 4px; }
-  /* Étiquette de pièce à conviction : légèrement inclinée, retenue par un
-     fil pointillé attaché à une punaise — motif « tableau d'enquête ». */
-  .ass-sigtag-wrap {
-    position: relative;
-    padding-top: 20px;
-    margin-top: 4px;
-    align-self: flex-start;
+  /* Citation en marge, façon presse écrite : filet de laiton à gauche, pas
+     de boîte ni d'inclinaison — la sobriété porte davantage que le décor. */
+  .ass-sigword-quote {
+    display: block;
+    border-left: 2px solid var(--brass);
+    padding-left: 14px;
+    font-size: 15px;
   }
-  .ass-sigtag-wrap::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 10px;
-    width: 0;
-    height: 16px;
-    border-left: 1px dashed var(--rule);
+
+  /* Hémicycle stylisé : demi-cercle en SVG, un quartier par parti (largeur =
+     poids en mots), un siège par député (taille = son propre poids en mots).
+     Cliquer ouvre le détail en dessous — cf. AssembleeHemicycle.tsx. */
+  .ass-hemi { display: flex; flex-direction: column; gap: 4px; }
+  .ass-hemi-svg {
+    display: block;
+    width: 100%;
+    max-width: 760px;
+    height: auto;
+    margin: 4px auto 0;
+    overflow: visible;
+    animation: assHemiIn 0.5s ease both;
   }
-  .ass-sigtag-wrap::after {
-    content: "";
-    position: absolute;
-    top: -3px;
-    left: 7px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--cordovan);
+  @keyframes assHemiIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
   }
-  .ass-sigtag {
-    border: 0.5px solid var(--rule);
-    background: var(--paper-deep);
-    padding: 8px 14px;
-    transform: rotate(-0.6deg);
+  @media (prefers-reduced-motion: reduce) {
+    .ass-hemi-svg { animation: none; }
   }
-  /* Rail de cartes satellites : chaque député pend d'un fil pointillé sous
-     le dossier du parti, comme des pièces à conviction punaisées. */
-  .ass-deputies { margin-top: 6px; }
-  .ass-deputies-rail {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 16px 14px;
-    padding-top: 20px;
-    border-top: 1px dashed var(--rule-faint);
+  .ass-hemi-frame { fill: none; stroke: var(--brass); stroke-width: 1; }
+  .ass-hemi-baseline { stroke: var(--rule-faint); stroke-width: 1; }
+  .ass-hemi-divider { stroke: var(--rule-faint); stroke-width: 1; stroke-dasharray: 2 4; }
+  .ass-hemi-label { cursor: pointer; }
+  .ass-hemi-label-bg { fill: var(--c); }
+  .ass-hemi-label-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    fill: #F3ECDD;
+    pointer-events: none;
   }
-  .ass-deputy-card {
-    position: relative;
-    flex: 0 0 auto;
-    min-width: 122px;
-    border: 0.5px solid var(--rule);
-    background: var(--paper);
-    padding: 9px 11px 10px;
+  .ass-hemi-label.selected .ass-hemi-label-bg { stroke: var(--brass); stroke-width: 2.5; }
+  .ass-hemi-label:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  .ass-hemi-seat { cursor: pointer; }
+  .ass-hemi-hit { fill: transparent; }
+  .ass-hemi-seat-dot {
+    stroke: var(--paper);
+    stroke-width: 0.75;
+    transition: stroke 0.15s ease, stroke-width 0.15s ease;
+  }
+  .ass-hemi-seat-dot.selected { stroke: var(--brass); stroke-width: 2.5; }
+  .ass-hemi-seat:focus-visible .ass-hemi-seat-dot { stroke: var(--cordovan); stroke-width: 2; }
+  .ass-hemi-halo { fill: var(--green); opacity: 0.08; }
+  .ass-hemi-halo.strong { opacity: 0.16; }
+  .ass-hemi-halo.defavorable { fill: var(--red); }
+
+  .ass-hemi-detail {
+    padding-top: 18px;
+    margin-top: 10px;
+    border-top: 0.5px solid var(--rule);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 12px;
   }
-  .ass-deputy-card::before {
-    /* punaise */
-    content: "";
-    position: absolute;
-    top: -21px;
-    left: 16px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--c);
+  .ass-hemi-detail-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
   }
-  .ass-deputy-card::after {
-    /* fil */
-    content: "";
-    position: absolute;
-    top: -20px;
-    left: 19px;
-    width: 0;
-    height: 20px;
-    border-left: 1px dashed var(--rule);
-  }
-  .ass-deputy-name {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: var(--ink-soft);
-  }
-  .ass-deputy-words {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 16px;
-    color: var(--cordovan);
-    white-space: nowrap;
-  }
-  .ass-deputy-words .unit {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 500;
-    font-size: 8px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-    margin-left: 4px;
-  }
-  .ass-deputy-card.size-2 .ass-deputy-words { font-size: 20px; }
-  .ass-deputy-card.size-3 { min-width: 148px; padding: 11px 13px 12px; }
-  .ass-deputy-card.size-3 .ass-deputy-words { font-size: 25px; }
-  .ass-deputy-richness {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    color: var(--ink);
-    letter-spacing: 2px;
-  }
-  .ass-deputy-richness .empty { color: var(--rule); }
-  .ass-deputy-sigword {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    line-height: 1.3;
-    margin: 2px 0 0;
-  }
+
   .ass-card-shadow {
     flex-direction: row;
     align-items: baseline;
@@ -3603,7 +3550,7 @@
     .treemap-mobile { display: block; margin-top: 4px; }
     .treemap-legend { display: none; }
 
-    /* ── Assemblée nationale : cartes ── */
+    /* ── Assemblée nationale : hémicycle + détail ── */
     .ass-card { padding: 18px 0; gap: 10px; }
     .ass-card-figure { font-size: 26px; }
     .enjeu-stack { height: 20px; }
@@ -3612,11 +3559,8 @@
     .ass-card-stats { grid-template-columns: 1fr; gap: 14px; }
     .period-subtitle { font-size: 10px; margin-top: 4px; }
     .in-shadow .ass-empty { font-size: 13px; }
-    .ass-deputies-rail { gap: 14px 10px; }
-    .ass-deputy-card { min-width: 104px; }
-    .ass-deputy-card.size-3 { min-width: 122px; }
-    .ass-deputy-card.size-2 .ass-deputy-words { font-size: 17px; }
-    .ass-deputy-card.size-3 .ass-deputy-words { font-size: 21px; }
+    .ass-hemi-label-text { font-size: 15px; }
+    .ass-hemi-detail-head { flex-wrap: wrap; }
 
     /* ── Alerte consensus ── */
     .alerte-consensus { padding: 28px 16px 24px; }
