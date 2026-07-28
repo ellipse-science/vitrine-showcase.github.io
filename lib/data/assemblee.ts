@@ -80,12 +80,42 @@ type AgoraRow = IssueShares & {
   signature_word_context?: string;
 };
 
+// Ligne brute de agora_decideurs_qc_deputes.json (agrégation par député, PR
+// aws-refiners#259) — pas d'angle éditorial ici (coût LLM non justifié à
+// l'échelle du député), mais le mot distinctif est calculé pour chacun.
+type DeputyAgoraRow = IssueShares & {
+  period_type: PeriodKey;
+  period_start_date: string;
+  period_end_date: string;
+  party: string;
+  deputy: string;
+  n_interventions: number;
+  word_count: number;
+  lexical_richness: number;
+  tone_score: number;
+  signature_word?: string;
+  signature_word_context?: string;
+};
+
 export type EnjeuSegment = {
   color: string;
   widthPct: number;
   label: string;
   title: string;
   isReste?: boolean;
+};
+
+export type DeputyRow = {
+  name: string;
+  wordsFormatted: string;
+  wordsRaw: number;
+  // Palier de taille (1 = plus discret, 3 = plus proéminent) dérivé du poids
+  // relatif du député au sein de son parti pour la période — alimente la
+  // taille des cartes satellites dans le tableau d'enquête.
+  sizeLevel: 1 | 2 | 3;
+  richnessLevel: number;
+  signatureWord?: string;
+  signatureWordContext?: string;
 };
 
 export type AssembleeRow = {
@@ -104,6 +134,9 @@ export type AssembleeRow = {
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
   signatureWordContext?: string;
+  // Députés du parti pour la période (tableau d'enquête) — absent tant que
+  // agora_decideurs_qc_deputes.json n'a pas encore été publié.
+  deputies?: DeputyRow[];
 };
 
 export type PeriodView = {
@@ -198,6 +231,41 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
   return stack;
 }
 
+// Paliers de taille des cartes satellites, relatifs au député le plus
+// prolixe du parti pour la période (pas de comparaison inter-partis — chaque
+// dossier a sa propre échelle, comme les enjeux le sont déjà).
+function deputySizeLevel(wordCount: number, maxWordCount: number): 1 | 2 | 3 {
+  if (maxWordCount <= 0) return 1;
+  const ratio = wordCount / maxWordCount;
+  if (ratio >= 0.66) return 3;
+  if (ratio >= 0.33) return 2;
+  return 1;
+}
+
+function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: DeputyAgoraRow[]): DeputyRow[] {
+  const rows = deputyRows.filter(
+    (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
+  );
+  if (rows.length === 0) return [];
+
+  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  const maxWordCount = sorted[0]?.word_count || 0;
+
+  const mattrs: Record<string, number> = {};
+  for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
+  const richnessLevels = computeRichnessLevels(mattrs);
+
+  return sorted.map((r) => ({
+    name: r.deputy,
+    wordsFormatted: fmtWords(r.word_count),
+    wordsRaw: Number(r.word_count || 0),
+    sizeLevel: deputySizeLevel(Number(r.word_count || 0), maxWordCount),
+    richnessLevel: richnessLevels[r.deputy] || 1,
+    signatureWord: r.signature_word || undefined,
+    signatureWordContext: r.signature_word_context || undefined,
+  }));
+}
+
 function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   if (periodType === "last_pdq") {
     return `Période de questions du ${fmtDateFr(endDate)} · Salon bleu`;
@@ -208,7 +276,7 @@ function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   return `Législature ${String(endDate || "").slice(0, 4)} · Salon bleu`;
 }
 
-function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
+function buildPeriodView(allRows: AgoraRow[], period: PeriodKey, deputyRows: DeputyAgoraRow[] = []): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
 
@@ -249,6 +317,7 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
       richnessLevel: richnessLevels[item.key] || 1,
       signatureWord: d.signature_word || undefined,
       signatureWordContext: d.signature_word_context || undefined,
+      deputies: buildDeputyList(item.key, period, deputyRows),
     };
   });
 
@@ -269,15 +338,37 @@ const ASSEMBLEE_JSON_PATH = path.resolve(
   "agora_decideurs_qc.json",
 );
 
+const ASSEMBLEE_DEPUTES_JSON_PATH = path.resolve(
+  process.cwd(),
+  "public",
+  "data",
+  "agora",
+  "agora_decideurs_qc_deputes.json",
+);
+
+async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
+  // Table publiée séparément (aws-refiners#259) — tant qu'un premier fetch_data.R
+  // ne l'a pas encore matérialisée localement, on dégrade en l'absence de
+  // cartes satellites plutôt que de faire échouer toute la section.
+  try {
+    const raw = await fs.readFile(ASSEMBLEE_DEPUTES_JSON_PATH, "utf8");
+    const rows = JSON.parse(raw) as DeputyAgoraRow[];
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadAssemblee(): Promise<AssembleeData | null> {
   const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
   const allRows = JSON.parse(raw) as AgoraRow[];
   if (!Array.isArray(allRows) || allRows.length === 0) return null;
+  const deputyRows = await loadDeputyRows();
   return {
     periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq"),
-      session: buildPeriodView(allRows, "session"),
-      legislature: buildPeriodView(allRows, "legislature"),
+      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows),
+      session: buildPeriodView(allRows, "session", deputyRows),
+      legislature: buildPeriodView(allRows, "legislature", deputyRows),
     },
   };
 }

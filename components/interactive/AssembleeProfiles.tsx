@@ -1,4 +1,4 @@
-import type { AssembleeRow } from "@/lib/data/assemblee";
+import type { AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { facetResult } from "@/lib/data/assembleeInsights";
 
 // Vue principale de « Que dit-on à l'Assemblée ? » : une fiche éditoriale par
@@ -22,13 +22,48 @@ function RichnessDots({ level }: { level: number }) {
   return <>{dots}</>;
 }
 
+// Cartes satellites : chaque député pend d'un fil pointillé sous le dossier
+// du parti, comme les pièces à conviction d'un tableau d'enquête. La taille
+// de la carte (petite/moyenne/grande) suit son poids relatif en mots au sein
+// du parti — pas de comparaison inter-partis, chaque dossier a sa propre
+// échelle (même logique que la barre d'enjeux).
+function DeputyCard({ deputy, color }: { deputy: DeputyRow; color: string }) {
+  return (
+    <div className={`ass-deputy-card size-${deputy.sizeLevel}`} style={{ ["--c" as string]: color }}>
+      <span className="ass-deputy-name">{deputy.name}</span>
+      <span className="ass-deputy-words">
+        {deputy.wordsFormatted}
+        <span className="unit" aria-hidden="true">mots</span>
+      </span>
+      <span className="ass-deputy-richness"><RichnessDots level={deputy.richnessLevel} /></span>
+      {deputy.signatureWord && (
+        <p className="ass-deputy-sigword">« {deputy.signatureWord} »</p>
+      )}
+    </div>
+  );
+}
+
+function DeputyBoard({ deputies, color }: { deputies: DeputyRow[]; color: string }) {
+  if (deputies.length === 0) return null;
+  return (
+    <div className="ass-card-block ass-deputies">
+      <span className="stat-label">Par député</span>
+      <div className="ass-deputies-rail">
+        {deputies.map((d) => (
+          <DeputyCard key={d.name} deputy={d} color={color} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PartyCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[] }) {
   const issue = facetResult(row, "issue", allRows);
   const tone = facetResult(row, "tone", allRows);
   const richness = facetResult(row, "richness", allRows);
 
   return (
-    <article className="ass-card">
+    <article className="ass-card" style={{ ["--c" as string]: row.color }}>
       <div className="ass-card-head">
         <span className={`parti-name-box ${row.key}`}>{row.label}</span>
         <span
@@ -76,11 +111,15 @@ function PartyCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[
       </div>
 
       {row.signatureWord && (
-        <p className="ass-card-sigword">
-          <span className="stat-label">Mot distinctif</span>
-          « {row.signatureWord} »{row.signatureWordContext ? ` (${row.signatureWordContext})` : ""}
-        </p>
+        <div className="ass-sigtag-wrap">
+          <p className="ass-card-sigword ass-sigtag">
+            <span className="stat-label">Mot distinctif</span>
+            « {row.signatureWord} »{row.signatureWordContext ? ` (${row.signatureWordContext})` : ""}
+          </p>
+        </div>
       )}
+
+      {row.deputies && <DeputyBoard deputies={row.deputies} color={row.color} />}
     </article>
   );
 }
