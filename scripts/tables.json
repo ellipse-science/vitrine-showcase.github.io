@@ -50,7 +50,9 @@
         "technology",
         "governments_and_governance",
         "culture_and_nationalism",
-        "editorial_angle"
+        "editorial_angle",
+        "signature_word",
+        "signature_word_context"
       ],
       "enabled": true,
       "used_by": "lib/data/assemblee.ts + components/sections/AssembleeSection.tsx"
