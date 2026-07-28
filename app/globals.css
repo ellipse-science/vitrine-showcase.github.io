@@ -3286,10 +3286,48 @@
        est peu découvrable — on pourrait croire le radar coupé). Le mask s'applique
        à la fenêtre visible du conteneur, pas au contenu scrollé, donc le fondu
        reste aux bords pendant le défilement. */
-    .solitudes .sol-radar { overflow-x: auto; overflow-y: hidden; padding: 10px 0; -webkit-overflow-scrolling: touch;
+    /* Radar « compact » : les titres sont partis dans .radar-legend, le SVG est
+       recadré sur le disque seul. Plus rien ne dépasse → ni défilement, ni
+       largeur plancher, ni fondu (signalements #302 et #309). */
+    .solitudes .sol-radar.compact { overflow: visible; padding: 4px 0 0;
+      -webkit-mask-image: none; mask-image: none; }
+    .solitudes .sol-radar.compact svg { min-width: 0; max-width: 340px; margin: 0 auto; }
+    .solitudes .sol-radar:not(.compact) { overflow-x: auto; overflow-y: hidden; padding: 10px 0; -webkit-overflow-scrolling: touch;
       -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
               mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%); }
-    .solitudes .sol-radar svg { min-width: 600px; }
+    .solitudes .sol-radar:not(.compact) svg { min-width: 600px; }
+
+    /* Pastilles numérotées au bout des axes — le pont entre le disque et la
+       légende. Teintées par région, comme les points de données. */
+    .radar-axnum circle { fill: var(--paper); stroke: var(--rule); stroke-width: 1; }
+    .radar-axnum text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; fill: var(--ink-soft); }
+    .radar-axnum.side-qc circle { stroke: var(--bleu); }
+    .radar-axnum.side-can circle { stroke: #a8302c; }
+
+    /* Légende : une entrée par histoire, pleine largeur, enfin lisible. */
+    .radar-legend { list-style: none; margin: 18px 0 4px; padding: 0; }
+    .radar-legend li { display: flex; gap: 12px; padding: 14px 0; border-top: 0.5px solid var(--rule); }
+    .radar-legend li:last-child { border-bottom: 0.5px solid var(--rule); }
+    .radar-legend .lg-num { flex: 0 0 26px; height: 26px; border-radius: 50%; border: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-soft); }
+    .radar-legend li.side-qc .lg-num { border-color: var(--bleu); color: var(--bleu); }
+    .radar-legend li.side-can .lg-num { border-color: #a8302c; color: #a8302c; }
+    .radar-legend .lg-body { flex: 1 1 auto; min-width: 0; text-align: left; }
+    .radar-legend .lg-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.18em;
+      color: var(--ink-softer); margin: 0 0 4px; }
+    .radar-legend .lg-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; font-weight: 600;
+      line-height: 1.3; color: var(--ink); margin: 0 0 6px; }
+    .radar-legend .lg-shares { display: flex; gap: 14px; margin: 0 0 8px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; }
+    .radar-legend .lg-shares .qc { color: var(--bleu); }
+    .radar-legend .lg-shares .can { color: #a8302c; }
+    .radar-legend .lg-media { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+    .radar-legend .lg-media a, .radar-legend .lg-media span {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+      padding: 3px 7px; border: 0.5px solid var(--rule); color: var(--ink-softer); text-decoration: none; }
+    .radar-legend .lg-media .chip-qc { color: var(--bleu); border-color: color-mix(in srgb, var(--bleu) 40%, transparent); }
+    .radar-legend .lg-media .chip-can { color: #a8302c; border-color: color-mix(in srgb, #a8302c 40%, transparent); }
     .solitudes .score-num { font-size: 58px; }
     .solitudes .score-num sup { font-size: 27px; vertical-align: 9px; }
     /* Pas de place à droite sur mobile : la bulle passe sous le ⓘ, centrée. */
@@ -5099,11 +5137,11 @@
   color: var(--ink-soft);
 }
 .flappy-initials input {
-  width: 4.8rem;
+  width: 7.2rem;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 0.35em;
-  font-size: 1.2rem;
+  letter-spacing: 0.15em;
+  font-size: 1.1rem;
   padding: 6px;
   border: 1px solid var(--rule);
   background: var(--paper);
@@ -5142,13 +5180,13 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  width: 260px;
+  width: 280px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
 }
 .flappy-board li {
   display: grid;
-  grid-template-columns: 2rem 1fr 4rem;
+  grid-template-columns: 1.8rem 1fr 3.5rem;
   gap: 8px;
   padding: 5px 0;
   border-bottom: 0.5px solid var(--rule-faint);

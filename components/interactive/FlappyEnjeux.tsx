@@ -196,7 +196,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
     .some((e) => e.initials === "___" && e.score === finalScore) && finalScore > 0;
   const save = () => {
     const entry: ScoreEntry = {
-      initials: sanitizeInitials(initials) || "AAA",
+      initials: sanitizeInitials(initials) || "JOUEUR",
       score: finalScore,
       date: new Date().toISOString().slice(0, 10),
     };
@@ -247,7 +247,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             {qualifies && !saved && (
               <div className="flappy-initials">
                 <label htmlFor="fi">Signe l&apos;édition</label>
-                <input id="fi" value={initials} maxLength={3} autoComplete="off"
+                <input id="fi" value={initials} maxLength={7} placeholder="JOUEUR" autoComplete="off"
                   onChange={(e) => setInitials(sanitizeInitials(e.target.value))} />
                 <button type="button" onClick={save}>Publier</button>
               </div>
@@ -257,7 +257,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
                 <span className="flappy-board-title">PALMARÈS DES ÉDITIONS 🌐</span>
                 <ol className="flappy-board">
                   {board.map((e, i) => (
-                    <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>
+                    <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "JOUEUR") && e.score === finalScore ? "is-new" : undefined}>
                       <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
                     </li>
                   ))}
