@@ -112,6 +112,6 @@ export function insertScore(board: ScoreEntry[], e: ScoreEntry): ScoreEntry[] {
 const BLOCK = new Set(["ASS", "FUK", "FUC", "SEX", "FAG", "CUL", "PD"]);
 
 export function sanitizeInitials(raw: string): string {
-  const up = (raw || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
-  return BLOCK.has(up) ? "AAA" : up;
+  const up = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
+  return BLOCK.has(up) ? "PLAYER" : up;
 }
