@@ -1,5 +1,11 @@
 [
   {
+    "pr": 366,
+    "date": "2026-07-28T23:10:43Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » devient un tableau d'enquête : ouvrez le dossier d'un parti pour découvrir ce qu'il dit en chambre, et les fiches de ses députés selon combien chacun a parlé.",
+    "version": "2.16.0-beta.0"
+  },
+  {
     "pr": 362,
     "date": "2026-07-28T19:18:05Z",
     "note": "(Vide — correctif technique invisible pour les visiteurs jusqu'à ce qu'un module l'affiche.)",
