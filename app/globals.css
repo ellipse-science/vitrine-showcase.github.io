@@ -5244,7 +5244,9 @@
 .doom-stage-container {
   position: relative;
   width: 100%;
-  height: 540px;
+  aspect-ratio: 4 / 3;
+  min-height: 360px;
+  max-height: 680px;
   overflow: hidden;
   background: #1E1E1E;
 }
@@ -5291,7 +5293,9 @@
     font-size: 12.5px;
   }
   .doom-stage-container {
-    height: 380px;
+    aspect-ratio: 4 / 3;
+    min-height: 300px;
+    max-height: 480px;
   }
   .doom-close-badge {
     padding: 4px 8px;
