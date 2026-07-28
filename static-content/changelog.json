@@ -1,5 +1,11 @@
 [
   {
+    "pr": 344,
+    "date": "2026-07-28T13:36:26Z",
+    "note": "Sur le radar « Deux solitudes », la catégorie affichée au-dessus du titre du haut n'est plus rognée quand le titre est long.",
+    "version": "2.15.0-beta.3"
+  },
+  {
     "pr": 338,
     "date": "2026-07-28T13:33:52Z",
     "note": "Quand l'envoi d'un signalement échoue, votre texte n'est plus perdu : il reste affiché, vous pouvez le copier ou nous l'envoyer par courriel en un clic, et le message explique enfin si la panne vient de chez nous ou de votre connexion.",
