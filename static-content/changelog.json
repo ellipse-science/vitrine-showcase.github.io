@@ -1,5 +1,11 @@
 [
   {
+    "pr": 341,
+    "date": "2026-07-28T19:10:49Z",
+    "note": "(Section vide — changement trop mineur/interne pour le journal public.)",
+    "version": "2.15.0-beta.10"
+  },
+  {
     "pr": 358,
     "date": "2026-07-28T17:45:15Z",
     "note": "feat(doom): ajouter la barre de sélection des 36 niveaux et corriger la hauteur du conteneur",
