@@ -132,11 +132,11 @@ describe("insertScore", () => {
 });
 
 describe("sanitizeInitials", () => {
-  it("uppercases and keeps only letters, max 3", () => {
-    expect(sanitizeInitials("ab3c")).toBe("ABC");
+  it("uppercases and keeps only letters and numbers, max 7", () => {
+    expect(sanitizeInitials("ab3cdefgh")).toBe("AB3CDEF");
     expect(sanitizeInitials("z")).toBe("Z");
   });
   it("replaces blocked words", () => {
-    expect(sanitizeInitials("ass")).toBe("AAA");
+    expect(sanitizeInitials("ass")).toBe("PLAYER");
   });
 });
