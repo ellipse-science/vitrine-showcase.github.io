@@ -1,21 +1,49 @@
+# Un lot de correctifs ne doit jamais être retenu en otage par une montée de
+# version majeure. Constat du 2026-07-28 (PR #333) : le groupe unique « * »
+# embarquait `typescript` 6 → 7 avec quatre correctifs parfaitement sains
+# (next, react, react-dom, @types/node). TypeScript 7 casse `next build` — Next
+# 16.2 ne fournit pas l'API de compilation qu'il attend —, donc les quatre
+# correctifs sont restés bloqués derrière un majeur qui demande un vrai chantier.
+#
+# D'où la séparation ci-dessous : les mineurs et correctifs d'un côté, mergeables
+# dès que la CI est verte ; les majeurs de l'autre, un lot à part qu'on regarde.
+# `open-pull-requests-limit: 2` parce qu'il faut une place pour chaque lot — à 1,
+# un majeur en attente empêcherait l'ouverture du lot de correctifs, ce qui
+# reproduirait le blocage qu'on cherche justement à supprimer.
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
     groups:
       npm-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      npm-majeurs:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
     groups:
       github-actions-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      github-actions-majeurs:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
