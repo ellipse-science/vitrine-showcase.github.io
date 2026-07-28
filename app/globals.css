@@ -2283,9 +2283,6 @@
   }
   .ass-hemi-seat-dot.selected { stroke: var(--brass); stroke-width: 2.5; }
   .ass-hemi-seat:focus-visible .ass-hemi-seat-dot { stroke: var(--cordovan); stroke-width: 2; }
-  .ass-hemi-halo { fill: var(--green); opacity: 0.08; }
-  .ass-hemi-halo.strong { opacity: 0.16; }
-  .ass-hemi-halo.defavorable { fill: var(--red); }
 
   .ass-hemi-detail {
     padding-top: 18px;

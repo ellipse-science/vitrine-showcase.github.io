@@ -17,9 +17,9 @@ const CY = 360;
 const ROW_RADII = [105, 148, 190];
 const LABEL_RADIUS = 224;
 const FRAME_RADIUS = 246;
-const SEAT_MIN_R = 4.5;
-const SEAT_MAX_R = 12;
-const WEDGE_GAP_DEG = 1.4;
+const DIVIDER_INNER_RADIUS = 60;
+const SEAT_MIN_R = 5.5;
+const SEAT_MAX_R = 14;
 
 function polar(r: number, angleDeg: number): { x: number; y: number } {
   const rad = (angleDeg * Math.PI) / 180;
@@ -230,12 +230,13 @@ export function AssembleeHemicycle({ rows, shadowRows }: { rows: AssembleeRow[];
 
         {wedges.map((w, i) => {
           if (i === 0) return null;
+          const a = polar(DIVIDER_INNER_RADIUS, w.angleStart);
           const b = polar(FRAME_RADIUS - 4, w.angleStart);
           return (
             <line
               key={`div-${w.row.key}`}
-              x1={CX}
-              y1={CY}
+              x1={a.x}
+              y1={a.y}
               x2={b.x}
               y2={b.y}
               className="ass-hemi-divider"
@@ -268,8 +269,6 @@ export function AssembleeHemicycle({ rows, shadowRows }: { rows: AssembleeRow[];
 
         {seats.map((seat) => {
           const isSelected = selected?.type === "deputy" && selected.deputyName === seat.deputy.name;
-          const favorable = seat.deputy.toneLeftPct >= 55;
-          const defavorable = seat.deputy.toneLeftPct <= 45;
           return (
             <g
               key={`${seat.partyKey}-${seat.deputy.name}`}
@@ -282,10 +281,6 @@ export function AssembleeHemicycle({ rows, shadowRows }: { rows: AssembleeRow[];
                 if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected({ type: "deputy", deputyName: seat.deputy.name, partyKey: seat.partyKey }); }
               }}
             >
-              {favorable && <circle cx={seat.x} cy={seat.y} r={seat.r + 9} className="ass-hemi-halo favorable" />}
-              {favorable && <circle cx={seat.x} cy={seat.y} r={seat.r + 5} className="ass-hemi-halo favorable strong" />}
-              {defavorable && <circle cx={seat.x} cy={seat.y} r={seat.r + 9} className="ass-hemi-halo defavorable" />}
-              {defavorable && <circle cx={seat.x} cy={seat.y} r={seat.r + 5} className="ass-hemi-halo defavorable strong" />}
               <circle cx={seat.x} cy={seat.y} r={14} className="ass-hemi-hit" />
               <circle
                 cx={seat.x}
