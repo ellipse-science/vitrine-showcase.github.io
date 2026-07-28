@@ -12,12 +12,7 @@ const UPSTASH_TOKEN =
 
 const REDIS_KEY = "vitrine-flappy-global-board";
 
-const DEFAULT_BOARD: ScoreEntry[] = [
-  { initials: "RAL", score: 55, date: "2026-07-27" },
-  { initials: "VTR", score: 42, date: "2026-07-27" },
-  { initials: "PLQ", score: 28, date: "2026-07-27" },
-  { initials: "CAQ", score: 19, date: "2026-07-27" },
-];
+const DEFAULT_BOARD: ScoreEntry[] = [];
 
 function parseBoardResult(raw: unknown): ScoreEntry[] {
   if (!raw) return DEFAULT_BOARD;
