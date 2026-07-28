@@ -4298,8 +4298,13 @@
   .ppl-promise:focus-visible .ppl-chevron { color: var(--cordovan); }
   /* Symétrie souris / clavier : le survol donne deux signaux (chevron + barre de
      gauche), le focus n'en donnait qu'un. La bague cordovan aligne le rang sur
-     .billiard-ball et .share-btn. */
-  .ppl-promise:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+     .billiard-ball et .share-btn.
+     outline-offset NÉGATIF, contrairement à ces deux-là : le rang occupe toute
+     la largeur du rail et les rangs sont jointifs. Un offset positif faisait
+     déborder la bague de 2 px sur le rang voisin, et son côté droit venait
+     buter contre le bord du module (vérifié à 1440 : le trait était rogné).
+     Tracée à l'intérieur, elle ne mord sur rien. */
+  .ppl-promise:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
   .ppl-promise--open .ppl-chevron { transform: rotate(180deg); color: var(--cordovan); }
   /* La rangée entière s'éclaircit au survol : deuxième signal de cliquabilité,
      cohérent avec le lavis déjà porté par le libellé. */
