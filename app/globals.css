@@ -2107,22 +2107,28 @@
   }
   .billiard-popup-close:hover { opacity: 1; }
 
-  /* Vue principale : une fiche par parti (pas un tableau CSS Grid) — chaque
-     mesure garde son propre canal visuel plutôt que d'être compressée dans
-     une forme abstraite unique (cf. commentaire d'en-tête AssembleeProfiles.tsx). */
-  .ass-profiles { display: flex; flex-direction: column; }
+  /* Blocs de mesure partagés (enjeu-stack, ass-tone, ass-richness…) : le
+     dossier central du tableau d'enquête (AssembleeDossiers.tsx) les
+     réutilise tels quels. .ass-card / .ass-card-shadow servent à la liste
+     « Hors chambre ». */
   .ass-card {
-    padding: 22px 0;
+    position: relative;
+    padding: 26px 0 22px;
     border-bottom: 0.5px solid var(--rule);
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
-  .ass-card-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
+  /* Onglet de dossier manille, dans la couleur du parti — pointe au-dessus
+     du haut de la fiche, comme une chemise glissée dans un classeur. */
+  .ass-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 46px;
+    height: 5px;
+    background: var(--c);
   }
   .ass-card-figure {
     font-family: 'Playfair Display', Georgia, serif;
@@ -2197,6 +2203,7 @@
     gap: 26px;
   }
   .ass-tone {
+    display: block;
     height: 16px;
     background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
     position: relative;
@@ -2224,6 +2231,206 @@
     margin: 0;
   }
   .ass-card-sigword .stat-label { display: block; margin-bottom: 4px; }
+  /* Citation en marge, façon presse écrite : filet de laiton à gauche, pas
+     de boîte ni d'inclinaison — la sobriété porte davantage que le décor. */
+  .ass-sigword-quote {
+    display: block;
+    border-left: 2px solid var(--brass);
+    padding-left: 14px;
+    font-size: 15px;
+  }
+
+  /* Tableau d'enquête : une étagère de dossiers (un par parti). Cliquer un
+     dossier l'ouvre — la chemise du parti devient la pièce centrale, chaque
+     député une fiche satellite reliée par un fil pointillé, dimensionnée
+     selon sa contribution en mots — cf. AssembleeDossiers.tsx. */
+  .ass-dossiers { display: flex; flex-direction: column; gap: 20px; }
+  .ass-shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .ass-folder {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    display: block;
+  }
+  .ass-folder-tab {
+    display: inline-block;
+    background: var(--c);
+    color: #F3ECDD;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 12px;
+  }
+  .ass-folder-cover {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: 0.5px solid var(--rule);
+    background: var(--paper-deep);
+    padding: 10px 12px 11px;
+  }
+  .ass-folder:not(.active) .ass-folder-tab { opacity: 0.55; }
+  .ass-folder:not(.active):hover .ass-folder-tab,
+  .ass-folder:focus-visible .ass-folder-tab { opacity: 1; }
+  .ass-folder.active .ass-folder-cover { border: 1.5px solid var(--c); }
+  .ass-folder:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  .ass-folder-words {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 21px;
+    color: var(--cordovan);
+    white-space: nowrap;
+  }
+  .ass-folder-words .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 4px;
+  }
+  .ass-folder-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+
+  .ass-board {
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 400px) 1fr;
+    column-gap: 26px;
+    row-gap: 18px;
+    align-items: start;
+    animation: assDossierIn 0.4s ease both;
+  }
+  @keyframes assDossierIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ass-board { animation: none; }
+  }
+  .ass-board-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 30px;
+  }
+  .ass-board-col.left { align-items: flex-end; }
+  .ass-board-col.right { align-items: flex-start; }
+
+  .ass-dossier { display: flex; flex-direction: column; align-items: flex-start; }
+  .ass-dossier-tab {
+    background: var(--c);
+    color: #F3ECDD;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 5px 14px;
+  }
+  .ass-dossier-card {
+    border: 1px solid var(--c);
+    background: var(--paper);
+    padding: 14px 16px 18px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ass-fiche {
+    position: relative;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    border: 0.5px solid var(--rule);
+    background: var(--paper);
+    padding: 9px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 210px;
+  }
+  .ass-fiche.tier-2 { width: 185px; }
+  .ass-fiche.tier-1 { width: 160px; }
+  .ass-fiche:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  /* Fil pointillé + punaise reliant la fiche au dossier central */
+  .ass-fiche::after {
+    content: "";
+    position: absolute;
+    top: 21px;
+    width: 26px;
+    border-top: 1px dashed var(--rule);
+  }
+  .ass-board-col.left .ass-fiche::after { left: 100%; }
+  .ass-board-col.right .ass-fiche::after { right: 100%; }
+  .ass-fiche-pin {
+    position: absolute;
+    top: 18px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .ass-board-col.left .ass-fiche-pin { right: -3.5px; }
+  .ass-board-col.right .ass-fiche-pin { left: -3.5px; }
+  .ass-fiche-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .ass-fiche-words {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 23px;
+    color: var(--cordovan);
+    white-space: nowrap;
+  }
+  .ass-fiche.tier-2 .ass-fiche-words { font-size: 18px; }
+  .ass-fiche.tier-1 .ass-fiche-words { font-size: 15px; }
+  .ass-fiche-words .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 4px;
+  }
+  .ass-fiche-sigword {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.3;
+  }
+  .ass-fiche-more {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    border-top: 0.5px dashed var(--rule-faint);
+    padding-top: 8px;
+  }
+  .ass-fiche-more .ass-tone { height: 10px; }
+
   .ass-card-shadow {
     flex-direction: row;
     align-items: baseline;
@@ -3472,7 +3679,7 @@
     .treemap-mobile { display: block; margin-top: 4px; }
     .treemap-legend { display: none; }
 
-    /* ── Assemblée nationale : cartes ── */
+    /* ── Assemblée nationale : hémicycle + détail ── */
     .ass-card { padding: 18px 0; gap: 10px; }
     .ass-card-figure { font-size: 26px; }
     .enjeu-stack { height: 20px; }
@@ -3481,6 +3688,16 @@
     .ass-card-stats { grid-template-columns: 1fr; gap: 14px; }
     .period-subtitle { font-size: 10px; margin-top: 4px; }
     .in-shadow .ass-empty { font-size: 13px; }
+    .ass-shelf { grid-template-columns: repeat(auto-fit, minmax(102px, 1fr)); gap: 8px; }
+    .ass-folder-words { font-size: 16px; }
+    .ass-folder-hint { font-size: 7.5px; }
+    .ass-board { grid-template-columns: 1fr; row-gap: 12px; }
+    .ass-dossier { order: -1; }
+    .ass-board-col { padding-top: 0; gap: 10px; }
+    .ass-board-col.left, .ass-board-col.right { align-items: stretch; }
+    .ass-fiche, .ass-fiche.tier-2, .ass-fiche.tier-1 { width: 100%; border-left: 3px solid var(--c); }
+    .ass-fiche::after { display: none; }
+    .ass-fiche-pin { display: none; }
 
     /* ── Alerte consensus ── */
     .alerte-consensus { padding: 28px 16px 24px; }
