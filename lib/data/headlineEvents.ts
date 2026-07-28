@@ -48,9 +48,8 @@ export type RawEvent = {
   // Deux solitudes — breakdown régional par événement (radar). Optionnels :
   // score_saillance = score_qc + score_roc + score_us (vérifié empiriquement,
   // cf. #143) — ne jamais dériver le ROC par soustraction, sinon le côté
-  // Canada absorbe les USA. Le repli transitoire soustrait tant que score_roc
-  // n'est pas publié (≤ 1 rafraîchissement de 4 h après le déploiement de
-  // #237). coverage_* et media_ids_qc/roc arrivent avec le refiner #211.
+  // Canada absorbe les USA. Publiés par le refiner #211, avec coverage_* et
+  // media_ids_qc/roc ; lus directement depuis le #272 (plus de repli).
   score_roc?: number | null;
   score_us?: number | null;
   coverage_qc_in_can?: number | null;
@@ -89,31 +88,31 @@ export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
 type ExtractedObject = { object: string; score: number };
 
 const ISSUE_COLORS: Record<string, string> = {
-  economy_and_labour: "#742630",
-  governments_and_governance: "#6F5828",
-  health_and_social_services: "#7D5358",
-  environment_and_energy: "#5F6E36",
-  rights_liberties_minorities_discrimination: "#5F4E78",
-  culture_and_nationalism: "#35604E",
-  education: "#7A5A23",
-  international_affairs_and_defense: "#304860",
-  law_and_crime: "#463E3E",
-  public_lands_and_agriculture: "#7D5132",
-  immigration: "#8B6914",
-  technology: "#3A5F70",
+  economy_and_labour: "#94781B",
+  governments_and_governance: "#234E78",
+  health_and_social_services: "#852244",
+  environment_and_energy: "#3D6B3A",
+  rights_liberties_minorities_discrimination: "#553278",
+  culture_and_nationalism: "#384873",
+  education: "#752373",
+  international_affairs_and_defense: "#1F5E66",
+  law_and_crime: "#993322",
+  public_lands_and_agriculture: "#5E731F",
+  immigration: "#9E541B",
+  technology: "#997018",
 };
 
 const ISSUE_LABELS_SHORT: Record<string, string> = {
   economy_and_labour: "Économie et travail",
-  governments_and_governance: "Gouvernements",
-  health_and_social_services: "Santé",
-  environment_and_energy: "Environnement",
-  rights_liberties_minorities_discrimination: "Droits et libertés",
-  culture_and_nationalism: "Culture",
+  governments_and_governance: "Gouvernements et gouvernance",
+  health_and_social_services: "Santé et politiques sociales",
+  environment_and_energy: "Environnement et énergie",
+  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
+  culture_and_nationalism: "Culture et nationalisme",
   education: "Éducation",
-  international_affairs_and_defense: "Aff. internationales",
+  international_affairs_and_defense: "Affaires internationales et défense",
   law_and_crime: "Loi et crime",
-  public_lands_and_agriculture: "Terres publiques",
+  public_lands_and_agriculture: "Terres publiques et agriculture",
   immigration: "Immigration",
   technology: "Technologie",
 };
@@ -141,24 +140,23 @@ const MEDIA_BADGE: Record<string, string> = {
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
-// Médias US — exclus du côté « Canada » dans le repli transitoire (avant que
-// media_ids_roc soit publié par le refiner #211) pour ne pas afficher une
-// source américaine comme canadienne.
-const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
-
 // ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
 // L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
 // calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
 // distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
-// percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
-// 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
-// conv=14→p50, 25→p63, 50→p80, 75→p93.
-// Depuis cette PR, CAL_CONV n'est plus que le REPLI : quand la calibration
-// glissante publiée (salience_calibration.json) est présente, la jauge se cale
-// sur sa vraie distribution (cf. bloc « Calibration glissante publiée » ci-dessous
-// et calConvFrom). Le prototype 13 mois reste le défaut tant que le fichier
-// manque ou qu'une métrique est absente. Suivi refiner = aws-refiners#212.
-const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
+// percentile.
+//
+// CAL_CONV est le REPLI seulement : la jauge se cale sur `metrics.convergence`
+// de la calibration glissante publiée (salience_calibration.json), présente et
+// peuplée depuis le 2026-07-27 (n = 399 sur 365 jours). Voir calConvFrom.
+//
+// Recalibré au #272 sur cette distribution publiée, en appliquant la même règle
+// d'ancrage que calConvFrom (p5 = p20 = 0 → écrasés dans l'ancre de départ) :
+// p50 = 6, p80 = 37, p95 = 69,1. L'ancien prototype (bandes 13 mois du red-team,
+// médiane 14) plaçait la médiane à 14 — plus du double de la vraie, ce qui
+// faisait lire « plus convergent que d'habitude » à des blocs parfaitement
+// ordinaires quand le fichier manquait. Suivi refiner = aws-refiners#212.
+const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [100, 100]];
 
 // Repère « habituel » de la jauge = convergence EVENT-level MÉDIANE (là où se
 // place le marqueur en temps normal). ATTENTION : c'est la médiane du score au
@@ -168,14 +166,15 @@ const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75,
 // (dédup par event_id avec préférence QC + filtre country_id≠USA, puis
 // storiesFrom24h + windowEventConvergence) sur chaque fenêtre glissante 24 h de
 // l'historique DEV (headline_events_4h, 2026-05-14 → 2026-07-15, 323 fenêtres) :
-// p50 = 31 % (p20=16, p80=42 ; fenêtre la plus récente = 37). NB : sans la dédup
-// event_id ni le filtre USA, on obtient 41 % — c'est ce que la PROD affiche
-// aujourd'hui (le JSON prod n'a pas encore score_roc/score_us, donc roc=saillance−qc
-// inclut les USA, bug #237/#211) ; le marqueur live s'alignera sur l'échelle
-// « propre » quand #211 sera déployé. PROVISOIRE jusqu'à ce que la calibration
-// glissante publie `event_convergence` (suivi backend) : dès qu'elle existe, on
-// prend son p50 (cf. loader) ; ce p50 doit être calculé AVEC la dédup + le filtre
-// USA, sinon il vaudra ~41 au lieu de ~31.
+// p50 = 31 % (p20=16, p80=42).
+//
+// CONFIRMÉ au #272 : `metrics.event_convergence` est désormais publiée
+// (n = 394 sur 365 jours) et son p50 vaut **31** — exactement la constante
+// mesurée à la main. Le loader préfère la valeur publiée ; celle-ci n'est plus
+// qu'un repli, et on sait maintenant qu'il est juste.
+//
+// Le « 41 % au lieu de 31 » qui était noté ici appartenait au repli
+// `saillance − qc` retiré au #272, lequel réabsorbait les USA du côté canadien.
 const HABITUAL_EVENT_CONV = 31;
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -199,9 +198,8 @@ function pctile(v: number, cal: [number, number][]): number {
 type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; p50: number; p80: number; p95: number };
 // `convergence` = convergence OBJET (interval_convergence_score) — calibre la
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
-// HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
-// quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
-// « habituel » (suivi backend).
+// HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
+// prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
 type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
@@ -244,12 +242,13 @@ function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
   return anchors.length >= 3 ? anchors : null; // besoin d'≥ 1 point interne
 }
 
-// Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
-// UNIQUEMENT tant que la colonne score_roc n'est pas publiée (≤ 1 rafraîchissement
-// de 4 h après #237) : on soustrait score_qc ET score_us (quand dispo) pour ne
-// PAS réabsorber les USA côté Canada. À retirer une fois score_roc publié.
+// Saillance ROC (Canada hors Québec, sans les USA) : lue directement dans la
+// colonne publiée (aws-refiners#211). Le repli par soustraction
+// `saillance − qc − us` a été retiré au #272 — il était devenu inerte
+// (score_roc non nul sur 184/184 lignes le 2026-07-27) et il faisait absorber
+// les USA du côté canadien quand score_us manquait.
 function rocScore(e: RawEvent): number {
-  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0));
+  return e.score_roc ?? 0;
 }
 
 // Positions des symboles sur l'axe : collés au centre quand ça converge,
@@ -396,12 +395,12 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
     const qc = e.score_qc ?? 0;
     const roc = rocScore(e);
-    const qcIds = e.media_ids_qc !== undefined
-      ? parseIdList(e.media_ids_qc)
-      : parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
-    const canIds = e.media_ids_roc !== undefined
-      ? parseIdList(e.media_ids_roc)
-      : parseIdList(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
+    // Listes de médias par région, publiées par le refiner (#211). Le repli qui
+    // re-triait `media_ids` à la main a été retiré au #272 : il devinait le côté
+    // canadien par soustraction d'une liste de médias US codée en dur, ce qui
+    // classait « canadien » tout média américain absent de cette liste.
+    const qcIds = parseIdList(e.media_ids_qc);
+    const canIds = parseIdList(e.media_ids_roc);
     let cur = byStory.get(key);
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
@@ -1318,6 +1317,8 @@ export type TreemapIssueTile = {
   growth: number | null;
   /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
   articles: { title: string; url: string | null }[];
+  /** Médias QC qui couvrent l'enjeu aujourd'hui (affiché au survol des tuiles). */
+  outlets: { name: string; url: string | null }[];
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -1642,8 +1643,13 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
 // du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
 // décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
 // (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
-async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: string | null }[]>> {
-  const map = new Map<string, { title: string; url: string | null }[]>();
+type IssueMedia = {
+  articles: { title: string; url: string | null }[];
+  outlets: { name: string; url: string | null }[];   // médias QC qui couvrent l'enjeu (comme la byline « Une des unes »)
+};
+
+async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+  const map = new Map<string, IssueMedia>();
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
@@ -1662,20 +1668,48 @@ async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: 
     const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
     const seen = new Set<string>();
     const list: { title: string; url: string | null }[] = [];
+    const qcIds = new Set<string>();
+    const urlByMedia: Record<string, string> = {};
     for (const e of sorted) {
       const title = (e.title ?? "").trim();
-      if (!title) continue;
-      const url = e.representative_url ?? null;
-      const dedupKey = url ?? title;
-      if (seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
-      list.push({ title, url });
-      if (list.length >= 5) break;
+      if (title) {
+        const url = e.representative_url ?? null;
+        const dedupKey = url ?? title;
+        if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
+      }
+      // Médias QC couvrant cet événement (exclusivité médias québécois)
+      let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
+      if (ids.length === 0 && e.media_ids) {
+        ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      }
+      ids.forEach((id) => {
+        if (QC_MEDIA.includes(id)) qcIds.add(id);
+      });
+      for (const k of ["articles_24h", "articles"] as const) {
+        try {
+          const parsed = JSON.parse((e[k] as string) ?? "[]");
+          if (Array.isArray(parsed)) for (const a of parsed as { media_id?: string; url?: string }[]) {
+            if (a.media_id && a.url && QC_MEDIA.includes(a.media_id) && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+          }
+        } catch { /* champ absent ou malformé */ }
+      }
     }
-    map.set(issueKey, list);
+    const outlets = QC_MEDIA
+      .filter((id) => qcIds.has(id))
+      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
+    map.set(issueKey, { articles: list.slice(0, 5), outlets });
   }
   return map;
 }
+
+const QC_MEDIA_DOMAINS: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "radio-canada.ca": "Radio-Canada",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "journaldemontreal.com": "Journal de Montréal",
+  "montrealgazette.com": "Montreal Gazette",
+};
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
@@ -1732,10 +1766,19 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
+      let outlets = articlesByIssue.get(issueKey)?.outlets ?? [];
+      if (outlets.length === 0 && url) {
+        for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
+          if (url.includes(domain)) {
+            outlets = [{ name, url }];
+            break;
+          }
+        }
+      }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey) ?? [] };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).

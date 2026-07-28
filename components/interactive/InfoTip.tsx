@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 // Registre module-level : ferme tous les autres au tap mobile.
 const registry = new Set<() => void>();
+
+// `useLayoutEffect` côté navigateur, `useEffect` au rendu serveur — sinon Next
+// avertit « useLayoutEffect does nothing on the server » au prérendu statique.
+// Le corps n'a de toute façon rien à faire tant que la bulle est fermée.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function InfoTip({
   children,
@@ -27,21 +32,27 @@ export function InfoTip({
   }, []);
 
   // Calcule l'offset left pour que la bulle reste dans le viewport (position: absolute).
-  useEffect(() => {
-    if (!open) { setBubbleStyle({}); return; }
-    const rafId = requestAnimationFrame(() => {
-      if (!wrapRef.current) return;
-      const wrap = wrapRef.current.getBoundingClientRect();
-      const vw   = window.innerWidth;
-      const w    = Math.min(300, vw - 16);
-      let left   = 0;
-      const overflowRight = (wrap.left + w) - (vw - 8);
-      if (overflowRight > 0) left = -overflowRight;
-      const overflowLeft = 8 - (wrap.left + left);
-      if (overflowLeft > 0) left += overflowLeft;
-      setBubbleStyle(left !== 0 ? { left: `${left}px`, width: `${w}px` } : {});
-    });
-    return () => cancelAnimationFrame(rafId);
+  // Mesure en LAYOUT effect, pas dans un requestAnimationFrame (#329) : le rAF
+  // s'exécute APRÈS la première peinture, donc la bulle était peinte une frame à
+  // sa position brute — débordante — avant de sauter en place. Le layout effect
+  // tourne avant la peinture : aucun saut, et plus de dépendance au fait qu'une
+  // frame soit planifiée.
+  useIsoLayoutEffect(() => {
+    // Rien à faire à la fermeture : la bulle n'est pas rendue, et la prochaine
+    // ouverture recalcule le style avant la peinture. Remettre l'objet à vide
+    // ici forçait un rendu + commit synchrones de plus à chaque fermeture (un
+    // littéral n'est jamais Object.is-égal au précédent, donc pas de bail-out).
+    if (!open) return;
+    if (!wrapRef.current) return;
+    const wrap = wrapRef.current.getBoundingClientRect();
+    const vw   = window.innerWidth;
+    const w    = Math.min(300, vw - 16);
+    let left   = 0;
+    const overflowRight = (wrap.left + w) - (vw - 8);
+    if (overflowRight > 0) left = -overflowRight;
+    const overflowLeft = 8 - (wrap.left + left);
+    if (overflowLeft > 0) left += overflowLeft;
+    setBubbleStyle(left !== 0 ? { left: `${left}px`, width: `${w}px` } : {});
   }, [open]);
 
   // Desktop : hover (souris uniquement via pointerType).

@@ -205,8 +205,14 @@ describe("pctile (jauge de convergence)", () => {
     expect(pctile(0, CAL_CONV)).toBe(0);
     expect(pctile(-5, CAL_CONV)).toBe(0);
   });
-  it("place la médiane de convergence (14) au centre de la jauge (p50)", () => {
-    expect(pctile(14, CAL_CONV)).toBeCloseTo(50, 5);
+  // Recalibré au #272 sur la distribution publiée (p50 = 6, et non 14 comme le
+  // prototype 13 mois du red-team).
+  it("place la médiane de convergence (6) au centre de la jauge (p50)", () => {
+    expect(pctile(6, CAL_CONV)).toBeCloseTo(50, 5);
+  });
+  it("place p80 et p95 aux valeurs mesurées", () => {
+    expect(pctile(37, CAL_CONV)).toBeCloseTo(80, 5);
+    expect(pctile(69.1, CAL_CONV)).toBeCloseTo(95, 5);
   });
   it("plafonne à 100", () => {
     expect(pctile(999, CAL_CONV)).toBe(100);
@@ -214,14 +220,17 @@ describe("pctile (jauge de convergence)", () => {
 });
 
 describe("rocScore", () => {
-  it("lit score_roc directement quand présent", () => {
+  it("lit la colonne score_roc publiée", () => {
     expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);
   });
-  it("repli transitoire : saillance − qc − us (ne réabsorbe pas les USA)", () => {
-    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(17);
+  // Garde-fou du #272 : le repli `saillance − qc − us` est retiré. S'il revenait,
+  // le côté Canada réabsorberait les USA dès que score_us manquerait.
+  it("ne dérive JAMAIS le ROC par soustraction quand la colonne manque", () => {
+    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never)).toBe(0);
   });
-  it("repli plancher à 0", () => {
-    expect(rocScore({ score_saillance: 5, score_qc: 8 } as never)).toBe(0);
+  it("rend 0 sur une ligne vide", () => {
+    expect(rocScore({} as never)).toBe(0);
   });
 });
 
@@ -998,9 +1007,11 @@ describe("buildSolitudes", () => {
 
   it("repère « habituel » = médiane event-level (défaut mesuré, sinon param calibré)", () => {
     const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
-    // Défaut = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV = 31 %).
+    // Repli = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV
+    // = 31 %), confirmée au #272 par la métrique publiée event_convergence.p50,
+    // qui vaut aussi 31.
     expect(sol([row], [row]).habitualConvPct).toBe(31);
-    // Câblé : quand la calibration glissante publiera event_convergence.p50, il prime.
+    // La valeur publiée (event_convergence.p50) prime quand elle est là.
     const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
   });
