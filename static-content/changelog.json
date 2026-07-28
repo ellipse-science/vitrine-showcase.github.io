@@ -1,5 +1,11 @@
 [
   {
+    "pr": 362,
+    "date": "2026-07-28T19:18:05Z",
+    "note": "(Vide — correctif technique invisible pour les visiteurs jusqu'à ce qu'un module l'affiche.)",
+    "version": "2.15.0-beta.11"
+  },
+  {
     "pr": 341,
     "date": "2026-07-28T19:10:49Z",
     "note": "(Section vide — changement trop mineur/interne pour le journal public.)",
