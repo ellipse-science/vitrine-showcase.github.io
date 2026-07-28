@@ -1,5 +1,11 @@
 [
   {
+    "pr": 343,
+    "date": "2026-07-28T13:30:51Z",
+    "note": "L'illustration de la Une crédite désormais Mathieu Fortin (Anorak Studio) à la direction artistique, plutôt que de dire qu'elle s'inspire de son style.",
+    "version": "2.15.0-beta.1"
+  },
+  {
     "pr": 352,
     "date": "2026-07-28T11:55:09Z",
     "note": "feat(flappy): autoriser jusqu'à 7 caractères pour la signature dans le classement global",
