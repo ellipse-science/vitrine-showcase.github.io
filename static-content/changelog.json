@@ -1,5 +1,11 @@
 [
   {
+    "pr": 358,
+    "date": "2026-07-28T17:45:15Z",
+    "note": "feat(doom): ajouter la barre de sélection des 36 niveaux et corriger la hauteur du conteneur",
+    "version": null
+  },
+  {
     "pr": 357,
     "date": "2026-07-28T16:19:36Z",
     "note": "feat(doom): intégrer l'Easter Egg DOOM PCQ « Knee-Deep in the Media » sans bordures noires",
