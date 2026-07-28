@@ -64,6 +64,19 @@ function Chevron() {
   );
 }
 
+/* Marque du Polimètre, reprise telle quelle du logo officiel (polimeter.org,
+   viewBox 50×43). En currentColor : dans le bouton d'encre elle sort en papier,
+   et elle suit le thème sans deuxième fichier. aria-hidden parce que le libellé
+   du lien nomme déjà le Polimètre. */
+function PolimetreMark() {
+  return (
+    <svg className="ppl-discover__mark" viewBox="0 0 50 43" width="20" height="17" fill="none" aria-hidden="true">
+      <circle cx="7.5" cy="35.5" r="5.5" fill="currentColor" stroke="currentColor" strokeWidth="4" />
+      <rect x="14.5" y="4.5" width="31" height="17" rx="8.5" stroke="currentColor" strokeWidth="9" />
+    </svg>
+  );
+}
+
 /* Libellé + chevron. Le chevron est solidaire du DERNIER MOT (.ppl-title__last
    en white-space: nowrap) : sans ça, un titre dont le dernier mot tombe pile en
    fin de ligne laisse le chevron seul sur la ligne suivante — cas le plus
@@ -393,6 +406,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               target="_blank"
               rel="noopener"
             >
+              <PolimetreMark />
               Découvrir toutes les promesses sur le site Web du Polimètre
             </a>
           </div>
