@@ -133,9 +133,11 @@ function DossierCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRo
 }
 
 // Un caucus majoritaire compte des dizaines de députés (75 pour la CAQ sur la
-// législature) : tout afficher d'emblée étirait le tableau sur quatre écrans,
-// avec une colonne centrale vide. On montre donc les voix les plus présentes,
-// le reste sur demande — rien n'est retiré, seulement replié.
+// législature). Les fiches qui encadrent le dossier ne tiennent que tant
+// qu'elles font à peu près sa hauteur : au-delà, le tableau s'étirait sur
+// quatre écrans avec une colonne centrale vide. Le dossier garde donc ses
+// dix voix les plus présentes de part et d'autre, et le reste s'ouvre en
+// dessous sous forme de liste — même fiche, sans fil ni punaise.
 const FICHES_VISIBLE = 10;
 
 function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRow[] }) {
@@ -144,12 +146,12 @@ function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeR
   const deputies = row.deputies ?? [];
   const maxWords = deputies.reduce((m, d) => Math.max(m, d.wordsRaw), 0);
 
-  const shown = showAll ? deputies : deputies.slice(0, FICHES_VISIBLE);
-  const hiddenCount = deputies.length - shown.length;
+  const flanking = deputies.slice(0, FICHES_VISIBLE);
+  const overflow = deputies.slice(FICHES_VISIBLE);
   // Alternance gauche/droite (les députés arrivent triés par mots décroissants
   // du loader) : les plus prolixes se répartissent des deux côtés du dossier.
-  const left = shown.filter((_, i) => i % 2 === 0);
-  const right = shown.filter((_, i) => i % 2 === 1);
+  const left = flanking.filter((_, i) => i % 2 === 0);
+  const right = flanking.filter((_, i) => i % 2 === 1);
 
   const fiche = (d: DeputyRow) => (
     <DeputyFiche
@@ -169,7 +171,8 @@ function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeR
         <DossierCard row={row} allRows={allRows} />
         {right.length > 0 && <div className="ass-board-col right">{right.map(fiche)}</div>}
       </div>
-      {(hiddenCount > 0 || showAll) && (
+
+      {overflow.length > 0 && (
         <button
           type="button"
           className="ass-board-more"
@@ -178,8 +181,12 @@ function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeR
         >
           {showAll
             ? "Replier les députés"
-            : `Voir les ${hiddenCount} autres députés`}
+            : `Voir les ${overflow.length} autres députés`}
         </button>
+      )}
+
+      {showAll && overflow.length > 0 && (
+        <div className="ass-overflow">{overflow.map(fiche)}</div>
       )}
     </>
   );
