@@ -5,18 +5,12 @@ import {
   FIELD, newGame, difficultyFor, stepPhysics, hitTest, nextTarget, comboPoints,
   insertScore, sanitizeInitials, type GameState, type ScoreEntry,
 } from "@/lib/flappy";
+import { fetchLeaderboard, submitScoreToLeaderboard } from "@/lib/flappyLeaderboard";
 
-const KEY = "vitrine-flappy-scores";
 const INK = "#1C1917";
 const CREAM = "#F3ECDD";
 const CORDOVAN = "#6B1E2A";
 
-function loadBoard(): ScoreEntry[] {
-  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
-}
-function saveBoard(b: ScoreEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* quota / privé : on ignore */ }
-}
 function headlineOf(t: TreemapIssueTile | undefined): string {
   if (!t) return "";
   const h = (t.context && t.context.trim()) || (t.topObject && t.topObject.trim()) || t.issueFr;
@@ -56,6 +50,11 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const [initials, setInitials] = useState("");
   const [saved, setSaved] = useState(false);
   const scoopTimer = useRef<number | null>(null);
+
+  // Charger le classement global au montage
+  useEffect(() => {
+    fetchLeaderboard().then((b) => setBoard(b));
+  }, []);
 
   const startTarget = useCallback(() => {
     const t = nextTarget(weights, Math.floor(performance.now()) || 1, -1);
@@ -159,7 +158,9 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         }
         if (hitTest(next, diff)) {
           shakeRef.current = 14;
-          setFinalScore(scoreRef.current); setBoard(loadBoard()); setSaved(false); setInitials("");
+          setFinalScore(scoreRef.current);
+          fetchLeaderboard().then((b) => setBoard(b));
+          setSaved(false); setInitials("");
           setPhase("over");
         } else {
           stateRef.current = next;
@@ -194,8 +195,15 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const qualifies = insertScore(board, { initials: "___", score: finalScore, date: "" })
     .some((e) => e.initials === "___" && e.score === finalScore) && finalScore > 0;
   const save = () => {
-    const nb = insertScore(board, { initials: sanitizeInitials(initials) || "AAA", score: finalScore, date: new Date().toISOString().slice(0, 10) });
-    saveBoard(nb); setBoard(nb); setSaved(true);
+    const entry: ScoreEntry = {
+      initials: sanitizeInitials(initials) || "JOUEUR",
+      score: finalScore,
+      date: new Date().toISOString().slice(0, 10),
+    };
+    submitScoreToLeaderboard(entry).then((b) => {
+      setBoard(b);
+      setSaved(true);
+    });
   };
 
   const targetTile = tiles[targetIdx];
@@ -239,19 +247,22 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             {qualifies && !saved && (
               <div className="flappy-initials">
                 <label htmlFor="fi">Signe l&apos;édition</label>
-                <input id="fi" value={initials} maxLength={3} autoComplete="off"
+                <input id="fi" value={initials} maxLength={7} placeholder="JOUEUR" autoComplete="off"
                   onChange={(e) => setInitials(sanitizeInitials(e.target.value))} />
                 <button type="button" onClick={save}>Publier</button>
               </div>
             )}
             {(saved || !qualifies) && board.length > 0 && (
-              <ol className="flappy-board">
-                {board.map((e, i) => (
-                  <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>
-                    <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
-                  </li>
-                ))}
-              </ol>
+              <div className="flappy-board-wrap">
+                <span className="flappy-board-title">PALMARÈS DES ÉDITIONS 🌐</span>
+                <ol className="flappy-board">
+                  {board.map((e, i) => (
+                    <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "JOUEUR") && e.score === finalScore ? "is-new" : undefined}>
+                      <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
             <div className="flappy-actions">
               <button type="button" className="flappy-cta" onClick={restart}>Rejouer</button>

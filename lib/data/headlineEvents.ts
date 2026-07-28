@@ -48,9 +48,8 @@ export type RawEvent = {
   // Deux solitudes — breakdown régional par événement (radar). Optionnels :
   // score_saillance = score_qc + score_roc + score_us (vérifié empiriquement,
   // cf. #143) — ne jamais dériver le ROC par soustraction, sinon le côté
-  // Canada absorbe les USA. Le repli transitoire soustrait tant que score_roc
-  // n'est pas publié (≤ 1 rafraîchissement de 4 h après le déploiement de
-  // #237). coverage_* et media_ids_qc/roc arrivent avec le refiner #211.
+  // Canada absorbe les USA. Publiés par le refiner #211, avec coverage_* et
+  // media_ids_qc/roc ; lus directement depuis le #272 (plus de repli).
   score_roc?: number | null;
   score_us?: number | null;
   coverage_qc_in_can?: number | null;
@@ -141,24 +140,23 @@ const MEDIA_BADGE: Record<string, string> = {
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
-// Médias US — exclus du côté « Canada » dans le repli transitoire (avant que
-// media_ids_roc soit publié par le refiner #211) pour ne pas afficher une
-// source américaine comme canadienne.
-const US_MEDIA = ["FXN", "CNN", "NYT", "WAP", "FOX"];
-
 // ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
 // L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
 // calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
 // distribution : CAL_CONV mappe l'indice de convergence (0-100) vers son
-// percentile. PROVISOIRE — dérivée des bandes 13 mois du red-team (Divergence
-// 63 % · Div. part. 17 % · Conv. part. 13 % · Convergence 7 %, médiane 14) :
-// conv=14→p50, 25→p63, 50→p80, 75→p93.
-// Depuis cette PR, CAL_CONV n'est plus que le REPLI : quand la calibration
-// glissante publiée (salience_calibration.json) est présente, la jauge se cale
-// sur sa vraie distribution (cf. bloc « Calibration glissante publiée » ci-dessous
-// et calConvFrom). Le prototype 13 mois reste le défaut tant que le fichier
-// manque ou qu'une métrique est absente. Suivi refiner = aws-refiners#212.
-const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75, 93], [100, 100]];
+// percentile.
+//
+// CAL_CONV est le REPLI seulement : la jauge se cale sur `metrics.convergence`
+// de la calibration glissante publiée (salience_calibration.json), présente et
+// peuplée depuis le 2026-07-27 (n = 399 sur 365 jours). Voir calConvFrom.
+//
+// Recalibré au #272 sur cette distribution publiée, en appliquant la même règle
+// d'ancrage que calConvFrom (p5 = p20 = 0 → écrasés dans l'ancre de départ) :
+// p50 = 6, p80 = 37, p95 = 69,1. L'ancien prototype (bandes 13 mois du red-team,
+// médiane 14) plaçait la médiane à 14 — plus du double de la vraie, ce qui
+// faisait lire « plus convergent que d'habitude » à des blocs parfaitement
+// ordinaires quand le fichier manquait. Suivi refiner = aws-refiners#212.
+const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [100, 100]];
 
 // Repère « habituel » de la jauge = convergence EVENT-level MÉDIANE (là où se
 // place le marqueur en temps normal). ATTENTION : c'est la médiane du score au
@@ -168,14 +166,15 @@ const CAL_CONV: [number, number][] = [[0, 0], [14, 50], [25, 63], [50, 80], [75,
 // (dédup par event_id avec préférence QC + filtre country_id≠USA, puis
 // storiesFrom24h + windowEventConvergence) sur chaque fenêtre glissante 24 h de
 // l'historique DEV (headline_events_4h, 2026-05-14 → 2026-07-15, 323 fenêtres) :
-// p50 = 31 % (p20=16, p80=42 ; fenêtre la plus récente = 37). NB : sans la dédup
-// event_id ni le filtre USA, on obtient 41 % — c'est ce que la PROD affiche
-// aujourd'hui (le JSON prod n'a pas encore score_roc/score_us, donc roc=saillance−qc
-// inclut les USA, bug #237/#211) ; le marqueur live s'alignera sur l'échelle
-// « propre » quand #211 sera déployé. PROVISOIRE jusqu'à ce que la calibration
-// glissante publie `event_convergence` (suivi backend) : dès qu'elle existe, on
-// prend son p50 (cf. loader) ; ce p50 doit être calculé AVEC la dédup + le filtre
-// USA, sinon il vaudra ~41 au lieu de ~31.
+// p50 = 31 % (p20=16, p80=42).
+//
+// CONFIRMÉ au #272 : `metrics.event_convergence` est désormais publiée
+// (n = 394 sur 365 jours) et son p50 vaut **31** — exactement la constante
+// mesurée à la main. Le loader préfère la valeur publiée ; celle-ci n'est plus
+// qu'un repli, et on sait maintenant qu'il est juste.
+//
+// Le « 41 % au lieu de 31 » qui était noté ici appartenait au repli
+// `saillance − qc` retiré au #272, lequel réabsorbait les USA du côté canadien.
 const HABITUAL_EVENT_CONV = 31;
 
 function pctile(v: number, cal: [number, number][]): number {
@@ -199,9 +198,8 @@ function pctile(v: number, cal: [number, number][]): number {
 type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; p50: number; p80: number; p95: number };
 // `convergence` = convergence OBJET (interval_convergence_score) — calibre la
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
-// HISTOIRE (windowEventConvergence) — PAS ENCORE publiée par fetch_data.R ;
-// quand elle le sera, son p50 remplacera HABITUAL_EVENT_CONV pour le repère
-// « habituel » (suivi backend).
+// HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
+// prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
 type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
@@ -244,12 +242,13 @@ function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
   return anchors.length >= 3 ? anchors : null; // besoin d'≥ 1 point interne
 }
 
-// Saillance ROC (Canada hors Québec, sans les USA). Repli par soustraction
-// UNIQUEMENT tant que la colonne score_roc n'est pas publiée (≤ 1 rafraîchissement
-// de 4 h après #237) : on soustrait score_qc ET score_us (quand dispo) pour ne
-// PAS réabsorber les USA côté Canada. À retirer une fois score_roc publié.
+// Saillance ROC (Canada hors Québec, sans les USA) : lue directement dans la
+// colonne publiée (aws-refiners#211). Le repli par soustraction
+// `saillance − qc − us` a été retiré au #272 — il était devenu inerte
+// (score_roc non nul sur 184/184 lignes le 2026-07-27) et il faisait absorber
+// les USA du côté canadien quand score_us manquait.
 function rocScore(e: RawEvent): number {
-  return e.score_roc ?? Math.max(0, (e.score_saillance ?? 0) - (e.score_qc ?? 0) - (e.score_us ?? 0));
+  return e.score_roc ?? 0;
 }
 
 // Positions des symboles sur l'axe : collés au centre quand ça converge,
@@ -396,12 +395,12 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
     const qc = e.score_qc ?? 0;
     const roc = rocScore(e);
-    const qcIds = e.media_ids_qc !== undefined
-      ? parseIdList(e.media_ids_qc)
-      : parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
-    const canIds = e.media_ids_roc !== undefined
-      ? parseIdList(e.media_ids_roc)
-      : parseIdList(e.media_ids).filter((id) => !QC_MEDIA.includes(id) && !US_MEDIA.includes(id));
+    // Listes de médias par région, publiées par le refiner (#211). Le repli qui
+    // re-triait `media_ids` à la main a été retiré au #272 : il devinait le côté
+    // canadien par soustraction d'une liste de médias US codée en dur, ce qui
+    // classait « canadien » tout média américain absent de cette liste.
+    const qcIds = parseIdList(e.media_ids_qc);
+    const canIds = parseIdList(e.media_ids_roc);
     let cur = byStory.get(key);
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
@@ -708,16 +707,30 @@ function rawRank(v: number, t: typeof SUM_QC_THRESHOLDS): number {
 
 // Niveau affiché = niveau brut, SAUF si le changement n'a pas franchi la
 // frontière avec la marge — auquel cas on conserve le niveau précédent.
+//
+// UNE BANDE À LA FOIS, dans les deux sens. L'ancienne version comparait la
+// valeur à la borne de la bande VISÉE et, si la marge n'y était pas, annulait
+// TOUT le mouvement. Un cumul qui saute de plusieurs bandes d'un coup restait
+// donc figé tout en bas : mesuré le 2026-07-27, la Une « logements » affichait
+// « Très faible » (rang 1) avec sumQc = 48,6, soit en pleine bande « Élevée »
+// (≥ 47,9) — les bandes 2 (23,1) et 3 (33,5) étaient pourtant franchies très
+// largement. Le badge se débloquait après le sommet, si bien que la trajectoire
+// gardait « Très faible » sur le point du sommet et « Modérée » sur le déclin :
+// le sommet paraissait plus faible que le creux (constat Adrien).
+// En avançant bande par bande, la marge freine encore chaque frontière (l'effet
+// anti-clignotement est intact) mais le badge ne peut plus rester à plus d'une
+// bande de la réalité.
 function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_THRESHOLDS): number {
   const raw = rawRank(v, t);
   if (prev === undefined || raw === prev) return raw;
   const low = bandLow(t);
-  if (raw > prev) {
-    // Monte : il faut dépasser la borne basse de la bande visée d'une marge.
-    return v >= low[raw] * (1 + HYST_MARGIN) ? raw : prev;
-  }
-  // Descend : il faut passer sous la borne basse de la bande QUITTÉE d'une marge.
-  return v <= low[prev] * (1 - HYST_MARGIN) ? raw : prev;
+  let r = prev;
+  // Monte : chaque bande gagnée demande de dépasser SA borne basse d'une marge.
+  while (r < raw && v >= low[r + 1] * (1 + HYST_MARGIN)) r++;
+  // Descend : on ne quitte une bande qu'en passant sous SA borne basse, marge
+  // comprise — symétrique de la montée.
+  while (r > raw && v <= low[r] * (1 - HYST_MARGIN)) r--;
+  return r;
 }
 
 // L'hystérésis a besoin du niveau de l'édition PRÉCÉDENTE. Le site est rebâti
@@ -989,12 +1002,11 @@ export type SalienceTrend = {
   points: SalienceTrendPoint[];
 };
 
-// Étiquette d'un bloc en heure de Montréal, relative à la date du bloc affiché
-// (même logique que firstSeenSaillantLabel). Renvoie le mot-jour, le moment de
-// la journée et l'heure de PUBLICATION du bloc (fin + 1 h, réforme #195).
-function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
-  { dayWord: string; moment: string; hour: number } | null {
-  if (!blockDateMtl) return null;
+// Jour de PUBLICATION d'un bloc, en heure de Montréal (« YYYY-MM-DD »), et
+// heure publique associée. C'est LE repère commun : le jour d'un bloc et le
+// jour de l'édition courante doivent se calculer avec la même règle, sinon
+// « aujourd'hui » ne veut plus dire la même chose des deux côtés.
+function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } | null {
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
   // Jour ET heure affichés AU PUBLIC = l'instant de PUBLICATION du bloc = fin
@@ -1007,9 +1019,31 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
   // rattachée au jour qui vient de finir (celui du bloc), pas au petit matin du
   // lendemain — le « moment » reste « cette nuit ».
   const isMidnight = pubHourReal === 0;
-  const pubHour = isMidnight ? 24 : pubHourReal;   // {8,12,16,20,minuit,4}
-  const anchorIso = isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso;
-  const blockDay = isoDay(anchorIso), refDay = isoDay(blockDateMtl);
+  return {
+    anchorIso: isMidnight ? mtlDateAndHour(t).dateIso : pubDateIso,
+    pubHour: isMidnight ? 24 : pubHourReal,   // {8,12,16,20,minuit,4}
+  };
+}
+
+// Étiquette d'un bloc en heure de Montréal, relative au jour de l'ÉDITION
+// courante. Renvoie le mot-jour, le moment de la journée et l'heure de
+// PUBLICATION du bloc (fin + 1 h, réforme #195).
+//
+// `refDayIso` = jour de publication de l'édition affichée (blockAnchor du bloc
+// le plus récent du snapshot), PAS la date de la storyline. On passait avant
+// `e.date_montreal_tz`, la date du dernier bloc où CETTE histoire était à la
+// Une : pour une histoire retombée du radar, ce repère est en retard d'un jour
+// et tous ses blocs s'étiquetaient « aujourd'hui ». Mesuré le 2026-07-27 à
+// l'édition de 12h : les six mêmes blocs se lisaient « hier 16h / hier 20h /
+// hier minuit… » sur la 1re Une et « aujourd'hui 16h / 20h / minuit… » sur la
+// 3e, qui annonçait un « Sommet à 20h » encore à venir dans la journée.
+function blockLabelParts(blockUtc: string, refDayIso: string | null):
+  { dayWord: string; moment: string; hour: number } | null {
+  if (!refDayIso) return null;
+  const anchor = blockAnchor(blockUtc);
+  if (!anchor) return null;
+  const { anchorIso, pubHour } = anchor;
+  const blockDay = isoDay(anchorIso), refDay = isoDay(refDayIso);
   if (blockDay === null || refDay === null) return null;
   const dayDiff = refDay - blockDay;
   // Les heures de PUBLICATION tombent PILE sur la grille d'éditions {0,4,8,12,16,20}
@@ -1031,7 +1065,9 @@ function blockLabelParts(blockUtc: string, blockDateMtl: string | null):
 function buildSalienceTrend(
   series: { blockUtc: string; qc: number; present: boolean; share: number }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
-  blockDateMtl: string | null,
+  /** Jour de publication de l'ÉDITION courante (cf. blockLabelParts) — c'est
+   *  lui qui décide de « aujourd'hui » vs « hier », pas la date de l'histoire. */
+  refDayIso: string | null,
   /** Niveau du BADGE édition par édition. Quand il est fourni, c'est lui qui
    *  étiquette les points — sinon le survol annoncerait un niveau calculé sur
    *  une autre grandeur (le score du bloc) et une autre échelle que la pastille,
@@ -1081,7 +1117,7 @@ function buildSalienceTrend(
   // après-midi » était plus vague que « depuis 16 h » pour le même nombre de
   // signes, et la grille d'éditions est déjà horaire.
   const heure = (i: number, avecA = true) => {
-    const p = blockLabelParts(series[i].blockUtc, blockDateMtl);
+    const p = blockLabelParts(series[i].blockUtc, refDayIso);
     if (!p) return null;
     const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
     if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
@@ -1135,7 +1171,7 @@ function buildSalienceTrend(
   // L'écart au sommet, lui, est dit par les mots.
   const dir: SalienceTrend["dir"] = deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat";
   const points: SalienceTrendPoint[] = series.map((p, i) => {
-    const parts = blockLabelParts(p.blockUtc, blockDateMtl);
+    const parts = blockLabelParts(p.blockUtc, refDayIso);
     // Bloc où la nouvelle n'a PAS fait la Une : « Hors du radar » (point creux),
     // pas « Très faible ». Ne pas peindre l'absence comme une saillance faible
     // mais réelle — sinon on laisse croire qu'elle était là (retour Adrien).
@@ -1348,6 +1384,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     (e) => e.date_utc === latestDate && e.time_interval_utc === latestInterval,
   );
 
+  // Jour de publication de l'ÉDITION affichée : le seul repère de « aujourd'hui »
+  // pour TOUTES les trajectoires. Une histoire retombée du radar n'a plus de bloc
+  // récent à elle ; si on lui laissait sa propre date comme repère, ses points
+  // s'étiquetteraient « aujourd'hui » un jour trop tard (cf. blockLabelParts).
+  const editionRefDayIso = blockAnchor(blockKey(sorted[0]))?.anchorIso ?? null;
+
   const dateLabel = formatDateFr(sorted[0].date_montreal_tz ?? sorted[0].date_utc);
   const snapshotInterval = sorted[0].time_interval_montreal_tz ?? sorted[0].time_interval_utc;
   const periodLabel = periodLabelFromInterval(snapshotInterval);
@@ -1419,7 +1461,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
     const sommetLabel = sommetSum != null && suivi
       ? (() => {
-        const p = blockLabelParts(suivi.peakBlock, e.date_montreal_tz);
+        const p = blockLabelParts(suivi.peakBlock, editionRefDayIso);
         if (!p) return null;
         const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
@@ -1428,7 +1470,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
-    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, e.date_montreal_tz, suivi?.history);
+    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;

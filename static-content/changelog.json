@@ -1,5 +1,71 @@
 [
   {
+    "pr": 342,
+    "date": "2026-07-28T13:49:48Z",
+    "note": "Le module « Deux solitudes » lit désormais directement les données par région produites en amont, au lieu de les reconstituer par soustraction. Rien ne change à l'écran, mais la part canadienne ne risque plus d'englober des médias américains.",
+    "version": null
+  },
+  {
+    "pr": 340,
+    "date": "2026-07-28T13:46:52Z",
+    "note": "La bulle d'information « i » se laisse enfin survoler jusqu'au bout : le lien « En savoir plus » qu'elle contient est maintenant cliquable, alors que la bulle disparaissait dès qu'on s'en approchait.",
+    "version": "2.15.0-beta.7"
+  },
+  {
+    "pr": 336,
+    "date": "2026-07-28T13:43:30Z",
+    "note": "Les promesses du Polimètre+ affichent maintenant une petite flèche qui indique qu'on peut cliquer dessus pour lire le résumé et la couverture médiatique.",
+    "version": "2.15.0-beta.6"
+  },
+  {
+    "pr": 351,
+    "date": "2026-07-28T13:40:54Z",
+    "note": "Les articles cités sous chaque promesse affichent de nouveau le bon média avec le bon titre, au lieu d'une association approximative déduite de l'adresse du lien.",
+    "version": "2.15.0-beta.5"
+  },
+  {
+    "pr": 339,
+    "date": "2026-07-28T13:39:00Z",
+    "note": "Sur téléphone, les six histoires du radar « Deux solitudes » étaient coupées et illisibles. Elles se lisent maintenant en entier dans une liste sous le radar, dont les axes sont numérotés pour s'y retrouver.",
+    "version": "2.15.0-beta.4"
+  },
+  {
+    "pr": 344,
+    "date": "2026-07-28T13:36:26Z",
+    "note": "Sur le radar « Deux solitudes », la catégorie affichée au-dessus du titre du haut n'est plus rognée quand le titre est long.",
+    "version": "2.15.0-beta.3"
+  },
+  {
+    "pr": 338,
+    "date": "2026-07-28T13:33:52Z",
+    "note": "Quand l'envoi d'un signalement échoue, votre texte n'est plus perdu : il reste affiché, vous pouvez le copier ou nous l'envoyer par courriel en un clic, et le message explique enfin si la panne vient de chez nous ou de votre connexion.",
+    "version": "2.15.0-beta.2"
+  },
+  {
+    "pr": 343,
+    "date": "2026-07-28T13:30:51Z",
+    "note": "L'illustration de la Une crédite désormais Mathieu Fortin (Anorak Studio) à la direction artistique, plutôt que de dire qu'elle s'inspire de son style.",
+    "version": "2.15.0-beta.1"
+  },
+  {
+    "pr": 352,
+    "date": "2026-07-28T11:55:09Z",
+    "note": "feat(flappy): autoriser jusqu'à 7 caractères pour la signature dans le classement global",
+    "version": null
+  },
+  {
+    "pr": 350,
+    "date": "2026-07-28T00:49:41Z",
+    "note": "fix(flappy): réinitialiser le classement global Upstash Redis et supprimer les entrées de test",
+    "version": null
+  },
+  {
+    "pr": 349,
+    "date": "2026-07-27T23:55:29Z",
+    "note": "feat(flappy): classement global en direct avec Upstash Redis et intégration fluide",
+    "version": null
+  },
+  {
     "pr": 347,
     "date": "2026-07-27T22:02:05Z",
     "note": "feat(flappy): déverrouillage tactile mobile et refonte esthétique éditoriale de Flappy Enjeux",
