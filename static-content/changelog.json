@@ -1,5 +1,11 @@
 [
   {
+    "pr": 342,
+    "date": "2026-07-28T13:49:48Z",
+    "note": "Le module « Deux solitudes » lit désormais directement les données par région produites en amont, au lieu de les reconstituer par soustraction. Rien ne change à l'écran, mais la part canadienne ne risque plus d'englober des médias américains.",
+    "version": null
+  },
+  {
     "pr": 340,
     "date": "2026-07-28T13:46:52Z",
     "note": "La bulle d'information « i » se laisse enfin survoler jusqu'au bout : le lien « En savoir plus » qu'elle contient est maintenant cliquable, alors que la bulle disparaissait dès qu'on s'en approchait.",
