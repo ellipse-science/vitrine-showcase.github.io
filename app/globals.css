@@ -5198,89 +5198,43 @@
   .flappy-actions button { padding: 8px 14px; font-size: 10px; }
 }
 
-/* DOOM PCQ Easter Egg Cabinet - Seamless Editorial Integration */
-.doom-cabinet {
-  display: flex;
-  flex-direction: column;
-  background: var(--paper-deep);
-  border: none;
-  margin-top: 0;
+/* DOOM PCQ Easter Egg - Seamless Inline View */
+.doom-seamless-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  aspect-ratio: 4 / 3;
+  margin: 12px auto 0;
   overflow: hidden;
-  box-shadow: none;
-}
-
-.doom-masthead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
   background: var(--paper-deep);
-  color: var(--ink);
-  border-bottom: 0.5px solid var(--rule);
+  border: 0.5px solid var(--rule);
 }
 
-.doom-title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.doom-brand {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cordovan);
-}
-
-.doom-subtitle {
-  font-family: 'Source Serif 4', Georgia, serif;
-  font-style: italic;
-  font-size: 15px;
-  color: var(--ink);
-}
-
-.doom-quit {
+.doom-close-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
   background: var(--paper);
   color: var(--ink);
   border: 0.5px solid var(--rule);
-  padding: 6px 14px;
-  cursor: pointer;
+  padding: 6px 12px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.doom-quit:hover {
+.doom-close-badge:hover {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
 }
 
-.doom-hint-bar {
-  background: var(--paper);
-  color: var(--ink-soft);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  padding: 8px 16px;
-  letter-spacing: 0.06em;
-  border-bottom: 0.5px solid var(--rule);
-  text-align: center;
-}
-
-.doom-stage {
-  position: relative;
-  width: 100%;
-  max-width: 720px;
-  aspect-ratio: 4 / 3;
-  margin: 0 auto;
-  background: var(--paper-deep);
-  overflow: hidden;
-}
-
-.doom-iframe {
+.doom-iframe-seamless {
   width: 100%;
   height: 100%;
   border: none;
@@ -5289,39 +5243,14 @@
   transform-origin: center center;
 }
 
-.doom-foot {
-  margin: 0;
-  padding: 8px 16px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-  background: var(--paper-deep);
-  border-top: 0.5px solid var(--rule-faint);
-  text-align: center;
-}
-
 @media (max-width: 640px) {
-  .doom-masthead {
-    padding: 10px 14px;
+  .doom-seamless-wrap {
+    max-width: 100%;
   }
-  .doom-brand {
-    font-size: 9px;
-    letter-spacing: 0.14em;
-  }
-  .doom-subtitle {
-    font-size: 13px;
-  }
-  .doom-stage {
-    height: 390px;
-  }
-  .doom-hint-bar {
-    font-size: 9.5px;
-    padding: 6px 10px;
-  }
-  .doom-quit {
-    padding: 5px 10px;
+  .doom-close-badge {
+    padding: 4px 8px;
     font-size: 10px;
+    top: 6px;
+    right: 6px;
   }
 }

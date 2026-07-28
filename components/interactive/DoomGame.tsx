@@ -15,43 +15,22 @@ export function DoomGame({ onExit }: { onExit: () => void }) {
   }, [onExit]);
 
   return (
-    <div
-      className="doom-cabinet"
-      role="group"
-      aria-label="Jeu caché : DOOM — Mode Spécial PCQ"
-    >
-      <div className="doom-masthead">
-        <div className="doom-title-block">
-          <span className="doom-brand">LA VITRINE · ÉDITION SPÉCIALE DOOM 💥</span>
-          <span className="doom-subtitle">« KNEE-DEEP IN THE MEDIA » · ÉRIC DUHAIME VS THE PRESS</span>
-        </div>
-        <button
-          type="button"
-          className="doom-quit"
-          onClick={onExit}
-          aria-label="Quitter le jeu DOOM"
-        >
-          Quitter ✕
-        </button>
-      </div>
-
-      <div className="doom-hint-bar">
-        <span>🎮 <b>COMMANDES :</b> [Flèches / ZQSD] Déplacer · [Ctrl / Clic] Tirer · [Espace] Ouvrir portes · [1-7] Armes · [Échap] Fermer</span>
-      </div>
-
-      <div className="doom-stage">
-        <iframe
-          src="https://raz0red.github.io/webprboom/"
-          className="doom-iframe"
-          title="DOOM WebAssembly Player (WebPrBoom)"
-          allow="autoplay; keyboard; fullscreen; gamepad"
-          allowFullScreen
-        />
-      </div>
-
-      <p className="doom-foot">
-        Easter Egg Déverrouillé (3 Taps sur PCQ) · DOOM WebAssembly (id Software / WebPrBoom Open Source)
-      </p>
+    <div className="doom-seamless-wrap" role="group" aria-label="DOOM Easter Egg">
+      <button
+        type="button"
+        className="doom-close-badge"
+        onClick={onExit}
+        aria-label="Fermer DOOM"
+      >
+        ✕ Fermer (Échap)
+      </button>
+      <iframe
+        src="https://raz0red.github.io/webprboom/"
+        className="doom-iframe-seamless"
+        title="DUHAIME — Open Source Game"
+        allow="autoplay; keyboard; fullscreen; gamepad"
+        allowFullScreen
+      />
     </div>
   );
 }
