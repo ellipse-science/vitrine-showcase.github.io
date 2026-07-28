@@ -35,18 +35,18 @@ export type IssueMeta = {
 };
 
 export const ISSUE_META: IssueMeta[] = [
-  { key: "economy_and_labour", color: "#742630", label: "Économie", title: "Économie et travail" },
-  { key: "governments_and_governance", color: "#6F5828", label: "Gouv.", title: "Gouvernements et gouvernance" },
-  { key: "health_and_social_services", color: "#7D5358", label: "Santé", title: "Santé et services sociaux" },
-  { key: "environment_and_energy", color: "#5F6E36", label: "Environ.", title: "Environnement et énergie" },
-  { key: "rights_liberties_minorities_discrimination", color: "#5F4E78", label: "Droits", title: "Droits, libertés, minorités" },
-  { key: "culture_and_nationalism", color: "#35604E", label: "Culture", title: "Culture et nationalisme" },
-  { key: "education", color: "#7A5A23", label: "Éduc.", title: "Éducation" },
-  { key: "international_affairs_and_defense", color: "#304860", label: "Aff. int.", title: "Affaires internationales" },
-  { key: "law_and_crime", color: "#463E3E", label: "Loi", title: "Loi et crime" },
-  { key: "public_lands_and_agriculture", color: "#7D5132", label: "Terres", title: "Terres publiques, agri." },
-  { key: "immigration", color: "#8B6914", label: "Immig.", title: "Immigration" },
-  { key: "technology", color: "#3A5F70", label: "Tech.", title: "Technologie" },
+  { key: "economy_and_labour", color: "#94781B", label: "Économie", title: "Économie et travail" },
+  { key: "governments_and_governance", color: "#234E78", label: "Gouv.", title: "Gouvernements et gouvernance" },
+  { key: "health_and_social_services", color: "#852244", label: "Santé", title: "Santé et politiques sociales" },
+  { key: "environment_and_energy", color: "#3D6B3A", label: "Environ.", title: "Environnement et énergie" },
+  { key: "rights_liberties_minorities_discrimination", color: "#553278", label: "Droits", title: "Droits, libertés, minorités et discrimination" },
+  { key: "culture_and_nationalism", color: "#384873", label: "Culture", title: "Culture et nationalisme" },
+  { key: "education", color: "#752373", label: "Éduc.", title: "Éducation" },
+  { key: "international_affairs_and_defense", color: "#1F5E66", label: "Aff. int.", title: "Affaires internationales et défense" },
+  { key: "law_and_crime", color: "#993322", label: "Loi", title: "Loi et crime" },
+  { key: "public_lands_and_agriculture", color: "#5E731F", label: "Terres", title: "Terres publiques et agriculture" },
+  { key: "immigration", color: "#9E541B", label: "Immig.", title: "Immigration" },
+  { key: "technology", color: "#997018", label: "Tech.", title: "Technologie" },
 ];
 
 const MONTHS_FR = [
@@ -180,7 +180,7 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
       color: seg.meta.color,
       widthPct: pct,
       label: seg.meta.label,
-      title: `${seg.meta.title} · ${pct} %`,
+      title: `${seg.meta.title} · ${pct} %`,
     };
   });
 
@@ -191,7 +191,7 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
       color: "",
       widthPct: pct,
       label: "Reste",
-      title: `Autres enjeux · ${pct} %`,
+      title: `Autres enjeux · ${pct} %`,
       isReste: true,
     });
   }
