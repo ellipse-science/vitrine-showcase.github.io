@@ -64,6 +64,28 @@ function Chevron() {
   );
 }
 
+/* Libellé + chevron. Le chevron est solidaire du DERNIER MOT (.ppl-title__last
+   en white-space: nowrap) : sans ça, un titre dont le dernier mot tombe pile en
+   fin de ligne laisse le chevron seul sur la ligne suivante — cas le plus
+   probable à 375 px, où la colonne du titre est la plus étroite. Au pire le
+   chevron descend maintenant AVEC son mot. Rendu identique dans les deux états
+   du rang (fermé et ouvert), d'où le composant plutôt que deux blocs jumeaux. */
+function PromiseTitle({ title }: { title: string }) {
+  const words = title.split(" ");
+  const last = words.pop() ?? "";
+  return (
+    <span className="ppl-title">
+      <span className="ppl-title__text">
+        {words.length > 0 ? `${words.join(" ")} ` : null}
+        <span className="ppl-title__last">
+          {last}
+          <Chevron />
+        </span>
+      </span>
+    </span>
+  );
+}
+
 function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: string }) {
   if (!verdict) return <span className="ppl-verdict-tag" aria-hidden="true" />;
   return (
@@ -311,12 +333,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <span className="ppl-title">
-                            <span className="ppl-title__text">
-                              {p.title}
-                              <Chevron />
-                            </span>
-                          </span>
+                          <PromiseTitle title={p.title} />
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -355,12 +372,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <span className="ppl-title">
-                          <span className="ppl-title__text">
-                            {p.title}
-                            <Chevron />
-                          </span>
-                        </span>
+                        <PromiseTitle title={p.title} />
                         <TrendBadge trend={p.trend} />
                       </>
                     )}
