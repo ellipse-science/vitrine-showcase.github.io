@@ -61,66 +61,77 @@ jobs:
             // Une PR en draft n'attend pas de review : elle est « en cours ».
             const cible = pr.draft ? COLONNE_DRAFT : COLONNE_EN_REVIEW;
 
-            // ── 1. Le projet, son champ Status et l'option visée ────────────
-            const projet = await github.graphql(`
-              query($org: String!, $num: Int!) {
-                organization(login: $org) {
-                  projectV2(number: $num) {
-                    id
-                    field(name: "Status") {
-                      ... on ProjectV2SingleSelectField { id options { id name } }
+            // Tout ce qui suit parle à l'API : un token périmé, un champ
+            // renommé ou une panne GraphQL doivent laisser la PR verte. Une
+            // seule enveloppe try/catch — un échec devient un avertissement.
+            try {
+              // ── 1. Le projet, son champ Status et l'option visée ──────────
+              const projet = await github.graphql(`
+                query($org: String!, $num: Int!) {
+                  organization(login: $org) {
+                    projectV2(number: $num) {
+                      id
+                      field(name: "Status") {
+                        ... on ProjectV2SingleSelectField { id options { id name } }
+                      }
                     }
                   }
-                }
-              }`, { org: ORG, num: PROJET });
+                }`, { org: ORG, num: PROJET });
 
-            const p = projet.organization.projectV2;
-            const champ = p.field;
-            const option = champ.options.find((o) => o.name === cible);
-            if (!option) {
-              // Quelqu'un a renommé la colonne dans l'UI : on le dit fort, mais
-              // on ne fait pas échouer la PR pour autant.
-              core.warning(`Colonne « ${cible} » introuvable dans le projet ${PROJET} — statut inchangé.`);
-              return;
-            }
+              const p = projet.organization?.projectV2;
+              const champ = p?.field;
+              if (!champ) {
+                core.warning(`Projet ${PROJET} ou son champ « Status » introuvable — statut inchangé.`);
+                return;
+              }
+              const option = champ.options.find((o) => o.name === cible);
+              if (!option) {
+                // Quelqu'un a renommé la colonne dans l'UI : on le dit fort,
+                // mais on ne fait pas échouer la PR pour autant.
+                core.warning(`Colonne « ${cible} » introuvable dans le projet ${PROJET} — statut inchangé.`);
+                return;
+              }
 
-            // ── 2. L'item de projet correspondant à cette PR ────────────────
-            // Il existe déjà si « Auto-add to project » a fait son travail ;
-            // sinon on l'ajoute nous-mêmes (course possible à l'ouverture).
-            const vue = await github.graphql(`
-              query($owner: String!, $repo: String!, $num: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $num) {
-                    id
-                    projectItems(first: 20) { nodes { id project { id } } }
+              // ── 2. L'item de projet correspondant à cette PR ──────────────
+              // Il existe déjà si « Auto-add to project » a fait son travail ;
+              // sinon on l'ajoute nous-mêmes (course possible à l'ouverture).
+              const vue = await github.graphql(`
+                query($owner: String!, $repo: String!, $num: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $num) {
+                      id
+                      projectItems(first: 20) { nodes { id project { id } } }
+                    }
                   }
-                }
-              }`, { owner: context.repo.owner, repo: context.repo.repo, num: pr.number });
+                }`, { owner: context.repo.owner, repo: context.repo.repo, num: pr.number });
 
-            const prNode = vue.repository.pullRequest;
-            let item = prNode.projectItems.nodes.find((n) => n.project.id === p.id);
+              const prNode = vue.repository.pullRequest;
+              let item = prNode.projectItems.nodes.find((n) => n.project.id === p.id);
 
-            if (!item) {
-              const ajout = await github.graphql(`
-                mutation($projet: ID!, $contenu: ID!) {
-                  addProjectV2ItemById(input: { projectId: $projet, contentId: $contenu }) {
-                    item { id }
-                  }
-                }`, { projet: p.id, contenu: prNode.id });
-              item = ajout.addProjectV2ItemById.item;
-              core.info('PR absente du projet — ajoutée.');
+              if (!item) {
+                const ajout = await github.graphql(`
+                  mutation($projet: ID!, $contenu: ID!) {
+                    addProjectV2ItemById(input: { projectId: $projet, contentId: $contenu }) {
+                      item { id }
+                    }
+                  }`, { projet: p.id, contenu: prNode.id });
+                item = ajout.addProjectV2ItemById.item;
+                core.info('PR absente du projet — ajoutée.');
+              }
+
+              // ── 3. Poser le statut ───────────────────────────────────────
+              await github.graphql(`
+                mutation($projet: ID!, $item: ID!, $champ: ID!, $option: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projet, itemId: $item, fieldId: $champ,
+                    value: { singleSelectOptionId: $option }
+                  }) { projectV2Item { id } }
+                }`, { projet: p.id, item: item.id, champ: champ.id, option: option.id });
+
+              core.info(`PR #${pr.number} → « ${cible} ».`);
+            } catch (erreur) {
+              core.warning(`Statut de projet non posé (${erreur.message}) — la PR n'est pas bloquée pour autant.`);
             }
-
-            // ── 3. Poser le statut ─────────────────────────────────────────
-            await github.graphql(`
-              mutation($projet: ID!, $item: ID!, $champ: ID!, $option: String!) {
-                updateProjectV2ItemFieldValue(input: {
-                  projectId: $projet, itemId: $item, fieldId: $champ,
-                  value: { singleSelectOptionId: $option }
-                }) { projectV2Item { id } }
-              }`, { projet: p.id, item: item.id, champ: champ.id, option: option.id });
-
-            core.info(`PR #${pr.number} → « ${cible} ».`);
         env:
           # `secrets` n'est pas lisible depuis le script : on expose seulement
           # la PRÉSENCE du secret, jamais sa valeur.
