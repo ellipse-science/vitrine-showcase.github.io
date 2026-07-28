@@ -14,16 +14,24 @@ import { facetResult } from "@/lib/data/assembleeInsights";
 
 const CX = 450;
 const CY = 360;
-const ROW_RADII = [105, 148, 190];
+const ROW_RADII = [90, 124, 158, 192];
 const LABEL_RADIUS = 224;
 const FRAME_RADIUS = 246;
 const DIVIDER_INNER_RADIUS = 60;
 const SEAT_MIN_R = 5.5;
 const SEAT_MAX_R = 14;
 
+const SEAT_GAP = 3; // écart minimal (unités viewBox) entre les bords de deux sièges
+
 function polar(r: number, angleDeg: number): { x: number; y: number } {
   const rad = (angleDeg * Math.PI) / 180;
   return { x: CX + r * Math.cos(rad), y: CY - r * Math.sin(rad) };
+}
+
+// Demi-largeur angulaire qu'occupe un siège de rayon `r` sur un anneau de
+// rayon `ringRadius` (arc ≈ rayon × angle, en radians, converti en degrés).
+function seatHalfAngleDeg(r: number, ringRadius: number): number {
+  return ((r + SEAT_GAP / 2) / ringRadius) * (180 / Math.PI);
 }
 
 type Selection =
@@ -52,13 +60,22 @@ function buildLayout(rows: AssembleeRow[]) {
   const allDeputyWords = rows.flatMap((r) => (r.deputies || []).map((d) => d.wordsRaw));
   const maxDeputyWords = allDeputyWords.length > 0 ? Math.max(...allDeputyWords) : 1;
 
+  // Plancher (jamais un quartier invisible) PUIS renormalisation : appliquer
+  // le plancher à plusieurs petits partis à la fois peut pousser la somme
+  // au-delà de 180°, ce qui faisait déborder le dernier quartier sous la
+  // ligne de base. La renormalisation garantit que la somme fait toujours
+  // exactement 180°, quel que soit le nombre de partis au plancher.
+  const floorWidth = 180 / (rows.length * 3);
+  const flooredWidths = rows.map((row) => Math.max(((row.wordsRaw || 0) / totalWords) * 180, floorWidth));
+  const flooredSum = flooredWidths.reduce((s, w) => s + w, 0) || 1;
+  const widths = flooredWidths.map((w) => (w / flooredSum) * 180);
+
   const wedges: Wedge[] = [];
   const seats: Seat[] = [];
   let cursor = 180;
 
-  for (const row of rows) {
-    const rawWidth = ((row.wordsRaw || 0) / totalWords) * 180;
-    const width = Math.max(rawWidth, 180 / (rows.length * 3)); // plancher : jamais un quartier invisible
+  rows.forEach((row, rowIdx) => {
+    const width = widths[rowIdx];
     const angleStart = cursor;
     const angleEnd = cursor - width;
     cursor = angleEnd;
@@ -72,23 +89,76 @@ function buildLayout(rows: AssembleeRow[]) {
     wedges.push({ row, angleStart, angleEnd, labelX: label.x, labelY: label.y });
 
     const deputies = row.deputies || [];
-    const rowCount = deputies.length <= 4 ? 1 : deputies.length <= 10 ? 2 : 3;
-    const chunkSize = Math.ceil(deputies.length / rowCount);
-
-    deputies.forEach((d, i) => {
-      const rowIdx = Math.floor(i / chunkSize);
-      const chunkStart = rowIdx * chunkSize;
-      const chunkLen = Math.min(chunkSize, deputies.length - chunkStart);
-      const posInChunk = i - chunkStart;
-      const frac = chunkLen === 1 ? 0.5 : posInChunk / (chunkLen - 1);
-      const angle = innerStart - frac * (innerStart - innerEnd);
-      const radius = ROW_RADII[rowIdx] ?? ROW_RADII[ROW_RADII.length - 1];
-      const { x, y } = polar(radius, angle);
+    const sized = deputies.map((d) => {
       const sizeFrac = maxDeputyWords > 0 ? d.wordsRaw / maxDeputyWords : 0;
-      const r = SEAT_MIN_R + sizeFrac * (SEAT_MAX_R - SEAT_MIN_R);
-      seats.push({ deputy: d, partyKey: row.key, color: row.color, x, y, r });
+      return { d, r: SEAT_MIN_R + sizeFrac * (SEAT_MAX_R - SEAT_MIN_R) };
     });
-  }
+    const availableWidthDeg = innerStart - innerEnd;
+
+    // Empile les sièges anneau par anneau (le plus prolixe au premier anneau,
+    // le plus près du centre) : un anneau ne reçoit un siège de plus que si sa
+    // largeur angulaire cumulée tient encore dans le quartier — sinon on
+    // passe à l'anneau suivant. Ça garantit qu'aucun siège ne chevauche son
+    // voisin, même quand le quartier est étroit ou compte beaucoup de députés.
+    const rings: (typeof sized)[] = [[]];
+    let usedDeg = 0;
+    for (const item of sized) {
+      let ringIdx = rings.length - 1;
+      let ringRadius = ROW_RADII[Math.min(ringIdx, ROW_RADII.length - 1)];
+      let needed = seatHalfAngleDeg(item.r, ringRadius) * 2;
+      if (usedDeg + needed > availableWidthDeg && rings[ringIdx].length > 0 && ringIdx < ROW_RADII.length - 1) {
+        rings.push([]);
+        ringIdx++;
+        ringRadius = ROW_RADII[Math.min(ringIdx, ROW_RADII.length - 1)];
+        needed = seatHalfAngleDeg(item.r, ringRadius) * 2;
+        usedDeg = 0;
+      }
+      rings[ringIdx].push(item);
+      usedDeg += needed;
+    }
+
+    rings.forEach((ring, ringIdx) => {
+      if (ring.length === 0) return;
+      const ringRadius = ROW_RADII[Math.min(ringIdx, ROW_RADII.length - 1)];
+      let halfDegs = ring.map((it) => seatHalfAngleDeg(it.r, ringRadius));
+      let totalSpan = halfDegs.reduce((s, h) => s + 2 * h, 0);
+
+      // Dernier anneau : plus de place pour en ouvrir un nouveau. Si même là
+      // ça déborde, on rétrécit les sièges de CET anneau juste assez pour
+      // qu'ils tiennent — jamais de débordement hors du quartier, même dans
+      // les cas extrêmes (parti étroit avec beaucoup de députés loquaces).
+      let ringSeatR = ring.map((it) => it.r);
+      if (totalSpan > availableWidthDeg) {
+        // Rétrécit jusqu'à ce que ça tienne (ou jusqu'au plancher de lisibilité) :
+        // deux passes suffisent en pratique, l'écart fixe (SEAT_GAP) entre
+        // sièges ne rétrécit pas proportionnellement au rayon.
+        for (let pass = 0; pass < 4 && totalSpan > availableWidthDeg; pass++) {
+          const shrink = availableWidthDeg / totalSpan;
+          ringSeatR = ringSeatR.map((r) => Math.max(2, r * shrink));
+          halfDegs = ringSeatR.map((r) => seatHalfAngleDeg(r, ringRadius));
+          totalSpan = halfDegs.reduce((s, h) => s + 2 * h, 0);
+        }
+      }
+
+      const startPad = Math.max(0, (availableWidthDeg - totalSpan) / 2);
+      let angleCursor = innerStart - startPad;
+      ring.forEach((item, i) => {
+        angleCursor -= halfDegs[i];
+        // Filet de sécurité final : même si le rétrécissement ci-dessus n'a
+        // pas suffi (trop de sièges pour l'espace, même au plancher), un
+        // siège ne sort JAMAIS de son propre quartier — il peut au pire se
+        // superposer à un autre siège du MÊME parti, jamais à celui d'un
+        // parti voisin. Les sièges en trop sont plutôt repoussés vers
+        // l'extérieur (en éventail depuis la bordure) plutôt que de
+        // s'empiler exactement au même point.
+        const clampedAngle = Math.min(innerStart, Math.max(innerEnd, angleCursor));
+        const overflowDeg = Math.abs(angleCursor - clampedAngle);
+        const { x, y } = polar(ringRadius + overflowDeg * 2.5, clampedAngle);
+        angleCursor -= halfDegs[i];
+        seats.push({ deputy: item.d, partyKey: row.key, color: row.color, x, y, r: ringSeatR[i] });
+      });
+    });
+  });
 
   return { wedges, seats };
 }
