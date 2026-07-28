@@ -228,6 +228,14 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
   return stack;
 }
 
+// « NA » est la valeur manquante de R : elle traverse le pipeline sous forme
+// de chaîne littérale et ne doit jamais s'afficher (vu en prod le 2026-07-28 :
+// un député dont le mot distinctif s'affichait « NA »).
+function cleanText(value?: string): string | undefined {
+  const v = (value ?? "").trim();
+  return v === "" || v === "NA" ? undefined : v;
+}
+
 function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: DeputyAgoraRow[]): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -248,8 +256,8 @@ function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: Depu
       wordsRaw: Number(r.word_count || 0),
       richnessLevel: richnessLevels[r.deputy] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
-      signatureWord: r.signature_word || undefined,
-      signatureWordContext: r.signature_word_context || undefined,
+      signatureWord: cleanText(r.signature_word),
+      signatureWordContext: cleanText(r.signature_word_context),
     };
   });
 }
@@ -298,13 +306,13 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey, deputyRows: Dep
       color: PARTY_COLORS[item.key],
       inShadow: false,
       enjeuStack: buildEnjeuStack(d),
-      editorialAngle: d.editorial_angle && d.editorial_angle !== "NA" ? d.editorial_angle : "",
+      editorialAngle: cleanText(d.editorial_angle) ?? "",
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       wordsFormatted: fmtWords(d.word_count),
       wordsRaw: Number(d.word_count || 0),
       richnessLevel: richnessLevels[item.key] || 1,
-      signatureWord: d.signature_word || undefined,
-      signatureWordContext: d.signature_word_context || undefined,
+      signatureWord: cleanText(d.signature_word),
+      signatureWordContext: cleanText(d.signature_word_context),
       deputies: buildDeputyList(item.key, period, deputyRows),
     };
   });

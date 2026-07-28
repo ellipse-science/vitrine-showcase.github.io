@@ -2430,6 +2430,40 @@
     padding-top: 8px;
   }
   .ass-fiche-more .ass-tone { height: 10px; }
+  .ass-board-more {
+    align-self: center;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0 2px 3px;
+    margin: -4px auto 0;
+  }
+  .ass-board-more:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .ass-board-more:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  /* Députés au-delà des dix premiers : même fiche, mais en liste sous le
+     dossier — un fil pointillé vers un dossier situé plusieurs écrans plus
+     haut ne voudrait plus rien dire, le liseré à la couleur du parti suffit
+     à rattacher la fiche. */
+  .ass-overflow {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+    gap: 10px;
+    margin-top: 2px;
+  }
+  .ass-overflow .ass-fiche,
+  .ass-overflow .ass-fiche.tier-2,
+  .ass-overflow .ass-fiche.tier-1 {
+    width: 100%;
+    border-left: 3px solid var(--c);
+  }
+  .ass-overflow .ass-fiche::after { display: none; }
+  .ass-overflow .ass-fiche-pin { display: none; }
 
   .ass-card-shadow {
     flex-direction: row;
