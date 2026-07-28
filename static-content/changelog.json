@@ -1,5 +1,11 @@
 [
   {
+    "pr": 351,
+    "date": "2026-07-28T13:40:54Z",
+    "note": "Les articles cités sous chaque promesse affichent de nouveau le bon média avec le bon titre, au lieu d'une association approximative déduite de l'adresse du lien.",
+    "version": "2.15.0-beta.5"
+  },
+  {
     "pr": 339,
     "date": "2026-07-28T13:39:00Z",
     "note": "Sur téléphone, les six histoires du radar « Deux solitudes » étaient coupées et illisibles. Elles se lisent maintenant en entier dans une liste sous le radar, dont les axes sont numérotés pour s'y retrouver.",
