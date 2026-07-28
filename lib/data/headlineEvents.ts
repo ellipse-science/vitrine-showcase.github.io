@@ -1496,7 +1496,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     return {
       title: e.title ?? "",
       excerpt,
-      issueFr: e.main_issue_text_fr ?? ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? "Actualité",
+      // ISSUE_LABELS_SHORT d'abord : c'est l'orthographe canonique du Polimètre
+      // (« Loi et crime », « Santé et politiques sociales »). Le libellé FR du
+      // datamart n'est qu'un repli, car l'historique de headline_events_4h porte
+      // encore les reformulations écrites par le raffineur avant
+      // aws-refiners#258 (« Droit et criminalité »…) : sans cette priorité, une
+      // même catégorie s'affiche sous deux noms selon l'âge de l'événement.
+      issueFr: ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? e.main_issue_text_fr ?? "Actualité",
       issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
       saillanceRank,
       saillanceLabel,
