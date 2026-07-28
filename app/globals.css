@@ -960,10 +960,19 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 10px 14px;
-    margin-bottom: 14px;
+    /* 10 px et non 14 comme le héros : le titre secondaire est deux fois plus
+       petit, donc le même blanc y pèse deux fois plus lourd. L'espacement suit
+       la taille du texte qu'il sépare, pas une constante de page. */
+    margin-bottom: 10px;
   }
-  .une-side-head .une-enjeu,
-  .une-side-head .saillance-tag {
+  /* `.une-side` en tête : sans lui, la règle `.une-side .une-enjeu` déclarée
+     plus bas (même spécificité, donc gagnante par l'ordre) remet 12 px de marge
+     sous l'enjeu ALORS QUE l'en-tête espace déjà ses rangées par `gap`. On
+     mesurait 22 px entre l'enjeu et le badge contre 10 px entre le badge et la
+     trajectoire — un double espacement jamais voulu, la règle ci-dessous
+     n'ayant simplement jamais pris. */
+  .une-side .une-side-head .une-enjeu,
+  .une-side .une-side-head .saillance-tag {
     margin-bottom: 0;
   }
   .une-side .une-enjeu {
@@ -1257,14 +1266,37 @@
        (retour Adrien) : le vert et le rouge sont ce qui rend le sens de la
        trajectoire lisible d'un coup d'œil, avant même d'avoir lu les mots. */
     color: var(--acc);
-    white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    display: inline-block;
+    /* Le libellé SE REPLIE au lieu de déborder. En `nowrap`, le texte de survol
+       — bien plus long que celui du repos — sortait de sa colonne et se peignait
+       par-dessus la Une voisine (mesuré : 428 px de texte dans 331 px de boîte,
+       97 px par-dessus le filet). Rien ne le coupait : la bande n'a pas
+       d'`overflow` et aucun ancêtre n'en pose. */
+    white-space: normal;
+    /* HAUTEUR RÉSERVÉE. Les doublures invisibles (un par texte possible) sont
+       empilées avec le texte vivant dans la MÊME cellule de grille : la hauteur
+       de la boîte est celle du plus long à la largeur courante. Elle ne dépend
+       donc d'aucun nombre magique, s'adapte à toutes les largeurs de colonne, et
+       ne bouge pas d'un pixel entre le repos et le survol. */
+    display: grid;
     /* Aucune largeur à réserver : la courbe est EN AMONT du libellé (ordre
        courbe → flèche → texte), donc elle est ancrée et le texte peut s'allonger
        au survol sans rien déplacer. */
     min-width: 0;
   }
+  .saillance-trend .trend-cap > * { grid-area: 1 / 1; }
+  /* Les deux Unes secondaires sont CÔTE À CÔTE : leurs titres doivent partir de
+     la même ligne. Or la hauteur réservée dépend du texte de chaque carte — l'une
+     tenait sur une ligne, l'autre sur deux, et les deux titres se retrouvaient
+     décalés de 22 px (constat Adrien). On leur donne donc le même plancher de
+     deux lignes. C'est le prix de l'alignement : aligné ET sans réserve vide
+     supposerait que le plus long texte tienne sur une ligne dans une colonne de
+     430 px, ce qui n'est pas le cas. */
+  .une-side .saillance-trend .trend-cap { min-height: 2lh; }
+  /* `visibility: hidden` et non `display: none` : la doublure doit continuer à
+     occuper sa place — c'est tout son rôle. `aria-hidden` côté JSX la retire des
+     lecteurs d'écran, qui ne lisent que le texte vivant. */
+  .saillance-trend .trend-cap-ghost { visibility: hidden; }
   .saillance-trend .trend-cap b { font-weight: 600; }
   /* Nudge optique : le centre de gravité d'une police serif est au-dessus du
      milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
@@ -1284,12 +1316,10 @@
   /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
      courbe est déjà au bord gauche. */
-  @media (max-width: 620px) {
-    /* La phrase peut se replier sur deux lignes ; la bande garde sa structure
-       (coup d'œil au-dessus, lecture en dessous), la courbe ne descend plus
-       seule sur une ligne à elle. */
-    .saillance-trend .trend-cap { white-space: normal; }
-  }
+  /* Le repli sur deux lignes n'est plus une exception mobile : il est devenu la
+     règle à toutes les largeurs (cf. .trend-cap). Le problème n'a jamais été la
+     taille de la FENÊTRE mais celle de la COLONNE — une Une secondaire est
+     étroite même sur un grand écran, et c'est là que le texte débordait. */
 
   /* ─── Traitement « breaking » inversé (noir) — Une #1 = Extrême (#35).
      Demande Shannon (Figma) : « couleur noir inversé lorsque saillance atteint
@@ -1366,7 +1396,13 @@
     row-gap: 11px;
   }
   .saillance-tag-row .saillance-tag { margin: 0; }
-  .une-side .saillance-tag-row { margin-bottom: 12px; }
+  /* Marge retirée : l'en-tête de la carte pose déjà 14 px sous lui. Les deux
+     s'additionnaient, d'où 26 px entre la trajectoire et le titre sur les Unes
+     secondaires contre 14 px sur la Une principale — les petites cartes se
+     lisaient PLUS détachées que la grande, à l'envers de la hiérarchie
+     (constat Adrien). Ce reliquat datait d'avant la trajectoire, quand la
+     rangée du badge était la dernière de l'en-tête. */
+  .une-side .saillance-tag-row { margin-bottom: 0; }
   .une-side .saillance-tag-row .saillance-tag { margin: 0; }
   .saillance-info-bubble {
     position: absolute;
@@ -1593,12 +1629,18 @@
     letter-spacing: -0.3px;
     margin: 0 0 12px;
   }
+  /* Échelle rang → taille (#35). Le plancher remonte de 19 à 22 px : à 19 px
+     dans une colonne de 600 px, une manchette secondaire se lisait comme une
+     légende (constat Adrien). Le haut de l'échelle ne bouge pas — l'écart entre
+     une Une exceptionnelle et une Une très faible reste lu d'un coup d'œil — et
+     les barreaux gardent un pas régulier de 3 px, pour que la taille continue
+     d'encoder le rang plutôt que de se tasser en bas. */
   .une-side h2[data-saillance="6"] { font-size: 38px; letter-spacing: -0.5px; }
-  .une-side h2[data-saillance="5"] { font-size: 34px; letter-spacing: -0.4px; }
-  .une-side h2[data-saillance="4"] { font-size: 30px; letter-spacing: -0.2px; }
-  .une-side h2[data-saillance="3"] { font-size: 26px; letter-spacing: -0.1px; }
-  .une-side h2[data-saillance="2"] { font-size: 22px; letter-spacing: 0; }
-  .une-side h2[data-saillance="1"] { font-size: 19px; letter-spacing: 0; }
+  .une-side h2[data-saillance="5"] { font-size: 35px; letter-spacing: -0.4px; }
+  .une-side h2[data-saillance="4"] { font-size: 32px; letter-spacing: -0.2px; }
+  .une-side h2[data-saillance="3"] { font-size: 30px; letter-spacing: -0.1px; }
+  .une-side h2[data-saillance="2"] { font-size: 27px; letter-spacing: 0; }
+  .une-side h2[data-saillance="1"] { font-size: 24px; letter-spacing: 0; }
   .une-side .dek-s {
     font-size: 14.5px;
     font-style: italic;
@@ -3218,6 +3260,10 @@
     .hero-secondaries {
       grid-template-columns: 1fr;
     }
+    /* Empilées = plus de titres à aligner l'un à côté de l'autre : le plancher
+       de deux lignes de la trajectoire n'a plus de raison d'être et ne ferait
+       qu'ajouter du vide. Chaque bande reprend la hauteur de son propre texte. */
+    .une-side .saillance-trend .trend-cap { min-height: 0; }
     .hero-secondaries .une-side:first-child {
       padding: 20px 0;
       border-right: none;
