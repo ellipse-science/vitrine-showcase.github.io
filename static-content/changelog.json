@@ -1,5 +1,11 @@
 [
   {
+    "pr": 352,
+    "date": "2026-07-28T11:55:09Z",
+    "note": "feat(flappy): autoriser jusqu'à 7 caractères pour la signature dans le classement global",
+    "version": null
+  },
+  {
     "pr": 350,
     "date": "2026-07-28T00:49:41Z",
     "note": "fix(flappy): réinitialiser le classement global Upstash Redis et supprimer les entrées de test",
