@@ -1,110 +1,110 @@
 {
-  "generatedAt": "2026-07-28T18:25:57Z",
-  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/30387250206",
+  "generatedAt": "2026-07-28T19:01:43Z",
+  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/30389987995",
   "tables": [
     {
       "name": "provincial_parties_score_day",
       "status": "ok",
       "rowCount": 8740,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/day/provincial_parties_score_day.json"
     },
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 12,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     },
     {
       "name": "federal_parties_score_week",
       "status": "ok",
       "rowCount": 2520,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/week/federal_parties_score_week.json"
     },
     {
       "name": "provincial_parties_score_week",
       "status": "ok",
       "rowCount": 2100,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/week/provincial_parties_score_week.json"
     },
     {
       "name": "federal_parties_score_month",
       "status": "ok",
       "rowCount": 2502,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/month/federal_parties_score_month.json"
     },
     {
       "name": "provincial_parties_score_month",
       "status": "ok",
       "rowCount": 2085,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/month/provincial_parties_score_month.json"
     },
     {
       "name": "provincial_parties_salient_shadow_day",
       "status": "ok",
       "rowCount": 175,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/day/provincial_parties_salient_shadow_day.json"
     },
     {
       "name": "provincial_parties_salient_shadow_week",
       "status": "ok",
       "rowCount": 35,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/week/provincial_parties_salient_shadow_week.json"
     },
     {
       "name": "provincial_parties_salient_shadow_month",
       "status": "ok",
       "rowCount": 15,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/month/provincial_parties_salient_shadow_month.json"
     },
     {
       "name": "issues_score_day",
       "status": "ok",
       "rowCount": 3720,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/day/issues_score_day.json"
     },
     {
       "name": "issues_score_week",
       "status": "ok",
       "rowCount": 1698,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/week/issues_score_week.json"
     },
     {
       "name": "issues_score_month",
       "status": "ok",
       "rowCount": 1836,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/refined/month/issues_score_month.json"
     },
     {
       "name": "headline_events_4h",
       "status": "ok",
       "rowCount": 176,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/headline-events.json"
     },
     {
       "name": "polimetre_plus",
       "status": "error",
       "error": "HIVE_BAD_DATA: Malformed Parquet file. Field rank_current's type INT32 in parquet file s3://pipeline-stack-datamartbucketcdb8f851-12kyktncthaxn/vitrine_datamart/polimetre_plus-output/run-1785256717018-part-block-0-r-00000-snappy.parquet is incompatible with type double defined in table schema [s3://pipeline-stack-datamartbucketcdb8f851-12kyktncthaxn/vitrine_datamart/polimetre_plus-output/run-1785256717018-part-block-0-r-00000-snappy.parquet]",
-      "generatedAt": "2026-07-28T18:25:57Z"
+      "generatedAt": "2026-07-28T19:01:43Z"
     },
     {
       "name": "salience_calibration",
       "status": "ok",
       "optional": true,
       "metrics": 5,
-      "generatedAt": "2026-07-28T18:25:57Z",
+      "generatedAt": "2026-07-28T19:01:43Z",
       "path": "public/data/salience_calibration.json"
     }
   ]
