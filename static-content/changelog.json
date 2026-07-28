@@ -1,5 +1,35 @@
 [
   {
+    "pr": 349,
+    "date": "2026-07-27T23:55:29Z",
+    "note": "feat(flappy): classement global en direct avec Upstash Redis et intégration fluide",
+    "version": null
+  },
+  {
+    "pr": 347,
+    "date": "2026-07-27T22:02:05Z",
+    "note": "feat(flappy): déverrouillage tactile mobile et refonte esthétique éditoriale de Flappy Enjeux",
+    "version": null
+  },
+  {
+    "pr": 345,
+    "date": "2026-07-27T21:43:07Z",
+    "note": "feat(enjeux): refonte du module De quoi parle-t-on (tuiles centrées, noms complets, infobulle ⓘ et palette CAPP)",
+    "version": null
+  },
+  {
+    "pr": 332,
+    "date": "2026-07-27T21:20:18Z",
+    "note": "Les signalements envoyés depuis le site sont désormais dirigés automatiquement vers la personne responsable du module concerné.",
+    "version": null
+  },
+  {
+    "pr": 334,
+    "date": "2026-07-27T20:16:59Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » présente maintenant une fiche par parti (mots prononcés, enjeux, ton, richesse lexicale) en un coup d'œil ; le jeu de billard devient un easter egg accessible via un petit bouton 🎱.",
+    "version": "2.15.0-beta.0"
+  },
+  {
     "pr": 337,
     "date": "2026-07-27T20:07:28Z",
     "note": "La pastille numérotée de chaque promesse du Polimètre+ est maintenant cerclée de la couleur de son verdict, ce qui rend le classement plus lisible d'un coup d'œil.",

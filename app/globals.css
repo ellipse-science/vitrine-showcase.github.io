@@ -2044,39 +2044,56 @@
   }
   .billiard-popup-close:hover { opacity: 1; }
 
-  .ass-row {
-    display: grid;
-    grid-template-columns: 84px 1fr 140px 92px 76px;
-    gap: 22px;
-    align-items: start;
-    padding: 16px 0;
+  /* Vue principale : une fiche par parti (pas un tableau CSS Grid) — chaque
+     mesure garde son propre canal visuel plutôt que d'être compressée dans
+     une forme abstraite unique (cf. commentaire d'en-tête AssembleeProfiles.tsx). */
+  .ass-profiles { display: flex; flex-direction: column; }
+  .ass-card {
+    padding: 22px 0;
     border-bottom: 0.5px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  /* Pour aligner verticalement la party-box, le ton, les mots et la richesse sur la barre des enjeux */
-  .ass-row .parti-name-box,
-  .ass-row .ass-tone,
-  .ass-row .ass-words,
-  .ass-row .ass-richness {
-    align-self: start;
+  .ass-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
   }
-  .ass-row.header {
-    border-bottom: 1px solid var(--ink);
-    padding: 6px 0 10px;
-    align-items: flex-end;
+  .ass-card-figure {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 34px;
+    color: var(--cordovan);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
   }
-  .ass-row.header > div {
+  .ass-card-figure .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 6px;
+  }
+  .ass-card-angle {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.45;
+    margin: 0;
+  }
+  .ass-card-block { display: flex; flex-direction: column; gap: 6px; }
+  .stat-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ink-soft);
+    color: var(--ink-softer);
     font-weight: 500;
-    line-height: 1.4;
-  }
-  .ass-issue {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
   }
   /* Barre empilée des enjeux : largeur = proportion des mots du parti */
   .enjeu-stack {
@@ -2104,12 +2121,17 @@
     background: var(--rule-faint);
     color: var(--ink-softer);
   }
-  .ass-angle {
+  .ass-card-caption {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 13.5px;
+    font-size: 13px;
     color: var(--ink-soft);
-    line-height: 1.35;
+    line-height: 1.4;
+    margin: 0;
+  }
+  .ass-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
   }
   .ass-tone {
     height: 16px;
@@ -2124,27 +2146,60 @@
     width: 3px;
     background: var(--ink);
   }
-  .ass-words {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px;
-    text-align: right;
-    font-weight: 400;
-  }
   .ass-richness {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 15px;
     color: var(--ink);
-    letter-spacing: 2px;
-    text-align: center;
-    line-height: 1;
+    letter-spacing: 3px;
   }
   .ass-richness .empty { color: var(--rule); }
+  .ass-card-sigword {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0;
+  }
+  .ass-card-sigword .stat-label { display: block; margin-bottom: 4px; }
+  .ass-card-shadow {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 0;
+  }
+  .ass-card-shadow .parti-name-box { opacity: 0.5; }
   .ass-empty {
     font-family: 'Source Serif 4', Georgia, serif;
     font-style: italic;
     font-size: 14px;
     color: var(--ink-softer);
+    margin: 0;
   }
+  .ass-easter-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 0 0 10px;
+    opacity: 0.45;
+    vertical-align: middle;
+    transition: opacity 0.15s ease;
+  }
+  .ass-easter-btn:hover, .ass-easter-btn:focus-visible { opacity: 1; }
+  .ass-back-btn {
+    display: block;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0 0 12px;
+  }
+  .ass-back-btn:hover { color: var(--cordovan); }
   .period-subtitle {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -2493,63 +2548,80 @@
   }
   a.gt-tile { cursor: pointer; }
   .treemap-growth .gt-tile:hover { filter: brightness(1.12); }
-  .treemap-growth .gt-tile::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    inset: 0;
-    background: color-mix(in srgb, var(--c) 78%, #1a1410 22%);
-    color: #F3ECDD;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 13px;
-    line-height: 1.5;
-    padding: 12px 16px;
-    display: grid;
-    place-items: center;
-    text-align: center;
-    opacity: 0;
-    transition: opacity 0.18s ease;
-    pointer-events: none;
-    z-index: 5;
-  }
-  .treemap-growth .gt-tile:hover::after { opacity: 1; }
   .treemap-growth .gt-head {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: flex-start;
     width: 100%;
-    gap: 8px;
     position: relative;
-    z-index: 2;
+    z-index: 3;
   }
-  .treemap-growth .gt-labels {
+  .treemap-growth .gt-body {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    position: relative;
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
   }
-  .treemap-growth .gt-enjeu {
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: #F3ECDD;
-    opacity: 0.8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-  .treemap-growth .gt-name {
+  /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
+  .treemap-growth .gt-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
     color: #F3ECDD;
-    opacity: 0.9;
-    line-height: 1.1;
-    white-space: nowrap;
+    line-height: 1.08;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    padding: 6px 10px;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+  }
+  /* manchette (actualité) + médias : au centre, révélée au survol et remplace le nom */
+  .treemap-growth .gt-news {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #F3ECDD;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 6px 10px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .treemap-growth .gt-has-news:hover .gt-title { opacity: 0; }
+  .treemap-growth .gt-has-news:hover .gt-news { opacity: 0.98; }
+  .treemap-growth .gt-news-head {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  /* médias couvrant l'enjeu (comme la byline « Une des unes ») */
+  .treemap-growth .gt-news-media {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.72em;
+    opacity: 0.8;
+    line-height: 1.35;
+    margin-top: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .treemap-growth .gt-pct {
     font-family: 'Playfair Display', serif;
@@ -2564,21 +2636,6 @@
   }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
-  .treemap-growth .gt-context {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    color: #F3ECDD;
-    opacity: 0.92;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-    margin: 0;
-    padding-top: 8px;
-  }
   .treemap-growth .gt-compact {
     display: flex;
     flex-direction: column;
@@ -2592,24 +2649,60 @@
     position: relative;
     z-index: 2;
   }
-  .treemap-growth .gt-compact .gt-enjeu { font-size: 8px; opacity: 0.85; }
+  .treemap-growth .gt-compact .gt-title { font-size: 11px; line-height: 1.05; padding: 0; position: static; }
   /* tailles */
   .treemap-growth .gt-large { padding: 16px 18px; }
-  .treemap-growth .gt-large .gt-enjeu { font-size: 10px; }
-  .treemap-growth .gt-large .gt-name { font-size: 15px; }
+  .treemap-growth .gt-large .gt-title { font-size: 32px; }
+  .treemap-growth .gt-large .gt-news-head { font-size: 19px; }
   .treemap-growth .gt-large .gt-pct { font-size: 28px; }
-  .treemap-growth .gt-large .gt-context { font-size: 18px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
-  .treemap-growth .gt-medium .gt-enjeu { font-size: 9px; }
-  .treemap-growth .gt-medium .gt-name { font-size: 13px; }
+  .treemap-growth .gt-medium .gt-title { font-size: 23px; }
+  .treemap-growth .gt-medium .gt-news-head { font-size: 14.5px; }
   .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
-  .treemap-growth .gt-medium .gt-context { font-size: 14px; }
-  .treemap-growth .gt-small { padding: 11px 12px; }
-  .treemap-growth .gt-small .gt-enjeu { font-size: 8.5px; }
-  .treemap-growth .gt-small .gt-name { font-size: 11px; }
+  .treemap-growth .gt-small { padding: 10px 11px; }
+  .treemap-growth .gt-small .gt-title { font-size: 15px; }
+  .treemap-growth .gt-small .gt-news-head { font-size: 12px; -webkit-line-clamp: 2; }
+  .treemap-growth .gt-small .gt-news-media { font-size: 0.65em; -webkit-line-clamp: 1; margin-top: 3px; }
   .treemap-growth .gt-small .gt-pct { font-size: 16px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
   .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
+  /* infobulle flottante des petites tuiles (nom + manchette + médias) */
+  .treemap-growth .gt-tip {
+    z-index: 20;
+    pointer-events: none;
+    max-width: 300px;
+    min-width: 170px;
+    margin: 5px;
+    background: #26221e;
+    color: #F3ECDD;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    padding: 10px 12px;
+    box-shadow: 0 6px 18px rgba(28, 25, 23, 0.3);
+  }
+  .treemap-growth .gt-tip-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.15;
+    margin-bottom: 6px;
+    border-left: 3px solid var(--c, #463E3E);
+    padding-left: 8px;
+  }
+  .treemap-growth .gt-tip-head {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .treemap-growth .gt-tip-media {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    opacity: 0.75;
+    line-height: 1.4;
+    margin-top: 6px;
+  }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 36px;
@@ -3275,37 +3368,12 @@
     .treemap-legend { display: none; }
 
     /* ── Assemblée nationale : cartes ── */
-    .ass-row.header { display: none; }
-    .ass-row {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 18px 0;
-      border-bottom: 0.5px solid var(--rule);
-    }
-    .ass-row .parti-name-box { align-self: flex-start; }
-    .ass-row .ass-issue { width: 100%; }
+    .ass-card { padding: 18px 0; gap: 10px; }
+    .ass-card-figure { font-size: 26px; }
     .enjeu-stack { height: 20px; }
     .enjeu-stack .seg { font-size: 8px; padding: 0 6px; }
-    .ass-angle { font-size: 14px; margin-top: 6px; display: block; }
-    .ass-ton-label {
-      display: block;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 8px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--ink-softer);
-      white-space: nowrap;
-      margin-bottom: 6px;
-    }
-    .ass-row .ass-tone {
-      display: block;
-      height: 14px;
-      width: 100%;
-    }
-    .ass-row .ass-tone::before { content: none; }
-    .ass-row .ass-words,
-    .ass-row .ass-richness { display: none; }
+    .ass-card-angle { font-size: 14px; }
+    .ass-card-stats { grid-template-columns: 1fr; gap: 14px; }
     .period-subtitle { font-size: 10px; margin-top: 4px; }
     .in-shadow .ass-empty { font-size: 13px; }
 
@@ -4862,104 +4930,296 @@
 
 /* ===== Easter egg : Flappy Enjeux — « Chasse à la une » (presse deluxe) ===== */
 .flappy-cabinet {
-  --ink: #26221e; --cream: #f7f4ef; --gold: #c29a45;
-  max-width: 900px; margin: 0 auto; background: var(--cream);
-  border: 2px solid var(--ink); border-radius: 10px; overflow: hidden;
-  animation: flappy-in 420ms ease both;
+  --ink: #1C1917;
+  --paper: #F3ECDD;
+  --paper-deep: #ECE3CF;
+  --cordovan: #6B1E2A;
+  --rule: #C8BDA6;
+  max-width: 100%;
+  margin: 0 auto;
+  background: var(--paper);
+  border: none;
+  box-shadow: none;
+  overflow: hidden;
+  animation: flappy-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes flappy-in {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) { .flappy-cabinet { animation: none; } }
 
 .flappy-masthead {
-  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
-  background: var(--ink); color: var(--cream);
-  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 2px solid var(--cordovan);
 }
 .flappy-brand {
-  font-family: Georgia, "Times New Roman", serif; font-weight: 700;
-  letter-spacing: 0.14em; font-size: 0.82rem; text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--paper);
 }
-.flappy-score-hud { margin-left: auto; font-family: Georgia, serif; font-size: 0.9rem; }
-.flappy-score-hud b { color: var(--gold); font-size: 1.05rem; }
-.flappy-score-hud em { color: var(--gold); font-style: normal; }
+.flappy-score-hud {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-deep);
+}
+.flappy-score-hud b {
+  color: #A3E635;
+  font-size: 14px;
+}
+.flappy-score-hud em {
+  color: #FFAAAA;
+  font-style: normal;
+}
 .flappy-quit {
-  background: transparent; color: var(--cream); border: 1px solid rgba(247, 244, 239, 0.4);
-  border-radius: 4px; width: 26px; height: 26px; cursor: pointer; line-height: 1;
+  background: transparent;
+  color: var(--paper);
+  border: 0.5px solid rgba(243, 236, 221, 0.3);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  line-height: 1;
+  font-family: sans-serif;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
 }
-.flappy-quit:hover { background: rgba(247, 244, 239, 0.15); }
+.flappy-quit:hover { background: rgba(243, 236, 221, 0.15); }
 
 .flappy-target {
-  display: flex; flex-direction: column; gap: 2px; padding: 8px 14px;
-  border-bottom: 1px solid rgba(38, 34, 30, 0.18); background: rgba(194, 154, 69, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 18px;
+  border-bottom: 0.5px solid var(--rule);
+  background: var(--paper-deep);
 }
-.flappy-target-kicker { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
-.flappy-target-head { font-family: Georgia, serif; font-style: italic; font-size: 1.02rem; color: var(--ink); }
+.flappy-target-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+.flappy-target-head {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.35;
+}
 
 .flappy-stage { position: relative; width: 100%; line-height: 0; }
 .flappy-canvas {
-  width: 100%; height: auto; display: block; touch-action: none; cursor: pointer;
-  background: var(--cream);
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+  background: var(--paper);
 }
 
 .flappy-overlay {
-  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px;
-  align-items: center; justify-content: center; text-align: center; padding: 24px;
-  background: rgba(247, 244, 239, 0.9); line-height: 1.5;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
+  line-height: 1.5;
+  backdrop-filter: blur(2px);
 }
 .flappy-title {
-  font-family: Georgia, serif; font-weight: 700; font-size: 1.7rem; margin: 0; color: var(--ink);
-  border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 30px;
+  margin: 0;
+  color: var(--ink);
+  border-bottom: 2px solid var(--cordovan);
+  padding-bottom: 6px;
 }
-.flappy-hint { margin: 0; font-size: 0.92rem; max-width: 46ch; color: var(--ink); }
-.flappy-score { margin: 0; font-size: 1.1rem; font-family: Georgia, serif; }
-.flappy-score b { color: var(--gold); font-size: 1.6rem; }
+.flappy-hint {
+  margin: 0;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  max-width: 48ch;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.flappy-score {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.flappy-score b { color: var(--cordovan); font-size: 24px; font-family: 'Playfair Display', serif; }
 
 .flappy-cta {
-  padding: 8px 22px; border: 2px solid var(--ink); border-radius: 6px; cursor: pointer;
-  background: var(--gold); color: var(--ink); font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; font-size: 0.9rem;
+  padding: 10px 26px;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  background: var(--cordovan);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+  transition: background 0.18s ease, color 0.18s ease;
 }
-.flappy-cta:hover { background: var(--ink); color: var(--cream); }
+.flappy-cta:hover { background: var(--ink); color: var(--paper); }
 
-.flappy-initials { display: flex; gap: 8px; align-items: center; }
-.flappy-initials label { font-size: 0.85rem; }
-.flappy-initials input {
-  width: 4.2rem; text-transform: uppercase; text-align: center; letter-spacing: 0.35em;
-  font-size: 1.2rem; padding: 4px; border: 2px solid var(--ink); border-radius: 4px; font-family: Georgia, serif;
+.flappy-initials { display: flex; gap: 10px; align-items: center; }
+.flappy-initials label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
-.flappy-initials button { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; cursor: pointer; }
-.flappy-board { list-style: none; padding: 0; margin: 0; width: 240px; font-family: Georgia, serif; }
-.flappy-board li { display: grid; grid-template-columns: 2rem 1fr 3rem; gap: 8px; padding: 3px 0; border-bottom: 1px dotted rgba(38,34,30,0.25); }
-.flappy-board li span:last-child { text-align: right; color: var(--gold); font-weight: 700; }
-.flappy-board li.is-new { color: #B00020; font-weight: 700; }
+.flappy-initials input {
+  width: 4.8rem;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.35em;
+  font-size: 1.2rem;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.flappy-initials button {
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.flappy-initials button:hover { background: var(--ink); color: var(--paper); }
+
+.flappy-board-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.flappy-board-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+.flappy-board {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 260px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+.flappy-board li {
+  display: grid;
+  grid-template-columns: 2rem 1fr 4rem;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.flappy-board li span:last-child { text-align: right; color: var(--cordovan); font-weight: 700; }
+.flappy-board li.is-new { color: var(--cordovan); font-weight: 700; background: rgba(107, 30, 42, 0.08); }
 .flappy-actions { display: flex; gap: 10px; }
-.flappy-actions button:not(.flappy-cta) { padding: 8px 16px; border: 1px solid var(--ink); border-radius: 6px; background: #fff; cursor: pointer; }
+.flappy-actions button:not(.flappy-cta) {
+  padding: 10px 18px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.flappy-actions button:not(.flappy-cta):hover { border-color: var(--ink); color: var(--cordovan); }
 
 .flappy-scoop {
-  position: absolute; top: 16%; left: 50%; transform: translateX(-50%) rotate(-6deg);
-  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
   animation: flappy-scoop 1100ms ease-out both;
 }
 .flappy-scoop-stamp {
-  font-family: Georgia, serif; font-weight: 800; font-size: 2.2rem; letter-spacing: 0.08em;
-  color: var(--gold); -webkit-text-stroke: 1.5px var(--ink); text-stroke: 1.5px var(--ink);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 800;
+  font-size: 2.4rem;
+  letter-spacing: 0.08em;
+  color: var(--cordovan);
+  -webkit-text-stroke: 1px var(--paper);
+  text-stroke: 1px var(--paper);
 }
-.flappy-scoop-issue { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); }
+.flappy-scoop-issue {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: var(--paper);
+  padding: 2px 8px;
+  border: 0.5px solid var(--rule);
+  margin-top: 4px;
+}
 @keyframes flappy-scoop {
-  0% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(0.4); }
-  25% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1.1); }
-  70% { opacity: 1; transform: translateX(-50%) rotate(-6deg) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) rotate(-6deg) scale(1); }
+  0% { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(0.4); }
+  25% { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(1.1); }
+  70% { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(1); }
 }
 
-.flappy-foot { margin: 0; padding: 6px 14px; font-size: 0.72rem; color: rgba(38,34,30,0.6); border-top: 1px solid rgba(38,34,30,0.14); text-align: center; }
+.flappy-foot {
+  margin: 0;
+  padding: 8px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  border-top: 0.5px solid var(--rule-faint);
+  text-align: center;
+}
 
 @media (max-width: 640px) {
-  .flappy-brand { font-size: 0.66rem; letter-spacing: 0.08em; }
-  .flappy-target-head { font-size: 0.9rem; }
-  .flappy-title { font-size: 1.3rem; }
-  .flappy-hint { font-size: 0.82rem; }
+  .flappy-brand { font-size: 9.5px; letter-spacing: 0.14em; }
+  .flappy-target-head { font-size: 13.5px; }
+  .flappy-title { font-size: 22px; }
+  .flappy-hint { font-size: 13px; }
 }
