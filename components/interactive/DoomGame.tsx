@@ -41,16 +41,16 @@ export function DoomGame({ onExit }: { onExit: () => void }) {
 
       <div className="doom-stage">
         <iframe
-          src="https://dos.zone/player/?bundleUrl=https%3A%2F%2Fcdn.dos.zone%2Fcustom%2Fdos%2Fdoom.jsdos&anonymous=1"
+          src="https://raz0red.github.io/webprboom/"
           className="doom-iframe"
-          title="DOOM — Open Source Game Player"
-          allow="autoplay; keyboard; fullscreen"
+          title="DOOM WebAssembly Player (WebPrBoom)"
+          allow="autoplay; keyboard; fullscreen; gamepad"
           allowFullScreen
         />
       </div>
 
       <p className="doom-foot">
-        Easter Egg Déverrouillé (3 Taps sur PCQ) · DOOM Shareware (id Software 1993, Open Source engine)
+        Easter Egg Déverrouillé (3 Taps sur PCQ) · DOOM WebAssembly (id Software / WebPrBoom Open Source)
       </p>
     </div>
   );
