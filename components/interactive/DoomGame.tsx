@@ -15,22 +15,31 @@ export function DoomGame({ onExit }: { onExit: () => void }) {
   }, [onExit]);
 
   return (
-    <div className="doom-seamless-wrap" role="group" aria-label="Jeu caché DOOM">
-      <button
-        type="button"
-        className="doom-close-badge"
-        onClick={onExit}
-        aria-label="Fermer le jeu DOOM"
-      >
-        ✕ Fermer (Échap)
-      </button>
-      <iframe
-        src="https://raz0red.github.io/webprboom/"
-        className="doom-iframe-seamless"
-        title="DOOM — Open Source Game"
-        allow="autoplay; keyboard; fullscreen; gamepad"
-        allowFullScreen
-      />
+    <div className="doom-seamless-wrap" role="group" aria-label="DOOM — Knee-Deep in the Media">
+      <div className="doom-editorial-header">
+        <div className="doom-header-titles">
+          <span className="doom-header-brand">LA VITRINE · ÉDITION SPÉCIALE 💥</span>
+          <span className="doom-header-sub">« KNEE-DEEP IN THE MEDIA » · ÉRIC DUHAIME VS THE PRESS</span>
+        </div>
+        <button
+          type="button"
+          className="doom-close-badge"
+          onClick={onExit}
+          aria-label="Fermer DOOM"
+        >
+          ✕ Fermer (Échap)
+        </button>
+      </div>
+
+      <div className="doom-stage-container">
+        <iframe
+          src="https://raz0red.github.io/webprboom/"
+          className="doom-iframe-seamless"
+          title="DOOM — Knee-Deep in the Media"
+          allow="autoplay; keyboard; fullscreen; gamepad"
+          allowFullScreen
+        />
+      </div>
     </div>
   );
 }

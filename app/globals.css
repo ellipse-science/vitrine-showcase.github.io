@@ -5198,7 +5198,7 @@
   .flappy-actions button { padding: 8px 14px; font-size: 10px; }
 }
 
-/* DOOM PCQ Easter Egg - Clean Borderless Game View */
+/* DOOM PCQ Easter Egg - Knee-Deep in the Media Editorial Header */
 .doom-seamless-wrap {
   position: relative;
   width: 100%;
@@ -5206,26 +5206,63 @@
   margin: 0;
   overflow: hidden;
   background: var(--paper-deep);
-  border: none;
-  box-shadow: none;
+  border: 0.5px solid var(--rule);
+}
+
+.doom-editorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--paper-deep);
+  border-bottom: 0.5px solid var(--rule);
+  gap: 12px;
+}
+
+.doom-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doom-header-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+
+.doom-header-sub {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.doom-stage-container {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 48px);
+  overflow: hidden;
 }
 
 .doom-close-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  position: relative;
   z-index: 20;
   background: var(--paper);
   color: var(--ink);
   border: 0.5px solid var(--rule);
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
@@ -5248,13 +5285,23 @@
   .doom-seamless-wrap {
     aspect-ratio: 4 / 3;
   }
+  .doom-editorial-header {
+    padding: 8px 12px;
+  }
+  .doom-header-brand {
+    font-size: 9px;
+  }
+  .doom-header-sub {
+    font-size: 12.5px;
+  }
+  .doom-stage-container {
+    height: calc(100% - 42px);
+  }
   .doom-iframe-seamless {
     transform: scale(1.24);
   }
   .doom-close-badge {
     padding: 4px 8px;
     font-size: 10px;
-    top: 6px;
-    right: 6px;
   }
 }
