@@ -1,5 +1,11 @@
 [
   {
+    "pr": 356,
+    "date": "2026-07-28T15:56:56Z",
+    "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
+    "version": "2.15.0-beta.9"
+  },
+  {
     "pr": 353,
     "date": "2026-07-28T13:59:20Z",
     "note": "Ne change aucune table, raffineur ou colonne.",
