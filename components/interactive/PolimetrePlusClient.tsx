@@ -316,7 +316,12 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                   <li
                     key={p.pledgeNumber}
                     className={cls}
-                    aria-label={p.verdictLabel || undefined}
+                    /* Le nom accessible doit d'abord dire SUR QUOI porte le bouton.
+                       L'aria-label écrase le contenu : avec le seul verdict, un
+                       lecteur d'écran annonçait « Réalisée, bouton » sans jamais
+                       nommer la promesse. Le verdict reste en second — il n'est
+                       porté que par la couleur, donc invisible sans la vue. */
+                    aria-label={p.verdictLabel ? `${p.title} — ${p.verdictLabel}` : p.title}
                     role="button"
                     tabIndex={0}
                     aria-expanded={open}

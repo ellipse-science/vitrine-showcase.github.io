@@ -4296,6 +4296,10 @@
   }
   .ppl-promise:hover .ppl-chevron,
   .ppl-promise:focus-visible .ppl-chevron { color: var(--cordovan); }
+  /* Symétrie souris / clavier : le survol donne deux signaux (chevron + barre de
+     gauche), le focus n'en donnait qu'un. La bague cordovan aligne le rang sur
+     .billiard-ball et .share-btn. */
+  .ppl-promise:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
   .ppl-promise--open .ppl-chevron { transform: rotate(180deg); color: var(--cordovan); }
   /* La rangée entière s'éclaircit au survol : deuxième signal de cliquabilité,
      cohérent avec le lavis déjà porté par le libellé. */
