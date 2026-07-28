@@ -1,5 +1,11 @@
 [
   {
+    "pr": 339,
+    "date": "2026-07-28T13:39:00Z",
+    "note": "Sur téléphone, les six histoires du radar « Deux solitudes » étaient coupées et illisibles. Elles se lisent maintenant en entier dans une liste sous le radar, dont les axes sont numérotés pour s'y retrouver.",
+    "version": "2.15.0-beta.4"
+  },
+  {
     "pr": 344,
     "date": "2026-07-28T13:36:26Z",
     "note": "Sur le radar « Deux solitudes », la catégorie affichée au-dessus du titre du haut n'est plus rognée quand le titre est long.",
