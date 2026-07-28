@@ -5218,6 +5218,65 @@
   gap: 12px;
 }
 
+.doom-episode-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--paper);
+  border-bottom: 0.5px solid var(--rule);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+
+.doom-episode-label {
+  color: var(--ink-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.doom-ep-btn {
+  background: var(--paper-deep);
+  color: var(--ink);
+  border: 0.5px solid var(--rule);
+  padding: 3px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.doom-ep-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.doom-ep-btn--cheat {
+  border-color: rgba(160, 52, 64, 0.4);
+  color: var(--cordovan);
+}
+.doom-ep-btn--cheat:hover {
+  background: var(--cordovan);
+  color: var(--paper);
+  border-color: var(--cordovan);
+}
+
+.doom-ep-sep {
+  color: var(--rule);
+  margin: 0 2px;
+}
+
+.doom-notice-toast {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--cordovan);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
 .doom-header-titles {
   display: flex;
   flex-direction: column;
