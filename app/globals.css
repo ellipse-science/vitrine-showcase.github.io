@@ -2107,10 +2107,10 @@
   }
   .billiard-popup-close:hover { opacity: 1; }
 
-  /* Panneau de détail de l'hémicycle : le corps réutilise les mêmes classes
-     qu'avant (enjeu-stack, ass-tone, ass-richness…), seul le conteneur change
-     — cf. AssembleeHemicycle.tsx. .ass-card / .ass-card-shadow restent aussi
-     utilisées pour la liste « Hors chambre ». */
+  /* Blocs de mesure partagés (enjeu-stack, ass-tone, ass-richness…) : le
+     dossier central du tableau d'enquête (AssembleeDossiers.tsx) les
+     réutilise tels quels. .ass-card / .ass-card-shadow servent à la liste
+     « Hors chambre ». */
   .ass-card {
     position: relative;
     padding: 26px 0 22px;
@@ -2203,6 +2203,7 @@
     gap: 26px;
   }
   .ass-tone {
+    display: block;
     height: 16px;
     background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
     position: relative;
@@ -2239,65 +2240,196 @@
     font-size: 15px;
   }
 
-  /* Hémicycle stylisé : demi-cercle en SVG, un quartier par parti (largeur =
-     poids en mots), un siège par député (taille = son propre poids en mots).
-     Cliquer ouvre le détail en dessous — cf. AssembleeHemicycle.tsx. */
-  .ass-hemi { display: flex; flex-direction: column; gap: 4px; }
-  .ass-hemi-svg {
-    display: block;
-    width: 100%;
-    max-width: 760px;
-    height: auto;
-    margin: 4px auto 0;
-    overflow: visible;
-    animation: assHemiIn 0.5s ease both;
+  /* Tableau d'enquête : une étagère de dossiers (un par parti). Cliquer un
+     dossier l'ouvre — la chemise du parti devient la pièce centrale, chaque
+     député une fiche satellite reliée par un fil pointillé, dimensionnée
+     selon sa contribution en mots — cf. AssembleeDossiers.tsx. */
+  .ass-dossiers { display: flex; flex-direction: column; gap: 20px; }
+  .ass-shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
   }
-  @keyframes assHemiIn {
-    from { opacity: 0; transform: scale(0.97); }
-    to { opacity: 1; transform: scale(1); }
+  .ass-folder {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    display: block;
+  }
+  .ass-folder-tab {
+    display: inline-block;
+    background: var(--c);
+    color: #F3ECDD;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 12px;
+  }
+  .ass-folder-cover {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: 0.5px solid var(--rule);
+    background: var(--paper-deep);
+    padding: 10px 12px 11px;
+  }
+  .ass-folder:not(.active) .ass-folder-tab { opacity: 0.55; }
+  .ass-folder:not(.active):hover .ass-folder-tab,
+  .ass-folder:focus-visible .ass-folder-tab { opacity: 1; }
+  .ass-folder.active .ass-folder-cover { border: 1.5px solid var(--c); }
+  .ass-folder:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  .ass-folder-words {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 21px;
+    color: var(--cordovan);
+    white-space: nowrap;
+  }
+  .ass-folder-words .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 4px;
+  }
+  .ass-folder-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+
+  .ass-board {
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 400px) 1fr;
+    column-gap: 26px;
+    row-gap: 18px;
+    align-items: start;
+    animation: assDossierIn 0.4s ease both;
+  }
+  @keyframes assDossierIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .ass-hemi-svg { animation: none; }
+    .ass-board { animation: none; }
   }
-  .ass-hemi-frame { fill: none; stroke: var(--brass); stroke-width: 1; }
-  .ass-hemi-baseline { stroke: var(--rule-faint); stroke-width: 1; }
-  .ass-hemi-divider { stroke: var(--rule-faint); stroke-width: 1; stroke-dasharray: 2 4; }
-  .ass-hemi-label { cursor: pointer; }
-  .ass-hemi-label-bg { fill: var(--c); }
-  .ass-hemi-label-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    fill: #F3ECDD;
-    pointer-events: none;
+  .ass-board-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 30px;
   }
-  .ass-hemi-label.selected .ass-hemi-label-bg { stroke: var(--brass); stroke-width: 2.5; }
-  .ass-hemi-label:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
-  .ass-hemi-seat { cursor: pointer; }
-  .ass-hemi-hit { fill: transparent; }
-  .ass-hemi-seat-dot {
-    stroke: var(--paper);
-    stroke-width: 0.75;
-    transition: stroke 0.15s ease, stroke-width 0.15s ease;
-  }
-  .ass-hemi-seat-dot.selected { stroke: var(--brass); stroke-width: 2.5; }
-  .ass-hemi-seat:focus-visible .ass-hemi-seat-dot { stroke: var(--cordovan); stroke-width: 2; }
+  .ass-board-col.left { align-items: flex-end; }
+  .ass-board-col.right { align-items: flex-start; }
 
-  .ass-hemi-detail {
-    padding-top: 18px;
-    margin-top: 10px;
-    border-top: 0.5px solid var(--rule);
+  .ass-dossier { display: flex; flex-direction: column; align-items: flex-start; }
+  .ass-dossier-tab {
+    background: var(--c);
+    color: #F3ECDD;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 5px 14px;
+  }
+  .ass-dossier-card {
+    border: 1px solid var(--c);
+    background: var(--paper);
+    padding: 14px 16px 18px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
-  .ass-hemi-detail-head {
+
+  .ass-fiche {
+    position: relative;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    border: 0.5px solid var(--rule);
+    background: var(--paper);
+    padding: 9px 12px 10px;
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    gap: 3px;
+    width: 210px;
   }
+  .ass-fiche.tier-2 { width: 185px; }
+  .ass-fiche.tier-1 { width: 160px; }
+  .ass-fiche:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  /* Fil pointillé + punaise reliant la fiche au dossier central */
+  .ass-fiche::after {
+    content: "";
+    position: absolute;
+    top: 21px;
+    width: 26px;
+    border-top: 1px dashed var(--rule);
+  }
+  .ass-board-col.left .ass-fiche::after { left: 100%; }
+  .ass-board-col.right .ass-fiche::after { right: 100%; }
+  .ass-fiche-pin {
+    position: absolute;
+    top: 18px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .ass-board-col.left .ass-fiche-pin { right: -3.5px; }
+  .ass-board-col.right .ass-fiche-pin { left: -3.5px; }
+  .ass-fiche-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .ass-fiche-words {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 23px;
+    color: var(--cordovan);
+    white-space: nowrap;
+  }
+  .ass-fiche.tier-2 .ass-fiche-words { font-size: 18px; }
+  .ass-fiche.tier-1 .ass-fiche-words { font-size: 15px; }
+  .ass-fiche-words .unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-left: 4px;
+  }
+  .ass-fiche-sigword {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.3;
+  }
+  .ass-fiche-more {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    border-top: 0.5px dashed var(--rule-faint);
+    padding-top: 8px;
+  }
+  .ass-fiche-more .ass-tone { height: 10px; }
 
   .ass-card-shadow {
     flex-direction: row;
@@ -3556,8 +3688,16 @@
     .ass-card-stats { grid-template-columns: 1fr; gap: 14px; }
     .period-subtitle { font-size: 10px; margin-top: 4px; }
     .in-shadow .ass-empty { font-size: 13px; }
-    .ass-hemi-label-text { font-size: 15px; }
-    .ass-hemi-detail-head { flex-wrap: wrap; }
+    .ass-shelf { grid-template-columns: repeat(auto-fit, minmax(102px, 1fr)); gap: 8px; }
+    .ass-folder-words { font-size: 16px; }
+    .ass-folder-hint { font-size: 7.5px; }
+    .ass-board { grid-template-columns: 1fr; row-gap: 12px; }
+    .ass-dossier { order: -1; }
+    .ass-board-col { padding-top: 0; gap: 10px; }
+    .ass-board-col.left, .ass-board-col.right { align-items: stretch; }
+    .ass-fiche, .ass-fiche.tier-2, .ass-fiche.tier-1 { width: 100%; border-left: 3px solid var(--c); }
+    .ass-fiche::after { display: none; }
+    .ass-fiche-pin { display: none; }
 
     /* ── Alerte consensus ── */
     .alerte-consensus { padding: 28px 16px 24px; }
