@@ -5202,7 +5202,6 @@
 .doom-seamless-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
   margin: 0;
   overflow: hidden;
   background: var(--paper-deep);
@@ -5245,8 +5244,9 @@
 .doom-stage-container {
   position: relative;
   width: 100%;
-  height: calc(100% - 48px);
+  height: 540px;
   overflow: hidden;
+  background: #1E1E1E;
 }
 
 .doom-close-badge {
@@ -5277,14 +5277,10 @@
   height: 100%;
   border: none;
   display: block;
-  transform: scale(1.18);
-  transform-origin: center center;
+  transform: none;
 }
 
 @media (max-width: 640px) {
-  .doom-seamless-wrap {
-    aspect-ratio: 4 / 3;
-  }
   .doom-editorial-header {
     padding: 8px 12px;
   }
@@ -5295,10 +5291,7 @@
     font-size: 12.5px;
   }
   .doom-stage-container {
-    height: calc(100% - 42px);
-  }
-  .doom-iframe-seamless {
-    transform: scale(1.24);
+    height: 380px;
   }
   .doom-close-badge {
     padding: 4px 8px;
