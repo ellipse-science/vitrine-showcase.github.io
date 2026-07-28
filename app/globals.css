@@ -5273,8 +5273,11 @@
 .doom-stage {
   position: relative;
   width: 100%;
-  height: 540px;
+  max-width: 720px;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
   background: var(--paper-deep);
+  overflow: hidden;
 }
 
 .doom-iframe {
@@ -5282,6 +5285,8 @@
   height: 100%;
   border: none;
   display: block;
+  transform: scale(1.06);
+  transform-origin: center center;
 }
 
 .doom-foot {
