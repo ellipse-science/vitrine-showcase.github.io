@@ -5198,7 +5198,7 @@
   .flappy-actions button { padding: 8px 14px; font-size: 10px; }
 }
 
-/* DOOM PCQ Easter Egg - Seamless Inline View */
+/* DOOM PCQ Easter Egg - Seamless DUHAIME Custom Game View */
 .doom-seamless-wrap {
   position: relative;
   width: 100%;
@@ -5210,23 +5210,61 @@
   border: 0.5px solid var(--rule);
 }
 
+.duhaime-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--paper-deep);
+  border-bottom: 0.5px solid var(--rule);
+  gap: 12px;
+}
+
+.duhaime-logo-box {
+  display: flex;
+  align-items: center;
+  height: 38px;
+}
+
+.duhaime-logo-img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.duhaime-subtitle {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doom-stage-container {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 54px);
+}
+
 .doom-close-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  position: relative;
   z-index: 20;
   background: var(--paper);
   color: var(--ink);
   border: 0.5px solid var(--rule);
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 }
 .doom-close-badge:hover {
   background: var(--ink);
@@ -5243,14 +5281,60 @@
   transform-origin: center center;
 }
 
+.duhaime-hud-face {
+  position: absolute;
+  bottom: 0.8%;
+  left: 50.1%;
+  transform: translateX(-50%);
+  z-index: 15;
+  width: 36px;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid #4A4A4A;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);
+  background: #000000;
+  pointer-events: none;
+  transition: transform 0.15s ease;
+}
+
+.duhaime-face-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.duhaime-hud-face--lookLeft {
+  transform: translateX(-52%) rotate(-3deg);
+}
+
+.duhaime-hud-face--lookRight {
+  transform: translateX(-48%) rotate(3deg);
+}
+
+.duhaime-hud-face--grin {
+  transform: translateX(-50%) scale(1.1);
+  border-color: var(--cordovan);
+}
+
 @media (max-width: 640px) {
   .doom-seamless-wrap {
     max-width: 100%;
   }
+  .duhaime-subtitle {
+    display: none;
+  }
+  .duhaime-logo-img {
+    height: 28px;
+  }
+  .duhaime-hud-face {
+    width: 26px;
+    height: 28px;
+    bottom: 0.5%;
+  }
   .doom-close-badge {
     padding: 4px 8px;
     font-size: 10px;
-    top: 6px;
-    right: 6px;
   }
 }
