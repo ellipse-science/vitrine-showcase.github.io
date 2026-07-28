@@ -85,6 +85,31 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
     return () => ro.disconnect();
   }, []);
 
+  // Sous 768 px, les titres accrochés aux axes ne peuvent PAS tenir : un libellé
+  // latéral fait ~186 px et le radar 320 px de diamètre, soit ~720 px minimum
+  // pour ~326 px disponibles. Le défilement horizontal (avec fondu aux bords,
+  // #251) n'a pas suffi — les signalements #302 et #309 sont postérieurs. On
+  // détache donc les titres : le radar ne porte plus que des pastilles
+  // numérotées, et les six histoires se lisent dans une légende sous le radar.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    // Même borne que le bloc mobile du radar dans globals.css : au-delà, les
+    // libellés d'axes tiennent encore.
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    // addEventListener sur un MediaQueryList n'existe qu'à partir de Safari 14
+    // (iOS 14). Sans le repli, un iOS plus ancien lève « addEventListener is not
+    // a function » DANS l'effet, ce qui casse tout le module — précisément en
+    // mobile, le cas que cette version sert.
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
+  }, []);
+
   const axes = s.axes;
   const n = Math.max(axes.length, 1);
   const vals = axes.map((a) => ({ vqc: a.qcRadial, vcan: a.canRadial }));
@@ -134,8 +159,14 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       </div>
 
       {/* Radar */}
-      <div className="sol-radar" ref={radarRef}>
-        <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Saillance de chaque événement au Québec et au Canada, en percentile de sa région">
+      <div className={`sol-radar${narrow ? " compact" : ""}`} ref={radarRef}>
+        <svg
+          viewBox={narrow ? `${CX - R - 46} ${CY - R - 46} ${2 * (R + 46)} ${2 * (R + 46)}` : `0 0 ${W} ${H}`}
+          role="group"
+          aria-label={narrow
+            ? "Part de l’attention médiatique de chaque histoire au Québec et au Canada. Les six histoires sont numérotées et détaillées sous le radar."
+            : "Part de l’attention médiatique de chaque histoire au Québec et au Canada."}
+        >
           <circle className="radar-halo" cx={CX} cy={CY} r={R + 10} />
           {/* Balayage radar discret (clin d'œil radarplus.org) : un secteur
               qui tourne lentement, dégradé bleu très léger, sous la grille. */}
@@ -167,7 +198,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {/* Leaders en COUDE (2 segments) pointillés colorés : du point de données,
               une diagonale puis un court segment horizontal qui rentre dans le libellé,
               avec un point au coude et au bout. Axes haut/bas = ligne droite. */}
-          {axes.map((a, i) => {
+          {!narrow && axes.map((a, i) => {
             const mv = Math.max(vals[i].vqc, vals[i].vcan);
             if (!(mv > 0)) return null;
             const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
@@ -224,7 +255,20 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {/* Libellés d'événements + badges — TOUT centré sur l'axe. Le bloc se
               place au-dessus du point (axe du haut), en dessous (axe du bas) ou
               centré verticalement (côtés). */}
-          {axes.map((a, i) => {
+          {/* Écran étroit : une pastille numérotée au bout de chaque axe, le
+              titre part dans la légende sous le radar. */}
+          {narrow && axes.map((a, i) => {
+            const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+            const px = CX + (R + 26) * Math.cos(ang);
+            const py = CY + (R + 26) * Math.sin(ang);
+            return (
+              <g key={`num-${i}`} className={`radar-axnum side-${a.side}`}>
+                <circle cx={px.toFixed(1)} cy={py.toFixed(1)} r={13} />
+                <text x={px.toFixed(1)} y={(py + 5).toFixed(1)} textAnchor="middle">{i + 1}</text>
+              </g>
+            );
+          })}
+          {!narrow && axes.map((a, i) => {
             const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
             const cosA = Math.cos(ang), sinA = Math.sin(ang);
             const lx = CX + labelR(cosA) * cosA;
@@ -334,6 +378,36 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           })}
         </svg>
       </div>
+
+      {/* Légende des six histoires (écran étroit uniquement) : ce que les
+          libellés d'axes disent en desktop, en pleine largeur et lisible. */}
+      {narrow && (
+        <ol className="radar-legend">
+          {axes.map((a, i) => (
+            <li key={`lg-${i}`} className={`side-${a.side}`}>
+              <span className="lg-num" aria-hidden>{i + 1}</span>
+              <div className="lg-body">
+                {a.eyebrow && <p className="lg-eyebrow">{a.eyebrow.toUpperCase()}</p>}
+                <p className="lg-title">{a.label}</p>
+                <p className="lg-shares">
+                  <span className="qc">Québec {a.qcShare}&nbsp;%</span>
+                  <span className="can">Canada {a.canShare}&nbsp;%</span>
+                </p>
+                {a.media.length > 0 && (
+                  <p className="lg-media">
+                    {a.media.map((m) => m.url ? (
+                      <a key={m.id} className={`chip-${m.region}`} href={m.url} target="_blank" rel="noopener noreferrer"
+                        aria-label={`Dernier article de ${m.name} sur ${a.label}`}>{m.badge}</a>
+                    ) : (
+                      <span key={m.id} className={`chip-${m.region}`} aria-label={`${m.name} a couvert : ${a.label}`}>{m.badge}</span>
+                    ))}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
 
       {/* Score signature + jauge relative + bulle éditoriale */}
       <div className="sol-stat">
