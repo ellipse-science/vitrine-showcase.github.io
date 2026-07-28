@@ -5047,11 +5047,11 @@
   color: var(--ink-soft);
 }
 .flappy-initials input {
-  width: 4.8rem;
+  width: 7.2rem;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 0.35em;
-  font-size: 1.2rem;
+  letter-spacing: 0.15em;
+  font-size: 1.1rem;
   padding: 6px;
   border: 1px solid var(--rule);
   background: var(--paper);
@@ -5090,13 +5090,13 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  width: 260px;
+  width: 280px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
 }
 .flappy-board li {
   display: grid;
-  grid-template-columns: 2rem 1fr 4rem;
+  grid-template-columns: 1.8rem 1fr 3.5rem;
   gap: 8px;
   padding: 5px 0;
   border-bottom: 0.5px solid var(--rule-faint);
