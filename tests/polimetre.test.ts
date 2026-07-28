@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/polimetre";
 
-const { realText, shortenPledge, buildView } = __test__;
+const { realText, shortenPledge, buildView, snapshotWindow } = __test__;
 
 // Ligne minimale du datamart ; les surcharges portent le cas testé.
 function row(over: Record<string, unknown> = {}) {
@@ -144,5 +144,104 @@ describe("buildView — libellé court et résumé IA", () => {
     ];
     const view = buildView(rows, WEEK, []);
     expect(view.map((p) => p.title)).toEqual(["Libellé IA", shortenPledge(row().pledge_text_fr)]);
+  });
+});
+
+// « flat » affiche « Aucun changement » : l'afficher faute de point de comparaison
+// serait une affirmation fausse. D'où l'état « unknown ».
+describe("buildView — tendance sans période de comparaison", () => {
+  const WEEK = ["2026-07-24"];
+
+  it("renvoie unknown quand la période précédente n'a pas été publiée", () => {
+    const [p] = buildView([row()], WEEK, []);
+    expect(p.trend).toEqual({ dir: "unknown", delta: 0 });
+  });
+
+  it("renvoie unknown pour une promesse absente de la période précédente", () => {
+    const rows = [
+      row({ pledge_number: "1", week_end_date: "2026-07-17", salience_index: 5 }),
+      row({ pledge_number: "1", week_end_date: "2026-07-24", salience_index: 8 }),
+      row({ pledge_number: "2", week_end_date: "2026-07-24", salience_index: 20 }), // entrante
+    ];
+    const view = buildView(rows, WEEK, ["2026-07-17"]);
+    expect(view.find((p) => p.pledgeNumber === "2")!.trend.dir).toBe("unknown");
+  });
+
+  it("distingue un rang réellement inchangé", () => {
+    const rows = [
+      row({ pledge_number: "1", week_end_date: "2026-07-17", salience_index: 20 }),
+      row({ pledge_number: "2", week_end_date: "2026-07-17", salience_index: 10 }),
+      row({ pledge_number: "1", week_end_date: "2026-07-24", salience_index: 30 }),
+      row({ pledge_number: "2", week_end_date: "2026-07-24", salience_index: 15 }),
+    ];
+    const view = buildView(rows, WEEK, ["2026-07-17"]);
+    expect(view.map((p) => p.trend.dir)).toEqual(["flat", "flat"]);
+  });
+});
+
+// Chaque snapshot couvre une fenêtre GLISSANTE de 7 jours. La sélection doit donc
+// se faire par date, jamais par position de ligne, sous peine d'additionner des
+// fenêtres qui se recouvrent.
+describe("snapshotWindow — fenêtres disjointes quelle que soit la cadence", () => {
+  const FRIDAYS = [
+    "2026-06-05", "2026-06-12", "2026-06-19", "2026-06-26",
+    "2026-07-03", "2026-07-10", "2026-07-17", "2026-07-24",
+  ];
+
+  it("suit les pas de 7 jours en publication hebdomadaire", () => {
+    expect(snapshotWindow(FRIDAYS, "2026-07-24", 4)).toEqual([
+      "2026-07-24", "2026-07-17", "2026-07-10", "2026-07-03",
+    ]);
+  });
+
+  // Régression : en cadence quotidienne, prendre les 4 dernières LIGNES donnait
+  // 4 jours consécutifs, chevauchés à 6/7 — la même couverture comptée 4 fois.
+  it("ignore les snapshots intermédiaires en publication quotidienne", () => {
+    const daily = [
+      "2026-07-06", "2026-07-13", "2026-07-20",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27",
+    ];
+    expect(snapshotWindow(daily, "2026-07-27", 4)).toEqual([
+      "2026-07-27", "2026-07-20", "2026-07-13", "2026-07-06",
+    ]);
+  });
+
+  it("laisse un trou quand un run a été manqué plutôt que d'emprunter un voisin", () => {
+    const withGap = ["2026-07-03", "2026-07-10", "2026-07-24"]; // 2026-07-17 jamais publié
+    expect(snapshotWindow(withGap, "2026-07-24", 4)).toEqual(["2026-07-24", "2026-07-10", "2026-07-03"]);
+  });
+
+  it("tolère un snapshot décalé de moins d'une demi-semaine", () => {
+    expect(snapshotWindow(["2026-07-24", "2026-07-15"], "2026-07-24", 2)).toEqual([
+      "2026-07-24", "2026-07-15",
+    ]);
+  });
+
+  it("ne réutilise jamais deux fois le même snapshot", () => {
+    expect(snapshotWindow(["2026-07-24"], "2026-07-24", 4)).toEqual(["2026-07-24"]);
+  });
+
+  // Cas réel du 28 juillet : reprise de publication 4 jours après le dernier
+  // snapshot. Les deux fenêtres se recouvrent sur 3 jours — les additionner
+  // compterait cette couverture deux fois. La tolérance seule les acceptait.
+  it("écarte un snapshot trop rapproché même s'il tombe dans la tolérance", () => {
+    const resumed = ["2026-07-03", "2026-07-10", "2026-07-24", "2026-07-28"];
+    expect(snapshotWindow(resumed, "2026-07-28", 4)).toEqual(["2026-07-28", "2026-07-10"]);
+  });
+
+  it("garde au moins 7 jours entre deux snapshots retenus, quelle que soit la cadence", () => {
+    const dense = ["2026-07-02", "2026-07-09", "2026-07-12", "2026-07-16", "2026-07-23", "2026-07-30"];
+    const picked = snapshotWindow(dense, "2026-07-30", 4);
+    const gaps = picked.slice(1).map((w, i) => (Date.parse(picked[i]) - Date.parse(w)) / 86_400_000);
+    expect(gaps.every((g) => g >= 7)).toBe(true);
+  });
+
+  // La fenêtre précédente sert au calcul des tendances : elle doit être disjointe
+  // de la courante, sinon la flèche compare deux périodes qui se recouvrent.
+  it("produit une fenêtre précédente sans intersection avec la courante", () => {
+    const current = snapshotWindow(FRIDAYS, "2026-07-24", 4);
+    const previous = snapshotWindow(FRIDAYS, "2026-07-24", 4, 4);
+    expect(previous).toEqual(["2026-06-26", "2026-06-19", "2026-06-12", "2026-06-05"]);
+    expect(current.filter((w) => previous.includes(w))).toEqual([]);
   });
 });

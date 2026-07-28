@@ -44,9 +44,17 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
       </span>
     );
   }
+  if (trend.dir === "flat") {
+    return (
+      <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
+        —
+      </span>
+    );
+  }
+  // Pas de rang antérieur comparable : on n'affirme rien sur le mouvement.
   return (
-    <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
-      —
+    <span className="ppl-trend ppl-trend--unknown" aria-label="Aucune période de comparaison" title="Aucune période de comparaison">
+      ·
     </span>
   );
 }
