@@ -88,31 +88,31 @@ export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
 type ExtractedObject = { object: string; score: number };
 
 const ISSUE_COLORS: Record<string, string> = {
-  economy_and_labour: "#742630",
-  governments_and_governance: "#6F5828",
-  health_and_social_services: "#7D5358",
-  environment_and_energy: "#5F6E36",
-  rights_liberties_minorities_discrimination: "#5F4E78",
-  culture_and_nationalism: "#35604E",
-  education: "#7A5A23",
-  international_affairs_and_defense: "#304860",
-  law_and_crime: "#463E3E",
-  public_lands_and_agriculture: "#7D5132",
-  immigration: "#8B6914",
-  technology: "#3A5F70",
+  economy_and_labour: "#94781B",
+  governments_and_governance: "#234E78",
+  health_and_social_services: "#852244",
+  environment_and_energy: "#3D6B3A",
+  rights_liberties_minorities_discrimination: "#553278",
+  culture_and_nationalism: "#384873",
+  education: "#752373",
+  international_affairs_and_defense: "#1F5E66",
+  law_and_crime: "#993322",
+  public_lands_and_agriculture: "#5E731F",
+  immigration: "#9E541B",
+  technology: "#997018",
 };
 
 const ISSUE_LABELS_SHORT: Record<string, string> = {
   economy_and_labour: "Économie et travail",
-  governments_and_governance: "Gouvernements",
-  health_and_social_services: "Santé",
-  environment_and_energy: "Environnement",
-  rights_liberties_minorities_discrimination: "Droits et libertés",
-  culture_and_nationalism: "Culture",
+  governments_and_governance: "Gouvernements et gouvernance",
+  health_and_social_services: "Santé et politiques sociales",
+  environment_and_energy: "Environnement et énergie",
+  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
+  culture_and_nationalism: "Culture et nationalisme",
   education: "Éducation",
-  international_affairs_and_defense: "Aff. internationales",
+  international_affairs_and_defense: "Affaires internationales et défense",
   law_and_crime: "Loi et crime",
-  public_lands_and_agriculture: "Terres publiques",
+  public_lands_and_agriculture: "Terres publiques et agriculture",
   immigration: "Immigration",
   technology: "Technologie",
 };
@@ -1280,6 +1280,8 @@ export type TreemapIssueTile = {
   growth: number | null;
   /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
   articles: { title: string; url: string | null }[];
+  /** Médias QC qui couvrent l'enjeu aujourd'hui (affiché au survol des tuiles). */
+  outlets: { name: string; url: string | null }[];
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -1598,8 +1600,13 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
 // du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
 // décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
 // (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
-async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: string | null }[]>> {
-  const map = new Map<string, { title: string; url: string | null }[]>();
+type IssueMedia = {
+  articles: { title: string; url: string | null }[];
+  outlets: { name: string; url: string | null }[];   // médias QC qui couvrent l'enjeu (comme la byline « Une des unes »)
+};
+
+async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+  const map = new Map<string, IssueMedia>();
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
   const allRaw = JSON.parse(rawEvents) as RawEvent[];
@@ -1618,20 +1625,48 @@ async function loadArticlesByIssue(): Promise<Map<string, { title: string; url: 
     const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
     const seen = new Set<string>();
     const list: { title: string; url: string | null }[] = [];
+    const qcIds = new Set<string>();
+    const urlByMedia: Record<string, string> = {};
     for (const e of sorted) {
       const title = (e.title ?? "").trim();
-      if (!title) continue;
-      const url = e.representative_url ?? null;
-      const dedupKey = url ?? title;
-      if (seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
-      list.push({ title, url });
-      if (list.length >= 5) break;
+      if (title) {
+        const url = e.representative_url ?? null;
+        const dedupKey = url ?? title;
+        if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
+      }
+      // Médias QC couvrant cet événement (exclusivité médias québécois)
+      let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
+      if (ids.length === 0 && e.media_ids) {
+        ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      }
+      ids.forEach((id) => {
+        if (QC_MEDIA.includes(id)) qcIds.add(id);
+      });
+      for (const k of ["articles_24h", "articles"] as const) {
+        try {
+          const parsed = JSON.parse((e[k] as string) ?? "[]");
+          if (Array.isArray(parsed)) for (const a of parsed as { media_id?: string; url?: string }[]) {
+            if (a.media_id && a.url && QC_MEDIA.includes(a.media_id) && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+          }
+        } catch { /* champ absent ou malformé */ }
+      }
     }
-    map.set(issueKey, list);
+    const outlets = QC_MEDIA
+      .filter((id) => qcIds.has(id))
+      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
+    map.set(issueKey, { articles: list.slice(0, 5), outlets });
   }
   return map;
 }
+
+const QC_MEDIA_DOMAINS: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "radio-canada.ca": "Radio-Canada",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "journaldemontreal.com": "Journal de Montréal",
+  "montrealgazette.com": "Montreal Gazette",
+};
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
@@ -1688,10 +1723,19 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
+      let outlets = articlesByIssue.get(issueKey)?.outlets ?? [];
+      if (outlets.length === 0 && url) {
+        for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
+          if (url.includes(domain)) {
+            outlets = [{ name, url }];
+            break;
+          }
+        }
+      }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey) ?? [] };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).

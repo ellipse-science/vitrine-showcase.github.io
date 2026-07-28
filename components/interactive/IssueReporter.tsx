@@ -5,7 +5,17 @@ import React, { useEffect, useRef, useState } from 'react'
 const REPO = 'ellipse-science/vitrine-showcase.github.io'
 const MAX_B64_CHARS = 45_000 // garde une marge sous la limite de 65 535 du dispatch
 
+// Voie de repli quand la chaîne de signalement est cassée (#335). Même adresse
+// que la page « À propos » — une seule adresse publique à maintenir.
+const CONTACT_EMAIL = 'capp@ulaval.ca'
+
 type UIState = 'idle' | 'menu' | 'modal' | 'submitting' | 'success' | 'error'
+
+// Nature de l'échec — pilote le message affiché (#335). Un 502 (la chaîne est
+// cassée chez nous) n'appelle pas la même consigne qu'une coupure réseau chez
+// l'utilisateur : dire « réessayez dans quelques instants » à quelqu'un dont le
+// signalement ne passera pas avant réparation, c'est le renvoyer échouer.
+type FailureKind = 'serveur' | 'reseau' | 'configuration'
 
 interface ReportContext {
   section: string
@@ -48,6 +58,8 @@ export function IssueReporter() {
   const [reporterName, setReporterName] = useState('')
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [screenshotError, setScreenshotError] = useState('')
+  const [failureKind, setFailureKind] = useState<FailureKind | null>(null)
+  const [copied, setCopied] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -90,8 +102,10 @@ export function IssueReporter() {
     if (uiState === 'modal') nameInputRef.current?.focus()
   }, [uiState])
 
+  // Un brouillon qui a survécu à un envoi échoué n'est PAS écrasé quand on
+  // rouvre le formulaire (#335) : c'est la seule copie du texte de la personne.
   const openModal = () => {
-    setDescription('')
+    if (!failureKind) setDescription('')
     setUiState('modal')
   }
 
@@ -105,13 +119,35 @@ export function IssueReporter() {
     openModal()
   }
 
-  const handleClose = () => {
-    setUiState('idle')
+  // Ferme sans rien jeter tant qu'un envoi a échoué : le texte doit rester
+  // récupérable (rouvrir le formulaire le retrouve) — c'est le cul-de-sac
+  // décrit dans #335. Le brouillon n'est vidé que sur un envoi réussi ou sur un
+  // abandon explicite.
+  const discardDraft = () => {
     setDescription('')
     setReporterName('')
     setScreenshotFile(null)
     setScreenshotError('')
+    setFailureKind(null)
+    setCopied(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleClose = () => {
+    // Pendant l'envoi, le bouton « Annuler » est déjà désactivé, mais le clic sur
+    // l'arrière-plan, lui, passait encore. La requête, elle, continue : au retour
+    // elle repassait le composant en success/error sur un modal que la personne
+    // venait de fermer, et le brouillon avait déjà été jeté au passage. Tant que
+    // l'envoi est en cours, fermer ne veut rien dire — on attend la réponse.
+    if (uiState === 'submitting') return
+    setUiState('idle')
+    setCopied(false)
+    if (!failureKind) discardDraft()
+  }
+
+  const handleDiscard = () => {
+    setUiState('idle')
+    discardDraft()
   }
 
   const selectFile = (file: File) => {
@@ -158,9 +194,40 @@ export function IssueReporter() {
 
   const canSubmit = description.trim().length > 0 && reporterName.trim().length > 0
 
+  // Courriel de repli pré-rempli avec ce que la personne vient d'écrire (#335).
+  // La capture d'écran ne peut pas voyager dans un `mailto:` — on le dit plutôt
+  // que de la perdre en silence.
+  const mailtoHref = () => {
+    const lignes = [
+      'Ce signalement n’a pas pu être transmis depuis le site. Ce courriel prend le relais.',
+      '',
+      `Nom : ${reporterName.trim()}`,
+      `Module : ${reportCtx.section || 'non précisé'}`,
+    ]
+    if (reportCtx.elementContext) lignes.push(`Contexte visible : ${reportCtx.elementContext}`)
+    if (screenshotFile) lignes.push('', '(Une capture d’écran était jointe au signalement — à rattacher à ce courriel.)')
+    lignes.push('', 'Description :', description.trim())
+    return `mailto:${CONTACT_EMAIL}`
+      + `?subject=${encodeURIComponent('Signalement — La Vitrine démocratique')}`
+      + `&body=${encodeURIComponent(lignes.join('\n'))}`
+  }
+
+  const copyDraft = async () => {
+    try {
+      await navigator.clipboard.writeText(description.trim())
+      setCopied(true)
+    } catch {
+      // Presse-papiers refusé (permission, contexte non sécurisé) : le texte
+      // reste sélectionnable à la main dans l'encadré, on ne bloque pas.
+      setCopied(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!canSubmit) return
     setUiState('submitting')
+    setFailureKind(null)
+    setCopied(false)
 
     let screenshot: { name: string; base64: string } | null = null
     if (screenshotFile) {
@@ -178,6 +245,7 @@ export function IssueReporter() {
     const dispatchUrl = process.env.NEXT_PUBLIC_DISPATCH_URL
     if (!dispatchUrl) {
       console.error('NEXT_PUBLIC_DISPATCH_URL is not configured')
+      setFailureKind('configuration')
       setUiState('error')
       return
     }
@@ -199,8 +267,21 @@ export function IssueReporter() {
           },
         }),
       })
-      setUiState(res.ok ? 'success' : 'error')
+      if (res.ok) {
+        discardDraft()
+        setUiState('success')
+        return
+      }
+      // La requête est partie et le serveur a répondu : l'échec est chez nous
+      // (jeton du Worker expiré, dispatch GitHub refusé…). Réessayer plus tard
+      // ne servira à rien tant que ce n'est pas réparé.
+      console.error(`Dispatch du signalement refusé (HTTP ${res.status})`)
+      setFailureKind('serveur')
+      setUiState('error')
     } catch {
+      // fetch a levé : rien n'est parti (hors ligne, DNS, CORS…). Là, réessayer
+      // a du sens.
+      setFailureKind('reseau')
       setUiState('error')
     }
   }
@@ -275,6 +356,12 @@ export function IssueReporter() {
             padding: '40px 48px',
             maxWidth: '520px',
             width: '90%',
+            // L'écran d'erreur est plus haut que le formulaire (texte conservé +
+            // voies de repli) : sans plafond il déborde sur un petit écran et
+            // les boutons deviennent inatteignables (#335).
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxSizing: 'border-box',
           }}>
 
             {uiState === 'success' && (
@@ -288,10 +375,53 @@ export function IssueReporter() {
 
             {uiState === 'error' && (
               <>
-                <p style={label}>Erreur</p>
-                <h2 style={title}>Envoi échoué</h2>
-                <p style={dek}>Une erreur est survenue. Réessayez dans quelques instants.</p>
-                <button onClick={handleClose} style={btn}>Fermer</button>
+                <p style={label}>Envoi échoué</p>
+                <h2 style={title}>
+                  {failureKind === 'reseau'
+                    ? 'Nous n’avons pas pu joindre le serveur'
+                    : 'Le problème vient de notre côté'}
+                </h2>
+                <p style={dek}>
+                  {failureKind === 'reseau'
+                    ? 'Votre signalement n’est pas parti. Vérifiez votre connexion, puis réessayez — votre texte est conservé.'
+                    : 'Votre signalement n’a pas pu être enregistré, et réessayer n’y changera rien tant que ce n’est pas réparé. Votre texte est conservé ci-dessous : envoyez-le-nous par courriel, ou copiez-le pour le garder.'}
+                </p>
+
+                <p style={fieldLabel}>Votre signalement</p>
+                {/* tabIndex + role : la boîte défile (maxHeight + overflowY) et
+                    un conteneur défilant doit être atteignable au clavier —
+                    sinon la fin d'un long signalement est hors de portée pour
+                    qui ne peut pas faire défiler à la souris (WCAG 2.1.1). */}
+                <p
+                  style={draftBox}
+                  tabIndex={0}
+                  role="group"
+                  aria-label="Votre signalement, conservé tel quel"
+                >
+                  {description.trim()}
+                </p>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
+                  <a href={mailtoHref()} style={{ ...btn, textDecoration: 'none', display: 'inline-block' }}>
+                    Envoyer par courriel
+                  </a>
+                  <button onClick={copyDraft} style={secondaryBtn}>
+                    {copied ? 'Texte copié ✓' : 'Copier le texte'}
+                  </button>
+                  <button onClick={() => setUiState('modal')} style={secondaryBtn}>
+                    {failureKind === 'reseau' ? 'Réessayer' : 'Revenir au formulaire'}
+                  </button>
+                </div>
+
+                <p style={{ ...fieldLabel, textTransform: 'none', letterSpacing: 0, fontFamily: "'Source Serif 4', serif", fontSize: '12px', fontStyle: 'italic', marginTop: '18px' }}>
+                  Écrivez-nous à <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--cordovan)' }}>{CONTACT_EMAIL}</a>.
+                  {screenshotFile && ' Pensez à rattacher votre capture d’écran au courriel : elle ne peut pas être jointe automatiquement.'}
+                </p>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                  <button onClick={handleDiscard} style={discardBtn}>Abandonner</button>
+                  <button onClick={handleClose} style={btn}>Fermer</button>
+                </div>
               </>
             )}
 
@@ -461,6 +591,53 @@ const btn: React.CSSProperties = {
   border: 'none',
   padding: '10px 20px',
   cursor: 'pointer',
+}
+
+// Sortie discrète : jeter son propre texte ne doit jamais avoir le poids visuel
+// d'une action recommandée.
+const discardBtn: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '9px',
+  fontWeight: 500,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-softer)',
+  background: 'none',
+  border: 'none',
+  padding: '10px 0',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  flexShrink: 0,
+}
+
+const secondaryBtn: React.CSSProperties = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: '10px',
+  fontWeight: 500,
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-softer)',
+  background: 'none',
+  border: '0.5px solid var(--rule)',
+  padding: '10px 20px',
+  cursor: 'pointer',
+}
+
+// Le texte échoué, rendu visible et sélectionnable : c'est la seule copie que
+// la personne possède tant que la chaîne est cassée (#335).
+const draftBox: React.CSSProperties = {
+  fontFamily: "'Source Serif 4', serif",
+  fontSize: '14px',
+  lineHeight: 1.5,
+  color: 'var(--ink)',
+  background: 'var(--paper-deep)',
+  border: '0.5px solid var(--rule)',
+  padding: '12px',
+  margin: '0',
+  maxHeight: '140px',
+  overflowY: 'auto',
+  whiteSpace: 'pre-wrap',
+  userSelect: 'text',
 }
 
 const attachBtn: React.CSSProperties = {

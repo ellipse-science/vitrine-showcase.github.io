@@ -156,7 +156,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
             </div>
             <figcaption>
               <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l&apos;artiste Mathieu Fortin, partenaire du projet.</span>
+              <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
             </figcaption>
           </figure>
         )}
