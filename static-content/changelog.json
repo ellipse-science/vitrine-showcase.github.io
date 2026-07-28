@@ -1,5 +1,11 @@
 [
   {
+    "pr": 340,
+    "date": "2026-07-28T13:46:52Z",
+    "note": "La bulle d'information « i » se laisse enfin survoler jusqu'au bout : le lien « En savoir plus » qu'elle contient est maintenant cliquable, alors que la bulle disparaissait dès qu'on s'en approchait.",
+    "version": "2.15.0-beta.7"
+  },
+  {
     "pr": 336,
     "date": "2026-07-28T13:43:30Z",
     "note": "Les promesses du Polimètre+ affichent maintenant une petite flèche qui indique qu'on peut cliquer dessus pour lire le résumé et la couverture médiatique.",
