@@ -1,10 +1,10 @@
 {
-  "event_id": "20260728T070000Z-evt-adolescent-qui-aurait-ete-tue-7d25b8cb",
-  "storyline_id": "story-philippe-benoit-1ff01bff",
-  "title": "Adolescent tué à Shawinigan: il craignait de visiter son père",
-  "main_issue": "law_and_crime",
+  "event_id": "20260728T110000Z-evt-garderie-kiddo-ferme-ses-portes-082fd0c5",
+  "storyline_id": "story-kiddo-00799a73",
+  "title": "Fermeture précipitée de la garderie Kiddo 2: parents désemparés",
+  "main_issue": "health_and_social_services",
   "date_utc": "2026-07-28",
-  "time_interval_utc": "07-11",
-  "sum_qc": 31.83,
-  "peak_qc": 16.243
+  "time_interval_utc": "11-15",
+  "sum_qc": 30.502,
+  "peak_qc": 21.346
 }
