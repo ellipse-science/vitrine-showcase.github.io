@@ -47,17 +47,13 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const [scoop, setScoop] = useState<{ label: string; head: string } | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [board, setBoard] = useState<ScoreEntry[]>([]);
-  const [isGlobalBoard, setIsGlobalBoard] = useState(false);
   const [initials, setInitials] = useState("");
   const [saved, setSaved] = useState(false);
   const scoopTimer = useRef<number | null>(null);
 
-  // Charger le classement (global ou local) au montage
+  // Charger le classement global au montage
   useEffect(() => {
-    fetchLeaderboard().then(({ board: b, isGlobal }) => {
-      setBoard(b);
-      setIsGlobalBoard(isGlobal);
-    });
+    fetchLeaderboard().then((b) => setBoard(b));
   }, []);
 
   const startTarget = useCallback(() => {
@@ -163,10 +159,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         if (hitTest(next, diff)) {
           shakeRef.current = 14;
           setFinalScore(scoreRef.current);
-          fetchLeaderboard().then(({ board: b, isGlobal }) => {
-            setBoard(b);
-            setIsGlobalBoard(isGlobal);
-          });
+          fetchLeaderboard().then((b) => setBoard(b));
           setSaved(false); setInitials("");
           setPhase("over");
         } else {
@@ -207,9 +200,8 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
       score: finalScore,
       date: new Date().toISOString().slice(0, 10),
     };
-    submitScoreToLeaderboard(entry).then(({ board: b, isGlobal }) => {
+    submitScoreToLeaderboard(entry).then((b) => {
       setBoard(b);
-      setIsGlobalBoard(isGlobal);
       setSaved(true);
     });
   };
@@ -262,7 +254,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             )}
             {(saved || !qualifies) && board.length > 0 && (
               <div className="flappy-board-wrap">
-                <span className="flappy-board-title">{isGlobalBoard ? "CLASSEMENT GLOBAL 🌐" : "CLASSEMENT LOCAL"}</span>
+                <span className="flappy-board-title">PALMARÈS DES ÉDITIONS 🌐</span>
                 <ol className="flappy-board">
                   {board.map((e, i) => (
                     <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>

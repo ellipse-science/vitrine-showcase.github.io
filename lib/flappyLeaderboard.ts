@@ -1,7 +1,5 @@
 import { ScoreEntry, insertScore, sanitizeInitials } from "./flappy";
 
-const LOCAL_KEY = "vitrine-flappy-scores";
-
 const UPSTASH_URL =
   process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL ||
   process.env.UPSTASH_REDIS_REST_URL ||
@@ -14,61 +12,44 @@ const UPSTASH_TOKEN =
 
 const REDIS_KEY = "vitrine-flappy-global-board";
 
-export function loadLocalBoard(): ScoreEntry[] {
-  if (typeof window === "undefined") return [];
+const DEFAULT_BOARD: ScoreEntry[] = [];
+
+function parseBoardResult(raw: unknown): ScoreEntry[] {
+  if (!raw) return DEFAULT_BOARD;
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+    let parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (typeof parsed === "string") parsed = JSON.parse(parsed);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as ScoreEntry[];
   } catch {
-    return [];
+    /* ignore parsing errors */
   }
+  return DEFAULT_BOARD;
 }
 
-export function saveLocalBoard(board: ScoreEntry[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(board));
-  } catch {
-    /* Quota ou mode privé */
-  }
-}
-
-export async function fetchLeaderboard(): Promise<{ board: ScoreEntry[]; isGlobal: boolean }> {
-  const local = loadLocalBoard();
-
+export async function fetchLeaderboard(): Promise<ScoreEntry[]> {
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
+    const timer = setTimeout(() => controller.abort(), 3500);
 
     const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
       signal: controller.signal,
+      cache: "no-store",
     });
     clearTimeout(timer);
 
     if (res.ok) {
       const data = await res.json();
-      const raw = data.result ? JSON.parse(data.result) : [];
-      if (Array.isArray(raw)) {
-        let merged = raw as ScoreEntry[];
-        for (const entry of local) {
-          merged = insertScore(merged, entry);
-        }
-        return { board: merged.slice(0, 10), isGlobal: true };
-      }
+      return parseBoardResult(data.result);
     }
-  } catch {
-    /* Repli sur le stockage local si déconnecté */
+  } catch (err) {
+    console.error("Erreur lors de la récupération du classement global:", err);
   }
 
-  return { board: local.slice(0, 10), isGlobal: false };
+  return DEFAULT_BOARD;
 }
 
-export async function submitScoreToLeaderboard(entry: ScoreEntry): Promise<{ board: ScoreEntry[]; isGlobal: boolean }> {
-  // 1. Sauvegarde locale immédiate (Local-First)
-  const currentLocal = loadLocalBoard();
-  const updatedLocal = insertScore(currentLocal, entry);
-  saveLocalBoard(updatedLocal);
-
+export async function submitScoreToLeaderboard(entry: ScoreEntry): Promise<ScoreEntry[]> {
   try {
     const sanitizedEntry: ScoreEntry = {
       initials: sanitizeInitials(entry.initials),
@@ -77,39 +58,41 @@ export async function submitScoreToLeaderboard(entry: ScoreEntry): Promise<{ boa
     };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
+    const timer = setTimeout(() => controller.abort(), 4000);
 
-    // Récupération préalable du classement mondial
+    // 1. Récupération préalable de la liste globale
     const getRes = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
       signal: controller.signal,
+      cache: "no-store",
     });
-    let currentGlobal: ScoreEntry[] = [];
+
+    let currentGlobal = DEFAULT_BOARD;
     if (getRes.ok) {
       const data = await getRes.json();
-      currentGlobal = data.result ? JSON.parse(data.result) : [];
+      currentGlobal = parseBoardResult(data.result);
     }
 
     const updatedGlobal = insertScore(currentGlobal, sanitizedEntry);
 
-    // Publication de la liste mise à jour dans Upstash Redis
+    // 2. Publication de la liste mise à jour dans Upstash Redis (JSON simple)
     const setRes = await fetch(`${UPSTASH_URL}/set/${REDIS_KEY}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${UPSTASH_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(JSON.stringify(updatedGlobal)),
+      body: JSON.stringify(updatedGlobal),
       signal: controller.signal,
     });
     clearTimeout(timer);
 
     if (setRes.ok) {
-      return { board: updatedGlobal.slice(0, 10), isGlobal: true };
+      return updatedGlobal;
     }
-  } catch {
-    /* Repli sur le stockage local */
+  } catch (err) {
+    console.error("Erreur lors de la publication du score global:", err);
   }
 
-  return { board: updatedLocal.slice(0, 10), isGlobal: false };
+  return DEFAULT_BOARD;
 }
