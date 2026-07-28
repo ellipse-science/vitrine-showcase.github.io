@@ -1,5 +1,11 @@
 [
   {
+    "pr": 348,
+    "date": "2026-07-28T13:55:19Z",
+    "note": "Aucune — outillage interne, rien de visible sur le site.",
+    "version": null
+  },
+  {
     "pr": 346,
     "date": "2026-07-28T13:52:23Z",
     "note": "Le niveau de saillance affiché sous chaque manchette suit maintenant fidèlement l'attention réelle des dernières 24 heures : il pouvait rester bloqué plusieurs crans trop bas, au point d'afficher un sommet plus faible que le creux qui l'a suivi. Le texte qui apparaît en survolant la courbe ne déborde plus sur la manchette voisine, et les heures de la veille ne sont plus annoncées comme celles du…",
