@@ -5,18 +5,12 @@ import {
   FIELD, newGame, difficultyFor, stepPhysics, hitTest, nextTarget, comboPoints,
   insertScore, sanitizeInitials, type GameState, type ScoreEntry,
 } from "@/lib/flappy";
+import { fetchLeaderboard, submitScoreToLeaderboard } from "@/lib/flappyLeaderboard";
 
-const KEY = "vitrine-flappy-scores";
-const INK = "#26221e";
-const CREAM = "#F7F4EF";
-const GOLD = "#C29A45";
+const INK = "#1C1917";
+const CREAM = "#F3ECDD";
+const CORDOVAN = "#6B1E2A";
 
-function loadBoard(): ScoreEntry[] {
-  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
-}
-function saveBoard(b: ScoreEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* quota / privé : on ignore */ }
-}
 function headlineOf(t: TreemapIssueTile | undefined): string {
   if (!t) return "";
   const h = (t.context && t.context.trim()) || (t.topObject && t.topObject.trim()) || t.issueFr;
@@ -57,6 +51,11 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const [saved, setSaved] = useState(false);
   const scoopTimer = useRef<number | null>(null);
 
+  // Charger le classement global au montage
+  useEffect(() => {
+    fetchLeaderboard().then((b) => setBoard(b));
+  }, []);
+
   const startTarget = useCallback(() => {
     const t = nextTarget(weights, Math.floor(performance.now()) || 1, -1);
     targetRef.current = t; setTargetIdx(t);
@@ -72,7 +71,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
     for (let i = 0; i < 16; i++) {
       const a = Math.random() * Math.PI * 2, sp = 0.1 + Math.random() * 0.35;
       partRef.current.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 0.1,
-        life: 1, c: i % 3 === 0 ? GOLD : (i % 3 === 1 ? color : CREAM), r: 2 + Math.random() * 3 });
+        life: 1, c: i % 3 === 0 ? CORDOVAN : (i % 3 === 1 ? color : CREAM), r: 2 + Math.random() * 3 });
     }
   };
 
@@ -94,14 +93,14 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
       const drawCol = (yTop: number, h: number) => {
         if (h <= 0) return;
         ctx.fillStyle = col; ctx.fillRect(p.x, yTop, FIELD.pipeW, h);
-        ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, yTop + 1, FIELD.pipeW - 2, h - 2);
+        ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(p.x + 1, yTop + 1, FIELD.pipeW - 2, h - 2);
       };
       drawCol(0, topH);
       drawCol(botY, FIELD.height - botY);
       // nom de l'enjeu, imprimé verticalement sur la colonne pleine, hors de l'ouverture
       const label = (tile?.issueFr ?? "").toUpperCase();
       ctx.fillStyle = ink;
-      ctx.font = "700 15px Georgia, 'Times New Roman', serif";
+      ctx.font = "700 15px 'Playfair Display', Georgia, serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       const putLabel = (cy: number, avail: number) => {
         if (avail < 90) return;
@@ -148,7 +147,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             if (p.issueIndex === targetRef.current) {
               scoreRef.current += comboPoints(comboRef.current); comboRef.current += 1;
               const tile = tiles[p.issueIndex]; flashScoop(tile);
-              burst(FIELD.birdX + 40, stateRef.current.bird.y, tile?.color ?? GOLD);
+              burst(FIELD.birdX + 40, stateRef.current.bird.y, tile?.color ?? CORDOVAN);
               targetRef.current = nextTarget(weights, p.id * 2246822519, targetRef.current);
               setTargetIdx(targetRef.current);
             } else {
@@ -159,7 +158,9 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         }
         if (hitTest(next, diff)) {
           shakeRef.current = 14;
-          setFinalScore(scoreRef.current); setBoard(loadBoard()); setSaved(false); setInitials("");
+          setFinalScore(scoreRef.current);
+          fetchLeaderboard().then((b) => setBoard(b));
+          setSaved(false); setInitials("");
           setPhase("over");
         } else {
           stateRef.current = next;
@@ -194,8 +195,15 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const qualifies = insertScore(board, { initials: "___", score: finalScore, date: "" })
     .some((e) => e.initials === "___" && e.score === finalScore) && finalScore > 0;
   const save = () => {
-    const nb = insertScore(board, { initials: sanitizeInitials(initials) || "AAA", score: finalScore, date: new Date().toISOString().slice(0, 10) });
-    saveBoard(nb); setBoard(nb); setSaved(true);
+    const entry: ScoreEntry = {
+      initials: sanitizeInitials(initials) || "JOUEUR",
+      score: finalScore,
+      date: new Date().toISOString().slice(0, 10),
+    };
+    submitScoreToLeaderboard(entry).then((b) => {
+      setBoard(b);
+      setSaved(true);
+    });
   };
 
   const targetTile = tiles[targetIdx];
@@ -228,7 +236,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         {phase === "ready" && (
           <div className="flappy-overlay">
             <p className="flappy-title">Chasse à la une</p>
-            <p className="flappy-hint">Fais voler le 📰 (Espace / ↑ / clic) et franchis l&apos;enjeu <b>à la une</b> pour décrocher le scoop. Ça accélère avec le score. Échap pour quitter.</p>
+            <p className="flappy-hint">Fais voler le journal 📰 (Espace / ↑ / touchez l&apos;écran) et franchis l&apos;enjeu <b>à la une</b> pour décrocher le scoop. Ça accélère avec le score. Échap ou ✕ pour quitter.</p>
             <button type="button" className="flappy-cta" onClick={flap}>Commencer</button>
           </div>
         )}
@@ -239,19 +247,22 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
             {qualifies && !saved && (
               <div className="flappy-initials">
                 <label htmlFor="fi">Signe l&apos;édition</label>
-                <input id="fi" value={initials} maxLength={3} autoComplete="off"
+                <input id="fi" value={initials} maxLength={7} placeholder="JOUEUR" autoComplete="off"
                   onChange={(e) => setInitials(sanitizeInitials(e.target.value))} />
                 <button type="button" onClick={save}>Publier</button>
               </div>
             )}
             {(saved || !qualifies) && board.length > 0 && (
-              <ol className="flappy-board">
-                {board.map((e, i) => (
-                  <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "AAA") && e.score === finalScore ? "is-new" : undefined}>
-                    <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
-                  </li>
-                ))}
-              </ol>
+              <div className="flappy-board-wrap">
+                <span className="flappy-board-title">PALMARÈS DES ÉDITIONS 🌐</span>
+                <ol className="flappy-board">
+                  {board.map((e, i) => (
+                    <li key={i} className={saved && e.initials === (sanitizeInitials(initials) || "JOUEUR") && e.score === finalScore ? "is-new" : undefined}>
+                      <span>{i + 1}</span><span>{e.initials}</span><span>{e.score}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
             <div className="flappy-actions">
               <button type="button" className="flappy-cta" onClick={restart}>Rejouer</button>
