@@ -1400,6 +1400,27 @@
     text-decoration: none;
     font-weight: 600;
   }
+  /* Pont invisible sur les 8 px qui séparent la pastille de la bulle (#250).
+     Sans lui, le curseur qui descend vers « En savoir plus » traverse un vide
+     qui n'appartient ni au bouton ni à la bulle : `pointerleave` part sur le
+     conteneur, la bulle se démonte, le lien est inatteignable. Le pont est un
+     pseudo-élément DE LA BULLE, donc survoler le vide compte comme survoler un
+     descendant du conteneur — `pointerleave` ne se déclenche plus. Il suit la
+     bulle quand elle est recentrée (left inline), et couvre toute sa largeur :
+     un déplacement en diagonale reste rattrapé.
+     9 px et non 8 : le pixel supplémentaire recouvre le bas de la pastille pour
+     absorber les demi-pixels du zoom fractionnaire (110 %, 125 %) et des écrans
+     à DPR non entier, où un pont exact laisserait une couture par laquelle
+     `pointerleave` repart — la panne même que ce pont corrige. Le recouvrement
+     ne coûte rien : il n'existe que pendant que la bulle est ouverte. */
+  .saillance-info-bubble::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -9px;
+    height: 9px;
+  }
   .saillance-info-bubble a:hover { text-decoration: underline; }
 
   /* Fiche de la bulle ⓘ (#274) : mini-distribution + micro-métho + lien. */
