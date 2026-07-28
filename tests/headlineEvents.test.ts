@@ -205,8 +205,14 @@ describe("pctile (jauge de convergence)", () => {
     expect(pctile(0, CAL_CONV)).toBe(0);
     expect(pctile(-5, CAL_CONV)).toBe(0);
   });
-  it("place la médiane de convergence (14) au centre de la jauge (p50)", () => {
-    expect(pctile(14, CAL_CONV)).toBeCloseTo(50, 5);
+  // Recalibré au #272 sur la distribution publiée (p50 = 6, et non 14 comme le
+  // prototype 13 mois du red-team).
+  it("place la médiane de convergence (6) au centre de la jauge (p50)", () => {
+    expect(pctile(6, CAL_CONV)).toBeCloseTo(50, 5);
+  });
+  it("place p80 et p95 aux valeurs mesurées", () => {
+    expect(pctile(37, CAL_CONV)).toBeCloseTo(80, 5);
+    expect(pctile(69.1, CAL_CONV)).toBeCloseTo(95, 5);
   });
   it("plafonne à 100", () => {
     expect(pctile(999, CAL_CONV)).toBe(100);
@@ -214,14 +220,17 @@ describe("pctile (jauge de convergence)", () => {
 });
 
 describe("rocScore", () => {
-  it("lit score_roc directement quand présent", () => {
+  it("lit la colonne score_roc publiée", () => {
     expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);
   });
-  it("repli transitoire : saillance − qc − us (ne réabsorbe pas les USA)", () => {
-    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(17);
+  // Garde-fou du #272 : le repli `saillance − qc − us` est retiré. S'il revenait,
+  // le côté Canada réabsorberait les USA dès que score_us manquerait.
+  it("ne dérive JAMAIS le ROC par soustraction quand la colonne manque", () => {
+    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never)).toBe(0);
   });
-  it("repli plancher à 0", () => {
-    expect(rocScore({ score_saillance: 5, score_qc: 8 } as never)).toBe(0);
+  it("rend 0 sur une ligne vide", () => {
+    expect(rocScore({} as never)).toBe(0);
   });
 });
 
@@ -646,6 +655,54 @@ describe("hysteresisRank (lissage du badge cumulé)", () => {
     const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
     expect(rangs).toEqual([6, 6, 5, 5, 4, 3]); // le badge redescend avec l'histoire
   });
+
+  // ── Montée de plusieurs bandes d'un coup ────────────────────────────────────
+  // Le freinage doit s'appliquer À CHAQUE frontière, pas seulement à la dernière.
+  it("une montée de plusieurs bandes n'est pas annulée : le badge monte aussi haut que les marges franchies", () => {
+    // sumQc = 48,6 depuis le rang 1. Bandes franchies avec la marge de 8 % :
+    // 2 (21,4 × 1,08 = 23,1) ✓, 3 (31 × 1,08 = 33,5) ✓, 4 (47,9 × 1,08 = 51,7) ✗.
+    // → le badge doit s'arrêter à 3, et surtout PAS rester à 1.
+    expect(rawRank(48.6, T)).toBe(4);
+    expect(hysteresisRank(1, 48.6, T)).toBe(3);
+  });
+
+  it("régression #27-07 : la Une « logements » n'affiche plus « Très faible » avec un cumul « Élevée »", () => {
+    // Série réellement mesurée sur DEV le 2026-07-27 (éditions de 4h, 8h, 12h).
+    // Avant le correctif : [1, 1, 1] — la pastille disait « Très faible » alors
+    // que le cumul était en pleine bande « Élevée », et le survol du SOMMET
+    // héritait de ce « Très faible » figé.
+    const suite = [11.7, 22.5, 48.6];
+    let r: number | undefined = undefined;
+    const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
+    expect(rangs).toEqual([1, 1, 3]);
+  });
+
+  it("le badge ne peut jamais s'écarter de plus d'UNE bande du niveau brut", () => {
+    // L'invariant qui résume le correctif : l'hystérésis a le droit de retarder
+    // d'une bande (c'est son travail), jamais de figer le badge plus bas que ça.
+    // Balayage : toutes les valeurs de 0 à 250 par pas de 0,5, depuis chaque
+    // niveau précédent possible.
+    for (let prev = 1; prev <= 6; prev++) {
+      for (let v = 0; v <= 250; v += 0.5) {
+        const affiche = hysteresisRank(prev, v, T);
+        expect(Math.abs(affiche - rawRank(v, T))).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("le retard éventuel est TOUJOURS du côté du niveau précédent (pas d'à-coup)", () => {
+    // Quand le badge n'est pas au niveau brut, c'est qu'il retient l'ancien —
+    // il ne doit jamais dépasser dans l'autre sens.
+    for (let prev = 1; prev <= 6; prev++) {
+      for (let v = 0; v <= 250; v += 0.5) {
+        const affiche = hysteresisRank(prev, v, T);
+        const brut = rawRank(v, T);
+        if (affiche === brut) continue;
+        expect(affiche).toBeGreaterThanOrEqual(Math.min(prev, brut));
+        expect(affiche).toBeLessThanOrEqual(Math.max(prev, brut));
+      }
+    }
+  });
 });
 
 describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
@@ -770,6 +827,49 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
   });
   it("renvoie null s'il n'y a rien à raconter (aucun bloc actif)", () => {
     expect(buildSalienceTrend([{ blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 }] as never, thr, "2026-07-20")).toBeNull();
+  });
+
+  // ── Le mot-jour appartient à l'ÉDITION, pas à l'histoire ────────────────────
+  // Le 3e argument est le jour de publication de l'édition affichée. Il était
+  // auparavant la date du dernier bloc de CETTE histoire : une Une retombée du
+  // radar traînait un repère en retard et nommait « aujourd'hui » des blocs de
+  // la veille — jusqu'à annoncer un sommet à une heure encore à venir.
+  it("une Une retombée du radar situe quand même ses blocs par rapport à l'édition", () => {
+    // Édition du 27 à 12h. L'histoire n'est plus à la Une depuis le bloc publié
+    // à 4 h ; ses blocs de la veille doivent se lire « hier », pas « aujourd'hui ».
+    const t = buildSalienceTrend([
+      { blockUtc: "2026-07-26T15", qc: 40, present: true, share: 44 },   // 11-15 Mtl → publié 16 h le 26
+      { blockUtc: "2026-07-26T19", qc: 30, present: true, share: 30 },   // 15-19 Mtl → publié 20 h le 26
+      { blockUtc: "2026-07-26T23", qc: 5, present: true, share: 2 },     // 19-23 Mtl → publié minuit
+      { blockUtc: "2026-07-27T03", qc: 0, present: false, share: 0 },    // 23-03 Mtl → publié 4 h le 27
+      { blockUtc: "2026-07-27T07", qc: 0, present: false, share: 0 },    // 03-07 Mtl → publié 8 h le 27
+    ] as never, thr, "2026-07-27")!;
+    const labels = t.points.map((p: { timeLabel: string }) => p.timeLabel);
+    expect(labels[0]).toBe("hier 16h");
+    expect(labels[1]).toBe("hier 20h");
+    expect(labels[2]).toBe("hier minuit");      // publié à minuit, rattaché au jour qui finit
+    expect(labels[3]).toBe("aujourd’hui 4h");   // publié le 27, même si le bloc démarre le 26
+    expect(labels[4]).toBe("aujourd’hui 8h");
+    // Et la phrase ne peut plus annoncer un sommet dans le futur de l'édition.
+    expect(t.capLabel).toContain("hier à 16h");
+  });
+
+  it("deux Unes de la même édition nomment les mêmes blocs de la même façon", () => {
+    // C'est la propriété qui cassait à l'écran : la 1re Une disait « hier 20h »
+    // et la 3e « aujourd’hui 20h » pour le MÊME bloc, sur la même page.
+    const blocs = [
+      { blockUtc: "2026-07-26T15", present: true, share: 40 },
+      { blockUtc: "2026-07-26T19", present: true, share: 30 },
+      { blockUtc: "2026-07-26T23", present: true, share: 20 },
+      { blockUtc: "2026-07-27T03", present: true, share: 10 },
+    ];
+    const enCours = buildSalienceTrend(
+      blocs.map((b) => ({ ...b, qc: 30 })) as never, thr, "2026-07-27")!;
+    // Même série de blocs, mais l'histoire a disparu du radar sur les 2 derniers.
+    const retombee = buildSalienceTrend(
+      blocs.map((b, i) => ({ ...b, qc: i < 2 ? 30 : 0, present: i < 2 })) as never, thr, "2026-07-27")!;
+    expect(retombee.points.map((p: { timeLabel: string }) => p.timeLabel))
+      .toEqual(enCours.points.map((p: { timeLabel: string }) => p.timeLabel));
   });
 });
 
@@ -907,9 +1007,11 @@ describe("buildSolitudes", () => {
 
   it("repère « habituel » = médiane event-level (défaut mesuré, sinon param calibré)", () => {
     const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
-    // Défaut = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV = 31 %).
+    // Repli = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV
+    // = 31 %), confirmée au #272 par la métrique publiée event_convergence.p50,
+    // qui vaut aussi 31.
     expect(sol([row], [row]).habitualConvPct).toBe(31);
-    // Câblé : quand la calibration glissante publiera event_convergence.p50, il prime.
+    // La valeur publiée (event_convergence.p50) prime quand elle est là.
     const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
   });

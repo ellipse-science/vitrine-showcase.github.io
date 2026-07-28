@@ -379,11 +379,12 @@
         "n_mentions",
         "titles",
         "urls",
+        "articles",
         "pledge_short_fr",
         "coverage_summary_week",
         "coverage_summary_month"
       ],
-      "_note": "articles column removed: absent from Athena table as of 2026-06-22; polimetre.ts falls back to host-mapping from urls",
+      "_note": "articles restored 2026-07-27 by ALTER TABLE ADD COLUMNS on the DEV datamart: populated from week_end_date 2026-07-03 onward, NULL/\"NA\" before — polimetre.ts already falls back to host-mapping from urls when it is absent or unparseable",
       "enabled": true,
       "used_by": "lib/data/polimetre.ts"
     }

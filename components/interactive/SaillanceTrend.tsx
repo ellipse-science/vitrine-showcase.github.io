@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SalienceTrend } from "@/lib/data/headlineEvents";
+import type { SalienceTrend, SalienceTrendPoint } from "@/lib/data/headlineEvents";
 
 // Trajectoire de saillance sous le badge (#274) : mini-courbe des 6 derniers
 // blocs, flèche de tendance, puis la phrase (#304). La courbe trace la PART
@@ -38,6 +38,16 @@ function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
       <path d={d} />
     </svg>
   );
+}
+
+// Le libellé d'un bloc pointé : le NIVEAU que la nouvelle affichait à ce bloc
+// (demande Adrien, #274), puis la part qui explique la hauteur du point sur la
+// courbe. Sorti du JSX pour servir DEUX fois — au texte affiché et aux doublures
+// invisibles qui réservent la hauteur (cf. plus bas).
+function capDuPoint(p: SalienceTrendPoint) {
+  return p.isAbsent
+    ? <>{p.timeLabel} · <b>Hors du radar</b></>
+    : <>{p.timeLabel} · <b>{p.level}</b> · {p.share}&nbsp;% de l’attention médiatique</>;
 }
 
 export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
@@ -98,14 +108,22 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           le niveau (« Très faible »), qui parlait l'échelle du badge et créait la
           contradiction relevée par Laurence-Olivier. L'ampleur ne s'affiche QUE
           si ça bouge — stable = « Stable » seul, sans chiffre. */}
-      <span className="trend-cap" aria-live="polite">
-        {active
-          ? (active.isAbsent
-            ? <>{active.timeLabel} · <b>Hors du radar</b></>
-            // Le NIVEAU que la nouvelle affichait à ce bloc (demande Adrien, #274),
-            // puis la part qui explique la hauteur du point sur la courbe.
-            : <>{active.timeLabel} · <b>{active.level}</b> · {active.share}&nbsp;% de l’attention médiatique</>)
-          : trend.capLabel}
+      {/* HAUTEUR RÉSERVÉE : tous les textes que cette bande peut afficher sont
+          empilés dans la même cellule de grille, les inactifs en `visibility:
+          hidden`. La hauteur de la boîte est donc celle du PLUS LONG à la
+          largeur courante, quelle que soit cette largeur — le libellé se replie
+          sur deux lignes dans une colonne étroite sans que rien ne saute au
+          survol, et ne réserve rien de plus qu'une ligne quand tout tient sur
+          une ligne. Avant, le libellé était en `nowrap` sans coupure : le texte
+          de survol (428 px) débordait de sa colonne (331 px) et allait se peindre
+          par-dessus la Une voisine — les « deux textes en même temps » d'Adrien. */}
+      <span className="trend-cap">
+        {[trend.capLabel as React.ReactNode, ...pts.map(capDuPoint)].map((n, i) => (
+          <span className="trend-cap-ghost" aria-hidden="true" key={i}>{n}</span>
+        ))}
+        <span className="trend-cap-live" aria-live="polite">
+          {active ? capDuPoint(active) : trend.capLabel}
+        </span>
       </span>
       </span>
     </span>
