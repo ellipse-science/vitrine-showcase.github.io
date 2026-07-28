@@ -4302,6 +4302,16 @@
     border-left: 3px solid var(--ink-softer);
     background: color-mix(in srgb, var(--ink-softer) 12%, transparent);
   }
+  /* Enveloppe du texte : .ppl-title est un flex (centrage vertical dans la boîte
+     de couleur), donc un chevron frère deviendrait un item collé à droite du
+     cadre. Ce wrapper remet le texte et le chevron dans un même flux inline.
+     min-width: 0 → autorise le rétrécissement au lieu du débordement. */
+  .ppl-title__text { min-width: 0; }
+  /* Dernier mot + chevron soudés : le chevron ne peut plus se retrouver seul sur
+     une ligne, il descend avec son mot. Sans risque de débordement — le plus
+     long dernier mot du jeu de données fait 13 caractères (« municipalités »),
+     très en deçà de la colonne du titre même à 375 px. */
+  .ppl-title__last { white-space: nowrap; }
   .ppl-promise--open .ppl-title { font-weight: 700; }
   .ppl-promise--realisee   .ppl-title { border-left-color: var(--ppl-realisee);   background: color-mix(in srgb, var(--ppl-realisee)   15%, transparent); }
   .ppl-promise--partielle  .ppl-title { border-left-color: var(--ppl-partielle);  background: color-mix(in srgb, var(--ppl-partielle)  15%, transparent); }
@@ -4373,6 +4383,48 @@
   .ppl-trend--up   { color: var(--green); }
   .ppl-trend--down { color: var(--red); }
   .ppl-trend--flat { color: var(--ink-softer); }
+
+  /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
+     très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
+     survol du rang, et pivoté de 180° quand la promesse est ouverte (voir le
+     bloc prefers-reduced-motion plus bas pour le sort de l'animation).
+     Il vit DANS le flux du libellé (.ppl-title__text) : il suit le dernier mot
+     et se replace tout seul quand le titre passe à la ligne — d'où l'inline-flex
+     + vertical-align plutôt qu'une colonne de grille dédiée. */
+  .ppl-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: -0.12em;
+    margin-left: 7px;
+    color: var(--ink-softer);
+    transition: color 0.15s ease, transform 0.2s ease;
+  }
+  .ppl-promise:hover .ppl-chevron,
+  .ppl-promise:focus-visible .ppl-chevron { color: var(--cordovan); }
+  /* Symétrie souris / clavier : le survol donne deux signaux (chevron + barre de
+     gauche), le focus n'en donnait qu'un. La bague cordovan aligne le rang sur
+     .billiard-ball et .share-btn.
+     outline-offset NÉGATIF, contrairement à ces deux-là : le rang occupe toute
+     la largeur du rail et les rangs sont jointifs. Un offset positif faisait
+     déborder la bague de 2 px sur le rang voisin, et son côté droit venait
+     buter contre le bord du module (vérifié à 1440 : le trait était rogné).
+     Tracée à l'intérieur, elle ne mord sur rien. */
+  .ppl-promise:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+  .ppl-promise--open .ppl-chevron { transform: rotate(180deg); color: var(--cordovan); }
+  /* La rangée entière s'éclaircit au survol : deuxième signal de cliquabilité,
+     cohérent avec le lavis déjà porté par le libellé. */
+  .ppl-promises .ppl-promise:not(.ppl-promise--open):hover .ppl-title {
+    border-left-color: var(--cordovan);
+  }
+  /* Mouvement réduit : on retire `transform` de la liste des transitions, donc
+     le chevron BASCULE INSTANTANÉMENT au lieu de pivoter. La rotation elle-même
+     est conservée volontairement — c'est l'indicateur d'état ouvert/fermé, pas
+     une décoration. La supprimer priverait du signal les personnes qui ont
+     justement demandé moins d'animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .ppl-chevron { transition: color 0.15s ease; }
+  }
 
   /* Promesse ouverte (état déplié — encadré paper-deep) */
   .ppl-promise--open {
