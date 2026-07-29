@@ -1,10 +1,10 @@
 {
-  "event_id": "20260728T070000Z-evt-adolescent-qui-aurait-ete-tue-7d25b8cb",
-  "storyline_id": "story-philippe-benoit-1ff01bff",
-  "title": "Adolescent tué à Shawinigan: il craignait de visiter son père",
-  "main_issue": "law_and_crime",
-  "date_utc": "2026-07-28",
-  "time_interval_utc": "07-11",
-  "sum_qc": 31.83,
-  "peak_qc": 16.243
+  "event_id": "20260729T110000Z-evt-sante-quebec-prevoit-transferer-seulement-6eb28fc6",
+  "storyline_id": "story-monteregie-7018000c",
+  "title": "Santé Québec vise à réduire de moitié la liste d'attente en chirurgie",
+  "main_issue": "health_and_social_services",
+  "date_utc": "2026-07-29",
+  "time_interval_utc": "11-15",
+  "sum_qc": 60.404,
+  "peak_qc": 31.918
 }

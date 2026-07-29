@@ -1,5 +1,59 @@
 [
   {
+    "pr": 364,
+    "date": "2026-07-29T16:22:05Z",
+    "note": "Quand on déplie une promesse du Polimètre+, la couleur de son verdict reste maintenant visible : elle habille tout le haut de la fiche, jusqu'au résumé.",
+    "version": "2.16.0-beta.2"
+  },
+  {
+    "pr": 368,
+    "date": "2026-07-29T16:19:09Z",
+    "note": "fix(polimetre) : immuniser le fetch contre la dérive INT32, et borner .git",
+    "version": null
+  },
+  {
+    "pr": 367,
+    "date": "2026-07-28T23:34:35Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » affiche d'abord les dix députés les plus présents de chaque parti, les autres s'affichant sur demande.",
+    "version": "2.16.0-beta.1"
+  },
+  {
+    "pr": 366,
+    "date": "2026-07-28T23:10:43Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » devient un tableau d'enquête : ouvrez le dossier d'un parti pour découvrir ce qu'il dit en chambre, et les fiches de ses députés selon combien chacun a parlé.",
+    "version": "2.16.0-beta.0"
+  },
+  {
+    "pr": 362,
+    "date": "2026-07-28T19:18:05Z",
+    "note": "(Vide — correctif technique invisible pour les visiteurs jusqu'à ce qu'un module l'affiche.)",
+    "version": "2.15.0-beta.11"
+  },
+  {
+    "pr": 341,
+    "date": "2026-07-28T19:10:49Z",
+    "note": "(Section vide — changement trop mineur/interne pour le journal public.)",
+    "version": "2.15.0-beta.10"
+  },
+  {
+    "pr": 358,
+    "date": "2026-07-28T17:45:15Z",
+    "note": "feat(doom): ajouter la barre de sélection des 36 niveaux et corriger la hauteur du conteneur",
+    "version": null
+  },
+  {
+    "pr": 357,
+    "date": "2026-07-28T16:19:36Z",
+    "note": "feat(doom): intégrer l'Easter Egg DOOM PCQ « Knee-Deep in the Media » sans bordures noires",
+    "version": null
+  },
+  {
+    "pr": 356,
+    "date": "2026-07-28T15:56:56Z",
+    "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
+    "version": "2.15.0-beta.9"
+  },
+  {
     "pr": 353,
     "date": "2026-07-28T13:59:20Z",
     "note": "Ne change aucune table, raffineur ou colonne.",
