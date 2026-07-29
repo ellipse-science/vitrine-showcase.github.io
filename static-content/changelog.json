@@ -1,5 +1,11 @@
 [
   {
+    "pr": 368,
+    "date": "2026-07-29T16:19:09Z",
+    "note": "fix(polimetre) : immuniser le fetch contre la dérive INT32, et borner .git",
+    "version": null
+  },
+  {
     "pr": 367,
     "date": "2026-07-28T23:34:35Z",
     "note": "Le module « Que dit-on à l'Assemblée ? » affiche d'abord les dix députés les plus présents de chaque parti, les autres s'affichant sur demande.",
