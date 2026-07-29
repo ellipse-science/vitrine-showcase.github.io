@@ -1,5 +1,11 @@
 [
   {
+    "pr": 364,
+    "date": "2026-07-29T16:22:05Z",
+    "note": "Quand on déplie une promesse du Polimètre+, la couleur de son verdict reste maintenant visible : elle habille tout le haut de la fiche, jusqu'au résumé.",
+    "version": "2.16.0-beta.2"
+  },
+  {
     "pr": 368,
     "date": "2026-07-29T16:19:09Z",
     "note": "fix(polimetre) : immuniser le fetch contre la dérive INT32, et borner .git",
