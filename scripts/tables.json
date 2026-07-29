@@ -419,6 +419,7 @@
         "coverage_summary_month"
       ],
       "_note": "articles restored 2026-07-27 by ALTER TABLE ADD COLUMNS on the DEV datamart: populated from week_end_date 2026-07-03 onward, NULL/\"NA\" before — polimetre.ts already falls back to host-mapping from urls when it is absent or unparseable",
+      "filter": "polimetre_plus_recent",
       "enabled": true,
       "used_by": "lib/data/polimetre.ts"
     }
