@@ -221,9 +221,13 @@ type Row = {
   salience_index: number;
   previous_salience_index: number;
   delta_index: number;
-  rank_current: number;
-  rank_delta: number;
-  n_mentions: number;
+  // rank_current, rank_delta et n_mentions ne sont PLUS récupérées : le raffineur
+  // les sérialise en INT32 alors que le catalogue Glue les déclare double, ce qui
+  // rend la table illisible pour toute requête qui les projette (HIVE_BAD_DATA).
+  // Aucune n'était lue — les rangs sont recalculés ici, n_mentions n'est affichée
+  // nulle part. Les exclure met la Vitrine à l'abri de cette dérive de façon
+  // permanente, indépendamment de l'état du raffineur. Cf. scripts/tables.json.
+  n_mentions?: number;
   titles: string;
   urls: string;
   pledge_short_fr?: string; // AI short label; literal "NA" when LLM unavailable
@@ -281,10 +285,10 @@ function aggregateWeeks(rows: Row[], weeks: Set<string>): Map<string, Agg> {
     if (!weeks.has(r.week_end_date)) continue;
     const cur = out.get(r.pledge_number);
     if (!cur) {
-      out.set(r.pledge_number, { salience: r.salience_index, nMentions: r.n_mentions, row: r });
+      out.set(r.pledge_number, { salience: r.salience_index, nMentions: r.n_mentions ?? 0, row: r });
     } else {
       cur.salience += r.salience_index;
-      cur.nMentions += r.n_mentions;
+      cur.nMentions += r.n_mentions ?? 0;
       if (r.week_end_date > cur.row.week_end_date) cur.row = r;
     }
   }
