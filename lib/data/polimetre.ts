@@ -216,7 +216,6 @@ type Row = {
   week_end_date: string;
   pledge_number: string;
   pledge_text_fr: string;
-  pledge_en: string;
   verdict: string;
   category: string; // full French category name
   salience_index: number;

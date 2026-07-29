@@ -402,7 +402,6 @@
         "week_end_date",
         "pledge_number",
         "pledge_text_fr",
-        "pledge_en",
         "verdict",
         "category",
         "salience_index",
@@ -419,6 +418,7 @@
         "coverage_summary_month"
       ],
       "_note": "articles restored 2026-07-27 by ALTER TABLE ADD COLUMNS on the DEV datamart: populated from week_end_date 2026-07-03 onward, NULL/\"NA\" before — polimetre.ts already falls back to host-mapping from urls when it is absent or unparseable",
+      "_note_pledge_en": "pledge_en retirée 2026-07-29 : 280 o/ligne (13,2% du fichier, autant que la colonne articles) pour un libellé anglais jamais lu — la Vitrine est unilingue (lang=\"fr\", locale fr_CA, aucune i18n). Les 4 colonnes numériques inutilisées (previous_salience_index, delta_index, rank_current, rank_delta) sont CONSERVÉES : 3,9% à elles quatre, et delta_index/rank_delta portent le calcul de mouvement du raffineur, piste ouverte pour les tendances.",
       "filter": "polimetre_plus_recent",
       "enabled": true,
       "used_by": "lib/data/polimetre.ts"
