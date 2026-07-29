@@ -80,12 +80,39 @@ type AgoraRow = IssueShares & {
   signature_word_context?: string;
 };
 
+// Ligne brute de agora_decideurs_qc_deputes.json (agrégation par député, PR
+// aws-refiners#259) — pas d'angle éditorial ici (coût LLM non justifié à
+// l'échelle du député), mais le mot distinctif est calculé pour chacun.
+type DeputyAgoraRow = IssueShares & {
+  period_type: PeriodKey;
+  period_start_date: string;
+  period_end_date: string;
+  party: string;
+  deputy: string;
+  n_interventions: number;
+  word_count: number;
+  lexical_richness: number;
+  tone_score: number;
+  signature_word?: string;
+  signature_word_context?: string;
+};
+
 export type EnjeuSegment = {
   color: string;
   widthPct: number;
   label: string;
   title: string;
   isReste?: boolean;
+};
+
+export type DeputyRow = {
+  name: string;
+  wordsFormatted: string;
+  wordsRaw: number;
+  richnessLevel: number;
+  toneLeftPct: number;
+  signatureWord?: string;
+  signatureWordContext?: string;
 };
 
 export type AssembleeRow = {
@@ -104,6 +131,9 @@ export type AssembleeRow = {
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
   signatureWordContext?: string;
+  // Députés du parti pour la période (tableau d'enquête) — absent tant que
+  // agora_decideurs_qc_deputes.json n'a pas encore été publié.
+  deputies?: DeputyRow[];
 };
 
 export type PeriodView = {
@@ -198,6 +228,40 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
   return stack;
 }
 
+// « NA » est la valeur manquante de R : elle traverse le pipeline sous forme
+// de chaîne littérale et ne doit jamais s'afficher (vu en prod le 2026-07-28 :
+// un député dont le mot distinctif s'affichait « NA »).
+function cleanText(value?: string): string | undefined {
+  const v = (value ?? "").trim();
+  return v === "" || v === "NA" ? undefined : v;
+}
+
+function buildDeputyList(partyKey: PartyKey, period: PeriodKey, deputyRows: DeputyAgoraRow[]): DeputyRow[] {
+  const rows = deputyRows.filter(
+    (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
+  );
+  if (rows.length === 0) return [];
+
+  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+
+  const mattrs: Record<string, number> = {};
+  for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
+  const richnessLevels = computeRichnessLevels(mattrs);
+
+  return sorted.map((r) => {
+    const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
+    return {
+      name: r.deputy,
+      wordsFormatted: fmtWords(r.word_count),
+      wordsRaw: Number(r.word_count || 0),
+      richnessLevel: richnessLevels[r.deputy] || 1,
+      toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
+      signatureWord: cleanText(r.signature_word),
+      signatureWordContext: cleanText(r.signature_word_context),
+    };
+  });
+}
+
 function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   if (periodType === "last_pdq") {
     return `Période de questions du ${fmtDateFr(endDate)} · Salon bleu`;
@@ -208,7 +272,7 @@ function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   return `Législature ${String(endDate || "").slice(0, 4)} · Salon bleu`;
 }
 
-function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
+function buildPeriodView(allRows: AgoraRow[], period: PeriodKey, deputyRows: DeputyAgoraRow[] = []): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
 
@@ -242,13 +306,14 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
       color: PARTY_COLORS[item.key],
       inShadow: false,
       enjeuStack: buildEnjeuStack(d),
-      editorialAngle: d.editorial_angle && d.editorial_angle !== "NA" ? d.editorial_angle : "",
+      editorialAngle: cleanText(d.editorial_angle) ?? "",
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       wordsFormatted: fmtWords(d.word_count),
       wordsRaw: Number(d.word_count || 0),
       richnessLevel: richnessLevels[item.key] || 1,
-      signatureWord: d.signature_word || undefined,
-      signatureWordContext: d.signature_word_context || undefined,
+      signatureWord: cleanText(d.signature_word),
+      signatureWordContext: cleanText(d.signature_word_context),
+      deputies: buildDeputyList(item.key, period, deputyRows),
     };
   });
 
@@ -269,15 +334,37 @@ const ASSEMBLEE_JSON_PATH = path.resolve(
   "agora_decideurs_qc.json",
 );
 
+const ASSEMBLEE_DEPUTES_JSON_PATH = path.resolve(
+  process.cwd(),
+  "public",
+  "data",
+  "agora",
+  "agora_decideurs_qc_deputes.json",
+);
+
+async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
+  // Table publiée séparément (aws-refiners#259) — tant qu'un premier fetch_data.R
+  // ne l'a pas encore matérialisée localement, on dégrade en l'absence de
+  // cartes satellites plutôt que de faire échouer toute la section.
+  try {
+    const raw = await fs.readFile(ASSEMBLEE_DEPUTES_JSON_PATH, "utf8");
+    const rows = JSON.parse(raw) as DeputyAgoraRow[];
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadAssemblee(): Promise<AssembleeData | null> {
   const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
   const allRows = JSON.parse(raw) as AgoraRow[];
   if (!Array.isArray(allRows) || allRows.length === 0) return null;
+  const deputyRows = await loadDeputyRows();
   return {
     periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq"),
-      session: buildPeriodView(allRows, "session"),
-      legislature: buildPeriodView(allRows, "legislature"),
+      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows),
+      session: buildPeriodView(allRows, "session", deputyRows),
+      legislature: buildPeriodView(allRows, "legislature", deputyRows),
     },
   };
 }
