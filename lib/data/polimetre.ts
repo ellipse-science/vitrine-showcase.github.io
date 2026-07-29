@@ -221,13 +221,13 @@ type Row = {
   salience_index: number;
   previous_salience_index: number;
   delta_index: number;
-  // rank_current, rank_delta et n_mentions ne sont PLUS récupérées : le raffineur
+  // rank_current, rank_delta et n_mentions sont ABSENTES à dessein : le raffineur
   // les sérialise en INT32 alors que le catalogue Glue les déclare double, ce qui
   // rend la table illisible pour toute requête qui les projette (HIVE_BAD_DATA).
-  // Aucune n'était lue — les rangs sont recalculés ici, n_mentions n'est affichée
-  // nulle part. Les exclure met la Vitrine à l'abri de cette dérive de façon
-  // permanente, indépendamment de l'état du raffineur. Cf. scripts/tables.json.
-  n_mentions?: number;
+  // Aucune n'était lue — les rangs sont recalculés ici (indispensable : la vue
+  // « mois » agrège plusieurs snapshots et reclasse), et n_mentions n'était
+  // affichée nulle part. Les exclure met la Vitrine à l'abri de cette dérive de
+  // façon permanente, indépendamment de l'état du raffineur. Cf. tables.json.
   titles: string;
   urls: string;
   pledge_short_fr?: string; // AI short label; literal "NA" when LLM unavailable
@@ -236,7 +236,7 @@ type Row = {
   articles?: string; // JSON array of {media_id, title, url}; absent pre-redeploy
 };
 
-type Agg = { salience: number; nMentions: number; row: Row };
+type Agg = { salience: number; row: Row };
 
 // Strip Polimètre quoting artefacts («», [], surrounding quotes).
 function cleanText(s: string | null | undefined): string {
@@ -285,10 +285,9 @@ function aggregateWeeks(rows: Row[], weeks: Set<string>): Map<string, Agg> {
     if (!weeks.has(r.week_end_date)) continue;
     const cur = out.get(r.pledge_number);
     if (!cur) {
-      out.set(r.pledge_number, { salience: r.salience_index, nMentions: r.n_mentions ?? 0, row: r });
+      out.set(r.pledge_number, { salience: r.salience_index, row: r });
     } else {
       cur.salience += r.salience_index;
-      cur.nMentions += r.n_mentions ?? 0;
       if (r.week_end_date > cur.row.week_end_date) cur.row = r;
     }
   }
@@ -331,7 +330,6 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         verdictLabel: r.verdict ?? "",
         category: category || null,
         salienceIndex: a.salience,
-        nMentions: a.nMentions,
         url: `https://polimeter.org/fr/legault/${num}`,
         trend,
         articles: pickArticlesByMedia(r),
