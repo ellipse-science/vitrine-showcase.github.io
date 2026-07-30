@@ -1,10 +1,10 @@
 {
-  "event_id": "20260730T030000Z-evt-nouveaux-bombardements-americains-iran-305ae04e",
-  "storyline_id": "story-iran-23e79f0d",
-  "title": "Les Etats-Unis frappent l'Iran après des attaques sur leurs forces au Moyen-Orient",
-  "main_issue": "international_affairs_and_defense",
+  "event_id": "20260730T070000Z-evt-videos-vague-clients-denonces-publiquement-724b4608",
+  "storyline_id": "story-dine-dash-2bc34136",
+  "title": "Des restaurateurs québécois dénoncent les clients qui fuient sans payer",
+  "main_issue": "law_and_crime",
   "date_utc": "2026-07-30",
-  "time_interval_utc": "03-07",
-  "sum_qc": 53.666,
-  "peak_qc": 42.358
+  "time_interval_utc": "07-11",
+  "sum_qc": 42.944,
+  "peak_qc": 28.103
 }
