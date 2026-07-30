@@ -1,10 +1,10 @@
 {
-  "event_id": "20260729T230000Z-evt-ado-tue-shawinigan-suspect-retrouve-3fd54f87",
-  "storyline_id": "story-philippe-benoit-1ff01bff",
-  "title": "Philippe Benoit, suspect du meurtre de son fils, arrêté à Shawinigan",
-  "main_issue": "law_and_crime",
-  "date_utc": "2026-07-29",
-  "time_interval_utc": "23-03",
-  "sum_qc": 67.479,
-  "peak_qc": 49.297
+  "event_id": "20260730T030000Z-evt-nouveaux-bombardements-americains-iran-305ae04e",
+  "storyline_id": "story-iran-23e79f0d",
+  "title": "Les Etats-Unis frappent l'Iran après des attaques sur leurs forces au Moyen-Orient",
+  "main_issue": "international_affairs_and_defense",
+  "date_utc": "2026-07-30",
+  "time_interval_utc": "03-07",
+  "sum_qc": 53.666,
+  "peak_qc": 42.358
 }
