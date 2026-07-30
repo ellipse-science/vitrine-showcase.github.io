@@ -1,5 +1,11 @@
 [
   {
+    "pr": 355,
+    "date": "2026-07-30T02:10:49Z",
+    "note": "(Section vide — configuration interne des mises à jour de dépendances, rien de visible pour le visiteur.)",
+    "version": null
+  },
+  {
     "pr": 364,
     "date": "2026-07-29T16:22:05Z",
     "note": "Quand on déplie une promesse du Polimètre+, la couleur de son verdict reste maintenant visible : elle habille tout le haut de la fiche, jusqu'au résumé.",
