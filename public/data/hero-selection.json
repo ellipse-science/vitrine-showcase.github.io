@@ -1,10 +1,10 @@
 {
-  "event_id": "20260730T110000Z-evt-jugement-invalidant-reglements-municipaux-fait-448050d2",
+  "event_id": "20260730T150000Z-evt-man-assaulted-ville-emard-13th-37d97afc",
   "storyline_id": "story-montreal-11ac1ef1",
-  "title": "Jugement annule les restrictions sur la conversion des RPA à Montréal",
+  "title": "Homicide à Ville-Émard : un homme de 42 ans tué sur le boulevard Monk",
   "main_issue": "law_and_crime",
   "date_utc": "2026-07-30",
-  "time_interval_utc": "11-15",
-  "sum_qc": 52.732,
+  "time_interval_utc": "15-19",
+  "sum_qc": 51.891,
   "peak_qc": 31.113
 }
