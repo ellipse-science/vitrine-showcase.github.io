@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
 
-const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline } = __test__;
+const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline, buildIssueMedia } = __test__;
 
 describe("latestIssueRow", () => {
   it("renvoie null sur une liste vide", () => {
@@ -363,6 +363,64 @@ const ev = (over: Record<string, unknown>) => ({
   media_ids: "[]", articles: "[]", interval_convergence_score: null,
   date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
   ...over,
+});
+
+describe("buildIssueMedia (actualités du treemap)", () => {
+  it("conserve les médias propres à chaque actualité et leurs liens", () => {
+    const rows = [
+      ev({
+        event_id: "alpha", target_region: "QC", main_issue: "economy_and_labour",
+        storyline_id: "story-alpha", title: "Actualité alpha", score_qc: 20,
+        representative_url: "https://ici.radio-canada.ca/alpha",
+        media_ids_24h: '["LAP","RCI","CTV"]',
+        articles_24h: JSON.stringify([
+          { media_id: "RCI", url: "https://ici.radio-canada.ca/alpha" },
+          { media_id: "LAP", url: "https://lapresse.ca/alpha" },
+          { media_id: "CTV", url: "https://ctvnews.ca/alpha" },
+        ]),
+      }),
+      ev({
+        event_id: "bravo", target_region: "QC", main_issue: "economy_and_labour",
+        storyline_id: "story-bravo", title: "Actualité bravo", score_qc: 10,
+        representative_url: "https://ledevoir.com/bravo",
+        media_ids_qc: '["LED"]',
+        articles: JSON.stringify([{ media_id: "LED", url: "https://ledevoir.com/bravo" }]),
+      }),
+    ];
+
+    const articles = buildIssueMedia(rows as never).get("economy_and_labour")!.articles;
+    expect(articles.map((article) => article.title)).toEqual(["Actualité alpha", "Actualité bravo"]);
+    expect(articles[0].outlets).toEqual([
+      { name: "La Presse", url: "https://lapresse.ca/alpha" },
+      { name: "Radio-Canada", url: "https://ici.radio-canada.ca/alpha" },
+    ]);
+    expect(articles[1].outlets).toEqual([
+      { name: "Le Devoir", url: "https://ledevoir.com/bravo" },
+    ]);
+  });
+
+  it("déduplique une storyline sans limiter le nombre d'actualités", () => {
+    const rows = Array.from({ length: 7 }, (_, index) => ev({
+      event_id: `event-${index}`,
+      target_region: "QC",
+      main_issue: "technology",
+      storyline_id: `story-${index}`,
+      title: `Actualité ${index}`,
+      score_qc: 20 - index,
+    }));
+    rows.push(ev({
+      event_id: "event-duplicate",
+      target_region: "QC",
+      main_issue: "technology",
+      storyline_id: "story-0",
+      title: "Ancienne formulation",
+      score_qc: 1,
+    }));
+
+    const articles = buildIssueMedia(rows as never).get("technology")!.articles;
+    expect(articles).toHaveLength(7);
+    expect(articles.some((article) => article.title === "Ancienne formulation")).toBe(false);
+  });
 });
 
 describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {

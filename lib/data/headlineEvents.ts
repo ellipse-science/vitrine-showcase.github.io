@@ -1315,10 +1315,12 @@ export type TreemapIssueTile = {
   velocity: number;
   /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
   growth: number | null;
-  /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
-  articles: { title: string; url: string | null }[];
-  /** Médias QC qui couvrent l'enjeu aujourd'hui (affiché au survol des tuiles). */
-  outlets: { name: string; url: string | null }[];
+  /** Actualités récentes liées à l'enjeu, avec les médias propres à chaque actualité. */
+  articles: {
+    title: string;
+    url: string | null;
+    outlets: { name: string; url: string | null }[];
+  }[];
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -1645,23 +1647,44 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
   return map;
 }
 
-// Jusqu'à 5 actualités récentes par enjeu (événements distincts), pour le panneau « À la une »
-// du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
-// décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
-// (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
+// Actualités récentes par enjeu (storylines distinctes). Chaque actualité conserve
+// ses propres médias et URLs : une union au niveau de l'enjeu attribuerait à tort
+// des médias d'une autre actualité à la manchette affichée.
 type IssueMedia = {
-  articles: { title: string; url: string | null }[];
-  outlets: { name: string; url: string | null }[];   // médias QC qui couvrent l'enjeu (comme la byline « Une des unes »)
+  articles: TreemapIssueTile["articles"];
 };
 
-async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+const QC_MEDIA_DOMAINS: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "radio-canada.ca": "Radio-Canada",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "journaldemontreal.com": "Journal de Montréal",
+  "montrealgazette.com": "Montreal Gazette",
+};
+
+type RawIssueArticle = { media_id?: string; url?: string };
+
+function parseIssueArticles(raw: string | null | undefined): RawIssueArticle[] {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed as RawIssueArticle[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function outletFromUrl(url: string | null): { name: string; url: string } | null {
+  if (!url) return null;
+  for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
+    if (url.includes(domain)) return { name, url };
+  }
+  return null;
+}
+
+function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
   const map = new Map<string, IssueMedia>();
-  let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
-  const allRaw = JSON.parse(rawEvents) as RawEvent[];
-
   const unique = uniqueQcEvents(allRaw);
-
   const byIssue = new Map<string, RawEvent[]>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
@@ -1673,49 +1696,52 @@ async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
   for (const [issueKey, events] of byIssue) {
     const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
     const seen = new Set<string>();
-    const list: { title: string; url: string | null }[] = [];
-    const qcIds = new Set<string>();
-    const urlByMedia: Record<string, string> = {};
+    const list: TreemapIssueTile["articles"] = [];
     for (const e of sorted) {
       const title = (e.title ?? "").trim();
-      if (title) {
-        const url = e.representative_url ?? null;
-        const dedupKey = url ?? title;
-        if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
+      if (!title) continue;
+
+      const dedupKey = e.storyline_id ?? e.representative_url ?? title;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
+
+      const rawArticles = [
+        ...parseIssueArticles(e.articles_24h),
+        ...parseIssueArticles(e.articles),
+      ];
+      const urlByMedia = new Map<string, string>();
+      for (const article of rawArticles) {
+        if (article.media_id && article.url && QC_MEDIA.includes(article.media_id) && !urlByMedia.has(article.media_id)) {
+          urlByMedia.set(article.media_id, article.url);
+        }
       }
-      // Médias QC couvrant cet événement (exclusivité médias québécois)
-      let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
-      if (ids.length === 0 && e.media_ids) {
-        ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+
+      let ids = parseIdList(e.media_ids_24h).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = parseIdList(e.media_ids_qc).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = [...urlByMedia.keys()];
+      const idSet = new Set(ids);
+      let outlets = QC_MEDIA
+        .filter((id) => idSet.has(id))
+        .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia.get(id) ?? null }));
+
+      const url = e.representative_url ?? outlets.find((outlet) => outlet.url)?.url ?? null;
+      if (outlets.length === 0) {
+        const fallbackOutlet = outletFromUrl(url);
+        if (fallbackOutlet) outlets = [fallbackOutlet];
       }
-      ids.forEach((id) => {
-        if (QC_MEDIA.includes(id)) qcIds.add(id);
-      });
-      for (const k of ["articles_24h", "articles"] as const) {
-        try {
-          const parsed = JSON.parse((e[k] as string) ?? "[]");
-          if (Array.isArray(parsed)) for (const a of parsed as { media_id?: string; url?: string }[]) {
-            if (a.media_id && a.url && QC_MEDIA.includes(a.media_id) && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
-          }
-        } catch { /* champ absent ou malformé */ }
-      }
+      list.push({ title, url, outlets });
     }
-    const outlets = QC_MEDIA
-      .filter((id) => qcIds.has(id))
-      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
-    map.set(issueKey, { articles: list.slice(0, 5), outlets });
+    map.set(issueKey, { articles: list });
   }
   return map;
 }
 
-const QC_MEDIA_DOMAINS: Record<string, string> = {
-  "lapresse.ca": "La Presse",
-  "ledevoir.com": "Le Devoir",
-  "radio-canada.ca": "Radio-Canada",
-  "tvanouvelles.ca": "TVA Nouvelles",
-  "journaldemontreal.com": "Journal de Montréal",
-  "montrealgazette.com": "Montreal Gazette",
-};
+async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+  let rawEvents: string;
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return new Map(); }
+  return buildIssueMedia(JSON.parse(rawEvents) as RawEvent[]);
+}
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
@@ -1772,19 +1798,15 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      let outlets = articlesByIssue.get(issueKey)?.outlets ?? [];
-      if (outlets.length === 0 && url) {
-        for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
-          if (url.includes(domain)) {
-            outlets = [{ name, url }];
-            break;
-          }
-        }
+      let articles = articlesByIssue.get(issueKey)?.articles ?? [];
+      if (articles.length === 0 && context) {
+        const fallbackOutlet = outletFromUrl(url);
+        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [] }];
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
@@ -1847,5 +1869,6 @@ export const __test__ = {
   blockKey,
   titleTokens,
   sameStory,
+  buildIssueMedia,
   CAL_CONV,
 };

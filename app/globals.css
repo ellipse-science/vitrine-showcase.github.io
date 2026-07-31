@@ -2820,6 +2820,210 @@
     color: var(--ink-softer);
   }
 
+  /* Vue mobile du classement des enjeux : une trajectoire lisible à la fois,
+     avec les onze autres en contexte et une sélection tactile séparée du SVG. */
+  .issues-rank-desktop { display: block; }
+  .issues-rank-mobile { display: none; }
+  .irm-container {
+    margin-top: 4px;
+    padding: 22px 16px 20px;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+  }
+  .irm-empty {
+    margin: 0 0 20px;
+    color: var(--ink-soft);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.45;
+  }
+  .irm-empty { padding: 36px 8px; text-align: center; }
+  .irm-focus-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .irm-kicker,
+  .irm-summary span,
+  .irm-news-heading span {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .irm-focus-header h3 {
+    margin: 6px 0 0;
+    padding-left: 10px;
+    border-left: 4px solid var(--c);
+    color: var(--ink);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 23px;
+    line-height: 1.08;
+  }
+  .irm-summary { min-width: 82px; text-align: right; }
+  .irm-summary strong {
+    display: block;
+    color: var(--ink);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 30px;
+    line-height: 1;
+  }
+  .irm-summary span { margin-top: 5px; letter-spacing: 0.08em; }
+  .irm-chart { display: block; width: 100%; height: auto; margin: 12px 0 4px; overflow: visible; }
+  .irm-guide { stroke: var(--rule-faint); stroke-width: 1; }
+  .irm-rank-axis,
+  .irm-date,
+  .irm-current-rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    fill: var(--ink-softer);
+  }
+  .irm-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.09;
+    transition: opacity 0.2s ease, stroke-width 0.2s ease;
+  }
+  .irm-line.active { stroke-width: 5; opacity: 1; }
+  .irm-current-rank { fill: var(--paper); font-size: 10px; font-weight: 700; }
+  .irm-selector {
+    margin-top: 8px;
+    border-top: 1px solid var(--ink);
+  }
+  .irm-issue-block { border-bottom: 0.5px solid var(--rule-faint); }
+  .irm-issue-block:last-child { border-bottom: 0; }
+  .irm-issue {
+    --c: var(--ink-soft);
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 34px 18px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 7px 8px 7px 5px;
+    border: 0;
+    border-left: 3px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .irm-issue.active {
+    border-left-color: var(--c);
+    background: color-mix(in srgb, var(--c) 9%, transparent);
+  }
+  .irm-issue:focus-visible { outline: 2px solid var(--c); outline-offset: -2px; }
+  .irm-issue-rank {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: var(--c);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .irm-issue-name {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.18;
+  }
+  .irm-issue-movement {
+    justify-self: end;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .irm-issue-movement.up { color: #3D6B3A; }
+  .irm-issue-movement.down { color: var(--cordovan); }
+  .irm-issue-movement.flat { color: var(--ink-softer); }
+  .irm-issue-toggle {
+    justify-self: end;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .irm-issue.expanded .irm-issue-toggle { color: var(--c); }
+  .irm-news {
+    padding: 16px 12px 18px 50px;
+    border-top: 0.5px solid var(--rule-faint);
+    background: color-mix(in srgb, var(--paper) 78%, var(--rule-faint) 22%);
+  }
+  .irm-inline-news {
+    animation: irmNewsIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes irmNewsIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: none; }
+  }
+  .irm-news-heading { margin-bottom: 12px; }
+  .irm-news-heading strong {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .irm-article {
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .irm-article:last-child { border-bottom: 0; }
+  .irm-article > a,
+  .irm-article > span {
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.28;
+    text-decoration: none;
+  }
+  .irm-article > a:hover { color: var(--cordovan); }
+  .irm-article-outlets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 7px;
+  }
+  .irm-article-outlets a,
+  .irm-article-outlets span {
+    color: var(--ink-softer);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .irm-article-outlets a:hover { color: var(--cordovan); }
+  .irm-no-news {
+    margin: 0;
+    color: var(--ink-soft);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .irm-inline-news { animation: none; }
+  }
+
   /* --- Treemap de croissance (vue Aujourd'hui) : tuiles pleines + % de croissance --- */
   .treemap-growth {
     position: relative;
@@ -2835,8 +3039,18 @@
     padding: 1px;
     display: flex;
     flex-direction: column;
-    transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), top 0.6s cubic-bezier(0.16, 1, 0.3, 1), width 0.6s cubic-bezier(0.16, 1, 0.3, 1), height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    outline: none;
+    will-change: left, top, width, height, opacity;
+    transition:
+      left 0.58s cubic-bezier(0.16, 1, 0.3, 1),
+      top 0.58s cubic-bezier(0.16, 1, 0.3, 1),
+      width 0.58s cubic-bezier(0.16, 1, 0.3, 1),
+      height 0.58s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.2s ease;
   }
+  .treemap-growth .gt-container-muted { opacity: 0; pointer-events: none; }
+  .treemap-growth .gt-container-expanded { z-index: 30; padding: 0; }
   .treemap-growth .gt-tile {
     flex: 1;
     min-height: 0;
@@ -2850,8 +3064,17 @@
     border: 0.5px solid rgba(255, 255, 255, 0.08);
     transition: filter 0.2s ease;
   }
-  a.gt-tile { cursor: pointer; }
-  .treemap-growth .gt-tile:hover { filter: brightness(1.12); }
+  .treemap-growth .gt-container:not(.gt-container-expanded) .gt-tile { cursor: pointer; }
+  .treemap-growth .gt-container:not(.gt-container-expanded) .gt-tile:hover { filter: brightness(1.12); }
+  .treemap-growth .gt-container:focus-visible .gt-tile { outline: 2px solid #F3ECDD; outline-offset: -4px; }
+  .treemap-growth .gt-collapsed {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    transition: opacity 0.14s ease;
+  }
+  .treemap-growth .gt-container-expanded .gt-collapsed { opacity: 0; pointer-events: none; }
   .treemap-growth .gt-head {
     display: flex;
     justify-content: flex-end;
@@ -2886,46 +3109,46 @@
     transition: opacity 0.2s ease;
     z-index: 1;
   }
-  /* manchette (actualité) + médias : au centre, révélée au survol et remplace le nom */
-  .treemap-growth .gt-news {
+  .treemap-growth .gt-preview {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    color: #F3ECDD;
-    opacity: 0;
-    transition: opacity 0.2s ease;
     padding: 6px 10px;
-    z-index: 2;
+    color: #F3ECDD;
+    text-align: center;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 2;
   }
-  .treemap-growth .gt-has-news:hover .gt-title { opacity: 0; }
-  .treemap-growth .gt-has-news:hover .gt-news { opacity: 0.98; }
-  .treemap-growth .gt-news-head {
+  .treemap-growth .gt-has-news:hover .gt-title,
+  .treemap-growth .gt-container:focus-visible .gt-has-news .gt-title { opacity: 0; }
+  .treemap-growth .gt-has-news:hover .gt-preview,
+  .treemap-growth .gt-container:focus-visible .gt-has-news .gt-preview { opacity: 0.98; }
+  .treemap-growth .gt-preview-head {
+    display: -webkit-box;
+    overflow: hidden;
     font-family: 'Source Serif 4', Georgia, serif;
     font-style: italic;
     line-height: 1.3;
-    display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
-    overflow: hidden;
   }
-  /* médias couvrant l'enjeu (comme la byline « Une des unes ») */
-  .treemap-growth .gt-news-media {
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.72em;
-    opacity: 0.8;
-    line-height: 1.35;
-    margin-top: 5px;
+  .treemap-growth .gt-preview-media {
     display: -webkit-box;
+    overflow: hidden;
+    margin-top: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72em;
+    line-height: 1.35;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.8;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
   }
   .treemap-growth .gt-pct {
     font-family: 'Playfair Display', serif;
@@ -2957,55 +3180,200 @@
   /* tailles */
   .treemap-growth .gt-large { padding: 16px 18px; }
   .treemap-growth .gt-large .gt-title { font-size: 32px; }
-  .treemap-growth .gt-large .gt-news-head { font-size: 19px; }
+  .treemap-growth .gt-large .gt-preview-head { font-size: 19px; }
   .treemap-growth .gt-large .gt-pct { font-size: 28px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
   .treemap-growth .gt-medium .gt-title { font-size: 23px; }
-  .treemap-growth .gt-medium .gt-news-head { font-size: 14.5px; }
+  .treemap-growth .gt-medium .gt-preview-head { font-size: 14.5px; }
   .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
   .treemap-growth .gt-small { padding: 10px 11px; }
   .treemap-growth .gt-small .gt-title { font-size: 15px; }
-  .treemap-growth .gt-small .gt-news-head { font-size: 12px; -webkit-line-clamp: 2; }
-  .treemap-growth .gt-small .gt-news-media { font-size: 0.65em; -webkit-line-clamp: 1; margin-top: 3px; }
   .treemap-growth .gt-small .gt-pct { font-size: 16px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
   .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
-  /* infobulle flottante des petites tuiles (nom + manchette + médias) */
   .treemap-growth .gt-tip {
-    z-index: 20;
+    z-index: 40;
     pointer-events: none;
-    max-width: 300px;
-    min-width: 170px;
+    max-width: 320px;
+    min-width: 190px;
     margin: 5px;
+    padding: 12px 14px;
     background: #26221e;
     color: #F3ECDD;
     border: 1px solid rgba(0, 0, 0, 0.35);
-    padding: 10px 12px;
-    box-shadow: 0 6px 18px rgba(28, 25, 23, 0.3);
+    box-shadow: 0 8px 24px rgba(28, 25, 23, 0.34);
+    animation: gtTipIn 0.16s ease both;
+  }
+  @keyframes gtTipIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: none; }
   }
   .treemap-growth .gt-tip-name {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 700;
-    font-size: 15px;
-    line-height: 1.15;
-    margin-bottom: 6px;
-    border-left: 3px solid var(--c, #463E3E);
+    margin-bottom: 7px;
     padding-left: 8px;
+    border-left: 3px solid var(--c, #463E3E);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.15;
   }
   .treemap-growth .gt-tip-head {
     font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
     font-size: 13px;
+    font-style: italic;
     line-height: 1.35;
   }
-  .treemap-growth .gt-tip-media {
+  .treemap-growth .gt-tip-media,
+  .treemap-growth .gt-tip-action {
+    margin-top: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.72;
+  }
+  .treemap-growth .gt-tip-action { margin-top: 10px; opacity: 0.48; }
+  .treemap-growth .gt-container-expanded .gt-tile { padding: 0; filter: none; }
+  .treemap-growth .gt-expanded-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 34px 38px 30px;
+    color: #F3ECDD;
+    overflow: hidden;
+    animation: gtExpandedContentIn 0.34s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes gtExpandedContentIn {
+    from { opacity: 0; transform: scale(0.975); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .treemap-growth .gt-expanded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(243, 236, 221, 0.38);
+    flex: 0 0 auto;
+  }
+  .treemap-growth .gt-expanded-kicker,
+  .treemap-growth .gt-expanded-count,
+  .treemap-growth .gt-expanded-growth > span:last-child {
+    display: block;
     font-family: 'IBM Plex Mono', monospace;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.16em;
     font-size: 10px;
-    opacity: 0.75;
+    line-height: 1.5;
+    opacity: 0.72;
+  }
+  .treemap-growth .gt-expanded-header h3 {
+    max-width: 760px;
+    margin: 5px 0 8px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(34px, 4vw, 58px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+  }
+  .treemap-growth .gt-expanded-growth {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    max-width: 210px;
+    text-align: right;
+  }
+  .treemap-growth .gt-expanded-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    padding: 6px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(243, 236, 221, 0.52);
+    background: transparent;
+    color: #F3ECDD;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .treemap-growth .gt-expanded-close span { font-size: 17px; line-height: 0.7; }
+  .treemap-growth .gt-expanded-close:hover,
+  .treemap-growth .gt-expanded-close:focus-visible { border-bottom-color: #F3ECDD; outline: none; }
+  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 32px; }
+  .treemap-growth .gt-expanded-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    column-gap: 38px;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 8px 10px 0 0;
+    scrollbar-color: rgba(243, 236, 221, 0.45) transparent;
+    scrollbar-width: thin;
+  }
+  .treemap-growth .gt-expanded-story {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    align-content: start;
+    padding: 19px 0 17px;
+    border-bottom: 1px solid rgba(243, 236, 221, 0.24);
+  }
+  .treemap-growth .gt-expanded-index {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    padding-top: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    opacity: 0.56;
+  }
+  .treemap-growth .gt-expanded-title {
+    grid-column: 2;
+    color: #F3ECDD;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: clamp(17px, 1.55vw, 22px);
+    line-height: 1.23;
+    font-weight: 600;
+    text-decoration: none;
+    text-wrap: balance;
+    transition: opacity 0.15s ease;
+  }
+  .treemap-growth a.gt-expanded-title:hover { opacity: 0.72; }
+  .treemap-growth .gt-expanded-outlets {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 13px;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
     line-height: 1.4;
-    margin-top: 6px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .treemap-growth .gt-expanded-outlets a,
+  .treemap-growth .gt-expanded-outlets span { color: #F3ECDD; opacity: 0.72; text-decoration: none; }
+  .treemap-growth .gt-expanded-outlets a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+  .treemap-growth .gt-expanded-empty {
+    margin: auto;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 19px;
+    font-style: italic;
+  }
+  @media (max-width: 900px) {
+    .treemap-growth .gt-expanded-panel { padding: 28px 30px 24px; }
+    .treemap-growth .gt-expanded-list { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .treemap-growth .gt-container { transition-duration: 0.01ms; }
+    .treemap-growth .gt-expanded-panel { animation: none; }
   }
   .partis-title {
     font-family: 'Playfair Display', Georgia, serif;
@@ -3712,6 +4080,8 @@
     .treemap-growth { display: none; }
     .treemap-mobile { display: block; margin-top: 4px; }
     .treemap-legend { display: none; }
+    .issues-rank-desktop { display: none; }
+    .issues-rank-mobile { display: block; }
 
     /* ── Assemblée nationale : hémicycle + détail ── */
     .ass-card { padding: 18px 0; gap: 10px; }
