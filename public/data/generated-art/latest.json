@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-07-31T00:04Z",
-  "headline_fr": "Homicide à Ville-Émard : un homme de 42 ans tué sur le boulevard Monk",
-  "headline_en": "Man assaulted in Ville-Émard is Montreal's 13th homicide of 2026, police say",
-  "main_issue": "law_and_crime",
-  "main_issue_text_fr": "Loi et crime",
+  "generated_at": "2026-07-31T04:03Z",
+  "headline_fr": "Trump annonce un accord pour le désarmement du Hamas à Gaza",
+  "headline_en": "Trump annonce un accord sur le désarmement du Hamas à Gaza",
+  "main_issue": "international_affairs_and_defense",
+  "main_issue_text_fr": "Affaires internationales et défense",
   "context_outlets": [
-    "MG",
-    "TVA"
+    "RCI",
+    "LAP",
+    "LED",
+    "JDM"
   ]
 }
