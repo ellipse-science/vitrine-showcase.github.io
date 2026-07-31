@@ -1,5 +1,11 @@
 [
   {
+    "pr": 377,
+    "date": "2026-07-31T16:05:35Z",
+    "note": "Les tuiles « De quoi parle-t-on? » révèlent maintenant leur actualité principale au survol et toutes les actualités associées au clic, avec les médias propres à chaque manchette. Sur mobile, les classements de la semaine et du mois deviennent une trajectoire ciblée accompagnée d'une liste où les actualités se déplient sous chaque enjeu.",
+    "version": "2.17.0-beta.0"
+  },
+  {
     "pr": 355,
     "date": "2026-07-30T02:10:49Z",
     "note": "(Section vide — configuration interne des mises à jour de dépendances, rien de visible pour le visiteur.)",
