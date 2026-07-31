@@ -1,10 +1,10 @@
 {
-  "event_id": "20260730T230000Z-evt-trump-annonce-accord-desarmement-hamas-55029437",
+  "event_id": "20260731T030000Z-evt-trump-agreement-has-been-reached-71dfda5a",
   "storyline_id": "story-hamas-581ac117",
   "title": "Trump annonce un accord pour le désarmement du Hamas à Gaza",
   "main_issue": "international_affairs_and_defense",
-  "date_utc": "2026-07-30",
-  "time_interval_utc": "23-03",
-  "sum_qc": 92.413,
+  "date_utc": "2026-07-31",
+  "time_interval_utc": "03-07",
+  "sum_qc": 97.292,
   "peak_qc": 92.413
 }
