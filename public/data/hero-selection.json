@@ -1,10 +1,10 @@
 {
-  "event_id": "20260731T070000Z-evt-trump-announces-agreement-hamas-disarm-4121ace7",
-  "storyline_id": "story-hamas-581ac117",
-  "title": "Trump annonce un accord pour le désarmement du Hamas à Gaza",
-  "main_issue": "international_affairs_and_defense",
+  "event_id": "20260731T150000Z-evt-espagne-000-migrants-ont-rejoint-32e9c378",
+  "storyline_id": "story-ceuta-78819bd4",
+  "title": "60 000 migrants franchissent la frontière de Ceuta, crise en Espagne",
+  "main_issue": "immigration",
   "date_utc": "2026-07-31",
-  "time_interval_utc": "07-11",
-  "sum_qc": 70.978,
-  "peak_qc": 92.413
+  "time_interval_utc": "15-19",
+  "sum_qc": 126.264,
+  "peak_qc": 86.174
 }
