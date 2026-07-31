@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
@@ -241,12 +242,194 @@ function smoothPath(pts: { x: number; y: number }[]): string {
   return d;
 }
 
+function rankLabel(rank: number): string {
+  return rank === 1 ? "1er" : `${rank}e`;
+}
+
+function movementLabel(delta: number): string {
+  if (delta === 0) return "Rang stable";
+  const count = Math.abs(delta);
+  return `${delta > 0 ? "En hausse" : "En baisse"} de ${count} rang${count > 1 ? "s" : ""}`;
+}
+
+function movementCompact(delta: number): string {
+  if (delta === 0) return "=";
+  return `${delta > 0 ? "↑" : "↓"} ${Math.abs(delta)}`;
+}
+
+function IssuesRankMobile({
+  tiles,
+  history,
+  period,
+}: {
+  tiles: TreemapIssueTile[];
+  history: TreemapHistoryPoint[];
+  period: RankPeriod;
+}) {
+  const points = rankPointsForPeriod(history, period);
+  const latestRanks = points.at(-1)?.ranks ?? {};
+  const rankedTiles = [...tiles].sort(
+    (a, b) => (latestRanks[a.issueKey] ?? 12) - (latestRanks[b.issueKey] ?? 12),
+  );
+  const [selectedKey, setSelectedKey] = useState(rankedTiles[0]?.issueKey ?? "");
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const selected = tiles.find((tile) => tile.issueKey === selectedKey) ?? rankedTiles[0];
+
+  if (points.length <= 1 || !selected) {
+    return (
+      <div className="issues-rank-mobile irm-container">
+        <p className="irm-empty">Pas assez de données historiques pour générer le graphique de classement.</p>
+      </div>
+    );
+  }
+
+  const VB_W = 360;
+  const VB_H = 248;
+  const PAD_L = 24;
+  const PAD_R = 28;
+  const PAD_T = 20;
+  const PAD_B = 38;
+  const plotW = VB_W - PAD_L - PAD_R;
+  const plotH = VB_H - PAD_T - PAD_B;
+  const plotRight = PAD_L + plotW;
+  const getX = (index: number) => PAD_L + index * (plotW / Math.max(points.length - 1, 1));
+  const getY = (rank: number) => PAD_T + (rank - 1) * (plotH / 11);
+  const movement = rankMovement(points, selected.issueKey);
+  const selectedPoints = points.map((point, index) => ({
+    x: getX(index),
+    y: getY(point.ranks[selected.issueKey] ?? 12),
+    rank: point.ranks[selected.issueKey] ?? 12,
+  }));
+  const focusArticles = selected.articles.length > 0
+    ? selected.articles.slice(0, 5)
+    : selected.context
+      ? [{ title: selected.context, url: selected.url, outlets: [] }]
+      : [];
+  const orderedLines = [...tiles].sort(
+    (a, b) => (a.issueKey === selected.issueKey ? 1 : 0) - (b.issueKey === selected.issueKey ? 1 : 0),
+  );
+
+  return (
+    <div className="issues-rank-mobile irm-container">
+      <div className="irm-focus-header">
+        <div>
+          <span className="irm-kicker">Trajectoire suivie</span>
+          <h3 style={{ "--c": selected.color } as React.CSSProperties}>{selected.issueFr}</h3>
+        </div>
+        <div className="irm-summary">
+          <strong>{rankLabel(movement.endRank)}</strong>
+          <span>{movementLabel(movement.delta)}</span>
+        </div>
+      </div>
+
+      <svg
+        className="irm-chart"
+        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        role="img"
+        aria-label={`Évolution du rang de ${selected.issueFr}, de ${rankLabel(movement.startRank)} à ${rankLabel(movement.endRank)}`}
+      >
+        {[1, 6, 12].map((rank) => (
+          <g key={rank}>
+            <line x1={PAD_L} y1={getY(rank)} x2={plotRight} y2={getY(rank)} className="irm-guide" />
+            <text x={PAD_L - 7} y={getY(rank) + 3} textAnchor="end" className="irm-rank-axis">{rank}</text>
+          </g>
+        ))}
+
+        {orderedLines.map((tile) => {
+          const linePoints = points.map((point, index) => ({
+            x: getX(index),
+            y: getY(point.ranks[tile.issueKey] ?? 12),
+          }));
+          const active = tile.issueKey === selected.issueKey;
+          return (
+            <path
+              key={tile.issueKey}
+              d={smoothPath(linePoints)}
+              className={active ? "irm-line active" : "irm-line"}
+              stroke={active ? tile.color : "var(--ink)"}
+            />
+          );
+        })}
+
+        {selectedPoints.map((point, index) => {
+          const previousRank = selectedPoints[index - 1]?.rank;
+          if (index !== 0 && index !== selectedPoints.length - 1 && point.rank === previousRank) return null;
+          return <circle key={index} cx={point.x} cy={point.y} r={index === selectedPoints.length - 1 ? 13 : 3.5} fill={selected.color} />;
+        })}
+        <text x={plotRight} y={selectedPoints.at(-1)!.y + 4} textAnchor="middle" className="irm-current-rank">
+          {movement.endRank}
+        </text>
+        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{fmtDate(points[0].date)}</text>
+        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{fmtDate(points.at(-1)!.date)}</text>
+      </svg>
+
+      <div className="irm-selector" aria-label="Choisir un enjeu à suivre">
+        {rankedTiles.map((tile) => {
+          const tileMovement = rankMovement(points, tile.issueKey);
+          const active = tile.issueKey === selected.issueKey;
+          const expanded = tile.issueKey === expandedKey;
+          return (
+            <div className={`irm-issue-block${active ? " active" : ""}${expanded ? " expanded" : ""}`} key={tile.issueKey}>
+              <button
+                type="button"
+                className={`irm-issue${active ? " active" : ""}${expanded ? " expanded" : ""}`}
+                style={{ "--c": tile.color } as React.CSSProperties}
+                aria-expanded={expanded}
+                onClick={() => {
+                  setSelectedKey(tile.issueKey);
+                  setExpandedKey((current) => current === tile.issueKey ? null : tile.issueKey);
+                }}
+              >
+                <span className="irm-issue-rank">{tileMovement.endRank}</span>
+                <span className="irm-issue-name">{tile.issueFr}</span>
+                <span className={`irm-issue-movement ${tileMovement.delta > 0 ? "up" : tileMovement.delta < 0 ? "down" : "flat"}`}>
+                  {movementCompact(tileMovement.delta)}
+                </span>
+                <span className="irm-issue-toggle" aria-hidden="true">{expanded ? "−" : "+"}</span>
+              </button>
+
+              {expanded && (
+                <div className="irm-news irm-inline-news">
+                  <div className="irm-news-heading">
+                    <span>À la une</span>
+                    <strong>{selected.issueFr}</strong>
+                  </div>
+                  {focusArticles.length > 0 ? focusArticles.map((article, index) => (
+                    <article className="irm-article" key={`${article.title}-${index}`}>
+                      {article.url ? (
+                        <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
+                      ) : (
+                        <span>{article.title}</span>
+                      )}
+                      {article.outlets.length > 0 && (
+                        <div className="irm-article-outlets">
+                          {article.outlets.map((outlet) => outlet.url ? (
+                            <a key={outlet.name} href={outlet.url} target="_blank" rel="noopener noreferrer">{outlet.name}</a>
+                          ) : (
+                            <span key={outlet.name}>{outlet.name}</span>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  )) : (
+                    <p className="irm-no-news">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Graphique de rang (« bump chart ») : trajectoire du classement des 12 enjeux dans le temps,
  * avec panneau « À la une » qui liste les actualités de l'enjeu sélectionné (clic) ou survolé.
  * Affiché pour les vues « Cette semaine » (7 derniers jours) et « Ce mois » (mois courant).
  */
-function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: "week" | "month" }) {
+function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: RankPeriod }) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
 
@@ -268,15 +451,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
     );
   }
 
-  // Fenêtre temporelle : 7 derniers jours (semaine) ou tous les jours du mois courant.
-  let points = [...history];
-  if (period === "week") {
-    points = points.slice(-7);
-  } else {
-    const latestMonth = points.length ? points[points.length - 1].date.slice(0, 7) : "";
-    const inMonth = points.filter((p) => p.date.slice(0, 7) === latestMonth);
-    points = inMonth.length > 1 ? inMonth : points.slice(-30);
-  }
+  const points = rankPointsForPeriod(history, period);
 
   const VB_W = 1200;
   const VB_H = 640;
@@ -493,7 +668,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation :</b><br /><br />
               • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes.
+              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -577,7 +752,12 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
       ) : secret && period === "month" ? (
         <FlappyEnjeux tiles={tiles} onExit={() => setSecret(false)} />
       ) : (
-        <IssuesRankChart tiles={tiles} history={current.history} period={period} />
+        <>
+          <div className="issues-rank-desktop">
+            <IssuesRankChart tiles={tiles} history={current.history} period={period} />
+          </div>
+          <IssuesRankMobile tiles={tiles} history={current.history} period={period} />
+        </>
       )}
 
       <div className="module-last-updated">{current.lastUpdated}</div>

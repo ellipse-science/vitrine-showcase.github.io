@@ -2820,6 +2820,210 @@
     color: var(--ink-softer);
   }
 
+  /* Vue mobile du classement des enjeux : une trajectoire lisible à la fois,
+     avec les onze autres en contexte et une sélection tactile séparée du SVG. */
+  .issues-rank-desktop { display: block; }
+  .issues-rank-mobile { display: none; }
+  .irm-container {
+    margin-top: 4px;
+    padding: 22px 16px 20px;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+  }
+  .irm-empty {
+    margin: 0 0 20px;
+    color: var(--ink-soft);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.45;
+  }
+  .irm-empty { padding: 36px 8px; text-align: center; }
+  .irm-focus-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .irm-kicker,
+  .irm-summary span,
+  .irm-news-heading span {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .irm-focus-header h3 {
+    margin: 6px 0 0;
+    padding-left: 10px;
+    border-left: 4px solid var(--c);
+    color: var(--ink);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 23px;
+    line-height: 1.08;
+  }
+  .irm-summary { min-width: 82px; text-align: right; }
+  .irm-summary strong {
+    display: block;
+    color: var(--ink);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 30px;
+    line-height: 1;
+  }
+  .irm-summary span { margin-top: 5px; letter-spacing: 0.08em; }
+  .irm-chart { display: block; width: 100%; height: auto; margin: 12px 0 4px; overflow: visible; }
+  .irm-guide { stroke: var(--rule-faint); stroke-width: 1; }
+  .irm-rank-axis,
+  .irm-date,
+  .irm-current-rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    fill: var(--ink-softer);
+  }
+  .irm-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.09;
+    transition: opacity 0.2s ease, stroke-width 0.2s ease;
+  }
+  .irm-line.active { stroke-width: 5; opacity: 1; }
+  .irm-current-rank { fill: var(--paper); font-size: 10px; font-weight: 700; }
+  .irm-selector {
+    margin-top: 8px;
+    border-top: 1px solid var(--ink);
+  }
+  .irm-issue-block { border-bottom: 0.5px solid var(--rule-faint); }
+  .irm-issue-block:last-child { border-bottom: 0; }
+  .irm-issue {
+    --c: var(--ink-soft);
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 34px 18px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 7px 8px 7px 5px;
+    border: 0;
+    border-left: 3px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .irm-issue.active {
+    border-left-color: var(--c);
+    background: color-mix(in srgb, var(--c) 9%, transparent);
+  }
+  .irm-issue:focus-visible { outline: 2px solid var(--c); outline-offset: -2px; }
+  .irm-issue-rank {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: var(--c);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .irm-issue-name {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.18;
+  }
+  .irm-issue-movement {
+    justify-self: end;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .irm-issue-movement.up { color: #3D6B3A; }
+  .irm-issue-movement.down { color: var(--cordovan); }
+  .irm-issue-movement.flat { color: var(--ink-softer); }
+  .irm-issue-toggle {
+    justify-self: end;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .irm-issue.expanded .irm-issue-toggle { color: var(--c); }
+  .irm-news {
+    padding: 16px 12px 18px 50px;
+    border-top: 0.5px solid var(--rule-faint);
+    background: color-mix(in srgb, var(--paper) 78%, var(--rule-faint) 22%);
+  }
+  .irm-inline-news {
+    animation: irmNewsIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes irmNewsIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: none; }
+  }
+  .irm-news-heading { margin-bottom: 12px; }
+  .irm-news-heading strong {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .irm-article {
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .irm-article:last-child { border-bottom: 0; }
+  .irm-article > a,
+  .irm-article > span {
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.28;
+    text-decoration: none;
+  }
+  .irm-article > a:hover { color: var(--cordovan); }
+  .irm-article-outlets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 7px;
+  }
+  .irm-article-outlets a,
+  .irm-article-outlets span {
+    color: var(--ink-softer);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .irm-article-outlets a:hover { color: var(--cordovan); }
+  .irm-no-news {
+    margin: 0;
+    color: var(--ink-soft);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .irm-inline-news { animation: none; }
+  }
+
   /* --- Treemap de croissance (vue Aujourd'hui) : tuiles pleines + % de croissance --- */
   .treemap-growth {
     position: relative;
@@ -3876,6 +4080,8 @@
     .treemap-growth { display: none; }
     .treemap-mobile { display: block; margin-top: 4px; }
     .treemap-legend { display: none; }
+    .issues-rank-desktop { display: none; }
+    .issues-rank-mobile { display: block; }
 
     /* ── Assemblée nationale : hémicycle + détail ── */
     .ass-card { padding: 18px 0; gap: 10px; }
