@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
 
-const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView } = __test__;
+const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView, rowsAreFresh } = __test__;
 
-type SR = { party: string; date_utc: string; date_montreal_tz: string; weighted_mentions: number; weighted_tone: number; computed_at?: string };
+type SR = { party: string; date_utc: string; date_montreal_tz: string; weighted_mentions: number; weighted_tone: number | null; computed_at?: string };
 
-function row(party: string, date: string, mentions: number, tone = 0): SR {
+function row(party: string, date: string, mentions: number, tone: number | null = 0): SR {
   return { party, date_utc: date, date_montreal_tz: date, weighted_mentions: mentions, weighted_tone: tone };
 }
 
@@ -86,6 +86,36 @@ describe("buildRangeView", () => {
     for (const r of view.rows) {
       expect(["positive", "negative", "neutral"]).toContain(r.toneDirection);
     }
+  });
+  it("affiche un ton manquant comme indisponible, jamais neutre", () => {
+    const rows = PARTY_KEYS.map((p) => row(p, DATE_A, 0.2, p === "caq" ? null : 0.1));
+    const view = buildRangeView(computeStats(rows, rows, rows)!, "today");
+    const caq = view.rows.find((r) => r.key === "caq")!;
+    expect(caq.toneDirection).toBe("unavailable");
+    expect(caq.toneLabel).toContain("Indisponible");
+    expect(caq.toneTitle).not.toContain("Neutre");
+  });
+  it("décrit le ton ciblé envers le parti", () => {
+    const rows = PARTY_KEYS.map((p) => row(p, DATE_A, 0.2, 0.1));
+    const caq = buildRangeView(computeStats(rows, rows, rows)!, "today").rows.find((r) => r.key === "caq")!;
+    expect(caq.toneTitle).toContain("envers ce parti");
+    expect(caq.toneTitle).not.toContain("proportion nette de mots positifs");
+  });
+});
+
+describe("rowsAreFresh", () => {
+  const now = Date.parse("2026-07-31T12:00:00Z");
+  it("utilise le timestamp le plus récent de la fenêtre historique", () => {
+    const rows = [
+      { ...row("caq", DATE_A, 1), computed_at: "2026-07-01T00:00:00Z" },
+      { ...row("caq", DATE_A, 1), computed_at: "2026-07-31T06:00:00Z" },
+    ];
+    expect(rowsAreFresh(rows, 12, now)).toBe(true);
+  });
+  it("rejette les données périmées, invalides ou futures", () => {
+    expect(rowsAreFresh([{ ...row("caq", DATE_A, 1), computed_at: "2026-07-30T23:00:00Z" }], 12, now)).toBe(false);
+    expect(rowsAreFresh([{ ...row("caq", DATE_A, 1), computed_at: "invalid" }], 12, now)).toBe(false);
+    expect(rowsAreFresh([{ ...row("caq", DATE_A, 1), computed_at: "2026-07-31T14:00:00Z" }], 12, now)).toBe(false);
   });
 });
 

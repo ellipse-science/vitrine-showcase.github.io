@@ -632,14 +632,16 @@
     </div>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le système analyse la couverture médiatique et produit, pour chaque parti, chaque date et chaque bloc de collecte, deux mesures clés&nbsp;: une <strong>saillance pondérée</strong> (visibilité) et un <strong>ton net pondéré</strong> (valence du traitement), disponibles sur les fenêtres jour, semaine et mois.</p>
+    <p class="metho-body">Le système analyse la couverture médiatique et produit, pour chaque parti et chaque date, deux mesures clés&nbsp;: une <strong>part de la visibilité politique</strong> et un <strong>ton pondéré</strong>, disponibles depuis le début du jour, de la semaine et du mois civils.</p>
+    <p class="metho-body"><strong>Statut provisoire&nbsp;:</strong> la détection des partis provinciaux combine actuellement un dictionnaire à haut rappel et la vérification de chaque correspondance par un modèle de langue génératif. Cette version rétablit l'actualisation du module, mais n'a pas encore fait l'objet d'une validation humaine complète de sa précision, de son rappel et de l'évaluation du ton.</p>
 
     <h3>Algorithme</h3>
     <ol class="metho-list">
-      <li>Les articles sont segmentés en phrases. Un dictionnaire de partis et un dictionnaire de sentiment sont appliqués simultanément à chaque phrase.</li>
-      <li><strong>Saillance pondérée</strong>&nbsp;: nombre de mentions du parti dans la phrase, divisé par le nombre total de mots, pondéré par l'indice inter-médias du média source.</li>
-      <li><strong>Ton net pondéré</strong>&nbsp;: nombre de termes positifs moins nombre de termes négatifs, rapporté au total des mots et pondéré de la même façon.</li>
-      <li>Agrégation journalière, puis calcul de moyennes glissantes pour les fenêtres semaine et mois.</li>
+      <li>Les articles sont segmentés en phrases. Un dictionnaire repère les phrases susceptibles de couvrir un parti, sa chefferie ou l'une de ses personnes élues. Chaque correspondance est ensuite vérifiée pour écarter les homonymes et les mentions sans lien réel avec le parti.</li>
+      <li><strong>Exposition par phrase</strong>&nbsp;: le temps passé en Une par un article est partagé également entre ses phrases retenues. Lorsqu'une phrase couvre plusieurs partis, la part de cette phrase est répartie également entre eux. Les mêmes minutes ne sont donc pas comptées intégralement plusieurs fois.</li>
+      <li><strong>Part de la visibilité</strong>&nbsp;: les parts de temps en Une attribuées à chaque parti sont additionnées, puis rapportées au total attribué à l'ensemble des partis provinciaux pendant la période.</li>
+      <li><strong>Ton de la couverture</strong>&nbsp;: le ton est évalué envers chaque parti dans la phrase qui le concerne — négatif, neutre ou positif — puis agrégé selon la même exposition. Deux partis mentionnés dans un même article peuvent ainsi recevoir des tons différents. En l'absence d'exposition mesurée, le ton est indiqué comme indisponible plutôt que neutre.</li>
+      <li>Les résultats s'accumulent depuis le début du jour, de la semaine ou du mois civil sélectionné, puis sont remis à zéro au début de la période suivante.</li>
     </ol>
 
     <h3>Affichage</h3>
@@ -766,8 +768,8 @@
     <h3>3 · Imperfections des modèles d'IA</h3>
     <p class="metho-body">GLiNER et Gemma 3 peuvent produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
 
-    <h3>4 · Limites des dictionnaires de sentiment</h3>
-    <p class="metho-body">L'approche par dictionnaire ne capte pas l'ironie, le sarcasme ou les nuances contextuelles. La valence d'un mot peut varier fortement selon la phrase qui l'entoure.</p>
+    <h3>4 · Limites de l'évaluation du ton politique</h3>
+    <p class="metho-body">L'évaluation automatisée du ton envers les partis peut mal interpréter l'ironie, le sarcasme, les citations rapportées ou une phrase qui oppose plusieurs acteurs. La méthode provinciale actuelle demeure provisoire et n'a pas encore fait l'objet d'une validation humaine complète. Le ton décrit le traitement observé dans les phrases attribuées au parti; il ne mesure ni la véracité des propos ni l'opinion générale du média.</p>
 
     <h3>5 · Comparabilité inter-langues</h3>
     <p class="metho-body">Les indices calculés séparément pour les médias francophones et anglophones ne sont pas directement comparables en valeur absolue, en raison des différences stylistiques entre les deux groupes.</p>

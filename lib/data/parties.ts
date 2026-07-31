@@ -64,18 +64,18 @@ const TAB_LABELS: Record<RangeKey, string> = {
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
-export type Tone = { today: number; week: number; month: number; year: number };
+export type Tone = { today: number | null; week: number | null; month: number | null; year: number | null };
 
 type ShadowRow = {
   party: string;
   date_utc: string;
   date_montreal_tz: string;
   weighted_mentions: number; // already SOV (0–1)
-  weighted_tone: number;
-  computed_at?: string;
+  weighted_tone: number | null;
+  computed_at?: string | null;
 };
 
-type Entry = { mentions: number; tone: number };
+type Entry = { mentions: number; tone: number | null };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
 type Stat = {
@@ -98,7 +98,7 @@ export type RowView = {
   refTitle: string;
   showLeaderLabel: boolean;
   toneLabel: string;
-  toneDirection: "positive" | "negative" | "neutral";
+  toneDirection: "positive" | "negative" | "neutral" | "unavailable";
   toneTitle: string;
   sparkPolyline: string;
   sparkCircles: { cx: number; cy: number; r: number }[];
@@ -121,6 +121,7 @@ export type PartiesData = {
 
 const TONE_THRESHOLD = 0.002;
 const SPARK_CIRCLE_COUNT = 7;
+const FRESHNESS_HOURS = { day: 12, week: 36, month: 36 } as const;
 
 function computeToneStreak(
   history: number[],
@@ -194,6 +195,22 @@ function buildLookup(rows: ShadowRow[]): Lookup {
   return result;
 }
 
+function toneValues(dates: string[], lookup: Lookup, party: PartyKey): number[] {
+  return dates
+    .map((date) => lookup[date]?.[party]?.tone)
+    .filter((tone): tone is number => typeof tone === "number" && Number.isFinite(tone));
+}
+
+function rowsAreFresh(rows: ShadowRow[], maxAgeHours: number, nowMs = Date.now()): boolean {
+  if (rows.length === 0) return false;
+  const timestamps = rows
+    .map((row) => (row.computed_at ? Date.parse(row.computed_at) : Number.NaN))
+    .filter(Number.isFinite);
+  if (timestamps.length === 0) return false;
+  const ageHours = (nowMs - Math.max(...timestamps)) / 3_600_000;
+  return ageHours >= -1 && ageHours <= maxAgeHours;
+}
+
 function computeStats(
   dayRows: ShadowRow[],
   weekRows: ShadowRow[],
@@ -226,14 +243,14 @@ function computeStats(
     const monthSov  = monthLookup[latestMonth]?.[pKey]?.mentions || 0;
     const yearSov   = avg(allDayDates.map((d) => dayLookup[d]?.[pKey]?.mentions || 0));
 
-    const todayTone = dayLookup[latestDay]?.[pKey]?.tone   || 0;
-    const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone  || 0;
-    const monthTone = monthLookup[latestMonth]?.[pKey]?.tone || 0;
+    const todayTone = dayLookup[latestDay]?.[pKey]?.tone ?? null;
+    const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone ?? null;
+    const monthTone = monthLookup[latestMonth]?.[pKey]?.tone ?? null;
 
     return {
       key: pKey,
       sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
-      tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
+      tone: { today: todayTone, week: weekTone, month: monthTone, year: null },
       history: {
         week:    last7DayDates.map((d)    => dayLookup[d]?.[pKey]?.mentions   || 0),
         weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.mentions  || 0),
@@ -241,9 +258,9 @@ function computeStats(
         monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.mentions || 0),
       },
       toneHistory: {
-        daily:   allDayDates.map((d)       => dayLookup[d]?.[pKey]?.tone   || 0),
-        weekly:  weekSampleDates.map((d)   => weekLookup[d]?.[pKey]?.tone  || 0),
-        monthly: monthSampleDates.map((d)  => monthLookup[d]?.[pKey]?.tone || 0),
+        daily:   toneValues(allDayDates, dayLookup, pKey),
+        weekly:  toneValues(weekSampleDates, weekLookup, pKey),
+        monthly: toneValues(monthSampleDates, monthLookup, pKey),
       },
     };
   });
@@ -268,8 +285,10 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
         : range === "week"
           ? stat.toneHistory.weekly
           : stat.toneHistory.daily;
+    const currentTone = stat.tone[cfg.toneKey];
+    const toneAvailable = currentTone !== null && Number.isFinite(currentTone);
     const streak = computeToneStreak(toneHist);
-    const unclamped = toneHist.length > 0 ? toneHist[toneHist.length - 1] : 0;
+    const unclamped = currentTone ?? 0;
     const unit =
       range === "month" ? "mois" : range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
@@ -280,11 +299,14 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
         : streak.direction === "negative"
           ? "Négatif"
           : "Neutre";
-    const toneLabel =
-      streak.direction === "neutral" || streak.count <= 1 || range === "today"
+    const toneLabel = !toneAvailable
+      ? "— Indisponible"
+      : streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
-    const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
+    const toneTitle = !toneAvailable
+      ? "Ton de la couverture — indisponible faute d'exposition mesurée pour ce parti."
+      : `Ton de la couverture — ${toneLabel} (solde pondéré des phrases positives et négatives envers ce parti : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
 
     const rawHistory =
       range === "month"
@@ -314,7 +336,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       refTitle,
       showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,
       toneLabel,
-      toneDirection: streak.direction,
+      toneDirection: toneAvailable ? streak.direction : "unavailable",
       toneTitle,
       sparkPolyline: polyline,
       sparkCircles: circles,
@@ -337,6 +359,7 @@ export const __test__ = {
   sparkPoints,
   samplePoints,
   buildRangeView,
+  rowsAreFresh,
 };
 
 const DATA_DIR = path.resolve(process.cwd(), "public", "data", "refined");
@@ -352,6 +375,12 @@ export async function loadParties(): Promise<PartiesData | null> {
     const dayRows   = JSON.parse(dayRaw)   as ShadowRow[];
     const weekRows  = JSON.parse(weekRaw)  as ShadowRow[];
     const monthRows = JSON.parse(monthRaw) as ShadowRow[];
+
+    if (!rowsAreFresh(dayRows, FRESHNESS_HOURS.day) ||
+        !rowsAreFresh(weekRows, FRESHNESS_HOURS.week) ||
+        !rowsAreFresh(monthRows, FRESHNESS_HOURS.month)) {
+      return null;
+    }
 
     const stats = computeStats(dayRows, weekRows, monthRows);
     if (!stats) return null;
@@ -372,4 +401,3 @@ export async function loadParties(): Promise<PartiesData | null> {
     throw err;
   }
 }
-

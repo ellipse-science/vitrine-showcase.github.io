@@ -12,6 +12,8 @@ suppressPackageStartupMessages({
   library(jsonlite)
 })
 
+source("scripts/data_freshness.R")
+
 NOW_UTC      <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 CONFIG_PATH  <- "scripts/tables.json"
 
@@ -111,6 +113,7 @@ fetch_table <- function(conn, entry) {
   df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
   df       <- apply_filter(df, entry$filter)
+  assert_fresh(df, entry$freshness, entry$name)
   df       <- sort_rows_deterministically(df)
   df
 }

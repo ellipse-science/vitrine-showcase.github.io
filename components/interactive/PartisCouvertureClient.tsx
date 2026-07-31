@@ -18,6 +18,8 @@ function shareTitle(data: PartiesData): string {
       ? "on en parle en bien"
       : leader.toneDirection === "negative"
         ? "on en parle en mal"
+        : leader.toneDirection === "unavailable"
+          ? "le ton n'est pas disponible"
         : "l'important, c'est qu'on en parle";
   return `${leader.label} domine la couverture (${leader.sovPct} %) : ${tone}`;
 }

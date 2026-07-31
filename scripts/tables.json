@@ -172,6 +172,10 @@
         "weighted_tone",
         "computed_at"
       ],
+      "freshness": {
+        "column": "computed_at",
+        "max_age_hours": 12
+      },
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
     },
@@ -187,6 +191,10 @@
         "weighted_tone",
         "computed_at"
       ],
+      "freshness": {
+        "column": "computed_at",
+        "max_age_hours": 36
+      },
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
     },
@@ -202,6 +210,10 @@
         "weighted_tone",
         "computed_at"
       ],
+      "freshness": {
+        "column": "computed_at",
+        "max_age_hours": 36
+      },
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
     },

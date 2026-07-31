@@ -3445,6 +3445,7 @@
   .tone-streak--positive { color: #3D6B3A; }
   .tone-streak--negative { color: #A8302C; }
   .tone-streak--neutral  { color: var(--ink-softer); }
+  .tone-streak--unavailable { color: var(--ink-softer); }
   .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
   .parti-row.header div {
     font-family: 'IBM Plex Mono', monospace;
