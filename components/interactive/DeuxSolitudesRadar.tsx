@@ -141,6 +141,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
+  // Tendance vs l'habituel (#258) : pilote la direction et la pulsation des
+  // flèches de l'axe. Plus convergent que d'habitude = flèches vers le centre ;
+  // plus divergent = vers l'extérieur ; écart nul = immobiles.
+  const trend = s.convPct - s.habitualConvPct;
+  const trendCls = trend >= 1 ? " in" : trend <= -1 ? " out" : "";
 
   return (
     <div className="sol-body">
@@ -148,9 +153,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           s'éloignent quand ça diverge — la distance encode la convergence. */}
       <div className="sol-viz">
         <div className="sol-axis" />
-        <span className="sol-arrowhead left" aria-hidden />
+        <span className={`sol-arrowhead left${trendCls}`} aria-hidden />
         <span className="sol-axis-tick" aria-hidden />
-        <span className="sol-arrowhead right" aria-hidden />
+        <span className={`sol-arrowhead right${trendCls}`} aria-hidden />
         <div className="sol-symbol qc" style={{ left: `${qp}%` }}>
           <span className="glyph fleur" aria-label="Québec"><Fleur /></span>
           <span className="caption">Québec</span>
@@ -424,20 +429,19 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
         </ol>
       )}
 
-      {/* Score signature + jauge relative + bulle éditoriale */}
+      {/* Score signature RELATIF (#258, demande Yannick) : le grand chiffre =
+          l'écart à l'habituel, le libellé donne direction et intensité. Le
+          score absolu s'est replié au survol du marqueur de la jauge. */}
       <div className="sol-stat">
-        <span
-          className={`score-num ${s.modeCls}`}
-          title={"Convergence des priorités sur les 24 dernières heures. 0\u00A0% = aucun sujet saillant partagé · 100\u00A0% = mêmes priorités des deux côtés. Mesure\u00A0: les mêmes sujets saillants, pas les mêmes articles."}
-        >
-          {s.scoreValue}
+        <span className={`score-num ${s.relCls}`}>
+          {s.relDiffPct}
           <sup>%</sup>
         </span>
         <span className="score-lab">
-          de {s.verb}
+          {s.relLabel}
           <span className="info-dot" tabIndex={0}>
             {"ⓘ"}
-            <span className="info-bubble">{s.edito}</span>
+            <span className="info-bubble">{s.relInfo}</span>
           </span>
         </span>
         {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel
@@ -453,7 +457,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             style={{ left: `${s.habitualConvPct}%` }}
             title={`« Habituel » = la convergence médiane des derniers mois (~${s.habitualConvPct} %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle.`}
           />
-          <div className="marker" style={{ left: `${s.convPct}%` }} />
+          <div className="marker" style={{ left: `${s.convPct}%` }}>
+            <span className="marker-bubble">{s.markerTitle}</span>
+          </div>
           <span className="grad g0">100&nbsp;%</span>
           <span className="grad gm" style={{ left: `${s.habitualConvPct}%` }}>habituel</span>
           <span className="grad g1">100&nbsp;%</span>

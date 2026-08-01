@@ -176,6 +176,13 @@ const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [10
 // Le « 41 % au lieu de 31 » qui était noté ici appartenait au repli
 // `saillance − qc` retiré au #272, lequel réabsorbait les USA du côté canadien.
 const HABITUAL_EVENT_CONV = 31;
+// Bandes du score RELATIF (#258, demande Yannick « plus/moins que d'habitude,
+// et de combien ») : au-delà de p80 (ou sous p20) de la même distribution de
+// 323 fenêtres 24 h, l'écart n'est plus « un peu » mais « nettement ». Repli
+// codé ; la calibration publiée (event_convergence.p20/p80) prime quand
+// présente et monotone.
+const HABITUAL_EVENT_CONV_P20 = 16;
+const HABITUAL_EVENT_CONV_P80 = 42;
 
 function pctile(v: number, cal: [number, number][]): number {
   if (!(v > 0)) return 0;
@@ -266,6 +273,37 @@ function convMode(convPct: number): { word: string; cls: string } {
   if (convPct < 50) return { word: "Divergence partielle", cls: "mode-divp" };
   if (convPct < 75) return { word: "Convergence partielle", cls: "mode-convp" };
   return { word: "Convergence", cls: "mode-con" };
+}
+
+// Score RELATIF en hero (#258, demande Yannick « plus/moins divergent que
+// d'habitude, et de combien ») : le grand chiffre devient l'écart entre la
+// convergence du moment et l'habituel. Écart affiché en « % » (décision
+// Adrien 2026-08-01 : « points de pourcentage » ne parle pas au grand
+// public). « nettement » quand le marqueur sort de la bande p20-p80 de la
+// distribution historique, « un peu » sinon.
+function relScore(convPct: number, hab: number, p20: number, p80: number): {
+  relDiffPct: number; relLabel: string; relCls: string; relInfo: string;
+} {
+  const diff = convPct - hab;
+  const conv = diff > 0;
+  const strong = conv ? convPct >= p80 : convPct <= p20;
+  const intensity = strong ? "nettement" : "un peu";
+  // Le libellé à l'écran reste sobre (direction seulement) ; l'intensité
+  // (« un peu / nettement ») vit dans la bulle ⓘ (décision Adrien 2026-08-01).
+  const relLabel = Math.abs(diff) < 1
+    ? "aussi convergent que d'habitude"
+    : `plus ${conv ? "convergent" : "divergent"} que d'habitude`;
+  // Couleur du grand chiffre = direction de l'écart (bleu convergent / rouge
+  // divergent), nuancée par l'intensité. À écart nul : la teinte douce du camp
+  // divergent, où « habituel » réside (la divergence est la norme).
+  const relCls = Math.abs(diff) < 1
+    ? "mode-divp"
+    : conv ? (strong ? "mode-con" : "mode-convp") : (strong ? "mode-div" : "mode-divp");
+  const qual = Math.abs(diff) < 1 ? "autant" : `${intensity} ${conv ? "plus" : "moins"}`;
+  const relInfo =
+    `Règle générale, les médias du Québec et du Canada consacrent ${hab} % de leur attention ` +
+    `aux mêmes histoires. En ce moment : ${convPct} %, ${qual} que d'habitude.`;
+  return { relDiffPct: Math.abs(diff), relLabel, relCls, relInfo };
 }
 
 // Phrase éditoriale : GABARITS FINIS choisis par règles (aucun LLM en prod),
@@ -517,7 +555,13 @@ function windowEventConvergence(stories: Story[]): number | null {
   return Math.round(((biQc / totalQc) + (biRoc / totalRoc)) / 2 * 100);
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, habitualConvPct: number = HABITUAL_EVENT_CONV): SolitudeData {
+function buildSolitudes(
+  latest: RawEvent[],
+  stories: Story[],
+  conv24h: number | null,
+  habitualConvPct: number = HABITUAL_EVENT_CONV,
+  habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
+): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -607,6 +651,11 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
     verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
     habitualConvPct,
+    ...relScore(convPct, habitualConvPct, habBands.p20, habBands.p80),
+    // Le score absolu recule d'un rang : il vit au survol du marqueur de la
+    // jauge, en divergence des deux côtés pour rester comparable.
+    markerTitle:
+      `En ce moment : ${divPct} % de divergence. En général : ${100 - habitualConvPct} %.`,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -1281,6 +1330,14 @@ export type SolitudeData = {
    *  event-level médiane, en %). Le marqueur live est à `convPct` ; sa position
    *  vs `habitualConvPct` dit si aujourd'hui est plus/moins convergent que d'ordinaire. */
   habitualConvPct: number;
+  /** Score RELATIF en hero (#258) : écart |convPct − habitualConvPct| en %,
+   *  libellé de direction/intensité, couleur, texte du ⓘ et survol du marqueur
+   *  (où le score absolu s'est replié). */
+  relDiffPct: number;
+  relLabel: string;
+  relCls: string;
+  relInfo: string;
+  markerTitle: string;
   /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
   coverageQcInCan: number | null;
   coverageCanInQc: number | null;
@@ -1431,11 +1488,19 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const sumThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
-  const evConvP50 = calibration?.metrics?.event_convergence?.p50;
+  const evConv = calibration?.metrics?.event_convergence;
+  const evConvP50 = evConv?.p50;
   const habitualConvPct =
     typeof evConvP50 === "number" && Number.isFinite(evConvP50)
       ? Math.round(Math.max(0, Math.min(100, evConvP50)))
       : HABITUAL_EVENT_CONV;
+  // Bandes « un peu / nettement » du score relatif (#258) : p20/p80 publiés,
+  // exigés finis et strictement encadrants de p50 (sinon repli codé 16/42).
+  const habBands =
+    evConv && [evConv.p20, evConv.p80].every((v) => typeof v === "number" && Number.isFinite(v)) &&
+    evConv.p20 < habitualConvPct && habitualConvPct < evConv.p80
+      ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
+      : undefined;
 
   // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
   const badgeRanks = badgeRanksWithHysteresis(unique, sumThresholds);
@@ -1533,7 +1598,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct);
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -1849,6 +1914,7 @@ export const __test__ = {
   pctile,
   rocScore,
   convMode,
+  relScore,
   solitudesEdito,
   symbolPositions,
   buildSolitudes,

@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
+const { pctile, rocScore, convMode, relScore, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -1072,5 +1072,41 @@ describe("buildSolitudes", () => {
     // La valeur publiée (event_convergence.p50) prime quand elle est là.
     const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
+  });
+});
+
+describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", () => {
+  it("écart + direction au libellé, intensité « un peu » dans la bulle", () => {
+    const r = relScore(35, 31, 16, 42);
+    expect(r.relDiffPct).toBe(4);
+    expect(r.relLabel).toBe("plus convergent que d'habitude");
+    expect(r.relInfo).toContain("consacrent 31 % de leur attention");
+    expect(r.relInfo).toContain("35 %, un peu plus que d'habitude");
+    expect(r.relCls).toBe("mode-convp");
+  });
+
+  it("« nettement » quand le moment sort de la bande p20-p80 (bulle seulement)", () => {
+    const haut = relScore(45, 31, 16, 42);
+    expect(haut.relLabel).toBe("plus convergent que d'habitude");
+    expect(haut.relInfo).toContain("nettement plus que d'habitude");
+    expect(haut.relCls).toBe("mode-con");
+    const bas = relScore(12, 31, 16, 42);
+    expect(bas.relLabel).toBe("plus divergent que d'habitude");
+    expect(bas.relInfo).toContain("nettement moins que d'habitude");
+    expect(bas.relCls).toBe("mode-div");
+  });
+
+  it("« un peu plus divergent » entre p20 et l'habituel", () => {
+    const r = relScore(24, 31, 16, 42);
+    expect(r.relDiffPct).toBe(7);
+    expect(r.relLabel).toBe("plus divergent que d'habitude");
+    expect(r.relInfo).toContain("un peu moins que d'habitude");
+  });
+
+  it("écart nul : « aussi convergent que d'habitude », « autant » dans la bulle", () => {
+    const r = relScore(31, 31, 16, 42);
+    expect(r.relDiffPct).toBe(0);
+    expect(r.relLabel).toBe("aussi convergent que d'habitude");
+    expect(r.relInfo).toContain("autant que d'habitude");
   });
 });

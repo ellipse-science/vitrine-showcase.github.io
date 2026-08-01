@@ -1683,7 +1683,7 @@
   }
   .solitudes .sol-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 38px;
+    font-size: 44px;
     font-weight: 900;
     color: var(--ink);
     margin: 0;
@@ -1723,6 +1723,15 @@
   .solitudes .sol-arrowhead { position: absolute; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
   .solitudes .sol-arrowhead.left { left: 3.5%; border-right: 10px solid var(--bleu); }
   .solitudes .sol-arrowhead.right { right: 3.5%; border-left: 10px solid var(--red); }
+  /* Flèches de tendance (#258) : .out = plus divergent que d'habitude, elles
+     pointent et pulsent vers l'extérieur ; .in = plus convergent, elles se
+     retournent vers le centre ; sans classe (écart nul) = immobiles. */
+  .solitudes .sol-arrowhead.left.in { border-right: 0; border-left: 10px solid var(--bleu); animation: solNudgeR 2.2s ease-in-out infinite; }
+  .solitudes .sol-arrowhead.left.out { animation: solNudgeL 2.2s ease-in-out infinite; }
+  .solitudes .sol-arrowhead.right.in { border-left: 0; border-right: 10px solid var(--red); animation: solNudgeL 2.2s ease-in-out infinite; }
+  .solitudes .sol-arrowhead.right.out { animation: solNudgeR 2.2s ease-in-out infinite; }
+  @keyframes solNudgeL { 50% { transform: translate(-6px, -50%); } }
+  @keyframes solNudgeR { 50% { transform: translate(6px, -50%); } }
   .solitudes .sol-axis-tick { position: absolute; left: 50%; top: 50%; width: 1px; height: 11px; transform: translate(-50%, -50%); background: var(--rule); }
   .solitudes .sol-symbol {
     position: absolute;
@@ -1861,7 +1870,14 @@
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 58px; margin: 20px auto 0; }
   .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--rule) 45%, var(--bleu)); }
   .solitudes .rel-strip .hab { position: absolute; top: 25px; width: 1px; height: 13px; background: rgba(28,25,23,0.42); }
-  .solitudes .rel-strip .marker { position: absolute; top: 31.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper-deep); transform: translate(-50%, -50%); transition: left 0.6s ease; background: var(--ink); animation: solLivePulse 2.2s ease-out infinite; }
+  .solitudes .rel-strip .marker { position: absolute; top: 31.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper-deep); transform: translate(-50%, -50%); transition: left 0.6s ease; background: var(--ink); animation: solLivePulse 2.2s ease-out infinite; cursor: help; }
+  /* Zone de survol élargie du marqueur (le point fait 12px, la cible 32px). */
+  .solitudes .rel-strip .marker::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; }
+  /* Bulle du marqueur (#258) : le score absolu s'y est replié. Même langage
+     visuel que la bulle du ⓘ, mais au-dessus du marqueur, flèche vers le bas. */
+  .solitudes .marker-bubble { position: absolute; bottom: calc(100% + 13px); left: 50%; transform: translateX(-50%); width: 265px; max-width: 74vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 13px 17px; font-family: 'Source Serif 4', Georgia, serif; font-size: 15px; line-height: 1.5; letter-spacing: 0; text-transform: none; text-align: left; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
+  .solitudes .marker-bubble::after { content: ''; position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%); border: 8px solid transparent; border-top-color: var(--paper); filter: drop-shadow(0 1px 0 var(--rule)); }
+  .solitudes .rel-strip .marker:hover .marker-bubble { opacity: 1; }
   /* Pouls « live » : anneau qui s'écarte et s'estompe — signale le score du moment. */
   @keyframes solLivePulse {
     0%   { box-shadow: 0 0 0 1px rgba(28,25,23,0.25), 0 0 0 0 rgba(107,30,42,0.5); }
@@ -1895,7 +1911,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker { animation: none !important; }
+    .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker, .solitudes .sol-arrowhead { animation: none !important; }
   }
 
   /* Hot 20 */
