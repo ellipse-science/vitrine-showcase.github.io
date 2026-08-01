@@ -63,6 +63,9 @@ type Tip = { x: number; y: number; side: "qc" | "can"; k: string; body: string }
 
 export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }) {
   const [tip, setTip] = useState<Tip | null>(null);
+  // « Légende améliorée » (#308) : survoler une zone colorée fait suivre au
+  // curseur le symbole de sa région (fleur = QC, érable = CAN).
+  const [zone, setZone] = useState<{ x: number; y: number; side: "qc" | "can" } | null>(null);
 
   // Sur écran étroit, le radar garde une largeur plancher (CSS) et son conteneur
   // devient scrollable horizontalement. Le radar étant symétrique (QC à gauche,
@@ -220,8 +223,20 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               </g>
             );
           })}
-          <polygon className="radar-can" points={polyPts("vcan")} />
-          <polygon className="radar-qc" points={polyPts("vqc")} />
+          <polygon
+            className="radar-can"
+            points={polyPts("vcan")}
+            onMouseEnter={(e) => setZone({ x: e.clientX, y: e.clientY, side: "can" })}
+            onMouseMove={(e) => setZone({ x: e.clientX, y: e.clientY, side: "can" })}
+            onMouseLeave={() => setZone(null)}
+          />
+          <polygon
+            className="radar-qc"
+            points={polyPts("vqc")}
+            onMouseEnter={(e) => setZone({ x: e.clientX, y: e.clientY, side: "qc" })}
+            onMouseMove={(e) => setZone({ x: e.clientX, y: e.clientY, side: "qc" })}
+            onMouseLeave={() => setZone(null)}
+          />
           {/* Points : bleu = QC, rouge = CAN, survolables (infobulle) */}
           {(["vcan", "vqc"] as const).map((key) =>
             vals.map((v, i) => {
@@ -449,6 +464,15 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
         <div className={`dot-tip on ${tip.side}`} style={{ left: tipX(tip.x), top: tipY(tip.y) }}>
           <span className="k">{tip.k}</span>
           {tip.body}
+        </div>
+      )}
+
+      {/* Glyphe-légende qui suit le curseur au-dessus des zones (#308). Les
+          points restent au-dessus des polygones : survoler un point masque le
+          glyphe (mouseleave du polygone) au profit de l'infobulle. */}
+      {zone && !tip && (
+        <div className={`zone-glyph ${zone.side}`} style={{ left: zone.x, top: zone.y }} aria-hidden>
+          {zone.side === "qc" ? <Fleur /> : <span className="maple">🍁</span>}
         </div>
       )}
     </div>

@@ -1881,6 +1881,18 @@
   .dot-tip .k { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
   .dot-tip.qc .k { color: #9DB4D0; }
   .dot-tip.can .k { color: #E6A6A2; }
+  /* Glyphe-légende des zones du radar (#308) : suit le curseur, légèrement
+     au-dessus pour ne pas le masquer. Sous l'infobulle (z-index 60). */
+  .zone-glyph { position: fixed; z-index: 59; pointer-events: none; }
+  .zone-glyph svg { display: block; width: 32px; height: 33px; transform: translate(-50%, -140%); filter: drop-shadow(0 1px 3px rgba(28,25,23,0.25)); }
+  .zone-glyph .maple {
+    display: block;
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: 29px; line-height: 1;
+    color: transparent;
+    text-shadow: 0 0 0 var(--red);
+    transform: translate(-50%, -140%);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker { animation: none !important; }
