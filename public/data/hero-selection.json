@@ -1,10 +1,10 @@
 {
-  "event_id": "20260801T190000Z-evt-police-investigate-possible-arson-kosher-4acc4191",
-  "storyline_id": "story-kosher-restaurant-67206e17",
-  "title": "Incendie criminel détruit un restaurant casher à Montréal",
-  "main_issue": "law_and_crime",
+  "event_id": "20260801T230000Z-evt-tate-mcrae-enflamme-osheaga-0126422a",
+  "storyline_id": "story-osheaga-00c7e2b0",
+  "title": "Tate McRae et Angine de Poitrine électrisent Osheaga 2026",
+  "main_issue": "culture_and_nationalism",
   "date_utc": "2026-08-01",
-  "time_interval_utc": "19-23",
-  "sum_qc": 36.609,
-  "peak_qc": 27.637
+  "time_interval_utc": "23-03",
+  "sum_qc": 31.085,
+  "peak_qc": 25.39
 }
