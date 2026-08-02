@@ -30,7 +30,12 @@ jobs:
           fi
           echo "Fichiers modifiés :"
           echo "$files"
-          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|public/methodologie/|public/docs/)'; then
+          # components/interactive/ était absent du filtre jusqu'au 2026-08-02 :
+          # c'est pourtant là que vivent les clients de graphiques (p. ex.
+          # PartisCouvertureClient.tsx, seul consommateur des tables
+          # *_parties_salient_shadow_*). Une PR qui n'y touchait qu'à une
+          # représentation échappait au garde.
+          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|components/interactive/|public/methodologie/|public/docs/)'; then
             echo "Aucun fichier sensible métho — rien à déclarer."
             exit 0
           fi
@@ -43,5 +48,5 @@ jobs:
             echo "::error::Section « Impact méthodologie » : $checked cases cochées — les 3 options sont mutuellement exclusives, n'en cochez qu'UNE."
             exit 1
           fi
-          echo "::error::Cette PR touche des fichiers qui peuvent affecter la page Méthodologie ou les docs vivantes du pipeline (lib/, scripts/, components/sections/, public/methodologie/, public/docs/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Guide : .claude/skills/synchro-methodologie/SKILL.md"
+          echo "::error::Cette PR touche des fichiers qui peuvent affecter les TROIS docs vivantes — public/methodologie/index.html, public/docs/horaire-refiners-2026.html et public/docs/workflow-vitrine-2025-swimlanes.html (chemins surveillés : lib/, scripts/, components/sections/, components/interactive/, public/methodologie/, public/docs/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Si vous cochez « aucun impact », vérifiez les trois docs, pas seulement la page Méthodologie. Guide : .claude/skills/synchro-methodologie/SKILL.md"
           exit 1

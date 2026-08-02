@@ -31,15 +31,23 @@ Guide complet : AGENTS.md § Versionnage. En cas d'hésitation, le plus bas.
 ## Impact méthodologie
 
 <!--
-La page Méthodologie (public/methodologie/index.html) ET les docs vivantes
-du pipeline (public/docs/horaire-refiners-2026.html,
-public/docs/workflow-vitrine-2025-swimlanes.html) doivent TOUJOURS refléter
-le comportement réel du pipeline — copies canoniques uniques.
+« Métho » = TROIS documents, pas seulement la page Méthodologie :
+  1. public/methodologie/index.html          (le contrat public)
+  2. public/docs/horaire-refiners-2026.html  (quand chaque étage tourne)
+  3. public/docs/workflow-vitrine-2025-swimlanes.html  (qui produit quelle table)
+Les trois doivent TOUJOURS refléter le comportement réel du pipeline —
+copies canoniques uniques.
+
+⚠️ Piège vécu (aws-infra#429, juillet 2026) : « aucun impact » a été coché
+avec pour justification « pas décrit dans la page Méthodologie » — alors que
+le raffineur débranché occupait un couloir entier des swimlanes, restées
+fausses 17 jours. Vérifiez les TROIS, pas la première.
+
 Cochez UNE case (le workflow garde-metho la vérifie si la PR touche des
 fichiers sensibles). Guide : .claude/skills/synchro-methodologie/SKILL.md
 -->
 
-- [ ] Aucun impact métho — ne change ni calcul, ni seuil, ni horaire, ni collecte, ni représentation (justification : …)
+- [ ] Aucun impact métho — ne change ni calcul, ni seuil, ni horaire, ni collecte, ni représentation, ET les 3 docs restent exactes (justification, en nommant les 3 : …)
 - [ ] Métho mise à jour dans cette PR (sections/docs : …)
 - [ ] PR métho séparée : #… (à merger avec/après le déploiement de celle-ci)
 
