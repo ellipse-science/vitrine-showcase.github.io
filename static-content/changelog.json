@@ -1,5 +1,11 @@
 [
   {
+    "pr": 379,
+    "date": "2026-08-02T18:35:53Z",
+    "note": "Le module Deux solitudes se fait plus compact et plus parlant : son grand chiffre indique désormais si l'actualité québécoise et canadienne se rejoint plus ou moins que d'habitude, et survoler les zones du radar affiche le symbole de la région concernée.",
+    "version": "2.18.0-beta.0"
+  },
+  {
     "pr": 380,
     "date": "2026-08-02T18:33:19Z",
     "note": "Le diagramme public qui explique comment les données de la Vitrine sont fabriquées a été entièrement vérifié et corrigé : il décrit maintenant la vraie chaîne de publication, les bons horaires, et deux étapes qui n'y figuraient pas.",
