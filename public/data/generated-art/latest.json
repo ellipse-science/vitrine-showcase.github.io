@@ -1,10 +1,13 @@
 {
-  "generated_at": "2026-08-02T12:04Z",
-  "headline_fr": "Valérie Larochelle s'inspire de ses grands-parents pour lancer son entreprise",
-  "headline_en": "Elle a lancé son entreprise grâce à l'inspiration de ses grands-parents",
+  "generated_at": "2026-08-02T16:04Z",
+  "headline_fr": "Grève des agents de bord de WestJet paralyse des centaines de vols",
+  "headline_en": "Les agents de bord de WestJet en grève",
   "main_issue": "economy_and_labour",
   "main_issue_text_fr": "Économie et travail",
   "context_outlets": [
-    "JDM"
+    "LAP",
+    "LED",
+    "TVA",
+    "RCI"
   ]
 }
