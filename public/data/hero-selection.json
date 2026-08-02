@@ -1,10 +1,10 @@
 {
-  "event_id": "20260801T110000Z-evt-pedocriminalite-ligne-demystifier-exploitation-abus-2154d31e",
-  "storyline_id": "story-internet-5a2d4604",
-  "title": "Pédocriminalité en ligne : l'essor inquiétant des cybercrimes sexuels",
-  "main_issue": "law_and_crime",
-  "date_utc": "2026-08-01",
+  "event_id": "20260802T110000Z-evt-agents-bord-westjet-greve-0c8f10f3",
+  "storyline_id": "story-westjet-3c390fc9",
+  "title": "Grève des agents de bord de WestJet paralyse des centaines de vols",
+  "main_issue": "economy_and_labour",
+  "date_utc": "2026-08-02",
   "time_interval_utc": "11-15",
-  "sum_qc": 53.874,
-  "peak_qc": 26.068
+  "sum_qc": 69.715,
+  "peak_qc": 57.422
 }
