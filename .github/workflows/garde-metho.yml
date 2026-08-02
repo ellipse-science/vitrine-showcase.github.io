@@ -35,7 +35,12 @@ jobs:
           # PartisCouvertureClient.tsx, seul consommateur des tables
           # *_parties_salient_shadow_*). Une PR qui n'y touchait qu'à une
           # représentation échappait au garde.
-          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|components/interactive/|public/methodologie/|public/docs/)'; then
+          # Les deux workflows de la chaîne de publication sont nommés dans les
+          # swimlanes (cadence de refresh-data.yml, déploiement par deploy.yml) :
+          # les modifier périme le diagramme sans toucher à lib/ ni public/.
+          # Filtre volontairement limité à ces deux-là — élargir à
+          # .github/workflows/ ferait déclencher le garde sur du CI sans rapport.
+          if ! echo "$files" | grep -qE '^(lib/|scripts/|components/sections/|components/interactive/|public/methodologie/|public/docs/|\.github/workflows/(refresh-data|deploy)\.yml)'; then
             echo "Aucun fichier sensible métho — rien à déclarer."
             exit 0
           fi
@@ -48,5 +53,5 @@ jobs:
             echo "::error::Section « Impact méthodologie » : $checked cases cochées — les 3 options sont mutuellement exclusives, n'en cochez qu'UNE."
             exit 1
           fi
-          echo "::error::Cette PR touche des fichiers qui peuvent affecter les TROIS docs vivantes — public/methodologie/index.html, public/docs/horaire-refiners-2026.html et public/docs/workflow-vitrine-2025-swimlanes.html (chemins surveillés : lib/, scripts/, components/sections/, components/interactive/, public/methodologie/, public/docs/). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Si vous cochez « aucun impact », vérifiez les trois docs, pas seulement la page Méthodologie. Guide : .claude/skills/synchro-methodologie/SKILL.md"
+          echo "::error::Cette PR touche des fichiers qui peuvent affecter les TROIS docs vivantes — public/methodologie/index.html, public/docs/horaire-refiners-2026.html et public/docs/workflow-vitrine-2025-swimlanes.html (chemins surveillés : lib/, scripts/, components/sections/, components/interactive/, public/methodologie/, public/docs/, .github/workflows/refresh-data.yml, .github/workflows/deploy.yml). Ajoutez la section « Impact méthodologie » du template au corps de la PR et cochez une des 3 cases (le check se relance à l'édition du corps). Si vous cochez « aucun impact », vérifiez les trois docs, pas seulement la page Méthodologie. Guide : .claude/skills/synchro-methodologie/SKILL.md"
           exit 1

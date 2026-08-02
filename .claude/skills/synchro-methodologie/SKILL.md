@@ -123,8 +123,11 @@ le template exige maintenant de nommer les trois.
 
 ### Le check mécanique `garde-swimlanes` (aws-infra)
 
-Depuis le 2026-08-02, chaque nœud raffineur des swimlanes porte
-`data-ecr` / `data-active` / `data-cron`. Un job d'aws-infra compare ces
+Depuis le 2026-08-02, chaque nœud des swimlanes qui correspond à un raffineur
+**AWS** porte `data-ecr` / `data-active` / `data-cron`. Les nœuds `[data-refiner]`
+hors AWS (`fetch-data`, `enrichissements-vitrine`) n'ont pas d'entrée dans
+`refiners.ts` : ils ne portent pas ces attributs et le check les ignore.
+Un job d'aws-infra compare ces
 attributs à `refiners.ts` (à chaque PR qui y touche, plus une passe
 quotidienne) et échoue à la première divergence : horaire faux, `active`
 faux, raffineur actif non documenté, ou horaire affiché qui ne correspond pas
