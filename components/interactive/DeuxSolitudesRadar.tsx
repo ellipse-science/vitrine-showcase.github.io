@@ -65,7 +65,23 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   const [tip, setTip] = useState<Tip | null>(null);
   // « Légende améliorée » (#308) : survoler une zone colorée fait suivre au
   // curseur le symbole de sa région (fleur = QC, érable = CAN).
-  const [zone, setZone] = useState<{ x: number; y: number; side: "qc" | "can" } | null>(null);
+  //
+  // Seul le CÔTÉ survolé est dans le state (il change à l'entrée/sortie d'une
+  // zone, pas en continu). La position suit le curseur par écriture directe
+  // sur le nœud : ce composant ne mémoïse rien, donc un setState par
+  // `mousemove` re-rendrait tout le SVG (polygones, axes, étiquettes) des
+  // dizaines de fois par seconde sur une grande surface.
+  const [zone, setZone] = useState<"qc" | "can" | null>(null);
+  const zonePos = useRef({ x: 0, y: 0 });
+  const glyphRef = useRef<HTMLDivElement>(null);
+  const moveGlyph = (e: React.MouseEvent) => {
+    zonePos.current = { x: e.clientX, y: e.clientY };
+    const g = glyphRef.current;
+    if (g) {
+      g.style.left = `${e.clientX}px`;
+      g.style.top = `${e.clientY}px`;
+    }
+  };
 
   // Sur écran étroit, le radar garde une largeur plancher (CSS) et son conteneur
   // devient scrollable horizontalement. Le radar étant symétrique (QC à gauche,
@@ -231,15 +247,15 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <polygon
             className="radar-can"
             points={polyPts("vcan")}
-            onMouseEnter={(e) => setZone({ x: e.clientX, y: e.clientY, side: "can" })}
-            onMouseMove={(e) => setZone({ x: e.clientX, y: e.clientY, side: "can" })}
+            onMouseEnter={(e) => { moveGlyph(e); setZone("can"); }}
+            onMouseMove={moveGlyph}
             onMouseLeave={() => setZone(null)}
           />
           <polygon
             className="radar-qc"
             points={polyPts("vqc")}
-            onMouseEnter={(e) => setZone({ x: e.clientX, y: e.clientY, side: "qc" })}
-            onMouseMove={(e) => setZone({ x: e.clientX, y: e.clientY, side: "qc" })}
+            onMouseEnter={(e) => { moveGlyph(e); setZone("qc"); }}
+            onMouseMove={moveGlyph}
             onMouseLeave={() => setZone(null)}
           />
           {/* Points : bleu = QC, rouge = CAN, survolables (infobulle) */}
@@ -477,8 +493,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           points restent au-dessus des polygones : survoler un point masque le
           glyphe (mouseleave du polygone) au profit de l'infobulle. */}
       {zone && !tip && (
-        <div className={`zone-glyph ${zone.side}`} style={{ left: zone.x, top: zone.y }} aria-hidden>
-          {zone.side === "qc" ? <Fleur /> : <span className="maple">🍁</span>}
+        <div
+          ref={glyphRef}
+          className={`zone-glyph ${zone}`}
+          style={{ left: zonePos.current.x, top: zonePos.current.y }}
+          aria-hidden
+        >
+          {zone === "qc" ? <Fleur /> : <span className="maple">🍁</span>}
         </div>
       )}
     </div>
