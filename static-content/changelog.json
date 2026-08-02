@@ -1,5 +1,11 @@
 [
   {
+    "pr": 380,
+    "date": "2026-08-02T18:33:19Z",
+    "note": "Le diagramme public qui explique comment les données de la Vitrine sont fabriquées a été entièrement vérifié et corrigé : il décrit maintenant la vraie chaîne de publication, les bons horaires, et deux étapes qui n'y figuraient pas.",
+    "version": null
+  },
+  {
     "pr": 377,
     "date": "2026-07-31T16:05:35Z",
     "note": "Les tuiles « De quoi parle-t-on? » révèlent maintenant leur actualité principale au survol et toutes les actualités associées au clic, avec les médias propres à chaque manchette. Sur mobile, les classements de la semaine et du mois deviennent une trajectoire ciblée accompagnée d'une liste où les actualités se déplient sous chaque enjeu.",
