@@ -1,10 +1,10 @@
 {
-  "event_id": "20260802T070000Z-evt-elle-lance-son-entreprise-grace-2f0bfea9",
-  "storyline_id": "story-valerie-larochelle-2442932c",
-  "title": "Valérie Larochelle s'inspire de ses grands-parents pour lancer son entreprise",
+  "event_id": "20260802T110000Z-evt-agents-bord-westjet-greve-0c8f10f3",
+  "storyline_id": "story-westjet-3c390fc9",
+  "title": "Grève des agents de bord de WestJet paralyse des centaines de vols",
   "main_issue": "economy_and_labour",
   "date_utc": "2026-08-02",
-  "time_interval_utc": "07-11",
-  "sum_qc": 41.901,
-  "peak_qc": 24.119
+  "time_interval_utc": "11-15",
+  "sum_qc": 69.715,
+  "peak_qc": 57.422
 }
