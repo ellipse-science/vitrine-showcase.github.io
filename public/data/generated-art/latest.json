@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-02T16:04Z",
-  "headline_fr": "Grève des agents de bord de WestJet paralyse des centaines de vols",
-  "headline_en": "Les agents de bord de WestJet en grève",
+  "generated_at": "2026-08-02T20:04Z",
+  "headline_fr": "Grève des agents de bord de WestJet : vols annulés, voyageurs bloqués",
+  "headline_en": "Les agents de bord de WestJet se mettent en grève",
   "main_issue": "economy_and_labour",
   "main_issue_text_fr": "Économie et travail",
   "context_outlets": [
-    "LAP",
     "LED",
-    "TVA",
-    "RCI"
+    "LAP",
+    "RCI",
+    "JDM"
   ]
 }
