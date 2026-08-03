@@ -1,10 +1,10 @@
 {
-  "event_id": "20260802T110000Z-evt-agents-bord-westjet-greve-0c8f10f3",
+  "event_id": "20260803T110000Z-evt-westjet-union-reach-tentative-deal-4d3a2754",
   "storyline_id": "story-westjet-3c390fc9",
-  "title": "Grève des agents de bord de WestJet paralyse des centaines de vols",
+  "title": "WestJet et agents de bord concluent une entente, fin de la grève",
   "main_issue": "economy_and_labour",
-  "date_utc": "2026-08-02",
+  "date_utc": "2026-08-03",
   "time_interval_utc": "11-15",
-  "sum_qc": 69.715,
-  "peak_qc": 57.422
+  "sum_qc": 47.236,
+  "peak_qc": 67.596
 }
