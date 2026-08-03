@@ -82,7 +82,18 @@ export function wrapLabel(s: string, maxLen = 26): string[] {
 // de la ligne (et en mobile, le numéro d'axe renvoie à la légende).
 // `side` porte aussi la couleur : bleu/rouge pour une mesure de région,
 // neutre (« story ») pour la saillance, qui n'appartient à aucune des deux.
-type Tip = { x: number; y: number; side: "qc" | "can" | "story"; k: string; lead?: string; body: string };
+type Tip = {
+  x: number; y: number;
+  side: "qc" | "can" | "story";
+  k: string;
+  /** Classe de niveau (`s-eleve`…) quand le chapeau doit être la PASTILLE de la
+   *  Une des Unes plutôt qu'un simple sur-titre : même composant visuel, mêmes
+   *  couleurs de bande, pour qu'on reconnaisse le niveau d'un module à l'autre
+   *  sans le relire. */
+  tagCls?: string;
+  lead?: string;
+  body: string;
+};
 
 export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }) {
   const [tip, setTip] = useState<Tip | null>(null);
@@ -274,8 +285,16 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // mené par le ROC attribuerait à une région une mesure qui n'est
             // pas la sienne. Le niveau appartient au SUJET, pas à un camp — le
             // ton neutre de la bulle le dit aussi visuellement.
-            const bulleSal = a.salienceLabel && a.salienceHint
-              ? { side: "story" as const, k: `Saillance ${a.salienceLabel.toLowerCase()}`, body: a.salienceHint }
+            const bulleSal = a.salienceLabel && a.salienceHint && a.salienceCls
+              ? {
+                side: "story" as const,
+                // Libellé EXACT du module 1 (« Saillance Élevée »), pas une
+                // variante en minuscules : c'est la même pastille, elle doit
+                // se lire pareil.
+                k: `Saillance ${a.salienceLabel}`,
+                tagCls: a.salienceCls,
+                body: a.salienceHint,
+              }
               : null;
             return (
               <g key={`ldr-${i}`} className={`radar-leader side-${a.side}`}>
@@ -574,7 +593,9 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
       {tip && (
         <div className={`dot-tip on ${tip.side}`} style={{ left: tipX(tip.x), top: tipY(tip.y) }}>
-          <span className="k">{tip.k}</span>
+          {tip.tagCls
+            ? <span className={`saillance-tag ${tip.tagCls}`}>{tip.k}</span>
+            : <span className="k">{tip.k}</span>}
           {tip.lead && <span className="lead">{tip.lead}</span>}
           {tip.body}
         </div>

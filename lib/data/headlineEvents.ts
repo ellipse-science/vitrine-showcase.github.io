@@ -707,16 +707,16 @@ const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, ex
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
 function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS): { label: string; cls: string; rank: number; hint: string } {
   const s = scoreQc ?? 0;
-  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
-  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
-  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
+  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une des médias québécois." };
+  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une des médias québécois." };
+  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une des médias québécois." };
   // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
   // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
   // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
   // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
-  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
+  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
+  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
 }
 
 // ── Badge de saillance CUMULÉE 24 h (essai) ─────────────────────────────────
@@ -750,12 +750,12 @@ const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve:
 const HYST_MARGIN = 0.08;
 
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
-  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une." },
-  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." },
-  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." },
-  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une des médias québécois." },
+  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une des médias québécois." },
+  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une des médias québécois." },
+  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
+  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
+  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
 };
 
 // Bornes basses des bandes, du rang 1 au rang 6 (rang 1 = pas de borne basse).

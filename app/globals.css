@@ -1925,6 +1925,15 @@
      rouge, donc, pour qu'on voie au premier coup d'œil qu'on ne lit pas la
      même nature d'information que sur un point de données. */
   .dot-tip.story .k { color: #C4BCAC; }
+  /* La pastille de niveau est celle de la Une des Unes, à l'identique (mêmes
+     bandes de couleur) : on reconnaît le niveau d'un module à l'autre sans le
+     relire. Seule la marge basse du badge (18 px, faite pour respirer sous un
+     titre de carte) est reprise à la mesure de l'infobulle.
+     `display: block` + `width: fit-content` : le badge est `inline-block` dans
+     sa carte d'origine, où il occupe sa propre ligne ; ici la phrase le suit
+     directement et venait s'enrouler autour de lui. Le bloc force le retour,
+     `fit-content` garde la pastille serrée sur son texte. */
+  .dot-tip .saillance-tag { display: block; width: fit-content; margin: 0 0 7px; }
   /* Le chiffre passe DEVANT la phrase : la part d'attention est la réponse, le
      reste n'est que son unité. Chiffres tabulaires pour que deux survols
      successifs ne fassent pas danser le nombre. */
