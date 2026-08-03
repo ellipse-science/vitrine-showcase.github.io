@@ -561,6 +561,13 @@ function buildSolitudes(
   conv24h: number | null,
   habitualConvPct: number = HABITUAL_EVENT_CONV,
   habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
+  // Suivi de badge de la Une des Unes (#314), passé tel quel pour que
+  // l'étiquette de saillance du radar (#383) soit LA MÊME que celle du
+  // module 1 pour une histoire donnée. Optionnels : les tests appellent
+  // buildSolitudes sans eux, et le radar se contente alors de la part
+  // d'attention (aucune étiquette inventée localement).
+  badgeRanks?: Map<string, { rank: number }>,
+  sumThresholds?: typeof SUM_QC_THRESHOLDS,
 ): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
@@ -628,9 +635,18 @@ function buildSolitudes(
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
+    // Même clé que la Une des Unes (`storyline_id ?? label`) et même repli
+    // (`rawRank` sur le cumul) : c'est ce qui garantit l'égalité des deux
+    // étiquettes. Sans suivi fourni, pas d'étiquette du tout.
+    const rank = badgeRanks && sumThresholds
+      ? (badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank ?? rawRank(a.sumQc, sumThresholds))
+      : null;
+    const tier = rank != null ? TIER_BY_RANK[rank] : null;
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
+      salienceLabel: tier?.label ?? null,
+      salienceCls: tier?.cls ?? null,
       qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
       canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
       qcShare: Math.round(qs),
@@ -1307,6 +1323,13 @@ export type SolitudeAxis = {
   canShare: number;
   /** Camp dominant (couleur du libellé). */
   side: "qc" | "can";
+  /** Étiquette de saillance du moment (#383), prise à la MÊME source que le
+   *  badge de la Une des Unes — `badgeRanks` (cumul 24 h + hystérésis, #314)
+   *  puis `TIER_BY_RANK`. Surtout pas un calcul parallèle : la même histoire
+   *  porte le même niveau dans les deux modules, sinon on retombe sur deux
+   *  vérités pour une seule mesure. null quand le suivi n'est pas fourni. */
+  salienceLabel: string | null;
+  salienceCls: string | null;
   /** Médias couvrants + lien vers leur dernier article sur le sujet.
    *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
    *  deux côtés montre les deux couleurs. */
@@ -1597,7 +1620,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands);
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, badgeRanks, sumThresholds);
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -1905,6 +1928,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,
   capitalizeObject,

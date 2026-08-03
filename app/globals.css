@@ -1795,6 +1795,25 @@
   .solitudes .radar-leader.side-can polyline { stroke: var(--red); }
   .solitudes .radar-leader.side-qc .ldr-dot { fill: var(--bleu); }
   .solitudes .radar-leader.side-can .ldr-dot { fill: var(--red); }
+  /* Bout de la ligne de rappel (#383) : repère du moment, survolable, avec le
+     même pouls que le marqueur de la jauge (solLivePulse). En SVG il n'y a pas
+     de box-shadow : l'anneau est un cercle dont le rayon et l'opacité
+     s'animent. `transform-box: fill-box` pour que le scale parte du centre du
+     cercle et non de l'origine du viewBox. */
+  .solitudes .radar-leader .ldr-end { outline: none; }
+  .solitudes .radar-leader .ldr-end .hit { fill: transparent; cursor: pointer; }
+  .solitudes .radar-leader .ldr-end:focus-visible .hit { fill: rgba(28,25,23,0.06); }
+  .solitudes .radar-leader .ldr-dot.is-end { pointer-events: none; transform-box: fill-box; transform-origin: center; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+  .solitudes .radar-leader .ldr-end:hover .ldr-dot.is-end,
+  .solitudes .radar-leader .ldr-end:focus-visible .ldr-dot.is-end { transform: scale(1.45); }
+  .solitudes .radar-leader .ldr-halo { pointer-events: none; fill: none; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: solLeaderPulse 2.2s ease-out infinite; }
+  .solitudes .radar-leader.side-qc  .ldr-halo { stroke: var(--bleu); }
+  .solitudes .radar-leader.side-can .ldr-halo { stroke: var(--red); }
+  @keyframes solLeaderPulse {
+    0%   { transform: scale(1);   opacity: 0.55; }
+    70%  { transform: scale(2.6); opacity: 0; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
   .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: start; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
@@ -1917,6 +1936,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker, .solitudes .sol-arrowhead { animation: none !important; }
+    /* Le pouls du bout de ligne (#383) s'arrête aussi — et l'anneau doit
+       DISPARAÎTRE, pas se figer à sa première image : sans opacity: 0 il
+       resterait un cercle statique de plus autour de chaque point. */
+    .solitudes .radar-leader .ldr-halo { animation: none !important; opacity: 0; }
   }
 
   /* Hot 20 */
@@ -4034,8 +4057,12 @@
       color: var(--ink-softer); margin: 0 0 4px; }
     .radar-legend .lg-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; font-weight: 600;
       line-height: 1.3; color: var(--ink); margin: 0 0 6px; }
-    .radar-legend .lg-shares { display: flex; gap: 14px; margin: 0 0 8px;
+    /* flex-wrap : avec l'étiquette de saillance en tête, les trois mentions ne
+       tiennent plus sur une ligne à 320 px — sans le wrap, « Canada 20 % »
+       sortirait de la carte. */
+    .radar-legend .lg-shares { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 8px;
       font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; }
+    .radar-legend .lg-shares .sal { color: var(--ink-softer); flex-basis: 100%; }
     .radar-legend .lg-shares .qc { color: var(--bleu); }
     .radar-legend .lg-shares .can { color: #a8302c; }
     .radar-legend .lg-media { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }

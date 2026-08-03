@@ -20,6 +20,21 @@ const W = 840, H = 680, CX = W / 2, CY = H / 2, R = 160, R0 = 6;
 // Offsets fixés visuellement à ce viewBox (840×680) — à revoir s'il change.
 const labelR = (cosA: number) => (Math.abs(cosA) < 0.35 ? R + 58 : R + 152);
 
+// Coupure de l'étiquette de rubrique (#381). Elle n'était PAS coupée du tout,
+// alors que le titre l'est à 26 caractères : « DROITS, LIBERTÉS, MINORITÉS ET
+// DISCRIMINATION » (44 car.) débordait sur la colonne de l'axe voisin.
+// 28 est mesuré, pas deviné : l'étiquette est en IBM Plex Mono avec un
+// letter-spacing fixe, donc de largeur strictement proportionnelle — 8,19 px
+// par caractère au rendu. 28 × 8,19 = 229 px, juste sous les 233 px du bloc
+// titre le plus large (26 caractères de Source Serif 4). Les deux colonnes ont
+// donc la même emprise, quelle que soit la rubrique.
+export const EYEBROW_MAX_CHARS = 28;
+/** Largeur mesurée d'un caractère de `.radar-eyebrow` (IBM Plex Mono 10,5 px,
+ *  letter-spacing 0.18em) et largeur du bloc titre le plus large. Exportées
+ *  pour que le test verrouille la CALIBRATION, pas seulement la coupure. */
+export const EYEBROW_PX_PER_CHAR = 8.19;
+export const AXIS_BLOCK_MAX_PX = 233;
+
 // Secteur du balayage radar (~48°, en tête vers le haut). Géométrie statique ;
 // la rotation est en CSS.
 const SWEEP = (() => {
@@ -46,9 +61,8 @@ function Fleur() {
 
 // Coupe un titre en lignes étroites (~26 caractères) : 2-3 lignes centrées,
 // comme la maquette, pour que le bloc ne déborde pas sur le radar.
-function wrapLabel(s: string): string[] {
+export function wrapLabel(s: string, maxLen = 26): string[] {
   const words = s.split(" ");
-  const maxLen = 26;
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -236,11 +250,37 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const pts = mid
               ? `${dx.toFixed(1)},${dy.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`
               : `${dx.toFixed(1)},${dy.toFixed(1)} ${e1x.toFixed(1)},${e1y.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`;
+            // Bout de la ligne de rappel (#383) : plus gros, avec le même pouls
+            // « live » que le marqueur de la jauge en bas du module — c'est le
+            // repère du moment, pas une décoration. En SVG le box-shadow de
+            // solLivePulse n'existe pas : l'anneau est un second cercle dont
+            // le rayon et l'opacité s'animent, même langage visuel.
+            // Il porte aussi l'étiquette de saillance du sujet, du côté qui
+            // mène l'axe (`a.side`) — « au Canada et/ou au Québec selon ».
+            const menant = a.side === "qc" ? "Au Québec" : "Au Canada";
+            const partMenante = a.side === "qc" ? a.qcShare : a.canShare;
+            const corps = a.salienceLabel
+              ? `${a.label} — saillance ${a.salienceLabel.toLowerCase()}, ${partMenante} % de l'attention médiatique des 24 dernières heures.`
+              : `${a.label} : ${partMenante} % de l'attention médiatique des 24 dernières heures.`;
             return (
               <g key={`ldr-${i}`} className={`radar-leader side-${a.side}`}>
                 <polyline points={pts} />
                 {!mid && <circle className="ldr-dot" cx={e1x.toFixed(1)} cy={e1y.toFixed(1)} r={2.2} />}
-                <circle className="ldr-dot" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={2.8} />
+                <g
+                  className="ldr-end"
+                  tabIndex={0}
+                  role="img"
+                  aria-label={`${menant} : ${corps}`}
+                  onMouseEnter={(e) => place(e, a.side, menant, corps)}
+                  onMouseMove={(e) => place(e, a.side, menant, corps)}
+                  onMouseLeave={() => setTip(null)}
+                  onFocus={(e) => placeAtRect(e.currentTarget, a.side, menant, corps)}
+                  onBlur={() => setTip(null)}
+                >
+                  <circle className="ldr-halo" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={4.2} />
+                  <circle className="hit" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={13} />
+                  <circle className="ldr-dot is-end" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={4.2} />
+                </g>
               </g>
             );
           })}
@@ -313,6 +353,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const strong = Math.max(vals[i].vqc, vals[i].vcan) === maxVal;
             const side = a.side;
             const BW = 26, CHGAP = 6, LINE_H = 20, EYE_GAP = 16, TB_GAP = 15;
+            // EYE_LINE_H : interligne d'une rubrique qui passe sur 2 lignes.
+            // 13 px pour une police de 10,5 px — assez serré pour que le bloc
+            // reste un « sur-titre » et ne concurrence pas le titre.
+            const EYE_LINE_H = 13;
+            const eyeLines = a.eyebrow ? wrapLabel(a.eyebrow.toUpperCase(), EYEBROW_MAX_CHARS) : [];
             // Les badges s'enroulent sur plusieurs rangées : une histoire très
             // couverte (11 médias = 346 px sur une ligne) débordait sur les
             // libellés des axes voisins. 6 par rangée ≈ 186 px, soit la largeur
@@ -327,7 +372,10 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const mediaRows = Array.from({ length: rowsCount }, (_, r) =>
               media.slice(r * perRow, (r + 1) * perRow),
             ).filter((r) => r.length > 0);
-            const eyeH = a.eyebrow ? EYE_GAP : 0;
+            // Chaque ligne de rubrique supplémentaire pousse le titre d'autant :
+            // sans ça, une rubrique sur 2 lignes écrirait sa 2e ligne PAR-DESSUS
+            // la 1re ligne du titre.
+            const eyeH = a.eyebrow ? EYE_GAP + (eyeLines.length - 1) * EYE_LINE_H : 0;
             const titleH = lines.length * LINE_H;
             // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges :
             // sans ça, le positionnement vertical (top) ignorerait les rangées
@@ -355,16 +403,17 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const rowY = title1Y + (lines.length - 1) * LINE_H + TB_GAP;
             return (
               <g key={`lab-${i}`}>
-                {a.eyebrow && (
+                {eyeLines.map((ey, k) => (
                   <text
+                    key={`eye-${k}`}
                     className={`radar-eyebrow side-${side}`}
                     x={lx.toFixed(1)}
-                    y={eyebrowY.toFixed(1)}
+                    y={(eyebrowY + k * EYE_LINE_H).toFixed(1)}
                     textAnchor="middle"
                   >
-                    {a.eyebrow.toUpperCase()}
+                    {ey}
                   </text>
-                )}
+                ))}
                 {lines.map((ln, k) => (
                   <text
                     key={k}
@@ -426,6 +475,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                 {a.eyebrow && <p className="lg-eyebrow">{a.eyebrow.toUpperCase()}</p>}
                 <p className="lg-title">{a.label}</p>
                 <p className="lg-shares">
+                  {/* Sur écran étroit il n'y a ni ligne de rappel ni survol :
+                      sans cette mention, l'étiquette de saillance (#383) serait
+                      simplement absente en mobile. Elle vit donc dans la
+                      légende, à la même place que les parts d'attention. */}
+                  {a.salienceLabel && <span className="sal">Saillance {a.salienceLabel.toLowerCase()}</span>}
                   <span className="qc">Québec {a.qcShare}&nbsp;%</span>
                   <span className="can">Canada {a.canShare}&nbsp;%</span>
                 </p>
