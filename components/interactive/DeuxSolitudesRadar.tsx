@@ -73,7 +73,16 @@ export function wrapLabel(s: string, maxLen = 26): string[] {
   return lines;
 }
 
-type Tip = { x: number; y: number; side: "qc" | "can"; k: string; body: string };
+// Deux infobulles, deux questions — jamais la même réponse (retour Adrien) :
+//  · point INTÉRIEUR (sommet d'un polygone) = « combien cette région
+//    accorde-t-elle à ce sujet ? » → une PART, chiffre en tête.
+//  · point EXTÉRIEUR (bout de la ligne de rappel) = « à quel point ce sujet
+//    est-il saillant ? » → un RANG parmi les Unes, avec ce qu'il signifie.
+// Ni l'une ni l'autre ne répète le titre : il est déjà écrit à côté, au bout
+// de la ligne (et en mobile, le numéro d'axe renvoie à la légende).
+// `side` porte aussi la couleur : bleu/rouge pour une mesure de région,
+// neutre (« story ») pour la saillance, qui n'appartient à aucune des deux.
+type Tip = { x: number; y: number; side: "qc" | "can" | "story"; k: string; lead?: string; body: string };
 
 export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }) {
   const [tip, setTip] = useState<Tip | null>(null);
@@ -162,12 +171,12 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   const polyPts = (key: "vqc" | "vcan") =>
     vals.map((v, i) => pt(i, v[key]).map((c) => c.toFixed(1)).join(",")).join(" ");
 
-  const place = (e: React.MouseEvent, side: "qc" | "can", k: string, body: string) =>
-    setTip({ x: e.clientX, y: e.clientY, side, k, body });
+  const place = (e: React.MouseEvent, t: Omit<Tip, "x" | "y">) =>
+    setTip({ ...t, x: e.clientX, y: e.clientY });
   // Focus clavier : positionne l'infobulle sur le point lui-même.
-  const placeAtRect = (el: SVGGElement, side: "qc" | "can", k: string, body: string) => {
+  const placeAtRect = (el: SVGGElement, t: Omit<Tip, "x" | "y">) => {
     const r = el.getBoundingClientRect();
-    setTip({ x: r.left + r.width / 2, y: r.top + r.height / 2, side, k, body });
+    setTip({ ...t, x: r.left + r.width / 2, y: r.top + r.height / 2 });
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
@@ -255,27 +264,33 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // repère du moment, pas une décoration. En SVG le box-shadow de
             // solLivePulse n'existe pas : l'anneau est un second cercle dont
             // le rayon et l'opacité s'animent, même langage visuel.
-            // Il porte aussi l'étiquette de saillance du sujet, du côté qui
-            // mène l'axe (`a.side`) — « au Canada et/ou au Québec selon ».
-            const menant = a.side === "qc" ? "Au Québec" : "Au Canada";
-            const partMenante = a.side === "qc" ? a.qcShare : a.canShare;
-            const corps = a.salienceLabel
-              ? `${a.label} — saillance ${a.salienceLabel.toLowerCase()}, ${partMenante} % de l'attention médiatique des 24 dernières heures.`
-              : `${a.label} : ${partMenante} % de l'attention médiatique des 24 dernières heures.`;
+            // Il porte l'étiquette de saillance du sujet — et RIEN de ce que
+            // disent les points de données : ni titre, ni part d'attention.
+            //
+            // Aucune mention de région non plus, et c'est une question
+            // d'exactitude, pas seulement de style : l'échelle de saillance est
+            // QUÉBÉCOISE (`sumQc` contre SUM_QC_THRESHOLDS, cf. le badge de la
+            // Une des Unes). Écrire « Au Canada : saillance faible » sur un axe
+            // mené par le ROC attribuerait à une région une mesure qui n'est
+            // pas la sienne. Le niveau appartient au SUJET, pas à un camp — le
+            // ton neutre de la bulle le dit aussi visuellement.
+            const bulleSal = a.salienceLabel && a.salienceHint
+              ? { side: "story" as const, k: `Saillance ${a.salienceLabel.toLowerCase()}`, body: a.salienceHint }
+              : null;
             return (
               <g key={`ldr-${i}`} className={`radar-leader side-${a.side}`}>
                 <polyline points={pts} />
                 {!mid && <circle className="ldr-dot" cx={e1x.toFixed(1)} cy={e1y.toFixed(1)} r={2.2} />}
                 <g
                   className="ldr-end"
-                  tabIndex={0}
-                  role="img"
-                  aria-label={`${menant} : ${corps}`}
-                  onMouseEnter={(e) => place(e, a.side, menant, corps)}
-                  onMouseMove={(e) => place(e, a.side, menant, corps)}
-                  onMouseLeave={() => setTip(null)}
-                  onFocus={(e) => placeAtRect(e.currentTarget, a.side, menant, corps)}
-                  onBlur={() => setTip(null)}
+                  tabIndex={bulleSal ? 0 : undefined}
+                  role={bulleSal ? "img" : undefined}
+                  aria-label={bulleSal ? `${a.label} — saillance ${a.salienceLabel!.toLowerCase()}. ${a.salienceHint}` : undefined}
+                  onMouseEnter={bulleSal ? (e) => place(e, bulleSal) : undefined}
+                  onMouseMove={bulleSal ? (e) => place(e, bulleSal) : undefined}
+                  onMouseLeave={bulleSal ? () => setTip(null) : undefined}
+                  onFocus={bulleSal ? (e) => placeAtRect(e.currentTarget, bulleSal) : undefined}
+                  onBlur={bulleSal ? () => setTip(null) : undefined}
                 >
                   <circle className="ldr-halo" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={4.2} />
                   <circle className="hit" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={13} />
@@ -304,22 +319,31 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               if (!(v[key] > 0)) return null;
               const [x, y] = pt(i, v[key]);
               const isQc = key === "vqc";
-              const region = isQc ? "québécoise" : "canadienne";
               const share = isQc ? axes[i].qcShare : axes[i].canShare;
-              const body = `${axes[i].label} : ${share} % de l'attention médiatique ${region} des 24 dernières heures.`;
-              const kk = isQc ? "Au Québec" : "Au Canada";
+              // Le titre ne va PAS dans la bulle : il est déjà écrit au bout de
+              // la ligne de rappel. En mobile il n'y est pas, mais les axes sont
+              // numérotés et la légende suit — le numéro suffit à relier.
+              const kk = (isQc ? "Au Québec" : "Au Canada") + (narrow ? ` · sujet ${i + 1}` : "");
               const sideKey = isQc ? "qc" : "can";
+              const bulle = {
+                side: sideKey as "qc" | "can",
+                k: kk,
+                lead: `${share} %`,
+                body: "de l'attention médiatique des 24 dernières heures.",
+              };
               return (
                 <g
                   key={`${key}-${i}`}
                   className={`dot ${isQc ? "radar-dot-qc" : "radar-dot-can"}`}
                   tabIndex={0}
                   role="img"
-                  aria-label={`${kk} : ${body}`}
-                  onMouseEnter={(e) => place(e, sideKey, kk, body)}
-                  onMouseMove={(e) => place(e, sideKey, kk, body)}
+                  /* Le lecteur d'écran, lui, n'a pas le titre sous les yeux :
+                     l'étiquette accessible reste complète. */
+                  aria-label={`${kk} : ${axes[i].label} — ${share} % de l'attention médiatique des 24 dernières heures.`}
+                  onMouseEnter={(e) => place(e, bulle)}
+                  onMouseMove={(e) => place(e, bulle)}
                   onMouseLeave={() => setTip(null)}
-                  onFocus={(e) => placeAtRect(e.currentTarget, sideKey, kk, body)}
+                  onFocus={(e) => placeAtRect(e.currentTarget, bulle)}
                   onBlur={() => setTip(null)}
                 >
                   <circle className="hit" cx={x.toFixed(1)} cy={y.toFixed(1)} r={13} />
@@ -551,6 +575,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
       {tip && (
         <div className={`dot-tip on ${tip.side}`} style={{ left: tipX(tip.x), top: tipY(tip.y) }}>
           <span className="k">{tip.k}</span>
+          {tip.lead && <span className="lead">{tip.lead}</span>}
           {tip.body}
         </div>
       )}

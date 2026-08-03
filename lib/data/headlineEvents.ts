@@ -647,6 +647,7 @@ function buildSolitudes(
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
       salienceLabel: tier?.label ?? null,
       salienceCls: tier?.cls ?? null,
+      salienceHint: tier?.hint ?? null,
       qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
       canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
       qcShare: Math.round(qs),
@@ -1330,6 +1331,12 @@ export type SolitudeAxis = {
    *  vérités pour une seule mesure. null quand le suivi n'est pas fourni. */
   salienceLabel: string | null;
   salienceCls: string | null;
+  /** Ce que le niveau VEUT DIRE, en percentiles (« Environ 85 % des nouvelles à
+   *  la Une sont plus saillantes que celle-ci. »). Même phrase que l'infobulle
+   *  du badge de la Une des Unes. C'est elle qui rend le bout de ligne utile
+   *  plutôt que redondant : le point INTÉRIEUR donne une part d'attention, le
+   *  point EXTÉRIEUR donne un rang parmi les Unes. */
+  salienceHint: string | null;
   /** Médias couvrants + lien vers leur dernier article sur le sujet.
    *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
    *  deux côtés montre les deux couleurs. */

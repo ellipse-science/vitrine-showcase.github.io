@@ -1921,6 +1921,14 @@
   .dot-tip .k { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
   .dot-tip.qc .k { color: #9DB4D0; }
   .dot-tip.can .k { color: #E6A6A2; }
+  /* Saillance : la mesure appartient au SUJET, pas à une région — ni bleu ni
+     rouge, donc, pour qu'on voie au premier coup d'œil qu'on ne lit pas la
+     même nature d'information que sur un point de données. */
+  .dot-tip.story .k { color: #C4BCAC; }
+  /* Le chiffre passe DEVANT la phrase : la part d'attention est la réponse, le
+     reste n'est que son unité. Chiffres tabulaires pour que deux survols
+     successifs ne fassent pas danser le nombre. */
+  .dot-tip .lead { display: block; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; margin-bottom: 2px; }
   /* Glyphe-légende des zones du radar (#308) : suit le curseur, légèrement
      au-dessus pour ne pas le masquer. Sous l'infobulle (z-index 60). */
   .zone-glyph { position: fixed; z-index: 59; pointer-events: none; }
