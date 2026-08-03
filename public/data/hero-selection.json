@@ -1,10 +1,10 @@
 {
-  "event_id": "20260802T150000Z-evt-agents-bord-westjet-mettent-greve-65c4ed79",
+  "event_id": "20260802T190000Z-evt-westjet-flight-attendants-strike-airline-4b9bf3ce",
   "storyline_id": "story-westjet-3c390fc9",
   "title": "Grève des agents de bord de WestJet: vols annulés et voyageurs bloqués",
   "main_issue": "economy_and_labour",
   "date_utc": "2026-08-02",
-  "time_interval_utc": "15-19",
-  "sum_qc": 105.239,
-  "peak_qc": 57.422
+  "time_interval_utc": "19-23",
+  "sum_qc": 147.352,
+  "peak_qc": 67.596
 }
