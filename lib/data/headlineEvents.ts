@@ -644,18 +644,15 @@ function buildSolitudes(
 
   return {
     divPct, convPct,
-    // Le grand chiffre = le camp qui gagne (divergence si divPct l'emporte, sinon
-    // convergence). Cohérent avec les flèches/logos et avec l'échelle absolue : le
-    // marqueur à gauche du milieu = divergent, sa position vs « habituel » nuance.
-    scoreValue: convPct < 50 ? divPct : convPct,
-    verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
     habitualConvPct,
     ...relScore(convPct, habitualConvPct, habBands.p20, habBands.p80),
-    // Le score absolu recule d'un rang : il vit au survol du marqueur de la
-    // jauge, en divergence des deux côtés pour rester comparable.
+    // Le niveau absolu recule d'un rang : il vit au survol du marqueur de la
+    // jauge. Il est dit en CONVERGENCE, comme tout le module : le marqueur est
+    // posé à `convPct` sur la piste, donc l'annoncer en divergence chiffrerait
+    // le point là où il n'est pas.
     markerTitle:
-      `En ce moment : ${divPct} % de divergence. En général : ${100 - habitualConvPct} %.`,
+      `Aujourd'hui : ${convPct} % de convergence. Habituel : ${habitualConvPct} %.`,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -1320,9 +1317,6 @@ export type SolitudeData = {
   /** Divergence affichée (0-100) = 100 − convergence. */
   divPct: number;
   convPct: number;
-  /** Le grand chiffre + son verbe (« divergence » / « convergence »). */
-  scoreValue: number;
-  verb: "divergence" | "convergence";
   /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
   modeWord: string;
   modeCls: string;
@@ -1332,7 +1326,12 @@ export type SolitudeData = {
   habitualConvPct: number;
   /** Score RELATIF en hero (#258) : écart |convPct − habitualConvPct| en %,
    *  libellé de direction/intensité, couleur, texte du ⓘ et survol du marqueur
-   *  (où le score absolu s'est replié). */
+   *  (où le niveau absolu s'est replié).
+   *
+   *  TOUT le module chiffre la CONVERGENCE — hero, ⓘ, bulle du marqueur, jauge
+   *  et partage. `divPct` reste calculé pour l'axe, mais aucun libellé public ne
+   *  doit l'afficher : deux vocabulaires pour une seule mesure obligent le
+   *  lecteur à faire la soustraction lui-même. */
   relDiffPct: number;
   relLabel: string;
   relCls: string;

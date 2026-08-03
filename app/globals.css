@@ -1876,6 +1876,11 @@
   /* Bulle du marqueur (#258) : le score absolu s'y est replié. Même langage
      visuel que la bulle du ⓘ, mais au-dessus du marqueur, flèche vers le bas. */
   .solitudes .marker-bubble { position: absolute; bottom: calc(100% + 13px); left: 50%; transform: translateX(-50%); width: 265px; max-width: 74vw; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 3px 16px rgba(28,25,23,0.16); padding: 13px 17px; font-family: 'Source Serif 4', Georgia, serif; font-size: 15px; line-height: 1.5; letter-spacing: 0; text-transform: none; text-align: left; color: var(--ink-soft); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 6; }
+  .solitudes .marker-bubble .mb-now { display: block; }
+  /* La phrase d'échelle est un second rang : plus petite et plus pâle que les
+     chiffres du moment, pour qu'on lise d'abord « où on en est » et ensuite
+     « ce que valent les bouts de la règle ». */
+  .solitudes .marker-bubble .mb-scale { display: block; margin-top: 9px; font-size: 13.5px; line-height: 1.45; color: var(--ink-softer); }
   .solitudes .marker-bubble::after { content: ''; position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%); border: 8px solid transparent; border-top-color: var(--paper); filter: drop-shadow(0 1px 0 var(--rule)); }
   .solitudes .rel-strip .marker:hover .marker-bubble { opacity: 1; }
   /* Pouls « live » : anneau qui s'écarte et s'estompe — signale le score du moment. */

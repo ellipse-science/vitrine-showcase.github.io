@@ -1032,8 +1032,10 @@ describe("buildSolitudes", () => {
     const s = sol([row], [row]);
     expect(s.convPct).toBe(80);
     expect(s.divPct).toBe(20);
-    expect(s.verb).toBe("convergence");
-    expect(s.scoreValue).toBe(80);
+    // La bulle du marqueur dit le niveau du moment en CONVERGENCE, la même
+    // grandeur que la position du marqueur sur la piste (`left: convPct%`).
+    expect(s.markerTitle).toContain("80");
+    expect(s.markerTitle).toContain("de convergence");
   });
 
   it("repli 24h : sans indice publié, exclusivité pondérée des histoires (pas du bloc)", () => {
@@ -1044,7 +1046,13 @@ describe("buildSolitudes", () => {
     ];
     const s = sol(rows, rows);
     expect(s.convPct).toBeLessThan(50);
-    expect(s.verb).toBe("divergence");
+    // Même une journée divergente se chiffre en convergence : c'est le défaut
+    // corrigé — le module basculait de vocabulaire selon le côté du milieu, et
+    // la bulle du marqueur annonçait une divergence là où le marqueur était
+    // posé à `convPct`. Un seul mot chiffré à l'écran, quel que soit le jour.
+    expect(s.markerTitle).toContain("de convergence");
+    expect(s.markerTitle).not.toContain("divergence");
+    expect(s.relInfo).not.toContain("divergence");
   });
 
   it("garde au plus 6 axes, la plus grosse histoire en tête", () => {

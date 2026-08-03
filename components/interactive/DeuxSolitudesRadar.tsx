@@ -460,10 +460,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             <span className="info-bubble">{s.relInfo}</span>
           </span>
         </span>
-        {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel
-            → 100 % convergence (droite). Marqueur = convergence sur la fenêtre
-            glissante 24 h (s.convPct), pas un bloc 4 h. Le repère « habituel »
-            = convergence event-level médiane des derniers mois (s.habitualConvPct). */}
+        {/* Échelle absolue de CONVERGENCE, graduée 0 % (gauche) → 100 % (droite),
+            comme la position du marqueur (`left: convPct%`). Les deux bornes
+            portaient « 100 % » de chaque côté : le lecteur ne pouvait pas savoir
+            que la piste mesure une seule grandeur. Les mots divergent/convergent
+            restent aux deux bouts comme repères de sens. Marqueur = convergence
+            sur la fenêtre glissante 24 h (s.convPct), pas un bloc 4 h. Le repère
+            « habituel » = convergence event-level médiane des derniers mois. */}
         <div className="rel-strip" aria-hidden>
           <span className="lbl l">divergent</span>
           <span className="lbl r">convergent</span>
@@ -474,9 +477,18 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             title={`« Habituel » = la convergence médiane des derniers mois (~${s.habitualConvPct} %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle.`}
           />
           <div className="marker" style={{ left: `${s.convPct}%` }}>
-            <span className="marker-bubble">{s.markerTitle}</span>
+            <span className="marker-bubble">
+              <span className="mb-now">{s.markerTitle}</span>
+              {/* Ce que valent les deux bouts de l'échelle. Texte invariant, donc
+                  il vit ici avec la jauge qu'il décrit, et non dans le loader :
+                  c'est la graduation 0-100 qu'il explique, pas une donnée. */}
+              <span className="mb-scale">
+                À 100&nbsp;%, toutes les histoires couvertes au Québec et au Canada sont
+                les mêmes. À 0&nbsp;%, tout est différent.
+              </span>
+            </span>
           </div>
-          <span className="grad g0">100&nbsp;%</span>
+          <span className="grad g0">0&nbsp;%</span>
           <span className="grad gm" style={{ left: `${s.habitualConvPct}%` }}>habituel</span>
           <span className="grad g1">100&nbsp;%</span>
         </div>
