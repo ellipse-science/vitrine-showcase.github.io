@@ -1034,8 +1034,12 @@ describe("buildSolitudes", () => {
     expect(s.divPct).toBe(20);
     // La bulle du marqueur dit le niveau du moment en CONVERGENCE, la même
     // grandeur que la position du marqueur sur la piste (`left: convPct%`).
-    expect(s.markerTitle).toContain("80");
-    expect(s.markerTitle).toContain("de convergence");
+    // Ancré sur le DÉBUT de la phrase : un simple `toContain("80")` passait
+    // aussi si 80 n'apparaissait que dans « Habituel », sans rien garantir sur
+    // la valeur du moment — le défaut que ce test est censé verrouiller.
+    // L'espace avant % est insécable, comme dans toute l'interface.
+    expect(s.markerTitle).toMatch(/^Aujourd'hui : 80 % de convergence\./);
+    expect(s.markerTitle).toMatch(/Habituel : \d+ %\.$/);
   });
 
   it("repli 24h : sans indice publié, exclusivité pondérée des histoires (pas du bloc)", () => {
