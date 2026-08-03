@@ -23,10 +23,12 @@ export async function DeuxSolitudesSection() {
       <section className="solitudes">
         <div className="sol-title-row">
           <h3 className="sol-title">Deux solitudes?</h3>
-          {/* Le partage suit la sémantique du grand chiffre (scoreValue/verb) :
-              sur une journée convergente il annonce la convergence, pas une
-              divergence figée. */}
-          <ShareButton title={`Deux solitudes — ${s.scoreValue} % de ${s.verb} aujourd'hui`} anchor="deux-solitudes" />
+          {/* Le partage reprend le grand chiffre du module, mot pour mot
+              (relDiffPct + relLabel). L'ancienne formule basculait de grandeur
+              selon la journée — « X % de convergence » au-dessus de 50 %,
+              « X % de divergence » en dessous — donc un même module se
+              partageait dans deux vocabulaires d'un jour à l'autre. */}
+          <ShareButton title={`Deux solitudes — ${s.relDiffPct} % ${s.relLabel}`} anchor="deux-solitudes" />
         </div>
         <div className="sol-rule" aria-hidden />
         <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise<br />et canadienne des 24 dernières heures.</p>

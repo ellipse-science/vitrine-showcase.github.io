@@ -20,6 +20,21 @@ const W = 840, H = 680, CX = W / 2, CY = H / 2, R = 160, R0 = 6;
 // Offsets fixés visuellement à ce viewBox (840×680) — à revoir s'il change.
 const labelR = (cosA: number) => (Math.abs(cosA) < 0.35 ? R + 58 : R + 152);
 
+// Coupure de l'étiquette de rubrique (#381). Elle n'était PAS coupée du tout,
+// alors que le titre l'est à 26 caractères : « DROITS, LIBERTÉS, MINORITÉS ET
+// DISCRIMINATION » (44 car.) débordait sur la colonne de l'axe voisin.
+// 28 est mesuré, pas deviné : l'étiquette est en IBM Plex Mono avec un
+// letter-spacing fixe, donc de largeur strictement proportionnelle — 8,19 px
+// par caractère au rendu. 28 × 8,19 = 229 px, juste sous les 233 px du bloc
+// titre le plus large (26 caractères de Source Serif 4). Les deux colonnes ont
+// donc la même emprise, quelle que soit la rubrique.
+export const EYEBROW_MAX_CHARS = 28;
+/** Largeur mesurée d'un caractère de `.radar-eyebrow` (IBM Plex Mono 10,5 px,
+ *  letter-spacing 0.18em) et largeur du bloc titre le plus large. Exportées
+ *  pour que le test verrouille la CALIBRATION, pas seulement la coupure. */
+export const EYEBROW_PX_PER_CHAR = 8.19;
+export const AXIS_BLOCK_MAX_PX = 233;
+
 // Secteur du balayage radar (~48°, en tête vers le haut). Géométrie statique ;
 // la rotation est en CSS.
 const SWEEP = (() => {
@@ -46,9 +61,8 @@ function Fleur() {
 
 // Coupe un titre en lignes étroites (~26 caractères) : 2-3 lignes centrées,
 // comme la maquette, pour que le bloc ne déborde pas sur le radar.
-function wrapLabel(s: string): string[] {
+export function wrapLabel(s: string, maxLen = 26): string[] {
   const words = s.split(" ");
-  const maxLen = 26;
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -59,7 +73,27 @@ function wrapLabel(s: string): string[] {
   return lines;
 }
 
-type Tip = { x: number; y: number; side: "qc" | "can"; k: string; body: string };
+// Deux infobulles, deux questions — jamais la même réponse (retour Adrien) :
+//  · point INTÉRIEUR (sommet d'un polygone) = « combien cette région
+//    accorde-t-elle à ce sujet ? » → une PART, chiffre en tête.
+//  · point EXTÉRIEUR (bout de la ligne de rappel) = « à quel point ce sujet
+//    est-il saillant ? » → un RANG parmi les Unes, avec ce qu'il signifie.
+// Ni l'une ni l'autre ne répète le titre : il est déjà écrit à côté, au bout
+// de la ligne (et en mobile, le numéro d'axe renvoie à la légende).
+// `side` porte aussi la couleur : bleu/rouge pour une mesure de région,
+// neutre (« story ») pour la saillance, qui n'appartient à aucune des deux.
+type Tip = {
+  x: number; y: number;
+  side: "qc" | "can" | "story";
+  k: string;
+  /** Classe de niveau (`s-eleve`…) quand le chapeau doit être la PASTILLE de la
+   *  Une des Unes plutôt qu'un simple sur-titre : même composant visuel, mêmes
+   *  couleurs de bande, pour qu'on reconnaisse le niveau d'un module à l'autre
+   *  sans le relire. */
+  tagCls?: string;
+  lead?: string;
+  body: string;
+};
 
 export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }) {
   const [tip, setTip] = useState<Tip | null>(null);
@@ -148,12 +182,12 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   const polyPts = (key: "vqc" | "vcan") =>
     vals.map((v, i) => pt(i, v[key]).map((c) => c.toFixed(1)).join(",")).join(" ");
 
-  const place = (e: React.MouseEvent, side: "qc" | "can", k: string, body: string) =>
-    setTip({ x: e.clientX, y: e.clientY, side, k, body });
+  const place = (e: React.MouseEvent, t: Omit<Tip, "x" | "y">) =>
+    setTip({ ...t, x: e.clientX, y: e.clientY });
   // Focus clavier : positionne l'infobulle sur le point lui-même.
-  const placeAtRect = (el: SVGGElement, side: "qc" | "can", k: string, body: string) => {
+  const placeAtRect = (el: SVGGElement, t: Omit<Tip, "x" | "y">) => {
     const r = el.getBoundingClientRect();
-    setTip({ x: r.left + r.width / 2, y: r.top + r.height / 2, side, k, body });
+    setTip({ ...t, x: r.left + r.width / 2, y: r.top + r.height / 2 });
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
@@ -236,11 +270,51 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const pts = mid
               ? `${dx.toFixed(1)},${dy.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`
               : `${dx.toFixed(1)},${dy.toFixed(1)} ${e1x.toFixed(1)},${e1y.toFixed(1)} ${e2x.toFixed(1)},${e2y.toFixed(1)}`;
+            // Bout de la ligne de rappel (#383) : plus gros, avec le même pouls
+            // « live » que le marqueur de la jauge en bas du module — c'est le
+            // repère du moment, pas une décoration. En SVG le box-shadow de
+            // solLivePulse n'existe pas : l'anneau est un second cercle dont
+            // le rayon et l'opacité s'animent, même langage visuel.
+            // Il porte l'étiquette de saillance du sujet — et RIEN de ce que
+            // disent les points de données : ni titre, ni part d'attention.
+            //
+            // Aucune mention de région non plus, et c'est une question
+            // d'exactitude, pas seulement de style : l'échelle de saillance est
+            // QUÉBÉCOISE (`sumQc` contre SUM_QC_THRESHOLDS, cf. le badge de la
+            // Une des Unes). Écrire « Au Canada : saillance faible » sur un axe
+            // mené par le ROC attribuerait à une région une mesure qui n'est
+            // pas la sienne. Le niveau appartient au SUJET, pas à un camp — le
+            // ton neutre de la bulle le dit aussi visuellement.
+            const bulleSal = a.salienceLabel && a.salienceHint && a.salienceCls
+              ? {
+                side: "story" as const,
+                // Libellé EXACT du module 1 (« Saillance Élevée »), pas une
+                // variante en minuscules : c'est la même pastille, elle doit
+                // se lire pareil.
+                k: `Saillance ${a.salienceLabel}`,
+                tagCls: a.salienceCls,
+                body: a.salienceHint,
+              }
+              : null;
             return (
               <g key={`ldr-${i}`} className={`radar-leader side-${a.side}`}>
                 <polyline points={pts} />
                 {!mid && <circle className="ldr-dot" cx={e1x.toFixed(1)} cy={e1y.toFixed(1)} r={2.2} />}
-                <circle className="ldr-dot" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={2.8} />
+                <g
+                  className="ldr-end"
+                  tabIndex={bulleSal ? 0 : undefined}
+                  role={bulleSal ? "img" : undefined}
+                  aria-label={bulleSal ? `${a.label} — saillance ${a.salienceLabel!.toLowerCase()}. ${a.salienceHint}` : undefined}
+                  onMouseEnter={bulleSal ? (e) => place(e, bulleSal) : undefined}
+                  onMouseMove={bulleSal ? (e) => place(e, bulleSal) : undefined}
+                  onMouseLeave={bulleSal ? () => setTip(null) : undefined}
+                  onFocus={bulleSal ? (e) => placeAtRect(e.currentTarget, bulleSal) : undefined}
+                  onBlur={bulleSal ? () => setTip(null) : undefined}
+                >
+                  <circle className="ldr-halo" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={4.2} />
+                  <circle className="hit" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={13} />
+                  <circle className="ldr-dot is-end" cx={e2x.toFixed(1)} cy={e2y.toFixed(1)} r={4.2} />
+                </g>
               </g>
             );
           })}
@@ -264,22 +338,31 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
               if (!(v[key] > 0)) return null;
               const [x, y] = pt(i, v[key]);
               const isQc = key === "vqc";
-              const region = isQc ? "québécoise" : "canadienne";
               const share = isQc ? axes[i].qcShare : axes[i].canShare;
-              const body = `${axes[i].label} : ${share} % de l'attention médiatique ${region} des 24 dernières heures.`;
-              const kk = isQc ? "Au Québec" : "Au Canada";
+              // Le titre ne va PAS dans la bulle : il est déjà écrit au bout de
+              // la ligne de rappel. En mobile il n'y est pas, mais les axes sont
+              // numérotés et la légende suit — le numéro suffit à relier.
+              const kk = (isQc ? "Au Québec" : "Au Canada") + (narrow ? ` · sujet ${i + 1}` : "");
               const sideKey = isQc ? "qc" : "can";
+              const bulle = {
+                side: sideKey as "qc" | "can",
+                k: kk,
+                lead: `${share} %`,
+                body: "de l'attention médiatique des 24 dernières heures.",
+              };
               return (
                 <g
                   key={`${key}-${i}`}
                   className={`dot ${isQc ? "radar-dot-qc" : "radar-dot-can"}`}
                   tabIndex={0}
                   role="img"
-                  aria-label={`${kk} : ${body}`}
-                  onMouseEnter={(e) => place(e, sideKey, kk, body)}
-                  onMouseMove={(e) => place(e, sideKey, kk, body)}
+                  /* Le lecteur d'écran, lui, n'a pas le titre sous les yeux :
+                     l'étiquette accessible reste complète. */
+                  aria-label={`${kk} : ${axes[i].label} — ${share} % de l'attention médiatique des 24 dernières heures.`}
+                  onMouseEnter={(e) => place(e, bulle)}
+                  onMouseMove={(e) => place(e, bulle)}
                   onMouseLeave={() => setTip(null)}
-                  onFocus={(e) => placeAtRect(e.currentTarget, sideKey, kk, body)}
+                  onFocus={(e) => placeAtRect(e.currentTarget, bulle)}
                   onBlur={() => setTip(null)}
                 >
                   <circle className="hit" cx={x.toFixed(1)} cy={y.toFixed(1)} r={13} />
@@ -313,6 +396,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const strong = Math.max(vals[i].vqc, vals[i].vcan) === maxVal;
             const side = a.side;
             const BW = 26, CHGAP = 6, LINE_H = 20, EYE_GAP = 16, TB_GAP = 15;
+            // EYE_LINE_H : interligne d'une rubrique qui passe sur 2 lignes.
+            // 13 px pour une police de 10,5 px — assez serré pour que le bloc
+            // reste un « sur-titre » et ne concurrence pas le titre.
+            const EYE_LINE_H = 13;
+            const eyeLines = a.eyebrow ? wrapLabel(a.eyebrow.toUpperCase(), EYEBROW_MAX_CHARS) : [];
             // Les badges s'enroulent sur plusieurs rangées : une histoire très
             // couverte (11 médias = 346 px sur une ligne) débordait sur les
             // libellés des axes voisins. 6 par rangée ≈ 186 px, soit la largeur
@@ -327,7 +415,10 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const mediaRows = Array.from({ length: rowsCount }, (_, r) =>
               media.slice(r * perRow, (r + 1) * perRow),
             ).filter((r) => r.length > 0);
-            const eyeH = a.eyebrow ? EYE_GAP : 0;
+            // Chaque ligne de rubrique supplémentaire pousse le titre d'autant :
+            // sans ça, une rubrique sur 2 lignes écrirait sa 2e ligne PAR-DESSUS
+            // la 1re ligne du titre.
+            const eyeH = a.eyebrow ? EYE_GAP + (eyeLines.length - 1) * EYE_LINE_H : 0;
             const titleH = lines.length * LINE_H;
             // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges :
             // sans ça, le positionnement vertical (top) ignorerait les rangées
@@ -355,16 +446,17 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const rowY = title1Y + (lines.length - 1) * LINE_H + TB_GAP;
             return (
               <g key={`lab-${i}`}>
-                {a.eyebrow && (
+                {eyeLines.map((ey, k) => (
                   <text
+                    key={`eye-${k}`}
                     className={`radar-eyebrow side-${side}`}
                     x={lx.toFixed(1)}
-                    y={eyebrowY.toFixed(1)}
+                    y={(eyebrowY + k * EYE_LINE_H).toFixed(1)}
                     textAnchor="middle"
                   >
-                    {a.eyebrow.toUpperCase()}
+                    {ey}
                   </text>
-                )}
+                ))}
                 {lines.map((ln, k) => (
                   <text
                     key={k}
@@ -426,6 +518,11 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                 {a.eyebrow && <p className="lg-eyebrow">{a.eyebrow.toUpperCase()}</p>}
                 <p className="lg-title">{a.label}</p>
                 <p className="lg-shares">
+                  {/* Sur écran étroit il n'y a ni ligne de rappel ni survol :
+                      sans cette mention, l'étiquette de saillance (#383) serait
+                      simplement absente en mobile. Elle vit donc dans la
+                      légende, à la même place que les parts d'attention. */}
+                  {a.salienceLabel && <span className="sal">Saillance {a.salienceLabel.toLowerCase()}</span>}
                   <span className="qc">Québec {a.qcShare}&nbsp;%</span>
                   <span className="can">Canada {a.canShare}&nbsp;%</span>
                 </p>
@@ -460,10 +557,13 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             <span className="info-bubble">{s.relInfo}</span>
           </span>
         </span>
-        {/* Échelle absolue graduée : 100 % divergence (gauche) → habituel
-            → 100 % convergence (droite). Marqueur = convergence sur la fenêtre
-            glissante 24 h (s.convPct), pas un bloc 4 h. Le repère « habituel »
-            = convergence event-level médiane des derniers mois (s.habitualConvPct). */}
+        {/* Échelle absolue de CONVERGENCE, graduée 0 % (gauche) → 100 % (droite),
+            comme la position du marqueur (`left: convPct%`). Les deux bornes
+            portaient « 100 % » de chaque côté : le lecteur ne pouvait pas savoir
+            que la piste mesure une seule grandeur. Les mots divergent/convergent
+            restent aux deux bouts comme repères de sens. Marqueur = convergence
+            sur la fenêtre glissante 24 h (s.convPct), pas un bloc 4 h. Le repère
+            « habituel » = convergence event-level médiane des derniers mois. */}
         <div className="rel-strip" aria-hidden>
           <span className="lbl l">divergent</span>
           <span className="lbl r">convergent</span>
@@ -474,9 +574,18 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             title={`« Habituel » = la convergence médiane des derniers mois (~${s.habitualConvPct} %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle.`}
           />
           <div className="marker" style={{ left: `${s.convPct}%` }}>
-            <span className="marker-bubble">{s.markerTitle}</span>
+            <span className="marker-bubble">
+              <span className="mb-now">{s.markerTitle}</span>
+              {/* Ce que valent les deux bouts de l'échelle. Texte invariant, donc
+                  il vit ici avec la jauge qu'il décrit, et non dans le loader :
+                  c'est la graduation 0-100 qu'il explique, pas une donnée. */}
+              <span className="mb-scale">
+                À 100&nbsp;%, toutes les histoires couvertes au Québec et au Canada sont
+                les mêmes. À 0&nbsp;%, tout est différent.
+              </span>
+            </span>
           </div>
-          <span className="grad g0">100&nbsp;%</span>
+          <span className="grad g0">0&nbsp;%</span>
           <span className="grad gm" style={{ left: `${s.habitualConvPct}%` }}>habituel</span>
           <span className="grad g1">100&nbsp;%</span>
         </div>
@@ -484,7 +593,10 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
 
       {tip && (
         <div className={`dot-tip on ${tip.side}`} style={{ left: tipX(tip.x), top: tipY(tip.y) }}>
-          <span className="k">{tip.k}</span>
+          {tip.tagCls
+            ? <span className={`saillance-tag ${tip.tagCls}`}>{tip.k}</span>
+            : <span className="k">{tip.k}</span>}
+          {tip.lead && <span className="lead">{tip.lead}</span>}
           {tip.body}
         </div>
       )}

@@ -115,14 +115,22 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   if (slug === "deux-solitudes") {
     const data = await loadHeadlineEvents();
     if (data) {
-      const { scoreValue, verb, edito } = data.solitudes;
+      // La carte reprend le grand chiffre du module (écart à l'habituel), et
+      // pas un niveau absolu dans un vocabulaire qui basculait selon la
+      // journée : celui qui clique doit retrouver à l'écran le chiffre qu'il a
+      // vu sur la carte. Le niveau absolu reste dans la description, en
+      // convergence comme partout ailleurs dans le module.
+      const { convPct, habitualConvPct, relDiffPct, relLabel } = data.solitudes;
       return {
         title: fallback.title,
-        description: `${scoreValue} % de ${verb} aujourd'hui entre les médias québécois et canadiens.`,
+        description:
+          `${relDiffPct} % ${relLabel}. Les médias québécois et canadiens consacrent ` +
+          `aujourd'hui ${convPct} % de leur attention aux mêmes histoires ` +
+          `(habituel : ${habitualConvPct} %).`,
         stat: {
-          value: `${scoreValue} %`,
-          label: `de ${verb} Québec–Canada`,
-          context: edito,
+          value: `${relDiffPct} %`,
+          label: relLabel,
+          context: data.solitudes.edito,
         },
       };
     }
