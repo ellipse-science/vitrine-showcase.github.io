@@ -561,13 +561,31 @@ function buildSolitudes(
   conv24h: number | null,
   habitualConvPct: number = HABITUAL_EVENT_CONV,
   habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
-  // Seuils de saillance PAR RÉGION (#383). Chaque camp est situé dans SA
-  // propre distribution : un sujet mené par le ROC se compare aux Unes
-  // canadiennes, pas aux québécoises — sans quoi le module comparerait deux
-  // solitudes avec une seule règle. Optionnels : les tests appellent
-  // buildSolitudes sans eux, et le radar se contente alors de la part
-  // d'attention (aucune étiquette inventée localement).
-  salScales?: { qc: typeof SAL_QC_THRESHOLDS; roc: typeof SAL_QC_THRESHOLDS | null },
+  // Niveau de saillance du bout de ligne (#383). Chaque camp est situé dans
+  // les Unes de SA région — un sujet mené par le ROC se compare aux Unes
+  // canadiennes, sinon le module comparerait deux solitudes avec une seule
+  // règle. Optionnel : les tests appellent buildSolitudes sans lui, et le
+  // radar se contente alors de la part d'attention (aucune étiquette inventée).
+  //
+  // ⚠️ COMPROMIS TEMPORAIRE — à retirer quand aws-refiners#273 aura livré
+  // `score_qc_sum_24h` et `score_roc_sum_24h`. Les deux côtés n'utilisent pas
+  // encore la même construction :
+  //   · QC  → le rang du badge de la Une des Unes (cumul 24 h + hystérésis,
+  //           #314), repris TEL QUEL. Non négociable : sans ça, la même
+  //           histoire affichait deux niveaux différents sur la même page
+  //           (mesuré le 2026-08-03 : « Téhéran » Faible au module 1,
+  //           Élevée au radar — même région, donc rien ne l'expliquait).
+  //   · ROC → le pic 24 h contre la distribution ROC des scores de bloc
+  //           (`score_roc`, n=1688), faute de calibration cumulée canadienne.
+  // Les deux restent « le niveau du sujet parmi les Unes de sa région », et la
+  // population est NOMMÉE dans la phrase, donc le lecteur n'a jamais à deviner
+  // dans quel panier il lit. Mais l'exactitude de la comparaison QC/ROC attend
+  // la calibration cumulée.
+  sal?: {
+    badgeRanks: Map<string, { rank: number }>;
+    sumThresholds: typeof SUM_QC_THRESHOLDS;
+    roc: typeof SAL_QC_THRESHOLDS | null;
+  },
 ): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
@@ -646,10 +664,17 @@ function buildSolitudes(
     // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
     // l'objet du module.
     const mene = qs >= cs ? "qc" : "can";
-    const echelle = mene === "qc" ? salScales?.qc : salScales?.roc;
-    const tier = echelle
-      ? saillanceTierFromScore(mene === "qc" ? a.peakQc : a.peakRoc, echelle, mene === "qc" ? POP_QC : POP_ROC)
-      : null;
+    let tier: { label: string; cls: string; hint: string } | null = null;
+    if (sal) {
+      if (mene === "qc") {
+        // Rang du badge du module 1, tel quel (même clé, même repli).
+        const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
+          ?? rawRank(a.sumQc, sal.sumThresholds);
+        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+      } else if (sal.roc) {
+        tier = saillanceTierFromScore(a.peakRoc, sal.roc, POP_ROC);
+      }
+    }
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
@@ -1664,10 +1689,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  // Deux échelles publiées par la calibration 365 j : score_qc (n≈1730) et
-  // score_roc (n≈1688). Le radar situe chaque camp dans la sienne.
+  // Côté QC, le radar reprend le badge du module 1 ; côté ROC, la seule
+  // distribution canadienne publiée (`score_roc`, n≈1688). Voir le compromis
+  // documenté sur buildSolitudes et aws-refiners#273.
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
-    qc: blockThresholds,
+    badgeRanks,
+    sumThresholds,
     roc: salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 
