@@ -980,7 +980,7 @@
     letter-spacing: 0.18em;
     margin-bottom: 12px;
   }
-  /* Tag « Résonance internationale » : trait laiton sous le texte */
+  /* Tag « Résonance canadienne / américaine » : trait laiton sous le texte */
   .resonance-tag {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
@@ -999,6 +999,48 @@
     letter-spacing: 0.18em;
     margin-bottom: 12px;
   }
+  /* Rangée « résonance » (#230) : sous la byline, dans le même bloc qu'elle.
+     DÉCLARÉE APRÈS `.une-side .resonance-tag` à dessein : les marges propres du
+     tag sont neutralisées ici (c'est la rangée qui gère l'espacement) et,
+     placée plus haut, la règle perdait le `margin-bottom: 12px` ci-dessus sur
+     les Unes secondaires — les deux espacements se seraient additionnés. C'est
+     exactement le piège déjà documenté pour `.une-side .une-enjeu`. */
+  .resonance-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    /* Respire sous la byline : à 9 px, les deux lignes se lisaient comme une
+       seule liste de médias qui continue. L'écart vaut maintenant celui qui
+       sépare la byline du chapô au-dessus (15 px) — même famille, deux
+       informations distinctes. Marges de blocs adjacents : elles fusionnent,
+       l'écart réel est donc ce `margin-top`, pas sa somme avec les 7 px du
+       paragraphe précédent. */
+    margin: 17px 0 0;
+  }
+  /* Tag + son ⓘ restent soudés : c'est le ⓘ de CETTE région. Le couple ne se
+     coupe jamais en fin de ligne, seuls les couples se replient entre eux. */
+  .resonance-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .resonance-row .resonance-tag { margin: 0; }
+  /* Contenu de la bulle : la part d'attention, puis les médias cliquables. */
+  .resonance-card { display: block; }
+  .resonance-card-share {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding-bottom: 7px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .resonance-card-media { display: block; }
   /* Saillance multi-régionale : QC primaire, ROC et US secondaires */
   .saillance-row .region-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -3886,6 +3928,12 @@
       gap: 8px 10px;
       margin-bottom: 10px;
     }
+    /* Résonance (#230) : les deux tags ne tiennent pas côte à côte sur 375 px,
+       le second passe donc à la ligne — avec SON ⓘ, puisque `.resonance-item`
+       les garde soudés. Rien à corriger ici : c'est le repli voulu. (Un temps,
+       les tags rapetissaient à 9 px pour tenir sur une seule ligne ; abandonné,
+       ça faisait changer le corps du texte d'une édition à l'autre selon qu'il
+       y avait une résonance ou deux.) */
     .une-main-grid,
     .une-main-grid.no-art {
       grid-template-columns: 1fr;
