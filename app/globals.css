@@ -2584,6 +2584,521 @@
     padding: 0 0 12px;
   }
   .ass-back-btn:hover { color: var(--cordovan); }
+
+  /* --- Vestiaire : casiers de parti et cartes de député ------------------- */
+  /* Le casier fermé porte le bilan du parti sur ses deux battants. L'ouvrir
+     fait pivoter les battants vers l'extérieur et étale le présentoir de
+     cartes. Aucun arrondi ni ombre portée (design_language.md) : la
+     profondeur vient des rotations 3D et des filets, pas d'un flou. */
+  .vestiaire { display: flex; flex-direction: column; gap: 18px; }
+  .vestiaire-rangee {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+
+  .casier {
+    position: relative;
+    min-height: 268px;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    perspective: 1400px;
+  }
+  /* Le casier ouvert prend toute la largeur de la rangée : le présentoir a
+     besoin de place, et la grille se réorganise seule autour de lui. */
+  .casier.est-ouvert { grid-column: 1 / -1; }
+
+  .casier-portes {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transform-style: preserve-3d;
+  }
+  .casier-portes:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  /* Casier ouvert : le bouton couvre toujours tout le casier, mais seul le
+     bois des battants reste cliquable — sinon un clic sur une carte serait
+     intercepté par le bouton, et le clic sur les battants (le seul geste
+     naturel pour refermer) serait perdu. */
+  .casier.est-ouvert .casier-portes { pointer-events: none; }
+  .casier-battant { pointer-events: auto; }
+
+  .casier-battant {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 50%;
+    padding: 12px 11px;
+    background: var(--pc);
+    border: 1px solid color-mix(in srgb, var(--pc) 72%, #000);
+    color: var(--paper);
+    transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                width 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+    backface-visibility: hidden;
+  }
+  .casier-battant.gauche  { transform-origin: left center; }
+  .casier-battant.droite  { transform-origin: right center; align-items: flex-end; text-align: right; }
+  /* Fermé : les deux battants joints forment la façade. Au survol, ils
+     s'entrebâillent — l'indice qu'il y a quelque chose derrière. */
+  .casier-portes:hover .casier-battant.gauche { transform: rotateY(-9deg); }
+  .casier-portes:hover .casier-battant.droite { transform: rotateY(9deg); }
+
+  /* Ouvert : les battants se réduisent à deux panneaux étroits plaqués aux
+     bords et vus de biais, comme des portes de vestiaire réellement ouvertes.
+     Ils encadrent le présentoir au lieu de disparaître. */
+  /* Largeur et angle sont choisis ensemble : une porte à 52 px pivotée de 64°
+     ne mesure plus que 9 px à l'écran une fois la perspective appliquée, soit
+     une cible intouchable. 84 px à 48° en laissent une trentaine — cliquable,
+     et la porte se lit encore comme une porte. */
+  .casier.est-ouvert .casier-battant {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 84px;
+    padding: 10px 7px;
+    justify-content: flex-start;
+    cursor: pointer;
+  }
+  .casier.est-ouvert .casier-battant.gauche { left: 0;  transform: rotateY(-48deg); }
+  .casier.est-ouvert .casier-battant.droite { right: 0; transform: rotateY(48deg); }
+  .casier.est-ouvert .casier-portes:hover .casier-battant.gauche { transform: rotateY(-38deg); }
+  .casier.est-ouvert .casier-portes:hover .casier-battant.droite { transform: rotateY(38deg); }
+  /* Un battant de 52 px ne peut pas porter le bilan chiffré : on ne garde que
+     les fentes et le sigle, tourné à la verticale le long de la porte. */
+  .casier.est-ouvert .casier-bilan,
+  .casier.est-ouvert .casier-enjeux,
+  .casier.est-ouvert .casier-poignee { display: none; }
+  .casier.est-ouvert .casier-plaque { border: none; padding: 0; margin-top: 10px; }
+  .casier.est-ouvert .casier-sigle {
+    display: block;
+    font-size: 17px;
+    writing-mode: vertical-rl;
+    letter-spacing: 0.16em;
+  }
+  .casier.est-ouvert .casier-battant.droite .casier-sigle { transform: rotate(180deg); }
+
+  /* Fentes d'aération : le détail qui fait lire « casier » plutôt que « boîte ». */
+  .casier-fentes {
+    display: block;
+    height: 13px;
+    background: repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--pc) 55%, #000) 0 2px,
+      transparent 2px 5px
+    );
+  }
+  .casier-plaque {
+    display: block;
+    padding: 5px 0;
+    border-top: 1px solid rgba(243, 236, 221, 0.45);
+    border-bottom: 1px solid rgba(243, 236, 221, 0.45);
+  }
+  .casier-sigle {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .casier-bilan { display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
+  .casier-bilan b {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 19px;
+    line-height: 1;
+  }
+  .casier-bilan i {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(243, 236, 221, 0.76);
+    margin-top: 2px;
+  }
+  .casier-enjeux { display: flex; height: 5px; width: 100%; margin-top: 8px; }
+  .casier-enjeux .reste { background: repeating-linear-gradient(
+      45deg, rgba(243,236,221,.5) 0 2px, transparent 2px 4px); }
+  .casier-poignee {
+    position: absolute;
+    left: -3px;
+    top: 50%;
+    width: 6px;
+    height: 42px;
+    margin-top: -21px;
+    background: var(--brass);
+    border: 1px solid color-mix(in srgb, var(--brass) 65%, #000);
+  }
+
+  .casier-interieur {
+    /* Marge latérale = largeur des battants ouverts : le présentoir vit entre
+       les portes, pas dessous. */
+    padding: 12px 14px 14px;
+    margin: 0 62px;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--paper-deep) 92%, #000) 0 1px,
+        transparent 1px 7px
+      ),
+      var(--paper-deep);
+  }
+  .casier-etiquette {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .casier-etiquette-parti {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--pc);
+  }
+  .casier-refermer {
+    margin-left: auto;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    padding: 0 0 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .casier-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .casier-refermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .casier-etiquette-compte,
+  .casier-vide {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  /* Le présentoir défile horizontalement : les cartes gardent leur format
+     exact plutôt que de se comprimer pour tenir dans la largeur. */
+  .casier-presentoir {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    scroll-snap-type: x proximity;
+  }
+  .casier-presentoir > * { scroll-snap-align: start; }
+
+  /* --- La carte : format 63,5 × 88,9 mm, soit 5:7 ------------------------- */
+  .carte {
+    flex: 0 0 auto;
+    width: 176px;
+    height: 246px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    perspective: 1000px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .carte:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .carte-pivot {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .carte.est-retournee .carte-pivot { transform: rotateY(180deg); }
+  .carte-recto,
+  .carte-verso {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    display: block;
+  }
+  .carte-verso { transform: rotateY(180deg); }
+
+  /* Recto : cadre plein à la couleur du parti, portrait tramé, plaque nominative. */
+  .carte-recto { background: var(--pc); padding: 7px; }
+  .carte-cadre {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--paper);
+  }
+  .carte-bandeau {
+    display: flex;
+    justify-content: space-between;
+    background: var(--pc);
+    color: var(--paper);
+    font-size: 5.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 3px 5px;
+  }
+  .carte-photo {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    border-bottom: 3px solid var(--pc);
+  }
+  .carte-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .carte-photo-absente {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 14px;
+    text-align: center;
+    font-size: 7px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    background: repeating-linear-gradient(
+      45deg, var(--rule-faint) 0 4px, transparent 4px 8px);
+  }
+  .carte-position {
+    position: absolute;
+    top: 26px;
+    right: 0;
+    background: var(--brass);
+    color: var(--paper);
+    font-size: 6px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+  }
+  .carte-plaque {
+    display: block;
+    padding: 6px 7px 7px 38px;
+    text-align: right;
+  }
+  .carte-nom {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 12px;
+    line-height: 1.04;
+    color: var(--cordovan);
+  }
+  .carte-circo {
+    display: block;
+    font-size: 5.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-top: 3px;
+  }
+  .carte-macaron {
+    position: absolute;
+    left: 5px;
+    bottom: 6px;
+    width: 30px;
+    height: 30px;
+    /* Cercle : seule forme arrondie admise (pastilles indicatrices). */
+    border-radius: 50%;
+    background: var(--pc);
+    color: var(--paper);
+    border: 2px solid var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  /* Verso : la fiche de statistiques. */
+  .carte-verso {
+    background: var(--paper-deep);
+    border: 5px solid var(--pc);
+    padding: 7px 8px;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+  .carte-v-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+    border-bottom: 2px solid var(--pc);
+    padding-bottom: 3px;
+  }
+  .carte-v-nom {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 11px;
+    line-height: 1.05;
+    color: var(--cordovan);
+  }
+  .carte-v-macaron {
+    flex: 0 0 auto;
+    background: var(--pc);
+    color: var(--paper);
+    font-size: 6px;
+    padding: 2px 4px;
+    letter-spacing: 0.06em;
+  }
+  .carte-v-circo {
+    display: block;
+    font-size: 5.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin: 3px 0 5px;
+  }
+  .carte-v-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 5px 0;
+  }
+  .carte-v-stats > span { display: block; text-align: center; }
+  .carte-v-stats b {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--cordovan);
+  }
+  .carte-v-stats b.carte-v-points { font-size: 6px; letter-spacing: 0.5px; }
+  .carte-v-stats b.carte-v-points .empty { color: var(--rule); }
+  /* Le ton s'écrit en toutes lettres : seul son sens est publiable
+     (cf. commentaire de toneLabel dans AssembleeVestiaire.tsx). */
+  .carte-v-ton {
+    display: block;
+    padding-top: 4px;
+    font-size: 6px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    text-align: center;
+  }
+  .carte-v-ton b { color: var(--cordovan); font-weight: 700; }
+  .casier-ton {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(243, 236, 221, 0.92);
+    border-top: 1px solid rgba(243, 236, 221, 0.35);
+    padding-top: 6px;
+  }
+  .carte-v-stats i {
+    display: block;
+    font-style: normal;
+    font-size: 4.6px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-top: 2px;
+  }
+  .carte-v-titre {
+    display: block;
+    font-size: 5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin: 6px 0 3px;
+  }
+  .carte-v-enjeux { display: block; }
+  .carte-v-ligne {
+    display: grid;
+    grid-template-columns: 46px 26px 1fr;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+  .carte-v-lbl {
+    font-style: normal;
+    font-size: 5.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .carte-v-pct {
+    font-style: normal;
+    font-size: 5.5px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+  .carte-v-piste { display: block; height: 4px; background: var(--rule-faint); }
+  .carte-v-piste > i { display: block; height: 4px; }
+  .carte-v-concept {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--cordovan);
+  }
+  .carte-v-citation {
+    display: block;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 7px;
+    line-height: 1.32;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  .carte-v-pied {
+    display: block;
+    margin-top: auto;
+    padding-top: 4px;
+    border-top: 1px solid var(--rule);
+    font-size: 4.4px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .casier-battant,
+    .carte-pivot { transition: none; }
+  }
+
+  /* Sur téléphone, deux battants de 84 px mangent un tiers de l'écran et il ne
+     reste plus qu'une carte visible : le présentoir n'a plus l'air de défiler.
+     On amincit les portes ; le bouton « Refermer le casier » reste de toute
+     façon la sortie principale au doigt. */
+  @media (max-width: 767px) {
+    .casier.est-ouvert .casier-battant { width: 58px; padding: 8px 5px; }
+    .casier.est-ouvert .casier-interieur { margin: 0 40px; padding: 10px 9px 12px; }
+    .casier.est-ouvert .casier-sigle { font-size: 14px; }
+    .casier-etiquette { gap: 6px; }
+  }
+
   .period-subtitle {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { AssembleeBilliard } from "@/components/interactive/AssembleeBilliard";
-import { AssembleeDossiers } from "@/components/interactive/AssembleeDossiers";
+import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -77,7 +77,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
             <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
           </>
         ) : (
-          <AssembleeDossiers key={period} rows={visibleRows} shadowRows={shadowRows} />
+          <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
         )}
       </section>
       <div className="module-last-updated">
