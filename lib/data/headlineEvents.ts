@@ -708,6 +708,31 @@ function buildSolitudes(
   conv24h: number | null,
   habitualConvPct: number = HABITUAL_EVENT_CONV,
   habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
+  // Niveau de saillance du bout de ligne (#383). Chaque camp est situé dans
+  // les Unes de SA région — un sujet mené par le ROC se compare aux Unes
+  // canadiennes, sinon le module comparerait deux solitudes avec une seule
+  // règle. Optionnel : les tests appellent buildSolitudes sans lui, et le
+  // radar se contente alors de la part d'attention (aucune étiquette inventée).
+  //
+  // ⚠️ COMPROMIS TEMPORAIRE — à retirer quand aws-refiners#273 aura livré
+  // `score_qc_sum_24h` et `score_roc_sum_24h`. Les deux côtés n'utilisent pas
+  // encore la même construction :
+  //   · QC  → le rang du badge de la Une des Unes (cumul 24 h + hystérésis,
+  //           #314), repris TEL QUEL. Non négociable : sans ça, la même
+  //           histoire affichait deux niveaux différents sur la même page
+  //           (mesuré le 2026-08-03 : « Téhéran » Faible au module 1,
+  //           Élevée au radar — même région, donc rien ne l'expliquait).
+  //   · ROC → le pic 24 h contre la distribution ROC des scores de bloc
+  //           (`score_roc`, n=1688), faute de calibration cumulée canadienne.
+  // Les deux restent « le niveau du sujet parmi les Unes de sa région », et la
+  // population est NOMMÉE dans la phrase, donc le lecteur n'a jamais à deviner
+  // dans quel panier il lit. Mais l'exactitude de la comparaison QC/ROC attend
+  // la calibration cumulée.
+  sal?: {
+    badgeRanks: Map<string, { rank: number }>;
+    sumThresholds: typeof SUM_QC_THRESHOLDS;
+    roc: typeof SAL_QC_THRESHOLDS | null;
+  },
 ): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
@@ -775,9 +800,34 @@ function buildSolitudes(
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
+    // Niveau de saillance du camp qui MÈNE l'axe, situé dans la distribution
+    // 365 jours de ce camp (`score_qc` / `score_roc`, publiées toutes deux par
+    // la calibration). `peakQc`/`peakRoc` sont sur l'échelle du score de bloc,
+    // donc directement comparables à ces percentiles.
+    //
+    // Les deux camps reçoivent EXACTEMENT le même traitement — même grandeur
+    // (le pic du sujet sur la fenêtre 24 h), même nature de référence (la
+    // distribution des scores de bloc de sa région). C'est ce qui rend les
+    // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
+    // l'objet du module.
+    const mene = qs >= cs ? "qc" : "can";
+    let tier: { label: string; cls: string; hint: string } | null = null;
+    if (sal) {
+      if (mene === "qc") {
+        // Rang du badge du module 1, tel quel (même clé, même repli).
+        const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
+          ?? rawRank(a.sumQc, sal.sumThresholds);
+        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+      } else if (sal.roc) {
+        tier = saillanceTierFromScore(a.peakRoc, sal.roc, POP_ROC);
+      }
+    }
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
+      salienceLabel: tier?.label ?? null,
+      salienceCls: tier?.cls ?? null,
+      salienceHint: tier?.hint ?? null,
       qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
       canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
       qcShare: Math.round(qs),
@@ -791,18 +841,15 @@ function buildSolitudes(
 
   return {
     divPct, convPct,
-    // Le grand chiffre = le camp qui gagne (divergence si divPct l'emporte, sinon
-    // convergence). Cohérent avec les flèches/logos et avec l'échelle absolue : le
-    // marqueur à gauche du milieu = divergent, sa position vs « habituel » nuance.
-    scoreValue: convPct < 50 ? divPct : convPct,
-    verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
     habitualConvPct,
     ...relScore(convPct, habitualConvPct, habBands.p20, habBands.p80),
-    // Le score absolu recule d'un rang : il vit au survol du marqueur de la
-    // jauge, en divergence des deux côtés pour rester comparable.
+    // Le niveau absolu recule d'un rang : il vit au survol du marqueur de la
+    // jauge. Il est dit en CONVERGENCE, comme tout le module : le marqueur est
+    // posé à `convPct` sur la piste, donc l'annoncer en divergence chiffrerait
+    // le point là où il n'est pas.
     markerTitle:
-      `En ce moment : ${divPct} % de divergence. En général : ${100 - habitualConvPct} %.`,
+      `Aujourd'hui : ${convPct} % de convergence. Habituel : ${habitualConvPct} %.`,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -838,18 +885,26 @@ const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, ex
 // DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
 // compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
-function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS): { label: string; cls: string; rank: number; hint: string } {
-  const s = scoreQc ?? 0;
-  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
-  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
-  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
-  // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
-  // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
-  // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
-  // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
-  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+// `pop` = population de référence, pour que la phrase nomme l'ensemble de médias
+// dans lequel la nouvelle est située. Défaut québécois : c'est la Une des Unes.
+// « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
+// la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
+// qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
+// Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
+function saillanceTierFromScore(
+  score: number | null,
+  thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS,
+  pop: string = POP_QC,
+): { label: string; cls: string; rank: number; hint: string } {
+  const s = score ?? 0;
+  const rank = s >= thresholds.extreme ? 6
+    : s >= thresholds.tresEleve ? 5
+      : s >= thresholds.eleve ? 4
+        : s >= thresholds.moyenne ? 3
+          : s >= thresholds.faible ? 2
+            : 1;
+  const { label, cls } = TIER_BY_RANK[rank];
+  return { label, cls, rank, hint: HINT_BY_RANK[rank](pop) };
 }
 
 // ── Badge de saillance CUMULÉE 24 h (essai) ─────────────────────────────────
@@ -882,13 +937,34 @@ const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve:
 // vraie décroissance passe.
 const HYST_MARGIN = 0.08;
 
+/** Population de référence d'un niveau de saillance. Un niveau n'existe JAMAIS
+ *  dans l'absolu : il situe une nouvelle parmi les Unes d'un ensemble de médias.
+ *  Nommer cet ensemble n'est pas une précision de style — sans lui, « saillance
+ *  faible » sur un sujet mené par le ROC laisse croire qu'on compare les deux
+ *  régions dans le même panier, ce que « Deux solitudes » cherche justement à
+ *  ne pas faire. */
+const POP_QC = "des médias québécois";
+const POP_ROC = "des médias canadiens";
+
+/** Une seule rédaction pour les six niveaux, la population en paramètre. Ces
+ *  phrases existaient en double (ici et dans saillanceTierFromScore), mot pour
+ *  mot : la moindre retouche devait être faite deux fois. */
+const HINT_BY_RANK: Record<number, (pop: string) => string> = {
+  6: (p) => `Plus saillante que 95 % des nouvelles à la Une ${p}.`,
+  5: (p) => `Plus saillante qu’environ 85 % des nouvelles à la Une ${p}.`,
+  4: (p) => `Plus saillante qu’environ 65 % des nouvelles à la Une ${p}.`,
+  3: (p) => `Environ 65 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  2: (p) => `Environ 85 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+};
+
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
-  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une." },
-  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." },
-  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." },
-  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+  6: { label: "Exceptionnelle", cls: "s-extreme", hint: HINT_BY_RANK[6](POP_QC) },
+  5: { label: "Très élevée", cls: "s-tres-eleve", hint: HINT_BY_RANK[5](POP_QC) },
+  4: { label: "Élevée", cls: "s-eleve", hint: HINT_BY_RANK[4](POP_QC) },
+  3: { label: "Modérée", cls: "s-moyenne", hint: HINT_BY_RANK[3](POP_QC) },
+  2: { label: "Faible", cls: "s-faible", hint: HINT_BY_RANK[2](POP_QC) },
+  1: { label: "Très faible", cls: "s-tres-faible", hint: HINT_BY_RANK[1](POP_QC) },
 };
 
 // Bornes basses des bandes, du rang 1 au rang 6 (rang 1 = pas de borne basse).
@@ -1464,6 +1540,19 @@ export type SolitudeAxis = {
   canShare: number;
   /** Camp dominant (couleur du libellé). */
   side: "qc" | "can";
+  /** Étiquette de saillance du moment (#383), prise à la MÊME source que le
+   *  badge de la Une des Unes — `badgeRanks` (cumul 24 h + hystérésis, #314)
+   *  puis `TIER_BY_RANK`. Surtout pas un calcul parallèle : la même histoire
+   *  porte le même niveau dans les deux modules, sinon on retombe sur deux
+   *  vérités pour une seule mesure. null quand le suivi n'est pas fourni. */
+  salienceLabel: string | null;
+  salienceCls: string | null;
+  /** Ce que le niveau VEUT DIRE, en percentiles (« Environ 85 % des nouvelles à
+   *  la Une sont plus saillantes que celle-ci. »). Même phrase que l'infobulle
+   *  du badge de la Une des Unes. C'est elle qui rend le bout de ligne utile
+   *  plutôt que redondant : le point INTÉRIEUR donne une part d'attention, le
+   *  point EXTÉRIEUR donne un rang parmi les Unes. */
+  salienceHint: string | null;
   /** Médias couvrants + lien vers leur dernier article sur le sujet.
    *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
    *  deux côtés montre les deux couleurs. */
@@ -1474,9 +1563,6 @@ export type SolitudeData = {
   /** Divergence affichée (0-100) = 100 − convergence. */
   divPct: number;
   convPct: number;
-  /** Le grand chiffre + son verbe (« divergence » / « convergence »). */
-  scoreValue: number;
-  verb: "divergence" | "convergence";
   /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
   modeWord: string;
   modeCls: string;
@@ -1486,7 +1572,12 @@ export type SolitudeData = {
   habitualConvPct: number;
   /** Score RELATIF en hero (#258) : écart |convPct − habitualConvPct| en %,
    *  libellé de direction/intensité, couleur, texte du ⓘ et survol du marqueur
-   *  (où le score absolu s'est replié). */
+   *  (où le niveau absolu s'est replié).
+   *
+   *  TOUT le module chiffre la CONVERGENCE — hero, ⓘ, bulle du marqueur, jauge
+   *  et partage. `divPct` reste calculé pour l'axe, mais aucun libellé public ne
+   *  doit l'afficher : deux vocabulaires pour une seule mesure obligent le
+   *  lecteur à faire la soustraction lui-même. */
   relDiffPct: number;
   relLabel: string;
   relCls: string;
@@ -1763,7 +1854,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands);
+  // Côté QC, le radar reprend le badge du module 1 ; côté ROC, la seule
+  // distribution canadienne publiée (`score_roc`, n≈1688). Voir le compromis
+  // documenté sur buildSolitudes et aws-refiners#273.
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
+    badgeRanks,
+    sumThresholds,
+    roc: salThresholdsFrom(calibration?.metrics?.score_roc),
+  });
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -2071,6 +2169,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,
   capitalizeObject,
