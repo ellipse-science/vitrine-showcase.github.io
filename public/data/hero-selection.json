@@ -1,10 +1,10 @@
 {
-  "event_id": "20260802T230000Z-evt-travellers-limbo-westjet-flight-attendants-105f4f5d",
+  "event_id": "20260803T030000Z-evt-travellers-limbo-westjet-flight-attendants-4af84449",
   "storyline_id": "story-westjet-3c390fc9",
   "title": "Grève des agents de bord de WestJet: chaos dans les aéroports canadiens",
   "main_issue": "economy_and_labour",
-  "date_utc": "2026-08-02",
-  "time_interval_utc": "23-03",
-  "sum_qc": 114.173,
+  "date_utc": "2026-08-03",
+  "time_interval_utc": "03-07",
+  "sum_qc": 86.527,
   "peak_qc": 67.596
 }
