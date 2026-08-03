@@ -561,13 +561,13 @@ function buildSolitudes(
   conv24h: number | null,
   habitualConvPct: number = HABITUAL_EVENT_CONV,
   habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
-  // Suivi de badge de la Une des Unes (#314), passé tel quel pour que
-  // l'étiquette de saillance du radar (#383) soit LA MÊME que celle du
-  // module 1 pour une histoire donnée. Optionnels : les tests appellent
+  // Seuils de saillance PAR RÉGION (#383). Chaque camp est situé dans SA
+  // propre distribution : un sujet mené par le ROC se compare aux Unes
+  // canadiennes, pas aux québécoises — sans quoi le module comparerait deux
+  // solitudes avec une seule règle. Optionnels : les tests appellent
   // buildSolitudes sans eux, et le radar se contente alors de la part
   // d'attention (aucune étiquette inventée localement).
-  badgeRanks?: Map<string, { rank: number }>,
-  sumThresholds?: typeof SUM_QC_THRESHOLDS,
+  salScales?: { qc: typeof SAL_QC_THRESHOLDS; roc: typeof SAL_QC_THRESHOLDS | null },
 ): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
@@ -635,13 +635,21 @@ function buildSolitudes(
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
-    // Même clé que la Une des Unes (`storyline_id ?? label`) et même repli
-    // (`rawRank` sur le cumul) : c'est ce qui garantit l'égalité des deux
-    // étiquettes. Sans suivi fourni, pas d'étiquette du tout.
-    const rank = badgeRanks && sumThresholds
-      ? (badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank ?? rawRank(a.sumQc, sumThresholds))
+    // Niveau de saillance du camp qui MÈNE l'axe, situé dans la distribution
+    // 365 jours de ce camp (`score_qc` / `score_roc`, publiées toutes deux par
+    // la calibration). `peakQc`/`peakRoc` sont sur l'échelle du score de bloc,
+    // donc directement comparables à ces percentiles.
+    //
+    // Les deux camps reçoivent EXACTEMENT le même traitement — même grandeur
+    // (le pic du sujet sur la fenêtre 24 h), même nature de référence (la
+    // distribution des scores de bloc de sa région). C'est ce qui rend les
+    // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
+    // l'objet du module.
+    const mene = qs >= cs ? "qc" : "can";
+    const echelle = mene === "qc" ? salScales?.qc : salScales?.roc;
+    const tier = echelle
+      ? saillanceTierFromScore(mene === "qc" ? a.peakQc : a.peakRoc, echelle, mene === "qc" ? POP_QC : POP_ROC)
       : null;
-    const tier = rank != null ? TIER_BY_RANK[rank] : null;
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
@@ -705,18 +713,26 @@ const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, ex
 // DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
 // compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
-function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS): { label: string; cls: string; rank: number; hint: string } {
-  const s = scoreQc ?? 0;
-  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une des médias québécois." };
-  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une des médias québécois." };
-  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une des médias québécois." };
-  // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
-  // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
-  // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
-  // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
-  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
-  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
-  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." };
+// `pop` = population de référence, pour que la phrase nomme l'ensemble de médias
+// dans lequel la nouvelle est située. Défaut québécois : c'est la Une des Unes.
+// « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
+// la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
+// qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
+// Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
+function saillanceTierFromScore(
+  score: number | null,
+  thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS,
+  pop: string = POP_QC,
+): { label: string; cls: string; rank: number; hint: string } {
+  const s = score ?? 0;
+  const rank = s >= thresholds.extreme ? 6
+    : s >= thresholds.tresEleve ? 5
+      : s >= thresholds.eleve ? 4
+        : s >= thresholds.moyenne ? 3
+          : s >= thresholds.faible ? 2
+            : 1;
+  const { label, cls } = TIER_BY_RANK[rank];
+  return { label, cls, rank, hint: HINT_BY_RANK[rank](pop) };
 }
 
 // ── Badge de saillance CUMULÉE 24 h (essai) ─────────────────────────────────
@@ -749,13 +765,34 @@ const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve:
 // vraie décroissance passe.
 const HYST_MARGIN = 0.08;
 
+/** Population de référence d'un niveau de saillance. Un niveau n'existe JAMAIS
+ *  dans l'absolu : il situe une nouvelle parmi les Unes d'un ensemble de médias.
+ *  Nommer cet ensemble n'est pas une précision de style — sans lui, « saillance
+ *  faible » sur un sujet mené par le ROC laisse croire qu'on compare les deux
+ *  régions dans le même panier, ce que « Deux solitudes » cherche justement à
+ *  ne pas faire. */
+const POP_QC = "des médias québécois";
+const POP_ROC = "des médias canadiens";
+
+/** Une seule rédaction pour les six niveaux, la population en paramètre. Ces
+ *  phrases existaient en double (ici et dans saillanceTierFromScore), mot pour
+ *  mot : la moindre retouche devait être faite deux fois. */
+const HINT_BY_RANK: Record<number, (pop: string) => string> = {
+  6: (p) => `Plus saillante que 95 % des nouvelles à la Une ${p}.`,
+  5: (p) => `Plus saillante qu’environ 85 % des nouvelles à la Une ${p}.`,
+  4: (p) => `Plus saillante qu’environ 65 % des nouvelles à la Une ${p}.`,
+  3: (p) => `Environ 65 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  2: (p) => `Environ 85 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+};
+
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
-  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une des médias québécois." },
-  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une des médias québécois." },
-  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une des médias québécois." },
-  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
-  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
-  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci." },
+  6: { label: "Exceptionnelle", cls: "s-extreme", hint: HINT_BY_RANK[6](POP_QC) },
+  5: { label: "Très élevée", cls: "s-tres-eleve", hint: HINT_BY_RANK[5](POP_QC) },
+  4: { label: "Élevée", cls: "s-eleve", hint: HINT_BY_RANK[4](POP_QC) },
+  3: { label: "Modérée", cls: "s-moyenne", hint: HINT_BY_RANK[3](POP_QC) },
+  2: { label: "Faible", cls: "s-faible", hint: HINT_BY_RANK[2](POP_QC) },
+  1: { label: "Très faible", cls: "s-tres-faible", hint: HINT_BY_RANK[1](POP_QC) },
 };
 
 // Bornes basses des bandes, du rang 1 au rang 6 (rang 1 = pas de borne basse).
@@ -1627,7 +1664,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, badgeRanks, sumThresholds);
+  // Deux échelles publiées par la calibration 365 j : score_qc (n≈1730) et
+  // score_roc (n≈1688). Le radar situe chaque camp dans la sienne.
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
+    qc: blockThresholds,
+    roc: salThresholdsFrom(calibration?.metrics?.score_roc),
+  });
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
