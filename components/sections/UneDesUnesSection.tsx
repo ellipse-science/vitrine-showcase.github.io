@@ -100,7 +100,7 @@ function ResonanceTag({ label, region, echo }: {
       <InfoTip size="sm" label={`${label} : détail de la couverture`}>
         <span className="resonance-card">
           <span className="resonance-card-share">
-            {echo.share} % de l&apos;attention des Unes {region}
+            {echo.share}&nbsp;% de l&apos;attention des Unes {region}
           </span>
           {echo.media.length > 0 && (
             <span className="resonance-card-media">
