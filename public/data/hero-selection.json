@@ -1,10 +1,10 @@
 {
-  "event_id": "20260803T110000Z-evt-westjet-union-reach-tentative-deal-4d3a2754",
+  "event_id": "20260803T150000Z-evt-westjet-union-reach-tentative-deal-27109f77",
   "storyline_id": "story-westjet-3c390fc9",
-  "title": "WestJet et agents de bord concluent une entente, fin de la grève",
+  "title": "WestJet et agents de bord concluent une entente pour mettre fin à la grève",
   "main_issue": "economy_and_labour",
   "date_utc": "2026-08-03",
-  "time_interval_utc": "11-15",
-  "sum_qc": 47.236,
+  "time_interval_utc": "15-19",
+  "sum_qc": 56.711,
   "peak_qc": 67.596
 }
