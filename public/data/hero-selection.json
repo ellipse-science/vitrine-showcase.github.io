@@ -1,10 +1,10 @@
 {
-  "event_id": "20260803T230000Z-evt-etats-democrates-contestent-justice-derniere-0a581aaa",
+  "event_id": "20260804T030000Z-evt-etats-contestent-justice-droits-douane-6679eee2",
   "storyline_id": "story-donald-trump-7c39f562",
-  "title": "25 États américains démocrates attaquent les tarifs douaniers de Trump",
+  "title": "25 États américains contestent les nouveaux tarifs douaniers de Trump",
   "main_issue": "economy_and_labour",
-  "date_utc": "2026-08-03",
-  "time_interval_utc": "23-03",
-  "sum_qc": 37.64,
+  "date_utc": "2026-08-04",
+  "time_interval_utc": "03-07",
+  "sum_qc": 52.221,
   "peak_qc": 37.64
 }
