@@ -1,10 +1,10 @@
 {
-  "event_id": "20260803T190000Z-evt-faut-savoir-entente-principe-conclue-7e03dc46",
-  "storyline_id": "story-westjet-3c390fc9",
-  "title": "WestJet et ses agents de bord concluent une entente, fin de la grève",
+  "event_id": "20260803T230000Z-evt-etats-democrates-contestent-justice-derniere-0a581aaa",
+  "storyline_id": "story-donald-trump-7c39f562",
+  "title": "25 États américains démocrates attaquent les tarifs douaniers de Trump",
   "main_issue": "economy_and_labour",
   "date_utc": "2026-08-03",
-  "time_interval_utc": "19-23",
-  "sum_qc": 34.936,
-  "peak_qc": 31.176
+  "time_interval_utc": "23-03",
+  "sum_qc": 37.64,
+  "peak_qc": 37.64
 }
