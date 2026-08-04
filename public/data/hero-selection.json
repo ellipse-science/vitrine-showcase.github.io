@@ -1,10 +1,10 @@
 {
-  "event_id": "20260804T070000Z-evt-aide-medicale-mourir-record-quebecois-4cded0ef",
+  "event_id": "20260804T110000Z-evt-aide-medicale-mourir-record-quebecois-0e4b090a",
   "storyline_id": "story-caroline-goulet-524e6761",
   "title": "Don d'organes avant l'aide médicale à mourir: un record au Québec",
   "main_issue": "health_and_social_services",
   "date_utc": "2026-08-04",
-  "time_interval_utc": "07-11",
-  "sum_qc": 47.264,
+  "time_interval_utc": "11-15",
+  "sum_qc": 61.68,
   "peak_qc": 32.384
 }
