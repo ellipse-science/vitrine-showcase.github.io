@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import type { PartyKey } from "@/lib/data/parties";
 
-// Vestiaire : un casier par parti actif. La porte porte le bilan du parti ;
-// l'ouvrir dévoile le présentoir de cartes de ses députés. Retourner une carte
-// montre son verso statistique.
+// Vestiaire : un banc de casiers, un par parti actif.
 //
-// La carte reprend la grammaire des cartes de collection : le macaron de parti
-// tient lieu d'écusson d'équipe, et l'enjeu dominant tient lieu de position.
-// Le portrait est une trame de similigravure calculée à la taille d'impression
-// (scripts/build_deputy_cards.py) : c'est ce qui permet à la carte d'être
-// imprimée pour de vrai malgré le petit format servi par l'Assemblée.
+// Disposition — le banc est FIXE. Les casiers gardent la même largeur et la
+// même place quoi qu'il arrive ; ouvrir un casier fait pivoter ses battants et
+// déroule un tiroir sous le banc, relié au casier ouvert par une encoche. Le
+// premier jet faisait grandir le casier ouvert jusqu'à toute la largeur de la
+// grille, ce qui réorganisait la rangée à chaque clic : les autres casiers
+// sautaient, et on ne savait plus lequel on venait d'ouvrir.
+//
+// La carte reprend la grammaire des cartes de collection : macaron de parti en
+// guise d'écusson, enjeu dominant en guise de position. Le portrait est un
+// duotone redressé (scripts/build_deputy_cards.py).
 
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
@@ -22,25 +25,66 @@ function RichnessDots({ level }: { level: number }) {
   return <>{dots}</>;
 }
 
-// On n'affiche que le SENS du ton, jamais son intensité chiffrée.
-// La valeur d'affichage est amplifiée puis bornée en amont (TONE_AMPLIFY),
-// si bien que les trois quarts des députés arrivent ici collés à la butée :
-// un « 100 » à côté du mot laisserait croire à une mesure fine là où il n'y a
-// qu'un plafond. Le signe, lui, reste fiable.
-function toneLabel(toneLeftPct: number): string {
-  return toneLeftPct >= 50 ? "favorable" : "défavorable";
+// Échelle de ton : « favorable » ou « défavorable » tout court ne dit rien à
+// personne, et le chiffre d'affichage est inexploitable (amplifié puis borné,
+// il colle 81 députés sur 108 à la butée). On place donc un repère sur une
+// règle graduée, normalisée sur l'étendue RÉELLEMENT observée dans la période :
+// le plus défavorable tient la gauche, le plus favorable la droite, le neutre
+// reste au centre. La position se lit par comparaison, ce qui est exactement
+// ce que la mesure permet de dire.
+function toneScalePct(score: number, maxAbs: number): number {
+  if (!(maxAbs > 0)) return 50;
+  const ratio = Math.max(-1, Math.min(1, score / maxAbs));
+  return Number((50 + ratio * 48).toFixed(1));
 }
 
-function DeputyCard({ deputy, party, color, flipped, onFlip }: {
+// Formulation partagée par l'échelle et par les libellés d'accessibilité : le
+// nom accessible d'un bouton écrase son contenu, donc la seule façon de rendre
+// le ton lisible au lecteur d'écran est de le porter dans l'aria-label parent.
+function toneWording(score: number, maxAbs: number): string {
+  const sens = score >= 0 ? "favorable" : "défavorable";
+  if (!(maxAbs > 0)) return "ton neutre";
+  const part = Math.abs(score) / maxAbs;
+  if (part < 0.15) return "ton proche du neutre";
+  const degre = part > 0.66 ? "nettement" : "plutôt";
+  return `ton ${degre} ${sens} par rapport aux autres de la période`;
+}
+
+function ToneScale({ score, maxAbs, compact }: {
+  score: number;
+  maxAbs: number;
+  compact?: boolean;
+}) {
+  const pct = toneScalePct(score, maxAbs);
+  return (
+    <span
+      className={`ton-echelle${compact ? " compacte" : ""}`}
+      role="img"
+      aria-label={toneWording(score, maxAbs)}
+      title={toneWording(score, maxAbs)}
+    >
+      <span className="ton-piste" aria-hidden="true">
+        <span className="ton-neutre" />
+        <span className="ton-repere" style={{ left: `${pct}%` }} />
+      </span>
+      <span className="ton-bornes" aria-hidden="true">
+        <i>défavorable</i>
+        <i>favorable</i>
+      </span>
+    </span>
+  );
+}
+
+function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
   deputy: DeputyRow;
   party: PartyKey;
   color: string;
+  maxAbsTone: number;
   flipped: boolean;
   onFlip: () => void;
 }) {
-  const tone = toneLabel(deputy.toneLeftPct);
   const partyLabel = party.toUpperCase();
-  const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 5);
+  const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 4);
 
   return (
     <button
@@ -52,7 +96,8 @@ function DeputyCard({ deputy, party, color, flipped, onFlip }: {
       aria-label={
         flipped
           ? `${deputy.name} : revenir au recto de la carte`
-          : `${deputy.name}, ${partyLabel} — voir les statistiques au verso`
+          : `${deputy.name}, ${partyLabel}, ${deputy.wordsFormatted} mots, `
+            + `${toneWording(deputy.toneScore, maxAbsTone)} — voir les statistiques au verso`
       }
     >
       <span className="carte-pivot">
@@ -111,12 +156,14 @@ function DeputyCard({ deputy, party, color, flipped, onFlip }: {
               <i>richesse</i>
             </span>
           </span>
-          <span className="carte-v-ton">
-            Ton <b>{tone}</b> en chambre
+
+          <span className="carte-v-bloc">
+            <span className="carte-v-titre">Ton en chambre</span>
+            <ToneScale score={deputy.toneScore} maxAbs={maxAbsTone} />
           </span>
 
           {enjeux.length > 0 && (
-            <>
+            <span className="carte-v-bloc">
               <span className="carte-v-titre">Répartition par enjeu</span>
               <span className="carte-v-enjeux">
                 {enjeux.map((seg) => (
@@ -129,11 +176,11 @@ function DeputyCard({ deputy, party, color, flipped, onFlip }: {
                   </span>
                 ))}
               </span>
-            </>
+            </span>
           )}
 
           {deputy.signatureWord && (
-            <>
+            <span className="carte-v-bloc">
               <span className="carte-v-titre">Concept distinctif</span>
               <span className="carte-v-concept">{deputy.signatureWord}</span>
               {deputy.signatureWordContext && (
@@ -141,11 +188,11 @@ function DeputyCard({ deputy, party, color, flipped, onFlip }: {
                   «&nbsp;{deputy.signatureWordContext}&nbsp;»
                 </span>
               )}
-            </>
+            </span>
           )}
 
           <span className="carte-v-pied">
-            Vitrine démocratique · portrait&nbsp;: Assemblée nationale du Québec
+            Portrait&nbsp;: Assemblée nationale du Québec
           </span>
         </span>
       </span>
@@ -153,105 +200,63 @@ function DeputyCard({ deputy, party, color, flipped, onFlip }: {
   );
 }
 
-function Locker({ row, open, onToggle }: {
+// Porte de casier : reste toujours à sa place et à sa taille dans le banc.
+function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   row: AssembleeRow;
   open: boolean;
   onToggle: () => void;
+  maxAbsTone: number;
 }) {
-  const [flipped, setFlipped] = useState<string | null>(null);
-  const deputies = row.deputies ?? [];
-  const tone = toneLabel(row.toneLeftPct ?? 50);
-
+  const nb = (row.deputies ?? []).length;
   return (
-    <div className={`casier${open ? " est-ouvert" : ""}`} style={{ ["--pc" as string]: row.color }}>
-      {/* Intérieur : révélé quand les portes s'ouvrent. */}
-      <div className="casier-interieur" hidden={!open}>
-        <div className="casier-etiquette">
-          <span className="casier-etiquette-parti">{row.label}</span>
-          <span className="casier-etiquette-compte">
-            {deputies.length} député.es qui ont pris la parole
-          </span>
-          {/* Deuxième sortie, en clair : les battants se cliquent aussi, mais
-              rien ne le dit à l'écran, et la touche Échap ne se découvre pas. */}
-          <button type="button" className="casier-refermer" onClick={onToggle}>
-            Refermer le casier
-          </button>
-        </div>
+    <button
+      type="button"
+      className={`casier${open ? " est-ouvert" : ""}`}
+      style={{ ["--pc" as string]: row.color }}
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={
+        open
+          ? `Refermer le casier ${row.label}`
+          : `Ouvrir le casier ${row.label} : ${nb} député.es, `
+            + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
+      }
+    >
+      {/* Fond de casier : ce qu'on aperçoit quand les battants s'écartent. */}
+      <span className="casier-fond" aria-hidden="true">
+        <span className="casier-tablette" />
+        <span className="casier-crochet" />
+      </span>
 
-        {deputies.length > 0 ? (
-          <div className="casier-presentoir">
-            {deputies.map((dep) => (
-              <DeputyCard
-                key={dep.name}
-                deputy={dep}
-                party={row.key}
-                color={row.color}
-                flipped={flipped === dep.name}
-                onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="casier-vide">
-            Aucune prise de parole attribuée à ce parti pour la période.
-          </p>
-        )}
-      </div>
-
-      {/* Portes : deux battants qui pivotent vers l'extérieur. */}
-      <button
-        type="button"
-        className="casier-portes"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-label={
-          open
-            ? `Refermer le casier ${row.label}`
-            : `Ouvrir le casier ${row.label} et voir ses ${deputies.length} cartes`
-        }
-      >
-        <span className="casier-battant gauche">
-          <span className="casier-fentes" aria-hidden="true" />
-          <span className="casier-plaque">
-            <span className="casier-sigle">{row.label}</span>
-          </span>
-          <span className="casier-bilan">
-            <span>
-              <b>{row.wordsFormatted}</b>
-              <i>mots</i>
-            </span>
-            <span>
-              <b>{row.interventions ?? 0}</b>
-              <i>interventions</i>
-            </span>
+      <span className="casier-battant gauche">
+        <span className="casier-fentes" aria-hidden="true" />
+        <span className="casier-plaque">
+          <span className="casier-sigle">{row.label}</span>
+        </span>
+        <span className="casier-bilan">
+          <span>
+            <b>{row.wordsFormatted}</b>
+            <i>mots</i>
           </span>
         </span>
-        <span className="casier-battant droite">
-          <span className="casier-fentes" aria-hidden="true" />
-          <span className="casier-bilan">
-            <span>
-              <b>{deputies.length}</b>
-              <i>député.es</i>
-            </span>
-            <span className="casier-ton">
-              Ton {tone}
-            </span>
+      </span>
+
+      <span className="casier-battant droite">
+        <span className="casier-fentes" aria-hidden="true" />
+        <span className="casier-bilan">
+          <span>
+            <b>{row.interventions ?? 0}</b>
+            <i>interventions</i>
           </span>
-          {row.enjeuStack && row.enjeuStack.length > 0 && (
-            <span className="casier-enjeux" aria-hidden="true">
-              {row.enjeuStack.map((seg, i) => (
-                <span
-                  key={`${seg.label}-${i}`}
-                  style={{ width: `${seg.widthPct}%`, background: seg.color || "transparent" }}
-                  className={seg.isReste ? "reste" : undefined}
-                />
-              ))}
-            </span>
-          )}
-          <span className="casier-poignee" aria-hidden="true" />
+          <span>
+            <b>{nb}</b>
+            <i>député.es</i>
+          </span>
         </span>
-      </button>
-    </div>
+        <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
+        <span className="casier-poignee" aria-hidden="true" />
+      </span>
+    </button>
   );
 }
 
@@ -260,9 +265,24 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
   shadowRows: AssembleeRow[];
 }) {
   const [openParty, setOpenParty] = useState<PartyKey | null>(null);
+  const [flipped, setFlipped] = useState<string | null>(null);
 
-  // Échap referme le casier ouvert : c'est le réflexe attendu de tout panneau
-  // qui s'étale par-dessus le reste de la page.
+  // Une seule échelle de ton pour tout le module : les positions ne veulent
+  // dire quelque chose que si elles se comparent entre elles.
+  const maxAbsTone = useMemo(() => {
+    let max = 0;
+    for (const row of rows) {
+      max = Math.max(max, Math.abs(row.toneScore ?? 0));
+      for (const dep of row.deputies ?? []) max = Math.max(max, Math.abs(dep.toneScore));
+    }
+    return max;
+  }, [rows]);
+
+  const openRow = rows.find((r) => r.key === openParty) ?? null;
+  const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
+  const deputies = openRow?.deputies ?? [];
+
+  // Échap referme le tiroir : réflexe attendu de tout panneau qui se déroule.
   useEffect(() => {
     if (!openParty) return;
     const onKey = (e: KeyboardEvent) => {
@@ -272,18 +292,69 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
     return () => window.removeEventListener("keydown", onKey);
   }, [openParty]);
 
+  const toggle = (key: PartyKey) => {
+    setOpenParty(openParty === key ? null : key);
+    setFlipped(null);
+  };
+
   return (
     <div className="vestiaire">
-      <div className="vestiaire-rangee">
+      <div className="vestiaire-banc">
         {rows.map((row) => (
-          <Locker
+          <LockerDoor
             key={row.key}
             row={row}
             open={openParty === row.key}
-            onToggle={() => setOpenParty(openParty === row.key ? null : row.key)}
+            onToggle={() => toggle(row.key)}
+            maxAbsTone={maxAbsTone}
           />
         ))}
       </div>
+
+      {openRow && (
+        <div
+          className="vestiaire-tiroir"
+          style={{
+            ["--pc" as string]: openRow.color,
+            ["--i" as string]: openIndex,
+            ["--n" as string]: rows.length,
+            // Indice de COLONNE en grille deux colonnes (téléphone). CSS ne
+            // sait pas faire de modulo, donc on le calcule ici.
+            ["--i2" as string]: openIndex % 2,
+          }}
+        >
+          <span className="tiroir-encoche" aria-hidden="true" />
+          <div className="tiroir-tete">
+            <span className="tiroir-parti">{openRow.label}</span>
+            <span className="tiroir-compte">
+              {deputies.length} député.es qui ont pris la parole
+            </span>
+            <button type="button" className="tiroir-refermer" onClick={() => toggle(openRow.key)}>
+              Refermer
+            </button>
+          </div>
+
+          {deputies.length > 0 ? (
+            <div className="tiroir-presentoir">
+              {deputies.map((dep) => (
+                <DeputyCard
+                  key={dep.name}
+                  deputy={dep}
+                  party={openRow.key}
+                  color={openRow.color}
+                  maxAbsTone={maxAbsTone}
+                  flipped={flipped === dep.name}
+                  onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="tiroir-vide">
+              Aucune prise de parole attribuée à ce parti pour la période.
+            </p>
+          )}
+        </div>
+      )}
 
       {shadowRows.length > 0 && (
         <p className="in-shadow">

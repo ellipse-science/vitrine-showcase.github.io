@@ -121,6 +121,10 @@ export type DeputyRow = {
   circonscription?: string;
   portrait?: string;
   interventions: number;
+  /** Ton BRUT (non amplifié, non borné). L'échelle visuelle se normalise sur
+   *  l'étendue réellement observée dans la période : toneLeftPct est inutilisable
+   *  pour cela, puisque l'amplification y colle 81 députés sur 108 à la butée. */
+  toneScore: number;
   /** Enjeu dominant : tient lieu de « position » sur la carte. */
   topIssueLabel?: string;
   topIssueColor?: string;
@@ -142,6 +146,8 @@ export type AssembleeRow = {
   richnessLevel?: number;
   /** Interventions du parti sur la période — porté sur la porte du casier. */
   interventions?: number;
+  /** Ton brut du parti, même usage que DeputyRow.toneScore. */
+  toneScore?: number;
   // Mot distinctif (TF-IDF inter-partis) — absent tant que le raffineur ne
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
@@ -362,8 +368,9 @@ function buildDeputyList(
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.png` : undefined,
+      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.jpg` : undefined,
       interventions: Number(r.n_interventions || 0),
+      toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
       topIssueColor: top?.color,
       enjeuStack: stack,
@@ -426,6 +433,7 @@ function buildPeriodView(
       wordsRaw: Number(d.word_count || 0),
       richnessLevel: richnessLevels[item.key] || 1,
       interventions: Number(d.n_interventions || 0),
+      toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
       signatureWordContext: cleanText(d.signature_word_context),
       deputies: buildDeputyList(item.key, period, deputyRows, portraits),
