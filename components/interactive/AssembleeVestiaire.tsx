@@ -230,8 +230,8 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   const deputies = row.deputies ?? [];
   const nb = deputies.length;
   const concept = conceptPubliable(row.signatureWord);
-  // deputies arrive déjà triés par mots décroissants (buildDeputyList).
-  const plusProlixe = deputies[0];
+  // deputies arrive déjà trié par mots décroissants (buildDeputyList).
+  const plusLoquace = deputies[0];
   return (
     <button
       type="button"
@@ -278,13 +278,13 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
             </span>
           )}
 
-          {/* Le plus prolixe du parti : une mesure directe, contrairement au
-              concept, et c'est ce que le classement des cartes montre déjà. */}
-          {plusProlixe && (
+          {/* Qui a le plus parlé : une mesure directe, contrairement au
+              concept, et c'est déjà l'ordre du présentoir. */}
+          {plusLoquace && (
             <span className="dedans-bloc bloc-vedette">
-              <span className="dedans-titre">Plus prolixe</span>
-              <span className="dedans-vedette">{plusProlixe.name}</span>
-              <span className="dedans-vedette-mots">{plusProlixe.wordsFormatted} mots</span>
+              <span className="dedans-titre">A le plus parlé</span>
+              <span className="dedans-vedette">{plusLoquace.name}</span>
+              <span className="dedans-vedette-mots">{plusLoquace.wordsFormatted} mots</span>
             </span>
           )}
 

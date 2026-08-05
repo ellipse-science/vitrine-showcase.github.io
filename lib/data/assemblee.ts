@@ -271,7 +271,25 @@ export type DeputyPortrait = {
   circonscription: string;
   circonscription_slug: string;
   nom: string;
+  /** « Indépendant », « Indépendante », ou le nom du parti, tel que l'ANQ
+   *  l'inscrit dans son index. */
+  parti?: string;
 };
+
+// Un.e député.e qui siège comme indépendant.e n'apparaît pas dans le module :
+// le raffineur ne produit pas encore de catégorie pour ces sièges, et les
+// afficher sous une bannière de parti serait faux (décision d'équipe,
+// 2026-08-05).
+//
+// La liste est DÉRIVÉE de l'index de l'ANQ, jamais tenue à la main. Une liste
+// manuelle a déjà produit exactement l'erreur qu'elle prétendait éviter : un
+// nom y avait été ajouté sans vérification et un député en règle s'est
+// retrouvé retiré du module. En lisant l'index, la liste se remet à jour toute
+// seule au prochain passage du scraper, et chaque entrée est vérifiable sur la
+// page officielle.
+function isIndependent(portrait: DeputyPortrait): boolean {
+  return /^ind[ée]pendant/i.test((portrait.parti ?? "").trim());
+}
 
 function tightKey(value: string): string {
   return (value || "")
@@ -346,7 +364,18 @@ function buildDeputyList(
   );
   if (rows.length === 0) return [];
 
-  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  // Les sièges indépendants sortent des cartes nominatives. Le raffineur en
+  // écarte déjà l'essentiel en filtrant sur PARTIES_QC ; ce filtre-ci ne sert
+  // qu'aux cas que le raffineur attribuerait encore à un parti.
+  // Les agrégats de parti, eux, ne sont pas retouchés : la parole a bel et bien
+  // été prononcée sous cette bannière pendant la période.
+  const sorted = [...rows]
+    .filter((r) => {
+      const p = lookupPortrait(r.deputy, portraits);
+      return !(p && isIndependent(p));
+    })
+    .sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  if (sorted.length === 0) return [];
 
   const mattrs: Record<string, number> = {};
   for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
