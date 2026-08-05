@@ -17,6 +17,26 @@ import type { PartyKey } from "@/lib/data/parties";
 // guise d'écusson, enjeu dominant en guise de position. Le portrait est un
 // duotone redressé (scripts/build_deputy_cards.py).
 
+// Garde-fou d'affichage sur le concept distinctif AU NIVEAU DU PARTI. Le
+// raffineur déployé y produit encore des mots-outils : sur les douze valeurs
+// publiées, on trouve « the », « and », « considérant » et « cède » (extrait de
+// « je cède la parole »). Un mot-outil n'est pas un concept, et le publier tel
+// quel n'apprendrait rien à personne.
+// Ce filtre ne rattrape QUE les cas indiscutables. Il ne peut rien contre
+// « cède » ni contre « bérubé » (le nom d'un député) : la vraie correction est
+// dans le raffineur, pas ici.
+const MOTS_OUTILS = new Set([
+  "the", "and", "of", "to", "for", "with", "that", "this",
+  "le", "la", "les", "des", "une", "un", "du", "de", "et", "ou",
+  "que", "qui", "dans", "pour", "avec", "sur", "par", "aux", "ce", "cette",
+]);
+
+function conceptPubliable(mot?: string): string | undefined {
+  const m = (mot ?? "").trim();
+  if (m.length < 3) return undefined;
+  return MOTS_OUTILS.has(m.toLowerCase()) ? undefined : m;
+}
+
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
   for (let i = 1; i <= 5; i++) {
@@ -207,7 +227,11 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   onToggle: () => void;
   maxAbsTone: number;
 }) {
-  const nb = (row.deputies ?? []).length;
+  const deputies = row.deputies ?? [];
+  const nb = deputies.length;
+  const concept = conceptPubliable(row.signatureWord);
+  // deputies arrive déjà triés par mots décroissants (buildDeputyList).
+  const plusProlixe = deputies[0];
   return (
     <button
       type="button"
@@ -222,10 +246,55 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
             + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
       }
     >
-      {/* Fond de casier : ce qu'on aperçoit quand les battants s'écartent. */}
-      <span className="casier-fond" aria-hidden="true">
-        <span className="casier-tablette" />
-        <span className="casier-crochet" />
+      {/* Fond de casier. Ce n'est pas un décor : les battants emportent avec eux
+          le bilan du parti en s'ouvrant, donc l'intérieur reprend le relais avec
+          ce que les portes ne montraient pas — répartition par enjeu, richesse
+          lexicale, concept distinctif. Comme des papiers punaisés au fond d'un
+          casier. */}
+      <span className="casier-fond">
+        <span className="casier-cloison" aria-hidden="true" />
+        <span className="casier-dedans">
+          {row.enjeuStack && row.enjeuStack.length > 0 && (
+            <span className="dedans-bloc bloc-enjeux">
+              <span className="dedans-titre">Enjeux</span>
+              {row.enjeuStack.filter((s) => !s.isReste).slice(0, 3).map((seg) => (
+                <span key={seg.label} className="dedans-enjeu" title={seg.title}>
+                  <i className="dedans-lbl">{seg.label}</i>
+                  <i className="dedans-piste">
+                    <i style={{ width: `${seg.widthPct}%`, background: seg.color }} />
+                  </i>
+                  <i className="dedans-pct">{seg.widthPct}&nbsp;%</i>
+                </span>
+              ))}
+            </span>
+          )}
+
+          {typeof row.richnessLevel === "number" && (
+            <span className="dedans-bloc bloc-richesse">
+              <span className="dedans-titre">Richesse lexicale</span>
+              <span className="dedans-points">
+                <RichnessDots level={row.richnessLevel} />
+              </span>
+            </span>
+          )}
+
+          {/* Le plus prolixe du parti : une mesure directe, contrairement au
+              concept, et c'est ce que le classement des cartes montre déjà. */}
+          {plusProlixe && (
+            <span className="dedans-bloc bloc-vedette">
+              <span className="dedans-titre">Plus prolixe</span>
+              <span className="dedans-vedette">{plusProlixe.name}</span>
+              <span className="dedans-vedette-mots">{plusProlixe.wordsFormatted} mots</span>
+            </span>
+          )}
+
+          {concept && (
+            <span className="dedans-bloc bloc-concept">
+              <span className="dedans-titre">Concept</span>
+              <span className="dedans-concept">{concept}</span>
+            </span>
+          )}
+        </span>
       </span>
 
       <span className="casier-battant gauche">
@@ -318,9 +387,6 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
             ["--pc" as string]: openRow.color,
             ["--i" as string]: openIndex,
             ["--n" as string]: rows.length,
-            // Indice de COLONNE en grille deux colonnes (téléphone). CSS ne
-            // sait pas faire de modulo, donc on le calcule ici.
-            ["--i2" as string]: openIndex % 2,
           }}
         >
           <span className="tiroir-encoche" aria-hidden="true" />
@@ -333,6 +399,12 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
               Refermer
             </button>
           </div>
+
+          {/* L'angle éditorial du parti : une phrase a besoin de largeur, donc
+              elle vit dans le tiroir et non sur une porte de casier. */}
+          {openRow.editorialAngle && (
+            <p className="tiroir-angle">{openRow.editorialAngle}</p>
+          )}
 
           {deputies.length > 0 ? (
             <div className="tiroir-presentoir">
