@@ -1,10 +1,10 @@
 {
-  "event_id": "20260805T070000Z-evt-omnium-banque-nationale-blesse-gabriel-3bb60941",
-  "storyline_id": "story-gabriel-diallo-16942461",
-  "title": "Blessures à l'Omnium Banque Nationale : Diallo et Shapovalov abandonnent",
-  "main_issue": "health_and_social_services",
+  "event_id": "20260805T110000Z-evt-vols-vehicules-aluminium-vaste-enquete-6bf48359",
+  "storyline_id": "story-organized-crime-7cfeb283",
+  "title": "Enquête policière à Sainte-Julie : découverte de véhicules et lingots volés",
+  "main_issue": "law_and_crime",
   "date_utc": "2026-08-05",
-  "time_interval_utc": "07-11",
-  "sum_qc": 48.055,
-  "peak_qc": 44.863
+  "time_interval_utc": "11-15",
+  "sum_qc": 47.046,
+  "peak_qc": 32.109
 }
