@@ -1,10 +1,10 @@
 {
-  "event_id": "20260805T110000Z-evt-vols-vehicules-aluminium-vaste-enquete-6bf48359",
-  "storyline_id": "story-organized-crime-7cfeb283",
-  "title": "Enquête policière à Sainte-Julie : découverte de véhicules et lingots volés",
-  "main_issue": "law_and_crime",
+  "event_id": "20260805T190000Z-evt-crise-sante-mentale-psychiatres-interpellent-48746e34",
+  "storyline_id": "story-mental-health-1adf726d",
+  "title": "Les psychiatres québécois pressent les partis de prioriser la santé mentale",
+  "main_issue": "health_and_social_services",
   "date_utc": "2026-08-05",
-  "time_interval_utc": "11-15",
-  "sum_qc": 35.654,
-  "peak_qc": 32.109
+  "time_interval_utc": "19-23",
+  "sum_qc": 54.746,
+  "peak_qc": 32.003
 }
