@@ -180,7 +180,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
               <b className="carte-v-points">
                 <RichnessDots level={deputy.richnessLevel} />
               </b>
-              <i>vocabulaire</i>
+              <i>richesse lexicale</i>
             </span>
           </span>
 
