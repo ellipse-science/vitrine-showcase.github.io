@@ -37,11 +37,12 @@ function conceptPubliable(mot?: string): string | undefined {
   return MOTS_OUTILS.has(m.toLowerCase()) ? undefined : m;
 }
 
-// « Mot distinctif » ne dit pas d'où vient la distinction. La mesure est un
-// TF-IDF : le mot ressort parce qu'il est bien plus fréquent ici qu'ailleurs à
-// l'Assemblée, pas parce qu'il est fréquent dans l'absolu. On l'écrit en
-// clair sous le mot plutôt que de laisser le lecteur le deviner.
-const GLOSE_MOT_DISTINCTIF = "Bien plus fréquent ici qu'ailleurs à l'Assemblée.";
+// L'intitulé seul ne dit pas d'où vient la distinction. Le calcul retient
+// l'expression bien plus fréquente ici qu'ailleurs, pas la plus fréquente dans
+// l'absolu : on l'écrit sous le concept plutôt que de laisser deviner.
+// « Concept » et non « mot » : l'extraction produit des expressions d'un OU
+// deux mots, et c'est le terme retenu par le raffineur et par la méthodologie.
+const GLOSE_CONCEPT = "Bien plus fréquent ici qu'ailleurs à l'Assemblée.";
 
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
@@ -208,9 +209,9 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
 
           {concept && (
             <span className="carte-v-bloc">
-              <span className="carte-v-titre">Mot distinctif</span>
+              <span className="carte-v-titre">Concept distinctif</span>
               <span className="carte-v-concept">{concept}</span>
-              <span className="carte-v-glose">{GLOSE_MOT_DISTINCTIF}</span>
+              <span className="carte-v-glose">{GLOSE_CONCEPT}</span>
               {deputy.signatureWordContext && (
                 <span className="carte-v-citation">
                   «&nbsp;{deputy.signatureWordContext}&nbsp;»
