@@ -208,7 +208,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
           )}
 
           {concept && (
-            <span className="carte-v-bloc">
+            <span className="carte-v-bloc bloc-concept">
               <span className="carte-v-titre">Concept distinctif</span>
               <span className="carte-v-concept">{concept}</span>
               <span className="carte-v-glose">{GLOSE_CONCEPT}</span>

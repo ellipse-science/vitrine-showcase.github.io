@@ -3027,6 +3027,11 @@
     display: flex;
     flex-direction: column;
     text-align: left;
+    /* Garantie dure. Le verso tenait à 6 px près : un nom qui passe sur deux
+       lignes, une graisse de police un peu différente d'une machine à l'autre,
+       et le pied de carte sortait du carton. Une carte est un objet fermé ;
+       rien ne doit jamais déborder de son cadre. */
+    overflow: hidden;
   }
   .carte-v-tete {
     display: flex;
@@ -3088,6 +3093,14 @@
     margin-top: 3px;
   }
   .carte-v-bloc { display: block; margin-top: 8px; }
+  /* Bloc du concept : le seul dont la hauteur varie vraiment (la citation).
+     On lui donne le reste de la place et on l'autorise à couper, de sorte que
+     la carte perde une ligne de citation plutôt qu'un pied de page. */
+  .carte-v-bloc.bloc-concept {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
   .carte-v-titre {
     display: block;
     font-size: 8px;
