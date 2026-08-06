@@ -2706,6 +2706,7 @@
     color: var(--paper);
   }
   .dedans-points .empty { color: rgba(243, 236, 221, 0.35); }
+  .bloc-chiffre .dedans-vedette { font-size: 22px; }
   .dedans-vedette {
     display: block;
     font-family: 'Playfair Display', Georgia, serif;
@@ -3143,6 +3144,15 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
   }
+  .carte-v-glose {
+    display: block;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 9px;
+    line-height: 1.3;
+    color: var(--ink-softer);
+    margin-top: 2px;
+  }
   .carte-v-pied {
     display: block;
     margin-top: auto;
@@ -3230,9 +3240,8 @@
        les deux blocs qui portent vraiment de l'information, et deux enjeux. */
     .casier { height: 232px; }
     .casier-dedans { inset: 13px 11px; gap: 9px; }
-    .casier-dedans .bloc-richesse,
-    .casier-dedans .bloc-concept,
-    .casier-dedans .dedans-enjeu:nth-of-type(4) { display: none; }
+    .casier-dedans .bloc-chiffre,
+    .casier-dedans .dedans-enjeu:nth-of-type(3) { display: none; }
     .dedans-vedette { font-size: 14px; }
     .casier-bilan b { font-size: 16px; }
     .casier-battant { padding: 9px 8px; }

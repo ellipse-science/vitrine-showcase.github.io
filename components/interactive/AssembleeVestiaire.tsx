@@ -37,6 +37,12 @@ function conceptPubliable(mot?: string): string | undefined {
   return MOTS_OUTILS.has(m.toLowerCase()) ? undefined : m;
 }
 
+// « Mot distinctif » ne dit pas d'où vient la distinction. La mesure est un
+// TF-IDF : le mot ressort parce qu'il est bien plus fréquent ici qu'ailleurs à
+// l'Assemblée, pas parce qu'il est fréquent dans l'absolu. On l'écrit en
+// clair sous le mot plutôt que de laisser le lecteur le deviner.
+const GLOSE_MOT_DISTINCTIF = "Bien plus fréquent ici qu'ailleurs à l'Assemblée.";
+
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
   for (let i = 1; i <= 5; i++) {
@@ -104,7 +110,8 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
   onFlip: () => void;
 }) {
   const partyLabel = party.toUpperCase();
-  const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 4);
+  const concept = conceptPubliable(deputy.signatureWord);
+  const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 3);
 
   return (
     <button
@@ -173,18 +180,18 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
               <b className="carte-v-points">
                 <RichnessDots level={deputy.richnessLevel} />
               </b>
-              <i>richesse</i>
+              <i>vocabulaire</i>
             </span>
           </span>
 
           <span className="carte-v-bloc">
-            <span className="carte-v-titre">Ton en chambre</span>
+            <span className="carte-v-titre">Ton des interventions</span>
             <ToneScale score={deputy.toneScore} maxAbs={maxAbsTone} />
           </span>
 
           {enjeux.length > 0 && (
             <span className="carte-v-bloc">
-              <span className="carte-v-titre">Répartition par enjeu</span>
+              <span className="carte-v-titre">Sujets abordés</span>
               <span className="carte-v-enjeux">
                 {enjeux.map((seg) => (
                   <span key={seg.label} className="carte-v-ligne" title={seg.title}>
@@ -199,10 +206,11 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
             </span>
           )}
 
-          {deputy.signatureWord && (
+          {concept && (
             <span className="carte-v-bloc">
-              <span className="carte-v-titre">Concept distinctif</span>
-              <span className="carte-v-concept">{deputy.signatureWord}</span>
+              <span className="carte-v-titre">Mot distinctif</span>
+              <span className="carte-v-concept">{concept}</span>
+              <span className="carte-v-glose">{GLOSE_MOT_DISTINCTIF}</span>
               {deputy.signatureWordContext && (
                 <span className="carte-v-citation">
                   «&nbsp;{deputy.signatureWordContext}&nbsp;»
@@ -229,7 +237,6 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
 }) {
   const deputies = row.deputies ?? [];
   const nb = deputies.length;
-  const concept = conceptPubliable(row.signatureWord);
   // deputies arrive déjà trié par mots décroissants (buildDeputyList).
   const plusLoquace = deputies[0];
   return (
@@ -254,9 +261,14 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       <span className="casier-fond">
         <span className="casier-cloison" aria-hidden="true" />
         <span className="casier-dedans">
+          <span className="dedans-bloc bloc-chiffre">
+            <span className="dedans-titre">Interventions</span>
+            <span className="dedans-vedette">{row.interventions ?? 0}</span>
+          </span>
+
           {row.enjeuStack && row.enjeuStack.length > 0 && (
             <span className="dedans-bloc bloc-enjeux">
-              <span className="dedans-titre">Enjeux</span>
+              <span className="dedans-titre">Sujets abordés</span>
               {row.enjeuStack.filter((s) => !s.isReste).slice(0, 3).map((seg) => (
                 <span key={seg.label} className="dedans-enjeu" title={seg.title}>
                   <i className="dedans-lbl">{seg.label}</i>
@@ -266,15 +278,6 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
                   <i className="dedans-pct">{seg.widthPct}&nbsp;%</i>
                 </span>
               ))}
-            </span>
-          )}
-
-          {typeof row.richnessLevel === "number" && (
-            <span className="dedans-bloc bloc-richesse">
-              <span className="dedans-titre">Richesse lexicale</span>
-              <span className="dedans-points">
-                <RichnessDots level={row.richnessLevel} />
-              </span>
             </span>
           )}
 
@@ -288,12 +291,6 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
             </span>
           )}
 
-          {concept && (
-            <span className="dedans-bloc bloc-concept">
-              <span className="dedans-titre">Concept</span>
-              <span className="dedans-concept">{concept}</span>
-            </span>
-          )}
         </span>
       </span>
 
@@ -313,10 +310,6 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       <span className="casier-battant droite">
         <span className="casier-fentes" aria-hidden="true" />
         <span className="casier-bilan">
-          <span>
-            <b>{row.interventions ?? 0}</b>
-            <i>interventions</i>
-          </span>
           <span>
             <b>{nb}</b>
             <i>député.es</i>
