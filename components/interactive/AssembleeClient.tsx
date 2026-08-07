@@ -43,7 +43,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Que dit-on à l&apos;Assemblée?</h2>
+          <h2 className="partis-title">L&apos;alignement de l&apos;Assemblée</h2>
           <div className="period-subtitle">
             {view.subtitle}
             <SourceTip />
@@ -63,7 +63,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Que dit-on à l'Assemblée nationale?" anchor="assemblee-nationale" />
+            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" />
           </div>
         </div>
       </div>
