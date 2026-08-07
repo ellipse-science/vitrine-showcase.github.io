@@ -1,5 +1,11 @@
 [
   {
+    "pr": 404,
+    "date": "2026-08-07T21:25:47Z",
+    "note": "L'échelle convergent/divergent du module Deux solitudes est maintenant en tons neutres, pour ne plus entrer en collision avec le code couleur Québec/Canada affiché au-dessus.",
+    "version": "2.20.0-beta.5"
+  },
+  {
     "pr": 402,
     "date": "2026-08-07T21:21:58Z",
     "note": "Le radar du module Deux solitudes ne laisse plus jamais un texte ou un badge chevaucher le graphique, quel que soit le nombre de médias ayant couvert un sujet.",
