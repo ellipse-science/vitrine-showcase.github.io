@@ -1,5 +1,11 @@
 [
   {
+    "pr": 405,
+    "date": "2026-08-07T21:39:06Z",
+    "note": "Dans le module Deux solitudes, le Québec (bleu) est maintenant affiché à droite et le Canada (rouge) à gauche, pour correspondre à la disposition réelle du graphique en dessous.",
+    "version": "2.20.0-beta.6"
+  },
+  {
     "pr": 404,
     "date": "2026-08-07T21:25:47Z",
     "note": "L'échelle convergent/divergent du module Deux solitudes est maintenant en tons neutres, pour ne plus entrer en collision avec le code couleur Québec/Canada affiché au-dessus.",
