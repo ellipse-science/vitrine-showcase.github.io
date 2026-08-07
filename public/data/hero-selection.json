@@ -1,10 +1,10 @@
 {
-  "event_id": "20260806T030000Z-evt-psychiatres-veulent-que-sante-mentale-13e478a1",
-  "storyline_id": "story-mental-health-1adf726d",
-  "title": "Les psychiatres québécois exigent une priorité électorale pour la santé mentale",
-  "main_issue": "health_and_social_services",
+  "event_id": "20260806T150000Z-evt-precampagne-caq-lancent-hostilites-attaquent-4d9fa2df",
+  "storyline_id": "story-parti-quebecois-69d6ca80",
+  "title": "La CAQ et le PQ s'affrontent en précampagne électorale",
+  "main_issue": "governments_and_governance",
   "date_utc": "2026-08-06",
-  "time_interval_utc": "03-07",
-  "sum_qc": 52.428,
-  "peak_qc": 32.003
+  "time_interval_utc": "15-19",
+  "sum_qc": 34.402,
+  "peak_qc": 34.402
 }
