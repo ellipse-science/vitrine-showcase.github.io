@@ -1,5 +1,11 @@
 [
   {
+    "pr": 390,
+    "date": "2026-08-07T18:30:29Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » prend la forme d'un vestiaire : un casier par parti, qu'on ouvre pour découvrir une carte par député, avec son portrait, ses chiffres et le concept qui le distingue. Le ton se lit maintenant sur une échelle graduée plutôt qu'en un seul mot.",
+    "version": "2.20.0-beta.0"
+  },
+  {
     "pr": 382,
     "date": "2026-08-03T20:00:53Z",
     "note": "L'encadré qui s'affiche au survol de la jauge « Deux solitudes » indique maintenant la part d'actualité que le Québec et le Canada ont en commun, avec un repère pour savoir ce que valent les deux extrémités de l'échelle. Tout le module parle désormais de la même chose, du grand chiffre au bouton de partage. Les catégories de sujets trop longues ne se chevauchent plus autour du radar, et le point…",
