@@ -1,5 +1,11 @@
 [
   {
+    "pr": 365,
+    "date": "2026-08-07T20:29:23Z",
+    "note": "fix(polimetre) : sélectionner les snapshots par date, pas par position",
+    "version": null
+  },
+  {
     "pr": 407,
     "date": "2026-08-07T18:56:37Z",
     "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",
