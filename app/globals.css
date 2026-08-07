@@ -1814,7 +1814,7 @@
     70%  { transform: scale(2.6); opacity: 0; }
     100% { transform: scale(2.6); opacity: 0; }
   }
-  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: start; }
+  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: middle; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .dot .hit { fill: transparent; cursor: pointer; }
@@ -1854,6 +1854,10 @@
   .solitudes .m-chip:hover g { transform: scale(1.25); }
   .solitudes .m-chip .m-name { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; font-size: 9.5px; letter-spacing: 0.09em; fill: var(--ink); text-anchor: middle; }
   .solitudes .m-chip:hover .m-name { opacity: 1; }
+  /* Chip « +N » (#394) : médias au-delà de ce qui tient sans chevaucher
+     le halo. Neutre (ni bleu ni rouge, ce n'est pas un média d'une région) —
+     pas de <g> interne comme les autres chips, donc pas de survol agrandi. */
+  .solitudes .m-chip.chip-more .m-code { fill: var(--ink-softer); font-weight: 500; }
 
   /* Score signature : chiffre géant + libellé */
   .solitudes .sol-stat { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 10px 0 0; animation: solFadeUp 0.5s ease 0.62s both; }
@@ -5828,17 +5832,25 @@
   .ppl-discover {
     border: 0.5px solid var(--rule);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
     color: var(--ink);
     text-decoration: none;
-    padding: 4px 11px;
+    padding: 7px 15px;
     background: var(--ink);
     color: var(--paper);
+    /* inline-flex : la marque du Polimètre s'aligne sur la casse du libellé
+       plutôt que sur sa ligne de base (le glyphe déborderait sous le bouton). */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-discover:hover { opacity: 0.85; }
+  /* La marque ne doit jamais rétrécir quand le libellé passe sur deux lignes
+     (cas mobile 375 px, où le bouton occupe toute la largeur). */
+  .ppl-discover__mark { flex-shrink: 0; }
 
   .ppl-trend {
     font-family: 'IBM Plex Mono', monospace;
@@ -5851,6 +5863,8 @@
   .ppl-trend--up   { color: var(--green); }
   .ppl-trend--down { color: var(--red); }
   .ppl-trend--flat { color: var(--ink-softer); }
+  /* Absence de comparaison : plus effacé que « flat », qui est un constat. */
+  .ppl-trend--unknown { color: var(--ink-softer); opacity: 0.55; }
 
   /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
      très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
@@ -6066,13 +6080,17 @@
        hauteur identique au bloc « depuis une semaine / un mois » en haut. */
     border: 0.5px solid transparent;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     font-weight: 500;
-    padding: 4px 22px;
+    padding: 7px 22px;
     cursor: pointer;
     transition: background 0.15s ease;
+    /* même alignement de la marque du Polimètre que .ppl-discover */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-website:hover { background: var(--cordovan); }
   .ppl-metho {
