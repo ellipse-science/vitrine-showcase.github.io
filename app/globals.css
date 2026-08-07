@@ -1720,14 +1720,6 @@
     background: linear-gradient(90deg, rgba(168,48,44,0.5) 0%, rgba(168,48,44,0.16) 25%, var(--rule-faint) 45%, var(--rule-faint) 55%, rgba(46,70,99,0.16) 75%, rgba(46,70,99,0.5) 100%);
   }
   .solitudes .sol-axis-tick { position: absolute; left: 50%; top: 50%; width: 1px; height: 11px; transform: translate(-50%, -50%); background: var(--rule); }
-  /* Légende classique du code couleur (#395/#399) : pastille carrée + mot,
-     même patron que .el-swatch/.el-item (légende des Enjeux saillants) —
-     cohérence de « look » entre modules pour un même rôle (clé de couleur). */
-  .solitudes .sol-legend { display: flex; justify-content: center; gap: 22px; margin: 0 0 10px; }
-  .solitudes .sol-legend .sl-item { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
-  .solitudes .sol-legend .sl-swatch { width: 11px; height: 11px; flex-shrink: 0; }
-  .solitudes .sol-legend .sl-swatch.qc { background: var(--bleu); }
-  .solitudes .sol-legend .sl-swatch.can { background: var(--red); }
   .solitudes .sol-symbol {
     position: absolute;
     top: 50%;
