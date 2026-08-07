@@ -1854,6 +1854,10 @@
   .solitudes .m-chip:hover g { transform: scale(1.25); }
   .solitudes .m-chip .m-name { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; font-size: 9.5px; letter-spacing: 0.09em; fill: var(--ink); text-anchor: middle; }
   .solitudes .m-chip:hover .m-name { opacity: 1; }
+  /* Chip « +N » (#394) : médias au-delà de ce qui tient sans chevaucher
+     le halo. Neutre (ni bleu ni rouge, ce n'est pas un média d'une région) —
+     pas de <g> interne comme les autres chips, donc pas de survol agrandi. */
+  .solitudes .m-chip.chip-more .m-code { fill: var(--ink-softer); font-weight: 500; }
 
   /* Score signature : chiffre géant + libellé */
   .solitudes .sol-stat { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 10px 0 0; animation: solFadeUp 0.5s ease 0.62s both; }
