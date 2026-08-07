@@ -4,6 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import type { AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import type { PartyKey } from "@/lib/data/parties";
 
+// Le site est publié sous un basePath sur GitHub Pages (même logique que
+// app/layout.tsx, SaillanceTip.tsx, TreemapClient.tsx…) : un chemin
+// racine codé en dur ("/images/…") n'est PAS réécrit automatiquement par
+// l'export statique de Next, contrairement à un <Image> ou un import. Sans
+// ce préfixe, le portrait pointe vers <domaine>/images/… au lieu de
+// <domaine>/vitrine-showcase.github.io/images/… et 404 en production tout
+// en fonctionnant en local (où le basePath est vide).
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 // Vestiaire : un banc de casiers, un par parti actif.
 //
 // Disposition — le banc est FIXE. Les casiers gardent la même largeur et la
@@ -138,7 +147,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
             </span>
             <span className="carte-photo">
               {deputy.portrait ? (
-                <img src={deputy.portrait} alt="" loading="lazy" decoding="async" />
+                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="lazy" decoding="async" />
               ) : (
                 <span className="carte-photo-absente" aria-hidden="true">
                   Portrait non apparié
