@@ -5848,6 +5848,8 @@
   .ppl-trend--up   { color: var(--green); }
   .ppl-trend--down { color: var(--red); }
   .ppl-trend--flat { color: var(--ink-softer); }
+  /* Absence de comparaison : plus effacé que « flat », qui est un constat. */
+  .ppl-trend--unknown { color: var(--ink-softer); opacity: 0.55; }
 
   /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
      très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
