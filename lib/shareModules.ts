@@ -79,7 +79,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "24", label: "heures d'analyse média, en continu" },
   },
   "assemblee-nationale": {
-    title: "Que dit-on à l'Assemblée nationale ?",
+    title: "L'alignement de l'Assemblée nationale",
     description: "Répartition des enjeux, ton et richesse lexicale des débats parlementaires.",
     stat: { value: "125", label: "député·e·s scrutés à chaque séance" },
   },
