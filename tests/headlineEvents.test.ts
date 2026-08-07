@@ -1099,6 +1099,41 @@ describe("buildSolitudes", () => {
     expect(s.canSymbolPos).toBeLessThan(50);
     expect(s.qcSymbolPos).toBeGreaterThan(50);
   });
+
+  it("niveau du bout de ligne : mêmes constructions des deux côtés (#273), repli ROC au pic", () => {
+    // Un sujet mené par le CANADA (aucun média QC) : son niveau doit venir du
+    // CUMUL 24 h (`sumRoc` = 50 ici) contre la calibration cumulée
+    // `score_roc_sum_24h` — plus jamais du pic contre les scores de bloc, le
+    // compromis qui faisait dire deux niveaux à la même histoire (2026-08-03).
+    const can = ev({ storyline_id: "ca", title: "Sujet CAN", score_qc: 0,
+      score_roc: 50, country_id: "CAN", media_ids_roc: '["CBC"]',
+      interval_convergence_score: 10 });
+    const stories = storiesFrom24h([can] as never);
+    const sumRoc = { faible: 1, moyenne: 10, eleve: 100, tresEleve: 200, extreme: 300 };
+    const rocBlocs = { faible: 1, moyenne: 2, eleve: 3, tresEleve: 4, extreme: 5 };
+    const avecCumul = buildSolitudes([can] as never, stories, 10, 31,
+      { p20: 16, p80: 42 },
+      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRoc, roc: rocBlocs });
+    // cumul 50 : ≥ moyenne (10), < eleve (100) → « Modérée », population ROC.
+    expect(avecCumul.axes[0].salienceLabel).toBe("Modérée");
+    expect(avecCumul.axes[0].salienceHint).toContain("canadiens");
+    // REPLI transitoire : sans calibration cumulée, l'ancien chemin (pic 24 h
+    // vs blocs) reste — ici pic 50 ≥ extreme (5) → « Exceptionnelle ». Le même
+    // sujet change d'étiquette entre les deux chemins : c'est le test qui
+    // verrouille que le nouveau chemin est bien prioritaire quand publié.
+    const sansCumul = buildSolitudes([can] as never, stories, 10, 31,
+      { p20: 16, p80: 42 },
+      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRoc: null, roc: rocBlocs });
+    expect(sansCumul.axes[0].salienceLabel).toBe("Exceptionnelle");
+    // Côté QC, rien ne bouge : le rang du badge du module 1 est repris tel quel.
+    const qc = ev({ storyline_id: "s-qc", title: "Sujet QC", score_qc: 40,
+      interval_convergence_score: 10 });
+    const sQc = buildSolitudes([qc] as never, storiesFrom24h([qc] as never), 10, 31,
+      { p20: 16, p80: 42 },
+      { badgeRanks: new Map([["s-qc", { rank: 5 }]]), sumThresholds: sumRoc, sumRoc, roc: rocBlocs });
+    expect(sQc.axes[0].salienceLabel).toBe("Très élevée");
+    expect(sQc.axes[0].salienceHint).toContain("québécois");
+  });
 });
 
 describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", () => {
