@@ -1,5 +1,11 @@
 [
   {
+    "pr": 406,
+    "date": "2026-08-07T18:41:14Z",
+    "note": "Correctif d'affichage : les portraits des député.es réapparaissent sur les cartes du module « Que dit-on à l'Assemblée? ».",
+    "version": "2.20.0-beta.1"
+  },
+  {
     "pr": 390,
     "date": "2026-08-07T18:30:29Z",
     "note": "Le module « Que dit-on à l'Assemblée? » prend la forme d'un vestiaire : un casier par parti, qu'on ouvre pour découvrir une carte par député, avec son portrait, ses chiffres et le concept qui le distingue. Le ton se lit maintenant sur une échelle graduée plutôt qu'en un seul mot.",
