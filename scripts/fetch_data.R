@@ -475,36 +475,53 @@ calibration_event_convergence <- function(conn, cut_date) {
   })
 }
 
-# Saillance CUMULÉE 24 h par histoire (sumQc du frontend, storiesFrom24h) —
-# calibre le BADGE de la Une des Unes (vitrine#314). Le badge décrivait le PIC
-# 24 h (score_qc_peak_24h, ci-dessus) ; il décrit maintenant l'attention
-# cumulée pondérée par récence, qui décroît d'elle-même quand une histoire
-# s'éteint. Reproduit EXACTEMENT storiesFrom24h côté frontend : mêmes filtres
-# que calibration_event_convergence (dédup event_id préf-QC, exclusion USA,
-# titre requis), fenêtre glissante de 6 blocs, pondération de récence demi-vie
-# 10 h (HALF_LIFE_H, vitrine #274). Convention de calibration_peak : UN POINT
-# PAR STORYLINE — son SOMMET cumulé sur toute la fenêtre, sinon une histoire
-# longue (beaucoup de fenêtres as-of) pèserait en double dans la distribution.
+# Saillance CUMULÉE 24 h par histoire (sumQc/sumRoc du frontend,
+# storiesFrom24h) — calibre le BADGE de la Une des Unes (vitrine#314) côté QC
+# et le niveau de bout de ligne du radar Deux solitudes des DEUX côtés
+# (vitrine#383, aws-refiners#273). Le badge décrivait le PIC 24 h
+# (score_qc_peak_24h, ci-dessus) ; il décrit maintenant l'attention cumulée
+# pondérée par récence, qui décroît d'elle-même quand une histoire s'éteint.
+# Reproduit EXACTEMENT storiesFrom24h côté frontend : mêmes filtres que
+# calibration_event_convergence (dédup event_id préf-QC — PARTAGÉE par les
+# deux côtés, comme storiesFrom24h qui ne construit qu'une liste d'histoires —,
+# exclusion USA, titre requis), fenêtre glissante de 6 blocs, pondération de
+# récence demi-vie 10 h (HALF_LIFE_H, vitrine #274). Convention de
+# calibration_peak : UN POINT PAR STORYLINE — son SOMMET cumulé sur toute la
+# fenêtre, sinon une histoire longue (beaucoup de fenêtres as-of) pèserait en
+# double dans la distribution.
+#
+# POPULATION par côté — toujours les histoires AFFICHÉES de SA région, jamais
+# le pool brut (voir la mesure 93 %/43 % plus bas) :
+#   · QC  (score_qc / media_ids_qc, min_media_secondary = 2) : la sélection de
+#     la Une des Unes, selectTopUnes — top-3 par sumQc, héros toujours gardé,
+#     secondaires ≥ 2 médias QC (seuil éditorial vitrine#279).
+#   · ROC (score_roc / media_ids_roc, min_media_secondary = 1) : le top-3
+#     canadien du radar Deux solitudes (tri par sumRoc). Le seuil « ≥ 2
+#     médias » ne s'applique PAS ici : il est propre au module 1, le radar n'a
+#     pas d'équivalent éditorial côté ROC.
 #
 # Même plancher POST-FUSION que calibration_peak (`from`, aws-refiners#227) :
 # vérifié empiriquement sur l'historique DEV, mélanger le pré-fusion tire les
 # seuils vers le bas (p50 mesuré 20,2 mélangé contre 22,1 post-fusion seul,
 # écart croissant sur les hauts percentiles, là où la fusion pèse le plus).
 #
-# Colonne/table indisponible ou trop peu de storylines → NULL (repli frontend
-# sur SUM_QC_THRESHOLDS codés en dur).
-calibration_sum_qc <- function(conn, from) {
+# Colonne/table indisponible ou trop peu de storylines → NULL. Repli frontend :
+# côté QC, SUM_QC_THRESHOLDS codés en dur ; côté ROC, le radar garde son
+# compromis temporaire au pic (buildSolitudes) tant que rien n'est publié.
+calibration_sum_24h <- function(conn, from, score_col, media_col,
+                                min_media_secondary) {
   tryCatch({
     sql <- sprintf(paste(
       "SELECT date_utc, time_interval_utc, storyline_id, event_label, event_id,",
-      "target_region, country_id, title, score_qc, media_ids_qc",
-      "FROM \"%s\" WHERE date_utc >= DATE '%s'"), CAL_TABLE, from)
+      "target_region, country_id, title, %s, %s",
+      "FROM \"%s\" WHERE date_utc >= DATE '%s'"),
+      score_col, media_col, CAL_TABLE, from)
     df <- as.data.frame(DBI::dbGetQuery(conn, sql))
 
     num <- function(x) suppressWarnings(as.numeric(x))
-    # Nombre de médias QC distincts, comme `qcMedia` côté frontend : sert au
-    # seuil éditorial des manchettes secondaires (MIN_QC_MEDIA_SECONDARY = 2).
-    n_media_qc <- function(s) {
+    # Nombre de médias distincts du côté calibré, comme `qcIds`/`canIds` côté
+    # frontend (parseIdList).
+    n_media <- function(s) {
       if (is.na(s) || s == "") return(0L)
       length(unique(trimws(strsplit(gsub("\\[|\\]|\"", "", s), ",")[[1]])))
     }
@@ -515,8 +532,8 @@ calibration_sum_qc <- function(conn, from) {
       filter(is.na(country_id) | country_id != "USA") %>%
       filter(!is.na(title), title != "") %>%
       mutate(
-        qc = ifelse(is.na(num(score_qc)), 0, num(score_qc)),
-        nmed = vapply(media_ids_qc, n_media_qc, integer(1)),
+        val = ifelse(is.na(num(.data[[score_col]])), 0, num(.data[[score_col]])),
+        nmed = vapply(.data[[media_col]], n_media, integer(1)),
         block = paste0(date_utc, "T",
                        sprintf("%02d", suppressWarnings(as.integer(
                                sub("-.*$", "",
@@ -528,8 +545,8 @@ calibration_sum_qc <- function(conn, from) {
     if (nrow(df) == 0) return(NULL)
 
     by_bs <- df %>% group_by(block, story) %>%
-      summarise(sumQc = sum(qc), nmed = max(nmed), .groups = "drop") %>%
-      filter(sumQc > 0)
+      summarise(sumVal = sum(val), nmed = max(nmed), .groups = "drop") %>%
+      filter(sumVal > 0)
 
     HALF_LIFE_H <- 10
     block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
@@ -540,15 +557,16 @@ calibration_sum_qc <- function(conn, from) {
     n <- length(blocks_desc)
     if (n < 6) return(NULL)
 
-    # Somme pondérée de CHAQUE fenêtre as-of, puis SÉLECTION comme selectTopUnes
-    # (qcMedia>0 & sumQc>0, tri par sumQc, top-3, secondaires ≥ 2 médias QC).
+    # Somme pondérée de CHAQUE fenêtre as-of, puis SÉLECTION comme le frontend
+    # (média>0 & cumul>0, tri décroissant, top-3, secondaires ≥
+    # min_media_secondary — voir POPULATION dans l'en-tête).
     #
     # Calibrer sur TOUTES les storylines au lieu des seules AFFICHÉES reproduit
-    # exactement le défaut qu'on corrige : mesuré sur l'historique DEV, 93 % des
-    # cartes tomberaient dans les 3 bandes du haut et 0 % dans les 2 du bas —
-    # le même 93 % que l'ancien badge au pic. Le tassement ne venait donc pas du
-    # « pic » mais de la population de référence. Sur les affichées : 43 % dans
-    # les 3 bandes du haut, 25 % dans les 2 du bas.
+    # exactement le défaut qu'on corrige : mesuré sur l'historique DEV (côté
+    # QC), 93 % des cartes tomberaient dans les 3 bandes du haut et 0 % dans
+    # les 2 du bas — le même 93 % que l'ancien badge au pic. Le tassement ne
+    # venait donc pas du « pic » mais de la population de référence. Sur les
+    # affichées : 43 % dans les 3 bandes du haut, 25 % dans les 2 du bas.
     all_vals <- vector("list", n - 5L)
     for (i in seq_len(n - 5L)) {
       win_blocks <- blocks_desc[i:(i + 5L)]
@@ -556,18 +574,18 @@ calibration_sum_qc <- function(conn, from) {
       if (nrow(w) == 0) next
       newest <- max(block_ms_tab[win_blocks], na.rm = TRUE)
       wt <- 2^((block_ms_tab[w$block] - newest) / 3600 / HALF_LIFE_H)
-      sums <- rowsum(w$sumQc * wt, w$story)[, 1]
+      sums <- rowsum(w$sumVal * wt, w$story)[, 1]
       nmed <- tapply(w$nmed, w$story, max)
-      sel <- data.frame(story = names(sums), sumQc = as.numeric(sums),
+      sel <- data.frame(story = names(sums), sumVal = as.numeric(sums),
                         nmed = as.numeric(nmed[names(sums)]),
                         stringsAsFactors = FALSE)
-      sel <- sel[sel$sumQc > 0 & sel$nmed > 0, , drop = FALSE]
+      sel <- sel[sel$sumVal > 0 & sel$nmed > 0, , drop = FALSE]
       if (nrow(sel) == 0) next
-      sel <- head(sel[order(-sel$sumQc), , drop = FALSE], 3)
-      keep <- seq_len(nrow(sel)) == 1L | sel$nmed >= 2
+      sel <- head(sel[order(-sel$sumVal), , drop = FALSE], 3)
+      keep <- seq_len(nrow(sel)) == 1L | sel$nmed >= min_media_secondary
       sel <- sel[keep, , drop = FALSE]
       if (nrow(sel) == 0) next
-      all_vals[[i]] <- setNames(sel$sumQc, sel$story)
+      all_vals[[i]] <- setNames(sel$sumVal, sel$story)
     }
     combined <- unlist(all_vals)
     if (length(combined) == 0) return(NULL)
@@ -576,7 +594,8 @@ calibration_sum_qc <- function(conn, from) {
     peak_by_story <- tapply(combined, names(combined), max)
     calibration_pctiles(unname(peak_by_story))
   }, error = function(e) {
-    message("   (calibration: score_qc_sum_24h indisponible — ", conditionMessage(e), ")")
+    message("   (calibration: cumul 24 h « ", score_col, " » indisponible — ",
+            conditionMessage(e), ")")
     NULL
   })
 }
@@ -593,11 +612,16 @@ build_salience_calibration <- function(conn, out_path) {
   peak_from <- max(cut_date, SAL_PEAK_CAL_FROM)
   pk  <- calibration_peak(conn, peak_from)
   if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = peak_from), pk)
-  # Cumul 24 h pondéré — calibre le badge (vitrine#314). MÊME plancher
-  # post-fusion que le pic ci-dessus (vérifié empiriquement dans
-  # calibration_sum_qc : mélanger le pré-fusion tire les seuils vers le bas).
-  sq  <- calibration_sum_qc(conn, peak_from)
-  if (!is.null(sq))  metrics$score_qc_sum_24h <- c(list(region = "QC", since = peak_from), sq)
+  # Cumul 24 h pondéré — calibre le badge (vitrine#314) côté QC et le bout de
+  # ligne du radar Deux solitudes côté ROC (vitrine#383, aws-refiners#273).
+  # MÊME plancher post-fusion que le pic ci-dessus (vérifié empiriquement dans
+  # calibration_sum_24h : mélanger le pré-fusion tire les seuils vers le bas).
+  sq  <- calibration_sum_24h(conn, peak_from, "score_qc",  "media_ids_qc",
+                             min_media_secondary = 2L)
+  if (!is.null(sq))  metrics$score_qc_sum_24h  <- c(list(region = "QC",  since = peak_from), sq)
+  sr  <- calibration_sum_24h(conn, peak_from, "score_roc", "media_ids_roc",
+                             min_media_secondary = 1L)
+  if (!is.null(sr))  metrics$score_roc_sum_24h <- c(list(region = "ROC", since = peak_from), sr)
   roc <- calibration_metric(conn, "score_roc", cut_date)
   if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,
