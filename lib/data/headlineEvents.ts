@@ -9,7 +9,12 @@ import path from "node:path";
 import { cache } from "react";
 
 import { editionLabel } from "@/lib/editions";
-import { formatDateFr, lastUpdatedLabel, publicationHourFromInterval } from "@/lib/dates";
+import {
+  formatDateFr,
+  lastUpdatedLabel,
+  publicationDateFromInterval,
+  publicationHourFromInterval,
+} from "@/lib/dates";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -1549,7 +1554,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // publicationHourFromInterval + ses tests pour la normalisation du bord à 24).
   const publicationHour = publicationHourFromInterval(snapshotInterval);
   const lastUpdated = lastUpdatedLabel(
-    sorted[0].date_montreal_tz ?? sorted[0].date_utc,
+    publicationDateFromInterval(sorted[0].date_montreal_tz ?? sorted[0].date_utc, snapshotInterval),
     publicationHour,
   );
 
