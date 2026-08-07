@@ -1717,22 +1717,17 @@
     left: 0; right: 0;
     height: 2px;
     transform: translateY(-50%);
-    background: linear-gradient(90deg, rgba(46,70,99,0.5) 0%, rgba(46,70,99,0.16) 25%, var(--rule-faint) 45%, var(--rule-faint) 55%, rgba(168,48,44,0.16) 75%, rgba(168,48,44,0.5) 100%);
+    background: linear-gradient(90deg, rgba(168,48,44,0.5) 0%, rgba(168,48,44,0.16) 25%, var(--rule-faint) 45%, var(--rule-faint) 55%, rgba(46,70,99,0.16) 75%, rgba(46,70,99,0.5) 100%);
   }
-  /* Flèches directionnelles de l'axe : ◀ bleu vers le Québec, ▶ rouge vers le Canada. */
-  .solitudes .sol-arrowhead { position: absolute; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
-  .solitudes .sol-arrowhead.left { left: 3.5%; border-right: 10px solid var(--bleu); }
-  .solitudes .sol-arrowhead.right { right: 3.5%; border-left: 10px solid var(--red); }
-  /* Flèches de tendance (#258) : .out = plus divergent que d'habitude, elles
-     pointent et pulsent vers l'extérieur ; .in = plus convergent, elles se
-     retournent vers le centre ; sans classe (écart nul) = immobiles. */
-  .solitudes .sol-arrowhead.left.in { border-right: 0; border-left: 10px solid var(--bleu); animation: solNudgeR 2.2s ease-in-out infinite; }
-  .solitudes .sol-arrowhead.left.out { animation: solNudgeL 2.2s ease-in-out infinite; }
-  .solitudes .sol-arrowhead.right.in { border-left: 0; border-right: 10px solid var(--red); animation: solNudgeL 2.2s ease-in-out infinite; }
-  .solitudes .sol-arrowhead.right.out { animation: solNudgeR 2.2s ease-in-out infinite; }
-  @keyframes solNudgeL { 50% { transform: translate(-6px, -50%); } }
-  @keyframes solNudgeR { 50% { transform: translate(6px, -50%); } }
   .solitudes .sol-axis-tick { position: absolute; left: 50%; top: 50%; width: 1px; height: 11px; transform: translate(-50%, -50%); background: var(--rule); }
+  /* Légende classique du code couleur (#395/#399) : pastille carrée + mot,
+     même patron que .el-swatch/.el-item (légende des Enjeux saillants) —
+     cohérence de « look » entre modules pour un même rôle (clé de couleur). */
+  .solitudes .sol-legend { display: flex; justify-content: center; gap: 22px; margin: 0 0 10px; }
+  .solitudes .sol-legend .sl-item { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+  .solitudes .sol-legend .sl-swatch { width: 11px; height: 11px; flex-shrink: 0; }
+  .solitudes .sol-legend .sl-swatch.qc { background: var(--bleu); }
+  .solitudes .sol-legend .sl-swatch.can { background: var(--red); }
   .solitudes .sol-symbol {
     position: absolute;
     top: 50%;
@@ -1952,7 +1947,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker, .solitudes .sol-arrowhead { animation: none !important; }
+    .solitudes .radar-can, .solitudes .radar-qc, .solitudes .sol-stat, .solitudes .rel-strip .marker { animation: none !important; }
     /* Le pouls du bout de ligne (#383) s'arrête aussi — et l'anneau doit
        DISPARAÎTRE, pas se figer à sa première image : sans opacity: 0 il
        resterait un cercle statique de plus autour de chaque point. */

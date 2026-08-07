@@ -258,8 +258,9 @@ function rocScore(e: RawEvent): number {
   return e.score_roc ?? 0;
 }
 
-// Positions des symboles sur l'axe : collés au centre quand ça converge,
-// aux extrémités quand ça diverge. gap min 18 % pour ne pas les superposer.
+// Positions [GAUCHE, DROITE] des symboles sur l'axe : collés au centre
+// quand ça converge, aux extrémités quand ça diverge. gap min 18 % pour ne
+// pas les superposer.
 function symbolPositions(convPct: number): [number, number] {
   const div = 100 - convPct;
   const gap = 18 + 72 * Math.pow(div / 100, 1.4);
@@ -612,7 +613,15 @@ function buildSolitudes(
   // une position fausse. calConvFrom reste pour la calibration Module 2 « objet »
   // si on la ré-expose un jour ; la saillance (Module 1) passe par salThresholds.
   const mode = convMode(convPct);
-  const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
+  // Québec à DROITE, Canada à GAUCHE (#395, retour Shannon + Adrien) :
+  // inversé par rapport à l'intuition, mais aligné sur ce que le radar fait
+  // déjà STRUCTURELLEMENT plus bas dans cette même fonction. `picked` met
+  // toujours le top-3 québécois (par sumQc) avant le top-3 canadien (par
+  // sumRoc), et les axes se posent en partant du haut, sens horaire — donc
+  // les axes 0-2 (québécois) tombent en haut/à droite, et 3-5 (canadiens)
+  // en bas/à gauche. Le bandeau du haut disait jusqu'ici « Québec = gauche »,
+  // l'inverse de ce que montre le radar juste en dessous.
+  const [canSymbolPos, qcSymbolPos] = symbolPositions(convPct);
 
   // Histoires 24 h déjà agrégées + dédupliquées en amont (storiesFrom24h),
   // partagées avec la Une des Unes. Ici : sélection + rendu seulement.

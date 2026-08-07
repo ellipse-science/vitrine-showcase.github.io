@@ -191,21 +191,21 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
-  // Tendance vs l'habituel (#258) : pilote la direction et la pulsation des
-  // flèches de l'axe. Plus convergent que d'habitude = flèches vers le centre ;
-  // plus divergent = vers l'extérieur ; écart nul = immobiles.
-  const trend = s.convPct - s.habitualConvPct;
-  const trendCls = trend >= 1 ? " in" : trend <= -1 ? " out" : "";
 
   return (
     <div className="sol-body">
       {/* Axe fleur/érable : les symboles se rapprochent quand ça converge et
-          s'éloignent quand ça diverge — la distance encode la convergence. */}
+          s'éloignent quand ça diverge — la distance encode la convergence.
+          Sans flèches (#399, retour Martel) : elles donnaient à cette bande
+          l'air d'un axe reporté dans le radar plus bas, qui n'en a pourtant
+          aucun (ses axes sont des SUJETS, positionnés par ordre/saillance,
+          sans notion de gauche/droite régionale) — mais leur ORDRE, lui,
+          penche structurellement QC à droite / CAN à gauche (#395, voir
+          `symbolPositions` dans lib/data/headlineEvents.ts), d'où le sens
+          Québec=droite / Canada=gauche choisi ici pour matcher le radar. */}
       <div className="sol-viz">
         <div className="sol-axis" />
-        <span className={`sol-arrowhead left${trendCls}`} aria-hidden />
         <span className="sol-axis-tick" aria-hidden />
-        <span className={`sol-arrowhead right${trendCls}`} aria-hidden />
         <div className="sol-symbol qc" style={{ left: `${qp}%` }}>
           <span className="glyph fleur" aria-label="Québec"><Fleur /></span>
           <span className="caption">Québec</span>
