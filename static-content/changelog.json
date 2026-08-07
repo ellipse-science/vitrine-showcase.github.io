@@ -1,5 +1,17 @@
 [
   {
+    "pr": 361,
+    "date": "2026-08-07T20:30:27Z",
+    "note": "Le lien vers le site du Polimètre, au bas du module des promesses, affiche maintenant le logo du Polimètre et un libellé plus lisible.",
+    "version": "2.20.0-beta.2"
+  },
+  {
+    "pr": 365,
+    "date": "2026-08-07T20:29:23Z",
+    "note": "fix(polimetre) : sélectionner les snapshots par date, pas par position",
+    "version": null
+  },
+  {
     "pr": 407,
     "date": "2026-08-07T18:56:37Z",
     "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",

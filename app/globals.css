@@ -5825,17 +5825,25 @@
   .ppl-discover {
     border: 0.5px solid var(--rule);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
     color: var(--ink);
     text-decoration: none;
-    padding: 4px 11px;
+    padding: 7px 15px;
     background: var(--ink);
     color: var(--paper);
+    /* inline-flex : la marque du Polimètre s'aligne sur la casse du libellé
+       plutôt que sur sa ligne de base (le glyphe déborderait sous le bouton). */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-discover:hover { opacity: 0.85; }
+  /* La marque ne doit jamais rétrécir quand le libellé passe sur deux lignes
+     (cas mobile 375 px, où le bouton occupe toute la largeur). */
+  .ppl-discover__mark { flex-shrink: 0; }
 
   .ppl-trend {
     font-family: 'IBM Plex Mono', monospace;
@@ -5848,6 +5856,8 @@
   .ppl-trend--up   { color: var(--green); }
   .ppl-trend--down { color: var(--red); }
   .ppl-trend--flat { color: var(--ink-softer); }
+  /* Absence de comparaison : plus effacé que « flat », qui est un constat. */
+  .ppl-trend--unknown { color: var(--ink-softer); opacity: 0.55; }
 
   /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
      très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
@@ -6063,13 +6073,17 @@
        hauteur identique au bloc « depuis une semaine / un mois » en haut. */
     border: 0.5px solid transparent;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     font-weight: 500;
-    padding: 4px 22px;
+    padding: 7px 22px;
     cursor: pointer;
     transition: background 0.15s ease;
+    /* même alignement de la marque du Polimètre que .ppl-discover */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-website:hover { background: var(--cordovan); }
   .ppl-metho {
