@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
 
-const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline } = __test__;
+const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline, buildIssueMedia } = __test__;
 
 describe("latestIssueRow", () => {
   it("renvoie null sur une liste vide", () => {
@@ -131,7 +131,7 @@ describe("capitalizeObject", () => {
 });
 
 // ── Deux solitudes (radar, part d'attention 24h) ────────────────────────────
-const { pctile, rocScore, convMode, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
+const { pctile, rocScore, convMode, relScore, solitudesEdito, symbolPositions, buildSolitudes, storiesFrom24h, selectTopUnes, windowConvergence, windowEventConvergence, salThresholdsFrom, calConvFrom, SAL_QC_THRESHOLDS, blockKey, titleTokens, sameStory, CAL_CONV, buildSalienceTrend } = __test__;
 
 describe("windowEventConvergence (convergence au niveau HISTOIRE)", () => {
   it("moyenne des parts d'attention sur les histoires bilatérales (2 côtés)", () => {
@@ -363,6 +363,64 @@ const ev = (over: Record<string, unknown>) => ({
   media_ids: "[]", articles: "[]", interval_convergence_score: null,
   date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
   ...over,
+});
+
+describe("buildIssueMedia (actualités du treemap)", () => {
+  it("conserve les médias propres à chaque actualité et leurs liens", () => {
+    const rows = [
+      ev({
+        event_id: "alpha", target_region: "QC", main_issue: "economy_and_labour",
+        storyline_id: "story-alpha", title: "Actualité alpha", score_qc: 20,
+        representative_url: "https://ici.radio-canada.ca/alpha",
+        media_ids_24h: '["LAP","RCI","CTV"]',
+        articles_24h: JSON.stringify([
+          { media_id: "RCI", url: "https://ici.radio-canada.ca/alpha" },
+          { media_id: "LAP", url: "https://lapresse.ca/alpha" },
+          { media_id: "CTV", url: "https://ctvnews.ca/alpha" },
+        ]),
+      }),
+      ev({
+        event_id: "bravo", target_region: "QC", main_issue: "economy_and_labour",
+        storyline_id: "story-bravo", title: "Actualité bravo", score_qc: 10,
+        representative_url: "https://ledevoir.com/bravo",
+        media_ids_qc: '["LED"]',
+        articles: JSON.stringify([{ media_id: "LED", url: "https://ledevoir.com/bravo" }]),
+      }),
+    ];
+
+    const articles = buildIssueMedia(rows as never).get("economy_and_labour")!.articles;
+    expect(articles.map((article) => article.title)).toEqual(["Actualité alpha", "Actualité bravo"]);
+    expect(articles[0].outlets).toEqual([
+      { name: "La Presse", url: "https://lapresse.ca/alpha" },
+      { name: "Radio-Canada", url: "https://ici.radio-canada.ca/alpha" },
+    ]);
+    expect(articles[1].outlets).toEqual([
+      { name: "Le Devoir", url: "https://ledevoir.com/bravo" },
+    ]);
+  });
+
+  it("déduplique une storyline sans limiter le nombre d'actualités", () => {
+    const rows = Array.from({ length: 7 }, (_, index) => ev({
+      event_id: `event-${index}`,
+      target_region: "QC",
+      main_issue: "technology",
+      storyline_id: `story-${index}`,
+      title: `Actualité ${index}`,
+      score_qc: 20 - index,
+    }));
+    rows.push(ev({
+      event_id: "event-duplicate",
+      target_region: "QC",
+      main_issue: "technology",
+      storyline_id: "story-0",
+      title: "Ancienne formulation",
+      score_qc: 1,
+    }));
+
+    const articles = buildIssueMedia(rows as never).get("technology")!.articles;
+    expect(articles).toHaveLength(7);
+    expect(articles.some((article) => article.title === "Ancienne formulation")).toBe(false);
+  });
 });
 
 describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
@@ -974,8 +1032,14 @@ describe("buildSolitudes", () => {
     const s = sol([row], [row]);
     expect(s.convPct).toBe(80);
     expect(s.divPct).toBe(20);
-    expect(s.verb).toBe("convergence");
-    expect(s.scoreValue).toBe(80);
+    // La bulle du marqueur dit le niveau du moment en CONVERGENCE, la même
+    // grandeur que la position du marqueur sur la piste (`left: convPct%`).
+    // Ancré sur le DÉBUT de la phrase : un simple `toContain("80")` passait
+    // aussi si 80 n'apparaissait que dans « Habituel », sans rien garantir sur
+    // la valeur du moment — le défaut que ce test est censé verrouiller.
+    // L'espace avant % est insécable, comme dans toute l'interface.
+    expect(s.markerTitle).toMatch(/^Aujourd'hui : 80 % de convergence\./);
+    expect(s.markerTitle).toMatch(/Habituel : \d+ %\.$/);
   });
 
   it("repli 24h : sans indice publié, exclusivité pondérée des histoires (pas du bloc)", () => {
@@ -986,7 +1050,13 @@ describe("buildSolitudes", () => {
     ];
     const s = sol(rows, rows);
     expect(s.convPct).toBeLessThan(50);
-    expect(s.verb).toBe("divergence");
+    // Même une journée divergente se chiffre en convergence : c'est le défaut
+    // corrigé — le module basculait de vocabulaire selon le côté du milieu, et
+    // la bulle du marqueur annonçait une divergence là où le marqueur était
+    // posé à `convPct`. Un seul mot chiffré à l'écran, quel que soit le jour.
+    expect(s.markerTitle).toContain("de convergence");
+    expect(s.markerTitle).not.toContain("divergence");
+    expect(s.relInfo).not.toContain("divergence");
   });
 
   it("garde au plus 6 axes, la plus grosse histoire en tête", () => {
@@ -1014,5 +1084,41 @@ describe("buildSolitudes", () => {
     // La valeur publiée (event_convergence.p50) prime quand elle est là.
     const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
+  });
+});
+
+describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", () => {
+  it("écart + direction au libellé, intensité « un peu » dans la bulle", () => {
+    const r = relScore(35, 31, 16, 42);
+    expect(r.relDiffPct).toBe(4);
+    expect(r.relLabel).toBe("plus convergent que d'habitude");
+    expect(r.relInfo).toContain("consacrent 31 % de leur attention");
+    expect(r.relInfo).toContain("35 %, un peu plus que d'habitude");
+    expect(r.relCls).toBe("mode-convp");
+  });
+
+  it("« nettement » quand le moment sort de la bande p20-p80 (bulle seulement)", () => {
+    const haut = relScore(45, 31, 16, 42);
+    expect(haut.relLabel).toBe("plus convergent que d'habitude");
+    expect(haut.relInfo).toContain("nettement plus que d'habitude");
+    expect(haut.relCls).toBe("mode-con");
+    const bas = relScore(12, 31, 16, 42);
+    expect(bas.relLabel).toBe("plus divergent que d'habitude");
+    expect(bas.relInfo).toContain("nettement moins que d'habitude");
+    expect(bas.relCls).toBe("mode-div");
+  });
+
+  it("« un peu plus divergent » entre p20 et l'habituel", () => {
+    const r = relScore(24, 31, 16, 42);
+    expect(r.relDiffPct).toBe(7);
+    expect(r.relLabel).toBe("plus divergent que d'habitude");
+    expect(r.relInfo).toContain("un peu moins que d'habitude");
+  });
+
+  it("écart nul : « aussi convergent que d'habitude », « autant » dans la bulle", () => {
+    const r = relScore(31, 31, 16, 42);
+    expect(r.relDiffPct).toBe(0);
+    expect(r.relLabel).toBe("aussi convergent que d'habitude");
+    expect(r.relInfo).toContain("autant que d'habitude");
   });
 });

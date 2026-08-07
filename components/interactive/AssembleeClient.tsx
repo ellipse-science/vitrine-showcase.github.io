@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { AssembleeBilliard } from "@/components/interactive/AssembleeBilliard";
-import { AssembleeProfiles } from "@/components/interactive/AssembleeProfiles";
+import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Que dit-on à l&apos;Assemblée?</h2>
+          <h2 className="partis-title">L&apos;alignement de l&apos;Assemblée</h2>
           <div className="period-subtitle">
             {view.subtitle}
             <SourceTip />
@@ -63,7 +63,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Que dit-on à l'Assemblée nationale?" anchor="assemblee-nationale" />
+            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" />
           </div>
         </div>
       </div>
@@ -72,12 +72,12 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
         {playing ? (
           <>
             <button type="button" className="ass-back-btn" onClick={() => setPlaying(false)}>
-              ← Retour aux profils
+              ← Retour aux dossiers
             </button>
             <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
           </>
         ) : (
-          <AssembleeProfiles rows={visibleRows} shadowRows={shadowRows} />
+          <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
         )}
       </section>
       <div className="module-last-updated">

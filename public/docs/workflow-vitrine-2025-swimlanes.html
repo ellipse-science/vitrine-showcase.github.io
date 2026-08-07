@@ -462,7 +462,8 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 22 juillet 2026 (regroupement des événements par LLM et retrait du garde d'appartenance, aws-refiners#243 ; pipeline Polimètre+ ; badges de dépréciation aws-infra #428) • <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine (DEV)</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 2 août 2026 (audit complet contre le code des 3 repos : chaîne de publication réelle, horaires resynchronisés sur <code>refiners.ts</code>, renommage <code>score_v2_*</code> → <code>salient_shadow_*</code>, couloir Agora décideurs QC ajouté) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds « Refiner » <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit : <strong>DEV</strong>, le seul en service.</p>
 
         <div class="controls">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
@@ -475,6 +476,7 @@
             <button class="btn" data-filter="events">Event Salience</button>
             <button class="btn" data-filter="hot20">Hot 20</button>
             <button class="btn" data-filter="sonar">SONAR</button>
+            <button class="btn" data-filter="agora">Agora décideurs</button>
             <button class="btn" data-filter="polimetre">Polimètre+</button>
             <button class="btn" data-filter="vitrine">Publication</button>
         </div>
@@ -522,7 +524,7 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="articles-segmented">
+                <div class="node node-refiner" data-type="refiner" data-refiner="articles-segmented" data-ecr="radar-data-preparation" data-active="true" data-cron="19:06,23:06,03:06,07:06,11:06,15:06">
                     radar-data-preparation.R
                     <div class="node-detail">Segmentation + annotation</div>
                     <div class="node-schedule">⏰ 19:06, 23:06, 03:06, 07:06, 11:06, 15:06</div>
@@ -535,7 +537,7 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="radar-object-extraction">
+                <div class="node node-refiner" data-type="refiner" data-refiner="radar-object-extraction" data-ecr="radar-object-extraction" data-active="true" data-cron="19:24,23:24,03:24,07:24,11:24,15:24">
                     radar-object-extraction.R
                     <div class="node-detail">NER + normalisation</div>
                     <div class="node-schedule">⏰ 19:24, 23:24, 03:24, 07:24, 11:24, 15:24</div>
@@ -555,7 +557,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🔵 Salient Index (Indices de Saillance)</span>
-                <span class="frequency">6x/jour: 19:20, 23:20, 03:20, 07:20, 11:20, 15:20 (heure du Québec)</span>
+                <span class="frequency">6x/jour — radar-salient-objects: 19:16, 23:16, 03:16, 07:16, 11:16, 15:16 • radar-salient-index: 19:42, 23:42, 03:42, 07:42, 11:42, 15:42 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -564,9 +566,10 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="salient-objects">
+                <div class="node node-refiner" data-type="refiner" data-refiner="salient-objects" data-ecr="radar-salient-objects" data-active="true" data-cron="19:16,23:16,03:16,07:16,11:16,15:16">
                     radar-salient-objects.R
                     <div class="node-detail">Extraction objets saillants</div>
+                    <div class="node-schedule">⏰ 19:16, 23:16, 03:16, 07:16, 11:16, 15:16</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -576,9 +579,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="salient-index">
+                <div class="node node-refiner" data-type="refiner" data-refiner="salient-index" data-ecr="radar-salient-index" data-active="true" data-cron="19:42,23:42,03:42,07:42,11:42,15:42">
                     radar-salient-index.R
                     <div class="node-detail">Calcul indices</div>
+                    <div class="node-schedule">⏰ 19:42, 23:42, 03:42, 07:42, 11:42, 15:42</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -595,7 +599,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📊 Issues Score (Scores par Enjeu)</span>
-                <span class="frequency">Quotidien: 07:09, 11:09, 15:09 • Hebdo: 15:11 • Mensuel: 15:14 (heure du Québec)</span>
+                <span class="frequency">Quotidien: 6x/jour 19:36, 23:36, 03:36, 07:36, 11:36, 15:36 • Hebdo: 19:35 • Mensuel: 19:39 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -606,11 +610,11 @@
                 <div class="arrow">+</div>
                 <div class="node node-dict" data-type="dict" data-dict="issues">
                     dict-issues-two-categories ⛔
-                    <div class="node-detail">À SUPPRIMER (suppression débloquée par aws-infra #428, pas encore faite — remplacé par dict-issues-capp-cap-lexicoder)</div>
+                    <div class="node-detail">DÉBRANCHÉ (active:false, aws-infra #462, 2026-07-27) — entrée conservée au catalogue, suppression pas encore faite ; remplacé par dict-issues-capp-cap-lexicoder</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="headlines-issues">
+                <div class="node node-refiner" data-type="refiner" data-refiner="headlines-issues" data-ecr="radar-headlines-issues" data-active="false" data-cron="">
                     radar-headlines-issues.R ⛔
                     <div class="node-detail">DÉPRÉCIÉ (active:false, aws-infra #428) — n'alimente plus le site</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
@@ -622,10 +626,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="issues-score">
+                <div class="node node-refiner" data-type="refiner" data-refiner="issues-score" data-ecr="radar-issues-score" data-active="true" data-cron="19:36,23:36,03:36,07:36,11:36,15:36,19:35,19:39">
                     radar-issues-score.R
                     <div class="node-detail">✅ VIVANT — lit radar_annotated (PAS headlines_issues)</div>
-                    <div class="node-schedule">⏰ 07:09, 11:09, 15:09</div>
+                    <div class="node-schedule">⏰ 19:36, 23:36, 03:36, 07:36, 11:36, 15:36 • hebdo 19:35 • mensuel 19:39</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -640,8 +644,8 @@
         <div class="pipeline pipeline-parties" data-pipeline="parties">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>🏛️ Party Scores v2 (Standardisation & Calendrier)</span>
-                <span class="frequency">6x/jour (après radar-data-preparation)</span>
+                <span>🏛️ Party Scores — miroir saillance (salient shadow)</span>
+                <span class="frequency">Quotidien: 6x/jour 19:31, 23:31, 03:31, 07:31, 11:31, 15:31 • Hebdo: 19:35 • Mensuel: 19:39 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="radar_annotated" data-env-source="DEV">
@@ -650,15 +654,16 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="party-score-v2">
-                    radar-party-score-v2.R
-                    <div class="node-detail">Unifié: IA + SOV</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="party-score-salient-shadow" data-ecr="radar-party-score-salient-shadow" data-active="true" data-cron="19:31,23:31,03:31,07:31,11:31,15:31,19:35,19:39">
+                    radar-party-score-salient-shadow.R
+                    <div class="node-detail">Recalibrage IA + part de voix</div>
+                    <div class="node-schedule">⏰ 19:31, 23:31, 03:31, 07:31, 11:31, 15:31 • hebdo 19:35 • mensuel 19:39</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-table" data-type="table" data-table="parties_score_v2" data-env-output="DEV">
-                    federal_parties_score_v2_*<br>provincial_parties_score_v2_*
-                    <div class="node-detail">SOV % + Minutes + Variation</div>
+                <div class="node node-table" data-type="table" data-table="parties_salient_shadow" data-env-output="DEV">
+                    federal_parties_salient_shadow_*<br>provincial_parties_salient_shadow_*
+                    <div class="node-detail">Anciennement <code>*_score_v2_*</code> — seules les <strong>provinciales</strong> sont consommées par la Vitrine</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
             </div>
@@ -669,7 +674,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🏛️ Party Scores legacy (Pertinence + Ton)</span>
-                <span class="frequency">Quotidien/Hebdo/Mensuel (pipeline historique maintenu)</span>
+                <span class="frequency">Quotidien: 6x/jour 19:46, 23:46, 03:46, 07:46, 11:46, 15:46 • Hebdo: 19:35 • Mensuel: 19:39 (heure du Québec) — pipeline historique, toujours actif</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_index" data-env-source="DEV">
@@ -696,15 +701,16 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="party-score-legacy">
+                <div class="node node-refiner" data-type="refiner" data-refiner="party-score-legacy" data-ecr="radar-party-score" data-active="true" data-cron="19:46,23:46,03:46,07:46,11:46,15:46,19:35,19:39">
                     radar-party-score.R
                     <div class="node-detail">Scores legacy (pondérés)</div>
+                    <div class="node-schedule">⏰ 19:46, 23:46, 03:46, 07:46, 11:46, 15:46 • hebdo 19:35 • mensuel 19:39</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="parties_score_legacy" data-env-output="DEV">
                     federal_parties_score_*<br>provincial_parties_score_*
-                    <div class="node-detail">Legacy (sans suffixe _v2_)</div>
+                    <div class="node-detail">Consommées par la Vitrine sauf <code>federal_parties_score_day</code> (désactivée dans <code>scripts/tables.json</code>)</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
             </div>
@@ -715,7 +721,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>💭 Reflet (Synthèses LLM par Enjeu) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16)</span>
-                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — Quotidien: 07:25, 11:25, 15:25 • Hebdo: 15:28 • Mensuel: 15:30 (heure du Québec)</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — Quotidien: 11:46, 15:46, 19:46 • Hebdo: 19:37 • Mensuel: 19:40 (heure du Québec)</span>
             </div>
             <div class="pipeline-content" style="display: grid; grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto; gap: 15px; align-items: center;">
                 <!-- Ligne 1: Quotidien/Hebdo -->
@@ -729,9 +735,9 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="reflet-daily-weekly">
-                    radar-reflet-daily-weekly.R
-                    <div class="node-schedule">⏰ 07:25, 11:25, 15:25</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="reflet-daily-weekly" data-ecr="radar-reflet-daily-weekly" data-active="false" data-cron="">
+                    radar-reflet-daily-weekly.R ⛔
+                    <div class="node-schedule">⛔ historique : 11:46, 15:46, 19:46 • hebdo 19:37</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -752,9 +758,9 @@
                 </div>
 
                 <!-- Ligne 2: Mensuel - utilise grid-column pour alignement exact -->
-                <div class="node node-refiner" data-type="refiner" data-refiner="reflet-monthly" style="grid-column: 7; margin-top: 40px;">
-                    radar-reflet-monthly.R
-                    <div class="node-schedule">⏰ 15:30</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="reflet-monthly" data-ecr="radar-reflet-monthly" data-active="false" data-cron="" style="grid-column: 7; margin-top: 40px;">
+                    radar-reflet-monthly.R ⛔
+                    <div class="node-schedule">⛔ historique : 19:40</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow" style="grid-column: 8; margin-top: 40px;">→</div>
@@ -770,7 +776,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📰 Headline of Headlines (Une des Unes) &nbsp;⛔ DÉPRÉCIÉ (active:false, aws-infra #428, 2026-07-16) — la Une vient de radar-event-salience</span>
-                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — 6x/jour: 19:28, 23:28, 03:28, 07:28, 11:28, 15:28 (heure du Québec)</span>
+                <span class="frequency">⛔ Horaire historique (raffineur déprécié) — 6x/jour: 19:46, 23:46, 03:46, 07:46, 11:46, 15:46 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -779,10 +785,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="headline-of-headlines">
-                    radar-headline-of-headlines.R
+                <div class="node node-refiner" data-type="refiner" data-refiner="headline-of-headlines" data-ecr="radar-headline-of-headlines" data-active="false" data-cron="">
+                    radar-headline-of-headlines.R ⛔
                     <div class="node-detail">Synthèse LLM</div>
-                    <div class="node-schedule">⏰ 19:28, 23:28, 03:28, 07:28, 11:28, 15:28</div>
+                    <div class="node-schedule">⛔ historique : 19:46, 23:46, 03:46, 07:46, 11:46, 15:46</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -799,7 +805,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🎯 Event Salience (Événements 4h par pays)</span>
-                <span class="frequency">6x/jour: à coordonner (~10 min après radar-salient-index)</span>
+                <span class="frequency">6x/jour: 19:51, 23:51, 03:51, 07:51, 11:51, 15:51 (heure du Québec) — 9 min après radar-salient-index</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -814,16 +820,16 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="event-salience">
+                <div class="node node-refiner" data-type="refiner" data-refiner="event-salience" data-ecr="radar-event-salience" data-active="true" data-cron="19:51,23:51,03:51,07:51,11:51,15:51">
                     radar-event-salience.R
                     <div class="node-detail">Clustering BFS + scoring</div>
-                    <div class="node-schedule">⏰ à confirmer</div>
+                    <div class="node-schedule">⏰ 19:51, 23:51, 03:51, 07:51, 11:51, 15:51</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="headline_events_4h" data-env-output="DEV">
                     headline_events_4h
-                    <div class="node-detail">Événements clusterisés (min 3 par bloc/pays)</div>
+                    <div class="node-detail">Événements clusterisés (min 3 par bloc/pays) — alimente <strong>Une des Unes</strong> ET <strong>Deux solitudes</strong></div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
             </div>
@@ -834,7 +840,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🔥 RADAR+ Hot 20 (TOP 20 Hebdomadaire)</span>
-                <span class="frequency">Vendredis: 11:30 (heure du Québec)</span>
+                <span class="frequency">Vendredis: 12:00 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -843,9 +849,9 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="hot20">
+                <div class="node node-refiner" data-type="refiner" data-refiner="hot20" data-ecr="radar-hot-20" data-active="true" data-cron="FRI 12:00">
                     radar-hot-20.R
-                    <div class="node-schedule">⏰ Ven 11:30</div>
+                    <div class="node-schedule">⏰ Ven 12:00</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -873,7 +879,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📡 SONAR Heatmaps (Monitoring Qualité)</span>
-                <span class="frequency">Mercredis: 07:30 (heure du Québec)</span>
+                <span class="frequency">sonar: quotidien 07:00 • sonar-heatmaps: mercredis 07:30 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-frontpages" data-env-source="PROD">
@@ -888,9 +894,10 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="sonar">
+                <div class="node node-refiner" data-type="refiner" data-refiner="sonar" data-ecr="sonar" data-active="true" data-cron="07:00">
                     sonar.R
                     <div class="node-detail">Extrait données SONAR</div>
+                    <div class="node-schedule">⏰ 07:00 (quotidien)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -900,7 +907,7 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-heatmaps">
+                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-heatmaps" data-ecr="sonar-heatmaps" data-active="true" data-cron="WED 07:30">
                     sonar-heatmaps.R
                     <div class="node-schedule">⏰ Mer 07:30</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
@@ -923,8 +930,8 @@
         <div class="pipeline pipeline-sonar" data-pipeline="sonar">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>🏛️ AGORA SONAR (Monitoring Qualité Parlementaire)</span>
-                <span class="frequency">Quotidien: qualité Agora • Hebdo: heatmaps (heure du Québec)</span>
+                <span>🏛️ AGORA SONAR (Monitoring Qualité Parlementaire) &nbsp;⚠️ JAMAIS PLANIFIÉ</span>
+                <span class="frequency">⚠️ Le code des deux raffineurs existe dans aws-refiners, mais aucune entrée ne leur correspond dans <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> — ce pipeline <strong>ne tourne pas</strong>, ni en DEV ni en PROD (audité le 2026-08-02)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="agora-tables" data-env-source="PROD">
@@ -933,9 +940,9 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar">
-                    agora-sonar.R
-                    <div class="node-detail">Freshness + complétude</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar" data-ecr="agora-sonar" data-active="unscheduled" data-cron="">
+                    agora-sonar.R ⚠️
+                    <div class="node-detail">Freshness + complétude — aucun horaire déployé</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -945,9 +952,9 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar-heatmaps">
-                    agora-sonar-heatmaps.R
-                    <div class="node-detail">4 heatmaps qualité</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar-heatmaps" data-ecr="agora-sonar-heatmaps" data-active="unscheduled" data-cron="">
+                    agora-sonar-heatmaps.R ⚠️
+                    <div class="node-detail">4 heatmaps qualité — aucun horaire déployé</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -960,6 +967,48 @@
                 <div class="node node-output" data-type="output" data-output="slack-agora-sonar">
                     Slack: agora-sonar
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AGORA DÉCIDEURS QC -->
+        <div class="pipeline pipeline-agora" data-pipeline="agora">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🗣️ Agora décideurs QC (Parole en chambre)</span>
+                <span class="frequency">Mardis: agora-decideurs-qc-phrases 05:00 • agora-decideurs-qc 06:00 (heure du Québec) — après l'extracteur qc-parliament-debates du lundi 22:00</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="a-qc-parliament-debates" data-env-source="PROD">
+                    a-qc-parliament-debates
+                    <div class="node-detail">Interventions au Salon bleu</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="agora-decideurs-qc-phrases" data-ecr="agora-decideurs-qc-phrases" data-active="true" data-cron="TUE 05:00">
+                    agora-decideurs-qc-phrases.R
+                    <div class="node-detail">Segmentation + annotation (INFER API)</div>
+                    <div class="node-schedule">⏰ Mar 05:00</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="agora_decideurs_qc_phrases" data-env-output="DEV">
+                    agora_decideurs_qc_phrases
+                    <div class="node-detail">Datamart : agora_datamart</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="agora-decideurs-qc" data-ecr="agora-decideurs-qc" data-active="true" data-cron="TUE 06:00">
+                    agora-decideurs-qc.R
+                    <div class="node-detail">Agrégation parti + député</div>
+                    <div class="node-schedule">⏰ Mar 06:00</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="agora_decideurs_qc" data-env-output="DEV">
+                    agora_decideurs_qc<br>agora_decideurs_qc_deputes
+                    <div class="node-detail">Consommées par le module Assemblée</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
             </div>
         </div>
@@ -978,7 +1027,7 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus">
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="12:30">
                     polimetre-plus.R
                     <div class="node-detail">Identification regex des promesses + saillance/progression hebdo ; enrichissement LLM best-effort (Gemma 3 : libellés courts + résumés)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
@@ -996,33 +1045,46 @@
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>📤 Publication Vitrine (JSON vers S3 Frontend)</span>
-                <span class="frequency">5x/jour: 23:39, 03:39, 07:39, 11:39, 15:39 (heure du Québec)</span>
+                <span>📤 Publication Vitrine (Athena → JSON statiques → GitHub Pages)</span>
+                <span class="frequency">6x/jour: 20:00, 00:00, 04:00, 08:00, 12:00, 16:00 (heure du Québec) — workflow <code>refresh-data.yml</code>, déclenché par cron-job.org (hors dépôt)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
-                    Toutes les tables finales
-                    <div class="node-detail">issues_score_*, parties_score_*, parties_score_v2_*, reflet_*, headline_of_headlines</div>
+                    15 tables du datamart
+                    <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes</div>
                     <div class="info-badge">📋 Cliquer pour liste complète</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-graph-data">
-                    vitrine-graph-data.R
-                    <div class="node-schedule">⏰ 5x/jour +36min</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="fetch-data">
+                    scripts/fetch_data.R
+                    <div class="node-detail">Requêtes Athena + projection par colonnes</div>
+                    <div class="node-schedule">⏰ 6x/jour (GitHub Actions)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output" data-type="output" data-output="json-files">
-                    Jusqu'à 19 fichiers JSON
-                    <div class="node-detail">Publiés sur S3</div>
+                    public/data/*.json
+                    <div class="node-detail">Commités sur <code>main</code> par github-actions[bot]</div>
                     <div class="info-badge">📄 Cliquer pour liste des fichiers</div>
                 </div>
                 <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="enrichissements-vitrine">
+                    select_hero · generate_art · generate_music
+                    <div class="node-detail">Best-effort, non bloquants</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
                 <div class="node node-output" style="min-width: 200px;" data-type="output" data-output="frontend-vitrine">
-                    Frontend Vitrine
-                    <div class="node-detail">Site web public vitrine démocratique</div>
+                    Site Vitrine (Next.js statique)
+                    <div class="node-detail">ellipse.science/vitrine-showcase.github.io</div>
                     <div class="info-badge">🌐 Cliquer pour ouvrir site</div>
                 </div>
+            </div>
+            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #E74C3C;background:rgba(231,76,60,.07);font-size:.9em;line-height:1.5">
+                ⛔ <strong>Ancienne chaîne, débranchée le 2026-07-16</strong> (<a href="https://github.com/ellipse-science/aws-infra/pull/429">aws-infra#429</a>) : le raffineur
+                <code>vitrine-graph-data</code> (<code>active:false</code>) publiait jusqu'à 19 fichiers JSON dans un bucket S3 legacy servi par
+                <code>dev.vitrinedemocratique.com</code> — un placeholder jamais mis en service. Le site n'a jamais lu ce bucket. Bucket, distribution CloudFront
+                et domaine sont <strong>conservés</strong> en vue d'un futur environnement DEV protégé.
             </div>
         </div>
 
@@ -1285,24 +1347,29 @@
                         'headlines_issues_month - Format mensuel'
                     ]
                 },
-                'parties_score_v2': {
-                    title: 'Tables: *_parties_score_* (v2)',
-                    description: 'Scores standardisés Share of Voice (SOV) avec reset calendrier (validé v2).',
+                'parties_salient_shadow': {
+                    title: 'Tables: *_parties_salient_shadow_*',
+                    description: 'Part de voix (SOV) recalculée depuis radar_annotated avec seuils par parti et reset calendrier. Anciennement *_parties_score_v2_* — renommées par aws-refiners (voir le README du raffineur).',
                     columns: [
-                        'party - Code parti (BQ, CAQ, CPC, GPC, LPC, NDP, PCQ, PLQ, PPC, PQ, QS)',
-                        'weighted_mentions - Share of Voice (0.0 à 1.0). Somme = 100% du jour/semaine/mois.',
+                        'party - Code parti (BQ, CAQ, CPC, GPC, LPC, NDP, PCQ, PLQ, PQ, QS)',
+                        'weighted_mentions - Part de voix (0.0 à 1.0). Somme = 100 % du jour/semaine/mois.',
                         'total_raw_score - Volume brut en minutes cumulées depuis le reset.',
                         'weighted_tone - Ton moyen numérique (-1.0 à +1.0).',
-                        'variation_pct - % de changement du SOV vs période précédente.',
+                        'variation_pct - % de changement de la part de voix vs période précédente.',
                         'date_utc / date_montreal_tz - Horodatages de fin de calcul.',
                         'period_start / period_end - Fenêtre exacte de l\'accumulation.',
-                        'threshold - Seuil d\'éclipse (0.02).',
-                        'pass - am/noon/pm (uniquement pour quotidien).'
+                        'computed_at - Horodatage UTC du calcul (sert à dédupliquer).',
+                        'threshold - Seuil d\'éclipse (0.02).'
+                    ],
+                    details: [
+                        '📋 6 tables publiées : federal_ et provincial_ × day / week / month',
+                        '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
+                        '🌐 Consommées par la Vitrine : <strong>uniquement les 3 provinciales</strong> (provincial_parties_salient_shadow_day/week/month → components/interactive/PartisCouvertureClient.tsx). Les 3 fédérales sont produites mais non lues.'
                     ]
                 },
                 'parties_score_legacy': {
                     title: 'Tables: *_parties_score_* (legacy)',
-                    description: 'Tables historiques calculées par radar-party-score.R (sans suffixe _v2_).',
+                    description: 'Tables calculées par radar-party-score.R, le pipeline historique — toujours actif et consommé par la Vitrine.',
                     columns: [
                         'party - Code parti (lpc, cpc, ndp, bq, gpc, ppc, caq, pq, plq, qs, pcq)',
                         'weighted_mentions - Score de pertinence pondéré',
@@ -1534,17 +1601,59 @@
                         '⚠️ Utilisée par agora-sonar-heatmaps.R (fenêtre 14 jours)'
                     ]
                 },
-                'all-final-tables': {
-                    title: 'Entrée: Toutes les tables finales',
-                    description: 'Nœud agrégé listant les tables consommées par vitrine-graph-data.R avant publication JSON.',
+                'agora_decideurs_qc_phrases': {
+                    title: 'Table: agora_decideurs_qc_phrases',
+                    description: 'Interventions du Salon bleu segmentées en phrases et annotées (thèmes CAP + sentiment via INFER API). Table de travail intermédiaire, non consommée par la Vitrine.',
                     columns: [
-                        'issues_score_*',
-                        'federal_parties_score_*',
-                        'provincial_parties_score_*',
-                        'federal_parties_score_v2_*',
-                        'provincial_parties_score_v2_*',
-                        'reflet_*',
-                        'headline_of_headlines'
+                        'Une ligne par phrase d\'intervention parlementaire',
+                        'Identifiants d\'intervention + date de séance',
+                        'Orateur et parti',
+                        'Thèmes CAP annotés (INFER API — modèle « CAP themes »)',
+                        'Sentiment annoté (INFER API — modèle « sentiment »)'
+                    ],
+                    details: [
+                        '📊 Datamart cible : agora_datamart',
+                        '🔄 Traitement incrémental : reprend à la prochaine date de séance non traitée',
+                        '⚠️ Lue par agora-decideurs-qc.R uniquement'
+                    ]
+                },
+                'agora_decideurs_qc': {
+                    title: 'Tables: agora_decideurs_qc + agora_decideurs_qc_deputes',
+                    description: 'Agrégats de la parole en chambre, par parti et par député. Ce sont les deux seules tables agora_datamart consommées par la Vitrine (module Assemblée).',
+                    columns: [
+                        'period_type / period_start_date / period_end_date - Fenêtre agrégée',
+                        'party - Parti (les deux tables) ; deputy - Député (table _deputes uniquement)',
+                        'n_interventions - Nombre d\'interventions',
+                        'word_count - Volume de parole',
+                        'lexical_richness - Richesse lexicale',
+                        'tone_score - Ton moyen',
+                        '12 colonnes d\'enjeux CAP (economy_and_labour, immigration, education, …)',
+                        'signature_word / signature_word_context - Mot signature et son contexte',
+                        'editorial_angle - Angle éditorial (table par parti uniquement, généré par LLM)'
+                    ],
+                    details: [
+                        '📊 Datamart cible : agora_datamart',
+                        '🌐 Consommées par lib/data/assemblee.ts + components/sections/AssembleeSection.tsx',
+                        '⚠️ État au 2026-08-02 : les deux tables sont <strong>en erreur au rafraîchissement</strong> du site (« Character encoding must be UTF-8, Latin-1 or bytes ») — le module affiche les fichiers du dernier passage réussi.'
+                    ]
+                },
+                'all-final-tables': {
+                    title: 'Entrée : les 15 tables que la Vitrine consomme',
+                    description: 'Liste blanche tenue dans scripts/tables.json (dépôt vitrine). Elle fixe les tables ET les colonnes projetées : ce qui n\'y est pas n\'est jamais lu. Audit du 2026-08-02.',
+                    columns: [
+                        'vitrine_datamart-issues_score_day / _week / _month',
+                        'vitrine_datamart-provincial_parties_score_day / _week / _month',
+                        'vitrine_datamart-federal_parties_score_week / _month',
+                        'vitrine_datamart-provincial_parties_salient_shadow_day / _week / _month',
+                        'vitrine_datamart-headline_events_4h',
+                        'vitrine_datamart-polimetre_plus',
+                        'agora_datamart-agora_decideurs_qc',
+                        'agora_datamart-agora_decideurs_qc_deputes'
+                    ],
+                    details: [
+                        '⛔ Désactivées dans la liste blanche (produites, jamais lues) : federal_parties_score_day, reflet_day/week/month, headline_of_headlines',
+                        '⛔ Non consommées non plus : federal_parties_salient_shadow_*, headlines_issues_*, hot_20_headlines, data_quality_14_days, agora_sonar_daily',
+                        '🔒 La projection par colonnes est une protection : elle a mis le module Polimètre+ à l\'abri d\'une dérive de type INT32/double sur rank_current, rank_delta et n_mentions (2026-07-29).'
                     ]
                 }
             },
@@ -1556,7 +1665,9 @@
                         '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation »)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
                         '',
-                        '⚙️ TRAITEMENT (hebdomadaire, semaine glissante):',
+                        '⏰ HORAIRE: quotidien 12:30 (heure du Québec) — l\'analyse porte sur une semaine glissante',
+                        '',
+                        '⚙️ TRAITEMENT (quotidien, sur une semaine glissante):',
                         '• Identification : appariement article ↔ promesse par expressions régulières validées (une par promesse) — 100 % à base de règles',
                         '• Saillance : n_mentions × somme du temps en Une pondéré inter-médias (même pondération que l\'indice de saillance)',
                         '• Progression : delta_index = salience_index − saillance de la semaine précédente',
@@ -1568,7 +1679,8 @@
                         '• Plafond optionnel SUMMARY_TOP_N (défaut : toutes les promesses)',
                         '',
                         '🎯 UTILITÉ: suivi médiatique des promesses électorales de la CAQ (module Polimètre+)',
-                        '→ Publie polimetre_plus, lue par le frontend de la Vitrine'
+                        '→ Publie polimetre_plus, lue par lib/data/polimetre.ts',
+                        '📌 Le site ne projette PAS rank_current, rank_delta ni n_mentions : le raffineur les produit en entiers (INT32) alors que le catalogue Glue les déclare en double, ce qui bloque toute lecture Athena qui les inclut. Les rangs sont recalculés côté site.'
                     ]
                 },
                 'articles-segmented': {
@@ -1766,12 +1878,12 @@
                         '🔗 Utilisé par: vitrine-graph-data pour frontend'
                     ]
                 },
-                'party-score-v2': {
-                    title: 'Refiner: radar-party-score-v2.R',
-                    description: 'Calcule les Party Scores v2 avec reset calendrier (jour/semaine/mois), Share of Voice, ton moyen pondéré et variation vs période précédente.',
+                'party-score-salient-shadow': {
+                    title: 'Refiner: radar-party-score-salient-shadow.R',
+                    description: 'Calcule la part de voix des partis avec reset calendrier (jour/semaine/mois), ton moyen pondéré et variation vs période précédente. Anciennement appelé « Party Scores v2 » — le raffineur ET ses tables ont été renommés.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table radar_annotated',
-                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Tables federal_parties_score_v2_* et provincial_parties_score_v2_*',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Tables federal_parties_salient_shadow_* et provincial_parties_salient_shadow_*',
                         '',
                         '⚙️ LOGIQUE DE RESET (America/Montreal):',
                         '• Day: reset à 00:00 Montréal',
@@ -1786,25 +1898,25 @@
                         '• Assure la présence de tous les partis (codes fixes) même à 0',
                         '',
                         '📋 OUTPUTS:',
-                        '• 6 tables: federal/provincial × day/week/month (suffixe _v2_)',
-                        '• Colonnes clés: party, weighted_mentions, weighted_tone, total_raw_score, variation_pct, threshold',
-                        '• Colonne pass (am/noon/pm) uniquement pour le quotidien',
+                        '• 6 tables: federal/provincial × day/week/month (suffixe _salient_shadow_)',
+                        '• Colonnes clés: party, weighted_mentions, weighted_tone, total_raw_score, variation_pct, computed_at, threshold',
+                        '• Fenêtre glissante conservée : 35 jours',
                         '',
-                        '⏰ HORAIRES:',
-                        '• QUOTIDIEN: 07:18, 11:18, 15:18 (pass=am/noon/pm)',
-                        '• HEBDO: 15:20',
-                        '• MENSUEL: 15:22 (heure du Québec)',
+                        '⏰ HORAIRES (heure du Québec):',
+                        '• QUOTIDIEN: 19:31, 23:31, 03:31, 07:31, 11:31, 15:31',
+                        '• HEBDO: 19:35',
+                        '• MENSUEL: 19:39',
                         '',
                         '💾 MÉMOIRE: 10 GB (tous)',
                         '⏳ TIMEOUT: 15 minutes (tous)',
                         '',
                         '🔗 DÉPENDANCES: nécessite radar_annotated généré par radar-data-preparation',
-                        '🔗 Utilisé par: vitrine-graph-data, dashboard politique'
+                        '🌐 Consommé par la Vitrine : les 3 tables PROVINCIALES seulement (components/interactive/PartisCouvertureClient.tsx). Les fédérales sont produites et non lues.'
                     ]
                 },
                 'party-score-legacy': {
                     title: 'Refiner: radar-party-score.R (legacy)',
-                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle.',
+                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle. Toujours actif — c\'est lui qui alimente le module Partis de la Vitrine.',
                     details: [
                         '📥 SOURCES:',
                         '• <span class="badge-dev">DEV</span>/datamarts - Table vitrine_datamart-salient_index',
@@ -1819,7 +1931,12 @@
                         '• Pondération temporelle quotidien/hebdo/mensuel',
                         '• Split fédéral/provincial + publication tables legacy',
                         '',
-                        '📌 Statut: pipeline legacy maintenu en parallèle de la v2'
+                        '⏰ HORAIRES (heure du Québec):',
+                        '• QUOTIDIEN: 19:46, 23:46, 03:46, 07:46, 11:46, 15:46',
+                        '• HEBDO: 19:35 • MENSUEL: 19:39',
+                        '',
+                        '📌 Statut: actif, maintenu en parallèle du miroir saillance (salient shadow)',
+                        '🌐 Consommé par la Vitrine : provincial_parties_score_day/week/month + federal_parties_score_week/month. federal_parties_score_day est désactivée dans scripts/tables.json.'
                     ]
                 },
                 'reflet-daily-weekly': {
@@ -1898,13 +2015,13 @@
                         '📋 OUTPUT:',
                         '• headline_of_headlines - Une synthétisée par bloc 4h',
                         '',
-                        '⏰ HORAIRES (6x/jour):',
-                        '• 19:28 • 23:28 • 03:28',
-                        '• 07:28 • 11:28 • 15:28 (heure du Québec)',
+                        '⛔ HORAIRE HISTORIQUE (le raffineur ne tourne plus depuis le 2026-07-16) — 6x/jour :',
+                        '• 19:46 • 23:46 • 03:46 • 07:46 • 11:46 • 15:46 (heure du Québec)',
                         '',
-                        '⏱️ TIMING: +8min après salient-index',
                         '💾 MÉMOIRE: 10 GB',
-                        '⏳ TIMEOUT: 15 minutes'
+                        '⏳ TIMEOUT: 15 minutes',
+                        '',
+                        '📌 headline_of_headlines est aussi désactivée dans scripts/tables.json : le site ne la lit plus.'
                     ]
                 },
                 'event-salience': {
@@ -1942,9 +2059,11 @@
                         '',
                         '📋 OUTPUT: headline_events_4h - 63 colonnes (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag), ~270 lignes/jour',
                         '',
-                        '⏰ HORAIRES: à confirmer (~10 min après radar-salient-index)',
+                        '⏰ HORAIRES: 19:51, 23:51, 03:51, 07:51, 11:51, 15:51 (heure du Québec) — 9 min après radar-salient-index',
                         '',
-                        '🤝 COEXISTENCE: radar-headline-of-headlines reste actif en parallèle jusqu\'à débranchement par le frontend',
+                        '🌐 CONSOMMATION: headline_events_4h alimente DEUX modules du site — « Une des Unes » (UneDesUnesSection) et « Deux solitudes » (DeuxSolitudesSection, via coverage_qc_in_can / coverage_can_in_qc / interval_convergence_score / top_objects_divergence)',
+                        '',
+                        '📌 radar-headline-of-headlines est DÉPRÉCIÉ (active:false depuis le 2026-07-16) : plus de coexistence, la Une vient de ce raffineur seul',
                         '',
                         '📝 NOTE: Quand radar-salient-index migrera vers headlines_objects_extracted (GLiNER+Gemma3), ce raffineur pourra être enrichi avec key_entities + sentence_analysis pour un clustering plus précis.'
                     ]
@@ -2036,10 +2155,11 @@
                     ]
                 },
                 'agora-sonar': {
-                    title: 'Refiner: agora-sonar.R',
-                    description: 'Calcule les métriques de qualité et fraîcheur des tables parlementaires Agora puis publie agora_sonar_daily.',
+                    title: 'Refiner: agora-sonar.R ⚠️ JAMAIS PLANIFIÉ',
+                    description: 'Calcule les métriques de qualité et fraîcheur des tables parlementaires Agora puis publie agora_sonar_daily. ATTENTION : le code existe dans aws-refiners, mais aucune entrée ne lui correspond dans refiners.ts (aws-infra) — il n\'a aucun horaire déployé et ne tourne pas. Audité le 2026-08-02.',
                     details: [
-                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - Tables a-ca-*, a-qc-*, a-eu-*',
+                        '⚠️ STATUT: code présent, pipeline jamais planifié — tout ce qui suit décrit ce que le raffineur FERAIT s\'il était déployé',
+                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - a-ca-parliament-debates, a-ca-press-releases, a-eu-parliament-debates, a-qc-parliament-debates, a-qc-parliamentary-commissions, a-qc-press-releases',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table agora_datamart.agora_sonar_daily',
                         '',
                         '⚙️ TRAITEMENT:',
@@ -2057,9 +2177,10 @@
                     ]
                 },
                 'agora-sonar-heatmaps': {
-                    title: 'Refiner: agora-sonar-heatmaps.R',
-                    description: 'Construit les heatmaps hebdomadaires de qualité Agora à partir de agora_sonar_daily et les publie sur Slack + datalake.',
+                    title: 'Refiner: agora-sonar-heatmaps.R ⚠️ JAMAIS PLANIFIÉ',
+                    description: 'Construit les heatmaps hebdomadaires de qualité Agora à partir de agora_sonar_daily et les publie sur Slack + datalake. ATTENTION : comme agora-sonar, aucune entrée dans refiners.ts — aucun horaire déployé. Audité le 2026-08-02.',
                     details: [
+                        '⚠️ STATUT: code présent, pipeline jamais planifié — et sa source agora_sonar_daily n\'est donc pas alimentée',
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table agora_datamart.agora_sonar_daily',
                         '📤 OUTPUTS: 4 PNG heatmaps + publication Slack + upload datalake (dataset agora-sonar-heatmaps)',
                         '',
@@ -2075,41 +2196,86 @@
                         '⏳ TIMEOUT: 15 minutes'
                     ]
                 },
-                'vitrine-graph-data': {
-                    title: 'Refiner: vitrine-graph-data.R',
-                    description: 'Publie TOUTES les données finales en JSON vers S3 pour le frontend Vitrine.',
+                'agora-decideurs-qc-phrases': {
+                    title: 'Refiner: agora-decideurs-qc-phrases.R',
+                    description: 'Charge les interventions du Salon bleu, les segmente en phrases et les annote (thèmes CAP + sentiment) via l\'INFER API. Étage amont du module Assemblée.',
                     details: [
-                        '📥 SOURCES: <span class="badge-dev">DEV</span>/datamarts - Lectures complètes de TOUTES les tables',
-                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - JSON sur S3',
+                        '📥 SOURCE: <span class="badge-prod">PROD</span>/datawarehouse - Table a-qc-parliament-debates',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table agora_datamart.agora_decideurs_qc_phrases',
                         '',
                         '⚙️ TRAITEMENT:',
-                        '• Agrège TOUTES les tables finales',
-                        '• Convertit en JSON propre (normalisé)',
-                        '• Optimise pour API frontend',
-                        '• Upload jusqu\'à 19 fichiers JSON sur S3 (selon tables présentes/non vides)',
-                        '• Structure: s3://vitrinedemocratique/data/refined/{period}/{table}.json',
+                        '• Reprise incrémentale : cherche la prochaine date de séance non encore traitée',
+                        '• Segmentation des interventions en phrases',
+                        '• Annotation thèmes CAP (INFER API, modèle « CAP themes »)',
+                        '• Annotation sentiment (INFER API, modèle « sentiment »)',
                         '',
-                        '📋 OUTPUTS (jusqu\'à 19 fichiers JSON):',
-                        '• issues_score_{day|week|month}',
-                        '• federal_parties_score_{day|week|month}',
-                        '• provincial_parties_score_{day|week|month}',
-                        '• federal_parties_score_v2_{day|week|month}',
-                        '• provincial_parties_score_v2_{day|week|month}',
-                        '• reflet_{day|week|month}',
-                        '• headline_of_headlines',
+                        '⏰ HORAIRE: mardis 05:00 (heure du Québec)',
+                        '🔗 L\'extracteur qc-parliament-debates tourne le lundi 22:00 — ce raffineur passe après',
+                        '💾 MÉMOIRE: 2 GB • ⏳ TIMEOUT: 15 minutes',
                         '',
-                        '⏰ HORAIRES (5x/jour):',
-                        '• 23:39 • 03:39 • 07:39',
-                        '• 11:39 • 15:39 (heure du Québec)',
+                        '📌 Déployé tardivement : ce raffineur existait sans être en service, corrigé par aws-infra#463 (2026-07-28)'
+                    ]
+                },
+                'agora-decideurs-qc': {
+                    title: 'Refiner: agora-decideurs-qc.R',
+                    description: 'Agrège les phrases annotées en portraits de la parole en chambre, par parti et par député, et génère un angle éditorial par LLM.',
+                    details: [
+                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - agora_datamart.agora_decideurs_qc_phrases (+ ses propres tables annotées, en historique)',
+                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - agora_decideurs_qc, agora_decideurs_qc_deputes (+ tables annotées intermédiaires)',
                         '',
-                        '💾 MÉMOIRE: 10 GB + 5 GB ephemeral storage',
-                        '⏳ TIMEOUT: 15 minutes'
+                        '⚙️ TRAITEMENT:',
+                        '• Agrégation par parti ET par député (aws-refiners#259)',
+                        '• Volume de parole, richesse lexicale, ton, répartition sur les 12 enjeux CAP',
+                        '• Mot signature + son contexte',
+                        '• Angle éditorial généré par LLM (ellipsellm / OpenAI), table par parti uniquement',
+                        '',
+                        '⏰ HORAIRE: mardis 06:00 (heure du Québec), après agora-decideurs-qc-phrases',
+                        '💾 MÉMOIRE: 2 GB • ⏳ TIMEOUT: 15 minutes',
+                        '',
+                        '🌐 Consommé par: lib/data/assemblee.ts + components/sections/AssembleeSection.tsx'
+                    ]
+                },
+                'fetch-data': {
+                    title: 'Publication: scripts/fetch_data.R (dépôt vitrine)',
+                    description: 'La chaîne de publication réelle du site. Ce n\'est PAS un raffineur AWS : c\'est un script R exécuté par GitHub Actions (workflow refresh-data.yml) dans le dépôt de la Vitrine.',
+                    details: [
+                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts via <strong>Athena</strong> (lecture seule)',
+                        '📤 OUTPUT: fichiers JSON dans <code>public/data/</code>, commités sur la branche <code>main</code>',
+                        '',
+                        '⚙️ TRAITEMENT:',
+                        '• Liste blanche <code>scripts/tables.json</code> : 15 tables activées, chacune avec ses colonnes',
+                        '• Projection colonne par colonne AVANT écriture (protège des dérives de type Parquet/Glue)',
+                        '• Filtres spécifiques par table (ex. fenêtre 3 jours pour headline_events_4h)',
+                        '• Calcule <code>salience_calibration.json</code> : percentiles p5/p20/p50/p80/p95 de score_qc, score_roc et interval_convergence_score sur 365 jours glissants',
+                        '• Écrit <code>meta.json</code> : statut et compte de lignes par table (diagnostic de fraîcheur)',
+                        '',
+                        '⏰ HORAIRE: 6x/jour — 20:00, 00:00, 04:00, 08:00, 12:00, 16:00 (heure du Québec). Le workflow n\'a que <code>workflow_dispatch</code> : le déclenchement vient de cron-job.org, hors dépôt.',
+                        '',
+                        '🚀 Après le commit : le workflow <code>deploy.yml</code> reconstruit le site Next.js et le publie sur GitHub Pages ; les données fraîches sont aussi synchronisées vers la branche <code>prod</code>.',
+                        '',
+                        '⛔ NE JAMAIS éditer <code>public/data/</code> à la main — le prochain rafraîchissement écrase tout.'
+                    ]
+                },
+                'enrichissements-vitrine': {
+                    title: 'Enrichissements du rafraîchissement (best-effort)',
+                    description: 'Trois étapes non bloquantes qui s\'exécutent après fetch_data.R dans le même workflow. Si l\'une échoue, le rafraîchissement se termine quand même.',
+                    details: [
+                        '🎯 <code>npm run select-hero</code> (scripts/select_hero.ts) → <code>public/data/hero-selection.json</code>',
+                        '• Désigne la Une n°1 avec le MÊME code que le site, pour que l\'illustration ne se trompe pas de manchette (aws-refiners#259)',
+                        '• Le fichier est effacé avant chaque exécution : mieux vaut aucun fichier qu\'un fichier périmé',
+                        '',
+                        '🖼️ <code>scripts/generate_art.py</code> → <code>public/data/generated-art/</code>',
+                        '• Illustration de la Une n°1 ; si hero-selection.json est absent, repli sur son heuristique interne',
+                        '',
+                        '🎵 <code>scripts/generate_music.py</code> → <code>public/audio/</code>',
+                        '',
+                        '📌 Les trois étapes portent <code>continue-on-error: true</code> dans refresh-data.yml — leur échec n\'empêche jamais la publication des données.'
                     ]
                 }
             },
             dicts: {
                 'issues': {
-                    title: 'Dictionnaire: dict-issues-two-categories ⛔ À SUPPRIMER (suppression débloquée par aws-infra #428, pas encore faite — remplacé par dict-issues-capp-cap-lexicoder)',
+                    title: 'Dictionnaire: dict-issues-two-categories ⛔ DÉBRANCHÉ (active:false, aws-infra #462, 2026-07-27 — entrée conservée au catalogue, suppression pas encore faite ; remplacé par dict-issues-capp-cap-lexicoder)',
                     description: 'Définit les 12 catégories d\'enjeux politiques utilisées pour classifier les headlines.',
                     details: [
                         '1. Economy and Labour (Économie et travail)',
@@ -2206,9 +2372,20 @@
                         'Output: Table Glue brute (non-datamart)'
                     ]
                 },
+                'a-qc-parliament-debates': {
+                    title: 'Source: a-qc-parliament-debates',
+                    description: 'Interventions à l\'Assemblée nationale du Québec (Salon bleu), extraites par le pipeline qc-parliament-debates. Seule source du module Assemblée.',
+                    details: [
+                        '📥 Environnement: <span class="badge-prod">PROD</span>/datawarehouse',
+                        '⏰ Extracteur: lundis 22:00 (heure du Québec)',
+                        '',
+                        '🔗 Lue par: agora-decideurs-qc-phrases.R (mardis 05:00), qui la segmente et l\'annote',
+                        '📌 C\'est la seule table Agora effectivement raffinée aujourd\'hui : les autres flux (communiqués, commissions, débats CA/EU) n\'alimentent aucun raffineur planifié.'
+                    ]
+                },
                 'agora-tables': {
                     title: 'Sources: tables Agora (a-*-*)',
-                    description: 'Ensemble des tables parlementaires/communiqués lues par agora-sonar.R pour le monitoring qualité.',
+                    description: 'Ensemble des tables parlementaires/communiqués que agora-sonar.R lirait pour le monitoring qualité — pipeline jamais planifié (audit 2026-08-02).',
                     details: [
                         '📥 Tables analysées:',
                         '• a-ca-parliament-debates',
@@ -2329,97 +2506,60 @@
                         '🎯 But: monitoring proactif des flux parlementaires Agora'
                     ]
                 },
-                'all-final-tables': {
-                    title: 'Toutes les Tables Finales',
-                    description: 'Collection complète des tables datamart pour publication',
-                    details: [
-                        '📋 Tables incluses:',
-                        '',
-                        '📊 Issues Score (3 tables):',
-                        '• issues_score_day - Scores quotidiens par enjeu',
-                        '• issues_score_week - Agrégation hebdomadaire',
-                        '• issues_score_month - Agrégation mensuelle',
-                        '',
-                        '🏛️ Party Scores legacy (6 tables):',
-                        '• federal_parties_score_day/week/month',
-                        '• provincial_parties_score_day/week/month',
-                        '',
-                        '🏛️ Party Scores v2 (6 tables):',
-                        '• federal_parties_score_v2_day/week/month',
-                        '• provincial_parties_score_v2_day/week/month',
-                        '',
-                        '💭 Reflet (3 tables):',
-                        '• reflet_day - Synthèses quotidiennes LLM',
-                        '• reflet_week - Synthèses hebdomadaires',
-                        '• reflet_month - Synthèses mensuelles',
-                        '',
-                        '📰 Headline of Headlines (1 table):',
-                        '• headline_of_headlines - Une des Unes par période 4h',
-                        '',
-                        '🎯 Total max: 19 tables → jusqu\'à 19 fichiers JSON publiés'
-                    ]
-                },
                 'json-files': {
-                    title: 'Jusqu\'à 19 Fichiers JSON Publiés',
-                    description: 'Données transformées en JSON pour le frontend',
+                    title: 'Fichiers publiés dans public/data/',
+                    description: 'Les JSON écrits par scripts/fetch_data.R, commités sur la branche main et servis en statique. Ils sont versionnés avec le site : ce ne sont pas des appels d\'API.',
                     details: [
-                        '📁 Structure S3:',
-                        's3://bucket/data/refined/',
-                        '',
-                        '📂 day/ (jusqu\'à 6 fichiers):',
+                        '📂 refined/day/',
                         '• issues_score_day.json',
-                        '• federal_parties_score_day.json',
                         '• provincial_parties_score_day.json',
-                        '• federal_parties_score_v2_day.json',
-                        '• provincial_parties_score_v2_day.json',
-                        '• reflet_day.json',
+                        '• provincial_parties_salient_shadow_day.json',
                         '',
-                        '📂 week/ (jusqu\'à 6 fichiers):',
+                        '📂 refined/week/',
                         '• issues_score_week.json',
                         '• federal_parties_score_week.json',
                         '• provincial_parties_score_week.json',
-                        '• federal_parties_score_v2_week.json',
-                        '• provincial_parties_score_v2_week.json',
-                        '• reflet_week.json',
+                        '• provincial_parties_salient_shadow_week.json',
+                        '• polimetre_plus.json',
                         '',
-                        '📂 month/ (jusqu\'à 7 fichiers):',
+                        '📂 refined/month/',
                         '• issues_score_month.json',
                         '• federal_parties_score_month.json',
                         '• provincial_parties_score_month.json',
-                        '• federal_parties_score_v2_month.json',
-                        '• provincial_parties_score_v2_month.json',
-                        '• reflet_month.json',
-                        '• headline_of_headlines.json',
+                        '• provincial_parties_salient_shadow_month.json',
                         '',
-                        '🔄 Mise à jour: 5x/jour (+36min après Glue)',
-                        '🌐 Consommés par: Frontend React du site vitrine'
+                        '📂 agora/',
+                        '• agora_decideurs_qc.json',
+                        '• agora_decideurs_qc_deputes.json',
+                        '',
+                        '📂 racine public/data/',
+                        '• headline-events.json - Une des Unes + Deux solitudes (fenêtre 3 jours)',
+                        '• salience_calibration.json - percentiles sur 365 jours glissants',
+                        '• hero-selection.json - la Une n°1 désignée par le code du site',
+                        '• meta.json - statut et compte de lignes par table (diagnostic de fraîcheur)',
+                        '• generated-art/latest.json - illustration de la Une',
+                        '',
+                        '🔄 Mise à jour: 6x/jour • ⛔ Jamais édités à la main'
                     ]
                 },
                 'frontend-vitrine': {
-                    title: 'Frontend Vitrine démocratique',
-                    description: 'Site web public affichant toutes les analyses politiques',
+                    title: 'Site Vitrine démocratique',
+                    description: 'Site public en Next.js, exporté en statique et hébergé sur GitHub Pages. Il lit les JSON du dépôt au build — aucune requête vers AWS à l\'exécution.',
                     details: [
-                        '🌐 Site web: Vitrine démocratique',
-                        '🔗 URL DEV: <a href="https://dev.vitrinedemocratique.com/beta.html" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; font-weight: bold;">https://dev.vitrinedemocratique.com/beta.html</a>',
+                        '🔗 <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; font-weight: bold;">ellipse.science/vitrine-showcase.github.io</a>',
                         '',
-                        '📊 Pages disponibles:',
-                        '• Dashboard principal avec KPIs',
-                        '• Vue par enjeux (12 catégories)',
-                        '• Vue par partis (fédéral + provincial)',
-                        '• Synthèses Reflet (quotidiennes/hebdo/mensuelles)',
-                        '• Une des Unes (headline of headlines)',
+                        '📊 Modules et leurs sources:',
+                        '• Une des Unes (UneDesUnesSection) ← headline_events_4h',
+                        '• Deux solitudes (DeuxSolitudesSection) ← headline_events_4h',
+                        '• Enjeux / treemap (TreemapSection) ← issues_score_day/week/month',
+                        '• Partis et couverture (PartisCouvertureSection) ← *_parties_score_* et provincial_parties_salient_shadow_*',
+                        '• Assemblée (AssembleeSection) ← agora_decideurs_qc + agora_decideurs_qc_deputes',
+                        '• Polimètre+ (PolimetrePlusSection) ← polimetre_plus',
                         '',
-                        '🔄 Données:',
-                        '• Lectures depuis S3 (jusqu\'à 19 fichiers JSON)',
-                        '• Mise à jour: 5x/jour via vitrine-graph-data.R',
-                        '• Latence: ~40 minutes après scraping',
+                        '🎨 Technologie: Next.js (export statique) + TypeScript, hébergé sur GitHub Pages',
+                        '🌍 Environnement décrit: DEV — c\'est le seul en service. dev.vitrinedemocratique.com est un placeholder jamais mis en ligne.',
                         '',
-                        '🎨 Technologie:',
-                        '• Frontend: React + TypeScript',
-                        '• Graphiques: Recharts / D3.js',
-                        '• Hosting: CloudFront + S3',
-                        '',
-                        '🎯 Audience: Grand public + analystes politiques'
+                        '🎯 Audience: grand public'
                     ]
                 }
             }
