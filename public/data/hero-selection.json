@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T030000Z-evt-will-get-deal-before-new-3b566530",
-  "storyline_id": "story-mark-carney-0f42f9cf",
-  "title": "Carney: discussions globales avec les États-Unis pour éviter de nouveaux tarifs",
-  "main_issue": "international_affairs_and_defense",
+  "event_id": "20260807T070000Z-evt-retour-sour-puss-kraken-saq-5c53acff",
+  "storyline_id": "story-sour-puss-16de9ed1",
+  "title": "Retour controversé du Sour Puss et Kraken sur les tablettes de la SAQ",
+  "main_issue": "economy_and_labour",
   "date_utc": "2026-08-07",
-  "time_interval_utc": "03-07",
-  "sum_qc": 30.905,
-  "peak_qc": 37.683
+  "time_interval_utc": "07-11",
+  "sum_qc": 36.459,
+  "peak_qc": 22.44
 }
