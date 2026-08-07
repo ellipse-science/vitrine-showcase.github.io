@@ -1,5 +1,11 @@
 [
   {
+    "pr": 409,
+    "date": "2026-08-07T22:09:53Z",
+    "note": "Le niveau de saillance des sujets canadiens du module Deux solitudes se prépare à être mesuré avec la même règle que celui des sujets québécois.",
+    "version": "2.20.0-beta.7"
+  },
+  {
     "pr": 405,
     "date": "2026-08-07T21:39:06Z",
     "note": "Dans le module Deux solitudes, le Québec (bleu) est maintenant affiché à droite et le Canada (rouge) à gauche, pour correspondre à la disposition réelle du graphique en dessous.",
