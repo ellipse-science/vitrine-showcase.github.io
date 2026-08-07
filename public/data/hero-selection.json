@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T070000Z-evt-retour-sour-puss-kraken-saq-5c53acff",
-  "storyline_id": "story-sour-puss-16de9ed1",
-  "title": "Retour controversé du Sour Puss et Kraken sur les tablettes de la SAQ",
-  "main_issue": "economy_and_labour",
+  "event_id": "20260807T110000Z-evt-immigrants-deplorent-manque-humanite-immigration-6e5722cd",
+  "storyline_id": "story-immigration-refugees-citizenship-778994fe",
+  "title": "Immigration Canada critiqué pour son manque d'humanité envers les travailleurs",
+  "main_issue": "immigration",
   "date_utc": "2026-08-07",
-  "time_interval_utc": "07-11",
-  "sum_qc": 36.459,
-  "peak_qc": 22.44
+  "time_interval_utc": "11-15",
+  "sum_qc": 68.493,
+  "peak_qc": 44.291
 }
