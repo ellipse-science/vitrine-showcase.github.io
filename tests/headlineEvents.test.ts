@@ -1085,6 +1085,20 @@ describe("buildSolitudes", () => {
     const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
     expect(calibré.habitualConvPct).toBe(44);
   });
+
+  it("verrouille l'orientation de l'axe : Québec à DROITE, Canada à GAUCHE (#395/#399)", () => {
+    const row = ev({ interval_convergence_score: 60, score_qc: 20, score_roc: 18 });
+    const s = sol([row], [row]);
+    // Les positions sont un pourcentage sur l'axe, de 0 (extrême gauche) à 100
+    // (extrême droite). Le symbole du Québec doit être posé à DROITE de celui
+    // du Canada — le sens corrigé au #395 (retour Shannon + Adrien), aligné sur
+    // ce que le radar fait déjà structurellement. Ce test échoue si le
+    // destructuring `[canSymbolPos, qcSymbolPos]` est ré-inversé en silence.
+    expect(s.qcSymbolPos).toBeGreaterThan(s.canSymbolPos);
+    // Chaque camp dans sa moitié : Canada à gauche du centre, Québec à droite.
+    expect(s.canSymbolPos).toBeLessThan(50);
+    expect(s.qcSymbolPos).toBeGreaterThan(50);
+  });
 });
 
 describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", () => {
