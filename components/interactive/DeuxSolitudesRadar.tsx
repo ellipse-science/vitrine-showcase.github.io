@@ -59,6 +59,19 @@ function Fleur() {
   );
 }
 
+// Angle des labels % de l'échelle radiale (#394) : l'écart entre le dernier
+// axe (i = n-1, angle -π/2 - 2π/n) et le premier (i = 0, angle -π/2), donc à
+// mi-chemin des deux, -π/2 - π/n. Aucun axe n'a jamais cet angle exact (les n
+// axes sont à -π/2 + i·2π/n pour i entier) : l'écart entre deux axes voisins
+// contient toujours ce point médian sans jamais coïncider avec l'un d'eux,
+// quel que soit n. Un label sur cet angle ne peut donc jamais retomber sur la
+// colonne d'un axe — et donc jamais sur un point de données, qui n'existe que
+// sur un axe (cf. `pt`). Exportée pour que le test verrouille la preuve
+// géométrique, pas seulement le rendu.
+export function ringLabelAngle(n: number): number {
+  return -Math.PI / 2 - Math.PI / n;
+}
+
 // Coupe un titre en lignes étroites (~26 caractères) : 2-3 lignes centrées,
 // comme la maquette, pour que le bloc ne déborde pas sur le radar.
 export function wrapLabel(s: string, maxLen = 26): string[] {
@@ -242,13 +255,26 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {[1, 0.75, 0.5, 0.25].map((f) => (
             <polygon key={f} className="radar-grid" points={ringPts(f)} />
           ))}
-          {/* Labels % pâles sur l'axe vertical du haut : le rayon = part
-              d'attention 24h de la région (le bord = axisScale %). */}
-          {[0.25, 0.5, 0.75, 1].map((f) => (
-            <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
-              {Math.round(s.axisScale * f)}&nbsp;%
-            </text>
-          ))}
+          {/* Labels % pâles, dans l'écart angulaire entre le dernier axe et
+              le premier (#394) — jamais SUR un axe. Ils étaient plaqués sur
+              l'axe vertical du haut (x=CX), la colonne exacte que suit aussi
+              le point de données de cet axe (pt(0, v) retombe sur x=CX quel
+              que soit v) : dès que sa valeur approchait un palier (25/50/75/
+              100 %), le label venait recouvrir le point. Le rayon reste
+              identique (part d'attention 24h de la région, le bord =
+              axisScale %) ; seul l'angle change, vers l'écart entre deux
+              axes où aucun spoke ni aucun point ne peut jamais tomber. */}
+          {[0.25, 0.5, 0.75, 1].map((f) => {
+            const ringAng = ringLabelAngle(n);
+            const r = R0 + f * (R - R0);
+            const rx = CX + r * Math.cos(ringAng);
+            const ry = CY + r * Math.sin(ringAng);
+            return (
+              <text key={f} className="radar-ring-lab" x={rx.toFixed(1)} y={(ry + 3).toFixed(1)}>
+                {Math.round(s.axisScale * f)}&nbsp;%
+              </text>
+            );
+          })}
           {axes.map((_, i) => {
             const [x, y] = pt(i, 100);
             return <line key={i} className="radar-spoke" x1={CX} y1={CY} x2={x.toFixed(1)} y2={y.toFixed(1)} />;

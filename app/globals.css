@@ -1814,7 +1814,7 @@
     70%  { transform: scale(2.6); opacity: 0; }
     100% { transform: scale(2.6); opacity: 0; }
   }
-  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: start; }
+  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: middle; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .dot .hit { fill: transparent; cursor: pointer; }
