@@ -1,5 +1,11 @@
 [
   {
+    "pr": 407,
+    "date": "2026-08-07T18:56:37Z",
+    "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",
+    "version": null
+  },
+  {
     "pr": 406,
     "date": "2026-08-07T18:41:14Z",
     "note": "Correctif d'affichage : les portraits des député.es réapparaissent sur les cartes du module « Que dit-on à l'Assemblée? ».",
