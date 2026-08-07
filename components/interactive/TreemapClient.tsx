@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
@@ -47,10 +48,25 @@ function formatGrowth(growth: number): string {
   return `${sign}${Math.abs(growth).toFixed(1).replace(".", ",")} %`;
 }
 
-function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutNode | null) => void }) {
+function GrowthTile({
+  tile,
+  expanded,
+  muted,
+  onExpand,
+  onPreview,
+}: {
+  tile: LayoutNode;
+  expanded: boolean;
+  muted: boolean;
+  onExpand: (issueKey: string | null) => void;
+  onPreview: (tile: LayoutNode | null) => void;
+}) {
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
+  const needsTip = size === "small" || isTiny;
+  const mainArticle = tile.articles[0];
+  const mediaLabel = mainArticle?.outlets.map((outlet) => outlet.name).join(" · ") ?? "";
 
   const growthSpan = (
     <span className="gt-pct">
@@ -59,12 +75,6 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
       {tile.growth === null ? (tile.velocity === 1 ? "nouv." : "") : formatGrowth(tile.growth)}
     </span>
   );
-
-  const hasNews = Boolean(tile.context);
-
-  const mediaLabel = tile.outlets.length > 0
-    ? tile.outlets.map((o) => o.name).join(" · ")
-    : null;
 
   const inner = isTiny ? (
     <div className="gt-compact">
@@ -78,67 +88,132 @@ function GrowthTile({ tile, onHover }: { tile: LayoutNode; onHover?: (t: LayoutN
       </div>
       <div className="gt-body">
         <div className="gt-title">{tile.issueFr}</div>
-        {hasNews && (
-          <div className="gt-news">
-            <span className="gt-news-head">{tile.context}</span>
-            {mediaLabel && <span className="gt-news-media">{mediaLabel}</span>}
+        {mainArticle && !needsTip && (
+          <div className="gt-preview">
+            <span className="gt-preview-head">{mainArticle.title}</span>
+            {mediaLabel && <span className="gt-preview-media">{mediaLabel}</span>}
           </div>
         )}
       </div>
     </>
   );
 
-  // Petites tuiles (texte tronqué) : on révèle tout via une infobulle stylée flottante
-  // (gérée par le parent) ; grandes/moyennes : révélation dans la tuile (déjà en place).
-  const needsTip = size === "small" || isTiny;
-  const shared = {
-    className: `gt-tile gt-${size}${hasNews ? " gt-has-news" : ""}`,
-    style: { "--c": tile.color } as React.CSSProperties,
-    title: needsTip ? undefined : tile.issueFr
-  };
-  const content = tile.url ? (
-    <a href={tile.url} target="_blank" rel="noopener noreferrer" {...shared}>{inner}</a>
-  ) : (
-    <div {...shared}>{inner}</div>
-  );
-
-  return (
-    <div
-      className="gt-container"
-      style={{
+  const containerStyle: React.CSSProperties = expanded
+    ? { left: "0%", top: "0%", width: "100%", height: "100%" }
+    : {
         left: `${tile.rect.x.toFixed(2)}%`,
         top: `${tile.rect.y.toFixed(2)}%`,
         width: `${tile.rect.w.toFixed(2)}%`,
-        height: `${tile.rect.h.toFixed(2)}%`
+        height: `${tile.rect.h.toFixed(2)}%`,
+      };
+
+  return (
+    <div
+      className={`gt-container${expanded ? " gt-container-expanded" : ""}${muted ? " gt-container-muted" : ""}`}
+      style={containerStyle}
+      tabIndex={muted ? -1 : 0}
+      aria-expanded={expanded}
+      aria-label={`${tile.issueFr} : cliquer pour afficher toutes les actualités associées`}
+      onClick={(event) => {
+        if (!expanded && !(event.target as HTMLElement).closest("a, button")) {
+          onPreview(null);
+          onExpand(tile.issueKey);
+        }
       }}
-      onMouseEnter={needsTip && onHover ? () => onHover(tile) : undefined}
-      onMouseLeave={needsTip && onHover ? () => onHover(null) : undefined}
+      onMouseEnter={() => {
+        if (!expanded && needsTip) onPreview(tile);
+      }}
+      onMouseLeave={() => onPreview(null)}
+      onFocus={() => {
+        if (!expanded && needsTip) onPreview(tile);
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onPreview(null);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && expanded) {
+          onExpand(null);
+          event.currentTarget.blur();
+        } else if (!expanded && event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onPreview(null);
+          onExpand(tile.issueKey);
+        }
+      }}
     >
-      {content}
+      <div className={`gt-tile gt-${size}${mainArticle ? " gt-has-news" : ""}`} style={{ "--c": tile.color } as React.CSSProperties}>
+        <div className="gt-collapsed" aria-hidden={expanded}>{inner}</div>
+        {expanded && (
+          <div className="gt-expanded-panel">
+            <div className="gt-expanded-header">
+              <div>
+                <span className="gt-expanded-kicker">Enjeu saillant</span>
+                <h3>{tile.issueFr}</h3>
+                <span className="gt-expanded-count">
+                  {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="gt-expanded-growth">
+                <button type="button" className="gt-expanded-close" onClick={() => onExpand(null)}>
+                  Fermer <span aria-hidden="true">×</span>
+                </button>
+                {growthSpan}
+                <span>Variation depuis le traitement précédent</span>
+              </div>
+            </div>
+
+            {tile.articles.length > 0 ? (
+              <div className="gt-expanded-list" role="list">
+                {tile.articles.map((article, index) => (
+                  <article className="gt-expanded-story" role="listitem" key={`${article.title}-${index}`}>
+                    <span className="gt-expanded-index">{String(index + 1).padStart(2, "0")}</span>
+                    {article.url ? (
+                      <a className="gt-expanded-title" href={article.url} target="_blank" rel="noopener noreferrer">
+                        {article.title}<span aria-hidden="true"> ↗</span>
+                      </a>
+                    ) : (
+                      <div className="gt-expanded-title">{article.title}</div>
+                    )}
+                    {article.outlets.length > 0 && (
+                      <div className="gt-expanded-outlets" aria-label="Médias associés à cette actualité">
+                        {article.outlets.map((outlet) => outlet.url ? (
+                          <a key={outlet.name} href={outlet.url} target="_blank" rel="noopener noreferrer">{outlet.name}</a>
+                        ) : (
+                          <span key={outlet.name}>{outlet.name}</span>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="gt-expanded-empty">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-// Infobulle stylée flottante pour les petites tuiles : nom + manchette + médias,
-// positionnée près de la tuile (bascule vers l'intérieur selon sa position).
 function GrowthTip({ tile }: { tile: LayoutNode }) {
+  const article = tile.articles[0];
+  if (!article) return null;
   const cx = tile.rect.x + tile.rect.w / 2;
   const cy = tile.rect.y + tile.rect.h / 2;
-  const rightSide = cx > 58;
-  const bottomSide = cy > 52;
   const style: React.CSSProperties = { position: "absolute" };
-  if (rightSide) style.right = `${(100 - (tile.rect.x + tile.rect.w)).toFixed(2)}%`;
+  if (cx > 58) style.right = `${(100 - (tile.rect.x + tile.rect.w)).toFixed(2)}%`;
   else style.left = `${tile.rect.x.toFixed(2)}%`;
-  if (bottomSide) style.bottom = `${(100 - tile.rect.y).toFixed(2)}%`;
+  if (cy > 52) style.bottom = `${(100 - tile.rect.y).toFixed(2)}%`;
   else style.top = `${(tile.rect.y + tile.rect.h).toFixed(2)}%`;
-  const mediaLabel = tile.outlets.length > 0
-    ? tile.outlets.map((o) => o.name).join(" · ")
-    : null;
+  const mediaLabel = article.outlets.map((outlet) => outlet.name).join(" · ");
+
   return (
     <div className="gt-tip" style={style}>
       <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
-      {tile.context && <div className="gt-tip-head">{tile.context}</div>}
+      <div className="gt-tip-head">{article.title}</div>
       {mediaLabel && <div className="gt-tip-media">{mediaLabel}</div>}
+      <div className="gt-tip-action">Cliquer pour tout voir</div>
     </div>
   );
 }
@@ -167,12 +242,194 @@ function smoothPath(pts: { x: number; y: number }[]): string {
   return d;
 }
 
+function rankLabel(rank: number): string {
+  return rank === 1 ? "1er" : `${rank}e`;
+}
+
+function movementLabel(delta: number): string {
+  if (delta === 0) return "Rang stable";
+  const count = Math.abs(delta);
+  return `${delta > 0 ? "En hausse" : "En baisse"} de ${count} rang${count > 1 ? "s" : ""}`;
+}
+
+function movementCompact(delta: number): string {
+  if (delta === 0) return "=";
+  return `${delta > 0 ? "↑" : "↓"} ${Math.abs(delta)}`;
+}
+
+function IssuesRankMobile({
+  tiles,
+  history,
+  period,
+}: {
+  tiles: TreemapIssueTile[];
+  history: TreemapHistoryPoint[];
+  period: RankPeriod;
+}) {
+  const points = rankPointsForPeriod(history, period);
+  const latestRanks = points.at(-1)?.ranks ?? {};
+  const rankedTiles = [...tiles].sort(
+    (a, b) => (latestRanks[a.issueKey] ?? 12) - (latestRanks[b.issueKey] ?? 12),
+  );
+  const [selectedKey, setSelectedKey] = useState(rankedTiles[0]?.issueKey ?? "");
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const selected = tiles.find((tile) => tile.issueKey === selectedKey) ?? rankedTiles[0];
+
+  if (points.length <= 1 || !selected) {
+    return (
+      <div className="issues-rank-mobile irm-container">
+        <p className="irm-empty">Pas assez de données historiques pour générer le graphique de classement.</p>
+      </div>
+    );
+  }
+
+  const VB_W = 360;
+  const VB_H = 248;
+  const PAD_L = 24;
+  const PAD_R = 28;
+  const PAD_T = 20;
+  const PAD_B = 38;
+  const plotW = VB_W - PAD_L - PAD_R;
+  const plotH = VB_H - PAD_T - PAD_B;
+  const plotRight = PAD_L + plotW;
+  const getX = (index: number) => PAD_L + index * (plotW / Math.max(points.length - 1, 1));
+  const getY = (rank: number) => PAD_T + (rank - 1) * (plotH / 11);
+  const movement = rankMovement(points, selected.issueKey);
+  const selectedPoints = points.map((point, index) => ({
+    x: getX(index),
+    y: getY(point.ranks[selected.issueKey] ?? 12),
+    rank: point.ranks[selected.issueKey] ?? 12,
+  }));
+  const focusArticles = selected.articles.length > 0
+    ? selected.articles.slice(0, 5)
+    : selected.context
+      ? [{ title: selected.context, url: selected.url, outlets: [] }]
+      : [];
+  const orderedLines = [...tiles].sort(
+    (a, b) => (a.issueKey === selected.issueKey ? 1 : 0) - (b.issueKey === selected.issueKey ? 1 : 0),
+  );
+
+  return (
+    <div className="issues-rank-mobile irm-container">
+      <div className="irm-focus-header">
+        <div>
+          <span className="irm-kicker">Trajectoire suivie</span>
+          <h3 style={{ "--c": selected.color } as React.CSSProperties}>{selected.issueFr}</h3>
+        </div>
+        <div className="irm-summary">
+          <strong>{rankLabel(movement.endRank)}</strong>
+          <span>{movementLabel(movement.delta)}</span>
+        </div>
+      </div>
+
+      <svg
+        className="irm-chart"
+        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        role="img"
+        aria-label={`Évolution du rang de ${selected.issueFr}, de ${rankLabel(movement.startRank)} à ${rankLabel(movement.endRank)}`}
+      >
+        {[1, 6, 12].map((rank) => (
+          <g key={rank}>
+            <line x1={PAD_L} y1={getY(rank)} x2={plotRight} y2={getY(rank)} className="irm-guide" />
+            <text x={PAD_L - 7} y={getY(rank) + 3} textAnchor="end" className="irm-rank-axis">{rank}</text>
+          </g>
+        ))}
+
+        {orderedLines.map((tile) => {
+          const linePoints = points.map((point, index) => ({
+            x: getX(index),
+            y: getY(point.ranks[tile.issueKey] ?? 12),
+          }));
+          const active = tile.issueKey === selected.issueKey;
+          return (
+            <path
+              key={tile.issueKey}
+              d={smoothPath(linePoints)}
+              className={active ? "irm-line active" : "irm-line"}
+              stroke={active ? tile.color : "var(--ink)"}
+            />
+          );
+        })}
+
+        {selectedPoints.map((point, index) => {
+          const previousRank = selectedPoints[index - 1]?.rank;
+          if (index !== 0 && index !== selectedPoints.length - 1 && point.rank === previousRank) return null;
+          return <circle key={index} cx={point.x} cy={point.y} r={index === selectedPoints.length - 1 ? 13 : 3.5} fill={selected.color} />;
+        })}
+        <text x={plotRight} y={selectedPoints.at(-1)!.y + 4} textAnchor="middle" className="irm-current-rank">
+          {movement.endRank}
+        </text>
+        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{fmtDate(points[0].date)}</text>
+        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{fmtDate(points.at(-1)!.date)}</text>
+      </svg>
+
+      <div className="irm-selector" aria-label="Choisir un enjeu à suivre">
+        {rankedTiles.map((tile) => {
+          const tileMovement = rankMovement(points, tile.issueKey);
+          const active = tile.issueKey === selected.issueKey;
+          const expanded = tile.issueKey === expandedKey;
+          return (
+            <div className={`irm-issue-block${active ? " active" : ""}${expanded ? " expanded" : ""}`} key={tile.issueKey}>
+              <button
+                type="button"
+                className={`irm-issue${active ? " active" : ""}${expanded ? " expanded" : ""}`}
+                style={{ "--c": tile.color } as React.CSSProperties}
+                aria-expanded={expanded}
+                onClick={() => {
+                  setSelectedKey(tile.issueKey);
+                  setExpandedKey((current) => current === tile.issueKey ? null : tile.issueKey);
+                }}
+              >
+                <span className="irm-issue-rank">{tileMovement.endRank}</span>
+                <span className="irm-issue-name">{tile.issueFr}</span>
+                <span className={`irm-issue-movement ${tileMovement.delta > 0 ? "up" : tileMovement.delta < 0 ? "down" : "flat"}`}>
+                  {movementCompact(tileMovement.delta)}
+                </span>
+                <span className="irm-issue-toggle" aria-hidden="true">{expanded ? "−" : "+"}</span>
+              </button>
+
+              {expanded && (
+                <div className="irm-news irm-inline-news">
+                  <div className="irm-news-heading">
+                    <span>À la une</span>
+                    <strong>{selected.issueFr}</strong>
+                  </div>
+                  {focusArticles.length > 0 ? focusArticles.map((article, index) => (
+                    <article className="irm-article" key={`${article.title}-${index}`}>
+                      {article.url ? (
+                        <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
+                      ) : (
+                        <span>{article.title}</span>
+                      )}
+                      {article.outlets.length > 0 && (
+                        <div className="irm-article-outlets">
+                          {article.outlets.map((outlet) => outlet.url ? (
+                            <a key={outlet.name} href={outlet.url} target="_blank" rel="noopener noreferrer">{outlet.name}</a>
+                          ) : (
+                            <span key={outlet.name}>{outlet.name}</span>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  )) : (
+                    <p className="irm-no-news">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Graphique de rang (« bump chart ») : trajectoire du classement des 12 enjeux dans le temps,
  * avec panneau « À la une » qui liste les actualités de l'enjeu sélectionné (clic) ou survolé.
  * Affiché pour les vues « Cette semaine » (7 derniers jours) et « Ce mois » (mois courant).
  */
-function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: "week" | "month" }) {
+function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: RankPeriod }) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
 
@@ -194,15 +451,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
     );
   }
 
-  // Fenêtre temporelle : 7 derniers jours (semaine) ou tous les jours du mois courant.
-  let points = [...history];
-  if (period === "week") {
-    points = points.slice(-7);
-  } else {
-    const latestMonth = points.length ? points[points.length - 1].date.slice(0, 7) : "";
-    const inMonth = points.filter((p) => p.date.slice(0, 7) === latestMonth);
-    points = inMonth.length > 1 ? inMonth : points.slice(-30);
-  }
+  const points = rankPointsForPeriod(history, period);
 
   const VB_W = 1200;
   const VB_H = 640;
@@ -232,7 +481,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
     tiles.find((t) => t.issueKey === hoveredLine) ??
     tiles[0];
   const focusArticles = focus
-    ? (focus.articles.length > 0 ? focus.articles : (focus.context ? [{ title: focus.context, url: focus.url }] : []))
+    ? (focus.articles.length > 0 ? focus.articles.slice(0, 5) : (focus.context ? [{ title: focus.context, url: focus.url, outlets: [] }] : []))
     : [];
 
   return (
@@ -373,8 +622,10 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 
 export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
+  const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const [secret, setSecret] = useState(false);
-  useKonamiCode(() => { setPeriod("month"); setSecret(true); });
+  useKonamiCode(() => { setTipTile(null); setExpandedIssue(null); setPeriod("month"); setSecret(true); });
 
   // Déverrouillage mobile / tactile : 3 clics/taps rapides sur le titre du module
   const tapCount = useRef(0);
@@ -384,6 +635,8 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     if (tapTimer.current) window.clearTimeout(tapTimer.current);
     if (tapCount.current >= 3) {
       tapCount.current = 0;
+      setTipTile(null);
+      setExpandedIssue(null);
       setPeriod("month");
       setSecret(true);
     } else {
@@ -393,9 +646,18 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
     }
   };
 
-  const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const current = data[period];
   const tiles = current.tiles;
+  const layout = computeTreemapLayout(tiles);
+  const selectPeriod = (nextPeriod: "day" | "week" | "month") => {
+    setTipTile(null);
+    setExpandedIssue(null);
+    setPeriod(nextPeriod);
+  };
+  const expandIssue = (issueKey: string | null) => {
+    setTipTile(null);
+    setExpandedIssue(issueKey);
+  };
 
   return (
     <>
@@ -405,8 +667,8 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
             De quoi parle-t-on?{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation :</b><br /><br />
-              • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent.<br /><br />
-              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes.
+              • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -416,21 +678,21 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
             <div className="legend-toggle inline">
               <span
                 className={period === "day" ? "active" : undefined}
-                onClick={() => setPeriod("day")}
+                onClick={() => selectPeriod("day")}
                 style={{ cursor: "pointer" }}
               >
                 Aujourd&apos;hui
               </span>
               <span
                 className={period === "week" ? "active" : undefined}
-                onClick={() => setPeriod("week")}
+                onClick={() => selectPeriod("week")}
                 style={{ cursor: "pointer" }}
               >
                 Cette semaine
               </span>
               <span
                 className={period === "month" ? "active" : undefined}
-                onClick={() => setPeriod("month")}
+                onClick={() => selectPeriod("month")}
                 style={{ cursor: "pointer" }}
               >
                 Ce mois
@@ -444,10 +706,17 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
       {period === "day" ? (
         <>
           <div className="treemap-growth">
-            {computeTreemapLayout(tiles).map((t) => (
-              <GrowthTile key={t.issueKey} tile={t} onHover={setTipTile} />
+            {layout.map((tile) => (
+              <GrowthTile
+                key={tile.issueKey}
+                tile={tile}
+                expanded={expandedIssue === tile.issueKey}
+                muted={expandedIssue !== null && expandedIssue !== tile.issueKey}
+                onExpand={expandIssue}
+                onPreview={setTipTile}
+              />
             ))}
-            {tipTile && <GrowthTip tile={tipTile} />}
+            {tipTile && expandedIssue === null && <GrowthTip tile={tipTile} />}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">
@@ -483,7 +752,12 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
       ) : secret && period === "month" ? (
         <FlappyEnjeux tiles={tiles} onExit={() => setSecret(false)} />
       ) : (
-        <IssuesRankChart tiles={tiles} history={current.history} period={period} />
+        <>
+          <div className="issues-rank-desktop">
+            <IssuesRankChart tiles={tiles} history={current.history} period={period} />
+          </div>
+          <IssuesRankMobile tiles={tiles} history={current.history} period={period} />
+        </>
       )}
 
       <div className="module-last-updated">{current.lastUpdated}</div>

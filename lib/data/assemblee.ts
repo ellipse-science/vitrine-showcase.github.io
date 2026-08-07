@@ -80,12 +80,56 @@ type AgoraRow = IssueShares & {
   signature_word_context?: string;
 };
 
+// Ligne brute de agora_decideurs_qc_deputes.json (agrégation par député, PR
+// aws-refiners#259) — pas d'angle éditorial ici (coût LLM non justifié à
+// l'échelle du député), mais le mot distinctif est calculé pour chacun.
+type DeputyAgoraRow = IssueShares & {
+  period_type: PeriodKey;
+  period_start_date: string;
+  period_end_date: string;
+  party: string;
+  deputy: string;
+  n_interventions: number;
+  word_count: number;
+  lexical_richness: number;
+  tone_score: number;
+  signature_word?: string;
+  signature_word_context?: string;
+};
+
 export type EnjeuSegment = {
   color: string;
   widthPct: number;
   label: string;
   title: string;
   isReste?: boolean;
+};
+
+export type DeputyRow = {
+  /** Graphie de l'Assemblée nationale quand le portrait est apparié
+   *  (« Jean-François Roberge ») ; sinon la graphie brute du référentiel,
+   *  remise en capitales initiales (« Jean-Francois Roberge »). */
+  name: string;
+  wordsFormatted: string;
+  wordsRaw: number;
+  richnessLevel: number;
+  toneLeftPct: number;
+  signatureWord?: string;
+  signatureWordContext?: string;
+  // Champs de carte. circonscription et portrait manquent quand l'appariement
+  // avec le référentiel de l'ANQ échoue (cf. PORTRAIT_ALIASES).
+  circonscription?: string;
+  portrait?: string;
+  interventions: number;
+  /** Ton BRUT (non amplifié, non borné). L'échelle visuelle se normalise sur
+   *  l'étendue réellement observée dans la période : toneLeftPct est inutilisable
+   *  pour cela, puisque l'amplification y colle 81 députés sur 108 à la butée. */
+  toneScore: number;
+  /** Enjeu dominant : tient lieu de « position » sur la carte. */
+  topIssueLabel?: string;
+  topIssueColor?: string;
+  /** Répartition par enjeu, pour le verso statistique. */
+  enjeuStack: EnjeuSegment[];
 };
 
 export type AssembleeRow = {
@@ -100,10 +144,17 @@ export type AssembleeRow = {
   wordsFormatted?: string;
   wordsRaw?: number;
   richnessLevel?: number;
+  /** Interventions du parti sur la période — porté sur la porte du casier. */
+  interventions?: number;
+  /** Ton brut du parti, même usage que DeputyRow.toneScore. */
+  toneScore?: number;
   // Mot distinctif (TF-IDF inter-partis) — absent tant que le raffineur ne
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
   signatureWordContext?: string;
+  // Députés du parti pour la période (tableau d'enquête) — absent tant que
+  // agora_decideurs_qc_deputes.json n'a pas encore été publié.
+  deputies?: DeputyRow[];
 };
 
 export type PeriodView = {
@@ -159,7 +210,7 @@ function computeRichnessLevels(mattrs: Record<string, number>): Record<string, n
   return result;
 }
 
-function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
+function buildEnjeuStack(row: IssueShares): EnjeuSegment[] {
   const segments = ISSUE_META
     .map((meta) => ({ meta, val: Number(row[meta.key] || 0) }))
     .filter((s) => s.val >= 0.04)
@@ -198,6 +249,164 @@ function buildEnjeuStack(row: AgoraRow): EnjeuSegment[] {
   return stack;
 }
 
+// « NA » est la valeur manquante de R : elle traverse le pipeline sous forme
+// de chaîne littérale et ne doit jamais s'afficher (vu en prod le 2026-07-28 :
+// un député dont le mot distinctif s'affichait « NA »).
+function cleanText(value?: string): string | undefined {
+  const v = (value ?? "").trim();
+  return v === "" || v === "NA" ? undefined : v;
+}
+
+// ---------------------------------------------------------------------------
+// Appariement des portraits
+// ---------------------------------------------------------------------------
+// Le référentiel de pplmatch écrit les noms sans accents ni séparateurs
+// (« jeanfrancois roberge ») ; l'ANQ les écrit correctement
+// (« Jean-François Roberge »). On apparie donc sur une clé « serrée » : minuscules,
+// accents retirés, TOUT séparateur supprimé. Cela résout à lui seul 102 des
+// 108 noms, y compris les traits d'union et les apostrophes (« sylvie damours »
+// ↔ « Sylvie D'Amours »).
+
+export type DeputyPortrait = {
+  circonscription: string;
+  circonscription_slug: string;
+  nom: string;
+  /** « Indépendant », « Indépendante », ou le nom du parti, tel que l'ANQ
+   *  l'inscrit dans son index. */
+  parti?: string;
+};
+
+// Un.e député.e qui siège comme indépendant.e n'apparaît pas dans le module :
+// le raffineur ne produit pas encore de catégorie pour ces sièges, et les
+// afficher sous une bannière de parti serait faux (décision d'équipe,
+// 2026-08-05).
+//
+// La liste est DÉRIVÉE de l'index de l'ANQ, jamais tenue à la main. Une liste
+// manuelle a déjà produit exactement l'erreur qu'elle prétendait éviter : un
+// nom y avait été ajouté sans vérification et un député en règle s'est
+// retrouvé retiré du module. En lisant l'index, la liste se remet à jour toute
+// seule au prochain passage du scraper, et chaque entrée est vérifiable sur la
+// page officielle.
+function isIndependent(portrait: DeputyPortrait): boolean {
+  return /^ind[ée]pendant/i.test((portrait.parti ?? "").trim());
+}
+
+function tightKey(value: string): string {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+}
+
+// Les six noms restants divergent réellement d'une source à l'autre. On les
+// résout à la main plutôt que par similarité approximative : afficher le
+// mauvais visage sur une carte nominative est une faute éditoriale, et un
+// appariement flou finirait tôt ou tard par en produire une.
+//
+// Éric Girard reste volontairement non apparié : deux députés portent ce nom
+// (Groulx et Lac-Saint-Jean) et le référentiel ne les distingue pas de façon
+// fiable (l'un des deux arrive sous « eric girard2 », l'autre sous une ligne
+// fusionnée « eric girard; eric girard2 »). Sans circonscription dans la table
+// des députés, le lien est indécidable : la carte s'affiche donc sans portrait.
+const PORTRAIT_ALIASES: Record<string, string> = {
+  brigittebgarceau: "brigittegarceau",   // « Brigitte B. Garceau » : initiale du second prénom
+  karianabourassa: "karianebourassa",    // Kariane, selon l'ANQ
+  simonjolinbarrette: "simonjolinbarette", // l'ANQ écrit « Barette » ; le nom réel prend deux r
+  valeriesetlakwe: "michellesetlakwe",   // prénom erroné au référentiel ; une seule Setlakwe siège
+};
+
+function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait> {
+  const byKey = new Map<string, DeputyPortrait>();
+  const seen = new Set<string>();
+  for (const p of portraits) {
+    const key = tightKey(p.nom);
+    if (!key) continue;
+    // Un homonyme rend la clé inutilisable : on la retire plutôt que de
+    // trancher au hasard entre deux personnes.
+    if (byKey.has(key)) {
+      seen.add(key);
+      byKey.delete(key);
+      continue;
+    }
+    if (!seen.has(key)) byKey.set(key, p);
+  }
+  return byKey;
+}
+
+function lookupPortrait(
+  deputy: string,
+  index: Map<string, DeputyPortrait>,
+): DeputyPortrait | undefined {
+  const key = tightKey(deputy);
+  return index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "");
+}
+
+// Repli quand le portrait manque : « jeanfrancois roberge » est illisible tel
+// quel. On ne peut pas restituer les accents ni les traits d'union perdus, mais
+// on peut au moins remettre les capitales initiales.
+function titleCaseName(raw: string): string {
+  return (raw || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function buildDeputyList(
+  partyKey: PartyKey,
+  period: PeriodKey,
+  deputyRows: DeputyAgoraRow[],
+  portraits: Map<string, DeputyPortrait>,
+): DeputyRow[] {
+  const rows = deputyRows.filter(
+    (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
+  );
+  if (rows.length === 0) return [];
+
+  // Les sièges indépendants sortent des cartes nominatives. Le raffineur en
+  // écarte déjà l'essentiel en filtrant sur PARTIES_QC ; ce filtre-ci ne sert
+  // qu'aux cas que le raffineur attribuerait encore à un parti.
+  // Les agrégats de parti, eux, ne sont pas retouchés : la parole a bel et bien
+  // été prononcée sous cette bannière pendant la période.
+  const sorted = [...rows]
+    .filter((r) => {
+      const p = lookupPortrait(r.deputy, portraits);
+      return !(p && isIndependent(p));
+    })
+    .sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  if (sorted.length === 0) return [];
+
+  const mattrs: Record<string, number> = {};
+  for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
+  const richnessLevels = computeRichnessLevels(mattrs);
+
+  return sorted.map((r) => {
+    const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
+    const portrait = lookupPortrait(r.deputy, portraits);
+    const stack = buildEnjeuStack(r);
+    const top = stack.find((s) => !s.isReste);
+    return {
+      name: portrait ? portrait.nom : titleCaseName(r.deputy),
+      wordsFormatted: fmtWords(r.word_count),
+      wordsRaw: Number(r.word_count || 0),
+      richnessLevel: richnessLevels[r.deputy] || 1,
+      toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
+      signatureWord: cleanText(r.signature_word),
+      signatureWordContext: cleanText(r.signature_word_context),
+      circonscription: portrait?.circonscription,
+      // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
+      // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
+      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.jpg` : undefined,
+      interventions: Number(r.n_interventions || 0),
+      toneScore: Number(r.tone_score || 0),
+      topIssueLabel: top?.label,
+      topIssueColor: top?.color,
+      enjeuStack: stack,
+    };
+  });
+}
+
 function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   if (periodType === "last_pdq") {
     return `Période de questions du ${fmtDateFr(endDate)} · Salon bleu`;
@@ -208,7 +417,12 @@ function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   return `Législature ${String(endDate || "").slice(0, 4)} · Salon bleu`;
 }
 
-function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
+function buildPeriodView(
+  allRows: AgoraRow[],
+  period: PeriodKey,
+  deputyRows: DeputyAgoraRow[] = [],
+  portraits: Map<string, DeputyPortrait> = new Map(),
+): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
 
@@ -242,13 +456,16 @@ function buildPeriodView(allRows: AgoraRow[], period: PeriodKey): PeriodView {
       color: PARTY_COLORS[item.key],
       inShadow: false,
       enjeuStack: buildEnjeuStack(d),
-      editorialAngle: d.editorial_angle && d.editorial_angle !== "NA" ? d.editorial_angle : "",
+      editorialAngle: cleanText(d.editorial_angle) ?? "",
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       wordsFormatted: fmtWords(d.word_count),
       wordsRaw: Number(d.word_count || 0),
       richnessLevel: richnessLevels[item.key] || 1,
-      signatureWord: d.signature_word || undefined,
-      signatureWordContext: d.signature_word_context || undefined,
+      interventions: Number(d.n_interventions || 0),
+      toneScore: Number(d.tone_score || 0),
+      signatureWord: cleanText(d.signature_word),
+      signatureWordContext: cleanText(d.signature_word_context),
+      deputies: buildDeputyList(item.key, period, deputyRows, portraits),
     };
   });
 
@@ -269,15 +486,59 @@ const ASSEMBLEE_JSON_PATH = path.resolve(
   "agora_decideurs_qc.json",
 );
 
+const ASSEMBLEE_DEPUTES_JSON_PATH = path.resolve(
+  process.cwd(),
+  "public",
+  "data",
+  "agora",
+  "agora_decideurs_qc_deputes.json",
+);
+
+async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
+  // Table publiée séparément (aws-refiners#259) — tant qu'un premier fetch_data.R
+  // ne l'a pas encore matérialisée localement, on dégrade en l'absence de
+  // cartes satellites plutôt que de faire échouer toute la section.
+  try {
+    const raw = await fs.readFile(ASSEMBLEE_DEPUTES_JSON_PATH, "utf8");
+    const rows = JSON.parse(raw) as DeputyAgoraRow[];
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+const PORTRAITS_INDEX_PATH = path.resolve(
+  process.cwd(),
+  "public",
+  "images",
+  "deputes",
+  "index.json",
+);
+
+async function loadPortraits(): Promise<DeputyPortrait[]> {
+  // Index produit par scripts/scrape_deputy_photos.py. Absent du dépôt tant que
+  // le script n'a pas tourné : on dégrade alors en cartes sans portrait plutôt
+  // que de faire échouer le build.
+  try {
+    const raw = await fs.readFile(PORTRAITS_INDEX_PATH, "utf8");
+    const parsed = JSON.parse(raw) as { deputes?: DeputyPortrait[] };
+    return Array.isArray(parsed?.deputes) ? parsed.deputes : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadAssemblee(): Promise<AssembleeData | null> {
   const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
   const allRows = JSON.parse(raw) as AgoraRow[];
   if (!Array.isArray(allRows) || allRows.length === 0) return null;
+  const deputyRows = await loadDeputyRows();
+  const portraits = buildPortraitIndex(await loadPortraits());
   return {
     periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq"),
-      session: buildPeriodView(allRows, "session"),
-      legislature: buildPeriodView(allRows, "legislature"),
+      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits),
+      session: buildPeriodView(allRows, "session", deputyRows, portraits),
+      legislature: buildPeriodView(allRows, "legislature", deputyRows, portraits),
     },
   };
 }

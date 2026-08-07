@@ -1,5 +1,77 @@
 [
   {
+    "pr": 407,
+    "date": "2026-08-07T18:56:37Z",
+    "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",
+    "version": null
+  },
+  {
+    "pr": 406,
+    "date": "2026-08-07T18:41:14Z",
+    "note": "Correctif d'affichage : les portraits des député.es réapparaissent sur les cartes du module « Que dit-on à l'Assemblée? ».",
+    "version": "2.20.0-beta.1"
+  },
+  {
+    "pr": 390,
+    "date": "2026-08-07T18:30:29Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » prend la forme d'un vestiaire : un casier par parti, qu'on ouvre pour découvrir une carte par député, avec son portrait, ses chiffres et le concept qui le distingue. Le ton se lit maintenant sur une échelle graduée plutôt qu'en un seul mot.",
+    "version": "2.20.0-beta.0"
+  },
+  {
+    "pr": 382,
+    "date": "2026-08-03T20:00:53Z",
+    "note": "L'encadré qui s'affiche au survol de la jauge « Deux solitudes » indique maintenant la part d'actualité que le Québec et le Canada ont en commun, avec un repère pour savoir ce que valent les deux extrémités de l'échelle. Tout le module parle désormais de la même chose, du grand chiffre au bouton de partage. Les catégories de sujets trop longues ne se chevauchent plus autour du radar, et le point…",
+    "version": "2.19.0-beta.0"
+  },
+  {
+    "pr": 379,
+    "date": "2026-08-02T18:35:53Z",
+    "note": "Le module Deux solitudes se fait plus compact et plus parlant : son grand chiffre indique désormais si l'actualité québécoise et canadienne se rejoint plus ou moins que d'habitude, et survoler les zones du radar affiche le symbole de la région concernée.",
+    "version": "2.18.0-beta.0"
+  },
+  {
+    "pr": 380,
+    "date": "2026-08-02T18:33:19Z",
+    "note": "Le diagramme public qui explique comment les données de la Vitrine sont fabriquées a été entièrement vérifié et corrigé : il décrit maintenant la vraie chaîne de publication, les bons horaires, et deux étapes qui n'y figuraient pas.",
+    "version": null
+  },
+  {
+    "pr": 377,
+    "date": "2026-07-31T16:05:35Z",
+    "note": "Les tuiles « De quoi parle-t-on? » révèlent maintenant leur actualité principale au survol et toutes les actualités associées au clic, avec les médias propres à chaque manchette. Sur mobile, les classements de la semaine et du mois deviennent une trajectoire ciblée accompagnée d'une liste où les actualités se déplient sous chaque enjeu.",
+    "version": "2.17.0-beta.0"
+  },
+  {
+    "pr": 355,
+    "date": "2026-07-30T02:10:49Z",
+    "note": "(Section vide — configuration interne des mises à jour de dépendances, rien de visible pour le visiteur.)",
+    "version": null
+  },
+  {
+    "pr": 364,
+    "date": "2026-07-29T16:22:05Z",
+    "note": "Quand on déplie une promesse du Polimètre+, la couleur de son verdict reste maintenant visible : elle habille tout le haut de la fiche, jusqu'au résumé.",
+    "version": "2.16.0-beta.2"
+  },
+  {
+    "pr": 368,
+    "date": "2026-07-29T16:19:09Z",
+    "note": "fix(polimetre) : immuniser le fetch contre la dérive INT32, et borner .git",
+    "version": null
+  },
+  {
+    "pr": 367,
+    "date": "2026-07-28T23:34:35Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » affiche d'abord les dix députés les plus présents de chaque parti, les autres s'affichant sur demande.",
+    "version": "2.16.0-beta.1"
+  },
+  {
+    "pr": 366,
+    "date": "2026-07-28T23:10:43Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » devient un tableau d'enquête : ouvrez le dossier d'un parti pour découvrir ce qu'il dit en chambre, et les fiches de ses députés selon combien chacun a parlé.",
+    "version": "2.16.0-beta.0"
+  },
+  {
     "pr": 362,
     "date": "2026-07-28T19:18:05Z",
     "note": "(Vide — correctif technique invisible pour les visiteurs jusqu'à ce qu'un module l'affiche.)",

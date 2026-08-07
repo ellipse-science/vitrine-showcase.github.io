@@ -176,6 +176,13 @@ const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [10
 // Le « 41 % au lieu de 31 » qui était noté ici appartenait au repli
 // `saillance − qc` retiré au #272, lequel réabsorbait les USA du côté canadien.
 const HABITUAL_EVENT_CONV = 31;
+// Bandes du score RELATIF (#258, demande Yannick « plus/moins que d'habitude,
+// et de combien ») : au-delà de p80 (ou sous p20) de la même distribution de
+// 323 fenêtres 24 h, l'écart n'est plus « un peu » mais « nettement ». Repli
+// codé ; la calibration publiée (event_convergence.p20/p80) prime quand
+// présente et monotone.
+const HABITUAL_EVENT_CONV_P20 = 16;
+const HABITUAL_EVENT_CONV_P80 = 42;
 
 function pctile(v: number, cal: [number, number][]): number {
   if (!(v > 0)) return 0;
@@ -266,6 +273,37 @@ function convMode(convPct: number): { word: string; cls: string } {
   if (convPct < 50) return { word: "Divergence partielle", cls: "mode-divp" };
   if (convPct < 75) return { word: "Convergence partielle", cls: "mode-convp" };
   return { word: "Convergence", cls: "mode-con" };
+}
+
+// Score RELATIF en hero (#258, demande Yannick « plus/moins divergent que
+// d'habitude, et de combien ») : le grand chiffre devient l'écart entre la
+// convergence du moment et l'habituel. Écart affiché en « % » (décision
+// Adrien 2026-08-01 : « points de pourcentage » ne parle pas au grand
+// public). « nettement » quand le marqueur sort de la bande p20-p80 de la
+// distribution historique, « un peu » sinon.
+function relScore(convPct: number, hab: number, p20: number, p80: number): {
+  relDiffPct: number; relLabel: string; relCls: string; relInfo: string;
+} {
+  const diff = convPct - hab;
+  const conv = diff > 0;
+  const strong = conv ? convPct >= p80 : convPct <= p20;
+  const intensity = strong ? "nettement" : "un peu";
+  // Le libellé à l'écran reste sobre (direction seulement) ; l'intensité
+  // (« un peu / nettement ») vit dans la bulle ⓘ (décision Adrien 2026-08-01).
+  const relLabel = Math.abs(diff) < 1
+    ? "aussi convergent que d'habitude"
+    : `plus ${conv ? "convergent" : "divergent"} que d'habitude`;
+  // Couleur du grand chiffre = direction de l'écart (bleu convergent / rouge
+  // divergent), nuancée par l'intensité. À écart nul : la teinte douce du camp
+  // divergent, où « habituel » réside (la divergence est la norme).
+  const relCls = Math.abs(diff) < 1
+    ? "mode-divp"
+    : conv ? (strong ? "mode-con" : "mode-convp") : (strong ? "mode-div" : "mode-divp");
+  const qual = Math.abs(diff) < 1 ? "autant" : `${intensity} ${conv ? "plus" : "moins"}`;
+  const relInfo =
+    `Règle générale, les médias du Québec et du Canada consacrent ${hab} % de leur attention ` +
+    `aux mêmes histoires. En ce moment : ${convPct} %, ${qual} que d'habitude.`;
+  return { relDiffPct: Math.abs(diff), relLabel, relCls, relInfo };
 }
 
 // Phrase éditoriale : GABARITS FINIS choisis par règles (aucun LLM en prod),
@@ -517,7 +555,38 @@ function windowEventConvergence(stories: Story[]): number | null {
   return Math.round(((biQc / totalQc) + (biRoc / totalRoc)) / 2 * 100);
 }
 
-function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | null, habitualConvPct: number = HABITUAL_EVENT_CONV): SolitudeData {
+function buildSolitudes(
+  latest: RawEvent[],
+  stories: Story[],
+  conv24h: number | null,
+  habitualConvPct: number = HABITUAL_EVENT_CONV,
+  habBands: { p20: number; p80: number } = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 },
+  // Niveau de saillance du bout de ligne (#383). Chaque camp est situé dans
+  // les Unes de SA région — un sujet mené par le ROC se compare aux Unes
+  // canadiennes, sinon le module comparerait deux solitudes avec une seule
+  // règle. Optionnel : les tests appellent buildSolitudes sans lui, et le
+  // radar se contente alors de la part d'attention (aucune étiquette inventée).
+  //
+  // ⚠️ COMPROMIS TEMPORAIRE — à retirer quand aws-refiners#273 aura livré
+  // `score_qc_sum_24h` et `score_roc_sum_24h`. Les deux côtés n'utilisent pas
+  // encore la même construction :
+  //   · QC  → le rang du badge de la Une des Unes (cumul 24 h + hystérésis,
+  //           #314), repris TEL QUEL. Non négociable : sans ça, la même
+  //           histoire affichait deux niveaux différents sur la même page
+  //           (mesuré le 2026-08-03 : « Téhéran » Faible au module 1,
+  //           Élevée au radar — même région, donc rien ne l'expliquait).
+  //   · ROC → le pic 24 h contre la distribution ROC des scores de bloc
+  //           (`score_roc`, n=1688), faute de calibration cumulée canadienne.
+  // Les deux restent « le niveau du sujet parmi les Unes de sa région », et la
+  // population est NOMMÉE dans la phrase, donc le lecteur n'a jamais à deviner
+  // dans quel panier il lit. Mais l'exactitude de la comparaison QC/ROC attend
+  // la calibration cumulée.
+  sal?: {
+    badgeRanks: Map<string, { rank: number }>;
+    sumThresholds: typeof SUM_QC_THRESHOLDS;
+    roc: typeof SAL_QC_THRESHOLDS | null;
+  },
+): SolitudeData {
   // Convergence OBJET sur la fenêtre 24 h (moyenne pondérée des blocs, cf.
   // windowConvergence). Repli sur l'exclusivité pondérée des histoires 24 h
   // tant qu'aucun bloc de la fenêtre n'a d'indice publié par le refiner (#211).
@@ -584,9 +653,34 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
+    // Niveau de saillance du camp qui MÈNE l'axe, situé dans la distribution
+    // 365 jours de ce camp (`score_qc` / `score_roc`, publiées toutes deux par
+    // la calibration). `peakQc`/`peakRoc` sont sur l'échelle du score de bloc,
+    // donc directement comparables à ces percentiles.
+    //
+    // Les deux camps reçoivent EXACTEMENT le même traitement — même grandeur
+    // (le pic du sujet sur la fenêtre 24 h), même nature de référence (la
+    // distribution des scores de bloc de sa région). C'est ce qui rend les
+    // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
+    // l'objet du module.
+    const mene = qs >= cs ? "qc" : "can";
+    let tier: { label: string; cls: string; hint: string } | null = null;
+    if (sal) {
+      if (mene === "qc") {
+        // Rang du badge du module 1, tel quel (même clé, même repli).
+        const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
+          ?? rawRank(a.sumQc, sal.sumThresholds);
+        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+      } else if (sal.roc) {
+        tier = saillanceTierFromScore(a.peakRoc, sal.roc, POP_ROC);
+      }
+    }
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
+      salienceLabel: tier?.label ?? null,
+      salienceCls: tier?.cls ?? null,
+      salienceHint: tier?.hint ?? null,
       qcRadial: Math.min(100, Math.round((qs / axisScale) * 100)),
       canRadial: Math.min(100, Math.round((cs / axisScale) * 100)),
       qcShare: Math.round(qs),
@@ -600,13 +694,15 @@ function buildSolitudes(latest: RawEvent[], stories: Story[], conv24h: number | 
 
   return {
     divPct, convPct,
-    // Le grand chiffre = le camp qui gagne (divergence si divPct l'emporte, sinon
-    // convergence). Cohérent avec les flèches/logos et avec l'échelle absolue : le
-    // marqueur à gauche du milieu = divergent, sa position vs « habituel » nuance.
-    scoreValue: convPct < 50 ? divPct : convPct,
-    verb: convPct < 50 ? "divergence" : "convergence",
     modeWord: mode.word, modeCls: mode.cls,
     habitualConvPct,
+    ...relScore(convPct, habitualConvPct, habBands.p20, habBands.p80),
+    // Le niveau absolu recule d'un rang : il vit au survol du marqueur de la
+    // jauge. Il est dit en CONVERGENCE, comme tout le module : le marqueur est
+    // posé à `convPct` sur la piste, donc l'annoncer en divergence chiffrerait
+    // le point là où il n'est pas.
+    markerTitle:
+      `Aujourd'hui : ${convPct} % de convergence. Habituel : ${habitualConvPct} %.`,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -642,18 +738,26 @@ const SAL_QC_THRESHOLDS = { faible: 8, moyenne: 11, eleve: 19, tresEleve: 48, ex
 // DÉPASSE la nouvelle (« X % … sont plus saillantes que celle-ci »), au-dessus on
 // compte ce qu'elle dépasse (« Plus saillante que X % … »). Toutes les nouvelles
 // ici ont fait la Une. Affiché en infobulle sur chaque tag + visible sous le hero.
-function saillanceTierFromScore(scoreQc: number | null, thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS): { label: string; cls: string; rank: number; hint: string } {
-  const s = scoreQc ?? 0;
-  if (s >= thresholds.extreme)   return { label: "Exceptionnelle",     cls: "s-extreme",     rank: 6, hint: "Plus saillante que 95 % des nouvelles à la Une." };
-  if (s >= thresholds.tresEleve) return { label: "Très élevée", cls: "s-tres-eleve",  rank: 5, hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." };
-  if (s >= thresholds.eleve)     return { label: "Élevée",      cls: "s-eleve",       rank: 4, hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." };
-  // « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
-  // la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
-  // qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
-  // Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
-  if (s >= thresholds.moyenne)   return { label: "Modérée",     cls: "s-moyenne",     rank: 3, hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  if (s >= thresholds.faible)    return { label: "Faible",      cls: "s-faible",      rank: 2, hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." };
-  return { label: "Très faible", cls: "s-tres-faible", rank: 1, hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." };
+// `pop` = population de référence, pour que la phrase nomme l'ensemble de médias
+// dans lequel la nouvelle est située. Défaut québécois : c'est la Une des Unes.
+// « Modérée » (et non « Moyenne ») : cette bande (p20-p50) est ENTIÈREMENT sous
+// la médiane ; avec 6 bandes paires, aucune n'EST le centre. Éviter « Moyenne »,
+// qui laisse croire à tort que c'est le niveau typique (retour M-A Martel, #35).
+// Le `cls` reste s-moyenne (le CSS s'appuie dessus, label ≠ classe).
+function saillanceTierFromScore(
+  score: number | null,
+  thresholds: typeof SAL_QC_THRESHOLDS = SAL_QC_THRESHOLDS,
+  pop: string = POP_QC,
+): { label: string; cls: string; rank: number; hint: string } {
+  const s = score ?? 0;
+  const rank = s >= thresholds.extreme ? 6
+    : s >= thresholds.tresEleve ? 5
+      : s >= thresholds.eleve ? 4
+        : s >= thresholds.moyenne ? 3
+          : s >= thresholds.faible ? 2
+            : 1;
+  const { label, cls } = TIER_BY_RANK[rank];
+  return { label, cls, rank, hint: HINT_BY_RANK[rank](pop) };
 }
 
 // ── Badge de saillance CUMULÉE 24 h (essai) ─────────────────────────────────
@@ -686,13 +790,34 @@ const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve:
 // vraie décroissance passe.
 const HYST_MARGIN = 0.08;
 
+/** Population de référence d'un niveau de saillance. Un niveau n'existe JAMAIS
+ *  dans l'absolu : il situe une nouvelle parmi les Unes d'un ensemble de médias.
+ *  Nommer cet ensemble n'est pas une précision de style — sans lui, « saillance
+ *  faible » sur un sujet mené par le ROC laisse croire qu'on compare les deux
+ *  régions dans le même panier, ce que « Deux solitudes » cherche justement à
+ *  ne pas faire. */
+const POP_QC = "des médias québécois";
+const POP_ROC = "des médias canadiens";
+
+/** Une seule rédaction pour les six niveaux, la population en paramètre. Ces
+ *  phrases existaient en double (ici et dans saillanceTierFromScore), mot pour
+ *  mot : la moindre retouche devait être faite deux fois. */
+const HINT_BY_RANK: Record<number, (pop: string) => string> = {
+  6: (p) => `Plus saillante que 95 % des nouvelles à la Une ${p}.`,
+  5: (p) => `Plus saillante qu’environ 85 % des nouvelles à la Une ${p}.`,
+  4: (p) => `Plus saillante qu’environ 65 % des nouvelles à la Une ${p}.`,
+  3: (p) => `Environ 65 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  2: (p) => `Environ 85 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+};
+
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
-  6: { label: "Exceptionnelle", cls: "s-extreme", hint: "Plus saillante que 95 % des nouvelles à la Une." },
-  5: { label: "Très élevée", cls: "s-tres-eleve", hint: "Plus saillante qu’environ 85 % des nouvelles à la Une." },
-  4: { label: "Élevée", cls: "s-eleve", hint: "Plus saillante qu’environ 65 % des nouvelles à la Une." },
-  3: { label: "Modérée", cls: "s-moyenne", hint: "Environ 65 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  2: { label: "Faible", cls: "s-faible", hint: "Environ 85 % des nouvelles à la Une sont plus saillantes que celle-ci." },
-  1: { label: "Très faible", cls: "s-tres-faible", hint: "95 % des nouvelles à la Une sont plus saillantes que celle-ci." },
+  6: { label: "Exceptionnelle", cls: "s-extreme", hint: HINT_BY_RANK[6](POP_QC) },
+  5: { label: "Très élevée", cls: "s-tres-eleve", hint: HINT_BY_RANK[5](POP_QC) },
+  4: { label: "Élevée", cls: "s-eleve", hint: HINT_BY_RANK[4](POP_QC) },
+  3: { label: "Modérée", cls: "s-moyenne", hint: HINT_BY_RANK[3](POP_QC) },
+  2: { label: "Faible", cls: "s-faible", hint: HINT_BY_RANK[2](POP_QC) },
+  1: { label: "Très faible", cls: "s-tres-faible", hint: HINT_BY_RANK[1](POP_QC) },
 };
 
 // Bornes basses des bandes, du rang 1 au rang 6 (rang 1 = pas de borne basse).
@@ -1261,6 +1386,19 @@ export type SolitudeAxis = {
   canShare: number;
   /** Camp dominant (couleur du libellé). */
   side: "qc" | "can";
+  /** Étiquette de saillance du moment (#383), prise à la MÊME source que le
+   *  badge de la Une des Unes — `badgeRanks` (cumul 24 h + hystérésis, #314)
+   *  puis `TIER_BY_RANK`. Surtout pas un calcul parallèle : la même histoire
+   *  porte le même niveau dans les deux modules, sinon on retombe sur deux
+   *  vérités pour une seule mesure. null quand le suivi n'est pas fourni. */
+  salienceLabel: string | null;
+  salienceCls: string | null;
+  /** Ce que le niveau VEUT DIRE, en percentiles (« Environ 85 % des nouvelles à
+   *  la Une sont plus saillantes que celle-ci. »). Même phrase que l'infobulle
+   *  du badge de la Une des Unes. C'est elle qui rend le bout de ligne utile
+   *  plutôt que redondant : le point INTÉRIEUR donne une part d'attention, le
+   *  point EXTÉRIEUR donne un rang parmi les Unes. */
+  salienceHint: string | null;
   /** Médias couvrants + lien vers leur dernier article sur le sujet.
    *  `region` colore la pastille (bleu QC / rouge CAN) : un sujet couvert des
    *  deux côtés montre les deux couleurs. */
@@ -1271,9 +1409,6 @@ export type SolitudeData = {
   /** Divergence affichée (0-100) = 100 − convergence. */
   divPct: number;
   convPct: number;
-  /** Le grand chiffre + son verbe (« divergence » / « convergence »). */
-  scoreValue: number;
-  verb: "divergence" | "convergence";
   /** Niveau + classe de couleur (4 seuils 25/50/75 sur la convergence). */
   modeWord: string;
   modeCls: string;
@@ -1281,6 +1416,19 @@ export type SolitudeData = {
    *  event-level médiane, en %). Le marqueur live est à `convPct` ; sa position
    *  vs `habitualConvPct` dit si aujourd'hui est plus/moins convergent que d'ordinaire. */
   habitualConvPct: number;
+  /** Score RELATIF en hero (#258) : écart |convPct − habitualConvPct| en %,
+   *  libellé de direction/intensité, couleur, texte du ⓘ et survol du marqueur
+   *  (où le niveau absolu s'est replié).
+   *
+   *  TOUT le module chiffre la CONVERGENCE — hero, ⓘ, bulle du marqueur, jauge
+   *  et partage. `divPct` reste calculé pour l'axe, mais aucun libellé public ne
+   *  doit l'afficher : deux vocabulaires pour une seule mesure obligent le
+   *  lecteur à faire la soustraction lui-même. */
+  relDiffPct: number;
+  relLabel: string;
+  relCls: string;
+  relInfo: string;
+  markerTitle: string;
   /** Mesure asymétrique « qui suit qui » (refiner #211) — null tant que non déployé. */
   coverageQcInCan: number | null;
   coverageCanInQc: number | null;
@@ -1315,10 +1463,12 @@ export type TreemapIssueTile = {
   velocity: number;
   /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
   growth: number | null;
-  /** Actualités récentes liées à l'enjeu (headline-events), pour le panneau « À la une ». */
-  articles: { title: string; url: string | null }[];
-  /** Médias QC qui couvrent l'enjeu aujourd'hui (affiché au survol des tuiles). */
-  outlets: { name: string; url: string | null }[];
+  /** Actualités récentes liées à l'enjeu, avec les médias propres à chaque actualité. */
+  articles: {
+    title: string;
+    url: string | null;
+    outlets: { name: string; url: string | null }[];
+  }[];
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -1429,11 +1579,19 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const sumThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
-  const evConvP50 = calibration?.metrics?.event_convergence?.p50;
+  const evConv = calibration?.metrics?.event_convergence;
+  const evConvP50 = evConv?.p50;
   const habitualConvPct =
     typeof evConvP50 === "number" && Number.isFinite(evConvP50)
       ? Math.round(Math.max(0, Math.min(100, evConvP50)))
       : HABITUAL_EVENT_CONV;
+  // Bandes « un peu / nettement » du score relatif (#258) : p20/p80 publiés,
+  // exigés finis et strictement encadrants de p50 (sinon repli codé 16/42).
+  const habBands =
+    evConv && [evConv.p20, evConv.p80].every((v) => typeof v === "number" && Number.isFinite(v)) &&
+    evConv.p20 < habitualConvPct && habitualConvPct < evConv.p80
+      ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
+      : undefined;
 
   // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
   const badgeRanks = badgeRanksWithHysteresis(unique, sumThresholds);
@@ -1531,7 +1689,14 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct);
+  // Côté QC, le radar reprend le badge du module 1 ; côté ROC, la seule
+  // distribution canadienne publiée (`score_roc`, n≈1688). Voir le compromis
+  // documenté sur buildSolitudes et aws-refiners#273.
+  const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
+    badgeRanks,
+    sumThresholds,
+    roc: salThresholdsFrom(calibration?.metrics?.score_roc),
+  });
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
   for (const e of latest) {
@@ -1645,23 +1810,44 @@ async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
   return map;
 }
 
-// Jusqu'à 5 actualités récentes par enjeu (événements distincts), pour le panneau « À la une »
-// du graphique de rang. On regroupe les événements par main_issue, on trie par score_qc
-// décroissant et on déduplique par URL/titre. Même source que loadFallbackIssueContent
-// (headline-events.json), mais on garde une liste plutôt que le seul meilleur.
+// Actualités récentes par enjeu (storylines distinctes). Chaque actualité conserve
+// ses propres médias et URLs : une union au niveau de l'enjeu attribuerait à tort
+// des médias d'une autre actualité à la manchette affichée.
 type IssueMedia = {
-  articles: { title: string; url: string | null }[];
-  outlets: { name: string; url: string | null }[];   // médias QC qui couvrent l'enjeu (comme la byline « Une des unes »)
+  articles: TreemapIssueTile["articles"];
 };
 
-async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+const QC_MEDIA_DOMAINS: Record<string, string> = {
+  "lapresse.ca": "La Presse",
+  "ledevoir.com": "Le Devoir",
+  "radio-canada.ca": "Radio-Canada",
+  "tvanouvelles.ca": "TVA Nouvelles",
+  "journaldemontreal.com": "Journal de Montréal",
+  "montrealgazette.com": "Montreal Gazette",
+};
+
+type RawIssueArticle = { media_id?: string; url?: string };
+
+function parseIssueArticles(raw: string | null | undefined): RawIssueArticle[] {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed as RawIssueArticle[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function outletFromUrl(url: string | null): { name: string; url: string } | null {
+  if (!url) return null;
+  for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
+    if (url.includes(domain)) return { name, url };
+  }
+  return null;
+}
+
+function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
   const map = new Map<string, IssueMedia>();
-  let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
-  const allRaw = JSON.parse(rawEvents) as RawEvent[];
-
   const unique = uniqueQcEvents(allRaw);
-
   const byIssue = new Map<string, RawEvent[]>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
@@ -1673,49 +1859,52 @@ async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
   for (const [issueKey, events] of byIssue) {
     const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
     const seen = new Set<string>();
-    const list: { title: string; url: string | null }[] = [];
-    const qcIds = new Set<string>();
-    const urlByMedia: Record<string, string> = {};
+    const list: TreemapIssueTile["articles"] = [];
     for (const e of sorted) {
       const title = (e.title ?? "").trim();
-      if (title) {
-        const url = e.representative_url ?? null;
-        const dedupKey = url ?? title;
-        if (!seen.has(dedupKey)) { seen.add(dedupKey); list.push({ title, url }); }
+      if (!title) continue;
+
+      const dedupKey = e.storyline_id ?? e.representative_url ?? title;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
+
+      const rawArticles = [
+        ...parseIssueArticles(e.articles_24h),
+        ...parseIssueArticles(e.articles),
+      ];
+      const urlByMedia = new Map<string, string>();
+      for (const article of rawArticles) {
+        if (article.media_id && article.url && QC_MEDIA.includes(article.media_id) && !urlByMedia.has(article.media_id)) {
+          urlByMedia.set(article.media_id, article.url);
+        }
       }
-      // Médias QC couvrant cet événement (exclusivité médias québécois)
-      let ids = e.media_ids_qc !== undefined ? parseIdList(e.media_ids_qc) : [];
-      if (ids.length === 0 && e.media_ids) {
-        ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+
+      let ids = parseIdList(e.media_ids_24h).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = parseIdList(e.media_ids_qc).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = parseIdList(e.media_ids).filter((id) => QC_MEDIA.includes(id));
+      if (ids.length === 0) ids = [...urlByMedia.keys()];
+      const idSet = new Set(ids);
+      let outlets = QC_MEDIA
+        .filter((id) => idSet.has(id))
+        .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia.get(id) ?? null }));
+
+      const url = e.representative_url ?? outlets.find((outlet) => outlet.url)?.url ?? null;
+      if (outlets.length === 0) {
+        const fallbackOutlet = outletFromUrl(url);
+        if (fallbackOutlet) outlets = [fallbackOutlet];
       }
-      ids.forEach((id) => {
-        if (QC_MEDIA.includes(id)) qcIds.add(id);
-      });
-      for (const k of ["articles_24h", "articles"] as const) {
-        try {
-          const parsed = JSON.parse((e[k] as string) ?? "[]");
-          if (Array.isArray(parsed)) for (const a of parsed as { media_id?: string; url?: string }[]) {
-            if (a.media_id && a.url && QC_MEDIA.includes(a.media_id) && !urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
-          }
-        } catch { /* champ absent ou malformé */ }
-      }
+      list.push({ title, url, outlets });
     }
-    const outlets = QC_MEDIA
-      .filter((id) => qcIds.has(id))
-      .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia[id] ?? null }));
-    map.set(issueKey, { articles: list.slice(0, 5), outlets });
+    map.set(issueKey, { articles: list });
   }
   return map;
 }
 
-const QC_MEDIA_DOMAINS: Record<string, string> = {
-  "lapresse.ca": "La Presse",
-  "ledevoir.com": "Le Devoir",
-  "radio-canada.ca": "Radio-Canada",
-  "tvanouvelles.ca": "TVA Nouvelles",
-  "journaldemontreal.com": "Journal de Montréal",
-  "montrealgazette.com": "Montreal Gazette",
-};
+async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+  let rawEvents: string;
+  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return new Map(); }
+  return buildIssueMedia(JSON.parse(rawEvents) as RawEvent[]);
+}
 
 export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
@@ -1772,19 +1961,15 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      let outlets = articlesByIssue.get(issueKey)?.outlets ?? [];
-      if (outlets.length === 0 && url) {
-        for (const [domain, name] of Object.entries(QC_MEDIA_DOMAINS)) {
-          if (url.includes(domain)) {
-            outlets = [{ name, url }];
-            break;
-          }
-        }
+      let articles = articlesByIssue.get(issueKey)?.articles ?? [];
+      if (articles.length === 0 && context) {
+        const fallbackOutlet = outletFromUrl(url);
+        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [] }];
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles: articlesByIssue.get(issueKey)?.articles ?? [], outlets };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
@@ -1819,6 +2004,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,
   capitalizeObject,
@@ -1827,6 +2013,7 @@ export const __test__ = {
   pctile,
   rocScore,
   convMode,
+  relScore,
   solitudesEdito,
   symbolPositions,
   buildSolitudes,
@@ -1847,5 +2034,6 @@ export const __test__ = {
   blockKey,
   titleTokens,
   sameStory,
+  buildIssueMedia,
   CAL_CONV,
 };

@@ -54,7 +54,6 @@ export type PromiseView = {
   verdictLabel: string;
   category: string | null; // full French category name
   salienceIndex: number;
-  nMentions: number;
   url: string;
   trend: Trend;
   // One article per outlet that covered the promise — the most recent piece

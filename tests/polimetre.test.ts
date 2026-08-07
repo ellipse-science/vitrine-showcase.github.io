@@ -3,22 +3,20 @@ import { __test__ } from "@/lib/data/polimetre";
 
 const { realText, shortenPledge, buildView, snapshotWindow } = __test__;
 
-// Ligne minimale du datamart ; les surcharges portent le cas testé.
+// Ligne minimale du datamart, restreinte aux colonnes RÉELLEMENT projetées par
+// scripts/tables.json — pledge_en, rank_current, rank_delta et n_mentions n'en
+// font plus partie, la fixture ne doit pas laisser croire le contraire.
 function row(over: Record<string, unknown> = {}) {
   return {
     country_id: "QC",
     week_end_date: "2026-07-24",
     pledge_number: "42",
     pledge_text_fr: "[Un gouvernement de la CAQ réélu s'engage à] abolir la taxe sur les carburants dès le premier budget",
-    pledge_en: "Abolish the fuel tax",
     verdict: "Promesse tenue",
     category: "Économie",
     salience_index: 10,
     previous_salience_index: 5,
     delta_index: 5,
-    rank_current: 1,
-    rank_delta: 0,
-    n_mentions: 3,
     titles: "",
     urls: "",
     ...over,

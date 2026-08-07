@@ -38,6 +38,27 @@ write_json_file <- function(df, path) {
     dataframe = "rows")
 }
 
+# Athena ne garantit AUCUN ordre en l'absence d'ORDER BY : deux fetch successifs
+# renvoient les mêmes lignes dans un ordre différent. Comme le JSON est écrit sur
+# une seule ligne, chaque rafraîchissement réécrivait donc le fichier entier —
+# six fois par jour, sans delta Git exploitable. D'où un .git qui dérive.
+#
+# Le tri porte sur toutes les colonnes concaténées : déterministe sans rien
+# savoir de la table. method = "radix" pour être indépendant de la locale, sinon
+# l'ordre changerait entre une machine locale et le runner CI.
+#
+# Aucun consommateur ne peut dépendre de l'ordre d'origine, puisqu'il variait
+# déjà d'un run à l'autre — les loaders qui ont besoin d'un ordre le
+# reconstruisent (cf. arrange() dans les post-traitements).
+sort_rows_deterministically <- function(df) {
+  if (nrow(df) < 2L || ncol(df) == 0L) return(df)
+  key <- do.call(paste, c(lapply(df, as.character), sep = ""))
+  df[order(key, method = "radix"), , drop = FALSE]
+}
+
+# Fenêtre de rétention du Polimètre+, en jours (cf. filtre polimetre_plus_recent).
+POLIMETRE_KEEP_DAYS <- 70L
+
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
 apply_filter <- function(df, filter_id) {
@@ -48,6 +69,28 @@ apply_filter <- function(df, filter_id) {
     if ("date_utc" %in% names(df)) {
       cutoff_day <- as.integer(Sys.Date() - 3L)
       df <- dplyr::filter(df, date_utc >= cutoff_day)
+    }
+    return(df)
+  }
+
+  if (filter_id == "polimetre_plus_recent") {
+    # Le raffineur publie un snapshot par jour et la table s'accumule sans fin,
+    # chaque ligne enrichie pesant ~1 Ko de texte IA (résumés 7 j et 30 j).
+    # lib/data/polimetre.ts n'a besoin que de 8 snapshots — 4 pour le mois
+    # courant, 4 pour le précédent, par pas de 7 jours, soit 49 jours plus la
+    # tolérance. 70 laisse de la marge pour des runs manqués.
+    #
+    # Fenêtre ancrée sur la DONNÉE (dernier snapshot), pas sur Sys.Date() : si le
+    # raffineur cessait de publier, une fenêtre calculée depuis l'horloge viderait
+    # le fichier ligne à ligne et le module finirait par disparaître du site.
+    # Ancrée sur la donnée, elle gèle — la Vitrine montre des données périmées,
+    # ce qui est visible, plutôt qu'un module absent, qui ne l'est pas.
+    if ("week_end_date" %in% names(df) && nrow(df) > 0) {
+      wed <- as.Date(df$week_end_date)
+      if (any(!is.na(wed))) {
+        cutoff <- max(wed, na.rm = TRUE) - POLIMETRE_KEEP_DAYS
+        df <- df[!is.na(wed) & wed >= cutoff, , drop = FALSE]
+      }
     }
     return(df)
   }
@@ -68,6 +111,7 @@ fetch_table <- function(conn, entry) {
   df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
   df       <- apply_filter(df, entry$filter)
+  df       <- sort_rows_deterministically(df)
   df
 }
 

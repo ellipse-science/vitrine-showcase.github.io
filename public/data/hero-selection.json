@@ -1,10 +1,10 @@
 {
-  "event_id": "20260728T150000Z-evt-troisieme-jour-recherches-retrouver-homme-29c20ea2",
-  "storyline_id": "story-philippe-benoit-1ff01bff",
-  "title": "Chasse à l'homme à Shawinigan : Philippe Benoit toujours introuvable",
-  "main_issue": "law_and_crime",
-  "date_utc": "2026-07-28",
-  "time_interval_utc": "15-19",
-  "sum_qc": 36.466,
-  "peak_qc": 18.184
+  "event_id": "20260807T110000Z-evt-immigrants-deplorent-manque-humanite-immigration-6e5722cd",
+  "storyline_id": "story-immigration-refugees-citizenship-778994fe",
+  "title": "Immigration Canada critiqué pour son manque d'humanité envers les travailleurs",
+  "main_issue": "immigration",
+  "date_utc": "2026-08-07",
+  "time_interval_utc": "11-15",
+  "sum_qc": 68.493,
+  "peak_qc": 44.291
 }
