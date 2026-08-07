@@ -1801,7 +1801,7 @@
     70%  { transform: scale(2.6); opacity: 0; }
     100% { transform: scale(2.6); opacity: 0; }
   }
-  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: start; }
+  .solitudes .radar-ring-lab { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: rgba(28,25,23,0.38); text-anchor: middle; }
   .solitudes .radar-qc  { fill: rgba(46,70,99,0.32); stroke: var(--bleu); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .radar-can { fill: rgba(168,48,44,0.26); stroke: var(--red); stroke-width: 1.7; stroke-linejoin: round; }
   .solitudes .dot .hit { fill: transparent; cursor: pointer; }
@@ -1841,6 +1841,10 @@
   .solitudes .m-chip:hover g { transform: scale(1.25); }
   .solitudes .m-chip .m-name { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; font-size: 9.5px; letter-spacing: 0.09em; fill: var(--ink); text-anchor: middle; }
   .solitudes .m-chip:hover .m-name { opacity: 1; }
+  /* Chip « +N » (#394) : médias au-delà de ce qui tient sans chevaucher
+     le halo. Neutre (ni bleu ni rouge, ce n'est pas un média d'une région) —
+     pas de <g> interne comme les autres chips, donc pas de survol agrandi. */
+  .solitudes .m-chip.chip-more .m-code { fill: var(--ink-softer); font-weight: 500; }
 
   /* Score signature : chiffre géant + libellé */
   .solitudes .sol-stat { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 10px 0 0; animation: solFadeUp 0.5s ease 0.62s both; }
@@ -1871,10 +1875,13 @@
     .solitudes .info-bubble::after { top: -8px; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-bottom-color: var(--paper); border-right-color: transparent; filter: drop-shadow(0 -1px 0 var(--rule)); }
   }
 
-  /* Échelle absolue graduée : rouge (100 % divergence) → bleu (100 % convergence),
-     repère « habituel » sous la ligne, marqueur = convergence sur la fenêtre 24 h. */
+  /* Échelle absolue graduée, neutre en ink (#396) : cette jauge mesure un DEGRÉ
+     de convergence, pas une région — le rouge/bleu de QC/ROC du radar au-dessus
+     n'a rien à y faire, et le réutiliser (même inversé) crée un code couleur
+     qui change de sens entre le haut et le bas du module. Repère « habituel »
+     sous la ligne, marqueur = convergence sur la fenêtre 24 h. */
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 58px; margin: 20px auto 0; }
-  .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--rule) 45%, var(--bleu)); }
+  .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--ink-softer), var(--rule) 50%, var(--ink-soft)); }
   .solitudes .rel-strip .hab { position: absolute; top: 25px; width: 1px; height: 13px; background: rgba(28,25,23,0.42); }
   .solitudes .rel-strip .marker { position: absolute; top: 31.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper-deep); transform: translate(-50%, -50%); transition: left 0.6s ease; background: var(--ink); animation: solLivePulse 2.2s ease-out infinite; cursor: help; }
   /* Zone de survol élargie du marqueur (le point fait 12px, la cible 32px). */
@@ -1896,8 +1903,8 @@
     100% { box-shadow: 0 0 0 1px rgba(28,25,23,0.25), 0 0 0 0 rgba(107,30,42,0); }
   }
   .solitudes .rel-strip .lbl { position: absolute; top: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-softer); }
-  .solitudes .rel-strip .lbl.l { left: 0; color: var(--red); }
-  .solitudes .rel-strip .lbl.r { right: 0; color: var(--bleu); }
+  .solitudes .rel-strip .lbl.l { left: 0; }
+  .solitudes .rel-strip .lbl.r { right: 0; }
   .solitudes .rel-strip .grad { position: absolute; top: 42px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap; }
   .solitudes .rel-strip .grad.g0 { left: 0; }
   .solitudes .rel-strip .grad.g1 { right: 0; }
@@ -5812,17 +5819,25 @@
   .ppl-discover {
     border: 0.5px solid var(--rule);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
     color: var(--ink);
     text-decoration: none;
-    padding: 4px 11px;
+    padding: 7px 15px;
     background: var(--ink);
     color: var(--paper);
+    /* inline-flex : la marque du Polimètre s'aligne sur la casse du libellé
+       plutôt que sur sa ligne de base (le glyphe déborderait sous le bouton). */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-discover:hover { opacity: 0.85; }
+  /* La marque ne doit jamais rétrécir quand le libellé passe sur deux lignes
+     (cas mobile 375 px, où le bouton occupe toute la largeur). */
+  .ppl-discover__mark { flex-shrink: 0; }
 
   .ppl-trend {
     font-family: 'IBM Plex Mono', monospace;
@@ -5835,6 +5850,8 @@
   .ppl-trend--up   { color: var(--green); }
   .ppl-trend--down { color: var(--red); }
   .ppl-trend--flat { color: var(--ink-softer); }
+  /* Absence de comparaison : plus effacé que « flat », qui est un constat. */
+  .ppl-trend--unknown { color: var(--ink-softer); opacity: 0.55; }
 
   /* Chevron d'affordance : sans lui, rien ne dit que le rang se déplie. Encre
      très pâle au repos (il ne doit pas concurrencer le libellé), cordovan au
@@ -6050,13 +6067,17 @@
        hauteur identique au bloc « depuis une semaine / un mois » en haut. */
     border: 0.5px solid transparent;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     font-weight: 500;
-    padding: 4px 22px;
+    padding: 7px 22px;
     cursor: pointer;
     transition: background 0.15s ease;
+    /* même alignement de la marque du Polimètre que .ppl-discover */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .ppl-website:hover { background: var(--cordovan); }
   .ppl-metho {

@@ -1,5 +1,35 @@
 [
   {
+    "pr": 404,
+    "date": "2026-08-07T21:25:47Z",
+    "note": "L'échelle convergent/divergent du module Deux solitudes est maintenant en tons neutres, pour ne plus entrer en collision avec le code couleur Québec/Canada affiché au-dessus.",
+    "version": "2.20.0-beta.5"
+  },
+  {
+    "pr": 402,
+    "date": "2026-08-07T21:21:58Z",
+    "note": "Le radar du module Deux solitudes ne laisse plus jamais un texte ou un badge chevaucher le graphique, quel que soit le nombre de médias ayant couvert un sujet.",
+    "version": "2.20.0-beta.4"
+  },
+  {
+    "pr": 398,
+    "date": "2026-08-07T21:19:27Z",
+    "note": "Correction d'un libellé de fraîcheur des données qui pouvait afficher un jour de retard pour certains blocs horaires.",
+    "version": "2.20.0-beta.3"
+  },
+  {
+    "pr": 361,
+    "date": "2026-08-07T20:30:27Z",
+    "note": "Le lien vers le site du Polimètre, au bas du module des promesses, affiche maintenant le logo du Polimètre et un libellé plus lisible.",
+    "version": "2.20.0-beta.2"
+  },
+  {
+    "pr": 365,
+    "date": "2026-08-07T20:29:23Z",
+    "note": "fix(polimetre) : sélectionner les snapshots par date, pas par position",
+    "version": null
+  },
+  {
     "pr": 407,
     "date": "2026-08-07T18:56:37Z",
     "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",

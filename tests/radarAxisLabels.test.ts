@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   wrapLabel,
+  ringLabelAngle,
   EYEBROW_MAX_CHARS,
   EYEBROW_PX_PER_CHAR,
   AXIS_BLOCK_MAX_PX,
@@ -56,5 +57,34 @@ describe("Deux solitudes — rubrique d'axe (#381)", () => {
     for (const ligne of wrapLabel("Grève des agents de bord de WestJet paralyse des centaines de vols")) {
       expect(ligne.length).toBeLessThanOrEqual(26);
     }
+  });
+});
+
+// #394 : « Ça embarque sur le point, il faut s'assurer que ça arrive
+// jamais. » Les labels % de l'échelle radiale (13/25/38/50 %) étaient plaqués
+// sur l'axe vertical du haut — la même colonne que le point de données de cet
+// axe — et venaient le recouvrir dès que sa valeur approchait un palier.
+describe("Deux solitudes — labels % de l'échelle radiale (#394)", () => {
+  const normalize = (a: number) => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+  it("l'angle du label ne coïncide jamais avec un axe, quel que soit le nombre d'histoires", () => {
+    for (let n = 1; n <= 12; n++) {
+      const ring = normalize(ringLabelAngle(n));
+      for (let i = 0; i < n; i++) {
+        const axis = normalize(-Math.PI / 2 + (i * 2 * Math.PI) / n);
+        expect(Math.abs(ring - axis)).toBeGreaterThan(1e-9);
+      }
+    }
+  });
+
+  it("pour six histoires (cas réel), le label tombe bien au milieu de l'écart entre le dernier axe et le premier", () => {
+    const n = 6;
+    const top = -Math.PI / 2;
+    const last = -Math.PI / 2 + ((n - 1) * 2 * Math.PI) / n; // axe n-1
+    const ring = ringLabelAngle(n);
+    // L'écart top↔last passe par le "bas" (2π - 2π/n) : le label doit être à
+    // équidistance des deux, du côté court (celui qui longe le haut).
+    expect(normalize(top - ring)).toBeCloseTo(Math.PI / n, 9);
+    expect(normalize(ring - last)).toBeCloseTo(Math.PI / n, 9);
   });
 });
