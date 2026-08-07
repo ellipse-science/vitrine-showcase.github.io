@@ -1,6 +1,6 @@
 {
   "window_days": 365,
-  "computed_utc": "2026-08-07T21:58:32Z",
+  "computed_utc": "2026-08-07T22:15:37Z",
   "metrics": {
     "score_qc": {
       "region": "QC",
@@ -30,6 +30,16 @@
       "p50": 52.01,
       "p80": 71.84,
       "p95": 154.63
+    },
+    "score_roc_sum_24h": {
+      "region": "ROC",
+      "since": "2026-07-17",
+      "n": 81,
+      "p5": 28.04,
+      "p20": 39.3,
+      "p50": 79.39,
+      "p80": 210.61,
+      "p95": 532.99
     },
     "score_roc": {
       "region": "ROC",
