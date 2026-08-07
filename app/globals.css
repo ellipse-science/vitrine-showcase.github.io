@@ -1884,10 +1884,13 @@
     .solitudes .info-bubble::after { top: -8px; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-bottom-color: var(--paper); border-right-color: transparent; filter: drop-shadow(0 -1px 0 var(--rule)); }
   }
 
-  /* Échelle absolue graduée : rouge (100 % divergence) → bleu (100 % convergence),
-     repère « habituel » sous la ligne, marqueur = convergence sur la fenêtre 24 h. */
+  /* Échelle absolue graduée, neutre en ink (#396) : cette jauge mesure un DEGRÉ
+     de convergence, pas une région — le rouge/bleu de QC/ROC du radar au-dessus
+     n'a rien à y faire, et le réutiliser (même inversé) crée un code couleur
+     qui change de sens entre le haut et le bas du module. Repère « habituel »
+     sous la ligne, marqueur = convergence sur la fenêtre 24 h. */
   .solitudes .rel-strip { position: relative; width: 320px; max-width: 90%; height: 58px; margin: 20px auto 0; }
-  .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--rule) 45%, var(--bleu)); }
+  .solitudes .rel-strip .track { position: absolute; top: 30px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--ink-softer), var(--rule) 50%, var(--ink-soft)); }
   .solitudes .rel-strip .hab { position: absolute; top: 25px; width: 1px; height: 13px; background: rgba(28,25,23,0.42); }
   .solitudes .rel-strip .marker { position: absolute; top: 31.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper-deep); transform: translate(-50%, -50%); transition: left 0.6s ease; background: var(--ink); animation: solLivePulse 2.2s ease-out infinite; cursor: help; }
   /* Zone de survol élargie du marqueur (le point fait 12px, la cible 32px). */
@@ -1909,8 +1912,8 @@
     100% { box-shadow: 0 0 0 1px rgba(28,25,23,0.25), 0 0 0 0 rgba(107,30,42,0); }
   }
   .solitudes .rel-strip .lbl { position: absolute; top: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-softer); }
-  .solitudes .rel-strip .lbl.l { left: 0; color: var(--red); }
-  .solitudes .rel-strip .lbl.r { right: 0; color: var(--bleu); }
+  .solitudes .rel-strip .lbl.l { left: 0; }
+  .solitudes .rel-strip .lbl.r { right: 0; }
   .solitudes .rel-strip .grad { position: absolute; top: 42px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap; }
   .solitudes .rel-strip .grad.g0 { left: 0; }
   .solitudes .rel-strip .grad.g1 { right: 0; }
