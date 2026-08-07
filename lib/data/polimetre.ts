@@ -49,6 +49,14 @@ const POLIMETRE_JSON_PATH = path.resolve(
 // Number of weekly snapshots rolled up into the "month" view.
 const MONTH_WEEKS = 4;
 
+// Snapshots are selected by DATE, never by row position — see snapshotWindow().
+const DAY_MS = 86_400_000;
+const WEEK_DAYS = 7;
+// How far a snapshot may sit from its nominal stride and still stand in for it.
+// Disjointness does NOT follow from this bound — two picks 3 days off in
+// opposite directions would land a day apart — so it is enforced separately.
+const SNAPSHOT_TOLERANCE_DAYS = 3;
+
 // French verdict label (from mastersheet_Promesses) → CSS/aria slug.
 const VERDICT_SLUG: Record<string, VerdictSlug> = {
   "Réalisée": "realisee",
@@ -310,13 +318,15 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     .map(([num, a]): PromiseView => {
       const currRank = currentRanks.get(num) ?? 0;
       const before = prevRanks.get(num);
-      const movement = before == null ? 0 : before - currRank; // up = gained positions
+      const movement = before == null ? null : before - currRank; // up = gained positions
       const trend: Trend =
-        movement > 0
-          ? { dir: "up", delta: movement }
-          : movement < 0
-            ? { dir: "down", delta: -movement }
-            : { dir: "flat", delta: 0 };
+        movement == null
+          ? { dir: "unknown", delta: 0 }
+          : movement > 0
+            ? { dir: "up", delta: movement }
+            : movement < 0
+              ? { dir: "down", delta: -movement }
+              : { dir: "flat", delta: 0 };
 
       const r = a.row;
       const category = (r.category ?? "").trim();
@@ -338,8 +348,64 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
 }
 
+function shiftDays(date: string, delta: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + delta * DAY_MS).toISOString().slice(0, 10);
+}
+
+function daysApart(a: string, b: string): number {
+  return Math.abs(Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / DAY_MS));
+}
+
+// Snapshot nearest `target`, or null when the closest one is further away than
+// SNAPSHOT_TOLERANCE_DAYS — a missing run must yield a hole, not a stand-in
+// borrowed from an adjacent stride. Candidates at less than WEEK_DAYS before
+// `floor` are rejected outright: a snapshot covers the 7 days ending on its own
+// date, so anything closer than that overlaps the pick already made.
+function nearestSnapshot(weeks: string[], target: string, floor: string | null): string | null {
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const w of weeks) {
+    if (floor !== null && daysApart(floor, w) < WEEK_DAYS) continue;
+    if (floor !== null && w > floor) continue;
+    const d = daysApart(w, target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = w;
+    }
+  }
+  return best !== null && bestDist <= SNAPSHOT_TOLERANCE_DAYS ? best : null;
+}
+
+// Walk back from `anchor` in 7-day strides, keeping the snapshot nearest each
+// one. Selecting by date rather than by row position is what keeps the rolled-up
+// windows disjoint whatever the publication cadence: the refiner publishes a
+// 7-day ROLLING window per run (current_week_start = week_end_date - 6), so
+// consecutive daily snapshots overlap by six days. Summing those — which taking
+// the last N rows did — counted the same coverage up to N times and collapsed
+// the week-over-week trend to a comparison between two near-identical windows.
+// `offsetWeeks` shifts the whole walk back; `floor` seeds it with a pick made by
+// an earlier walk, so the preceding window stays disjoint from the current one
+// and the trend compares two genuinely separate periods.
+function snapshotWindow(
+  weeks: string[],
+  anchor: string,
+  count: number,
+  offsetWeeks = 0,
+  floor: string | null = null,
+): string[] {
+  const picked: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const hit = nearestSnapshot(weeks, shiftDays(anchor, -(offsetWeeks + i) * WEEK_DAYS), floor);
+    if (hit) {
+      picked.push(hit);
+      floor = hit;
+    }
+  }
+  return picked;
+}
+
 // Exported for unit testing only — not part of the public API.
-export const __test__ = { realText, shortenPledge, buildView };
+export const __test__ = { realText, shortenPledge, buildView, snapshotWindow };
 
 export async function loadPolimetre(): Promise<PolimetreData | null> {
   let raw: string;
@@ -360,9 +426,16 @@ export async function loadPolimetre(): Promise<PolimetreData | null> {
   const weeks = Array.from(new Set(rows.map((r) => r.week_end_date))).sort();
   const latestWeek = weeks[weeks.length - 1];
 
+  const weekCurrent = snapshotWindow(weeks, latestWeek, 1);
+  const monthCurrent = snapshotWindow(weeks, latestWeek, MONTH_WEEKS);
+
   const ranges: Record<RangeKey, PromiseView[]> = {
-    week: buildView(rows, weeks.slice(-1), weeks.slice(-2, -1)),
-    month: buildView(rows, weeks.slice(-MONTH_WEEKS), weeks.slice(-2 * MONTH_WEEKS, -MONTH_WEEKS)),
+    week: buildView(rows, weekCurrent, snapshotWindow(weeks, latestWeek, 1, 1, weekCurrent.at(-1) ?? null)),
+    month: buildView(
+      rows,
+      monthCurrent,
+      snapshotWindow(weeks, latestWeek, MONTH_WEEKS, MONTH_WEEKS, monthCurrent.at(-1) ?? null),
+    ),
   };
 
   if (ranges.week.length === 0 && ranges.month.length === 0) return null;
