@@ -108,10 +108,13 @@ jobs:
       - name: Check headline freshness (silent-lag alarm)
         id: freshness
         continue-on-error: true
-        run: python3 scripts/check_freshness.py
+        run: python scripts/check_freshness.py
 
+      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
+      # données plus bas — la donnée (même en retard) se publie toujours.
       - name: Alert Slack if headline data is stale
         if: steps.freshness.outputs.stale == 'true'
+        continue-on-error: true
         run: |
           RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
