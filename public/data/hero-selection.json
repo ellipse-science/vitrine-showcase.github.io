@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T110000Z-evt-immigrants-deplorent-manque-humanite-immigration-6e5722cd",
-  "storyline_id": "story-immigration-refugees-citizenship-778994fe",
-  "title": "Immigration Canada critiqué pour son manque d'humanité envers les travailleurs",
-  "main_issue": "immigration",
+  "event_id": "20260807T190000Z-evt-nouvelle-menace-tarifaire-ottawa-ouvert-4a65b1fe",
+  "storyline_id": "story-tariffs-2a5e7c2c",
+  "title": "Ottawa prêt à lever l'interdiction sur l'alcool américain pour éviter des tarifs",
+  "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-07",
-  "time_interval_utc": "11-15",
-  "sum_qc": 51.908,
-  "peak_qc": 44.291
+  "time_interval_utc": "19-23",
+  "sum_qc": 80.388,
+  "peak_qc": 51.23
 }
