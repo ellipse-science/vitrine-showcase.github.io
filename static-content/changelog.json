@@ -1,5 +1,83 @@
 [
   {
+    "pr": 412,
+    "date": "2026-08-08T16:23:28Z",
+    "note": "Ajout d'une surveillance automatique de la fraîcheur des données de la Une — l'équipe est maintenant alertée en quelques heures si les données prennent du retard.",
+    "version": null
+  },
+  {
+    "pr": 411,
+    "date": "2026-08-08T16:20:17Z",
+    "note": "Documentation interne seulement — rien ne change pour le site.",
+    "version": null
+  },
+  {
+    "pr": 409,
+    "date": "2026-08-07T22:09:53Z",
+    "note": "Le niveau de saillance des sujets canadiens du module Deux solitudes se prépare à être mesuré avec la même règle que celui des sujets québécois.",
+    "version": "2.20.0-beta.7"
+  },
+  {
+    "pr": 405,
+    "date": "2026-08-07T21:39:06Z",
+    "note": "Dans le module Deux solitudes, le Québec (bleu) est maintenant affiché à droite et le Canada (rouge) à gauche, pour correspondre à la disposition réelle du graphique en dessous.",
+    "version": "2.20.0-beta.6"
+  },
+  {
+    "pr": 404,
+    "date": "2026-08-07T21:25:47Z",
+    "note": "L'échelle convergent/divergent du module Deux solitudes est maintenant en tons neutres, pour ne plus entrer en collision avec le code couleur Québec/Canada affiché au-dessus.",
+    "version": "2.20.0-beta.5"
+  },
+  {
+    "pr": 402,
+    "date": "2026-08-07T21:21:58Z",
+    "note": "Le radar du module Deux solitudes ne laisse plus jamais un texte ou un badge chevaucher le graphique, quel que soit le nombre de médias ayant couvert un sujet.",
+    "version": "2.20.0-beta.4"
+  },
+  {
+    "pr": 398,
+    "date": "2026-08-07T21:19:27Z",
+    "note": "Correction d'un libellé de fraîcheur des données qui pouvait afficher un jour de retard pour certains blocs horaires.",
+    "version": "2.20.0-beta.3"
+  },
+  {
+    "pr": 361,
+    "date": "2026-08-07T20:30:27Z",
+    "note": "Le lien vers le site du Polimètre, au bas du module des promesses, affiche maintenant le logo du Polimètre et un libellé plus lisible.",
+    "version": "2.20.0-beta.2"
+  },
+  {
+    "pr": 365,
+    "date": "2026-08-07T20:29:23Z",
+    "note": "fix(polimetre) : sélectionner les snapshots par date, pas par position",
+    "version": null
+  },
+  {
+    "pr": 407,
+    "date": "2026-08-07T18:56:37Z",
+    "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",
+    "version": null
+  },
+  {
+    "pr": 406,
+    "date": "2026-08-07T18:41:14Z",
+    "note": "Correctif d'affichage : les portraits des député.es réapparaissent sur les cartes du module « Que dit-on à l'Assemblée? ».",
+    "version": "2.20.0-beta.1"
+  },
+  {
+    "pr": 390,
+    "date": "2026-08-07T18:30:29Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » prend la forme d'un vestiaire : un casier par parti, qu'on ouvre pour découvrir une carte par député, avec son portrait, ses chiffres et le concept qui le distingue. Le ton se lit maintenant sur une échelle graduée plutôt qu'en un seul mot.",
+    "version": "2.20.0-beta.0"
+  },
+  {
+    "pr": 382,
+    "date": "2026-08-03T20:00:53Z",
+    "note": "L'encadré qui s'affiche au survol de la jauge « Deux solitudes » indique maintenant la part d'actualité que le Québec et le Canada ont en commun, avec un repère pour savoir ce que valent les deux extrémités de l'échelle. Tout le module parle désormais de la même chose, du grand chiffre au bouton de partage. Les catégories de sujets trop longues ne se chevauchent plus autour du radar, et le point…",
+    "version": "2.19.0-beta.0"
+  },
+  {
     "pr": 379,
     "date": "2026-08-02T18:35:53Z",
     "note": "Le module Deux solitudes se fait plus compact et plus parlant : son grand chiffre indique désormais si l'actualité québécoise et canadienne se rejoint plus ou moins que d'habitude, et survoler les zones du radar affiche le symbole de la région concernée.",
