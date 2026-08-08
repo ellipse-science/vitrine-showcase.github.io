@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T110000Z-evt-immigrants-deplorent-manque-humanite-immigration-6e5722cd",
-  "storyline_id": "story-immigration-refugees-citizenship-778994fe",
-  "title": "Immigration Canada critiqué pour son manque d'humanité envers les travailleurs",
-  "main_issue": "immigration",
-  "date_utc": "2026-08-07",
+  "event_id": "20260808T110000Z-evt-teles-ont-disparu-certains-hopitaux-38110a39",
+  "storyline_id": "story-televisions-068a0fa7",
+  "title": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
+  "main_issue": "health_and_social_services",
+  "date_utc": "2026-08-08",
   "time_interval_utc": "11-15",
-  "sum_qc": 51.908,
-  "peak_qc": 44.291
+  "sum_qc": 43.3,
+  "peak_qc": 21.554
 }
