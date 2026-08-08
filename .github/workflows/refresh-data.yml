@@ -34,6 +34,9 @@ jobs:
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_MUSIC_WEBHOOK_URL:    ${{ secrets.SLACK_MUSIC_WEBHOOK_URL }}
+      # Webhook du canal #02_vitrine_vibecode — l'alarme de fraîcheur y poste
+      # aussi. Optionnel : tant que le secret n'existe pas, silencieux.
+      SLACK_VIBECODE_WEBHOOK_URL: ${{ secrets.SLACK_VIBECODE_WEBHOOK_URL }}
       OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
       REPLICATE_API_TOKEN:   ${{ secrets.REPLICATE_API_TOKEN }}
 
@@ -94,6 +97,50 @@ jobs:
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
+
+      # Alarme de fraîcheur (réf. aws-refiners#278) : un retard CONSTANT
+      # d'environ 4h SANS aucune erreur = un stepper de la cascade AWS coincé
+      # un bloc en arrière — panne silencieuse restée invisible ~30h les
+      # 6-7 août 2026. On mesure l'âge du bloc le plus frais réellement servi
+      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; l'alerte Slack
+      # ci-dessous sonne au-delà du seuil, à chaque fetch tant que ça dure.
+      # Non bloquant : une donnée en retard doit quand même être publiée.
+      - name: Check headline freshness (silent-lag alarm)
+        id: freshness
+        continue-on-error: true
+        run: python scripts/check_freshness.py
+
+      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
+      # données plus bas — la donnée (même en retard) se publie toujours.
+      - name: Alert Slack if headline data is stale
+        if: steps.freshness.outputs.stale == 'true'
+        continue-on-error: true
+        run: |
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
+          for hook in "$SLACK_WEBHOOK_URL" "$SLACK_VIBECODE_WEBHOOK_URL"; do
+            if [ -n "$hook" ]; then
+              curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$hook"
+            fi
+          done
+
+      # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
+      # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
+      # fetch, ping /fail quand la Une est périmée → courriel « DOWN » avec
+      # l'âge en corps, puis « UP » au rétablissement. Si le workflow meurt
+      # entièrement, le battement manque et Healthchecks alerte aussi —
+      # couvre le fetch mort ET le retard silencieux.
+      - name: Signal freshness to Healthchecks (email alert)
+        if: steps.freshness.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if [ -n "$HEALTHCHECKS_URL" ]; then
+            if [ "${{ steps.freshness.outputs.stale }}" = "true" ]; then
+              curl -fsS -m 10 --retry 3 --data-raw "La Une est périmée : ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep." "$HEALTHCHECKS_URL/fail"
+            else
+              curl -fsS -m 10 --retry 3 --data-raw "${{ steps.freshness.outputs.resume }}" "$HEALTHCHECKS_URL"
+            fi
+          fi
 
       # Node n'était pas installé dans ce job : il l'est maintenant pour une
       # seule raison — faire désigner la Une n°1 par le MÊME code que le site,

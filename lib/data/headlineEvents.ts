@@ -212,7 +212,7 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
 // HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
 // prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; score_roc_sum_24h?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -573,23 +573,25 @@ function buildSolitudes(
   // règle. Optionnel : les tests appellent buildSolitudes sans lui, et le
   // radar se contente alors de la part d'attention (aucune étiquette inventée).
   //
-  // ⚠️ COMPROMIS TEMPORAIRE — à retirer quand aws-refiners#273 aura livré
-  // `score_qc_sum_24h` et `score_roc_sum_24h`. Les deux côtés n'utilisent pas
-  // encore la même construction :
-  //   · QC  → le rang du badge de la Une des Unes (cumul 24 h + hystérésis,
-  //           #314), repris TEL QUEL. Non négociable : sans ça, la même
-  //           histoire affichait deux niveaux différents sur la même page
-  //           (mesuré le 2026-08-03 : « Téhéran » Faible au module 1,
-  //           Élevée au radar — même région, donc rien ne l'expliquait).
-  //   · ROC → le pic 24 h contre la distribution ROC des scores de bloc
-  //           (`score_roc`, n=1688), faute de calibration cumulée canadienne.
-  // Les deux restent « le niveau du sujet parmi les Unes de sa région », et la
-  // population est NOMMÉE dans la phrase, donc le lecteur n'a jamais à deviner
-  // dans quel panier il lit. Mais l'exactitude de la comparaison QC/ROC attend
-  // la calibration cumulée.
+  // Les deux côtés utilisent la MÊME construction depuis aws-refiners#273
+  // (livrée le 2026-08-07) : le cumul 24 h pondéré par récence du sujet, situé
+  // dans la distribution 365 j des cumuls de SA région (`score_qc_sum_24h` /
+  // `score_roc_sum_24h`).
+  //   · QC  → le rang du badge de la Une des Unes (cumul + hystérésis, #314),
+  //           repris TEL QUEL. Non négociable : sans ça, la même histoire
+  //           affichait deux niveaux différents sur la même page (mesuré le
+  //           2026-08-03 : « Téhéran » Faible au module 1, Élevée au radar).
+  //   · ROC → rawRank(sumRoc) contre `score_roc_sum_24h`. Sans hystérésis :
+  //           le badge du module 1 n'existe pas pour ces sujets et le radar
+  //           n'a pas de mémoire d'édition en édition côté canadien.
+  // REPLI transitoire (`roc`) : tant que `score_roc_sum_24h` n'est pas dans le
+  // JSON déployé, l'ancien compromis s'applique — le pic 24 h contre la
+  // distribution ROC des scores de bloc. La population reste NOMMÉE dans la
+  // phrase dans les deux cas.
   sal?: {
     badgeRanks: Map<string, { rank: number }>;
     sumThresholds: typeof SUM_QC_THRESHOLDS;
+    sumRocThresholds?: typeof SUM_QC_THRESHOLDS | null;
     roc: typeof SAL_QC_THRESHOLDS | null;
   },
 ): SolitudeData {
@@ -667,16 +669,12 @@ function buildSolitudes(
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
-    // Niveau de saillance du camp qui MÈNE l'axe, situé dans la distribution
-    // 365 jours de ce camp (`score_qc` / `score_roc`, publiées toutes deux par
-    // la calibration). `peakQc`/`peakRoc` sont sur l'échelle du score de bloc,
-    // donc directement comparables à ces percentiles.
-    //
-    // Les deux camps reçoivent EXACTEMENT le même traitement — même grandeur
-    // (le pic du sujet sur la fenêtre 24 h), même nature de référence (la
-    // distribution des scores de bloc de sa région). C'est ce qui rend les
-    // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
-    // l'objet du module.
+    // Niveau de saillance du camp qui MÈNE l'axe, situé parmi les Unes de SA
+    // région. Même grandeur des deux côtés : le cumul 24 h pondéré par récence
+    // (`sumQc`/`sumRoc`), contre la distribution 365 j des cumuls de sa région
+    // (`score_qc_sum_24h` / `score_roc_sum_24h`). C'est ce qui rend les
+    // niveaux des deux côtés du radar comparables entre eux — l'objet même du
+    // module (et la fin du compromis mesuré le 2026-08-03 sur « Téhéran »).
     const mene = qs >= cs ? "qc" : "can";
     let tier: { label: string; cls: string; hint: string } | null = null;
     if (sal) {
@@ -685,7 +683,12 @@ function buildSolitudes(
         const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
           ?? rawRank(a.sumQc, sal.sumThresholds);
         tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+      } else if (sal.sumRocThresholds) {
+        const rank = rawRank(a.sumRoc, sal.sumRocThresholds);
+        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_ROC) };
       } else if (sal.roc) {
+        // Repli transitoire : calibration ROC cumulée absente du JSON → pic
+        // 24 h contre la distribution des scores de bloc.
         tier = saillanceTierFromScore(a.peakRoc, sal.roc, POP_ROC);
       }
     }
@@ -1703,12 +1706,13 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  // Côté QC, le radar reprend le badge du module 1 ; côté ROC, la seule
-  // distribution canadienne publiée (`score_roc`, n≈1688). Voir le compromis
-  // documenté sur buildSolitudes et aws-refiners#273.
+  // Les deux côtés du radar situent le sujet dans la distribution des cumuls
+  // 24 h de SA région (aws-refiners#273, livrée 2026-08-07) ; `roc` reste le
+  // repli transitoire si la calibration cumulée manque au JSON.
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
     badgeRanks,
     sumThresholds,
+    sumRocThresholds: salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
     roc: salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 
