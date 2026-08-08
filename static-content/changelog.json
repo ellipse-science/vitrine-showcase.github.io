@@ -1,5 +1,11 @@
 [
   {
+    "pr": 410,
+    "date": "2026-08-08T16:25:56Z",
+    "note": "Dans le module Deux solitudes, le niveau de saillance des sujets canadiens est maintenant mesuré avec la même règle que celui des sujets québécois : les niveaux des deux côtés du radar se comparent directement.",
+    "version": "2.20.0-beta.8"
+  },
+  {
     "pr": 412,
     "date": "2026-08-08T16:23:28Z",
     "note": "Ajout d'une surveillance automatique de la fraîcheur des données de la Une — l'équipe est maintenant alertée en quelques heures si les données prennent du retard.",
