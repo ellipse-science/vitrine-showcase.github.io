@@ -6,7 +6,13 @@ la cascade AWS coincé un bloc en arrière — une panne silencieuse de ce genre
 est restée invisible ~30 h les 6-7 août 2026. Ce script tourne à chaque fetch
 (refresh-data.yml) : il mesure l'âge du bloc le plus frais réellement servi au
 site (normal ≈ 1 h au moment du fetch, ≈ 5 h dès qu'un bloc est manqué) et
-expose stale/age_h au workflow, qui alerte Slack au-delà du seuil.
+expose stale/resume au workflow, qui alerte Slack + Healthchecks au-delà du
+seuil.
+
+Un fichier manquant, vide ou illisible est traité comme PÉRIMÉ (c'est le cas
+le plus grave : le fetch lui-même est suspect) — jamais comme une erreur de
+script, sinon l'alerte ne partirait pas. Sortie toujours 0 ; l'alerte passe
+par les outputs.
 
 Diagnostic quand ça sonne : skill diagnostic-donnees-perimees (repo vitrine),
 remède : skill rattrapage-radar-data-prep.
@@ -33,23 +39,37 @@ def fin_bloc_utc(date_utc: str, interval: str) -> datetime.datetime:
     return end
 
 
-def main() -> None:
-    with open(PATH, encoding="utf-8") as f:
-        rows = json.load(f)
-    fin = max(fin_bloc_utc(r["date_utc"], r["time_interval_utc"]) for r in rows)
+def mesurer() -> tuple[bool, str]:
+    """(stale, resume) — toute erreur de lecture = périmé, avec le motif."""
+    try:
+        with open(PATH, encoding="utf-8") as f:
+            rows = json.load(f)
+        fin = max(fin_bloc_utc(r["date_utc"], r["time_interval_utc"]) for r in rows)
+    except Exception as e:  # fichier absent/vide/corrompu, colonne manquante…
+        return True, (
+            f"{PATH} manquant, vide ou illisible ({type(e).__name__}: {e}) — "
+            "le fetch lui-même est suspect"
+        )
     age_h = (
         datetime.datetime.now(datetime.timezone.utc) - fin
     ).total_seconds() / 3600
-    stale = age_h > SEUIL_H
-    print(
-        f"Bloc le plus frais : fin {fin:%Y-%m-%d %H:%M} UTC | "
-        f"âge {age_h:.1f} h | seuil {SEUIL_H} h | stale={stale}"
-    )
+    if age_h > SEUIL_H:
+        return True, (
+            f"bloc le plus frais vieux de {age_h:.1f} h (normal ≈ 1 h au "
+            "fetch) — suspect n°1 : stepper de la cascade coincé un bloc en "
+            "arrière (réf. aws-refiners#278)"
+        )
+    return False, f"Fraîcheur OK : bloc le plus frais vieux de {age_h:.1f} h"
+
+
+def main() -> None:
+    stale, resume = mesurer()
+    print(f"stale={stale} | {resume}")
     out = os.environ.get("GITHUB_OUTPUT")
     if out:
         with open(out, "a", encoding="utf-8") as f:
             f.write(f"stale={'true' if stale else 'false'}\n")
-            f.write(f"age_h={age_h:.1f}\n")
+            f.write(f"resume={resume}\n")
 
 
 if __name__ == "__main__":
