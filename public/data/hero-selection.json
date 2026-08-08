@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T190000Z-evt-nouvelle-menace-tarifaire-ottawa-ouvert-4a65b1fe",
+  "event_id": "20260807T230000Z-evt-discussing-trade-concessions-return-some-304acedd",
   "storyline_id": "story-tariffs-2a5e7c2c",
-  "title": "Ottawa prêt à lever l'interdiction sur l'alcool américain pour éviter des tarifs",
+  "title": "Ottawa prêt à céder sur l'alcool pour alléger les tarifs américains",
   "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-07",
-  "time_interval_utc": "19-23",
-  "sum_qc": 80.388,
+  "time_interval_utc": "23-03",
+  "sum_qc": 83.41,
   "peak_qc": 51.23
 }
