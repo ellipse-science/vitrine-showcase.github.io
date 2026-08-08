@@ -1,5 +1,11 @@
 [
   {
+    "pr": 417,
+    "date": "2026-08-08T17:35:53Z",
+    "note": "Aucun changement visible sur le site — regroupement interne des alertes de surveillance de la qualité des données.",
+    "version": null
+  },
+  {
     "pr": 410,
     "date": "2026-08-08T16:25:56Z",
     "note": "Dans le module Deux solitudes, le niveau de saillance des sujets canadiens est maintenant mesuré avec la même règle que celui des sujets québécois : les niveaux des deux côtés du radar se comparent directement.",
