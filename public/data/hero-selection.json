@@ -1,10 +1,10 @@
 {
-  "event_id": "20260807T190000Z-evt-nouvelle-menace-tarifaire-ottawa-ouvert-4a65b1fe",
-  "storyline_id": "story-tariffs-2a5e7c2c",
-  "title": "Ottawa prêt à lever l'interdiction sur l'alcool américain pour éviter des tarifs",
-  "main_issue": "international_affairs_and_defense",
-  "date_utc": "2026-08-07",
-  "time_interval_utc": "19-23",
-  "sum_qc": 80.388,
-  "peak_qc": 51.23
+  "event_id": "20260808T110000Z-evt-teles-ont-disparu-certains-hopitaux-38110a39",
+  "storyline_id": "story-televisions-068a0fa7",
+  "title": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
+  "main_issue": "health_and_social_services",
+  "date_utc": "2026-08-08",
+  "time_interval_utc": "11-15",
+  "sum_qc": 43.3,
+  "peak_qc": 21.554
 }
