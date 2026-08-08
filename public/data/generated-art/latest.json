@@ -1,10 +1,13 @@
 {
-  "generated_at": "2026-08-08T16:03Z",
-  "headline_fr": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
-  "headline_en": "Les télés ont disparu de certains hôpitaux, une décision dénoncée par des comités d’usagers",
-  "main_issue": "health_and_social_services",
-  "main_issue_text_fr": "Santé et politiques sociales",
+  "generated_at": "2026-08-08T20:03Z",
+  "headline_fr": "Incendie rapide force l'évacuation de 20 000 résidents à Summerland, C.-B.",
+  "headline_en": "Un nouveau feu de forêt dangereux entraîne l’évacuation du district de Summerland en Colombie-Britannique",
+  "main_issue": "environment_and_energy",
+  "main_issue_text_fr": "Environnement et énergie",
   "context_outlets": [
-    "LED"
+    "LED",
+    "RCI",
+    "LAP",
+    "GN"
   ]
 }
