@@ -1,5 +1,11 @@
 [
   {
+    "pr": 412,
+    "date": "2026-08-08T16:23:28Z",
+    "note": "Ajout d'une surveillance automatique de la fraîcheur des données de la Une — l'équipe est maintenant alertée en quelques heures si les données prennent du retard.",
+    "version": null
+  },
+  {
     "pr": 411,
     "date": "2026-08-08T16:20:17Z",
     "note": "Documentation interne seulement — rien ne change pour le site.",
