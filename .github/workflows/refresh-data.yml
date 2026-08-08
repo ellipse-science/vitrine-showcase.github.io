@@ -121,6 +121,25 @@ jobs:
             fi
           done
 
+      # Courriel clair via Healthchecks.io (check dédié, secret optionnel) :
+      # battement de cœur à chaque fetch, ping /fail quand la Une est périmée
+      # → courriel « DOWN » avec l'âge en corps, puis « UP » au rétablissement.
+      # Si le workflow meurt entièrement, le battement manque et Healthchecks
+      # alerte aussi — couvre le fetch mort ET le retard silencieux.
+      - name: Signal freshness to Healthchecks (email alert)
+        if: steps.freshness.outcome == 'success'
+        continue-on-error: true
+        env:
+          HC_URL: ${{ secrets.HEALTHCHECKS_FRESHNESS_URL }}
+        run: |
+          if [ -n "$HC_URL" ]; then
+            if [ "${{ steps.freshness.outputs.stale }}" = "true" ]; then
+              curl -fsS -m 10 --retry 3 --data-raw "La Une est périmée : bloc le plus frais vieux de ${{ steps.freshness.outputs.age_h }} h (normal ≈ 1 h au fetch). Suspect n°1 : stepper coincé un bloc en arrière (réf. aws-refiners#278). Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep." "$HC_URL/fail"
+            else
+              curl -fsS -m 10 --retry 3 --data-raw "Fraîcheur OK : bloc le plus frais vieux de ${{ steps.freshness.outputs.age_h }} h." "$HC_URL"
+            fi
+          fi
+
       # Node n'était pas installé dans ce job : il l'est maintenant pour une
       # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
       # au lieu de la laisser deviner par le script d'illustration (issue #259).
