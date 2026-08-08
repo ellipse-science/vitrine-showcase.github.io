@@ -32,11 +32,14 @@ jobs:
       AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
+      # TOUTES les alertes qualité de ce workflow (refresh FAILED, art, musique,
+      # fraîcheur de la Une) partent sur CE webhook, et il doit pointer la
+      # chaîne Sonar de Radar : #02_radar-plus_sonar (C0659SSCCKY) — décision
+      # Adrien 2026-08-08, un seul endroit pour ne rien perdre, le même que les
+      # graphes hebdo de sonar-heatmaps (aws-refiners). Le courriel
+      # Healthchecks reste le canal de secours hors Slack.
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_MUSIC_WEBHOOK_URL:    ${{ secrets.SLACK_MUSIC_WEBHOOK_URL }}
-      # Webhook du canal #02_vitrine_vibecode — l'alarme de fraîcheur y poste
-      # aussi. Optionnel : tant que le secret n'existe pas, silencieux.
-      SLACK_VIBECODE_WEBHOOK_URL: ${{ secrets.SLACK_VIBECODE_WEBHOOK_URL }}
       OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
       REPLICATE_API_TOKEN:   ${{ secrets.REPLICATE_API_TOKEN }}
 
@@ -118,11 +121,9 @@ jobs:
         run: |
           RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
-          for hook in "$SLACK_WEBHOOK_URL" "$SLACK_VIBECODE_WEBHOOK_URL"; do
-            if [ -n "$hook" ]; then
-              curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$hook"
-            fi
-          done
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+          fi
 
       # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
       # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
