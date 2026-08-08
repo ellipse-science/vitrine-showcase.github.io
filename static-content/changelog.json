@@ -1,5 +1,11 @@
 [
   {
+    "pr": 411,
+    "date": "2026-08-08T16:20:17Z",
+    "note": "Documentation interne seulement — rien ne change pour le site.",
+    "version": null
+  },
+  {
     "pr": 409,
     "date": "2026-08-07T22:09:53Z",
     "note": "Le niveau de saillance des sujets canadiens du module Deux solitudes se prépare à être mesuré avec la même règle que celui des sujets québécois.",
