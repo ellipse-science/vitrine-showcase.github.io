@@ -136,6 +136,11 @@ const MEDIA_NAMES: Record<string, string> = {
   GAM: "The Globe and Mail",
   NP: "National Post",
   VS: "Vancouver Sun",
+  // Médias américains — rencontrés sur les lignes `target_region = US`, qui ne
+  // servent qu'à la résonance (#230). La table reste un confort d'affichage :
+  // un sigle inconnu retombe sur lui-même (`MEDIA_NAMES[id] ?? id`).
+  CNN: "CNN",
+  FXN: "Fox News",
 };
 
 // Sigle court affiché dans le badge carré du radar (Deux solitudes).
@@ -145,6 +150,20 @@ const MEDIA_BADGE: Record<string, string> = {
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
+// Médias canadiens-anglais suivis par le pipeline. Sert à l'ORDRE d'affichage
+// de la résonance canadienne (#230) ; un sigle hors liste est affiché à la
+// suite plutôt qu'écarté — on ne perd jamais un média inconnu.
+const CAN_MEDIA = ["CBC", "CTV", "GN", "TTS", "GAM", "NP", "VS"];
+// Roster canadien complet = QC + ROC. Sur une ligne `target_region = US`, la
+// liste d'articles mêle les deux pays : le sujet est américain, mais des médias
+// d'ici l'ont parfois repris. On identifie donc les médias AMÉRICAINS par
+// complément de ce roster — jamais par une liste blanche de sigles US, qui
+// laisserait tomber en silence tout média américain pas encore rencontré.
+// (Le sens de la soustraction compte : le bug #272 devinait le côté CANADIEN
+// en retranchant une liste US codée en dur, et classait « canadien » n'importe
+// quel média américain absent de cette liste. Ici, l'inconnu part du côté
+// américain — celui de la ligne qu'on est en train de lire.)
+const CANADIAN_MEDIA = new Set([...QC_MEDIA, ...CAN_MEDIA]);
 // ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
 // L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
 // calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
@@ -509,6 +528,134 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     });
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
+}
+
+// ── Résonance cross-région (#230) ────────────────────────────────────────────
+// Une histoire québécoise « résonne » quand le MÊME sujet est aussi en Une
+// ailleurs. Deux libellés distincts plutôt qu'un seul « internationale » :
+// mesuré sur les 4 derniers jours (16 fenêtres, 36 Unes), la résonance
+// canadienne touche 44 % des Unes et l'américaine 19 % — les fondre aurait
+// affiché « internationale » sur une fusillade à Toronto, aplatissant la
+// distinction QC/CAN ↔ US que la demande d'origine (Shannon, 2026-07-03)
+// cherchait justement à faire voir.
+//
+// Ce qu'on montre d'une résonance : la PART D'ATTENTION que la région a
+// accordée à cette histoire, et les médias qui l'ont mise en Une — cliquables
+// vers leur article. La part est calculée sur la MÊME base que le radar Deux
+// solitudes (part de l'attention 24 h de la région, cf. canShareOf) : une même
+// histoire affiche donc le même pourcentage dans les deux modules.
+export type RegionEcho = {
+  /** Part de l'attention 24 h des Unes de la région, en % (arrondi). */
+  share: number;
+  /** Médias de la région ayant mis l'histoire en Une + lien vers leur article. */
+  media: { name: string; url: string | null }[];
+};
+
+// Ordonne des sigles selon un roster, les inconnus à la suite (ordre stable).
+function orderMedia(ids: Iterable<string>, roster: string[]): string[] {
+  const set = new Set(ids);
+  const known = roster.filter((id) => set.has(id));
+  const rest = [...set].filter((id) => !roster.includes(id)).sort();
+  return [...known, ...rest];
+}
+
+// Côté CANADIEN, rien à détecter : storiesFrom24h fusionne déjà les lignes CAN
+// dans l'histoire (union des médias du ROC publiée par le refiner #211), donc
+// `canMedia` EST la résonance. Vérifié : sur ces 36 Unes, ce critère et un
+// appariement ligne à ligne (storyline_id ou titres proches) donnent exactement
+// le même verdict, 0 désaccord.
+function canResonance(s: Story, totalRoc: number): RegionEcho | null {
+  if (s.canMedia.size === 0) return null;
+  return {
+    share: totalRoc > 0 ? Math.round((s.sumRoc / totalRoc) * 100) : 0,
+    media: orderMedia(s.canMedia, CAN_MEDIA).map((id) => ({
+      name: MEDIA_NAMES[id] ?? id,
+      url: s.urlByMedia[id] ?? null,
+    })),
+  };
+}
+
+// Côté AMÉRICAIN, il faut relire la source : uniqueQcEvents() écarte les lignes
+// USA du pipeline et elles NE DOIVENT PAS y revenir — c'est ce filtre qui tient
+// l'indice de convergence à sa valeur publiée (#211/#237). D'où cette lecture
+// séparée, en LECTURE SEULE : les lignes US ne servent qu'à répondre « ce sujet
+// est-il aussi en Une aux États-Unis ? », jamais à alimenter un score.
+//
+// Appariement : storyline_id identique OU titres très proches (sameStory). Le
+// stopgap par titre est nécessaire tant que le regroupement cross-langue n'est
+// pas livré (aws-refiners#213) — l'appariement par identifiant seul
+// sous-détecte massivement (mesuré au repérage du 2026-07-15). Les titres
+// comparés sont les titres FR normalisés par le raffineur, des deux côtés :
+// c'est la même clé que la dédup FR/EN de storiesFrom24h.
+type UsEcho = {
+  storylineId: string | null;
+  tok: Set<string>;
+  /** score_us du bloc, PONDÉRÉ par récence — même demi-vie que sumQc/sumRoc,
+   *  sans quoi la part américaine ne serait pas sur la même échelle que la
+   *  part canadienne à laquelle elle est montrée côte à côte. */
+  scoreUs: number;
+  blockUtc: string;
+  articles: { media_id: string; url: string }[];
+};
+function usEchoes(allRaw: RawEvent[], windowBlocks: Set<string>): UsEcho[] {
+  const newestMs = windowBlocks.size
+    ? Math.max(...[...windowBlocks].map(blockStartMs))
+    : 0;
+  return allRaw
+    .filter((e) => e.country_id === "USA" && windowBlocks.has(blockKey(e)) && e.title)
+    .map((e) => {
+      const bk = blockKey(e);
+      const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+      let articles: { media_id: string; url: string }[] = [];
+      try {
+        const parsed = JSON.parse(e.articles ?? "[]");
+        if (Array.isArray(parsed)) articles = parsed as { media_id: string; url: string }[];
+      } catch { /* champ absent ou malformé */ }
+      return {
+        storylineId: e.storyline_id ?? null,
+        tok: titleTokens(e.title ?? ""),
+        scoreUs: (e.score_us ?? 0) * w,
+        blockUtc: bk,
+        articles,
+      };
+    });
+}
+
+function usResonance(s: Story, echoes: UsEcho[], totalUs: number): RegionEcho | null {
+  const matched = echoes.filter(
+    (u) =>
+      (u.storylineId != null && u.storylineId === s.rep.storyline_id) ||
+      sameStory(u.tok, s.tok),
+  );
+  if (matched.length === 0) return null;
+
+  // Un lien par média : celui du bloc le plus RÉCENT où il a couvert le sujet.
+  const urlByMedia: Record<string, string> = {};
+  for (const u of [...matched].sort((a, b) => (a.blockUtc < b.blockUtc ? 1 : -1))) {
+    for (const a of u.articles) {
+      // Les articles d'une ligne américaine mêlent les deux pays : le sujet est
+      // américain, mais Radio-Canada ou CBC l'ont parfois repris. Seuls les
+      // médias hors roster canadien comptent ici (cf. CANADIAN_MEDIA).
+      if (!a?.media_id || !a.url || CANADIAN_MEDIA.has(a.media_id)) continue;
+      if (!urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+    }
+  }
+  const sumUs = matched.reduce((acc, u) => acc + u.scoreUs, 0);
+  return {
+    share: totalUs > 0 ? Math.round((sumUs / totalUs) * 100) : 0,
+    media: orderMedia(Object.keys(urlByMedia), []).map((id) => ({
+      name: MEDIA_NAMES[id] ?? id,
+      url: urlByMedia[id] ?? null,
+    })),
+  };
+}
+
+// Les 6 blocs de 4 h de la fenêtre glissante — MÊME définition que
+// storiesFrom24h, pour que la résonance se mesure exactement sur la fenêtre des
+// histoires affichées.
+function window24hBlocks(events: RawEvent[]): Set<string> {
+  const blocks = Array.from(new Set(events.map(blockKey))).sort().reverse();
+  return new Set(blocks.slice(0, 6));
 }
 
 // Convergence OBJET sur la fenêtre glissante 24 h (mêmes 6 blocs que
@@ -1383,6 +1530,13 @@ export type UneEvent = {
   /** Seuils de saillance en vigueur [p5, p20, p50, p80, p95] — pour situer la
    *  nouvelle sur la courbe de distribution dans la bulle ⓘ (#274). */
   salThresholds: number[];
+  /** Résonance cross-région (#230) : le même sujet vu ailleurs — part
+   *  d'attention de la région + médias qui l'ont mise en Une (cliquables).
+   *  null quand il n'y a pas de résonance. Deux champs distincts, jamais fondus
+   *  en un seul « international » : c'est la distinction QC/CAN ↔ US qui était
+   *  demandée. Voir canResonance / usResonance. */
+  resonanceCan: RegionEcho | null;
+  resonanceUs: RegionEcho | null;
 };
 
 /** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
@@ -1618,6 +1772,15 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // portées par ≥ MIN_QC_MEDIA_SECONDARY médias QC → 1 à 3 Unes.
   const qcStories = selectTopUnes(stories);
 
+  // Résonance (#230). Côté américain, lecture sur `all` (AVANT uniqueQcEvents),
+  // la seule source où les lignes USA existent encore ; fenêtre calée sur
+  // `unique`, c'est-à-dire sur les blocs qui ont produit les histoires ci-dessus.
+  // Les deux totaux sont les DÉNOMINATEURS des parts d'attention : total de la
+  // région sur la fenêtre, même construction que le radar Deux solitudes.
+  const echoesUs = usEchoes(all, window24hBlocks(unique));
+  const totalUs = echoesUs.reduce((acc, u) => acc + u.scoreUs, 0);
+  const totalRoc = stories.reduce((acc, s) => acc + s.sumRoc, 0);
+
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
     // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
@@ -1700,6 +1863,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
       // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
       salThresholds: [sumThresholds.faible, sumThresholds.moyenne, sumThresholds.eleve, sumThresholds.tresEleve, sumThresholds.extreme],
+      resonanceCan: canResonance(s, totalRoc),
+      resonanceUs: usResonance(s, echoesUs, totalUs),
     };
   });
 
@@ -2049,6 +2214,10 @@ export const __test__ = {
   hysteresisRank,
   badgeRanksWithHysteresis,
   uniqueQcEvents,
+  canResonance,
+  usResonance,
+  usEchoes,
+  window24hBlocks,
   blockKey,
   titleTokens,
   sameStory,

@@ -63,6 +63,56 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
   );
 }
 
+// Résonance cross-région (#230) : « le même sujet est aussi en Une ailleurs ».
+// Deux libellés SÉPARÉS — canadienne / américaine — et jamais un « Résonance
+// internationale » unique : c'est précisément la distinction QC/CAN ↔ US qui
+// était demandée, et la fondre reviendrait à qualifier d'internationale une
+// fusillade à Toronto. Une Une peut porter les deux tags.
+//
+// Posée SOUS la byline (« À la Une aujourd'hui sur … »), pas dans l'en-tête :
+// c'est la même question que la byline — qui a mis ce sujet en Une — posée
+// ailleurs, et les deux se lisent d'affilée. L'en-tête, lui, reste la suite
+// arbitrée rubrique → badge → trajectoire (#286). Rien n'est rendu sans
+// résonance : l'absence de tag dit déjà « sujet d'ici seulement ».
+//
+// Chaque tag porte SON ⓘ : la bulle est propre à une région (part d'attention
+// + médias de cette région-là), une bulle commune mélangerait deux mesures.
+function ResonanceRow({ event }: { event: UneEvent }) {
+  const { resonanceCan: can, resonanceUs: us } = event;
+  if (!can && !us) return null;
+  return (
+    <p className="resonance-row">
+      {can && <ResonanceTag label="Résonance canadienne" region="canadiennes-anglaises" echo={can} />}
+      {us && <ResonanceTag label="Résonance américaine" region="américaines" echo={us} />}
+    </p>
+  );
+}
+
+function ResonanceTag({ label, region, echo }: {
+  label: string;
+  /** Accord au féminin pluriel : « … des Unes canadiennes-anglaises ». */
+  region: string;
+  echo: NonNullable<UneEvent["resonanceCan"]>;
+}) {
+  return (
+    <span className="resonance-item">
+      <span className="resonance-tag">{label}</span>
+      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
+        <span className="resonance-card">
+          <span className="resonance-card-share">
+            {echo.share}&nbsp;% de l&apos;attention des Unes {region}
+          </span>
+          {echo.media.length > 0 && (
+            <span className="resonance-card-media">
+              <MediaLinkList media={echo.media} />
+            </span>
+          )}
+        </span>
+      </InfoTip>
+    </span>
+  );
+}
+
 function MediaLinkList({ media }: { media: { name: string; url: string | null }[] }) {
   return (
     <span className="byline-media">
@@ -80,21 +130,28 @@ function MediaLinkList({ media }: { media: { name: string; url: string | null }[
   );
 }
 
-function Byline({ mediaToday }: {
-  mediaToday: { name: string; url: string | null }[];
-}) {
+function Byline({ event }: { event: UneEvent }) {
   // Une seule ligne de présence : « À la Une aujourd'hui sur » = union des
   // médias QC ayant mis l'histoire en Une sur la fenêtre 24h (#213/#215/#51).
   // Les liens pointent vers le DERNIER article mis en Une par chaque média,
   // même s'il vient d'un bloc précédent (#129). (« Absent de la Une sur »
   // retiré 2026-07-20 — décision Adrien, peu utile.)
-  if (mediaToday.length === 0) return null;
+  //
+  // La résonance (#230) vient juste dessous : même question — qui a mis ce
+  // sujet en Une — posée ailleurs qu'ici. Le bloc s'affiche donc dès que l'une
+  // OU l'autre existe : une Une sans média QC connu mais reprise au Canada
+  // anglais garde sa ligne de résonance.
+  const { mediaToday, resonanceCan, resonanceUs } = event;
+  if (mediaToday.length === 0 && !resonanceCan && !resonanceUs) return null;
   return (
     <div className="byline-block">
-      <p className="byline-line">
-        <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
-        <MediaLinkList media={mediaToday} />
-      </p>
+      {mediaToday.length > 0 && (
+        <p className="byline-line">
+          <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
+          <MediaLinkList media={mediaToday} />
+        </p>
+      )}
+      <ResonanceRow event={event} />
     </div>
   );
 }
@@ -124,14 +181,14 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
             <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
-          <Byline mediaToday={event.mediaToday} />
+          <Byline event={event} />
           {secondEvent && (
             <div className="une-side une-second">
               <SaillanceHead event={secondEvent} className="une-side-head" />
               <h2 data-saillance={secondEvent.saillanceRank}>
                 <HeadlineTitle event={secondEvent}>{secondEvent.title}</HeadlineTitle>
               </h2>
-              <Byline mediaToday={secondEvent.mediaToday} />
+              <Byline event={secondEvent} />
             </div>
           )}
         </div>
@@ -173,7 +230,7 @@ function SideUne({ event }: { event: UneEvent }) {
         <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
       </h2>
       {/* QC seulement — Shannon: "Médias Qc seulement" */}
-      <Byline mediaToday={event.mediaToday} />
+      <Byline event={event} />
     </div>
   );
 }
