@@ -591,7 +591,7 @@ function buildSolitudes(
   sal?: {
     badgeRanks: Map<string, { rank: number }>;
     sumThresholds: typeof SUM_QC_THRESHOLDS;
-    sumRoc?: typeof SUM_QC_THRESHOLDS | null;
+    sumRocThresholds?: typeof SUM_QC_THRESHOLDS | null;
     roc: typeof SAL_QC_THRESHOLDS | null;
   },
 ): SolitudeData {
@@ -683,8 +683,8 @@ function buildSolitudes(
         const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
           ?? rawRank(a.sumQc, sal.sumThresholds);
         tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
-      } else if (sal.sumRoc) {
-        const rank = rawRank(a.sumRoc, sal.sumRoc);
+      } else if (sal.sumRocThresholds) {
+        const rank = rawRank(a.sumRoc, sal.sumRocThresholds);
         tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_ROC) };
       } else if (sal.roc) {
         // Repli transitoire : calibration ROC cumulée absente du JSON → pic
@@ -1712,7 +1712,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
     badgeRanks,
     sumThresholds,
-    sumRoc: salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
+    sumRocThresholds: salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
     roc: salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 

@@ -1113,7 +1113,7 @@ describe("buildSolitudes", () => {
     const rocBlocs = { faible: 1, moyenne: 2, eleve: 3, tresEleve: 4, extreme: 5 };
     const avecCumul = buildSolitudes([can] as never, stories, 10, 31,
       { p20: 16, p80: 42 },
-      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRoc, roc: rocBlocs });
+      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRocThresholds: sumRoc, roc: rocBlocs });
     // cumul 50 : ≥ moyenne (10), < eleve (100) → « Modérée », population ROC.
     expect(avecCumul.axes[0].salienceLabel).toBe("Modérée");
     expect(avecCumul.axes[0].salienceHint).toContain("canadiens");
@@ -1123,14 +1123,14 @@ describe("buildSolitudes", () => {
     // verrouille que le nouveau chemin est bien prioritaire quand publié.
     const sansCumul = buildSolitudes([can] as never, stories, 10, 31,
       { p20: 16, p80: 42 },
-      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRoc: null, roc: rocBlocs });
+      { badgeRanks: new Map(), sumThresholds: sumRoc, sumRocThresholds: null, roc: rocBlocs });
     expect(sansCumul.axes[0].salienceLabel).toBe("Exceptionnelle");
     // Côté QC, rien ne bouge : le rang du badge du module 1 est repris tel quel.
     const qc = ev({ storyline_id: "s-qc", title: "Sujet QC", score_qc: 40,
       interval_convergence_score: 10 });
     const sQc = buildSolitudes([qc] as never, storiesFrom24h([qc] as never), 10, 31,
       { p20: 16, p80: 42 },
-      { badgeRanks: new Map([["s-qc", { rank: 5 }]]), sumThresholds: sumRoc, sumRoc, roc: rocBlocs });
+      { badgeRanks: new Map([["s-qc", { rank: 5 }]]), sumThresholds: sumRoc, sumRocThresholds: sumRoc, roc: rocBlocs });
     expect(sQc.axes[0].salienceLabel).toBe("Très élevée");
     expect(sQc.axes[0].salienceHint).toContain("québécois");
   });
