@@ -1154,7 +1154,33 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 
 // Seuil éditorial (#273) : le module affiche 1 à 3 Unes, pas toujours 3.
 // La position héros revient toujours à l'histoire la plus saillante, mais une
-// Une SECONDAIRE doit être portée par au moins MIN_QC_MEDIA_SECONDARY médias
+// PLUS DE FILTRE D'AFFICHAGE depuis vitrine#430 (décision A2, 2026-08-09).
+//
+// Une carte secondaire portée par un seul média était cachée : avec l'ANCIEN
+// indice, qui ne voyait pas la largeur de couverture, elle pouvait monter haut
+// et se présenter à tort à côté de vraies convergences. Le nouvel indice met la
+// Visibilité comme une jambe d'une moyenne géométrique non compensatoire : il la
+// classe lui-même, honnêtement, tout en bas. Mesuré : le seuil cachait 69 cartes
+// sur 210 places — un tiers des places secondaires restaient vides — et 93 %
+// d'entre elles tombent d'elles-mêmes dans les deux bandes du bas.
+//
+// La règle était en plus incohérente : le héros est gardé quel que soit son
+// nombre de médias. On acceptait donc un mono-média EN TÊTE du module, mais pas
+// en deuxième position.
+//
+// ⚠️ CE QUI NE CHANGE PAS, ET C'EST LE POINT DÉLICAT : la population de
+// CALIBRATION reste « top-3 avec ≥ 2 médias » (scripts/fetch_data.R,
+// min_media_secondary = 2). Le niveau affiché est une POSITION dans un groupe :
+// si le groupe de référence suivait l'affichage, élargir l'affichage ferait
+// monter tout le monde — mesuré, 79 % des cartes gagneraient au moins une bande,
+// +0,82 en moyenne, sans que l'actualité ait bougé. On décroche donc la
+// référence de l'affichage, ce qui préfigure exactement la décision A0 : la
+// référence sera FIGÉE sur une année, versionnée, une fois le corpus réparé et
+// l'historique rejoué.
+//
+// MIN_QC_MEDIA_SECONDARY ne décrit donc plus ce qu'on MONTRE, mais ce à quoi on
+// COMPARE — et il doit rester en phase avec fetch_data.R.
+// Une SECONDAIRE devait être portée par au moins MIN_QC_MEDIA_SECONDARY médias
 // QC sur la fenêtre 24 h. Critère « nombre de médias » plutôt que niveau de
 // saillance : tant que la formule amont gonfle la durée-en-Une d'un seul média
 // (aws-refiners#205), la pastille peut afficher « Très élevée » pour une
@@ -1185,14 +1211,13 @@ const MIN_QC_MEDIA_SECONDARY = 2;
 // médias quand rien de neuf n'émerge. Déclencheur : cas Oliver Jones (mort culturelle
 // de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
 function selectTopUnes(stories: Story[], max = 3): Story[] {
-  // Héros toujours affiché ; une Une SECONDAIRE doit être portée par ≥
-  // MIN_QC_MEDIA_SECONDARY médias QC (seuil éditorial #273 conservé). On tronque au
-  // top-3 par saillance cumulée SANS repêcher (le pool est partagé avec le radar).
+  // Top-3 par saillance cumulée, sans repêchage (le pool est partagé avec le
+  // radar) et SANS filtre de nombre de médias depuis #430 : l'indice hiérarchise
+  // lui-même, et le badge dit honnêtement où chaque carte se situe.
   const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
   return eligible
     .sort((a, b) => b.sumQc - a.sumQc)
-    .slice(0, max)
-    .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
+    .slice(0, max);
 }
 
 /** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs

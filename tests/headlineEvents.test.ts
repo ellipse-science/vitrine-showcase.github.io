@@ -936,10 +936,15 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
   });
 });
 
-describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3)", () => {
-  // selectTopUnes classe par sumQc (saillance QC cumulée 24 h) et applique le
-  // seuil éditorial ≥ 2 médias QC pour les secondaires. Classement pur, sans
-  // plancher de récence (retiré 2026-07-23) — cf. describe « classement pur » plus bas.
+describe("selectTopUnes (#430 A2 — classement pur, plus de seuil de médias)", () => {
+  // selectTopUnes classe par sumQc (saillance QC cumulée 24 h) et s'arrête là.
+  // Le seuil « ≥ 2 médias québécois » pour les cartes secondaires a été retiré
+  // le 2026-08-09 : il datait de l'ancien indice, qui ne voyait pas la largeur
+  // de couverture. Le nouvel indice classe lui-même une histoire mono-média tout
+  // en bas — mesuré, 93 % d'entre elles tombent dans les deux bandes basses —
+  // et la règle était incohérente (le héros, lui, était gardé mono-média).
+  // ⚠️ La population de CALIBRATION, elle, garde le ≥ 2 : le niveau est une
+  // position dans un groupe, et ce groupe ne doit pas suivre l'affichage.
   const story = (label: string, sumQc: number, nQcMedia: number) =>
     ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
        series: [{ blockUtc: "2026-07-20T15", qc: Math.max(1, sumQc) }] });
@@ -948,17 +953,20 @@ describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3
     const st = [story("A", 30, 4), story("B", 20, 2), story("C", 10, 3)];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
-  it("cas du 16-17 juillet : héros multi-médias + 2 secondaires mono-média → une seule Une", () => {
+  it("les secondaires mono-média ne sont PLUS cachées (cas du 16-17 juillet, inversé)", () => {
+    // Avant #430 ce cas rendait ["Argentine"] seule : deux histoires réelles
+    // disparaissaient de l'écran alors que l'indice savait déjà les classer bas.
     const st = [story("Argentine", 30, 4), story("Montréal vibre", 20, 1), story("Tiques", 10, 1)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Argentine"]);
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
+      .toEqual(["Argentine", "Montréal vibre", "Tiques"]);
   });
-  it("le héros reste affiché même mono-média (le module a toujours ≥ 1 Une)", () => {
+  it("le héros reste le plus gros cumul, mono-média ou non", () => {
     const st = [story("Seule", 8, 1), story("Autre", 5, 1)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule"]);
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule", "Autre"]);
   });
-  it("tronque SANS repêcher : une multi-média hors top-3 ne remonte pas (sélection partagée avec le radar)", () => {
+  it("tronque SANS repêcher : une histoire hors top-3 ne remonte pas (pool partagé avec le radar)", () => {
     const st = [story("A", 30, 4), story("B", 20, 1), story("C", 10, 2), story("D", 5, 5)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "C"]);
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
   it("classe par saillance cumulée décroissante et ignore les histoires sans média QC", () => {
     const st = [story("Faible", 5, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
