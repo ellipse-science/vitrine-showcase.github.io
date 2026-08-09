@@ -386,9 +386,12 @@
         "articles_24h",
         "score_qc_peak_24h",
         "first_seen_utc",
-        "n_blocks_24h"
+        "n_blocks_24h",
+        "salience_index_qc",
+        "salience_index_roc"
       ],
       "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
+      "_note_cutover": "salience_index_qc/roc = indice spec v1 (aws-refiners#287, tag spec-v1). Projetés AVANT la bascule pour que la donnée soit déjà dans le snapshot le jour où SALIENCE_CUTOVER passe à true (lib/data/salienceCutover.ts) : le flip devient un changement d'une ligne, sans attendre un refresh. score_qc/roc restent projetés APRÈS la bascule — ils servent de repli et de poids au module 3 (treemap d'objets).",
       "filter": "headline_events_3day",
       "enabled": true,
       "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx"

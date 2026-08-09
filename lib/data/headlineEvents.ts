@@ -15,6 +15,15 @@ import {
   publicationDateFromInterval,
   publicationHourFromInterval,
 } from "@/lib/dates";
+import {
+  SALIENCE_CUTOVER,
+  NEW_INDEX_SCALE,
+  NEW_SUM_QC_THRESHOLDS,
+  NEW_BLOCK_QC_THRESHOLDS,
+  NEW_SUM_ROC_THRESHOLDS,
+  NEW_BLOCK_ROC_THRESHOLDS,
+  scaleThresholds,
+} from "@/lib/data/salienceCutover";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -69,6 +78,14 @@ export type RawEvent = {
   score_qc_peak_24h?: number | null;
   first_seen_utc?: string | null;
   n_blocks_24h?: number | null;
+  // Indice de saillance spec v1 (aws-refiners#287, tag `spec-v1`), publié en
+  // shadow par le raffineur et lu SEULEMENT quand SALIENCE_CUTOVER est vrai.
+  // Optionnels : absents des lignes publiées avant le 2026-07-14 (Athena rend
+  // null), et absents du snapshot tant que tables.json ne les projette pas.
+  // Unité de stockage : [0,1] — le ×100 d'affichage est appliqué par qcScore/
+  // rocScore, jamais ici (cf. lib/data/salienceCutover.ts).
+  salience_index_qc?: number | null;
+  salience_index_roc?: number | null;
 };
 
 // Pré-filtre COMMUN à tous les consommateurs du snapshot : une seule ligne par
@@ -231,7 +248,13 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
 // HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
 // prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; score_roc_sum_24h?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+// Les clés `salience_index_*` sont les homologues des `score_*` pour le NOUVEL
+// indice (cf. build_salience_calibration dans scripts/fetch_data.R). Elles sont
+// publiées sur une fenêtre plancherée au déploiement de la spec v1, donc
+// homogènes par construction — mais restent NULL tant que n < CAL_MIN_N, d'où
+// les grilles de repli de lib/data/salienceCutover.ts. En unités BRUTES [0,1] :
+// c'est `scaleThresholds` qui les passe à l'échelle d'affichage.
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; score_roc_sum_24h?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric; salience_index_qc?: CalMetric; salience_index_qc_sum_24h?: CalMetric; salience_index_roc?: CalMetric; salience_index_roc_sum_24h?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -278,8 +301,20 @@ function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
 // `saillance − qc − us` a été retiré au #272 — il était devenu inerte
 // (score_roc non nul sur 184/184 lignes le 2026-07-27) et il faisait absorber
 // les USA du côté canadien quand score_us manquait.
-function rocScore(e: RawEvent): number {
-  return e.score_roc ?? 0;
+function rocScore(e: RawEvent, cutover: boolean = SALIENCE_CUTOVER): number {
+  return cutover ? (e.salience_index_roc ?? 0) * NEW_INDEX_SCALE : (e.score_roc ?? 0);
+}
+
+// LE point de bascule du cutover, côté québécois — et le SEUL endroit du loader
+// qui décide quelle colonne est « la saillance d'un bloc ». Tout le reste
+// (cumuls pondérés, sommets, classement, badge, parts d'attention, trajectoire,
+// radar) se sert de cette valeur sans savoir d'où elle vient, si bien que la
+// bascule ne peut pas laisser un module derrière.
+//
+// Le ×100 est appliqué ICI, à la lecture, pas à l'affichage : voir la note
+// d'échelle dans lib/data/salienceCutover.ts.
+function qcScore(e: RawEvent, cutover: boolean = SALIENCE_CUTOVER): number {
+  return cutover ? (e.salience_index_qc ?? 0) * NEW_INDEX_SCALE : (e.score_qc ?? 0);
 }
 
 // Positions [GAUCHE, DROITE] des symboles sur l'axe : collés au centre
@@ -396,10 +431,12 @@ type Story = {
   rep: RawEvent;           // occurrence du bloc le plus récent (titre, médias, articles frais)
   repKey: string;
   label: string;
-  sumQc: number;           // Σ score_qc pondérée par récence (demi-vie HALF_LIFE_H) — sert au CLASSEMENT
+  // Σ de l'indice de bloc (qcScore : `score_qc`, ou `salience_index_qc` ×100
+  // après le cutover) pondérée par récence (demi-vie HALF_LIFE_H) — CLASSEMENT.
+  sumQc: number;
   sumRoc: number;
-  peakQc: number;          // max score_qc BRUT sur la fenêtre — sert à la PASTILLE de saillance
-  peakRoc: number;         // (même échelle que le score de bloc → seuils inchangés)
+  peakQc: number;          // max de l'indice de bloc, BRUT, sur la fenêtre
+  peakRoc: number;         // (même échelle que l'indice de bloc → seuils cohérents)
   qcMedia: Set<string>;
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
@@ -437,7 +474,7 @@ function parseIdList(json: string | null | undefined): string[] {
 const HALF_LIFE_H = 10;
 const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
 
-function storiesFrom24h(allEvents: RawEvent[]): Story[] {
+function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
@@ -456,8 +493,8 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     const bk = blockKey(e);
     // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
     const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
-    const qc = e.score_qc ?? 0;
-    const roc = rocScore(e);
+    const qc = qcScore(e, cutover);
+    const roc = rocScore(e, cutover);
     // Listes de médias par région, publiées par le refiner (#211). Le repli qui
     // re-triait `media_ids` à la main a été retiré au #272 : il devinait le côté
     // canadien par soustraction d'une liste de médias US codée en dur, ce qui
@@ -665,7 +702,7 @@ function window24hBlocks(events: RawEvent[]): Set<string> {
 // donc les 24 h, plus un seul bloc de 4 h (décision d'équipe 2026-07-14, Y3).
 // null si aucun bloc de la fenêtre n'a d'indice publié → repli en aval.
 // PROVISOIRE : la convergence glissante « officielle » viendra du refiner (aws-refiners#212).
-function windowConvergence(allEvents: RawEvent[]): number | null {
+function windowConvergence(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): number | null {
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
   const byBlock = new Map<string, { idx: number | null; wt: number }>();
@@ -678,7 +715,10 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
     if (b.idx === null && e.interval_convergence_score != null) {
       b.idx = Math.max(0, Math.min(100, e.interval_convergence_score));
     }
-    b.wt += (e.score_qc ?? 0) + rocScore(e);
+    // Les deux régions DOIVENT être lues sur la même échelle : mélanger un QC
+    // en ancien indice et un ROC en nouveau donnerait un poids de bloc dominé
+    // par le seul côté à grande échelle.
+    b.wt += qcScore(e, cutover) + rocScore(e, cutover);
   }
   let num = 0, den = 0, plainNum = 0, plainCount = 0;
   for (const { idx, wt } of byBlock.values()) {
@@ -1029,6 +1069,7 @@ function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_TH
 function badgeRanksWithHysteresis(
   events: RawEvent[],
   sumThresholds: typeof SUM_QC_THRESHOLDS,
+  cutover: boolean = SALIENCE_CUTOVER,
 ): Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }> {
   const blocks = Array.from(new Set(events.map(blockKey))).sort();
   const byBlock = new Map<string, RawEvent[]>();
@@ -1041,7 +1082,7 @@ function badgeRanksWithHysteresis(
   for (let i = 0; i < blocks.length; i++) {
     const rows = blocks.slice(Math.max(0, i - 5), i + 1).flatMap((b) => byBlock.get(b) ?? []);
     if (rows.length === 0) continue;
-    for (const s of storiesFrom24h(rows)) {
+    for (const s of storiesFrom24h(rows, cutover)) {
       const key = s.rep.storyline_id ?? s.label;
       const prev = out.get(key);
       // La même passe sert au SOMMET de l'indice cumulé : la plus haute valeur
@@ -1694,6 +1735,24 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   if (unique.length === 0) return null;
 
+  // GARDE DU JOUR J. Le mode d'échec redouté de la bascule n'est pas un mauvais
+  // calcul, c'est un snapshot MUET : si `salience_index_qc` n'a pas encore été
+  // projeté par un refresh (scripts/tables.json), qcScore rend 0 partout, toutes
+  // les histoires tombent au filtre `sumQc + sumRoc > 0`, et le site se déploie
+  // avec une Une des Unes VIDE — sans une seule erreur. On préfère casser le
+  // build, bruyamment : un déploiement raté se voit, une page vide passe pour
+  // une accalmie de l'actualité.
+  // Ordre correct : merger cette PR éteinte → laisser tourner un refresh (la
+  // colonne entre dans le snapshot) → flipper le flag.
+  if (SALIENCE_CUTOVER && !unique.some((e) => (e.salience_index_qc ?? 0) > 0)) {
+    throw new Error(
+      "SALIENCE_CUTOVER est allumé mais aucune ligne du snapshot ne porte de " +
+      "`salience_index_qc` non nul. Le snapshot date d'avant l'ajout de la colonne " +
+      "à scripts/tables.json : lancez un refresh (gh workflow run refresh-data.yml), " +
+      "vérifiez public/data/headline-events.json, puis rebâtissez.",
+    );
+  }
+
   const sorted = unique.slice().sort((a, b) => {
     const dA = `${a.date_utc}T${a.time_interval_utc.split("-")[0]}:00Z`;
     const dB = `${b.date_utc}T${b.time_interval_utc.split("-")[0]}:00Z`;
@@ -1732,11 +1791,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
-  // La pastille étiquette le PIC 24 h (peakQc) → seuils calibrés sur la
-  // distribution des PICS (metrics.score_qc_peak_24h), pas sur les scores par
-  // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
-  // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
-  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
   // Niveau d'un BLOC (lecture au survol de la trajectoire) : calibré sur la
   // distribution des scores PAR BLOC — sa vraie population de référence, la
   // mieux fournie du fichier (n≈1500 sur un an, contre 106 pour les sommets).
@@ -1744,10 +1798,19 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // badge parle du CUMUL 24 h, le survol d'un BLOC — deux objets distincts, à
   // deux endroits distincts. (C'était impossible du temps des deux badges
   // côte à côte, où « en ce moment » pouvait dépasser « sommet 24 h ».)
-  const blockThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
-  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_qc dans
+  //
+  // CUTOVER : chaque grille a son homologue calibré sur le nouvel indice, à la
+  // MÊME convention (même fonction dans fetch_data.R, même population). On ne
+  // mélange jamais les deux familles — une valeur du nouvel indice classée avec
+  // les bornes de l'ancien serait à un ordre de grandeur de la vérité.
+  const blockThresholds = SALIENCE_CUTOVER
+    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc)) ?? NEW_BLOCK_QC_THRESHOLDS
+    : salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_24h dans
   // fetch_data.R ; repli sur les valeurs mesurées tant qu'elle manque.
-  const sumThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
+  const sumThresholds = SALIENCE_CUTOVER
+    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc_sum_24h)) ?? NEW_SUM_QC_THRESHOLDS
+    : salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConv = calibration?.metrics?.event_convergence;
@@ -1877,8 +1940,17 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
     badgeRanks,
     sumThresholds,
-    sumRocThresholds: salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
-    roc: salThresholdsFrom(calibration?.metrics?.score_roc),
+    // Côté ROC aussi, les deux familles ne se mélangent pas. Après le cutover,
+    // la grille cumulée a un repli codé (NEW_SUM_ROC_THRESHOLDS) qu'elle n'avait
+    // pas avant : sans lui, le radar canadien retomberait sur `roc` — le pic par
+    // bloc — donc sur une AUTRE grandeur que le côté québécois, ce qui est
+    // exactement le compromis que aws-refiners#273 a fermé.
+    sumRocThresholds: SALIENCE_CUTOVER
+      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc_sum_24h)) ?? NEW_SUM_ROC_THRESHOLDS
+      : salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
+    roc: SALIENCE_CUTOVER
+      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc)) ?? NEW_BLOCK_ROC_THRESHOLDS
+      : salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
@@ -1886,6 +1958,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     if (!e.extracted_objects) continue;
     let objects: ExtractedObject[] = [];
     try { objects = JSON.parse(e.extracted_objects) as ExtractedObject[]; } catch { continue; }
+    // HORS PÉRIMÈTRE DU CUTOVER, volontairement : ce poids ne sert qu'à ORDONNER
+    // et dimensionner les tuiles d'objets entre elles (module 3), jamais à
+    // afficher un niveau. Le basculer changerait le classement du Hot 20 sans
+    // qu'aucune grille ne l'ait calibré — et ce module a son propre dossier
+    // (aws-refiners#283, migration de l'extracteur #206). `score_qc` reste donc
+    // projeté par tables.json après la bascule, précisément pour cette ligne.
     const eventWeight = e.score_qc ?? e.score_saillance ?? 0;
     const issueColor = ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E";
     const context = e.title ?? "";
@@ -2195,6 +2273,7 @@ export const __test__ = {
   dedupeByStoryline,
   pctile,
   rocScore,
+  qcScore,
   convMode,
   relScore,
   solitudesEdito,
