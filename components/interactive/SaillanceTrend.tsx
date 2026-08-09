@@ -12,7 +12,12 @@ import type { SalienceTrend, SalienceTrendPoint } from "@/lib/data/headlineEvent
 // Boîte volontairement basse : une sparkline trop haute lit « en dessous » du
 // texte (sa masse — les blocs au plancher — s'enfonce sous la ligne de base).
 // Compacte, elle s'aligne optiquement avec le libellé.
-const W = 124, H = 24, PADX = 5, PADY = 4;
+// PADX = 8 et non 5 (relevé en review sur #432) : le dernier point est posé à
+// x = W − PADX, et son rayon maximal atteint 4,8 px + 1,8 px de grossissement au
+// survol + 0,8 px de demi-contour pour l'anneau « maintenant » — soit 7,4 px.
+// À 5 px de marge il débordait de 2,4 px hors du cadre. `overflow: visible` le
+// sauvait de l'écrêtage mais le laissait peindre par-dessus ce qui suit.
+const W = 124, H = 24, PADX = 8, PADY = 4;
 
 // Diamètre d'un point = PALIER DE SAILLANCE de ce bloc (demande Adrien) : la
 // courbe dit l'attention cumulée 24 h par sa hauteur, la grosseur redit le même

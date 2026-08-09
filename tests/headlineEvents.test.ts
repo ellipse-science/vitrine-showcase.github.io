@@ -489,6 +489,25 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
 });
 
 describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
+  // GARDE-FOU (relevé en review sur #432) : `present` se décide sur la VALEUR,
+  // pas sur l'existence d'une ligne. Le datamart publie des lignes dont la
+  // saillance QC est nulle — l'histoire figure dans le bloc mais aucun média
+  // québécois ne l'avait en Une. Les compter comme « présentes » ferait dire
+  // « à la Une » à une histoire absente des pages frontales, et masquerait les
+  // points creux de la trajectoire (« Hors du radar »).
+  it("une ligne présente mais à saillance QC NULLE compte comme absente", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "12-16" }),
+      // Ligne bien réelle, mais saillance QC nulle : l'histoire n'est plus en Une.
+      ev({ storyline_id: "sA", title: "A", score_qc: 0, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sB", title: "B", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+    ];
+    const s = storiesFrom24h(rows as never).find((x: { label: string }) => x.label === "A")!;
+    const bloc = (k: string) => s.series.find((p: { blockUtc: string }) => p.blockUtc === k)!;
+    expect(bloc("2026-07-13T16").present).toBe(false);   // la ligne existe, la Une non
+    expect(bloc("2026-07-13T16").qc).toBe(0);
+    expect(bloc("2026-07-13T12").present).toBe(true);    // celle-ci était bien en Une
+  });
   it("expose la série brute des 6 blocs de la fenêtre, 0 si absente d'un bloc", () => {
     const rows = [
       ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
