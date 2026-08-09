@@ -1354,6 +1354,11 @@
      chevauche ni la pastille ni le titre, et rien ne bouge dans la mise en page
      (le débordement ne participe pas au calcul de la hauteur de ligne). */
   .saillance-trend .trend-spark { overflow: visible; }
+  /* La valeur d'un point et sa variation, au survol : elles prennent la couleur
+     de la tendance — verte en hausse, rouge en baisse — comme la flèche et le
+     libellé. Un gris neutre les faisait lire comme une note de bas de page. */
+  .saillance-trend .trend-val,
+  .saillance-trend .trend-delta { color: var(--acc); font-variant-numeric: tabular-nums; }
   .saillance-trend .trend-line { stroke: var(--acc); }
   .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
   /* UN SEUL point noir plein, et il désigne UNE seule chose : le SOMMET.

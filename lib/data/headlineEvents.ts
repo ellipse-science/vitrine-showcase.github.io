@@ -1393,6 +1393,16 @@ export type SalienceTrendPoint = {
    *  vitrine#430 : la même grandeur que le badge, pour que la hauteur du point
    *  et le mot posé à côté ne puissent plus se contredire. */
   cumul: number;
+  /** Variation relative du cumul depuis le bloc précédent, en % (demande
+   *  d'Adrien) : « +12 % » dit ce que le point a fait, là où la seule hauteur
+   *  demande de comparer deux positions à l'œil. null au premier point, et null
+   *  quand le précédent valait zéro — une histoire qui apparaît ne « croît » pas
+   *  de 100 %, elle arrive, et la phrase de tendance dit déjà « Nouveau ». */
+  delta: number | null;
+  /** Heure du bloc auquel la variation se compare — « 4h », « hier 20h ». Même
+   *  grammaire que la phrase juste au-dessus (« depuis 12h »), pour que la bande
+   *  parle d'une seule voix. */
+  deltaDepuis: string | null;
   /** Part de l'attention QC du bloc, en % — CE QUE TRACE LA COURBE (essai #304).
    *  Toute la boîte de trajectoire parle désormais de part d'attention : courbe,
    *  flèche et chiffre. Le vocabulaire de NIVEAU (« Très faible »…) redevient
@@ -1633,7 +1643,9 @@ function buildSalienceTrend(
       score: Math.round(p.qc),
       share: Math.round(p.share),
       // Ce que la courbe trace désormais (cf. la note sur `valeur` plus haut).
-      cumul: Math.round(valeur(i)),
+      cumul: Math.round(valeur(i) * 10) / 10,
+      delta: i === 0 || niveaux[i - 1] <= 0 ? null : relatif(niveaux[i], niveaux[i - 1]),
+      deltaDepuis: i === 0 || niveaux[i - 1] <= 0 ? null : heure(i - 1, false),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
       isAbsent: !p.present,
     };
