@@ -47,14 +47,22 @@ function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
 // courbe. Sorti du JSX pour servir DEUX fois — au texte affiché et aux doublures
 // invisibles qui réservent la hauteur (cf. plus bas).
 function capDuPoint(p: SalienceTrendPoint) {
-  // Le « X % de l'attention médiatique » a quitté cette ligne (vitrine#430, B3).
-  // Il disait la part du bloc de 4 h pendant que le mot juste à côté disait le
-  // niveau du cumul 24 h : deux natures, deux fenêtres, et 39 % des mouvements
-  // qui se contredisaient à l'écran. La part d'attention n'a pas disparu du
-  // site — c'est le sujet même du module « Deux solitudes ».
+  // Le « X % de l'attention médiatique » a quitté cette ligne (vitrine#430, B3) :
+  // il disait la part du bloc de 4 h pendant que le mot juste à côté disait le
+  // niveau du cumul 24 h — deux natures, et 39 % des mouvements qui se
+  // contredisaient. À la place, la VALEUR du point et sa variation depuis le
+  // bloc précédent (demande d'Adrien) : une seule grandeur, et le mouvement
+  // chiffré plutôt que laissé à l'appréciation de l'œil.
+  // « points » explicite : sans unité, un nombre nu à côté d'un mot de niveau se
+  // lit comme un rang ou un pourcentage. Et la variation nomme le bloc auquel
+  // elle se compare, sinon « −24 % » ne dit pas depuis quand.
+  const val = <span className="trend-val">{p.cumul.toFixed(1).replace(".", ",")}&nbsp;points</span>;
+  const bouge = p.delta != null && p.delta !== 0
+    ? <span className="trend-delta"> ({p.delta > 0 ? "+" : "−"}{Math.abs(p.delta)}&nbsp;%{p.deltaDepuis ? ` depuis ${p.deltaDepuis}` : ""})</span>
+    : null;
   return p.isAbsent
-    ? <>{p.timeLabel} · <b>Hors du radar</b></>
-    : <>{p.timeLabel} · <b>{p.level}</b></>;
+    ? <>{p.timeLabel} · <b>Hors du radar</b> · {val}{bouge}</>
+    : <>{p.timeLabel} · <b>{p.level}</b> · {val}{bouge}</>;
 }
 
 export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
@@ -98,7 +106,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
               role="img"
               aria-label={p.isAbsent
                 ? `${p.timeLabel} : Hors du radar`
-                : `${p.timeLabel} : saillance ${p.level}`}
+                : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
               onPointerEnter={() => setHover(i)}
               onPointerLeave={() => setHover((h) => (h === i ? null : h))}
               onFocus={() => setHover(i)}

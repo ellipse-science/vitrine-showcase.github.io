@@ -25,7 +25,11 @@ import {
   scaleThresholds,
 } from "@/lib/data/salienceCutover";
 
-const DATA_PATH = path.resolve(
+// VITRINE_DATA_PATH : échappatoire réservée au BANC DE VALIDATION (#430). Elle
+// permet de servir un instantané recomposé — par exemple avec les valeurs de la
+// spec v1 recalculées depuis le JSON `articles` — sans jamais toucher à
+// public/data/, qui est écrasé par fetch_data.R. Absente en production.
+const DATA_PATH = process.env.VITRINE_DATA_PATH ?? path.resolve(
   process.cwd(),
   "public",
   "data",
@@ -1428,6 +1432,14 @@ export type SalienceTrendPoint = {
    *  vitrine#430 : la même grandeur que le badge, pour que la hauteur du point
    *  et le mot posé à côté ne puissent plus se contredire. */
   cumul: number;
+  /** Variation relative du cumul depuis le bloc précédent, en % (demande
+   *  d'Adrien) : « +12 % » dit ce que le point a fait, là où la seule hauteur
+   *  demande de comparer deux positions à l'œil. null sur le premier point. */
+  delta: number | null;
+  /** Heure du bloc auquel la variation se compare — « 4h », « hier 20h ». Même
+   *  grammaire que la phrase de tendance juste au-dessus (« depuis 12h »), pour
+   *  que la bande parle d'une seule voix. */
+  deltaDepuis: string | null;
   /** Part de l'attention QC du bloc, en % — CE QUE TRACE LA COURBE (essai #304).
    *  Toute la boîte de trajectoire parle désormais de part d'attention : courbe,
    *  flèche et chiffre. Le vocabulaire de NIVEAU (« Très faible »…) redevient
@@ -1668,7 +1680,12 @@ function buildSalienceTrend(
       score: Math.round(p.qc),
       share: Math.round(p.share),
       // Ce que la courbe trace désormais (cf. la note sur `valeur` plus haut).
-      cumul: Math.round(valeur(i)),
+      cumul: Math.round(valeur(i) * 10) / 10,
+      // Pas de variation quand le point précédent valait zéro : une histoire qui
+      // apparaît ne « croît » pas de 100 %, elle arrive. La phrase de trajectoire
+      // dit déjà « Nouveau ».
+      delta: i === 0 || niveaux[i - 1] <= 0 ? null : relatif(niveaux[i], niveaux[i - 1]),
+      deltaDepuis: i === 0 || niveaux[i - 1] <= 0 ? null : heure(i - 1, false),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
       isAbsent: !p.present,
     };
@@ -1688,6 +1705,11 @@ export type UneEvent = {
   saillanceCls: string;
   /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
   saillanceHint: string;
+  /** Centile réel de la nouvelle dans la distribution de référence (#430, A7).
+   *  La bulle ⓘ l'utilise pour dire la même chose que l'infobulle du badge —
+   *  avant, elle parlait par paliers (« dans le cinquième le plus marquant »),
+   *  ce qui contredisait la phrase voisine dès qu'on avait le vrai chiffre. */
+  saillanceCentile: number;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -1870,7 +1892,14 @@ export type HeadlineData = {
 // cache() : le snapshot est lu par plusieurs consommateurs du même rendu
 // (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
 // lecture/parse par build au lieu d'une par appel.
-export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (
+  /** Bloc « as-of » (« AAAA-MM-JJTHH ») : reconstruit le module tel qu'il était à
+   *  cette édition, en ne gardant que les blocs qui la précèdent. Sert à naviguer
+   *  dans les éditions passées (vitrine#434) — et, ici, à valider à l'œil le
+   *  comportement des règles du dossier #430 sur plusieurs éditions d'affilée.
+   *  Absent → l'édition courante, comportement inchangé. */
+  asOf?: string,
+): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -1878,7 +1907,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     return null;
   }
 
-  const all = JSON.parse(raw) as RawEvent[];
+  const tout = JSON.parse(raw) as RawEvent[];
+  // Voyage dans le temps : on coupe le snapshot au bloc demandé. Tout le reste
+  // de la chaîne (fenêtre de 6 blocs, rejeu des éditions, badge, trajectoire)
+  // travaille alors exactement comme il l'aurait fait à ce moment-là.
+  const all = asOf ? tout.filter((e) => blockKey(e) <= asOf) : tout;
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
@@ -2006,6 +2039,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
     const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
     const saillanceHint = hintFromCentile(s.sumQc, sumThresholds, POP_QC);
+    const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
@@ -2058,6 +2092,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceLabel,
       saillanceCls,
       saillanceHint,
+      saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,

@@ -7036,3 +7036,10 @@
     font-size: 10px;
   }
 }
+
+  /* La valeur d'un point et sa variation, au survol de la courbe (#430).
+     Les deux prennent la couleur de la tendance — verte en hausse, rouge en
+     baisse — comme la flèche et le libellé : un seul code couleur dans la
+     bande. Un gris neutre les faisait lire comme une note de bas de page. */
+  .saillance-trend .trend-val,
+  .saillance-trend .trend-delta { color: var(--acc); font-variant-numeric: tabular-nums; }
