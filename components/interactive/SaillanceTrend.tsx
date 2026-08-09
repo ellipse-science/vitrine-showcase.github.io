@@ -15,8 +15,10 @@ import type { SalienceTrend, SalienceTrendPoint } from "@/lib/data/headlineEvent
 const W = 124, H = 24, PADX = 5, PADY = 4;
 
 // Diamètre d'un point = PALIER DE SAILLANCE de ce bloc (demande Adrien) : la
-// courbe dit la part d'attention par sa hauteur, la grosseur dit à quel niveau
-// la nouvelle se trouvait. Écart volontairement marqué — 1,9 px à 4,8 px entre
+// courbe dit l'attention cumulée 24 h par sa hauteur, la grosseur redit le même
+// niveau en plus lisible (vitrine#430 B3 : une seule grandeur dans toute la
+// bande — hauteur, diamètre et mot ne peuvent plus se contredire).
+// Écart volontairement marqué — 1,9 px à 4,8 px entre
 // « Très faible » et « Exceptionnelle » — pour que la différence se voie à cette
 // échelle. Un bloc sans Une garde un petit anneau creux, lisible mais discret.
 // Les repères sommet / maintenant passent par la COULEUR (cf. CSS), pas par la
@@ -45,20 +47,34 @@ function Arrow({ dir }: { dir: SalienceTrend["dir"] }) {
 // courbe. Sorti du JSX pour servir DEUX fois — au texte affiché et aux doublures
 // invisibles qui réservent la hauteur (cf. plus bas).
 function capDuPoint(p: SalienceTrendPoint) {
+  // Le « X % de l'attention médiatique » a quitté cette ligne (vitrine#430, B3) :
+  // il disait la part du bloc de 4 h pendant que le mot juste à côté disait le
+  // niveau du cumul 24 h — deux natures, et 39 % des mouvements qui se
+  // contredisaient. À la place, la VALEUR du point et sa variation depuis le
+  // bloc précédent (demande d'Adrien) : une seule grandeur, et le mouvement
+  // chiffré plutôt que laissé à l'appréciation de l'œil.
+  // « points » explicite : sans unité, un nombre nu à côté d'un mot de niveau se
+  // lit comme un rang ou un pourcentage. Et la variation nomme le bloc auquel
+  // elle se compare, sinon « −24 % » ne dit pas depuis quand.
+  const val = <span className="trend-val">{p.cumul.toFixed(1).replace(".", ",")}&nbsp;points</span>;
+  const bouge = p.delta != null && p.delta !== 0
+    ? <span className="trend-delta"> ({p.delta > 0 ? "+" : "−"}{Math.abs(p.delta)}&nbsp;%{p.deltaDepuis ? ` depuis ${p.deltaDepuis}` : ""})</span>
+    : null;
   return p.isAbsent
-    ? <>{p.timeLabel} · <b>Hors du radar</b></>
-    : <>{p.timeLabel} · <b>{p.level}</b> · {p.share}&nbsp;% de l’attention médiatique</>;
+    ? <>{p.timeLabel} · <b>Hors du radar</b> · {val}{bouge}</>
+    : <>{p.timeLabel} · <b>{p.level}</b> · {val}{bouge}</>;
 }
 
 export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   const [hover, setHover] = useState<number | null>(null);
   const pts = trend.points;
-  // La courbe trace la PART D'ATTENTION, pas le score (essai #304) : une seule
-  // grandeur dans toute la boîte — courbe, flèche et chiffre disent la même chose.
-  const max = Math.max(1, ...pts.map((p) => p.share));
+  // La courbe trace le CUMUL 24 h — la grandeur du badge (vitrine#430, B3).
+  // Une seule grandeur dans toute la bande : la pastille, la hauteur des points
+  // et le mot au survol disent maintenant tous la même chose.
+  const max = Math.max(1, ...pts.map((p) => p.cumul));
   const xs = (i: number) => PADX + i * ((W - 2 * PADX) / Math.max(1, pts.length - 1));
   const ys = (v: number) => H - PADY - (v / max) * (H - 2 * PADY);
-  const line = pts.map((p, i) => `${xs(i).toFixed(1)},${ys(p.share).toFixed(1)}`).join(" ");
+  const line = pts.map((p, i) => `${xs(i).toFixed(1)},${ys(p.cumul).toFixed(1)}`).join(" ");
 
   const active = hover !== null ? pts[hover] : null;
 
@@ -78,19 +94,19 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
     <span className={`saillance-trend trend-${trend.dir}`}>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
-          role="img" aria-label={`Part de l’attention médiatique sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
+          role="img" aria-label={`Niveau de saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
           <polyline points={line} fill="none" className="trend-line" strokeWidth="1.9" strokeLinejoin="round" />
           {pts.map((p, i) => (
             <circle
               key={i}
               className={`trend-pt${p.isAbsent ? " is-absent" : ""}${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
-              cx={xs(i).toFixed(1)} cy={ys(p.share).toFixed(1)}
+              cx={xs(i).toFixed(1)} cy={ys(p.cumul).toFixed(1)}
               r={rayon(p, i === hover)}
               tabIndex={0}
               role="img"
               aria-label={p.isAbsent
                 ? `${p.timeLabel} : Hors du radar`
-                : `${p.timeLabel} : saillance ${p.level}, ${p.share} % de l’attention médiatique`}
+                : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
               onPointerEnter={() => setHover(i)}
               onPointerLeave={() => setHover((h) => (h === i ? null : h))}
               onFocus={() => setHover(i)}
