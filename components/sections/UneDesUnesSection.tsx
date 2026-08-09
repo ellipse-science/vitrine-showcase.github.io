@@ -53,6 +53,7 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
         <InfoTip size="sm" label="Détail du niveau de saillance">
           <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} centile={event.saillanceCentile}
             peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
+            sommetCentile={event.sommetCentile} sommetTier={event.sommetTier}
             thresholds={event.salThresholds}
             qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
             since={event.saillantSince} />
@@ -99,8 +100,15 @@ function ResonanceTag({ label, region, echo }: {
       <span className="resonance-tag">{label}</span>
       <InfoTip size="sm" label={`${label} : détail de la couverture`}>
         <span className="resonance-card">
+          {/* La fenêtre était TUE (demande d'Adrien, 2026-08-09) : « 61 % de
+              l'attention des Unes canadiennes-anglaises » se lisait comme un
+              état permanent, alors que la part est calculée sur la fenêtre
+              glissante de 24 h pondérée par la récence — la même que le
+              classement, le badge et les axes du radar (`sumRoc / totalRoc`,
+              issus de storiesFrom24h). Un pourcentage sans période n'est pas
+              interprétable. */}
           <span className="resonance-card-share">
-            {echo.share}&nbsp;% de l&apos;attention des Unes {region}
+            {echo.share}&nbsp;% de l&apos;attention des Unes {region} sur les 24 dernières heures
           </span>
           {echo.media.length > 0 && (
             <span className="resonance-card-media">
@@ -235,12 +243,12 @@ function SideUne({ event }: { event: UneEvent }) {
   );
 }
 
-export async function UneDesUnesSection() {
+export async function UneDesUnesSection({ asOf }: { asOf?: string } = {}) {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
   const [data, artExists, audioUrl] = await Promise.all([
-    loadHeadlineEvents(),
+    loadHeadlineEvents(asOf),
     fs.access(artJsonPath).then(() => true).catch(() => false),
     fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")

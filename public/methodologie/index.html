@@ -531,26 +531,55 @@
   </section>
 
   <!-- §3 Indice de saillance -->
+  remplace la section `<section id="indice-saillance">` de
+  public/methodologie/index.html, dans le MÊME commit que le passage de
+  SALIENCE_CUTOVER à `true` (lib/data/salienceCutover.ts).
+
+  Pourquoi il vit ici en attendant : la page Méthodologie décrit ce que le site
+  FAIT, au présent. L'installer avant la bascule ferait décrire au public un
+  indice qui ne tourne pas encore — et l'installer après la ferait mentir dans
+  l'autre sens. Le test `tests/salienceCutover.test.ts` refuse les deux, dans
+  les deux directions : il lit le flag ET la page, et échoue si l'un avance sans
+  l'autre. La bascule est donc indivisible par construction, pas par discipline.
+
+  Suivi : vitrine#271 · spec : aws-refiners#287 (tag `spec-v1`) · seuils : #224.
+
+  DEUX CHOSES À REFAIRE LE JOUR J, en plus du copier-coller :
+   1. re-rouler `_chantiers-vitrine/banc-235/cutover_grilles_specv1.R` et
+      reporter les seuils dans lib/data/salienceCutover.ts ;
+   2. régénérer `public/methodologie/saillance-niveaux.png` — la figure montre
+      encore la distribution de l'ANCIEN indice, et la légende ci-dessous
+      annoncerait autre chose que ce qu'elle illustre.
+-->
   <section id="indice-saillance" class="metho-section">
     <p class="metho-section-label">§ 03</p>
     <h2>L'indice de saillance</h2>
     <p class="metho-body">La saillance est mesurée en blocs de quatre heures ancrés sur l'heure de Montréal (<span style="white-space:nowrap">03–07 h</span>, <span style="white-space:nowrap">07–11 h</span>, <span style="white-space:nowrap">11–15 h</span>, <span style="white-space:nowrap">15–19 h</span>, <span style="white-space:nowrap">19–23 h</span>, <span style="white-space:nowrap">23–03 h</span>), qui constituent l'unité temporelle de base de l'analyse. L'ancrage sur l'heure locale plutôt que sur UTC garantit qu'un bloc reste la même tranche de journée toute l'année, y compris aux changements d'heure.</p>
 
-    <h3>Indice absolu</h3>
-    <p class="metho-body">Pour chaque objet <em>o</em>, chaque média <em>m</em> et chaque bloc <em>t</em>&nbsp;:</p>
-    <div class="metho-formula">IndiceAbsolu(o, m, t) = TempsEnUne(o, m, t) × PondérationMédia(m)</div>
-    <p class="metho-body">La <strong>pondération inter-médias</strong> corrige les disparités structurelles entre sources&nbsp;: certains médias renouvellent leur page frontale très fréquemment, d'autres la laissent stable plusieurs heures. Sans correction, les premières accumuleraient mécaniquement moins de durée brute pour une même importance. La pondération est basée sur le temps moyen historique passé en Une sur trois mois glissants.</p>
-
-    <h3>Indice relatif (normalisé)</h3>
-    <p class="metho-body">L'indice absolu est normalisé par la somme des indices de tous les objets du même bloc&nbsp;:</p>
-    <div class="metho-formula">IndiceRelatif(o, t) = IndiceAbsolu(o, t) / Σ IndiceAbsolu(tous objets, t)</div>
-    <p class="metho-body">Cet indice exprime quelle proportion de l'attention médiatique totale est consacrée à un objet sur un bloc de quatre heures. Il est recalculé à chaque nouveau bloc.</p>
-
-    <h3>Niveaux de saillance affichés</h3>
-    <p class="metho-body">Toutes les nouvelles présentées dans le module « La Une des Unes » ont fait la Une d'au moins un média&nbsp;: elles sont déjà saillantes. L'étiquette de saillance ne dit donc pas si une nouvelle est importante, mais <strong>où elle se situe parmi les autres Unes</strong>. Le <strong>sommet de saillance</strong> atteint par chaque histoire sur 24 heures — son plus haut score québécois (<code>score_qc</code>) — est comparé à la distribution des sommets de toutes les Unes récentes, puis classé en six niveaux par percentiles symétriques.</p>
+    <h3>Trois façons d'occuper l'espace médiatique</h3>
+    <p class="metho-body">Une nouvelle peut s'imposer de trois manières différentes, et l'indice les mesure séparément avant de les combiner. Chacune est ramenée sur une échelle de 0 à 1.</p>
     <div class="metho-table-wrap">
       <table class="metho-table">
-        <thead><tr><th>Niveau</th><th>Position (percentile du sommet 24 h)</th><th>Part des Unes</th></tr></thead>
+        <thead><tr><th>Facette</th><th>Question</th><th>Mesure</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Visibilité</strong></td><td>Combien de médias en ont fait leur Une?</td><td>Part des médias suivis de la région qui ont mis l'histoire en Une, en plus du premier.</td></tr>
+          <tr><td><strong>Intensité</strong></td><td>Chaque média y consacre-t-il un article ou plusieurs?</td><td>Nombre moyen d'articles par média couvrant l'histoire. Un même média ne compte que jusqu'à trois articles&nbsp;: au-delà, un site qui décline abondamment un sujet gonflerait la mesure sans que l'histoire occupe plus de place ailleurs.</td></tr>
+          <tr><td><strong>Durée</strong></td><td>Combien de temps est-elle restée en Une?</td><td>Temps passé en Une, rapporté au rythme habituel de chaque média&nbsp;: une heure sur une page frontale renouvelée en continu ne vaut pas une heure sur une page qui change deux fois par jour.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Comment les trois se combinent</h3>
+    <p class="metho-body">Les trois facettes sont réunies par une <strong>moyenne géométrique</strong>, et non par une addition. La différence est de fond&nbsp;: une addition serait <em>compensatoire</em>, c'est-à-dire qu'une facette très forte pourrait masquer une facette absente. Un seul média qui laisserait un sujet toute la journée en Une obtiendrait alors un score élevé, alors qu'aucun autre média ne l'a jugé digne de sa page frontale. La moyenne géométrique refuse cette compensation&nbsp;: <strong>une histoire doit exister sur les trois plans à la fois</strong> pour monter, et le plus faible des trois tire l'ensemble vers le bas. Un plancher empêche toutefois qu'une facette nulle annule tout le reste.</p>
+    <div class="metho-formula">Indice(histoire, région, bloc) = (Visibilité × Intensité × Durée)<sup>1/3</sup></div>
+    <p class="metho-body">L'indice est calculé <strong>séparément pour chaque région</strong> — les médias québécois d'un côté, les médias canadiens de l'autre — parce qu'une histoire ne se compare qu'aux Unes du même ensemble de médias. C'est ce qui permet au module « Deux solitudes&nbsp;? » de situer chaque camp chez lui plutôt que dans un panier commun.</p>
+    <p class="metho-body">Le résultat vaut entre 0 et 1&nbsp;; il est affiché <strong>sur 100, avec une décimale</strong>.</p>
+
+    <h3>Niveaux de saillance affichés</h3>
+    <p class="metho-body">Toutes les nouvelles présentées dans le module « La Une des Unes » ont fait la Une d'au moins un média&nbsp;: elles sont déjà saillantes. L'étiquette de saillance ne dit donc pas si une nouvelle est importante, mais <strong>où elle se situe parmi les autres Unes</strong>. Ce qui est classé est l'<strong>attention cumulée sur 24 heures</strong>, les heures récentes comptant davantage — la même grandeur qui détermine l'ordre des manchettes, de sorte que le niveau affiché et le rang racontent la même chose. Cette valeur est comparée à la distribution des mêmes cumuls sur toutes les Unes récentes, puis classée en six niveaux par percentiles symétriques.</p>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Niveau</th><th>Position (percentile de l'attention cumulée 24 h)</th><th>Part des Unes</th></tr></thead>
         <tbody>
           <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5 %</td></tr>
           <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15 %</td></tr>
@@ -561,10 +590,11 @@
         </tbody>
       </table>
     </div>
-    <p class="metho-body">Les bandes sont symétriques&nbsp;: autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalculés à chaque mise à jour sur l'historique récent disponible, de sorte qu'« habituel » suit l'évolution réelle de l'actualité plutôt qu'une saison figée; à défaut, on retombe sur des seuils de référence fixes. Lorsque la façon de mesurer la saillance change, cet historique de référence repart de ce changement — c'est pourquoi la distribution ci-dessous ne couvre pour l'instant que la période récente.</p>
+    <p class="metho-body">Les bandes sont symétriques&nbsp;: autant de « Très faible » que d'« Exceptionnelle », l'essentiel au centre. La médiane tombe entre « Modérée » et « Élevée », de sorte qu'aucune bande ne représente « la moyenne ». Les seuils sont recalculés à chaque mise à jour sur l'historique récent disponible, de sorte qu'« habituel » suit l'évolution réelle de l'actualité plutôt qu'une saison figée&nbsp;; à défaut, on retombe sur des seuils de référence fixes. Lorsque la façon de mesurer la saillance change, cet historique de référence repart de ce changement.</p>
+    <p class="metho-body">Une propriété mérite d'être signalée, parce qu'elle ne vient d'aucune règle ajoutée&nbsp;: une histoire portée par <strong>un seul média</strong> ne peut pas franchir la moitié supérieure de l'échelle, quelle que soit la durée pendant laquelle ce média l'a gardée en Une. Elle découle directement de la façon dont l'indice est construit — la facette Visibilité y est presque nulle, et comme les trois facettes se multiplient au lieu de s'additionner, aucune des deux autres ne peut compenser. C'est la traduction mathématique d'un principe simple&nbsp;: la saillance décrit une attention <em>collective</em>, et un média seul, aussi insistant soit-il, ne fait pas un agenda.</p>
     <figure class="metho-figure">
-      <img src="saillance-niveaux.png" alt="Distribution des sommets de saillance des Unes récentes (un pic 24 h par histoire), découpée en six bandes de percentiles, de la plus faible à la plus élevée.">
-      <figcaption>Distribution réelle des scores de saillance (<code>score_qc</code>) de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
+      <img src="saillance-niveaux.png" alt="Distribution de l'attention cumulée sur 24 heures des Unes récentes, découpée en six bandes de percentiles, de la plus faible à la plus élevée.">
+      <figcaption>Distribution réelle de l'attention cumulée sur 24 heures de toutes les Unes récentes, répartie en six bandes de percentiles. Échelle logarithmique.</figcaption>
     </figure>
   </section>
 

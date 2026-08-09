@@ -25,7 +25,11 @@ import {
   scaleThresholds,
 } from "@/lib/data/salienceCutover";
 
-const DATA_PATH = path.resolve(
+// VITRINE_DATA_PATH : échappatoire réservée au BANC DE VALIDATION (#430). Elle
+// permet de servir un instantané recomposé — par exemple avec les valeurs de la
+// spec v1 recalculées depuis le JSON `articles` — sans jamais toucher à
+// public/data/, qui est écrasé par fetch_data.R. Absente en production.
+const DATA_PATH = process.env.VITRINE_DATA_PATH ?? path.resolve(
   process.cwd(),
   "public",
   "data",
@@ -1279,8 +1283,31 @@ function selectTopUnes(stories: Story[], max = 3): Story[] {
   // est calculé et publié pour TOUTES les histoires, elles restent disponibles
   // en base pour l'analyse, et Radar+ les montrera toutes. La Vitrine choisit
   // seulement ce qu'elle met en avant.
-  const meneur = top[0].sumQc;
-  return top.filter((s, i) => i === 0 || s.sumQc >= meneur * MIN_PART_DU_MENEUR);
+  // B7 (#430) — LE DÉNOMINATEUR EST LA PLUS FORTE HISTOIRE ENCORE VIVANTE.
+  //
+  // Le défaut : le cumul 24 h d'un meneur ÉTEINT (plus aucun média québécois ne
+  // l'a en Une dans le bloc courant) reste gonflé par son passé. Une nouvelle
+  // bien vivante se faisait alors retirer de l'écran pour n'avoir pas fait la
+  // moitié d'un fantôme — le 2026-08-09 à 16h, Gaza (33,4) sortait à 49 % d'un
+  // meneur à 68,4 qui valait 0 dans le bloc courant. Trois histoires en cours,
+  // deux cartes.
+  //
+  // Mesuré sur le rejeu de l'année (2683 éditions) : le cas se produit dans
+  // 6,0 % des éditions. La correction en change 7,9 % (4,2 % sur le seul régime
+  // de regroupement actuel) et PRÉSERVE le cas à deux cartes — 21,1 % contre
+  // 25,9 % — là où toutes les variantes « cascade » testées le faisaient tomber
+  // à 9 % en poussant tout vers trois cartes.
+  //
+  // Formulation publique, une seule phrase et aucune condition : « une manchette
+  // secondaire s'affiche si elle vaut au moins la moitié de la plus forte
+  // histoire encore à la Une ». Quand le meneur est vivant — le cas ordinaire —
+  // c'est lui, et la règle est exactement celle d'avant.
+  const vivante = (s: Story) => (s.series[s.series.length - 1]?.qc ?? 0) > 0;
+  // `eligible` est déjà trié par cumul décroissant : le premier vivant est donc
+  // le plus fort. Repli sur le meneur si PERSONNE n'est à la Une dans ce bloc
+  // (nuit creuse) — sinon la règle n'aurait plus de référence du tout.
+  const reference = (vivante(top[0]) ? top[0] : eligible.find(vivante) ?? top[0]).sumQc;
+  return top.filter((s, i) => i === 0 || s.sumQc >= reference * MIN_PART_DU_MENEUR);
 }
 
 /** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs
@@ -1502,6 +1529,43 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // l'édition de 12h : les six mêmes blocs se lisaient « hier 16h / hier 20h /
 // hier minuit… » sur la 1re Une et « aujourd'hui 16h / 20h / minuit… » sur la
 // 3e, qui annonçait un « Sommet à 20h » encore à venir dans la journée.
+// HEURE **ET** MOMENT DE LA JOURNÉE, toujours les deux (arbitrage d'Adrien,
+// 2026-08-09). L'heure seule oblige le lecteur à deviner la demi-journée ; le
+// moment seul perd la précision de la grille d'éditions. Les deux ensemble
+// répondent aussi à l'objection d'origine contre « depuis cet après-midi »
+// (plus vague que « depuis 16h ») : on ne remplace pas l'heure, on l'complète.
+//
+// UN SEUL endroit : ce libellé vivait en DEUX exemplaires — celui de la bulle ⓘ
+// et celui de la phrase de trajectoire — et ils ont divergé. Toute la chaîne
+// passe désormais par ici.
+//
+// Exceptions assumées : « minuit » et « midi » SONT déjà une heure et un
+// moment ; « à minuit cette nuit » ou « à midi ce midi » seraient des
+// pléonasmes. Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
+const MOMENT_AUJ: Record<number, string> = {
+  0: "minuit", 4: "4h ce matin", 8: "8h ce matin",
+  12: "ce midi", 16: "16h cet après-midi", 20: "20h ce soir",
+};
+const MOMENT_HIER: Record<number, string> = {
+  0: "hier à minuit", 4: "4h hier matin", 8: "8h hier matin",
+  12: "hier midi", 16: "16h hier après-midi", 20: "20h hier soir",
+};
+/** `avecA` : « à 4h ce matin » après « Sommet »/« arrivée », « 4h ce matin »
+ *  après « depuis ». Les formes de `hier` portent déjà leur repère de jour. */
+function momentLabel(dayWord: string, hour: number, avecA = true): string | null {
+  const hh = hour % 24;
+  if (dayWord.startsWith("le ")) return dayWord;
+  const table = dayWord === "aujourd’hui" ? MOMENT_AUJ : dayWord === "hier" ? MOMENT_HIER : null;
+  if (!table) return null;
+  const brut = table[hh] ?? (dayWord === "hier" ? `hier à ${hh}h` : `${hh}h`);
+  if (!avecA) return brut.startsWith("hier à ") ? `hier ${brut.slice("hier à ".length)}` : brut;
+  // « à » se colle devant une HEURE, jamais devant un démonstratif : on dit
+  // « à 4h ce matin » mais « ce midi », pas « à ce midi ». Même chose pour les
+  // formes de `hier`, qui portent déjà leur repère.
+  if (/^(ce |cette |hier)/.test(brut)) return brut;
+  return `à ${brut}`;
+}
+
 function blockLabelParts(blockUtc: string, refDayIso: string | null):
   { dayWord: string; moment: string; hour: number } | null {
   if (!refDayIso) return null;
@@ -1604,10 +1668,7 @@ function buildSalienceTrend(
   const heure = (i: number, avecA = true) => {
     const p = blockLabelParts(series[i].blockUtc, refDayIso);
     if (!p) return null;
-    const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
-    if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
-    const jour = p.dayWord === "aujourd’hui" ? "" : `${p.dayWord} `;
-    return avecA ? `${jour}à ${h}` : `${jour}${h}`;
+    return momentLabel(p.dayWord, p.hour, avecA);
   };
   const hSommet = heure(peakIdx);
   const ancre = hSommet ? `Sommet ${hSommet}` : "Sommet du jour";
@@ -1651,6 +1712,7 @@ function buildSalienceTrend(
               : situation === "stable" ? `Se maintient ${incise}`
                 : `En recul de ${reculSommet} % ${incise}`;
 
+
   // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis
   // du sommet : une histoire qui revient (0 → 25 %) monte visiblement à l'écran,
   // une flèche rouge à côté d'un segment qui grimpe se lit comme une erreur.
@@ -1666,9 +1728,11 @@ function buildSalienceTrend(
     const tier = !p.present ? null
       : badgeRank ? TIER_BY_RANK[badgeRank]
         : saillanceTierFromScore(p.qc, thresholds);
-    // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
-    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
-      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour}h`}`;
+    // TROISIÈME exemplaire de ce libellé — après celui de la bulle ⓘ et celui de
+    // la phrase de trajectoire, tous les trois divergents. Il passe lui aussi par
+    // `momentLabel`, sans « à » (le survol n'a pas de préposition devant) :
+    // « 4h ce matin », plus « aujourd'hui 4h ».
+    const timeLabel = !parts ? "" : (momentLabel(parts.dayWord, parts.hour, false) ?? "");
     return {
       timeLabel,
       // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
@@ -1698,8 +1762,6 @@ export type UneEvent = {
   saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
-  /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
-  saillanceHint: string;
   /** Centile réel dans la distribution de référence (#430, A7). La bulle ⓘ s'en
    *  sert pour dire la même chose que l'infobulle du badge — elle parlait encore
    *  par paliers (« dans le cinquième le plus marquant »), ce qui contredisait
@@ -1728,6 +1790,11 @@ export type UneEvent = {
    *  été (« à minuit », « hier à 20 h »). null si l'histoire est à son sommet. */
   sommetSum: number | null;
   sommetLabel: string | null;
+  /** Centile et bande du SOMMET (#430, A8) : c'est le sommet qui situe la
+   *  nouvelle dans l'année, pas sa valeur du moment. null quand le sommet est
+   *  l'instant présent — la bulle utilise alors `saillanceCentile`. */
+  sommetCentile: number | null;
+  sommetTier: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -1887,7 +1954,14 @@ export type HeadlineData = {
 // cache() : le snapshot est lu par plusieurs consommateurs du même rendu
 // (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
 // lecture/parse par build au lieu d'une par appel.
-export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (
+  /** Bloc « as-of » (« AAAA-MM-JJTHH ») : reconstruit le module tel qu'il était à
+   *  cette édition, en ne gardant que les blocs qui la précèdent. Sert à naviguer
+   *  dans les éditions passées (vitrine#434) — et, ici, à valider à l'œil le
+   *  comportement des règles du dossier #430 sur plusieurs éditions d'affilée.
+   *  Absent → l'édition courante, comportement inchangé. */
+  asOf?: string,
+): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -1895,7 +1969,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     return null;
   }
 
-  const all = JSON.parse(raw) as RawEvent[];
+  const tout = JSON.parse(raw) as RawEvent[];
+  // Voyage dans le temps : on coupe le snapshot au bloc demandé. Tout le reste
+  // de la chaîne (fenêtre de 6 blocs, rejeu des éditions, badge, trajectoire)
+  // travaille alors exactement comme il l'aurait fait à ce moment-là.
+  const all = asOf ? tout.filter((e) => blockKey(e) <= asOf) : tout;
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
@@ -2026,7 +2104,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const suivi = badgeRanksByStory.get(storyKey);
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
     const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
-    const saillanceHint = hintFromCentile(s.sumQc, sumThresholds, POP_QC);
     const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
@@ -2035,10 +2112,29 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? (() => {
         const p = blockLabelParts(suivi.peakBlock, editionRefDayIso);
         if (!p) return null;
-        const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
-        return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+        // « à 4h ce matin », pas « à 4h » (demande d'Adrien, 2026-08-09). L'heure
+        // nue oblige le lecteur à deviner de quelle demi-journée on parle, alors
+        // que le module dispose déjà du vocabulaire de moment (SAILLANT_TODAY).
+        // Table EXPLICITE plutôt que dérivée : c'est un libellé public, et deux
+        // cas s'y refusent — « à minuit cette nuit » et « à midi ce midi » sont
+        // des pléonasmes, et « à 4h tôt ce matin » est illisible.
+        return momentLabel(p.dayWord, p.hour);
       })()
+      : null;
+    // A8 (#430) — CE QUI SITUE LA NOUVELLE DANS L'ANNÉE, C'EST SON SOMMET.
+    // La valeur du moment ne dit que l'instant : une histoire retombée à 68,4
+    // pts (57e centile) reste celle qui a atteint 157,3 pts (96e centile), et
+    // c'est ce sommet que le palmarès hebdomadaire classera (aws-refiners#283).
+    // Parler du rang de la nouvelle avec le chiffre du moment était FAUX, pas
+    // seulement mal cadré. Quand le sommet EST le moment présent, `sommetSum`
+    // vaut null et la bulle se rabat sur le centile courant — qui est alors le
+    // même nombre, au présent.
+    const sommetCentile = sommetSum != null
+      ? Math.max(1, Math.min(99, centileFrom(sommetSum, sumThresholds)))
+      : null;
+    const sommetTier = sommetSum != null
+      ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].label
       : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
@@ -2079,7 +2175,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceRank,
       saillanceLabel,
       saillanceCls,
-      saillanceHint,
       saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
@@ -2093,6 +2188,8 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       scoreQcSum24h: s.sumQc,
       sommetSum,
       sommetLabel,
+      sommetCentile,
+      sommetTier,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit

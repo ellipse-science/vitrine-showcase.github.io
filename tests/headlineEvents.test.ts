@@ -799,7 +799,9 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
       { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h
     ] as never, thr, "2026-07-24")!;
     const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
-    expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
+    // Plus ancré en fin de chaîne : le libellé continue par le moment de la
+    // journée (« 8h ce matin »). Ce qui compte reste l'heure de PUBLICATION.
+    expect(now.timeLabel).toMatch(/8\s*h/);    // heure de PUBLICATION
     expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
   });
   it("bloc de nuit 23-03 (publié à 4 h LE LENDEMAIN) → « aujourd’hui 4 h », jamais « hier » (jour = publication, #317)", () => {
@@ -811,7 +813,10 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
     ] as never, thr, "2026-07-24")!;
     const overnight = t.points[t.points.length - 2];   // le point 23-03
     expect(overnight.timeLabel).toMatch(/4\s*h/);       // heure de publication
-    expect(overnight.timeLabel).toContain("aujourd");   // « aujourd’hui », jour de publication
+    // Le libellé porte maintenant l'heure ET le moment (« 4h ce matin ») : c'est
+    // « ce matin » qui dit le jour de publication. Le garde-fou du #317 reste le
+    // même — jamais « hier », qui serait le jour du DÉBUT du bloc.
+    expect(overnight.timeLabel).toContain("ce matin");  // jour de publication
     expect(overnight.timeLabel).not.toContain("hier");  // surtout pas le jour du début
   });
   it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
@@ -842,13 +847,16 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
       { blockUtc: "2026-07-27T07", qc: 0, present: false, share: 0 },    // 03-07 Mtl → publié 8 h le 27
     ] as never, thr, "2026-07-27")!;
     const labels = t.points.map((p: { timeLabel: string }) => p.timeLabel);
-    expect(labels[0]).toBe("hier 16h");
-    expect(labels[1]).toBe("hier 20h");
+    // Heure ET moment de la journée depuis le 2026-08-09 (arbitrage d'Adrien) :
+    // l'heure seule laissait deviner la demi-journée. « minuit » et « midi »
+    // restent seuls — ils sont déjà l'un et l'autre.
+    expect(labels[0]).toBe("16h hier après-midi");
+    expect(labels[1]).toBe("20h hier soir");
     expect(labels[2]).toBe("hier minuit");      // publié à minuit, rattaché au jour qui finit
-    expect(labels[3]).toBe("aujourd’hui 4h");   // publié le 27, même si le bloc démarre le 26
-    expect(labels[4]).toBe("aujourd’hui 8h");
+    expect(labels[3]).toBe("4h ce matin");      // publié le 27, même si le bloc démarre le 26
+    expect(labels[4]).toBe("8h ce matin");
     // Et la phrase ne peut plus annoncer un sommet dans le futur de l'édition.
-    expect(t.capLabel).toContain("hier à 16h");
+    expect(t.capLabel).toContain("à 16h hier après-midi");
   });
 
   it("deux Unes de la même édition nomment les mêmes blocs de la même façon", () => {

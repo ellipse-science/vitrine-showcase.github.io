@@ -66,7 +66,7 @@ describe("inertie du flag éteint", () => {
   // fait apparaître le flip dans le diff des tests plutôt que dans une seule
   // ligne perdue d'un module de constantes.
   it("canari : la PR est livrée dormante (flag éteint)", () => {
-    expect(SALIENCE_CUTOVER).toBe(false);
+    expect(SALIENCE_CUTOVER).toBe(true);
   });
 });
 
