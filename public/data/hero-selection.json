@@ -1,10 +1,10 @@
 {
-  "event_id": "20260808T190000Z-evt-incendies-foret-colombie-britannique-decrete-7405f826",
+  "event_id": "20260809T110000Z-evt-wildfire-shows-little-growth-overnight-7547a000",
   "storyline_id": "story-abbotsford-1d5d99ad",
-  "title": "Incendies en Colombie-Britannique : état d'urgence et 20 000 évacuations",
+  "title": "Incendies en C.-B. : état d'urgence et évacuations massives",
   "main_issue": "environment_and_energy",
-  "date_utc": "2026-08-08",
-  "time_interval_utc": "19-23",
-  "sum_qc": 105.94,
-  "peak_qc": 58.91
+  "date_utc": "2026-08-09",
+  "time_interval_utc": "11-15",
+  "sum_qc": 79.352,
+  "peak_qc": 66.388
 }
