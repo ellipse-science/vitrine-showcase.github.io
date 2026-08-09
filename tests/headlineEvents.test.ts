@@ -945,18 +945,21 @@ describe("selectTopUnes (#430 A2 — classement pur, plus de seuil de médias)",
   // et la règle était incohérente (le héros, lui, était gardé mono-média).
   // ⚠️ La population de CALIBRATION, elle, garde le ≥ 2 : le niveau est une
   // position dans un groupe, et ce groupe ne doit pas suivre l'affichage.
+  // ⚠️ Les cumuls de ces fixtures sont volontairement PROCHES les uns des
+  // autres : ces tests portent sur le nombre de médias et sur l'ordre, pas sur
+  // la règle de domination (#430 B6), qui a son propre describe plus bas.
   const story = (label: string, sumQc: number, nQcMedia: number) =>
     ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
        series: [{ blockUtc: "2026-07-20T15", qc: Math.max(1, sumQc) }] });
 
   it("garde les 3 Unes quand les secondaires sont multi-médias", () => {
-    const st = [story("A", 30, 4), story("B", 20, 2), story("C", 10, 3)];
+    const st = [story("A", 30, 4), story("B", 25, 2), story("C", 20, 3)];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
   it("les secondaires mono-média ne sont PLUS cachées (cas du 16-17 juillet, inversé)", () => {
     // Avant #430 ce cas rendait ["Argentine"] seule : deux histoires réelles
     // disparaissaient de l'écran alors que l'indice savait déjà les classer bas.
-    const st = [story("Argentine", 30, 4), story("Montréal vibre", 20, 1), story("Tiques", 10, 1)];
+    const st = [story("Argentine", 30, 4), story("Montréal vibre", 25, 1), story("Tiques", 20, 1)];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
       .toEqual(["Argentine", "Montréal vibre", "Tiques"]);
   });
@@ -965,11 +968,11 @@ describe("selectTopUnes (#430 A2 — classement pur, plus de seuil de médias)",
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule", "Autre"]);
   });
   it("tronque SANS repêcher : une histoire hors top-3 ne remonte pas (pool partagé avec le radar)", () => {
-    const st = [story("A", 30, 4), story("B", 20, 1), story("C", 10, 2), story("D", 5, 5)];
+    const st = [story("A", 30, 4), story("B", 25, 1), story("C", 20, 2), story("D", 18, 5)];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
   it("classe par saillance cumulée décroissante et ignore les histoires sans média QC", () => {
-    const st = [story("Faible", 5, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
+    const st = [story("Faible", 30, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Forte", "Faible"]);
   });
 });
@@ -996,7 +999,7 @@ describe("classement pur : la Une suit la saillance pondérée 24 h comme le rad
     // la moyenne pondérée fait décroître le soccer d'elle-même en quelques blocs).
     const st = [
       withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul, retombé
-      withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]),   // frais, cumul plus bas
+      withSeries("inflation", 45, 2, [0, 0, 0, 0, 45]),   // frais, cumul plus bas
     ];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
       .toEqual(["soccer", "inflation"]);
@@ -1182,5 +1185,38 @@ describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", (
     expect(r.relDiffPct).toBe(0);
     expect(r.relLabel).toBe("aussi convergent que d'habitude");
     expect(r.relInfo).toContain("autant que d'habitude");
+  });
+});
+
+// ── B6 — le nombre de manchettes reflète la journée (vitrine#430) ────────────
+describe("selectTopUnes — règle de domination (#430 B6)", () => {
+  const { selectTopUnes } = __test__;
+  const st = (label: string, sumQc: number) =>
+    ({ label, sumQc, qcMedia: new Set(["M1"]), series: [{ blockUtc: "2026-07-20T15", qc: sumQc }] });
+
+  it("une histoire qui écrase les autres reste seule", () => {
+    // Cas réel du 2026-08-09 : 79,4 / 37,6 / 21,7 — la 2e est à 47 % du meneur.
+    expect(selectTopUnes([st("Incendies", 79.4), st("Élus", 37.6), st("Douane", 21.7)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["Incendies"]);
+  });
+  it("deux histoires comparables → deux manchettes", () => {
+    expect(selectTopUnes([st("A", 80), st("B", 60), st("C", 20)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["A", "B"]);
+  });
+  it("trois histoires comparables → trois manchettes, même toutes faibles", () => {
+    // LE cas qui inquiétait Adrien : une journée creuse ne doit pas vider le
+    // module. La règle compare les histoires ENTRE ELLES, jamais à un plancher.
+    expect(selectTopUnes([st("A", 9), st("B", 8), st("C", 7)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
+  });
+  it("le meneur passe toujours : le module ne peut pas se vider", () => {
+    expect(selectTopUnes([st("Seule", 0.4)] as never).map((s: { label: string }) => s.label))
+      .toEqual(["Seule"]);
+  });
+  it("la 3e est jugée sur le meneur, pas sur la 2e", () => {
+    // 100 / 55 / 52 : la 3e vaut 95 % de la 2e mais 52 % du meneur → elle passe.
+    expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 52)] as never)).toHaveLength(3);
+    // 100 / 55 / 45 : la 3e tombe sous la moitié du meneur → elle sort.
+    expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 45)] as never)).toHaveLength(2);
   });
 });

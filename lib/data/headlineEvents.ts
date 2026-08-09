@@ -1192,6 +1192,10 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
 
+/** Part de l'attention du meneur qu'une manchette secondaire doit atteindre pour
+ *  s'afficher (#430, B6). Voir selectTopUnes pour le raisonnement et la mesure. */
+const MIN_PART_DU_MENEUR = 0.5;
+
 // Sélection des Unes : classement PUR par saillance QC cumulée 24 h (sumQc,
 // demi-vie w10), depuis le MÊME pool que le radar Deux solitudes → les deux modules
 // montrent exactement le même classement (le héros de la Une = la nouvelle #1 du
@@ -1212,12 +1216,36 @@ const MIN_QC_MEDIA_SECONDARY = 2;
 // de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
 function selectTopUnes(stories: Story[], max = 3): Story[] {
   // Top-3 par saillance cumulée, sans repêchage (le pool est partagé avec le
-  // radar) et SANS filtre de nombre de médias depuis #430 : l'indice hiérarchise
-  // lui-même, et le badge dit honnêtement où chaque carte se situe.
+  // radar) et SANS filtre de nombre de médias depuis #430 A2 : l'indice
+  // hiérarchise lui-même, et le badge dit honnêtement où chaque carte se situe.
   const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
-  return eligible
-    .sort((a, b) => b.sumQc - a.sumQc)
-    .slice(0, max);
+  const top = eligible.sort((a, b) => b.sumQc - a.sumQc).slice(0, max);
+  if (top.length === 0) return top;
+  // RÈGLE DE DOMINATION (#430, B6, décision d'Adrien du 2026-08-09).
+  //
+  // Le nombre de manchettes n'est pas un réglage : c'est une AFFIRMATION.
+  // Trois cartes disent « voici les trois histoires du moment » ; une seule dit
+  // « aujourd'hui, une seule compte ». C'est la journée qui doit décider
+  // laquelle est vraie.
+  //
+  // La règle est RELATIVE, jamais un plancher absolu. Un plancher pourrait vider
+  // le module un jour creux où rien n'atteint le seuil — or trois nouvelles
+  // également faibles sont comparables ENTRE ELLES et méritent leurs trois
+  // cartes, chacune portant honnêtement son « Très faible ». À l'inverse, une
+  // histoire qui écrase les autres doit rester seule. Le meneur passe toujours :
+  // le module ne peut pas se vider.
+  //
+  // Seuil à 50 % — mesuré sur 105 éditions : trois cartes 49 % du temps, deux
+  // 23 %, une seule 29 %. La 2e histoire est à 69 % du meneur en médiane, mais
+  // sous 48 % dans un quart des éditions : les deux régimes de journées existent
+  // vraiment. Et le seuil se dit en une phrase publique.
+  //
+  // ⚠️ C'est une règle d'AFFICHAGE, pas de mesure (précision d'Adrien) : l'indice
+  // est calculé et publié pour TOUTES les histoires, elles restent disponibles
+  // en base pour l'analyse, et Radar+ les montrera toutes. La Vitrine choisit
+  // seulement ce qu'elle met en avant.
+  const meneur = top[0].sumQc;
+  return top.filter((s, i) => i === 0 || s.sumQc >= meneur * MIN_PART_DU_MENEUR);
 }
 
 /** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs
@@ -2368,6 +2396,7 @@ export const __test__ = {
   buildSalienceTrend,
   selectTopUnes,
   MIN_QC_MEDIA_SECONDARY,
+  MIN_PART_DU_MENEUR,
   windowConvergence,
   windowEventConvergence,
   salThresholdsFrom,
