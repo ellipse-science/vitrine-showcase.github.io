@@ -37,9 +37,13 @@ const MICRO: Record<number, string> = {
 const W = 300, PLOT_H = 52, LIGNE = 10, TOP = 2 * LIGNE + 4, H = TOP + PLOT_H + 2 * LIGNE + 5;
 const log10 = (v: number) => Math.log10(Math.max(v, 1));
 
-export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thresholds, qcOutlets, totalQcOutlets, since }: {
+export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLabel, thresholds, qcOutlets, totalQcOutlets, since }: {
   rank: number;
   level: string;
+  /** Centile réel (#430, A7). La bulle disait un palier — « dans le cinquième le
+   *  plus marquant » — pendant que l'infobulle du badge, elle, donnait déjà le
+   *  vrai chiffre : deux phrases voisines qui ne disaient pas la même chose. */
+  centile?: number;
   peak: number | null;
   /** Sommet de l'indice cumulé (même échelle que `peak`), null si atteint maintenant. */
   sommet?: number | null;
@@ -92,8 +96,8 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
   // cartes de l'historique DEV : les deux tombent sur des heures différentes
   // 45,6 % du temps (écart max 1040 h). Deux mots distincts pour deux
   // grandeurs distinctes, sinon le lecteur lit une contradiction.
-  const somL1 = "Plus haut niveau", somL2 = sommetLabel ? `(${sommetLabel})` : null;
-  const nowL1 = "Cette Une", nowL2 = "(maintenant)";
+  const somL1 = "Son sommet", somL2 = sommetLabel ? `(${sommetLabel})` : null;
+  const nowL1 = "Maintenant", nowL2 = null;
   const demi = (...l: (string | null)[]) => (Math.max(...l.map((s) => (s ?? "").length)) * CAR) / 2;
   const demiNow = demi(nowL1, nowL2);
   const demiSom = demi(somL1, somL2);
@@ -105,13 +109,23 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
 
   return (
     <span className="saillance-info-card">
-      <span className="sic-kicker">Saillance {level} · {rank}/6</span>
+      {/* Le « 3/6 » a été retiré (demande d'Adrien) : le rang chiffré doublait la
+          figure juste en dessous, qui le montre déjà en le SITUANT — et deux
+          façons de dire la même chose se lisent comme deux mesures. À la place,
+          la valeur elle-même, sur l'échelle d'affichage. */}
+      <span className="sic-kicker">Saillance {level}{typeof peak === "number" ? <> · {peak.toFixed(1).replace(".", ",")} points</> : null}</span>
       {/* ORDRE (décision Adrien) : l'EXPLICATION SIMPLE en tête — ce que ce
           niveau-ci veut dire pour cette Une-ci — et la DÉFINITION de la
           saillance en pied, pour qui veut aller plus loin. Le lecteur qui ouvre
           la bulle veut d'abord comprendre le badge qu'il a sous les yeux, pas
           apprendre comment on fabrique l'indice. */}
-      <span className="sic-lede">{MICRO[rank] ?? ""}</span>
+      <span className="sic-lede">{
+        typeof centile === "number"
+          ? (centile >= 50
+              ? `Environ ${centile} % des Unes de l’année sont moins saillantes que celle-ci.`
+              : `Environ ${100 - centile} % des Unes de l’année sont plus saillantes que celle-ci.`)
+          : (MICRO[rank] ?? "")
+      }</span>
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
         aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
         {/* RANGÉE DU HAUT — le sommet, sur deux lignes centrées. */}
@@ -156,6 +170,20 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
           <text x="2" y={(H - 4).toFixed(1)} className="sic-axis-label">← moins d’attention</text>
         )}
       </svg>
+      {/* Le SOMMET, nommé et chiffré (#430 + aws-refiners#283). Il n'était qu'un
+          repère muet sur la figure ; or c'est une grandeur qui a un sens propre —
+          la plus haute attention que l'histoire ait accumulée. C'est aussi,
+          par construction, celle qui classera le palmarès hebdomadaire des
+          nouvelles saillantes quand il existera (#283 : « sommet hebdo du cumul
+          24 h par storyline »). On ne l'écrit PAS encore dans la phrase : ce
+          classement n'est pas en ligne, et la page ne doit décrire que ce qui
+          existe. */}
+      {typeof sommet === "number" && (
+        <span className="sic-fait">
+          Son sommet&nbsp;: <b>{sommet.toFixed(1).replace(".", ",")} points</b>
+          {sommetLabel ? <>, atteint {sommetLabel}</> : null}.
+        </span>
+      )}
       {/* Les faits de CETTE Une : sans eux la bulle n'explique qu'une méthode,
           jamais pourquoi cette histoire-ci se retrouve à ce niveau-là. */}
       {typeof qcOutlets === "number" && qcOutlets > 0 && (
