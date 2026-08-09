@@ -74,9 +74,17 @@ function capDuPoint(p: SalienceTrendPoint) {
   // lisait comme n'importe quelle autre édition. C'est pourtant la valeur qui
   // situe la nouvelle dans l'année (A8) et celle qui classera le palmarès.
   const sommet = p.isPeak ? <span className="tc-chip tc-sommet">Sommet</span> : null;
-  const niveau = <span className={`tc-chip tc-niveau${p.isAbsent ? " is-absent" : ""}`}>
-    {p.isAbsent ? "Hors du radar" : p.level}
-  </span>;
+  // LE TAG OFFICIEL, dans sa vraie couleur (demande d'Adrien) : la pastille du
+  // survol reprend `saillance-tag` + la classe de bande, donc exactement le fond
+  // et l'encre du badge au-dessus. Un aplat noir maison en faisait une troisième
+  // grammaire de couleur dans une bande qui n'en a qu'une.
+  const CLS_BANDE: Record<number, string> = {
+    1: "s-tres-faible", 2: "s-faible", 3: "s-moyenne",
+    4: "s-eleve", 5: "s-tres-eleve", 6: "s-extreme",
+  };
+  const niveau = p.isAbsent
+    ? <span className="tc-chip tc-niveau is-absent">Hors du radar</span>
+    : <span className={`tc-chip tc-niveau saillance-tag ${CLS_BANDE[Math.max(1, Math.min(6, p.rank))]}`}>{p.level}</span>;
   return (
     <span className="trend-chips">
       <span className="tc-time">{p.timeLabel}</span>
@@ -137,31 +145,37 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
               r={rayon(p, i === hover)}
             />
           ))}
-          {/* CIBLES DE SURVOL, invisibles et posées PAR-DESSUS. Rayon fixe de
-              8 px, soit ~4× le plus petit point : deux points voisins sont à
-              22,8 px l'un de l'autre, donc 8 px couvre l'essentiel de
-              l'intervalle en laissant 6,8 px de zone morte entre voisins. Pas
-              plus : `.trend-spark` est en `overflow: visible`, donc une cible
-              trop large déborderait du cadre et volerait le survol au titre. C'est aussi ce qui porte le
-              focus clavier et l'étiquette lue — un seul élément focusable par
-              point, sinon la tabulation les traverserait deux fois. */}
-          {pts.map((p, i) => (
-            <circle
-              key={`hit${i}`}
-              className="trend-hit"
-              cx={xs(i).toFixed(1)} cy={ys(p.cumul).toFixed(1)}
-              r={8}
-              tabIndex={0}
-              role="img"
-              aria-label={p.isAbsent
-                ? `${p.timeLabel} : Hors du radar`
-                : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
-              onPointerEnter={() => setHover(i)}
-              onPointerLeave={() => setHover((h) => (h === i ? null : h))}
-              onFocus={() => setHover(i)}
-              onBlur={() => setHover((h) => (h === i ? null : h))}
-            />
-          ))}
+          {/* CIBLES DE SURVOL — des BANDES, pas des pastilles (#430). Un disque
+              plus gros butait sur deux limites : il laissait des zones mortes
+              entre voisins, et comme `.trend-spark` est en `overflow: visible`,
+              l'agrandir davantage l'aurait fait déborder du cadre pour voler le
+              survol au titre. Une bande verticale pleine hauteur, large d'un
+              demi-intervalle de chaque côté, règle les deux : les bandes sont
+              CONTIGUËS (aucun trou : tout point du graphe appartient au point le
+              plus proche) et restent strictement dans la boîte. Cible utile :
+              22,8 × 24 px au lieu d'un disque de 8 px de rayon.
+              C'est aussi ce qui porte le focus clavier et l'étiquette lue — un
+              seul élément focusable par point. */}
+          {pts.map((p, i) => {
+            const demi = (W - 2 * PADX) / Math.max(1, pts.length - 1) / 2;
+            const x = Math.max(0, xs(i) - demi), x2 = Math.min(W, xs(i) + demi);
+            return (
+              <rect
+                key={`hit${i}`}
+                className="trend-hit"
+                x={x.toFixed(1)} y={0} width={(x2 - x).toFixed(1)} height={H}
+                tabIndex={0}
+                role="img"
+                aria-label={p.isAbsent
+                  ? `${p.timeLabel} : Hors du radar`
+                  : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
+                onPointerEnter={() => setHover(i)}
+                onPointerLeave={() => setHover((h) => (h === i ? null : h))}
+                onFocus={() => setHover(i)}
+                onBlur={() => setHover((h) => (h === i ? null : h))}
+              />
+            );
+          })}
         </svg>
       </span>
       {/* Flèche et libellé dans le MÊME bloc de retour à la ligne : en mobile, la

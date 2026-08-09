@@ -1397,7 +1397,14 @@
   }
   /* Le niveau reprend le vocabulaire visuel du badge, en plus discret : même
      famille, jamais la même force — sinon deux pastilles se disputent l'oeil. */
-  .saillance-trend .tc-niveau { background: var(--ink); color: var(--paper); font-weight: 600; letter-spacing: 0.01em; }
+  /* La pastille de niveau EST le tag officiel : le fond et l'encre viennent de
+     `.saillance-tag.s-*`. Ici on ne règle QUE la taille — le survol vit dans une
+     ligne de texte, pas dans un en-tête de carte. Sélecteur à trois classes pour
+     passer devant `.saillance-tag.s-extreme`, qui impose sa propre taille. */
+  .saillance-trend .saillance-tag.tc-niveau {
+    font-size: 0.72em; font-weight: 600; padding: 0.1em 0.5em;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
   .saillance-trend .tc-niveau.is-absent { background: transparent; color: var(--ink-softer); border: 1px solid var(--ink-softer); font-weight: 500; }
   /* Le sommet : contour plutôt qu'aplat, pour se distinguer du niveau sans
      peser autant — c'est un statut, pas une mesure. */
@@ -1405,8 +1412,15 @@
     border: 1px solid var(--ink); color: var(--ink);
     font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600;
   }
-  .saillance-trend .tc-val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); padding-left: 0; padding-right: 0; }
-  .saillance-trend .tc-delta { font-variant-numeric: tabular-nums; font-weight: 600; }
+  /* Les CHIFFRES aussi portent le cadre (demande d'Adrien) : ils étaient le
+     seul élément resté en texte nu, ce qui les faisait retomber dans la phrase
+     que les pastilles venaient justement de casser. Contour discret plutôt
+     qu'aplat — une valeur se lit, elle ne s'étiquette pas. */
+  .saillance-trend .tc-val {
+    font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink);
+    border: 1px solid var(--ink-softer);
+  }
+  .saillance-trend .tc-delta { font-variant-numeric: tabular-nums; font-weight: 600; border: 1px solid currentColor; }
   .saillance-trend .tc-delta.is-up { color: #2E6B4F; }
   .saillance-trend .tc-delta.is-down { color: #A85A52; }
   .saillance-trend .tc-since { font-weight: 400; opacity: 0.7; }

@@ -1506,6 +1506,39 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // l'édition de 12h : les six mêmes blocs se lisaient « hier 16h / hier 20h /
 // hier minuit… » sur la 1re Une et « aujourd'hui 16h / 20h / minuit… » sur la
 // 3e, qui annonçait un « Sommet à 20h » encore à venir dans la journée.
+// HEURE **ET** MOMENT DE LA JOURNÉE, toujours les deux (arbitrage d'Adrien,
+// 2026-08-09). L'heure seule oblige le lecteur à deviner la demi-journée ; le
+// moment seul perd la précision de la grille d'éditions. Les deux ensemble
+// répondent aussi à l'objection d'origine contre « depuis cet après-midi »
+// (plus vague que « depuis 16h ») : on ne remplace pas l'heure, on l'complète.
+//
+// UN SEUL endroit : ce libellé vivait en DEUX exemplaires — celui de la bulle ⓘ
+// et celui de la phrase de trajectoire — et ils ont divergé. Toute la chaîne
+// passe désormais par ici.
+//
+// Exceptions assumées : « minuit » et « midi » SONT déjà une heure et un
+// moment ; « à minuit cette nuit » ou « à midi ce midi » seraient des
+// pléonasmes. Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
+const MOMENT_AUJ: Record<number, string> = {
+  0: "minuit", 4: "4h ce matin", 8: "8h ce matin",
+  12: "midi", 16: "16h cet après-midi", 20: "20h ce soir",
+};
+const MOMENT_HIER: Record<number, string> = {
+  0: "hier à minuit", 4: "4h hier matin", 8: "8h hier matin",
+  12: "hier midi", 16: "16h hier après-midi", 20: "20h hier soir",
+};
+/** `avecA` : « à 4h ce matin » après « Sommet »/« arrivée », « 4h ce matin »
+ *  après « depuis ». Les formes de `hier` portent déjà leur repère de jour. */
+function momentLabel(dayWord: string, hour: number, avecA = true): string | null {
+  const hh = hour % 24;
+  if (dayWord.startsWith("le ")) return dayWord;
+  const table = dayWord === "aujourd’hui" ? MOMENT_AUJ : dayWord === "hier" ? MOMENT_HIER : null;
+  if (!table) return null;
+  const brut = table[hh] ?? (dayWord === "hier" ? `hier à ${hh}h` : `${hh}h`);
+  if (!avecA) return brut.startsWith("hier à ") ? brut.slice("hier à ".length).replace(/^/, "hier ") : brut;
+  return brut.startsWith("hier ") && !brut.startsWith("hier à ") ? `à ${brut}` : brut.startsWith("hier à ") ? brut : `à ${brut}`;
+}
+
 function blockLabelParts(blockUtc: string, refDayIso: string | null):
   { dayWord: string; moment: string; hour: number } | null {
   if (!refDayIso) return null;
@@ -1608,10 +1641,7 @@ function buildSalienceTrend(
   const heure = (i: number, avecA = true) => {
     const p = blockLabelParts(series[i].blockUtc, refDayIso);
     if (!p) return null;
-    const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
-    if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
-    const jour = p.dayWord === "aujourd’hui" ? "" : `${p.dayWord} `;
-    return avecA ? `${jour}à ${h}` : `${jour}${h}`;
+    return momentLabel(p.dayWord, p.hour, avecA);
   };
   const hSommet = heure(peakIdx);
   const ancre = hSommet ? `Sommet ${hSommet}` : "Sommet du jour";
@@ -1670,9 +1700,11 @@ function buildSalienceTrend(
     const tier = !p.present ? null
       : badgeRank ? TIER_BY_RANK[badgeRank]
         : saillanceTierFromScore(p.qc, thresholds);
-    // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
-    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
-      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour}h`}`;
+    // TROISIÈME exemplaire de ce libellé — après celui de la bulle ⓘ et celui de
+    // la phrase de trajectoire, tous les trois divergents. Il passe lui aussi par
+    // `momentLabel`, sans « à » (le survol n'a pas de préposition devant) :
+    // « 4h ce matin », plus « aujourd'hui 4h ».
+    const timeLabel = !parts ? "" : (momentLabel(parts.dayWord, parts.hour, false) ?? "");
     return {
       timeLabel,
       // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
@@ -2055,18 +2087,7 @@ export const loadHeadlineEvents = cache(async (
         // Table EXPLICITE plutôt que dérivée : c'est un libellé public, et deux
         // cas s'y refusent — « à minuit cette nuit » et « à midi ce midi » sont
         // des pléonasmes, et « à 4h tôt ce matin » est illisible.
-        const MOMENT_AUJ: Record<number, string> = {
-          0: "à minuit", 4: "à 4h ce matin", 8: "à 8h ce matin",
-          12: "à midi", 16: "à 16h cet après-midi", 20: "à 20h ce soir",
-        };
-        const MOMENT_HIER: Record<number, string> = {
-          0: "hier à minuit", 4: "hier à 4h", 8: "hier matin à 8h",
-          12: "hier midi", 16: "hier à 16h", 20: "hier soir à 20h",
-        };
-        const hh = p.hour % 24;
-        if (p.dayWord === "aujourd’hui") return MOMENT_AUJ[hh] ?? `à ${hh}h`;
-        if (p.dayWord === "hier") return MOMENT_HIER[hh] ?? `hier à ${hh}h`;
-        return `${p.dayWord} à ${hh}h`;
+        return momentLabel(p.dayWord, p.hour);
       })()
       : null;
     // A8 (#430) — CE QUI SITUE LA NOUVELLE DANS L'ANNÉE, C'EST SON SOMMET.
