@@ -25,7 +25,11 @@ import {
   scaleThresholds,
 } from "@/lib/data/salienceCutover";
 
-const DATA_PATH = path.resolve(
+// VITRINE_DATA_PATH : échappatoire réservée au BANC DE VALIDATION (#430). Elle
+// permet de servir un instantané recomposé — par exemple avec les valeurs de la
+// spec v1 recalculées depuis le JSON `articles` — sans jamais toucher à
+// public/data/, qui est écrasé par fetch_data.R. Absente en production.
+const DATA_PATH = process.env.VITRINE_DATA_PATH ?? path.resolve(
   process.cwd(),
   "public",
   "data",

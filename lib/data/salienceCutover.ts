@@ -20,7 +20,7 @@
 // échelle sans conversion supplémentaire. Ce n'est pas cosmétique : la figure de
 // distribution du ⓘ trace un axe logarithmique planché à 1 (`Math.max(v, 1)`) —
 // en unités brutes [0,1], tous les repères s'écraseraient sur la même abscisse.
-export const SALIENCE_CUTOVER = false;
+export const SALIENCE_CUTOVER = true; // BANC /430 — jamais commité vers main
 
 /** Facteur d'affichage du nouvel indice. Voir la note d'échelle ci-dessus. */
 export const NEW_INDEX_SCALE = 100;
