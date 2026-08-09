@@ -1575,6 +1575,11 @@ export type UneEvent = {
   saillanceCls: string;
   /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
   saillanceHint: string;
+  /** Centile réel dans la distribution de référence (#430, A7). La bulle ⓘ s'en
+   *  sert pour dire la même chose que l'infobulle du badge — elle parlait encore
+   *  par paliers (« dans le cinquième le plus marquant »), ce qui contredisait
+   *  la phrase voisine dès qu'on a eu le vrai chiffre. */
+  saillanceCentile: number;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -1893,6 +1898,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
     const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
     const saillanceHint = hintFromCentile(s.sumQc, sumThresholds, POP_QC);
+    const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
@@ -1945,6 +1951,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceLabel,
       saillanceCls,
       saillanceHint,
+      saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
