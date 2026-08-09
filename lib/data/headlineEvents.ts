@@ -561,7 +561,21 @@ function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOV
     s.series = windowBlocksAsc.map((b) => {
       const qc = s.byBlock.get(b) ?? 0;
       const tot = blockTotalQc.get(b) ?? 0;
-      return { blockUtc: b, qc, present: s.byBlock.has(b), share: tot > 0 ? (qc / tot) * 100 : 0 };
+      // `present` = « un média QUÉBÉCOIS l'avait-il en Une dans ce bloc ? »,
+      // et NON « ce bloc a-t-il une entrée pour cette histoire ? ».
+      //
+      // La nuance n'est pas théorique : une entrée existe dès qu'un événement
+      // apparaît dans le bloc, y compris quand seuls des médias canadiens ou
+      // américains le couvraient — la saillance québécoise est alors nulle.
+      // Avec l'ancien test (`byBlock.has`), ces points échappaient à
+      // « Hors du radar » et affichaient le niveau du BADGE (cumul 24 h) suivi
+      // de « 0 % de l'attention médiatique ». Les deux moitiés étaient vraies,
+      // l'ensemble illisible — signalé par Adrien captures à l'appui, mesuré à
+      // **229 points sur 2 086 (11 %)** du snapshot déployé.
+      //
+      // Vérifié : le défaut ne vient PAS de l'indice — il se reproduit à
+      // l'identique flag allumé (vitrine#430).
+      return { blockUtc: b, qc, present: qc > 0, share: tot > 0 ? (qc / tot) * 100 : 0 };
     });
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
