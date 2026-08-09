@@ -489,6 +489,25 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
 });
 
 describe("storiesFrom24h — série par bloc (trajectoire #274)", () => {
+  // GARDE-FOU (relevé en review sur #432) : `present` se décide sur la VALEUR,
+  // pas sur l'existence d'une ligne. Le datamart publie des lignes dont la
+  // saillance QC est nulle — l'histoire figure dans le bloc mais aucun média
+  // québécois ne l'avait en Une. Les compter comme « présentes » ferait dire
+  // « à la Une » à une histoire absente des pages frontales, et masquerait les
+  // points creux de la trajectoire (« Hors du radar »).
+  it("une ligne présente mais à saillance QC NULLE compte comme absente", () => {
+    const rows = [
+      ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "12-16" }),
+      // Ligne bien réelle, mais saillance QC nulle : l'histoire n'est plus en Une.
+      ev({ storyline_id: "sA", title: "A", score_qc: 0, date_utc: "2026-07-13", time_interval_utc: "16-20" }),
+      ev({ storyline_id: "sB", title: "B", score_qc: 5, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
+    ];
+    const s = storiesFrom24h(rows as never).find((x: { label: string }) => x.label === "A")!;
+    const bloc = (k: string) => s.series.find((p: { blockUtc: string }) => p.blockUtc === k)!;
+    expect(bloc("2026-07-13T16").present).toBe(false);   // la ligne existe, la Une non
+    expect(bloc("2026-07-13T16").qc).toBe(0);
+    expect(bloc("2026-07-13T12").present).toBe(true);    // celle-ci était bien en Une
+  });
   it("expose la série brute des 6 blocs de la fenêtre, 0 si absente d'un bloc", () => {
     const rows = [
       ev({ storyline_id: "sA", title: "A", score_qc: 30, date_utc: "2026-07-13", time_interval_utc: "20-24" }),
@@ -763,21 +782,26 @@ describe("hysteresisRank (lissage du badge cumulé)", () => {
   });
 });
 
-describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
+describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)", () => {
   const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
-  // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du
-  // bloc (qc histoire / qc total du bloc), calculée en amont (storiesFrom24h). La
-  // TENDANCE (#304) compare la part des DEUX derniers blocs ; la mini-courbe et les
-  // niveaux par bloc restent, eux, basés sur `qc`.
+  // `present` = un média québécois avait la Une à ce bloc. `cumul` = l'attention
+  // cumulée 24 h à cette édition — LA grandeur de la bande depuis #430 : c'est
+  // elle que la courbe trace, elle que le sommet marque, et elle dont la flèche
+  // chiffre la variation. `share` (la part du bloc de 4 h) ne sert plus à rien
+  // ici : elle disait une FRACTION là où le mot disait un NIVEAU, et 39 % des
+  // mouvements se contredisaient à l'écran.
+  //
+  // La variation est désormais RELATIVE, en % du cumul précédent : sur une
+  // quantité absolue, « −10 points » ne veut rien dire au lecteur.
   const decline = [
-    { blockUtc: "2026-07-19T19", qc: 0, present: false, share: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, share: 55 },
-    { blockUtc: "2026-07-20T03", qc: 50, present: true, share: 40 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 25 },
-    { blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 },
+    { blockUtc: "2026-07-19T19", qc: 0, present: false, cumul: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, cumul: 100 },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true, cumul: 95 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, cumul: 70 },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false, cumul: 56 },
   ];
   it("absente du bloc courant : l'attention est retombée, JAMAIS « plus à la Une »", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
-    expect(t.deltaPct).toBe(-25);
+    expect(t.deltaPct).toBe(-20);   // 70 → 56 = −20 % du cumul précédent
     expect(t.situation).toBe("retombee");
     // Grammaire arrêtée : [ce que l'attention fait] puis l'ancre au sommet en incise.
     expect(t.capLabel).toMatch(/^L’attention est retombée depuis .+ \(Sommet .+\)$/);
@@ -796,44 +820,44 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
     expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
   });
-  it("détecte la progression (part qui monte d'un bloc au suivant : 15 → 32 = +17)", () => {
+  it("détecte la progression (cumul qui monte : 20 → 23 = +15 %)", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 4, present: true, share: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, share: 15 },
-      { blockUtc: "2026-07-20T11", qc: 20, present: true, share: 32 },
+      { blockUtc: "2026-07-20T03", qc: 4, present: true, cumul: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, cumul: 20 },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true, cumul: 23 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
-    expect(t.deltaPct).toBe(17);
+    expect(t.deltaPct).toBe(15);
     // Part la plus haute de la fenêtre → « au plus haut du jour », pas d'ancre
     // au sommet (elle EST le sommet).
     expect(t.situation).toBe("sommet");
     // Seul cas où l'écart se compte depuis le BLOC PRÉCÉDENT : au sommet,
     // « sous le sommet » n'a pas de sens, la question est « de combien elle a monté ».
     // Notation en % (et non « points »), alignée sur le module des enjeux.
-    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+17 % depuis /);
+    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+15 % depuis /);
   });
-  // Ampleur = variation de la PART d'attention entre les deux derniers blocs (#304).
-  it("deltaPct baisse : 25 % → 15 % = −10 points", () => {
+  // Ampleur = variation RELATIVE du cumul entre les deux dernières éditions.
+  it("deltaPct baisse : cumul 40 → 30 = −25 %", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 25 },
-      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 15 },
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, cumul: 40 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, cumul: 30 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
-    expect(t.deltaPct).toBe(-10);
+    expect(t.deltaPct).toBe(-25);
   });
-  it("deltaPct hausse : 10 % → 22 % = +12 points", () => {
+  it("deltaPct hausse : cumul 50 → 61 = +22 %", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 10 },
-      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 22 },
+      { blockUtc: "2026-07-20T07", qc: 12, present: true, cumul: 50 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, cumul: 61 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
-    expect(t.deltaPct).toBe(12);
+    expect(t.deltaPct).toBe(22);
   });
-  it("stable : part inchangée → dir flat, et le SCORE qui monte ne fait pas un sommet", () => {
-    // qc monte (40 → 42) mais la part ne bouge pas : la boîte parle de PART,
+  it("stable : cumul inchangé → dir flat, et le SCORE du bloc qui monte ne fait pas un sommet", () => {
+    // qc monte (40 → 42) mais le cumul ne bouge pas : la bande parle du CUMUL,
     // donc ce n'est pas « au plus haut du jour ».
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 30 },
-      { blockUtc: "2026-07-20T11", qc: 42, present: true, share: 30 },
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, cumul: 30 },
+      { blockUtc: "2026-07-20T11", qc: 42, present: true, cumul: 30 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("flat");
     expect(t.deltaPct).toBe(0);
@@ -842,9 +866,9 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 0, present: false, share: 0 },  // pas à la Une → Absente
-      { blockUtc: "2026-07-20T07", qc: 3, present: true, share: 5 },   // à la Une mais faible (< seuil faible=8)
-      { blockUtc: "2026-07-20T11", qc: 40, present: true, share: 30 },
+      { blockUtc: "2026-07-20T03", qc: 0, present: false, cumul: 0 },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true, cumul: 5 },   // à la Une mais faible (< seuil faible=8)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true, cumul: 40 },
     ] as never, thr, "2026-07-20")!;
     const absent = trend.points[0], faible = trend.points[1];
     expect(absent.level).toBe("Hors du radar");
@@ -931,32 +955,43 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
   });
 });
 
-describe("selectTopUnes (#273 — seuil éditorial : 1 à 3 Unes, pas toujours 3)", () => {
-  // selectTopUnes classe par sumQc (saillance QC cumulée 24 h) et applique le
-  // seuil éditorial ≥ 2 médias QC pour les secondaires. Classement pur, sans
-  // plancher de récence (retiré 2026-07-23) — cf. describe « classement pur » plus bas.
+describe("selectTopUnes (#430 A2 — classement pur, plus de seuil de médias)", () => {
+  // selectTopUnes classe par sumQc (saillance QC cumulée 24 h) et s'arrête là.
+  // Le seuil « ≥ 2 médias québécois » pour les cartes secondaires a été retiré
+  // le 2026-08-09 : il datait de l'ancien indice, qui ne voyait pas la largeur
+  // de couverture. Le nouvel indice classe lui-même une histoire mono-média tout
+  // en bas — mesuré, 93 % d'entre elles tombent dans les deux bandes basses —
+  // et la règle était incohérente (le héros, lui, était gardé mono-média).
+  // ⚠️ La population de CALIBRATION, elle, garde le ≥ 2 : le niveau est une
+  // position dans un groupe, et ce groupe ne doit pas suivre l'affichage.
+  // ⚠️ Les cumuls de ces fixtures sont volontairement PROCHES les uns des
+  // autres : ces tests portent sur le nombre de médias et sur l'ordre, pas sur
+  // la règle de domination (#430 B6), qui a son propre describe plus bas.
   const story = (label: string, sumQc: number, nQcMedia: number) =>
     ({ label, sumQc, qcMedia: new Set(Array.from({ length: nQcMedia }, (_, i) => `M${i}`)),
        series: [{ blockUtc: "2026-07-20T15", qc: Math.max(1, sumQc) }] });
 
   it("garde les 3 Unes quand les secondaires sont multi-médias", () => {
-    const st = [story("A", 30, 4), story("B", 20, 2), story("C", 10, 3)];
+    const st = [story("A", 30, 4), story("B", 25, 2), story("C", 20, 3)];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
-  it("cas du 16-17 juillet : héros multi-médias + 2 secondaires mono-média → une seule Une", () => {
-    const st = [story("Argentine", 30, 4), story("Montréal vibre", 20, 1), story("Tiques", 10, 1)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Argentine"]);
+  it("les secondaires mono-média ne sont PLUS cachées (cas du 16-17 juillet, inversé)", () => {
+    // Avant #430 ce cas rendait ["Argentine"] seule : deux histoires réelles
+    // disparaissaient de l'écran alors que l'indice savait déjà les classer bas.
+    const st = [story("Argentine", 30, 4), story("Montréal vibre", 25, 1), story("Tiques", 20, 1)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
+      .toEqual(["Argentine", "Montréal vibre", "Tiques"]);
   });
-  it("le héros reste affiché même mono-média (le module a toujours ≥ 1 Une)", () => {
+  it("le héros reste le plus gros cumul, mono-média ou non", () => {
     const st = [story("Seule", 8, 1), story("Autre", 5, 1)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule"]);
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Seule", "Autre"]);
   });
-  it("tronque SANS repêcher : une multi-média hors top-3 ne remonte pas (sélection partagée avec le radar)", () => {
-    const st = [story("A", 30, 4), story("B", 20, 1), story("C", 10, 2), story("D", 5, 5)];
-    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "C"]);
+  it("tronque SANS repêcher : une histoire hors top-3 ne remonte pas (pool partagé avec le radar)", () => {
+    const st = [story("A", 30, 4), story("B", 25, 1), story("C", 20, 2), story("D", 18, 5)];
+    expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
   });
   it("classe par saillance cumulée décroissante et ignore les histoires sans média QC", () => {
-    const st = [story("Faible", 5, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
+    const st = [story("Faible", 30, 2), story("Forte", 50, 2), { label: "ROC", sumQc: 99, qcMedia: new Set() }];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label)).toEqual(["Forte", "Faible"]);
   });
 });
@@ -983,7 +1018,7 @@ describe("classement pur : la Une suit la saillance pondérée 24 h comme le rad
     // la moyenne pondérée fait décroître le soccer d'elle-même en quelques blocs).
     const st = [
       withSeries("soccer", 74, 3, [90, 54, 21, 10, 0]),   // plus gros cumul, retombé
-      withSeries("inflation", 14, 2, [0, 0, 0, 0, 14]),   // frais, cumul plus bas
+      withSeries("inflation", 45, 2, [0, 0, 0, 0, 45]),   // frais, cumul plus bas
     ];
     expect(selectTopUnes(st as never).map((s: { label: string }) => s.label))
       .toEqual(["soccer", "inflation"]);
@@ -1169,5 +1204,38 @@ describe("relScore (#258 : hero relatif, l'intensité vit dans la bulle ⓘ)", (
     expect(r.relDiffPct).toBe(0);
     expect(r.relLabel).toBe("aussi convergent que d'habitude");
     expect(r.relInfo).toContain("autant que d'habitude");
+  });
+});
+
+// ── B6 — le nombre de manchettes reflète la journée (vitrine#430) ────────────
+describe("selectTopUnes — règle de domination (#430 B6)", () => {
+  const { selectTopUnes } = __test__;
+  const st = (label: string, sumQc: number) =>
+    ({ label, sumQc, qcMedia: new Set(["M1"]), series: [{ blockUtc: "2026-07-20T15", qc: sumQc }] });
+
+  it("une histoire qui écrase les autres reste seule", () => {
+    // Cas réel du 2026-08-09 : 79,4 / 37,6 / 21,7 — la 2e est à 47 % du meneur.
+    expect(selectTopUnes([st("Incendies", 79.4), st("Élus", 37.6), st("Douane", 21.7)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["Incendies"]);
+  });
+  it("deux histoires comparables → deux manchettes", () => {
+    expect(selectTopUnes([st("A", 80), st("B", 60), st("C", 20)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["A", "B"]);
+  });
+  it("trois histoires comparables → trois manchettes, même toutes faibles", () => {
+    // LE cas qui inquiétait Adrien : une journée creuse ne doit pas vider le
+    // module. La règle compare les histoires ENTRE ELLES, jamais à un plancher.
+    expect(selectTopUnes([st("A", 9), st("B", 8), st("C", 7)] as never)
+      .map((s: { label: string }) => s.label)).toEqual(["A", "B", "C"]);
+  });
+  it("le meneur passe toujours : le module ne peut pas se vider", () => {
+    expect(selectTopUnes([st("Seule", 0.4)] as never).map((s: { label: string }) => s.label))
+      .toEqual(["Seule"]);
+  });
+  it("la 3e est jugée sur le meneur, pas sur la 2e", () => {
+    // 100 / 55 / 52 : la 3e vaut 95 % de la 2e mais 52 % du meneur → elle passe.
+    expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 52)] as never)).toHaveLength(3);
+    // 100 / 55 / 45 : la 3e tombe sous la moitié du meneur → elle sort.
+    expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 45)] as never)).toHaveLength(2);
   });
 });
