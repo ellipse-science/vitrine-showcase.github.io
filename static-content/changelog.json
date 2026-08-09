@@ -1,5 +1,11 @@
 [
   {
+    "pr": 428,
+    "date": "2026-08-09T03:22:55Z",
+    "note": "La page Méthodologie décrit maintenant correctement le découpage du temps utilisé pour mesurer la saillance : des blocs de quatre heures calés sur l'heure de Montréal, et non sur l'heure universelle.",
+    "version": null
+  },
+  {
     "pr": 385,
     "date": "2026-08-08T17:38:17Z",
     "note": "Les manchettes qui font aussi la Une ailleurs le disent maintenant : une mention « Résonance canadienne » ou « Résonance américaine » sous la liste des médias québécois, avec la part d'attention que la région a accordée au sujet et les médias qui l'ont couvert, cliquables vers leurs articles.",
