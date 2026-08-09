@@ -353,6 +353,17 @@ calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_
 # donc mélanger le pré-fusion abaisserait faussement les seuils (#281). NULL si
 # trop peu de storylines → repli frontend sur les seuils codés post-fusion.
 SAL_PEAK_CAL_FROM <- "2026-07-17"  # déploiement de la fusion prominence
+
+# Plancher de calibration du NOUVEL indice (salience_index_qc/roc, spec v1).
+# Pourquoi un plancher DIFFÉRENT de celui de l'ancien : la colonne shadow n'est
+# homogène qu'à partir du déploiement de aws-refiners#287, mergée le 2026-08-08
+# à 15 h 04 et vivante dès le bloc 15-19. Avant cette frontière, la même colonne
+# porte les valeurs de l'ANCIENNE formule — calibrer sur ce mélange est
+# exactement le piège documenté sur aws-refiners#224. Le plancher fait donc de
+# l'homogénéité une propriété de la requête, et non une consigne à respecter.
+# Il disparaîtra tout seul quand le recompute AWS aura réécrit l'historique
+# sous la spec v1 : il suffira alors de le ramener à cut_date.
+SPEC_V1_CAL_FROM <- "2026-08-09"  # 1er jour ENTIER en spec v1 (bascule le 08-08 en cours de journée)
 calibration_peak <- function(conn, from) {
   tryCatch({
     sql <- sprintf(paste(
@@ -624,6 +635,23 @@ build_salience_calibration <- function(conn, out_path) {
   if (!is.null(sr))  metrics$score_roc_sum_24h <- c(list(region = "ROC", since = peak_from), sr)
   roc <- calibration_metric(conn, "score_roc", cut_date)
   if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
+  # ── Homologues du NOUVEL indice (cutover, lib/data/salienceCutover.ts) ──────
+  # Mêmes fonctions, mêmes conventions, même population que les quatre grilles
+  # ci-dessus — seule la colonne source change. Publiées MÊME quand le flag est
+  # éteint : le frontend les ignore, mais on peut ainsi les regarder grossir
+  # avant la bascule et vérifier qu'elles rejoignent les seuils codés. Une
+  # colonne absente ou un n trop petit rend simplement NULL (repli frontend).
+  si_from <- max(cut_date, SPEC_V1_CAL_FROM)
+  siq <- calibration_metric(conn, "salience_index_qc", si_from)
+  if (!is.null(siq)) metrics$salience_index_qc <- c(list(region = "QC", since = si_from), siq)
+  sir <- calibration_metric(conn, "salience_index_roc", si_from)
+  if (!is.null(sir)) metrics$salience_index_roc <- c(list(region = "ROC", since = si_from), sir)
+  siqs <- calibration_sum_24h(conn, si_from, "salience_index_qc", "media_ids_qc",
+                              min_media_secondary = 2L)
+  if (!is.null(siqs)) metrics$salience_index_qc_sum_24h <- c(list(region = "QC", since = si_from), siqs)
+  sirs <- calibration_sum_24h(conn, si_from, "salience_index_roc", "media_ids_roc",
+                              min_media_secondary = 1L)
+  if (!is.null(sirs)) metrics$salience_index_roc_sum_24h <- c(list(region = "ROC", since = si_from), sirs)
   cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,
                             keep_zero = TRUE, distinct_block = TRUE)
   if (!is.null(cv))  metrics$convergence <- c(list(region = NA), cv)
