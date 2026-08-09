@@ -1,5 +1,11 @@
 [
   {
+    "pr": 431,
+    "date": "2026-08-09T23:23:44Z",
+    "note": "Le niveau de saillance affiché sous les manchettes reposera bientôt sur une mesure qui tient compte du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant.",
+    "version": null
+  },
+  {
     "pr": 429,
     "date": "2026-08-09T16:06:20Z",
     "note": "Les niveaux de saillance affichés sous les manchettes reposeront bientôt sur une nouvelle mesure, qui tient compte à la fois du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant : cette mise à jour prépare le terrain.",

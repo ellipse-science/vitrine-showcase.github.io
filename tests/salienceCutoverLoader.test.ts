@@ -80,16 +80,16 @@ describe("chargeur, flag ALLUMÉ", () => {
     // fonction de la valeur : franchir la frontière, c'est porter le titre.
     expect(une.saillanceLabel).toBe("Exceptionnelle");
     // La figure du ⓘ reçoit la grille du badge — celle du nouvel indice.
-    expect(une.salThresholds).toEqual([32.5, 45.0, 62.3, 89.4, 133.3]);
+    expect(une.salThresholds).toEqual([32.5, 40.4, 62.3, 89.4, 133.3]);
   });
 
-  it("un mono-média insistant reste sous « Modérée » — l'invariant ε tient de bout en bout", async () => {
-    // Un seul média québécois, mais à un niveau par bloc très élevé (0,27, le
-    // maximum mono-média observé). Le cumul atteint ~82, ce qui tomberait dans
-    // « Élevée » sans le garde ; la borne relevée à 45,0 ne suffit pas seule —
-    // c'est la mesure qui montre qu'un mono-média ne cumule pas jusque-là dans
-    // la vraie vie (44,7 au maximum). Ici on vérifie au moins que le classement
-    // se fait bien sur la grille relevée.
+  it("la grille du badge est bien celle du nouvel indice, aux percentiles bruts", async () => {
+    // Un seul média québécois, à un niveau par bloc très élevé (0,27, le
+    // maximum mono-média observé). Ce test ne vérifie PLUS un garde ε : depuis
+    // vitrine#430 l'invariant est « un mono-média ne dépasse pas la médiane »,
+    // et il tient par la forme de l'indice, pas par une borne relevée. Ce qui
+    // est vérifié ici, c'est que la grille branchée est bien celle du nouvel
+    // indice, sans béquille.
     const rows = dataset(0.27).map((r) => ({
       ...r, media_ids_qc: '["LED"]', media_ids: '["LED"]',
       articles: '[{"media_id":"LED","url":"https://led/a"}]',
@@ -97,7 +97,7 @@ describe("chargeur, flag ALLUMÉ", () => {
     serve(rows);
     const data = await loadHeadlineEvents();
     const une = data!.top3[0];
-    expect(une.salThresholds[1]).toBe(45.0);
+    expect(une.salThresholds[1]).toBe(40.4);
     expect(une.saillanceRank).toBeGreaterThanOrEqual(1);
   });
 
