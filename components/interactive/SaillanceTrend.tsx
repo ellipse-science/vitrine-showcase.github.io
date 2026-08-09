@@ -119,13 +119,18 @@ function capAuRepos(trend: SalienceTrend) {
     <span className="trend-chips">
       {maintenant ? (
         <>
-          <span className="tc-chip tc-val">{maintenant.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
+          {/* LA VARIATION D'ABORD, collée à la flèche (Adrien) : la flèche donne
+              le SENS du mouvement, le pourcentage en donne l'AMPLEUR — c'est une
+              seule information en deux signes, les séparer par la valeur cassait
+              la lecture. La valeur absolue vient ensuite, c'est l'état, pas le
+              mouvement. */}
           {maintenant.delta != null && maintenant.delta !== 0 ? (
             <span className={`tc-chip tc-delta ${maintenant.delta > 0 ? "is-up" : "is-down"}`}>
               {maintenant.delta > 0 ? "+" : "−"}{Math.abs(maintenant.delta)}&nbsp;%
               {maintenant.deltaDepuis ? <span className="tc-since"> / {maintenant.deltaDepuis}</span> : null}
             </span>
           ) : null}
+          <span className="tc-chip tc-val">{maintenant.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
         </>
       ) : null}
     </span>
