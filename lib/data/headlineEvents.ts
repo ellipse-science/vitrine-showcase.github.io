@@ -1477,12 +1477,6 @@ export type SalienceTrendPoint = {
   isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
 };
 export type SalienceTrend = {
-  /** Le mouvement seul, sans l'incise « (Sommet …) » — la bande l'affiche en
-   *  pastilles au repos, le sommet devenant sa propre pastille. */
-  capMouvement: string;
-  /** false quand le mouvement nomme déjà le sommet (« Nouveau sommet ») ou
-   *  quand l'histoire vient d'arriver : pas de pastille de sommet alors. */
-  montreSommet: boolean;
   dir: "up" | "down" | "flat";
   // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
   capLabel: string;
@@ -1703,11 +1697,6 @@ function buildSalienceTrend(
   // entre parenthèses. Le lecteur reçoit d'abord ce qui se passe, puis le
   // repère qui le situe — et non l'inverse.
   const incise = `(${ancre})`;
-  // Même chaîne SANS l'incise : au repos la bande affiche des pastilles, et le
-  // sommet y devient une pastille à part au lieu d'une parenthèse (#430,
-  // demande d'Adrien). `capLabel` reste la version en prose — c'est elle que
-  // lisent les lecteurs d'écran et le partage.
-  const sansIncise = (t: string) => t.replace(` ${incise}`, "").replace(incise, "").trim();
   const capLabel =
     situation === "nouvelle" ? (hCourant ? `Nouveau (arrivée ${hCourant})` : "Nouveau")
       : situation === "sommet" ? (hPrec
@@ -1723,10 +1712,6 @@ function buildSalienceTrend(
               : situation === "stable" ? `Se maintient ${incise}`
                 : `En recul de ${reculSommet} % ${incise}`;
 
-  // Le sommet ne se répète pas quand le mouvement le dit déjà (« Nouveau
-  // sommet aujourd'hui ») ou quand l'histoire vient d'arriver.
-  const montreSommet = situation !== "nouvelle" && situation !== "sommet";
-  const capMouvement = sansIncise(capLabel);
 
   // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis
   // du sommet : une histoire qui revient (0 → 25 %) monte visiblement à l'écran,
@@ -1764,7 +1749,7 @@ function buildSalienceTrend(
       isAbsent: !p.present,
     };
   });
-  return { dir, capLabel, capMouvement, montreSommet, deltaPct, situation, points };
+  return { dir, capLabel, deltaPct, situation, points };
 }
 
 export type UneEvent = {

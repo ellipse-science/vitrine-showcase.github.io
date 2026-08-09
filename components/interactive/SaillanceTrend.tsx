@@ -96,25 +96,36 @@ function capDuPoint(p: SalienceTrendPoint) {
   );
 }
 
-// AU REPOS, la même grammaire de pastilles qu'au survol (demande d'Adrien) :
-// la phrase courante — « L'attention est retombée depuis ce midi (Sommet à 4h
-// ce matin) » — était le dernier bloc de prose d'une bande devenue entièrement
-// tabulaire.
+// AU REPOS : la flèche et les pastilles, PLUS DE PHRASE DU TOUT (Adrien). La
+// prose — « L'attention est retombée depuis ce midi (Sommet à 4h ce matin) » —
+// disait ce que la flèche et la variation disent déjà, en trois fois plus de
+// signes. Le mouvement se lit maintenant dans le sens de la flèche et dans la
+// pastille de variation, qui nomme le bloc auquel elle se compare.
+//
+// LES CHIFFRES SONT CEUX DU MOMENT, jamais ceux du sommet. Au repos la bande
+// répond à « où en est cette nouvelle MAINTENANT » ; le sommet, lui, a désormais
+// sa place dans la bulle ⓘ, où il situe la nouvelle dans l'année (A8). Le mettre
+// ici aussi ferait dire deux choses différentes au même endroit.
 //
 // DEUX absences volontaires, demandées explicitement :
 //   · pas de tag de NIVEAU — le badge est juste au-dessus, il le dit déjà ;
 //   · pas de « Hors du radar » — c'est l'état d'UN bloc, pas de la journée ;
 //     il n'apparaît qu'au survol du point concerné.
+// La VALEUR s'affiche même quand la nouvelle a quitté les Unes : le cumul 24 h
+// existe toujours, et c'est lui que le badge affiche.
 function capAuRepos(trend: SalienceTrend) {
-  const som = trend.points.find((p) => p.isPeak);
+  const maintenant = trend.points.find((p) => p.isNow);
   return (
     <span className="trend-chips">
-      <span className="tc-mouvement">{trend.capMouvement}</span>
-      {trend.montreSommet && som ? (
+      {maintenant ? (
         <>
-          <span className="tc-chip tc-sommet">Sommet</span>
-          <span className="tc-chip tc-val">{som.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
-          <span className="tc-time">{som.timeLabel}</span>
+          <span className="tc-chip tc-val">{maintenant.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
+          {maintenant.delta != null && maintenant.delta !== 0 ? (
+            <span className={`tc-chip tc-delta ${maintenant.delta > 0 ? "is-up" : "is-down"}`}>
+              {maintenant.delta > 0 ? "+" : "−"}{Math.abs(maintenant.delta)}&nbsp;%
+              {maintenant.deltaDepuis ? <span className="tc-since"> / {maintenant.deltaDepuis}</span> : null}
+            </span>
+          ) : null}
         </>
       ) : null}
     </span>
