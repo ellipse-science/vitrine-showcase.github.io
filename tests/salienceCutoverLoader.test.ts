@@ -73,13 +73,12 @@ describe("chargeur, flag ALLUMÉ", () => {
     // La grandeur publiée à l'UI est bien sur l'échelle d'affichage ×100 (et
     // non dans [0,1], où la figure du ⓘ écraserait tous ses repères sur 0).
     expect(une.scoreQcSum24h).toBeCloseTo(140.6, 1);
-    // 140,6 dépasse le p95 de la grille (133,3) : le rang BRUT est 6. Le badge
-    // affiche pourtant « Très élevée » (5), parce que l'hystérésis ne laisse
-    // gagner qu'une bande par édition et que l'histoire part de zéro six
-    // éditions plus tôt. C'est le comportement voulu (#314) — et il survit à la
-    // bascule, ce qui est précisément ce qu'on vérifie ici : la nouvelle grille
-    // est branchée SANS court-circuiter le lissage.
-    expect(une.saillanceLabel).toBe("Très élevée");
+    // 140,6 dépasse le p95 de la grille (133,3) : le niveau est donc
+    // « Exceptionnelle », immédiatement. Avant vitrine#430 (A4), l'hystérésis
+    // affichait « Très élevée » — une bande sous la réalité — parce qu'elle ne
+    // laissait gagner qu'un palier par édition. Le niveau est désormais une pure
+    // fonction de la valeur : franchir la frontière, c'est porter le titre.
+    expect(une.saillanceLabel).toBe("Exceptionnelle");
     // La figure du ⓘ reçoit la grille du badge — celle du nouvel indice.
     expect(une.salThresholds).toEqual([32.5, 40.4, 62.3, 89.4, 133.3]);
   });
