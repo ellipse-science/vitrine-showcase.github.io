@@ -1,5 +1,11 @@
 [
   {
+    "pr": 429,
+    "date": "2026-08-09T16:06:20Z",
+    "note": "Les niveaux de saillance affichés sous les manchettes reposeront bientôt sur une nouvelle mesure, qui tient compte à la fois du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant : cette mise à jour prépare le terrain.",
+    "version": null
+  },
+  {
     "pr": 428,
     "date": "2026-08-09T03:22:55Z",
     "note": "La page Méthodologie décrit maintenant correctement le découpage du temps utilisé pour mesurer la saillance : des blocs de quatre heures calés sur l'heure de Montréal, et non sur l'heure universelle.",
