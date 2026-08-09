@@ -152,3 +152,43 @@ describe("garde : le flag et la page Méthodologie basculent ensemble", () => {
     expect(remplacement).not.toContain("IndiceAbsolu(o, m, t) = TempsEnUne");
   });
 });
+
+// ── A7 — le VRAI centile dans l'infobulle (vitrine#430) ──────────────────────
+// Avant : six phrases fixes, une par bande, alors que les bandes couvrent
+// jusqu'à 30 points de centile. Une Une au 22e centile et une autre au 49e
+// recevaient la même. Maintenant : le centile interpolé entre les 5 percentiles
+// publiés, dans la formulation arrêtée avec Adrien.
+describe("centile réel de l'infobulle", () => {
+  const { centileFrom, hintFromCentile } = __test__ as unknown as {
+    centileFrom: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS) => number;
+    hintFromCentile: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS, pop: string) => string;
+  };
+  const T = NEW_SUM_QC_THRESHOLDS; // 32,5 / 40,4 / 62,3 / 89,4 / 133,3
+
+  it("les percentiles publiés retombent sur eux-mêmes", () => {
+    expect(centileFrom(T.faible, T)).toBe(5);
+    expect(centileFrom(T.moyenne, T)).toBe(20);
+    expect(centileFrom(T.eleve, T)).toBe(50);
+    expect(centileFrom(T.tresEleve, T)).toBe(80);
+    expect(centileFrom(T.extreme, T)).toBe(95);
+  });
+  it("interpole entre deux percentiles au lieu d'arrondir à la bande", () => {
+    // Deux valeurs de la MÊME bande « Modérée » (20 → 50) : elles doivent
+    // recevoir des centiles différents, c'est tout l'objet de la règle.
+    const bas = centileFrom(T.moyenne + 1, T);
+    const haut = centileFrom(T.eleve - 1, T);
+    expect(bas).toBeGreaterThan(20);
+    expect(haut).toBeLessThan(50);
+    expect(haut - bas).toBeGreaterThan(10);
+  });
+  it("le cadrage bascule à la médiane pour garder un chiffre parlant", () => {
+    expect(hintFromCentile(T.tresEleve, T, "des médias québécois"))
+      .toBe("Environ 80 % des nouvelles à la Une des médias québécois sont moins saillantes que celle-ci.");
+    expect(hintFromCentile(T.faible, T, "des médias québécois"))
+      .toBe("Environ 95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci.");
+  });
+  it("borne à [1, 99] — « moins saillante que 100 % » serait faux, elle fait partie du lot", () => {
+    expect(hintFromCentile(T.extreme * 10, T, "p")).toContain("99 %");
+    expect(hintFromCentile(0, T, "p")).toContain("99 %");
+  });
+});
