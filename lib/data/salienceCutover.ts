@@ -76,11 +76,24 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *    · au cumul  : mono-média ≤ 44,7                          vs médiane 62,4
  *
  *  L'invariant vrai sous la spec v1 n'est donc plus « jamais Modérée » mais
- *  **« un mono-média ne dépasse jamais la médiane »** — et celui-là ne demande
- *  aucune règle : il tient par la forme de l'indice. Décision d'Adrien du
- *  2026-08-09 : réénoncer l'invariant et retirer la béquille. Une constante
- *  arbitraire de moins à recalculer à chaque recalibration, et une asymétrie
- *  QC/ROC de moins à justifier dans la méthodologie publique.
+ *  **« un mono-média ne dépasse pas la médiane »**, et il ne demande aucune
+ *  règle ajoutée. Décision d'Adrien du 2026-08-09 : réénoncer l'invariant et
+ *  retirer la béquille. Une constante arbitraire de moins à recalculer à chaque
+ *  recalibration, et une asymétrie QC/ROC de moins à justifier publiquement.
+ *
+ *  ⚠️ C'est un constat EMPIRIQUE, pas une garantie de construction — la nuance
+ *  a failli se perdre (relevée en review sur #431). La forme de l'indice plafonne
+ *  un mono-média PAR BLOC à 0,05^(1/3) = 36,8 ; mais le badge tourne sur le
+ *  CUMUL 24 h, et les six poids de récence somment à 3,347. Le plafond théorique
+ *  du cumul est donc 36,8 × 3,347 = **123,3**, largement au-dessus d'« Élevée »
+ *  (62,3). Un média qui garderait seul une histoire en Une pendant 24 h d'affilée
+ *  franchirait le seuil.
+ *
+ *  Ce que le corpus dit : ce cas ne se produit pas. Le plus fort mono-média
+ *  RÉELLEMENT AFFICHÉ vaut 44,7, soit 17,6 points sous « Élevée ». L'invariant
+ *  tient donc sur les données observées, avec une marge confortable — et c'est
+ *  à ce titre qu'il justifie le retrait de la béquille, pas au titre d'une
+ *  impossibilité mathématique. À revérifier à chaque recalibration.
  *
  *  Conséquence assumée : une histoire portée par un seul média peut désormais
  *  afficher « Modérée », dont l'infobulle dit « environ 65 % des Unes sont plus
