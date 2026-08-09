@@ -235,12 +235,12 @@ function SideUne({ event }: { event: UneEvent }) {
   );
 }
 
-export async function UneDesUnesSection() {
+export async function UneDesUnesSection({ asOf }: { asOf?: string } = {}) {
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
   const [data, artExists, audioUrl] = await Promise.all([
-    loadHeadlineEvents(),
+    loadHeadlineEvents(asOf),
     fs.access(artJsonPath).then(() => true).catch(() => false),
     fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")

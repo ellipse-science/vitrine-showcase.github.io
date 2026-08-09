@@ -1891,7 +1891,14 @@ export type HeadlineData = {
 // cache() : le snapshot est lu par plusieurs consommateurs du même rendu
 // (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
 // lecture/parse par build au lieu d'une par appel.
-export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (
+  /** Bloc « as-of » (« AAAA-MM-JJTHH ») : reconstruit le module tel qu'il était à
+   *  cette édition, en ne gardant que les blocs qui la précèdent. Sert à naviguer
+   *  dans les éditions passées (vitrine#434) — et, ici, à valider à l'œil le
+   *  comportement des règles du dossier #430 sur plusieurs éditions d'affilée.
+   *  Absent → l'édition courante, comportement inchangé. */
+  asOf?: string,
+): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -1899,7 +1906,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     return null;
   }
 
-  const all = JSON.parse(raw) as RawEvent[];
+  const tout = JSON.parse(raw) as RawEvent[];
+  // Voyage dans le temps : on coupe le snapshot au bloc demandé. Tout le reste
+  // de la chaîne (fenêtre de 6 blocs, rejeu des éditions, badge, trajectoire)
+  // travaille alors exactement comme il l'aurait fait à ce moment-là.
+  const all = asOf ? tout.filter((e) => blockKey(e) <= asOf) : tout;
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
