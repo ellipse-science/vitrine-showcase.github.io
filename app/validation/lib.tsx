@@ -15,6 +15,7 @@ import path from "node:path";
 import { loadHeadlineEvents, __test__ } from "@/lib/data/headlineEvents";
 import { SALIENCE_CUTOVER } from "@/lib/data/salienceCutover";
 import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
+import { DeuxSolitudesSection } from "@/components/sections/DeuxSolitudesSection";
 
 export async function blocsDuSnapshot(): Promise<string[]> {
   const raw = await fs.readFile(path.resolve(process.cwd(), "public/data/headline-events.json"), "utf8");
@@ -78,6 +79,16 @@ export async function Banc({ bloc }: { bloc: string }) {
 
       <div id="une-des-unes" data-section="Une des unes">
         <UneDesUnesSection asOf={bloc} />
+      </div>
+
+      {/* Module 2 sur la MÊME édition, pour vérifier la cohérence inter-modules :
+          les deux lisent le même `loadHeadlineEvents(asOf)` (mémoïsé par React
+          `cache`), donc les données sont identiques par construction — mais les
+          NIVEAUX peuvent diverger, parce que le radar situe chaque sujet dans la
+          population de SA région (QC ou ROC) et pas dans celle des Unes. C'est
+          justement ce qu'on veut pouvoir regarder côte à côte. */}
+      <div id="deux-solitudes" data-section="Deux solitudes">
+        <DeuxSolitudesSection asOf={bloc} />
       </div>
     </div>
   );
