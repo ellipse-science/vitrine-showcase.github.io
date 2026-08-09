@@ -58,20 +58,40 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *  AFFICHÉES. Réplique de `calibration_sum_24h(score_col = salience_index_qc,
  *  media_col = media_ids_qc, min_media_secondary = 2)`. n = 52.
  *
- *  ⚠️ Bornes brutes p5/p20/p50/p80/p95 = 32,5 / 40,4 / 62,3 / 89,4 / 133,3.
- *  La borne « Modérée » est RELEVÉE à 45,0 par la règle pérenne d'Adrien
- *  (#224, 2026-08-08) : `borne_Modérée = max(p20, mono_max + 0,3)`, parce que
- *  le garde ε du 19-07 — « un sujet porté par un seul média n'atteint jamais
- *  Modérée » — est l'INVARIANT, et les percentiles la convention. Mesuré sur la
- *  grandeur du badge : le plus haut cumul mono-média vaut 44,7 (2 storylines
- *  sur 52), au-dessus du p20. Sans ce relèvement, la bascule ferait entrer un
- *  mono-média dans Modérée dès le premier jour.
+ *  PERCENTILES BRUTS, sans relèvement — et c'est une décision, pas un oubli.
  *
- *  NB : #224 avait posé cette même règle sur la grille des PICS ; c'est la
+ *  Le garde ε du 19-07 disait : « un sujet porté par un seul média n'atteint
+ *  jamais Modérée ». Il fallait le poser à la main parce que l'ANCIEN indice
+ *  comptait du temps en Une sans regarder combien de médias couvraient
+ *  l'histoire — un média obstiné pouvait donc monter seul, et rien dans le
+ *  calcul ne l'en empêchait.
+ *
+ *  La spec v1 multiplie trois jambes (Visibilité × Intensité × Durée) en
+ *  moyenne géométrique NON compensatoire : une jambe presque nulle écrase le
+ *  reste. Un mono-média a une visibilité nulle, ramenée au plancher EV_EPS =
+ *  0,05, ce qui PLAFONNE son indice par construction — mesuré sur la fenêtre
+ *  régime-LLM (vitrine#430, 2026-08-09) :
+ *
+ *    · par bloc  : mono-média ≤ 27,2 (plafond théorique 33,9) vs médiane 38,6
+ *    · au cumul  : mono-média ≤ 44,7                          vs médiane 62,4
+ *
+ *  L'invariant vrai sous la spec v1 n'est donc plus « jamais Modérée » mais
+ *  **« un mono-média ne dépasse jamais la médiane »** — et celui-là ne demande
+ *  aucune règle : il tient par la forme de l'indice. Décision d'Adrien du
+ *  2026-08-09 : réénoncer l'invariant et retirer la béquille. Une constante
+ *  arbitraire de moins à recalculer à chaque recalibration, et une asymétrie
+ *  QC/ROC de moins à justifier dans la méthodologie publique.
+ *
+ *  Conséquence assumée : une histoire portée par un seul média peut désormais
+ *  afficher « Modérée », dont l'infobulle dit « environ 65 % des Unes sont plus
+ *  saillantes que celle-ci ». Pour un sujet à un seul média, la phrase est
+ *  juste.
+ *
+ *  NB : #224 avait posé la règle du relèvement sur la grille des PICS ; c'est la
  *  grille des CUMULS qui pilote le badge depuis vitrine#314 (27-07). Les deux
  *  ne sont pas la même distribution — d'où cette mesure dédiée. */
 export const NEW_SUM_QC_THRESHOLDS: Thresholds =
-  { faible: 32.5, moyenne: 45.0, eleve: 62.3, tresEleve: 89.4, extreme: 133.3 };
+  { faible: 32.5, moyenne: 40.4, eleve: 62.3, tresEleve: 89.4, extreme: 133.3 };
 
 /** Grille du niveau PAR BLOC (lecture au survol de la trajectoire) : réplique de
  *  `calibration_metric("salience_index_qc")`, toutes les valeurs > 0. n = 332.
@@ -83,10 +103,18 @@ export const NEW_BLOCK_QC_THRESHOLDS: Thresholds =
 
 /** Côté ROC (bout de ligne du radar Deux solitudes) : mêmes conventions, avec
  *  `min_media_secondary = 1` comme fetch_data.R. n = 63.
- *  Percentiles bruts : le plus haut cumul mono-média canadien vaut 56,1, mais
- *  26 des 63 storylines ROC sont mono-média (contre 2 sur 52 au QC) — relever
- *  la borne à 56,4 pousserait « Modérée » au-dessus de la médiane et casserait
- *  l'échelle. La décision ε visait le badge québécois ; à trancher pour le ROC. */
+ *  Percentiles bruts, comme le QC depuis le 2026-08-09 — les deux côtés
+ *  suivent désormais la même règle, ce qui était l'un des arguments de la
+ *  décision. 26 des 63 storylines ROC sont mono-média (contre 2 sur 52 au QC) :
+ *  le mono-média est l'exception au Québec et la norme au Canada, parce que le
+ *  radar n'a pas de seuil éditorial équivalent.
+ *
+ *  Hypothèse TESTÉE ET RÉFUTÉE (vitrine#430) : aligner les populations —
+ *  exiger ≥ 2 médias côté ROC aussi — ne ferait PAS tenir l'ancien garde ε.
+ *  Après alignement, le plus fort mono-média canadien vaut encore 53,0 contre
+ *  une borne Modérée à 37,2, parce que le héros de chaque édition est gardé
+ *  quel que soit son nombre de médias, des deux côtés. L'asymétrie des seuils
+ *  n'était pas la cause. */
 export const NEW_SUM_ROC_THRESHOLDS: Thresholds =
   { faible: 24.1, moyenne: 30.8, eleve: 41.1, tresEleve: 73.4, extreme: 149.1 };
 
