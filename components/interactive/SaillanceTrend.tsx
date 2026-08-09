@@ -15,8 +15,10 @@ import type { SalienceTrend, SalienceTrendPoint } from "@/lib/data/headlineEvent
 const W = 124, H = 24, PADX = 5, PADY = 4;
 
 // Diamètre d'un point = PALIER DE SAILLANCE de ce bloc (demande Adrien) : la
-// courbe dit la part d'attention par sa hauteur, la grosseur dit à quel niveau
-// la nouvelle se trouvait. Écart volontairement marqué — 1,9 px à 4,8 px entre
+// courbe dit l'attention cumulée 24 h par sa hauteur, la grosseur redit le même
+// niveau en plus lisible (vitrine#430 B3 : une seule grandeur dans toute la
+// bande — hauteur, diamètre et mot ne peuvent plus se contredire).
+// Écart volontairement marqué — 1,9 px à 4,8 px entre
 // « Très faible » et « Exceptionnelle » — pour que la différence se voie à cette
 // échelle. Un bloc sans Une garde un petit anneau creux, lisible mais discret.
 // Les repères sommet / maintenant passent par la COULEUR (cf. CSS), pas par la
