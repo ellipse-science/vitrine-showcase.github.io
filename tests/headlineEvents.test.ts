@@ -616,11 +616,13 @@ describe("grille du badge : calibration publiée sinon repli (#314)", () => {
   });
 });
 
-// Le rejeu des éditions est la pièce la plus délicate du badge : c'est lui qui
-// reconstitue le niveau de l'édition précédente (l'hystérésis n'a pas d'état
-// persistant à lire) et qui produit l'historique affiché au survol.
+// Le rejeu des éditions ne sert plus à reconstituer le niveau précédent : depuis
+// le retrait de l'hystérésis (A4), le rang est une fonction pure du cumul et ne
+// dépend d'aucun état antérieur. Il reste nécessaire pour deux choses — le
+// SOMMET (la plus haute valeur atteinte et l'édition où elle l'a été) et
+// l'HISTORIQUE des niveaux lu au survol de la trajectoire.
 describe("badgeRanks (rejeu des éditions)", () => {
-  const { badgeRanks: badgeRanksWithHysteresis, SUM_QC_THRESHOLDS } = __test__;
+  const { badgeRanks, SUM_QC_THRESHOLDS } = __test__;   // plus d'hystérésis depuis A4
   // Une histoire seule dans chaque bloc : sumQc = score du bloc + traînée
   // pondérée des précédents (demi-vie 10 h), donc strictement croissante ici.
   const bloc = (h: string, qc: number) =>
@@ -629,7 +631,7 @@ describe("badgeRanks (rejeu des éditions)", () => {
       articles: JSON.stringify([{ media_id: "LED", url: "https://led/a" }]) });
 
   it("accumule un historique : une entrée par édition rejouée", () => {
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     expect(a).toBeDefined();
@@ -641,7 +643,7 @@ describe("badgeRanks (rejeu des éditions)", () => {
 
   it("le sommet se fixe sur l'édition où le cumul est le plus haut", () => {
     // Le cumul culmine au dernier bloc (la traînée s'ajoute au plus gros score).
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     expect(a.peakBlock).toBe("2026-07-13T08");
@@ -650,13 +652,13 @@ describe("badgeRanks (rejeu des éditions)", () => {
     // Si le gros score est au MILIEU, le sommet reste sur ce bloc-là même si
     // des éditions plus récentes suivent — c'est ce qui permet au ⓘ de dire
     // « plus haut niveau à telle heure » après le déclin.
-    const declin = badgeRanksWithHysteresis(
+    const declin = badgeRanks(
       [bloc("00", 20), bloc("04", 200), bloc("08", 5)] as never, SUM_QC_THRESHOLDS);
     expect(declin.get("sA")!.peakBlock).toBe("2026-07-13T04");
   });
 
   it("le rang final est celui de la dernière édition, et il a suivi la montée", () => {
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 5), bloc("04", 40), bloc("08", 260)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     const rangs = [...a.history.values()];
@@ -667,7 +669,7 @@ describe("badgeRanks (rejeu des éditions)", () => {
   });
 
   it("aucun événement → aucune entrée (pas de plantage)", () => {
-    expect(badgeRanksWithHysteresis([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
+    expect(badgeRanks([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
   });
 });
 

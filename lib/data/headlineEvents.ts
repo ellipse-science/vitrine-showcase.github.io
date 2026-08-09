@@ -1867,7 +1867,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
       : undefined;
 
-  // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
+  // Niveaux de badge reconstitués en rejouant les éditions du snapshot. Plus
+  // aucun LISSAGE depuis le retrait de l'hystérésis (A4) : le rang de chaque
+  // édition est une fonction pure de son cumul. Le rejeu sert désormais à deux
+  // choses seulement — le SOMMET (la plus haute valeur atteinte et l'édition où
+  // elle l'a été) et l'HISTORIQUE lu au survol de la trajectoire.
   const badgeRanksByStory = badgeRanks(unique, sumThresholds);
 
   const stories = storiesFrom24h(unique);
