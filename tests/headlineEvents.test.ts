@@ -763,21 +763,26 @@ describe("hysteresisRank (lissage du badge cumulé)", () => {
   });
 });
 
-describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'attention)", () => {
+describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)", () => {
   const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}
-  // present = la nouvelle a fait la Une à ce bloc. `share` = part d'attention QC du
-  // bloc (qc histoire / qc total du bloc), calculée en amont (storiesFrom24h). La
-  // TENDANCE (#304) compare la part des DEUX derniers blocs ; la mini-courbe et les
-  // niveaux par bloc restent, eux, basés sur `qc`.
+  // `present` = un média québécois avait la Une à ce bloc. `cumul` = l'attention
+  // cumulée 24 h à cette édition — LA grandeur de la bande depuis #430 : c'est
+  // elle que la courbe trace, elle que le sommet marque, et elle dont la flèche
+  // chiffre la variation. `share` (la part du bloc de 4 h) ne sert plus à rien
+  // ici : elle disait une FRACTION là où le mot disait un NIVEAU, et 39 % des
+  // mouvements se contredisaient à l'écran.
+  //
+  // La variation est désormais RELATIVE, en % du cumul précédent : sur une
+  // quantité absolue, « −10 points » ne veut rien dire au lecteur.
   const decline = [
-    { blockUtc: "2026-07-19T19", qc: 0, present: false, share: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, share: 55 },
-    { blockUtc: "2026-07-20T03", qc: 50, present: true, share: 40 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 25 },
-    { blockUtc: "2026-07-20T11", qc: 0, present: false, share: 0 },
+    { blockUtc: "2026-07-19T19", qc: 0, present: false, cumul: 0 }, { blockUtc: "2026-07-19T23", qc: 100, present: true, cumul: 100 },
+    { blockUtc: "2026-07-20T03", qc: 50, present: true, cumul: 95 }, { blockUtc: "2026-07-20T07", qc: 12, present: true, cumul: 70 },
+    { blockUtc: "2026-07-20T11", qc: 0, present: false, cumul: 56 },
   ];
   it("absente du bloc courant : l'attention est retombée, JAMAIS « plus à la Une »", () => {
     const t = buildSalienceTrend(decline as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
-    expect(t.deltaPct).toBe(-25);
+    expect(t.deltaPct).toBe(-20);   // 70 → 56 = −20 % du cumul précédent
     expect(t.situation).toBe("retombee");
     // Grammaire arrêtée : [ce que l'attention fait] puis l'ancre au sommet en incise.
     expect(t.capLabel).toMatch(/^L’attention est retombée depuis .+ \(Sommet .+\)$/);
@@ -796,44 +801,44 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
     expect(t.points.filter((p: { isFirst: boolean }) => p.isFirst)).toHaveLength(1);
     expect(t.points.find((p: { isFirst: boolean }) => p.isFirst)!.score).toBe(100);
   });
-  it("détecte la progression (part qui monte d'un bloc au suivant : 15 → 32 = +17)", () => {
+  it("détecte la progression (cumul qui monte : 20 → 23 = +15 %)", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 4, present: true, share: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, share: 15 },
-      { blockUtc: "2026-07-20T11", qc: 20, present: true, share: 32 },
+      { blockUtc: "2026-07-20T03", qc: 4, present: true, cumul: 10 }, { blockUtc: "2026-07-20T07", qc: 9, present: true, cumul: 20 },
+      { blockUtc: "2026-07-20T11", qc: 20, present: true, cumul: 23 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
-    expect(t.deltaPct).toBe(17);
+    expect(t.deltaPct).toBe(15);
     // Part la plus haute de la fenêtre → « au plus haut du jour », pas d'ancre
     // au sommet (elle EST le sommet).
     expect(t.situation).toBe("sommet");
     // Seul cas où l'écart se compte depuis le BLOC PRÉCÉDENT : au sommet,
     // « sous le sommet » n'a pas de sens, la question est « de combien elle a monté ».
     // Notation en % (et non « points »), alignée sur le module des enjeux.
-    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+17 % depuis /);
+    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+15 % depuis /);
   });
-  // Ampleur = variation de la PART d'attention entre les deux derniers blocs (#304).
-  it("deltaPct baisse : 25 % → 15 % = −10 points", () => {
+  // Ampleur = variation RELATIVE du cumul entre les deux dernières éditions.
+  it("deltaPct baisse : cumul 40 → 30 = −25 %", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 25 },
-      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 15 },
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, cumul: 40 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, cumul: 30 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("down");
-    expect(t.deltaPct).toBe(-10);
+    expect(t.deltaPct).toBe(-25);
   });
-  it("deltaPct hausse : 10 % → 22 % = +12 points", () => {
+  it("deltaPct hausse : cumul 50 → 61 = +22 %", () => {
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 12, present: true, share: 10 },
-      { blockUtc: "2026-07-20T11", qc: 30, present: true, share: 22 },
+      { blockUtc: "2026-07-20T07", qc: 12, present: true, cumul: 50 },
+      { blockUtc: "2026-07-20T11", qc: 30, present: true, cumul: 61 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("up");
-    expect(t.deltaPct).toBe(12);
+    expect(t.deltaPct).toBe(22);
   });
-  it("stable : part inchangée → dir flat, et le SCORE qui monte ne fait pas un sommet", () => {
-    // qc monte (40 → 42) mais la part ne bouge pas : la boîte parle de PART,
+  it("stable : cumul inchangé → dir flat, et le SCORE du bloc qui monte ne fait pas un sommet", () => {
+    // qc monte (40 → 42) mais le cumul ne bouge pas : la bande parle du CUMUL,
     // donc ce n'est pas « au plus haut du jour ».
     const t = buildSalienceTrend([
-      { blockUtc: "2026-07-20T07", qc: 40, present: true, share: 30 },
-      { blockUtc: "2026-07-20T11", qc: 42, present: true, share: 30 },
+      { blockUtc: "2026-07-20T07", qc: 40, present: true, cumul: 30 },
+      { blockUtc: "2026-07-20T11", qc: 42, present: true, cumul: 30 },
     ] as never, thr, "2026-07-20")!;
     expect(t.dir).toBe("flat");
     expect(t.deltaPct).toBe(0);
@@ -842,9 +847,9 @@ describe("buildSalienceTrend (#274/#304 — tendance = variation de la part d'at
   });
   it("distingue « Absente » (pas à la Une) d'une saillance faible réelle", () => {
     const trend = buildSalienceTrend([
-      { blockUtc: "2026-07-20T03", qc: 0, present: false, share: 0 },  // pas à la Une → Absente
-      { blockUtc: "2026-07-20T07", qc: 3, present: true, share: 5 },   // à la Une mais faible (< seuil faible=8)
-      { blockUtc: "2026-07-20T11", qc: 40, present: true, share: 30 },
+      { blockUtc: "2026-07-20T03", qc: 0, present: false, cumul: 0 },  // pas à la Une → Absente
+      { blockUtc: "2026-07-20T07", qc: 3, present: true, cumul: 5 },   // à la Une mais faible (< seuil faible=8)
+      { blockUtc: "2026-07-20T11", qc: 40, present: true, cumul: 40 },
     ] as never, thr, "2026-07-20")!;
     const absent = trend.points[0], faible = trend.points[1];
     expect(absent.level).toBe("Hors du radar");
