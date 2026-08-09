@@ -1590,6 +1590,9 @@
 
   /* Fiche de la bulle ⓘ (#274) : mini-distribution + micro-métho + lien. */
   .saillance-info-card { display: block; }
+  /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
+     serrée dessous et en chiffres tabulaires. */
+  .saillance-info-card .sic-kicker-val { margin-top: -0.15em; font-variant-numeric: tabular-nums; }
   .saillance-info-card .sic-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;

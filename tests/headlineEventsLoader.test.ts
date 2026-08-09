@@ -91,9 +91,12 @@ describe("loadHeadlineEvents — le mot-jour appartient à l'édition, pas à l'
 
     // Et la lecture positive : les blocs de la veille sont bien nommés « hier ».
     const labels = data.top3[0].salienceTrend!.points.map((p) => p.timeLabel);
+    // Heure ET moment de la journée depuis le 2026-08-09 : l'heure seule
+    // laissait deviner la demi-journée. Ce que ce test garde reste le mot-JOUR —
+    // les blocs de la veille disent « hier », ceux du jour ne le disent pas.
     expect(labels).toEqual([
-      "hier 12h", "hier 16h", "hier 20h", "hier minuit",
-      "aujourd’hui 4h", "aujourd’hui 8h",
+      "hier midi", "16h hier après-midi", "20h hier soir", "hier minuit",
+      "4h ce matin", "8h ce matin",
     ]);
   });
 });

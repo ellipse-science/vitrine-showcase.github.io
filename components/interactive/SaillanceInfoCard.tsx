@@ -116,7 +116,14 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           figure juste en dessous, qui le montre déjà en le SITUANT — et deux
           façons de dire la même chose se lisent comme deux mesures. À la place,
           la valeur elle-même, sur l'échelle d'affichage. */}
-      <span className="sic-kicker">Saillance actuelle&nbsp;: {level}{typeof peak === "number" ? <> · {peak.toFixed(1).replace(".", ",")} points</> : null}</span>
+      {/* DEUX LIGNES et non une (Adrien) : « Saillance actuelle : Modérée · 44,7
+          points » se repliait selon la largeur, et « POINTS » se retrouvait seul
+          sur la seconde ligne. La valeur passe donc systématiquement à la ligne
+          — le repli devient une mise en page voulue au lieu d'un accident. */}
+      <span className="sic-kicker">Saillance actuelle&nbsp;: {level}</span>
+      {typeof peak === "number" ? (
+        <span className="sic-kicker sic-kicker-val">{peak.toFixed(1).replace(".", ",")}&nbsp;points</span>
+      ) : null}
       {/* A8 (#430) — LA COMPARAISON À L'ANNÉE S'ACCROCHE TOUJOURS AU SOMMET.
           Avant, cette phrase situait la nouvelle avec sa valeur du MOMENT :
           une histoire retombée s'annonçait « plus saillante que 57 % des Unes »
@@ -129,14 +136,14 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           du moment (A4). Le présent n'est donc jamais nié : il est au-dessus. */}
       <span className="sic-lede">{
         sommet != null && typeof sommetCentile === "number" && sommetTier
-          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"} — elle était alors ${sommetTier}, ${
+          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"}. Elle était alors ${sommetTier}, ${
               sommetCentile >= 50
                 ? `devant environ ${sommetCentile} % des Unes de l’année.`
                 : `mais environ ${100 - sommetCentile} % des Unes de l’année restaient plus saillantes.`}`
           : typeof centile === "number"
             ? (centile >= 50
-                ? `C’est son sommet — elle dépasse environ ${centile} % des Unes de l’année.`
-                : `C’est son sommet — environ ${100 - centile} % des Unes de l’année sont plus saillantes.`)
+                ? `C’est son sommet. Elle dépasse environ ${centile} % des Unes de l’année.`
+                : `C’est son sommet. Environ ${100 - centile} % des Unes de l’année sont plus saillantes.`)
             : (MICRO[rank] ?? "")
       }</span>
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"

@@ -25,11 +25,7 @@ import {
   scaleThresholds,
 } from "@/lib/data/salienceCutover";
 
-// VITRINE_DATA_PATH : échappatoire réservée au BANC DE VALIDATION (#430). Elle
-// permet de servir un instantané recomposé — par exemple avec les valeurs de la
-// spec v1 recalculées depuis le JSON `articles` — sans jamais toucher à
-// public/data/, qui est écrasé par fetch_data.R. Absente en production.
-const DATA_PATH = process.env.VITRINE_DATA_PATH ?? path.resolve(
+const DATA_PATH = path.resolve(
   process.cwd(),
   "public",
   "data",
@@ -1954,14 +1950,7 @@ export type HeadlineData = {
 // cache() : le snapshot est lu par plusieurs consommateurs du même rendu
 // (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
 // lecture/parse par build au lieu d'une par appel.
-export const loadHeadlineEvents = cache(async (
-  /** Bloc « as-of » (« AAAA-MM-JJTHH ») : reconstruit le module tel qu'il était à
-   *  cette édition, en ne gardant que les blocs qui la précèdent. Sert à naviguer
-   *  dans les éditions passées (vitrine#434) — et, ici, à valider à l'œil le
-   *  comportement des règles du dossier #430 sur plusieurs éditions d'affilée.
-   *  Absent → l'édition courante, comportement inchangé. */
-  asOf?: string,
-): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -1969,11 +1958,7 @@ export const loadHeadlineEvents = cache(async (
     return null;
   }
 
-  const tout = JSON.parse(raw) as RawEvent[];
-  // Voyage dans le temps : on coupe le snapshot au bloc demandé. Tout le reste
-  // de la chaîne (fenêtre de 6 blocs, rejeu des éditions, badge, trajectoire)
-  // travaille alors exactement comme il l'aurait fait à ce moment-là.
-  const all = asOf ? tout.filter((e) => blockKey(e) <= asOf) : tout;
+  const all = JSON.parse(raw) as RawEvent[];
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;

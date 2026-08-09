@@ -13,8 +13,8 @@ import { DeuxSolitudesRadar } from "@/components/interactive/DeuxSolitudesRadar"
 // Server component : charge les données et les passe au radar (client) qui
 // gère les interactions (infobulle des points, bulle éditoriale).
 
-export async function DeuxSolitudesSection({ asOf }: { asOf?: string } = {}) {
-  const data = await loadHeadlineEvents(asOf);
+export async function DeuxSolitudesSection() {
+  const data = await loadHeadlineEvents();
   if (!data) return null;
   const s = data.solitudes;
 
