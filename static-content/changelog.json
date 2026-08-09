@@ -1,5 +1,11 @@
 [
   {
+    "pr": 432,
+    "date": "2026-08-09T23:28:49Z",
+    "note": "La petite courbe sous chaque manchette montre désormais la même chose que le niveau affiché à côté d'elle : quand la courbe monte, le niveau monte. Les moments où l'histoire n'était en Une d'aucun média québécois sont indiqués par un point creux, et le point noir marque son sommet.",
+    "version": null
+  },
+  {
     "pr": 431,
     "date": "2026-08-09T23:23:44Z",
     "note": "Le niveau de saillance affiché sous les manchettes reposera bientôt sur une mesure qui tient compte du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant.",
