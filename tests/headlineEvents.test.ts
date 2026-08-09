@@ -635,11 +635,13 @@ describe("grille du badge : calibration publiée sinon repli (#314)", () => {
   });
 });
 
-// Le rejeu des éditions est la pièce la plus délicate du badge : c'est lui qui
-// reconstitue le niveau de l'édition précédente (l'hystérésis n'a pas d'état
-// persistant à lire) et qui produit l'historique affiché au survol.
-describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
-  const { badgeRanksWithHysteresis, SUM_QC_THRESHOLDS } = __test__;
+// Le rejeu des éditions ne sert plus à reconstituer le niveau précédent : depuis
+// le retrait de l'hystérésis (A4), le rang est une fonction pure du cumul et ne
+// dépend d'aucun état antérieur. Il reste nécessaire pour deux choses — le
+// SOMMET (la plus haute valeur atteinte et l'édition où elle l'a été) et
+// l'HISTORIQUE des niveaux lu au survol de la trajectoire.
+describe("badgeRanks (rejeu des éditions)", () => {
+  const { badgeRanks, SUM_QC_THRESHOLDS } = __test__;   // plus d'hystérésis depuis A4
   // Une histoire seule dans chaque bloc : sumQc = score du bloc + traînée
   // pondérée des précédents (demi-vie 10 h), donc strictement croissante ici.
   const bloc = (h: string, qc: number) =>
@@ -648,7 +650,7 @@ describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
       articles: JSON.stringify([{ media_id: "LED", url: "https://led/a" }]) });
 
   it("accumule un historique : une entrée par édition rejouée", () => {
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     expect(a).toBeDefined();
@@ -660,7 +662,7 @@ describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
 
   it("le sommet se fixe sur l'édition où le cumul est le plus haut", () => {
     // Le cumul culmine au dernier bloc (la traînée s'ajoute au plus gros score).
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     expect(a.peakBlock).toBe("2026-07-13T08");
@@ -669,13 +671,13 @@ describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
     // Si le gros score est au MILIEU, le sommet reste sur ce bloc-là même si
     // des éditions plus récentes suivent — c'est ce qui permet au ⓘ de dire
     // « plus haut niveau à telle heure » après le déclin.
-    const declin = badgeRanksWithHysteresis(
+    const declin = badgeRanks(
       [bloc("00", 20), bloc("04", 200), bloc("08", 5)] as never, SUM_QC_THRESHOLDS);
     expect(declin.get("sA")!.peakBlock).toBe("2026-07-13T04");
   });
 
   it("le rang final est celui de la dernière édition, et il a suivi la montée", () => {
-    const suivi = badgeRanksWithHysteresis(
+    const suivi = badgeRanks(
       [bloc("00", 5), bloc("04", 40), bloc("08", 260)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     const rangs = [...a.history.values()];
@@ -686,101 +688,14 @@ describe("badgeRanksWithHysteresis (rejeu des éditions)", () => {
   });
 
   it("aucun événement → aucune entrée (pas de plantage)", () => {
-    expect(badgeRanksWithHysteresis([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
+    expect(badgeRanks([] as never, SUM_QC_THRESHOLDS).size).toBe(0);
   });
 });
 
-describe("hysteresisRank (lissage du badge cumulé)", () => {
-  const T = __test__.SUM_QC_THRESHOLDS; // {faible:21.4, moyenne:31, eleve:47.9, tresEleve:102.4, extreme:192.8}
-  const { rawRank, hysteresisRank } = __test__;
-
-  it("sans niveau précédent, rend le niveau brut", () => {
-    expect(hysteresisRank(undefined, 50, T)).toBe(rawRank(50, T)); // 47.9 ≤ 50 → rang 4
-    expect(hysteresisRank(undefined, 50, T)).toBe(4);
-  });
-
-  it("ne monte pas d'une bande pour un franchissement de justesse", () => {
-    // 48 dépasse le seuil « Élevée » (47.9) mais pas de 8 % → reste à 3.
-    expect(rawRank(48, T)).toBe(4);
-    expect(hysteresisRank(3, 48, T)).toBe(3);
-  });
-
-  it("monte quand la marge est franchie", () => {
-    expect(hysteresisRank(3, 47.9 * 1.09, T)).toBe(4);
-  });
-
-  it("ne redescend pas pour un repli de justesse sous le seuil quitté", () => {
-    // 47 est juste sous 47.9 : le badge « Élevée » tient.
-    expect(rawRank(47, T)).toBe(3);
-    expect(hysteresisRank(4, 47, T)).toBe(4);
-  });
-
-  it("redescend quand le repli est net", () => {
-    expect(hysteresisRank(4, 47.9 * 0.91, T)).toBe(3);
-  });
-
-  it("un aller-retour de frontière ne fait bouger le badge ni à l'aller ni au retour", () => {
-    let r = 3;
-    for (const v of [48, 47, 48.5, 46.5, 48]) r = hysteresisRank(r, v, T);
-    expect(r).toBe(3);
-  });
-
-  it("laisse passer une vraie décroissance, bande après bande", () => {
-    // Trajectoire réelle (tarifs, 23-24 juillet) : 261 → 198 → 150 → 110 → 68 → 34
-    const suite = [261.8, 198.4, 150.4, 110.5, 68.1, 33.8];
-    let r: number | undefined = undefined;
-    const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
-    expect(rangs).toEqual([6, 6, 5, 5, 4, 3]); // le badge redescend avec l'histoire
-  });
-
-  // ── Montée de plusieurs bandes d'un coup ────────────────────────────────────
-  // Le freinage doit s'appliquer À CHAQUE frontière, pas seulement à la dernière.
-  it("une montée de plusieurs bandes n'est pas annulée : le badge monte aussi haut que les marges franchies", () => {
-    // sumQc = 48,6 depuis le rang 1. Bandes franchies avec la marge de 8 % :
-    // 2 (21,4 × 1,08 = 23,1) ✓, 3 (31 × 1,08 = 33,5) ✓, 4 (47,9 × 1,08 = 51,7) ✗.
-    // → le badge doit s'arrêter à 3, et surtout PAS rester à 1.
-    expect(rawRank(48.6, T)).toBe(4);
-    expect(hysteresisRank(1, 48.6, T)).toBe(3);
-  });
-
-  it("régression #27-07 : la Une « logements » n'affiche plus « Très faible » avec un cumul « Élevée »", () => {
-    // Série réellement mesurée sur DEV le 2026-07-27 (éditions de 4h, 8h, 12h).
-    // Avant le correctif : [1, 1, 1] — la pastille disait « Très faible » alors
-    // que le cumul était en pleine bande « Élevée », et le survol du SOMMET
-    // héritait de ce « Très faible » figé.
-    const suite = [11.7, 22.5, 48.6];
-    let r: number | undefined = undefined;
-    const rangs = suite.map((v) => (r = hysteresisRank(r, v, T)));
-    expect(rangs).toEqual([1, 1, 3]);
-  });
-
-  it("le badge ne peut jamais s'écarter de plus d'UNE bande du niveau brut", () => {
-    // L'invariant qui résume le correctif : l'hystérésis a le droit de retarder
-    // d'une bande (c'est son travail), jamais de figer le badge plus bas que ça.
-    // Balayage : toutes les valeurs de 0 à 250 par pas de 0,5, depuis chaque
-    // niveau précédent possible.
-    for (let prev = 1; prev <= 6; prev++) {
-      for (let v = 0; v <= 250; v += 0.5) {
-        const affiche = hysteresisRank(prev, v, T);
-        expect(Math.abs(affiche - rawRank(v, T))).toBeLessThanOrEqual(1);
-      }
-    }
-  });
-
-  it("le retard éventuel est TOUJOURS du côté du niveau précédent (pas d'à-coup)", () => {
-    // Quand le badge n'est pas au niveau brut, c'est qu'il retient l'ancien —
-    // il ne doit jamais dépasser dans l'autre sens.
-    for (let prev = 1; prev <= 6; prev++) {
-      for (let v = 0; v <= 250; v += 0.5) {
-        const affiche = hysteresisRank(prev, v, T);
-        const brut = rawRank(v, T);
-        if (affiche === brut) continue;
-        expect(affiche).toBeGreaterThanOrEqual(Math.min(prev, brut));
-        expect(affiche).toBeLessThanOrEqual(Math.max(prev, brut));
-      }
-    }
-  });
-});
+// Le describe « hysteresisRank » a été retiré avec la règle (vitrine#430, A4) :
+// le niveau du badge est redevenu une pure FONCTION de la valeur. Deux Unes au
+// même cumul affichent le même niveau, quoi qu'elles aient affiché avant — c'est
+// la condition pour qu'un score soit officiel et comparable dans le temps.
 
 describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)", () => {
   const thr = SAL_QC_THRESHOLDS; // pics : {faible:8, moyenne:11, eleve:19, tresEleve:48, extreme:95}

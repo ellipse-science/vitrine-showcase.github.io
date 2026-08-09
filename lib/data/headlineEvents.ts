@@ -897,10 +897,10 @@ function buildSolitudes(
         // Rang du badge du module 1, tel quel (même clé, même repli).
         const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
           ?? rawRank(a.sumQc, sal.sumThresholds);
-        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+        tier = { ...TIER_BY_RANK[rank], hint: hintFromCentile(a.sumQc, sal.sumThresholds, POP_QC) };
       } else if (sal.sumRocThresholds) {
         const rank = rawRank(a.sumRoc, sal.sumRocThresholds);
-        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_ROC) };
+        tier = { ...TIER_BY_RANK[rank], hint: hintFromCentile(a.sumRoc, sal.sumRocThresholds, POP_ROC) };
       } else if (sal.roc) {
         // Repli transitoire : calibration ROC cumulée absente du JSON → pic
         // 24 h contre la distribution des scores de bloc.
@@ -1015,12 +1015,29 @@ function saillanceTierFromScore(
 // l'ancien badge au pic. Sur les affichées : 43 % / 25 %.
 const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
 
-// Hystérésis : sans elle le badge change de bande une édition sur deux (mesuré :
-// 52 % des transitions, dont 5,6 % de sauts de 2 bandes). Il faut dépasser la
-// frontière de HYST_MARGIN pour que le libellé bouge ; sinon on garde le niveau
-// de l'édition précédente. Les allers-retours de frontière disparaissent, la
-// vraie décroissance passe.
-const HYST_MARGIN = 0.08;
+// PLUS D'HYSTÉRÉSIS depuis vitrine#430 (décision A4, Adrien, 2026-08-09).
+//
+// Une marge de 8 % retenait le libellé tant que la valeur n'avait pas dépassé
+// la frontière franchement. L'intention était bonne — éviter qu'un cumul qui
+// flotte autour d'une ligne fasse clignoter l'étiquette — mais elle avait un
+// défaut rédhibitoire pour un score qui se veut OFFICIEL et COMPARABLE :
+//
+//   le niveau n'était pas une FONCTION de la valeur.
+//
+// Deux Unes au cumul identique pouvaient afficher deux niveaux différents,
+// selon ce qu'elles affichaient à l'édition précédente. Cette dépendance au
+// chemin interdit de dire « ce niveau correspond à cette valeur » — et c'est
+// précisément la promesse que Radar+ doit tenir pour des analyses
+// longitudinales (cf. A0 : référence gelée, datée, versionnée).
+//
+// L'amortisseur masquait par ailleurs le bruit d'une échelle MOUVANTE. Une fois
+// la référence ancrée, ce bruit-là disparaît : franchir une frontière redevient
+// un événement réel, et le public a le droit de le voir au moment où il arrive.
+//
+// Prix mesuré et assumé : 11 % des cartes changent d'étiquette, et 13,7 % des
+// triplets d'éditions montrent un aller-retour A→B→A. En contrepartie
+// l'infobulle annonce désormais le VRAI centile (A7), donc un lecteur qui
+// s'étonne d'un mouvement en voit le chiffre.
 
 /** Population de référence d'un niveau de saillance. Un niveau n'existe JAMAIS
  *  dans l'absolu : il situe une nouvelle parmi les Unes d'un ensemble de médias.
@@ -1043,6 +1060,50 @@ const HINT_BY_RANK: Record<number, (pop: string) => string> = {
   1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
 };
 
+// ── Le VRAI centile, plutôt qu'un centile arrondi à six paliers (#430, A7) ───
+//
+// L'échelle publique approuvée avec Yannick (vitrine#258) dit « le niveau se dit
+// en centile ». Les phrases ci-dessus en donnaient bien un — mais il n'en
+// existait que SIX, un par bande, alors que les bandes couvrent 5, 15, 30, 30,
+// 15 et 5 points de centile. Une Une au 22e centile et une autre au 49e
+// recevaient donc le même mot ET la même phrase. Écart moyen mesuré entre le
+// centile annoncé et le vrai : 6,5 points, jusqu'à 14, avec 27 % des cartes
+// fausses de plus de 10 points.
+//
+// On ne publie que 5 percentiles (p5/p20/p50/p80/p95), donc le centile est
+// INTERPOLÉ entre eux — même patron que la jauge de convergence (pctile /
+// calConvFrom). Mesuré sur les mêmes cartes : erreur moyenne 1,9 point, jamais
+// plus de 6, et plus aucune carte fausse de plus de 10 points. L'erreur est
+// divisée par 3,4 sans rien publier de nouveau.
+//
+// Ancre haute à 2 × p95 → 100 : même convention que la figure du ⓘ, qui trace
+// son axe jusqu'au double du p95.
+function centileFrom(v: number, t: typeof SUM_QC_THRESHOLDS): number {
+  const anchors: [number, number][] = [
+    [0, 0], [t.faible, 5], [t.moyenne, 20], [t.eleve, 50],
+    [t.tresEleve, 80], [t.extreme, 95], [t.extreme * 2, 100],
+  ];
+  return Math.round(pctile(v, anchors));
+}
+
+/** La phrase de l'infobulle, sur le centile RÉEL.
+ *
+ *  Formulation arrêtée avec Adrien (2026-08-09) : « environ 73 % des Unes sont
+ *  moins saillantes que celle-ci » — le registre public, pas celui de la métho
+ *  (« au 73e centile » a été explicitement écarté).
+ *
+ *  Le cadrage BASCULE à la médiane, comme avant : sous 50 on compte ce qui
+ *  DÉPASSE la nouvelle, au-dessus on compte ce qu'elle dépasse. Le chiffre reste
+ *  ainsi toujours grand et parlant. Borné à [1, 99] : « moins saillante que
+ *  100 % des Unes » serait faux (elle fait partie du lot) et « 0 % » ne dit rien.
+ */
+function hintFromCentile(v: number, t: typeof SUM_QC_THRESHOLDS, pop: string): string {
+  const c = Math.max(1, Math.min(99, centileFrom(v, t)));
+  return c >= 50
+    ? `Environ ${c} % des nouvelles à la Une ${pop} sont moins saillantes que celle-ci.`
+    : `Environ ${100 - c} % des nouvelles à la Une ${pop} sont plus saillantes que celle-ci.`;
+}
+
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
   6: { label: "Exceptionnelle", cls: "s-extreme", hint: HINT_BY_RANK[6](POP_QC) },
   5: { label: "Très élevée", cls: "s-tres-eleve", hint: HINT_BY_RANK[5](POP_QC) },
@@ -1062,39 +1123,13 @@ function rawRank(v: number, t: typeof SUM_QC_THRESHOLDS): number {
   return 1;
 }
 
-// Niveau affiché = niveau brut, SAUF si le changement n'a pas franchi la
-// frontière avec la marge — auquel cas on conserve le niveau précédent.
-//
-// UNE BANDE À LA FOIS, dans les deux sens. L'ancienne version comparait la
-// valeur à la borne de la bande VISÉE et, si la marge n'y était pas, annulait
-// TOUT le mouvement. Un cumul qui saute de plusieurs bandes d'un coup restait
-// donc figé tout en bas : mesuré le 2026-07-27, la Une « logements » affichait
-// « Très faible » (rang 1) avec sumQc = 48,6, soit en pleine bande « Élevée »
-// (≥ 47,9) — les bandes 2 (23,1) et 3 (33,5) étaient pourtant franchies très
-// largement. Le badge se débloquait après le sommet, si bien que la trajectoire
-// gardait « Très faible » sur le point du sommet et « Modérée » sur le déclin :
-// le sommet paraissait plus faible que le creux (constat Adrien).
-// En avançant bande par bande, la marge freine encore chaque frontière (l'effet
-// anti-clignotement est intact) mais le badge ne peut plus rester à plus d'une
-// bande de la réalité.
-function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_THRESHOLDS): number {
-  const raw = rawRank(v, t);
-  if (prev === undefined || raw === prev) return raw;
-  const low = bandLow(t);
-  let r = prev;
-  // Monte : chaque bande gagnée demande de dépasser SA borne basse d'une marge.
-  while (r < raw && v >= low[r + 1] * (1 + HYST_MARGIN)) r++;
-  // Descend : on ne quitte une bande qu'en passant sous SA borne basse, marge
-  // comprise — symétrique de la montée.
-  while (r > raw && v <= low[r] * (1 - HYST_MARGIN)) r--;
-  return r;
-}
-
-// L'hystérésis a besoin du niveau de l'édition PRÉCÉDENTE. Le site est rebâti
-// à neuf toutes les 4 h, sans état persistant — on le reconstitue donc en
-// rejouant les éditions du snapshot (3 jours ≈ 18 fenêtres), du plus ancien au
-// plus récent. Déterministe : même snapshot → même badge, sans fichier d'état.
-function badgeRanksWithHysteresis(
+// Le rejeu des éditions reste nécessaire — non plus pour lisser le badge, mais
+// pour le SOMMET (la plus haute valeur atteinte, montrée dans la bulle ⓘ), pour
+// les CUMULS édition par édition (la courbe de trajectoire) et pour
+// l'HISTORIQUE des niveaux (l'étiquette de chaque point). Le site est rebâti à
+// neuf toutes les 4 h sans état persistant : on rejoue donc les éditions du
+// snapshot, du plus ancien au plus récent. Déterministe.
+function badgeRanks(
   events: RawEvent[],
   sumThresholds: typeof SUM_QC_THRESHOLDS,
   cutover: boolean = SALIENCE_CUTOVER,
@@ -1118,7 +1153,7 @@ function badgeRanksWithHysteresis(
       // MÊME échelle que la valeur courante — donc plaçable sur la même figure.
       const peakSum = Math.max(prev?.peakSum ?? 0, s.sumQc);
       const peakBlock = !prev || s.sumQc > prev.peakSum ? blocks[i] : prev.peakBlock;
-      const rank = hysteresisRank(prev?.rank, s.sumQc, sumThresholds);
+      const rank = rawRank(s.sumQc, sumThresholds);
       // …et à l'HISTORIQUE du badge, édition par édition : c'est lui qu'affiche
       // le survol de la trajectoire, pour que le niveau lu sur un point soit le
       // niveau que le badge portait à ce moment-là — même grandeur, même échelle.
@@ -1665,6 +1700,11 @@ export type UneEvent = {
   saillanceCls: string;
   /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
   saillanceHint: string;
+  /** Centile réel dans la distribution de référence (#430, A7). La bulle ⓘ s'en
+   *  sert pour dire la même chose que l'infobulle du badge — elle parlait encore
+   *  par paliers (« dans le cinquième le plus marquant »), ce qui contredisait
+   *  la phrase voisine dès qu'on a eu le vrai chiffre. */
+  saillanceCentile: number;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -1952,8 +1992,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
       : undefined;
 
-  // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
-  const badgeRanks = badgeRanksWithHysteresis(unique, sumThresholds);
+  // Niveaux de badge reconstitués en rejouant les éditions du snapshot. Plus
+  // aucun LISSAGE depuis le retrait de l'hystérésis (A4) : le rang de chaque
+  // édition est une fonction pure de son cumul. Le rejeu sert désormais à deux
+  // choses seulement — le SOMMET (la plus haute valeur atteinte et l'édition où
+  // elle l'a été) et l'HISTORIQUE lu au survol de la trajectoire.
+  const badgeRanksByStory = badgeRanks(unique, sumThresholds);
 
   const stories = storiesFrom24h(unique);
   // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
@@ -1979,9 +2023,11 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // (cf. SUM_QC_THRESHOLDS). Le sommet ne pilote plus le badge : il est nommé
     // dans la phrase de trajectoire, sous le badge.
     const storyKey = s.rep.storyline_id ?? s.label;
-    const suivi = badgeRanks.get(storyKey);
+    const suivi = badgeRanksByStory.get(storyKey);
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
-    const { label: saillanceLabel, cls: saillanceCls, hint: saillanceHint } = TIER_BY_RANK[saillanceRank];
+    const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
+    const saillanceHint = hintFromCentile(s.sumQc, sumThresholds, POP_QC);
+    const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
@@ -2034,6 +2080,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceLabel,
       saillanceCls,
       saillanceHint,
+      saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
@@ -2063,7 +2110,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // 24 h de SA région (aws-refiners#273, livrée 2026-08-07) ; `roc` reste le
   // repli transitoire si la calibration cumulée manque au JSON.
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
-    badgeRanks,
+    badgeRanks: badgeRanksByStory,
     sumThresholds,
     // Côté ROC aussi, les deux familles ne se mélangent pas. Après le cutover,
     // la grille cumulée a un repli codé (NEW_SUM_ROC_THRESHOLDS) qu'elle n'avait
@@ -2412,12 +2459,13 @@ export const __test__ = {
   windowConvergence,
   windowEventConvergence,
   salThresholdsFrom,
+  centileFrom,
+  hintFromCentile,
   calConvFrom,
   SAL_QC_THRESHOLDS,
   SUM_QC_THRESHOLDS,
   rawRank,
-  hysteresisRank,
-  badgeRanksWithHysteresis,
+  badgeRanks,
   uniqueQcEvents,
   canResonance,
   usResonance,
