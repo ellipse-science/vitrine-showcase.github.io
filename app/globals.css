@@ -1344,11 +1344,31 @@
      milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
      sur la hauteur d'x du libellé, pas sur la boîte. */
   .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; transform: translateY(-2px); }
+  /* Le SVG doit laisser DÉBORDER ses points. Un point survolé grossit de 1,8 px,
+     et le sommet est par construction collé au bord haut de la boîte (son
+     ordonnée vaut PADY) : avec l'`overflow: hidden` par défaut des SVG, le
+     sommet était donc TOUJOURS rogné au survol — 2 px coupés en haut — et le
+     point « maintenant » l'était en bas quand l'attention retombait à zéro.
+     Signalé par Adrien, capture à l'appui. Vérifié au navigateur : le point
+     agrandi reste largement à l'intérieur de la bande de saillance, il ne
+     chevauche ni la pastille ni le titre, et rien ne bouge dans la mise en page
+     (le débordement ne participe pas au calcul de la hauteur de ligne). */
+  .saillance-trend .trend-spark { overflow: visible; }
   .saillance-trend .trend-line { stroke: var(--acc); }
   .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
-  .saillance-trend .trend-pt.is-peak,
-  .saillance-trend .trend-pt.is-now { fill: var(--ink); }
-  .saillance-trend .trend-pt.is-hover { fill: var(--ink); }
+  /* UN SEUL point noir plein, et il désigne UNE seule chose : le SOMMET.
+     Avant, le sommet, le bloc courant et le point survolé partageaient la même
+     encre — trois sens pour une couleur. Or le sommet n'est pas le bloc courant
+     dans 64 % des cartes (mesuré, vitrine#430) : deux points noirs cohabitaient
+     donc deux fois sur trois, sans rien pour les distinguer. Décision d'Adrien
+     du 2026-08-09 : le sommet garde le noir, c'est lui que l'œil doit trouver
+     en premier sur la courbe. */
+  .saillance-trend .trend-pt.is-peak { fill: var(--ink); }
+  /* Le bloc courant devient un anneau plein d'encre légère : repérable sans
+     rivaliser avec le sommet. Distinct aussi de l'anneau « Hors du radar »,
+     qui est creux ET bordé de gris pâle. */
+  .saillance-trend .trend-pt.is-now { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6px; }
+  .saillance-trend .trend-pt.is-hover { fill: var(--ink); stroke: none; }
   /* Bloc « Absente » : anneau creux couleur papier → l'œil lit « pas là »,
      pas « faiblement saillante ». Placé après is-hover pour gagner la cascade. */
   .saillance-trend .trend-pt.is-absent { fill: var(--paper); stroke: var(--ink-softer); stroke-width: 1.1px; }
