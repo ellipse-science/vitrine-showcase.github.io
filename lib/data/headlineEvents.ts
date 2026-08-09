@@ -1702,8 +1702,6 @@ export type UneEvent = {
   saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
-  /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
-  saillanceHint: string;
   /** Centile réel dans la distribution de référence (#430, A7). La bulle ⓘ s'en
    *  sert pour dire la même chose que l'infobulle du badge — elle parlait encore
    *  par paliers (« dans le cinquième le plus marquant »), ce qui contredisait
@@ -1732,6 +1730,11 @@ export type UneEvent = {
    *  été (« à minuit », « hier à 20 h »). null si l'histoire est à son sommet. */
   sommetSum: number | null;
   sommetLabel: string | null;
+  /** Centile et bande du SOMMET (#430, A8) : c'est le sommet qui situe la
+   *  nouvelle dans l'année, pas sa valeur du moment. null quand le sommet est
+   *  l'instant présent — la bulle utilise alors `saillanceCentile`. */
+  sommetCentile: number | null;
+  sommetTier: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -2037,7 +2040,6 @@ export const loadHeadlineEvents = cache(async (
     const suivi = badgeRanksByStory.get(storyKey);
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
     const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
-    const saillanceHint = hintFromCentile(s.sumQc, sumThresholds, POP_QC);
     const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
@@ -2046,10 +2048,40 @@ export const loadHeadlineEvents = cache(async (
       ? (() => {
         const p = blockLabelParts(suivi.peakBlock, editionRefDayIso);
         if (!p) return null;
-        const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
-        return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+        // « à 4h ce matin », pas « à 4h » (demande d'Adrien, 2026-08-09). L'heure
+        // nue oblige le lecteur à deviner de quelle demi-journée on parle, alors
+        // que le module dispose déjà du vocabulaire de moment (SAILLANT_TODAY).
+        // Table EXPLICITE plutôt que dérivée : c'est un libellé public, et deux
+        // cas s'y refusent — « à minuit cette nuit » et « à midi ce midi » sont
+        // des pléonasmes, et « à 4h tôt ce matin » est illisible.
+        const MOMENT_AUJ: Record<number, string> = {
+          0: "à minuit", 4: "à 4h ce matin", 8: "à 8h ce matin",
+          12: "à midi", 16: "à 16h cet après-midi", 20: "à 20h ce soir",
+        };
+        const MOMENT_HIER: Record<number, string> = {
+          0: "hier à minuit", 4: "hier à 4h", 8: "hier matin à 8h",
+          12: "hier midi", 16: "hier à 16h", 20: "hier soir à 20h",
+        };
+        const hh = p.hour % 24;
+        if (p.dayWord === "aujourd’hui") return MOMENT_AUJ[hh] ?? `à ${hh}h`;
+        if (p.dayWord === "hier") return MOMENT_HIER[hh] ?? `hier à ${hh}h`;
+        return `${p.dayWord} à ${hh}h`;
       })()
+      : null;
+    // A8 (#430) — CE QUI SITUE LA NOUVELLE DANS L'ANNÉE, C'EST SON SOMMET.
+    // La valeur du moment ne dit que l'instant : une histoire retombée à 68,4
+    // pts (57e centile) reste celle qui a atteint 157,3 pts (96e centile), et
+    // c'est ce sommet que le palmarès hebdomadaire classera (aws-refiners#283).
+    // Parler du rang de la nouvelle avec le chiffre du moment était FAUX, pas
+    // seulement mal cadré. Quand le sommet EST le moment présent, `sommetSum`
+    // vaut null et la bulle se rabat sur le centile courant — qui est alors le
+    // même nombre, au présent.
+    const sommetCentile = sommetSum != null
+      ? Math.max(1, Math.min(99, centileFrom(sommetSum, sumThresholds)))
+      : null;
+    const sommetTier = sommetSum != null
+      ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].label
       : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
@@ -2090,7 +2122,6 @@ export const loadHeadlineEvents = cache(async (
       saillanceRank,
       saillanceLabel,
       saillanceCls,
-      saillanceHint,
       saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
@@ -2104,6 +2135,8 @@ export const loadHeadlineEvents = cache(async (
       scoreQcSum24h: s.sumQc,
       sommetSum,
       sommetLabel,
+      sommetCentile,
+      sommetTier,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
