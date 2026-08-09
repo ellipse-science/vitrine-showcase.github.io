@@ -85,13 +85,15 @@ function capDuPoint(p: SalienceTrendPoint) {
   const niveau = p.isAbsent
     ? <span className="tc-chip tc-niveau is-absent">Hors du radar</span>
     : <span className={`tc-chip tc-niveau saillance-tag ${CLS_BANDE[Math.max(1, Math.min(6, p.rank))]}`}>{p.level}</span>;
-  // ORDRE (Adrien) : le moment, le statut, puis les CHIFFRES, et le tag de
-  // saillance en DERNIER. Le niveau est la conclusion de ce qui précède — le
-  // mettre devant faisait lire les chiffres comme sa justification après coup.
+  // ORDRE (Adrien), le même qu'au repos : la VARIATION collée à la flèche —
+  // sens et ampleur d'un seul mouvement de l'oeil — puis la valeur, puis les
+  // statuts (sommet, niveau), et la DATE À LA TOUTE FIN. Le moment ouvrait la
+  // ligne : il repoussait le pourcentage loin de la flèche qui l'illustre, et
+  // c'est pourtant l'information qu'on vient chercher en dernier.
   return (
     <span className="trend-chips">
+      {bouge}{val}{sommet}{niveau}
       <span className="tc-time">{p.timeLabel}</span>
-      {sommet}{val}{bouge}{niveau}
     </span>
   );
 }
