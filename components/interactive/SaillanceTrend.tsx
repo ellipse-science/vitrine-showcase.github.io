@@ -85,10 +85,38 @@ function capDuPoint(p: SalienceTrendPoint) {
   const niveau = p.isAbsent
     ? <span className="tc-chip tc-niveau is-absent">Hors du radar</span>
     : <span className={`tc-chip tc-niveau saillance-tag ${CLS_BANDE[Math.max(1, Math.min(6, p.rank))]}`}>{p.level}</span>;
+  // ORDRE (Adrien) : le moment, le statut, puis les CHIFFRES, et le tag de
+  // saillance en DERNIER. Le niveau est la conclusion de ce qui précède — le
+  // mettre devant faisait lire les chiffres comme sa justification après coup.
   return (
     <span className="trend-chips">
       <span className="tc-time">{p.timeLabel}</span>
-      {sommet}{niveau}{val}{bouge}
+      {sommet}{val}{bouge}{niveau}
+    </span>
+  );
+}
+
+// AU REPOS, la même grammaire de pastilles qu'au survol (demande d'Adrien) :
+// la phrase courante — « L'attention est retombée depuis ce midi (Sommet à 4h
+// ce matin) » — était le dernier bloc de prose d'une bande devenue entièrement
+// tabulaire.
+//
+// DEUX absences volontaires, demandées explicitement :
+//   · pas de tag de NIVEAU — le badge est juste au-dessus, il le dit déjà ;
+//   · pas de « Hors du radar » — c'est l'état d'UN bloc, pas de la journée ;
+//     il n'apparaît qu'au survol du point concerné.
+function capAuRepos(trend: SalienceTrend) {
+  const som = trend.points.find((p) => p.isPeak);
+  return (
+    <span className="trend-chips">
+      <span className="tc-mouvement">{trend.capMouvement}</span>
+      {trend.montreSommet && som ? (
+        <>
+          <span className="tc-chip tc-sommet">Sommet</span>
+          <span className="tc-chip tc-val">{som.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
+          <span className="tc-time">{som.timeLabel}</span>
+        </>
+      ) : null}
     </span>
   );
 }
@@ -201,7 +229,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           <span className="trend-cap-ghost" aria-hidden="true" key={i}>{n}</span>
         ))}
         <span className="trend-cap-live" aria-live="polite">
-          {active ? capDuPoint(active) : trend.capLabel}
+          {active ? capDuPoint(active) : capAuRepos(trend)}
         </span>
       </span>
       </span>

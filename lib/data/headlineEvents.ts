@@ -1283,8 +1283,31 @@ function selectTopUnes(stories: Story[], max = 3): Story[] {
   // est calculé et publié pour TOUTES les histoires, elles restent disponibles
   // en base pour l'analyse, et Radar+ les montrera toutes. La Vitrine choisit
   // seulement ce qu'elle met en avant.
-  const meneur = top[0].sumQc;
-  return top.filter((s, i) => i === 0 || s.sumQc >= meneur * MIN_PART_DU_MENEUR);
+  // B7 (#430) — LE DÉNOMINATEUR EST LA PLUS FORTE HISTOIRE ENCORE VIVANTE.
+  //
+  // Le défaut : le cumul 24 h d'un meneur ÉTEINT (plus aucun média québécois ne
+  // l'a en Une dans le bloc courant) reste gonflé par son passé. Une nouvelle
+  // bien vivante se faisait alors retirer de l'écran pour n'avoir pas fait la
+  // moitié d'un fantôme — le 2026-08-09 à 16h, Gaza (33,4) sortait à 49 % d'un
+  // meneur à 68,4 qui valait 0 dans le bloc courant. Trois histoires en cours,
+  // deux cartes.
+  //
+  // Mesuré sur le rejeu de l'année (2683 éditions) : le cas se produit dans
+  // 6,0 % des éditions. La correction en change 7,9 % (4,2 % sur le seul régime
+  // de regroupement actuel) et PRÉSERVE le cas à deux cartes — 21,1 % contre
+  // 25,9 % — là où toutes les variantes « cascade » testées le faisaient tomber
+  // à 9 % en poussant tout vers trois cartes.
+  //
+  // Formulation publique, une seule phrase et aucune condition : « une manchette
+  // secondaire s'affiche si elle vaut au moins la moitié de la plus forte
+  // histoire encore à la Une ». Quand le meneur est vivant — le cas ordinaire —
+  // c'est lui, et la règle est exactement celle d'avant.
+  const vivante = (s: Story) => (s.series[s.series.length - 1]?.qc ?? 0) > 0;
+  // `eligible` est déjà trié par cumul décroissant : le premier vivant est donc
+  // le plus fort. Repli sur le meneur si PERSONNE n'est à la Une dans ce bloc
+  // (nuit creuse) — sinon la règle n'aurait plus de référence du tout.
+  const reference = (vivante(top[0]) ? top[0] : eligible.find(vivante) ?? top[0]).sumQc;
+  return top.filter((s, i) => i === 0 || s.sumQc >= reference * MIN_PART_DU_MENEUR);
 }
 
 /** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs
@@ -1454,6 +1477,12 @@ export type SalienceTrendPoint = {
   isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
 };
 export type SalienceTrend = {
+  /** Le mouvement seul, sans l'incise « (Sommet …) » — la bande l'affiche en
+   *  pastilles au repos, le sommet devenant sa propre pastille. */
+  capMouvement: string;
+  /** false quand le mouvement nomme déjà le sommet (« Nouveau sommet ») ou
+   *  quand l'histoire vient d'arriver : pas de pastille de sommet alors. */
+  montreSommet: boolean;
   dir: "up" | "down" | "flat";
   // « En déclin depuis hier soir » / « En progression depuis ce midi » / « Stable »
   capLabel: string;
@@ -1521,7 +1550,7 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // pléonasmes. Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
 const MOMENT_AUJ: Record<number, string> = {
   0: "minuit", 4: "4h ce matin", 8: "8h ce matin",
-  12: "midi", 16: "16h cet après-midi", 20: "20h ce soir",
+  12: "ce midi", 16: "16h cet après-midi", 20: "20h ce soir",
 };
 const MOMENT_HIER: Record<number, string> = {
   0: "hier à minuit", 4: "4h hier matin", 8: "8h hier matin",
@@ -1535,8 +1564,12 @@ function momentLabel(dayWord: string, hour: number, avecA = true): string | null
   const table = dayWord === "aujourd’hui" ? MOMENT_AUJ : dayWord === "hier" ? MOMENT_HIER : null;
   if (!table) return null;
   const brut = table[hh] ?? (dayWord === "hier" ? `hier à ${hh}h` : `${hh}h`);
-  if (!avecA) return brut.startsWith("hier à ") ? brut.slice("hier à ".length).replace(/^/, "hier ") : brut;
-  return brut.startsWith("hier ") && !brut.startsWith("hier à ") ? `à ${brut}` : brut.startsWith("hier à ") ? brut : `à ${brut}`;
+  if (!avecA) return brut.startsWith("hier à ") ? `hier ${brut.slice("hier à ".length)}` : brut;
+  // « à » se colle devant une HEURE, jamais devant un démonstratif : on dit
+  // « à 4h ce matin » mais « ce midi », pas « à ce midi ». Même chose pour les
+  // formes de `hier`, qui portent déjà leur repère.
+  if (/^(ce |cette |hier)/.test(brut)) return brut;
+  return `à ${brut}`;
 }
 
 function blockLabelParts(blockUtc: string, refDayIso: string | null):
@@ -1670,6 +1703,11 @@ function buildSalienceTrend(
   // entre parenthèses. Le lecteur reçoit d'abord ce qui se passe, puis le
   // repère qui le situe — et non l'inverse.
   const incise = `(${ancre})`;
+  // Même chaîne SANS l'incise : au repos la bande affiche des pastilles, et le
+  // sommet y devient une pastille à part au lieu d'une parenthèse (#430,
+  // demande d'Adrien). `capLabel` reste la version en prose — c'est elle que
+  // lisent les lecteurs d'écran et le partage.
+  const sansIncise = (t: string) => t.replace(` ${incise}`, "").replace(incise, "").trim();
   const capLabel =
     situation === "nouvelle" ? (hCourant ? `Nouveau (arrivée ${hCourant})` : "Nouveau")
       : situation === "sommet" ? (hPrec
@@ -1684,6 +1722,11 @@ function buildSalienceTrend(
               : `Remonte ${incise}`)
               : situation === "stable" ? `Se maintient ${incise}`
                 : `En recul de ${reculSommet} % ${incise}`;
+
+  // Le sommet ne se répète pas quand le mouvement le dit déjà (« Nouveau
+  // sommet aujourd'hui ») ou quand l'histoire vient d'arriver.
+  const montreSommet = situation !== "nouvelle" && situation !== "sommet";
+  const capMouvement = sansIncise(capLabel);
 
   // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis
   // du sommet : une histoire qui revient (0 → 25 %) monte visiblement à l'écran,
@@ -1721,7 +1764,7 @@ function buildSalienceTrend(
       isAbsent: !p.present,
     };
   });
-  return { dir, capLabel, deltaPct, situation, points };
+  return { dir, capLabel, capMouvement, montreSommet, deltaPct, situation, points };
 }
 
 export type UneEvent = {

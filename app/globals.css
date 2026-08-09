@@ -1391,6 +1391,9 @@
      variation colorée par son sens. */
   .saillance-trend .trend-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
   .saillance-trend .tc-time { color: var(--ink-softer); font-size: 0.82em; white-space: nowrap; }
+  /* Le mouvement garde la couleur de la tendance : c'est LUI que la flèche
+     juste à sa gauche illustre. */
+  .saillance-trend .tc-mouvement { color: var(--acc); }
   .saillance-trend .tc-chip {
     display: inline-block; padding: 0.08em 0.42em; border-radius: 2px;
     font-size: 0.78em; line-height: 1.5; white-space: nowrap;
@@ -1404,6 +1407,13 @@
   .saillance-trend .saillance-tag.tc-niveau {
     font-size: 0.72em; font-weight: 600; padding: 0.1em 0.5em;
     letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  /* « Exceptionnelle » porte un LISERÉ D'ENCRE (demande d'Adrien) : sur la carte,
+     ce niveau fait basculer tout le fond du module en noir (`.unes-jour.breaking`).
+     La pastille du survol ne peut pas basculer un fond — le trait est ce qui
+     rappelle l'événement, et c'est le seul niveau à en porter un. */
+  .saillance-trend .saillance-tag.tc-niveau.s-extreme {
+    box-shadow: 0 0 0 1.5px var(--ink);
   }
   .saillance-trend .tc-niveau.is-absent { background: transparent; color: var(--ink-softer); border: 1px solid var(--ink-softer); font-weight: 500; }
   /* Le sommet : contour plutôt qu'aplat, pour se distinguer du niveau sans
