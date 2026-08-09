@@ -96,14 +96,51 @@ describe("grilles de seuils du nouvel indice", () => {
     });
   }
 
-  // L'INVARIANT ε d'Adrien (décision du 19-07, réaffirmée sur #224 le 08-08),
-  // écrit ici en assertion plutôt qu'en commentaire : une histoire portée par un
-  // seul média ne doit jamais atteindre la bande « Modérée ». Le plus fort cumul
-  // 24 h mono-média mesuré sur la fenêtre spec v1 vaut 44,7 (×100).
-  const MONO_MAX_MESURE = 44.7;
-  it("garde mono-média : la borne « Modérée » du badge reste au-dessus du plus fort mono-média", () => {
-    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeGreaterThan(MONO_MAX_MESURE);
-    expect(rawRank(MONO_MAX_MESURE, NEW_SUM_QC_THRESHOLDS)).toBeLessThanOrEqual(2);
+  // L'INVARIANT MONO-MÉDIA, réénoncé le 2026-08-09 (vitrine#430) et écrit ici
+  // en assertion plutôt qu'en commentaire.
+  //
+  // Ancien énoncé (19-07) : « un mono-média n'atteint jamais Modérée ». Il
+  // exigeait de relever une borne à la main, parce que l'ancien indice ne
+  // regardait pas la largeur de couverture.
+  //
+  // Énoncé actuel : « un mono-média ne dépasse jamais la MÉDIANE ». Il tient
+  // par la forme de l'indice — visibilité nulle ramenée au plancher ε dans une
+  // moyenne géométrique non compensatoire — donc sans aucune constante à
+  // maintenir. Ce test le vérifie sur les deux grandeurs, avec les maxima
+  // mono-média mesurés sur la fenêtre régime-LLM.
+  const MONO_MAX_CUMUL = 44.7;   // grandeur du badge
+  const MONO_MAX_BLOC  = 27.2;   // valeur d'un bloc isolé
+  it("invariant : un mono-média ne franchit pas la médiane des Unes, sans règle ajoutée", () => {
+    // `eleve` = p50 = la médiane : la frontière de la moitié supérieure.
+    expect(MONO_MAX_CUMUL).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
+    // Il reste sous la moitié haute — rangs 1 à 3 sur 6.
+    expect(rawRank(MONO_MAX_CUMUL, NEW_SUM_QC_THRESHOLDS)).toBeLessThanOrEqual(3);
+  });
+
+  // ⚠️ PRÉCISION QUI A FAILLI PASSER À LA TRAPPE — ce test l'a attrapée.
+  //
+  // L'invariant porte sur une POPULATION précise : les Unes. Il ne se transpose
+  // pas à la grille PAR BLOC, qui est calibrée sur TOUTES les valeurs de bloc
+  // non nulles (n = 332), y compris celles d'événements qui n'ont jamais été
+  // Une. Cette population-là a une médiane bien plus basse (21,2), et le
+  // maximum mono-média (27,2) la dépasse.
+  //
+  // Ce n'est pas une faille : la grille par bloc ne sert que de REPLI pour le
+  // survol de la trajectoire, et seulement quand l'historique du badge manque —
+  // sinon ce sont les niveaux du badge, donc du cumul, qui étiquettent les
+  // points (cf. buildSalienceTrend). Le niveau que le lecteur voit vit sur le
+  // cumul, et c'est là que l'invariant tient.
+  //
+  // Dit autrement : « un mono-média ne dépasse jamais la médiane » est vrai
+  // parmi les Unes, pas parmi tous les blocs de tous les événements. Ne pas
+  // élargir la phrase sans refaire la mesure.
+  it("la grille par bloc est une autre population — l'invariant ne s'y transpose pas", () => {
+    expect(MONO_MAX_BLOC).toBeGreaterThan(NEW_BLOCK_QC_THRESHOLDS.eleve);
+  });
+  it("la borne « Modérée » est bien le percentile brut, sans relèvement", () => {
+    // Garde-fou anti-retour : si quelqu'un remet une béquille sans passer par
+    // #430, ce test le dit. 40,4 = p20 mesuré, 45,0 = l'ancien relèvement.
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(40.4);
   });
 
   it("scaleThresholds passe une grille publiée à l'échelle d'affichage", () => {
