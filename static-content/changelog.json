@@ -1,5 +1,11 @@
 [
   {
+    "pr": 433,
+    "date": "2026-08-09T23:32:12Z",
+    "note": "Le niveau de saillance affiché sous une manchette suit désormais directement sa valeur : dès qu'une nouvelle franchit un seuil, elle porte le palier correspondant, à la hausse comme à la baisse. Et l'infobulle donne le chiffre exact — « environ 75 % des Unes sont moins saillantes que celle-ci » — au lieu d'une estimation par palier.",
+    "version": null
+  },
+  {
     "pr": 432,
     "date": "2026-08-09T23:28:49Z",
     "note": "La petite courbe sous chaque manchette montre désormais la même chose que le niveau affiché à côté d'elle : quand la courbe monte, le niveau monte. Les moments où l'histoire n'était en Une d'aucun média québécois sont indiqués par un point creux, et le point noir marque son sommet.",
