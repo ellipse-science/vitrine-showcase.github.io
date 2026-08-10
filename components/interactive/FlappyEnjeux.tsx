@@ -209,7 +209,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
   const targetTile = tiles[targetIdx];
 
   return (
-    <div className="flappy-cabinet" role="group" aria-label="Jeu caché : Flappy Enjeux — chasse à la une">
+    <div className="flappy-cabinet" role="group" aria-label="Jeu caché : Flappy Enjeux, chasse à la Une">
       <div className="flappy-masthead">
         <span className="flappy-brand">LA VITRINE · ÉDITION SPÉCIALE</span>
         <span className="flappy-score-hud">Score <b>{score}</b>{combo > 1 && <em> · Combo ×{combo}</em>}</span>
@@ -235,8 +235,8 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         )}
         {phase === "ready" && (
           <div className="flappy-overlay">
-            <p className="flappy-title">Chasse à la une</p>
-            <p className="flappy-hint">Fais voler le journal 📰 (Espace / ↑ / touchez l&apos;écran) et franchis l&apos;enjeu <b>à la une</b> pour décrocher le scoop. Ça accélère avec le score. Échap ou ✕ pour quitter.</p>
+            <p className="flappy-title">Chasse à la Une</p>
+            <p className="flappy-hint">Fais voler le journal 📰 (Espace / ↑ / touchez l&apos;écran) et franchis l&apos;enjeu <b>à la Une</b> pour décrocher le scoop. Ça accélère avec le score. Échap ou ✕ pour quitter.</p>
             <button type="button" className="flappy-cta" onClick={flap}>Commencer</button>
           </div>
         )}

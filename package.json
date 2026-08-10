@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.21.0-beta.0",
+  "version": "2.21.0-beta.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "start": "next start",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "garde-redaction": "node scripts/garde_redaction.mjs",
     "select-hero": "npx --yes tsx@4 scripts/select_hero.ts"
   },
   "dependencies": {
