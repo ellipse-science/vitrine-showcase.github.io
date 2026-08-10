@@ -745,8 +745,16 @@
   .header-edition .pulse-icon.showing svg.celestial { color: var(--cordovan); }
 
   /* Un moment sans données ne fait pas semblant d'être cliquable. */
-  .pulse-icon[aria-disabled="true"] {
-    cursor: default;
+  .pulse-icon[aria-disabled="true"] { cursor: default; }
+
+  /* …mais l'affadissement épargne l'HORLOGE. Le cas arrive tous les jours, six
+     fois : à 12 h 30 le créneau du midi est le créneau courant (`.current`)
+     alors que son édition n'est pas encore publiée (`aria-disabled`). Sans le
+     `:not(.current)`, les deux règles ont la même spécificité (0,2,0) et
+     celle-ci, plus bas dans le fichier, effaçait le marquage de l'horloge —
+     décision Adrien 2026-07-09 : l'horloge garde son marquage, publiée ou pas.
+     Signalé par Copilot sur la PR #440. */
+  .pulse-icon[aria-disabled="true"]:not(.current) {
     color: var(--rule-faint);
     opacity: 0.55;
   }
