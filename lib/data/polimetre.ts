@@ -407,7 +407,11 @@ function snapshotWindow(
 // Exported for unit testing only — not part of the public API.
 export const __test__ = { realText, shortenPledge, buildView, snapshotWindow };
 
-export async function loadPolimetre(): Promise<PolimetreData | null> {
+export async function loadPolimetre(
+  /** Édition passée (#434) : jour de publication de l'édition affichée. Le
+   *  Polimètre+ publie un instantané par SEMAINE — même remarque de cadence. */
+  asOfIso?: string,
+): Promise<PolimetreData | null> {
   let raw: string;
   try {
     raw = await fs.readFile(POLIMETRE_JSON_PATH, "utf8");
@@ -417,7 +421,8 @@ export async function loadPolimetre(): Promise<PolimetreData | null> {
 
   let rows: Row[];
   try {
-    rows = (JSON.parse(raw) as Row[]).filter((r) => r && r.country_id === "QC");
+    rows = (JSON.parse(raw) as Row[]).filter((r) =>
+      r && r.country_id === "QC" && (!asOfIso || String(r.week_end_date ?? "") <= asOfIso));
   } catch {
     return null;
   }

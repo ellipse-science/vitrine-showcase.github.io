@@ -59,15 +59,35 @@ sort_rows_deterministically <- function(df) {
 # Fenêtre de rétention du Polimètre+, en jours (cf. filtre polimetre_plus_recent).
 POLIMETRE_KEEP_DAYS <- 70L
 
+# Profondeur de l'archive des éditions (cf. filtre headline_events_window).
+#
+# 3 jours suffisaient tant que le site ne montrait que l'édition courante et sa
+# fenêtre glissante de 24 h. Depuis vitrine#434, le bandeau d'en-tête permet de
+# remonter d'édition en édition : cette constante EST la profondeur de l'archive
+# offerte au public (moins les 5 plus anciennes éditions, dont la fenêtre 24 h
+# serait tronquée — cf. listEditions dans lib/data/headlineEvents.ts).
+#
+# COÛT AWS : NUL. fetch_table() émet `SELECT <cols> FROM <table>` sans WHERE —
+# Athena scanne déjà la table entière à chaque run, et ce filtre ne fait que
+# jeter des lignes APRÈS coup, en R. Élargir la fenêtre ne change donc rien à la
+# facture ; on cesse simplement de jeter de la donnée déjà payée.
+#
+# COÛT DÉPÔT : marginal. Git stocke chaque version du JSON en delta de la
+# précédente (~60 Ko mesurés sur 516 versions, contre 1,3 Mo de fichier brut), et
+# ce delta suit ce qui CHANGE d'un run à l'autre — un bloc ajouté, un bloc
+# retiré — pas la largeur de la fenêtre. Passer de 3 à 14 jours coûte donc ~4 Mo
+# une fois, puis rien.
+HEADLINE_KEEP_DAYS <- 14L
+
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
 apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
-  if (filter_id == "headline_events_3day") {
-    # date_utc is stored as integer days since 1970-01-01; keep last 3 days
+  if (filter_id == "headline_events_window") {
+    # date_utc is stored as integer days since 1970-01-01.
     if ("date_utc" %in% names(df)) {
-      cutoff_day <- as.integer(Sys.Date() - 3L)
+      cutoff_day <- as.integer(Sys.Date() - HEADLINE_KEEP_DAYS)
       df <- dplyr::filter(df, date_utc >= cutoff_day)
     }
     return(df)

@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import React from "react";
-import { loadHeadlineEvents, type UneEvent } from "@/lib/data/headlineEvents";
+import { loadHeadlineEvents, listEditions, type UneEvent } from "@/lib/data/headlineEvents";
+import { editionHrefs } from "@/lib/editionLinks";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -26,7 +27,11 @@ function HeadlineTitle({ event, children }: { event: UneEvent; children: React.R
 // trajectoire (#274). Le badge tombe toujours sous l'enjeu (CSS flex-basis 100 %),
 // et la trajectoire prend sa propre ligne dessous. Factorisé : hero et secondaires
 // partagent exactement la même structure (seule la classe du conteneur change).
-function SaillanceHead({ event, className }: { event: UneEvent; className: string }) {
+function SaillanceHead({ event, className, hrefs }: {
+  event: UneEvent;
+  className: string;
+  hrefs?: Record<string, string>;
+}) {
   return (
     <div className={className}>
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
@@ -58,7 +63,7 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
             qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
             since={event.saillantSince} />
         </InfoTip>
-        {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} />}
+        {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} editionHrefs={hrefs} />}
       </span>
     </div>
   );
@@ -195,8 +200,9 @@ function HeroFigure({ src, alt, variant }: {
   );
 }
 
-function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
+function MainUne({ event, secondEvent, generatedArtUrl, audioUrl, hrefs }: {
   event: UneEvent;
+  hrefs?: Record<string, string>;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
    *  première dans la colonne de gauche — sans lead — et l'illustration garde
    *  toute la hauteur des deux à droite. (L'essai « carte large » pleine
@@ -214,7 +220,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
               négative) et le tag « Exceptionnelle » agrandi finissait par le
               chevaucher quand l'enjeu était long. Ici, le chevauchement est
               impossible par construction. */}
-          <SaillanceHead event={event} className="une-main-head" />
+          <SaillanceHead event={event} className="une-main-head" hrefs={hrefs} />
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
@@ -228,7 +234,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
           <Byline event={event} />
           {secondEvent && (
             <div className="une-side une-second">
-              <SaillanceHead event={secondEvent} className="une-side-head" />
+              <SaillanceHead event={secondEvent} className="une-side-head" hrefs={hrefs} />
               <h2 data-saillance={secondEvent.saillanceRank}>
                 <HeadlineTitle event={secondEvent}>{secondEvent.title}</HeadlineTitle>
               </h2>
@@ -252,10 +258,10 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
   );
 }
 
-function SideUne({ event }: { event: UneEvent }) {
+function SideUne({ event, hrefs }: { event: UneEvent; hrefs?: Record<string, string> }) {
   return (
     <div className="une-side">
-      <SaillanceHead event={event} className="une-side-head" />
+      <SaillanceHead event={event} className="une-side-head" hrefs={hrefs} />
       <h2 data-saillance={event.saillanceRank}>
         <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
       </h2>
@@ -265,14 +271,23 @@ function SideUne({ event }: { event: UneEvent }) {
   );
 }
 
-export async function UneDesUnesSection() {
+export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
+  // ÉDITIONS PASSÉES (#434). L'illustration et la musique ne sont PAS
+  // archivées : `generated-art/latest.png` et `audio/latest.mp3` sont écrasés à
+  // chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
+  // servir sur une édition passée collerait l'image d'aujourd'hui sur les Unes
+  // d'avant-hier — une illustration qui affirme un faux. Une édition passée
+  // s'affiche donc sans image ni musique, et la mise en page « no-art » du
+  // module (déjà prévue pour les blocs sans illustration) s'en charge.
+  const isArchive = Boolean(editionKey);
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, artExists, audioUrl] = await Promise.all([
-    loadHeadlineEvents(),
-    fs.access(artJsonPath).then(() => true).catch(() => false),
-    fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
+  const [data, editions, artExists, audioUrl] = await Promise.all([
+    loadHeadlineEvents(editionKey),
+    listEditions(),
+    isArchive ? false : fs.access(artJsonPath).then(() => true).catch(() => false),
+    isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
         .then(() => "audio/latest.wav")
@@ -281,6 +296,8 @@ export async function UneDesUnesSection() {
   if (!data || data.top3.length === 0) return null;
 
   const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
+  // Chaque point de trajectoire EST une édition : on lui donne son adresse.
+  const hrefs = editionHrefs(editions);
   const [main, sideLeft, sideRight] = data.top3;
 
   // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
@@ -306,7 +323,14 @@ export async function UneDesUnesSection() {
   // normal d'une journée dominée par une seule histoire. Le singulier ne promet
   // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
   // explicitement pourquoi il varie.
-  const sectionTitle = "L'actualité saillante du moment au Québec";
+  // « du moment » est vrai de l'édition courante et faux de toutes les autres :
+  // sur une archive, le titre est le seul élément qui daterait le contenu à tort
+  // (la pastille de date, elle, porte déjà le bon jour). On retire donc les deux
+  // mots plutôt que d'affirmer un présent qui n'est plus (#434) — le reste du
+  // libellé approuvé en #307 est intact.
+  const sectionTitle = isArchive
+    ? "L'actualité saillante au Québec"
+    : "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
@@ -343,14 +367,15 @@ export async function UneDesUnesSection() {
               secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
               generatedArtUrl={generatedArtUrl}
               audioUrl={audioUrl}
+              hrefs={hrefs}
             />
           )}
         </section>
 
         {sideLeft && sideRight && (
           <section className="hero-secondaries">
-            <SideUne event={sideLeft} />
-            <SideUne event={sideRight} />
+            <SideUne event={sideLeft} hrefs={hrefs} />
+            <SideUne event={sideRight} hrefs={hrefs} />
           </section>
         )}
         <div className="module-last-updated">{data.lastUpdated}</div>
