@@ -243,14 +243,22 @@ function SideUne({ event }: { event: UneEvent }) {
   );
 }
 
-export async function UneDesUnesSection() {
+export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
+  // ÉDITIONS PASSÉES (#434). L'illustration et la musique ne sont PAS
+  // archivées : `generated-art/latest.png` et `audio/latest.mp3` sont écrasés à
+  // chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
+  // servir sur une édition passée collerait l'image d'aujourd'hui sur les Unes
+  // d'avant-hier — une illustration qui affirme un faux. Une édition passée
+  // s'affiche donc sans image ni musique, et la mise en page « no-art » du
+  // module (déjà prévue pour les blocs sans illustration) s'en charge.
+  const isArchive = Boolean(editionKey);
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
   const [data, artExists, audioUrl] = await Promise.all([
-    loadHeadlineEvents(),
-    fs.access(artJsonPath).then(() => true).catch(() => false),
-    fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
+    loadHeadlineEvents(editionKey),
+    isArchive ? false : fs.access(artJsonPath).then(() => true).catch(() => false),
+    isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
         .then(() => "audio/latest.wav")
@@ -277,7 +285,13 @@ export async function UneDesUnesSection() {
   // population il parlait, alors que son voisin « Deux solitudes » compare deux
   // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
   // Le titre porte donc la même règle que les phrases de distribution.
-  const sectionTitle = "Les Unes saillantes du moment au Québec";
+  // « du moment » est vrai de l'édition courante et faux de toutes les autres :
+  // sur une archive, le titre est le seul élément qui daterait le contenu à tort
+  // (la pastille de date, elle, porte déjà le bon jour). On retire donc les deux
+  // mots plutôt que d'affirmer un présent qui n'est plus (#434).
+  const sectionTitle = isArchive
+    ? "Les Unes saillantes au Québec"
+    : "Les Unes saillantes du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une

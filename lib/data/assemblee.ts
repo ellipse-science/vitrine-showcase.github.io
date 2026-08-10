@@ -528,10 +528,19 @@ async function loadPortraits(): Promise<DeputyPortrait[]> {
   }
 }
 
-export async function loadAssemblee(): Promise<AssembleeData | null> {
+export async function loadAssemblee(
+  /** Édition passée (#434) : jour de publication de l'édition affichée. Les
+   *  discours sont publiés par JOUR DE DÉBAT — l'archive de ce module suit donc
+   *  la cadence de l'Assemblée, pas celle des éditions. */
+  asOfIso?: string,
+): Promise<AssembleeData | null> {
   const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
-  const allRows = JSON.parse(raw) as AgoraRow[];
-  if (!Array.isArray(allRows) || allRows.length === 0) return null;
+  const parsed = JSON.parse(raw) as AgoraRow[];
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const allRows = asOfIso
+    ? parsed.filter((r) => String(r.period_end_date ?? "") <= asOfIso)
+    : parsed;
+  if (allRows.length === 0) return null;
   const deputyRows = await loadDeputyRows();
   const portraits = buildPortraitIndex(await loadPortraits());
   return {

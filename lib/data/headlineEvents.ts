@@ -8,7 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
 
-import { editionLabel } from "@/lib/editions";
+import { editionLabel, editionSlot } from "@/lib/editions";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -389,6 +389,21 @@ function solitudesEdito(convPct: number, shared: number): string {
 function blockKey(e: RawEvent): string {
   const start = (e.time_interval_utc ?? "").split("-")[0].padStart(2, "0");
   return `${e.date_utc}T${start}`;
+}
+
+// LA coupe des éditions passées (#434), en un seul endroit.
+//
+// Tout ce que la Vitrine calcule sur le snapshot 4 h — classement, badge,
+// trajectoire, radar, treemap, résonance — définit sa fenêtre comme « les blocs
+// les plus récents des lignes qu'on me donne ». Couper les lignes à un bloc
+// donné suffit donc à replacer TOUT le site à ce moment-là, sans qu'aucun de
+// ces calculs n'ait à connaître la notion d'édition.
+//
+// La coupe s'applique AVANT uniqueQcEvents : les lignes USA de la résonance
+// n'existent plus après, et les laisser passer donnerait à une édition passée
+// l'écho de son avenir.
+function eventsUpTo(rows: RawEvent[], editionKey?: string): RawEvent[] {
+  return editionKey ? rows.filter((e) => blockKey(e) <= editionKey) : rows;
 }
 
 // Signature de titre pour la dédup cross-langue (stopgap aws-refiners#213) :
@@ -1977,10 +1992,100 @@ export type HeadlineData = {
   treemapMobile: (TreemapTile & { relWidth: number })[];
 };
 
+/** Une édition publiée, telle qu'on peut y revenir (#434). */
+export type EditionRef = {
+  /** Clé de bloc triable — `2026-08-10T07`. Sert aussi de segment d'URL. */
+  key: string;
+  /** Jour de PUBLICATION (ISO), pas le jour du bloc — cf. blockAnchor. */
+  dateIso: string;
+  /** Jour CALENDAIRE de l'instant de publication — la rangée d'icônes où cette
+   *  édition se range. Diffère de `dateIso` pour la seule édition de minuit :
+   *  blockAnchor la rattache au jour qui vient de FINIR (« le moment reste
+   *  cette nuit », bon pour la prose), alors que le bandeau l'a toujours
+   *  montrée en tête du jour qui COMMENCE — c'est le « 00 h » que le lecteur
+   *  vient de vivre. Confondre les deux laissait l'icône 00 h morte en
+   *  permanence : jamais aucune édition ne tombait dans sa case. */
+  navDateIso: string;
+  /** Heure de publication : {4, 8, 12, 16, 20, 24}. 24 = minuit. */
+  pubHour: number;
+  /** Index de l'icône céleste dans le bandeau, 0 (00 h) à 5 (20 h). */
+  slot: number;
+  /** « Édition du matin ». */
+  label: string;
+  /** « mercredi 8 juillet 2026 ». */
+  dateLabel: string;
+};
+
+// Les éditions présentes dans le snapshot, de la PLUS RÉCENTE à la plus
+// ancienne. La profondeur suit la fenêtre de rétention de `fetch_data.R`
+// (filtre `headline_events_window`) : le site ne décide pas jusqu'où on
+// remonte, il montre ce que le snapshot porte. Un bandeau qui proposerait une
+// édition absente mènerait à une page vide — ce qui ne se voit pas.
+export const listEditions = cache(async (): Promise<EditionRef[]> => {
+  let raw: string;
+  try {
+    raw = await fs.readFile(DATA_PATH, "utf8");
+  } catch {
+    return [];
+  }
+
+  const rows = uniqueQcEvents(JSON.parse(raw) as RawEvent[]);
+  const all = Array.from(new Set(rows.map(blockKey))).sort().reverse();
+
+  // FENÊTRE COMPLÈTE EXIGÉE. Tout ce que le module affiche — classement, badge,
+  // trajectoire, parts d'attention — est une somme sur les 6 blocs les plus
+  // récents. Au bord ANCIEN du snapshot, ces 6 blocs n'existent pas : l'édition
+  // la plus vieille se calcule sur un seul bloc, et rend des saillances basses
+  // et un classement appauvri qui n'ont jamais été à l'écran. Le mode d'échec
+  // est silencieux — une page qui s'affiche bien et ment. On ne propose donc que
+  // les éditions qui ont 6 blocs derrière elles.
+  //
+  // Coût : les 5 plus anciennes éditions du snapshot ne sont pas navigables.
+  // C'est le prix d'une archive exacte, et il se paie une fois : chaque refresh
+  // en libère une nouvelle par le bord récent.
+  const keys = all.slice(0, Math.max(0, all.length - 5));
+
+  return keys.flatMap((key) => {
+    const anchor = blockAnchor(key);
+    if (!anchor) return [];
+    // L'heure PUBLIQUE (fin du bloc + 1 h) est la seule identité d'une édition
+    // à l'écran : c'est elle qui nomme l'édition et qui allume l'icône. Le bloc
+    // de données 03-07 est l'« édition du matin », publiée à 8 h — jamais « 3 h ».
+    const hour24 = anchor.pubHour % 24;
+    // Jour calendaire de l'instant de publication = début du bloc + 5 h (fin
+    // +4 h, puis +1 h de pipeline) — la MÊME arithmétique que blockAnchor,
+    // mais lue AVANT son exception de minuit.
+    const publishedAt = new Date(Date.parse(`${key}:00:00Z`) + 5 * 3_600_000);
+    return [{
+      key,
+      dateIso: anchor.anchorIso,
+      navDateIso: mtlDateAndHour(publishedAt).dateIso,
+      pubHour: anchor.pubHour,
+      slot: editionSlot(hour24),
+      label: `Édition ${editionLabel(hour24)}`,
+      dateLabel: formatDateFr(anchor.anchorIso),
+    }];
+  });
+});
+
 // cache() : le snapshot est lu par plusieurs consommateurs du même rendu
 // (Home pour periodLabel, UneDesUnesSection pour le contenu) — une seule
 // lecture/parse par build au lieu d'une par appel.
-export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> => {
+//
+// ÉDITIONS PASSÉES (#434). `editionKey` = clé de bloc (`2026-08-10T07`) à
+// laquelle on veut revoir le module « tel qu'il était ». Le rejeu ne demande
+// AUCUNE machinerie nouvelle : tout l'aval — storiesFrom24h, window24hBlocks,
+// windowConvergence, badgeRanks — définit sa fenêtre comme « les 6 blocs les
+// plus récents des lignes qu'on lui donne ». Il suffit donc de couper le
+// snapshot aux blocs ≤ editionKey pour que le bloc visé DEVIENNE le plus
+// récent, et toute la chaîne se recalcule d'elle-même autour de lui.
+//
+// La coupe se fait sur `all`, AVANT uniqueQcEvents : les lignes USA de la
+// résonance (#230) n'existent plus après, et les laisser passer donnerait à une
+// édition passée l'écho de son avenir.
+//
+// Sans argument, le comportement est strictement inchangé (édition courante).
+export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(DATA_PATH, "utf8");
@@ -1988,7 +2093,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     return null;
   }
 
-  const all = JSON.parse(raw) as RawEvent[];
+  const all = eventsUpTo(JSON.parse(raw) as RawEvent[], editionKey);
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
@@ -2281,11 +2386,21 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
 const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
 
-async function loadIssueScores(period: "day" | "week" | "month"): Promise<Array<Record<string, unknown>> | null> {
+async function loadIssueScores(
+  period: "day" | "week" | "month",
+  /** Édition passée (#434) : ne garder que les lignes déjà publiées ce jour-là.
+   *  Précision au JOUR — ces tables sont publiées une fois par jour/semaine/mois,
+   *  pas six fois par jour ; l'archive d'un module lent ne peut donc pas être
+   *  plus fine que sa cadence. */
+  asOfIso?: string,
+): Promise<Array<Record<string, unknown>> | null> {
   const filePath = path.resolve(process.cwd(), "public", "data", "refined", period, `issues_score_${period}.json`);
   try {
     const raw = await fs.readFile(filePath, "utf8");
-    return JSON.parse(raw) as Array<Record<string, unknown>>;
+    const rows = JSON.parse(raw) as Array<Record<string, unknown>>;
+    return asOfIso
+      ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso)
+      : rows;
   } catch { return null; }
 }
 
@@ -2327,11 +2442,11 @@ function capitalizeObject(s: string): string {
 
 type FallbackEntry = { topObject: string; context: string; url: string | null };
 
-async function loadFallbackIssueContent(): Promise<Map<string, FallbackEntry>> {
+async function loadFallbackIssueContent(editionKey?: string): Promise<Map<string, FallbackEntry>> {
   const map = new Map<string, FallbackEntry>();
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
-  const allRaw = JSON.parse(rawEvents) as RawEvent[];
+  const allRaw = eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey);
 
   const unique = uniqueQcEvents(allRaw);
 
@@ -2445,19 +2560,24 @@ function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
   return map;
 }
 
-async function loadArticlesByIssue(): Promise<Map<string, IssueMedia>> {
+async function loadArticlesByIssue(editionKey?: string): Promise<Map<string, IssueMedia>> {
   let rawEvents: string;
   try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return new Map(); }
-  return buildIssueMedia(JSON.parse(rawEvents) as RawEvent[]);
+  return buildIssueMedia(eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey));
 }
 
-export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
+export async function loadTreemap(
+  /** Clé de bloc d'une édition passée (#434) ; absent = édition courante. */
+  editionKey?: string,
+  /** Jour de publication de cette édition, pour les tables jour/semaine/mois. */
+  asOfIso?: string,
+): Promise<TreemapAllPeriods | null> {
   const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
-    loadIssueScores("day"),
-    loadIssueScores("week"),
-    loadIssueScores("month"),
-    loadFallbackIssueContent(),
-    loadArticlesByIssue(),
+    loadIssueScores("day", asOfIso),
+    loadIssueScores("week", asOfIso),
+    loadIssueScores("month", asOfIso),
+    loadFallbackIssueContent(editionKey),
+    loadArticlesByIssue(editionKey),
   ]);
 
   function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {

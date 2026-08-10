@@ -20,25 +20,29 @@
 
     <!-- Centre : édition du moment (cycle des mises à jour, l'édition courante en évidence) -->
     <div class="header-edition" aria-label="Édition du moment">
+      <div class="edition-nav-row">
+        <a class="edition-arrow edition-arrow-prev" aria-label="Édition précédente" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       <div class="pulse-icons">
         <!-- 00h : pleine lune — coeur de la nuit -->
-        <div class="pulse-icon past" title="Mise à jour de 00 h">
+        <a class="pulse-icon past" title="Mise à jour de 00 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Nuit">
             <circle cx="12" cy="12" r="7.4" fill="currentColor"/>
           </svg>
           <span class="pulse-hour">00 h</span>
-        </div>
+        </a>
 
         <!-- 04h : lune — nuit/aube -->
-        <div class="pulse-icon past" title="Mise à jour de 04 h">
+        <a class="pulse-icon past" title="Mise à jour de 04 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Avant l'aube">
             <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" fill="currentColor"/>
           </svg>
           <span class="pulse-hour">04 h</span>
-        </div>
+        </a>
 
         <!-- 08h : petit soleil — lever -->
-        <div class="pulse-icon past" title="Mise à jour de 08 h">
+        <a class="pulse-icon past" title="Mise à jour de 08 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Matin">
             <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
             <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
@@ -53,10 +57,10 @@
             </g>
           </svg>
           <span class="pulse-hour">08 h</span>
-        </div>
+        </a>
 
         <!-- 12h : soleil plein — midi, actuelle -->
-        <div class="pulse-icon current" title="Mise à jour actuelle · 12 h">
+        <a class="pulse-icon current" title="Mise à jour actuelle · 12 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Midi — mise à jour actuelle">
             <circle cx="12" cy="12" r="5" fill="currentColor"/>
             <g stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
@@ -71,10 +75,10 @@
             </g>
           </svg>
           <span class="pulse-hour">12 h</span>
-        </div>
+        </a>
 
         <!-- 16h : soleil — après-midi -->
-        <div class="pulse-icon" title="Mise à jour de 16 h">
+        <a class="pulse-icon" title="Mise à jour de 16 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Après-midi">
             <circle cx="12" cy="12" r="4.3" fill="currentColor"/>
             <g stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
@@ -89,17 +93,21 @@
             </g>
           </svg>
           <span class="pulse-hour">16 h</span>
-        </div>
+        </a>
 
         <!-- 20h : croissant inversé — soir -->
-        <div class="pulse-icon" title="Mise à jour de 20 h">
+        <a class="pulse-icon" title="Mise à jour de 20 h">
           <svg class="celestial" viewBox="0 0 24 24" role="img" aria-label="Soir">
             <g transform="translate(24,0) scale(-1,1)">
               <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" fill="currentColor"/>
             </g>
           </svg>
           <span class="pulse-hour">20 h</span>
-        </div>
+        </a>
+      </div>
+        <a class="edition-arrow edition-arrow-next" aria-label="Édition suivante" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       </div>
 
       <div class="edition-block">
