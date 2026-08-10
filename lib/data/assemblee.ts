@@ -11,7 +11,19 @@ import path from "node:path";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 
-const TONE_AMPLIFY = 10;
+// Le ton mesuré est resserré autour de zéro : sur la table réelle, les partis
+// s'étalent de -0,30 à +0,18. Avec un facteur 10, tout ce qui dépasse ±0,1
+// venait buter sur les bornes, donc les quatre partis s'affichaient collés aux
+// extrémités de la jauge (« 100 % vers le pôle favorable » pour plusieurs
+// d'entre eux, ce qui ne voulait plus rien dire). Le facteur 2,5 conserve
+// l'ordre et l'écart entre les partis sans saturer :
+//
+//   parti   ton      × 10    × 2,5
+//   CAQ    +0,183    100 %    73 %
+//   PLQ    -0,237      0 %    20 %
+//   PQ     -0,275      0 %    16 %
+//   QS     -0,299      0 %    13 %
+const TONE_AMPLIFY = 2.5;
 
 export type IssueKey =
   | "economy_and_labour"
