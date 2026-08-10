@@ -164,6 +164,37 @@ function Byline({ event }: { event: UneEvent }) {
   );
 }
 
+/** L'illustration est rendue DEUX fois (variante desktop en colonne 2 de la
+ *  grille, variante mobile dans la colonne texte juste sous le titre) et la
+ *  bascule se fait en CSS. Sur mobile, la grille passe en 1 colonne et suit
+ *  l'ordre DOM : la figure en fin de grille arrivait à ~2 écrans de défilement
+ *  (#310) — la variante mobile la ramène sous le h1, fidèle à l'intention
+ *  « titre → image → métadonnées ». Même URL des deux côtés = un seul
+ *  téléchargement ; la variante cachée l'est via display:none. */
+function HeroFigure({ src, alt, variant }: {
+  src: string;
+  alt: string;
+  variant: "desktop" | "mobile";
+}) {
+  return (
+    <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
+      <div className="figure-frame">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          className="editorial-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+      <figcaption>
+        <span className="cap-tag">Illustration</span>
+        <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
+      </figcaption>
+    </figure>
+  );
+}
+
 function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
   event: UneEvent;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
@@ -188,6 +219,11 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
+          {/* alt="" : le titre est adjacent (h1 juste au-dessus) — un alt
+              identique ferait lire le titre deux fois aux lecteurs d'écran. */}
+          {generatedArtUrl && (
+            <HeroFigure src={generatedArtUrl} alt="" variant="mobile" />
+          )}
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
           <Byline event={event} />
           {secondEvent && (
@@ -209,21 +245,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
         )}
 
         {generatedArtUrl && (
-          <figure className="hero-figure hero-figure-inline">
-            <div className="figure-frame">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={generatedArtUrl}
-                alt={event.title}
-                className="editorial-img"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-            <figcaption>
-              <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
-            </figcaption>
-          </figure>
+          <HeroFigure src={generatedArtUrl} alt={event.title} variant="desktop" />
         )}
       </div>
     </div>
@@ -277,7 +299,14 @@ export async function UneDesUnesSection() {
   // population il parlait, alors que son voisin « Deux solitudes » compare deux
   // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
   // Le titre porte donc la même règle que les phrases de distribution.
-  const sectionTitle = "Les Unes saillantes du moment au Québec";
+  // « L'actualité saillante » plutôt que « Les Unes saillantes » (Adrien,
+  // 2026-08-10, closes #307) : au pluriel, le titre PROMETTAIT des Unes, donc
+  // plusieurs. Les jours où le module n'en affiche qu'une, Yannick lisait un
+  // bug (« on dirait qu'il manque quelque chose ») alors que c'est le résultat
+  // normal d'une journée dominée par une seule histoire. Le singulier ne promet
+  // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
+  // explicitement pourquoi il varie.
+  const sectionTitle = "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une

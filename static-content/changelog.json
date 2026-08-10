@@ -1,5 +1,17 @@
 [
   {
+    "pr": 414,
+    "date": "2026-08-10T20:00:30Z",
+    "note": "Sur téléphone, l'illustration de la Une principale apparaît maintenant juste sous le titre, au lieu d'être reléguée deux écrans plus bas.",
+    "version": "2.21.0-beta.1"
+  },
+  {
+    "pr": 443,
+    "date": "2026-08-10T19:55:22Z",
+    "note": "Ajustement technique de l'outillage de développement. Rien ne change sur le site pour les visiteuses et les visiteurs.",
+    "version": null
+  },
+  {
     "pr": 418,
     "date": "2026-08-10T15:41:24Z",
     "note": "Aucun changement visible sur le site — réorganisation interne des alertes de surveillance.",
