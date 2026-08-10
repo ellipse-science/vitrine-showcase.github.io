@@ -1418,6 +1418,12 @@
   .saillance-trend .tc-niveau.is-absent { background: transparent; color: var(--ink-softer); border: 1px solid var(--ink-softer); font-weight: 500; }
   /* Le sommet : contour plutôt qu'aplat, pour se distinguer du niveau sans
      peser autant — c'est un statut, pas une mesure. */
+  /* Pastille d'état : même contour discret que le sommet — c'est un statut, pas
+     une mesure — mais en couleur de tendance, parce qu'elle remplace la
+     variation absente et se lit avec la flèche. */
+  .saillance-trend .tc-etat {
+    border: 1px solid var(--acc); color: var(--acc); font-weight: 600;
+  }
   .saillance-trend .tc-sommet {
     border: 1px solid var(--ink); color: var(--ink);
     font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600;

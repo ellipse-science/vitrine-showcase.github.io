@@ -79,6 +79,10 @@ function capDuPoint(p: SalienceTrendPoint) {
   // lisait comme n'importe quelle autre édition. C'est pourtant la valeur qui
   // situe la nouvelle dans l'année (A8) et celle qui classera le palmarès.
   const sommet = p.isPeak ? <span className="tc-chip tc-sommet">Sommet</span> : null;
+  // Même logique qu'au repos : un point sans variation à afficher est un point
+  // d'arrivée. `isFirst` marque le premier bloc où la nouvelle a été en Une.
+  const arrivee = p.isFirst && p.delta == null
+    ? <span className="tc-chip tc-etat">Nouveau</span> : null;
   // LE TAG OFFICIEL, dans sa vraie couleur (demande d'Adrien) : la pastille du
   // survol reprend `saillance-tag` + la classe de bande, donc exactement le fond
   // et l'encre du badge au-dessus. Un aplat noir maison en faisait une troisième
@@ -97,7 +101,7 @@ function capDuPoint(p: SalienceTrendPoint) {
   // c'est pourtant l'information qu'on vient chercher en dernier.
   return (
     <span className="trend-chips">
-      {bouge}{val}{sommet}{niveau}
+      {arrivee}{bouge}{val}{sommet}{niveau}
       <span className="tc-time">{p.timeLabel}</span>
     </span>
   );
@@ -120,10 +124,24 @@ function capDuPoint(p: SalienceTrendPoint) {
 //     il n'apparaît qu'au survol du point concerné.
 // La VALEUR s'affiche même quand la nouvelle a quitté les Unes : le cumul 24 h
 // existe toujours, et c'est lui que le badge affiche.
+// Quand `delta` est nul, la bande n'a plus que la valeur à montrer et le
+// mouvement disparaît. Ça arrive dans deux cas seulement, et ce sont justement
+// les deux qui méritent d'être nommés : la nouvelle vient d'ARRIVER (premier
+// bloc, rien avant à quoi se comparer) ou elle REVIENT après une absence (le
+// bloc précédent valait zéro). Une pastille courte les dit, sans réintroduire
+// la phrase qu'on vient de retirer.
+function etatSansVariation(situation: SalienceTrend["situation"]) {
+  if (situation === "nouvelle") return "Nouveau";
+  if (situation === "retour") return "Retour";
+  return null;
+}
+
 function capAuRepos(trend: SalienceTrend) {
   const maintenant = trend.points.find((p) => p.isNow);
+  const etat = maintenant && maintenant.delta == null ? etatSansVariation(trend.situation) : null;
   return (
     <span className="trend-chips">
+      {etat ? <span className="tc-chip tc-etat">{etat}</span> : null}
       {maintenant ? (
         <>
           {/* LA VARIATION D'ABORD, collée à la flèche (Adrien) : la flèche donne

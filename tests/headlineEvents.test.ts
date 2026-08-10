@@ -219,6 +219,51 @@ describe("pctile (jauge de convergence)", () => {
   });
 });
 
+// Le libellé d'un bloc a longtemps existé en TROIS exemplaires divergents (bulle
+// ⓘ, phrase de trajectoire, survol). Il passe désormais par un helper unique :
+// ces tests le tiennent à sa règle — l'heure ET le moment de la journée, avec un
+// repère de jour dans CHAQUE case, sans exception.
+describe("momentLabel — heure et moment, jamais l'un sans l'autre", () => {
+  const { momentLabel } = __test__ as unknown as {
+    momentLabel: (dayWord: string, hour: number, avecA?: boolean) => string | null;
+  };
+  const AUJ = "aujourd\u2019hui";
+
+  it("aujourd'hui : chaque case porte son repère de jour", () => {
+    expect(momentLabel(AUJ, 4, false)).toBe("4h ce matin");
+    expect(momentLabel(AUJ, 8, false)).toBe("8h ce matin");
+    expect(momentLabel(AUJ, 16, false)).toBe("16h cet après-midi");
+    expect(momentLabel(AUJ, 20, false)).toBe("20h ce soir");
+    // « midi » et « minuit » sont déjà une heure ET un moment — mais il leur
+    // faut quand même leur jour, sinon on ne sait pas de quel midi on parle.
+    expect(momentLabel(AUJ, 12, false)).toBe("ce midi");
+    expect(momentLabel(AUJ, 0, false)).toBe("minuit cette nuit");
+  });
+
+  it("aucune case d'aujourd'hui ne reste sans repère de jour", () => {
+    for (const h of [0, 4, 8, 12, 16, 20]) {
+      expect(momentLabel(AUJ, h, false)).toMatch(/ce |cet |cette /);
+    }
+  });
+
+  it("hier : le repère de jour est porté par « hier »", () => {
+    expect(momentLabel("hier", 4, false)).toBe("4h hier matin");
+    expect(momentLabel("hier", 12, false)).toBe("hier midi");
+    expect(momentLabel("hier", 0, false)).toBe("hier minuit");
+  });
+
+  it("« à » se colle devant une heure, jamais devant un démonstratif", () => {
+    expect(momentLabel(AUJ, 4)).toBe("à 4h ce matin");
+    expect(momentLabel(AUJ, 12)).toBe("ce midi");        // et non « à ce midi »
+    // « minuit » reste une heure : « atteint à minuit cette nuit » se dit.
+    expect(momentLabel(AUJ, 0)).toBe("à minuit cette nuit");
+  });
+
+  it("une date lointaine passe telle quelle", () => {
+    expect(momentLabel("le 18 juillet", 16)).toBe("le 18 juillet");
+  });
+});
+
 describe("rocScore", () => {
   it("lit la colonne score_roc publiée", () => {
     expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);

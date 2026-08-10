@@ -1535,11 +1535,15 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // et celui de la phrase de trajectoire — et ils ont divergé. Toute la chaîne
 // passe désormais par ici.
 //
-// Exceptions assumées : « minuit » et « midi » SONT déjà une heure et un
-// moment ; « à minuit cette nuit » ou « à midi ce midi » seraient des
-// pléonasmes. Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
+// Une seule exception : « midi » EST déjà une heure et un moment, « à midi ce
+// midi » serait un pléonasme — mais il lui faut quand même son repère de jour,
+// d'où « ce midi » / « hier midi ». « minuit » avait le même défaut et le même
+// remède : « minuit cette nuit », un peu redondant, mais aucune case de la
+// table ne reste alors sans jour. Le bloc de minuit est rattaché au jour qui
+// FINIT (c'est le 19-23 publié à 00 h), donc « cette nuit » est exact.
+// Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
 const MOMENT_AUJ: Record<number, string> = {
-  0: "minuit", 4: "4h ce matin", 8: "8h ce matin",
+  0: "minuit cette nuit", 4: "4h ce matin", 8: "8h ce matin",
   12: "ce midi", 16: "16h cet après-midi", 20: "20h ce soir",
 };
 const MOMENT_HIER: Record<number, string> = {
@@ -2519,6 +2523,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  momentLabel,
   ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,
