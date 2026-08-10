@@ -91,7 +91,7 @@ Treat these as **distinct modules**. A right-click report inside a block must be
 
 | Module | Block | GitHub label |
 |--------|-------|--------------|
-| Module 1 — Une des unes | primary/secondary front-page stories | `module-1-unes-des-unes` |
+| Module 1 — Une des Unes | primary/secondary front-page stories | `module-1-unes-des-unes` |
 | Module 2 — Deux solitudes | divergence block, QC/Canada symbols + three bars | `module-2-solitudes` |
 | Module 3 — Partis et couverture | coverage & tone by party, period tabs | `module-3-partis-couverture` |
 | Module 4 — Enjeux saillants | issue treemap, day/week/month tabs | `module-4-enjeux-saillants` |

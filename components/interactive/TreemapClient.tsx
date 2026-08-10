@@ -391,7 +391,7 @@ function IssuesRankMobile({
               {expanded && (
                 <div className="irm-news irm-inline-news">
                   <div className="irm-news-heading">
-                    <span>À la une</span>
+                    <span>À la Une</span>
                     <strong>{selected.issueFr}</strong>
                   </div>
                   {focusArticles.length > 0 ? focusArticles.map((article, index) => (
@@ -585,7 +585,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
         <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "0.5px solid var(--rule)", display: "flex", gap: "34px", alignItems: "flex-start", flexWrap: "wrap", minHeight: "120px" }}>
           <div style={{ flex: "0 0 auto", maxWidth: "220px" }}>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--cordovan)" }}>
-              À la une
+              À la Une
             </div>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: "13px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", borderBottom: `2px solid ${focus.color}`, paddingBottom: "5px", marginTop: "10px", display: "inline-block" }}>
               {focus.issueFr}
