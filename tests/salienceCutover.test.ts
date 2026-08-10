@@ -219,10 +219,30 @@ describe("centile réel de l'infobulle", () => {
     expect(haut - bas).toBeGreaterThan(10);
   });
   it("le cadrage bascule à la médiane pour garder un chiffre parlant", () => {
-    expect(hintFromCentile(T.tresEleve, T, "des médias québécois"))
-      .toBe("Environ 80 % des nouvelles à la Une des médias québécois sont moins saillantes que celle-ci.");
-    expect(hintFromCentile(T.faible, T, "des médias québécois"))
-      .toBe("Environ 95 % des nouvelles à la Une des médias québécois sont plus saillantes que celle-ci.");
+    expect(hintFromCentile(T.tresEleve, T, "québécoises"))
+      .toBe("Sur les 24 dernières heures, elle dépasse environ 80 % des Unes québécoises de l’année.");
+    expect(hintFromCentile(T.faible, T, "québécoises"))
+      .toBe("Sur les 24 dernières heures, environ 95 % des Unes québécoises de l’année sont plus saillantes.");
+  });
+  // A9 (#430) — GARDE DE COHÉRENCE. Toute phrase de distribution doit nommer ses
+  // TROIS composantes : la portée (sur quoi on situe), la population, la
+  // période. Avant, chaque module n'en nommait que deux — et pas les mêmes —,
+  // si bien que deux chiffres mesurés contre des règles différentes se lisaient
+  // comme une contradiction. Ce test tient les DEUX familles de phrases.
+  it("toute phrase de distribution nomme sa portée, sa population et sa période", () => {
+    const { HINT_BY_RANK } = __test__ as unknown as {
+      HINT_BY_RANK: Record<number, (pop: string) => string>;
+    };
+    const phrases = [
+      ...[0, T.faible, T.moyenne, T.eleve, T.tresEleve, T.extreme, T.extreme * 10]
+        .flatMap((v) => ["québécoises", "canadiennes"].map((p) => hintFromCentile(v, T, p))),
+      ...[1, 2, 3, 4, 5, 6].flatMap((r) => ["québécoises", "canadiennes"].map((p) => HINT_BY_RANK[r](p))),
+    ];
+    for (const ph of phrases) {
+      expect(ph, `portée absente : ${ph}`).toContain("24 dernières heures");
+      expect(ph, `période absente : ${ph}`).toContain("de l’année");
+      expect(ph, `population absente : ${ph}`).toMatch(/québécoises|canadiennes/);
+    }
   });
   it("borne à [1, 99] — « moins saillante que 100 % » serait faux, elle fait partie du lot", () => {
     expect(hintFromCentile(T.extreme * 10, T, "p")).toContain("99 %");
