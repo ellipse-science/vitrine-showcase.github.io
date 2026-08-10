@@ -800,9 +800,14 @@
        Le fond et le retrait sont ceux de `.section-label`, la bande que le site
        emploie déjà six fois par page : le bandeau se lit alors comme un élément
        du système, pas comme une pièce rapportée au-dessus de la page. */
-    border-top: 1px solid var(--rule);
-    border-bottom: 1px solid var(--rule);
-    background: var(--paper-deep);
+    /* AVERTISSEMENT, pas décor (demande d'Adrien) : le rouge doit se voir sans
+       revenir à la barre latérale épaisse écartée plus tôt. Il passe donc par
+       les filets et par un lavis très dilué du cordovan sur le fond de bande —
+       assez pour que l'œil sache qu'il n'est pas dans l'actualité du moment,
+       trop peu pour concurrencer le contenu qui suit. */
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, var(--paper-deep));
     padding: 12px 30px;
     /* Une seule rangée : le texte à gauche, la sortie à droite, sur la ligne de
        base du premier mot. Empilés, les trois éléments laissaient les deux
@@ -836,14 +841,22 @@
     gap: 10px;
     margin: 0;
   }
+  /* Pastille pleine, comme les étiquettes de saillance : c'est l'idiome que le
+     site emploie déjà pour marquer un état, et il porte le rouge bien mieux
+     qu'un aplat de fond. En petites capitales cordovan sur le fond de page, la
+     mention se lisait comme une légende parmi d'autres. */
   .archive-notice-tag {
+    display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--cordovan);
+    background: var(--cordovan);
+    color: var(--paper);
     font-weight: 600;
     white-space: nowrap;
+    padding: 4px 9px;
+    line-height: 1.2;
   }
   .archive-notice-body { font-size: 14px; color: var(--ink-soft); }
   .archive-notice-aside {
