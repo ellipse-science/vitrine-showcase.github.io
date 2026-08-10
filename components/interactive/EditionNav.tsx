@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { editionLabel, editionSlot } from "@/lib/editions";
-import { editionHref } from "@/lib/editionLinks";
+import { editionHref, editionRoute } from "@/lib/editionLinks";
 import type { EditionRef } from "@/lib/data/headlineEvents";
 
 // Bandeau d'édition : compte à rebours + NAVIGATION vers les éditions passées
@@ -146,8 +146,10 @@ export function EditionNav({ editions, currentKey }: {
 
     const nettoyages: Array<() => void> = [];
     for (const el of liens) {
-      const href = el.getAttribute("href")!;
-      router.prefetch(href);
+      // L'attribut garde le basePath (c'est une vraie adresse) ; le routeur
+      // reçoit la route nue, sinon le préfixe est compté deux fois.
+      const route = editionRoute(el.getAttribute("href")!);
+      router.prefetch(route);
 
       const surClic = (ev: MouseEvent) => {
         // On ne vole PAS les gestes qui veulent ouvrir ailleurs : clic-milieu,
@@ -155,9 +157,9 @@ export function EditionNav({ editions, currentKey }: {
         if (ev.defaultPrevented || ev.button !== 0) return;
         if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
         ev.preventDefault();
-        router.push(href);
+        router.push(route);
       };
-      const surSurvol = () => router.prefetch(href);
+      const surSurvol = () => router.prefetch(route);
 
       el.addEventListener("click", surClic);
       el.addEventListener("pointerenter", surSurvol);
