@@ -36,7 +36,7 @@ Trois choix de conception valent d'être connus :
 
 - **Les sources, pas `out/`.** Les manchettes des médias ne sont pas de notre plume : elles se normalisent au rendu, pas à la source. Les faire échouer une PR n'aurait aucun sens.
 - **Analyse par spans, pas par lignes.** Seuls les littéraux de chaîne et le texte JSX sont examinés, et le contenu des interpolations `${…}` est neutralisé — sinon chaque ternaire `cond ? a : b` et chaque annotation TypeScript déclencherait la règle de l'insécable.
-- **Cliquet sur `scripts/garde_redaction.baseline.json`.** Ce fichier fige la dette du 2026-08-10 (79 violations). Le check échoue sur toute violation **nouvelle**, et aussi quand une entrée de dette ne correspond plus à rien — pour que la dette ne puisse que rétrécir. Après une correction : `npm run garde-redaction -- --ecrire-baseline`.
+- **Cliquet sur `scripts/garde_redaction.baseline.json`.** Ce fichier fige la dette du 2026-08-10 (84 violations distinctes après le passage sur «&nbsp;Une&nbsp;», dont 22 espaces ordinaires avant «&nbsp;%&nbsp;» — suivi&nbsp;: #446). Le check échoue sur toute violation **nouvelle**, et aussi quand une entrée de dette ne correspond plus à rien — pour que la dette ne puisse que rétrécir. Après une correction : `npm run garde-redaction -- --ecrire-baseline`.
 
 Dérogation légitime (séparateur de `<title>`, tiret employé comme glyphe de donnée absente) : écrire `garde-redaction: ok (raison)` en commentaire, sur la ligne ou juste au-dessus.
 
