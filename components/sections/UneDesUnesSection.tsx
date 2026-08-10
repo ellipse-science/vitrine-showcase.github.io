@@ -11,11 +11,6 @@ import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { HeadlineLink } from "@/components/interactive/HeadlineLink";
 
-// § 04 de la méthodologie : c'est la section qui donne la règle exacte du
-// nombre de manchettes affichées (« Le module présente donc de une à trois
-// manchettes, selon ce que l'actualité offre réellement »).
-const METHO_HREF = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#une-des-unes`;
-
 // Titre cliquable d'une Une : ouvre un article au hasard parmi les médias QC
 // qui la couvrent (chance égale). Repli sur l'article représentatif si besoin.
 // Rendu en texte simple si aucun lien connu.
@@ -287,8 +282,8 @@ export async function UneDesUnesSection() {
   // plusieurs. Les jours où le module n'en affiche qu'une, Yannick lisait un
   // bug (« on dirait qu'il manque quelque chose ») alors que c'est le résultat
   // normal d'une journée dominée par une seule histoire. Le singulier ne promet
-  // plus de compte, et la note de bas de module dit explicitement pourquoi il
-  // varie.
+  // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
+  // explicitement pourquoi il varie.
   const sectionTitle = "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
@@ -336,20 +331,7 @@ export async function UneDesUnesSection() {
             <SideUne event={sideRight} />
           </section>
         )}
-        {/* Note de compte (closes #307) : une seule manchette se lisait comme
-            un bug (« on comprend pas que c'est LA nouvelle du moment, et que
-            rien d'autre n'est aussi saillant »). La phrase le dit là où le
-            doute naît, au bas du module, et renvoie au § 04 de la métho pour la
-            règle exacte. Elle ne promet pas un compte : elle explique pourquoi
-            il varie. */}
-        <div className="module-footer">
-          <p className="module-note">
-            De une à trois nouvelles, selon l&apos;actualité&nbsp;: seules celles qui
-            se détachent nettement des autres figurent ici.{" "}
-            <a href={METHO_HREF}>En savoir plus&nbsp;→</a>
-          </p>
-          <div className="module-last-updated">{data.lastUpdated}</div>
-        </div>
+        <div className="module-last-updated">{data.lastUpdated}</div>
     </div>
   );
 }
