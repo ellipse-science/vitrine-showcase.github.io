@@ -1,5 +1,11 @@
 [
   {
+    "pr": 418,
+    "date": "2026-08-10T15:41:24Z",
+    "note": "Aucun changement visible sur le site — réorganisation interne des alertes de surveillance.",
+    "version": null
+  },
+  {
     "pr": 435,
     "date": "2026-08-10T15:39:46Z",
     "note": "feat(saillance) : A8 et B7, et la bande de trajectoire passe en pastilles",
