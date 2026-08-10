@@ -1600,6 +1600,14 @@
   .saillance-trend .trend-hit { fill: transparent; stroke: none; cursor: pointer; }
   .saillance-trend .trend-hit:focus { outline: none; }
   .saillance-trend .trend-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 50%; }
+  /* Point cliquable (#434) : le focus passe sur l'ancre, qui porte seule le
+     parcours clavier — sinon chaque point offrait deux arrêts de tabulation. */
+  .saillance-trend .trend-hit-link { cursor: pointer; outline: none; }
+  .saillance-trend .trend-hit-link:focus-visible .trend-hit {
+    outline: 2px solid var(--ink);
+    outline-offset: 1px;
+    border-radius: 50%;
+  }
 
   /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la

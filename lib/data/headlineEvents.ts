@@ -1508,6 +1508,9 @@ export type SalienceTrendPoint = {
   isPeak: boolean;     // bloc du sommet
   isNow: boolean;      // bloc courant
   isAbsent: boolean;   // la nouvelle n'était PAS à la Une à ce bloc (≠ faible)
+  /** Clé du bloc (`2026-08-10T07`) — CE point EST une édition. C'est ce qui
+   *  permet de cliquer un creux ou un sommet pour aller le voir (#434). */
+  blockUtc: string;
 };
 export type SalienceTrend = {
   dir: "up" | "down" | "flat";
@@ -1788,6 +1791,7 @@ function buildSalienceTrend(
       deltaDepuis: i === 0 || niveaux[i - 1] <= 0 ? null : heure(i - 1, false),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
       isAbsent: !p.present,
+      blockUtc: p.blockUtc,
     };
   });
   return { dir, capLabel, deltaPct, situation, points };

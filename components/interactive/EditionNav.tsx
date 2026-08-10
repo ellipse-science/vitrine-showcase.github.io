@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { editionLabel, editionSlot } from "@/lib/editions";
+import { editionHref } from "@/lib/editionLinks";
 import type { EditionRef } from "@/lib/data/headlineEvents";
 
 // Bandeau d'édition : compte à rebours + NAVIGATION vers les éditions passées
@@ -18,14 +20,6 @@ import type { EditionRef } from "@/lib/data/headlineEvents";
 // posé ici.
 
 const UPDATE_HOURS = [0, 4, 8, 12, 16, 20];
-
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-/** L'accueil EST l'édition courante — et la seule à porter illustration et
- *  musique. On y renvoie plutôt que vers sa copie archivée. */
-function hrefFor(edition: EditionRef, isCurrent: boolean): string {
-  return isCurrent ? `${basePath}/` : `${basePath}/edition/${edition.key}/`;
-}
 
 // Heure de MONTRÉAL, pas celle du navigateur : les blocs d'édition et l'horaire
 // de rafraîchissement sont définis en heure de Montréal (cf. lib/editions.ts,
@@ -48,6 +42,8 @@ export function EditionNav({ editions, currentKey }: {
   /** Édition affichée par la page. Absent sur l'accueil = édition courante. */
   currentKey?: string;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     const isArchive = Boolean(currentKey);
     const index = currentKey ? editions.findIndex((e) => e.key === currentKey) : 0;
@@ -90,7 +86,7 @@ export function EditionNav({ editions, currentKey }: {
       el.classList.toggle("showing", isDisplayed);
 
       if (target) {
-        el.href = hrefFor(target, target.key === editions[0]?.key);
+        el.href = editionHref(target.key, target.key === editions[0]?.key);
         el.removeAttribute("aria-disabled");
         el.title = isDisplayed
           ? `${target.label} — édition affichée`
@@ -111,7 +107,7 @@ export function EditionNav({ editions, currentKey }: {
       const el = document.querySelector<HTMLAnchorElement>(selector);
       if (!el) return;
       if (target) {
-        el.href = hrefFor(target, target.key === editions[0]?.key);
+        el.href = editionHref(target.key, target.key === editions[0]?.key);
         el.hidden = false;
         el.title = `${verb} : ${target.label.toLowerCase()} du ${target.dateLabel.toLowerCase()}`;
         el.removeAttribute("aria-disabled");
@@ -129,6 +125,47 @@ export function EditionNav({ editions, currentKey }: {
     };
     wireArrow(".edition-arrow-prev", older, "Édition précédente");
     wireArrow(".edition-arrow-next", newer, "Édition suivante");
+
+    // ── Changer d'édition sans recharger la page ────────────────────────────
+    //
+    // Les liens restent de VRAIS <a href> : clic-milieu, « ouvrir dans un
+    // nouvel onglet », partage et robots continuent de fonctionner, et la
+    // navigation marche même si le JS ne charge pas. On intercepte seulement le
+    // clic simple pour le confier au routeur — le document n'est plus rechargé,
+    // le CSS et le JS partagés (992 Ko) restent en place, seul le contenu des
+    // modules est refait.
+    //
+    // Le préchargement fait le reste : au survol comme au montage, on demande
+    // au routeur d'aller chercher les éditions atteignables. Quand le clic
+    // arrive, la page est déjà en cache — c'est ce qui rend les flèches
+    // instantanées plutôt que « rapides ».
+    const liens = [
+      ...icons,
+      ...Array.from(document.querySelectorAll<HTMLAnchorElement>(".edition-arrow")),
+    ].filter((el) => el.getAttribute("href"));
+
+    const nettoyages: Array<() => void> = [];
+    for (const el of liens) {
+      const href = el.getAttribute("href")!;
+      router.prefetch(href);
+
+      const surClic = (ev: MouseEvent) => {
+        // On ne vole PAS les gestes qui veulent ouvrir ailleurs : clic-milieu,
+        // Cmd/Ctrl/Maj-clic. Les détourner casserait une attente universelle.
+        if (ev.defaultPrevented || ev.button !== 0) return;
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+        ev.preventDefault();
+        router.push(href);
+      };
+      const surSurvol = () => router.prefetch(href);
+
+      el.addEventListener("click", surClic);
+      el.addEventListener("pointerenter", surSurvol);
+      nettoyages.push(() => {
+        el.removeEventListener("click", surClic);
+        el.removeEventListener("pointerenter", surSurvol);
+      });
+    }
 
     // ── Horloge (comportement d'origine, inchangé sur l'accueil) ────────────
     function tick() {
@@ -165,8 +202,14 @@ export function EditionNav({ editions, currentKey }: {
 
     tick();
     const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [editions, currentKey]);
+    return () => {
+      window.clearInterval(id);
+      // Les écouteurs vivent sur des nœuds du markup brut, que React ne
+      // démonte pas : sans ce retrait, chaque navigation côté client en
+      // empilerait une couche de plus sur les mêmes icônes.
+      for (const nettoyer of nettoyages) nettoyer();
+    };
+  }, [editions, currentKey, router]);
 
   return null;
 }
