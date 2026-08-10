@@ -1,5 +1,11 @@
 [
   {
+    "pr": 387,
+    "date": "2026-08-10T21:07:47Z",
+    "note": "La jauge du ton en chambre distingue maintenant les partis les uns des autres, au lieu de les afficher tous à la même extrémité.",
+    "version": "2.21.0-beta.4"
+  },
+  {
     "pr": 420,
     "date": "2026-08-10T21:03:21Z",
     "note": "docs(métho) : consigner l'exclusion des pages permanentes (§10, limite 9)",
