@@ -3677,6 +3677,38 @@
     align-items: stretch;
     gap: 10px;
   }
+  /* Note de bas de module (#307) : explique que le nombre de manchettes varie.
+     Elle se pose À GAUCHE, en regard de « Dernière mise à jour » qui tient la
+     droite sur la même ligne visuelle — d'où le flex et non deux blocs
+     empilés. En serif comme le corps du module (c'est de la prose, pas un
+     indicateur technique), et en encre douce pour rester sous les manchettes
+     dans la hiérarchie. */
+  .module-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px 24px;
+  }
+  /* Dans le pied, « Dernière mise à jour » ne pose plus sa propre marge : elle
+     viendrait s'ajouter à celle du pied et décrocher les deux lignes. */
+  .module-footer .module-last-updated { margin-top: 0; }
+  .module-note {
+    max-width: 62ch;
+    margin-top: 18px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-softer);
+  }
+  .module-note a {
+    color: var(--ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+  }
+  .module-note a:hover { color: var(--ink); }
+
   /* Indicateur uniforme « Dernière mise à jour : … » — bas-droite de CHAQUE
      module, branché sur le timestamp de sa table (cf. lib/dates.ts). Même
      police / taille / couleur partout ; il gèle si le pipeline plante. */
