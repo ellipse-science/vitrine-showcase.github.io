@@ -1391,9 +1391,6 @@
      variation colorée par son sens. */
   .saillance-trend .trend-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
   .saillance-trend .tc-time { color: var(--ink-softer); font-size: 0.82em; white-space: nowrap; }
-  /* Le mouvement garde la couleur de la tendance : c'est LUI que la flèche
-     juste à sa gauche illustre. */
-  .saillance-trend .tc-mouvement { color: var(--acc); }
   .saillance-trend .tc-chip {
     display: inline-block; padding: 0.08em 0.42em; border-radius: 2px;
     font-size: 0.78em; line-height: 1.5; white-space: nowrap;
@@ -1441,9 +1438,6 @@
   .saillance-trend .tc-delta.is-down { color: #A85A52; }
   .saillance-trend .tc-since { font-weight: 400; opacity: 0.7; }
 
-  /* Le SOMMET se nomme au survol : petites capitales, couleur d'encre, pour se
-     distinguer du niveau (en gras) sans lui voler la vedette. */
-  .saillance-trend .trend-sommet { font-variant: small-caps; letter-spacing: 0.04em; color: var(--ink); font-weight: 600; }
   .saillance-trend .trend-hit { fill: transparent; stroke: none; cursor: pointer; }
   .saillance-trend .trend-hit:focus { outline: none; }
   .saillance-trend .trend-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 50%; }

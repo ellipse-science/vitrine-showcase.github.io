@@ -87,13 +87,13 @@ function capDuPoint(p: SalienceTrendPoint) {
   // survol reprend `saillance-tag` + la classe de bande, donc exactement le fond
   // et l'encre du badge au-dessus. Un aplat noir maison en faisait une troisième
   // grammaire de couleur dans une bande qui n'en a qu'une.
-  const CLS_BANDE: Record<number, string> = {
-    1: "s-tres-faible", 2: "s-faible", 3: "s-moyenne",
-    4: "s-eleve", 5: "s-tres-eleve", 6: "s-extreme",
-  };
+  //
+  // La classe vient du POINT, pas d'une table recopiée ici (relevé en review) :
+  // `TIER_BY_RANK` reste la source unique, et une copie locale aurait divergé au
+  // premier renommage de bande.
   const niveau = p.isAbsent
     ? <span className="tc-chip tc-niveau is-absent">Hors du radar</span>
-    : <span className={`tc-chip tc-niveau saillance-tag ${CLS_BANDE[Math.max(1, Math.min(6, p.rank))]}`}>{p.level}</span>;
+    : <span className={`tc-chip tc-niveau saillance-tag ${p.cls}`}>{p.level}</span>;
   // ORDRE (Adrien), le même qu'au repos : la VARIATION collée à la flèche —
   // sens et ampleur d'un seul mouvement de l'oeil — puis la valeur, puis les
   // statuts (sommet, niveau), et la DATE À LA TOUTE FIN. Le moment ouvrait la

@@ -1464,6 +1464,10 @@ export type SalienceTrendPoint = {
   /** Palier de saillance du bloc, 1 (Très faible) → 6 (Exceptionnelle) ; 0 si la
    *  nouvelle n'était pas à la Une. Pilote le DIAMÈTRE du point sur la courbe. */
   rank: number;
+  /** Classe CSS de la bande (`s-eleve`…), tirée de `TIER_BY_RANK` — source
+   *  unique, pour que la pastille du survol porte exactement la couleur du
+   *  badge sans qu'une table parallèle puisse dériver. */
+  cls: string;
   score: number;       // score_qc du bloc, arrondi
   /** Attention cumulée 24 h à cette édition — CE QUE TRACE LA COURBE depuis
    *  vitrine#430 : la même grandeur que le badge, pour que la hauteur du point
@@ -1547,7 +1551,7 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // 2026-08-09). L'heure seule oblige le lecteur à deviner la demi-journée ; le
 // moment seul perd la précision de la grille d'éditions. Les deux ensemble
 // répondent aussi à l'objection d'origine contre « depuis cet après-midi »
-// (plus vague que « depuis 16h ») : on ne remplace pas l'heure, on l'complète.
+// (plus vague que « depuis 16h ») : on ne remplace pas l'heure, on la complète.
 //
 // UN SEUL endroit : ce libellé vivait en DEUX exemplaires — celui de la bulle ⓘ
 // et celui de la phrase de trajectoire — et ils ont divergé. Toute la chaîne
@@ -1757,6 +1761,10 @@ function buildSalienceTrend(
       // Radar+ dit l'absence de couverture sans nier que la carte EST une Une.
       level: tier ? tier.label : "Hors du radar",
       rank: tier ? (badgeRank ?? (tier as { rank?: number }).rank ?? 0) : 0,
+      // La CLASSE de bande vient d'ici, pas d'une table recopiée côté composant
+      // (relevé en review) : `TIER_BY_RANK` est la source unique, et une table
+      // parallèle dans le JSX aurait divergé au premier renommage de bande.
+      cls: tier ? tier.cls : "",
       score: Math.round(p.qc),
       share: Math.round(p.share),
       // Ce que la courbe trace désormais (cf. la note sur `valeur` plus haut).
