@@ -1,10 +1,10 @@
 {
-  "event_id": "20260809T150000Z-evt-negociations-commerciales-etats-unis-entente-43c1103d",
-  "storyline_id": "story-justin-trudeau-241bbb72",
-  "title": "Ottawa face à Washington : tensions sur les droits de douane",
-  "main_issue": "international_affairs_and_defense",
-  "date_utc": "2026-08-09",
-  "time_interval_utc": "15-19",
-  "sum_qc": 59.296,
-  "peak_qc": 61.801
+  "event_id": "20260810T070000Z-evt-wildfire-shows-little-growth-overnight-2d37a7a2",
+  "storyline_id": "story-abbotsford-1d5d99ad",
+  "title": "Incendie à Summerland : décès d'une femme de 80 ans confirmé",
+  "main_issue": "environment_and_energy",
+  "date_utc": "2026-08-10",
+  "time_interval_utc": "07-11",
+  "sum_qc": 68.851,
+  "peak_qc": 36.92
 }
