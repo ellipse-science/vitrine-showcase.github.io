@@ -26,6 +26,22 @@ Il s'applique à tout agent travaillant dans le repo (après acceptation des ré
 
 Complément préventif : `"includeCoAuthoredBy": false` dans `.claude/settings.json` empêche Claude Code de générer le trailer de paternité. La détection se fait par adresse courriel, pas par prénom.
 
+## Garde rédaction / typographie (sur chaque PR)
+
+`.github/workflows/garde-redaction.yml` exécute `scripts/garde_redaction.mjs`, qui applique la règle dure #7 à ce que **nous** écrivons : littéraux de chaîne et nœuds de texte JSX de `app/`, `components/`, `lib/`, plus le HTML de `static-content/`.
+
+Six règles, toutes tirées du guide Notion (miroir : [`redaction-editoriale`](../../.claude/skills/redaction-editoriale/SKILL.md)) : heure collée (`16h`, jamais `16 h`), pas de tiret cadratin, insécable avant `:` et `%` et dans les guillemets français, « Une » toujours en majuscule.
+
+Trois choix de conception valent d'être connus :
+
+- **Les sources, pas `out/`.** Les manchettes des médias ne sont pas de notre plume : elles se normalisent au rendu, pas à la source. Les faire échouer une PR n'aurait aucun sens.
+- **Analyse par spans, pas par lignes.** Seuls les littéraux de chaîne et le texte JSX sont examinés, et le contenu des interpolations `${…}` est neutralisé — sinon chaque ternaire `cond ? a : b` et chaque annotation TypeScript déclencherait la règle de l'insécable.
+- **Cliquet sur `scripts/garde_redaction.baseline.json`.** Ce fichier fige la dette du 2026-08-10 (92 violations distinctes, dont 22 espaces ordinaires avant «&nbsp;%&nbsp;»). Le check échoue sur toute violation **nouvelle**, et aussi quand une entrée de dette ne correspond plus à rien — pour que la dette ne puisse que rétrécir. Après une correction : `npm run garde-redaction -- --ecrire-baseline`.
+
+Dérogation légitime (séparateur de `<title>`, tiret employé comme glyphe de donnée absente) : écrire `garde-redaction: ok (raison)` en commentaire, sur la ligne ou juste au-dessus.
+
+**Trou connu** : les notes de `/journal` viennent de la section « Note de journal » du corps des PR et sont ajoutées à `static-content/changelog.json` par `version-bump.yml` **après** le merge. Le check ne peut donc rien y empêcher, et le fichier est exclu de l'analyse.
+
 ## Auto-merge Dependabot
 
 `.github/workflows/auto-merge-dependabot.yml` approuve puis active l'auto-merge (`gh pr merge --auto`) des PRs Dependabot. **L'auto-merge ne fusionne que si la protection de branche de `main` exige le check CI en succès.**
