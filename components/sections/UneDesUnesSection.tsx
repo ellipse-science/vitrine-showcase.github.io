@@ -299,7 +299,14 @@ export async function UneDesUnesSection() {
   // population il parlait, alors que son voisin « Deux solitudes » compare deux
   // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
   // Le titre porte donc la même règle que les phrases de distribution.
-  const sectionTitle = "Les Unes saillantes du moment au Québec";
+  // « L'actualité saillante » plutôt que « Les Unes saillantes » (Adrien,
+  // 2026-08-10, closes #307) : au pluriel, le titre PROMETTAIT des Unes, donc
+  // plusieurs. Les jours où le module n'en affiche qu'une, Yannick lisait un
+  // bug (« on dirait qu'il manque quelque chose ») alors que c'est le résultat
+  // normal d'une journée dominée par une seule histoire. Le singulier ne promet
+  // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
+  // explicitement pourquoi il varie.
+  const sectionTitle = "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une

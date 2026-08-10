@@ -1596,6 +1596,15 @@
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
 
+  /* Phrase ajoutée SOUS le lien de la bulle (#307). Le lien est un
+     `inline-block` : sans ce bloc, la phrase se collerait à sa droite, sur la
+     même ligne. Elle hérite de l'italique et de la taille de la bulle, donc
+     elle se lit comme la suite du texte et non comme une légende à part. */
+  .saillance-info-bubble .tip-note {
+    display: block;
+    margin-top: 8px;
+  }
+
   /* Fiche de la bulle ⓘ (#274) : mini-distribution + micro-métho + lien. */
   .saillance-info-card { display: block; }
   /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
