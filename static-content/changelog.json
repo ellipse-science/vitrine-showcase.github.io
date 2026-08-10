@@ -1,5 +1,11 @@
 [
   {
+    "pr": 444,
+    "date": "2026-08-10T20:03:22Z",
+    "note": "Le premier module s'intitule désormais « L'actualité saillante du moment au Québec », et son infobulle explique que le nombre de nouvelles affichées, de une à trois, dépend de l'actualité du moment.",
+    "version": "2.21.0-beta.2"
+  },
+  {
     "pr": 414,
     "date": "2026-08-10T20:00:30Z",
     "note": "Sur téléphone, l'illustration de la Une principale apparaît maintenant juste sous le titre, au lieu d'être reléguée deux écrans plus bas.",
