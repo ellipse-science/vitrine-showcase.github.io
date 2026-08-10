@@ -1,10 +1,10 @@
 {
-  "event_id": "20260808T110000Z-evt-teles-ont-disparu-certains-hopitaux-38110a39",
-  "storyline_id": "story-televisions-068a0fa7",
-  "title": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
-  "main_issue": "health_and_social_services",
-  "date_utc": "2026-08-08",
+  "event_id": "20260810T110000Z-evt-evacuees-slowly-learn-losses-wildfire-75f4db59",
+  "storyline_id": "story-abbotsford-1d5d99ad",
+  "title": "Incendies en C.-B. : une octogénaire périt en fuyant les flammes",
+  "main_issue": "environment_and_energy",
+  "date_utc": "2026-08-10",
   "time_interval_utc": "11-15",
-  "sum_qc": 43.3,
-  "peak_qc": 21.554
+  "sum_qc": 77.121,
+  "peak_qc": 36.92
 }
