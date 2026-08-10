@@ -51,8 +51,9 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
           Saillance {event.saillanceLabel}
         </span>
         <InfoTip size="sm" label="Détail du niveau de saillance">
-          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel}
+          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} centile={event.saillanceCentile}
             peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
+            sommetCentile={event.sommetCentile} sommetTier={event.sommetTier}
             thresholds={event.salThresholds}
             qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
             since={event.saillantSince} />
@@ -60,6 +61,63 @@ function SaillanceHead({ event, className }: { event: UneEvent; className: strin
         {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} />}
       </span>
     </div>
+  );
+}
+
+// Résonance cross-région (#230) : « le même sujet est aussi en Une ailleurs ».
+// Deux libellés SÉPARÉS — canadienne / américaine — et jamais un « Résonance
+// internationale » unique : c'est précisément la distinction QC/CAN ↔ US qui
+// était demandée, et la fondre reviendrait à qualifier d'internationale une
+// fusillade à Toronto. Une Une peut porter les deux tags.
+//
+// Posée SOUS la byline (« À la Une aujourd'hui sur … »), pas dans l'en-tête :
+// c'est la même question que la byline — qui a mis ce sujet en Une — posée
+// ailleurs, et les deux se lisent d'affilée. L'en-tête, lui, reste la suite
+// arbitrée rubrique → badge → trajectoire (#286). Rien n'est rendu sans
+// résonance : l'absence de tag dit déjà « sujet d'ici seulement ».
+//
+// Chaque tag porte SON ⓘ : la bulle est propre à une région (part d'attention
+// + médias de cette région-là), une bulle commune mélangerait deux mesures.
+function ResonanceRow({ event }: { event: UneEvent }) {
+  const { resonanceCan: can, resonanceUs: us } = event;
+  if (!can && !us) return null;
+  return (
+    <p className="resonance-row">
+      {can && <ResonanceTag label="Résonance canadienne" region="canadiennes-anglaises" echo={can} />}
+      {us && <ResonanceTag label="Résonance américaine" region="américaines" echo={us} />}
+    </p>
+  );
+}
+
+function ResonanceTag({ label, region, echo }: {
+  label: string;
+  /** Accord au féminin pluriel : « … des Unes canadiennes-anglaises ». */
+  region: string;
+  echo: NonNullable<UneEvent["resonanceCan"]>;
+}) {
+  return (
+    <span className="resonance-item">
+      <span className="resonance-tag">{label}</span>
+      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
+        <span className="resonance-card">
+          {/* La fenêtre était TUE (demande d'Adrien, 2026-08-09) : « 61 % de
+              l'attention des Unes canadiennes-anglaises » se lisait comme un
+              état permanent, alors que la part est calculée sur la fenêtre
+              glissante de 24 h pondérée par la récence — la même que le
+              classement, le badge et les axes du radar (`sumRoc / totalRoc`,
+              issus de storiesFrom24h). Un pourcentage sans période n'est pas
+              interprétable. */}
+          <span className="resonance-card-share">
+            {echo.share}&nbsp;% de l&apos;attention des Unes {region} sur les 24 dernières heures
+          </span>
+          {echo.media.length > 0 && (
+            <span className="resonance-card-media">
+              <MediaLinkList media={echo.media} />
+            </span>
+          )}
+        </span>
+      </InfoTip>
+    </span>
   );
 }
 
@@ -80,22 +138,60 @@ function MediaLinkList({ media }: { media: { name: string; url: string | null }[
   );
 }
 
-function Byline({ mediaToday }: {
-  mediaToday: { name: string; url: string | null }[];
-}) {
+function Byline({ event }: { event: UneEvent }) {
   // Une seule ligne de présence : « À la Une aujourd'hui sur » = union des
   // médias QC ayant mis l'histoire en Une sur la fenêtre 24h (#213/#215/#51).
   // Les liens pointent vers le DERNIER article mis en Une par chaque média,
   // même s'il vient d'un bloc précédent (#129). (« Absent de la Une sur »
   // retiré 2026-07-20 — décision Adrien, peu utile.)
-  if (mediaToday.length === 0) return null;
+  //
+  // La résonance (#230) vient juste dessous : même question — qui a mis ce
+  // sujet en Une — posée ailleurs qu'ici. Le bloc s'affiche donc dès que l'une
+  // OU l'autre existe : une Une sans média QC connu mais reprise au Canada
+  // anglais garde sa ligne de résonance.
+  const { mediaToday, resonanceCan, resonanceUs } = event;
+  if (mediaToday.length === 0 && !resonanceCan && !resonanceUs) return null;
   return (
     <div className="byline-block">
-      <p className="byline-line">
-        <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
-        <MediaLinkList media={mediaToday} />
-      </p>
+      {mediaToday.length > 0 && (
+        <p className="byline-line">
+          <span className="byline-label">À la Une aujourd&apos;hui sur</span>{" "}
+          <MediaLinkList media={mediaToday} />
+        </p>
+      )}
+      <ResonanceRow event={event} />
     </div>
+  );
+}
+
+/** L'illustration est rendue DEUX fois (variante desktop en colonne 2 de la
+ *  grille, variante mobile dans la colonne texte juste sous le titre) et la
+ *  bascule se fait en CSS. Sur mobile, la grille passe en 1 colonne et suit
+ *  l'ordre DOM : la figure en fin de grille arrivait à ~2 écrans de défilement
+ *  (#310) — la variante mobile la ramène sous le h1, fidèle à l'intention
+ *  « titre → image → métadonnées ». Même URL des deux côtés = un seul
+ *  téléchargement ; la variante cachée l'est via display:none. */
+function HeroFigure({ src, alt, variant }: {
+  src: string;
+  alt: string;
+  variant: "desktop" | "mobile";
+}) {
+  return (
+    <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
+      <div className="figure-frame">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          className="editorial-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+      <figcaption>
+        <span className="cap-tag">Illustration</span>
+        <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -123,15 +219,20 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
+          {/* alt="" : le titre est adjacent (h1 juste au-dessus) — un alt
+              identique ferait lire le titre deux fois aux lecteurs d'écran. */}
+          {generatedArtUrl && (
+            <HeroFigure src={generatedArtUrl} alt="" variant="mobile" />
+          )}
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
-          <Byline mediaToday={event.mediaToday} />
+          <Byline event={event} />
           {secondEvent && (
             <div className="une-side une-second">
               <SaillanceHead event={secondEvent} className="une-side-head" />
               <h2 data-saillance={secondEvent.saillanceRank}>
                 <HeadlineTitle event={secondEvent}>{secondEvent.title}</HeadlineTitle>
               </h2>
-              <Byline mediaToday={secondEvent.mediaToday} />
+              <Byline event={secondEvent} />
             </div>
           )}
         </div>
@@ -144,21 +245,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
         )}
 
         {generatedArtUrl && (
-          <figure className="hero-figure hero-figure-inline">
-            <div className="figure-frame">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={generatedArtUrl}
-                alt={event.title}
-                className="editorial-img"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-            <figcaption>
-              <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
-            </figcaption>
-          </figure>
+          <HeroFigure src={generatedArtUrl} alt={event.title} variant="desktop" />
         )}
       </div>
     </div>
@@ -173,7 +260,7 @@ function SideUne({ event }: { event: UneEvent }) {
         <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
       </h2>
       {/* QC seulement — Shannon: "Médias Qc seulement" */}
-      <Byline mediaToday={event.mediaToday} />
+      <Byline event={event} />
     </div>
   );
 }
@@ -208,7 +295,18 @@ export async function UneDesUnesSection() {
   // l'en-tête (#edition-name) et la fraîcheur réelle dans « Dernière mise à
   // jour du module » en bas — le titre, lui, ne doit pas trahir un retard de
   // données. Partagé avec le ShareButton pour éviter toute divergence.
-  const sectionTitle = "Les Unes saillantes du moment";
+  // « au Québec » (demande d'Adrien, A9) : le module ne disait pas de quelle
+  // population il parlait, alors que son voisin « Deux solitudes » compare deux
+  // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
+  // Le titre porte donc la même règle que les phrases de distribution.
+  // « L'actualité saillante » plutôt que « Les Unes saillantes » (Adrien,
+  // 2026-08-10, closes #307) : au pluriel, le titre PROMETTAIT des Unes, donc
+  // plusieurs. Les jours où le module n'en affiche qu'une, Yannick lisait un
+  // bug (« on dirait qu'il manque quelque chose ») alors que c'est le résultat
+  // normal d'une journée dominée par une seule histoire. Le singulier ne promet
+  // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
+  // explicitement pourquoi il varie.
+  const sectionTitle = "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une

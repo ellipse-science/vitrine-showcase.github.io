@@ -59,6 +59,19 @@ function Fleur() {
   );
 }
 
+// Angle des labels % de l'échelle radiale (#394) : l'écart entre le dernier
+// axe (i = n-1, angle -π/2 - 2π/n) et le premier (i = 0, angle -π/2), donc à
+// mi-chemin des deux, -π/2 - π/n. Aucun axe n'a jamais cet angle exact (les n
+// axes sont à -π/2 + i·2π/n pour i entier) : l'écart entre deux axes voisins
+// contient toujours ce point médian sans jamais coïncider avec l'un d'eux,
+// quel que soit n. Un label sur cet angle ne peut donc jamais retomber sur la
+// colonne d'un axe — et donc jamais sur un point de données, qui n'existe que
+// sur un axe (cf. `pt`). Exportée pour que le test verrouille la preuve
+// géométrique, pas seulement le rendu.
+export function ringLabelAngle(n: number): number {
+  return -Math.PI / 2 - Math.PI / n;
+}
+
 // Coupe un titre en lignes étroites (~26 caractères) : 2-3 lignes centrées,
 // comme la maquette, pour que le bloc ne déborde pas sur le radar.
 export function wrapLabel(s: string, maxLen = 26): string[] {
@@ -191,21 +204,21 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
   };
 
   const [qp, rp] = [s.qcSymbolPos, s.canSymbolPos];
-  // Tendance vs l'habituel (#258) : pilote la direction et la pulsation des
-  // flèches de l'axe. Plus convergent que d'habitude = flèches vers le centre ;
-  // plus divergent = vers l'extérieur ; écart nul = immobiles.
-  const trend = s.convPct - s.habitualConvPct;
-  const trendCls = trend >= 1 ? " in" : trend <= -1 ? " out" : "";
 
   return (
     <div className="sol-body">
       {/* Axe fleur/érable : les symboles se rapprochent quand ça converge et
-          s'éloignent quand ça diverge — la distance encode la convergence. */}
+          s'éloignent quand ça diverge — la distance encode la convergence.
+          Sans flèches (#399, retour Martel) : elles donnaient à cette bande
+          l'air d'un axe reporté dans le radar plus bas, qui n'en a pourtant
+          aucun (ses axes sont des SUJETS, positionnés par ordre/saillance,
+          sans notion de gauche/droite régionale) — mais leur ORDRE, lui,
+          penche structurellement QC à droite / CAN à gauche (#395, voir
+          `symbolPositions` dans lib/data/headlineEvents.ts), d'où le sens
+          Québec=droite / Canada=gauche choisi ici pour matcher le radar. */}
       <div className="sol-viz">
         <div className="sol-axis" />
-        <span className={`sol-arrowhead left${trendCls}`} aria-hidden />
         <span className="sol-axis-tick" aria-hidden />
-        <span className={`sol-arrowhead right${trendCls}`} aria-hidden />
         <div className="sol-symbol qc" style={{ left: `${qp}%` }}>
           <span className="glyph fleur" aria-label="Québec"><Fleur /></span>
           <span className="caption">Québec</span>
@@ -242,13 +255,26 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           {[1, 0.75, 0.5, 0.25].map((f) => (
             <polygon key={f} className="radar-grid" points={ringPts(f)} />
           ))}
-          {/* Labels % pâles sur l'axe vertical du haut : le rayon = part
-              d'attention 24h de la région (le bord = axisScale %). */}
-          {[0.25, 0.5, 0.75, 1].map((f) => (
-            <text key={f} className="radar-ring-lab" x={CX + 4} y={CY - (R0 + f * (R - R0)) + 3}>
-              {Math.round(s.axisScale * f)}&nbsp;%
-            </text>
-          ))}
+          {/* Labels % pâles, dans l'écart angulaire entre le dernier axe et
+              le premier (#394) — jamais SUR un axe. Ils étaient plaqués sur
+              l'axe vertical du haut (x=CX), la colonne exacte que suit aussi
+              le point de données de cet axe (pt(0, v) retombe sur x=CX quel
+              que soit v) : dès que sa valeur approchait un palier (25/50/75/
+              100 %), le label venait recouvrir le point. Le rayon reste
+              identique (part d'attention 24h de la région, le bord =
+              axisScale %) ; seul l'angle change, vers l'écart entre deux
+              axes où aucun spoke ni aucun point ne peut jamais tomber. */}
+          {[0.25, 0.5, 0.75, 1].map((f) => {
+            const ringAng = ringLabelAngle(n);
+            const r = R0 + f * (R - R0);
+            const rx = CX + r * Math.cos(ringAng);
+            const ry = CY + r * Math.sin(ringAng);
+            return (
+              <text key={f} className="radar-ring-lab" x={rx.toFixed(1)} y={(ry + 3).toFixed(1)}>
+                {Math.round(s.axisScale * f)}&nbsp;%
+              </text>
+            );
+          })}
           {axes.map((_, i) => {
             const [x, y] = pt(i, 100);
             return <line key={i} className="radar-spoke" x1={CX} y1={CY} x2={x.toFixed(1)} y2={y.toFixed(1)} />;
@@ -392,7 +418,6 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const cosA = Math.cos(ang), sinA = Math.sin(ang);
             const lx = CX + labelR(cosA) * cosA;
             const ly = CY + labelR(cosA) * sinA;
-            const lines = wrapLabel(a.label);
             const strong = Math.max(vals[i].vqc, vals[i].vcan) === maxVal;
             const side = a.side;
             const BW = 26, CHGAP = 6, LINE_H = 20, EYE_GAP = 16, TB_GAP = 15;
@@ -401,6 +426,38 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // reste un « sur-titre » et ne concurrence pas le titre.
             const EYE_LINE_H = 13;
             const eyeLines = a.eyebrow ? wrapLabel(a.eyebrow.toUpperCase(), EYEBROW_MAX_CHARS) : [];
+            const eyeH = a.eyebrow ? EYE_GAP + (eyeLines.length - 1) * EYE_LINE_H : 0;
+            // Rien ne doit jamais chevaucher le disque du radar (#394, extension
+            // demandée par Adrien : « on veut plus jamais que ça arrive nulle
+            // part » — #394 ne couvrait que les labels % vs le point de l'axe 0).
+            // Sur les axes haut/bas, le budget vertical entre le bord du
+            // canevas (y=2) et le bord du halo est FIXE et étroit — sur les
+            // côtés, il est énorme (labelR y est bien plus grand) et jamais
+            // serré en pratique. Ce plafond protège donc les deux seuls axes à
+            // risque ; recalculé à partir des mêmes constantes que le clamp de
+            // `top` plus bas (R+10 = halo, labelR(0) = ancre de l'axe) plutôt
+            // que codé en dur, pour rester juste si l'une d'elles bouge.
+            const vertical = Math.abs(cosA) < 0.35;
+            // -4 : marge de sécurité visible plutôt qu'un plafond pile au
+            // bord du halo (0px d'écart se lirait encore comme un contact).
+            const maxBlockH = vertical ? (labelR(0) - (R + 10)) + (CY - labelR(0) - 2) - 4 : Infinity;
+            // Plafond du TITRE (constaté : un titre long, sans même de badge,
+            // peut à lui seul dépasser le budget — les vrais titres scrapés
+            // n'ont pas de longueur maximale garantie, contrairement à la
+            // rubrique qui vient d'un dictionnaire fixe de 12 entrées, déjà
+            // vérifiées ≤ 2 lignes par le test #381). Rarement atteint en
+            // pratique (~5-6 lignes dispo une fois la rubrique déduite) — filet
+            // de sécurité, pas un comportement normal. Ellipse sur la dernière
+            // ligne gardée plutôt que de laisser le titre continuer à pousser.
+            const rawLines = wrapLabel(a.label);
+            const maxTitleLines = vertical
+              ? Math.max(1, Math.floor((maxBlockH - eyeH - TB_GAP - 20) / LINE_H))
+              : Infinity;
+            const lines = rawLines.length <= maxTitleLines ? rawLines : [
+              ...rawLines.slice(0, maxTitleLines - 1),
+              `${rawLines[maxTitleLines - 1].replace(/.{1,3}$/, "")}…`,
+            ];
+            const titleH = lines.length * LINE_H;
             // Les badges s'enroulent sur plusieurs rangées : une histoire très
             // couverte (11 médias = 346 px sur une ligne) débordait sur les
             // libellés des axes voisins. 6 par rangée ≈ 186 px, soit la largeur
@@ -412,20 +469,30 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             const media = a.media;
             const rowsCount = Math.ceil(media.length / MAX_PER_ROW); // 0 si aucun badge
             const perRow = rowsCount > 0 ? Math.ceil(media.length / rowsCount) : 0;
-            const mediaRows = Array.from({ length: rowsCount }, (_, r) =>
+            const allRows = Array.from({ length: rowsCount }, (_, r) =>
               media.slice(r * perRow, (r + 1) * perRow),
             ).filter((r) => r.length > 0);
-            // Chaque ligne de rubrique supplémentaire pousse le titre d'autant :
-            // sans ça, une rubrique sur 2 lignes écrirait sa 2e ligne PAR-DESSUS
-            // la 1re ligne du titre.
-            const eyeH = a.eyebrow ? EYE_GAP + (eyeLines.length - 1) * EYE_LINE_H : 0;
-            const titleH = lines.length * LINE_H;
-            // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges :
-            // sans ça, le positionnement vertical (top) ignorerait les rangées
-            // supplémentaires et les axes du bas mordraient sur le radar.
-            // Math.max(0, …) : un axe SANS badge garde la hauteur d'avant (la
-            // rangée vide était déjà comptée 20 px) au lieu de perdre 34 px et
-            // de remonter sur le radar.
+            // Plafond des RANGÉES DE BADGES (#394, retour Adrien) : un
+            // sujet très couvert (10+ médias → 2 rangées) pousse le bloc au-delà
+            // du budget une fois le titre/rubrique déjà comptés — constaté en
+            // direct sur « Carney et Trump s'affrontent… » (2 rangées, titre 4
+            // lignes, rubrique 2 lignes : bloc de 178px pour un budget de 168px,
+            // 10px dans le halo). Le clamp de `top` plus bas protège le bord du
+            // DESSIN, pas le bord du DISQUE — il faut limiter le CONTENU lui-même.
+            const nonBadgeH = eyeH + titleH + TB_GAP + 20;
+            const maxExtraRows = Math.max(0, Math.floor((maxBlockH - nonBadgeH) / ROW_H));
+            // Toujours au moins 1 rangée affichée (même si ça déborde légèrement) :
+            // perdre TOUS les badges d'un coup serait pire que quelques px de trop
+            // dans un cas déjà extrême (titre très long ET rubrique sur 2 lignes).
+            const allowedRowsCount = Math.min(allRows.length, Math.max(1, 1 + maxExtraRows));
+            const hiddenMediaCount = media.length - allRows.slice(0, allowedRowsCount).flat().length;
+            const mediaRows = allRows.slice(0, allowedRowsCount);
+            // Hauteur du bloc = eyebrow + titres + TOUTES les rangées de badges
+            // GARDÉES (après troncature ci-dessus) : sans ça, le positionnement
+            // vertical (top) ignorerait les rangées supplémentaires et les axes
+            // du bas mordraient sur le radar. Math.max(0, …) : un axe SANS badge
+            // garde la hauteur d'avant (la rangée vide était déjà comptée 20 px)
+            // au lieu de perdre 34 px et de remonter sur le radar.
             const blockH = eyeH + titleH + TB_GAP + 20 + Math.max(0, mediaRows.length - 1) * ROW_H;
             // Haut du bloc selon la position de l'axe, borné dans la zone de
             // dessin (#299). Le bloc grandit vers le HAUT sur l'axe du haut :
@@ -469,11 +536,25 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                   </text>
                 ))}
                 {mediaRows.flatMap((row, r) => {
+                  // Rangées de badges tronquées (voir plus haut) : la dernière
+                  // rangée GARDÉE porte un chip « +N » plutôt que de perdre les
+                  // médias en trop en silence — même largeur qu'un chip normal,
+                  // compté dans le centrage de la rangée.
+                  const isLastKeptRow = r === mediaRows.length - 1;
+                  const showMore = isLastKeptRow && hiddenMediaCount > 0;
+                  const slots = row.length + (showMore ? 1 : 0);
                   // Chaque rangée est centrée sur l'axe indépendamment.
-                  const tot = row.length * BW + (row.length - 1) * CHGAP;
+                  const tot = slots * BW + (slots - 1) * CHGAP;
                   const rowX = lx - tot / 2;
                   const ry = rowY + r * ROW_H;
-                  return row.map((m, k) => {
+                  const moreChip = showMore ? (
+                    <g key="more" className="m-chip chip-more" role="img" aria-label={`Et ${hiddenMediaCount} autre${hiddenMediaCount > 1 ? "s" : ""} média${hiddenMediaCount > 1 ? "s" : ""} ayant couvert : ${a.label}`}>
+                      <text className="m-code" x={(rowX + row.length * (BW + CHGAP) + BW / 2).toFixed(1)} y={(ry + 16).toFixed(1)} textAnchor="middle">
+                        {`+${hiddenMediaCount}`}
+                      </text>
+                    </g>
+                  ) : null;
+                  return [...row.map((m, k) => {
                   const cx0 = rowX + k * (BW + CHGAP);
                   const cxm = cx0 + BW / 2;
                   const inner = (
@@ -499,7 +580,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                       {inner}
                     </g>
                   );
-                  });
+                  }), moreChip].filter(Boolean);
                 })}
               </g>
             );

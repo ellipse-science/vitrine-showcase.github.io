@@ -44,9 +44,17 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
       </span>
     );
   }
+  if (trend.dir === "flat") {
+    return (
+      <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
+        —
+      </span>
+    );
+  }
+  // Pas de rang antérieur comparable : on n'affirme rien sur le mouvement.
   return (
-    <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
-      —
+    <span className="ppl-trend ppl-trend--unknown" aria-label="Aucune période de comparaison" title="Aucune période de comparaison">
+      ·
     </span>
   );
 }
@@ -61,6 +69,19 @@ function Chevron() {
         <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
+  );
+}
+
+/* Marque du Polimètre, reprise telle quelle du logo officiel (polimeter.org,
+   viewBox 50×43). En currentColor : dans le bouton d'encre elle sort en papier,
+   et elle suit le thème sans deuxième fichier. aria-hidden parce que le libellé
+   du lien nomme déjà le Polimètre. */
+function PolimetreMark() {
+  return (
+    <svg className="ppl-discover__mark" viewBox="0 0 50 43" width="20" height="17" fill="none" aria-hidden="true">
+      <circle cx="7.5" cy="35.5" r="5.5" fill="currentColor" stroke="currentColor" strokeWidth="4" />
+      <rect x="14.5" y="4.5" width="31" height="17" rx="8.5" stroke="currentColor" strokeWidth="9" />
+    </svg>
   );
 }
 
@@ -147,7 +168,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
     <section className="polimeter-plus" aria-label="Polimètre+">
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+ : promesses électorales à la une</h2>
+          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
           <div className="period-subtitle">
             Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
             <InfoTip size="sm" label="À propos du Polimètre+">
@@ -393,6 +414,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               target="_blank"
               rel="noopener"
             >
+              <PolimetreMark />
               Découvrir toutes les promesses sur le site Web du Polimètre
             </a>
           </div>

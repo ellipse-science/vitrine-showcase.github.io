@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.19.0-beta.0",
+  "version": "2.21.0-beta.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,10 +9,11 @@
     "start": "next start",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "garde-redaction": "node scripts/garde_redaction.mjs",
     "select-hero": "npx --yes tsx@4 scripts/select_hero.ts"
   },
   "dependencies": {
-    "next": "16.2.12",
+    "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -20,7 +21,7 @@
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^6",
+    "typescript": "^7",
     "vitest": "^4.1.9"
   }
 }

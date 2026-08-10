@@ -1,10 +1,10 @@
 {
-  "event_id": "20260803T150000Z-evt-westjet-union-reach-tentative-deal-27109f77",
-  "storyline_id": "story-westjet-3c390fc9",
-  "title": "WestJet et agents de bord concluent une entente pour mettre fin à la grève",
-  "main_issue": "economy_and_labour",
-  "date_utc": "2026-08-03",
+  "event_id": "20260810T150000Z-evt-feux-foret-armee-canadienne-prete-1e611904",
+  "storyline_id": "story-abbotsford-1d5d99ad",
+  "title": "L'armée canadienne prête à intervenir face aux feux de forêt en C.-B.",
+  "main_issue": "environment_and_energy",
+  "date_utc": "2026-08-10",
   "time_interval_utc": "15-19",
-  "sum_qc": 56.711,
-  "peak_qc": 67.596
+  "sum_qc": 60.905,
+  "peak_qc": 36.92
 }

@@ -32,6 +32,23 @@ jobs:
       AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
+      # ─── DEUX DESTINATIONS, SELON LA GRAVITÉ (décision Adrien 2026-08-08) ───
+      # L'architecture de surveillance est UNE CHAÎNE PAR CORPUS : les médias ont
+      # #02_radar-plus_sonar, les décideurs #02__agora-plus_sonar, et la vitrine
+      # (ce dépôt) a la sienne. Ce qui vient d'ici ne va donc PAS dans la chaîne
+      # de Radar+ — corrige le cadrage de la PR #417, qui datait du matin même.
+      #
+      # SLACK_VITRINE_SONAR_WEBHOOK_URL -> #02_vitrine_sonar : ce qui rend le site
+      #   FAUX ou VIEUX (rafraîchissement échoué, Une périmée). C'est ce qu'on lit.
+      # SLACK_WEBHOOK_URL -> #02_hydration_watchdog : les échecs COSMÉTIQUES
+      #   (image, musique), fréquents et sans conséquence sur l'exactitude. On
+      #   laisse ce bruit où il est plutôt que de le déverser dans une chaîne
+      #   qu'on veut pouvoir lire — consigne explicite d'Adrien.
+      #
+      # Tant que le secret du sonar vitrine n'existe pas, les alertes graves
+      # RETOMBENT sur SLACK_WEBHOOK_URL : on préfère une alerte au mauvais endroit
+      # à une alerte perdue. Le courriel Healthchecks reste le secours hors Slack.
+      SLACK_VITRINE_SONAR_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_MUSIC_WEBHOOK_URL:    ${{ secrets.SLACK_MUSIC_WEBHOOK_URL }}
       OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
@@ -94,6 +111,51 @@ jobs:
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
+
+      # Alarme de fraîcheur (réf. aws-refiners#278) : un retard CONSTANT
+      # d'environ 4h SANS aucune erreur = un stepper de la cascade AWS coincé
+      # un bloc en arrière — panne silencieuse restée invisible ~30h les
+      # 6-7 août 2026. On mesure l'âge du bloc le plus frais réellement servi
+      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; l'alerte Slack
+      # ci-dessous sonne au-delà du seuil, à chaque fetch tant que ça dure.
+      # Non bloquant : une donnée en retard doit quand même être publiée.
+      - name: Check headline freshness (silent-lag alarm)
+        id: freshness
+        continue-on-error: true
+        run: python scripts/check_freshness.py
+
+      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
+      # données plus bas — la donnée (même en retard) se publie toujours.
+      - name: Alert Slack if headline data is stale
+        if: steps.freshness.outputs.stale == 'true'
+        continue-on-error: true
+        run: |
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
+          # Sonar vitrine si le secret existe, sinon repli sur l'ancien webhook :
+          # une alerte au mauvais endroit vaut mieux qu'une alerte perdue.
+          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$HOOK"
+          fi
+
+      # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
+      # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
+      # fetch, ping /fail quand la Une est périmée → courriel « DOWN » avec
+      # l'âge en corps, puis « UP » au rétablissement. Si le workflow meurt
+      # entièrement, le battement manque et Healthchecks alerte aussi —
+      # couvre le fetch mort ET le retard silencieux.
+      - name: Signal freshness to Healthchecks (email alert)
+        if: steps.freshness.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if [ -n "$HEALTHCHECKS_URL" ]; then
+            if [ "${{ steps.freshness.outputs.stale }}" = "true" ]; then
+              curl -fsS -m 10 --retry 3 --data-raw "La Une est périmée : ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep." "$HEALTHCHECKS_URL/fail"
+            else
+              curl -fsS -m 10 --retry 3 --data-raw "${{ steps.freshness.outputs.resume }}" "$HEALTHCHECKS_URL"
+            fi
+          fi
 
       # Node n'était pas installé dans ce job : il l'est maintenant pour une
       # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
@@ -177,16 +239,21 @@ jobs:
             git push origin prod
           fi
 
+      # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
+      # alerte de sonar vitrine, pas du bruit cosmétique.
       - name: Alert Slack on failure
         if: failure()
         run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
+          if [ -n "$HOOK" ]; then
             RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             curl -fsS -X POST -H 'Content-Type: application/json' \
               -d "{\"text\":\"⚠️ *Vitrine data refresh FAILED*\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
+              "$HOOK"
           fi
 
+      # Art et musique : cosmétique et fréquent. Reste dans le watchdog — on ne
+      # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
       - name: Warn Slack if art generation failed (data still published)
         if: steps.art.outcome == 'failure'
         run: |

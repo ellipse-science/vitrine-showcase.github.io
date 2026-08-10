@@ -9,7 +9,21 @@ import path from "node:path";
 import { cache } from "react";
 
 import { editionLabel } from "@/lib/editions";
-import { formatDateFr, lastUpdatedLabel, publicationHourFromInterval } from "@/lib/dates";
+import {
+  formatDateFr,
+  lastUpdatedLabel,
+  publicationDateFromInterval,
+  publicationHourFromInterval,
+} from "@/lib/dates";
+import {
+  SALIENCE_CUTOVER,
+  NEW_INDEX_SCALE,
+  NEW_SUM_QC_THRESHOLDS,
+  NEW_BLOCK_QC_THRESHOLDS,
+  NEW_SUM_ROC_THRESHOLDS,
+  NEW_BLOCK_ROC_THRESHOLDS,
+  scaleThresholds,
+} from "@/lib/data/salienceCutover";
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -64,6 +78,14 @@ export type RawEvent = {
   score_qc_peak_24h?: number | null;
   first_seen_utc?: string | null;
   n_blocks_24h?: number | null;
+  // Indice de saillance spec v1 (aws-refiners#287, tag `spec-v1`), publié en
+  // shadow par le raffineur et lu SEULEMENT quand SALIENCE_CUTOVER est vrai.
+  // Optionnels : absents des lignes publiées avant le 2026-07-14 (Athena rend
+  // null), et absents du snapshot tant que tables.json ne les projette pas.
+  // Unité de stockage : [0,1] — le ×100 d'affichage est appliqué par qcScore/
+  // rocScore, jamais ici (cf. lib/data/salienceCutover.ts).
+  salience_index_qc?: number | null;
+  salience_index_roc?: number | null;
 };
 
 // Pré-filtre COMMUN à tous les consommateurs du snapshot : une seule ligne par
@@ -131,6 +153,11 @@ const MEDIA_NAMES: Record<string, string> = {
   GAM: "The Globe and Mail",
   NP: "National Post",
   VS: "Vancouver Sun",
+  // Médias américains — rencontrés sur les lignes `target_region = US`, qui ne
+  // servent qu'à la résonance (#230). La table reste un confort d'affichage :
+  // un sigle inconnu retombe sur lui-même (`MEDIA_NAMES[id] ?? id`).
+  CNN: "CNN",
+  FXN: "Fox News",
 };
 
 // Sigle court affiché dans le badge carré du radar (Deux solitudes).
@@ -140,6 +167,20 @@ const MEDIA_BADGE: Record<string, string> = {
 };
 
 const QC_MEDIA = ["LED", "LAP", "RCI", "TVA", "JDM", "MG"];
+// Médias canadiens-anglais suivis par le pipeline. Sert à l'ORDRE d'affichage
+// de la résonance canadienne (#230) ; un sigle hors liste est affiché à la
+// suite plutôt qu'écarté — on ne perd jamais un média inconnu.
+const CAN_MEDIA = ["CBC", "CTV", "GN", "TTS", "GAM", "NP", "VS"];
+// Roster canadien complet = QC + ROC. Sur une ligne `target_region = US`, la
+// liste d'articles mêle les deux pays : le sujet est américain, mais des médias
+// d'ici l'ont parfois repris. On identifie donc les médias AMÉRICAINS par
+// complément de ce roster — jamais par une liste blanche de sigles US, qui
+// laisserait tomber en silence tout média américain pas encore rencontré.
+// (Le sens de la soustraction compte : le bug #272 devinait le côté CANADIEN
+// en retranchant une liste US codée en dur, et classait « canadien » n'importe
+// quel média américain absent de cette liste. Ici, l'inconnu part du côté
+// américain — celui de la ligne qu'on est en train de lire.)
+const CANADIAN_MEDIA = new Set([...QC_MEDIA, ...CAN_MEDIA]);
 // ── Deux solitudes — calibration de la JAUGE de convergence (échelle relative) ─
 // L'axe du radar utilise une part d'attention 24 h (voir buildSolitudes), pas de
 // calibration. Seule la jauge « plus/moins que d'habitude » a besoin d'une
@@ -207,7 +248,13 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
 // HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
 // prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
-type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric } };
+// Les clés `salience_index_*` sont les homologues des `score_*` pour le NOUVEL
+// indice (cf. build_salience_calibration dans scripts/fetch_data.R). Elles sont
+// publiées sur une fenêtre plancherée au déploiement de la spec v1, donc
+// homogènes par construction — mais restent NULL tant que n < CAL_MIN_N, d'où
+// les grilles de repli de lib/data/salienceCutover.ts. En unités BRUTES [0,1] :
+// c'est `scaleThresholds` qui les passe à l'échelle d'affichage.
+type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; score_roc_sum_24h?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric; salience_index_qc?: CalMetric; salience_index_qc_sum_24h?: CalMetric; salience_index_roc?: CalMetric; salience_index_roc_sum_24h?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
 
@@ -254,12 +301,25 @@ function calConvFrom(m: CalMetric | undefined): [number, number][] | null {
 // `saillance − qc − us` a été retiré au #272 — il était devenu inerte
 // (score_roc non nul sur 184/184 lignes le 2026-07-27) et il faisait absorber
 // les USA du côté canadien quand score_us manquait.
-function rocScore(e: RawEvent): number {
-  return e.score_roc ?? 0;
+function rocScore(e: RawEvent, cutover: boolean = SALIENCE_CUTOVER): number {
+  return cutover ? (e.salience_index_roc ?? 0) * NEW_INDEX_SCALE : (e.score_roc ?? 0);
 }
 
-// Positions des symboles sur l'axe : collés au centre quand ça converge,
-// aux extrémités quand ça diverge. gap min 18 % pour ne pas les superposer.
+// LE point de bascule du cutover, côté québécois — et le SEUL endroit du loader
+// qui décide quelle colonne est « la saillance d'un bloc ». Tout le reste
+// (cumuls pondérés, sommets, classement, badge, parts d'attention, trajectoire,
+// radar) se sert de cette valeur sans savoir d'où elle vient, si bien que la
+// bascule ne peut pas laisser un module derrière.
+//
+// Le ×100 est appliqué ICI, à la lecture, pas à l'affichage : voir la note
+// d'échelle dans lib/data/salienceCutover.ts.
+function qcScore(e: RawEvent, cutover: boolean = SALIENCE_CUTOVER): number {
+  return cutover ? (e.salience_index_qc ?? 0) * NEW_INDEX_SCALE : (e.score_qc ?? 0);
+}
+
+// Positions [GAUCHE, DROITE] des symboles sur l'axe : collés au centre
+// quand ça converge, aux extrémités quand ça diverge. gap min 18 % pour ne
+// pas les superposer.
 function symbolPositions(convPct: number): [number, number] {
   const div = 100 - convPct;
   const gap = 18 + 72 * Math.pow(div / 100, 1.4);
@@ -371,10 +431,12 @@ type Story = {
   rep: RawEvent;           // occurrence du bloc le plus récent (titre, médias, articles frais)
   repKey: string;
   label: string;
-  sumQc: number;           // Σ score_qc pondérée par récence (demi-vie HALF_LIFE_H) — sert au CLASSEMENT
+  // Σ de l'indice de bloc (qcScore : `score_qc`, ou `salience_index_qc` ×100
+  // après le cutover) pondérée par récence (demi-vie HALF_LIFE_H) — CLASSEMENT.
+  sumQc: number;
   sumRoc: number;
-  peakQc: number;          // max score_qc BRUT sur la fenêtre — sert à la PASTILLE de saillance
-  peakRoc: number;         // (même échelle que le score de bloc → seuils inchangés)
+  peakQc: number;          // max de l'indice de bloc, BRUT, sur la fenêtre
+  peakRoc: number;         // (même échelle que l'indice de bloc → seuils cohérents)
   qcMedia: Set<string>;
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
@@ -390,7 +452,7 @@ type Story = {
    *  l'histoire / qc total du bloc × 100), donc dans [0, 100] et 0 quand le bloc
    *  n'a aucune saillance QC. Sert à chiffrer la tendance (#304) — le `qc` brut,
    *  lui, reste la base de la courbe et du niveau au survol. */
-  series: { blockUtc: string; qc: number; present: boolean; share: number }[];
+  series: { blockUtc: string; qc: number; present: boolean; share: number; cumul: number }[];
 };
 
 function parseIdList(json: string | null | undefined): string[] {
@@ -412,7 +474,7 @@ function parseIdList(json: string | null | undefined): string[] {
 const HALF_LIFE_H = 10;
 const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
 
-function storiesFrom24h(allEvents: RawEvent[]): Story[] {
+function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): Story[] {
   type RawArticle = { media_id: string; url: string };
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
@@ -431,8 +493,8 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     const bk = blockKey(e);
     // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
     const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
-    const qc = e.score_qc ?? 0;
-    const roc = rocScore(e);
+    const qc = qcScore(e, cutover);
+    const roc = rocScore(e, cutover);
     // Listes de médias par région, publiées par le refiner (#211). Le repli qui
     // re-triait `media_ids` à la main a été retiré au #272 : il devinait le côté
     // canadien par soustraction d'une liste de médias US codée en dur, ce qui
@@ -496,13 +558,169 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
     blockTotalQc.set(b, tot);
   }
   for (const s of merged) {
-    s.series = windowBlocksAsc.map((b) => {
+    s.series = windowBlocksAsc.map((b, idx) => {
       const qc = s.byBlock.get(b) ?? 0;
       const tot = blockTotalQc.get(b) ?? 0;
-      return { blockUtc: b, qc, present: s.byBlock.has(b), share: tot > 0 ? (qc / tot) * 100 : 0 };
+      // `present` = « un média QUÉBÉCOIS l'avait-il en Une dans ce bloc ? »,
+      // et NON « ce bloc a-t-il une entrée pour cette histoire ? ».
+      //
+      // La nuance n'est pas théorique : une entrée existe dès qu'un événement
+      // apparaît dans le bloc, y compris quand seuls des médias canadiens ou
+      // américains le couvraient — la saillance québécoise est alors nulle.
+      // Avec l'ancien test (`byBlock.has`), ces points échappaient à
+      // « Hors du radar » et affichaient le niveau du BADGE (cumul 24 h) suivi
+      // de « 0 % de l'attention médiatique ». Les deux moitiés étaient vraies,
+      // l'ensemble illisible — signalé par Adrien captures à l'appui, mesuré à
+      // **229 points sur 2 086 (11 %)** du snapshot déployé.
+      //
+      // Vérifié : le défaut ne vient PAS de l'indice — il se reproduit à
+      // l'identique flag allumé (vitrine#430).
+      //
+      // `cumul` = l'attention cumulée 24 h « as-of » ce bloc — LA grandeur du
+      // badge, donc celle que la courbe trace depuis #430 B3. Repli seulement :
+      // le loader passe les cumuls exacts du rejeu d'éditions (badgeSums), qui
+      // voient aussi les blocs antérieurs à la fenêtre affichée. Ici on ne peut
+      // regarder que les 6 blocs de la fenêtre, donc les premiers points sont
+      // légèrement sous-estimés.
+      let cumul = 0;
+      for (let j = Math.max(0, idx - 5); j <= idx; j++) {
+        const bj = windowBlocksAsc[j];
+        const qj = s.byBlock.get(bj) ?? 0;
+        if (qj <= 0) continue;
+        cumul += qj * Math.pow(2, (blockStartMs(bj) - blockStartMs(b)) / 3.6e6 / HALF_LIFE_H);
+      }
+      return { blockUtc: b, qc, present: qc > 0, share: tot > 0 ? (qc / tot) * 100 : 0, cumul };
     });
   }
   return merged.filter((s) => s.sumQc + s.sumRoc > 0);
+}
+
+// ── Résonance cross-région (#230) ────────────────────────────────────────────
+// Une histoire québécoise « résonne » quand le MÊME sujet est aussi en Une
+// ailleurs. Deux libellés distincts plutôt qu'un seul « internationale » :
+// mesuré sur les 4 derniers jours (16 fenêtres, 36 Unes), la résonance
+// canadienne touche 44 % des Unes et l'américaine 19 % — les fondre aurait
+// affiché « internationale » sur une fusillade à Toronto, aplatissant la
+// distinction QC/CAN ↔ US que la demande d'origine (Shannon, 2026-07-03)
+// cherchait justement à faire voir.
+//
+// Ce qu'on montre d'une résonance : la PART D'ATTENTION que la région a
+// accordée à cette histoire, et les médias qui l'ont mise en Une — cliquables
+// vers leur article. La part est calculée sur la MÊME base que le radar Deux
+// solitudes (part de l'attention 24 h de la région, cf. canShareOf) : une même
+// histoire affiche donc le même pourcentage dans les deux modules.
+export type RegionEcho = {
+  /** Part de l'attention 24 h des Unes de la région, en % (arrondi). */
+  share: number;
+  /** Médias de la région ayant mis l'histoire en Une + lien vers leur article. */
+  media: { name: string; url: string | null }[];
+};
+
+// Ordonne des sigles selon un roster, les inconnus à la suite (ordre stable).
+function orderMedia(ids: Iterable<string>, roster: string[]): string[] {
+  const set = new Set(ids);
+  const known = roster.filter((id) => set.has(id));
+  const rest = [...set].filter((id) => !roster.includes(id)).sort();
+  return [...known, ...rest];
+}
+
+// Côté CANADIEN, rien à détecter : storiesFrom24h fusionne déjà les lignes CAN
+// dans l'histoire (union des médias du ROC publiée par le refiner #211), donc
+// `canMedia` EST la résonance. Vérifié : sur ces 36 Unes, ce critère et un
+// appariement ligne à ligne (storyline_id ou titres proches) donnent exactement
+// le même verdict, 0 désaccord.
+function canResonance(s: Story, totalRoc: number): RegionEcho | null {
+  if (s.canMedia.size === 0) return null;
+  return {
+    share: totalRoc > 0 ? Math.round((s.sumRoc / totalRoc) * 100) : 0,
+    media: orderMedia(s.canMedia, CAN_MEDIA).map((id) => ({
+      name: MEDIA_NAMES[id] ?? id,
+      url: s.urlByMedia[id] ?? null,
+    })),
+  };
+}
+
+// Côté AMÉRICAIN, il faut relire la source : uniqueQcEvents() écarte les lignes
+// USA du pipeline et elles NE DOIVENT PAS y revenir — c'est ce filtre qui tient
+// l'indice de convergence à sa valeur publiée (#211/#237). D'où cette lecture
+// séparée, en LECTURE SEULE : les lignes US ne servent qu'à répondre « ce sujet
+// est-il aussi en Une aux États-Unis ? », jamais à alimenter un score.
+//
+// Appariement : storyline_id identique OU titres très proches (sameStory). Le
+// stopgap par titre est nécessaire tant que le regroupement cross-langue n'est
+// pas livré (aws-refiners#213) — l'appariement par identifiant seul
+// sous-détecte massivement (mesuré au repérage du 2026-07-15). Les titres
+// comparés sont les titres FR normalisés par le raffineur, des deux côtés :
+// c'est la même clé que la dédup FR/EN de storiesFrom24h.
+type UsEcho = {
+  storylineId: string | null;
+  tok: Set<string>;
+  /** score_us du bloc, PONDÉRÉ par récence — même demi-vie que sumQc/sumRoc,
+   *  sans quoi la part américaine ne serait pas sur la même échelle que la
+   *  part canadienne à laquelle elle est montrée côte à côte. */
+  scoreUs: number;
+  blockUtc: string;
+  articles: { media_id: string; url: string }[];
+};
+function usEchoes(allRaw: RawEvent[], windowBlocks: Set<string>): UsEcho[] {
+  const newestMs = windowBlocks.size
+    ? Math.max(...[...windowBlocks].map(blockStartMs))
+    : 0;
+  return allRaw
+    .filter((e) => e.country_id === "USA" && windowBlocks.has(blockKey(e)) && e.title)
+    .map((e) => {
+      const bk = blockKey(e);
+      const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+      let articles: { media_id: string; url: string }[] = [];
+      try {
+        const parsed = JSON.parse(e.articles ?? "[]");
+        if (Array.isArray(parsed)) articles = parsed as { media_id: string; url: string }[];
+      } catch { /* champ absent ou malformé */ }
+      return {
+        storylineId: e.storyline_id ?? null,
+        tok: titleTokens(e.title ?? ""),
+        scoreUs: (e.score_us ?? 0) * w,
+        blockUtc: bk,
+        articles,
+      };
+    });
+}
+
+function usResonance(s: Story, echoes: UsEcho[], totalUs: number): RegionEcho | null {
+  const matched = echoes.filter(
+    (u) =>
+      (u.storylineId != null && u.storylineId === s.rep.storyline_id) ||
+      sameStory(u.tok, s.tok),
+  );
+  if (matched.length === 0) return null;
+
+  // Un lien par média : celui du bloc le plus RÉCENT où il a couvert le sujet.
+  const urlByMedia: Record<string, string> = {};
+  for (const u of [...matched].sort((a, b) => (a.blockUtc < b.blockUtc ? 1 : -1))) {
+    for (const a of u.articles) {
+      // Les articles d'une ligne américaine mêlent les deux pays : le sujet est
+      // américain, mais Radio-Canada ou CBC l'ont parfois repris. Seuls les
+      // médias hors roster canadien comptent ici (cf. CANADIAN_MEDIA).
+      if (!a?.media_id || !a.url || CANADIAN_MEDIA.has(a.media_id)) continue;
+      if (!urlByMedia[a.media_id]) urlByMedia[a.media_id] = a.url;
+    }
+  }
+  const sumUs = matched.reduce((acc, u) => acc + u.scoreUs, 0);
+  return {
+    share: totalUs > 0 ? Math.round((sumUs / totalUs) * 100) : 0,
+    media: orderMedia(Object.keys(urlByMedia), []).map((id) => ({
+      name: MEDIA_NAMES[id] ?? id,
+      url: urlByMedia[id] ?? null,
+    })),
+  };
+}
+
+// Les 6 blocs de 4 h de la fenêtre glissante — MÊME définition que
+// storiesFrom24h, pour que la résonance se mesure exactement sur la fenêtre des
+// histoires affichées.
+function window24hBlocks(events: RawEvent[]): Set<string> {
+  const blocks = Array.from(new Set(events.map(blockKey))).sort().reverse();
+  return new Set(blocks.slice(0, 6));
 }
 
 // Convergence OBJET sur la fenêtre glissante 24 h (mêmes 6 blocs que
@@ -512,7 +730,7 @@ function storiesFrom24h(allEvents: RawEvent[]): Story[] {
 // donc les 24 h, plus un seul bloc de 4 h (décision d'équipe 2026-07-14, Y3).
 // null si aucun bloc de la fenêtre n'a d'indice publié → repli en aval.
 // PROVISOIRE : la convergence glissante « officielle » viendra du refiner (aws-refiners#212).
-function windowConvergence(allEvents: RawEvent[]): number | null {
+function windowConvergence(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): number | null {
   const blocks = Array.from(new Set(allEvents.map(blockKey))).sort().reverse();
   const window24h = new Set(blocks.slice(0, 6));
   const byBlock = new Map<string, { idx: number | null; wt: number }>();
@@ -525,7 +743,10 @@ function windowConvergence(allEvents: RawEvent[]): number | null {
     if (b.idx === null && e.interval_convergence_score != null) {
       b.idx = Math.max(0, Math.min(100, e.interval_convergence_score));
     }
-    b.wt += (e.score_qc ?? 0) + rocScore(e);
+    // Les deux régions DOIVENT être lues sur la même échelle : mélanger un QC
+    // en ancien indice et un ROC en nouveau donnerait un poids de bloc dominé
+    // par le seul côté à grande échelle.
+    b.wt += qcScore(e, cutover) + rocScore(e, cutover);
   }
   let num = 0, den = 0, plainNum = 0, plainCount = 0;
   for (const { idx, wt } of byBlock.values()) {
@@ -567,23 +788,25 @@ function buildSolitudes(
   // règle. Optionnel : les tests appellent buildSolitudes sans lui, et le
   // radar se contente alors de la part d'attention (aucune étiquette inventée).
   //
-  // ⚠️ COMPROMIS TEMPORAIRE — à retirer quand aws-refiners#273 aura livré
-  // `score_qc_sum_24h` et `score_roc_sum_24h`. Les deux côtés n'utilisent pas
-  // encore la même construction :
-  //   · QC  → le rang du badge de la Une des Unes (cumul 24 h + hystérésis,
-  //           #314), repris TEL QUEL. Non négociable : sans ça, la même
-  //           histoire affichait deux niveaux différents sur la même page
-  //           (mesuré le 2026-08-03 : « Téhéran » Faible au module 1,
-  //           Élevée au radar — même région, donc rien ne l'expliquait).
-  //   · ROC → le pic 24 h contre la distribution ROC des scores de bloc
-  //           (`score_roc`, n=1688), faute de calibration cumulée canadienne.
-  // Les deux restent « le niveau du sujet parmi les Unes de sa région », et la
-  // population est NOMMÉE dans la phrase, donc le lecteur n'a jamais à deviner
-  // dans quel panier il lit. Mais l'exactitude de la comparaison QC/ROC attend
-  // la calibration cumulée.
+  // Les deux côtés utilisent la MÊME construction depuis aws-refiners#273
+  // (livrée le 2026-08-07) : le cumul 24 h pondéré par récence du sujet, situé
+  // dans la distribution 365 j des cumuls de SA région (`score_qc_sum_24h` /
+  // `score_roc_sum_24h`).
+  //   · QC  → le rang du badge de la Une des Unes (cumul + hystérésis, #314),
+  //           repris TEL QUEL. Non négociable : sans ça, la même histoire
+  //           affichait deux niveaux différents sur la même page (mesuré le
+  //           2026-08-03 : « Téhéran » Faible au module 1, Élevée au radar).
+  //   · ROC → rawRank(sumRoc) contre `score_roc_sum_24h`. Sans hystérésis :
+  //           le badge du module 1 n'existe pas pour ces sujets et le radar
+  //           n'a pas de mémoire d'édition en édition côté canadien.
+  // REPLI transitoire (`roc`) : tant que `score_roc_sum_24h` n'est pas dans le
+  // JSON déployé, l'ancien compromis s'applique — le pic 24 h contre la
+  // distribution ROC des scores de bloc. La population reste NOMMÉE dans la
+  // phrase dans les deux cas.
   sal?: {
     badgeRanks: Map<string, { rank: number }>;
     sumThresholds: typeof SUM_QC_THRESHOLDS;
+    sumRocThresholds?: typeof SUM_QC_THRESHOLDS | null;
     roc: typeof SAL_QC_THRESHOLDS | null;
   },
 ): SolitudeData {
@@ -612,7 +835,15 @@ function buildSolitudes(
   // une position fausse. calConvFrom reste pour la calibration Module 2 « objet »
   // si on la ré-expose un jour ; la saillance (Module 1) passe par salThresholds.
   const mode = convMode(convPct);
-  const [qcSymbolPos, canSymbolPos] = symbolPositions(convPct);
+  // Québec à DROITE, Canada à GAUCHE (#395, retour Shannon + Adrien) :
+  // inversé par rapport à l'intuition, mais aligné sur ce que le radar fait
+  // déjà STRUCTURELLEMENT plus bas dans cette même fonction. `picked` met
+  // toujours le top-3 québécois (par sumQc) avant le top-3 canadien (par
+  // sumRoc), et les axes se posent en partant du haut, sens horaire — donc
+  // les axes 0-2 (québécois) tombent en haut/à droite, et 3-5 (canadiens)
+  // en bas/à gauche. Le bandeau du haut disait jusqu'ici « Québec = gauche »,
+  // l'inverse de ce que montre le radar juste en dessous.
+  const [canSymbolPos, qcSymbolPos] = symbolPositions(convPct);
 
   // Histoires 24 h déjà agrégées + dédupliquées en amont (storiesFrom24h),
   // partagées avec la Une des Unes. Ici : sélection + rendu seulement.
@@ -653,16 +884,12 @@ function buildSolitudes(
 
   const axes: SolitudeAxis[] = picked.map((a) => {
     const qs = qcShareOf(a), cs = canShareOf(a);
-    // Niveau de saillance du camp qui MÈNE l'axe, situé dans la distribution
-    // 365 jours de ce camp (`score_qc` / `score_roc`, publiées toutes deux par
-    // la calibration). `peakQc`/`peakRoc` sont sur l'échelle du score de bloc,
-    // donc directement comparables à ces percentiles.
-    //
-    // Les deux camps reçoivent EXACTEMENT le même traitement — même grandeur
-    // (le pic du sujet sur la fenêtre 24 h), même nature de référence (la
-    // distribution des scores de bloc de sa région). C'est ce qui rend les
-    // niveaux des deux côtés du radar comparables entre eux, ce qui est tout
-    // l'objet du module.
+    // Niveau de saillance du camp qui MÈNE l'axe, situé parmi les Unes de SA
+    // région. Même grandeur des deux côtés : le cumul 24 h pondéré par récence
+    // (`sumQc`/`sumRoc`), contre la distribution 365 j des cumuls de sa région
+    // (`score_qc_sum_24h` / `score_roc_sum_24h`). C'est ce qui rend les
+    // niveaux des deux côtés du radar comparables entre eux — l'objet même du
+    // module (et la fin du compromis mesuré le 2026-08-03 sur « Téhéran »).
     const mene = qs >= cs ? "qc" : "can";
     let tier: { label: string; cls: string; hint: string } | null = null;
     if (sal) {
@@ -670,8 +897,13 @@ function buildSolitudes(
         // Rang du badge du module 1, tel quel (même clé, même repli).
         const rank = sal.badgeRanks.get(a.rep.storyline_id ?? a.label)?.rank
           ?? rawRank(a.sumQc, sal.sumThresholds);
-        tier = { ...TIER_BY_RANK[rank], hint: HINT_BY_RANK[rank](POP_QC) };
+        tier = { ...TIER_BY_RANK[rank], hint: hintFromCentile(a.sumQc, sal.sumThresholds, POP_QC) };
+      } else if (sal.sumRocThresholds) {
+        const rank = rawRank(a.sumRoc, sal.sumRocThresholds);
+        tier = { ...TIER_BY_RANK[rank], hint: hintFromCentile(a.sumRoc, sal.sumRocThresholds, POP_ROC) };
       } else if (sal.roc) {
+        // Repli transitoire : calibration ROC cumulée absente du JSON → pic
+        // 24 h contre la distribution des scores de bloc.
         tier = saillanceTierFromScore(a.peakRoc, sal.roc, POP_ROC);
       }
     }
@@ -783,12 +1015,29 @@ function saillanceTierFromScore(
 // l'ancien badge au pic. Sur les affichées : 43 % / 25 %.
 const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
 
-// Hystérésis : sans elle le badge change de bande une édition sur deux (mesuré :
-// 52 % des transitions, dont 5,6 % de sauts de 2 bandes). Il faut dépasser la
-// frontière de HYST_MARGIN pour que le libellé bouge ; sinon on garde le niveau
-// de l'édition précédente. Les allers-retours de frontière disparaissent, la
-// vraie décroissance passe.
-const HYST_MARGIN = 0.08;
+// PLUS D'HYSTÉRÉSIS depuis vitrine#430 (décision A4, Adrien, 2026-08-09).
+//
+// Une marge de 8 % retenait le libellé tant que la valeur n'avait pas dépassé
+// la frontière franchement. L'intention était bonne — éviter qu'un cumul qui
+// flotte autour d'une ligne fasse clignoter l'étiquette — mais elle avait un
+// défaut rédhibitoire pour un score qui se veut OFFICIEL et COMPARABLE :
+//
+//   le niveau n'était pas une FONCTION de la valeur.
+//
+// Deux Unes au cumul identique pouvaient afficher deux niveaux différents,
+// selon ce qu'elles affichaient à l'édition précédente. Cette dépendance au
+// chemin interdit de dire « ce niveau correspond à cette valeur » — et c'est
+// précisément la promesse que Radar+ doit tenir pour des analyses
+// longitudinales (cf. A0 : référence gelée, datée, versionnée).
+//
+// L'amortisseur masquait par ailleurs le bruit d'une échelle MOUVANTE. Une fois
+// la référence ancrée, ce bruit-là disparaît : franchir une frontière redevient
+// un événement réel, et le public a le droit de le voir au moment où il arrive.
+//
+// Prix mesuré et assumé : 11 % des cartes changent d'étiquette, et 13,7 % des
+// triplets d'éditions montrent un aller-retour A→B→A. En contrepartie
+// l'infobulle annonce désormais le VRAI centile (A7), donc un lecteur qui
+// s'étonne d'un mouvement en voit le chiffre.
 
 /** Population de référence d'un niveau de saillance. Un niveau n'existe JAMAIS
  *  dans l'absolu : il situe une nouvelle parmi les Unes d'un ensemble de médias.
@@ -796,20 +1045,82 @@ const HYST_MARGIN = 0.08;
  *  faible » sur un sujet mené par le ROC laisse croire qu'on compare les deux
  *  régions dans le même panier, ce que « Deux solitudes » cherche justement à
  *  ne pas faire. */
-const POP_QC = "des médias québécois";
-const POP_ROC = "des médias canadiens";
+// A9 (#430) — RÈGLE DE COHÉRENCE : toute phrase de distribution nomme ses TROIS
+// composantes — la valeur situéе, la POPULATION, et la PÉRIODE. Avant, chaque
+// module n'en nommait que deux, et pas les mêmes : la Une des Unes disait « des
+// Unes de l'année » sans la région, le radar disait « des médias canadiens »
+// sans la période. Un lecteur voyant 96 % d'un côté et 67 % de l'autre n'avait
+// aucun moyen de savoir qu'on ne mesurait pas contre la même règle — d'où une
+// contradiction apparente là où il n'y a que deux questions différentes.
+//
+// Adjectifs et non groupes nominaux : « des Unes québécoises de l'année » se
+// compose, « des Unes des médias québécois de l'année » non.
+const POP_QC = "québécoises";
+const POP_ROC = "canadiennes";
 
 /** Une seule rédaction pour les six niveaux, la population en paramètre. Ces
  *  phrases existaient en double (ici et dans saillanceTierFromScore), mot pour
  *  mot : la moindre retouche devait être faite deux fois. */
+// Repli par bande, quand le centile exact n'est pas calculable. Même règle des
+// trois composantes que `hintFromCentile` : ces phrases sortent aux mêmes
+// endroits, elles ne peuvent pas parler une autre langue.
 const HINT_BY_RANK: Record<number, (pop: string) => string> = {
-  6: (p) => `Plus saillante que 95 % des nouvelles à la Une ${p}.`,
-  5: (p) => `Plus saillante qu’environ 85 % des nouvelles à la Une ${p}.`,
-  4: (p) => `Plus saillante qu’environ 65 % des nouvelles à la Une ${p}.`,
-  3: (p) => `Environ 65 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
-  2: (p) => `Environ 85 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
-  1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  6: (p) => `Sur les 24 dernières heures, elle dépasse 95 % des Unes ${p} de l’année.`,
+  5: (p) => `Sur les 24 dernières heures, elle dépasse environ 85 % des Unes ${p} de l’année.`,
+  4: (p) => `Sur les 24 dernières heures, elle dépasse environ 65 % des Unes ${p} de l’année.`,
+  3: (p) => `Sur les 24 dernières heures, environ 65 % des Unes ${p} de l’année sont plus saillantes.`,
+  2: (p) => `Sur les 24 dernières heures, environ 85 % des Unes ${p} de l’année sont plus saillantes.`,
+  1: (p) => `Sur les 24 dernières heures, 95 % des Unes ${p} de l’année sont plus saillantes.`,
 };
+
+// ── Le VRAI centile, plutôt qu'un centile arrondi à six paliers (#430, A7) ───
+//
+// L'échelle publique approuvée avec Yannick (vitrine#258) dit « le niveau se dit
+// en centile ». Les phrases ci-dessus en donnaient bien un — mais il n'en
+// existait que SIX, un par bande, alors que les bandes couvrent 5, 15, 30, 30,
+// 15 et 5 points de centile. Une Une au 22e centile et une autre au 49e
+// recevaient donc le même mot ET la même phrase. Écart moyen mesuré entre le
+// centile annoncé et le vrai : 6,5 points, jusqu'à 14, avec 27 % des cartes
+// fausses de plus de 10 points.
+//
+// On ne publie que 5 percentiles (p5/p20/p50/p80/p95), donc le centile est
+// INTERPOLÉ entre eux — même patron que la jauge de convergence (pctile /
+// calConvFrom). Mesuré sur les mêmes cartes : erreur moyenne 1,9 point, jamais
+// plus de 6, et plus aucune carte fausse de plus de 10 points. L'erreur est
+// divisée par 3,4 sans rien publier de nouveau.
+//
+// Ancre haute à 2 × p95 → 100 : même convention que la figure du ⓘ, qui trace
+// son axe jusqu'au double du p95.
+function centileFrom(v: number, t: typeof SUM_QC_THRESHOLDS): number {
+  const anchors: [number, number][] = [
+    [0, 0], [t.faible, 5], [t.moyenne, 20], [t.eleve, 50],
+    [t.tresEleve, 80], [t.extreme, 95], [t.extreme * 2, 100],
+  ];
+  return Math.round(pctile(v, anchors));
+}
+
+/** La phrase de l'infobulle, sur le centile RÉEL.
+ *
+ *  Formulation arrêtée avec Adrien (2026-08-09) : « environ 73 % des Unes sont
+ *  moins saillantes que celle-ci » — le registre public, pas celui de la métho
+ *  (« au 73e centile » a été explicitement écarté).
+ *
+ *  Le cadrage BASCULE à la médiane, comme avant : sous 50 on compte ce qui
+ *  DÉPASSE la nouvelle, au-dessus on compte ce qu'elle dépasse. Le chiffre reste
+ *  ainsi toujours grand et parlant. Borné à [1, 99] : « moins saillante que
+ *  100 % des Unes » serait faux (elle fait partie du lot) et « 0 % » ne dit rien.
+ */
+function hintFromCentile(v: number, t: typeof SUM_QC_THRESHOLDS, pop: string): string {
+  const c = Math.max(1, Math.min(99, centileFrom(v, t)));
+  // « Sur les 24 dernières heures » : le radar situe par le MOMENT, pas par le
+  // sommet — et c'est juste, parce que sa figure montre un instant (la distance
+  // au centre est la part d'attention de la fenêtre). Contrairement à la Une des
+  // Unes, il ne dessine aucun sommet ; lui en faire dire un décrirait ce que
+  // l'image ne montre pas. La portée devait donc être ÉNONCÉE, pas changée.
+  return c >= 50
+    ? `Sur les 24 dernières heures, elle dépasse environ ${c} % des Unes ${pop} de l’année.`
+    : `Sur les 24 dernières heures, environ ${100 - c} % des Unes ${pop} de l’année sont plus saillantes.`;
+}
 
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
   6: { label: "Exceptionnelle", cls: "s-extreme", hint: HINT_BY_RANK[6](POP_QC) },
@@ -830,42 +1141,17 @@ function rawRank(v: number, t: typeof SUM_QC_THRESHOLDS): number {
   return 1;
 }
 
-// Niveau affiché = niveau brut, SAUF si le changement n'a pas franchi la
-// frontière avec la marge — auquel cas on conserve le niveau précédent.
-//
-// UNE BANDE À LA FOIS, dans les deux sens. L'ancienne version comparait la
-// valeur à la borne de la bande VISÉE et, si la marge n'y était pas, annulait
-// TOUT le mouvement. Un cumul qui saute de plusieurs bandes d'un coup restait
-// donc figé tout en bas : mesuré le 2026-07-27, la Une « logements » affichait
-// « Très faible » (rang 1) avec sumQc = 48,6, soit en pleine bande « Élevée »
-// (≥ 47,9) — les bandes 2 (23,1) et 3 (33,5) étaient pourtant franchies très
-// largement. Le badge se débloquait après le sommet, si bien que la trajectoire
-// gardait « Très faible » sur le point du sommet et « Modérée » sur le déclin :
-// le sommet paraissait plus faible que le creux (constat Adrien).
-// En avançant bande par bande, la marge freine encore chaque frontière (l'effet
-// anti-clignotement est intact) mais le badge ne peut plus rester à plus d'une
-// bande de la réalité.
-function hysteresisRank(prev: number | undefined, v: number, t: typeof SUM_QC_THRESHOLDS): number {
-  const raw = rawRank(v, t);
-  if (prev === undefined || raw === prev) return raw;
-  const low = bandLow(t);
-  let r = prev;
-  // Monte : chaque bande gagnée demande de dépasser SA borne basse d'une marge.
-  while (r < raw && v >= low[r + 1] * (1 + HYST_MARGIN)) r++;
-  // Descend : on ne quitte une bande qu'en passant sous SA borne basse, marge
-  // comprise — symétrique de la montée.
-  while (r > raw && v <= low[r] * (1 - HYST_MARGIN)) r--;
-  return r;
-}
-
-// L'hystérésis a besoin du niveau de l'édition PRÉCÉDENTE. Le site est rebâti
-// à neuf toutes les 4 h, sans état persistant — on le reconstitue donc en
-// rejouant les éditions du snapshot (3 jours ≈ 18 fenêtres), du plus ancien au
-// plus récent. Déterministe : même snapshot → même badge, sans fichier d'état.
-function badgeRanksWithHysteresis(
+// Le rejeu des éditions reste nécessaire — non plus pour lisser le badge, mais
+// pour le SOMMET (la plus haute valeur atteinte, montrée dans la bulle ⓘ), pour
+// les CUMULS édition par édition (la courbe de trajectoire) et pour
+// l'HISTORIQUE des niveaux (l'étiquette de chaque point). Le site est rebâti à
+// neuf toutes les 4 h sans état persistant : on rejoue donc les éditions du
+// snapshot, du plus ancien au plus récent. Déterministe.
+function badgeRanks(
   events: RawEvent[],
   sumThresholds: typeof SUM_QC_THRESHOLDS,
-): Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }> {
+  cutover: boolean = SALIENCE_CUTOVER,
+): Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number>; sums: Map<string, number> }> {
   const blocks = Array.from(new Set(events.map(blockKey))).sort();
   const byBlock = new Map<string, RawEvent[]>();
   for (const e of events) {
@@ -873,11 +1159,11 @@ function badgeRanksWithHysteresis(
     if (!byBlock.has(b)) byBlock.set(b, []);
     byBlock.get(b)!.push(e);
   }
-  const out = new Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number> }>();
+  const out = new Map<string, { rank: number; peakSum: number; peakBlock: string; history: Map<string, number>; sums: Map<string, number> }>();
   for (let i = 0; i < blocks.length; i++) {
     const rows = blocks.slice(Math.max(0, i - 5), i + 1).flatMap((b) => byBlock.get(b) ?? []);
     if (rows.length === 0) continue;
-    for (const s of storiesFrom24h(rows)) {
+    for (const s of storiesFrom24h(rows, cutover)) {
       const key = s.rep.storyline_id ?? s.label;
       const prev = out.get(key);
       // La même passe sert au SOMMET de l'indice cumulé : la plus haute valeur
@@ -885,13 +1171,18 @@ function badgeRanksWithHysteresis(
       // MÊME échelle que la valeur courante — donc plaçable sur la même figure.
       const peakSum = Math.max(prev?.peakSum ?? 0, s.sumQc);
       const peakBlock = !prev || s.sumQc > prev.peakSum ? blocks[i] : prev.peakBlock;
-      const rank = hysteresisRank(prev?.rank, s.sumQc, sumThresholds);
+      const rank = rawRank(s.sumQc, sumThresholds);
       // …et à l'HISTORIQUE du badge, édition par édition : c'est lui qu'affiche
       // le survol de la trajectoire, pour que le niveau lu sur un point soit le
       // niveau que le badge portait à ce moment-là — même grandeur, même échelle.
       const history = prev?.history ?? new Map<string, number>();
       history.set(blocks[i], rank);
-      out.set(key, { rank, peakSum, peakBlock, history });
+      // …et à la COURBE : le cumul lui-même, édition par édition. C'est lui que
+      // la trajectoire trace depuis vitrine#430, pour que la hauteur d'un point
+      // et le niveau annoncé à côté soient la même grandeur.
+      const sums = prev?.sums ?? new Map<string, number>();
+      sums.set(blocks[i], s.sumQc);
+      out.set(key, { rank, peakSum, peakBlock, history, sums });
     }
   }
   return out;
@@ -916,7 +1207,33 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 
 // Seuil éditorial (#273) : le module affiche 1 à 3 Unes, pas toujours 3.
 // La position héros revient toujours à l'histoire la plus saillante, mais une
-// Une SECONDAIRE doit être portée par au moins MIN_QC_MEDIA_SECONDARY médias
+// PLUS DE FILTRE D'AFFICHAGE depuis vitrine#430 (décision A2, 2026-08-09).
+//
+// Une carte secondaire portée par un seul média était cachée : avec l'ANCIEN
+// indice, qui ne voyait pas la largeur de couverture, elle pouvait monter haut
+// et se présenter à tort à côté de vraies convergences. Le nouvel indice met la
+// Visibilité comme une jambe d'une moyenne géométrique non compensatoire : il la
+// classe lui-même, honnêtement, tout en bas. Mesuré : le seuil cachait 69 cartes
+// sur 210 places — un tiers des places secondaires restaient vides — et 93 %
+// d'entre elles tombent d'elles-mêmes dans les deux bandes du bas.
+//
+// La règle était en plus incohérente : le héros est gardé quel que soit son
+// nombre de médias. On acceptait donc un mono-média EN TÊTE du module, mais pas
+// en deuxième position.
+//
+// ⚠️ CE QUI NE CHANGE PAS, ET C'EST LE POINT DÉLICAT : la population de
+// CALIBRATION reste « top-3 avec ≥ 2 médias » (scripts/fetch_data.R,
+// min_media_secondary = 2). Le niveau affiché est une POSITION dans un groupe :
+// si le groupe de référence suivait l'affichage, élargir l'affichage ferait
+// monter tout le monde — mesuré, 79 % des cartes gagneraient au moins une bande,
+// +0,82 en moyenne, sans que l'actualité ait bougé. On décroche donc la
+// référence de l'affichage, ce qui préfigure exactement la décision A0 : la
+// référence sera FIGÉE sur une année, versionnée, une fois le corpus réparé et
+// l'historique rejoué.
+//
+// MIN_QC_MEDIA_SECONDARY ne décrit donc plus ce qu'on MONTRE, mais ce à quoi on
+// COMPARE — et il doit rester en phase avec fetch_data.R.
+// Une SECONDAIRE devait être portée par au moins MIN_QC_MEDIA_SECONDARY médias
 // QC sur la fenêtre 24 h. Critère « nombre de médias » plutôt que niveau de
 // saillance : tant que la formule amont gonfle la durée-en-Une d'un seul média
 // (aws-refiners#205), la pastille peut afficher « Très élevée » pour une
@@ -927,6 +1244,10 @@ function dedupeByStoryline<T extends { storyline_id?: string | null }>(events: T
 // solitudes » — le radar peut en revanche montrer des histoires de plus (top
 // canadien, jusqu'à 6 axes) qui ne passent jamais en Une.
 const MIN_QC_MEDIA_SECONDARY = 2;
+
+/** Part de l'attention du meneur qu'une manchette secondaire doit atteindre pour
+ *  s'afficher (#430, B6). Voir selectTopUnes pour le raisonnement et la mesure. */
+const MIN_PART_DU_MENEUR = 0.5;
 
 // Sélection des Unes : classement PUR par saillance QC cumulée 24 h (sumQc,
 // demi-vie w10), depuis le MÊME pool que le radar Deux solitudes → les deux modules
@@ -947,14 +1268,60 @@ const MIN_QC_MEDIA_SECONDARY = 2;
 // médias quand rien de neuf n'émerge. Déclencheur : cas Oliver Jones (mort culturelle
 // de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
 function selectTopUnes(stories: Story[], max = 3): Story[] {
-  // Héros toujours affiché ; une Une SECONDAIRE doit être portée par ≥
-  // MIN_QC_MEDIA_SECONDARY médias QC (seuil éditorial #273 conservé). On tronque au
-  // top-3 par saillance cumulée SANS repêcher (le pool est partagé avec le radar).
+  // Top-3 par saillance cumulée, sans repêchage (le pool est partagé avec le
+  // radar) et SANS filtre de nombre de médias depuis #430 A2 : l'indice
+  // hiérarchise lui-même, et le badge dit honnêtement où chaque carte se situe.
   const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
-  return eligible
-    .sort((a, b) => b.sumQc - a.sumQc)
-    .slice(0, max)
-    .filter((s, i) => i === 0 || s.qcMedia.size >= MIN_QC_MEDIA_SECONDARY);
+  const top = eligible.sort((a, b) => b.sumQc - a.sumQc).slice(0, max);
+  if (top.length === 0) return top;
+  // RÈGLE DE DOMINATION (#430, B6, décision d'Adrien du 2026-08-09).
+  //
+  // Le nombre de manchettes n'est pas un réglage : c'est une AFFIRMATION.
+  // Trois cartes disent « voici les trois histoires du moment » ; une seule dit
+  // « aujourd'hui, une seule compte ». C'est la journée qui doit décider
+  // laquelle est vraie.
+  //
+  // La règle est RELATIVE, jamais un plancher absolu. Un plancher pourrait vider
+  // le module un jour creux où rien n'atteint le seuil — or trois nouvelles
+  // également faibles sont comparables ENTRE ELLES et méritent leurs trois
+  // cartes, chacune portant honnêtement son « Très faible ». À l'inverse, une
+  // histoire qui écrase les autres doit rester seule. Le meneur passe toujours :
+  // le module ne peut pas se vider.
+  //
+  // Seuil à 50 % — mesuré sur 105 éditions : trois cartes 49 % du temps, deux
+  // 23 %, une seule 29 %. La 2e histoire est à 69 % du meneur en médiane, mais
+  // sous 48 % dans un quart des éditions : les deux régimes de journées existent
+  // vraiment. Et le seuil se dit en une phrase publique.
+  //
+  // ⚠️ C'est une règle d'AFFICHAGE, pas de mesure (précision d'Adrien) : l'indice
+  // est calculé et publié pour TOUTES les histoires, elles restent disponibles
+  // en base pour l'analyse, et Radar+ les montrera toutes. La Vitrine choisit
+  // seulement ce qu'elle met en avant.
+  // B7 (#430) — LE DÉNOMINATEUR EST LA PLUS FORTE HISTOIRE ENCORE VIVANTE.
+  //
+  // Le défaut : le cumul 24 h d'un meneur ÉTEINT (plus aucun média québécois ne
+  // l'a en Une dans le bloc courant) reste gonflé par son passé. Une nouvelle
+  // bien vivante se faisait alors retirer de l'écran pour n'avoir pas fait la
+  // moitié d'un fantôme — le 2026-08-09 à 16h, Gaza (33,4) sortait à 49 % d'un
+  // meneur à 68,4 qui valait 0 dans le bloc courant. Trois histoires en cours,
+  // deux cartes.
+  //
+  // Mesuré sur le rejeu de l'année (2683 éditions) : le cas se produit dans
+  // 6,0 % des éditions. La correction en change 7,9 % (4,2 % sur le seul régime
+  // de regroupement actuel) et PRÉSERVE le cas à deux cartes — 21,1 % contre
+  // 25,9 % — là où toutes les variantes « cascade » testées le faisaient tomber
+  // à 9 % en poussant tout vers trois cartes.
+  //
+  // Formulation publique, une seule phrase et aucune condition : « une manchette
+  // secondaire s'affiche si elle vaut au moins la moitié de la plus forte
+  // histoire encore à la Une ». Quand le meneur est vivant — le cas ordinaire —
+  // c'est lui, et la règle est exactement celle d'avant.
+  const vivante = (s: Story) => (s.series[s.series.length - 1]?.qc ?? 0) > 0;
+  // `eligible` est déjà trié par cumul décroissant : le premier vivant est donc
+  // le plus fort. Repli sur le meneur si PERSONNE n'est à la Une dans ce bloc
+  // (nuit creuse) — sinon la règle n'aurait plus de référence du tout.
+  const reference = (vivante(top[0]) ? top[0] : eligible.find(vivante) ?? top[0]).sumQc;
+  return top.filter((s, i) => i === 0 || s.sumQc >= reference * MIN_PART_DU_MENEUR);
 }
 
 /** Identité de la Une n°1 telle que le site la rendra, pour les consommateurs
@@ -1097,7 +1464,25 @@ export type SalienceTrendPoint = {
   /** Palier de saillance du bloc, 1 (Très faible) → 6 (Exceptionnelle) ; 0 si la
    *  nouvelle n'était pas à la Une. Pilote le DIAMÈTRE du point sur la courbe. */
   rank: number;
+  /** Classe CSS de la bande (`s-eleve`…), tirée de `TIER_BY_RANK` — source
+   *  unique, pour que la pastille du survol porte exactement la couleur du
+   *  badge sans qu'une table parallèle puisse dériver. */
+  cls: string;
   score: number;       // score_qc du bloc, arrondi
+  /** Attention cumulée 24 h à cette édition — CE QUE TRACE LA COURBE depuis
+   *  vitrine#430 : la même grandeur que le badge, pour que la hauteur du point
+   *  et le mot posé à côté ne puissent plus se contredire. */
+  cumul: number;
+  /** Variation relative du cumul depuis le bloc précédent, en % (demande
+   *  d'Adrien) : « +12 % » dit ce que le point a fait, là où la seule hauteur
+   *  demande de comparer deux positions à l'œil. null au premier point, et null
+   *  quand le précédent valait zéro — une histoire qui apparaît ne « croît » pas
+   *  de 100 %, elle arrive, et la phrase de tendance dit déjà « Nouveau ». */
+  delta: number | null;
+  /** Heure du bloc auquel la variation se compare — « 4h », « hier 20h ». Même
+   *  grammaire que la phrase juste au-dessus (« depuis 12h »), pour que la bande
+   *  parle d'une seule voix. */
+  deltaDepuis: string | null;
   /** Part de l'attention QC du bloc, en % — CE QUE TRACE LA COURBE (essai #304).
    *  Toute la boîte de trajectoire parle désormais de part d'attention : courbe,
    *  flèche et chiffre. Le vocabulaire de NIVEAU (« Très faible »…) redevient
@@ -1162,6 +1547,47 @@ function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } |
 // l'édition de 12h : les six mêmes blocs se lisaient « hier 16h / hier 20h /
 // hier minuit… » sur la 1re Une et « aujourd'hui 16h / 20h / minuit… » sur la
 // 3e, qui annonçait un « Sommet à 20h » encore à venir dans la journée.
+// HEURE **ET** MOMENT DE LA JOURNÉE, toujours les deux (arbitrage d'Adrien,
+// 2026-08-09). L'heure seule oblige le lecteur à deviner la demi-journée ; le
+// moment seul perd la précision de la grille d'éditions. Les deux ensemble
+// répondent aussi à l'objection d'origine contre « depuis cet après-midi »
+// (plus vague que « depuis 16h ») : on ne remplace pas l'heure, on la complète.
+//
+// UN SEUL endroit : ce libellé vivait en DEUX exemplaires — celui de la bulle ⓘ
+// et celui de la phrase de trajectoire — et ils ont divergé. Toute la chaîne
+// passe désormais par ici.
+//
+// Une seule exception : « midi » EST déjà une heure et un moment, « à midi ce
+// midi » serait un pléonasme — mais il lui faut quand même son repère de jour,
+// d'où « ce midi » / « hier midi ». « minuit » avait le même défaut et le même
+// remède : « minuit cette nuit », un peu redondant, mais aucune case de la
+// table ne reste alors sans jour. Le bloc de minuit est rattaché au jour qui
+// FINIT (c'est le 19-23 publié à 00 h), donc « cette nuit » est exact.
+// Et 4h prend « ce matin », jamais « tôt ce matin » (Adrien).
+const MOMENT_AUJ: Record<number, string> = {
+  0: "minuit cette nuit", 4: "4h ce matin", 8: "8h ce matin",
+  12: "ce midi", 16: "16h cet après-midi", 20: "20h ce soir",
+};
+const MOMENT_HIER: Record<number, string> = {
+  0: "hier à minuit", 4: "4h hier matin", 8: "8h hier matin",
+  12: "hier midi", 16: "16h hier après-midi", 20: "20h hier soir",
+};
+/** `avecA` : « à 4h ce matin » après « Sommet »/« arrivée », « 4h ce matin »
+ *  après « depuis ». Les formes de `hier` portent déjà leur repère de jour. */
+function momentLabel(dayWord: string, hour: number, avecA = true): string | null {
+  const hh = hour % 24;
+  if (dayWord.startsWith("le ")) return dayWord;
+  const table = dayWord === "aujourd’hui" ? MOMENT_AUJ : dayWord === "hier" ? MOMENT_HIER : null;
+  if (!table) return null;
+  const brut = table[hh] ?? (dayWord === "hier" ? `hier à ${hh}h` : `${hh}h`);
+  if (!avecA) return brut.startsWith("hier à ") ? `hier ${brut.slice("hier à ".length)}` : brut;
+  // « à » se colle devant une HEURE, jamais devant un démonstratif : on dit
+  // « à 4h ce matin » mais « ce midi », pas « à ce midi ». Même chose pour les
+  // formes de `hier`, qui portent déjà leur repère.
+  if (/^(ce |cette |hier)/.test(brut)) return brut;
+  return `à ${brut}`;
+}
+
 function blockLabelParts(blockUtc: string, refDayIso: string | null):
   { dayWord: string; moment: string; hour: number } | null {
   if (!refDayIso) return null;
@@ -1188,7 +1614,7 @@ function blockLabelParts(blockUtc: string, refDayIso: string | null):
 // (ex. 25 %→15 % = −10) : baisse (↘ −X), hausse (↗ +X) ou stable (= 0), toujours
 // affichée. null seulement s'il n'y a pas 2 blocs à comparer ou aucune saillance.
 function buildSalienceTrend(
-  series: { blockUtc: string; qc: number; present: boolean; share: number }[],
+  series: { blockUtc: string; qc: number; present: boolean; share: number; cumul: number }[],
   thresholds: typeof SAL_QC_THRESHOLDS,
   /** Jour de publication de l'ÉDITION courante (cf. blockLabelParts) — c'est
    *  lui qui décide de « aujourd'hui » vs « hier », pas la date de l'histoire. */
@@ -1198,19 +1624,40 @@ function buildSalienceTrend(
    *  une autre grandeur (le score du bloc) et une autre échelle que la pastille,
    *  et les deux se contrediraient à l'écran. */
   badgeHistory?: Map<string, number>,
+  /** Cumul 24 h du badge, édition par édition — la grandeur que la courbe trace.
+   *  Fourni par le loader depuis le rejeu d'éditions, qui voit aussi les blocs
+   *  antérieurs à la fenêtre affichée. Absent → repli sur `series[].cumul`, qui
+   *  ne regarde que les 6 blocs visibles et sous-estime les premiers points. */
+  badgeSums?: Map<string, number>,
 ): SalienceTrend | null {
   if (series.length < 2 || series.every((p) => p.qc <= 0)) return null;
   const vals = series.map((p) => p.qc);
-  // Sommet marqué sur la courbe = sommet de la PART d'attention, puisque c'est
-  // elle que la courbe trace (essai #304). Le badge, lui, reste au sommet du
-  // SCORE : deux repères distincts, sur deux objets explicitement distincts.
+  // ── LA grandeur de la bande, depuis vitrine#430 (décision B3, 2026-08-09) ──
+  // La courbe traçait la PART d'attention du bloc (une fraction : l'histoire
+  // divisée par tout ce qui se passait dans ces 4 h) pendant que le mot posé à
+  // côté disait le niveau du CUMUL 24 h (une quantité absolue). Deux natures
+  // différentes sur la même ligne : une fraction monte quand son dénominateur
+  // baisse, c'est-à-dire quand le RESTE de l'actualité se calme. Résultat, un
+  // point pouvait monter pendant que son niveau descendait — mesuré à 39 % des
+  // mouvements, et signalé par Adrien qui butait dessus.
+  //
+  // La courbe trace désormais le CUMUL, la grandeur même du badge : hauteur et
+  // mot ne peuvent plus se contredire, et le « Sommet » de la phrase devient le
+  // même repère que le « Plus haut niveau » de la bulle ⓘ (les deux sommets
+  // tombaient à des heures différentes 45,6 % du temps).
+  const valeur = (i: number) => badgeSums?.get(series[i].blockUtc) ?? series[i].cumul;
+  const niveaux = series.map((_, i) => valeur(i));
   let peakIdx = 0;
-  for (let i = 1; i < series.length; i++) if (series[i].share > series[peakIdx].share) peakIdx = i;
+  for (let i = 1; i < series.length; i++) if (niveaux[i] > niveaux[peakIdx]) peakIdx = i;
   const firstIdx = series.findIndex((p) => p.qc > 0);
   // Tendance = variation de la part d'attention QC depuis le bloc précédent
   // (bloc courant − bloc précédent, en points). Bornée [−100, +100], cohérente
   // avec Deux solitudes ; toujours affichée (0 = stable, avec symbole =).
-  const deltaPct = Math.round(series[series.length - 1].share - series[series.length - 2].share);
+  // Variation RELATIVE du cumul depuis l'édition précédente, en % — et non plus
+  // un écart en points de part. Sur une quantité absolue, « −40 points » ne veut
+  // rien dire au lecteur ; « a perdu 40 % de son attention » se comprend seul.
+  const relatif = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : (a > 0 ? 100 : 0));
+  const deltaPct = relatif(niveaux[niveaux.length - 1], niveaux[niveaux.length - 2]);
 
   // ── Situation, et phrase qui la dit ────────────────────────────────────────
   // RÈGLE : ne JAMAIS nier le présent. Le mot « Une » désigne deux choses à
@@ -1230,10 +1677,9 @@ function buildSalienceTrend(
   // trace et que la phrase cite (« sommet cette nuit à 65 % »). Mélanger les
   // deux ferait dire « au plus haut du jour » à une histoire dont la part n'a
   // pas bougé, simplement parce que son score brut a monté.
-  const shares = series.map((p) => p.share);
-  const maxShare = Math.max(...shares);
-  const maxAvant = Math.max(...shares.slice(0, last));
-  const part = Math.round(series[last].share);
+  const maxShare = Math.max(...niveaux);
+  const maxAvant = Math.max(...niveaux.slice(0, last));
+  const shares = niveaux;
 
   // Heure d'un bloc. Deux formes, selon la préposition qui précède (Adrien) :
   //   avecA = true  → « à 16 h », « hier à minuit »   (après « Sommet », « arrivée »)
@@ -1244,10 +1690,7 @@ function buildSalienceTrend(
   const heure = (i: number, avecA = true) => {
     const p = blockLabelParts(series[i].blockUtc, refDayIso);
     if (!p) return null;
-    const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
-    if (p.dayWord.startsWith("le ")) return p.dayWord;          // date lointaine
-    const jour = p.dayWord === "aujourd’hui" ? "" : `${p.dayWord} `;
-    return avecA ? `${jour}à ${h}` : `${jour}${h}`;
+    return momentLabel(p.dayWord, p.hour, avecA);
   };
   const hSommet = heure(peakIdx);
   const ancre = hSommet ? `Sommet ${hSommet}` : "Sommet du jour";
@@ -1256,7 +1699,8 @@ function buildSalienceTrend(
   // Écart au sommet, en points de part, mais NOTÉ en % — même notation que le
   // module des enjeux de Laurence-Olivier (décision Adrien), pour que les deux
   // modules parlent pareil.
-  const reculSommet = Math.round(Math.max(0, Math.round(series[peakIdx].share) - part));
+  // Recul depuis le sommet, en % de ce sommet — même logique relative.
+  const reculSommet = Math.max(0, -relatif(niveaux[last], niveaux[peakIdx]));
   // Depuis quand l'attention est retombée = début de la série d'absences finale.
   let debutAbsence = last;
   while (debutAbsence > 0 && !presents[debutAbsence - 1]) debutAbsence--;
@@ -1290,6 +1734,7 @@ function buildSalienceTrend(
               : situation === "stable" ? `Se maintient ${incise}`
                 : `En recul de ${reculSommet} % ${incise}`;
 
+
   // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis
   // du sommet : une histoire qui revient (0 → 25 %) monte visiblement à l'écran,
   // une flèche rouge à côté d'un segment qui grimpe se lit comme une erreur.
@@ -1305,17 +1750,27 @@ function buildSalienceTrend(
     const tier = !p.present ? null
       : badgeRank ? TIER_BY_RANK[badgeRank]
         : saillanceTierFromScore(p.qc, thresholds);
-    // « hier 19 h » ; pour une date lointaine le mot-jour est déjà « le 18 juillet ».
-    const timeLabel = !parts ? "" : parts.dayWord.startsWith("le ") ? parts.dayWord
-      : `${parts.dayWord} ${parts.hour >= 24 ? "minuit" : `${parts.hour}h`}`;
+    // TROISIÈME exemplaire de ce libellé — après celui de la bulle ⓘ et celui de
+    // la phrase de trajectoire, tous les trois divergents. Il passe lui aussi par
+    // `momentLabel`, sans « à » (le survol n'a pas de préposition devant) :
+    // « 4h ce matin », plus « aujourd'hui 4h ».
+    const timeLabel = !parts ? "" : (momentLabel(parts.dayWord, parts.hour, false) ?? "");
     return {
       timeLabel,
       // « Hors du radar » plutôt que « Pas à la Une » (Adrien) : le clin d'œil à
       // Radar+ dit l'absence de couverture sans nier que la carte EST une Une.
       level: tier ? tier.label : "Hors du radar",
       rank: tier ? (badgeRank ?? (tier as { rank?: number }).rank ?? 0) : 0,
+      // La CLASSE de bande vient d'ici, pas d'une table recopiée côté composant
+      // (relevé en review) : `TIER_BY_RANK` est la source unique, et une table
+      // parallèle dans le JSX aurait divergé au premier renommage de bande.
+      cls: tier ? tier.cls : "",
       score: Math.round(p.qc),
       share: Math.round(p.share),
+      // Ce que la courbe trace désormais (cf. la note sur `valeur` plus haut).
+      cumul: Math.round(valeur(i) * 10) / 10,
+      delta: i === 0 || niveaux[i - 1] <= 0 ? null : relatif(niveaux[i], niveaux[i - 1]),
+      deltaDepuis: i === 0 || niveaux[i - 1] <= 0 ? null : heure(i - 1, false),
       isFirst: i === firstIdx, isPeak: i === peakIdx, isNow: i === vals.length - 1,
       isAbsent: !p.present,
     };
@@ -1333,8 +1788,11 @@ export type UneEvent = {
   saillanceRank: number;
   saillanceLabel: string;
   saillanceCls: string;
-  /** Explication relative du niveau, en pourcentage (cf. saillanceTierFromScore). */
-  saillanceHint: string;
+  /** Centile réel dans la distribution de référence (#430, A7). La bulle ⓘ s'en
+   *  sert pour dire la même chose que l'infobulle du badge — elle parlait encore
+   *  par paliers (« dans le cinquième le plus marquant »), ce qui contredisait
+   *  la phrase voisine dès qu'on a eu le vrai chiffre. */
+  saillanceCentile: number;
   timeMtl: string;
   headlineHours: number | null;
   /** « ce matin, 8 h » — moment depuis lequel l'événement est saillant (#126).
@@ -1358,6 +1816,11 @@ export type UneEvent = {
    *  été (« à minuit », « hier à 20 h »). null si l'histoire est à son sommet. */
   sommetSum: number | null;
   sommetLabel: string | null;
+  /** Centile et bande du SOMMET (#430, A8) : c'est le sommet qui situe la
+   *  nouvelle dans l'année, pas sa valeur du moment. null quand le sommet est
+   *  l'instant présent — la bulle utilise alors `saillanceCentile`. */
+  sommetCentile: number | null;
+  sommetTier: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -1366,6 +1829,13 @@ export type UneEvent = {
   /** Seuils de saillance en vigueur [p5, p20, p50, p80, p95] — pour situer la
    *  nouvelle sur la courbe de distribution dans la bulle ⓘ (#274). */
   salThresholds: number[];
+  /** Résonance cross-région (#230) : le même sujet vu ailleurs — part
+   *  d'attention de la région + médias qui l'ont mise en Une (cliquables).
+   *  null quand il n'y a pas de résonance. Deux champs distincts, jamais fondus
+   *  en un seul « international » : c'est la distinction QC/CAN ↔ US qui était
+   *  demandée. Voir canResonance / usResonance. */
+  resonanceCan: RegionEcho | null;
+  resonanceUs: RegionEcho | null;
 };
 
 /** Un axe du radar « Deux solitudes » = une histoire saillante du jour. */
@@ -1523,6 +1993,24 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
 
   if (unique.length === 0) return null;
 
+  // GARDE DU JOUR J. Le mode d'échec redouté de la bascule n'est pas un mauvais
+  // calcul, c'est un snapshot MUET : si `salience_index_qc` n'a pas encore été
+  // projeté par un refresh (scripts/tables.json), qcScore rend 0 partout, toutes
+  // les histoires tombent au filtre `sumQc + sumRoc > 0`, et le site se déploie
+  // avec une Une des Unes VIDE — sans une seule erreur. On préfère casser le
+  // build, bruyamment : un déploiement raté se voit, une page vide passe pour
+  // une accalmie de l'actualité.
+  // Ordre correct : merger cette PR éteinte → laisser tourner un refresh (la
+  // colonne entre dans le snapshot) → flipper le flag.
+  if (SALIENCE_CUTOVER && !unique.some((e) => (e.salience_index_qc ?? 0) > 0)) {
+    throw new Error(
+      "SALIENCE_CUTOVER est allumé mais aucune ligne du snapshot ne porte de " +
+      "`salience_index_qc` non nul. Le snapshot date d'avant l'ajout de la colonne " +
+      "à scripts/tables.json : lancez un refresh (gh workflow run refresh-data.yml), " +
+      "vérifiez public/data/headline-events.json, puis rebâtissez.",
+    );
+  }
+
   const sorted = unique.slice().sort((a, b) => {
     const dA = `${a.date_utc}T${a.time_interval_utc.split("-")[0]}:00Z`;
     const dB = `${b.date_utc}T${b.time_interval_utc.split("-")[0]}:00Z`;
@@ -1549,7 +2037,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // publicationHourFromInterval + ses tests pour la normalisation du bord à 24).
   const publicationHour = publicationHourFromInterval(snapshotInterval);
   const lastUpdated = lastUpdatedLabel(
-    sorted[0].date_montreal_tz ?? sorted[0].date_utc,
+    publicationDateFromInterval(sorted[0].date_montreal_tz ?? sorted[0].date_utc, snapshotInterval),
     publicationHour,
   );
 
@@ -1561,11 +2049,6 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
   // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
   const calibration = await loadCalibration();
-  // La pastille étiquette le PIC 24 h (peakQc) → seuils calibrés sur la
-  // distribution des PICS (metrics.score_qc_peak_24h), pas sur les scores par
-  // bloc (metrics.score_qc, plus bas). Sans cette clé (calibration pas encore
-  // assez fournie post-fusion), repli sur les seuils codés post-fusion (#281).
-  const salThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_peak_24h) ?? SAL_QC_THRESHOLDS;
   // Niveau d'un BLOC (lecture au survol de la trajectoire) : calibré sur la
   // distribution des scores PAR BLOC — sa vraie population de référence, la
   // mieux fournie du fichier (n≈1500 sur un an, contre 106 pour les sommets).
@@ -1573,10 +2056,19 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
   // badge parle du CUMUL 24 h, le survol d'un BLOC — deux objets distincts, à
   // deux endroits distincts. (C'était impossible du temps des deux badges
   // côte à côte, où « en ce moment » pouvait dépasser « sommet 24 h ».)
-  const blockThresholds = salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
-  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_qc dans
+  //
+  // CUTOVER : chaque grille a son homologue calibré sur le nouvel indice, à la
+  // MÊME convention (même fonction dans fetch_data.R, même population). On ne
+  // mélange jamais les deux familles — une valeur du nouvel indice classée avec
+  // les bornes de l'ancien serait à un ordre de grandeur de la vérité.
+  const blockThresholds = SALIENCE_CUTOVER
+    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc)) ?? NEW_BLOCK_QC_THRESHOLDS
+    : salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
+  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_24h dans
   // fetch_data.R ; repli sur les valeurs mesurées tant qu'elle manque.
-  const sumThresholds = salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
+  const sumThresholds = SALIENCE_CUTOVER
+    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc_sum_24h)) ?? NEW_SUM_QC_THRESHOLDS
+    : salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
   const evConv = calibration?.metrics?.event_convergence;
@@ -1593,13 +2085,26 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
       : undefined;
 
-  // Niveaux de badge lissés, reconstitués en rejouant les éditions du snapshot.
-  const badgeRanks = badgeRanksWithHysteresis(unique, sumThresholds);
+  // Niveaux de badge reconstitués en rejouant les éditions du snapshot. Plus
+  // aucun LISSAGE depuis le retrait de l'hystérésis (A4) : le rang de chaque
+  // édition est une fonction pure de son cumul. Le rejeu sert désormais à deux
+  // choses seulement — le SOMMET (la plus haute valeur atteinte et l'édition où
+  // elle l'a été) et l'HISTORIQUE lu au survol de la trajectoire.
+  const badgeRanksByStory = badgeRanks(unique, sumThresholds);
 
   const stories = storiesFrom24h(unique);
   // Seuil éditorial #273 : héros toujours affiché, secondaires seulement si
   // portées par ≥ MIN_QC_MEDIA_SECONDARY médias QC → 1 à 3 Unes.
   const qcStories = selectTopUnes(stories);
+
+  // Résonance (#230). Côté américain, lecture sur `all` (AVANT uniqueQcEvents),
+  // la seule source où les lignes USA existent encore ; fenêtre calée sur
+  // `unique`, c'est-à-dire sur les blocs qui ont produit les histoires ci-dessus.
+  // Les deux totaux sont les DÉNOMINATEURS des parts d'attention : total de la
+  // région sur la fenêtre, même construction que le radar Deux solitudes.
+  const echoesUs = usEchoes(all, window24hBlocks(unique));
+  const totalUs = echoesUs.reduce((acc, u) => acc + u.scoreUs, 0);
+  const totalRoc = stories.reduce((acc, s) => acc + s.sumRoc, 0);
 
   const top3: UneEvent[] = qcStories.map((s) => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
@@ -1611,9 +2116,10 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     // (cf. SUM_QC_THRESHOLDS). Le sommet ne pilote plus le badge : il est nommé
     // dans la phrase de trajectoire, sous le badge.
     const storyKey = s.rep.storyline_id ?? s.label;
-    const suivi = badgeRanks.get(storyKey);
+    const suivi = badgeRanksByStory.get(storyKey);
     const saillanceRank = suivi?.rank ?? rawRank(s.sumQc, sumThresholds);
-    const { label: saillanceLabel, cls: saillanceCls, hint: saillanceHint } = TIER_BY_RANK[saillanceRank];
+    const { label: saillanceLabel, cls: saillanceCls } = TIER_BY_RANK[saillanceRank];
+    const saillanceCentile = Math.max(1, Math.min(99, centileFrom(s.sumQc, sumThresholds)));
     // Sommet de l'indice cumulé + l'édition où il a été atteint — posés sur la
     // figure du ⓘ à côté du repère « CETTE UNE », sur la même échelle.
     const sommetSum = suivi && suivi.peakSum > s.sumQc ? suivi.peakSum : null;
@@ -1621,14 +2127,33 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       ? (() => {
         const p = blockLabelParts(suivi.peakBlock, editionRefDayIso);
         if (!p) return null;
-        const h = p.hour >= 24 ? "minuit" : `${p.hour}h`;
         if (p.dayWord.startsWith("le ")) return p.dayWord;
-        return p.dayWord === "aujourd’hui" ? `à ${h}` : `${p.dayWord} à ${h}`;
+        // « à 4h ce matin », pas « à 4h » (demande d'Adrien, 2026-08-09). L'heure
+        // nue oblige le lecteur à deviner de quelle demi-journée on parle, alors
+        // que le module dispose déjà du vocabulaire de moment (SAILLANT_TODAY).
+        // Table EXPLICITE plutôt que dérivée : c'est un libellé public, et deux
+        // cas s'y refusent — « à minuit cette nuit » et « à midi ce midi » sont
+        // des pléonasmes, et « à 4h tôt ce matin » est illisible.
+        return momentLabel(p.dayWord, p.hour);
       })()
+      : null;
+    // A8 (#430) — CE QUI SITUE LA NOUVELLE DANS L'ANNÉE, C'EST SON SOMMET.
+    // La valeur du moment ne dit que l'instant : une histoire retombée à 68,4
+    // pts (57e centile) reste celle qui a atteint 157,3 pts (96e centile), et
+    // c'est ce sommet que le palmarès hebdomadaire classera (aws-refiners#283).
+    // Parler du rang de la nouvelle avec le chiffre du moment était FAUX, pas
+    // seulement mal cadré. Quand le sommet EST le moment présent, `sommetSum`
+    // vaut null et la bulle se rabat sur le centile courant — qui est alors le
+    // même nombre, au présent.
+    const sommetCentile = sommetSum != null
+      ? Math.max(1, Math.min(99, centileFrom(sommetSum, sumThresholds)))
+      : null;
+    const sommetTier = sommetSum != null
+      ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].label
       : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
-    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history);
+    const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history, suivi?.sums);
 
     type RawArticle = { media_id: string; headline_minutes?: number | null };
     let totalHeadlineMinutes = 0;
@@ -1665,7 +2190,7 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       saillanceRank,
       saillanceLabel,
       saillanceCls,
-      saillanceHint,
+      saillanceCentile,
       timeMtl: e.time_interval_montreal_tz ?? e.time_interval_utc,
       headlineHours,
       saillantSince,
@@ -1678,24 +2203,38 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
       scoreQcSum24h: s.sumQc,
       sommetSum,
       sommetLabel,
+      sommetCentile,
+      sommetTier,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
       // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
       salThresholds: [sumThresholds.faible, sumThresholds.moyenne, sumThresholds.eleve, sumThresholds.tresEleve, sumThresholds.extreme],
+      resonanceCan: canResonance(s, totalRoc),
+      resonanceUs: usResonance(s, echoesUs, totalUs),
     };
   });
 
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
   const conv24h = windowEventConvergence(stories);
-  // Côté QC, le radar reprend le badge du module 1 ; côté ROC, la seule
-  // distribution canadienne publiée (`score_roc`, n≈1688). Voir le compromis
-  // documenté sur buildSolitudes et aws-refiners#273.
+  // Les deux côtés du radar situent le sujet dans la distribution des cumuls
+  // 24 h de SA région (aws-refiners#273, livrée 2026-08-07) ; `roc` reste le
+  // repli transitoire si la calibration cumulée manque au JSON.
   const solitudes = buildSolitudes(latest, stories, conv24h, habitualConvPct, habBands, {
-    badgeRanks,
+    badgeRanks: badgeRanksByStory,
     sumThresholds,
-    roc: salThresholdsFrom(calibration?.metrics?.score_roc),
+    // Côté ROC aussi, les deux familles ne se mélangent pas. Après le cutover,
+    // la grille cumulée a un repli codé (NEW_SUM_ROC_THRESHOLDS) qu'elle n'avait
+    // pas avant : sans lui, le radar canadien retomberait sur `roc` — le pic par
+    // bloc — donc sur une AUTRE grandeur que le côté québécois, ce qui est
+    // exactement le compromis que aws-refiners#273 a fermé.
+    sumRocThresholds: SALIENCE_CUTOVER
+      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc_sum_24h)) ?? NEW_SUM_ROC_THRESHOLDS
+      : salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
+    roc: SALIENCE_CUTOVER
+      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc)) ?? NEW_BLOCK_ROC_THRESHOLDS
+      : salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 
   const objMap = new Map<string, { score: number; issue: string; color: string; context: string }>();
@@ -1703,6 +2242,12 @@ export const loadHeadlineEvents = cache(async (): Promise<HeadlineData | null> =
     if (!e.extracted_objects) continue;
     let objects: ExtractedObject[] = [];
     try { objects = JSON.parse(e.extracted_objects) as ExtractedObject[]; } catch { continue; }
+    // HORS PÉRIMÈTRE DU CUTOVER, volontairement : ce poids ne sert qu'à ORDONNER
+    // et dimensionner les tuiles d'objets entre elles (module 3), jamais à
+    // afficher un niveau. Le basculer changerait le classement du Hot 20 sans
+    // qu'aucune grille ne l'ait calibré — et ce module a son propre dossier
+    // (aws-refiners#283, migration de l'extracteur #206). `score_qc` reste donc
+    // projeté par tables.json après la bascule, précisément pour cette ligne.
     const eventWeight = e.score_qc ?? e.score_saillance ?? 0;
     const issueColor = ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E";
     const context = e.title ?? "";
@@ -2004,6 +2549,8 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  momentLabel,
+  HINT_BY_RANK,
   ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,
@@ -2012,6 +2559,7 @@ export const __test__ = {
   dedupeByStoryline,
   pctile,
   rocScore,
+  qcScore,
   convMode,
   relScore,
   solitudesEdito,
@@ -2021,16 +2569,22 @@ export const __test__ = {
   buildSalienceTrend,
   selectTopUnes,
   MIN_QC_MEDIA_SECONDARY,
+  MIN_PART_DU_MENEUR,
   windowConvergence,
   windowEventConvergence,
   salThresholdsFrom,
+  centileFrom,
+  hintFromCentile,
   calConvFrom,
   SAL_QC_THRESHOLDS,
   SUM_QC_THRESHOLDS,
   rawRank,
-  hysteresisRank,
-  badgeRanksWithHysteresis,
+  badgeRanks,
   uniqueQcEvents,
+  canResonance,
+  usResonance,
+  usEchoes,
+  window24hBlocks,
   blockKey,
   titleTokens,
   sameStory,

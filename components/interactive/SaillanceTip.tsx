@@ -16,6 +16,14 @@ export function SaillanceTip() {
       Toutes les nouvelles présentées ici ont fait la Une. L’étiquette les compare
       entre elles, des moins aux plus saillantes du moment.
       <a href={METHO_HREF}>En savoir plus →</a>
+      {/* Nombre de manchettes (closes #307) : une seule nouvelle à l’écran se
+          lisait comme un bogue, « on comprend pas que c’est LA nouvelle du
+          moment, et que rien d’autre n’est aussi saillant » (Yannick). La
+          réponse vit ici, sous le lien, à la demande d’Adrien. */}
+      <span className="tip-note">
+        De une à trois nouvelles figurent ici, selon l’actualité&nbsp;: seules celles
+        qui se détachent nettement des autres sont retenues.
+      </span>
     </InfoTip>
   );
 }
