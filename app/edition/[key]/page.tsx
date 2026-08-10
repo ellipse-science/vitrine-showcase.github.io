@@ -92,11 +92,14 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
             <strong>{edition.label.toLowerCase()}</strong> du {edition.dateLabel.toLowerCase()}.
           </span>
         </p>
+        {/* On ne garde que ce qui SURPREND le lecteur. Qu'un module publié
+            chaque jour soit restitué au jour va de soi : le dire tenait de la
+            note d'ingénieur, pas de l'information (retour d'Adrien, 10-08).
+            L'absence d'illustration, elle, ne va pas de soi — l'image est un
+            élément visible du module, et son absence demande une raison. */}
         <p className="archive-notice-aside">
           L&apos;illustration et la musique ne sont pas conservées : elles n&apos;existent que
-          pour l&apos;édition courante. Les modules publiés au jour ou à la semaine —
-          partis et couverture, Assemblée nationale, Polimètre+ — sont restitués à leur
-          date, pas à l&apos;heure.
+          pour l&apos;édition courante.
         </p>
         {/* La sortie doit rester sous la main : le bandeau est collant, donc ce
             lien est le seul retour visible une fois qu'on a défilé. */}
