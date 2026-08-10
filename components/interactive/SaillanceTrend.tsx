@@ -61,13 +61,105 @@ function capDuPoint(p: SalienceTrendPoint) {
   // « points » explicite : sans unité, un nombre nu à côté d'un mot de niveau se
   // lit comme un rang ou un pourcentage. Et la variation nomme le bloc auquel
   // elle se compare, sinon « −24 % » ne dit pas depuis quand.
-  const val = <span className="trend-val">{p.cumul.toFixed(1).replace(".", ",")}&nbsp;points</span>;
+  // EN TAGS, PAS EN PHRASE (demande d'Adrien, 2026-08-09). Quatre grandeurs
+  // différentes — un moment, un statut, un niveau, une valeur et sa variation —
+  // étaient enfilées sur une seule ligne séparée par des points médians : ça se
+  // lisait comme une phrase alors que ce sont cinq faits indépendants, et l'oeil
+  // n'avait aucun point d'accroche pour aller chercher celui qu'il voulait.
+  // Chaque fait devient donc une pastille, avec son propre registre visuel.
+  const val = <span className="tc-chip tc-val">{p.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>;
   const bouge = p.delta != null && p.delta !== 0
-    ? <span className="trend-delta"> ({p.delta > 0 ? "+" : "−"}{Math.abs(p.delta)}&nbsp;%{p.deltaDepuis ? ` depuis ${p.deltaDepuis}` : ""})</span>
+    ? <span className={`tc-chip tc-delta ${p.delta > 0 ? "is-up" : "is-down"}`}>
+        {p.delta > 0 ? "+" : "−"}{Math.abs(p.delta)}&nbsp;%
+        {p.deltaDepuis ? <span className="tc-since"> / {p.deltaDepuis}</span> : null}
+      </span>
     : null;
-  return p.isAbsent
-    ? <>{p.timeLabel} · <b>Hors du radar</b> · {val}{bouge}</>
-    : <>{p.timeLabel} · <b>{p.level}</b> · {val}{bouge}</>;
+  // Le SOMMET se nomme (demande d'Adrien). Il n'était marqué que par la couleur
+  // du point : au survol, le plus haut niveau que l'histoire ait atteint se
+  // lisait comme n'importe quelle autre édition. C'est pourtant la valeur qui
+  // situe la nouvelle dans l'année (A8) et celle qui classera le palmarès.
+  const sommet = p.isPeak ? <span className="tc-chip tc-sommet">Sommet</span> : null;
+  // Même logique qu'au repos : un point sans variation à afficher est un point
+  // d'arrivée. `isFirst` marque le premier bloc où la nouvelle a été en Une.
+  const arrivee = p.isFirst && p.delta == null
+    ? <span className="tc-chip tc-etat">Nouveau</span> : null;
+  // LE TAG OFFICIEL, dans sa vraie couleur (demande d'Adrien) : la pastille du
+  // survol reprend `saillance-tag` + la classe de bande, donc exactement le fond
+  // et l'encre du badge au-dessus. Un aplat noir maison en faisait une troisième
+  // grammaire de couleur dans une bande qui n'en a qu'une.
+  //
+  // La classe vient du POINT, pas d'une table recopiée ici (relevé en review) :
+  // `TIER_BY_RANK` reste la source unique, et une copie locale aurait divergé au
+  // premier renommage de bande.
+  const niveau = p.isAbsent
+    ? <span className="tc-chip tc-niveau is-absent">Hors du radar</span>
+    : <span className={`tc-chip tc-niveau saillance-tag ${p.cls}`}>{p.level}</span>;
+  // ORDRE (Adrien), le même qu'au repos : la VARIATION collée à la flèche —
+  // sens et ampleur d'un seul mouvement de l'oeil — puis la valeur, puis les
+  // statuts (sommet, niveau), et la DATE À LA TOUTE FIN. Le moment ouvrait la
+  // ligne : il repoussait le pourcentage loin de la flèche qui l'illustre, et
+  // c'est pourtant l'information qu'on vient chercher en dernier.
+  return (
+    <span className="trend-chips">
+      {arrivee}{bouge}{val}{sommet}{niveau}
+      <span className="tc-time">{p.timeLabel}</span>
+    </span>
+  );
+}
+
+// AU REPOS : la flèche et les pastilles, PLUS DE PHRASE DU TOUT (Adrien). La
+// prose — « L'attention est retombée depuis ce midi (Sommet à 4h ce matin) » —
+// disait ce que la flèche et la variation disent déjà, en trois fois plus de
+// signes. Le mouvement se lit maintenant dans le sens de la flèche et dans la
+// pastille de variation, qui nomme le bloc auquel elle se compare.
+//
+// LES CHIFFRES SONT CEUX DU MOMENT, jamais ceux du sommet. Au repos la bande
+// répond à « où en est cette nouvelle MAINTENANT » ; le sommet, lui, a désormais
+// sa place dans la bulle ⓘ, où il situe la nouvelle dans l'année (A8). Le mettre
+// ici aussi ferait dire deux choses différentes au même endroit.
+//
+// DEUX absences volontaires, demandées explicitement :
+//   · pas de tag de NIVEAU — le badge est juste au-dessus, il le dit déjà ;
+//   · pas de « Hors du radar » — c'est l'état d'UN bloc, pas de la journée ;
+//     il n'apparaît qu'au survol du point concerné.
+// La VALEUR s'affiche même quand la nouvelle a quitté les Unes : le cumul 24 h
+// existe toujours, et c'est lui que le badge affiche.
+// Quand `delta` est nul, la bande n'a plus que la valeur à montrer et le
+// mouvement disparaît. Ça arrive dans deux cas seulement, et ce sont justement
+// les deux qui méritent d'être nommés : la nouvelle vient d'ARRIVER (premier
+// bloc, rien avant à quoi se comparer) ou elle REVIENT après une absence (le
+// bloc précédent valait zéro). Une pastille courte les dit, sans réintroduire
+// la phrase qu'on vient de retirer.
+function etatSansVariation(situation: SalienceTrend["situation"]) {
+  if (situation === "nouvelle") return "Nouveau";
+  if (situation === "retour") return "Retour";
+  return null;
+}
+
+function capAuRepos(trend: SalienceTrend) {
+  const maintenant = trend.points.find((p) => p.isNow);
+  const etat = maintenant && maintenant.delta == null ? etatSansVariation(trend.situation) : null;
+  return (
+    <span className="trend-chips">
+      {etat ? <span className="tc-chip tc-etat">{etat}</span> : null}
+      {maintenant ? (
+        <>
+          {/* LA VARIATION D'ABORD, collée à la flèche (Adrien) : la flèche donne
+              le SENS du mouvement, le pourcentage en donne l'AMPLEUR — c'est une
+              seule information en deux signes, les séparer par la valeur cassait
+              la lecture. La valeur absolue vient ensuite, c'est l'état, pas le
+              mouvement. */}
+          {maintenant.delta != null && maintenant.delta !== 0 ? (
+            <span className={`tc-chip tc-delta ${maintenant.delta > 0 ? "is-up" : "is-down"}`}>
+              {maintenant.delta > 0 ? "+" : "−"}{Math.abs(maintenant.delta)}&nbsp;%
+              {maintenant.deltaDepuis ? <span className="tc-since"> / {maintenant.deltaDepuis}</span> : null}
+            </span>
+          ) : null}
+          <span className="tc-chip tc-val">{maintenant.cumul.toFixed(1).replace(".", ",")}&nbsp;pts</span>
+        </>
+      ) : null}
+    </span>
+  );
 }
 
 export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
@@ -82,6 +174,16 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   const line = pts.map((p, i) => `${xs(i).toFixed(1)},${ys(p.cumul).toFixed(1)}`).join(" ");
 
   const active = hover !== null ? pts[hover] : null;
+  // La flèche et la couleur décrivaient TOUJOURS la tendance d'ensemble, même
+  // quand le survol lisait un point qui, lui, MONTAIT : « ↘ » rouge au-dessus
+  // d'un « +29 % depuis hier 20h » (relevé par Adrien). Deux affirmations
+  // contraires sur le même point. Tant qu'un point est pointé, toute la bande
+  // parle de LUI — flèche, couleur et texte ensemble ; au repos, elle reparle
+  // des 24 h. Un point sans variation (le premier, ou un plat) est neutre :
+  // garder la flèche globale y réintroduirait exactement la contradiction.
+  const dirActif: SalienceTrend["dir"] = active
+    ? (active.delta == null || active.delta === 0 ? "flat" : active.delta > 0 ? "up" : "down")
+    : trend.dir;
 
   // Les nombres vivent maintenant DANS la phrase (part actuelle + part au
   // sommet), pas dans une parenthèse séparée : « −40 % » était ambigu (points
@@ -96,34 +198,59 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
   // <span> et non <div> : la trajectoire vit maintenant DANS la bande de
   // saillance, elle-même un <span> (un div y serait un imbriquement invalide).
   return (
-    <span className={`saillance-trend trend-${trend.dir}`}>
+    <span className={`saillance-trend trend-${dirActif}`}>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
           role="img" aria-label={`Niveau de saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
           <polyline points={line} fill="none" className="trend-line" strokeWidth="1.9" strokeLinejoin="round" />
+          {/* Les points VISIBLES ne portent plus rien d'interactif : leur rayon
+              encode un niveau (1,9 px à 4,8 px), il ne peut pas servir aussi de
+              cible de souris. Viser 1,9 px était « tannant » (Adrien). */}
           {pts.map((p, i) => (
             <circle
-              key={i}
+              key={`pt${i}`}
               className={`trend-pt${p.isAbsent ? " is-absent" : ""}${p.isPeak ? " is-peak" : ""}${p.isNow ? " is-now" : ""}${i === hover ? " is-hover" : ""}`}
               cx={xs(i).toFixed(1)} cy={ys(p.cumul).toFixed(1)}
               r={rayon(p, i === hover)}
-              tabIndex={0}
-              role="img"
-              aria-label={p.isAbsent
-                ? `${p.timeLabel} : Hors du radar`
-                : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
-              onPointerEnter={() => setHover(i)}
-              onPointerLeave={() => setHover((h) => (h === i ? null : h))}
-              onFocus={() => setHover(i)}
-              onBlur={() => setHover((h) => (h === i ? null : h))}
             />
           ))}
+          {/* CIBLES DE SURVOL — des BANDES, pas des pastilles (#430). Un disque
+              plus gros butait sur deux limites : il laissait des zones mortes
+              entre voisins, et comme `.trend-spark` est en `overflow: visible`,
+              l'agrandir davantage l'aurait fait déborder du cadre pour voler le
+              survol au titre. Une bande verticale pleine hauteur, large d'un
+              demi-intervalle de chaque côté, règle les deux : les bandes sont
+              CONTIGUËS (aucun trou : tout point du graphe appartient au point le
+              plus proche) et restent strictement dans la boîte. Cible utile :
+              22,8 × 24 px au lieu d'un disque de 8 px de rayon.
+              C'est aussi ce qui porte le focus clavier et l'étiquette lue — un
+              seul élément focusable par point. */}
+          {pts.map((p, i) => {
+            const demi = (W - 2 * PADX) / Math.max(1, pts.length - 1) / 2;
+            const x = Math.max(0, xs(i) - demi), x2 = Math.min(W, xs(i) + demi);
+            return (
+              <rect
+                key={`hit${i}`}
+                className="trend-hit"
+                x={x.toFixed(1)} y={0} width={(x2 - x).toFixed(1)} height={H}
+                tabIndex={0}
+                role="img"
+                aria-label={p.isAbsent
+                  ? `${p.timeLabel} : Hors du radar`
+                  : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
+                onPointerEnter={() => setHover(i)}
+                onPointerLeave={() => setHover((h) => (h === i ? null : h))}
+                onFocus={() => setHover(i)}
+                onBlur={() => setHover((h) => (h === i ? null : h))}
+              />
+            );
+          })}
         </svg>
       </span>
       {/* Flèche et libellé dans le MÊME bloc de retour à la ligne : en mobile, la
           phrase passe sous la courbe, et une flèche laissée seule au bout de la
           première ligne se lit comme un défaut d'affichage. */}
-      <span className="trend-say"><Arrow dir={trend.dir} />
+      <span className="trend-say"><Arrow dir={dirActif} />
       {/* Le libellé fait double emploi : tendance + ampleur au repos, lecture du
           bloc pointé au survol. Au survol on donne la PART du bloc pointé — plus
           le niveau (« Très faible »), qui parlait l'échelle du badge et créait la
@@ -143,7 +270,7 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           <span className="trend-cap-ghost" aria-hidden="true" key={i}>{n}</span>
         ))}
         <span className="trend-cap-live" aria-live="polite">
-          {active ? capDuPoint(active) : trend.capLabel}
+          {active ? capDuPoint(active) : capAuRepos(trend)}
         </span>
       </span>
       </span>

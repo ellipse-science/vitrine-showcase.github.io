@@ -1,5 +1,11 @@
 [
   {
+    "pr": 436,
+    "date": "2026-08-10T15:36:46Z",
+    "note": "test(saillance) : les fixtures cessent de dépendre de l'état du flag",
+    "version": null
+  },
+  {
     "pr": 433,
     "date": "2026-08-09T23:32:12Z",
     "note": "Le niveau de saillance affiché sous une manchette suit désormais directement sa valeur : dès qu'une nouvelle franchit un seuil, elle porte le palier correspondant, à la hausse comme à la baisse. Et l'infobulle donne le chiffre exact — « environ 75 % des Unes sont moins saillantes que celle-ci » — au lieu d'une estimation par palier.",

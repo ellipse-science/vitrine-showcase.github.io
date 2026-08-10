@@ -1,12 +1,13 @@
 {
-  "generated_at": "2026-08-10T00:03Z",
-  "headline_fr": "Ottawa face à Washington : tensions sur les droits de douane",
-  "headline_en": "Négociations commerciales avec les États-Unis : vers une entente pour le 19 août?",
-  "main_issue": "international_affairs_and_defense",
-  "main_issue_text_fr": "Affaires internationales et défense",
+  "generated_at": "2026-08-10T12:04Z",
+  "headline_fr": "Incendie à Summerland : décès d'une femme de 80 ans confirmé",
+  "headline_en": "B.C. wildfire shows little growth overnight as RCMP investigate possible death",
+  "main_issue": "environment_and_energy",
+  "main_issue_text_fr": "Environnement et énergie",
   "context_outlets": [
     "RCI",
-    "TVA",
-    "CBC"
+    "GAM",
+    "CBC",
+    "GN"
   ]
 }

@@ -219,18 +219,74 @@ describe("pctile (jauge de convergence)", () => {
   });
 });
 
+// Le libellé d'un bloc a longtemps existé en TROIS exemplaires divergents (bulle
+// ⓘ, phrase de trajectoire, survol). Il passe désormais par un helper unique :
+// ces tests le tiennent à sa règle — l'heure ET le moment de la journée, avec un
+// repère de jour dans CHAQUE case, sans exception.
+describe("momentLabel — heure et moment, jamais l'un sans l'autre", () => {
+  const { momentLabel } = __test__ as unknown as {
+    momentLabel: (dayWord: string, hour: number, avecA?: boolean) => string | null;
+  };
+  const AUJ = "aujourd\u2019hui";
+
+  it("aujourd'hui : chaque case porte son repère de jour", () => {
+    expect(momentLabel(AUJ, 4, false)).toBe("4h ce matin");
+    expect(momentLabel(AUJ, 8, false)).toBe("8h ce matin");
+    expect(momentLabel(AUJ, 16, false)).toBe("16h cet après-midi");
+    expect(momentLabel(AUJ, 20, false)).toBe("20h ce soir");
+    // « midi » et « minuit » sont déjà une heure ET un moment — mais il leur
+    // faut quand même leur jour, sinon on ne sait pas de quel midi on parle.
+    expect(momentLabel(AUJ, 12, false)).toBe("ce midi");
+    expect(momentLabel(AUJ, 0, false)).toBe("minuit cette nuit");
+  });
+
+  it("aucune case d'aujourd'hui ne reste sans repère de jour", () => {
+    for (const h of [0, 4, 8, 12, 16, 20]) {
+      expect(momentLabel(AUJ, h, false)).toMatch(/ce |cet |cette /);
+    }
+  });
+
+  it("hier : le repère de jour est porté par « hier »", () => {
+    expect(momentLabel("hier", 4, false)).toBe("4h hier matin");
+    expect(momentLabel("hier", 12, false)).toBe("hier midi");
+    expect(momentLabel("hier", 0, false)).toBe("hier minuit");
+  });
+
+  it("« à » se colle devant une heure, jamais devant un démonstratif", () => {
+    expect(momentLabel(AUJ, 4)).toBe("à 4h ce matin");
+    expect(momentLabel(AUJ, 12)).toBe("ce midi");        // et non « à ce midi »
+    // « minuit » reste une heure : « atteint à minuit cette nuit » se dit.
+    expect(momentLabel(AUJ, 0)).toBe("à minuit cette nuit");
+  });
+
+  it("une date lointaine passe telle quelle", () => {
+    expect(momentLabel("le 18 juillet", 16)).toBe("le 18 juillet");
+  });
+});
+
 describe("rocScore", () => {
-  it("lit la colonne score_roc publiée", () => {
-    expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);
+  // Ce bloc éprouve le POINT DE BASCULE lui-même : chaque cas nomme donc le
+  // régime qu'il teste au lieu de dépendre de l'état du flag. C'est la seule
+  // famille de tests qui doit le faire — ailleurs, les fixtures posent les deux
+  // colonnes en miroir (cf. la note sur `ev`) et le régime n'a plus d'effet.
+  it("flag ÉTEINT : lit la colonne score_roc publiée", () => {
+    expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never, false)).toBe(12);
+  });
+  it("flag ALLUMÉ : lit salience_index_roc, à l'échelle d'affichage", () => {
+    expect(rocScore({ score_roc: 12, salience_index_roc: 0.42 } as never, true)).toBeCloseTo(42, 6);
+    // Et il ne retombe PAS sur l'ancienne colonne quand la nouvelle manque :
+    // ce serait publier un chiffre de l'ancien indice sous le nouveau.
+    expect(rocScore({ score_roc: 12 } as never, true)).toBe(0);
   });
   // Garde-fou du #272 : le repli `saillance − qc − us` est retiré. S'il revenait,
   // le côté Canada réabsorberait les USA dès que score_us manquerait.
   it("ne dérive JAMAIS le ROC par soustraction quand la colonne manque", () => {
-    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(0);
-    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never, false)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never, false)).toBe(0);
   });
-  it("rend 0 sur une ligne vide", () => {
-    expect(rocScore({} as never)).toBe(0);
+  it("rend 0 sur une ligne vide, dans les deux régimes", () => {
+    expect(rocScore({} as never, false)).toBe(0);
+    expect(rocScore({} as never, true)).toBe(0);
   });
 });
 
@@ -358,12 +414,34 @@ describe("blockKey", () => {
   });
 });
 
-const ev = (over: Record<string, unknown>) => ({
-  country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
-  media_ids: "[]", articles: "[]", interval_convergence_score: null,
-  date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
-  ...over,
-});
+// MIROIR SPEC V1 — les fixtures cessent de dépendre de l'état du flag.
+//
+// `qcScore()` lit `salience_index_qc × 100` quand SALIENCE_CUTOVER est allumé,
+// et `score_qc` sinon. Les fixtures ne posaient que `score_qc` : flag allumé,
+// elles renvoyaient donc 0 partout, et 29 tests tombaient — non pas parce que le
+// code était faux, mais parce que la donnée de test n'existait pas dans le
+// régime testé. Le mode d'échec est vicieux : il n'apparaît qu'au moment de la
+// bascule, c'est-à-dire au pire moment.
+//
+// En posant `salience_index_qc = score_qc / 100`, les deux chemins de lecture
+// rendent la MÊME valeur, et chaque test devient valable dans les deux régimes.
+// Un test qui veut éprouver spécifiquement le nouvel indice peut toujours poser
+// `salience_index_qc` explicitement : la valeur fournie l'emporte.
+const ev = (over: Record<string, unknown>) => {
+  const socle = {
+    country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
+    media_ids: "[]", articles: "[]", interval_convergence_score: null,
+    date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
+  };
+  // Voir la note « miroir spec v1 » plus haut : dérivé APRÈS l'étalement de
+  // `over`, pour suivre le `score_qc` que le test a réellement demandé.
+  const base = { ...socle, ...over } as Record<string, unknown>;
+  return {
+    ...base,
+    salience_index_qc: base.salience_index_qc ?? Number(base.score_qc ?? 0) / 100,
+    salience_index_roc: base.salience_index_roc ?? Number(base.score_roc ?? 0) / 100,
+  };
+};
 
 describe("buildIssueMedia (actualités du treemap)", () => {
   it("conserve les médias propres à chaque actualité et leurs liens", () => {
@@ -799,7 +877,9 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
       { blockUtc: "2026-07-24T07", qc: 20, present: true },  // 03-07 Mtl → publié 8 h
     ] as never, thr, "2026-07-24")!;
     const now = t.points.find((p: { isNow: boolean }) => p.isNow)!;
-    expect(now.timeLabel).toMatch(/8\s*h$/);   // heure de PUBLICATION
+    // Plus ancré en fin de chaîne : le libellé continue par le moment de la
+    // journée (« 8h ce matin »). Ce qui compte reste l'heure de PUBLICATION.
+    expect(now.timeLabel).toMatch(/8\s*h/);    // heure de PUBLICATION
     expect(now.timeLabel).not.toContain("3");  // surtout pas l'heure de début
   });
   it("bloc de nuit 23-03 (publié à 4 h LE LENDEMAIN) → « aujourd’hui 4 h », jamais « hier » (jour = publication, #317)", () => {
@@ -811,7 +891,10 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
     ] as never, thr, "2026-07-24")!;
     const overnight = t.points[t.points.length - 2];   // le point 23-03
     expect(overnight.timeLabel).toMatch(/4\s*h/);       // heure de publication
-    expect(overnight.timeLabel).toContain("aujourd");   // « aujourd’hui », jour de publication
+    // Le libellé porte maintenant l'heure ET le moment (« 4h ce matin ») : c'est
+    // « ce matin » qui dit le jour de publication. Le garde-fou du #317 reste le
+    // même — jamais « hier », qui serait le jour du DÉBUT du bloc.
+    expect(overnight.timeLabel).toContain("ce matin");  // jour de publication
     expect(overnight.timeLabel).not.toContain("hier");  // surtout pas le jour du début
   });
   it("bloc du soir 19-23 Mtl → publié à « minuit » (fin 23 h + 1), pas « 19 h »", () => {
@@ -842,13 +925,16 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
       { blockUtc: "2026-07-27T07", qc: 0, present: false, share: 0 },    // 03-07 Mtl → publié 8 h le 27
     ] as never, thr, "2026-07-27")!;
     const labels = t.points.map((p: { timeLabel: string }) => p.timeLabel);
-    expect(labels[0]).toBe("hier 16h");
-    expect(labels[1]).toBe("hier 20h");
+    // Heure ET moment de la journée depuis le 2026-08-09 (arbitrage d'Adrien) :
+    // l'heure seule laissait deviner la demi-journée. « minuit » et « midi »
+    // restent seuls — ils sont déjà l'un et l'autre.
+    expect(labels[0]).toBe("16h hier après-midi");
+    expect(labels[1]).toBe("20h hier soir");
     expect(labels[2]).toBe("hier minuit");      // publié à minuit, rattaché au jour qui finit
-    expect(labels[3]).toBe("aujourd’hui 4h");   // publié le 27, même si le bloc démarre le 26
-    expect(labels[4]).toBe("aujourd’hui 8h");
+    expect(labels[3]).toBe("4h ce matin");      // publié le 27, même si le bloc démarre le 26
+    expect(labels[4]).toBe("8h ce matin");
     // Et la phrase ne peut plus annoncer un sommet dans le futur de l'édition.
-    expect(t.capLabel).toContain("hier à 16h");
+    expect(t.capLabel).toContain("à 16h hier après-midi");
   });
 
   it("deux Unes de la même édition nomment les mêmes blocs de la même façon", () => {
@@ -1066,7 +1152,7 @@ describe("buildSolitudes", () => {
       { badgeRanks: new Map(), sumThresholds: sumRoc, sumRocThresholds: sumRoc, roc: rocBlocs });
     // cumul 50 : ≥ moyenne (10), < eleve (100) → « Modérée », population ROC.
     expect(avecCumul.axes[0].salienceLabel).toBe("Modérée");
-    expect(avecCumul.axes[0].salienceHint).toContain("canadiens");
+    expect(avecCumul.axes[0].salienceHint).toContain("canadiennes");
     // REPLI transitoire : sans calibration cumulée, l'ancien chemin (pic 24 h
     // vs blocs) reste — ici pic 50 ≥ extreme (5) → « Exceptionnelle ». Le même
     // sujet change d'étiquette entre les deux chemins : c'est le test qui
