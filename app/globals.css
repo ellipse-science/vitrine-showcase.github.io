@@ -54,7 +54,13 @@
        horizontal sur mobile. Les causes réelles sont corrigées plus bas ;
        ceci est une ceinture de sécurité. */
     max-width: 100%;
-    overflow-x: hidden;
+    /* `clip` et non `hidden` : les deux coupent le débordement horizontal, mais
+       `hidden` fait de l'élément un CONTENEUR DE DÉFILEMENT — ce qui casse tout
+       `position: sticky` de la page, y compris le bandeau d'archive (#434), qui
+       se retrouvait à coller au haut d'un scroller invisible plutôt qu'à
+       l'écran. `clip` ne crée pas de scroller : la ceinture de sécurité reste,
+       le collant fonctionne. */
+    overflow-x: clip;
   }
 
   /* Cibles des liens d'ancrage par module (#deux-solitudes, etc.) — un peu
@@ -780,12 +786,13 @@
     top: 0;
     z-index: 40;
     margin: 22px 0 0;
-    padding: 12px 16px;
-    border: 1px solid var(--rule);
-    border-left: 3px solid var(--cordovan);
-    background: var(--paper-deep);
-    /* Opaque, jamais translucide : le texte des modules défile DERRIÈRE. */
-    box-shadow: 0 6px 14px -10px rgba(28, 25, 23, 0.55);
+    padding: 12px 0;
+    /* Filets fins, comme le reste du site — pas de barre latérale colorée ni
+       d'ombre portée (retour d'Adrien : « trop design IA »). Le fond opaque
+       suffit : le texte des modules défile DERRIÈRE, pas au travers. */
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
   }
   .archive-notice-exit {
     display: inline-block;
@@ -4885,7 +4892,7 @@
     .edition-arrow { width: 24px; height: 24px; margin-bottom: 9px; }
     .edition-arrow svg { width: 14px; height: 14px; }
 
-    .archive-notice { padding: 10px 12px; }
+    .archive-notice { padding: 10px 0; }
     .archive-notice-line { gap: 6px; }
     .archive-notice-body { font-size: 13px; }
     .archive-notice-aside { font-size: 11px; }
