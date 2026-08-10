@@ -1,5 +1,35 @@
 [
   {
+    "pr": 442,
+    "date": "2026-08-10T20:08:10Z",
+    "note": "Le mot « Une » s'écrit désormais avec une majuscule partout sur le site, y compris dans l'expression « à la Une ».",
+    "version": "2.21.0-beta.3"
+  },
+  {
+    "pr": 441,
+    "date": "2026-08-10T20:05:18Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique de la typographie des textes publics avant chaque mise en ligne.",
+    "version": null
+  },
+  {
+    "pr": 444,
+    "date": "2026-08-10T20:03:22Z",
+    "note": "Le premier module s'intitule désormais « L'actualité saillante du moment au Québec », et son infobulle explique que le nombre de nouvelles affichées, de une à trois, dépend de l'actualité du moment.",
+    "version": "2.21.0-beta.2"
+  },
+  {
+    "pr": 414,
+    "date": "2026-08-10T20:00:30Z",
+    "note": "Sur téléphone, l'illustration de la Une principale apparaît maintenant juste sous le titre, au lieu d'être reléguée deux écrans plus bas.",
+    "version": "2.21.0-beta.1"
+  },
+  {
+    "pr": 443,
+    "date": "2026-08-10T19:55:22Z",
+    "note": "Ajustement technique de l'outillage de développement. Rien ne change sur le site pour les visiteuses et les visiteurs.",
+    "version": null
+  },
+  {
     "pr": 418,
     "date": "2026-08-10T15:41:24Z",
     "note": "Aucun changement visible sur le site — réorganisation interne des alertes de surveillance.",

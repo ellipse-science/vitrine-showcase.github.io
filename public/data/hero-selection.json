@@ -1,10 +1,10 @@
 {
-  "event_id": "20260810T110000Z-evt-evacuees-slowly-learn-losses-wildfire-75f4db59",
+  "event_id": "20260810T150000Z-evt-feux-foret-armee-canadienne-prete-1e611904",
   "storyline_id": "story-abbotsford-1d5d99ad",
-  "title": "Incendies en C.-B. : une octogénaire périt en fuyant les flammes",
+  "title": "L'armée canadienne prête à intervenir face aux feux de forêt en C.-B.",
   "main_issue": "environment_and_energy",
   "date_utc": "2026-08-10",
-  "time_interval_utc": "11-15",
-  "sum_qc": 77.121,
+  "time_interval_utc": "15-19",
+  "sum_qc": 60.905,
   "peak_qc": 36.92
 }

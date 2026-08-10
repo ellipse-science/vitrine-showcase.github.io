@@ -89,7 +89,7 @@ export function EditionNav({ editions, currentKey }: {
         el.href = editionHref(target.key, target.key === editions[0]?.key);
         el.removeAttribute("aria-disabled");
         el.title = isDisplayed
-          ? `${target.label} — édition affichée`
+          ? `${target.label} (édition affichée)`
           : `Voir l'${target.label.replace(/^Édition /, "édition ")} du ${target.dateLabel.toLowerCase()}`;
         if (isDisplayed) el.setAttribute("aria-current", "page");
         else el.removeAttribute("aria-current");
@@ -99,7 +99,7 @@ export function EditionNav({ editions, currentKey }: {
         el.removeAttribute("href");
         el.removeAttribute("aria-current");
         el.setAttribute("aria-disabled", "true");
-        el.title = `Mise à jour de ${String(i * 4).padStart(2, "0")} h — pas d'édition disponible`;
+        el.title = `Mise à jour de ${String(i * 4).padStart(2, "0")} h (pas d'édition disponible)`;
       }
     });
 

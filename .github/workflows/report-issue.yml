@@ -43,7 +43,7 @@ jobs:
             // ─────────────────────────────────────────────────────────────
             const SECTION_LABELS = [
               // ── Les 6 modules ──────────────────────────────────────────
-              { match: ['une des unes', 'unes des unes', 'module 1'],                    section: 'Une des unes',           label: { name: 'module-1-unes-des-unes',      color: '8b949e', description: 'Signalements du module Une des unes' } },
+              { match: ['une des unes', 'unes des unes', 'module 1'],                    section: 'Une des Unes',           label: { name: 'module-1-unes-des-unes',      color: '8b949e', description: 'Signalements du module Une des Unes' } },
               { match: ['deux solitudes', '2 solitudes', 'module 2'],                    section: 'Deux solitudes',         label: { name: 'module-2-solitudes',          color: '1f6feb', description: 'Signalements du module Deux solitudes' } },
               { match: ['partis et couverture', 'couverture des partis', 'module 3'],    section: 'Partis et couverture',   label: { name: 'module-3-partis-couverture',  color: '0969da', description: 'Signalements du module Partis et couverture' } },
               { match: ['enjeux saillants', 'de quoi parle', 'module 4'],                section: 'Enjeux saillants',       label: { name: 'module-4-enjeux-saillants',   color: '1a7f37', description: 'Signalements du module Enjeux saillants' } },

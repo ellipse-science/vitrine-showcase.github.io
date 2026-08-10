@@ -20,7 +20,7 @@ export default async function Home() {
         <RawMaquette chunk="top" />
       </div>
 
-      <div id="une-des-unes" data-section="Une des unes">
+      <div id="une-des-unes" data-section="Une des Unes">
         <UneDesUnesSection />
       </div>
 

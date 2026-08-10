@@ -1,0 +1,38 @@
+# Garde-fou : la typographie des textes publics (AGENTS.md règle #7).
+#
+# La règle existait depuis le 14 juillet et n'était vérifiée nulle part. Audit
+# du 2026-08-10 sur le site en production : 27 heures espacées (« 00 h » dans le
+# bandeau d'en-tête), 272 tirets cadratins, 424 deux-points sans insécable,
+# « Une des unes » en minuscule dans la fenêtre de signalement — donc dans le
+# titre de toutes les issues qu'elle produit.
+#
+# Le check lit les SOURCES (le texte que nous écrivons), jamais `out/` : les
+# manchettes des médias ne sont pas de notre plume.
+name: garde-redaction
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: garde-redaction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typographie:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # Aucun `npm ci` : le script n'a aucune dépendance, il ne lit que des
+      # fichiers. Le check rend donc son verdict en quelques secondes, sans
+      # attendre l'installation, et reste vert même si le lockfile est en vrac.
+      - name: Vérifier la typographie des textes publics
+        run: node scripts/garde_redaction.mjs

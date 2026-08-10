@@ -45,13 +45,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const edition = (await listEditions()).find((e) => e.key === key);
   if (!edition) return {};
 
-  const title = `${edition.label} — ${edition.dateLabel}`;
+  // `dateLabel` arrive capitalisé (il sert de pastille de date, en tête de
+  // ligne) ; en apposition après une virgule, la majuscule serait fautive.
+  const title = `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
   const description =
     `La Vitrine démocratique telle qu'elle était à l'${edition.label.toLowerCase()} ` +
     `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, partis, ` +
     `enjeux, Assemblée nationale et Polimètre+.`;
 
   return {
+    // garde-redaction: ok (séparateur d'onglet, forme commune à toutes les pages du site)
     title: `${title} — La Vitrine démocratique`,
     description,
     openGraph: { type: "article", siteName: "La Vitrine démocratique", title, description, locale: "fr_CA" },
@@ -98,7 +101,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
             L'absence d'illustration, elle, ne va pas de soi — l'image est un
             élément visible du module, et son absence demande une raison. */}
         <p className="archive-notice-aside">
-          L&apos;illustration et la musique ne sont pas conservées : elles n&apos;existent que
+          L&apos;illustration et la musique ne sont pas conservées&nbsp;: elles n&apos;existent que
           pour l&apos;édition courante.
         </p>
         {/* La sortie doit rester sous la main : le bandeau est collant, donc ce
@@ -111,7 +114,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
           instantané 4 h et se rejouent au BLOC près ; les modules 3, 5 et 6 sont
           publiés au jour ou à la semaine et se rejouent à leur propre cadence
           (cf. le bandeau ci-dessus, qui le dit au lecteur). */}
-      <div id="une-des-unes" data-section="Une des unes">
+      <div id="une-des-unes" data-section="Une des Unes">
         <UneDesUnesSection editionKey={edition.key} />
       </div>
 
