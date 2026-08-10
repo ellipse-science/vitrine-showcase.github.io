@@ -168,7 +168,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
     <section className="polimeter-plus" aria-label="Polimètre+">
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+ : promesses électorales à la une</h2>
+          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
           <div className="period-subtitle">
             Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
             <InfoTip size="sm" label="À propos du Polimètre+">
