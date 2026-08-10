@@ -273,7 +273,11 @@ export async function UneDesUnesSection() {
   // l'en-tête (#edition-name) et la fraîcheur réelle dans « Dernière mise à
   // jour du module » en bas — le titre, lui, ne doit pas trahir un retard de
   // données. Partagé avec le ShareButton pour éviter toute divergence.
-  const sectionTitle = "Les Unes saillantes du moment";
+  // « au Québec » (demande d'Adrien, A9) : le module ne disait pas de quelle
+  // population il parlait, alors que son voisin « Deux solitudes » compare deux
+  // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
+  // Le titre porte donc la même règle que les phrases de distribution.
+  const sectionTitle = "Les Unes saillantes du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une

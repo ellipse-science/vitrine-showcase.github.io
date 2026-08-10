@@ -1045,19 +1045,32 @@ const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve:
  *  faible » sur un sujet mené par le ROC laisse croire qu'on compare les deux
  *  régions dans le même panier, ce que « Deux solitudes » cherche justement à
  *  ne pas faire. */
-const POP_QC = "des médias québécois";
-const POP_ROC = "des médias canadiens";
+// A9 (#430) — RÈGLE DE COHÉRENCE : toute phrase de distribution nomme ses TROIS
+// composantes — la valeur situéе, la POPULATION, et la PÉRIODE. Avant, chaque
+// module n'en nommait que deux, et pas les mêmes : la Une des Unes disait « des
+// Unes de l'année » sans la région, le radar disait « des médias canadiens »
+// sans la période. Un lecteur voyant 96 % d'un côté et 67 % de l'autre n'avait
+// aucun moyen de savoir qu'on ne mesurait pas contre la même règle — d'où une
+// contradiction apparente là où il n'y a que deux questions différentes.
+//
+// Adjectifs et non groupes nominaux : « des Unes québécoises de l'année » se
+// compose, « des Unes des médias québécois de l'année » non.
+const POP_QC = "québécoises";
+const POP_ROC = "canadiennes";
 
 /** Une seule rédaction pour les six niveaux, la population en paramètre. Ces
  *  phrases existaient en double (ici et dans saillanceTierFromScore), mot pour
  *  mot : la moindre retouche devait être faite deux fois. */
+// Repli par bande, quand le centile exact n'est pas calculable. Même règle des
+// trois composantes que `hintFromCentile` : ces phrases sortent aux mêmes
+// endroits, elles ne peuvent pas parler une autre langue.
 const HINT_BY_RANK: Record<number, (pop: string) => string> = {
-  6: (p) => `Plus saillante que 95 % des nouvelles à la Une ${p}.`,
-  5: (p) => `Plus saillante qu’environ 85 % des nouvelles à la Une ${p}.`,
-  4: (p) => `Plus saillante qu’environ 65 % des nouvelles à la Une ${p}.`,
-  3: (p) => `Environ 65 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
-  2: (p) => `Environ 85 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
-  1: (p) => `95 % des nouvelles à la Une ${p} sont plus saillantes que celle-ci.`,
+  6: (p) => `Sur les 24 dernières heures, elle dépasse 95 % des Unes ${p} de l’année.`,
+  5: (p) => `Sur les 24 dernières heures, elle dépasse environ 85 % des Unes ${p} de l’année.`,
+  4: (p) => `Sur les 24 dernières heures, elle dépasse environ 65 % des Unes ${p} de l’année.`,
+  3: (p) => `Sur les 24 dernières heures, environ 65 % des Unes ${p} de l’année sont plus saillantes.`,
+  2: (p) => `Sur les 24 dernières heures, environ 85 % des Unes ${p} de l’année sont plus saillantes.`,
+  1: (p) => `Sur les 24 dernières heures, 95 % des Unes ${p} de l’année sont plus saillantes.`,
 };
 
 // ── Le VRAI centile, plutôt qu'un centile arrondi à six paliers (#430, A7) ───
@@ -1099,9 +1112,14 @@ function centileFrom(v: number, t: typeof SUM_QC_THRESHOLDS): number {
  */
 function hintFromCentile(v: number, t: typeof SUM_QC_THRESHOLDS, pop: string): string {
   const c = Math.max(1, Math.min(99, centileFrom(v, t)));
+  // « Sur les 24 dernières heures » : le radar situe par le MOMENT, pas par le
+  // sommet — et c'est juste, parce que sa figure montre un instant (la distance
+  // au centre est la part d'attention de la fenêtre). Contrairement à la Une des
+  // Unes, il ne dessine aucun sommet ; lui en faire dire un décrirait ce que
+  // l'image ne montre pas. La portée devait donc être ÉNONCÉE, pas changée.
   return c >= 50
-    ? `Environ ${c} % des nouvelles à la Une ${pop} sont moins saillantes que celle-ci.`
-    : `Environ ${100 - c} % des nouvelles à la Une ${pop} sont plus saillantes que celle-ci.`;
+    ? `Sur les 24 dernières heures, elle dépasse environ ${c} % des Unes ${pop} de l’année.`
+    : `Sur les 24 dernières heures, environ ${100 - c} % des Unes ${pop} de l’année sont plus saillantes.`;
 }
 
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
@@ -2524,6 +2542,7 @@ export async function loadTreemap(): Promise<TreemapAllPeriods | null> {
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
   momentLabel,
+  HINT_BY_RANK,
   ISSUE_LABELS_SHORT,
   latestIssueRow,
   parseIssuesMeta,

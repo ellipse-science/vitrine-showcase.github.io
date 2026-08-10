@@ -1119,7 +1119,7 @@ describe("buildSolitudes", () => {
       { badgeRanks: new Map(), sumThresholds: sumRoc, sumRocThresholds: sumRoc, roc: rocBlocs });
     // cumul 50 : ≥ moyenne (10), < eleve (100) → « Modérée », population ROC.
     expect(avecCumul.axes[0].salienceLabel).toBe("Modérée");
-    expect(avecCumul.axes[0].salienceHint).toContain("canadiens");
+    expect(avecCumul.axes[0].salienceHint).toContain("canadiennes");
     // REPLI transitoire : sans calibration cumulée, l'ancien chemin (pic 24 h
     // vs blocs) reste — ici pic 50 ≥ extreme (5) → « Exceptionnelle ». Le même
     // sujet change d'étiquette entre les deux chemins : c'est le test qui
