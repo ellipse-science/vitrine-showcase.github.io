@@ -14,14 +14,14 @@ const BAND_COLORS = ["#E4DCC6", "#DCCBA2", "#D2B488", "#C99A76", "#BE7C6A", "#A8
 // Phrase par niveau (1→6), registre public — ancre le référent (« typique »,
 // « 1 sur 20 ») sans jargon.
 const MICRO: Record<number, string> = {
-  1: "Le bas de l’échelle : sur un an de Unes, 19 sur 20 attirent plus d’attention que celle-ci.",
+  1: "Le bas de l’échelle : sur un an de Unes québécoises, 19 sur 20 attirent plus d’attention que celle-ci.",
   2: "Sous la Une typique : 4 Unes sur 5 attirent plus d’attention que celle-ci.",
-  3: "Le niveau d’une Une typique : la moitié des Unes de l’année en attire plus, l’autre moitié moins.",
+  3: "Le niveau d’une Une typique : la moitié des Unes québécoises de l’année en attire plus, l’autre moitié moins.",
   4: "Au-dessus de la Une typique : deux Unes sur trois attirent moins d’attention que celle-ci.",
-  5: "Dans le cinquième le plus marquant des Unes de l’année.",
+  5: "Dans le cinquième le plus marquant des Unes québécoises de l’année.",
   // « à son meilleur » retiré : le niveau ne décrit plus le SOMMET de l'histoire
   // mais son attention cumulée à cette édition — il redescend avec elle.
-  6: "Le sommet de l’échelle : sur un an de Unes, à peine 1 sur 20 attire autant d’attention que celle-ci.",
+  6: "Le sommet de l’échelle : sur un an de Unes québécoises, à peine 1 sur 20 attire autant d’attention que celle-ci.",
 };
 
 // Deux rangées de libellés : SOMMET au-dessus du tracé, CETTE UNE en dessous
@@ -37,13 +37,20 @@ const MICRO: Record<number, string> = {
 const W = 300, PLOT_H = 52, LIGNE = 10, TOP = 2 * LIGNE + 4, H = TOP + PLOT_H + 2 * LIGNE + 5;
 const log10 = (v: number) => Math.log10(Math.max(v, 1));
 
-export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thresholds, qcOutlets, totalQcOutlets, since }: {
+export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLabel, sommetCentile, sommetTier, thresholds, qcOutlets, totalQcOutlets, since }: {
   rank: number;
   level: string;
+  /** Centile réel (#430, A7). La bulle disait un palier — « dans le cinquième le
+   *  plus marquant » — pendant que l'infobulle du badge, elle, donnait déjà le
+   *  vrai chiffre : deux phrases voisines qui ne disaient pas la même chose. */
+  centile?: number;
   peak: number | null;
   /** Sommet de l'indice cumulé (même échelle que `peak`), null si atteint maintenant. */
   sommet?: number | null;
   sommetLabel?: string | null;
+  /** Centile et bande AU SOMMET (#430, A8) — ce qui situe la nouvelle dans l'année. */
+  sommetCentile?: number | null;
+  sommetTier?: string | null;
   thresholds: number[];
   /** Médias québécois qui ont mis l'histoire en Une sur la fenêtre 24 h. */
   qcOutlets?: number;
@@ -92,8 +99,8 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
   // cartes de l'historique DEV : les deux tombent sur des heures différentes
   // 45,6 % du temps (écart max 1040 h). Deux mots distincts pour deux
   // grandeurs distinctes, sinon le lecteur lit une contradiction.
-  const somL1 = "Plus haut niveau", somL2 = sommetLabel ? `(${sommetLabel})` : null;
-  const nowL1 = "Cette Une", nowL2 = "(maintenant)";
+  const somL1 = "Son sommet", somL2 = sommetLabel ? `(${sommetLabel})` : null;
+  const nowL1 = "Maintenant", nowL2 = null;
   const demi = (...l: (string | null)[]) => (Math.max(...l.map((s) => (s ?? "").length)) * CAR) / 2;
   const demiNow = demi(nowL1, nowL2);
   const demiSom = demi(somL1, somL2);
@@ -105,13 +112,40 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
 
   return (
     <span className="saillance-info-card">
-      <span className="sic-kicker">Saillance {level} · {rank}/6</span>
-      {/* ORDRE (décision Adrien) : l'EXPLICATION SIMPLE en tête — ce que ce
-          niveau-ci veut dire pour cette Une-ci — et la DÉFINITION de la
-          saillance en pied, pour qui veut aller plus loin. Le lecteur qui ouvre
-          la bulle veut d'abord comprendre le badge qu'il a sous les yeux, pas
-          apprendre comment on fabrique l'indice. */}
-      <span className="sic-lede">{MICRO[rank] ?? ""}</span>
+      {/* Le « 3/6 » a été retiré (demande d'Adrien) : le rang chiffré doublait la
+          figure juste en dessous, qui le montre déjà en le SITUANT — et deux
+          façons de dire la même chose se lisent comme deux mesures. À la place,
+          la valeur elle-même, sur l'échelle d'affichage. */}
+      {/* DEUX LIGNES et non une (Adrien) : « Saillance actuelle : Modérée · 44,7
+          points » se repliait selon la largeur, et « POINTS » se retrouvait seul
+          sur la seconde ligne. La valeur passe donc systématiquement à la ligne
+          — le repli devient une mise en page voulue au lieu d'un accident. */}
+      <span className="sic-kicker">Saillance actuelle&nbsp;: {level}</span>
+      {typeof peak === "number" ? (
+        <span className="sic-kicker sic-kicker-val">{peak.toFixed(1).replace(".", ",")}&nbsp;points</span>
+      ) : null}
+      {/* A8 (#430) — LA COMPARAISON À L'ANNÉE S'ACCROCHE TOUJOURS AU SOMMET.
+          Avant, cette phrase situait la nouvelle avec sa valeur du MOMENT :
+          une histoire retombée s'annonçait « plus saillante que 57 % des Unes »
+          alors qu'elle avait atteint le 96e centile quatre heures plus tôt.
+          C'était faux — pas mal cadré : la phrase parle de « celle-ci », donc de
+          la nouvelle, et le rang d'une nouvelle dans l'année est son sommet.
+          C'est aussi la grandeur qui classera le palmarès (aws-refiners#283) :
+          la bulle et le palmarès se seraient contredits sur la même histoire.
+          Le badge, lui, ne bouge pas — il reste une fonction pure de la valeur
+          du moment (A4). Le présent n'est donc jamais nié : il est au-dessus. */}
+      <span className="sic-lede">{
+        sommet != null && typeof sommetCentile === "number" && sommetTier
+          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"}. Elle était alors ${sommetTier}, ${
+              sommetCentile >= 50
+                ? `devant environ ${sommetCentile} % des Unes québécoises de l’année.`
+                : `mais environ ${100 - sommetCentile} % des Unes québécoises de l’année restaient plus saillantes.`}`
+          : typeof centile === "number"
+            ? (centile >= 50
+                ? `C’est son sommet. Elle dépasse environ ${centile} % des Unes québécoises de l’année.`
+                : `C’est son sommet. Environ ${100 - centile} % des Unes québécoises de l’année sont plus saillantes.`)
+            : (MICRO[rank] ?? "")
+      }</span>
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
         aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
         {/* RANGÉE DU HAUT — le sommet, sur deux lignes centrées. */}
@@ -156,6 +190,10 @@ export function SaillanceInfoCard({ rank, level, peak, sommet, sommetLabel, thre
           <text x="2" y={(H - 4).toFixed(1)} className="sic-axis-label">← moins d’attention</text>
         )}
       </svg>
+      {/* La ligne « Son sommet » qui vivait ICI a migré en TÊTE de carte (A8,
+          #430) : elle ne complète plus la phrase d'ouverture, elle EST la phrase
+          qui situe la nouvelle dans l'année. La garder en double aurait donné
+          deux fois le même chiffre dans une bulle de six lignes. */}
       {/* Les faits de CETTE Une : sans eux la bulle n'explique qu'une méthode,
           jamais pourquoi cette histoire-ci se retrouve à ce niveau-là. */}
       {typeof qcOutlets === "number" && qcOutlets > 0 && (

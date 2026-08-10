@@ -1,5 +1,53 @@
 [
   {
+    "pr": 418,
+    "date": "2026-08-10T15:41:24Z",
+    "note": "Aucun changement visible sur le site — réorganisation interne des alertes de surveillance.",
+    "version": null
+  },
+  {
+    "pr": 435,
+    "date": "2026-08-10T15:39:46Z",
+    "note": "feat(saillance) : A8 et B7, et la bande de trajectoire passe en pastilles",
+    "version": null
+  },
+  {
+    "pr": 436,
+    "date": "2026-08-10T15:36:46Z",
+    "note": "test(saillance) : les fixtures cessent de dépendre de l'état du flag",
+    "version": null
+  },
+  {
+    "pr": 433,
+    "date": "2026-08-09T23:32:12Z",
+    "note": "Le niveau de saillance affiché sous une manchette suit désormais directement sa valeur : dès qu'une nouvelle franchit un seuil, elle porte le palier correspondant, à la hausse comme à la baisse. Et l'infobulle donne le chiffre exact — « environ 75 % des Unes sont moins saillantes que celle-ci » — au lieu d'une estimation par palier.",
+    "version": null
+  },
+  {
+    "pr": 432,
+    "date": "2026-08-09T23:28:49Z",
+    "note": "La petite courbe sous chaque manchette montre désormais la même chose que le niveau affiché à côté d'elle : quand la courbe monte, le niveau monte. Les moments où l'histoire n'était en Une d'aucun média québécois sont indiqués par un point creux, et le point noir marque son sommet.",
+    "version": null
+  },
+  {
+    "pr": 431,
+    "date": "2026-08-09T23:23:44Z",
+    "note": "Le niveau de saillance affiché sous les manchettes reposera bientôt sur une mesure qui tient compte du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant.",
+    "version": null
+  },
+  {
+    "pr": 429,
+    "date": "2026-08-09T16:06:20Z",
+    "note": "Les niveaux de saillance affichés sous les manchettes reposeront bientôt sur une nouvelle mesure, qui tient compte à la fois du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant : cette mise à jour prépare le terrain.",
+    "version": null
+  },
+  {
+    "pr": 428,
+    "date": "2026-08-09T03:22:55Z",
+    "note": "La page Méthodologie décrit maintenant correctement le découpage du temps utilisé pour mesurer la saillance : des blocs de quatre heures calés sur l'heure de Montréal, et non sur l'heure universelle.",
+    "version": null
+  },
+  {
     "pr": 385,
     "date": "2026-08-08T17:38:17Z",
     "note": "Les manchettes qui font aussi la Une ailleurs le disent maintenant : une mention « Résonance canadienne » ou « Résonance américaine » sous la liste des médias québécois, avec la part d'attention que la région a accordée au sujet et les médias qui l'ont couvert, cliquables vers leurs articles.",

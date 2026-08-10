@@ -1344,16 +1344,103 @@
      milieu de sa boîte ; on remonte la courbe d'un cheveu pour qu'elle s'aligne
      sur la hauteur d'x du libellé, pas sur la boîte. */
   .saillance-trend .trend-spark-wrap { position: relative; display: inline-flex; line-height: 0; transform: translateY(-2px); }
+  /* Le SVG doit laisser DÉBORDER ses points. Un point survolé grossit de 1,8 px,
+     et le sommet est par construction collé au bord haut de la boîte (son
+     ordonnée vaut PADY) : avec l'`overflow: hidden` par défaut des SVG, le
+     sommet était donc TOUJOURS rogné au survol — 2 px coupés en haut — et le
+     point « maintenant » l'était en bas quand l'attention retombait à zéro.
+     Signalé par Adrien, capture à l'appui. Vérifié au navigateur : le point
+     agrandi reste largement à l'intérieur de la bande de saillance, il ne
+     chevauche ni la pastille ni le titre, et rien ne bouge dans la mise en page
+     (le débordement ne participe pas au calcul de la hauteur de ligne). */
+  .saillance-trend .trend-spark { overflow: visible; }
+  /* La valeur d'un point et sa variation, au survol : elles prennent la couleur
+     de la tendance — verte en hausse, rouge en baisse — comme la flèche et le
+     libellé. Un gris neutre les faisait lire comme une note de bas de page. */
+  .saillance-trend .trend-val,
+  .saillance-trend .trend-delta { color: var(--acc); font-variant-numeric: tabular-nums; }
   .saillance-trend .trend-line { stroke: var(--acc); }
-  .saillance-trend .trend-pt { fill: var(--acc); cursor: pointer; transition: r 0.1s ease; }
-  .saillance-trend .trend-pt.is-peak,
-  .saillance-trend .trend-pt.is-now { fill: var(--ink); }
-  .saillance-trend .trend-pt.is-hover { fill: var(--ink); }
+  /* Le point visible encode un NIVEAU par son rayon ; il ne sert plus de cible
+     de souris (#430) — c'est `.trend-hit` qui reçoit le survol et le focus. */
+  .saillance-trend .trend-pt { fill: var(--acc); pointer-events: none; transition: r 0.1s ease; }
+  /* UN SEUL point noir plein, et il désigne UNE seule chose : le SOMMET.
+     Avant, le sommet, le bloc courant et le point survolé partageaient la même
+     encre — trois sens pour une couleur. Or le sommet n'est pas le bloc courant
+     dans 64 % des cartes (mesuré, vitrine#430) : deux points noirs cohabitaient
+     donc deux fois sur trois, sans rien pour les distinguer. Décision d'Adrien
+     du 2026-08-09 : le sommet garde le noir, c'est lui que l'œil doit trouver
+     en premier sur la courbe. */
+  .saillance-trend .trend-pt.is-peak { fill: var(--ink); }
+  /* Le bloc courant devient un anneau plein d'encre légère : repérable sans
+     rivaliser avec le sommet. Distinct aussi de l'anneau « Hors du radar »,
+     qui est creux ET bordé de gris pâle. */
+  .saillance-trend .trend-pt.is-now { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6px; }
+  .saillance-trend .trend-pt.is-hover { fill: var(--ink); stroke: none; }
   /* Bloc « Absente » : anneau creux couleur papier → l'œil lit « pas là »,
      pas « faiblement saillante ». Placé après is-hover pour gagner la cascade. */
   .saillance-trend .trend-pt.is-absent { fill: var(--paper); stroke: var(--ink-softer); stroke-width: 1.1px; }
   .saillance-trend .trend-pt.is-absent.is-hover { fill: var(--paper); stroke: var(--ink); }
-  .saillance-trend .trend-pt:focus { outline: none; }
+  /* Cible de survol : invisible mais cliquable. `fill: transparent` et non
+     `none` — `none` ne reçoit aucun événement de pointeur. */
+  /* ── Survol de la courbe : cinq FAITS, cinq pastilles (#430) ──────────────
+     Avant : une phrase « aujourd'hui 4h · Sommet · Exceptionnelle · 157,3 points
+     (+3 % depuis hier minuit) ». Cinq grandeurs de natures différentes enfilées
+     par des points médians — l'oeil devait relire toute la ligne pour trouver le
+     chiffre. Chaque fait porte maintenant son registre : le moment en retrait,
+     le statut et le niveau en pastilles, la valeur en chiffres tabulaires, la
+     variation colorée par son sens. */
+  .saillance-trend .trend-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+  .saillance-trend .tc-time { color: var(--ink-softer); font-size: 0.82em; white-space: nowrap; }
+  .saillance-trend .tc-chip {
+    display: inline-block; padding: 0.08em 0.42em; border-radius: 2px;
+    font-size: 0.78em; line-height: 1.5; white-space: nowrap;
+  }
+  /* Le niveau reprend le vocabulaire visuel du badge, en plus discret : même
+     famille, jamais la même force — sinon deux pastilles se disputent l'oeil. */
+  /* La pastille de niveau EST le tag officiel : le fond et l'encre viennent de
+     `.saillance-tag.s-*`. Ici on ne règle QUE la taille — le survol vit dans une
+     ligne de texte, pas dans un en-tête de carte. Sélecteur à trois classes pour
+     passer devant `.saillance-tag.s-extreme`, qui impose sa propre taille. */
+  .saillance-trend .saillance-tag.tc-niveau {
+    font-size: 0.72em; font-weight: 600; padding: 0.1em 0.5em;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  /* « Exceptionnelle » porte un LISERÉ D'ENCRE (demande d'Adrien) : sur la carte,
+     ce niveau fait basculer tout le fond du module en noir (`.unes-jour.breaking`).
+     La pastille du survol ne peut pas basculer un fond — le trait est ce qui
+     rappelle l'événement, et c'est le seul niveau à en porter un. */
+  .saillance-trend .saillance-tag.tc-niveau.s-extreme {
+    box-shadow: 0 0 0 1.5px var(--ink);
+  }
+  .saillance-trend .tc-niveau.is-absent { background: transparent; color: var(--ink-softer); border: 1px solid var(--ink-softer); font-weight: 500; }
+  /* Le sommet : contour plutôt qu'aplat, pour se distinguer du niveau sans
+     peser autant — c'est un statut, pas une mesure. */
+  /* Pastille d'état : même contour discret que le sommet — c'est un statut, pas
+     une mesure — mais en couleur de tendance, parce qu'elle remplace la
+     variation absente et se lit avec la flèche. */
+  .saillance-trend .tc-etat {
+    border: 1px solid var(--acc); color: var(--acc); font-weight: 600;
+  }
+  .saillance-trend .tc-sommet {
+    border: 1px solid var(--ink); color: var(--ink);
+    font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600;
+  }
+  /* Les CHIFFRES aussi portent le cadre (demande d'Adrien) : ils étaient le
+     seul élément resté en texte nu, ce qui les faisait retomber dans la phrase
+     que les pastilles venaient justement de casser. Contour discret plutôt
+     qu'aplat — une valeur se lit, elle ne s'étiquette pas. */
+  .saillance-trend .tc-val {
+    font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink);
+    border: 1px solid var(--ink-softer);
+  }
+  .saillance-trend .tc-delta { font-variant-numeric: tabular-nums; font-weight: 600; border: 1px solid currentColor; }
+  .saillance-trend .tc-delta.is-up { color: #2E6B4F; }
+  .saillance-trend .tc-delta.is-down { color: #A85A52; }
+  .saillance-trend .tc-since { font-weight: 400; opacity: 0.7; }
+
+  .saillance-trend .trend-hit { fill: transparent; stroke: none; cursor: pointer; }
+  .saillance-trend .trend-hit:focus { outline: none; }
+  .saillance-trend .trend-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 50%; }
 
   /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
@@ -1503,6 +1590,9 @@
 
   /* Fiche de la bulle ⓘ (#274) : mini-distribution + micro-métho + lien. */
   .saillance-info-card { display: block; }
+  /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
+     serrée dessous et en chiffres tabulaires. */
+  .saillance-info-card .sic-kicker-val { margin-top: -0.15em; font-variant-numeric: tabular-nums; }
   .saillance-info-card .sic-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;

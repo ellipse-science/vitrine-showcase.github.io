@@ -9,15 +9,25 @@ import { describe, it, expect, vi } from "vitest";
 const readFileMock = vi.fn();
 vi.mock("node:fs/promises", () => ({ default: { readFile: (...a: unknown[]) => readFileMock(...a) } }));
 
-const ev = (over: Record<string, unknown>) => ({
-  country_id: "QC", target_region: "QC", title: "T", score_qc: 0, score_roc: 0, score_us: 0,
-  score_saillance: 0, media_ids: '["LED","LAP"]', media_ids_qc: '["LED","LAP"]', media_ids_roc: "[]",
-  articles: '[{"media_id":"LED","url":"https://led/a"},{"media_id":"LAP","url":"https://lap/a"}]',
-  interval_convergence_score: null,
-  date_utc: "2026-07-27", time_interval_utc: "07-11",
-  date_montreal_tz: "2026-07-27", time_interval_montreal_tz: "07-11",
-  ...over,
-});
+// Miroir spec v1 : cf. la note dans tests/headlineEvents.test.ts. Sans lui, ces
+// fixtures renvoient 0 dès que SALIENCE_CUTOVER est allumé, et la garde
+// anti-snapshot-muet du chargeur lève avant même la première assertion.
+const ev = (over: Record<string, unknown>) => {
+  const socle = {
+    country_id: "QC", target_region: "QC", title: "T", score_qc: 0, score_roc: 0, score_us: 0,
+    score_saillance: 0, media_ids: '["LED","LAP"]', media_ids_qc: '["LED","LAP"]', media_ids_roc: "[]",
+    articles: '[{"media_id":"LED","url":"https://led/a"},{"media_id":"LAP","url":"https://lap/a"}]',
+    interval_convergence_score: null,
+    date_utc: "2026-07-27", time_interval_utc: "07-11",
+    date_montreal_tz: "2026-07-27", time_interval_montreal_tz: "07-11",
+  };
+  const base = { ...socle, ...over } as Record<string, unknown>;
+  return {
+    ...base,
+    salience_index_qc: base.salience_index_qc ?? Number(base.score_qc ?? 0) / 100,
+    salience_index_roc: base.salience_index_roc ?? Number(base.score_roc ?? 0) / 100,
+  };
+};
 
 // Trois histoires québécoises du même bloc, toutes trois en Une :
 //   · « alpha » n'existe qu'ici → aucun tag ;
