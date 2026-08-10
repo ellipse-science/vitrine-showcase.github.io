@@ -971,6 +971,47 @@
             </div>
         </div>
 
+        <!-- SONAR PIPELINE (méta-sonar) -->
+        <div class="pipeline pipeline-sonar" data-pipeline="sonar">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🛰️ SONAR PIPELINE (Santé des raffineurs)</span>
+                <span class="frequency">Quotidien 08:15 (heure du Québec) — après le cycle de 07:xx, pour lire un état stabilisé. Remplace <code>agora-sonar</code>, jamais planifié.</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="datamarts-tables" data-env-source="DEV">
+                    Tables des datamarts
+                    <div class="node-detail">Ce que les autres raffineurs publient</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">+</div>
+                <div class="node node-source" data-type="source" data-source="a-qc-parliament-debates" data-env-source="PROD">
+                    a-qc-parliament-debates
+                    <div class="node-detail">Source de référence du corpus Agora</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-pipeline" data-ecr="sonar-pipeline" data-active="true" data-cron="08:15">
+                    sonar-pipeline.R
+                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest</div>
+                    <div class="node-schedule">⏰ 08:15 (quotidien)</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="pipeline_health" data-env-output="DEV">
+                    pipeline_health
+                    <div class="node-detail">Datamart: sonar — historique ET mémoire de l'anti-bruit</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output" data-type="output" data-output="slack-sonar-pipeline">
+                    Slack: par corpus
+                    <div class="node-detail">médias → radar-plus_sonar • décideurs → agora-plus_sonar</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+            </div>
+        </div>
+
         <!-- AGORA DÉCIDEURS QC -->
         <div class="pipeline pipeline-agora" data-pipeline="agora">
             <div class="pipeline-header">
