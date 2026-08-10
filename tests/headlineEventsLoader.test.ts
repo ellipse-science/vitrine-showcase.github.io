@@ -14,13 +14,35 @@ vi.mock("node:fs/promises", () => ({ default: { readFile: (...a: unknown[]) => r
 //   · « bravo » a disparu du radar après le bloc publié à 4h — c'est elle qui
 //     traînait un repère de jour en retard et nommait « aujourd'hui » des blocs
 //     de la veille (jusqu'à annoncer un « Sommet à 20h » en pleine après-midi).
-const ev = (over: Record<string, unknown>) => ({
-  country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
-  media_ids: '["LED","LAP"]', media_ids_qc: '["LED","LAP"]',
-  articles: '[{"media_id":"LED","url":"https://led/a"},{"media_id":"LAP","url":"https://lap/a"}]',
-  interval_convergence_score: null, storyline_id: "s",
-  ...over,
-});
+// MIROIR SPEC V1 — les fixtures cessent de dépendre de l'état du flag.
+//
+// `qcScore()` lit `salience_index_qc × 100` quand SALIENCE_CUTOVER est allumé,
+// et `score_qc` sinon. Les fixtures ne posaient que `score_qc` : flag allumé,
+// elles renvoyaient donc 0 partout, et 29 tests tombaient — non pas parce que le
+// code était faux, mais parce que la donnée de test n'existait pas dans le
+// régime testé. Le mode d'échec est vicieux : il n'apparaît qu'au moment de la
+// bascule, c'est-à-dire au pire moment.
+//
+// En posant `salience_index_qc = score_qc / 100`, les deux chemins de lecture
+// rendent la MÊME valeur, et chaque test devient valable dans les deux régimes.
+// Un test qui veut éprouver spécifiquement le nouvel indice peut toujours poser
+// `salience_index_qc` explicitement : la valeur fournie l'emporte.
+const ev = (over: Record<string, unknown>) => {
+  const socle = {
+    country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
+    media_ids: '["LED","LAP"]', media_ids_qc: '["LED","LAP"]',
+    articles: '[{"media_id":"LED","url":"https://led/a"},{"media_id":"LAP","url":"https://lap/a"}]',
+    interval_convergence_score: null, storyline_id: "s",
+  };
+  // Voir la note « miroir spec v1 » plus haut : dérivé APRÈS l'étalement de
+  // `over`, pour suivre le `score_qc` que le test a réellement demandé.
+  const base = { ...socle, ...over } as Record<string, unknown>;
+  return {
+    ...base,
+    salience_index_qc: base.salience_index_qc ?? Number(base.score_qc ?? 0) / 100,
+    salience_index_roc: base.salience_index_roc ?? Number(base.score_roc ?? 0) / 100,
+  };
+};
 
 // Intervalles en UTC (comme dans le vrai fichier). Heure PUBLIQUE d'un bloc =
 // fin + 1 h en heure de Montréal, soit début UTC + 5 h ramené à Montréal.

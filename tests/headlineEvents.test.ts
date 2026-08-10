@@ -220,17 +220,28 @@ describe("pctile (jauge de convergence)", () => {
 });
 
 describe("rocScore", () => {
-  it("lit la colonne score_roc publiée", () => {
-    expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(12);
+  // Ce bloc éprouve le POINT DE BASCULE lui-même : chaque cas nomme donc le
+  // régime qu'il teste au lieu de dépendre de l'état du flag. C'est la seule
+  // famille de tests qui doit le faire — ailleurs, les fixtures posent les deux
+  // colonnes en miroir (cf. la note sur `ev`) et le régime n'a plus d'effet.
+  it("flag ÉTEINT : lit la colonne score_roc publiée", () => {
+    expect(rocScore({ score_roc: 12, score_saillance: 30, score_qc: 8, score_us: 5 } as never, false)).toBe(12);
+  });
+  it("flag ALLUMÉ : lit salience_index_roc, à l'échelle d'affichage", () => {
+    expect(rocScore({ score_roc: 12, salience_index_roc: 0.42 } as never, true)).toBeCloseTo(42, 6);
+    // Et il ne retombe PAS sur l'ancienne colonne quand la nouvelle manque :
+    // ce serait publier un chiffre de l'ancien indice sous le nouveau.
+    expect(rocScore({ score_roc: 12 } as never, true)).toBe(0);
   });
   // Garde-fou du #272 : le repli `saillance − qc − us` est retiré. S'il revenait,
   // le côté Canada réabsorberait les USA dès que score_us manquerait.
   it("ne dérive JAMAIS le ROC par soustraction quand la colonne manque", () => {
-    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never)).toBe(0);
-    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8, score_us: 5 } as never, false)).toBe(0);
+    expect(rocScore({ score_saillance: 30, score_qc: 8 } as never, false)).toBe(0);
   });
-  it("rend 0 sur une ligne vide", () => {
-    expect(rocScore({} as never)).toBe(0);
+  it("rend 0 sur une ligne vide, dans les deux régimes", () => {
+    expect(rocScore({} as never, false)).toBe(0);
+    expect(rocScore({} as never, true)).toBe(0);
   });
 });
 
@@ -358,12 +369,34 @@ describe("blockKey", () => {
   });
 });
 
-const ev = (over: Record<string, unknown>) => ({
-  country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
-  media_ids: "[]", articles: "[]", interval_convergence_score: null,
-  date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
-  ...over,
-});
+// MIROIR SPEC V1 — les fixtures cessent de dépendre de l'état du flag.
+//
+// `qcScore()` lit `salience_index_qc × 100` quand SALIENCE_CUTOVER est allumé,
+// et `score_qc` sinon. Les fixtures ne posaient que `score_qc` : flag allumé,
+// elles renvoyaient donc 0 partout, et 29 tests tombaient — non pas parce que le
+// code était faux, mais parce que la donnée de test n'existait pas dans le
+// régime testé. Le mode d'échec est vicieux : il n'apparaît qu'au moment de la
+// bascule, c'est-à-dire au pire moment.
+//
+// En posant `salience_index_qc = score_qc / 100`, les deux chemins de lecture
+// rendent la MÊME valeur, et chaque test devient valable dans les deux régimes.
+// Un test qui veut éprouver spécifiquement le nouvel indice peut toujours poser
+// `salience_index_qc` explicitement : la valeur fournie l'emporte.
+const ev = (over: Record<string, unknown>) => {
+  const socle = {
+    country_id: "QC", title: "T", score_qc: 0, score_saillance: 0,
+    media_ids: "[]", articles: "[]", interval_convergence_score: null,
+    date_utc: "2026-07-13", time_interval_utc: "16-20", storyline_id: "s",
+  };
+  // Voir la note « miroir spec v1 » plus haut : dérivé APRÈS l'étalement de
+  // `over`, pour suivre le `score_qc` que le test a réellement demandé.
+  const base = { ...socle, ...over } as Record<string, unknown>;
+  return {
+    ...base,
+    salience_index_qc: base.salience_index_qc ?? Number(base.score_qc ?? 0) / 100,
+    salience_index_roc: base.salience_index_roc ?? Number(base.score_roc ?? 0) / 100,
+  };
+};
 
 describe("buildIssueMedia (actualités du treemap)", () => {
   it("conserve les médias propres à chaque actualité et leurs liens", () => {
