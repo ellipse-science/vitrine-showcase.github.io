@@ -1,10 +1,12 @@
 {
-  "generated_at": "2026-08-08T16:03Z",
-  "headline_fr": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
-  "headline_en": "Les télés ont disparu de certains hôpitaux, une décision dénoncée par des comités d’usagers",
-  "main_issue": "health_and_social_services",
-  "main_issue_text_fr": "Santé et politiques sociales",
+  "generated_at": "2026-08-10T00:03Z",
+  "headline_fr": "Ottawa face à Washington : tensions sur les droits de douane",
+  "headline_en": "Négociations commerciales avec les États-Unis : vers une entente pour le 19 août?",
+  "main_issue": "international_affairs_and_defense",
+  "main_issue_text_fr": "Affaires internationales et défense",
   "context_outlets": [
-    "LED"
+    "RCI",
+    "TVA",
+    "CBC"
   ]
 }

@@ -1,10 +1,10 @@
 {
-  "event_id": "20260808T110000Z-evt-teles-ont-disparu-certains-hopitaux-38110a39",
-  "storyline_id": "story-televisions-068a0fa7",
-  "title": "Des hôpitaux québécois remplacent les télés par le wifi, usagers mécontents",
-  "main_issue": "health_and_social_services",
-  "date_utc": "2026-08-08",
-  "time_interval_utc": "11-15",
-  "sum_qc": 43.3,
-  "peak_qc": 21.554
+  "event_id": "20260809T150000Z-evt-negociations-commerciales-etats-unis-entente-43c1103d",
+  "storyline_id": "story-justin-trudeau-241bbb72",
+  "title": "Ottawa face à Washington : tensions sur les droits de douane",
+  "main_issue": "international_affairs_and_defense",
+  "date_utc": "2026-08-09",
+  "time_interval_utc": "15-19",
+  "sum_qc": 59.296,
+  "peak_qc": 61.801
 }
