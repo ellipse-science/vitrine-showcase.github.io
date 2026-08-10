@@ -1,5 +1,11 @@
 [
   {
+    "pr": 440,
+    "date": "2026-08-10T22:29:55Z",
+    "note": "On peut maintenant remonter dans le temps : les flèches et les icônes de l'en-tête permettent de revoir la Vitrine telle qu'elle était aux éditions précédentes.",
+    "version": "2.22.0-beta.0"
+  },
+  {
     "pr": 387,
     "date": "2026-08-10T21:07:47Z",
     "note": "La jauge du ton en chambre distingue maintenant les partis les uns des autres, au lieu de les afficher tous à la même extrémité.",
