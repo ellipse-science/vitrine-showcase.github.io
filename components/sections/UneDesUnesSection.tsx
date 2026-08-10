@@ -164,6 +164,37 @@ function Byline({ event }: { event: UneEvent }) {
   );
 }
 
+/** L'illustration est rendue DEUX fois (variante desktop en colonne 2 de la
+ *  grille, variante mobile dans la colonne texte juste sous le titre) et la
+ *  bascule se fait en CSS. Sur mobile, la grille passe en 1 colonne et suit
+ *  l'ordre DOM : la figure en fin de grille arrivait à ~2 écrans de défilement
+ *  (#310) — la variante mobile la ramène sous le h1, fidèle à l'intention
+ *  « titre → image → métadonnées ». Même URL des deux côtés = un seul
+ *  téléchargement ; la variante cachée l'est via display:none. */
+function HeroFigure({ src, alt, variant }: {
+  src: string;
+  alt: string;
+  variant: "desktop" | "mobile";
+}) {
+  return (
+    <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
+      <div className="figure-frame">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          className="editorial-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+      <figcaption>
+        <span className="cap-tag">Illustration</span>
+        <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
+      </figcaption>
+    </figure>
+  );
+}
+
 function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
   event: UneEvent;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
@@ -188,6 +219,11 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
             <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
+          {/* alt="" : le titre est adjacent (h1 juste au-dessus) — un alt
+              identique ferait lire le titre deux fois aux lecteurs d'écran. */}
+          {generatedArtUrl && (
+            <HeroFigure src={generatedArtUrl} alt="" variant="mobile" />
+          )}
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
           <Byline event={event} />
           {secondEvent && (
@@ -209,21 +245,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
         )}
 
         {generatedArtUrl && (
-          <figure className="hero-figure hero-figure-inline">
-            <div className="figure-frame">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={generatedArtUrl}
-                alt={event.title}
-                className="editorial-img"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-            <figcaption>
-              <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
-            </figcaption>
-          </figure>
+          <HeroFigure src={generatedArtUrl} alt={event.title} variant="desktop" />
         )}
       </div>
     </div>

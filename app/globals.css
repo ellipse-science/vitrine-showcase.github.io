@@ -863,6 +863,14 @@
     margin: 0;
     width: 100%;
   }
+  /* #310 — l'illustration existe en 2 variantes DOM (desktop = colonne 2 de la
+     grille ; mobile = sous le h1, dans la colonne texte). Ici on cache la
+     variante mobile ; le bloc ≤768px fait la bascule inverse. Spécificité
+     0,2,0 voulue : elle doit battre le `.hero-figure-inline { display:flex }`
+     du bloc ≥1081px plus bas. */
+  .une-main-copy .hero-figure-mobile {
+    display: none;
+  }
   .hero-figure-inline .figure-frame {
     height: 320px;
     min-height: unset;
@@ -4696,6 +4704,16 @@
     .hero-figure-inline figcaption {
       margin-top: 8px;
       gap: 8px;
+    }
+    /* #310 — sur mobile, la grille passe en 1 colonne et suit l'ordre DOM : la
+       figure de fin de grille tombait à ~2 écrans de défilement (relevé du
+       2026-08-03 : 977px du début de section). Bascule : la variante desktop
+       disparaît, la variante mobile (sous le h1) prend le relais — l'ordre
+       redevient « titre → image → métadonnées ». */
+    .hero-figure-inline.hero-figure-desktop { display: none; }
+    .une-main-copy .hero-figure-mobile {
+      display: block;
+      margin: 2px 0 4px;
     }
 
     /* ── Sub-nav ── */
