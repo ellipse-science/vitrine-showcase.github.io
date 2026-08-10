@@ -1,5 +1,11 @@
 [
   {
+    "pr": 442,
+    "date": "2026-08-10T20:08:10Z",
+    "note": "Le mot « Une » s'écrit désormais avec une majuscule partout sur le site, y compris dans l'expression « à la Une ».",
+    "version": "2.21.0-beta.3"
+  },
+  {
     "pr": 441,
     "date": "2026-08-10T20:05:18Z",
     "note": "Aucun changement visible sur le site : ajout d'une vérification automatique de la typographie des textes publics avant chaque mise en ligne.",
