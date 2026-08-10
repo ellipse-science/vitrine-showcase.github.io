@@ -85,6 +85,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
           ressemble trait pour trait à l'accueil se lit comme l'actualité du
           moment — c'est le mode d'échec à écarter en premier. */}
       <div className="archive-notice" data-section="Bandeau d'archive">
+        <div className="archive-notice-text">
         <p className="archive-notice-line">
           <span className="archive-notice-tag">Édition passée</span>
           <span className="archive-notice-body">
@@ -104,6 +105,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
           L&apos;illustration et la musique ne sont pas conservées&nbsp;: elles n&apos;existent que
           pour l&apos;édition courante.
         </p>
+        </div>
         {/* La sortie doit rester sous la main : le bandeau est collant, donc ce
             lien est le seul retour visible une fois qu'on a défilé. */}
         <a className="archive-notice-exit" href="../../">Revenir à l&apos;édition courante</a>

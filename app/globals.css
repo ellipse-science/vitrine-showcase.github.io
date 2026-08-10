@@ -794,17 +794,31 @@
     top: 0;
     z-index: 40;
     margin: 22px 0 0;
-    padding: 12px 0;
     /* Filets fins, comme le reste du site — pas de barre latérale colorée ni
        d'ombre portée (retour d'Adrien : « trop design IA »). Le fond opaque
-       suffit : le texte des modules défile DERRIÈRE, pas au travers. */
+       suffit : le texte des modules défile DERRIÈRE, pas au travers.
+       Le fond et le retrait sont ceux de `.section-label`, la bande que le site
+       emploie déjà six fois par page : le bandeau se lit alors comme un élément
+       du système, pas comme une pièce rapportée au-dessus de la page. */
     border-top: 1px solid var(--rule);
     border-bottom: 1px solid var(--rule);
-    background: var(--paper);
+    background: var(--paper-deep);
+    padding: 12px 30px;
+    /* Une seule rangée : le texte à gauche, la sortie à droite, sur la ligne de
+       base du premier mot. Empilés, les trois éléments laissaient les deux
+       tiers droits vides et le lien orphelin en bas à gauche. */
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px 30px;
+    flex-wrap: wrap;
   }
+  /* `min-width: 0` : sans lui, la phrase refuse de se couper et pousse le lien
+     hors de la bande sur les largeurs intermédiaires. */
+  .archive-notice-text { flex: 1 1 420px; min-width: 0; }
   .archive-notice-exit {
     display: inline-block;
-    margin-top: 8px;
+    flex: 0 0 auto;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.18em;
@@ -4935,10 +4949,14 @@
     .edition-arrow { width: 24px; height: 24px; margin-bottom: 9px; }
     .edition-arrow svg { width: 14px; height: 14px; }
 
-    .archive-notice { padding: 10px 0; }
+    /* Sous 768 px la bande s'empile d'elle-même (`flex-wrap`) : le texte prend
+       la largeur, la sortie tombe dessous. Il ne reste qu'à resserrer le
+       retrait et à lui redonner l'air que la rangée lui prenait. */
+    .archive-notice { padding: 10px 16px; gap: 8px 16px; }
     .archive-notice-line { gap: 6px; }
     .archive-notice-body { font-size: 13px; }
     .archive-notice-aside { font-size: 11px; }
+    .archive-notice-exit { margin-top: 2px; }
 
     /* Empilé : les trois liens côte à côte tombaient à ~90 px de large chacun. */
     .archive-pager {
