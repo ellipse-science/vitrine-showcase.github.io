@@ -1,5 +1,11 @@
 [
   {
+    "pr": 435,
+    "date": "2026-08-10T15:39:46Z",
+    "note": "feat(saillance) : A8 et B7, et la bande de trajectoire passe en pastilles",
+    "version": null
+  },
+  {
     "pr": 436,
     "date": "2026-08-10T15:36:46Z",
     "note": "test(saillance) : les fixtures cessent de dépendre de l'état du flag",
