@@ -38,6 +38,14 @@ const EXCLUS = [/node_modules/, /\.next/, /changelog\.json$/];
 
 const ESPACES = "\\u0020\\u00a0\\u202f\\u2009";
 
+// Caractère de remplissage des interpolations `${…}` (voir `analyse`). Le
+// contenu d'une interpolation est du CODE, mais ce qu'elle PRODUIT est du
+// texte affiché : une règle qui suit un nombre doit donc pouvoir s'accrocher
+// à ce caractère, sinon `${part} %` échappe à la garde alors que `95 %` est
+// pris. Nommé ici parce que les règles et le masquage doivent parler du même
+// caractère.
+const MASQUE = "·";
+
 // ── Les règles ────────────────────────────────────────────────────────────────
 // `exemple` sert au message d'erreur : on montre la forme correcte, sinon la
 // personne qui lit l'échec doit aller chercher la règle ailleurs.
@@ -61,8 +69,12 @@ const REGLES = [
     exemple: "une insécable — `&nbsp;` en HTML/JSX, `\\u00a0` dans une chaîne.",
   },
   {
+    // Le nombre est presque toujours INTERPOLÉ dans ce repo (`${part} %`) : à
+    // n'accepter qu'un chiffre littéral, la règle ratait 16 spans sur 22.
+    // D'où `MASQUE`, le caractère qui remplace une interpolation. Surtout pas
+    // « n'importe quoi sauf une espace » : ça attraperait un modulo.
     code: "insecable-pourcent",
-    motif: new RegExp(`\\d[\\u0020]%`, "u"),
+    motif: new RegExp(`[\\d${MASQUE}][\\u0020]%`, "u"),
     quoi: "espace ordinaire avant « % »",
     exemple: "une insécable — `&nbsp;%`.",
   },
@@ -165,7 +177,7 @@ function analyse(chemin) {
     // Le contenu d'une interpolation `${…}` est du CODE, pas du texte affiché :
     // le `:` de `${n > 1 ? "s" : ""}` n'a jamais besoin d'insécable. On le
     // neutralise avant d'appliquer les règles, sans changer la longueur du span.
-    const prose = span.texte.replace(/\$\{[^{}]*\}/gu, (m) => "·".repeat(m.length));
+    const prose = span.texte.replace(/\$\{[^{}]*\}/gu, (m) => MASQUE.repeat(m.length));
     for (const regle of REGLES) {
       const m = prose.match(regle.motif);
       if (!m) continue;
@@ -205,7 +217,13 @@ const cle = (t) => `${t.fichier}::${t.code}::${t.extrait}`;
 const toutes = DOSSIERS.flatMap((d) => fichiers(join(RACINE, d))).flatMap(analyse);
 
 if (process.argv.includes("--ecrire-baseline")) {
-  const dette = toutes.map(cle).sort();
+  // Dédupliquer : la clé exclut le numéro de ligne, donc deux occurrences de la
+  // même chaîne dans un même fichier (« À la une » vu deux fois dans le
+  // treemap) produisent la MÊME clé. Sans ce `Set`, le compteur « Dette figée »
+  // annonce plus de violations qu'il n'y a d'entrées distinctes, et le cliquet
+  // devient illisible : corriger l'une des deux occurrences ne fait rien
+  // rétrécir. Mesuré à l'installation : 79 entrées pour 76 clés distinctes.
+  const dette = [...new Set(toutes.map(cle))].sort();
   writeFileSync(join(RACINE, BASELINE), JSON.stringify(dette, null, 2) + "\n");
   console.log(`Dette figée : ${dette.length} violations dans ${BASELINE}`);
   process.exit(0);
@@ -222,7 +240,10 @@ const detteSet = new Set(dette);
 const vues = new Set(toutes.map(cle));
 
 const nouvelles = toutes.filter((t) => !detteSet.has(cle(t)));
-const corrigees = dette.filter((k) => !vues.has(k));
+// Sur `detteSet` et non sur `dette` : une baseline écrite par une version
+// antérieure du script peut porter des doublons, qui compteraient deux fois
+// dans le message « n entrée(s) ne correspondent plus à rien ».
+const corrigees = [...detteSet].filter((k) => !vues.has(k));
 
 for (const t of nouvelles) {
   console.error(`✘ ${t.fichier}:${t.ligne} — ${t.quoi}`);
