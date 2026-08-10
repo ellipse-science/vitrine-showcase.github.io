@@ -1,5 +1,11 @@
 [
   {
+    "pr": 441,
+    "date": "2026-08-10T20:05:18Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique de la typographie des textes publics avant chaque mise en ligne.",
+    "version": null
+  },
+  {
     "pr": 444,
     "date": "2026-08-10T20:03:22Z",
     "note": "Le premier module s'intitule désormais « L'actualité saillante du moment au Québec », et son infobulle explique que le nombre de nouvelles affichées, de une à trois, dépend de l'actualité du moment.",
