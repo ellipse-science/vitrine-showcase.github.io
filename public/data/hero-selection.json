@@ -1,10 +1,10 @@
 {
-  "event_id": "20260810T150000Z-evt-feux-foret-armee-canadienne-prete-1e611904",
-  "storyline_id": "story-abbotsford-1d5d99ad",
-  "title": "L'armée canadienne prête à intervenir face aux feux de forêt en C.-B.",
-  "main_issue": "environment_and_energy",
-  "date_utc": "2026-08-10",
-  "time_interval_utc": "15-19",
-  "sum_qc": 60.905,
-  "peak_qc": 36.92
+  "event_id": "20260811T110000Z-evt-quebec-ottawa-enquetent-cyberattaques-usines-1ec2e929",
+  "storyline_id": "story-cyberattacks-662da8e9",
+  "title": "Cyberattaques pro-russes ciblent les usines d'eau potable au Canada",
+  "main_issue": "technology",
+  "date_utc": "2026-08-11",
+  "time_interval_utc": "11-15",
+  "sum_qc": 46.461,
+  "peak_qc": 31.299
 }

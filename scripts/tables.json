@@ -392,9 +392,10 @@
       ],
       "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
       "_note_cutover": "salience_index_qc/roc = indice spec v1 (aws-refiners#287, tag spec-v1). Projetés AVANT la bascule pour que la donnée soit déjà dans le snapshot le jour où SALIENCE_CUTOVER passe à true (lib/data/salienceCutover.ts) : le flip devient un changement d'une ligne, sans attendre un refresh. score_qc/roc restent projetés APRÈS la bascule — ils servent de repli et de poids au module 3 (treemap d'objets).",
-      "filter": "headline_events_3day",
+      "_note_archive": "vitrine#434 : la fenêtre passe de 3 à 14 jours pour alimenter la navigation dans les éditions passées. Profondeur pilotée par HEADLINE_KEEP_DAYS dans fetch_data.R. Coût Athena nul — la requête n'a pas de WHERE, la table est déjà scannée en entier à chaque run.",
+      "filter": "headline_events_window",
       "enabled": true,
-      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx"
+      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx + app/edition/[key]/page.tsx"
     },
     {
       "name": "polimetre_plus",

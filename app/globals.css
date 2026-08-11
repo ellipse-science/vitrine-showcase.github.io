@@ -54,7 +54,13 @@
        horizontal sur mobile. Les causes réelles sont corrigées plus bas ;
        ceci est une ceinture de sécurité. */
     max-width: 100%;
-    overflow-x: hidden;
+    /* `clip` et non `hidden` : les deux coupent le débordement horizontal, mais
+       `hidden` fait de l'élément un CONTENEUR DE DÉFILEMENT — ce qui casse tout
+       `position: sticky` de la page, y compris le bandeau d'archive (#434), qui
+       se retrouvait à coller au haut d'un scroller invisible plutôt qu'à
+       l'écran. `clip` ne crée pas de scroller : la ceinture de sécurité reste,
+       le collant fonctionne. */
+    overflow-x: clip;
   }
 
   /* Cibles des liens d'ancrage par module (#deux-solitudes, etc.) — un peu
@@ -692,6 +698,194 @@
     color: var(--cordovan);
     font-weight: 500;
   }
+
+  /* ── Bandeau d'édition navigable (#434) ──────────────────────────────────
+     Les flèches encadrent la rangée SANS entrer dans .pulse-icons : l'arc
+     céleste est posé par .pulse-icons > .pulse-icon:nth-child(1..6), et un
+     enfant supplémentaire décalerait les six icônes d'un cran. */
+  .edition-nav-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+  }
+  .edition-nav-row .pulse-icons { flex: 1 1 auto; }
+
+  .pulse-icon { text-decoration: none; }
+
+  /* Une édition consultable est LÉGÈREMENT teintée : assez pour se distinguer
+     d'un moment sans données, pas assez pour concurrencer l'édition courante,
+     qui garde son marquage d'aujourd'hui. `:not(.current)` plutôt qu'un ordre
+     de déclaration : la règle ne dépend alors plus de sa position dans le
+     fichier — c'est exactement le piège de cascade qui a déjà coûté une issue. */
+  .pulse-icon.available:not(.current) {
+    color: color-mix(in srgb, var(--cordovan) 36%, var(--rule));
+  }
+  .pulse-icon.available:not(.current):hover,
+  .pulse-icon.available:not(.current):focus-visible { color: var(--cordovan); }
+  .pulse-icon.available:not(.current):hover .pulse-hour,
+  .pulse-icon.available:not(.current):focus-visible .pulse-hour { color: var(--cordovan); }
+
+  /* CE QU'ON LIT, distinct de `current` = où en est l'horloge. Les deux se
+     séparent chaque fois que le pipeline n'a pas encore publié le créneau en
+     cours (à 12 h 30, on lit encore l'édition de 8 h). Un seul marquage pour
+     les deux ferait croire au lecteur qu'il lit une édition qui n'existe pas. */
+  .pulse-icon.showing .pulse-hour,
+  .header-edition .pulse-icon.showing .pulse-hour {
+    color: var(--cordovan);
+    font-weight: 600;
+    /* box-shadow et non border-bottom : la bordure ajoutait 3,5 px à la hauteur
+       de l'élément, et `.pulse-icons { align-items: flex-end }` remontait alors
+       l'icône marquée de 4 px au-dessus de ses voisines. Le soulignement doit
+       se voir sans peser sur la mise en page. */
+    box-shadow: 0 2px 0 -0.5px var(--cordovan);
+  }
+  .pulse-icon.showing svg.celestial,
+  .header-edition .pulse-icon.showing svg.celestial { color: var(--cordovan); }
+
+  /* Un moment sans données ne fait pas semblant d'être cliquable. */
+  .pulse-icon[aria-disabled="true"] { cursor: default; }
+
+  /* …mais l'affadissement épargne l'HORLOGE. Le cas arrive tous les jours, six
+     fois : à 12 h 30 le créneau du midi est le créneau courant (`.current`)
+     alors que son édition n'est pas encore publiée (`aria-disabled`). Sans le
+     `:not(.current)`, les deux règles ont la même spécificité (0,2,0) et
+     celle-ci, plus bas dans le fichier, effaçait le marquage de l'horloge —
+     décision Adrien 2026-07-09 : l'horloge garde son marquage, publiée ou pas.
+     Signalé par Copilot sur la PR #440. */
+  .pulse-icon[aria-disabled="true"]:not(.current) {
+    color: var(--rule-faint);
+    opacity: 0.55;
+  }
+
+  .edition-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    /* Les icônes portent un libellé sous elles ; la flèche se cale sur le
+       disque céleste, pas sur le bas de la colonne. */
+    margin-bottom: 13px;
+    color: var(--rule);
+    text-decoration: none;
+    border-radius: 50%;
+    transition: color 120ms ease, background-color 120ms ease;
+  }
+  .edition-arrow svg { width: 16px; height: 16px; display: block; }
+  .edition-arrow:hover,
+  .edition-arrow:focus-visible { color: var(--cordovan); background: var(--paper-deep); }
+  .edition-arrow[aria-disabled="true"] {
+    color: var(--rule-faint);
+    opacity: 0.4;
+    cursor: default;
+    background: none;
+  }
+
+  /* ── Page d'une édition passée (#434) ─────────────────────────────────── */
+  /* COLLANT EN HAUT (demande d'Adrien) : une archive se lit en défilant, et
+     sans rappel permanent le lecteur oublie qu'il n'est pas dans l'actualité du
+     moment — c'est le mode d'échec du module. Le bandeau reste donc à l'écran,
+     et emporte avec lui la sortie vers l'édition courante. */
+  .archive-notice {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    margin: 22px 0 0;
+    /* Filets fins, comme le reste du site — pas de barre latérale colorée ni
+       d'ombre portée (retour d'Adrien : « trop design IA »). Le fond opaque
+       suffit : le texte des modules défile DERRIÈRE, pas au travers.
+       Le fond et le retrait sont ceux de `.section-label`, la bande que le site
+       emploie déjà six fois par page : le bandeau se lit alors comme un élément
+       du système, pas comme une pièce rapportée au-dessus de la page. */
+    /* AVERTISSEMENT, pas décor (demande d'Adrien) : le rouge doit se voir sans
+       revenir à la barre latérale épaisse écartée plus tôt. Il passe donc par
+       les filets et par un lavis très dilué du cordovan sur le fond de bande —
+       assez pour que l'œil sache qu'il n'est pas dans l'actualité du moment,
+       trop peu pour concurrencer le contenu qui suit. */
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, var(--paper-deep));
+    padding: 12px 30px;
+    /* Une seule rangée : le texte à gauche, la sortie à droite, sur la ligne de
+       base du premier mot. Empilés, les trois éléments laissaient les deux
+       tiers droits vides et le lien orphelin en bas à gauche. */
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px 30px;
+    flex-wrap: wrap;
+  }
+  /* `min-width: 0` : sans lui, la phrase refuse de se couper et pousse le lien
+     hors de la bande sur les largeurs intermédiaires. */
+  .archive-notice-text { flex: 1 1 420px; min-width: 0; }
+  .archive-notice-exit {
+    display: inline-block;
+    flex: 0 0 auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+  }
+  .archive-notice-exit:hover { color: var(--ink); }
+  .archive-notice-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+  }
+  /* Pastille pleine, comme les étiquettes de saillance : c'est l'idiome que le
+     site emploie déjà pour marquer un état, et il porte le rouge bien mieux
+     qu'un aplat de fond. En petites capitales cordovan sur le fond de page, la
+     mention se lisait comme une légende parmi d'autres. */
+  .archive-notice-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 4px 9px;
+    line-height: 1.2;
+  }
+  .archive-notice-body { font-size: 14px; color: var(--ink-soft); }
+  .archive-notice-aside {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--ink-softer);
+  }
+
+  .archive-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 26px 0 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+  }
+  .archive-pager a { color: var(--cordovan); text-decoration: none; }
+  .archive-pager a:hover { text-decoration: underline; }
+  .archive-pager .is-end { color: var(--ink-softer); }
+  .archive-pager-home {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .archive-pager-next { text-align: right; }
 
   /* Tag annotation */
   .anno {
@@ -1449,6 +1643,14 @@
   .saillance-trend .trend-hit { fill: transparent; stroke: none; cursor: pointer; }
   .saillance-trend .trend-hit:focus { outline: none; }
   .saillance-trend .trend-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 50%; }
+  /* Point cliquable (#434) : le focus passe sur l'ancre, qui porte seule le
+     parcours clavier — sinon chaque point offrait deux arrêts de tabulation. */
+  .saillance-trend .trend-hit-link { cursor: pointer; outline: none; }
+  .saillance-trend .trend-hit-link:focus-visible .trend-hit {
+    outline: 2px solid var(--ink);
+    outline-offset: 1px;
+    border-radius: 50%;
+  }
 
   /* Mobile / colonnes étroites : la courbe prend sa propre ligne (elle est en
      tête), puis flèche + libellé dessous. Plus d'indentation à compenser — la
@@ -4749,6 +4951,34 @@
     .pulse-icon { flex: 0 0 auto; }
     .pulse-icon svg.celestial { width: 18px; height: 18px; }
     .pulse-hour { font-size: 8px; letter-spacing: 0.14em; }
+
+    /* Six icônes + deux flèches sur UNE ligne à 390 px (#434). Les flèches
+       rétrécissent et se collent aux bords ; les icônes gardent leur place. */
+    /* Cible tactile de 24 px pour le doigt, glyphe de 14 px pour l'œil : à
+       18 px, la flèche passait sous le minimum tactile (cf. #437, même défaut
+       relevé sur la trajectoire). La rangée tient toujours à 390 px :
+       24 + 240 + 24 + gaps = 292 px. */
+    .edition-nav-row { gap: 2px; }
+    .edition-arrow { width: 24px; height: 24px; margin-bottom: 9px; }
+    .edition-arrow svg { width: 14px; height: 14px; }
+
+    /* Sous 768 px la bande s'empile d'elle-même (`flex-wrap`) : le texte prend
+       la largeur, la sortie tombe dessous. Il ne reste qu'à resserrer le
+       retrait et à lui redonner l'air que la rangée lui prenait. */
+    .archive-notice { padding: 10px 16px; gap: 8px 16px; }
+    .archive-notice-line { gap: 6px; }
+    .archive-notice-body { font-size: 13px; }
+    .archive-notice-aside { font-size: 11px; }
+    .archive-notice-exit { margin-top: 2px; }
+
+    /* Empilé : les trois liens côte à côte tombaient à ~90 px de large chacun. */
+    .archive-pager {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      text-align: center;
+    }
+    .archive-pager-next { text-align: center; }
 
     /* ── Bande de section « Les Unes … » : empilée, centrée, padding confortable.
        Ce bloc passe APRÈS les styles de base (ligne ~646) → il gagne la cascade,
