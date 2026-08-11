@@ -1107,7 +1107,7 @@
             tables: {
                 'polimetre_plus': {
                     title: 'Table: polimetre_plus',
-                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification 100 % regex ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
+                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification par IA (classifieur + LLM Gemma) depuis le 2026-08-10, lue depuis la table polimetre_plus_identification ; repli regex publié comme tel (colonne identification_method) ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
                     columns: [
                         '📍 IDENTIFIANTS:',
                         'country_id - Pays (QC)',
@@ -1660,7 +1660,7 @@
             refiners: {
                 'polimetre-plus': {
                     title: 'Refiner: polimetre-plus.R',
-                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification 100 % regex (source de vérité) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
+                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification par IA depuis le 2026-08-10 : lit vitrine_datamart.polimetre_plus_identification (produite par l'étage polimetre-plus-identification, 6x/jour par bloc de 4 h) au lieu d'appeler le LLM ; le regex reste le repli, et la méthode retenue est publiée par ligne (identification_method) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
                     details: [
                         '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation »)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
