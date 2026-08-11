@@ -118,6 +118,30 @@
             transition: all 0.3s;
         }
 
+        /* ── Sélecteur de vue (module ↔ pipeline) ──
+           La bascule se fait par une classe sur <body>, pas en enveloppant les
+           couloirs existants : ça évite de toucher aux 14 blocs de la vue
+           technique, donc de risquer le check garde-swimlanes qui les analyse. */
+        .btn-vue {
+            padding: 11px 22px;
+            border: 2px solid #4A90E2;
+            background: #fff;
+            color: #4A90E2;
+            border-radius: 22px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all .2s;
+        }
+        .btn-vue:hover { background: #eaf2fc; }
+        .btn-vue.active { background: #4A90E2; color: #fff; }
+        body.mode-modules .vue-pipeline,
+        body.mode-modules .pipeline:not(.pipeline-module) { display: none; }
+        body.mode-pipeline #vue-modules { display: none; }
+        .pipeline-module .pipeline-header { background: linear-gradient(135deg, #2c3e6b 0%, #1b2647 100%); }
+        .pipeline-module .node { cursor: default; }
+        .pipeline-module .node:hover { transform: none; }
+
         .pipeline.hidden {
             display: none;
         }
@@ -465,7 +489,169 @@
         <p class="subtitle">Architecture complète • Dernière mise à jour le 2 août 2026 (audit complet contre le code des 3 repos : chaîne de publication réelle, horaires resynchronisés sur <code>refiners.ts</code>, renommage <code>score_v2_*</code> → <code>salient_shadow_*</code>, couloir Agora décideurs QC ajouté) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds « Refiner » <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit : <strong>DEV</strong>, le seul en service.</p>
 
-        <div class="controls">
+        <!-- ═══ SÉLECTEUR DE VUE ═══
+             Deux lectures du même système. « Par module » répond à « d'où vient ce
+             que je vois à l'écran ? », qui est la question que se posent les
+             lecteurs ; « par pipeline » répond à « que produit ce raffineur ? ».
+             La vue par module est le défaut depuis 2026-08-11.
+             ⚠️ Les nœuds de la vue par MODULE ne portent volontairement AUCUN
+             attribut data-ecr / data-active / data-cron : le check garde-swimlanes
+             les lit pour les comparer à refiners.ts, et un raffineur présent dans
+             plusieurs modules y apparaîtrait plusieurs fois. La vue par pipeline
+             reste donc la seule qui fait autorité pour le garde. -->
+        <div class="controls" style="margin-bottom:18px">
+            <button class="btn-vue active" data-vue="modules">🧩 Par module de la Vitrine</button>
+            <button class="btn-vue" data-vue="pipeline">⚙️ Par pipeline technique</button>
+        </div>
+
+        <div id="vue-modules">
+            <p class="subtitle" style="margin-top:-6px;margin-bottom:18px;font-size:.9em;color:#666">
+                Ce que le visiteur voit, et d'où ça vient. Un couloir par module de la Vitrine, de la source au pixel.
+                Les horaires et l'état des raffineurs font foi dans la <strong>vue par pipeline</strong>, qui est celle vérifiée automatiquement contre <code>refiners.ts</code>.
+            </p>
+
+            <!-- MODULE 1 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>1️⃣ L'actualité saillante du moment au Québec</span>
+                    <span class="frequency">6×/jour — la Une des Unes</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-source">r-media-headlines<div class="node-detail">Les Unes captées, PROD</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-salient-objects<div class="node-detail">objets saillants — GPT-4o<br><em>→ modèles locaux après #206</em></div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-salient-index<div class="node-detail">indice de saillance par objet</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-event-salience<div class="node-detail">regroupe en événements + rédige les titres FR</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">headline_events_4h<div class="node-detail">salience_index_qc / _roc</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 1<div class="node-detail">manchettes, badge de saillance, trajectoire</div></div>
+                </div>
+            </div>
+
+            <!-- MODULE 2 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>2️⃣ Deux solitudes?</span>
+                    <span class="frequency">6×/jour — convergence QC ↔ CAN</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-table">headline_events_4h<div class="node-detail"><strong>même table que le module 1</strong></div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 2<div class="node-detail">radar, convergence, résonance canadienne</div></div>
+                </div>
+                <div style="padding:10px 18px;font-size:.86em;color:#555;background:#faf8f4;border-top:1px solid #eee">
+                    Section distincte, <strong>même source</strong> : les deux modules lisent <code>headline_events_4h</code>. Ce qui change est la lecture — le module 2 compare les régions plutôt que de classer les nouvelles.
+                </div>
+            </div>
+
+            <!-- MODULE 3 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>3️⃣ Couverture médiatique des partis politiques</span>
+                    <span class="frequency">6×/jour — deux chaînes distinctes</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-table">salient_index<div class="node-detail">indices par objet</div></div>
+                    <div class="arrow">+</div>
+                    <div class="node node-dict">dict-political-parties-ca / -qc · dict-sentiments<div class="node-detail">dictionnaires</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-party-score<div class="node-detail">mentions pondérées + ton</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">{federal,provincial}_parties_score_{day,week,month}<div class="node-detail">série officielle</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 3<div class="node-detail">part de voix, ton</div></div>
+                </div>
+                <div style="padding:10px 18px;font-size:.86em;color:#555;background:#faf8f4;border-top:1px solid #eee">
+                    ⚠️ <strong>Une seconde chaîne alimente le même module</strong> : <code>radar-party-score-salient-shadow</code> part de <code>radar_annotated</code> (donc des classifieurs locaux, par phrase) et non de <code>salient_index</code>. Elle publie <code>provincial_parties_salient_shadow_*</code>, également lue par le site. <strong>Deux chemins, deux définitions</strong> — c'est voulu, c'est le régime « shadow ».
+                </div>
+            </div>
+
+            <!-- MODULE 4 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>4️⃣ De quoi parle-t-on?</span>
+                    <span class="frequency">6×/jour — trois provenances dans une seule tuile</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-source">r-media-headlines<div class="node-detail">PROD</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-data-preparation<div class="node-detail">classifieurs CAP par phrase<br><em>API d'inférence locale</em></div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">radar_annotated<div class="node-detail">sentence_analysis</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">radar-issues-score<div class="node-detail">proportions des 12 enjeux CAP</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">issues_score_{day,week,month}<div class="node-detail">+ colonne issues_meta</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 4<div class="node-detail">treemap</div></div>
+                </div>
+                <div style="padding:10px 18px;font-size:.86em;color:#555;background:#faf8f4;border-top:1px solid #eee">
+                    <strong>Une seule tuile, trois provenances</strong> — c'est ce que la vue par pipeline ne montrait pas :
+                    <ul style="margin:6px 0 0 18px;padding:0">
+                        <li>la <strong>taille</strong> de la tuile vient des classifieurs locaux, via <code>radar_annotated</code> ;</li>
+                        <li>les <strong>articles listés</strong> viennent de <code>headline_events_4h</code>, donc de l'indice de saillance ;</li>
+                        <li>l'<strong>objet dominant</strong> et l'<strong>accroche</strong> viennent d'un appel <strong>GPT-4o distinct</strong>, dans <code>radar-issues-score</code>, qui ne voit que des titres.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- MODULE 5 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>5️⃣ L'alignement de l'Assemblée</span>
+                    <span class="frequency">hebdomadaire — corpus de décideurs, pas de médias</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-source">a-qc-parliament-debates<div class="node-detail">débats de l'Assemblée, PROD</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">agora-decideurs-qc-phrases<div class="node-detail">segmentation + annotation<br><em>API d'inférence locale</em></div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">agora-decideurs-qc<div class="node-detail">agrégation par jour et par parti</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">agora_decideurs_qc · _deputes<div class="node-detail">datamart agora</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 5<div class="node-detail">jauge de ton, enjeux débattus</div></div>
+                </div>
+                <div style="padding:10px 18px;font-size:.86em;color:#555;background:#faf8f4;border-top:1px solid #eee">
+                    Seul module qui <strong>ne part pas des médias</strong>. Sa chaîne d'alerte Sonar est donc celle des <strong>décideurs</strong>, pas celle des médias — la chaîne se choisit sur la source de la donnée, jamais sur le sujet.
+                </div>
+            </div>
+
+            <!-- MODULE 6 -->
+            <div class="pipeline pipeline-module">
+                <div class="pipeline-header">
+                    <span class="toggle-icon">▼</span>
+                    <span>6️⃣ Polimètre+ : promesses électorales à la Une</span>
+                    <span class="frequency">hebdomadaire</span>
+                </div>
+                <div class="pipeline-content">
+                    <div class="node node-source">r-media-headlines<div class="node-detail">PROD</div></div>
+                    <div class="arrow">+</div>
+                    <div class="node node-dict">polimeter / mastersheet_Promesses<div class="node-detail">promesses officielles (Polimètre, U. Laval)</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-refiner">polimetre-plus<div class="node-detail">identification des promesses + saillance hebdo<br><em>libellés courts : gemma3 local</em></div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-table">polimetre_plus<div class="node-detail">indice + progression</div></div>
+                    <div class="arrow">→</div>
+                    <div class="node node-output">Module 6<div class="node-detail">promesses les plus couvertes</div></div>
+                </div>
+            </div>
+
+            <div style="margin:26px auto 10px;max-width:900px;padding:.9rem 1.2rem;border-left:4px solid #4A90E2;background:#f4f8fd;font-size:.9em;line-height:1.55">
+                <strong>Ce que cette vue montre et que l'autre cachait.</strong> Un raffineur peut alimenter plusieurs modules — <code>headline_events_4h</code> en nourrit trois — et un module peut avoir plusieurs provenances. Le jour où <code>radar-salient-objects</code> s'arrête, cette vue dit immédiatement ce qui s'éteint à l'écran.
+                Pour les horaires, l'état actif et la chaîne technique complète, passer à la <strong>vue par pipeline</strong>.
+            </div>
+        </div>
+
+        <div class="controls vue-pipeline">
             <button class="btn active" data-filter="all">Voir tous les pipelines</button>
             <button class="btn" data-filter="articles">RADAR+ Data Prep</button>
             <button class="btn" data-filter="salient">Salient Index</button>
@@ -482,7 +668,7 @@
         </div>
 
         <!-- Filtres par type de node -->
-        <div class="controls" style="margin-top: 10px; margin-bottom: 20px;">
+        <div class="controls vue-pipeline" style="margin-top: 10px; margin-bottom: 20px;">
             <button class="btn-node btn-node-source active-node" data-node-filter="source">
                 <span class="node-color-box" style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);"></span>
                 Chargeur ETL
@@ -506,7 +692,7 @@
         </div>
 
         <!-- Horaire Glue Jobs ETL -->
-        <p class="subtitle" style="margin-top: -10px; margin-bottom: 20px; font-size: 13px; color: #E74C3C; font-weight: 600;">
+        <p class="subtitle vue-pipeline" style="margin-top: -10px; margin-bottom: 20px; font-size: 13px; color: #E74C3C; font-weight: 600;">
             ⏰ Glue Jobs ETL (r-media-headlines, r-media-frontpages): 6x/jour → 19:03, 23:03, 03:03, 07:03, 11:03, 15:03 (heure du Québec)
         </p>
 
@@ -2564,6 +2750,22 @@
                 }
             }
         };
+
+        // ── Bascule de vue : par module (défaut) ↔ par pipeline ──
+        // L'état vit sur <body> et dans l'URL (#pipeline), pour qu'un lien
+        // partagé ouvre la bonne vue — les deux publics ne veulent pas la même.
+        const btnsVue = document.querySelectorAll('.btn-vue');
+        function poserVue(vue) {
+            document.body.classList.toggle('mode-modules', vue === 'modules');
+            document.body.classList.toggle('mode-pipeline', vue === 'pipeline');
+            btnsVue.forEach(b => b.classList.toggle('active', b.dataset.vue === vue));
+        }
+        btnsVue.forEach(b => b.addEventListener('click', () => {
+            const vue = b.dataset.vue;
+            poserVue(vue);
+            history.replaceState(null, '', vue === 'pipeline' ? '#pipeline' : location.pathname);
+        }));
+        poserVue(location.hash === '#pipeline' ? 'pipeline' : 'modules');
 
         // Filter controls
         const buttons = document.querySelectorAll('.btn');
