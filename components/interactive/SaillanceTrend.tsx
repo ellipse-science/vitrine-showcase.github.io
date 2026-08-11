@@ -162,7 +162,14 @@ function capAuRepos(trend: SalienceTrend) {
   );
 }
 
-export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
+export function SaillanceTrend({ trend, editionHrefs }: {
+  trend: SalienceTrend;
+  /** Clé de bloc → adresse de l'édition (#434). Chaque point de la courbe EST
+   *  une édition : pouvoir cliquer le creux ou le sommet qu'on vient de lire est
+   *  le chemin le plus court vers l'archive. Les points hors de l'archive
+   *  (fenêtre de rétention dépassée) restent de simples repères de survol. */
+  editionHrefs?: Record<string, string>;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const pts = trend.points;
   // La courbe trace le CUMUL 24 h — la grandeur du badge (vitrine#430, B3).
@@ -228,12 +235,16 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
           {pts.map((p, i) => {
             const demi = (W - 2 * PADX) / Math.max(1, pts.length - 1) / 2;
             const x = Math.max(0, xs(i) - demi), x2 = Math.min(W, xs(i) + demi);
-            return (
+            const href = editionHrefs?.[p.blockUtc];
+            const lecture = p.isAbsent
+              ? `${p.timeLabel} : Hors du radar`
+              : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`;
+            const cible = (
               <rect
                 key={`hit${i}`}
-                className="trend-hit"
+                className={`trend-hit${href ? " is-lien" : ""}`}
                 x={x.toFixed(1)} y={0} width={(x2 - x).toFixed(1)} height={H}
-                tabIndex={0}
+                tabIndex={href ? undefined : 0}
                 role="img"
                 aria-label={p.isAbsent
                   ? `${p.timeLabel} : Hors du radar`
@@ -244,6 +255,22 @@ export function SaillanceTrend({ trend }: { trend: SalienceTrend }) {
                 onBlur={() => setHover((h) => (h === i ? null : h))}
               />
             );
+            // Un point QUI MÈNE QUELQUE PART devient un lien. L'ancre porte
+            // alors seule le focus clavier et l'étiquette lue — le rect lui
+            // rend son `tabIndex` pour qu'il n'y ait pas deux arrêts de
+            // tabulation par point, ni deux libellés concurrents.
+            return href ? (
+              <a
+                key={`lien${i}`}
+                href={href}
+                className="trend-hit-link"
+                aria-label={`${lecture}. Voir cette édition.`}
+                onFocus={() => setHover(i)}
+                onBlur={() => setHover((h) => (h === i ? null : h))}
+              >
+                {cible}
+              </a>
+            ) : cible;
           })}
         </svg>
       </span>

@@ -341,7 +341,13 @@ export const __test__ = {
 
 const DATA_DIR = path.resolve(process.cwd(), "public", "data", "refined");
 
-export async function loadParties(): Promise<PartiesData | null> {
+export async function loadParties(
+  /** Édition passée (#434) : jour de publication de l'édition affichée. Ce
+   *  module est publié une fois par JOUR — son archive est donc exacte au jour,
+   *  pas au bloc de 4 h. Naviguer de l'édition de 8 h à celle de midi le laisse
+   *  identique, et c'est la vérité : rien n'a été republié entre les deux. */
+  asOfIso?: string,
+): Promise<PartiesData | null> {
   try {
     const [dayRaw, weekRaw, monthRaw] = await Promise.all([
       fs.readFile(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_day.json"),   "utf8"),
@@ -349,9 +355,11 @@ export async function loadParties(): Promise<PartiesData | null> {
       fs.readFile(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_month.json"), "utf8"),
     ]);
 
-    const dayRows   = JSON.parse(dayRaw)   as ShadowRow[];
-    const weekRows  = JSON.parse(weekRaw)  as ShadowRow[];
-    const monthRows = JSON.parse(monthRaw) as ShadowRow[];
+    const upTo = (rows: ShadowRow[]) =>
+      asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
+    const dayRows   = upTo(JSON.parse(dayRaw)   as ShadowRow[]);
+    const weekRows  = upTo(JSON.parse(weekRaw)  as ShadowRow[]);
+    const monthRows = upTo(JSON.parse(monthRaw) as ShadowRow[]);
 
     const stats = computeStats(dayRows, weekRows, monthRows);
     if (!stats) return null;
