@@ -1,10 +1,10 @@
 {
-  "event_id": "20260810T190000Z-evt-fillette-tuee-durant-voyage-new-2c540c6f",
+  "event_id": "20260810T230000Z-evt-jury-new-yorkais-declare-lundi-12b27f47",
   "storyline_id": "story-luciano-frattolin-7127da04",
   "title": "Luciano Frattolin reconnu coupable du meurtre de sa fille à New York",
   "main_issue": "law_and_crime",
   "date_utc": "2026-08-10",
-  "time_interval_utc": "19-23",
-  "sum_qc": 88.688,
+  "time_interval_utc": "23-03",
+  "sum_qc": 98.919,
   "peak_qc": 88.688
 }
