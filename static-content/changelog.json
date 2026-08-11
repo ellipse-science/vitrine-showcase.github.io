@@ -1,5 +1,11 @@
 [
   {
+    "pr": 447,
+    "date": "2026-08-11T00:31:44Z",
+    "note": "docs(métho) : le titre du Polimètre+ suit « Une » en majuscule",
+    "version": null
+  },
+  {
     "pr": 440,
     "date": "2026-08-10T22:29:55Z",
     "note": "On peut maintenant remonter dans le temps : les flèches et les icônes de l'en-tête permettent de revoir la Vitrine telle qu'elle était aux éditions précédentes.",
