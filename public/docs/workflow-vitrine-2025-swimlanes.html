@@ -142,6 +142,50 @@
         /* Un module a souvent PLUSIEURS chaînes (le module 4 en a trois) : le
            libellé dit laquelle on regarde, sinon les rangées se lisent comme
            une seule chaîne interrompue. */
+        /* Légende de la vue par module : purement informative, contrairement à
+           celle de la vue technique qui filtre. Mêmes dégradés que les nœuds,
+           pour que la couleur se lise sans aller-retour. */
+        .legende-modules {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 22px;
+            align-items: center;
+            justify-content: center;
+            max-width: 980px;
+            margin: 0 auto 22px;
+            padding: 14px 18px;
+            background: #fff;
+            border: 1px solid #e3e6ec;
+            border-radius: 10px;
+            font-size: .88em;
+        }
+        .legende-item { display: inline-flex; align-items: center; gap: 7px; }
+        .legende-note {
+            flex-basis: 100%;
+            text-align: center;
+            color: #666;
+            font-size: .95em;
+            border-top: 1px solid #eef0f4;
+            padding-top: 10px;
+            margin-top: 2px;
+            line-height: 1.5;
+        }
+        /* En dessous de 768px la légende passe à cinq rangées et occupait près de
+           la moitié de l'écran avant le premier couloir. On la resserre : la
+           légende explique le diagramme, elle ne doit pas le précéder de si loin
+           qu'on l'oublie en arrivant dessus. */
+        @media (max-width: 768px) {
+            .legende-modules {
+                gap: 6px 14px;
+                padding: 10px 12px;
+                font-size: .8em;
+                margin-bottom: 16px;
+                justify-content: flex-start;
+            }
+            .legende-item { gap: 5px; }
+            .legende-modules .node-color-box { width: 12px; height: 12px; }
+            .legende-note { text-align: left; padding-top: 8px; font-size: .92em; }
+        }
         .chaine-libelle {
             padding: 12px 20px 2px;
             font-size: .88em;
@@ -524,6 +568,7 @@
 
         <div id="vue-modules">
         <p class="subtitle" style="margin-top:-6px;margin-bottom:18px;font-size:.9em;color:#666">Ce que le visiteur voit, et d'où ça vient — <strong>la chaîne complète, du brut jusqu'au pixel</strong>. Les horaires et l'état des raffineurs font foi dans la <strong>vue par pipeline</strong>, seule vérifiée automatiquement contre <code>refiners.ts</code>.</p>
+        <div class="legende-modules"><span class="legende-item"><span class="node-color-box" style="background:linear-gradient(135deg,#E74C3C 0%,#C0392B 100%);"></span><strong>Source brute</strong> <span style="color:#777">ce que le pipeline capte</span></span><span class="legende-item"><span class="node-color-box" style="background:linear-gradient(135deg,#4A90E2 0%,#357ABD 100%);"></span><strong>Raffineur</strong> <span style="color:#777">un Lambda R sur AWS</span></span><span class="legende-item"><span class="node-color-box" style="background:linear-gradient(135deg,#50C878 0%,#3BA05F 100%);"></span><strong>Table du datamart</strong> <span style="color:#777">ce qu’il publie</span></span><span class="legende-item"><span class="node-color-box" style="background:linear-gradient(135deg,#9B59B6 0%,#7D3C98 100%);"></span><strong>Référentiel</strong> <span style="color:#777">dictionnaire, liste officielle</span></span><span class="legende-item"><span class="node-color-box" style="background:linear-gradient(135deg,#FFB347 0%,#FF8C00 100%);"></span><strong>Publication</strong> <span style="color:#777">le JSON servi, puis le module</span></span><span class="legende-note">En <em>italique</em> sous un raffineur : le <strong>modèle</strong> qu’il utilise — « API d’inférence locale » et « GLiNER / gemma3 » sont les modèles maison ; « GPT-4o » est le seul appel externe payant.</span></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>1️⃣ L'actualité saillante du moment au Québec</span><span class="frequency">6×/jour — la Une des Unes</span></div><div class="chaine-libelle">Chaîne A — l'extraction par <strong>GPT-4o</strong> · celle qui alimente l'indice <em>aujourd'hui</em></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-objects<div class="node-detail">objets saillants — GPT-4o<br><em>→ modèles locaux après #206</em></div></div><div class="arrow">→</div><div class="node node-table">salient_headlines_objects<div class="node-detail">objets par article</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-index<div class="node-detail">agrège par objet et par bloc</div></div><div class="arrow">→</div><div class="node node-table">salient_index<div class="node-detail">indice de saillance par objet</div></div><div class="arrow">→</div><div class="node node-refiner">radar-event-salience<div class="node-detail">regroupe en événements, rédige les titres FR, calcule salience_index</div></div><div class="arrow">→</div><div class="node node-table">headline_events_4h<div class="node-detail">l'indice publié</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 1<div class="node-detail">manchettes, badge, trajectoire</div></div></div><div class="chaine-libelle">Chaîne B — l'extraction par les <strong>modèles locaux</strong> · appelée à <strong>remplacer</strong> la chaîne A (#206)</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">thèmes CAP, partis, sentiment</div></div><div class="arrow">→</div><div class="node node-refiner">radar-object-extraction<div class="node-detail">NER + normalisation<br><em>GLiNER + gemma3 locaux</em></div></div><div class="arrow">→</div><div class="node node-table">headlines_objects_extracted<div class="node-detail">sentence_analysis</div></div><div class="arrow">→</div><div class="node node-refiner">radar-event-salience<div class="node-detail">y lit le ton (tone_n_pos / _neg)</div></div></div><div class="note-module"><strong>Deux extracteurs d'objets coexistent, et c'est temporaire.</strong> Les deux tables portent la <strong>même colonne <code>extracted_objects</code></strong> : celle de <code>salient_headlines_objects</code> est produite par <strong>GPT-4o</strong>, celle de <code>headlines_objects_extracted</code> par les <strong>modèles locaux</strong> (GLiNER + gemma3). <code>radar-salient-index</code> lit aujourd'hui la première.<br>La bascule vers la seconde, c'est <strong>#206</strong> — elle attend la fin de la validation des modèles. D'ici là, la chaîne B ne sert qu'à une chose côté module 1 : fournir la <strong>tonalité</strong> des événements. Mesuré au 8 août : changer d'extracteur déplace <strong>10,8 à 11,2 objets sur 20</strong> au Hot 20, mais la Une des Unes et Deux solitudes y sont <strong>insensibles</strong> — l'indice ne contient aucun terme d'objet.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>2️⃣ Deux solitudes?</span><span class="frequency">6×/jour — convergence QC ↔ CAN</span></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-objects<div class="node-detail">objets saillants — GPT-4o<br><em>→ modèles locaux après #206</em></div></div><div class="arrow">→</div><div class="node node-table">salient_headlines_objects<div class="node-detail">objets par article</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-index<div class="node-detail">agrège par objet et par bloc</div></div><div class="arrow">→</div><div class="node node-table">salient_index<div class="node-detail">indice de saillance par objet</div></div><div class="arrow">→</div><div class="node node-refiner">radar-event-salience<div class="node-detail">+ convergence QC ↔ CAN</div></div><div class="arrow">→</div><div class="node node-table">headline_events_4h<div class="node-detail">interval_convergence_score, coverage_qc_in_can…</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 2<div class="node-detail">radar, convergence, résonance</div></div></div><div class="note-module"><strong>Même chaîne et même table que le module 1</strong> — jusqu'au dernier maillon. Ce qui change est la lecture : le module 2 compare deux régions là où le module 1 classe des nouvelles. Ils ne peuvent donc pas diverger sur les données.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>3️⃣ Couverture médiatique des partis politiques</span><span class="frequency">6×/jour — sur les modèles locaux</span></div><div class="chaine-libelle">La chaîne en production — <code>radar-party-score-salient-shadow</code>, sur les <strong>modèles locaux</strong></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">thèmes CAP, partis, sentiment</div></div><div class="arrow">→</div><div class="node node-refiner">radar-party-score-salient-shadow<div class="node-detail">part des phrases, pas des objets</div></div><div class="arrow">→</div><div class="node node-table">provincial_parties_salient_shadow_{day,week,month}</div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 3<div class="node-detail">part de voix, ton — <strong>ce que le visiteur voit</strong></div></div></div><div class="note-module">Le module tourne <strong>déjà sur les classifieurs locaux</strong> : il part de <code>radar_annotated</code>, pas des objets saillants. La part de voix est normalisée en amont (0-1) et le seuil d'éclipse est de <strong>2 %</strong>.<br>Le nom <code>salient_shadow</code> est un vestige — cette chaîne n'a plus rien d'un régime d'essai, c'est celle que <code>lib/data/parties.ts</code> lit.</div></div>
