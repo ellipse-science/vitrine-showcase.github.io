@@ -1,5 +1,11 @@
 [
   {
+    "pr": 461,
+    "date": "2026-08-12T21:30:05Z",
+    "note": "Les niveaux de saillance affichés sous les manchettes reposent désormais sur une nouvelle mesure, qui tient compte à la fois du nombre de médias ayant fait de l'histoire leur Une, du nombre d'articles qu'ils y consacrent et du temps passé en Une. Une nouvelle doit exister sur ces trois plans à la fois pour monter : un seul média, aussi insistant soit-il, ne suffit plus. La page Méthodologie…",
+    "version": "2.23.0-beta.0"
+  },
+  {
     "pr": 454,
     "date": "2026-08-12T20:11:41Z",
     "note": "Aucune — documentation technique interne, rien de visible pour le visiteur du site.",

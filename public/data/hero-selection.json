@@ -1,10 +1,10 @@
 {
-  "event_id": "20260812T150000Z-evt-camera-type-flock-spvm-servait-7306d950",
-  "storyline_id": "story-flock-6186ff9d",
-  "title": "Caméra de surveillance Flock utilisée par le SPVM à Montréal",
-  "main_issue": "law_and_crime",
+  "event_id": "20260812T110000Z-evt-allegations-racisme-nord-soraya-martinez-19f2c889",
+  "storyline_id": "story-spvm-0751f85d",
+  "title": "Allégations de racisme: Soraya Martinez Ferrada prône le dialogue",
+  "main_issue": "rights_liberties_minorities_discrimination",
   "date_utc": "2026-08-12",
-  "time_interval_utc": "15-19",
-  "sum_qc": 105.999,
-  "peak_qc": 51.967
+  "time_interval_utc": "11-15",
+  "sum_qc": 68.87,
+  "peak_qc": 57.1
 }
