@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
-"""Génère l'illustration pédagogique des niveaux de saillance (#35, recalibré #281).
+"""Génère l'illustration pédagogique des niveaux de saillance (#35, recalibré #281,
+bascule spec v1 le 2026-08-12).
 
-Histogramme du PIC de saillance 24 h (échelle log) avec les 6 bandes de percentiles
-(Très faible / Faible / Modérée / Élevée / Très élevée / Exceptionnelle = 5/15/30/30/15/5 %).
-Sert à la page méthodologie (§03) ET à l'équipe.
+Histogramme de l'ATTENTION CUMULÉE sur 24 h (échelle log) avec les 6 bandes de
+percentiles (Très faible / Faible / Modérée / Élevée / Très élevée /
+Exceptionnelle = 5/15/30/30/15/5 %). Sert à la page méthodologie (§03) ET à l'équipe.
 
-DONNÉES — la pastille étiquette le PIC 24 h d'une histoire, donc l'illustration
-montre la distribution des pics par storyline QC, période POST-FUSION (≥ 2026-07-17,
-aws-refiners#227). Pour rafraîchir le CSV source :
+DONNÉES — la figure doit montrer LA GRANDEUR QUI CLASSE, sinon elle illustre autre
+chose que ce que la légende annonce. Depuis vitrine#314 (27-07) le badge et l'ordre
+des manchettes tournent sur le cumul 24 h pondéré par récence, et depuis la bascule
+spec v1 ce cumul porte sur `salience_index_qc` — pas sur le pic, pas sur `score_qc`.
+La population est celle de la grille du badge : un point par storyline (son plus haut
+cumul), parmi les Unes RÉELLEMENT AFFICHÉES.
 
-    Rscript -e 'readRenviron("~/.Renviron"); library(tube); library(DBI);
-      conn <- ellipse_connect(env="DEV", database="datamarts");
-      df <- DBI::dbGetQuery(conn, paste0(\"SELECT max(score_qc_peak_24h) v FROM \",
-        chr(34), \"vitrine_datamart-headline_events_4h\", chr(34),
-        \" WHERE date_utc >= DATE '2026-07-17' AND storyline_id IS NOT NULL GROUP BY storyline_id\"));
-      d <- df$v[!is.na(df$v) & df$v>0];
-      writeLines(paste(d, collapse=\",\"), \"/tmp/score_qc_peak.csv\")'
+Le CSV est produit par le script de calibration lui-même, pour que la figure et les
+seuils ne puissent pas diverger :
+
+    cd _chantiers-vitrine/banc-235 && Rscript cutover_grilles_specv1.R
+    # → out/cumul24h_qc.csv (et _roc.csv), déjà à l'échelle d'affichage ×100
 
 Usage :  python3 scripts/generate_saillance_levels.py [chemin_csv]
 """
@@ -26,15 +28,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-CSV = sys.argv[1] if len(sys.argv) > 1 else "/tmp/score_qc_peak.csv"
+# Défaut valable depuis la RACINE du dépôt (le dépôt et `_chantiers-vitrine` sont
+# voisins). Depuis un worktree, passer le chemin en argument.
+CSV = (sys.argv[1] if len(sys.argv) > 1
+       else "../_chantiers-vitrine/banc-235/out/cumul24h_qc.csv")
 OUT = [
     "public/methodologie/saillance-niveaux.png",
     "docs/saillance-niveaux.png",
 ]
 
-# Seuils recalibrés (#281, 2026-07-20) = SAL_QC_THRESHOLDS côté frontend :
-# distribution des PICS 24 h par storyline QC, période POST-FUSION (≥ 2026-07-17).
-TH = [8, 11, 19, 48, 95]                   # p5 / p20 / p50 / p80 / p95
+# Seuils du jour de la bascule = NEW_SUM_QC_THRESHOLDS dans
+# lib/data/salienceCutover.ts. ⚠️ Les deux doivent bouger ENSEMBLE : une figure
+# qui garde les anciennes bornes place les bandes au mauvais endroit sous un
+# histogramme juste, et rien ne le signale.
+TH = [32.9, 40.6, 60.6, 87.8, 147.7]       # p5 / p20 / p50 / p80 / p95
 PLABELS = ["p5", "p20", "p50", "p80", "p95"]
 BANDS = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Exceptionnelle"]
 PCTS = ["5 %", "15 %", "30 %", "30 %", "15 %", "5 %"]
@@ -54,7 +61,11 @@ ax.set_facecolor(PAPER)
 
 # Bins réguliers en espace log (la distribution devient une cloche).
 lo, hi = sc.min(), sc.max()
-bins = np.logspace(np.log10(lo * 0.85), np.log10(hi * 1.1), 34)
+# La marge de droite n'est pas cosmétique : la bande « Exceptionnelle » est
+# ouverte (tout ce qui dépasse le p95) et doit rester assez large pour porter son
+# étiquette. Avec le p95 du cumul (147,7) très proche du maximum observé, une
+# marge de 10 % la réduisait à un liseré et le mot débordait du cadre.
+bins = np.logspace(np.log10(lo * 0.85), np.log10(hi * 1.45), 34)
 counts, edges = np.histogram(sc, bins=bins)
 ymax = counts.max()
 band_top = ymax * 1.18
@@ -89,8 +100,13 @@ for i in range(6):
 ax.set_xscale("log")
 ax.set_xlim(xleft, xright)
 ax.set_ylim(0, band_top)
-ax.set_xticks([1, 5, 10, 20, 40, 80, 160])
+ax.set_xticks([30, 40, 60, 90, 150])
 ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+# En échelle log, matplotlib ajoute de lui-même des graduations MINEURES, qu'il
+# étiquette en notation scientifique (« 2 × 10² ») dès que la plage s'étend. Sur
+# une figure destinée au grand public, c'est un caractère de bruit — et il n'est
+# apparu qu'en élargissant la marge de droite ci-dessus.
+ax.get_xaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
 # Ticks Y adaptatifs au volume (l'échantillon post-fusion est encore mince).
 _yt = [t for t in [0, 10, 20, 30, 40] if t <= band_top]
 ax.set_yticks(_yt if len(_yt) >= 2 else [0, max(1, int(round(ymax)))])
@@ -101,19 +117,22 @@ for s in ["top", "right"]:
 for s in ["left", "bottom"]:
     ax.spines[s].set_color(RULE)
 ax.set_ylabel("Nombre d'histoires", color="#5B544A", fontsize=11)
-ax.set_xlabel("Sommet de saillance au Québec sur 24 h  (échelle log)",
+ax.set_xlabel("Attention cumulée au Québec sur 24 h  (échelle log)",
               color="#5B544A", fontsize=12, labelpad=30)
 
 # Titre + sous-titre + pied (sans em-dash).
 fig.text(0.055, 0.95, "Comment on calcule les niveaux de saillance",
          fontsize=25, fontweight="bold", color=INK, ha="left", va="top")
 fig.text(0.055, 0.895,
-         "L'étiquette situe le PIC de saillance atteint par l'histoire sur 24 h dans la distribution de TOUTES les Unes\n"
-         "récentes : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », le gros au centre (cloche en échelle log).",
+         "L'étiquette situe l'ATTENTION CUMULÉE par l'histoire sur 24 h, les heures récentes comptant davantage, dans la distribution\n"
+         # NE PAS réintroduire « cloche en échelle log » : c'était vrai de la
+         # distribution des PICS, pas de celle des cumuls, qui s'étale. La
+         # légende doit décrire la figure qu'on regarde, pas celle d'avant.
+         "de TOUTES les Unes récentes : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », et 60 % des histoires au centre.",
          fontsize=13, color="#5B544A", ha="left", va="top")
 fig.text(0.055, 0.028,
-         f"n = {n} histoires (pic 24 h par storyline QC) depuis le 2026-07-17, après la fusion des événements.  "
-         "Source : headline_events_4h (DEV).  Seuils recalibrés le 2026-07-20 (#281) ; recalcul glissant automatique côté données (fetch_data.R).",
+         f"n = {n} histoires (plus haut cumul 24 h par storyline QC, parmi les Unes affichées) depuis le 2026-07-23.  "
+         "Source : headline_events_4h (DEV), indice spec v1.  Seuils mesurés le 2026-08-12 ; recalcul glissant côté données.",
          fontsize=10.5, color="#8A8474", ha="left", va="bottom")
 
 plt.subplots_adjust(left=0.055, right=0.965, top=0.80, bottom=0.20)
