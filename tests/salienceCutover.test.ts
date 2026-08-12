@@ -61,12 +61,12 @@ describe("inertie du flag éteint", () => {
     expect(story.sumQc).toBeCloseTo(60 + 40 * w, 6);
     expect(story.peakQc).toBe(60);
   });
-  // CANARI DE BASCULE — à retourner AVEC le flag, le jour J. Ce n'est pas un
-  // invariant mais un état déclaré : il rend la PR dormante vérifiable, et il
-  // fait apparaître le flip dans le diff des tests plutôt que dans une seule
-  // ligne perdue d'un module de constantes.
-  it("canari : la PR est livrée dormante (flag éteint)", () => {
-    expect(SALIENCE_CUTOVER).toBe(false);
+  // CANARI DE BASCULE — retourné AVEC le flag le 2026-08-12, jour J. Ce n'est
+  // pas un invariant mais un état déclaré : il a rendu la PR dormante
+  // vérifiable pendant quatre jours, et il fait apparaître le flip dans le diff
+  // des tests plutôt que dans une seule ligne perdue d'un module de constantes.
+  it("canari : la bascule est FAITE (flag allumé)", () => {
+    expect(SALIENCE_CUTOVER).toBe(true);
   });
 });
 
@@ -139,8 +139,21 @@ describe("grilles de seuils du nouvel indice", () => {
   });
   it("la borne « Modérée » est bien le percentile brut, sans relèvement", () => {
     // Garde-fou anti-retour : si quelqu'un remet une béquille sans passer par
-    // #430, ce test le dit. 40,4 = p20 mesuré, 45,0 = l'ancien relèvement.
-    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(40.4);
+    // #430, ce test le dit. 41,8 = p20 mesuré sur l'ANNÉE (n = 1 306) ; 45,0
+    // était l'ancien relèvement, retiré le 09-08.
+    //
+    // ⚠️ Ce test est le seul endroit où une valeur de grille est écrite en dur
+    // hors du module : à mettre à jour DÉLIBÉRÉMENT à chaque recalibration —
+    // c'est précisément son rôle de faire lever la main. Il l'a fait le
+    // 2026-08-12 au passage de la fenêtre courte (40,6) à l'année (41,8), et
+    // c'est le SEUL des 290 tests qui a bougé : les autres dérivent de la
+    // grille, donc une recalibration ne les rend plus faussement rouges.
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(41.8);
+    // Ce que le garde protège vraiment, au-delà du chiffre : la borne reste le
+    // p20 nu, donc strictement sous la médiane, jamais poussée au-dessus du
+    // maximum mono-média.
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(MONO_MAX_CUMUL);
   });
 
   it("scaleThresholds passe une grille publiée à l'échelle d'affichage", () => {
@@ -200,7 +213,7 @@ describe("centile réel de l'infobulle", () => {
     centileFrom: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS) => number;
     hintFromCentile: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS, pop: string) => string;
   };
-  const T = NEW_SUM_QC_THRESHOLDS; // 32,5 / 40,4 / 62,3 / 89,4 / 133,3
+  const T = NEW_SUM_QC_THRESHOLDS; // 32,9 / 40,6 / 60,6 / 87,8 / 147,7
 
   it("les percentiles publiés retombent sur eux-mêmes", () => {
     expect(centileFrom(T.faible, T)).toBe(5);
