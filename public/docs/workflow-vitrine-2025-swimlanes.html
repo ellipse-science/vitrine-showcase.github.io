@@ -548,7 +548,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme : <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h : <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 2 août 2026 (audit complet contre le code des 3 repos : chaîne de publication réelle, horaires resynchronisés sur <code>refiners.ts</code>, renommage <code>score_v2_*</code> → <code>salient_shadow_*</code>, couloir Agora décideurs QC ajouté) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 12 août 2026 (deux lectures du même système : par module de la Vitrine et par pipeline technique ; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar ; horaires et état vérifiés contre <code>refiners.ts</code>) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds « Refiner » <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit : <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -2635,13 +2635,17 @@
         btnsVue.forEach(b => b.addEventListener('click', () => {
             const vue = b.dataset.vue;
             poserVue(vue);
-            history.replaceState(null, '', vue === 'pipeline' ? '#pipeline' : location.pathname);
+            // On garde location.search : un lien partagé porte parfois des
+            // paramètres, et revenir à la vue modules ne doit pas les jeter.
+            history.replaceState(null, '', vue === 'pipeline' ? '#pipeline' : location.pathname + location.search);
         }));
         poserVue(location.hash === '#pipeline' ? 'pipeline' : 'modules');
 
         // Filter controls
         const buttons = document.querySelectorAll('.btn');
-        const pipelines = document.querySelectorAll('.pipeline');
+        // Les couloirs « par module » n'ont pas de data-pipeline : les inclure
+        // ici les ferait masquer par tout filtre autre que « tous ».
+        const pipelines = document.querySelectorAll('.pipeline:not(.pipeline-module)');
 
         buttons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -2661,6 +2665,9 @@
 
         // Node type filter controls - met en évidence le type sélectionné
         const nodeButtons = document.querySelectorAll('.btn-node');
+        // Le filtre pose des styles inline sur les nœuds ; on le limite à la vue
+        // par pipeline, sinon l'opacité fuit sur les couloirs par module.
+        const nodesPipeline = document.querySelectorAll('.pipeline:not(.pipeline-module) .node');
         let selectedNodeType = null;
 
         nodeButtons.forEach(btn => {
@@ -2672,7 +2679,7 @@
                     selectedNodeType = null;
                     nodeButtons.forEach(b => b.classList.add('active-node'));
                     // Remettre tous les nodes à opacité normale
-                    document.querySelectorAll('.node').forEach(node => {
+                    nodesPipeline.forEach(node => {
                         node.style.opacity = '1';
                     });
                 } else {
@@ -2688,7 +2695,7 @@
                     });
 
                     // Mettre en évidence seulement le type sélectionné
-                    document.querySelectorAll('.node').forEach(node => {
+                    nodesPipeline.forEach(node => {
                         const nodeClass = node.className.split(' ').find(c => c.startsWith('node-'));
                         if (nodeClass) {
                             const type = nodeClass.replace('node-', '');
