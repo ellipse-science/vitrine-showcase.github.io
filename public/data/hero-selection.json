@@ -1,10 +1,10 @@
 {
-  "event_id": "20260811T110000Z-evt-quebec-ottawa-enquetent-cyberattaques-usines-1ec2e929",
-  "storyline_id": "story-cyberattacks-662da8e9",
-  "title": "Cyberattaques pro-russes ciblent les usines d'eau potable au Canada",
-  "main_issue": "technology",
-  "date_utc": "2026-08-11",
-  "time_interval_utc": "11-15",
-  "sum_qc": 46.461,
-  "peak_qc": 31.299
+  "event_id": "20260812T150000Z-evt-camera-type-flock-spvm-servait-7306d950",
+  "storyline_id": "story-flock-6186ff9d",
+  "title": "Caméra de surveillance Flock utilisée par le SPVM à Montréal",
+  "main_issue": "law_and_crime",
+  "date_utc": "2026-08-12",
+  "time_interval_utc": "15-19",
+  "sum_qc": 105.999,
+  "peak_qc": 51.967
 }
