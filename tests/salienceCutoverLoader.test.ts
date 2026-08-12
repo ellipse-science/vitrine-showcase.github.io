@@ -17,6 +17,14 @@ const readFileMock = vi.fn();
 vi.mock("node:fs/promises", () => ({ default: { readFile: (...a: unknown[]) => readFileMock(...a) } }));
 
 const { loadHeadlineEvents } = await import("@/lib/data/headlineEvents");
+const { NEW_SUM_QC_THRESHOLDS } = await import("@/lib/data/salienceCutover");
+
+// Somme des six poids de récence d'une fenêtre 24 h à demi-vie 10 h :
+// Σ 2^(−4k/10) pour k = 0..5. Sert à viser une valeur de cumul depuis une
+// valeur par bloc, sans recopier un résultat intermédiaire.
+const SOMME_POIDS = [0, 1, 2, 3, 4, 5].reduce((s, k) => s + Math.pow(2, (-4 * k) / 10), 0);
+/** Valeur par bloc qui produit le cumul 24 h visé (à l'échelle d'affichage). */
+const blocPourCumul = (cumul: number) => cumul / SOMME_POIDS / 100;
 
 // Six blocs, une histoire québécoise portée par deux médias. Les deux colonnes
 // sont peuplées et DISCORDANTES : l'ancien indice placerait l'histoire tout en
@@ -64,23 +72,30 @@ const serve = (rows: unknown[]) => {
 
 describe("chargeur, flag ALLUMÉ", () => {
   it("classe la Une avec la grille du NOUVEL indice, pas celle de l'ancien", async () => {
-    // 0,42 par bloc → 42 à l'échelle d'affichage → cumul 24 h pondéré
-    // 42 × Σ2^(−âge/10) = 42 × 3,347 ≈ 140,6.
-    serve(dataset(0.42));
+    // On vise 5 % AU-DESSUS du p95 de la grille du badge — dérivé de la grille
+    // plutôt qu'écrit en dur, parce que ce test porte sur une RÈGLE (« franchir
+    // le p95, c'est porter le titre »), pas sur un jeu de seuils particulier.
+    // Écrit en dur, il devenait faux à chaque recalibration en ayant l'air de
+    // dénoncer une régression : c'est arrivé le 2026-08-12, où le p95 est passé
+    // de 133,3 à 147,7 et où la valeur d'entrée s'est retrouvée SOUS le seuil.
+    const cumulVise = NEW_SUM_QC_THRESHOLDS.extreme * 1.05;
+    serve(dataset(blocPourCumul(cumulVise)));
     const data = await loadHeadlineEvents();
     expect(data).not.toBeNull();
     const une = data!.top3[0];
     // La grandeur publiée à l'UI est bien sur l'échelle d'affichage ×100 (et
     // non dans [0,1], où la figure du ⓘ écraserait tous ses repères sur 0).
-    expect(une.scoreQcSum24h).toBeCloseTo(140.6, 1);
-    // 140,6 dépasse le p95 de la grille (133,3) : le niveau est donc
-    // « Exceptionnelle », immédiatement. Avant vitrine#430 (A4), l'hystérésis
-    // affichait « Très élevée » — une bande sous la réalité — parce qu'elle ne
-    // laissait gagner qu'un palier par édition. Le niveau est désormais une pure
-    // fonction de la valeur : franchir la frontière, c'est porter le titre.
+    expect(une.scoreQcSum24h).toBeCloseTo(cumulVise, 1);
+    expect(une.scoreQcSum24h).toBeGreaterThan(NEW_SUM_QC_THRESHOLDS.extreme);
+    // Au-delà du p95, le niveau est « Exceptionnelle », immédiatement. Avant
+    // vitrine#430 (A4), l'hystérésis affichait « Très élevée » — une bande sous
+    // la réalité — parce qu'elle ne laissait gagner qu'un palier par édition. Le
+    // niveau est désormais une pure fonction de la valeur : franchir la
+    // frontière, c'est porter le titre.
     expect(une.saillanceLabel).toBe("Exceptionnelle");
     // La figure du ⓘ reçoit la grille du badge — celle du nouvel indice.
-    expect(une.salThresholds).toEqual([32.5, 40.4, 62.3, 89.4, 133.3]);
+    const g = NEW_SUM_QC_THRESHOLDS;
+    expect(une.salThresholds).toEqual([g.faible, g.moyenne, g.eleve, g.tresEleve, g.extreme]);
   });
 
   it("la grille du badge est bien celle du nouvel indice, aux percentiles bruts", async () => {
@@ -97,7 +112,7 @@ describe("chargeur, flag ALLUMÉ", () => {
     serve(rows);
     const data = await loadHeadlineEvents();
     const une = data!.top3[0];
-    expect(une.salThresholds[1]).toBe(40.4);
+    expect(une.salThresholds[1]).toBe(NEW_SUM_QC_THRESHOLDS.moyenne);
     expect(une.saillanceRank).toBeGreaterThanOrEqual(1);
   });
 

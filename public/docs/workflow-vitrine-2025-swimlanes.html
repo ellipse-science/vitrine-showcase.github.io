@@ -1039,46 +1039,42 @@
             </div>
         </div>
 
-        <!-- AGORA SONAR -->
+        <!-- SONAR PIPELINE (méta-sonar) -->
         <div class="pipeline pipeline-sonar" data-pipeline="sonar">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>🏛️ AGORA SONAR (Monitoring Qualité Parlementaire) &nbsp;⚠️ JAMAIS PLANIFIÉ</span>
-                <span class="frequency">⚠️ Le code des deux raffineurs existe dans aws-refiners, mais aucune entrée ne leur correspond dans <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> — ce pipeline <strong>ne tourne pas</strong>, ni en DEV ni en PROD (audité le 2026-08-02)</span>
+                <span>🛰️ SONAR PIPELINE (Santé des raffineurs)</span>
+                <span class="frequency">Quotidien 08:15 (heure du Québec) — après le cycle de 07:xx, pour lire un état stabilisé. Remplace <code>agora-sonar</code>, jamais planifié.</span>
             </div>
             <div class="pipeline-content">
-                <div class="node node-source" data-type="source" data-source="agora-tables" data-env-source="PROD">
-                    a-*-* (tables Agora)
-                    <div class="node-detail">Parlement + communiqués</div>
+                <div class="node node-source" data-type="source" data-source="datamarts-tables" data-env-source="DEV">
+                    Tables des datamarts
+                    <div class="node-detail">Ce que les autres raffineurs publient</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">+</div>
+                <div class="node node-source" data-type="source" data-source="a-qc-parliament-debates" data-env-source="PROD">
+                    a-qc-parliament-debates
+                    <div class="node-detail">Source de référence du corpus Agora</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar" data-ecr="agora-sonar" data-active="unscheduled" data-cron="">
-                    agora-sonar.R ⚠️
-                    <div class="node-detail">Freshness + complétude — aucun horaire déployé</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-pipeline" data-ecr="sonar-pipeline" data-active="true" data-cron="08:15">
+                    sonar-pipeline.R
+                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest</div>
+                    <div class="node-schedule">⏰ 08:15 (quotidien)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-table" data-type="table" data-table="agora_sonar_daily" data-env-output="DEV">
-                    agora_sonar_daily
-                    <div class="node-detail">Datamart: agora_datamart</div>
+                <div class="node node-table" data-type="table" data-table="pipeline_health" data-env-output="DEV">
+                    pipeline_health
+                    <div class="node-detail">Datamart: sonar — historique ET mémoire de l'anti-bruit</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="agora-sonar-heatmaps" data-ecr="agora-sonar-heatmaps" data-active="unscheduled" data-cron="">
-                    agora-sonar-heatmaps.R ⚠️
-                    <div class="node-detail">4 heatmaps qualité — aucun horaire déployé</div>
-                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
-                </div>
-                <div class="arrow">→</div>
-                <div class="node node-output" data-type="output" data-output="agora-heatmaps">
-                    4 PNG Heatmaps
-                    <div class="node-detail">lag, statut, contenu, orateur</div>
-                    <div class="info-badge">🖼️ Cliquer pour détails</div>
-                </div>
-                <div class="arrow">→</div>
-                <div class="node node-output" data-type="output" data-output="slack-agora-sonar">
-                    Slack: agora-sonar
+                <div class="node node-output" data-type="output" data-output="slack-sonar-pipeline">
+                    Slack: par corpus
+                    <div class="node-detail">médias → radar-plus_sonar • décideurs → agora-plus_sonar</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
             </div>
@@ -1218,6 +1214,23 @@
         // Modal data
         const modalData = {
             tables: {
+                'pipeline_health': {
+                    title: 'Table: pipeline_health',
+                    description: 'Santé des raffineurs vue par leurs tables, publiée par sonar-pipeline.R dans le datamart sonar. Une ligne par table surveillée et par passe.',
+                    details: [
+                        '📊 Datamart cible: sonar.pipeline_health',
+                        '🗓️ Cadence: quotidienne, 08:15 (heure du Québec)',
+                        '',
+                        '📋 COLONNES:',
+                        '• table, refiner, cadence — ce qui est surveillé',
+                        '• watermark_utc, lag_hours, status — fraîcheur (NORMAL/WARNING/CRITICAL/NO_DATA)',
+                        '• source_table, source_watermark, source_behind_days — retard mesuré contre la SOURCE, pour les corpus intermittents comme l\'Assemblée',
+                        '• chain_behind_blocks — décalage entre étages de la chaîne radar',
+                        '• slack_muet — trace des passes où l\'alerte n\'a pas pu être publiée',
+                        '',
+                        '⚠️ Publiée en mode APPEND : cette table EST la mémoire du sonar. L\'écraser rendrait l\'anti-bruit impossible (on réalerterait chaque jour sur le même problème).'
+                    ]
+                },
                 'polimetre_plus': {
                     title: 'Table: polimetre_plus',
                     description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification 100 % regex ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
@@ -1689,31 +1702,6 @@
                         '→ Lue par radar-object-extraction.R pour GLiNER + Gemma3'
                     ]
                 },
-                'agora_sonar_daily': {
-                    title: 'Table: agora_sonar_daily',
-                    description: 'Table de monitoring Agora publiée par agora-sonar.R dans agora_datamart (qualité, fraîcheur, complétude).',
-                    columns: [
-                        'date_utc - Date de la mesure (UTC)',
-                        'date_montreal_tz - Date Montréal',
-                        'country_id - Pays/source (CAN, QC, EU)',
-                        'source_type - Type de source (debates, commissions, press_releases)',
-                        'table_name - Nom table Agora analysée',
-                        'total_records - Nombre de lignes chargées pour la date',
-                        'last_event_date - Dernière date événement observée',
-                        'lag_days - Délai en jours depuis last_event_date',
-                        'freshness_issue - Flag de fraîcheur (0/1)',
-                        'pct_with_content - % avec contenu textuel',
-                        'pct_with_speaker - % avec orateur/parti renseigné',
-                        'pct_with_lang_en - % avec champ anglais (quand applicable)',
-                        'quality_score - Score composite qualité (0-1)',
-                        'alert_status - NORMAL / WARNING / CRITICAL / NO_DATA / ERROR'
-                    ],
-                    details: [
-                        '📊 Datamart cible: agora_datamart.agora_sonar_daily',
-                        '🔄 Publication en remplacement complet (table glissante)',
-                        '⚠️ Utilisée par agora-sonar-heatmaps.R (fenêtre 14 jours)'
-                    ]
-                },
                 'agora_decideurs_qc_phrases': {
                     title: 'Table: agora_decideurs_qc_phrases',
                     description: 'Interventions du Salon bleu segmentées en phrases et annotées (thèmes CAP + sentiment via INFER API). Table de travail intermédiaire, non consommée par la Vitrine.',
@@ -1771,6 +1759,24 @@
                 }
             },
             refiners: {
+                'sonar-pipeline': {
+                    title: 'Refiner: sonar-pipeline.R',
+                    description: 'Le méta-sonar : il observe les datamarts et en déduit la santé des AUTRES raffineurs. Remplace agora-sonar, qui n\'a jamais été planifié.',
+                    details: [
+                        '📥 SOURCES: les tables des datamarts (DEV) + les sources de référence déclarées au manifest (ex. a-qc-parliament-debates en PROD)',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts (sonar) - Table pipeline_health',
+                        '⏰ Quotidien 08:15 — après le cycle de 07:xx, pour lire un état stabilisé',
+                        '',
+                        '⚙️ CE QU\'IL VÉRIFIE:',
+                        '• Fraîcheur — âge du watermark vs le seuil de la cadence',
+                        '• Retard sur la SOURCE — pour les corpus intermittents : hors séance parlementaire, sortie et source gèlent ensemble, donc aucune alerte. À l\'horloge, ces raffineurs paraîtraient morts 3 mois par année.',
+                        '• Décalage de chaîne — un étage radar qui reste derrière son amont',
+                        '• Couverture du manifest — table publiée que personne n\'a déclarée',
+                        '',
+                        '🔕 ANTI-BRUIT: alerte à l\'APPARITION d\'un problème et à sa résolution, jamais à chaque passe.',
+                        '📢 Slack routé par corpus: médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar'
+                    ]
+                },
                 'polimetre-plus': {
                     title: 'Refiner: polimetre-plus.R',
                     description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification 100 % regex (source de vérité) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
@@ -2267,48 +2273,6 @@
                         '⏳ TIMEOUT: 15 minutes'
                     ]
                 },
-                'agora-sonar': {
-                    title: 'Refiner: agora-sonar.R ⚠️ JAMAIS PLANIFIÉ',
-                    description: 'Calcule les métriques de qualité et fraîcheur des tables parlementaires Agora puis publie agora_sonar_daily. ATTENTION : le code existe dans aws-refiners, mais aucune entrée ne lui correspond dans refiners.ts (aws-infra) — il n\'a aucun horaire déployé et ne tourne pas. Audité le 2026-08-02.',
-                    details: [
-                        '⚠️ STATUT: code présent, pipeline jamais planifié — tout ce qui suit décrit ce que le raffineur FERAIT s\'il était déployé',
-                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - a-ca-parliament-debates, a-ca-press-releases, a-eu-parliament-debates, a-qc-parliament-debates, a-qc-parliamentary-commissions, a-qc-press-releases',
-                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table agora_datamart.agora_sonar_daily',
-                        '',
-                        '⚙️ TRAITEMENT:',
-                        '• Mesure du lag par table (dernière date événement vs aujourd\'hui)',
-                        '• Calcul des taux de complétude (contenu, orateur, champs EN)',
-                        '• Scoring composite quality_score + statut d\'alerte (NORMAL/WARNING/CRITICAL/NO_DATA/ERROR)',
-                        '• Résumé par pays + alertes critiques',
-                        '',
-                        '📋 OUTPUT:',
-                        '• agora_sonar_daily - Monitoring quotidien multi-sources Agora',
-                        '',
-                        '📣 Notification Slack: canal agora-sonar (résumé + alertes)',
-                        '💾 MÉMOIRE: 5 GB',
-                        '⏳ TIMEOUT: 10 minutes'
-                    ]
-                },
-                'agora-sonar-heatmaps': {
-                    title: 'Refiner: agora-sonar-heatmaps.R ⚠️ JAMAIS PLANIFIÉ',
-                    description: 'Construit les heatmaps hebdomadaires de qualité Agora à partir de agora_sonar_daily et les publie sur Slack + datalake. ATTENTION : comme agora-sonar, aucune entrée dans refiners.ts — aucun horaire déployé. Audité le 2026-08-02.',
-                    details: [
-                        '⚠️ STATUT: code présent, pipeline jamais planifié — et sa source agora_sonar_daily n\'est donc pas alimentée',
-                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - Table agora_datamart.agora_sonar_daily',
-                        '📤 OUTPUTS: 4 PNG heatmaps + publication Slack + upload datalake (dataset agora-sonar-heatmaps)',
-                        '',
-                        '⚙️ HEATMAPS GÉNÉRÉES (fenêtre 14 jours):',
-                        '• lag_days (délai depuis dernière extraction)',
-                        '• alert_status (NORMAL/WARNING/CRITICAL/NO_DATA/ERROR)',
-                        '• pct_with_content (complétude texte)',
-                        '• pct_with_speaker (couverture orateurs)',
-                        '',
-                        '📣 Canal Slack: agora-sonar (upload PNG)',
-                        '🗃️ Datalake: dataset agora-sonar-heatmaps',
-                        '💾 MÉMOIRE: 5 GB',
-                        '⏳ TIMEOUT: 15 minutes'
-                    ]
-                },
                 'agora-decideurs-qc-phrases': {
                     title: 'Refiner: agora-decideurs-qc-phrases.R',
                     description: 'Charge les interventions du Salon bleu, les segmente en phrases et les annote (thèmes CAP + sentiment) via l\'INFER API. Étage amont du module Assemblée.',
@@ -2444,6 +2408,17 @@
                 }
             },
             sources: {
+                'datamarts-tables': {
+                    title: 'Source: les tables des datamarts',
+                    description: 'Ce que les autres raffineurs publient. Le méta-sonar les lit pour en déduire leur santé — il ne surveille pas l\'infrastructure, mais la donnée.',
+                    details: [
+                        '📍 <span class="badge-dev">DEV</span>/datamarts — vitrine_datamart, agora_datamart, sonar',
+                        '',
+                        '💡 POURQUOI PAS CLOUDWATCH: nos pannes réelles sont silencieuses côté AWS — la Lambda « réussit », les logs sont propres, et la donnée est pourtant en retard ou incomplète.',
+                        '',
+                        '📋 Le périmètre exact est déclaré dans refiners/sonar-pipeline/manifest.R : une entrée par table d\'un raffineur actif.'
+                    ]
+                },
                 'r-media-headlines': {
                     title: 'Source: r-media-headlines',
                     description: 'Glue Job Python ETL qui transforme les données de scraping en table datawarehouse',
@@ -2495,25 +2470,22 @@
                         '🔗 Lue par: agora-decideurs-qc-phrases.R (mardis 05:00), qui la segmente et l\'annote',
                         '📌 C\'est la seule table Agora effectivement raffinée aujourd\'hui : les autres flux (communiqués, commissions, débats CA/EU) n\'alimentent aucun raffineur planifié.'
                     ]
-                },
-                'agora-tables': {
-                    title: 'Sources: tables Agora (a-*-*)',
-                    description: 'Ensemble des tables parlementaires/communiqués que agora-sonar.R lirait pour le monitoring qualité — pipeline jamais planifié (audit 2026-08-02).',
-                    details: [
-                        '📥 Tables analysées:',
-                        '• a-ca-parliament-debates',
-                        '• a-ca-press-releases',
-                        '• a-eu-parliament-debates',
-                        '• a-qc-parliament-debates',
-                        '• a-qc-parliamentary-commissions',
-                        '• a-qc-press-releases',
-                        '',
-                        '🎯 Objectif: surveiller fraîcheur, complétude et statut d\'alerte des flux Agora',
-                        '🌍 Couverture: CAN, QC, EU'
-                    ]
                 }
             },
             outputs: {
+                'slack-sonar-pipeline': {
+                    title: 'Notifications Slack - Sonar pipeline',
+                    description: 'Alertes de santé des raffineurs, routées selon la SOURCE de la donnée concernée — pas selon son sujet.',
+                    details: [
+                        '📢 Données de MÉDIAS → #02_radar-plus_sonar',
+                        '📢 Données de DÉCIDEURS (débats, commissions, communiqués) → #02__agora-plus_sonar',
+                        '',
+                        '🎯 Le critère est « qui doit lire cette alerte » : celui qui peut réparer la source qui se tarit.',
+                        '📌 Cas de référence: polimetre-plus détecte des promesses DE décideurs mais les cherche dans des TEXTES DE MÉDIAS → chaîne médias.',
+                        '',
+                        '⛔ Les alertes de la Vitrine (site pas à jour, déploiement raté) ne passent pas par ici : elles ont leur propre chaîne.'
+                    ]
+                },
                 'hot20-files': {
                     title: 'Hot 20 - Fichiers PNG et HTML',
                     description: '6 fichiers générés chaque vendredi à 12:00 (heure du Québec)',
@@ -2590,33 +2562,6 @@
                         '',
                         '🎯 Audience: Équipe technique DevOps',
                         '💡 But: Monitoring proactif de la santé du système'
-                    ]
-                },
-                'agora-heatmaps': {
-                    title: 'AGORA SONAR - Heatmaps qualité',
-                    description: '4 heatmaps PNG générées par agora-sonar-heatmaps.R sur une fenêtre glissante de 14 jours.',
-                    details: [
-                        '📊 Fichiers PNG:',
-                        '• agora_sonar_lag_days.png',
-                        '• agora_sonar_alert_status.png',
-                        '• agora_sonar_content.png',
-                        '• agora_sonar_speaker.png',
-                        '',
-                        '📍 Publication: Slack (agora-sonar) + datalake (dataset agora-sonar-heatmaps)',
-                        '🗓️ Fenêtre: 14 jours glissants'
-                    ]
-                },
-                'slack-agora-sonar': {
-                    title: 'Notifications Slack - AGORA SONAR',
-                    description: 'Rapport qualité Agora et diffusion des heatmaps dans le canal Agora SONAR.',
-                    details: [
-                        '📢 Canal Slack: agora-sonar',
-                        '📎 Contenu envoyé:',
-                        '• résumé qualité par pays/source',
-                        '• alertes critiques si présentes',
-                        '• 4 heatmaps PNG hebdomadaires',
-                        '',
-                        '🎯 But: monitoring proactif des flux parlementaires Agora'
                     ]
                 },
                 'json-files': {

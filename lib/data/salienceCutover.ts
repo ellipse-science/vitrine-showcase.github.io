@@ -20,7 +20,7 @@
 // échelle sans conversion supplémentaire. Ce n'est pas cosmétique : la figure de
 // distribution du ⓘ trace un axe logarithmique planché à 1 (`Math.max(v, 1)`) —
 // en unités brutes [0,1], tous les repères s'écraseraient sur la même abscisse.
-export const SALIENCE_CUTOVER = false;
+export const SALIENCE_CUTOVER = true;
 
 /** Facteur d'affichage du nouvel indice. Voir la note d'échelle ci-dessus. */
 export const NEW_INDEX_SCALE = 100;
@@ -29,26 +29,57 @@ export const NEW_INDEX_SCALE = 100;
 //
 // MÊME rôle que SAL_QC_THRESHOLDS / SUM_QC_THRESHOLDS pour l'ancien indice : la
 // calibration glissante publiée (`salience_calibration.json`) prime dès qu'elle
-// a assez de points ; ces valeurs servent d'ici là. Pour le nouvel indice, le
-// repli n'est PAS un détail transitoire — au moment d'écrire, la fenêtre
-// homogène compte n = 52 storylines QC, sous CAL_MIN_N = 60. Ce sont donc ces
-// nombres-ci qui classeront les Unes le jour de la bascule.
+// a assez de points ; ces valeurs servent d'ici là.
 //
-// MESURE (script `_chantiers-vitrine/banc-235/cutover_grilles_specv1.R`,
-// 2026-08-08, scan Athena 4 Mo) :
+// ⚠️ ÉTAT AU JOUR DE LA BASCULE (2026-08-12, relevé dans le JSON publié) — les
+// quatre grilles ne sont PAS logées à la même enseigne, et c'est ce qui décide
+// lesquelles de ces constantes comptent vraiment :
+//   · `salience_index_qc_sum_24h` / `_roc_sum_24h` : ABSENTES du JSON (la
+//     fenêtre glissante part du plancher spec-v1 du 2026-08-09, trop courte
+//     pour réunir CAL_MIN_N = 60 storylines DISTINCTES). Ce sont donc bien
+//     NEW_SUM_QC/ROC_THRESHOLDS ci-dessous qui CLASSENT les Unes et pilotent
+//     le badge au jour J. Ce sont les deux constantes qui portent le poids.
+//   · `salience_index_qc` (n = 83) et `_roc` (n = 71) : PUBLIÉES et déjà
+//     au-dessus du seuil, donc la calibration glissante PRIME et les grilles
+//     par bloc ci-dessous ne servent plus que de filet. Le basculement
+//     automatique annoncé s'est fait tout seul entre le 09 et le 12 août.
+// Conséquence pratique : au prochain refresh qui publiera les deux `_sum_24h`,
+// le classement changera de grille sans qu'une ligne de code bouge. C'est le
+// mécanisme voulu, mais il vaut d'être su — vérifier la concordance ce jour-là.
+//
+// MESURE (script `_chantiers-vitrine/banc-235/grilles_annee_specv1.R`, roulé le
+// 2026-08-12, AUCUN appel AWS — le rejeu local `out/year_llm.rds`) :
 //   · valeurs RECOMPOSÉES depuis le JSON `articles` à la spec v1, jamais lues
 //     dans la colonne publiée : depuis le bloc 15-19 du 2026-08-08 celle-ci
 //     mélange ancienne et nouvelle formule (#224), et calibrer sur un mélange
 //     est précisément le piège que #224 documente ;
-//   · fenêtre = régime regroupement-LLM (≥ 2026-07-23), 101 blocs ;
+//   · fenêtre = 2025-05-17 → 2026-08-07, soit 448 jours et 2 683 blocs,
+//     `storyline_id` peuplé à 100 % (régime de regroupement LLM partout, donc
+//     comparable au régime courant) ;
 //   · population = celle du frontend (dédup event_id préf-QC, exclusion des
 //     Unes américaines, titre requis), donc plus étroite que celle de #224 ;
 //   · conventions de calibration IDENTIQUES à scripts/fetch_data.R, grille par
 //     grille (voir chaque constante).
 //
+// ⚠️ POURQUOI L'ANNÉE ET PAS LES 20 DERNIERS JOURS. La première version de cette
+// PR calibrait sur la seule fenêtre qu'Athena permet (≥ 2026-07-23, 122 blocs,
+// n = 63) parce que `headline_events_4h` ne commence qu'au 2026-05-14. Mesuré :
+// cette fenêtre courte émet **68 % d'« Exceptionnelle » de trop** (111 contre 66
+// sur l'année) et 15,5 % des storylines y changent de bande. C'est la bande la
+// plus visible du site. La grille d'année ne peut venir que du rejeu local, ou
+// d'aws-refiners#280 une fois la table peuplée.
+//
+// ⛔ CE N'EST TOUJOURS PAS `ref-AAAA`, la référence figée de vitrine#430 A0.
+// 95,5 % des jours de ce rejeu tournent à panel QC = 5 (TVA exclu) ; après le
+// recompute, TVA est partout et le seul changement de dénominateur ferait
+// passer le p95 de 157,1 à ~147,2. Geler ici, ce serait figer une année qui a
+// changé d'instrument en cours de route. L'ordre reste : réparer → rejouer →
+// geler, et la cible arrêtée avec Adrien le 2026-08-12 est `ref-2025`, une
+// année CIVILE complète, après le recompute.
+//
 // CONTRÔLE de la mesure : rejouée sur la convention de #224 (pic par storyline),
-// elle rend 19,9 / 22,2 / 38,5 / 56,2 / 64,5 contre 19,8 / 22,2 / 38,6 / 55,4 /
-// 64,6 postés le 08-08 — l'écart tient à une storyline de plus et aux filtres
+// elle rend 19,6 / 22,1 / 38,5 / 56,2 / 65,3 contre 19,8 / 22,2 / 38,6 / 55,4 /
+// 64,6 postés le 08-08 — l'écart tient aux quatre jours de plus et aux filtres
 // frontend. La reconstruction est donc la bonne.
 
 type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: number; extreme: number };
@@ -56,7 +87,7 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
 /** Grille du BADGE et du CLASSEMENT (Une des Unes) : cumul 24 h pondéré par
  *  récence, un point par storyline (son sommet cumulé), population = les Unes
  *  AFFICHÉES. Réplique de `calibration_sum_24h(score_col = salience_index_qc,
- *  media_col = media_ids_qc, min_media_secondary = 2)`. n = 52.
+ *  media_col = media_ids_qc, min_media_secondary = 2)`. n = 63.
  *
  *  PERCENTILES BRUTS, sans relèvement — et c'est une décision, pas un oubli.
  *
@@ -72,8 +103,8 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *  0,05, ce qui PLAFONNE son indice par construction — mesuré sur la fenêtre
  *  régime-LLM (vitrine#430, 2026-08-09) :
  *
- *    · par bloc  : mono-média ≤ 27,2 (plafond théorique 33,9) vs médiane 38,6
- *    · au cumul  : mono-média ≤ 44,7                          vs médiane 62,4
+ *    · par bloc  : mono-média ≤ 27,2 (plafond théorique 33,9) vs médiane 38,5
+ *    · au cumul  : mono-média ≤ 44,7                          vs médiane 60,6
  *
  *  L'invariant vrai sous la spec v1 n'est donc plus « jamais Modérée » mais
  *  **« un mono-média ne dépasse pas la médiane »**, et il ne demande aucune
@@ -86,14 +117,42 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *  un mono-média PAR BLOC à 0,05^(1/3) = 36,8 ; mais le badge tourne sur le
  *  CUMUL 24 h, et les six poids de récence somment à 3,347. Le plafond théorique
  *  du cumul est donc 36,8 × 3,347 = **123,3**, largement au-dessus d'« Élevée »
- *  (62,3). Un média qui garderait seul une histoire en Une pendant 24 h d'affilée
+ *  (60,6). Un média qui garderait seul une histoire en Une pendant 24 h d'affilée
  *  franchirait le seuil.
  *
  *  Ce que le corpus dit : ce cas ne se produit pas. Le plus fort mono-média
- *  RÉELLEMENT AFFICHÉ vaut 44,7, soit 17,6 points sous « Élevée ». L'invariant
+ *  RÉELLEMENT AFFICHÉ vaut 44,7, soit 15,9 points sous « Élevée ». L'invariant
  *  tient donc sur les données observées, avec une marge confortable — et c'est
  *  à ce titre qu'il justifie le retrait de la béquille, pas au titre d'une
  *  impossibilité mathématique. À revérifier à chaque recalibration.
+ *
+ *  ✅ REVÉRIFIÉ le 2026-08-12, et la consigne ci-dessus est désormais OUTILLÉE :
+ *  `cutover_grilles_specv1.R` mesure lui-même le plus fort mono-média AU CUMUL
+ *  (il ne donnait que celui des pics) et pèse l'ampleur d'un éventuel
+ *  dépassement.
+ *
+ *  🔎 ET LE CAS THÉORIQUE CI-DESSUS S'EST PRODUIT — une fois en 448 jours.
+ *  Sur la fenêtre courte (122 blocs) le plus fort mono-média vaut 44,7 contre
+ *  une médiane de 60,6. Sur l'ANNÉE (n = 1 306), il vaut 63,2 contre une médiane
+ *  de 59,2 : il franchit donc la médiane, de 4,0 points sur une bande large de
+ *  37,3, et atterrit dans le premier dixième d'« Élevée ».
+ *
+ *  Le cas est `story-hiroshima-0dc148fc` : Le Devoir, du samedi 2 août 2025 16 h
+ *  au dimanche 3 août 12 h, cinq blocs d'affilée, `outlets_qc = 1` tout du long
+ *  — le dossier de fin de semaine sur les 80 ans d'Hiroshima et Nagasaki. Une
+ *  commémoration datée d'avance, tenue en Une pendant que l'actualité chaude du
+ *  samedi soir se tarit, qu'aucun autre média n'avait de raison de suivre.
+ *
+ *  Ça ne remet PAS l'invariant en cause, et c'est même sa démonstration : la
+ *  Visibilité de ce dossier est au plancher (1 média sur 6), et le mécanisme
+ *  non-compensatoire a écrasé vingt heures de Une continue jusqu'à le ramener
+ *  au niveau d'une histoire médiane — 63,2 quand le p95 est à 157,1. L'ancien
+ *  indice, qui comptait le temps en Une, en aurait fait une nouvelle majeure.
+ *  Décision d'Adrien (2026-08-12) : 1 cas sur 37 mono, c'est une exception, pas
+ *  une rupture ; la béquille reste retirée. Le script ne parle de rupture que
+ *  si le dépassement devient courant (> 10 % des mono) ou franchement haut
+ *  (au-delà du p80) — un test binaire `max > médiane` escaladait un signal
+ *  faible.
  *
  *  Conséquence assumée : une histoire portée par un seul média peut désormais
  *  afficher « Modérée », dont l'infobulle dit « environ 65 % des Unes sont plus
@@ -104,23 +163,30 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *  grille des CUMULS qui pilote le badge depuis vitrine#314 (27-07). Les deux
  *  ne sont pas la même distribution — d'où cette mesure dédiée. */
 export const NEW_SUM_QC_THRESHOLDS: Thresholds =
-  { faible: 32.5, moyenne: 40.4, eleve: 62.3, tresEleve: 89.4, extreme: 133.3 };
+  { faible: 33.8, moyenne: 41.8, eleve: 59.2, tresEleve: 96.5, extreme: 157.1 };
 
 /** Grille du niveau PAR BLOC (lecture au survol de la trajectoire) : réplique de
- *  `calibration_metric("salience_index_qc")`, toutes les valeurs > 0. n = 332.
+ *  `calibration_metric("salience_index_qc")`, toutes les valeurs > 0. n = 403.
  *  Percentiles bruts, sans relèvement : le garde ε porte sur l'étiquette d'une
  *  Une, pas sur la lecture d'un bloc isolé — l'étendre ici serait une décision
  *  neuve, qui n'appartient pas à cette PR. */
 export const NEW_BLOCK_QC_THRESHOLDS: Thresholds =
-  { faible: 11.6, moyenne: 17.8, eleve: 21.2, tresEleve: 36.7, extreme: 54.8 };
+  { faible: 12.1, moyenne: 17.4, eleve: 21.5, tresEleve: 41.9, extreme: 63.6 };
 
 /** Côté ROC (bout de ligne du radar Deux solitudes) : mêmes conventions, avec
- *  `min_media_secondary = 1` comme fetch_data.R. n = 63.
+ *  `min_media_secondary = 1` comme fetch_data.R. n = 75.
  *  Percentiles bruts, comme le QC depuis le 2026-08-09 — les deux côtés
  *  suivent désormais la même règle, ce qui était l'un des arguments de la
- *  décision. 26 des 63 storylines ROC sont mono-média (contre 2 sur 52 au QC) :
+ *  décision. 36 des 75 storylines ROC sont mono-média (contre 2 sur 63 au QC) :
  *  le mono-média est l'exception au Québec et la norme au Canada, parce que le
  *  radar n'a pas de seuil éditorial équivalent.
+ *
+ *  ⚠️ C'est pourquoi l'invariant mono-média N'EST PAS revendiqué de ce côté-ci,
+ *  et ce n'est pas un oubli : mesuré le 2026-08-12, le plus fort mono-média
+ *  canadien au cumul vaut 56,1 pour une médiane à 40,4 — il la dépasse. Un
+ *  invariant qui porterait sur la moitié de sa population ne dirait rien. Le
+ *  script de calibration encode cette asymétrie explicitement, pour qu'une
+ *  future recalibration ne la lise pas comme une régression.
  *
  *  Hypothèse TESTÉE ET RÉFUTÉE (vitrine#430) : aligner les populations —
  *  exiger ≥ 2 médias côté ROC aussi — ne ferait PAS tenir l'ancien garde ε.
@@ -129,12 +195,12 @@ export const NEW_BLOCK_QC_THRESHOLDS: Thresholds =
  *  quel que soit son nombre de médias, des deux côtés. L'asymétrie des seuils
  *  n'était pas la cause. */
 export const NEW_SUM_ROC_THRESHOLDS: Thresholds =
-  { faible: 24.1, moyenne: 30.8, eleve: 41.1, tresEleve: 73.4, extreme: 149.1 };
+  { faible: 20.0, moyenne: 30.4, eleve: 45.4, tresEleve: 85.0, extreme: 150.6 };
 
 /** Repli transitoire du côté ROC (scores par bloc), utilisé seulement si la
- *  grille cumulée ROC manque. n = 317. */
+ *  grille cumulée ROC manque. n = 381. */
 export const NEW_BLOCK_ROC_THRESHOLDS: Thresholds =
-  { faible: 11.5, moyenne: 15.9, eleve: 19.8, tresEleve: 36.0, extreme: 61.8 };
+  { faible: 11.3, moyenne: 15.9, eleve: 20.0, tresEleve: 37.2, extreme: 59.6 };
 
 /** Passe une grille publiée en unités brutes [0,1] à l'échelle d'affichage.
  *  `null` reste `null` : c'est le signal « pas de calibration → prends le repli ». */
