@@ -1,10 +1,10 @@
 {
-  "event_id": "20260812T030000Z-evt-police-chief-acted-quickly-possible-2d9c6f42",
-  "storyline_id": "story-spvm-0751f85d",
-  "title": "Le chef du SPVM promet des actions rapides face aux allégations de racisme",
-  "main_issue": "rights_liberties_minorities_discrimination",
+  "event_id": "20260812T110000Z-evt-camera-type-flock-reperee-4353a8b1",
+  "storyline_id": "story-flock-6186ff9d",
+  "title": "Caméra de lecture de plaques Flock repérée à Montréal",
+  "main_issue": "technology",
   "date_utc": "2026-08-12",
-  "time_interval_utc": "03-07",
-  "sum_qc": 48.971,
-  "peak_qc": 65.743
+  "time_interval_utc": "11-15",
+  "sum_qc": 86.564,
+  "peak_qc": 51.967
 }
