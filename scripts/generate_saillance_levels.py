@@ -21,6 +21,8 @@ seuils ne puissent pas diverger :
 
 Usage :  python3 scripts/generate_saillance_levels.py [chemin_csv]
 """
+import os
+import re
 import sys
 import numpy as np
 import matplotlib
@@ -40,8 +42,63 @@ OUT = [
 # Seuils du jour de la bascule = NEW_SUM_QC_THRESHOLDS dans
 # lib/data/salienceCutover.ts. ⚠️ Les deux doivent bouger ENSEMBLE : une figure
 # qui garde les anciennes bornes place les bandes au mauvais endroit sous un
-# histogramme juste, et rien ne le signale.
+# histogramme juste. C'est `verifier_coherence_seuils()` plus bas qui le signale
+# maintenant — le commentaire seul ne suffisait pas.
 TH = [32.9, 40.6, 60.6, 87.8, 147.7]       # p5 / p20 / p50 / p80 / p95
+TS = "lib/data/salienceCutover.ts"         # la source de vérité des seuils
+
+
+def verifier_coherence_seuils():
+    """Refuse de dessiner si `TH` a divergé de NEW_SUM_QC_THRESHOLDS.
+
+    La figure et le code de classement doivent lire la MÊME grille : une figure
+    juste sous des bandes fausses est le pire des deux mondes, parce qu'elle a
+    l'air d'une preuve. On lit donc le TS plutôt que de faire confiance à une
+    recopie. Silencieux si le fichier est absent (le script doit rester
+    utilisable hors du dépôt) — mais bruyant dès qu'on peut comparer.
+
+    La grille est un OBJET nommé (`{ faible: …, moyenne: … }`), pas un tableau :
+    on lit clé par clé, sinon un réordonnancement des champs passerait inaperçu.
+    Et si la constante devient introuvable, on ARRÊTE au lieu de laisser filer —
+    une garde muette qui a l'air verte est pire que pas de garde du tout.
+    """
+    if not os.path.exists(TS):
+        return
+    src = open(TS, encoding="utf8").read()
+    bloc = re.search(r"NEW_SUM_QC_THRESHOLDS[^=]*=\s*\{([^}]*)\}", src)
+    if not bloc:
+        sys.exit(
+            f"ERREUR — NEW_SUM_QC_THRESHOLDS introuvable dans {TS}.\n"
+            f"La constante a été renommée ou sa forme a changé : mettre à jour ce\n"
+            f"script, sinon la vérification de cohérence des seuils ne protège plus rien."
+        )
+    ts_vals = []
+    for cle in ("faible", "moyenne", "eleve", "tresEleve", "extreme"):
+        m = re.search(rf"\b{cle}\s*:\s*(-?\d+\.?\d*)", bloc.group(1))
+        if not m:
+            sys.exit(f"ERREUR — clé « {cle} » absente de NEW_SUM_QC_THRESHOLDS dans {TS}.")
+        ts_vals.append(float(m.group(1)))
+    if ts_vals != TH:
+        sys.exit(
+            f"ERREUR — les seuils ont divergé.\n"
+            f"  ici (TH)          : {TH}\n"
+            f"  {TS} : {ts_vals}\n"
+            f"Reporter les seuils re-mesurés aux DEUX endroits avant de régénérer."
+        )
+
+
+def charger_scores(chemin):
+    """Lit le CSV des cumuls 24 h, avec un message qui dit quoi faire s'il manque."""
+    if not os.path.exists(chemin):
+        sys.exit(
+            f"ERREUR — CSV introuvable : {chemin}\n"
+            f"Ce fichier n'est PAS versionné (il sort du banc de calibration). Le produire :\n"
+            f"    cd _chantiers-vitrine/banc-235 && Rscript cutover_grilles_specv1.R\n"
+            f"puis relancer, au besoin en passant le chemin en argument :\n"
+            f"    python3 scripts/generate_saillance_levels.py <chemin_csv>"
+        )
+    brut = open(chemin, encoding="utf8").read().replace("\n", ",")
+    return np.array([float(x) for x in brut.split(",") if x.strip()])
 PLABELS = ["p5", "p20", "p50", "p80", "p95"]
 BANDS = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Exceptionnelle"]
 PCTS = ["5 %", "15 %", "30 %", "30 %", "15 %", "5 %"]
@@ -52,7 +109,8 @@ PAPER = "#F2ECDD"
 INK = "#231F1C"
 RULE = "#B8AE99"
 
-sc = np.array([float(x) for x in open(CSV).read().replace("\n", ",").split(",") if x.strip()])
+verifier_coherence_seuils()
+sc = charger_scores(CSV)
 n = len(sc)
 
 fig, ax = plt.subplots(figsize=(17.6, 9.8), dpi=100)
