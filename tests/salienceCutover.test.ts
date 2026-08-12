@@ -139,13 +139,16 @@ describe("grilles de seuils du nouvel indice", () => {
   });
   it("la borne « Modérée » est bien le percentile brut, sans relèvement", () => {
     // Garde-fou anti-retour : si quelqu'un remet une béquille sans passer par
-    // #430, ce test le dit. 40,6 = p20 re-mesuré au matin de la bascule
-    // (2026-08-12) ; 45,0 était l'ancien relèvement, retiré le 09-08.
+    // #430, ce test le dit. 41,8 = p20 mesuré sur l'ANNÉE (n = 1 306) ; 45,0
+    // était l'ancien relèvement, retiré le 09-08.
     //
     // ⚠️ Ce test est le seul endroit où une valeur de grille est écrite en dur
     // hors du module : à mettre à jour DÉLIBÉRÉMENT à chaque recalibration —
-    // c'est précisément son rôle de faire lever la main.
-    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(40.6);
+    // c'est précisément son rôle de faire lever la main. Il l'a fait le
+    // 2026-08-12 au passage de la fenêtre courte (40,6) à l'année (41,8), et
+    // c'est le SEUL des 290 tests qui a bougé : les autres dérivent de la
+    // grille, donc une recalibration ne les rend plus faussement rouges.
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(41.8);
     // Ce que le garde protège vraiment, au-delà du chiffre : la borne reste le
     // p20 nu, donc strictement sous la médiane, jamais poussée au-dessus du
     // maximum mono-média.

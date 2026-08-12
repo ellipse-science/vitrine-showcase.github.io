@@ -16,7 +16,7 @@ cumul), parmi les Unes RÉELLEMENT AFFICHÉES.
 Le CSV est produit par le script de calibration lui-même, pour que la figure et les
 seuils ne puissent pas diverger :
 
-    cd _chantiers-vitrine/banc-235 && Rscript cutover_grilles_specv1.R
+    cd _chantiers-vitrine/banc-235 && Rscript grilles_annee_specv1.R
     # → out/cumul24h_qc.csv (et _roc.csv), déjà à l'échelle d'affichage ×100
 
 Usage :  python3 scripts/generate_saillance_levels.py [chemin_csv]
@@ -44,7 +44,7 @@ OUT = [
 # qui garde les anciennes bornes place les bandes au mauvais endroit sous un
 # histogramme juste. C'est `verifier_coherence_seuils()` plus bas qui le signale
 # maintenant — le commentaire seul ne suffisait pas.
-TH = [32.9, 40.6, 60.6, 87.8, 147.7]       # p5 / p20 / p50 / p80 / p95
+TH = [33.8, 41.8, 59.2, 96.5, 157.1]       # p5 / p20 / p50 / p80 / p95
 TS = "lib/data/salienceCutover.ts"         # la source de vérité des seuils
 
 
@@ -93,7 +93,7 @@ def charger_scores(chemin):
         sys.exit(
             f"ERREUR — CSV introuvable : {chemin}\n"
             f"Ce fichier n'est PAS versionné (il sort du banc de calibration). Le produire :\n"
-            f"    cd _chantiers-vitrine/banc-235 && Rscript cutover_grilles_specv1.R\n"
+            f"    cd _chantiers-vitrine/banc-235 && Rscript grilles_annee_specv1.R\n"
             f"puis relancer, au besoin en passant le chemin en argument :\n"
             f"    python3 scripts/generate_saillance_levels.py <chemin_csv>"
         )
@@ -121,7 +121,7 @@ ax.set_facecolor(PAPER)
 lo, hi = sc.min(), sc.max()
 # La marge de droite n'est pas cosmétique : la bande « Exceptionnelle » est
 # ouverte (tout ce qui dépasse le p95) et doit rester assez large pour porter son
-# étiquette. Avec le p95 du cumul (147,7) très proche du maximum observé, une
+# étiquette. Avec le p95 du cumul (157,1) très proche du maximum observé, une
 # marge de 10 % la réduisait à un liseré et le mot débordait du cadre.
 bins = np.logspace(np.log10(lo * 0.85), np.log10(hi * 1.45), 34)
 counts, edges = np.histogram(sc, bins=bins)
