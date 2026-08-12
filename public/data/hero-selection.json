@@ -1,10 +1,10 @@
 {
-  "event_id": "20260812T110000Z-evt-camera-type-flock-reperee-4353a8b1",
+  "event_id": "20260812T150000Z-evt-camera-type-flock-spvm-servait-7306d950",
   "storyline_id": "story-flock-6186ff9d",
-  "title": "Caméra de lecture de plaques Flock repérée à Montréal",
-  "main_issue": "technology",
+  "title": "Caméra de surveillance Flock utilisée par le SPVM à Montréal",
+  "main_issue": "law_and_crime",
   "date_utc": "2026-08-12",
-  "time_interval_utc": "11-15",
-  "sum_qc": 86.564,
+  "time_interval_utc": "15-19",
+  "sum_qc": 105.999,
   "peak_qc": 51.967
 }
