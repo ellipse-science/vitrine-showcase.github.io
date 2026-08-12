@@ -1,10 +1,10 @@
 {
-  "event_id": "20260811T110000Z-evt-quebec-ottawa-enquetent-cyberattaques-usines-1ec2e929",
-  "storyline_id": "story-cyberattacks-662da8e9",
-  "title": "Cyberattaques pro-russes ciblent les usines d'eau potable au Canada",
-  "main_issue": "technology",
+  "event_id": "20260811T190000Z-evt-droits-douane-accord-commercial-pourrait-389ce915",
+  "storyline_id": "story-tariffs-2a5e7c2c",
+  "title": "Ottawa et Washington pressent Trump pour un accord commercial crucial",
+  "main_issue": "economy_and_labour",
   "date_utc": "2026-08-11",
-  "time_interval_utc": "11-15",
-  "sum_qc": 35.211,
-  "peak_qc": 31.299
+  "time_interval_utc": "19-23",
+  "sum_qc": 96.1,
+  "peak_qc": 75.959
 }
