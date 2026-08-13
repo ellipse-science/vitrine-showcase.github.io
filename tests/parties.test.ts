@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { __test__, PARTY_KEYS } from "@/lib/data/parties";
+import { __test__, PARTY_KEYS, PARTY_COLORS } from "@/lib/data/parties";
 
 const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView, buildChart, axisTop } =
   __test__;
@@ -251,6 +251,32 @@ describe("le portrait global", () => {
     for (const s of view.chart.series) {
       const ligne = view.rows.find((r) => r.key === s.key)!;
       expect(ligne.sovPct).toBe(s.lastPct);
+    }
+  });
+});
+
+describe("palette des partis — accord avec le module Assemblée", () => {
+  // Les couleurs vivent à deux endroits : PARTY_COLORS (TypeScript, pour la
+  // course) et `.parti-name-box.*` (CSS, pour l'alignement de l'Assemblée). Un
+  // lecteur qui passe d'un module à l'autre doit suivre les mêmes couleurs, et
+  // rien dans le code ne l'impose. Ce test le fait : modifier un côté sans
+  // l'autre échoue ici plutôt que de se voir sur le site publié.
+  it("PARTY_COLORS et .parti-name-box déclarent exactement les mêmes teintes", async () => {
+    const fs = await import("node:fs/promises");
+    const css = await fs.readFile("app/globals.css", "utf8");
+
+    const duCss = new Map<string, string>();
+    for (const m of css.matchAll(
+      /\.parti-name-box\.(\w+)\s*\{\s*--party:\s*(#[0-9A-Fa-f]{6})/g,
+    )) {
+      duCss.set(m[1], m[2].toUpperCase());
+    }
+
+    expect(duCss.size).toBe(PARTY_KEYS.length);
+    for (const key of PARTY_KEYS) {
+      expect(duCss.get(key), `couleur CSS manquante pour ${key}`).toBe(
+        PARTY_COLORS[key].toUpperCase(),
+      );
     }
   });
 });
