@@ -4845,6 +4845,7 @@
     margin-top: 4px;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
+    --tranche: 78px;  /* largeur d'une tranche — FIXE, voir ci-dessous */
     --gradu: 44px;    /* largeur de la colonne de graduations */
     --gradu-gap: 20px;
   }
@@ -4940,11 +4941,15 @@
     white-space: nowrap;
   }
 
+  /* Largeur FIXE, et non `flex: 1 1 0`. Dans un conteneur dimensionné par son
+     contenu, une base de 0 sans espace libre à répartir fait retomber chaque
+     tranche sur la largeur de son TEXTE : « PCQ » sortait à 70 px quand « QS »
+     en faisait 45. Mesuré. */
   .console-tranche {
     order: var(--ordre);
-    flex: 1 1 0;
+    flex: none;
+    width: var(--tranche);
     min-width: 0;
-    max-width: 128px;
     display: grid;
     grid-template-rows: var(--piste) auto auto;
     align-items: end;
@@ -5410,7 +5415,7 @@
     .console-ruban-nom { font-size: 13px; }
     .console-tranche.tete .console-ruban-nom { font-size: 15px; }
     .manchette { font-size: 21px; }
-    .console { --gradu: 34px; --gradu-gap: 8px; }
+    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
     .platine { padding-top: 0; }
 
