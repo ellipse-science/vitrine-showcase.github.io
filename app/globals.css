@@ -4846,7 +4846,7 @@
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
     --gradu: 44px;    /* largeur de la colonne de graduations */
-    --gradu-gap: 14px;
+    --gradu-gap: 20px;
   }
 
   .console-tete {
@@ -4931,7 +4931,7 @@
     color: var(--ink-softer);
     border: 1px solid var(--rule);
   }
-  .console-coupe-mention {
+  .console-sourdine {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.16em;
@@ -4976,20 +4976,9 @@
   .console-vumetre .seg.on.green { background: var(--green); }
   .console-vumetre .seg.on.amber { background: var(--amber); }
   .console-vumetre .seg.on.red   { background: var(--red); }
-  /* Canal coupé : deux segments GRIS en bas, et rien d'autre. La tranche reste
-     là — un canal muet se voit, il ne disparaît pas. */
-  .console-vumetre .seg.on.mute  { background: var(--ink-softer); }
-
-  /* Peak hold : le sommet atteint sur la fenêtre, qui reste affiché longtemps
-     après que le niveau soit redescendu. */
-  .console-peak {
-    position: absolute;
-    left: -3px;
-    right: -3px;
-    height: 2px;
-    background: var(--cordovan);
-    pointer-events: none;
-  }
+  /* Sourdine : deux segments VERTS en bas, et rien d'autre. La tranche reste
+     là — un canal muet se voit, il ne disparaît pas. Le vert est cohérent :
+     un canal en sourdine est par définition sous sa moyenne. */
 
   /* Le ruban d'identité — l'adhésif de couleur d'une tranche de mixeur. */
   .console-ruban-nom {

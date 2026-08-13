@@ -499,13 +499,14 @@ function Tranche({
   onSelect: (key: string) => void;
   onPcqTap?: () => void;
 }) {
-  // Canal coupé : DEUX segments gris, en bas — le signal résiduel qu'affiche
-  // une table de mix pour une tranche muette. Ni zéro (la tranche aurait l'air
-  // absente), ni son vrai niveau (il n'est pas retenu comme audible).
+  // Sourdine : DEUX segments en bas — le signal résiduel qu'affiche une table
+  // de mix pour une tranche muette. Ni zéro (la tranche aurait l'air absente),
+  // ni son vrai niveau (il n'est justement pas retenu comme audible). En VERT,
+  // parce qu'un canal en sourdine est par définition sous sa moyenne, donc dans
+  // la zone verte comme n'importe quel autre canal qui n'y dépasse pas.
   const coupe = row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
   const allumes = coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
-  const peak = Math.min(1, row.peakPct / METER_FULL_SCALE);
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
@@ -524,7 +525,7 @@ function Tranche({
       <div
         className="console-vumetre"
         title={
-          (coupe ? `${row.label} — canal coupé, sous 2 % : ` : `${row.label} — `) +
+          (coupe ? `${row.label} — en sourdine, sous 2 % : ` : `${row.label} — `) +
           `${row.sovPct} % de la couverture accordée aux partis (sommet : ${row.peakPct} %)` +
           (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à sa moyenne`)
         }
@@ -533,19 +534,12 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${coupe ? "mute" : zoneSegment(idx, moyennePct)}${
+            className={`seg ${coupe ? "green" : zoneSegment(idx, moyennePct)}${
               idx < allumes ? " on" : ""
             }`}
             aria-hidden="true"
           />
         ))}
-        {row.peakPct > 0 && (
-          <span
-            className="console-peak"
-            style={{ bottom: `${peak * 100}%` }}
-            aria-hidden="true"
-          />
-        )}
       </div>
 
       <button
@@ -562,9 +556,9 @@ function Tranche({
         {row.label}
       </button>
       {coupe ? (
-        <span className="console-coupe-mention">
-          coupé
-          <InfoTip size="sm" label="Ombre médiatique">
+        <span className="console-sourdine">
+          Sourdine
+          <InfoTip size="sm" label="Sourdine">
             Moins de 2&nbsp;% de la couverture accordée aux partis sur la période — trop peu pour
             qu&apos;on puisse parler d&apos;une présence. Le canal reste affiché, mais muet.
           </InfoTip>
