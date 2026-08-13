@@ -32,15 +32,15 @@ export const MEDIA_LABELS: Record<string, string> = {
 };
 
 /**
- * Ordre des crans du fader, « tous les médias » AU CENTRE — c'est la position
- * de repos d'un crossfader, et celle qui doit se retrouver sans réfléchir.
+ * Ordre des crans du fader, « tous les médias » AU CENTRE — position de repos
+ * d'un crossfader, celle qu'on retrouve sans regarder.
  *
- * ⚠️ L'ordre gauche-droite des médias autour du centre n'est PAS neutre : un
- * lecteur y lira un axe. Tant que cet axe n'est pas documenté et assumé
- * publiquement, il ne porte aucune étiquette dans l'interface.
+ * Cet ordre est un CHOIX ÉDITORIAL de l'équipe. Il n'est ni alphabétique, ni
+ * dérivé des données, et il ne porte aucune étiquette dans l'interface : ne pas
+ * le « corriger » en croyant à un tri cassé.
  */
 export const MEDIA_ORDER: string[] = [
-  "RCI", "LAP", "LED",
+  "LED", "RCI", "LAP",
   TOUS_MEDIAS,
-  "JDM", "TVA", "MG",
+  "MG", "TVA", "JDM",
 ];
