@@ -1,0 +1,48 @@
+# Garde-fou : la note de journal d'une PR est du TEXTE PUBLIC.
+#
+# Toutes les entrées de /journal sont lisibles par les visiteurs, les
+# partenaires et la presse. Jusqu'ici, la note était le SEUL texte public du
+# site qu'aucune vérification ne touchait : `garde-redaction` exclut
+# explicitement `changelog.json`, parce que la note y arrive APRÈS le merge,
+# donc trop tard pour la refuser.
+#
+# Audit du 2026-08-13 sur les 230 entrées publiées : 20 titres de commit bruts,
+# 4 artefacts de formulaire, et une ligne annonçant au public qu'un jeton
+# d'authentification avait été exposé. Aucune n'avait été ÉCRITE pour le
+# public — elles y sont tombées faute d'être relues à temps.
+name: garde-journal
+
+on:
+  pull_request:
+    branches: [main]
+    # La note vit dans le CORPS de la PR : sans `edited`, corriger la note ne
+    # relancerait pas le check et la PR resterait rouge sans raison.
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: garde-journal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  note-publique:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # Aucun `npm ci` : le script ne lit que du texte, il n'a pas de
+      # dépendance. Le verdict tombe en quelques secondes.
+      #
+      # Le corps de la PR passe par l'entrée standard, jamais par la ligne de
+      # commande ni par une interpolation dans le shell : c'est une donnée
+      # écrite par un tiers, et `${{ }}` l'injecterait dans le script.
+      - name: Vérifier la note de journal
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" | node .github/scripts/garde-journal.mjs
