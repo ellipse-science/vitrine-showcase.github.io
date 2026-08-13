@@ -78,13 +78,13 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
   return (
     <>
-      <div className="partis-title-row stacked">
+      <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
         </div>
         <div className="control-block">
           <div className="control-row">
-            <div className="legend-toggle inline">
+            <div className="legend-toggle inline compact">
               {RANGES.map((r) => (
                 <span
                   key={r}

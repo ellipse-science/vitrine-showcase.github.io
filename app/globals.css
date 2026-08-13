@@ -975,6 +975,17 @@
   .legend-toggle.inline .active { background: var(--ink); color: var(--paper); }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
+  /* Variante compacte — introduite pour « Couverture médiatique des partis
+     politiques », dont le titre est long : le bloc d'onglets doit se serrer
+     pour que titre et onglets tiennent sur UNE ligne. Modificateur et non
+     changement de `.legend-toggle.inline`, qui est partagé avec Treemap,
+     Assemblée et Polimètre+. */
+  .legend-toggle.inline.compact {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+  .legend-toggle.inline.compact span { padding: 3px 9px; }
+
   /* Hero principal — une pleine largeur (Figma: "hero") */
   .hero-main {
     border-top: 2px solid var(--rule-faint);

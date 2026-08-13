@@ -101,9 +101,9 @@ const RANGE_CONFIG: Record<
  *  « course » alors que la course est passée sous la console : ils décrivent
  *  désormais ce qu'ils font vraiment, une période. */
 const TAB_LABELS: Record<RangeKey, string> = {
-  today: "Aujourd'hui",
-  week: "Cette semaine",
-  overall: "Tout le suivi",
+  today: "Jour",
+  week: "Semaine",
+  overall: "Tout",
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
