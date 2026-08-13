@@ -1,10 +1,10 @@
 {
-  "event_id": "20260813T110000Z-evt-medecins-offrent-surtout-plages-horaires-5c3772cf",
-  "storyline_id": "story-doctors-3f31061d",
-  "title": "Les médecins de famille privilégient les horaires en semaine avant 15 h",
-  "main_issue": "health_and_social_services",
+  "event_id": "20260813T150000Z-evt-leblanc-meet-trade-chief-tariff-6fb5139b",
+  "storyline_id": "story-tariffs-2a5e7c2c",
+  "title": "LeBlanc en pourparlers à Washington pour éviter des tarifs américains de 50 %",
+  "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-13",
-  "time_interval_utc": "11-15",
-  "sum_qc": 44.669,
-  "peak_qc": 19.53
+  "time_interval_utc": "15-19",
+  "sum_qc": 48.199,
+  "peak_qc": 30.68
 }
