@@ -107,7 +107,7 @@ describe("buildChart — la course", () => {
   it("place toutes les lignes sur UNE échelle commune : à part de voix égale, même hauteur", () => {
     const rows = DATES.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, 0.2)));
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     const ys = chart.series.map((s) => s.lastY);
     for (const y of ys) expect(y).toBeCloseTo(ys[0], 6);
   });
@@ -118,7 +118,7 @@ describe("buildChart — la course", () => {
       row("qs", d, 0.2), row("plq", d, 0.1), row("pcq", d, 0.1),
     ]);
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     const caq = chart.series.find((s) => s.key === "caq")!;
     const pq = chart.series.find((s) => s.key === "pq")!;
     // y est mesuré depuis le HAUT du viewBox : la hauteur au-dessus de zéro
@@ -128,23 +128,21 @@ describe("buildChart — la course", () => {
 
   it("l'axe vertical plafonne au-dessus du maximum observé, jamais en dessous", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     const leader = chart.series[0];
     expect(leader.lastY).toBeGreaterThanOrEqual(0);
     expect(leader.lastPct).toBe(40);
   });
 
-  it("axisTop : toujours 100 %, pour que le dégradé dise la même chose partout", () => {
-    // Un plafond qui suit le maximum observé ferait glisser le sens des
-    // couleurs d'un onglet à l'autre — 40 % ici, 50 % là, même bande rouge.
-    expect(axisTop(4)).toBe(100);
-    expect(axisTop(35)).toBe(100);
-    expect(axisTop(97)).toBe(100);
+  it("axisTop : tronqué au-dessus du maximum observé, plancher à 20 %", () => {
+    expect(axisTop(4)).toBe(20);
+    expect(axisTop(35)).toBe(40);
+    expect(axisTop(40)).toBe(40);
   });
 
   it("les lignes sont triées par part de voix décroissante", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     const pcts = chart.series.map((s) => s.lastPct);
     expect(pcts).toEqual([...pcts].sort((a, b) => b - a));
   });
@@ -152,7 +150,7 @@ describe("buildChart — la course", () => {
   it("une seule date ⇒ tooShort, pour que le composant n'affiche pas une « courbe » d'un point", () => {
     const rows = PARTY_KEYS.map((p) => row(p, DATE_A, 0.2));
     const { stats, dates } = statsOf(rows, rows, rows);
-    expect(buildChart(stats, "today", dates).tooShort).toBe(true);
+    expect(buildChart(stats, dates).tooShort).toBe(true);
   });
 
   it("écarte les étiquettes de partis au coude à coude, sans déplacer les points", () => {
@@ -163,7 +161,7 @@ describe("buildChart — la course", () => {
       row("qs", d, 0.249), row("plq", d, 0.248), row("pcq", d, 0.002),
     ]);
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
 
     const serres = chart.series.filter((s) => s.lastPct >= 20);
     expect(serres.length).toBe(4);
@@ -178,7 +176,7 @@ describe("buildChart — la course", () => {
   it("les étiquettes restent dans le cadre même quand tout le monde est au plancher", () => {
     const rows = DATES.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, 0.2)));
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     for (const s of chart.series) {
       expect(s.labelY).toBeGreaterThanOrEqual(0);
       expect(s.labelY).toBeLessThanOrEqual(chart.height);
@@ -187,7 +185,7 @@ describe("buildChart — la course", () => {
 
   it("étiquette l'axe horizontal avec la première et la dernière date", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     expect(chart.xLabels[0].label).toBe("8 juin");
     expect(chart.xLabels.at(-1)!.label).toBe("10 juin");
   });
@@ -220,16 +218,14 @@ describe("le portrait global", () => {
     return DAYS.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, v[p])));
   }
 
-  it("pose un repère de scrutin, que les deux autres onglets n'ont pas", () => {
+  it("pose toujours le repère du scrutin : la course est unique et y court", () => {
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    expect(buildChart(stats, "overall", dates).election).not.toBeNull();
-    expect(buildChart(stats, "today", dates).election).toBeNull();
-    expect(buildChart(stats, "week", dates).election).toBeNull();
+    expect(buildChart(stats, dates).election).not.toBeNull();
   });
 
   it("laisse la donnée s'arrêter bien avant le scrutin — le vide est l'information", () => {
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    const chart = buildChart(stats, "overall", dates);
+    const chart = buildChart(stats, dates);
     const finDonnee = Math.max(...chart.series.map((s) => s.lastX));
     // 13 août → 5 octobre : la donnée doit occuper nettement moins que l'axe.
     expect(finDonnee).toBeLessThan(chart.election!.x * 0.6);
@@ -239,19 +235,23 @@ describe("le portrait global", () => {
     // Trois dates inégalement espacées : 1er, 7 et 13 août. Le point du milieu
     // doit tomber à mi-chemin, pas au tiers comme le voudrait un rang.
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    const chart = buildChart(stats, "today", dates);
+    const chart = buildChart(stats, dates);
     const xs = chart.series[0].polyline.split(" ").map((p) => Number(p.split(",")[0]));
     expect(xs.length).toBe(3);
     expect((xs[1] - xs[0]) / (xs[2] - xs[0])).toBeCloseTo(0.5, 2);
   });
 
-  it("la légende et le bout de courbe annoncent le même chiffre", () => {
+  it("le podium moyenne la période, la courbe montre la dernière journée", () => {
+    // Les deux nombres diffèrent désormais LÉGITIMEMENT : le podium annonce la
+    // moyenne de la période choisie, la courbe le dernier point. C'est pour ça
+    // que le podium n'affiche plus de pourcentage — deux chiffres différents
+    // côte à côte, sans explication, était la confusion à éviter.
     const { stats, dates } = statsOf(rows(), rows(), rows());
     const view = buildRangeView(stats, "overall", dates);
-    for (const s of view.chart.series) {
-      const ligne = view.rows.find((r) => r.key === s.key)!;
-      expect(ligne.sovPct).toBe(s.lastPct);
-    }
+    const chart = buildChart(stats, dates);
+    expect(chart.series.map((s) => s.key).sort()).toEqual(
+      view.rows.map((r) => r.key).sort(),
+    );
   });
 });
 

@@ -77,40 +77,10 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
-      <Podium rows={view.rows} onPcqTap={handlePcqTap} />
+      <Podium rows={view.rows} refLabel={view.refLabel} onPcqTap={handlePcqTap} />
 
       <section className="partis-course">
-        <Course chart={view.chart} headLabel={view.sparkHeadLabel} />
-
-        <div className="course-legende">
-          {visibleRows.map((row) => (
-            <LegendeParti
-              key={row.key}
-              row={row}
-              onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
-            />
-          ))}
-        </div>
-
-        {shadowRows.length > 0 && (
-          <div className="course-ombre">
-            <span className="course-ombre-label">
-              Dans l'ombre médiatique
-              <InfoTip size="sm" label="Ombre médiatique">
-                Ces partis obtiennent moins de 2&nbsp;% de la part de voix médiatique sur la période
-                sélectionnée. Leur présence dans les médias est trop faible pour être significative.
-              </InfoTip>
-            </span>
-            {shadowRows.map((row) => (
-              <LegendeParti
-                key={row.key}
-                row={row}
-                shadow
-                onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
-              />
-            ))}
-          </div>
-        )}
+        <Course chart={data.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
       </section>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
@@ -118,32 +88,47 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   );
 }
 
-const RANGS = ["1er", "2e", "3e"];
+const RANGS = ["1er", "2e", "3e", "4e", "5e"];
 
 /**
- * Le podium — qui mène, d'un coup d'œil.
+ * Position visuelle d'une marche, pour que le vainqueur soit AU CENTRE.
  *
- * Il suit l'onglet sélectionné plutôt que d'être figé sur la journée : un
- * podium qui annoncerait un classement pendant que la courbe juste en dessous
- * en montre un autre serait la même incohérence que celle déjà corrigée entre
- * la légende et le bout de courbe.
- *
- * Hauteur des marches : PROPORTIONNELLE à la part de voix, la première
- * remplissant le bloc. Les rapports entre marches restent donc exacts (une
- * marche deux fois plus haute vaut deux fois plus), et la base est à zéro —
- * c'est une mise à l'échelle, pas une déformation.
- *
- * Ordre du DOM : 1er, 2e, 3e — c'est celui qu'entend un lecteur d'écran. Le CSS
- * les réarrange en 2-1-3 pour la lecture visuelle, sans toucher au balisage.
+ * Les rangs pairs vont à gauche en s'éloignant, les impairs à droite : avec
+ * cinq partis, l'ordre lu est 4-2-1-3-5. Le HTML, lui, reste dans l'ordre du
+ * classement (1er, 2e, 3e…) — c'est celui qu'énonce un lecteur d'écran, et
+ * seul `order` déplace les blocs.
  */
-function Podium({ rows, onPcqTap }: { rows: RowView[]; onPcqTap: () => void }) {
-  const podium = rows.slice(0, 3);
-  const reste = rows.slice(3);
-  const tete = podium[0]?.sovPct ?? 0;
+function positionVisuelle(rang: number, total: number): number {
+  if (rang === 1) return 0;
+  return rang % 2 === 0 ? -Math.ceil(rang / 2) : Math.ceil((rang - 1) / 2) + total;
+}
 
-  // Aucune couverture mesurée : un podium de marches nulles serait absurde, et
-  // surtout il donnerait l'apparence d'un résultat là où il n'y a pas de donnée.
-  if (tete <= 0) {
+/**
+ * Le podium — la pièce maîtresse du module.
+ *
+ * Il montre la MOYENNE de la période choisie (jour, semaine, ou toute la
+ * fenêtre), pas la dernière valeur. Aucun pourcentage n'est écrit : la hauteur
+ * des marches porte l'information, et deux chiffres différents entre le podium
+ * et la courbe — qui montre le dernier jour — n'auraient pas pu s'expliquer.
+ *
+ * Tous les partis y montent, SAUF ceux dans l'ombre médiatique (moins de 2 %
+ * de part de voix), qui sont posés à part, en dessous : leur place n'est pas
+ * une dernière marche, c'est le hors-jeu.
+ */
+function Podium({
+  rows,
+  refLabel,
+  onPcqTap,
+}: {
+  rows: RowView[];
+  refLabel: string;
+  onPcqTap: () => void;
+}) {
+  const surPodium = rows.filter((r) => !r.inShadow);
+  const dansLOmbre = rows.filter((r) => r.inShadow);
+  const tete = surPodium[0];
+
+  if (!tete || tete.sovPct <= 0) {
     return (
       <p className="podium-vide">
         Aucune couverture mesurée sur cette période — pas de classement à afficher.
@@ -153,16 +138,28 @@ function Podium({ rows, onPcqTap }: { rows: RowView[]; onPcqTap: () => void }) {
 
   return (
     <section className="podium" aria-label="Classement de la couverture médiatique">
-      <ol className="podium-marches">
-        {podium.map((row, i) => (
+      <p className="podium-chapo">{refLabel}</p>
+
+      <ol className="podium-marches" style={{ ["--n" as string]: surPodium.length }}>
+        {surPodium.map((row, i) => (
           <li
             key={row.key}
-            className={`podium-marche rang-${i + 1}${row.inShadow ? " shadow" : ""}`}
-            style={{ ["--h" as string]: `${Math.max(8, (row.sovPct / tete) * 100)}%` }}
+            className={`podium-marche${i === 0 ? " tete" : ""}`}
+            style={{
+              ["--h" as string]: `${Math.max(9, (row.sovPct / tete.sovPct) * 100)}%`,
+              ["--ordre" as string]: positionVisuelle(i + 1, surPodium.length),
+              ["--party" as string]: row.color,
+            }}
           >
-            <div className="podium-bloc" style={{ ["--party" as string]: row.color }}>
-              <span className="podium-parti">{row.label}</span>
-              <span className="podium-pct">{row.sovPct}&nbsp;%</span>
+            <div className="podium-bloc">
+              <span
+                className="podium-parti"
+                onClick={row.key === "pcq" ? onPcqTap : undefined}
+                style={row.key === "pcq" ? { cursor: "pointer", userSelect: "none" } : undefined}
+                title={row.key === "pcq" ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
+              >
+                {row.label}
+              </span>
             </div>
             <span className="podium-rang">{RANGS[i]}</span>
             <span
@@ -175,11 +172,19 @@ function Podium({ rows, onPcqTap }: { rows: RowView[]; onPcqTap: () => void }) {
         ))}
       </ol>
 
-      {reste.length > 0 && (
-        <p className="podium-reste">
-          <span className="podium-reste-label">Hors podium</span>
-          {reste.map((row) => (
-            <span key={row.key} className={`podium-reste-item${row.inShadow ? " shadow" : ""}`}>
+      <VictoireDouteuse tete={tete} />
+
+      {dansLOmbre.length > 0 && (
+        <p className="podium-ombre">
+          <span className="podium-ombre-label">
+            Dans l&apos;ombre médiatique
+            <InfoTip size="sm" label="Ombre médiatique">
+              Moins de 2&nbsp;% de la part de voix sur la période. Trop peu pour qu&apos;on puisse
+              parler d&apos;une présence médiatique — ces partis ne montent donc pas sur le podium.
+            </InfoTip>
+          </span>
+          {dansLOmbre.map((row) => (
+            <span key={row.key} className="podium-ombre-item">
               <i className="podium-puce" style={{ background: row.color }} aria-hidden="true" />
               <span
                 onClick={row.key === "pcq" ? onPcqTap : undefined}
@@ -187,14 +192,40 @@ function Podium({ rows, onPcqTap }: { rows: RowView[]; onPcqTap: () => void }) {
                 title={row.key === "pcq" ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
               >
                 {row.label}
-              </span>{" "}
-              {row.sovPct}&nbsp;%
-              {row.inShadow && <em>dans l&apos;ombre</em>}
+              </span>
             </span>
           ))}
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * Le vainqueur a-t-il vraiment gagné ?
+ *
+ * Quand le parti le plus couvert l'est en mal, la première marche devient
+ * ambiguë. On ne tranche pas — personne ne peut trancher — mais on pose la
+ * question, parce que la taire ferait lire le podium comme un palmarès.
+ */
+function VictoireDouteuse({ tete }: { tete: RowView }) {
+  if (tete.toneDirection !== "negative") return null;
+  return (
+    <p className="podium-doute">
+      <span className="podium-doute-marque" aria-hidden="true">
+        ?
+      </span>
+      <span>
+        <b>{tete.label}</b>{" "}
+        occupe le plus de place — mais on en parle en mal. Première marche, ou mauvaise
+        passe&nbsp;?
+        <InfoTip size="sm" label="Gagner ou perdre ?">
+          Le podium classe le VOLUME de couverture, pas sa faveur. Un parti peut dominer parce
+          qu&apos;on le critique. L&apos;adage veut qu&apos;il n&apos;y ait pas de mauvaise
+          publicité — cette page ne prétend pas savoir s&apos;il a raison.
+        </InfoTip>
+      </span>
+    </p>
   );
 }
 
@@ -230,6 +261,18 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
 
   const pct = (v: number, max: number) => `${(v / max) * 100}%`;
 
+  // Le dégradé est ancré sur des PARTS DE VOIX ABSOLUES, pas sur la hauteur du
+  // cadre : l'axe étant tronqué au maximum observé, se caler dessus ferait
+  // désigner à la même bande de couleur 40 % un jour et 25 % le lendemain.
+  // Ici, 30 % de couverture donne toujours exactement la même teinte.
+  const arret = (sovPct: number) => `${Math.min(100, (sovPct / chart.topPct) * 100)}%`;
+  const fond = [
+    `transparent 0%`,
+    `color-mix(in srgb, var(--amber) 7%, transparent) ${arret(12)}`,
+    `color-mix(in srgb, var(--amber) 15%, transparent) ${arret(28)}`,
+    `color-mix(in srgb, var(--red) 22%, transparent) ${arret(50)}`,
+  ].join(", ");
+
   return (
     <figure className="course-figure">
       <figcaption className="course-tete">
@@ -240,7 +283,7 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
         </span>
       </figcaption>
 
-      <div className="course-cadre">
+      <div className="course-cadre" style={{ ["--fond-db" as string]: `linear-gradient(to top, ${fond})` }}>
         <svg
           className="course-svg"
           viewBox={`0 0 ${chart.width} ${chart.height}`}
@@ -333,34 +376,3 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
   );
 }
 
-/** Une entrée de légende : pastille de couleur, parti, part de voix, ton. */
-function LegendeParti({
-  row,
-  shadow,
-  onPcqTap,
-}: {
-  row: RowView;
-  shadow?: boolean;
-  onPcqTap?: () => void;
-}) {
-  const isPcq = row.key === "pcq";
-  return (
-    <span className={`course-legende-item${shadow ? " shadow" : ""}`}>
-      <i className="course-puce" style={{ background: row.color }} aria-hidden="true" />
-      <span
-        className={`course-parti ${row.key}`}
-        onClick={isPcq ? onPcqTap : undefined}
-        style={isPcq ? { cursor: "pointer", userSelect: "none" } : undefined}
-        title={isPcq ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
-      >
-        {row.label}
-      </span>
-      <span className="course-pct" title={row.barTitle}>
-        {row.sovPct}&nbsp;%
-      </span>
-      <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-        {row.toneLabel}
-      </span>
-    </span>
-  );
-}

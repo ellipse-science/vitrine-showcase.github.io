@@ -4667,70 +4667,90 @@
     vertical-align: middle;
   }
 
-  /* ── Le podium : qui mène, d'un coup d'œil ──────────────────────────────
-     Les marches sont dans l'ordre 1-2-3 dans le HTML (l'ordre qu'entend un
-     lecteur d'écran) et réarrangées en 2-1-3 par `order`, la disposition
-     olympique. --h porte la hauteur, proportionnelle à la part de voix. */
-  .podium { margin-top: 22px; }
+  /* ── Le podium : la pièce maîtresse du module ───────────────────────────
+     Centré, et volontairement le plus grand objet de la section — la course,
+     en dessous, est secondaire. Les marches sont dans l'ordre du classement
+     dans le HTML (ce qu'énonce un lecteur d'écran) et repositionnées par
+     `order` pour que le vainqueur soit AU CENTRE : 4-2-1-3-5. */
+  .podium { margin-top: 30px; --socle: 250px; }
+
+  .podium-chapo {
+    margin: 0 0 22px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
 
   .podium-marches {
     list-style: none;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    max-width: 540px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+    max-width: 760px;
+    position: relative;
   }
-  /* La première rangée a une hauteur DÉFINIE (150px) : sans elle, le
-     `height: var(--h)` du bloc n'a rien à quoi se rapporter et retombe sur la
-     hauteur du contenu — les trois marches font alors la même taille, ce qui
-     ruine le podium. Les deux rangées suivantes (rang, ton) s'auto-dimensionnent. */
+  /* Le sol du podium — sans lui, les blocs flottent au-dessus du vide. Il court
+     un peu au-delà des marches, comme une estrade. */
+  .podium-marches::after {
+    content: '';
+    position: absolute;
+    left: -14px;
+    right: -14px;
+    /* Posé au BAS de la rangée des blocs, dont la hauteur est fixée à 250px
+       (--socle). Toutes les marches ont la même hauteur totale et sont alignées
+       par le bas, donc leurs sommets coïncident : mesurer depuis le haut est
+       fiable, là où un calcul en hauteurs de ligne ne l'était pas. */
+    top: var(--socle);
+    border-bottom: 1px solid var(--ink);
+    pointer-events: none;
+  }
+
   .podium-marche {
+    order: var(--ordre);
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 132px;
     display: grid;
-    grid-template-rows: 150px auto auto;
+    /* Rangée haute DÉFINIE : sans hauteur définie, le `height: var(--h)` du
+       bloc n'a rien à quoi se rapporter et toutes les marches sortent égales. */
+    grid-template-rows: var(--socle) auto auto;
     align-items: end;
     justify-items: center;
-    row-gap: 6px;
-    min-width: 0;
+    row-gap: 9px;
   }
-  .podium-marche.rang-1 { order: 2; }
-  .podium-marche.rang-2 { order: 1; }
-  .podium-marche.rang-3 { order: 3; }
+  /* La première marche est plus large, en plus d'être plus haute : le regard
+     doit y aller sans avoir à comparer des hauteurs. */
+  .podium-marche.tete { max-width: 158px; }
 
   .podium-bloc {
     width: 100%;
     height: var(--h);
-    min-height: 34px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 2px;
-    padding: 9px 6px 0;
-    /* Aplat PLEIN, texte sur papier — la même grammaire que .parti-name-box,
-       qui porte déjà l'identité des partis dans le module Assemblée. En teinte
-       pâle, la CAQ et le PQ viraient tous deux au gris-bleu et devenaient
-       indiscernables côte à côte ; en aplat plein, leur différence de clarté
-       (6,1 contre 9,8 de contraste sur le papier) se voit. */
+    min-height: 46px;
     background: var(--party);
-    color: var(--paper);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 13px;
   }
-  .podium-marche.shadow .podium-bloc { opacity: 0.5; }
+  .podium-marche.tete .podium-bloc { padding-top: 16px; }
 
   .podium-parti {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 19px;
+    font-size: 21px;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     color: var(--paper);
-    line-height: 1.1;
+    line-height: 1;
   }
-  .podium-pct {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 15px;
-    color: color-mix(in srgb, var(--paper) 82%, transparent);
-  }
+  .podium-marche.tete .podium-parti { font-size: 26px; }
+
   .podium-rang {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -4739,47 +4759,74 @@
     color: var(--ink-soft);
     font-weight: 500;
   }
+  .podium-marche.tete .podium-rang { color: var(--ink); }
 
-  .podium-reste {
+  /* Le doute sur la victoire — cordovan, l'accent unique du site. */
+  .podium-doute {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    max-width: 620px;
+    margin: 26px auto 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    text-align: left;
+  }
+  .podium-doute b { color: var(--ink); font-weight: 700; }
+  .podium-doute-marque {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--cordovan);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cordovan);
+    line-height: 1;
+  }
+
+  /* L'ombre médiatique n'est pas une dernière marche : c'est le hors-jeu.
+     D'où le filet, l'écart, et l'absence de bloc. */
+  .podium-ombre {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 18px;
-    margin: 18px 0 0;
-    padding-top: 14px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 18px;
+    max-width: 620px;
+    margin: 26px auto 0;
+    padding-top: 16px;
     border-top: 0.5px solid var(--rule);
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 15px;
-    color: var(--ink-soft);
+    font-size: 16px;
+    color: var(--ink-softer);
   }
-  .podium-reste-label {
+  .podium-ombre-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ink-softer);
     font-weight: 500;
   }
-  .podium-reste-item { display: inline-flex; align-items: baseline; gap: 6px; }
-  .podium-reste-item.shadow { opacity: 0.55; }
-  .podium-reste-item em {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-style: normal;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-  }
-  .podium-puce { width: 9px; height: 9px; align-self: center; flex: none; }
+  .podium-ombre-item { display: inline-flex; align-items: center; gap: 7px; opacity: 0.72; }
+  .podium-puce { width: 9px; height: 9px; flex: none; }
 
   .podium-vide {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--ink-softer);
-    padding: 24px 0;
+    padding: 30px 0;
+    text-align: center;
   }
 
-  .partis-course { margin-top: 26px; padding-top: 22px; border-top: 2px solid var(--rule-faint); }
+  .partis-course { margin-top: 44px; padding-top: 26px; border-top: 2px solid var(--rule-faint); }
 
   .course-figure { margin: 0; }
   .course-tete {
@@ -4850,13 +4897,10 @@
     right: 0;
     top: 0;
     bottom: 0;
-    background: linear-gradient(
-      to top,
-      transparent 0%,
-      color-mix(in srgb, var(--amber) 7%, transparent) 38%,
-      color-mix(in srgb, var(--amber) 15%, transparent) 68%,
-      color-mix(in srgb, var(--red) 22%, transparent) 100%
-    );
+    /* Le dégradé lui-même est calculé par le composant et posé dans
+       --fond-db : ses arrêts dépendent du plafond de l'axe, que seule la
+       couche de données connaît. */
+    background: var(--fond-db);
     pointer-events: none;
     z-index: 0;
   }
@@ -4864,7 +4908,7 @@
   .course-svg {
     display: block;
     width: 100%;
-    aspect-ratio: 100 / 46;
+    aspect-ratio: 100 / 30;
     height: auto;
     overflow: visible;
     /* Au-dessus du dégradé : un ::before absolu passerait sinon par-dessus le
@@ -5022,7 +5066,7 @@
   @media (max-width: 768px) {
     /* Le podium se resserre : marches moins hautes, typographie réduite —
        trois colonnes doivent tenir dans ~340 px de contenu. */
-    .podium-marche { grid-template-rows: 108px auto auto; }
+    .podium { --socle: 150px; }
     .podium-parti { font-size: 15px; }
     .podium-pct { font-size: 13px; }
     .podium-bloc { padding: 7px 4px 0; }

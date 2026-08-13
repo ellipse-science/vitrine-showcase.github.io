@@ -76,13 +76,15 @@ const RANGE_CONFIG: Record<
   RangeKey,
   { barKey: keyof Sov; refKey: keyof Sov; toneKey: keyof Tone; refLabel: string }
 > = {
-  today:   { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne depuis lundi" },
-  week:    { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne du mois" },
-  // Le portrait global chiffre la DERNIÈRE valeur, comme les deux autres — et
-  // surtout comme le bout de sa propre courbe, qui est juste au-dessus. Une
-  // moyenne de période y serait plus riche, mais afficher « PCQ 8 % » sous une
-  // courbe qui se termine à 1 % ne s'explique pas au lecteur.
-  overall: { barKey: "today", refKey: "year",  toneKey: "today", refLabel: "moyenne de la période" },
+  // Chaque onglet donne la MOYENNE de sa période, ce que le podium affiche.
+  // Pas de moyenne recalculée ici : le raffineur accumule déjà depuis minuit
+  // (jour) et depuis lundi (semaine) avant de normaliser en part de voix — la
+  // valeur publiée EST la moyenne de sa période. La remoyenner la fausserait.
+  // Seul le portrait global demande un vrai calcul : `year` est la moyenne sur
+  // toutes les journées de la fenêtre.
+  today:   { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne du jour" },
+  week:    { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne de la semaine" },
+  overall: { barKey: "year",  refKey: "year",  toneKey: "today", refLabel: "moyenne de la période" },
 };
 
 const TAB_LABELS: Record<RangeKey, string> = {
@@ -167,22 +169,31 @@ export type ChartView = {
   election: { x: number; label: string } | null;
   width: number;
   height: number;
+  /** Part de voix au sommet de l'axe. L'axe étant TRONQUÉ, le dégradé de fond
+   *  ne peut pas s'y caler : il est ancré sur des valeurs absolues calculées à
+   *  partir d'elle, sans quoi la même bande de couleur désignerait un niveau
+   *  différent d'un jour à l'autre. */
+  topPct: number;
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
 };
 
+/** Un onglet ne décrit plus qu'un CLASSEMENT (ce que montre le podium). La
+ *  course, elle, est unique et vit sur PartiesData : elle ne dépend pas de
+ *  l'onglet choisi. */
 export type RangeView = {
   range: RangeKey;
   tabLabel: string;
   sparkHeadLabel: string;
   refLabel: string;
   rows: RowView[];
-  chart: ChartView;
 };
 
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
+  /** La course jusqu'au scrutin — quotidienne, la même quel que soit l'onglet. */
+  chart: ChartView;
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
@@ -351,21 +362,20 @@ function shortDateFr(isoDate: string): string {
 }
 
 /**
- * Plafond de l'axe vertical : TOUJOURS 100 %.
+ * Plafond de l'axe vertical : le multiple de 10 juste au-dessus du maximum
+ * observé, plancher à 20 %.
  *
- * Un plafond adaptatif (le multiple de 10 au-dessus du maximum observé) rendait
- * la lecture plus fine, mais il devient indéfendable depuis que le fond porte
- * une échelle de couleurs : le sommet vaudrait 40 % sur un onglet et 50 % sur
- * un autre, donc la même bande « saturation » désignerait deux niveaux
- * différents selon l'onglet consulté.
+ * L'axe est TRONQUÉ, et c'est assumé : la course est passée au second plan
+ * derrière le podium, et un axe jusqu'à 100 % y écrasait les cinq lignes dans
+ * son tiers inférieur. La base reste à zéro, donc les rapports de hauteur
+ * restent exacts — ce n'est pas le piège de l'axe qui démarre en l'air.
  *
- * 100 % est aussi le seul plafond qui ait un sens ici : la part de voix est une
- * part d'un tout, et ce tout vaut 100. Prix payé, assumé : les cinq lignes
- * vivent dans le tiers inférieur du cadre, puisqu'aucun parti n'a jamais
- * approché la moitié de la couverture.
+ * Conséquence à ne pas oublier : le dégradé de fond ne peut PAS se caler sur ce
+ * plafond, sinon la même bande de couleur désignerait un niveau différent d'un
+ * jour à l'autre. Il est ancré sur des valeurs absolues, via `topPct`.
  */
-function axisTop(_maxPct: number): number {
-  return 100;
+function axisTop(maxPct: number): number {
+  return Math.max(20, Math.ceil(maxPct / 10) * 10);
 }
 
 /** Écart vertical minimal entre deux étiquettes de bout de ligne, en unités du
@@ -412,15 +422,15 @@ function spreadLabels(series: ChartSeries[]): void {
  * isolée, mais trompeur dès qu'on les met côte à côte : un parti à 2 % et un
  * parti à 40 % y occupaient exactement la même hauteur.
  */
-function buildChart(
-  stats: Stat[],
-  range: RangeKey,
-  dates: SeriesDates,
-): ChartView {
+function buildChart(stats: Stat[], dates: SeriesDates): ChartView {
+  // La course est TOUJOURS quotidienne et court TOUJOURS jusqu'au scrutin :
+  // elle raconte la même histoire quel que soit l'onglet, qui ne pilote plus
+  // que le classement du podium.
+  const range = "overall" as const;
   // Le portrait global lit la série JOURNALIÈRE : c'est la plus fournie, et un
   // axe qui court jusqu'au scrutin mérite mieux que trois points mensuels
   // écrasés dans son premier tiers.
-  const seriesKey = range === "week" ? "weekly" : "daily";
+  const seriesKey = "daily" as const;
   const axisDates = dates[seriesKey];
   const n = axisDates.length;
 
@@ -495,11 +505,12 @@ function buildChart(
     election,
     width: CHART_W,
     height: CHART_H,
+    topPct: top,
     tooShort: n <= 1,
   };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
+function buildRangeView(stats: Stat[], range: RangeKey, _dates: SeriesDates): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
 
@@ -570,7 +581,6 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
     rows,
-    chart: buildChart(stats, range, dates),
   };
 }
 
@@ -629,6 +639,7 @@ export async function loadParties(
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
       daysToElection,
+      chart: buildChart(stats, dates),
       ranges: {
         today: buildRangeView(stats, "today", dates),
         week:  buildRangeView(stats, "week", dates),
