@@ -245,9 +245,17 @@ function Console({
   onSelect: (key: string) => void;
   onPcqTap: () => void;
 }) {
-  // Les canaux coupés RESTENT sur la console : un canal muet se voit, il ne
-  // disparaît pas. C'est aussi ce que montre un afficheur de table de mix —
-  // la tranche est là, ses segments ne s'allument pas.
+  // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
+  // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
+  // canal reste à sa place, et seul son niveau change — c'est ce qui rend la
+  // comparaison entre médias lisible.
+  const ordre = new Map(reference.map((r, i) => [r.key, i]));
+  const tranches = rows
+    .slice()
+    .sort((a, b) => (ordre.get(a.key) ?? 99) - (ordre.get(b.key) ?? 99));
+
+  // Les canaux en sourdine RESTENT sur la console : un canal muet se voit, il
+  // ne disparaît pas. C'est aussi ce que montre un afficheur de table de mix.
   const tete = rows.filter((r) => !r.inShadow)[0];
 
   if (!tete || tete.sovPct <= 0) {
@@ -270,13 +278,13 @@ function Console({
       </div>
 
       <div className="console-corps">
-        <ol className="console-tranches" style={{ ["--n" as string]: rows.length }}>
-          {rows.map((row, i) => (
+        <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
+          {tranches.map((row, i) => (
             <Tranche
               key={row.key}
               row={row}
               rang={i + 1}
-              total={rows.length}
+              total={tranches.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               charge={selection[0] === row.key ? "A" : selection[1] === row.key ? "B" : null}
               onSelect={onSelect}
@@ -287,7 +295,7 @@ function Console({
 
         {/* Graduations, à droite comme sur une tranche de console. */}
         <ul className="console-graduations" aria-hidden="true">
-          {[50, 20, 0].map((v) => (
+          {[50, 40, 30, 20, 10, 0].map((v) => (
             <li key={v} style={{ ["--v" as string]: v / METER_FULL_SCALE }}>
               {v === 20 ? <b>{v} %</b> : `${v} %`}
             </li>
@@ -525,7 +533,7 @@ function Tranche({
       <div
         className="console-vumetre"
         title={
-          (coupe ? `${row.label} — en sourdine, sous 2 % : ` : `${row.label} — `) +
+          (coupe ? `${row.label} — en sourdine, sous 5 % : ` : `${row.label} — `) +
           `${row.sovPct} % de la couverture accordée aux partis (sommet : ${row.peakPct} %)` +
           (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à sa moyenne`)
         }
@@ -559,7 +567,7 @@ function Tranche({
         <span className="console-sourdine">
           Sourdine
           <InfoTip size="sm" label="Sourdine">
-            Moins de 2&nbsp;% de la couverture accordée aux partis sur la période — trop peu pour
+            Moins de 5&nbsp;% de la couverture accordée aux partis sur la période — trop peu pour
             qu&apos;on puisse parler d&apos;une présence. Le canal reste affiché, mais muet.
           </InfoTip>
         </span>

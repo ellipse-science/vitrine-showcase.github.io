@@ -54,17 +54,18 @@ describe("computeStats", () => {
 });
 
 describe("buildRangeView", () => {
-  it("met en ombre un parti sous le seuil de 2 %", () => {
+  it("met en sourdine un parti sous le seuil de 5 %", () => {
     const dayRows = [
       row("caq", DATE_A, 0.60), row("pq",  DATE_A, 0.25),
       row("qs",  DATE_A, 0.10), row("plq", DATE_A, 0.04), row("pcq", DATE_A, 0.01),
     ];
     const { stats, dates } = statsOf(dayRows, dayRows, dayRows);
     const view = buildRangeView(stats, "today", dates);
-    const pcq = view.rows.find((r) => r.key === "pcq")!;
-    expect(pcq.inShadow).toBe(true);
-    const plq = view.rows.find((r) => r.key === "plq")!;
-    expect(plq.inShadow).toBe(false);
+    // 1 % et 4 % passent tous deux sous le seuil d'affichage de 5 %…
+    expect(view.rows.find((r) => r.key === "pcq")!.inShadow).toBe(true);
+    expect(view.rows.find((r) => r.key === "plq")!.inShadow).toBe(true);
+    // …tandis que 10 % reste audible.
+    expect(view.rows.find((r) => r.key === "qs")!.inShadow).toBe(false);
   });
   it("barWidthPct est dans [0, 100] pour tous les partis", () => {
     const dayRows = PARTY_KEYS.map((p, i) => row(p, DATE_A, [0.5, 0.25, 0.15, 0.07, 0.03][i]));

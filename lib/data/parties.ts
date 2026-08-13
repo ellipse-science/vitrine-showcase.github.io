@@ -59,7 +59,16 @@ export const PARTY_COLORS: Record<PartyKey, string> = {
   pcq: "#5A3B6E",
 };
 
-const SHADOW_THRESHOLD = 0.02; // éclipse médiatique : < 2 % SOV (seuil du raffineur)
+/**
+ * Sourdine : sous ce seuil, un parti n'est plus considéré comme audible.
+ *
+ * ⚠️ 5 % est un choix d'AFFICHAGE, plus élevé que le seuil du raffineur, qui
+ * reste à 2 % (ECLIPSE_THRESHOLD dans radar-party-score-salient-shadow, publié
+ * dans la colonne `threshold`). Les deux divergent donc volontairement : la
+ * colonne `threshold` de la donnée ne décrit PLUS ce que le site affiche.
+ * À aligner si le seuil de 5 % est retenu durablement.
+ */
+const SHADOW_THRESHOLD = 0.05;
 const SPARK_W = 100;
 const SPARK_H = 30;
 
