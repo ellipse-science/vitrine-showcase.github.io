@@ -17,6 +17,7 @@ import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
 import { ELECTION_DATE, daysUntilElection } from "@/lib/election";
+import { MEDIA_LABELS } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -103,6 +104,8 @@ type ShadowRow = {
   weighted_mentions: number; // already SOV (0–1)
   weighted_tone: number;
   computed_at?: string;
+  /** Présent uniquement dans les tables `*_by_media_*`. */
+  media_id?: string;
 };
 
 type Entry = { mentions: number; tone: number };
@@ -195,10 +198,29 @@ export type RangeView = {
   rows: RowView[];
 };
 
+/** Une position du fader : « tous les médias », ou un média du panel. */
+export type MediaOption = { id: string; label: string };
+
+/** Ce que le fader donne à voir pour une position : les classements par
+ *  période, et la course. */
+export type MediaView = {
+  ranges: Record<RangeKey, RangeView>;
+  chart: ChartView;
+};
+
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
   /** La course jusqu'au scrutin — quotidienne, la même quel que soit l'onglet. */
   chart: ChartView;
+  /** Positions du fader, « tous les médias » en tête. Vide si la ventilation
+   *  par média n'est pas publiée — le fader disparaît alors, plutôt que de
+   *  s'afficher inerte. */
+  medias: MediaOption[];
+  /** Vues par position du fader. La clé TOUS_MEDIAS n'y figure PAS : elle
+   *  correspond à `ranges`/`chart` ci-dessus, qui viennent de la table
+   *  agrégée. Et c'est volontaire — l'agrégat est pondéré par les minutes de
+   *  chaque média, il n'est donc pas la moyenne des vues par média. */
+  byMedia: Record<string, MediaView>;
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
@@ -634,6 +656,22 @@ export async function loadParties(
     const weekRows  = upTo(JSON.parse(weekRaw)  as ShadowRow[]);
     const monthRows = upTo(JSON.parse(monthRaw) as ShadowRow[]);
 
+    // Ventilation par média — facultative : le fader ne s'affiche que si les
+    // tables `*_by_media_*` sont publiées. Un `null` ici n'est pas une erreur,
+    // c'est l'état d'avant aws-refiners#… (la PR qui les crée).
+    const lireMedia = async (p: string) => {
+      try {
+        return JSON.parse(await fs.readFile(p, "utf8")) as ShadowRow[];
+      } catch {
+        return null;
+      }
+    };
+    const [mDay, mWeek, mMonth] = await Promise.all([
+      lireMedia(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_by_media_day.json")),
+      lireMedia(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_by_media_week.json")),
+      lireMedia(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_by_media_month.json")),
+    ]);
+
     const computed = computeStats(dayRows, weekRows, monthRows);
     if (!computed) return null;
     const { stats, dates } = computed;
@@ -645,10 +683,36 @@ export async function loadParties(
     const refDate = asOfIso ?? new Date().toISOString().slice(0, 10);
     const daysToElection = daysUntilElection(refDate);
 
+    // Une vue par média, construite avec exactement le même code que la vue
+    // agrégée — seules les lignes d'entrée changent.
+    const medias: MediaOption[] = [];
+    const byMedia: Record<string, MediaView> = {};
+
+    if (mDay && mWeek && mMonth) {
+      const ids = [...new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x))].sort();
+      for (const id of ids) {
+        const parMedia = (rows: ShadowRow[] | null) =>
+          upTo((rows ?? []).filter((r) => r.media_id === id));
+        const c = computeStats(parMedia(mDay), parMedia(mWeek), parMedia(mMonth));
+        if (!c) continue;
+        medias.push({ id, label: MEDIA_LABELS[id] ?? id });
+        byMedia[id] = {
+          chart: buildChart(c.stats, c.dates),
+          ranges: {
+            today: buildRangeView(c.stats, "today", c.dates),
+            week: buildRangeView(c.stats, "week", c.dates),
+            overall: buildRangeView(c.stats, "overall", c.dates),
+          },
+        };
+      }
+    }
+
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
       daysToElection,
+      medias,
+      byMedia,
       chart: buildChart(stats, dates),
       ranges: {
         today: buildRangeView(stats, "today", dates),

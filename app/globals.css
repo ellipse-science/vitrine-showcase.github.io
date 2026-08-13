@@ -4898,6 +4898,103 @@
     text-align: center;
   }
 
+  /* ── Le fader : choisir la source qu'on écoute ──────────────────────────
+     Un curseur, pas un menu : sur une console on pousse, on ne déroule pas.
+     L'input natif porte l'interaction (souris, clavier, tactile) ; il est rendu
+     transparent et les crans sont dessinés dessous. */
+  .fader {
+    max-width: 620px;
+    margin: 34px auto 0;
+    padding-top: 22px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .fader-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .fader-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+  .fader-valeur {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .fader-piste { position: relative; height: 40px; }
+
+  .fader-input {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+    height: 22px;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .fader-input:focus-visible + .fader-crans .fader-cran.actif i {
+    outline: 2px solid var(--cordovan);
+    outline-offset: 3px;
+  }
+
+  .fader-crans { position: absolute; inset: 0; pointer-events: none; }
+  /* Le rail */
+  .fader-crans::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 10px;
+    height: 2px;
+    background: var(--rule);
+  }
+  .fader-cran {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+  }
+  .fader-cran i {
+    display: block;
+    width: 3px;
+    height: 22px;
+    background: var(--rule);
+  }
+  .fader-cran b {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-softer);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  /* Le curseur : le cran actif devient une vraie tirette. */
+  .fader-cran.actif i {
+    width: 13px;
+    height: 26px;
+    margin-top: -2px;
+    background: var(--ink);
+  }
+  .fader-cran.actif b { color: var(--ink); font-weight: 500; }
+
+  @media (max-width: 768px) {
+    .fader-cran b { font-size: 8px; }
+    .fader-valeur { font-size: 15px; }
+  }
+
   .partis-course { margin-top: 44px; padding-top: 26px; border-top: 2px solid var(--rule-faint); }
 
   .course-figure { margin: 0; }

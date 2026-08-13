@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
+import { TOUS_MEDIAS } from "@/lib/medias";
 import { ELECTION_LABEL } from "@/lib/election";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -25,6 +26,7 @@ function shareTitle(data: PartiesData): string {
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const [range, setRange] = useState<RangeKey>("today");
+  const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   const [showDoom, setShowDoom] = useState(false);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
@@ -43,7 +45,14 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
     }
   };
 
-  const view: RangeView = data.ranges[range];
+  // Position du fader. « Tous les médias » lit la table AGRÉGÉE, jamais une
+  // moyenne des vues par média : l'agrégat est pondéré par les minutes de
+  // chaque média, donc les deux nombres diffèrent légitimement.
+  const source =
+    media !== TOUS_MEDIAS && data.byMedia[media]
+      ? data.byMedia[media]
+      : { ranges: data.ranges, chart: data.chart };
+  const view: RangeView = source.ranges[range];
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
 
@@ -79,8 +88,16 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
       <Console rows={view.rows} refLabel={view.refLabel} onPcqTap={handlePcqTap} />
 
+      {data.medias.length > 0 && (
+        <Fader
+          medias={data.medias}
+          valeur={media}
+          onChange={setMedia}
+        />
+      )}
+
       <section className="partis-course">
-        <Course chart={data.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
+        <Course chart={source.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
       </section>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
@@ -308,6 +325,66 @@ function VictoireDouteuse({ tete }: { tete: RowView }) {
         </InfoTip>
       </span>
     </p>
+  );
+}
+
+/**
+ * Le fader — choisir la source qu'on écoute.
+ *
+ * Un `input[type=range]` à crans plutôt qu'un menu déroulant : sur une
+ * console, on ne choisit pas une source dans une liste, on pousse un curseur.
+ * Le clavier fonctionne (flèches), et le lecteur d'écran annonce la valeur via
+ * `aria-valuetext`, que le rendu visuel ne lui donnerait pas.
+ *
+ * Position 0 = tous les médias, c'est-à-dire la table AGRÉGÉE — pas la moyenne
+ * des positions suivantes.
+ */
+function Fader({
+  medias,
+  valeur,
+  onChange,
+}: {
+  medias: { id: string; label: string }[];
+  valeur: string;
+  onChange: (v: string) => void;
+}) {
+  const positions = [{ id: TOUS_MEDIAS, label: "Tous les médias" }, ...medias];
+  const idx = Math.max(0, positions.findIndex((p) => p.id === valeur));
+  const courante = positions[idx];
+
+  return (
+    <div className="fader">
+      <div className="fader-tete">
+        <span className="fader-label">Source</span>
+        <span className="fader-valeur">{courante.label}</span>
+      </div>
+
+      <div className="fader-piste">
+        <input
+          type="range"
+          min={0}
+          max={positions.length - 1}
+          step={1}
+          value={idx}
+          onChange={(e) => onChange(positions[Number(e.target.value)].id)}
+          aria-label="Source médiatique"
+          aria-valuetext={courante.label}
+          className="fader-input"
+        />
+        <div className="fader-crans" aria-hidden="true">
+          {positions.map((p, i) => (
+            <span
+              key={p.id}
+              className={`fader-cran${i === idx ? " actif" : ""}${i === 0 ? " tous" : ""}`}
+              style={{ left: `${(i / (positions.length - 1)) * 100}%` }}
+            >
+              <i />
+              <b>{i === 0 ? "TOUS" : p.id}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

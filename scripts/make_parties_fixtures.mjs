@@ -10,6 +10,10 @@
 // (règle dure #1 : ce dossier est généré par scripts/fetch_data.R). Chaque ligne
 // porte un champ `_fictif: true` pour qu'aucune confusion ne soit possible.
 //
+// Produit AUSSI les tables ventilées par média (*_by_media_*), au même schéma
+// que celles du raffineur — chaque média y a un penchant, sinon un sélecteur
+// de média n'aurait rien à montrer.
+//
 // Usage :
 //   node scripts/make_parties_fixtures.mjs            # profil réaliste
 //   node scripts/make_parties_fixtures.mjs --dense    # 12 points par courbe
@@ -28,6 +32,20 @@ const OUT_DIR = path.resolve(process.cwd(), "fixtures", "parties");
 const TODAY = "2026-08-13";
 
 const PARTIES = ["CAQ", "PQ", "PLQ", "QS", "PCQ"];
+
+// Panel de médias, repris des identifiants réels de radar_annotated. Chaque
+// média a un PENCHANT : un multiplicateur par parti, qui décale sa répartition
+// par rapport à la moyenne. Sans ça, un sélecteur de média n'aurait rien à
+// montrer — toutes les positions se ressembleraient.
+const MEDIAS = {
+  RC:  { label: "Radio-Canada",         penchant: { CAQ: 0.9, PQ: 1.15, PLQ: 1.0,  QS: 1.2,  PCQ: 0.6 } },
+  LAP: { label: "La Presse",            penchant: { CAQ: 0.95, PQ: 1.1, PLQ: 1.05, QS: 1.1,  PCQ: 0.7 } },
+  JDM: { label: "Journal de Montréal",  penchant: { CAQ: 1.25, PQ: 0.95, PLQ: 0.85, QS: 0.7, PCQ: 1.6 } },
+  LED: { label: "Le Devoir",            penchant: { CAQ: 0.85, PQ: 1.2, PLQ: 0.95, QS: 1.35, PCQ: 0.5 } },
+  TVA: { label: "TVA Nouvelles",        penchant: { CAQ: 1.2, PQ: 0.9,  PLQ: 0.95, QS: 0.75, PCQ: 1.4 } },
+  GAM: { label: "The Globe and Mail",   penchant: { CAQ: 1.05, PQ: 0.8, PLQ: 1.3,  QS: 0.8,  PCQ: 0.9 } },
+};
+const MEDIA_IDS = Object.keys(MEDIAS);
 
 // Part de voix de fond, avant bruit et avant l'événement scénarisé plus bas.
 // Ordre plausible pour l'été 2026 ; la somme n'a pas à faire 1, on normalise.
@@ -118,6 +136,45 @@ function toneFor(party, rand, daysFromEnd) {
 /** Construit les lignes pour une liste de dates, part de voix normalisée à 1
  *  par date — c'est le contrat du raffineur : weighted_mentions EST déjà une
  *  part de voix (0–1) dont la somme fait 1 sur les partis provinciaux. */
+/** Lignes ventilées PAR MÉDIA — la part de voix y est normalisée DANS chaque
+ *  média, comme le fait le raffineur. Volontairement PAS la moyenne des
+ *  médias : l'agrégat est pondéré par le volume de chacun. */
+function buildRowsByMedia(dates, seed, periodLabel) {
+  const rand = rng(seed);
+  const rows = [];
+  const lastIdx = dates.length - 1;
+
+  dates.forEach((date, i) => {
+    const daysFromEnd = lastIdx - i;
+    for (const mid of MEDIA_IDS) {
+      const pen = MEDIAS[mid].penchant;
+      const raw = {};
+      for (const p of PARTIES) raw[p] = sovFor(p, date, rand, daysFromEnd) * pen[p];
+      const total = Object.values(raw).reduce((s, v) => s + v, 0);
+
+      for (const p of PARTIES) {
+        const sov = raw[p] / total;
+        rows.push({
+          party: p,
+          media_id: mid,
+          date_utc: date,
+          date_montreal_tz: date,
+          weighted_mentions: round4(sov),
+          total_raw_score: round4(sov * (periodLabel === "day" ? 70 : periodLabel === "week" ? 430 : 1800)),
+          weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
+          threshold: 0.02,
+          period_start: dates[0],
+          period_end: date,
+          computed_at: `${date}T19:05:00Z`,
+          _fictif: true,
+        });
+      }
+    }
+  });
+
+  return rows;
+}
+
 function buildRows(dates, seed, periodLabel) {
   const rand = rng(seed);
   const rows = [];
@@ -157,10 +214,17 @@ const PROFILE = DENSE
   ? { day: 35, weeks: 12, months: 12 }
   : { day: 35, weeks: 6, months: 3 };
 
+const D = dailyDates(PROFILE.day);
+const W = weeklyDates(PROFILE.weeks);
+const M = monthlyDates(PROFILE.months);
+
 const files = [
-  ["day", "provincial_parties_salient_shadow_day.json", buildRows(dailyDates(PROFILE.day), 1, "day")],
-  ["week", "provincial_parties_salient_shadow_week.json", buildRows(weeklyDates(PROFILE.weeks), 2, "week")],
-  ["month", "provincial_parties_salient_shadow_month.json", buildRows(monthlyDates(PROFILE.months), 3, "month")],
+  ["day", "provincial_parties_salient_shadow_day.json", buildRows(D, 1, "day")],
+  ["week", "provincial_parties_salient_shadow_week.json", buildRows(W, 2, "week")],
+  ["month", "provincial_parties_salient_shadow_month.json", buildRows(M, 3, "month")],
+  ["day", "provincial_parties_salient_shadow_by_media_day.json", buildRowsByMedia(D, 11, "day")],
+  ["week", "provincial_parties_salient_shadow_by_media_week.json", buildRowsByMedia(W, 12, "week")],
+  ["month", "provincial_parties_salient_shadow_by_media_month.json", buildRowsByMedia(M, 13, "month")],
 ];
 
 for (const [sub, name, rows] of files) {
