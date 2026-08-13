@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
-import { TOUS_MEDIAS } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER } from "@/lib/medias";
 import { ELECTION_LABEL } from "@/lib/election";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -348,7 +348,19 @@ function Fader({
   valeur: string;
   onChange: (v: string) => void;
 }) {
-  const positions = [{ id: TOUS_MEDIAS, label: "Tous les médias" }, ...medias];
+  // Ordre du crossfader : « tous » AU CENTRE, les médias de part et d'autre.
+  // MEDIA_ORDER fixe la disposition ; tout média publié mais absent de cette
+  // liste est ajouté à la fin plutôt que d'être escamoté.
+  const parId = new Map(medias.map((m) => [m.id, m]));
+  const connus = MEDIA_ORDER.flatMap((id) =>
+    id === TOUS_MEDIAS
+      ? [{ id: TOUS_MEDIAS, label: "Tous les médias" }]
+      : parId.has(id)
+        ? [parId.get(id)!]
+        : [],
+  );
+  const restants = medias.filter((m) => !MEDIA_ORDER.includes(m.id));
+  const positions = [...connus, ...restants];
   const idx = Math.max(0, positions.findIndex((p) => p.id === valeur));
   const courante = positions[idx];
 
@@ -375,11 +387,13 @@ function Fader({
           {positions.map((p, i) => (
             <span
               key={p.id}
-              className={`fader-cran${i === idx ? " actif" : ""}${i === 0 ? " tous" : ""}`}
+              className={`fader-cran${i === idx ? " actif" : ""}${
+                p.id === TOUS_MEDIAS ? " tous" : ""
+              }`}
               style={{ left: `${(i / (positions.length - 1)) * 100}%` }}
             >
               <i />
-              <b>{i === 0 ? "TOUS" : p.id}</b>
+              <b>{p.id === TOUS_MEDIAS ? "TOUS" : p.id}</b>
             </span>
           ))}
         </div>

@@ -4989,6 +4989,11 @@
     background: var(--ink);
   }
   .fader-cran.actif b { color: var(--ink); font-weight: 500; }
+  /* Le cran « tous » est la position de repos du crossfader : plus haut et
+     plus marqué que les autres, pour se retrouver sans regarder. */
+  .fader-cran.tous i { height: 30px; margin-top: -4px; background: var(--ink-softer); }
+  .fader-cran.tous b { letter-spacing: 0.18em; color: var(--ink-soft); }
+  .fader-cran.tous.actif i { background: var(--ink); }
 
   @media (max-width: 768px) {
     .fader-cran b { font-size: 8px; }

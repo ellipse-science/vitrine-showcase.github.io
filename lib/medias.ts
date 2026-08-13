@@ -10,18 +10,37 @@
  *  minutes-en-Une. */
 export const TOUS_MEDIAS = "__tous__";
 
-/** Libellés lisibles du panel. Clés = `media_id` de radar_annotated ; un
- *  identifiant absent d'ici s'affiche tel quel plutôt que de disparaître. */
+/** Libellés lisibles du panel. Clés = `media_id` réels de radar_annotated,
+ *  vérifiés sur le corpus le 2026-08-13 ; un identifiant absent d'ici s'affiche
+ *  tel quel plutôt que de disparaître. */
 export const MEDIA_LABELS: Record<string, string> = {
-  RC: "Radio-Canada",
+  // Québec (country_id = QC) — les seuls pertinents pour des partis PROVINCIAUX
+  RCI: "Radio-Canada",
   LAP: "La Presse",
-  JDM: "Journal de Montréal",
   LED: "Le Devoir",
+  JDM: "Journal de Montréal",
   TVA: "TVA Nouvelles",
-  GAM: "The Globe and Mail",
+  MG: "Montreal Gazette",
+  // Canada et États-Unis — présents au corpus, hors sujet ici
   CBC: "CBC",
   CTV: "CTV",
+  GAM: "The Globe and Mail",
+  NP: "National Post",
   GN: "Global News",
-  JDQ: "Journal de Québec",
-  MTG: "Montreal Gazette",
+  CNN: "CNN",
+  FXN: "Fox News",
 };
+
+/**
+ * Ordre des crans du fader, « tous les médias » AU CENTRE — c'est la position
+ * de repos d'un crossfader, et celle qui doit se retrouver sans réfléchir.
+ *
+ * ⚠️ L'ordre gauche-droite des médias autour du centre n'est PAS neutre : un
+ * lecteur y lira un axe. Tant que cet axe n'est pas documenté et assumé
+ * publiquement, il ne porte aucune étiquette dans l'interface.
+ */
+export const MEDIA_ORDER: string[] = [
+  "RCI", "LAP", "LED",
+  TOUS_MEDIAS,
+  "JDM", "TVA", "MG",
+];
