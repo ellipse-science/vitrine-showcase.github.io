@@ -16,7 +16,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
-import { ELECTION_DATE, daysUntilElection } from "@/lib/election";
+import { ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
@@ -97,10 +97,13 @@ const RANGE_CONFIG: Record<
   overall: { barKey: "year",  refKey: "year",  toneKey: "today", refLabel: "moyenne de la période" },
 };
 
+/** Fenêtres de moyennage du podium. Les anciens libellés parlaient de
+ *  « course » alors que la course est passée sous la console : ils décrivent
+ *  désormais ce qu'ils font vraiment, une période. */
 const TAB_LABELS: Record<RangeKey, string> = {
-  today: "La course de la journée",
-  week: "La course de la semaine",
-  overall: "Le portrait global",
+  today: "Aujourd'hui",
+  week: "Cette semaine",
+  overall: "Tout le suivi",
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
@@ -233,12 +236,6 @@ export type PartiesData = {
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
-  /** Jours restants avant le scrutin. Compté depuis la date de BUILD (ou celle
-   *  de l'édition consultée), pas depuis la date de la donnée : le module se
-   *  reconstruit à chaque rafraîchissement, donc au pire quelques heures de
-   *  retard — alors qu'une donnée en retard de deux semaines fausserait le
-   *  compte de deux semaines. Négatif après le scrutin. */
-  daysToElection: number;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -687,11 +684,6 @@ export async function loadParties(
 
     const lastDate = dayRows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), "");
 
-    // Édition passée ⇒ on compte depuis CETTE édition, pour que l'archive dise
-    // ce qu'elle disait ce jour-là et non ce qu'on saurait aujourd'hui.
-    const refDate = asOfIso ?? new Date().toISOString().slice(0, 10);
-    const daysToElection = daysUntilElection(refDate);
-
     // Une vue par média, construite avec exactement le même code que la vue
     // agrégée — seules les lignes d'entrée changent.
     const medias: MediaOption[] = [];
@@ -719,7 +711,6 @@ export async function loadParties(
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
-      daysToElection,
       medias,
       byMedia,
       chart: buildChart(stats, dates),

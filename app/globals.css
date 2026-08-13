@@ -4649,32 +4649,6 @@
      (preserveAspectRatio="none"). Tout le texte est en HTML posé par-dessus,
      positionné en pourcentage — donc net à toutes les tailles, là où du texte
      dans un SVG étiré serait déformé. */
-  .partis-countdown {
-    display: inline-block;
-    /* .title-block est une colonne flex : sans ceci le badge s'étire sur toute
-       la largeur au lieu d'épouser son texte. */
-    align-self: flex-start;
-    margin-left: 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-weight: 500;
-    color: var(--cordovan);
-    border: 0.5px solid var(--cordovan);
-    padding: 3px 8px;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-
-  /* ── La console : une tranche par parti, un vumètre par tranche ─────────
-     La couleur des SEGMENTS dit le niveau, jamais le parti — c'est ainsi que
-     fonctionne une console, et c'est ce qui empêche les deux bleus (CAQ, PQ)
-     de se confondre : ils ne sont plus distingués par la couleur du tout.
-     L'identité du canal tient à son ruban, comme l'adhésif de couleur collé
-     sur une tranche de mixeur.
-     Rendu à l'encre : des segments, c'est du plein et du vide — la chose la
-     plus imprimable qui soit, et parfaitement dans la grammaire du papier. */
   /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
      module après son titre, centré, avec de l'air autour — c'est elle qui
      porte la réponse, l'instrument ne fait que la prouver. */

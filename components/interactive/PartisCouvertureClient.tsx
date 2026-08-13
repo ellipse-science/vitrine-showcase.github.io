@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS } from "@/lib/medias";
-import { ELECTION_LABEL } from "@/lib/election";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -79,10 +78,9 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
   return (
     <>
-      <div className="partis-title-row">
+      <div className="partis-title-row stacked">
         <div className="title-block">
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
-          <Countdown days={data.daysToElection} />
         </div>
         <div className="control-block">
           <div className="control-row">
@@ -655,17 +653,6 @@ function Fader({
   );
 }
 
-/** « J-53 avant le scrutin ». Le jour même, puis après, le libellé change —
- *  un « J-0 » ou un compte négatif ne veut rien dire pour un lecteur. */
-function Countdown({ days }: { days: number }) {
-  if (days < 0) return null;
-  const label = days === 0 ? "Scrutin aujourd'hui" : `J-${days} avant le scrutin`;
-  return (
-    <span className="partis-countdown" title={`Élections générales québécoises — ${ELECTION_LABEL}`}>
-      {label}
-    </span>
-  );
-}
 
 /**
  * La course : toutes les lignes sur une seule échelle verticale.

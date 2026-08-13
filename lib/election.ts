@@ -7,10 +7,3 @@
 
 export const ELECTION_DATE = "2026-10-05";
 export const ELECTION_LABEL = "5 octobre 2026";
-
-/** Jours entre `fromIso` et le scrutin. Négatif une fois le scrutin passé. */
-export function daysUntilElection(fromIso: string): number {
-  return Math.round(
-    (Date.parse(`${ELECTION_DATE}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / 86_400_000,
-  );
-}
