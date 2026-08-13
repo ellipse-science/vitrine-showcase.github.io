@@ -6,9 +6,10 @@ courage de lire finit approuvée sans être lue, et c'est déjà arrivé.
 
 ## Description
 
-<!-- 3 à 5 puces, une phrase chacune : ce qui change, et pourquoi. Liez l'issue (closes #…). -->
-
--
+<!--
+3 à 5 puces, une phrase chacune : ce qui change, et pourquoi. Liez l'issue (closes #…).
+Exemple : « - La page Méthodologie passe sous la garde typographique. »
+-->
 
 ## Type de changement
 
@@ -43,9 +44,7 @@ c'est elle qui dit au relecteur qu'il peut merger sans rien vérifier d'autre.
 
 ## Tests effectués
 
-<!-- Des faits, pas un récit. -->
-
--
+<!-- Des faits, pas un récit. Exemple : « - Page Méthodologie : 50 violations → 0. » -->
 
 **Non exécuté :**
 
