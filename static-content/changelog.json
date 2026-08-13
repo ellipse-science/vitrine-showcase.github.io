@@ -1,5 +1,11 @@
 [
   {
+    "pr": 469,
+    "date": "2026-08-13T15:34:40Z",
+    "note": "Amélioration interne de la façon dont l'équipe décrit ses changements avant de les mettre en ligne. Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 461,
     "date": "2026-08-12T21:30:05Z",
     "note": "Les niveaux de saillance affichés sous les manchettes reposent désormais sur une nouvelle mesure, qui tient compte à la fois du nombre de médias ayant fait de l'histoire leur Une, du nombre d'articles qu'ils y consacrent et du temps passé en Une. Une nouvelle doit exister sur ces trois plans à la fois pour monter : un seul média, aussi insistant soit-il, ne suffit plus. La page Méthodologie…",
