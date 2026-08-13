@@ -86,7 +86,12 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
-      <Console rows={view.rows} refLabel={view.refLabel} onPcqTap={handlePcqTap} />
+      <Console
+        rows={view.rows}
+        reference={data.ranges[range].rows}
+        refLabel={view.refLabel}
+        onPcqTap={handlePcqTap}
+      />
 
       {data.medias.length > 0 && (
         <Fader
@@ -105,8 +110,6 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   );
 }
 
-const RANGS = ["1er", "2e", "3e", "4e", "5e"];
-
 /**
  * L'échelle des vumètres, en points de part de voix.
  *
@@ -121,15 +124,26 @@ const RANGS = ["1er", "2e", "3e", "4e", "5e"];
  */
 const METER_SEGMENTS = 20;
 const METER_FULL_SCALE = 50;
-const SEUIL_AMBRE = 20; // partage égal à cinq
-const SEUIL_ROUGE = 40;
 
-/** Zone d'un segment, d'après la part de voix qu'il représente. */
-function zoneSegment(i: number): "ink" | "amber" | "red" {
-  const pct = ((i + 1) / METER_SEGMENTS) * METER_FULL_SCALE;
-  if (pct > SEUIL_ROUGE) return "red";
-  if (pct > SEUIL_AMBRE) return "amber";
-  return "ink";
+/**
+ * La couleur d'un canal dit son ÉCART À LA MOYENNE, pas son niveau.
+ *
+ * Deux encodages distincts, donc deux informations : la HAUTEUR porte la part
+ * de voix, la COULEUR porte la sur-représentation par rapport à ce que ce parti
+ * obtient tous médias confondus.
+ *
+ * Conséquence voulue : sur « tous les médias », chaque parti est exactement à
+ * sa propre moyenne, donc tout reste vert. Les couleurs ne s'allument qu'en
+ * bougeant le fader — un canal part dans le rouge parce que CE média-LÀ le
+ * pousse au-dessus de sa moyenne.
+ */
+const SEUIL_AMBRE = 1.0;
+const SEUIL_ROUGE = 1.3;
+
+function zoneEcart(ratio: number): "green" | "amber" | "red" {
+  if (ratio > SEUIL_ROUGE) return "red";
+  if (ratio > SEUIL_AMBRE) return "amber";
+  return "green";
 }
 
 /**
@@ -159,10 +173,14 @@ function positionVisuelle(rang: number, total: number): number {
  */
 function Console({
   rows,
+  reference,
   refLabel,
   onPcqTap,
 }: {
   rows: RowView[];
+  /** Les mêmes partis, tous médias confondus — le point de comparaison des
+   *  couleurs. Identique à `rows` quand le fader est sur « tous ». */
+  reference: RowView[];
   refLabel: string;
   onPcqTap: () => void;
 }) {
@@ -181,11 +199,11 @@ function Console({
   return (
     <section className="console" aria-label="Niveaux de couverture médiatique par parti">
       <div className="console-tete">
-        <span className="console-titre">Niveaux — {refLabel}</span>
+        <span className="console-titre">{refLabel}</span>
         <span className="console-echelle-legende">
-          <i className="zone ink" /> sous sa part
+          <i className="zone green" /> dans sa moyenne
           <i className="zone amber" /> au-dessus
-          <i className="zone red" /> saturation
+          <i className="zone red" /> bien au-dessus
         </span>
       </div>
 
@@ -197,6 +215,7 @@ function Console({
               row={row}
               rang={i + 1}
               total={actifs.length}
+              moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
             />
           ))}
@@ -204,9 +223,9 @@ function Console({
 
         {/* Graduations, à droite comme sur une tranche de console. */}
         <ul className="console-graduations" aria-hidden="true">
-          {[50, 40, 30, 20, 10, 0].map((v) => (
+          {[50, 20, 0].map((v) => (
             <li key={v} style={{ ["--v" as string]: v / METER_FULL_SCALE }}>
-              {v === SEUIL_AMBRE ? <b>{v} %</b> : `${v} %`}
+              {v === 20 ? <b>{v} %</b> : `${v} %`}
             </li>
           ))}
         </ul>
@@ -247,16 +266,23 @@ function Tranche({
   row,
   rang,
   total,
+  moyennePct,
   onPcqTap,
 }: {
   row: RowView;
   rang: number;
   total: number;
+  moyennePct: number;
   onPcqTap?: () => void;
 }) {
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
   const allumes = Math.max(1, Math.round(niveau * METER_SEGMENTS));
   const peak = Math.min(1, row.peakPct / METER_FULL_SCALE);
+  // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
+  // d'inventer une sur-représentation par division par zéro.
+  const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
+  const zone = zoneEcart(ratio);
+  const ecart = Math.round((ratio - 1) * 100);
 
   return (
     <li
@@ -265,13 +291,16 @@ function Tranche({
     >
       <div
         className="console-vumetre"
-        title={`${row.label} — ${row.sovPct} % de la part de voix (sommet : ${row.peakPct} %)`}
+        title={
+          `${row.label} — ${row.sovPct} % de la part de voix (sommet : ${row.peakPct} %)` +
+          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à sa moyenne`)
+        }
       >
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${zoneSegment(idx)}${idx < allumes ? " on" : ""}`}
+            className={`seg ${zone}${idx < allumes ? " on" : ""}`}
             aria-hidden="true"
           />
         ))}
@@ -293,9 +322,8 @@ function Tranche({
           {row.label}
         </span>
       </span>
-      <span className="console-rang">{RANGS[rang - 1]}</span>
       <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-        {row.toneLabel}
+        {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "—"}
       </span>
     </li>
   );

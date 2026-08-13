@@ -4679,6 +4679,8 @@
     margin-top: 30px;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
+    --gradu: 44px;    /* largeur de la colonne de graduations */
+    --gradu-gap: 14px;
   }
 
   .console-tete {
@@ -4711,7 +4713,7 @@
     margin-left: 8px;
   }
   .console-echelle-legende .zone:first-child { margin-left: 0; }
-  .zone.ink   { background: var(--ink); }
+  .zone.green { background: var(--green); }
   .zone.amber { background: var(--amber); }
   .zone.red   { background: var(--red); }
 
@@ -4720,9 +4722,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 14px;
+    gap: var(--gradu-gap);
     max-width: 820px;
     margin: 0 auto;
+    /* Compense la colonne de graduations, à droite : sans ce décalage, centrer
+       le bloc entier décentre les VUMÈTRES, qui sont ce que l'œil lit. */
+    padding-left: calc(var(--gradu) + var(--gradu-gap));
   }
 
   .console-tranches {
@@ -4744,12 +4749,11 @@
     min-width: 0;
     max-width: 104px;
     display: grid;
-    grid-template-rows: var(--piste) auto auto auto;
+    grid-template-rows: var(--piste) auto auto;
     align-items: end;
     justify-items: center;
     row-gap: 9px;
   }
-  .console-tranche.tete { max-width: 124px; }
 
   /* Le vumètre : une pile de segments, du bas vers le haut. */
   .console-vumetre {
@@ -4768,7 +4772,11 @@
        plein/vide qui fait lire l'échelle, pas seulement la hauteur. */
     background: var(--rule-faint);
   }
-  .console-vumetre .seg.on.ink   { background: var(--ink); }
+  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau : tout le segment allumé
+     d'un canal partage donc la même teinte. Sur « tous les médias », chaque
+     parti est à sa propre moyenne — tout est vert, et les couleurs ne
+     s'allument qu'en bougeant le fader. */
+  .console-vumetre .seg.on.green { background: var(--green); }
   .console-vumetre .seg.on.amber { background: var(--amber); }
   .console-vumetre .seg.on.red   { background: var(--red); }
 
@@ -4796,17 +4804,6 @@
     letter-spacing: 0.08em;
     line-height: 1;
   }
-  .console-tranche.tete .console-ruban-nom { font-size: 19px; padding: 7px 4px; }
-
-  .console-rang {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    font-weight: 500;
-  }
-  .console-tranche.tete .console-rang { color: var(--ink); }
 
   /* Graduations : posées en absolu sur la hauteur du vumètre, pour tomber
      exactement en face du niveau qu'elles annoncent. */
@@ -4815,7 +4812,7 @@
     margin: 0;
     padding: 0;
     position: relative;
-    width: 44px;
+    width: var(--gradu);
     height: var(--piste);
     flex: none;
   }
@@ -5244,8 +5241,7 @@
     .console-tranches { gap: 9px; }
     .console-ruban-nom { font-size: 13px; }
     .console-tranche.tete .console-ruban-nom { font-size: 15px; }
-    .console-corps { gap: 8px; }
-    .console-graduations { width: 34px; }
+    .console { --gradu: 34px; --gradu-gap: 8px; }
 
     /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
        de haut deviennent illisibles quand la largeur tombe sous ~400 px. */
