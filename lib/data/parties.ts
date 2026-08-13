@@ -329,11 +329,22 @@ function shortDateFr(isoDate: string): string {
   return `${Number(d)} ${MONTHS_SHORT_FR[Number(m) - 1]}`;
 }
 
-/** Plafond de l'axe vertical : le multiple de 10 juste au-dessus du maximum
- *  observé, avec un plancher à 20 % pour qu'une course serrée ne remplisse pas
- *  toute la hauteur et ne donne pas l'illusion d'écarts énormes. */
-function axisTop(maxPct: number): number {
-  return Math.max(20, Math.ceil(maxPct / 10) * 10);
+/**
+ * Plafond de l'axe vertical : TOUJOURS 100 %.
+ *
+ * Un plafond adaptatif (le multiple de 10 au-dessus du maximum observé) rendait
+ * la lecture plus fine, mais il devient indéfendable depuis que le fond porte
+ * une échelle de couleurs : le sommet vaudrait 40 % sur un onglet et 50 % sur
+ * un autre, donc la même bande « saturation » désignerait deux niveaux
+ * différents selon l'onglet consulté.
+ *
+ * 100 % est aussi le seul plafond qui ait un sens ici : la part de voix est une
+ * part d'un tout, et ce tout vaut 100. Prix payé, assumé : les cinq lignes
+ * vivent dans le tiers inférieur du cadre, puisqu'aucun parti n'a jamais
+ * approché la moitié de la couverture.
+ */
+function axisTop(_maxPct: number): number {
+  return 100;
 }
 
 /** Écart vertical minimal entre deux étiquettes de bout de ligne, en unités du
@@ -433,8 +444,10 @@ function buildChart(
 
   spreadLabels(series);
 
+  // Un trait tous les 20 % : 0-20-40-60-80-100. Le repère des 20 % est aussi
+  // celui du partage égal entre cinq partis.
   const gridLines = [];
-  for (let pct = 0; pct <= top; pct += top <= 20 ? 5 : 10) {
+  for (let pct = 0; pct <= top; pct += 20) {
     gridLines.push({ pct, y: Number(yAt(pct).toFixed(2)) });
   }
 

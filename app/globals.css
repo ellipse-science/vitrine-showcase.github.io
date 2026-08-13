@@ -4671,6 +4671,10 @@
 
   .course-figure { margin: 0; }
   .course-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
@@ -4686,6 +4690,32 @@
     margin-bottom: 32px;
   }
 
+  /* Petite règle du dégradé, reprise à l'identique du fond — elle dit ce que
+     la couleur veut dire sans qu'on ait à l'écrire ailleurs. */
+  .course-echelle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.12em;
+    text-transform: none;
+    color: var(--ink-softer);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  .course-echelle-barre {
+    display: block;
+    width: 62px;
+    height: 7px;
+    border: 0.5px solid var(--rule-faint);
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      color-mix(in srgb, var(--amber) 30%, transparent) 45%,
+      color-mix(in srgb, var(--amber) 55%, transparent) 70%,
+      color-mix(in srgb, var(--red) 75%, transparent) 100%
+    );
+  }
+
   /* La réserve à gauche loge les graduations ; celle de droite est déjà
      ménagée DANS le viewBox (les lignes s'arrêtent à 84 %), pour que les
      étiquettes de bout de ligne tombent dans le cadre. */
@@ -4693,18 +4723,49 @@
     position: relative;
     padding-left: 34px;
   }
+
+  /* Échelle de décibels : le fond va du silence, en bas, à la saturation, en
+     haut — la hauteur d'une ligne se lit donc aussi comme un niveau sonore.
+     Rampe UNIQUEMENT chaude (--amber → --red), volontairement sans vert : dans
+     ce module, le vert dit déjà « ton positif » juste en dessous, dans la
+     légende. La même couleur pour deux idées se contredirait. Opacités très
+     basses : c'est une teinte imprimée sur du papier, pas un fond d'écran, et
+     les traits doivent rester lisibles par-dessus. */
+  .course-cadre::before {
+    content: '';
+    position: absolute;
+    left: 34px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to top,
+      transparent 0%,
+      color-mix(in srgb, var(--amber) 7%, transparent) 38%,
+      color-mix(in srgb, var(--amber) 15%, transparent) 68%,
+      color-mix(in srgb, var(--red) 22%, transparent) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .course-svg {
     display: block;
     width: 100%;
     aspect-ratio: 100 / 46;
     height: auto;
     overflow: visible;
+    /* Au-dessus du dégradé : un ::before absolu passerait sinon par-dessus le
+       contenu en flux. */
+    position: relative;
+    z-index: 1;
   }
   .course-grille { stroke: var(--rule-faint); stroke-width: 0.5px; }
   .course-axe    { stroke: var(--rule); stroke-width: 1px; }
 
   .course-y-label {
     position: absolute;
+    z-index: 2;
     left: 0;
     transform: translateY(-50%);
     font-family: 'IBM Plex Mono', monospace;
@@ -4719,6 +4780,7 @@
   .course-scrutin { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
   .course-scrutin-label {
     position: absolute;
+    z-index: 2;
     top: 0;
     transform: translate(-50%, -100%);
     display: flex;
@@ -4738,6 +4800,7 @@
 
   .course-point {
     position: absolute;
+    z-index: 2;
     width: 7px;
     height: 7px;
     border-radius: 50%;
@@ -4748,6 +4811,7 @@
 
   .course-bout {
     position: absolute;
+    z-index: 2;
     transform: translate(10px, -50%);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;

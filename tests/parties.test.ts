@@ -134,10 +134,12 @@ describe("buildChart — la course", () => {
     expect(leader.lastPct).toBe(40);
   });
 
-  it("axisTop : plancher à 20 % pour ne pas dramatiser une course serrée", () => {
-    expect(axisTop(4)).toBe(20);
-    expect(axisTop(35)).toBe(40);
-    expect(axisTop(40)).toBe(40);
+  it("axisTop : toujours 100 %, pour que le dégradé dise la même chose partout", () => {
+    // Un plafond qui suit le maximum observé ferait glisser le sens des
+    // couleurs d'un onglet à l'autre — 40 % ici, 50 % là, même bande rouge.
+    expect(axisTop(4)).toBe(100);
+    expect(axisTop(35)).toBe(100);
+    expect(axisTop(97)).toBe(100);
   });
 
   it("les lignes sont triées par part de voix décroissante", () => {

@@ -150,7 +150,13 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
 
   return (
     <figure className="course-figure">
-      <figcaption className="course-tete">{headLabel}</figcaption>
+      <figcaption className="course-tete">
+        {headLabel}
+        <span className="course-echelle" aria-hidden="true">
+          <i className="course-echelle-barre" />
+          du silence à la saturation
+        </span>
+      </figcaption>
 
       <div className="course-cadre">
         <svg
