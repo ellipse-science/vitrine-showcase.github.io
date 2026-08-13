@@ -77,7 +77,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
-      <Podium rows={view.rows} refLabel={view.refLabel} onPcqTap={handlePcqTap} />
+      <Console rows={view.rows} refLabel={view.refLabel} onPcqTap={handlePcqTap} />
 
       <section className="partis-course">
         <Course chart={data.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
@@ -91,12 +91,34 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 const RANGS = ["1er", "2e", "3e", "4e", "5e"];
 
 /**
- * Position visuelle d'une marche, pour que le vainqueur soit AU CENTRE.
+ * L'échelle des vumètres, en points de part de voix.
  *
- * Les rangs pairs vont à gauche en s'éloignant, les impairs à droite : avec
- * cinq partis, l'ordre lu est 4-2-1-3-5. Le HTML, lui, reste dans l'ordre du
- * classement (1er, 2e, 3e…) — c'est celui qu'énonce un lecteur d'écran, et
- * seul `order` déplace les blocs.
+ * FIXE, et non calée sur le meneur : sur une console, un niveau se lit dans
+ * l'absolu. Un vumètre auto-calibré mettrait toujours le premier canal à fond,
+ * et « dans le rouge » ne voudrait plus rien dire.
+ *
+ * 50 % est le fond d'échelle : à cinq partis, dominer la moitié de toute la
+ * couverture, c'est saturer. Les seuils de couleur ne sont pas décoratifs —
+ * 20 % est le PARTAGE ÉGAL entre cinq partis, donc la frontière entre un canal
+ * en dessous de sa part et un canal au-dessus.
+ */
+const METER_SEGMENTS = 20;
+const METER_FULL_SCALE = 50;
+const SEUIL_AMBRE = 20; // partage égal à cinq
+const SEUIL_ROUGE = 40;
+
+/** Zone d'un segment, d'après la part de voix qu'il représente. */
+function zoneSegment(i: number): "ink" | "amber" | "red" {
+  const pct = ((i + 1) / METER_SEGMENTS) * METER_FULL_SCALE;
+  if (pct > SEUIL_ROUGE) return "red";
+  if (pct > SEUIL_AMBRE) return "amber";
+  return "ink";
+}
+
+/**
+ * Position visuelle d'une tranche, pour que le canal le plus fort soit AU
+ * CENTRE : rangs pairs à gauche, impairs à droite, soit 4-2-1-3-5. Le HTML
+ * reste dans l'ordre du classement — c'est lui qu'énonce un lecteur d'écran.
  */
 function positionVisuelle(rang: number, total: number): number {
   if (rang === 1) return 0;
@@ -104,18 +126,21 @@ function positionVisuelle(rang: number, total: number): number {
 }
 
 /**
- * Le podium — la pièce maîtresse du module.
+ * La console — une tranche par parti, un vumètre par tranche.
  *
- * Il montre la MOYENNE de la période choisie (jour, semaine, ou toute la
- * fenêtre), pas la dernière valeur. Aucun pourcentage n'est écrit : la hauteur
- * des marches porte l'information, et deux chiffres différents entre le podium
- * et la courbe — qui montre le dernier jour — n'auraient pas pu s'expliquer.
+ * La couleur des segments dit le NIVEAU, jamais le parti : c'est ainsi que
+ * fonctionne une console, et c'est ce qui règle au passage la confusion entre
+ * les deux bleus de la CAQ et du PQ. L'identité du canal est portée par son
+ * étiquette, comme le ruban de couleur collé sur une tranche.
  *
- * Tous les partis y montent, SAUF ceux dans l'ombre médiatique (moins de 2 %
- * de part de voix), qui sont posés à part, en dessous : leur place n'est pas
- * une dernière marche, c'est le hors-jeu.
+ * Le trait qui flotte au-dessus des segments allumés est le PEAK HOLD : le
+ * sommet atteint sur la fenêtre, qui reste affiché longtemps après que le
+ * niveau soit redescendu.
+ *
+ * Un parti dans l'ombre médiatique est un CANAL COUPÉ — pas un dernier de
+ * classement. Il quitte la console et passe sous la barre des coupés.
  */
-function Podium({
+function Console({
   rows,
   refLabel,
   onPcqTap,
@@ -124,68 +149,67 @@ function Podium({
   refLabel: string;
   onPcqTap: () => void;
 }) {
-  const surPodium = rows.filter((r) => !r.inShadow);
-  const dansLOmbre = rows.filter((r) => r.inShadow);
-  const tete = surPodium[0];
+  const actifs = rows.filter((r) => !r.inShadow);
+  const coupes = rows.filter((r) => r.inShadow);
+  const tete = actifs[0];
 
   if (!tete || tete.sovPct <= 0) {
     return (
-      <p className="podium-vide">
-        Aucune couverture mesurée sur cette période — pas de classement à afficher.
+      <p className="console-vide">
+        Aucun signal sur cette période — tous les canaux sont silencieux.
       </p>
     );
   }
 
   return (
-    <section className="podium" aria-label="Classement de la couverture médiatique">
-      <p className="podium-chapo">{refLabel}</p>
+    <section className="console" aria-label="Niveaux de couverture médiatique par parti">
+      <div className="console-tete">
+        <span className="console-titre">Niveaux — {refLabel}</span>
+        <span className="console-echelle-legende">
+          <i className="zone ink" /> sous sa part
+          <i className="zone amber" /> au-dessus
+          <i className="zone red" /> saturation
+        </span>
+      </div>
 
-      <ol className="podium-marches" style={{ ["--n" as string]: surPodium.length }}>
-        {surPodium.map((row, i) => (
-          <li
-            key={row.key}
-            className={`podium-marche${i === 0 ? " tete" : ""}`}
-            style={{
-              ["--h" as string]: `${Math.max(9, (row.sovPct / tete.sovPct) * 100)}%`,
-              ["--ordre" as string]: positionVisuelle(i + 1, surPodium.length),
-              ["--party" as string]: row.color,
-            }}
-          >
-            <div className="podium-bloc">
-              <span
-                className="podium-parti"
-                onClick={row.key === "pcq" ? onPcqTap : undefined}
-                style={row.key === "pcq" ? { cursor: "pointer", userSelect: "none" } : undefined}
-                title={row.key === "pcq" ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
-              >
-                {row.label}
-              </span>
-            </div>
-            <span className="podium-rang">{RANGS[i]}</span>
-            <span
-              className={`tone-streak tone-streak--${row.toneDirection}`}
-              title={row.toneTitle}
-            >
-              {row.toneLabel}
-            </span>
-          </li>
-        ))}
-      </ol>
+      <div className="console-corps">
+        <ol className="console-tranches" style={{ ["--n" as string]: actifs.length }}>
+          {actifs.map((row, i) => (
+            <Tranche
+              key={row.key}
+              row={row}
+              rang={i + 1}
+              total={actifs.length}
+              onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
+            />
+          ))}
+        </ol>
+
+        {/* Graduations, à droite comme sur une tranche de console. */}
+        <ul className="console-graduations" aria-hidden="true">
+          {[50, 40, 30, 20, 10, 0].map((v) => (
+            <li key={v} style={{ ["--v" as string]: v / METER_FULL_SCALE }}>
+              {v === SEUIL_AMBRE ? <b>{v} %</b> : `${v} %`}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <VictoireDouteuse tete={tete} />
 
-      {dansLOmbre.length > 0 && (
-        <p className="podium-ombre">
-          <span className="podium-ombre-label">
-            Dans l&apos;ombre médiatique
+      {coupes.length > 0 && (
+        <p className="console-coupes">
+          <span className="console-coupes-label">
+            Canaux coupés
             <InfoTip size="sm" label="Ombre médiatique">
-              Moins de 2&nbsp;% de la part de voix sur la période. Trop peu pour qu&apos;on puisse
-              parler d&apos;une présence médiatique — ces partis ne montent donc pas sur le podium.
+              Moins de 2&nbsp;% de la part de voix sur la période — trop peu pour qu&apos;on puisse
+              parler d&apos;une présence. Ces partis sortent de la console : leur signal n&apos;est
+              pas faible, il est inaudible.
             </InfoTip>
           </span>
-          {dansLOmbre.map((row) => (
-            <span key={row.key} className="podium-ombre-item">
-              <i className="podium-puce" style={{ background: row.color }} aria-hidden="true" />
+          {coupes.map((row) => (
+            <span key={row.key} className="console-coupe-item">
+              <i className="console-ruban" style={{ background: row.color }} aria-hidden="true" />
               <span
                 onClick={row.key === "pcq" ? onPcqTap : undefined}
                 style={row.key === "pcq" ? { cursor: "pointer", userSelect: "none" } : undefined}
@@ -201,26 +225,84 @@ function Podium({
   );
 }
 
+/** Une tranche : vumètre segmenté, peak hold, ruban d'identité, ton. */
+function Tranche({
+  row,
+  rang,
+  total,
+  onPcqTap,
+}: {
+  row: RowView;
+  rang: number;
+  total: number;
+  onPcqTap?: () => void;
+}) {
+  const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
+  const allumes = Math.max(1, Math.round(niveau * METER_SEGMENTS));
+  const peak = Math.min(1, row.peakPct / METER_FULL_SCALE);
+
+  return (
+    <li
+      className={`console-tranche${rang === 1 ? " tete" : ""}`}
+      style={{ ["--ordre" as string]: positionVisuelle(rang, total) }}
+    >
+      <div
+        className="console-vumetre"
+        title={`${row.label} — ${row.sovPct} % de la part de voix (sommet : ${row.peakPct} %)`}
+      >
+        {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
+        {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
+          <i
+            key={idx}
+            className={`seg ${zoneSegment(idx)}${idx < allumes ? " on" : ""}`}
+            aria-hidden="true"
+          />
+        ))}
+        {row.peakPct > 0 && (
+          <span
+            className="console-peak"
+            style={{ bottom: `${peak * 100}%` }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+
+      <span className="console-ruban-nom" style={{ ["--party" as string]: row.color }}>
+        <span
+          onClick={onPcqTap}
+          style={onPcqTap ? { cursor: "pointer", userSelect: "none" } : undefined}
+          title={onPcqTap ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
+        >
+          {row.label}
+        </span>
+      </span>
+      <span className="console-rang">{RANGS[rang - 1]}</span>
+      <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
+        {row.toneLabel}
+      </span>
+    </li>
+  );
+}
+
 /**
- * Le vainqueur a-t-il vraiment gagné ?
+ * Le canal le plus fort est-il vraiment le meilleur ?
  *
- * Quand le parti le plus couvert l'est en mal, la première marche devient
- * ambiguë. On ne tranche pas — personne ne peut trancher — mais on pose la
- * question, parce que la taire ferait lire le podium comme un palmarès.
+ * Quand le parti le plus couvert l'est en mal, on pose la question sans la
+ * trancher : la console mesure un niveau, pas une qualité de son.
  */
 function VictoireDouteuse({ tete }: { tete: RowView }) {
   if (tete.toneDirection !== "negative") return null;
   return (
-    <p className="podium-doute">
-      <span className="podium-doute-marque" aria-hidden="true">
+    <p className="console-doute">
+      <span className="console-doute-marque" aria-hidden="true">
         ?
       </span>
       <span>
         <b>{tete.label}</b>{" "}
-        occupe le plus de place — mais on en parle en mal. Première marche, ou mauvaise
-        passe&nbsp;?
-        <InfoTip size="sm" label="Gagner ou perdre ?">
-          Le podium classe le VOLUME de couverture, pas sa faveur. Un parti peut dominer parce
+        pousse le niveau le plus haut — mais on en parle en mal. Le canal le plus fort n&apos;est
+        pas forcément le mieux joué.
+        <InfoTip size="sm" label="Fort ne veut pas dire bon">
+          La console mesure un VOLUME de couverture, pas sa faveur. Un parti peut saturer parce
           qu&apos;on le critique. L&apos;adage veut qu&apos;il n&apos;y ait pas de mauvaise
           publicité — cette page ne prétend pas savoir s&apos;il a raison.
         </InfoTip>

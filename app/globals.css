@@ -4667,91 +4667,138 @@
     vertical-align: middle;
   }
 
-  /* ── Le podium : la pièce maîtresse du module ───────────────────────────
-     Centré, et volontairement le plus grand objet de la section — la course,
-     en dessous, est secondaire. Les marches sont dans l'ordre du classement
-     dans le HTML (ce qu'énonce un lecteur d'écran) et repositionnées par
-     `order` pour que le vainqueur soit AU CENTRE : 4-2-1-3-5. */
-  .podium { margin-top: 30px; --socle: 250px; }
-
-  .podium-chapo {
-    margin: 0 0 22px;
-    text-align: center;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-    font-weight: 500;
+  /* ── La console : une tranche par parti, un vumètre par tranche ─────────
+     La couleur des SEGMENTS dit le niveau, jamais le parti — c'est ainsi que
+     fonctionne une console, et c'est ce qui empêche les deux bleus (CAQ, PQ)
+     de se confondre : ils ne sont plus distingués par la couleur du tout.
+     L'identité du canal tient à son ruban, comme l'adhésif de couleur collé
+     sur une tranche de mixeur.
+     Rendu à l'encre : des segments, c'est du plein et du vide — la chose la
+     plus imprimable qui soit, et parfaitement dans la grammaire du papier. */
+  .console {
+    margin-top: 30px;
+    --piste: 250px;   /* hauteur du vumètre */
+    --seg-gap: 3px;
   }
 
-  .podium-marches {
-    list-style: none;
+  .console-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 760px;
+    margin: 0 auto 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .console-titre { color: var(--ink); }
+  .console-echelle-legende {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.12em;
+    text-transform: none;
+    color: var(--ink-softer);
+    font-weight: 400;
+  }
+  .console-echelle-legende .zone {
+    width: 11px;
+    height: 7px;
+    margin-left: 8px;
+  }
+  .console-echelle-legende .zone:first-child { margin-left: 0; }
+  .zone.ink   { background: var(--ink); }
+  .zone.amber { background: var(--amber); }
+  .zone.red   { background: var(--red); }
+
+  /* La console et ses graduations, côte à côte. */
+  .console-corps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 14px;
+    max-width: 820px;
     margin: 0 auto;
+  }
+
+  .console-tranches {
+    list-style: none;
+    margin: 0;
     padding: 0;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 14px;
-    max-width: 760px;
-    position: relative;
-  }
-  /* Le sol du podium — sans lui, les blocs flottent au-dessus du vide. Il court
-     un peu au-delà des marches, comme une estrade. */
-  .podium-marches::after {
-    content: '';
-    position: absolute;
-    left: -14px;
-    right: -14px;
-    /* Posé au BAS de la rangée des blocs, dont la hauteur est fixée à 250px
-       (--socle). Toutes les marches ont la même hauteur totale et sont alignées
-       par le bas, donc leurs sommets coïncident : mesurer depuis le haut est
-       fiable, là où un calcul en hauteurs de ligne ne l'était pas. */
-    top: var(--socle);
-    border-bottom: 1px solid var(--ink);
-    pointer-events: none;
+    gap: 16px;
+    /* Largeur au CONTENU : réserver une largeur fixe laisserait les
+       graduations flotter loin des vumètres qu'elles annoncent. */
+    flex: 0 0 auto;
   }
 
-  .podium-marche {
+  .console-tranche {
     order: var(--ordre);
     flex: 1 1 0;
     min-width: 0;
-    max-width: 132px;
+    max-width: 104px;
     display: grid;
-    /* Rangée haute DÉFINIE : sans hauteur définie, le `height: var(--h)` du
-       bloc n'a rien à quoi se rapporter et toutes les marches sortent égales. */
-    grid-template-rows: var(--socle) auto auto;
+    grid-template-rows: var(--piste) auto auto auto;
     align-items: end;
     justify-items: center;
     row-gap: 9px;
   }
-  /* La première marche est plus large, en plus d'être plus haute : le regard
-     doit y aller sans avoir à comparer des hauteurs. */
-  .podium-marche.tete { max-width: 158px; }
+  .console-tranche.tete { max-width: 124px; }
 
-  .podium-bloc {
+  /* Le vumètre : une pile de segments, du bas vers le haut. */
+  .console-vumetre {
+    position: relative;
     width: 100%;
-    height: var(--h);
-    min-height: 46px;
-    background: var(--party);
+    height: var(--piste);
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 13px;
+    flex-direction: column;
+    gap: var(--seg-gap);
+    padding: 0;
   }
-  .podium-marche.tete .podium-bloc { padding-top: 16px; }
+  .console-vumetre .seg {
+    flex: 1 1 0;
+    min-height: 3px;
+    /* Éteint : le segment existe, mais il ne s'allume pas. C'est ce contraste
+       plein/vide qui fait lire l'échelle, pas seulement la hauteur. */
+    background: var(--rule-faint);
+  }
+  .console-vumetre .seg.on.ink   { background: var(--ink); }
+  .console-vumetre .seg.on.amber { background: var(--amber); }
+  .console-vumetre .seg.on.red   { background: var(--red); }
 
-  .podium-parti {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
+  /* Peak hold : le sommet atteint sur la fenêtre, qui reste affiché longtemps
+     après que le niveau soit redescendu. */
+  .console-peak {
+    position: absolute;
+    left: -3px;
+    right: -3px;
+    height: 2px;
+    background: var(--cordovan);
+    pointer-events: none;
+  }
+
+  /* Le ruban d'identité — l'adhésif de couleur d'une tranche de mixeur. */
+  .console-ruban-nom {
+    width: 100%;
+    background: var(--party);
     color: var(--paper);
+    text-align: center;
+    padding: 5px 4px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     line-height: 1;
   }
-  .podium-marche.tete .podium-parti { font-size: 26px; }
+  .console-tranche.tete .console-ruban-nom { font-size: 19px; padding: 7px 4px; }
 
-  .podium-rang {
+  .console-rang {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
@@ -4759,24 +4806,49 @@
     color: var(--ink-soft);
     font-weight: 500;
   }
-  .podium-marche.tete .podium-rang { color: var(--ink); }
+  .console-tranche.tete .console-rang { color: var(--ink); }
 
-  /* Le doute sur la victoire — cordovan, l'accent unique du site. */
-  .podium-doute {
+  /* Graduations : posées en absolu sur la hauteur du vumètre, pour tomber
+     exactement en face du niveau qu'elles annoncent. */
+  .console-graduations {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: 44px;
+    height: var(--piste);
+    flex: none;
+  }
+  .console-graduations li {
+    position: absolute;
+    left: 0;
+    bottom: calc(var(--v) * 100%);
+    transform: translateY(50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+  /* Le partage égal à cinq — la seule graduation qui veut dire quelque chose
+     en soi, donc la seule appuyée. */
+  .console-graduations b { color: var(--ink); font-weight: 500; }
+
+  .console-doute {
     display: flex;
     align-items: flex-start;
     justify-content: center;
     gap: 10px;
     max-width: 620px;
-    margin: 26px auto 0;
+    margin: 28px auto 0;
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 15px;
     line-height: 1.5;
     color: var(--ink-soft);
     text-align: left;
   }
-  .podium-doute b { color: var(--ink); font-weight: 700; }
-  .podium-doute-marque {
+  .console-doute b { color: var(--ink); font-weight: 700; }
+  .console-doute-marque {
     flex: none;
     width: 26px;
     height: 26px;
@@ -4792,9 +4864,9 @@
     line-height: 1;
   }
 
-  /* L'ombre médiatique n'est pas une dernière marche : c'est le hors-jeu.
-     D'où le filet, l'écart, et l'absence de bloc. */
-  .podium-ombre {
+  /* Canaux coupés : hors console, sous un filet. Leur signal n'est pas
+     faible, il est absent. */
+  .console-coupes {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -4808,17 +4880,17 @@
     font-size: 16px;
     color: var(--ink-softer);
   }
-  .podium-ombre-label {
+  .console-coupes-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
   }
-  .podium-ombre-item { display: inline-flex; align-items: center; gap: 7px; opacity: 0.72; }
-  .podium-puce { width: 9px; height: 9px; flex: none; }
+  .console-coupe-item { display: inline-flex; align-items: center; gap: 7px; opacity: 0.72; }
+  .console-ruban { width: 9px; height: 9px; flex: none; }
 
-  .podium-vide {
+  .console-vide {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--ink-softer);
@@ -5066,11 +5138,12 @@
   @media (max-width: 768px) {
     /* Le podium se resserre : marches moins hautes, typographie réduite —
        trois colonnes doivent tenir dans ~340 px de contenu. */
-    .podium { --socle: 150px; }
-    .podium-parti { font-size: 15px; }
-    .podium-pct { font-size: 13px; }
-    .podium-bloc { padding: 7px 4px 0; }
-    .podium-reste { font-size: 14px; gap: 6px 12px; }
+    .console { --piste: 168px; --seg-gap: 2px; }
+    .console-tranches { gap: 9px; }
+    .console-ruban-nom { font-size: 13px; }
+    .console-tranche.tete .console-ruban-nom { font-size: 15px; }
+    .console-corps { gap: 8px; }
+    .console-graduations { width: 34px; }
 
     /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
        de haut deviennent illisibles quand la largeur tombe sous ~400 px. */

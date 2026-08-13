@@ -137,6 +137,11 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** Sommet atteint sur la fenêtre suivie, et le jour où il l'a été.
+   *  C'est le « peak hold » de la console : le trait qui reste au niveau le
+   *  plus haut atteint, longtemps après que le son soit redescendu. */
+  peakPct: number;
+  peakDate: string;
   sparkPolyline: string;
   sparkCircles: { cx: number; cy: number; r: number }[];
 };
@@ -510,7 +515,7 @@ function buildChart(stats: Stat[], dates: SeriesDates): ChartView {
   };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey, _dates: SeriesDates): RangeView {
+function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
 
@@ -556,10 +561,15 @@ function buildRangeView(stats: Stat[], range: RangeKey, _dates: SeriesDates): Ra
       r: i === sampled.length - 1 ? 3.5 : 2.5,
     }));
 
+    const dailyHist = stat.history.daily;
+    const peakIdx = dailyHist.reduce((best, v, i) => (v > dailyHist[best] ? i : best), 0);
+
     return {
       key: stat.key,
       label: PARTY_LABELS[stat.key],
       inShadow: sov < SHADOW_THRESHOLD,
+      peakPct: Math.round((dailyHist[peakIdx] ?? 0) * 100),
+      peakDate: dates.daily[peakIdx] ?? "",
       color: PARTY_COLORS[stat.key],
       sovPct,
       barWidthPct: Number(barWidthPct.toFixed(1)),
