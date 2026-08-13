@@ -1,10 +1,10 @@
 {
-  "event_id": "20260812T110000Z-evt-allegations-racisme-nord-soraya-martinez-19f2c889",
-  "storyline_id": "story-spvm-0751f85d",
-  "title": "Allégations de racisme: Soraya Martinez Ferrada prône le dialogue",
-  "main_issue": "rights_liberties_minorities_discrimination",
-  "date_utc": "2026-08-12",
+  "event_id": "20260813T110000Z-evt-medecins-offrent-surtout-plages-horaires-5c3772cf",
+  "storyline_id": "story-doctors-3f31061d",
+  "title": "Les médecins de famille privilégient les horaires en semaine avant 15 h",
+  "main_issue": "health_and_social_services",
+  "date_utc": "2026-08-13",
   "time_interval_utc": "11-15",
-  "sum_qc": 68.87,
-  "peak_qc": 57.1
+  "sum_qc": 44.669,
+  "peak_qc": 19.53
 }

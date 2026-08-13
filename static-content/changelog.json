@@ -1,5 +1,17 @@
 [
   {
+    "pr": 466,
+    "date": "2026-08-13T17:20:00Z",
+    "note": "La page Méthodologie respecte maintenant les règles typographiques du site, et une vérification automatique s'applique désormais à toutes les pages publiques.",
+    "version": null
+  },
+  {
+    "pr": 469,
+    "date": "2026-08-13T15:34:40Z",
+    "note": "Amélioration interne de la façon dont l'équipe décrit ses changements avant de les mettre en ligne. Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 461,
     "date": "2026-08-12T21:30:05Z",
     "note": "Les niveaux de saillance affichés sous les manchettes reposent désormais sur une nouvelle mesure, qui tient compte à la fois du nombre de médias ayant fait de l'histoire leur Une, du nombre d'articles qu'ils y consacrent et du temps passé en Une. Une nouvelle doit exister sur ces trois plans à la fois pour monter : un seul média, aussi insistant soit-il, ne suffit plus. La page Méthodologie…",
@@ -276,18 +288,6 @@
     "version": "2.15.0-beta.10"
   },
   {
-    "pr": 358,
-    "date": "2026-07-28T17:45:15Z",
-    "note": "feat(doom): ajouter la barre de sélection des 36 niveaux et corriger la hauteur du conteneur",
-    "version": null
-  },
-  {
-    "pr": 357,
-    "date": "2026-07-28T16:19:36Z",
-    "note": "feat(doom): intégrer l'Easter Egg DOOM PCQ « Knee-Deep in the Media » sans bordures noires",
-    "version": null
-  },
-  {
     "pr": 356,
     "date": "2026-07-28T15:56:56Z",
     "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
@@ -368,7 +368,7 @@
   {
     "pr": 350,
     "date": "2026-07-28T00:49:41Z",
-    "note": "fix(flappy): réinitialiser le classement global Upstash Redis et supprimer les entrées de test",
+    "note": "Le classement du jeu caché a été remis à zéro à la fin de sa phase d’essai.",
     "version": null
   },
   {
@@ -956,7 +956,7 @@
   {
     "pr": 167,
     "date": "2026-06-26T17:14:34Z",
-    "note": "Renforcement de la sécurité du formulaire de signalement : un jeton exposé a été remplacé par un relais sécurisé.",
+    "note": "Renforcement de la sécurité du formulaire de signalement.",
     "version": null
   },
   {
