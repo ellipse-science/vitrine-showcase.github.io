@@ -108,6 +108,32 @@ const REGLES = [
   },
 ];
 
+// Les noms de projets ne prennent JAMAIS l'italique (guide Notion, entrée « Les
+// projets de la CLESSN » : « Ne jamais mettre les projets en italique »).
+//
+// Cette règle ne peut PAS se juger sur un span de texte, contrairement à toutes
+// les autres : l'italique est porté par le BALISAGE, que l'extraction de spans
+// retire justement. Elle a donc sa propre passe, sur la source.
+//
+// ⚠️ Conflit connu avec une autre règle du même guide : l'entrée « Citations et
+// bibliographie » impose le style APA, qui met le titre de l'œuvre en italique.
+// Une référence bibliographique correcte déclenche donc cette règle à tort —
+// d'où la dérogation `garde-redaction: ok (…)` posée sur la citation de la page
+// Méthodologie. Si le cas se répand, c'est le guide qu'il faut trancher.
+const PROJETS = [
+  "La Vitrine démocratique",
+  "Vitrine démocratique",
+  "Projet Quorum",
+  "Datagotchi",
+  "Déméter",
+  "Radar\\+",
+  "Civimètre\\+",
+  "Agora\\+",
+  "Polimètre",
+  "Global-ES",
+];
+const PROJET_ITALIQUE = new RegExp(`<(em|i)\\b[^>]*>[^<]*(?:${PROJETS.join("|")})[^<]*</\\1>`, "giu");
+
 // ── Extraction du texte que nous écrivons ────────────────────────────────────
 
 /** Retire les commentaires. Ce qui est dans un commentaire n'est pas affiché,
@@ -242,6 +268,23 @@ function analyse(chemin) {
       });
     }
   }
+
+  // Passe HORS SPAN — voir PROJET_ITALIQUE : l'italique vit dans le balisage,
+  // que `spansDeTexte` a retiré. Aucune règle par span ne peut le voir.
+  for (const m of nettoye.matchAll(PROJET_ITALIQUE)) {
+    const numero = ligneDe(nettoye, m.index);
+    if (estDerogee(lignes, numero)) continue;
+    trouvailles.push({
+      fichier: relative(RACINE, chemin),
+      ligne: numero,
+      code: "projet-italique",
+      quoi: "nom de projet en italique",
+      exemple:
+        "les projets ne prennent jamais l'italique (guide Notion). Exception : une référence bibliographique en style APA — dans ce cas, poser « garde-redaction: ok (citation APA) ».",
+      extrait: m[0].trim().slice(0, 100),
+    });
+  }
+
   return trouvailles;
 }
 
