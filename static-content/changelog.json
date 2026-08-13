@@ -1,5 +1,11 @@
 [
   {
+    "pr": 466,
+    "date": "2026-08-13T17:20:00Z",
+    "note": "La page Méthodologie respecte maintenant les règles typographiques du site, et une vérification automatique s'applique désormais à toutes les pages publiques.",
+    "version": null
+  },
+  {
     "pr": 469,
     "date": "2026-08-13T15:34:40Z",
     "note": "Amélioration interne de la façon dont l'équipe décrit ses changements avant de les mettre en ligne. Rien ne change sur le site.",
