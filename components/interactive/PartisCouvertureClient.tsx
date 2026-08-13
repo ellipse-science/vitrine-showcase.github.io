@@ -10,6 +10,16 @@ import { DoomGame } from "@/components/interactive/DoomGame";
 
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
+/** Article défini de chaque parti — « LA CAQ », « LE PQ », mais « Québec
+ *  solidaire » n'en prend pas. Sans ça la manchette écrit « CAQ occupe… ». */
+const ARTICLE: Record<string, string> = {
+  caq: "La ",
+  pq: "Le ",
+  plq: "Le ",
+  pcq: "Le ",
+  qs: "",
+};
+
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   if (!leader || leader.sovPct === 0 || leader.inShadow) {
@@ -93,6 +103,12 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
+      <Manchette
+        rows={view.rows}
+        reference={data.ranges[range].rows}
+        mediaLabel={media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null)}
+      />
+
       <div className="regie">
         <Platine
           cote="A"
@@ -175,10 +191,14 @@ const SEUIL_ROUGE = 1.3;
  * exactement là où le canal dépasse ce que ce parti obtient d'habitude.
  */
 function zoneSegment(i: number, moyennePct: number): "green" | "amber" | "red" {
-  const pct = ((i + 1) / METER_SEGMENTS) * METER_FULL_SCALE;
+  // On compare la BASE du segment, pas son sommet. Avec le sommet, le segment
+  // le plus haut d'un canal exactement à sa moyenne dépassait celle-ci par le
+  // seul effet de l'arrondi du nombre de segments allumés, et virait à l'ambre
+  // — ce qui cassait la propriété « tout est vert sur tous les médias ».
+  const base = (i / METER_SEGMENTS) * METER_FULL_SCALE;
   if (moyennePct <= 0) return "green"; // pas de moyenne ⇒ rien à dépasser
-  if (pct > moyennePct * SEUIL_ROUGE) return "red";
-  if (pct > moyennePct) return "amber";
+  if (base >= moyennePct * SEUIL_ROUGE) return "red";
+  if (base >= moyennePct) return "amber";
   return "green";
 }
 
@@ -273,8 +293,6 @@ function Console({
         </ul>
       </div>
 
-      <VictoireDouteuse tete={tete} />
-
       {coupes.length > 0 && (
         <p className="console-coupes">
           <span className="console-coupes-label">
@@ -300,6 +318,77 @@ function Console({
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * La manchette — ce qu'on doit comprendre sans effort, avant tout le reste.
+ *
+ * Le module est un instrument : on y lit des hauteurs, on les compare, on
+ * remarque une position centrale. C'est riche, mais ça demande un travail. La
+ * manchette dit la réponse en une phrase, et l'instrument la prouve — c'est
+ * l'ordre d'un journal, pas celui d'un tableau de bord.
+ *
+ * Elle se réécrit quand le fader bouge : filtrée sur un média, elle nomme ce
+ * média et l'écart à la moyenne, parce que c'est LÀ que se trouve l'information
+ * que ce média-là apporte.
+ *
+ * Elle absorbe aussi le doute sur la victoire : une seule phrase éditoriale
+ * plutôt que deux blocs de prose qui se disputent l'attention.
+ */
+function Manchette({
+  rows,
+  reference,
+  mediaLabel,
+}: {
+  rows: RowView[];
+  reference: RowView[];
+  mediaLabel: string | null;
+}) {
+  const tete = rows.filter((r) => !r.inShadow)[0];
+  if (!tete || tete.sovPct <= 0) return null;
+
+  const moyenne = reference.find((r) => r.key === tete.key)?.sovPct ?? 0;
+  const ratio = moyenne > 0 ? tete.sovPct / moyenne : 1;
+  const ecart = Math.round((ratio - 1) * 100);
+
+  return (
+    <p className="manchette">
+      {mediaLabel ? <>Chez <b>{mediaLabel}</b>, {ARTICLE[tete.key]?.toLowerCase() ?? ""}</> : ARTICLE[tete.key]}
+      <b className="manchette-parti">{tete.label}</b> occupe{" "}
+      <b className="manchette-chiffre">{tete.sovPct}&nbsp;%</b> de la couverture
+      {mediaLabel && Math.abs(ecart) >= 10 && (
+        <>
+          {" "}—{" "}
+          {/* Mêmes seuils que les segments : la manchette ne peut pas annoncer
+              en rouge un écart que le vumètre montre en ambre. */}
+          <span
+            className={
+              ecart <= 0
+                ? "manchette-sous"
+                : ratio > SEUIL_ROUGE
+                  ? "manchette-sur-fort"
+                  : "manchette-sur"
+            }
+          >
+            {ecart > 0 ? `${ecart} % de plus` : `${Math.abs(ecart)} % de moins`}
+          </span>{" "}
+          que sa moyenne
+        </>
+      )}
+      .
+      {tete.toneDirection === "negative" && (
+        <>
+          {" "}Et on en parle surtout en mal
+          <InfoTip size="sm" label="Fort ne veut pas dire bon">
+            Ce module mesure un VOLUME de couverture, pas sa faveur. Un parti peut dominer parce
+            qu&apos;on le critique. L&apos;adage veut qu&apos;il n&apos;y ait pas de mauvaise
+            publicité — cette page ne prétend pas savoir s&apos;il a raison.
+          </InfoTip>
+          .
+        </>
+      )}
+    </p>
   );
 }
 
@@ -475,32 +564,6 @@ function Tranche({
   );
 }
 
-/**
- * Le canal le plus fort est-il vraiment le meilleur ?
- *
- * Quand le parti le plus couvert l'est en mal, on pose la question sans la
- * trancher : la console mesure un niveau, pas une qualité de son.
- */
-function VictoireDouteuse({ tete }: { tete: RowView }) {
-  if (tete.toneDirection !== "negative") return null;
-  return (
-    <p className="console-doute">
-      <span className="console-doute-marque" aria-hidden="true">
-        ?
-      </span>
-      <span>
-        <b>{tete.label}</b>{" "}
-        pousse le niveau le plus haut — mais on en parle en mal. Le canal le plus fort n&apos;est
-        pas forcément le mieux joué.
-        <InfoTip size="sm" label="Fort ne veut pas dire bon">
-          La console mesure un VOLUME de couverture, pas sa faveur. Un parti peut saturer parce
-          qu&apos;on le critique. L&apos;adage veut qu&apos;il n&apos;y ait pas de mauvaise
-          publicité — cette page ne prétend pas savoir s&apos;il a raison.
-        </InfoTip>
-      </span>
-    </p>
-  );
-}
 
 /**
  * Le fader — choisir la source qu'on écoute.

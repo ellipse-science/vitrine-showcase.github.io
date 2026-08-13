@@ -4675,6 +4675,36 @@
      sur une tranche de mixeur.
      Rendu à l'encre : des segments, c'est du plein et du vide — la chose la
      plus imprimable qui soit, et parfaitement dans la grammaire du papier. */
+  /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
+     module après son titre, centré, avec de l'air autour — c'est elle qui
+     porte la réponse, l'instrument ne fait que la prouver. */
+  .manchette {
+    max-width: 700px;
+    margin: 30px auto 0;
+    text-align: center;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 27px;
+    line-height: 1.35;
+    color: var(--ink-soft);
+    text-wrap: balance;
+  }
+  .manchette b { font-weight: 400; color: var(--ink); }
+  .manchette-parti {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+  }
+  .manchette-chiffre {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700 !important;
+    white-space: nowrap;
+  }
+  /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
+     bien au-dessus. */
+  .manchette-sur      { color: var(--amber); }
+  .manchette-sur-fort { color: var(--red); }
+  .manchette-sous     { color: var(--green); }
+
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console
      peut donc s'élargir. */
@@ -4683,7 +4713,7 @@
     grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
     align-items: start;
     gap: 26px;
-    margin-top: 30px;
+    margin-top: 26px;
   }
 
   .platine {
@@ -4812,7 +4842,7 @@
   .platine-donnees dd.bas  { color: var(--green); }
 
   .console {
-    margin-top: 0;
+    margin-top: 4px;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
     --gradu: 44px;    /* largeur de la colonne de graduations */
@@ -4821,19 +4851,19 @@
 
   .console-tete {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: baseline;
-    gap: 20px;
+    gap: 18px;
     flex-wrap: wrap;
     max-width: 760px;
-    margin: 0 auto 20px;
+    margin: 0 auto 22px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
   }
-  .console-titre { color: var(--ink); }
+  .console-titre { color: var(--ink-softer); font-weight: 400; }
   .console-echelle-legende {
     display: inline-flex;
     align-items: center;
@@ -5396,6 +5426,7 @@
     .console-tranches { gap: 9px; }
     .console-ruban-nom { font-size: 13px; }
     .console-tranche.tete .console-ruban-nom { font-size: 15px; }
+    .manchette { font-size: 21px; }
     .console { --gradu: 34px; --gradu-gap: 8px; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
     .platine { padding-top: 0; }

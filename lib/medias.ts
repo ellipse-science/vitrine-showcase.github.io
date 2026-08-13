@@ -18,7 +18,7 @@ export const MEDIA_LABELS: Record<string, string> = {
   RCI: "Radio-Canada",
   LAP: "La Presse",
   LED: "Le Devoir",
-  JDM: "Journal de Montréal",
+  JDM: "Le Journal de Montréal",
   TVA: "TVA Nouvelles",
   MG: "Montreal Gazette",
   // Canada et États-Unis — présents au corpus, hors sujet ici

@@ -44,7 +44,7 @@ const MEDIAS = {
   RCI: { label: "Radio-Canada",        penchant: { CAQ: 0.9,  PQ: 1.15, PLQ: 1.0,  QS: 1.2,  PCQ: 0.6 } },
   LAP: { label: "La Presse",           penchant: { CAQ: 0.95, PQ: 1.1,  PLQ: 1.05, QS: 1.1,  PCQ: 0.7 } },
   LED: { label: "Le Devoir",           penchant: { CAQ: 0.85, PQ: 1.2,  PLQ: 0.95, QS: 1.35, PCQ: 0.5 } },
-  JDM: { label: "Journal de Montréal", penchant: { CAQ: 1.25, PQ: 0.95, PLQ: 0.85, QS: 0.7,  PCQ: 1.6 } },
+  JDM: { label: "Le Journal de Montréal", penchant: { CAQ: 1.25, PQ: 0.95, PLQ: 0.85, QS: 0.7,  PCQ: 1.6 } },
   TVA: { label: "TVA Nouvelles",       penchant: { CAQ: 1.2,  PQ: 0.9,  PLQ: 0.95, QS: 0.75, PCQ: 1.4 } },
   MG:  { label: "Montreal Gazette",    penchant: { CAQ: 1.05, PQ: 0.7,  PLQ: 1.45, QS: 0.8,  PCQ: 0.9 } },
 };
