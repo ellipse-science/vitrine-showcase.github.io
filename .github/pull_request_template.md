@@ -1,6 +1,57 @@
-<!-- Décrivez le quoi et le pourquoi. Liez les issues (closes #…). -->
+<!--
+LONGUEUR : cette PR doit tenir dans un écran. Le détail — mesures, tableaux,
+récit de l'enquête — va dans l'issue liée, pas ici. Une PR qu'on n'a pas le
+courage de lire finit approuvée sans être lue, et c'est déjà arrivé.
+-->
 
-## Quoi
+## Description
+
+<!--
+3 à 5 puces, une phrase chacune : ce qui change, et pourquoi. Liez l'issue (closes #…).
+Exemple : « - La page Méthodologie passe sous la garde typographique. »
+-->
+
+## Type de changement
+
+- [ ] Nouvelle fonctionnalité
+- [ ] Correctif
+- [ ] Refactorisation
+- [ ] Documentation
+- [ ] Outillage (CI, scripts, gardes)
+
+## Surface touchée
+
+<!--
+Ce qu'un relecteur doit voir sans ouvrir le diff. GitHub liste déjà les
+fichiers : ce qui manque, ce sont les MODULES, les TABLES et les RAFFINEURS,
+qui ne se déduisent pas du diff. Laissez vide ce qui ne s'applique pas.
+-->
+
+- **Modules / pages** :
+- **Données (tables, colonnes, raffineurs)** :
+- **Outillage (CI, scripts, gardes)** :
+
+## Dépendances
+
+<!--
+Cochez UNE case. « Aucune » est une information utile, pas une case à sauter :
+c'est elle qui dit au relecteur qu'il peut merger sans rien vérifier d'autre.
+-->
+
+- [ ] Aucune — cette PR se merge seule
+- [ ] Dépend de #… — à merger après **son merge**
+- [ ] Dépend de #… — à merger après **son DÉPLOIEMENT** (une métho ne décrit pas du futur)
+
+## Tests effectués
+
+<!-- Des faits, pas un récit. Exemple : « - Page Méthodologie : 50 violations → 0. » -->
+
+**Non exécuté :**
+
+<!--
+Ce qui n'a pas tourné, et pourquoi. C'est l'information qui manque le plus
+souvent au relecteur. Écrivez « rien, tout est passé » si c'est le cas.
+-->
 
 ## Note de journal
 

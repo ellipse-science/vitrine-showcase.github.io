@@ -1,10 +1,10 @@
 {
-  "event_id": "20260810T230000Z-evt-jury-new-yorkais-declare-lundi-12b27f47",
-  "storyline_id": "story-luciano-frattolin-7127da04",
-  "title": "Luciano Frattolin reconnu coupable du meurtre de sa fille à New York",
-  "main_issue": "law_and_crime",
-  "date_utc": "2026-08-10",
-  "time_interval_utc": "23-03",
-  "sum_qc": 56.814,
-  "peak_qc": 88.688
+  "event_id": "20260813T110000Z-evt-medecins-offrent-surtout-plages-horaires-5c3772cf",
+  "storyline_id": "story-doctors-3f31061d",
+  "title": "Les médecins de famille privilégient les horaires en semaine avant 15 h",
+  "main_issue": "health_and_social_services",
+  "date_utc": "2026-08-13",
+  "time_interval_utc": "11-15",
+  "sum_qc": 44.669,
+  "peak_qc": 19.53
 }

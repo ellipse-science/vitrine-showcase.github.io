@@ -8,9 +8,11 @@
 // existe pour que la prochaine PR ne puisse plus en réintroduire.
 //
 // CE QU'ELLE LIT : le texte que NOUS écrivons — littéraux de chaîne et nœuds de
-// texte JSX de `app/`, `components/`, `lib/`, plus le HTML de `static-content/`.
-// Pas le rendu (`out/`), qui contient les manchettes des médias : celles-là ne
-// sont pas de notre plume et se normalisent au rendu, pas à la source.
+// texte JSX de `app/`, `components/`, `lib/`, plus le HTML de `static-content/`
+// et de `public/` (page Méthodologie et docs vivantes du pipeline, que la règle
+// dure #6 interdit de laisser périmer). Pas le rendu (`out/`), qui contient les
+// manchettes des médias : celles-là ne sont pas de notre plume et se
+// normalisent au rendu, pas à la source.
 //
 // SOURCE DE VÉRITÉ des règles : la page Notion « Guide de rédaction
 // CAPP/CLESSN », dont `.claude/skills/redaction-editoriale/SKILL.md` est le
@@ -27,7 +29,7 @@ import { join, relative } from "node:path";
 const RACINE = process.cwd();
 const BASELINE = "scripts/garde_redaction.baseline.json";
 
-const DOSSIERS = ["app", "components", "lib", "static-content"];
+const DOSSIERS = ["app", "components", "lib", "static-content", "public"];
 const EXTENSIONS = [".ts", ".tsx", ".html"];
 
 // `changelog.json` est de l'HISTORIQUE : ses notes sont écrites dans le corps
@@ -85,6 +87,17 @@ const REGLES = [
     exemple: "des insécables des deux côtés, sinon un « ou un » se retrouve seul en début de ligne (issue #384).",
   },
   {
+    // L'autre moitié de la règle #7, jamais outillée jusqu'ici : l'insécable
+    // avant `:` et `%` l'était, « pas d'espace avant `; ? !` » non. Toute
+    // espace est fautive, y compris l'insécable — c'est la norme québécoise,
+    // à l'inverse de la France. En HTML l'insécable s'écrit `&nbsp;`, une
+    // ENTITÉ : la classe de caractères ne la voit pas, il faut la nommer.
+    code: "espace-avant-ponctuation",
+    motif: new RegExp(`(?:[${ESPACES}]|&nbsp;|&#160;|&#xa0;|&thinsp;|&#8201;|&#8239;|&#x202f;)[;?!]`, "iu"),
+    quoi: "espace avant « ; », « ? » ou « ! »",
+    exemple: "rien du tout avant le signe : « Deux solitudes? », « 1972; Iyengar ». Norme québécoise, pas française.",
+  },
+  {
     // Les bornes excluent `-` et `_` : `unes-jour` et `une-des-unes` sont des
     // noms de classe CSS et d'ancre, pas de la prose. Le « à » accepte les deux
     // casses, sinon le « À la une » du treemap passait sous le radar.
@@ -95,6 +108,32 @@ const REGLES = [
   },
 ];
 
+// Les noms de projets ne prennent JAMAIS l'italique (guide Notion, entrée « Les
+// projets de la CLESSN » : « Ne jamais mettre les projets en italique »).
+//
+// Cette règle ne peut PAS se juger sur un span de texte, contrairement à toutes
+// les autres : l'italique est porté par le BALISAGE, que l'extraction de spans
+// retire justement. Elle a donc sa propre passe, sur la source.
+//
+// ⚠️ Conflit connu avec une autre règle du même guide : l'entrée « Citations et
+// bibliographie » impose le style APA, qui met le titre de l'œuvre en italique.
+// Une référence bibliographique correcte déclenche donc cette règle à tort —
+// d'où la dérogation `garde-redaction: ok (…)` posée sur la citation de la page
+// Méthodologie. Si le cas se répand, c'est le guide qu'il faut trancher.
+const PROJETS = [
+  "La Vitrine démocratique",
+  "Vitrine démocratique",
+  "Projet Quorum",
+  "Datagotchi",
+  "Déméter",
+  "Radar\\+",
+  "Civimètre\\+",
+  "Agora\\+",
+  "Polimètre",
+  "Global-ES",
+];
+const PROJET_ITALIQUE = new RegExp(`<(em|i)\\b[^>]*>[^<]*(?:${PROJETS.join("|")})[^<]*</\\1>`, "giu");
+
 // ── Extraction du texte que nous écrivons ────────────────────────────────────
 
 /** Retire les commentaires. Ce qui est dans un commentaire n'est pas affiché,
@@ -103,17 +142,45 @@ const REGLES = [
  *  (et non les supprimer) préserve les numéros de ligne. */
 function sansCommentaires(src, estHtml) {
   const vide = (m) => m.replace(/[^\n]/g, " ");
-  if (estHtml) return src.replace(/<!--[\s\S]*?-->/g, vide);
+  // En HTML, `<script>` et `<style>` tombent avec les commentaires : leur
+  // contenu vit entre un `>` et un `<`, donc l'extracteur le prend pour du
+  // texte affiché. Un `!important` de CSS et un ternaire de JavaScript
+  // deviennent alors des fautes de typographie qu'on ne peut pas corriger.
+  if (estHtml) {
+    return src
+      .replace(/<!--[\s\S]*?-->/g, vide)
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, vide)
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, vide);
+  }
   return src
     .replace(/\/\*[\s\S]*?\*\//g, vide)
     .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + vide(m.slice(p.length)));
+}
+
+/** Neutralise les interpolations `${…}` sans changer la longueur du texte. Ce
+ *  qu'elles contiennent est du CODE (le `:` de `${n > 1 ? "s" : ""}` n'a jamais
+ *  besoin d'insécable), mais ce qu'elles PRODUISENT est du texte affiché : d'où
+ *  un caractère de remplissage auquel une règle peut encore s'accrocher, et non
+ *  une suppression. */
+function masqueInterpolations(texte) {
+  // Du plus profond vers l'extérieur : `${a ? `${b}` : ""}` garde des accolades
+  // après une seule passe, et son ternaire ressort en faute de typographie.
+  let prose = texte;
+  for (let i = 0; i < 5; i++) {
+    const suivant = prose.replace(/\$\{[^{}]*\}/gu, (m) => MASQUE.repeat(m.length));
+    if (suivant === prose) break;
+    prose = suivant;
+  }
+  // L'appariement naïf des accents graves coupe parfois le span au milieu d'une
+  // interpolation : la queue qui reste est du code privé de son `}`.
+  return prose.replace(/\$\{[^{}]*$/u, (m) => MASQUE.repeat(m.length));
 }
 
 /** Les spans de texte que le visiteur peut lire : littéraux de chaîne et nœuds
  *  de texte JSX. Travailler sur des SPANS et non sur des lignes entières est ce
  *  qui rend la règle « insécable avant : » utilisable — sinon chaque ternaire
  *  `cond ? a : b` et chaque annotation TypeScript la ferait hurler. */
-function spansDeTexte(src, estHtml) {
+function spansDeTexte(src, estHtml, estJsx) {
   const spans = [];
   const pousse = (texte, index) => {
     if (!texte) return;
@@ -126,8 +193,20 @@ function spansDeTexte(src, estHtml) {
     // avale des dizaines de lignes de JavaScript. Ces spans-là ne sont pas du
     // texte affiché, et les laisser passer produisait des faux positifs
     // impossibles à corriger pour qui lit l'échec.
-    const estCode = /\)\s*[;,]|=>|\]\s*[);]|\bif\s*\(|\breturn\b|\b(const|let|function)\s/u.test(texte);
-    if (estProse && !estCode) spans.push({ texte, index });
+    // Le test porte sur le texte INTERPOLATIONS MASQUÉES, jamais sur le brut :
+    // `Son sommet : ${label ?? "plus tôt"}` est du texte affiché qui contient
+    // du code, et le juger sur le brut le faisait disparaître de la garde avec
+    // ses vraies fautes. Une fois masqué, il ne reste du code que dans les
+    // spans qui n'étaient pas du texte du tout.
+    // Les deux derniers motifs servent la règle « espace avant ; ? ! » : un
+    // ternaire `x ? "a" : b` a une espace avant son `?`, et aucune des règles
+    // précédentes ne s'y accrochait. Sans eux, la garde dénonce du code.
+    const prose = masqueInterpolations(texte);
+    const estCode =
+      /\)\s*[;,]|=>|\]\s*[);]|\bif\s*\(|\breturn\b|\b(const|let|function)\s/u.test(prose) ||
+      /&&|\|\||\?\?|===|!==/u.test(prose) ||
+      /\?\s*["'][^"']*["']\s*:/u.test(prose);
+    if (estProse && !estCode) spans.push({ texte, prose, index });
   };
 
   if (estHtml) {
@@ -144,7 +223,9 @@ function spansDeTexte(src, estHtml) {
   }
   // Nœuds de texte JSX : `>texte<`. Grossier mais suffisant, et les faux
   // positifs (comparaisons `a > b < c`) ne ressemblent pas à de la prose.
-  for (const m of src.matchAll(/>([^<>{}]+)</g)) pousse(m[1], m.index + 1);
+  // Réservé aux `.tsx` : un `.ts` n'a pas de JSX, donc ce motif n'y récolte
+  // QUE des comparaisons — d'où cinq ternaires dénoncés comme fautifs.
+  if (estJsx) for (const m of src.matchAll(/>([^<>{}]+)</g)) pousse(m[1], m.index + 1);
   return spans;
 }
 
@@ -171,15 +252,11 @@ function analyse(chemin) {
   const lignes = src.split("\n");
   const trouvailles = [];
 
-  for (const span of spansDeTexte(nettoye, estHtml)) {
+  for (const span of spansDeTexte(nettoye, estHtml, chemin.endsWith(".tsx"))) {
     const numero = ligneDe(nettoye, span.index);
     if (estDerogee(lignes, numero)) continue;
-    // Le contenu d'une interpolation `${…}` est du CODE, pas du texte affiché :
-    // le `:` de `${n > 1 ? "s" : ""}` n'a jamais besoin d'insécable. On le
-    // neutralise avant d'appliquer les règles, sans changer la longueur du span.
-    const prose = span.texte.replace(/\$\{[^{}]*\}/gu, (m) => MASQUE.repeat(m.length));
     for (const regle of REGLES) {
-      const m = prose.match(regle.motif);
+      const m = span.prose.match(regle.motif);
       if (!m) continue;
       trouvailles.push({
         fichier: relative(RACINE, chemin),
@@ -191,6 +268,23 @@ function analyse(chemin) {
       });
     }
   }
+
+  // Passe HORS SPAN — voir PROJET_ITALIQUE : l'italique vit dans le balisage,
+  // que `spansDeTexte` a retiré. Aucune règle par span ne peut le voir.
+  for (const m of nettoye.matchAll(PROJET_ITALIQUE)) {
+    const numero = ligneDe(nettoye, m.index);
+    if (estDerogee(lignes, numero)) continue;
+    trouvailles.push({
+      fichier: relative(RACINE, chemin),
+      ligne: numero,
+      code: "projet-italique",
+      quoi: "nom de projet en italique",
+      exemple:
+        "les projets ne prennent jamais l'italique (guide Notion). Exception : une référence bibliographique en style APA — dans ce cas, poser « garde-redaction: ok (citation APA) ».",
+      extrait: m[0].trim().slice(0, 100),
+    });
+  }
+
   return trouvailles;
 }
 
