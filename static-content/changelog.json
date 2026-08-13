@@ -288,18 +288,6 @@
     "version": "2.15.0-beta.10"
   },
   {
-    "pr": 358,
-    "date": "2026-07-28T17:45:15Z",
-    "note": "feat(doom): ajouter la barre de sélection des 36 niveaux et corriger la hauteur du conteneur",
-    "version": null
-  },
-  {
-    "pr": 357,
-    "date": "2026-07-28T16:19:36Z",
-    "note": "feat(doom): intégrer l'Easter Egg DOOM PCQ « Knee-Deep in the Media » sans bordures noires",
-    "version": null
-  },
-  {
     "pr": 356,
     "date": "2026-07-28T15:56:56Z",
     "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
@@ -380,7 +368,7 @@
   {
     "pr": 350,
     "date": "2026-07-28T00:49:41Z",
-    "note": "fix(flappy): réinitialiser le classement global Upstash Redis et supprimer les entrées de test",
+    "note": "Le classement du jeu caché a été remis à zéro à la fin de sa phase d’essai.",
     "version": null
   },
   {
@@ -968,7 +956,7 @@
   {
     "pr": 167,
     "date": "2026-06-26T17:14:34Z",
-    "note": "Renforcement de la sécurité du formulaire de signalement : un jeton exposé a été remplacé par un relais sécurisé.",
+    "note": "Renforcement de la sécurité du formulaire de signalement.",
     "version": null
   },
   {
