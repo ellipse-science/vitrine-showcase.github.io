@@ -4662,6 +4662,17 @@
      (preserveAspectRatio="none"). Tout le texte est en HTML posé par-dessus,
      positionné en pourcentage — donc net à toutes les tailles, là où du texte
      dans un SVG étiré serait déformé. */
+  /* Le pupitre — le filet qui rassemble la manchette, les deux platines, la
+     console et le fader en UN poste de travail. Sans fond : c'est un contour,
+     et il laisse le châssis de la console ressortir à l'intérieur. */
+  .pupitre {
+    border: 1px solid var(--rule);
+    padding: 8px 30px 30px;
+    margin-top: 26px;
+  }
+  .pupitre .manchette { margin-top: 24px; }
+  .pupitre .regie { margin-top: 24px; }
+
   /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
      module après son titre, centré, avec de l'air autour — c'est elle qui
      porte la réponse, l'instrument ne fait que la prouver. */
@@ -5069,30 +5080,22 @@
      transparent et les crans sont dessinés dessous. */
   .fader {
     max-width: 620px;
-    margin: 34px auto 0;
-    padding-top: 22px;
+    margin: 30px auto 0;
+    padding-top: 24px;
     border-top: 0.5px solid var(--rule);
   }
-  .fader-tete {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
+  /* « Source » est SOUS le curseur : c'est une étiquette d'appareil, pas un
+     titre. Centrée, discrète, elle nomme la commande sans la précéder. */
   .fader-label {
+    display: block;
+    margin-top: 14px;
+    text-align: center;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--ink-softer);
     font-weight: 500;
-  }
-  .fader-valeur {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink);
   }
 
   .fader-piste { position: relative; height: 40px; }

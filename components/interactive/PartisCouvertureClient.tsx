@@ -101,6 +101,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
+      <div className="pupitre">
       <Manchette
         rows={view.rows}
         reference={data.ranges[range].rows}
@@ -142,6 +143,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           onChange={setMedia}
         />
       )}
+
+      </div>
 
       <section className="partis-course">
         <Course chart={source.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
@@ -617,11 +620,6 @@ function Fader({
 
   return (
     <div className="fader">
-      <div className="fader-tete">
-        <span className="fader-label">Source</span>
-        <span className="fader-valeur">{courante.label}</span>
-      </div>
-
       <div className="fader-piste">
         <input
           type="range"
@@ -649,6 +647,12 @@ function Fader({
           ))}
         </div>
       </div>
+
+      {/* « Source » SOUS le curseur, et plus de titre du média à droite : la
+          manchette nomme déjà le média en toutes lettres et le cran actif porte
+          son sigle. Le répéter en gros corps disputait l'attention à la
+          manchette, qui est ce qu'on doit lire en premier. */}
+      <span className="fader-label">Source</span>
     </div>
   );
 }
