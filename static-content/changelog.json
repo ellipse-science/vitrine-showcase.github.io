@@ -1,5 +1,11 @@
 [
   {
+    "pr": 464,
+    "date": "2026-08-13T17:23:42Z",
+    "note": "_Aucune — changement interne, invisible pour le visiteur._",
+    "version": "2.23.0-beta.1"
+  },
+  {
     "pr": 472,
     "date": "2026-08-13T17:22:32Z",
     "note": "Reformulation de quelques anciennes entrées de ce journal, et retrait de deux entrées devenues sans objet.",
