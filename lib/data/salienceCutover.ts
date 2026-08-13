@@ -25,27 +25,39 @@ export const SALIENCE_CUTOVER = true;
 /** Facteur d'affichage du nouvel indice. Voir la note d'échelle ci-dessus. */
 export const NEW_INDEX_SCALE = 100;
 
-// ── Grilles de repli ─────────────────────────────────────────────────────────
+// ── Les grilles qui classent ─────────────────────────────────────────────────
 //
-// MÊME rôle que SAL_QC_THRESHOLDS / SUM_QC_THRESHOLDS pour l'ancien indice : la
-// calibration glissante publiée (`salience_calibration.json`) prime dès qu'elle
-// a assez de points ; ces valeurs servent d'ici là.
+// ⚓ CE NE SONT PAS DES GRILLES DE REPLI. Elles classent, tout le temps.
 //
-// ⚠️ ÉTAT AU JOUR DE LA BASCULE (2026-08-12, relevé dans le JSON publié) — les
-// quatre grilles ne sont PAS logées à la même enseigne, et c'est ce qui décide
-// lesquelles de ces constantes comptent vraiment :
-//   · `salience_index_qc_sum_24h` / `_roc_sum_24h` : ABSENTES du JSON (la
-//     fenêtre glissante part du plancher spec-v1 du 2026-08-09, trop courte
-//     pour réunir CAL_MIN_N = 60 storylines DISTINCTES). Ce sont donc bien
-//     NEW_SUM_QC/ROC_THRESHOLDS ci-dessous qui CLASSENT les Unes et pilotent
-//     le badge au jour J. Ce sont les deux constantes qui portent le poids.
-//   · `salience_index_qc` (n = 83) et `_roc` (n = 71) : PUBLIÉES et déjà
-//     au-dessus du seuil, donc la calibration glissante PRIME et les grilles
-//     par bloc ci-dessous ne servent plus que de filet. Le basculement
-//     automatique annoncé s'est fait tout seul entre le 09 et le 12 août.
-// Conséquence pratique : au prochain refresh qui publiera les deux `_sum_24h`,
-// le classement changera de grille sans qu'une ligne de code bouge. C'est le
-// mécanisme voulu, mais il vaut d'être su — vérifier la concordance ce jour-là.
+// C'est la décision A0 de vitrine#430, redite par Adrien le 2026-08-13 : la
+// référence des bandes est **ANCRÉE, pas glissante**. Le chargeur ne consulte
+// donc PLUS `salience_calibration.json` pour les quatre métriques du nouvel
+// indice — il lit ces constantes, et elles seules.
+//
+// POURQUOI. Un indice absolu mérite une lentille stable. La calibration
+// glissante recalcule ses percentiles à chaque refresh sur l'historique
+// disponible : une même valeur peut donc changer d'étiquette parce que la
+// distribution a bougé SOUS elle, sans que l'histoire ait bougé d'un point.
+// Pour une mesure qu'on publie et qu'on cite, c'est le défaut à ne pas avoir.
+//
+// ET CE N'EST PAS THÉORIQUE. La fenêtre glissante est repartie de zéro au
+// plancher spec-v1 du 2026-08-09 : elle publiera donc une grille de VINGT
+// JOURS dès qu'elle atteindra CAL_MIN_N = 60 storylines distinctes (n = 16 au
+// QC et 14 au ROC le 13-08). Sans ce débranchement, le classement du site
+// aurait changé de grille tout seul, à un refresh quelconque, sans qu'une
+// ligne de code bouge et sans que personne l'ait demandé. Et il aurait troqué
+// une grille d'ANNÉE contre une grille de vingt jours — le défaut exact mesuré
+// et rejeté au cutover : la fenêtre courte sur-émet « Exceptionnelle » de 68 %.
+//
+// CE QUI RESTE GLISSANT, ET C'EST VOULU : le repère « habituel » de la jauge de
+// convergence (Deux solitudes). Là, le mot « habituel » DÉSIGNE le passé récent
+// — une référence figée le rendrait faux. Deux régimes, deux raisons.
+//
+// ⏳ CES VALEURS SONT PROVISOIRES, et le plan est arrêté : elles cèdent la place
+// à `ref-2025`, une année CIVILE complète, figée et versionnée, APRÈS le
+// recompute (ordre imposé : réparer → rejouer → geler). Quand 2026 sera
+// complète à son tour, les deux années pourront être comparées et la référence
+// rediscutée. Jusque-là, on ne change pas de plan.
 //
 // MESURE (script `_chantiers-vitrine/banc-235/grilles_annee_specv1.R`, roulé le
 // 2026-08-12, AUCUN appel AWS — le rejeu local `out/year_llm.rds`) :

@@ -22,7 +22,6 @@ import {
   NEW_BLOCK_QC_THRESHOLDS,
   NEW_SUM_ROC_THRESHOLDS,
   NEW_BLOCK_ROC_THRESHOLDS,
-  scaleThresholds,
 } from "@/lib/data/salienceCutover";
 
 const DATA_PATH = path.resolve(
@@ -249,11 +248,12 @@ type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; 
 // HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
 // prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
 // Les clés `salience_index_*` sont les homologues des `score_*` pour le NOUVEL
-// indice (cf. build_salience_calibration dans scripts/fetch_data.R). Elles sont
-// publiées sur une fenêtre plancherée au déploiement de la spec v1, donc
-// homogènes par construction — mais restent NULL tant que n < CAL_MIN_N, d'où
-// les grilles de repli de lib/data/salienceCutover.ts. En unités BRUTES [0,1] :
-// c'est `scaleThresholds` qui les passe à l'échelle d'affichage.
+// indice (cf. build_salience_calibration dans scripts/fetch_data.R). ⚓ Le site
+// ne les LIT PLUS depuis la décision A0 : les bandes du nouvel indice sont
+// ancrées sur une année complète (lib/data/salienceCutover.ts). Elles restent
+// dans le type parce que fetch_data.R continue de les publier — c'est utile
+// pour surveiller la distribution, et ça n'engage rien tant que rien ne les
+// consomme. Ne pas les rebrancher sans rouvrir A0.
 type Calibration = { window_days?: number; computed_utc?: string; metrics?: { score_qc?: CalMetric; score_qc_peak_24h?: CalMetric; score_qc_sum_24h?: CalMetric; score_roc?: CalMetric; score_roc_sum_24h?: CalMetric; convergence?: CalMetric; event_convergence?: CalMetric; salience_index_qc?: CalMetric; salience_index_qc_sum_24h?: CalMetric; salience_index_roc?: CalMetric; salience_index_roc_sum_24h?: CalMetric } };
 
 const CALIBRATION_PATH = path.resolve(process.cwd(), "public", "data", "salience_calibration.json");
@@ -2155,8 +2155,10 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   // heures, classées par saillance QC CUMULÉE (sumQc), depuis la MÊME liste que
   // le radar → les deux modules montrent les mêmes histoires. Filtre : au moins
   // un média QC a couvert l'histoire sur la fenêtre.
-  // Calibration glissante publiée (suivi aws-refiners#212) : seuils de saillance + jauge dérivés de
-  // la vraie distribution ≈ 12 mois quand le fichier existe, sinon valeurs codées.
+  // Calibration glissante publiée (suivi aws-refiners#212). Depuis le cutover
+  // elle ne sert plus QU'À la jauge de convergence de Deux solitudes, où
+  // « habituel » DOIT suivre l'actualité récente — c'est le sens du mot. Les
+  // seuils de saillance, eux, sont ancrés (voir plus bas).
   const calibration = await loadCalibration();
   // Niveau d'un BLOC (lecture au survol de la trajectoire) : calibré sur la
   // distribution des scores PAR BLOC — sa vraie population de référence, la
@@ -2170,13 +2172,21 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   // MÊME convention (même fonction dans fetch_data.R, même population). On ne
   // mélange jamais les deux familles — une valeur du nouvel indice classée avec
   // les bornes de l'ancien serait à un ordre de grandeur de la vérité.
+  //
+  // ⚓ RÉFÉRENCE ANCRÉE, PAS GLISSANTE (vitrine#430 A0, décision d'Adrien).
+  // Après le cutover, les grilles du NOUVEL indice ne consultent PLUS
+  // `calibration` : ce sont les constantes de salienceCutover.ts, mesurées sur
+  // une année complète, qui classent — toujours, et pas seulement en repli.
+  // Voir la note « pourquoi pas la glissante » dans salienceCutover.ts.
+  // L'ancien indice, lui, garde son câblage d'origine : il n'est plus lu depuis
+  // la bascule et le changer ne prouverait rien.
   const blockThresholds = SALIENCE_CUTOVER
-    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc)) ?? NEW_BLOCK_QC_THRESHOLDS
+    ? NEW_BLOCK_QC_THRESHOLDS
     : salThresholdsFrom(calibration?.metrics?.score_qc) ?? SAL_QC_THRESHOLDS;
-  // Grille du BADGE (cumul 24 h pondéré). Publiée par calibration_sum_24h dans
-  // fetch_data.R ; repli sur les valeurs mesurées tant qu'elle manque.
+  // Grille du BADGE (cumul 24 h pondéré) — celle qui porte tout le poids : elle
+  // décide de l'étiquette de chaque Une et du centile annoncé dans la bulle ⓘ.
   const sumThresholds = SALIENCE_CUTOVER
-    ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_qc_sum_24h)) ?? NEW_SUM_QC_THRESHOLDS
+    ? NEW_SUM_QC_THRESHOLDS
     : salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
   // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
   // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
@@ -2338,11 +2348,13 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
     // pas avant : sans lui, le radar canadien retomberait sur `roc` — le pic par
     // bloc — donc sur une AUTRE grandeur que le côté québécois, ce qui est
     // exactement le compromis que aws-refiners#273 a fermé.
+    // ⚓ Ancrées elles aussi (A0) : après le cutover, la calibration glissante
+    // n'entre pas dans le classement, des deux côtés de la frontière.
     sumRocThresholds: SALIENCE_CUTOVER
-      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc_sum_24h)) ?? NEW_SUM_ROC_THRESHOLDS
+      ? NEW_SUM_ROC_THRESHOLDS
       : salThresholdsFrom(calibration?.metrics?.score_roc_sum_24h),
     roc: SALIENCE_CUTOVER
-      ? scaleThresholds(salThresholdsFrom(calibration?.metrics?.salience_index_roc)) ?? NEW_BLOCK_ROC_THRESHOLDS
+      ? NEW_BLOCK_ROC_THRESHOLDS
       : salThresholdsFrom(calibration?.metrics?.score_roc),
   });
 
