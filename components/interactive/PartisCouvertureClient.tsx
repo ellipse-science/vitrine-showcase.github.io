@@ -499,11 +499,11 @@ function Tranche({
   onSelect: (key: string) => void;
   onPcqTap?: () => void;
 }) {
-  // Sourdine : DEUX segments en bas — le signal résiduel qu'affiche une table
-  // de mix pour une tranche muette. Ni zéro (la tranche aurait l'air absente),
-  // ni son vrai niveau (il n'est justement pas retenu comme audible). En VERT,
-  // parce qu'un canal en sourdine est par définition sous sa moyenne, donc dans
-  // la zone verte comme n'importe quel autre canal qui n'y dépasse pas.
+  // Sourdine : DEUX segments GRIS en bas — le signal résiduel qu'affiche une
+  // table de mix pour une tranche muette. Ni zéro (la tranche aurait l'air
+  // absente), ni son vrai niveau (il n'est justement pas retenu comme audible).
+  // Gris et non vert : le vert appartient à l'échelle des canaux qui jouent, et
+  // une tranche en sourdine n'est pas sur cette échelle.
   const coupe = row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
   const allumes = coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
@@ -534,7 +534,7 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${coupe ? "green" : zoneSegment(idx, moyennePct)}${
+            className={`seg ${coupe ? "mute" : zoneSegment(idx, moyennePct)}${
               idx < allumes ? " on" : ""
             }`}
             aria-hidden="true"

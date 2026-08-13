@@ -4976,9 +4976,10 @@
   .console-vumetre .seg.on.green { background: var(--green); }
   .console-vumetre .seg.on.amber { background: var(--amber); }
   .console-vumetre .seg.on.red   { background: var(--red); }
-  /* Sourdine : deux segments VERTS en bas, et rien d'autre. La tranche reste
-     là — un canal muet se voit, il ne disparaît pas. Le vert est cohérent :
-     un canal en sourdine est par définition sous sa moyenne. */
+  /* Sourdine : deux segments GRIS en bas, et rien d'autre. La tranche reste
+     là — un canal muet se voit, il ne disparaît pas. Gris et non vert : le vert
+     appartient à l'échelle des canaux qui jouent. */
+  .console-vumetre .seg.on.mute { background: var(--ink-softer); }
 
   /* Le ruban d'identité — l'adhésif de couleur d'une tranche de mixeur. */
   .console-ruban-nom {
