@@ -4675,8 +4675,144 @@
      sur une tranche de mixeur.
      Rendu à l'encre : des segments, c'est du plein et du vide — la chose la
      plus imprimable qui soit, et parfaitement dans la grammaire du papier. */
-  .console {
+  /* La régie : platine — console — platine. Les deux plateaux occupent
+     l'espace qui restait vide de part et d'autre des vumètres, et la console
+     peut donc s'élargir. */
+  .regie {
+    display: grid;
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
+    align-items: start;
+    gap: 26px;
     margin-top: 30px;
+  }
+
+  .platine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 26px;
+  }
+  .platine-cote {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+  /* Le plateau : des cercles concentriques à l'encre, pas un objet en volume. */
+  .platine-plateau {
+    position: relative;
+    width: 138px;
+    height: 138px;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background:
+      repeating-radial-gradient(circle at 50% 50%,
+        transparent 0 6px, color-mix(in srgb, var(--rule-faint) 55%, transparent) 6px 7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .platine.vide .platine-plateau { opacity: 0.45; }
+  /* L'arc que parcourt l'aiguille — sans lui, sa position ne se rapporte à
+     rien. Deux traits aux extrémités : 0 % à gauche, 50 % à droite. */
+  .platine-plateau::before,
+  .platine-plateau::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    width: 1px;
+    height: 9px;
+    background: var(--rule);
+    transform-origin: 50% 55px;
+  }
+  .platine-plateau::before { transform: rotate(-52deg); }
+  .platine-plateau::after  { transform: rotate(52deg); }
+
+  .platine-axe {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  /* L'aiguille porte la part de voix : un tour vaut 50 %, la même échelle que
+     les vumètres — les deux lectures ne peuvent donc pas se contredire. */
+  .platine-aiguille {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: 2px;
+    height: 58px;
+    margin-left: -1px;
+    transform-origin: 50% 100%;
+    background: var(--party);
+  }
+  .platine-valeur {
+    position: absolute;
+    bottom: 22px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .platine-valeur b { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
+
+  .platine-nom {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  .platine-vide-txt {
+    margin: 0;
+    max-width: 130px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    line-height: 1.6;
+    letter-spacing: 0.1em;
+    color: var(--ink-softer);
+  }
+
+  .platine-donnees { margin: 0; width: 100%; max-width: 172px; }
+  .platine-donnees > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .platine-donnees > div:last-child { border-bottom: none; }
+  .platine-donnees dt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .platine-donnees dd {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 14px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .platine-donnees dd span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-softer);
+  }
+  .platine-donnees dd.haut { color: var(--red); }
+  .platine-donnees dd.bas  { color: var(--green); }
+
+  .console {
+    margin-top: 0;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
     --gradu: 44px;    /* largeur de la colonne de graduations */
@@ -4723,7 +4859,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: var(--gradu-gap);
-    max-width: 820px;
+    max-width: none;
     margin: 0 auto;
     /* Compense la colonne de graduations, à droite : sans ce décalage, centrer
        le bloc entier décentre les VUMÈTRES, qui sont ce que l'œil lit. */
@@ -4737,17 +4873,32 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 16px;
+    gap: 20px;
     /* Largeur au CONTENU : réserver une largeur fixe laisserait les
        graduations flotter loin des vumètres qu'elles annoncent. */
     flex: 0 0 auto;
   }
 
+  /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
+  .console-tranche { position: relative; }
+  .console-charge {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    font-weight: 500;
+    color: var(--cordovan);
+  }
+  .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
   .console-tranche {
     order: var(--ordre);
     flex: 1 1 0;
     min-width: 0;
-    max-width: 104px;
+    max-width: 128px;
     display: grid;
     grid-template-rows: var(--piste) auto auto;
     align-items: end;
@@ -4772,10 +4923,10 @@
        plein/vide qui fait lire l'échelle, pas seulement la hauteur. */
     background: var(--rule-faint);
   }
-  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau : tout le segment allumé
-     d'un canal partage donc la même teinte. Sur « tous les médias », chaque
-     parti est à sa propre moyenne — tout est vert, et les couleurs ne
-     s'allument qu'en bougeant le fader. */
+  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau, et elle se lit DANS la
+     colonne : vert jusqu'à la moyenne du parti, ambre au-dessus, rouge bien
+     au-dessus. La frontière verte marque donc, sans repère supplémentaire,
+     l'endroit exact où ce média dépasse l'ordinaire de ce parti. */
   .console-vumetre .seg.on.green { background: var(--green); }
   .console-vumetre .seg.on.amber { background: var(--amber); }
   .console-vumetre .seg.on.red   { background: var(--red); }
@@ -4793,7 +4944,11 @@
 
   /* Le ruban d'identité — l'adhésif de couleur d'une tranche de mixeur. */
   .console-ruban-nom {
+    display: block;
     width: 100%;
+    border: none;
+    cursor: pointer;
+    font: inherit;
     background: var(--party);
     color: var(--paper);
     text-align: center;
@@ -5242,6 +5397,8 @@
     .console-ruban-nom { font-size: 13px; }
     .console-tranche.tete .console-ruban-nom { font-size: 15px; }
     .console { --gradu: 34px; --gradu-gap: 8px; }
+    .regie { grid-template-columns: 1fr; gap: 30px; }
+    .platine { padding-top: 0; }
 
     /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
        de haut deviennent illisibles quand la largeur tombe sous ~400 px. */

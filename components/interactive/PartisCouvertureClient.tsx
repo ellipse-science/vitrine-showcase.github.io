@@ -27,6 +27,13 @@ function shareTitle(data: PartiesData): string {
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
+  // Les deux platines : la dernière sélection à gauche, la précédente à droite.
+  // Cliquer un canal fait donc glisser A vers B — on compare toujours les deux
+  // derniers partis regardés, sans avoir à choisir un « emplacement ».
+  const [platines, setPlatines] = useState<[string | null, string | null]>([null, null]);
+
+  const chargerPlatine = (key: string) =>
+    setPlatines(([a]) => (a === key ? [a, null] : [key, a]));
   const [showDoom, setShowDoom] = useState(false);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
@@ -86,12 +93,32 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
-      <Console
-        rows={view.rows}
-        reference={data.ranges[range].rows}
-        refLabel={view.refLabel}
-        onPcqTap={handlePcqTap}
-      />
+      <div className="regie">
+        <Platine
+          cote="A"
+          row={view.rows.find((r) => r.key === platines[0]) ?? null}
+          moyennePct={
+            data.ranges[range].rows.find((r) => r.key === platines[0])?.sovPct ?? 0
+          }
+        />
+
+        <Console
+          rows={view.rows}
+          reference={data.ranges[range].rows}
+          refLabel={view.refLabel}
+          selection={platines}
+          onSelect={chargerPlatine}
+          onPcqTap={handlePcqTap}
+        />
+
+        <Platine
+          cote="B"
+          row={view.rows.find((r) => r.key === platines[1]) ?? null}
+          moyennePct={
+            data.ranges[range].rows.find((r) => r.key === platines[1])?.sovPct ?? 0
+          }
+        />
+      </div>
 
       {data.medias.length > 0 && (
         <Fader
@@ -137,12 +164,21 @@ const METER_FULL_SCALE = 50;
  * bougeant le fader — un canal part dans le rouge parce que CE média-LÀ le
  * pousse au-dessus de sa moyenne.
  */
-const SEUIL_AMBRE = 1.0;
 const SEUIL_ROUGE = 1.3;
 
-function zoneEcart(ratio: number): "green" | "amber" | "red" {
-  if (ratio > SEUIL_ROUGE) return "red";
-  if (ratio > SEUIL_AMBRE) return "amber";
+/**
+ * Zone d'UN segment, d'après la part de voix qu'il représente et la moyenne du
+ * parti. Le dégradé se lit donc DANS la colonne : vert jusqu'à la moyenne,
+ * ambre au-dessus, rouge bien au-dessus.
+ *
+ * La frontière verte devient ainsi visible sans repère supplémentaire — c'est
+ * exactement là où le canal dépasse ce que ce parti obtient d'habitude.
+ */
+function zoneSegment(i: number, moyennePct: number): "green" | "amber" | "red" {
+  const pct = ((i + 1) / METER_SEGMENTS) * METER_FULL_SCALE;
+  if (moyennePct <= 0) return "green"; // pas de moyenne ⇒ rien à dépasser
+  if (pct > moyennePct * SEUIL_ROUGE) return "red";
+  if (pct > moyennePct) return "amber";
   return "green";
 }
 
@@ -175,6 +211,8 @@ function Console({
   rows,
   reference,
   refLabel,
+  selection,
+  onSelect,
   onPcqTap,
 }: {
   rows: RowView[];
@@ -182,6 +220,8 @@ function Console({
    *  couleurs. Identique à `rows` quand le fader est sur « tous ». */
   reference: RowView[];
   refLabel: string;
+  selection: [string | null, string | null];
+  onSelect: (key: string) => void;
   onPcqTap: () => void;
 }) {
   const actifs = rows.filter((r) => !r.inShadow);
@@ -216,6 +256,8 @@ function Console({
               rang={i + 1}
               total={actifs.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
+              charge={selection[0] === row.key ? "A" : selection[1] === row.key ? "B" : null}
+              onSelect={onSelect}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
             />
           ))}
@@ -261,18 +303,114 @@ function Console({
   );
 }
 
+/**
+ * Une platine — le plateau sur lequel on charge un parti pour l'examiner.
+ *
+ * Deux platines encadrent la console, comme deux lecteurs encadrent un mixeur.
+ * Elles occupent aussi l'espace qui restait vide de part et d'autre.
+ *
+ * La position de l'aiguille sur le plateau porte la part de voix : plus le
+ * parti occupe de place, plus l'aiguille a tourné. Ce n'est pas un ornement —
+ * c'est la même donnée que la hauteur du vumètre, lue autrement.
+ */
+function Platine({
+  cote,
+  row,
+  moyennePct,
+}: {
+  cote: "A" | "B";
+  row: RowView | null;
+  moyennePct: number;
+}) {
+  if (!row) {
+    return (
+      <div className={`platine vide cote-${cote}`}>
+        <span className="platine-cote">{cote}</span>
+        <div className="platine-plateau" aria-hidden="true">
+          <i className="platine-axe" />
+        </div>
+        <p className="platine-vide-txt">
+          Cliquez un parti pour le charger
+        </p>
+      </div>
+    );
+  }
+
+  const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
+  const ecart = Math.round((ratio - 1) * 100);
+  // Balayage dans l'ARC SUPÉRIEUR seulement, de −52° à +52°, comme une aiguille
+  // de vumètre. Un balayage large ferait pointer l'aiguille vers le BAS aux
+  // valeurs hautes, ce qui se lit à contresens. Pleine échelle = 50 % de part
+  // de voix, la même que les colonnes : les deux lectures ne peuvent pas se
+  // contredire.
+  const angle = Math.min(1, row.sovPct / METER_FULL_SCALE) * 104 - 52;
+
+  return (
+    <div className={`platine cote-${cote}`} style={{ ["--party" as string]: row.color }}>
+      <span className="platine-cote">{cote}</span>
+
+      <div className="platine-plateau" aria-hidden="true">
+        <i className="platine-aiguille" style={{ transform: `rotate(${angle}deg)` }} />
+        <i className="platine-axe" />
+        <span className="platine-valeur">{row.sovPct}<b> %</b></span>
+      </div>
+
+      <p className="platine-nom">{row.label}</p>
+
+      <dl className="platine-donnees">
+        <div>
+          <dt>Écart à sa moyenne</dt>
+          <dd className={ecart > 0 ? "haut" : ecart < 0 ? "bas" : undefined}>
+            {ecart > 0 ? "+" : ""}{ecart}&nbsp;%
+          </dd>
+        </div>
+        <div>
+          <dt>Sommet</dt>
+          <dd>{row.peakPct}&nbsp;% <span>{formatCourt(row.peakDate)}</span></dd>
+        </div>
+        <div>
+          <dt>Ton</dt>
+          <dd className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</dd>
+        </div>
+        {row.inShadow && (
+          <div>
+            <dt>État</dt>
+            <dd>Canal coupé</dd>
+          </div>
+        )}
+      </dl>
+    </div>
+  );
+}
+
+const MOIS_COURTS = [
+  "janv.", "févr.", "mars", "avr.", "mai", "juin",
+  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+];
+
+/** « 2026-08-10 » → « 10 août ». Chaîne vide si la date manque. */
+function formatCourt(iso: string): string {
+  if (!iso) return "";
+  const [, m, d] = iso.split("-");
+  return `${Number(d)} ${MOIS_COURTS[Number(m) - 1] ?? ""}`;
+}
+
 /** Une tranche : vumètre segmenté, peak hold, ruban d'identité, ton. */
 function Tranche({
   row,
   rang,
   total,
   moyennePct,
+  charge,
+  onSelect,
   onPcqTap,
 }: {
   row: RowView;
   rang: number;
   total: number;
   moyennePct: number;
+  charge: "A" | "B" | null;
+  onSelect: (key: string) => void;
   onPcqTap?: () => void;
 }) {
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
@@ -281,14 +419,18 @@ function Tranche({
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
-  const zone = zoneEcart(ratio);
   const ecart = Math.round((ratio - 1) * 100);
 
   return (
     <li
-      className={`console-tranche${rang === 1 ? " tete" : ""}`}
+      className={`console-tranche${charge ? " chargee" : ""}`}
       style={{ ["--ordre" as string]: positionVisuelle(rang, total) }}
     >
+      {charge && (
+        <span className="console-charge" aria-hidden="true">
+          {charge}
+        </span>
+      )}
       <div
         className="console-vumetre"
         title={
@@ -300,7 +442,7 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${zone}${idx < allumes ? " on" : ""}`}
+            className={`seg ${zoneSegment(idx, moyennePct)}${idx < allumes ? " on" : ""}`}
             aria-hidden="true"
           />
         ))}
@@ -313,15 +455,19 @@ function Tranche({
         )}
       </div>
 
-      <span className="console-ruban-nom" style={{ ["--party" as string]: row.color }}>
-        <span
-          onClick={onPcqTap}
-          style={onPcqTap ? { cursor: "pointer", userSelect: "none" } : undefined}
-          title={onPcqTap ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
-        >
-          {row.label}
-        </span>
-      </span>
+      <button
+        type="button"
+        className="console-ruban-nom"
+        style={{ ["--party" as string]: row.color }}
+        onClick={() => {
+          onSelect(row.key);
+          onPcqTap?.();
+        }}
+        aria-pressed={charge !== null}
+        title={`${row.label} — cliquer pour charger sur une platine`}
+      >
+        {row.label}
+      </button>
       <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
         {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "—"}
       </span>
