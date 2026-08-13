@@ -981,10 +981,12 @@
      changement de `.legend-toggle.inline`, qui est partagé avec Treemap,
      Assemblée et Polimètre+. */
   .legend-toggle.inline.compact {
-    font-size: 9px;
-    letter-spacing: 0.14em;
+    /* Le CORPS reste celui des autres modules — c'est lui qu'on lit, et le
+       réduire faisait paraître le sélecteur secondaire. Seuls l'interlettrage
+       et le rembourrage se resserrent, ce qui suffit à dégager la place. */
+    letter-spacing: 0.16em;
   }
-  .legend-toggle.inline.compact span { padding: 3px 9px; }
+  .legend-toggle.inline.compact span { padding: 4px 10px; }
 
   /* Hero principal — une pleine largeur (Figma: "hero") */
   .hero-main {
