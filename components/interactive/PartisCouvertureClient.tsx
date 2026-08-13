@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, RangeKey, RangeView, RowView } from "@/lib/data/parties";
+import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
+import { ELECTION_LABEL } from "@/lib/election";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -55,6 +56,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Couverture médiatique des partis politiques</h2>
+          <Countdown days={data.daysToElection} />
         </div>
         <div className="control-block">
           <div className="control-row">
@@ -75,119 +77,185 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
-      <section className="partis">
-        <div className="parti-row header">
-          <div>Parti</div>
-          <div>Saillance</div>
-          <div>{view.sparkHeadLabel}</div>
-          <div>Ton de la couverture</div>
+      <section className="partis-course">
+        <Course chart={view.chart} headLabel={view.sparkHeadLabel} />
+
+        <div className="course-legende">
+          {visibleRows.map((row) => (
+            <LegendeParti
+              key={row.key}
+              row={row}
+              onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
+            />
+          ))}
         </div>
 
-        {visibleRows.map((row) => (
-          <PartiRow
-            key={row.key}
-            row={row}
-            refLabel={view.refLabel}
-            onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
-          />
-        ))}
-
         {shadowRows.length > 0 && (
-          <>
-            <div className="in-shadow-label">
+          <div className="course-ombre">
+            <span className="course-ombre-label">
               Dans l'ombre médiatique
               <InfoTip size="sm" label="Ombre médiatique">
-                Ces partis obtiennent moins de 2&nbsp;% de la part de voix médiatique sur la période sélectionnée.
-                Leur présence dans les médias est trop faible pour être significative.
+                Ces partis obtiennent moins de 2&nbsp;% de la part de voix médiatique sur la période
+                sélectionnée. Leur présence dans les médias est trop faible pour être significative.
               </InfoTip>
-            </div>
-            <div className="in-shadow">
-              {shadowRows.map((row) => (
-                <PartiRow
-                  key={row.key}
-                  row={row}
-                  refLabel={view.refLabel}
-                  shadow
-                  onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
-                />
-              ))}
-            </div>
-          </>
+            </span>
+            {shadowRows.map((row) => (
+              <LegendeParti
+                key={row.key}
+                row={row}
+                shadow
+                onPcqTap={row.key === "pcq" ? handlePcqTap : undefined}
+              />
+            ))}
+          </div>
         )}
       </section>
+
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
   );
 }
 
-function PartiRow({
+/** « J-53 avant le scrutin ». Le jour même, puis après, le libellé change —
+ *  un « J-0 » ou un compte négatif ne veut rien dire pour un lecteur. */
+function Countdown({ days }: { days: number }) {
+  if (days < 0) return null;
+  const label = days === 0 ? "Scrutin aujourd'hui" : `J-${days} avant le scrutin`;
+  return (
+    <span className="partis-countdown" title={`Élections générales québécoises — ${ELECTION_LABEL}`}>
+      {label}
+    </span>
+  );
+}
+
+/**
+ * La course : toutes les lignes sur une seule échelle verticale.
+ *
+ * Le SVG ne porte QUE la géométrie (grille + lignes), étiré en largeur via
+ * preserveAspectRatio="none" — c'est pourquoi les traits portent
+ * vectorEffect="non-scaling-stroke", sans quoi l'étirement les épaissirait.
+ * Tout le texte est en HTML positionné par-dessus : dans un SVG étiré, il
+ * serait déformé.
+ */
+function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
+  if (chart.tooShort) {
+    return (
+      <p className="course-vide">
+        Une seule journée de données disponible — pas encore de quoi tracer une évolution.
+      </p>
+    );
+  }
+
+  const pct = (v: number, max: number) => `${(v / max) * 100}%`;
+
+  return (
+    <figure className="course-figure">
+      <figcaption className="course-tete">{headLabel}</figcaption>
+
+      <div className="course-cadre">
+        <svg
+          className="course-svg"
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {chart.gridLines.map((g) => (
+            <line
+              key={g.pct}
+              x1="0"
+              x2={chart.width}
+              y1={g.y}
+              y2={g.y}
+              className={g.pct === 0 ? "course-axe" : "course-grille"}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+
+          {chart.series.map((s) => (
+            <polyline
+              key={s.key}
+              points={s.polyline}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={s.inShadow ? 1 : 1.6}
+              strokeDasharray={s.inShadow ? "2 2" : undefined}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              opacity={s.inShadow ? 0.5 : 1}
+            />
+          ))}
+
+        </svg>
+
+        {/* Le point terminal est en HTML, pas en SVG : dans un viewBox étiré en
+            largeur, un <circle> devient une ellipse démesurée. Il marque la
+            donnée exacte (lastY), là où l'étiquette peut avoir été déplacée. */}
+        {chart.series.map((s) => (
+          <i
+            key={s.key}
+            className={`course-point${s.inShadow ? " shadow" : ""}`}
+            style={{ top: pct(s.lastY, chart.height), left: pct(s.lastX, chart.width), background: s.color }}
+            aria-hidden="true"
+          />
+        ))}
+
+        {chart.gridLines.map((g) => (
+          <span key={g.pct} className="course-y-label" style={{ top: pct(g.y, chart.height) }}>
+            {g.pct} %
+          </span>
+        ))}
+
+        {chart.series.map((s) => (
+          <span
+            key={s.key}
+            className={`course-bout${s.inShadow ? " shadow" : ""}`}
+            style={{ top: pct(s.labelY, chart.height), left: pct(s.lastX, chart.width), color: s.color }}
+          >
+            {s.label} <b>{s.lastPct}&nbsp;%</b>
+          </span>
+        ))}
+      </div>
+
+      <div className="course-x">
+        {chart.xLabels.map((l) => (
+          <span key={l.label} style={{ left: pct(l.x, chart.width) }}>
+            {l.label}
+          </span>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+/** Une entrée de légende : pastille de couleur, parti, part de voix, ton. */
+function LegendeParti({
   row,
-  refLabel,
   shadow,
   onPcqTap,
 }: {
   row: RowView;
-  refLabel: string;
   shadow?: boolean;
   onPcqTap?: () => void;
 }) {
   const isPcq = row.key === "pcq";
-  const nameStyle = {
-    ...(shadow ? { opacity: 0.35 } : {}),
-    ...(isPcq ? { cursor: "pointer", userSelect: "none" as const } : {}),
-  };
-
   return (
-    <div className="parti-row">
+    <span className={`course-legende-item${shadow ? " shadow" : ""}`}>
+      <i className="course-puce" style={{ background: row.color }} aria-hidden="true" />
       <span
-        className={`parti-name-box ${row.key}`}
-        style={nameStyle}
+        className={`course-parti ${row.key}`}
         onClick={isPcq ? onPcqTap : undefined}
+        style={isPcq ? { cursor: "pointer", userSelect: "none" } : undefined}
         title={isPcq ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
       >
         {row.label}
       </span>
-      <div className="parti-sail-label">Saillance</div>
-      <div className="parti-bar-wrap">
-        <div
-          className="parti-bar"
-          style={{ width: `${row.barWidthPct}%`, background: row.color }}
-          title={row.barTitle}
-        />
-        <div
-          className="parti-bar-avg"
-          style={{ left: `${row.refLeftPct}%` }}
-          title={row.refTitle}
-        >
-          {row.showLeaderLabel && <span className="avg-label">{refLabel}</span>}
-        </div>
-      </div>
-      <div className="parti-spark">
-        <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-          <polyline
-            points={row.sparkPolyline}
-            fill="none"
-            stroke={shadow ? "#6E685F" : "#1C1917"}
-            strokeWidth="1.2"
-            vectorEffect="non-scaling-stroke"
-          />
-          {row.sparkCircles.map((c, i) => (
-            <circle
-              key={i}
-              cx={c.cx}
-              cy={c.cy}
-              r={c.r}
-              fill={i === row.sparkCircles.length - 1 ? "#AAA18E" : "#ECE3CF"}
-              stroke="#C8BDA6"
-              strokeWidth="0.5"
-            />
-          ))}
-        </svg>
-      </div>
-      <div className="parti-ton-label">Ton de la couverture</div>
-      <div className="parti-tone" title={row.toneTitle}>
-        <span className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</span>
-      </div>
-    </div>
+      <span className="course-pct" title={row.barTitle}>
+        {row.sovPct}&nbsp;%
+      </span>
+      <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
+        {row.toneLabel}
+      </span>
+    </span>
   );
 }

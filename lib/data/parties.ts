@@ -16,6 +16,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
+import { daysUntilElection } from "@/lib/election";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -82,9 +83,16 @@ type Stat = {
   key: PartyKey;
   sov: Sov;
   tone: Tone;
-  history: { week: number[]; weekly: number[]; month: number[]; monthly: number[] };
+  /** `daily` couvre TOUTE la fenêtre disponible ; `week` n'en garde que les 7
+   *  derniers jours. La courbe partagée veut la première, l'ancienne mini-courbe
+   *  voulait la seconde. */
+  history: { daily: number[]; week: number[]; weekly: number[]; month: number[]; monthly: number[] };
   toneHistory: { daily: number[]; weekly: number[]; monthly: number[] };
 };
+
+/** Les dates effectivement retenues pour chaque échelle — l'axe horizontal de
+ *  la courbe les étiquette, donc elles doivent voyager avec les valeurs. */
+type SeriesDates = { daily: string[]; weekly: string[]; monthly: string[] };
 
 export type RowView = {
   key: PartyKey;
@@ -104,12 +112,42 @@ export type RowView = {
   sparkCircles: { cx: number; cy: number; r: number }[];
 };
 
+/** Une ligne de la course, déjà projetée en coordonnées du viewBox. */
+export type ChartSeries = {
+  key: PartyKey;
+  label: string;
+  color: string;
+  inShadow: boolean;
+  polyline: string;
+  /** Bout de ligne — position du point terminal. */
+  lastX: number;
+  lastY: number;
+  /** Position de l'ÉTIQUETTE : `lastY` écarté de ses voisines si nécessaire.
+   *  Distinct de `lastY` pour que le point reste sur la donnée exacte même
+   *  quand son étiquette a dû être déplacée. */
+  labelY: number;
+  lastPct: number;
+};
+
+export type ChartView = {
+  series: ChartSeries[];
+  /** Graduations horizontales, en pourcentage de part de voix. */
+  gridLines: { pct: number; y: number }[];
+  xLabels: { label: string; x: number }[];
+  width: number;
+  height: number;
+  /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
+   *  seul point ne veut rien dire, le composant affiche autre chose. */
+  tooShort: boolean;
+};
+
 export type RangeView = {
   range: RangeKey;
   tabLabel: string;
   sparkHeadLabel: string;
   refLabel: string;
   rows: RowView[];
+  chart: ChartView;
 };
 
 export type PartiesData = {
@@ -117,6 +155,12 @@ export type PartiesData = {
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
+  /** Jours restants avant le scrutin. Compté depuis la date de BUILD (ou celle
+   *  de l'édition consultée), pas depuis la date de la donnée : le module se
+   *  reconstruit à chaque rafraîchissement, donc au pire quelques heures de
+   *  retard — alors qu'une donnée en retard de deux semaines fausserait le
+   *  compte de deux semaines. Négatif après le scrutin. */
+  daysToElection: number;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -198,7 +242,7 @@ function computeStats(
   dayRows: ShadowRow[],
   weekRows: ShadowRow[],
   monthRows: ShadowRow[],
-): Stat[] | null {
+): { stats: Stat[]; dates: SeriesDates } | null {
   const dayLookup   = buildLookup(dayRows);
   const weekLookup  = buildLookup(weekRows);
   const monthLookup = buildLookup(monthRows);
@@ -220,7 +264,7 @@ function computeStats(
   const avg = (arr: number[]) =>
     arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
 
-  return PARTY_KEYS.map((pKey): Stat => {
+  const stats = PARTY_KEYS.map((pKey): Stat => {
     const todaySov  = dayLookup[latestDay]?.[pKey]?.mentions   || 0;
     const weekSov   = weekLookup[latestWeek]?.[pKey]?.mentions  || 0;
     const monthSov  = monthLookup[latestMonth]?.[pKey]?.mentions || 0;
@@ -235,6 +279,7 @@ function computeStats(
       sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
       tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
       history: {
+        daily:   allDayDates.map((d)      => dayLookup[d]?.[pKey]?.mentions   || 0),
         week:    last7DayDates.map((d)    => dayLookup[d]?.[pKey]?.mentions   || 0),
         weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.mentions  || 0),
         month:   [],
@@ -247,9 +292,136 @@ function computeStats(
       },
     };
   });
+
+  return {
+    stats,
+    dates: { daily: allDayDates, weekly: weekSampleDates, monthly: monthSampleDates },
+  };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
+const CHART_W = 100;
+const CHART_H = 46;
+/** Marge droite réservée aux étiquettes de parti posées en bout de ligne. */
+const CHART_PAD_R = 16;
+
+const MONTHS_SHORT_FR = [
+  "janv.", "févr.", "mars", "avr.", "mai", "juin",
+  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+];
+
+/** « 2026-07-10 » → « 10 juil. » */
+function shortDateFr(isoDate: string): string {
+  const [, m, d] = isoDate.split("-");
+  return `${Number(d)} ${MONTHS_SHORT_FR[Number(m) - 1]}`;
+}
+
+/** Plafond de l'axe vertical : le multiple de 10 juste au-dessus du maximum
+ *  observé, avec un plancher à 20 % pour qu'une course serrée ne remplisse pas
+ *  toute la hauteur et ne donne pas l'illusion d'écarts énormes. */
+function axisTop(maxPct: number): number {
+  return Math.max(20, Math.ceil(maxPct / 10) * 10);
+}
+
+/** Écart vertical minimal entre deux étiquettes de bout de ligne, en unités du
+ *  viewBox (hauteur totale 46). En dessous, elles se chevauchent. */
+const MIN_LABEL_GAP = 4.2;
+
+/**
+ * Écarte verticalement les étiquettes trop proches, sans toucher aux points.
+ *
+ * Nécessaire dès que deux partis se tiennent : à un point de part de voix
+ * d'écart, deux étiquettes se superposent et aucune n'est lisible — exactement
+ * la situation d'une campagne serrée, donc celle où le module compte le plus.
+ *
+ * `series` est déjà trié par part de voix décroissante, donc par `lastY`
+ * croissant. On descend la liste en poussant vers le bas ce qui est trop haut,
+ * puis on remonte si le paquet a débordé du cadre.
+ */
+function spreadLabels(series: ChartSeries[]): void {
+  for (const s of series) s.labelY = s.lastY;
+
+  for (let i = 1; i < series.length; i++) {
+    const min = series[i - 1].labelY + MIN_LABEL_GAP;
+    if (series[i].labelY < min) series[i].labelY = min;
+  }
+
+  // Débordement par le bas : on repousse tout le paquet vers le haut.
+  const overflow = (series.at(-1)?.labelY ?? 0) - CHART_H;
+  if (overflow > 0) {
+    for (const s of series) s.labelY -= overflow;
+    for (let i = series.length - 2; i >= 0; i--) {
+      const max = series[i + 1].labelY - MIN_LABEL_GAP;
+      if (series[i].labelY > max) series[i].labelY = max;
+    }
+  }
+
+  for (const s of series) s.labelY = Number(s.labelY.toFixed(2));
+}
+
+/**
+ * Construit la course : toutes les lignes sur UNE échelle verticale commune.
+ *
+ * C'est la différence de fond avec les anciennes mini-courbes, qui étaient
+ * normalisées chacune sur son propre min/max — pratique pour lire une forme
+ * isolée, mais trompeur dès qu'on les met côte à côte : un parti à 2 % et un
+ * parti à 40 % y occupaient exactement la même hauteur.
+ */
+function buildChart(
+  stats: Stat[],
+  range: RangeKey,
+  dates: SeriesDates,
+): ChartView {
+  const seriesKey = range === "month" ? "monthly" : range === "week" ? "weekly" : "daily";
+  const axisDates = dates[seriesKey];
+  const n = axisDates.length;
+
+  const histOf = (s: Stat) => s.history[seriesKey];
+  const allValues = stats.flatMap((s) => histOf(s));
+  const top = axisTop(Math.max(0, ...allValues) * 100);
+
+  const plotW = CHART_W - CHART_PAD_R;
+  const xAt = (i: number) => (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+  const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
+
+  const series: ChartSeries[] = stats
+    .slice()
+    .sort((a, b) => histOf(b).at(-1)! - histOf(a).at(-1)!)
+    .map((stat) => {
+      const hist = histOf(stat);
+      const pts = hist.map((v, i) => [xAt(i), yAt(v * 100)] as const);
+      const lastPct = Math.round((hist.at(-1) ?? 0) * 100);
+      return {
+        key: stat.key,
+        label: PARTY_LABELS[stat.key],
+        color: PARTY_COLORS[stat.key],
+        inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
+        polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+        lastX: Number((pts.at(-1)?.[0] ?? 0).toFixed(2)),
+        lastY: Number((pts.at(-1)?.[1] ?? CHART_H).toFixed(2)),
+        labelY: 0, // posé juste après, une fois toutes les lignes connues
+        lastPct,
+      };
+    });
+
+  spreadLabels(series);
+
+  const gridLines = [];
+  for (let pct = 0; pct <= top; pct += top <= 20 ? 5 : 10) {
+    gridLines.push({ pct, y: Number(yAt(pct).toFixed(2)) });
+  }
+
+  // Trois repères horizontaux (début, milieu, fin) suffisent : au-delà, les
+  // étiquettes se chevauchent sur mobile.
+  const labelIdx = n <= 1 ? [0] : n === 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1];
+  const xLabels = labelIdx.map((i) => ({
+    label: shortDateFr(axisDates[i] ?? ""),
+    x: Number(xAt(i).toFixed(2)),
+  }));
+
+  return { series, gridLines, xLabels, width: CHART_W, height: CHART_H, tooShort: n <= 1 };
+}
+
+function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
 
@@ -327,6 +499,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
     rows,
+    chart: buildChart(stats, range, dates),
   };
 }
 
@@ -337,6 +510,8 @@ export const __test__ = {
   sparkPoints,
   samplePoints,
   buildRangeView,
+  buildChart,
+  axisTop,
 };
 
 // Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
@@ -368,18 +543,25 @@ export async function loadParties(
     const weekRows  = upTo(JSON.parse(weekRaw)  as ShadowRow[]);
     const monthRows = upTo(JSON.parse(monthRaw) as ShadowRow[]);
 
-    const stats = computeStats(dayRows, weekRows, monthRows);
-    if (!stats) return null;
+    const computed = computeStats(dayRows, weekRows, monthRows);
+    if (!computed) return null;
+    const { stats, dates } = computed;
 
     const lastDate = dayRows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), "");
+
+    // Édition passée ⇒ on compte depuis CETTE édition, pour que l'archive dise
+    // ce qu'elle disait ce jour-là et non ce qu'on saurait aujourd'hui.
+    const refDate = asOfIso ?? new Date().toISOString().slice(0, 10);
+    const daysToElection = daysUntilElection(refDate);
 
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
+      daysToElection,
       ranges: {
-        today: buildRangeView(stats, "today"),
-        week:  buildRangeView(stats, "week"),
-        month: buildRangeView(stats, "month"),
+        today: buildRangeView(stats, "today", dates),
+        week:  buildRangeView(stats, "week", dates),
+        month: buildRangeView(stats, "month", dates),
       },
     };
   } catch (err) {

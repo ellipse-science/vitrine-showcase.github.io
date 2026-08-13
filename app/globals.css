@@ -4643,6 +4643,196 @@
     height: auto;
     overflow: visible;
   }
+
+  /* ── La course : toutes les lignes sur une échelle commune ─────────────
+     Le SVG ne porte que la géométrie et s'étire librement en largeur
+     (preserveAspectRatio="none"). Tout le texte est en HTML posé par-dessus,
+     positionné en pourcentage — donc net à toutes les tailles, là où du texte
+     dans un SVG étiré serait déformé. */
+  .partis-countdown {
+    display: inline-block;
+    /* .title-block est une colonne flex : sans ceci le badge s'étire sur toute
+       la largeur au lieu d'épouser son texte. */
+    align-self: flex-start;
+    margin-left: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--cordovan);
+    border: 0.5px solid var(--cordovan);
+    padding: 3px 8px;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .partis-course { margin-top: 18px; }
+
+  .course-figure { margin: 0; }
+  .course-tete {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--rule-faint);
+    margin-bottom: 18px;
+  }
+
+  /* La réserve à gauche loge les graduations ; celle de droite est déjà
+     ménagée DANS le viewBox (les lignes s'arrêtent à 84 %), pour que les
+     étiquettes de bout de ligne tombent dans le cadre. */
+  .course-cadre {
+    position: relative;
+    padding-left: 34px;
+  }
+  .course-svg {
+    display: block;
+    width: 100%;
+    aspect-ratio: 100 / 46;
+    height: auto;
+    overflow: visible;
+  }
+  .course-grille { stroke: var(--rule-faint); stroke-width: 0.5px; }
+  .course-axe    { stroke: var(--rule); stroke-width: 1px; }
+
+  .course-y-label {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+
+  .course-point {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .course-point.shadow { opacity: 0.5; }
+
+  .course-bout {
+    position: absolute;
+    transform: translate(10px, -50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .course-bout b {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .course-bout.shadow { opacity: 0.55; }
+
+  .course-x {
+    position: relative;
+    height: 16px;
+    margin-top: 6px;
+    margin-left: 34px;
+  }
+  .course-x span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+  /* Les repères extrêmes se recentrent vers l'intérieur, sinon ils débordent
+     du cadre à gauche et à droite. */
+  .course-x span:first-child { transform: none; }
+  .course-x span:last-child  { transform: translateX(-100%); }
+
+  .course-vide {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-softer);
+    padding: 28px 0;
+    text-align: center;
+  }
+
+  .course-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .course-legende-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .course-legende-item.shadow { opacity: 0.5; }
+  .course-puce {
+    width: 9px;
+    height: 9px;
+    flex: none;
+    align-self: center;
+  }
+  .course-parti {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  .course-pct {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+
+  .course-ombre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 2px solid var(--rule-faint);
+  }
+  .course-ombre-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
+       de haut deviennent illisibles quand la largeur tombe sous ~400 px. */
+    .course-svg { aspect-ratio: 100 / 68; }
+    /* Le cadre décale par un padding, l'axe horizontal par une marge — cumuler
+       les deux sur .course-x le ferait déborder d'autant vers la droite. */
+    .course-cadre { padding-left: 26px; }
+    .course-x { margin-left: 26px; padding-left: 0; }
+    .course-bout { font-size: 10px; transform: translate(6px, -50%); }
+    /* La réserve de droite ne fait que 16 % de la largeur : sur un écran
+       étroit, « CAQ 35 % » n'y tient pas. On garde le sigle, la part de voix
+       est de toute façon répétée dans la légende juste dessous. */
+    .course-bout b { display: none; }
+    .partis-countdown { margin-left: 0; margin-top: 8px; }
+    .course-legende { gap: 10px 18px; }
+  }
   .in-shadow-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
