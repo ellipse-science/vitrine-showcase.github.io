@@ -2156,9 +2156,9 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   // le radar → les deux modules montrent les mêmes histoires. Filtre : au moins
   // un média QC a couvert l'histoire sur la fenêtre.
   // Calibration glissante publiée (suivi aws-refiners#212). Depuis le cutover
-  // elle ne sert plus QU'À la jauge de convergence de Deux solitudes, où
-  // « habituel » DOIT suivre l'actualité récente — c'est le sens du mot. Les
-  // seuils de saillance, eux, sont ancrés (voir plus bas).
+  // elle ne sert plus QU'À la jauge de convergence de Deux solitudes — les
+  // seuils de saillance, eux, sont ancrés (voir plus bas). ⚠️ Cette exception
+  // n'est pas ratifiée : vitrine#477 la documente et la mesure.
   const calibration = await loadCalibration();
   // Niveau d'un BLOC (lecture au survol de la trajectoire) : calibré sur la
   // distribution des scores PAR BLOC — sa vraie population de référence, la

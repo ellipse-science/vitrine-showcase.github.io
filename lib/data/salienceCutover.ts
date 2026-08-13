@@ -49,9 +49,13 @@ export const NEW_INDEX_SCALE = 100;
 // une grille d'ANNÉE contre une grille de vingt jours — le défaut exact mesuré
 // et rejeté au cutover : la fenêtre courte sur-émet « Exceptionnelle » de 68 %.
 //
-// CE QUI RESTE GLISSANT, ET C'EST VOULU : le repère « habituel » de la jauge de
-// convergence (Deux solitudes). Là, le mot « habituel » DÉSIGNE le passé récent
-// — une référence figée le rendrait faux. Deux régimes, deux raisons.
+// CE QUI RESTE GLISSANT POUR L'INSTANT : le repère « habituel » de la jauge de
+// convergence (Deux solitudes). C'est désormais le SEUL repère mobile du site —
+// tous les autres sont soit ancrés, soit des seuils absolus (2 % de part de
+// voix pour l'ombre médiatique, ±0,002 pour le ton). ⚠️ Ce n'est PAS ratifié :
+// la question « pourquoi un régime pour l'un et pas pour l'autre » est ouverte
+// et documentée, mesure à l'appui, dans vitrine#477. Ne pas invoquer cette
+// exception comme un choix arrêté tant qu'elle n'est pas tranchée.
 //
 // ⏳ CES VALEURS SONT PROVISOIRES, et le plan est arrêté : elles cèdent la place
 // à `ref-2025`, une année CIVILE complète, figée et versionnée, APRÈS le
