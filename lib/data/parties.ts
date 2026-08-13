@@ -339,7 +339,14 @@ export const __test__ = {
   buildRangeView,
 };
 
-const DATA_DIR = path.resolve(process.cwd(), "public", "data", "refined");
+// Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
+// VITRINE_PARTIES_FIXTURES pointe vers un jeu FICTIF au même schéma
+// (cf. scripts/make_parties_fixtures.mjs) — la donnée réelle est aujourd'hui
+// dégénérée (un seul parti détecté, cf. aws-refiners#223/#248), donc impossible
+// d'y juger un changement visuel. Variable absente ⇒ comportement inchangé.
+const DATA_DIR = process.env.VITRINE_PARTIES_FIXTURES
+  ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES)
+  : path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(
   /** Édition passée (#434) : jour de publication de l'édition affichée. Ce
