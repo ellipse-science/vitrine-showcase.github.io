@@ -4679,7 +4679,11 @@
     font-weight: 500;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--rule-faint);
-    margin-bottom: 18px;
+    /* Assez d'air pour loger l'étiquette du scrutin, qui se pose AU-DESSUS du
+       cadre. Marge et non padding : un padding sur .course-cadre décalerait le
+       bloc de référence des éléments positionnés, donc désalignerait les
+       graduations de leurs lignes. */
+    margin-bottom: 32px;
   }
 
   /* La réserve à gauche loge les graduations ; celle de droite est déjà
@@ -4709,6 +4713,28 @@
     color: var(--ink-softer);
     white-space: nowrap;
   }
+
+  /* Repère du scrutin : trait plein cordovan, l'accent unique du site. Le vide
+     à sa gauche est voulu — c'est le temps qui reste avant le vote. */
+  .course-scrutin { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
+  .course-scrutin-label {
+    position: absolute;
+    top: 0;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding-bottom: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .course-scrutin-label b { font-weight: 500; letter-spacing: 0.1em; }
 
   .course-point {
     position: absolute;

@@ -7,7 +7,7 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
 
-const RANGES: RangeKey[] = ["today", "week", "month"];
+const RANGES: RangeKey[] = ["today", "week", "overall"];
 
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
@@ -186,7 +186,24 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
             />
           ))}
 
+          {chart.election && (
+            <line
+              x1={chart.election.x}
+              x2={chart.election.x}
+              y1="0"
+              y2={chart.height}
+              className="course-scrutin"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
+
+        {chart.election && (
+          <span className="course-scrutin-label" style={{ left: pct(chart.election.x, chart.width) }}>
+            Scrutin
+            <b>{chart.election.label}</b>
+          </span>
+        )}
 
         {/* Le point terminal est en HTML, pas en SVG : dans un viewBox étiré en
             largeur, un <circle> devient une ellipse démesurée. Il marque la

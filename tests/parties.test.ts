@@ -210,3 +210,45 @@ describe("sparkPoints / samplePoints", () => {
     expect(sampled[sampled.length - 1]).toEqual(pts[pts.length - 1]);
   });
 });
+
+describe("le portrait global", () => {
+  const DAYS = ["2026-08-01", "2026-08-07", "2026-08-13"];
+  function rows(): SR[] {
+    const v: Record<string, number> = { caq: 0.4, pq: 0.3, qs: 0.15, plq: 0.1, pcq: 0.05 };
+    return DAYS.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, v[p])));
+  }
+
+  it("pose un repère de scrutin, que les deux autres onglets n'ont pas", () => {
+    const { stats, dates } = statsOf(rows(), rows(), rows());
+    expect(buildChart(stats, "overall", dates).election).not.toBeNull();
+    expect(buildChart(stats, "today", dates).election).toBeNull();
+    expect(buildChart(stats, "week", dates).election).toBeNull();
+  });
+
+  it("laisse la donnée s'arrêter bien avant le scrutin — le vide est l'information", () => {
+    const { stats, dates } = statsOf(rows(), rows(), rows());
+    const chart = buildChart(stats, "overall", dates);
+    const finDonnee = Math.max(...chart.series.map((s) => s.lastX));
+    // 13 août → 5 octobre : la donnée doit occuper nettement moins que l'axe.
+    expect(finDonnee).toBeLessThan(chart.election!.x * 0.6);
+  });
+
+  it("place les points selon la DATE et non selon leur rang", () => {
+    // Trois dates inégalement espacées : 1er, 7 et 13 août. Le point du milieu
+    // doit tomber à mi-chemin, pas au tiers comme le voudrait un rang.
+    const { stats, dates } = statsOf(rows(), rows(), rows());
+    const chart = buildChart(stats, "today", dates);
+    const xs = chart.series[0].polyline.split(" ").map((p) => Number(p.split(",")[0]));
+    expect(xs.length).toBe(3);
+    expect((xs[1] - xs[0]) / (xs[2] - xs[0])).toBeCloseTo(0.5, 2);
+  });
+
+  it("la légende et le bout de courbe annoncent le même chiffre", () => {
+    const { stats, dates } = statsOf(rows(), rows(), rows());
+    const view = buildRangeView(stats, "overall", dates);
+    for (const s of view.chart.series) {
+      const ligne = view.rows.find((r) => r.key === s.key)!;
+      expect(ligne.sovPct).toBe(s.lastPct);
+    }
+  });
+});

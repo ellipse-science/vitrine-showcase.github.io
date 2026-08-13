@@ -16,7 +16,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
-import { daysUntilElection } from "@/lib/election";
+import { ELECTION_DATE, daysUntilElection } from "@/lib/election";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -41,27 +41,33 @@ const SHADOW_THRESHOLD = 0.02; // éclipse médiatique : < 2 % SOV (seuil du raf
 const SPARK_W = 100;
 const SPARK_H = 30;
 
-export type RangeKey = "today" | "week" | "month";
+/** `overall` a remplacé l'ancien `month` : ce n'est plus une granularité de
+ *  plus, c'est la vue dont l'axe court jusqu'au scrutin. */
+export type RangeKey = "today" | "week" | "overall";
 
 const SPARK_HEAD_LABELS: Record<RangeKey, string> = {
-  today: "Les derniers jours",
-  week: "Les dernières semaines",
-  month: "Les derniers mois",
+  today: "Jour par jour",
+  week: "Semaine par semaine",
+  overall: "Depuis le début du suivi, jusqu'au scrutin",
 };
 
 const RANGE_CONFIG: Record<
   RangeKey,
   { barKey: keyof Sov; refKey: keyof Sov; toneKey: keyof Tone; refLabel: string }
 > = {
-  today: { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne depuis lundi" },
-  week:  { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne du mois" },
-  month: { barKey: "month", refKey: "year",  toneKey: "month", refLabel: "moyenne de l'année" },
+  today:   { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne depuis lundi" },
+  week:    { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne du mois" },
+  // Le portrait global chiffre la DERNIÈRE valeur, comme les deux autres — et
+  // surtout comme le bout de sa propre courbe, qui est juste au-dessus. Une
+  // moyenne de période y serait plus riche, mais afficher « PCQ 8 % » sous une
+  // courbe qui se termine à 1 % ne s'explique pas au lecteur.
+  overall: { barKey: "today", refKey: "year",  toneKey: "today", refLabel: "moyenne de la période" },
 };
 
 const TAB_LABELS: Record<RangeKey, string> = {
-  today: "Aujourd'hui",
-  week: "Depuis une semaine",
-  month: "Depuis un mois",
+  today: "La course de la journée",
+  week: "La course de la semaine",
+  overall: "Le portrait global",
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
@@ -134,6 +140,10 @@ export type ChartView = {
   /** Graduations horizontales, en pourcentage de part de voix. */
   gridLines: { pct: number; y: number }[];
   xLabels: { label: string; x: number }[];
+  /** Repère vertical du scrutin — non nul seulement quand l'axe court jusqu'à
+   *  lui (portrait global). Le vide à sa gauche EST l'information : c'est le
+   *  temps qui reste. */
+  election: { x: number; label: string } | null;
   width: number;
   height: number;
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
@@ -301,8 +311,12 @@ function computeStats(
 
 const CHART_W = 100;
 const CHART_H = 46;
-/** Marge droite réservée aux étiquettes de parti posées en bout de ligne. */
+/** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
+ *  Le portrait global en demande beaucoup moins : ses courbes s'arrêtent à
+ *  aujourd'hui, donc leurs étiquettes tombent au milieu du cadre et seule
+ *  celle du scrutin, centrée sur son repère, doit tenir au bord. */
 const CHART_PAD_R = 16;
+const CHART_PAD_R_OVERALL = 7;
 
 const MONTHS_SHORT_FR = [
   "janv.", "févr.", "mars", "avr.", "mai", "juin",
@@ -371,7 +385,10 @@ function buildChart(
   range: RangeKey,
   dates: SeriesDates,
 ): ChartView {
-  const seriesKey = range === "month" ? "monthly" : range === "week" ? "weekly" : "daily";
+  // Le portrait global lit la série JOURNALIÈRE : c'est la plus fournie, et un
+  // axe qui court jusqu'au scrutin mérite mieux que trois points mensuels
+  // écrasés dans son premier tiers.
+  const seriesKey = range === "week" ? "weekly" : "daily";
   const axisDates = dates[seriesKey];
   const n = axisDates.length;
 
@@ -379,8 +396,19 @@ function buildChart(
   const allValues = stats.flatMap((s) => histOf(s));
   const top = axisTop(Math.max(0, ...allValues) * 100);
 
-  const plotW = CHART_W - CHART_PAD_R;
-  const xAt = (i: number) => (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+  const plotW = CHART_W - (range === "overall" ? CHART_PAD_R_OVERALL : CHART_PAD_R);
+
+  // L'axe horizontal est PROPORTIONNEL AU TEMPS, pas au rang du point. Sans
+  // ça, le portrait global n'aurait aucun vide à droite : les 53 jours qui
+  // restent avant le scrutin seraient écrasés à zéro, et le compte à rebours
+  // ne se verrait pas. Ça corrige aussi la vue hebdomadaire, dont les dates ne
+  // sont pas régulièrement espacées.
+  const dayMs = 86_400_000;
+  const t0 = Date.parse(`${axisDates[0] ?? ELECTION_DATE}T00:00:00Z`);
+  const tLast = Date.parse(`${axisDates.at(-1) ?? axisDates[0] ?? ELECTION_DATE}T00:00:00Z`);
+  const tEnd = range === "overall" ? Date.parse(`${ELECTION_DATE}T00:00:00Z`) : tLast;
+  const span = Math.max(tEnd - t0, dayMs); // jamais zéro : une seule date ⇒ pas de division par 0
+  const xAtDate = (iso: string) => ((Date.parse(`${iso}T00:00:00Z`) - t0) / span) * plotW;
   const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
 
   const series: ChartSeries[] = stats
@@ -388,7 +416,7 @@ function buildChart(
     .sort((a, b) => histOf(b).at(-1)! - histOf(a).at(-1)!)
     .map((stat) => {
       const hist = histOf(stat);
-      const pts = hist.map((v, i) => [xAt(i), yAt(v * 100)] as const);
+      const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
       const lastPct = Math.round((hist.at(-1) ?? 0) * 100);
       return {
         key: stat.key,
@@ -411,14 +439,30 @@ function buildChart(
   }
 
   // Trois repères horizontaux (début, milieu, fin) suffisent : au-delà, les
-  // étiquettes se chevauchent sur mobile.
+  // étiquettes se chevauchent sur mobile. Dans le portrait global, la borne de
+  // droite est le scrutin — il porte son propre repère, donc on ne l'étiquette
+  // pas deux fois et on s'arrête à la dernière donnée.
   const labelIdx = n <= 1 ? [0] : n === 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1];
   const xLabels = labelIdx.map((i) => ({
     label: shortDateFr(axisDates[i] ?? ""),
-    x: Number(xAt(i).toFixed(2)),
+    x: Number(xAtDate(axisDates[i] ?? "").toFixed(2)),
   }));
 
-  return { series, gridLines, xLabels, width: CHART_W, height: CHART_H, tooShort: n <= 1 };
+  // Repère du scrutin : uniquement là où l'axe va jusqu'à lui.
+  const election =
+    range === "overall"
+      ? { x: Number(xAtDate(ELECTION_DATE).toFixed(2)), label: shortDateFr(ELECTION_DATE) }
+      : null;
+
+  return {
+    series,
+    gridLines,
+    xLabels,
+    election,
+    width: CHART_W,
+    height: CHART_H,
+    tooShort: n <= 1,
+  };
 }
 
 function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
@@ -434,16 +478,13 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     const refLeftPct = Math.min(100, refSov * 100);
     const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
 
+    // Le ton suit la MÊME série que la courbe du même onglet : le portrait
+    // global lit le journalier, donc son ton aussi.
     const toneHist =
-      range === "month"
-        ? stat.toneHistory.monthly
-        : range === "week"
-          ? stat.toneHistory.weekly
-          : stat.toneHistory.daily;
+      range === "week" ? stat.toneHistory.weekly : stat.toneHistory.daily;
     const streak = computeToneStreak(toneHist);
     const unclamped = toneHist.length > 0 ? toneHist[toneHist.length - 1] : 0;
-    const unit =
-      range === "month" ? "mois" : range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
+    const unit = range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
       streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—";
     const dirLabel =
@@ -459,11 +500,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
 
     const rawHistory =
-      range === "month"
-        ? stat.history.monthly
-        : range === "week"
-          ? stat.history.weekly
-          : stat.history.week;
+      range === "week" ? stat.history.weekly : stat.history.week;
     const pts = sparkPoints(rawHistory, SPARK_W, SPARK_H);
     const polyline = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
 
@@ -561,7 +598,7 @@ export async function loadParties(
       ranges: {
         today: buildRangeView(stats, "today", dates),
         week:  buildRangeView(stats, "week", dates),
-        month: buildRangeView(stats, "month", dates),
+        overall: buildRangeView(stats, "overall", dates),
       },
     };
   } catch (err) {
