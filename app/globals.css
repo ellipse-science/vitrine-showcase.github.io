@@ -4828,7 +4828,13 @@
   .platine-donnees dd.haut { color: var(--red); }
   .platine-donnees dd.bas  { color: var(--green); }
 
+  /* La table de mix est un APPAREIL : elle a son châssis. Fond `--paper-deep`,
+     le jeton que le design language réserve aux encadrés. Les platines, elles,
+     restent dehors — ce sont des appareils distincts dans une régie. */
   .console {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: 20px 22px 24px;
     margin-top: 4px;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
@@ -4958,8 +4964,10 @@
     flex: 1 1 0;
     min-height: 3px;
     /* Éteint : le segment existe, mais il ne s'allume pas. C'est ce contraste
-       plein/vide qui fait lire l'échelle, pas seulement la hauteur. */
-    background: var(--rule-faint);
+       plein/vide qui fait lire l'échelle, pas seulement la hauteur. Assombri
+       depuis que la console a un fond `--paper-deep`, sur lequel l'ancien
+       `--rule-faint` disparaissait presque. */
+    background: color-mix(in srgb, var(--rule) 62%, transparent);
   }
   /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau, et elle se lit DANS la
      colonne : vert jusqu'à la moyenne du parti, ambre au-dessus, rouge bien
