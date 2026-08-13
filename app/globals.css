@@ -4667,7 +4667,119 @@
     vertical-align: middle;
   }
 
-  .partis-course { margin-top: 18px; }
+  /* ── Le podium : qui mène, d'un coup d'œil ──────────────────────────────
+     Les marches sont dans l'ordre 1-2-3 dans le HTML (l'ordre qu'entend un
+     lecteur d'écran) et réarrangées en 2-1-3 par `order`, la disposition
+     olympique. --h porte la hauteur, proportionnelle à la part de voix. */
+  .podium { margin-top: 22px; }
+
+  .podium-marches {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 540px;
+  }
+  /* La première rangée a une hauteur DÉFINIE (150px) : sans elle, le
+     `height: var(--h)` du bloc n'a rien à quoi se rapporter et retombe sur la
+     hauteur du contenu — les trois marches font alors la même taille, ce qui
+     ruine le podium. Les deux rangées suivantes (rang, ton) s'auto-dimensionnent. */
+  .podium-marche {
+    display: grid;
+    grid-template-rows: 150px auto auto;
+    align-items: end;
+    justify-items: center;
+    row-gap: 6px;
+    min-width: 0;
+  }
+  .podium-marche.rang-1 { order: 2; }
+  .podium-marche.rang-2 { order: 1; }
+  .podium-marche.rang-3 { order: 3; }
+
+  .podium-bloc {
+    width: 100%;
+    height: var(--h);
+    min-height: 34px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 9px 6px 0;
+    /* Aplat PLEIN, texte sur papier — la même grammaire que .parti-name-box,
+       qui porte déjà l'identité des partis dans le module Assemblée. En teinte
+       pâle, la CAQ et le PQ viraient tous deux au gris-bleu et devenaient
+       indiscernables côte à côte ; en aplat plein, leur différence de clarté
+       (6,1 contre 9,8 de contraste sur le papier) se voit. */
+    background: var(--party);
+    color: var(--paper);
+  }
+  .podium-marche.shadow .podium-bloc { opacity: 0.5; }
+
+  .podium-parti {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    line-height: 1.1;
+  }
+  .podium-pct {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    color: color-mix(in srgb, var(--paper) 82%, transparent);
+  }
+  .podium-rang {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  .podium-reste {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 18px;
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--rule);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  .podium-reste-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+  .podium-reste-item { display: inline-flex; align-items: baseline; gap: 6px; }
+  .podium-reste-item.shadow { opacity: 0.55; }
+  .podium-reste-item em {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-style: normal;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .podium-puce { width: 9px; height: 9px; align-self: center; flex: none; }
+
+  .podium-vide {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-softer);
+    padding: 24px 0;
+  }
+
+  .partis-course { margin-top: 26px; padding-top: 22px; border-top: 2px solid var(--rule-faint); }
 
   .course-figure { margin: 0; }
   .course-tete {
@@ -4908,6 +5020,14 @@
   }
 
   @media (max-width: 768px) {
+    /* Le podium se resserre : marches moins hautes, typographie réduite —
+       trois colonnes doivent tenir dans ~340 px de contenu. */
+    .podium-marche { grid-template-rows: 108px auto auto; }
+    .podium-parti { font-size: 15px; }
+    .podium-pct { font-size: 13px; }
+    .podium-bloc { padding: 7px 4px 0; }
+    .podium-reste { font-size: 14px; gap: 6px 12px; }
+
     /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
        de haut deviennent illisibles quand la largeur tombe sous ~400 px. */
     .course-svg { aspect-ratio: 100 / 68; }

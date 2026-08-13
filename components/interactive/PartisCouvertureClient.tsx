@@ -77,6 +77,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
+      <Podium rows={view.rows} onPcqTap={handlePcqTap} />
+
       <section className="partis-course">
         <Course chart={view.chart} headLabel={view.sparkHeadLabel} />
 
@@ -113,6 +115,86 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
+  );
+}
+
+const RANGS = ["1er", "2e", "3e"];
+
+/**
+ * Le podium — qui mène, d'un coup d'œil.
+ *
+ * Il suit l'onglet sélectionné plutôt que d'être figé sur la journée : un
+ * podium qui annoncerait un classement pendant que la courbe juste en dessous
+ * en montre un autre serait la même incohérence que celle déjà corrigée entre
+ * la légende et le bout de courbe.
+ *
+ * Hauteur des marches : PROPORTIONNELLE à la part de voix, la première
+ * remplissant le bloc. Les rapports entre marches restent donc exacts (une
+ * marche deux fois plus haute vaut deux fois plus), et la base est à zéro —
+ * c'est une mise à l'échelle, pas une déformation.
+ *
+ * Ordre du DOM : 1er, 2e, 3e — c'est celui qu'entend un lecteur d'écran. Le CSS
+ * les réarrange en 2-1-3 pour la lecture visuelle, sans toucher au balisage.
+ */
+function Podium({ rows, onPcqTap }: { rows: RowView[]; onPcqTap: () => void }) {
+  const podium = rows.slice(0, 3);
+  const reste = rows.slice(3);
+  const tete = podium[0]?.sovPct ?? 0;
+
+  // Aucune couverture mesurée : un podium de marches nulles serait absurde, et
+  // surtout il donnerait l'apparence d'un résultat là où il n'y a pas de donnée.
+  if (tete <= 0) {
+    return (
+      <p className="podium-vide">
+        Aucune couverture mesurée sur cette période — pas de classement à afficher.
+      </p>
+    );
+  }
+
+  return (
+    <section className="podium" aria-label="Classement de la couverture médiatique">
+      <ol className="podium-marches">
+        {podium.map((row, i) => (
+          <li
+            key={row.key}
+            className={`podium-marche rang-${i + 1}${row.inShadow ? " shadow" : ""}`}
+            style={{ ["--h" as string]: `${Math.max(8, (row.sovPct / tete) * 100)}%` }}
+          >
+            <div className="podium-bloc" style={{ ["--party" as string]: row.color }}>
+              <span className="podium-parti">{row.label}</span>
+              <span className="podium-pct">{row.sovPct}&nbsp;%</span>
+            </div>
+            <span className="podium-rang">{RANGS[i]}</span>
+            <span
+              className={`tone-streak tone-streak--${row.toneDirection}`}
+              title={row.toneTitle}
+            >
+              {row.toneLabel}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {reste.length > 0 && (
+        <p className="podium-reste">
+          <span className="podium-reste-label">Hors podium</span>
+          {reste.map((row) => (
+            <span key={row.key} className={`podium-reste-item${row.inShadow ? " shadow" : ""}`}>
+              <i className="podium-puce" style={{ background: row.color }} aria-hidden="true" />
+              <span
+                onClick={row.key === "pcq" ? onPcqTap : undefined}
+                style={row.key === "pcq" ? { cursor: "pointer", userSelect: "none" } : undefined}
+                title={row.key === "pcq" ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
+              >
+                {row.label}
+              </span>{" "}
+              {row.sovPct}&nbsp;%
+              {row.inShadow && <em>dans l&apos;ombre</em>}
+            </span>
+          ))}
+        </p>
+      )}
+    </section>
   );
 }
 
