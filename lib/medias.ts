@@ -32,6 +32,30 @@ export const MEDIA_LABELS: Record<string, string> = {
 };
 
 /**
+ * Formule prépositionnelle pour la manchette, qui n'est pas le nom seul : on
+ * lit DANS un journal, on regarde ou on écoute À une chaîne. Et l'article se
+ * décapitalise en cours de phrase — « dans le Journal de Montréal », alors que
+ * le titre du quotidien est « Le Journal de Montréal ».
+ *
+ * Repli pour un média absent d'ici : « dans » + son libellé.
+ */
+export const MEDIA_DANS: Record<string, string> = {
+  RCI: "À Radio-Canada",
+  LAP: "Dans La Presse",
+  LED: "Dans Le Devoir",
+  JDM: "Dans le Journal de Montréal",
+  TVA: "À TVA Nouvelles",
+  MG: "Dans la Montreal Gazette",
+  CBC: "À CBC",
+  CTV: "À CTV",
+  GAM: "Dans The Globe and Mail",
+  NP: "Dans le National Post",
+  GN: "À Global News",
+  CNN: "À CNN",
+  FXN: "À Fox News",
+};
+
+/**
  * Ordre des crans du fader, « tous les médias » AU CENTRE — position de repos
  * d'un crossfader, celle qu'on retrouve sans regarder.
  *

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS } from "@/lib/medias";
 import { ELECTION_LABEL } from "@/lib/election";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -31,7 +31,7 @@ function shareTitle(data: PartiesData): string {
       : leader.toneDirection === "negative"
         ? "on en parle en mal"
         : "l'important, c'est qu'on en parle";
-  return `${leader.label} domine la couverture (${leader.sovPct} %) : ${tone}`;
+  return `${leader.label} domine la couverture des partis (${leader.sovPct} %) : ${tone}`;
 }
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
@@ -106,7 +106,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       <Manchette
         rows={view.rows}
         reference={data.ranges[range].rows}
-        mediaLabel={media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null)}
+        media={media === TOUS_MEDIAS ? null : media}
+        mediaLabel={data.medias.find((m) => m.id === media)?.label ?? null}
       />
 
       <div className="regie">
@@ -339,10 +340,12 @@ function Console({
 function Manchette({
   rows,
   reference,
+  media,
   mediaLabel,
 }: {
   rows: RowView[];
   reference: RowView[];
+  media: string | null;
   mediaLabel: string | null;
 }) {
   const tete = rows.filter((r) => !r.inShadow)[0];
@@ -354,9 +357,26 @@ function Manchette({
 
   return (
     <p className="manchette">
-      {mediaLabel ? <>Chez <b>{mediaLabel}</b>, {ARTICLE[tete.key]?.toLowerCase() ?? ""}</> : ARTICLE[tete.key]}
+      {media ? (
+        <>
+          {(() => {
+            const dans = MEDIA_DANS[media] ?? `Dans ${mediaLabel ?? media}`;
+            const [tete0, ...reste] = dans.split(" ");
+            return (
+              <>
+                {tete0}{" "}
+                <b>{reste.join(" ")}</b>,{" "}
+              </>
+            );
+          })()}
+          {ARTICLE[tete.key]?.toLowerCase() ?? ""}
+        </>
+      ) : (
+        ARTICLE[tete.key]
+      )}
       <b className="manchette-parti">{tete.label}</b> occupe{" "}
       <b className="manchette-chiffre">{tete.sovPct}&nbsp;%</b> de la couverture
+      accordée aux partis
       {mediaLabel && Math.abs(ecart) >= 10 && (
         <>
           {" "}—{" "}
