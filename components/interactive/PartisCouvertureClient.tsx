@@ -245,9 +245,10 @@ function Console({
   onSelect: (key: string) => void;
   onPcqTap: () => void;
 }) {
-  const actifs = rows.filter((r) => !r.inShadow);
-  const coupes = rows.filter((r) => r.inShadow);
-  const tete = actifs[0];
+  // Les canaux coupés RESTENT sur la console : un canal muet se voit, il ne
+  // disparaît pas. C'est aussi ce que montre un afficheur de table de mix —
+  // la tranche est là, ses segments ne s'allument pas.
+  const tete = rows.filter((r) => !r.inShadow)[0];
 
   if (!tete || tete.sovPct <= 0) {
     return (
@@ -269,13 +270,13 @@ function Console({
       </div>
 
       <div className="console-corps">
-        <ol className="console-tranches" style={{ ["--n" as string]: actifs.length }}>
-          {actifs.map((row, i) => (
+        <ol className="console-tranches" style={{ ["--n" as string]: rows.length }}>
+          {rows.map((row, i) => (
             <Tranche
               key={row.key}
               row={row}
               rang={i + 1}
-              total={actifs.length}
+              total={rows.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               charge={selection[0] === row.key ? "A" : selection[1] === row.key ? "B" : null}
               onSelect={onSelect}
@@ -294,30 +295,6 @@ function Console({
         </ul>
       </div>
 
-      {coupes.length > 0 && (
-        <p className="console-coupes">
-          <span className="console-coupes-label">
-            Canaux coupés
-            <InfoTip size="sm" label="Ombre médiatique">
-              Moins de 2&nbsp;% de la part de voix sur la période — trop peu pour qu&apos;on puisse
-              parler d&apos;une présence. Ces partis sortent de la console : leur signal n&apos;est
-              pas faible, il est inaudible.
-            </InfoTip>
-          </span>
-          {coupes.map((row) => (
-            <span key={row.key} className="console-coupe-item">
-              <i className="console-ruban" style={{ background: row.color }} aria-hidden="true" />
-              <span
-                onClick={row.key === "pcq" ? onPcqTap : undefined}
-                style={row.key === "pcq" ? { cursor: "pointer", userSelect: "none" } : undefined}
-                title={row.key === "pcq" ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
-              >
-                {row.label}
-              </span>
-            </span>
-          ))}
-        </p>
-      )}
     </section>
   );
 }
@@ -522,8 +499,12 @@ function Tranche({
   onSelect: (key: string) => void;
   onPcqTap?: () => void;
 }) {
+  // Canal coupé : DEUX segments gris, en bas — le signal résiduel qu'affiche
+  // une table de mix pour une tranche muette. Ni zéro (la tranche aurait l'air
+  // absente), ni son vrai niveau (il n'est pas retenu comme audible).
+  const coupe = row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
-  const allumes = Math.max(1, Math.round(niveau * METER_SEGMENTS));
+  const allumes = coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   const peak = Math.min(1, row.peakPct / METER_FULL_SCALE);
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
@@ -532,7 +513,7 @@ function Tranche({
 
   return (
     <li
-      className={`console-tranche${charge ? " chargee" : ""}`}
+      className={`console-tranche${charge ? " chargee" : ""}${coupe ? " coupee" : ""}`}
       style={{ ["--ordre" as string]: positionVisuelle(rang, total) }}
     >
       {charge && (
@@ -543,7 +524,8 @@ function Tranche({
       <div
         className="console-vumetre"
         title={
-          `${row.label} — ${row.sovPct} % de la part de voix (sommet : ${row.peakPct} %)` +
+          (coupe ? `${row.label} — canal coupé, sous 2 % : ` : `${row.label} — `) +
+          `${row.sovPct} % de la couverture accordée aux partis (sommet : ${row.peakPct} %)` +
           (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à sa moyenne`)
         }
       >
@@ -551,7 +533,9 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${zoneSegment(idx, moyennePct)}${idx < allumes ? " on" : ""}`}
+            className={`seg ${coupe ? "mute" : zoneSegment(idx, moyennePct)}${
+              idx < allumes ? " on" : ""
+            }`}
             aria-hidden="true"
           />
         ))}
@@ -577,9 +561,19 @@ function Tranche({
       >
         {row.label}
       </button>
-      <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-        {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "—"}
-      </span>
+      {coupe ? (
+        <span className="console-coupe-mention">
+          coupé
+          <InfoTip size="sm" label="Ombre médiatique">
+            Moins de 2&nbsp;% de la couverture accordée aux partis sur la période — trop peu pour
+            qu&apos;on puisse parler d&apos;une présence. Le canal reste affiché, mais muet.
+          </InfoTip>
+        </span>
+      ) : (
+        <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
+          {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "—"}
+        </span>
+      )}
     </li>
   );
 }

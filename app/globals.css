@@ -4924,6 +4924,22 @@
   }
   .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
+  /* Le ruban d'un canal coupé perd sa couleur de parti : il n'est plus une
+     identité qui joue, seulement une tranche présente. */
+  .console-tranche.coupee .console-ruban-nom {
+    background: transparent;
+    color: var(--ink-softer);
+    border: 1px solid var(--rule);
+  }
+  .console-coupe-mention {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+
   .console-tranche {
     order: var(--ordre);
     flex: 1 1 0;
@@ -4960,6 +4976,9 @@
   .console-vumetre .seg.on.green { background: var(--green); }
   .console-vumetre .seg.on.amber { background: var(--amber); }
   .console-vumetre .seg.on.red   { background: var(--red); }
+  /* Canal coupé : deux segments GRIS en bas, et rien d'autre. La tranche reste
+     là — un canal muet se voit, il ne disparaît pas. */
+  .console-vumetre .seg.on.mute  { background: var(--ink-softer); }
 
   /* Peak hold : le sommet atteint sur la fenêtre, qui reste affiché longtemps
      après que le niveau soit redescendu. */
@@ -5045,32 +5064,6 @@
     color: var(--cordovan);
     line-height: 1;
   }
-
-  /* Canaux coupés : hors console, sous un filet. Leur signal n'est pas
-     faible, il est absent. */
-  .console-coupes {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 8px 18px;
-    max-width: 620px;
-    margin: 26px auto 0;
-    padding-top: 16px;
-    border-top: 0.5px solid var(--rule);
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 16px;
-    color: var(--ink-softer);
-  }
-  .console-coupes-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-  .console-coupe-item { display: inline-flex; align-items: center; gap: 7px; opacity: 0.72; }
-  .console-ruban { width: 9px; height: 9px; flex: none; }
 
   .console-vide {
     font-family: 'IBM Plex Mono', monospace;
