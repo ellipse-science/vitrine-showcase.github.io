@@ -20,7 +20,7 @@ description: Règles de rédaction de TOUT texte public ou d'équipe de la Vitri
 >   **signale toute divergence** à Adrien, arbitre du contenu éditorial.
 > - Typographie : **OQLF par défaut**, sauf exception explicitement décidée par
 >   l'équipe (voir la PR #246).
-> - Dernière synchro Notion → skill : **2026-07-24**.
+> - Dernière synchro Notion → skill : **2026-08-13**.
 
 ## Voix et ton
 
@@ -62,8 +62,10 @@ bannis :
   - **à l'intérieur** des guillemets français : « exemple » ;
   - comme **séparateur de milliers** (`12 000`) ;
   - **PAS d'espace avant `;`, `?`, `!`** — norme québécoise, à l'inverse
-    de la France. (`;` ratifié par la PR #246 ; l'entrée Notion cite
-    explicitement `?` et `!`.)
+    de la France. Les trois signes sont désormais dans l'entrée Notion
+    « Espaces insécables » (ajout du `;` validé par Adrien le 2026-08-13 ;
+    il ne venait que de la PR #246 jusque-là). Vérifié par la règle
+    `espace-avant-ponctuation` de `scripts/garde_redaction.mjs`.
   - **PAS d'espace dans l'heure** : `16h`, `14h30` — **jamais** `16 h` ni
     `14 h 30`. L'entrée Notion « Espaces insécables » est explicite : *« L'OQLF
     dit d'en mettre, mais on ne le fait pas. »* C'est donc un écart ASSUMÉ à
@@ -105,6 +107,40 @@ utiles côté Vitrine :
   campagne (« l'équipe François Legault »).
 - **Sigles** : « Vitrine démocratique » (EN : *The Vitrine Démocratique*) ;
   CLESSN (majuscule à « la Chaire ») ; CAPP (majuscule au « Centre »).
+
+## Les 12 catégories d'enjeux (entrée Notion « Catégories d'enjeux »)
+
+Libellés **canoniques**, à reprendre au caractère près. Ils sont **partagés avec
+le Digital Society Lab et l'Institut Donald J. Savoie** (Hamilton et Moncton,
+Polimètres) : les changer unilatéralement casserait la comparabilité.
+
+| Français | Anglais |
+|---|---|
+| Affaires internationales et défense | International Affairs and Defence |
+| Culture et nationalisme | Culture and Nationalism |
+| Droits, libertés, minorités et discrimination | Rights, Liberties, Minorities and Discrimination |
+| Économie et travail | Economy and Labour |
+| Éducation | Education |
+| Environnement et énergie | Environment and Energy |
+| Gouvernements et gouvernance | Governments and Governance |
+| Immigration | Immigration |
+| Loi et crime | Law and Crime |
+| Santé et politiques sociales | Health and Social Policy |
+| Technologie | Technology |
+| Terres publiques et agriculture | Public Lands and Agriculture |
+
+## Les projets ne prennent JAMAIS l'italique
+
+Entrée Notion « Les projets de la CLESSN » : La Vitrine démocratique, Projet
+Quorum, Datagotchi, Déméter, Radar+, Civimètre+, Agora+, Polimètre, Global-ES.
+L'italique est réservé aux termes techniques et aux termes anglais ; les noms
+d'entreprises (GitHub, Slack…) n'en prennent pas non plus.
+
+⚠️ **Conflit connu avec l'entrée « Citations et bibliographie »**, qui impose le
+style APA — lequel met le titre de l'œuvre en italique. Une référence
+bibliographique correcte contredit donc la règle. Résolu au cas par cas avec une
+dérogation `garde-redaction: ok (citation APA)` ; si le cas se répand, c'est le
+guide qu'il faut trancher, pas le code. Vérifié par la règle `projet-italique`.
 
 ## Lexique — spécifique à la Vitrine
 
