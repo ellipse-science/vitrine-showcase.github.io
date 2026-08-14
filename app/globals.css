@@ -975,19 +975,6 @@
   .legend-toggle.inline .active { background: var(--ink); color: var(--paper); }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
-  /* Variante compacte — introduite pour « Couverture médiatique des partis
-     politiques », dont le titre est long : le bloc d'onglets doit se serrer
-     pour que titre et onglets tiennent sur UNE ligne. Modificateur et non
-     changement de `.legend-toggle.inline`, qui est partagé avec Treemap,
-     Assemblée et Polimètre+. */
-  .legend-toggle.inline.compact {
-    /* Le CORPS reste celui des autres modules — c'est lui qu'on lit, et le
-       réduire faisait paraître le sélecteur secondaire. Seuls l'interlettrage
-       et le rembourrage se resserrent, ce qui suffit à dégager la place. */
-    letter-spacing: 0.16em;
-  }
-  .legend-toggle.inline.compact span { padding: 4px 10px; }
-
   /* Hero principal — une pleine largeur (Figma: "hero") */
   .hero-main {
     border-top: 2px solid var(--rule-faint);
