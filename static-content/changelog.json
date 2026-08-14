@@ -1,5 +1,11 @@
 [
   {
+    "pr": 471,
+    "date": "2026-08-14T18:34:09Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique des textes du journal des mises à jour avant leur publication.",
+    "version": null
+  },
+  {
     "pr": 451,
     "date": "2026-08-14T17:09:55Z",
     "note": "Aucune — page de documentation technique interne, rien de visible pour le visiteur du site.",

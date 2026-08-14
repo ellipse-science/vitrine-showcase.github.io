@@ -10,38 +10,32 @@
 // (version après bump, vide si la PR n'avait pas de label semver:*).
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { extractNote, verifierNote } from "./journal-note.mjs";
 
 const CHANGELOG = "static-content/changelog.json";
-const PLACEHOLDER = "À remplacer";
-// Une note de journal = 1-2 phrases. Au-delà, on tronque : le corps de la PR
-// est une entrée non fiable et la page /journal doit rester lisible.
-const MAX_NOTE_LENGTH = 400;
 
 const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
 const pr = event.pull_request;
 
-// Extrait la section « ## Note de journal » du corps de la PR (sans les
-// commentaires HTML du template), jusqu'au prochain titre « ## ».
-function extractNote(body) {
-  if (!body) return null;
-  const match = body.match(/^##\s*Note de journal\s*$([\s\S]*?)(?=^##\s|\n*$(?![\s\S]))/m);
-  if (!match) return null;
-  let note = match[1]
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/^\s*>\s?/gm, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!note || note.includes(PLACEHOLDER)) return null;
-  if (note.length > MAX_NOTE_LENGTH) {
-    note = note.slice(0, MAX_NOTE_LENGTH).replace(/\s+\S*$/, "") + "…";
-  }
-  return note;
-}
-
 const isBot = pr.user?.type === "Bot" || /\[bot\]$/.test(pr.user?.login ?? "");
-const note =
-  extractNote(pr.body) ??
-  (isBot ? "Mise à jour automatique de dépendances techniques." : pr.title);
+const extraite = extractNote(pr.body);
+
+// PAS de repli sur le titre de la PR. C'est lui qui a publié « test(saillance) :
+// les fixtures cessent de dépendre de l'état du flag » et 19 autres titres de
+// commit sur une page que lisent les visiteurs et les partenaires. Un TROU dans
+// le journal coûte infiniment moins cher qu'une ligne indéfendable : sans note
+// publiable, on n'écrit rien. `garde-journal` fait échouer la PR bien avant
+// d'en arriver là ; ceci n'est que le filet sous le filet, pour le jour où
+// quelqu'un merge en passant outre.
+const note = extraite ?? (isBot ? "Mise à jour automatique de dépendances techniques." : null);
+
+if (note === null || verifierNote(note).length > 0) {
+  console.log(
+    `PR #${pr.number} : aucune note de journal publiable — aucune entrée ajoutée. ` +
+      `(Le titre de la PR n'est JAMAIS publié à sa place.)`,
+  );
+  process.exit(0);
+}
 
 const entry = {
   pr: pr.number,
