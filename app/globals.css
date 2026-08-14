@@ -4678,8 +4678,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 27px;
-    min-height: calc(3 * 1.35em);
+    font-size: 24px;
+    min-height: calc(3 * 1.45em);
   }
 
   /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
@@ -4689,23 +4689,21 @@
     max-width: 700px;
     margin: 0 auto;
     text-align: center;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 27px;
-    line-height: 1.35;
+    /* Même famille, même interligne et même couleur que `.une-main .dek`, le
+       chapeau principal du site : Playfair Display en normale, `--ink-soft`,
+       l'accent porté par le POIDS et non par un changement de police. Plus
+       grand que le dek d'origine (19 px) parce que c'est la phrase-clé du
+       module, mais dans la même famille. */
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: -0.1px;
     color: var(--ink-soft);
     text-wrap: balance;
   }
-  .manchette b { font-weight: 400; color: var(--ink); }
-  .manchette-parti {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 700 !important;
-    letter-spacing: 0.01em;
-  }
-  .manchette-chiffre {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 700 !important;
-    white-space: nowrap;
-  }
+  .manchette b { font-weight: 700; color: var(--ink); }
+  .manchette-chiffre { white-space: nowrap; }
   /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
      bien au-dessus. */
   /* Le chiffre du média prend la couleur de son écart, comme les segments. */
@@ -4806,15 +4804,20 @@
     letter-spacing: 0.06em;
     color: var(--ink);
   }
+  /* PROSE, donc police de lecture : le design language réserve IBM Plex Mono
+     aux étiquettes, toujours en capitales. Une phrase en monospace bas-de-casse
+     y contrevient. Même règle pour .console-vide et .course-vide. */
   .platine-vide-txt {
     margin: 0;
-    max-width: 130px;
+    max-width: 140px;
     text-align: center;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    line-height: 1.6;
-    letter-spacing: 0.1em;
-    color: var(--ink-softer);
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
   }
 
   .platine-donnees { margin: 0; width: 100%; max-width: 172px; }
@@ -4842,8 +4845,9 @@
     white-space: nowrap;
   }
   .platine-donnees dd span {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
     color: var(--ink-softer);
   }
   .platine-donnees dd.haut { color: var(--red); }
@@ -5043,11 +5047,15 @@
   }
 
   .console-vide {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-softer);
     padding: 30px 0;
     text-align: center;
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
   }
 
   /* ── Le fader : choisir la source qu'on écoute ──────────────────────────
@@ -5173,11 +5181,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: 0.12em;
-    text-transform: none;
-    color: var(--ink-softer);
-    font-weight: 400;
     white-space: nowrap;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
   }
   .course-echelle-barre {
     display: block;
@@ -5323,11 +5333,15 @@
   .course-x span:last-child  { transform: translateX(-100%); }
 
   .course-vide {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-softer);
     padding: 28px 0;
     text-align: center;
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
   }
 
   .course-legende {
@@ -5388,8 +5402,8 @@
     .console-tranches { gap: 9px; }
     .console-ruban-nom { font-size: 13px; }
     .console-tranche.tete .console-ruban-nom { font-size: 15px; }
-    .manchette { font-size: 21px; }
-    .manchette-zone { font-size: 21px; min-height: calc(4 * 1.35em); }
+    .manchette { font-size: 19px; }
+    .manchette-zone { font-size: 19px; min-height: calc(4 * 1.45em); }
     .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
     .platine { padding-top: 0; }
