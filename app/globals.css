@@ -4661,7 +4661,24 @@
      elle le faisait déborder sur deux lignes. */
   .pupitre-aide { display: flex; justify-content: flex-end; }
   .pupitre .manchette-zone { margin-top: 10px; }
-  .pupitre .regie { margin-top: 24px; }
+  /* Une DÉLIMITATION LÉGÈRE entre la manchette et la table de mix : le filet
+     dit qu'on change d'objet — d'une phrase à un instrument — sans dire qu'on
+     change de module. Court et centré, pas pleine largeur : un filet qui
+     traverse tout séparerait au lieu d'articuler. */
+  .pupitre .regie {
+    margin-top: 26px;
+    padding-top: 26px;
+    position: relative;
+  }
+  .pupitre .regie::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    border-top: 0.5px solid var(--rule);
+  }
 
   /* HAUTEUR RÉSERVÉE pour la manchette. Elle fait deux lignes sur « tous les
      médias » et trois dès qu'un média est choisi (mesuré : 62 px contre 98).

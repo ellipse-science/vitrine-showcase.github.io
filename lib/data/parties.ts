@@ -16,7 +16,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
-import { ELECTION_DATE } from "@/lib/election";
+import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
@@ -292,15 +292,27 @@ function lastDatesPerMonth(dates: string[]): string[] {
 
 // Builds a date → party → entry lookup. First occurrence wins for duplicate
 // (date, party) pairs — the refiner guarantees uniqueness per run.
+/**
+ * Indexe par date puis parti, en gardant le relevé le PLUS RÉCENT.
+ *
+ * L'ancienne version gardait la premiere ligne rencontree, ce qui etait sans
+ * effet tant que le raffineur ne publiait qu'un releve par jour. Des qu'il en
+ * publiera six — la frequence augmente pour la campagne — cette regle aurait
+ * fait prendre a la serie quotidienne un instantane intra-journee arbitraire
+ * au lieu de la valeur accumulee de fin de journee, et RIEN ne l'aurait
+ * signale. `computed_at` tranche.
+ */
 function buildLookup(rows: ShadowRow[]): Lookup {
   const result: Lookup = Object.create(null);
+  const vus: Record<string, string> = Object.create(null);
   for (const row of rows) {
     const pKey = row.party.toLowerCase();
+    const cle = `${row.date_utc}|${pKey}`;
+    const quand = row.computed_at ?? "";
+    if (vus[cle] !== undefined && vus[cle] >= quand) continue;
+    vus[cle] = quand;
     if (!result[row.date_utc]) result[row.date_utc] = Object.create(null);
-    const existing = result[row.date_utc][pKey];
-    if (!existing) {
-      result[row.date_utc][pKey] = { mentions: row.weighted_mentions, tone: row.weighted_tone };
-    }
+    result[row.date_utc][pKey] = { mentions: row.weighted_mentions, tone: row.weighted_tone };
   }
   return result;
 }
@@ -369,8 +381,8 @@ function computeStats(
 const CHART_W = 100;
 const CHART_H = 46;
 /** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
- */
-const CHART_PAD_R = 16;
+ *  Resserrée pour que la ligne d'arrivée se rapproche du bord. */
+const CHART_PAD_R = 9;
 
 const MONTHS_SHORT_FR = [
   "janv.", "févr.", "mars", "avr.", "mai", "juin",
@@ -480,8 +492,31 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
   return { t: j.getTime() + HEURE_ARRIVEE * 3_600_000, label: "Arrivée", sub: `${HEURE_ARRIVEE} h` };
 }
 
-/** Nombre de journées montrées, par onglet. */
-const FENETRE: Record<RangeKey, number> = { today: 7, week: 28, overall: Infinity };
+/**
+ * Départ de l'axe, en regard de l'arrivée.
+ *
+ *   Semaine → vendredi 22 h de la semaine PRÉCÉDENTE, soit exactement sept
+ *             jours avant l'arrivée du vendredi 20 h.
+ *   Tout    → le déclenchement du scrutin quand il est connu, sinon le début
+ *             du suivi : mieux vaut un axe plus large qu'une date inventée.
+ *   Jour    → la première journée montrée.
+ */
+function depart(range: RangeKey, premiere: string, arriveeT: number): number {
+  if (range === "week") return arriveeT - 7 * 86_400_000 - 2 * 3_600_000;
+  if (range === "overall" && ELECTION_CALL_DATE) {
+    return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
+  }
+  return Date.parse(`${premiere}T00:00:00Z`);
+}
+
+/** Nombre de journées montrées, par onglet.
+ *
+ *  `today` : 7 jours et non la seule journée. L'axe voulu — 22 h la veille à
+ *  20 h — ne contiendrait qu'un point : le raffineur ne publie QU'UN relevé par
+ *  jour, pris à 20 h. Tracer une tendance intra-journée demanderait qu'il
+ *  conserve ses six blocs de 4 h au lieu de les écraser.
+ *  `week` : 7 jours, soit exactement vendredi à vendredi. */
+const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity };
 
 /**
  * La course — épurée : des lignes, leurs étiquettes de bout, deux dates, une
@@ -492,17 +527,22 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 28, overall: Infinit
 function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartView {
   const toutes = dates.daily;
   const garde = FENETRE[range];
-  const axisDates = Number.isFinite(garde) ? toutes.slice(-garde) : toutes;
+  const fenetre = Number.isFinite(garde) ? toutes.slice(-garde) : toutes;
+
+  const plotW = CHART_W - CHART_PAD_R;
+  const but = arrivee(range, fenetre.at(-1) ?? ELECTION_DATE);
+  const t0 = depart(range, fenetre[0] ?? ELECTION_DATE, but.t);
+
+  // LES BORNES DE L'AXE D'ABORD, LES POINTS ENSUITE : une date anterieure au
+  // depart se dessinerait a gauche du cadre, hors champ. C'est ce qui arrivait
+  // a la vue semaine, dont l'axe commence le vendredi 22 h alors que la fenetre
+  // de sept jours remonte au-dela.
+  const axisDates = fenetre.filter((iso) => Date.parse(`${iso}T00:00:00Z`) >= t0);
   const decalage = toutes.length - axisDates.length;
   const n = axisDates.length;
 
   const histOf = (s: Stat) => s.history.daily.slice(decalage);
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
-
-  const plotW = CHART_W - CHART_PAD_R;
-  const but = arrivee(range, axisDates.at(-1) ?? ELECTION_DATE);
-
-  const t0 = Date.parse(`${axisDates[0] ?? ELECTION_DATE}T00:00:00Z`);
   const span = Math.max(but.t - t0, 86_400_000);
   const xAt = (t: number) => ((t - t0) / span) * plotW;
   const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));

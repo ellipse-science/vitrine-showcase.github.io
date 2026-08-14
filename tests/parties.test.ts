@@ -24,12 +24,23 @@ describe("buildLookup", () => {
     const lut = buildLookup([row("PLQ", DATE_A, 0.4)]);
     expect(lut[DATE_A]["plq"].mentions).toBeCloseTo(0.4);
   });
-  it("garde la première occurrence en cas de doublon (date, parti)", () => {
+  it("garde le relevé le PLUS RÉCENT en cas de doublon (date, parti)", () => {
+    // Décisif dès que le raffineur publiera plusieurs relevés par jour : la
+    // série quotidienne doit prendre la valeur accumulée de fin de journée,
+    // pas un instantané intermédiaire arrivé en premier dans le fichier.
     const lut = buildLookup([
-      row("caq", DATE_A, 0.5),
-      row("caq", DATE_A, 0.9),
+      { ...row("caq", DATE_A, 0.5), computed_at: `${DATE_A}T12:00:00Z` },
+      { ...row("caq", DATE_A, 0.9), computed_at: `${DATE_A}T20:00:00Z` },
     ]);
-    expect(lut[DATE_A]["caq"].mentions).toBeCloseTo(0.5);
+    expect(lut[DATE_A]["caq"].mentions).toBeCloseTo(0.9);
+  });
+
+  it("l'ordre du fichier ne change rien : c'est computed_at qui tranche", () => {
+    const lut = buildLookup([
+      { ...row("caq", DATE_A, 0.9), computed_at: `${DATE_A}T20:00:00Z` },
+      { ...row("caq", DATE_A, 0.5), computed_at: `${DATE_A}T12:00:00Z` },
+    ]);
+    expect(lut[DATE_A]["caq"].mentions).toBeCloseTo(0.9);
   });
 });
 
