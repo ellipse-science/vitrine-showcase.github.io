@@ -1,5 +1,11 @@
 [
   {
+    "pr": 476,
+    "date": "2026-08-14T23:16:41Z",
+    "note": "Les niveaux de saillance (« Modérée », « Élevée »…) se lisent désormais contre une référence fixe, mesurée sur une année complète, plutôt que contre une référence recalculée à chaque mise à jour. Une même valeur porte donc la même étiquette d'un jour à l'autre.",
+    "version": "2.23.0-beta.3"
+  },
+  {
     "pr": 475,
     "date": "2026-08-14T22:44:59Z",
     "note": "La page Méthodologie affiche maintenant le même numéro de version que le reste du site, au lieu d'un numéro figé depuis des mois.",
