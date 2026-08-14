@@ -22,7 +22,7 @@ const ARTICLE: Record<string, string> = {
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   if (!leader || leader.sovPct === 0 || leader.inShadow) {
-    return "De qui parle-t-on?";
+    return "De quel parti parle-t-on dans les médias?";
   }
   const tone =
     leader.toneDirection === "positive"
@@ -80,7 +80,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">De qui parle-t-on?</h2>
+          <h2 className="partis-title">De quel parti parle-t-on dans les médias?</h2>
         </div>
         <div className="control-block">
           <div className="control-row">

@@ -69,7 +69,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "2", label: "régions, une seule actualité qui diverge" },
   },
   "partis-et-couverture": {
-    title: "De qui parle-t-on?",
+    title: "De quel parti parle-t-on dans les médias?",
     description: "Saillance et ton de la couverture médiatique de chaque parti québécois.",
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
