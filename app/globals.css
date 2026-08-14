@@ -4708,9 +4708,10 @@
   }
   /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
      bien au-dessus. */
-  .manchette-sur      { color: var(--amber); }
-  .manchette-sur-fort { color: var(--red); }
-  .manchette-sous     { color: var(--green); }
+  /* Le chiffre du média prend la couleur de son écart, comme les segments. */
+  .manchette-chiffre.sur      { color: var(--amber); }
+  .manchette-chiffre.sur-fort { color: var(--red); }
+  .manchette-chiffre.sous     { color: var(--green); }
 
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console

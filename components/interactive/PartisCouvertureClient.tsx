@@ -30,7 +30,7 @@ function shareTitle(data: PartiesData): string {
       : leader.toneDirection === "negative"
         ? "on en parle en mal"
         : "l'important, c'est qu'on en parle";
-  return `${leader.label} domine la couverture des partis (${leader.sovPct} %) : ${tone}`;
+  return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct} % du temps : ${tone}`;
 }
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
@@ -106,21 +106,21 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <InfoTip size="lg" label="Comment lire cette visualisation">
               <b>Comment lire cette visualisation :</b>
               <br />
-              <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la place qu&apos;il
-              occupe dans la couverture <i>accordée aux partis</i> — et non dans toute
-              l&apos;actualité. Les cinq colonnes se partagent 100&nbsp;%.
+              <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
+              les médias lui consacrent <i>quand ils parlent d&apos;un parti</i> — et non sur
+              l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
+              petite. Les cinq colonnes se partagent 100&nbsp;%.
               <br />
-              <br />• Les <b>couleurs</b> comparent chaque parti à lui-même. Vert : il est dans sa
-              moyenne habituelle, ou en dessous. Jaune puis rouge : ce média lui donne plus de place
-              que d&apos;ordinaire.
+              <br />• Les <b>couleurs</b> comparent un média à l&apos;ensemble des médias. Vert :
+              ce média donne à ce parti autant de temps que les autres, ou moins. Jaune puis rouge :
+              il lui en donne davantage.
               <br />
-              <br />• Le curseur <b>Source</b> change de média. Au centre, « tous les médias » — et
-              là tout est vert, puisque chaque parti y est par définition à sa propre moyenne. Les
-              couleurs n&apos;apparaissent qu&apos;en choisissant un média.
+              <br />• Le curseur <b>Source</b> change de média. Au centre, « tous les médias » : là
+              tout est vert, puisqu&apos;il n&apos;y a rien à comparer. Les couleurs
+              n&apos;apparaissent qu&apos;en choisissant un média en particulier.
               <br />
-              <br />• <b>Sourdine</b> : sous 5&nbsp;% de la couverture, un parti est trop peu
-              présent pour qu&apos;on puisse en tirer quelque chose. Sa colonne reste affichée, en
-              gris.
+              <br />• <b>Sourdine</b> : sous 5&nbsp;% du temps, un parti est trop peu présent pour
+              qu&apos;on puisse en tirer quelque chose. Sa colonne reste affichée, en gris.
               <br />
               <br />• <b>Cliquez un parti</b> pour l&apos;examiner sur l&apos;un des deux plateaux.
               <br />
@@ -355,7 +355,6 @@ function Manchette({
 
   const moyenne = reference.find((r) => r.key === tete.key)?.sovPct ?? 0;
   const ratio = moyenne > 0 ? tete.sovPct / moyenne : 1;
-  const ecart = Math.round((ratio - 1) * 100);
 
   return (
     <div className="manchette-zone">
@@ -364,49 +363,39 @@ function Manchette({
         <>
           {(() => {
             const dans = MEDIA_DANS[media] ?? `Dans ${mediaLabel ?? media}`;
-            const [tete0, ...reste] = dans.split(" ");
+            const [premier, ...reste] = dans.split(" ");
             return (
               <>
-                {tete0}{" "}
-                <b>{reste.join(" ")}</b>,{" "}
+                {premier} <b>{reste.join(" ")}</b>,{" "}
               </>
             );
           })()}
-          {ARTICLE[tete.key]?.toLowerCase() ?? ""}
+          quand on parle d&apos;un parti, c&apos;est{" "}
+          {(ARTICLE[tete.key] ?? "").replace("La ", "de la ").replace("Le ", "du ") || "de "}
         </>
       ) : (
-        ARTICLE[tete.key]
-      )}
-      <b className="manchette-parti">{tete.label}</b> occupe{" "}
-      <b className="manchette-chiffre">{tete.sovPct}&nbsp;%</b> de la couverture
-      accordée aux partis
-      {mediaLabel && Math.abs(ecart) >= 10 && (
         <>
-          {" "}—{" "}
-          {/* Mêmes seuils que les segments : la manchette ne peut pas annoncer
-              en rouge un écart que le vumètre montre en ambre. */}
-          <span
-            className={
-              ecart <= 0
-                ? "manchette-sous"
-                : ratio > SEUIL_ROUGE
-                  ? "manchette-sur-fort"
-                  : "manchette-sur"
-            }
-          >
-            {ecart > 0 ? `${ecart} % de plus` : `${Math.abs(ecart)} % de moins`}
-          </span>{" "}
-          que sa moyenne
+          Quand les médias parlent d&apos;un parti, c&apos;est{" "}
+          {(ARTICLE[tete.key] ?? "").replace("La ", "de la ").replace("Le ", "du ") || "de "}
+        </>
+      )}
+      <b className="manchette-parti">{tete.label}</b>{" "}
+      <b className={`manchette-chiffre${media && tete.sovPct !== moyenne ? (tete.sovPct > moyenne ? (ratio > SEUIL_ROUGE ? " sur-fort" : " sur") : " sous") : ""}`}>
+        {tete.sovPct}&nbsp;% du temps
+      </b>
+      {media && tete.sovPct !== moyenne && (
+        <>
+          , contre <b>{moyenne}&nbsp;%</b>{" "}
+          dans l&apos;ensemble des médias
         </>
       )}
       .
       {tete.toneDirection === "negative" && (
         <>
           {" "}Et on en parle surtout en mal
-          <InfoTip size="sm" label="Fort ne veut pas dire bon">
-            Ce module mesure un VOLUME de couverture, pas sa faveur. Un parti peut dominer parce
-            qu&apos;on le critique. L&apos;adage veut qu&apos;il n&apos;y ait pas de mauvaise
-            publicité — cette page ne prétend pas savoir s&apos;il a raison.
+          <InfoTip size="sm" label="Beaucoup parler n'est pas bien parler">
+            Ce module compte le TEMPS que les médias consacrent à chaque parti, pas s&apos;ils en
+            disent du bien. Un parti peut être le plus présent parce qu&apos;on le critique.
           </InfoTip>
           .
         </>
@@ -472,13 +461,13 @@ function Platine({
 
       <dl className="platine-donnees">
         <div>
-          <dt>Écart à sa moyenne</dt>
+          <dt>Écart aux autres médias</dt>
           <dd className={ecart > 0 ? "haut" : ecart < 0 ? "bas" : undefined}>
             {ecart > 0 ? "+" : ""}{ecart}&nbsp;%
           </dd>
         </div>
         <div>
-          <dt>Sommet</dt>
+          <dt>Record</dt>
           <dd>{row.peakPct}&nbsp;% <span>{formatCourt(row.peakDate)}</span></dd>
         </div>
         <div>
@@ -553,8 +542,8 @@ function Tranche({
         className="console-vumetre"
         title={
           (coupe ? `${row.label} — en sourdine, sous 5 % : ` : `${row.label} — `) +
-          `${row.sovPct} % de la couverture accordée aux partis (sommet : ${row.peakPct} %)` +
-          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à sa moyenne`)
+          `${row.sovPct} % du temps consacré aux partis (record de la période : ${row.peakPct} %)` +
+          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à l'ensemble des médias`)
         }
       >
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
@@ -586,8 +575,9 @@ function Tranche({
         <span className="console-sourdine">
           Sourdine
           <InfoTip size="sm" label="Sourdine">
-            Moins de 5&nbsp;% de la couverture accordée aux partis sur la période — trop peu pour
-            qu&apos;on puisse parler d&apos;une présence. Le canal reste affiché, mais muet.
+            Sur cette période, ce parti reçoit moins de 5&nbsp;% du temps que les médias
+            consacrent aux partis — trop peu pour qu&apos;on puisse en tirer quelque chose. Sa
+            colonne reste affichée, mais muette.
           </InfoTip>
         </span>
       ) : (
