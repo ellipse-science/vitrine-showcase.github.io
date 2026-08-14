@@ -108,7 +108,7 @@ describe("buildChart — la course", () => {
   it("place toutes les lignes sur UNE échelle commune : à part de voix égale, même hauteur", () => {
     const rows = DATES.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, 0.2)));
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const ys = chart.series.map((s) => s.lastY);
     for (const y of ys) expect(y).toBeCloseTo(ys[0], 6);
   });
@@ -119,7 +119,7 @@ describe("buildChart — la course", () => {
       row("qs", d, 0.2), row("plq", d, 0.1), row("pcq", d, 0.1),
     ]);
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const caq = chart.series.find((s) => s.key === "caq")!;
     const pq = chart.series.find((s) => s.key === "pq")!;
     // y est mesuré depuis le HAUT du viewBox : la hauteur au-dessus de zéro
@@ -129,7 +129,7 @@ describe("buildChart — la course", () => {
 
   it("l'axe vertical plafonne au-dessus du maximum observé, jamais en dessous", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const leader = chart.series[0];
     expect(leader.lastY).toBeGreaterThanOrEqual(0);
     expect(leader.lastPct).toBe(40);
@@ -143,7 +143,7 @@ describe("buildChart — la course", () => {
 
   it("les lignes sont triées par part de voix décroissante", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const pcts = chart.series.map((s) => s.lastPct);
     expect(pcts).toEqual([...pcts].sort((a, b) => b - a));
   });
@@ -151,7 +151,7 @@ describe("buildChart — la course", () => {
   it("une seule date ⇒ tooShort, pour que le composant n'affiche pas une « courbe » d'un point", () => {
     const rows = PARTY_KEYS.map((p) => row(p, DATE_A, 0.2));
     const { stats, dates } = statsOf(rows, rows, rows);
-    expect(buildChart(stats, dates).tooShort).toBe(true);
+    expect(buildChart(stats, dates, "overall").tooShort).toBe(true);
   });
 
   it("écarte les étiquettes de partis au coude à coude, sans déplacer les points", () => {
@@ -162,7 +162,7 @@ describe("buildChart — la course", () => {
       row("qs", d, 0.249), row("plq", d, 0.248), row("pcq", d, 0.002),
     ]);
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
 
     const serres = chart.series.filter((s) => s.lastPct >= 20);
     expect(serres.length).toBe(4);
@@ -177,7 +177,7 @@ describe("buildChart — la course", () => {
   it("les étiquettes restent dans le cadre même quand tout le monde est au plancher", () => {
     const rows = DATES.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, 0.2)));
     const { stats, dates } = statsOf(rows, rows, rows);
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     for (const s of chart.series) {
       expect(s.labelY).toBeGreaterThanOrEqual(0);
       expect(s.labelY).toBeLessThanOrEqual(chart.height);
@@ -186,7 +186,7 @@ describe("buildChart — la course", () => {
 
   it("étiquette l'axe horizontal avec la première et la dernière date", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     expect(chart.xLabels[0].label).toBe("8 juin");
     expect(chart.xLabels.at(-1)!.label).toBe("10 juin");
   });
@@ -219,24 +219,26 @@ describe("le portrait global", () => {
     return DAYS.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, v[p])));
   }
 
-  it("pose toujours le repère du scrutin : la course est unique et y court", () => {
+  it("chaque onglet a sa propre ligne d'arrivée", () => {
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    expect(buildChart(stats, dates).election).not.toBeNull();
+    expect(buildChart(stats, dates, "overall").finish.label).toBe("Scrutin");
+    expect(buildChart(stats, dates, "week").finish.sub).toBe("vendredi 20 h");
+    expect(buildChart(stats, dates, "today").finish.sub).toBe("20 h");
   });
 
   it("laisse la donnée s'arrêter bien avant le scrutin — le vide est l'information", () => {
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const finDonnee = Math.max(...chart.series.map((s) => s.lastX));
     // 13 août → 5 octobre : la donnée doit occuper nettement moins que l'axe.
-    expect(finDonnee).toBeLessThan(chart.election!.x * 0.6);
+    expect(finDonnee).toBeLessThan(chart.finish.x * 0.6);
   });
 
   it("place les points selon la DATE et non selon leur rang", () => {
     // Trois dates inégalement espacées : 1er, 7 et 13 août. Le point du milieu
     // doit tomber à mi-chemin, pas au tiers comme le voudrait un rang.
     const { stats, dates } = statsOf(rows(), rows(), rows());
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     const xs = chart.series[0].polyline.split(" ").map((p) => Number(p.split(",")[0]));
     expect(xs.length).toBe(3);
     expect((xs[1] - xs[0]) / (xs[2] - xs[0])).toBeCloseTo(0.5, 2);
@@ -249,7 +251,7 @@ describe("le portrait global", () => {
     // côte à côte, sans explication, était la confusion à éviter.
     const { stats, dates } = statsOf(rows(), rows(), rows());
     const view = buildRangeView(stats, "overall", dates);
-    const chart = buildChart(stats, dates);
+    const chart = buildChart(stats, dates, "overall");
     expect(chart.series.map((s) => s.key).sort()).toEqual(
       view.rows.map((r) => r.key).sort(),
     );

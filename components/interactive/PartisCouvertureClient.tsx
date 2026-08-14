@@ -67,7 +67,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const source =
     media !== TOUS_MEDIAS && data.byMedia[media]
       ? data.byMedia[media]
-      : { ranges: data.ranges, chart: data.chart };
+      : { ranges: data.ranges };
   const view: RangeView = source.ranges[range];
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
@@ -171,11 +171,14 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         />
       )}
 
-      </div>
 
-      <section className="partis-course">
-        <Course chart={source.chart} headLabel="La course jusqu'au scrutin, jour par jour" />
-      </section>
+        {/* La course vit DANS le pupitre : c'est le même appareil, et la
+            séparer par un filet la faisait lire comme un second module. */}
+        <section className="partis-course">
+          <p className="course-tete">La tendance</p>
+          <Course chart={view.chart} />
+        </section>
+      </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
@@ -684,103 +687,61 @@ function Fader({
 
 
 /**
- * La course : toutes les lignes sur une seule échelle verticale.
+ * La course — épurée jusqu'à la tendance.
  *
- * Le SVG ne porte QUE la géométrie (grille + lignes), étiré en largeur via
- * preserveAspectRatio="none" — c'est pourquoi les traits portent
- * vectorEffect="non-scaling-stroke", sans quoi l'étirement les épaissirait.
- * Tout le texte est en HTML positionné par-dessus : dans un SVG étiré, il
- * serait déformé.
+ * Ni grille, ni graduations, ni fond dégradé : l'objectif est de VOIR une
+ * direction, pas de lire une valeur au pixel près. Les valeurs sont écrites en
+ * toutes lettres au bout de chaque ligne, là où l'œil arrive naturellement.
+ *
+ * La LIGNE D'ARRIVÉE change avec l'onglet — 20 h aujourd'hui, vendredi 20 h,
+ * le jour du scrutin. Le vide entre la dernière donnée et elle est l'espace
+ * qu'il reste à courir.
  */
-function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
+function Course({ chart }: { chart: ChartView }) {
   if (chart.tooShort) {
     return (
       <p className="course-vide">
-        Une seule journée de données disponible — pas encore de quoi tracer une évolution.
+        Une seule journée de données — pas encore de tendance à lire.
       </p>
     );
   }
 
   const pct = (v: number, max: number) => `${(v / max) * 100}%`;
 
-  // Le dégradé est ancré sur des PARTS DE VOIX ABSOLUES, pas sur la hauteur du
-  // cadre : l'axe étant tronqué au maximum observé, se caler dessus ferait
-  // désigner à la même bande de couleur 40 % un jour et 25 % le lendemain.
-  // Ici, 30 % de couverture donne toujours exactement la même teinte.
-  const arret = (sovPct: number) => `${Math.min(100, (sovPct / chart.topPct) * 100)}%`;
-  const fond = [
-    `transparent 0%`,
-    `color-mix(in srgb, var(--amber) 7%, transparent) ${arret(12)}`,
-    `color-mix(in srgb, var(--amber) 15%, transparent) ${arret(28)}`,
-    `color-mix(in srgb, var(--red) 22%, transparent) ${arret(50)}`,
-  ].join(", ");
-
   return (
     <figure className="course-figure">
-      <figcaption className="course-tete">
-        {headLabel}
-        <span className="course-echelle" aria-hidden="true">
-          <i className="course-echelle-barre" />
-          du silence à la saturation
-        </span>
-      </figcaption>
-
-      <div className="course-cadre" style={{ ["--fond-db" as string]: `linear-gradient(to top, ${fond})` }}>
+      <div className="course-cadre">
         <svg
           className="course-svg"
           viewBox={`0 0 ${chart.width} ${chart.height}`}
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          {chart.gridLines.map((g) => (
-            <line
-              key={g.pct}
-              x1="0"
-              x2={chart.width}
-              y1={g.y}
-              y2={g.y}
-              className={g.pct === 0 ? "course-axe" : "course-grille"}
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-
           {chart.series.map((s) => (
             <polyline
               key={s.key}
               points={s.polyline}
               fill="none"
               stroke={s.color}
-              strokeWidth={s.inShadow ? 1 : 1.6}
-              strokeDasharray={s.inShadow ? "2 2" : undefined}
+              strokeWidth={s.inShadow ? 1 : 1.5}
+              strokeDasharray={s.inShadow ? "2 3" : undefined}
               strokeLinejoin="round"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
-              opacity={s.inShadow ? 0.5 : 1}
+              opacity={s.inShadow ? 0.45 : 1}
             />
           ))}
 
-          {chart.election && (
-            <line
-              x1={chart.election.x}
-              x2={chart.election.x}
-              y1="0"
-              y2={chart.height}
-              className="course-scrutin"
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
+          <line
+            x1={chart.finish.x}
+            x2={chart.finish.x}
+            y1="0"
+            y2={chart.height}
+            className="course-arrivee"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
 
-        {chart.election && (
-          <span className="course-scrutin-label" style={{ left: pct(chart.election.x, chart.width) }}>
-            Scrutin
-            <b>{chart.election.label}</b>
-          </span>
-        )}
-
-        {/* Le point terminal est en HTML, pas en SVG : dans un viewBox étiré en
-            largeur, un <circle> devient une ellipse démesurée. Il marque la
-            donnée exacte (lastY), là où l'étiquette peut avoir été déplacée. */}
         {chart.series.map((s) => (
           <i
             key={s.key}
@@ -788,12 +749,6 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
             style={{ top: pct(s.lastY, chart.height), left: pct(s.lastX, chart.width), background: s.color }}
             aria-hidden="true"
           />
-        ))}
-
-        {chart.gridLines.map((g) => (
-          <span key={g.pct} className="course-y-label" style={{ top: pct(g.y, chart.height) }}>
-            {g.pct} %
-          </span>
         ))}
 
         {chart.series.map((s) => (
@@ -805,6 +760,11 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
             {s.label} <b>{s.lastPct}&nbsp;%</b>
           </span>
         ))}
+
+        <span className="course-arrivee-label" style={{ left: pct(chart.finish.x, chart.width) }}>
+          {chart.finish.label}
+          <b>{chart.finish.sub}</b>
+        </span>
       </div>
 
       <div className="course-x">
@@ -817,4 +777,3 @@ function Course({ chart, headLabel }: { chart: ChartView; headLabel: string }) {
     </figure>
   );
 }
-

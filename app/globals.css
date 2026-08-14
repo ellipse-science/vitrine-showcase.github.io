@@ -5190,117 +5190,38 @@
     .fader-valeur { font-size: 15px; }
   }
 
-  .partis-course { margin-top: 44px; padding-top: 26px; border-top: 2px solid var(--rule-faint); }
+  /* La course vit DANS le pupitre : plus de filet lourd, seulement de l'air. */
+  .partis-course { margin-top: 40px; }
 
-  .course-figure { margin: 0; }
+  /* ── La tendance : épurée jusqu'à la direction ────────────────────────────
+     Ni grille, ni graduations, ni fond dégradé — l'objectif est de VOIR une
+     direction, pas de lire une valeur au pixel près. Les valeurs sont écrites
+     au bout de chaque ligne, là où l'œil arrive naturellement. */
   .course-tete {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    margin: 0 0 22px;
+    text-align: center;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--ink-soft);
+    color: var(--ink-softer);
     font-weight: 500;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--rule-faint);
-    /* Assez d'air pour loger l'étiquette du scrutin, qui se pose AU-DESSUS du
-       cadre. Marge et non padding : un padding sur .course-cadre décalerait le
-       bloc de référence des éléments positionnés, donc désalignerait les
-       graduations de leurs lignes. */
-    margin-bottom: 32px;
   }
 
-  /* Petite règle du dégradé, reprise à l'identique du fond — elle dit ce que
-     la couleur veut dire sans qu'on ait à l'écrire ailleurs. */
-  .course-echelle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--ink-soft);
-  }
-  .course-echelle-barre {
-    display: block;
-    width: 62px;
-    height: 7px;
-    border: 0.5px solid var(--rule-faint);
-    background: linear-gradient(
-      to right,
-      transparent 0%,
-      color-mix(in srgb, var(--amber) 30%, transparent) 45%,
-      color-mix(in srgb, var(--amber) 55%, transparent) 70%,
-      color-mix(in srgb, var(--red) 75%, transparent) 100%
-    );
-  }
-
-  /* La réserve à gauche loge les graduations ; celle de droite est déjà
-     ménagée DANS le viewBox (les lignes s'arrêtent à 84 %), pour que les
-     étiquettes de bout de ligne tombent dans le cadre. */
-  .course-cadre {
-    position: relative;
-    padding-left: 34px;
-  }
-
-  /* Échelle de décibels : le fond va du silence, en bas, à la saturation, en
-     haut — la hauteur d'une ligne se lit donc aussi comme un niveau sonore.
-     Rampe UNIQUEMENT chaude (--amber → --red), volontairement sans vert : dans
-     ce module, le vert dit déjà « ton positif » juste en dessous, dans la
-     légende. La même couleur pour deux idées se contredirait. Opacités très
-     basses : c'est une teinte imprimée sur du papier, pas un fond d'écran, et
-     les traits doivent rester lisibles par-dessus. */
-  .course-cadre::before {
-    content: '';
-    position: absolute;
-    left: 34px;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    /* Le dégradé lui-même est calculé par le composant et posé dans
-       --fond-db : ses arrêts dépendent du plafond de l'axe, que seule la
-       couche de données connaît. */
-    background: var(--fond-db);
-    pointer-events: none;
-    z-index: 0;
-  }
-
+  .course-figure { margin: 0; }
+  .course-cadre { position: relative; }
   .course-svg {
     display: block;
     width: 100%;
-    aspect-ratio: 100 / 30;
+    aspect-ratio: 100 / 26;
     height: auto;
     overflow: visible;
-    /* Au-dessus du dégradé : un ::before absolu passerait sinon par-dessus le
-       contenu en flux. */
-    position: relative;
-    z-index: 1;
-  }
-  .course-grille { stroke: var(--rule-faint); stroke-width: 0.5px; }
-  .course-axe    { stroke: var(--rule); stroke-width: 1px; }
-
-  .course-y-label {
-    position: absolute;
-    z-index: 2;
-    left: 0;
-    transform: translateY(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    color: var(--ink-softer);
-    white-space: nowrap;
   }
 
-  /* Repère du scrutin : trait plein cordovan, l'accent unique du site. Le vide
-     à sa gauche est voulu — c'est le temps qui reste avant le vote. */
-  .course-scrutin { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
-  .course-scrutin-label {
+  /* La ligne d'ARRIVÉE — cordovan, l'accent unique du site. Le vide à sa
+     gauche est ce qu'il reste à courir. */
+  .course-arrivee { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
+  .course-arrivee-label {
     position: absolute;
     z-index: 2;
     top: 0;
@@ -5309,7 +5230,7 @@
     flex-direction: column;
     align-items: center;
     gap: 1px;
-    padding-bottom: 4px;
+    padding-bottom: 7px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.18em;
@@ -5318,25 +5239,25 @@
     white-space: nowrap;
     pointer-events: none;
   }
-  .course-scrutin-label b { font-weight: 500; letter-spacing: 0.1em; }
+  .course-arrivee-label b { font-weight: 500; letter-spacing: 0.1em; }
 
   .course-point {
     position: absolute;
     z-index: 2;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
   }
-  .course-point.shadow { opacity: 0.5; }
+  .course-point.shadow { opacity: 0.45; }
 
   .course-bout {
     position: absolute;
     z-index: 2;
-    transform: translate(10px, -50%);
+    transform: translate(9px, -50%);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -5347,14 +5268,9 @@
     font-size: 13px;
     font-weight: 700;
   }
-  .course-bout.shadow { opacity: 0.55; }
+  .course-bout.shadow { opacity: 0.5; }
 
-  .course-x {
-    position: relative;
-    height: 16px;
-    margin-top: 6px;
-    margin-left: 34px;
-  }
+  .course-x { position: relative; height: 14px; margin-top: 12px; }
   .course-x span {
     position: absolute;
     transform: translateX(-50%);
@@ -5365,10 +5281,7 @@
     color: var(--ink-softer);
     white-space: nowrap;
   }
-  /* Les repères extrêmes se recentrent vers l'intérieur, sinon ils débordent
-     du cadre à gauche et à droite. */
   .course-x span:first-child { transform: none; }
-  .course-x span:last-child  { transform: translateX(-100%); }
 
   .course-vide {
     padding: 28px 0;
@@ -5382,56 +5295,6 @@
     color: var(--ink-soft);
   }
 
-  .course-legende {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 26px;
-    margin-top: 22px;
-    padding-top: 16px;
-    border-top: 0.5px solid var(--rule);
-  }
-  .course-legende-item {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .course-legende-item.shadow { opacity: 0.5; }
-  .course-puce {
-    width: 9px;
-    height: 9px;
-    flex: none;
-    align-self: center;
-  }
-  .course-parti {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink);
-  }
-  .course-pct {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 15px;
-    color: var(--ink-soft);
-  }
-
-  .course-ombre {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 22px;
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 2px solid var(--rule-faint);
-  }
-  .course-ombre-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    font-weight: 500;
-  }
 
   @media (max-width: 768px) {
     /* Le podium se resserre : marches moins hautes, typographie réduite —
@@ -5439,27 +5302,19 @@
     .console { --piste: 168px; --seg-gap: 2px; }
     .console-tranches { gap: 9px; }
     .console-ruban-nom { font-size: 13px; }
-    .console-tranche.tete .console-ruban-nom { font-size: 15px; }
     .manchette { font-size: 19px; }
     .manchette-zone { font-size: 19px; min-height: calc(4 * 1.45em); }
     .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
     .platine { padding-top: 0; }
 
-    /* Sur étroit, la course s'allonge en hauteur : cinq lignes dans 46 unités
-       de haut deviennent illisibles quand la largeur tombe sous ~400 px. */
-    .course-svg { aspect-ratio: 100 / 68; }
-    /* Le cadre décale par un padding, l'axe horizontal par une marge — cumuler
-       les deux sur .course-x le ferait déborder d'autant vers la droite. */
-    .course-cadre { padding-left: 26px; }
-    .course-x { margin-left: 26px; padding-left: 0; }
-    .course-bout { font-size: 10px; transform: translate(6px, -50%); }
-    /* La réserve de droite ne fait que 16 % de la largeur : sur un écran
-       étroit, « CAQ 35 % » n'y tient pas. On garde le sigle, la part de voix
-       est de toute façon répétée dans la légende juste dessous. */
+    /* Sur étroit, la tendance s'allonge : cinq lignes dans 26 unités de haut
+       deviennent illisibles sous ~400 px de large. */
+    .course-svg { aspect-ratio: 100 / 44; }
+    .course-bout { font-size: 9px; transform: translate(6px, -50%); }
+    /* La réserve de droite ne fait que 16 % de la largeur : « CAQ 35 % » n'y
+       tient pas sur un écran étroit. Le sigle suffit. */
     .course-bout b { display: none; }
-    .partis-countdown { margin-left: 0; margin-top: 8px; }
-    .course-legende { gap: 10px 18px; }
   }
   .in-shadow-label {
     font-family: 'IBM Plex Mono', monospace;

@@ -180,34 +180,29 @@ export type ChartSeries = {
 
 export type ChartView = {
   series: ChartSeries[];
-  /** Graduations horizontales, en pourcentage de part de voix. */
-  gridLines: { pct: number; y: number }[];
+  /** Bornes de la période affichée, aux deux extrémités de l'axe. */
   xLabels: { label: string; x: number }[];
-  /** Repère vertical du scrutin — non nul seulement quand l'axe court jusqu'à
-   *  lui (portrait global). Le vide à sa gauche EST l'information : c'est le
-   *  temps qui reste. */
-  election: { x: number; label: string } | null;
+  /** La ligne d'ARRIVÉE, propre à l'onglet : 20 h aujourd'hui pour le jour,
+   *  vendredi 20 h pour la semaine, le jour du scrutin pour tout le suivi.
+   *  Le vide entre la dernière donnée et elle EST l'information — c'est ce
+   *  qu'il reste à courir. */
+  finish: { x: number; label: string; sub: string };
   width: number;
   height: number;
-  /** Part de voix au sommet de l'axe. L'axe étant TRONQUÉ, le dégradé de fond
-   *  ne peut pas s'y caler : il est ancré sur des valeurs absolues calculées à
-   *  partir d'elle, sans quoi la même bande de couleur désignerait un niveau
-   *  différent d'un jour à l'autre. */
-  topPct: number;
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
 };
 
-/** Un onglet ne décrit plus qu'un CLASSEMENT (ce que montre le podium). La
- *  course, elle, est unique et vit sur PartiesData : elle ne dépend pas de
- *  l'onglet choisi. */
 export type RangeView = {
   range: RangeKey;
   tabLabel: string;
   sparkHeadLabel: string;
   refLabel: string;
   rows: RowView[];
+  /** La course de CETTE période : sa fenêtre et sa ligne d'arrivée en
+   *  dépendent. */
+  chart: ChartView;
 };
 
 /** Une position du fader : « tous les médias », ou un média du panel. */
@@ -217,13 +212,10 @@ export type MediaOption = { id: string; label: string };
  *  période, et la course. */
 export type MediaView = {
   ranges: Record<RangeKey, RangeView>;
-  chart: ChartView;
 };
 
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
-  /** La course jusqu'au scrutin — quotidienne, la même quel que soit l'onglet. */
-  chart: ChartView;
   /** Positions du fader, « tous les médias » en tête. Vide si la ventilation
    *  par média n'est pas publiée — le fader disparaît alors, plutôt que de
    *  s'afficher inerte. */
@@ -377,11 +369,8 @@ function computeStats(
 const CHART_W = 100;
 const CHART_H = 46;
 /** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
- *  Le portrait global en demande beaucoup moins : ses courbes s'arrêtent à
- *  aujourd'hui, donc leurs étiquettes tombent au milieu du cadre et seule
- *  celle du scrutin, centrée sur son repère, doit tenir au bord. */
+ */
 const CHART_PAD_R = 16;
-const CHART_PAD_R_OVERALL = 7;
 
 const MONTHS_SHORT_FR = [
   "janv.", "févr.", "mars", "avr.", "mai", "juin",
@@ -455,35 +444,68 @@ function spreadLabels(series: ChartSeries[]): void {
  * isolée, mais trompeur dès qu'on les met côte à côte : un parti à 2 % et un
  * parti à 40 % y occupaient exactement la même hauteur.
  */
-function buildChart(stats: Stat[], dates: SeriesDates): ChartView {
-  // La course est TOUJOURS quotidienne et court TOUJOURS jusqu'au scrutin :
-  // elle raconte la même histoire quel que soit l'onglet, qui ne pilote plus
-  // que le classement du podium.
-  const range = "overall" as const;
-  // Le portrait global lit la série JOURNALIÈRE : c'est la plus fournie, et un
-  // axe qui court jusqu'au scrutin mérite mieux que trois points mensuels
-  // écrasés dans son premier tiers.
-  const seriesKey = "daily" as const;
-  const axisDates = dates[seriesKey];
+/** 20 h, l'heure de publication du dernier bloc de la journée. */
+const HEURE_ARRIVEE = 20;
+
+/**
+ * La ligne d'ARRIVÉE de chaque onglet, et la fenêtre de données à montrer.
+ *
+ *   Jour     → 20 h aujourd'hui, sur les sept derniers jours
+ *   Semaine  → vendredi 20 h de la semaine en cours, sur quatre semaines
+ *   Tout     → le jour du scrutin, sur toute la fenêtre suivie
+ *
+ * Chaque onglet a donc sa propre course et son propre but, au lieu d'une
+ * course unique qui ne pouvait pas dire ce que « la journée » veut dire.
+ */
+function arrivee(range: RangeKey, derniere: string): { t: number; label: string; sub: string } {
+  const j = new Date(`${derniere}T00:00:00Z`);
+  if (range === "overall") {
+    return {
+      t: Date.parse(`${ELECTION_DATE}T00:00:00Z`),
+      label: "Scrutin",
+      sub: shortDateFr(ELECTION_DATE),
+    };
+  }
+  if (range === "week") {
+    // Vendredi de la semaine en cours (lundi = 1).
+    const jour = j.getUTCDay() || 7;
+    const vendredi = new Date(j);
+    vendredi.setUTCDate(j.getUTCDate() + (5 - jour));
+    return {
+      t: vendredi.getTime() + HEURE_ARRIVEE * 3_600_000,
+      label: "Arrivée",
+      sub: `vendredi ${HEURE_ARRIVEE} h`,
+    };
+  }
+  return { t: j.getTime() + HEURE_ARRIVEE * 3_600_000, label: "Arrivée", sub: `${HEURE_ARRIVEE} h` };
+}
+
+/** Nombre de journées montrées, par onglet. */
+const FENETRE: Record<RangeKey, number> = { today: 7, week: 28, overall: Infinity };
+
+/**
+ * La course — épurée : des lignes, leurs étiquettes de bout, deux dates, une
+ * ligne d'arrivée. Ni grille, ni graduations, ni fond : l'objectif est de VOIR
+ * LA TENDANCE, pas de lire une valeur au pixel près. Les valeurs, elles, sont
+ * écrites en toutes lettres au bout de chaque ligne.
+ */
+function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartView {
+  const toutes = dates.daily;
+  const garde = FENETRE[range];
+  const axisDates = Number.isFinite(garde) ? toutes.slice(-garde) : toutes;
+  const decalage = toutes.length - axisDates.length;
   const n = axisDates.length;
 
-  const histOf = (s: Stat) => s.history[seriesKey];
-  const allValues = stats.flatMap((s) => histOf(s));
-  const top = axisTop(Math.max(0, ...allValues) * 100);
+  const histOf = (s: Stat) => s.history.daily.slice(decalage);
+  const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
 
-  const plotW = CHART_W - (range === "overall" ? CHART_PAD_R_OVERALL : CHART_PAD_R);
+  const plotW = CHART_W - CHART_PAD_R;
+  const but = arrivee(range, axisDates.at(-1) ?? ELECTION_DATE);
 
-  // L'axe horizontal est PROPORTIONNEL AU TEMPS, pas au rang du point. Sans
-  // ça, le portrait global n'aurait aucun vide à droite : les 53 jours qui
-  // restent avant le scrutin seraient écrasés à zéro, et le compte à rebours
-  // ne se verrait pas. Ça corrige aussi la vue hebdomadaire, dont les dates ne
-  // sont pas régulièrement espacées.
-  const dayMs = 86_400_000;
   const t0 = Date.parse(`${axisDates[0] ?? ELECTION_DATE}T00:00:00Z`);
-  const tLast = Date.parse(`${axisDates.at(-1) ?? axisDates[0] ?? ELECTION_DATE}T00:00:00Z`);
-  const tEnd = range === "overall" ? Date.parse(`${ELECTION_DATE}T00:00:00Z`) : tLast;
-  const span = Math.max(tEnd - t0, dayMs); // jamais zéro : une seule date ⇒ pas de division par 0
-  const xAtDate = (iso: string) => ((Date.parse(`${iso}T00:00:00Z`) - t0) / span) * plotW;
+  const span = Math.max(but.t - t0, 86_400_000);
+  const xAt = (t: number) => ((t - t0) / span) * plotW;
+  const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));
   const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
 
   const series: ChartSeries[] = stats
@@ -492,7 +514,6 @@ function buildChart(stats: Stat[], dates: SeriesDates): ChartView {
     .map((stat) => {
       const hist = histOf(stat);
       const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
-      const lastPct = Math.round((hist.at(-1) ?? 0) * 100);
       return {
         key: stat.key,
         label: PARTY_LABELS[stat.key],
@@ -501,44 +522,32 @@ function buildChart(stats: Stat[], dates: SeriesDates): ChartView {
         polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
         lastX: Number((pts.at(-1)?.[0] ?? 0).toFixed(2)),
         lastY: Number((pts.at(-1)?.[1] ?? CHART_H).toFixed(2)),
-        labelY: 0, // posé juste après, une fois toutes les lignes connues
-        lastPct,
+        labelY: 0,
+        lastPct: Math.round((hist.at(-1) ?? 0) * 100),
       };
     });
 
   spreadLabels(series);
 
-  // Un trait tous les 20 % : 0-20-40-60-80-100. Le repère des 20 % est aussi
-  // celui du partage égal entre cinq partis.
-  const gridLines = [];
-  for (let pct = 0; pct <= top; pct += 20) {
-    gridLines.push({ pct, y: Number(yAt(pct).toFixed(2)) });
-  }
-
-  // Trois repères horizontaux (début, milieu, fin) suffisent : au-delà, les
-  // étiquettes se chevauchent sur mobile. Dans le portrait global, la borne de
-  // droite est le scrutin — il porte son propre repère, donc on ne l'étiquette
-  // pas deux fois et on s'arrête à la dernière donnée.
-  const labelIdx = n <= 1 ? [0] : n === 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1];
-  const xLabels = labelIdx.map((i) => ({
-    label: shortDateFr(axisDates[i] ?? ""),
-    x: Number(xAtDate(axisDates[i] ?? "").toFixed(2)),
-  }));
-
-  // Repère du scrutin : uniquement là où l'axe va jusqu'à lui.
-  const election =
-    range === "overall"
-      ? { x: Number(xAtDate(ELECTION_DATE).toFixed(2)), label: shortDateFr(ELECTION_DATE) }
-      : null;
+  // Deux dates seulement : le début et la fin de ce qui est mesuré. La ligne
+  // d'arrivée porte sa propre étiquette.
+  const xLabels =
+    n <= 1
+      ? [{ label: shortDateFr(axisDates[0] ?? ""), x: 0 }]
+      : [
+          { label: shortDateFr(axisDates[0]), x: 0 },
+          {
+            label: shortDateFr(axisDates[n - 1]),
+            x: Number(xAtDate(axisDates[n - 1]).toFixed(2)),
+          },
+        ];
 
   return {
     series,
-    gridLines,
     xLabels,
-    election,
+    finish: { x: Number(xAt(but.t).toFixed(2)), label: but.label, sub: but.sub },
     width: CHART_W,
     height: CHART_H,
-    topPct: top,
     tooShort: n <= 1,
   };
 }
@@ -619,6 +628,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
     rows,
+    chart: buildChart(stats, dates, range),
   };
 }
 
@@ -698,7 +708,6 @@ export async function loadParties(
         if (!c) continue;
         medias.push({ id, label: MEDIA_LABELS[id] ?? id });
         byMedia[id] = {
-          chart: buildChart(c.stats, c.dates),
           ranges: {
             today: buildRangeView(c.stats, "today", c.dates),
             week: buildRangeView(c.stats, "week", c.dates),
@@ -713,7 +722,6 @@ export async function loadParties(
       lastUpdated: lastUpdatedLabel(lastDate),
       medias,
       byMedia,
-      chart: buildChart(stats, dates),
       ranges: {
         today: buildRangeView(stats, "today", dates),
         week:  buildRangeView(stats, "week", dates),
