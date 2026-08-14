@@ -1,5 +1,11 @@
 [
   {
+    "pr": 475,
+    "date": "2026-08-14T22:44:59Z",
+    "note": "La page Méthodologie affiche maintenant le même numéro de version que le reste du site, au lieu d'un numéro figé depuis des mois.",
+    "version": "2.23.0-beta.2"
+  },
+  {
     "pr": 471,
     "date": "2026-08-14T18:34:09Z",
     "note": "Aucun changement visible sur le site : ajout d'une vérification automatique des textes du journal des mises à jour avant leur publication.",
