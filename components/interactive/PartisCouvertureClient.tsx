@@ -358,6 +358,7 @@ function Manchette({
   const ecart = Math.round((ratio - 1) * 100);
 
   return (
+    <div className="manchette-zone">
     <p className="manchette">
       {media ? (
         <>
@@ -411,6 +412,7 @@ function Manchette({
         </>
       )}
     </p>
+    </div>
   );
 }
 
