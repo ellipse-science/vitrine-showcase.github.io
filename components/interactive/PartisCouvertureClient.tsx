@@ -102,6 +102,34 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       </div>
 
       <div className="pupitre">
+        <div className="pupitre-aide">
+          <InfoTip size="lg" label="Comment lire cette visualisation">
+              <b>Comment lire cette visualisation :</b>
+              <br />
+              <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la place qu&apos;il
+              occupe dans la couverture <i>accordée aux partis</i> — et non dans toute
+              l&apos;actualité. Les cinq colonnes se partagent 100&nbsp;%.
+              <br />
+              <br />• Les <b>couleurs</b> comparent chaque parti à lui-même. Vert : il est dans sa
+              moyenne habituelle, ou en dessous. Jaune puis rouge : ce média lui donne plus de place
+              que d&apos;ordinaire.
+              <br />
+              <br />• Le curseur <b>Source</b> change de média. Au centre, « tous les médias » — et
+              là tout est vert, puisque chaque parti y est par définition à sa propre moyenne. Les
+              couleurs n&apos;apparaissent qu&apos;en choisissant un média.
+              <br />
+              <br />• <b>Sourdine</b> : sous 5&nbsp;% de la couverture, un parti est trop peu
+              présent pour qu&apos;on puisse en tirer quelque chose. Sa colonne reste affichée, en
+              gris.
+              <br />
+              <br />• <b>Cliquez un parti</b> pour l&apos;examiner sur l&apos;un des deux plateaux.
+              <br />
+              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
+                En savoir plus sur la méthodologie →
+              </a>
+            </InfoTip>
+        </div>
+
       <Manchette
         rows={view.rows}
         reference={data.ranges[range].rows}
@@ -121,7 +149,6 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         <Console
           rows={view.rows}
           reference={data.ranges[range].rows}
-          refLabel={view.refLabel}
           selection={platines}
           onSelect={chargerPlatine}
           onPcqTap={handlePcqTap}
@@ -232,7 +259,6 @@ function positionVisuelle(rang: number, total: number): number {
 function Console({
   rows,
   reference,
-  refLabel,
   selection,
   onSelect,
   onPcqTap,
@@ -241,7 +267,6 @@ function Console({
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
    *  couleurs. Identique à `rows` quand le fader est sur « tous ». */
   reference: RowView[];
-  refLabel: string;
   selection: [string | null, string | null];
   onSelect: (key: string) => void;
   onPcqTap: () => void;
@@ -269,15 +294,6 @@ function Console({
 
   return (
     <section className="console" aria-label="Niveaux de couverture médiatique par parti">
-      <div className="console-tete">
-        <span className="console-titre">{refLabel}</span>
-        <span className="console-echelle-legende">
-          <i className="zone green" /> dans sa moyenne
-          <i className="zone amber" /> au-dessus
-          <i className="zone red" /> bien au-dessus
-        </span>
-      </div>
-
       <div className="console-corps">
         <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
           {tranches.map((row, i) => (

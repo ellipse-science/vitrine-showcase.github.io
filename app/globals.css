@@ -4670,7 +4670,10 @@
     padding: 8px 30px 30px;
     margin-top: 26px;
   }
-  .pupitre .manchette { margin-top: 24px; }
+  /* La marque d'aide vit sur le PUPITRE, pas dans le titre : ajoutée au titre,
+     elle le faisait déborder sur deux lignes. */
+  .pupitre-aide { display: flex; justify-content: flex-end; }
+  .pupitre .manchette { margin-top: 10px; }
   .pupitre .regie { margin-top: 24px; }
 
   /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
@@ -4853,40 +4856,6 @@
     --gradu: 44px;    /* largeur de la colonne de graduations */
     --gradu-gap: 20px;
   }
-
-  .console-tete {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    gap: 18px;
-    flex-wrap: wrap;
-    max-width: 760px;
-    margin: 0 auto 22px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-  .console-titre { color: var(--ink-softer); font-weight: 400; }
-  .console-echelle-legende {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    letter-spacing: 0.12em;
-    text-transform: none;
-    color: var(--ink-softer);
-    font-weight: 400;
-  }
-  .console-echelle-legende .zone {
-    width: 11px;
-    height: 7px;
-    margin-left: 8px;
-  }
-  .console-echelle-legende .zone:first-child { margin-left: 0; }
-  .zone.green { background: var(--green); }
-  .zone.amber { background: var(--amber); }
-  .zone.red   { background: var(--red); }
 
   /* La console et ses graduations, côte à côte. */
   .console-corps {
