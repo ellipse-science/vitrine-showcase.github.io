@@ -30,7 +30,7 @@ function shareTitle(data: PartiesData): string {
       : leader.toneDirection === "negative"
         ? "on en parle en mal"
         : "l'important, c'est qu'on en parle";
-  return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct} % du temps : ${tone}`;
+  return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct}\u00a0% du temps\u00a0: ${tone}`;
 }
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
@@ -104,10 +104,10 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       <div className="pupitre">
         <div className="pupitre-aide">
           <InfoTip size="lg" label="Comment lire cette visualisation">
-              <b>Comment lire cette visualisation :</b>
+              <b>Comment lire cette visualisation&nbsp;:</b>
               <br />
               <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
-              les médias lui consacrent <i>quand ils parlent d&apos;un parti</i> — et non sur
+              les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
               l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
               petite. Les cinq colonnes se partagent 100&nbsp;%.
               <br />
@@ -115,7 +115,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
               ce média donne à ce parti autant de temps que les autres, ou moins. Jaune puis rouge :
               il lui en donne davantage.
               <br />
-              <br />• Le curseur <b>Source</b> change de média. Au centre, « tous les médias » : là
+              <br />• Le curseur <b>Source</b> change de média. Au centre, «&nbsp;tous les médias&nbsp;»&nbsp;: là
               tout est vert, puisqu&apos;il n&apos;y a rien à comparer. Les couleurs
               n&apos;apparaissent qu&apos;en choisissant un média en particulier.
               <br />
@@ -291,7 +291,7 @@ function Console({
   if (!tete || tete.sovPct <= 0) {
     return (
       <p className="console-vide">
-        Aucun signal sur cette période — tous les canaux sont silencieux.
+        Aucun signal sur cette période. Tous les canaux sont silencieux.
       </p>
     );
   }
@@ -553,9 +553,9 @@ function Tranche({
       <div
         className="console-vumetre"
         title={
-          (coupe ? `${row.label} — en sourdine, sous 5 % : ` : `${row.label} — `) +
-          `${row.sovPct} % du temps consacré aux partis (record de la période : ${row.peakPct} %)` +
-          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart} % par rapport à l'ensemble des médias`)
+          (coupe ? `${row.label}, en sourdine, sous 5\u00a0%\u00a0: ` : `${row.label}\u00a0: `) +
+          `${row.sovPct}\u00a0% du temps consacré aux partis (record de la période\u00a0: ${row.peakPct}\u00a0%)` +
+          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart}\u00a0% par rapport à l'ensemble des médias`)
         }
       >
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
@@ -579,7 +579,7 @@ function Tranche({
           onPcqTap?.();
         }}
         aria-pressed={charge !== null}
-        title={`${row.label} — cliquer pour charger sur une platine`}
+        title={`${row.label}\u00a0: cliquer pour charger sur une platine`}
       >
         {row.label}
       </button>
@@ -588,13 +588,13 @@ function Tranche({
           Sourdine
           <InfoTip size="sm" label="Sourdine">
             Sur cette période, ce parti reçoit moins de 5&nbsp;% du temps que les médias
-            consacrent aux partis — trop peu pour qu&apos;on puisse en tirer quelque chose. Sa
+            consacrent aux partis. Trop peu pour qu&apos;on puisse en tirer quelque chose. Sa
             colonne reste affichée, mais muette.
           </InfoTip>
         </span>
       ) : (
         <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-          {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "—"}
+          {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "–"}
         </span>
       )}
     </li>
@@ -701,7 +701,7 @@ function Course({ chart }: { chart: ChartView }) {
   if (chart.tooShort) {
     return (
       <p className="course-vide">
-        Une seule journée de données — pas encore de tendance à lire.
+        Une seule journée de données. Pas encore de tendance à lire.
       </p>
     );
   }

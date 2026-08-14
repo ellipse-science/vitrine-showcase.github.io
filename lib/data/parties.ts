@@ -603,7 +603,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
 
     const refSov = stat.sov[cfg.refKey];
     const refLeftPct = Math.min(100, refSov * 100);
-    const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
+    const refTitle = `${cfg.refLabel}\u00a0: ${Math.round(refSov * 100)}\u00a0%`;
 
     // Le ton suit la MÊME série que la courbe du même onglet : le portrait
     // global lit le journalier, donc son ton aussi.
@@ -624,7 +624,8 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
-    const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
+    // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
+    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots positifs\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
 
     const rawHistory =
       range === "week" ? stat.history.weekly : stat.history.week;
@@ -650,7 +651,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
       color: PARTY_COLORS[stat.key],
       sovPct,
       barWidthPct: Number(barWidthPct.toFixed(1)),
-      barTitle: `${sovPct} % de part de voix`,
+      barTitle: `${sovPct}\u00a0% du temps consacré aux partis`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
       showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,
