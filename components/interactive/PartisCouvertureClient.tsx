@@ -194,6 +194,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
  * 20 % est le PARTAGE ÉGAL entre cinq partis, donc la frontière entre un canal
  * en dessous de sa part et un canal au-dessus.
  */
+/** 20 crans pour une pleine échelle de 50 % : un cran vaut 2,5 points. */
 const METER_SEGMENTS = 20;
 const METER_FULL_SCALE = 50;
 
@@ -310,10 +311,18 @@ function Console({
           ))}
         </ol>
 
-        {/* Graduations, à droite comme sur une tranche de console. */}
+        {/* Graduations, à droite comme sur une tranche de console.
+            `--n` est le NOMBRE DE SEGMENTS sous le repère, pas une fraction de
+            hauteur : les segments sont séparés par des gouttières, donc la
+            pile n'est pas linéaire et une position en pourcentage tombe à côté.
+            Chaque graduation choisie est un multiple de 2,5 %, donc elle tombe
+            exactement sur une frontière entre deux segments. */}
         <ul className="console-graduations" aria-hidden="true">
           {[50, 40, 30, 20, 10, 0].map((v) => (
-            <li key={v} style={{ ["--v" as string]: v / METER_FULL_SCALE }}>
+            <li
+              key={v}
+              style={{ ["--n" as string]: (v / METER_FULL_SCALE) * METER_SEGMENTS }}
+            >
               {v === 20 ? <b>{v} %</b> : `${v} %`}
             </li>
           ))}

@@ -4857,14 +4857,21 @@
      le jeton que le design language réserve aux encadrés. Les platines, elles,
      restent dehors — ce sont des appareils distincts dans une régie. */
   .console {
+    /* Hauteur d'UN segment, déduite de la piste et des 19 gouttières. Sert aux
+       graduations, qui doivent tomber sur les frontières entre segments. */
+    --seg-h: calc((var(--piste) - 19 * var(--seg-gap)) / 20);
     background: var(--paper-deep);
     border: 1px solid var(--rule);
     padding: 20px 22px 24px;
     margin-top: 4px;
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
-    --tranche: 78px;  /* largeur d'une tranche — FIXE, voir ci-dessous */
-    --gradu: 44px;    /* largeur de la colonne de graduations */
+    /* Largeur d'une tranche — FIXE (voir plus bas), et calibrée pour que la
+       console TIENNE dans sa colonne. Budget : colonne centrale 548 px, moins
+       44 de rembourrage du châssis, moins 46 de graduations et 20 de gouttière
+       → 438 px pour 5 tranches et 4 écarts. 5×72 + 4×16 = 424, il reste 14. */
+    --tranche: 72px;
+    --gradu: 46px;    /* largeur de la colonne de graduations */
     --gradu-gap: 20px;
   }
 
@@ -4888,7 +4895,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
     /* Largeur au CONTENU : réserver une largeur fixe laisserait les
        graduations flotter loin des vumètres qu'elles annoncent. */
     flex: 0 0 auto;
@@ -5004,7 +5011,12 @@
   .console-graduations li {
     position: absolute;
     left: 0;
-    bottom: calc(var(--v) * 100%);
+    /* Position = sommet du n-ième segment : n hauteurs de segment, plus les
+       (n−1) gouttières intercalées. Une position en pourcentage de la piste
+       ignorerait ces gouttières et décalerait les repères du milieu. */
+    bottom: calc(
+      var(--n) * var(--seg-h) + max(var(--n) - 1, 0) * var(--seg-gap)
+    );
     transform: translateY(50%);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
