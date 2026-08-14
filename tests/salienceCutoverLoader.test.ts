@@ -165,8 +165,8 @@ describe("référence ancrée : la calibration glissante ne classe plus", () => 
     const une = data!.top3[0];
 
     expect(une.scoreQcSum24h).toBeCloseTo(cumulVise, 1);
-    // La borne haute de la glissante (60) est bien FRANCHIE : sans le
-    // débranchement, ce test échouerait au lieu de ne rien prouver.
+    // Le p95 de la glissante (45) est bien FRANCHI par cumulVise (50) : sans
+    // le débranchement, ce test échouerait au lieu de ne rien prouver.
     expect(cumulVise).toBeGreaterThan(glissante.metrics.salience_index_qc_sum_24h.p95 * 100);
     // Et pourtant c'est la grille d'année qui parle.
     expect(une.saillanceLabel).toBe("Modérée");
