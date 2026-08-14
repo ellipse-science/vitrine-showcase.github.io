@@ -647,7 +647,15 @@ function Fader({
               className={`fader-cran${i === idx ? " actif" : ""}${
                 p.id === TOUS_MEDIAS ? " tous" : ""
               }`}
-              style={{ left: `${(i / (positions.length - 1)) * 100}%` }}
+              /* La poignée native ne va pas de 0 à 100 % : elle est rentrée
+                 d'une demi-largeur à chaque bout pour rester dans la piste. Les
+                 crans suivent la même course, sinon la tirette ne tomberait pas
+                 dessus. --pouce porte cette largeur, définie en CSS. */
+              style={{
+                left: `calc(var(--pouce) / 2 + ${
+                  i / (positions.length - 1)
+                } * (100% - var(--pouce)))`,
+              }}
             >
               <i />
               <b>{p.id === TOUS_MEDIAS ? "TOUS" : p.id}</b>

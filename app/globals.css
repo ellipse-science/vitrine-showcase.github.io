@@ -5082,22 +5082,52 @@
     font-weight: 500;
   }
 
-  .fader-piste { position: relative; height: 40px; }
+  .fader-piste { position: relative; height: 40px; --pouce: 15px; }
 
+  /* La POIGNÉE NATIVE est la tirette. Elle est visible et stylée, pas cachée
+     derrière un faux curseur dessiné : c'est elle qui suit le doigt ou la
+     souris pendant le glissement, et elle apporte gratuitement le clavier, le
+     tactile et l'accessibilité. */
   .fader-input {
     position: absolute;
     inset: 0 0 auto;
     width: 100%;
-    height: 22px;
+    height: 30px;
     margin: 0;
-    opacity: 0;
-    cursor: pointer;
     z-index: 2;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: grab;
   }
-  .fader-input:focus-visible + .fader-crans .fader-cran.actif i {
-    outline: 2px solid var(--cordovan);
-    outline-offset: 3px;
+  .fader-input:active { cursor: grabbing; }
+
+  .fader-input::-webkit-slider-runnable-track { height: 30px; background: transparent; }
+  .fader-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--pouce);
+    height: 30px;
+    background: var(--ink);
+    border: none;
+    border-radius: 0;
+    cursor: grab;
   }
+  .fader-input::-moz-range-track { height: 30px; background: transparent; }
+  .fader-input::-moz-range-thumb {
+    width: var(--pouce);
+    height: 30px;
+    background: var(--ink);
+    border: none;
+    border-radius: 0;
+    cursor: grab;
+  }
+  /* Une encoche claire au milieu de la tirette — le repère qu'on trouve sur
+     les vraies tirettes de console. */
+  .fader-input::-webkit-slider-thumb { box-shadow: inset 0 0 0 1px var(--ink), inset 0 14px 0 -13px var(--paper); }
+  .fader-input::-moz-range-thumb { box-shadow: inset 0 14px 0 -13px var(--paper); }
+
+  .fader-input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  .fader-input:focus-visible::-moz-range-thumb { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
   .fader-crans { position: absolute; inset: 0; pointer-events: none; }
   /* Le rail */
@@ -5119,9 +5149,11 @@
     align-items: center;
     gap: 7px;
   }
+  /* Les crans ne sont plus que des GRADUATIONS : la tirette est la poignée
+     native, et non le cran actif grossi comme auparavant. */
   .fader-cran i {
     display: block;
-    width: 3px;
+    width: 1px;
     height: 22px;
     background: var(--rule);
   }
@@ -5133,17 +5165,11 @@
     font-weight: 400;
     white-space: nowrap;
   }
-  /* Le curseur : le cran actif devient une vraie tirette. */
-  .fader-cran.actif i {
-    width: 13px;
-    height: 26px;
-    margin-top: -2px;
-    background: var(--ink);
-  }
+  .fader-cran.actif i { background: var(--ink-soft); }
   .fader-cran.actif b { color: var(--ink); font-weight: 500; }
   /* Le cran « tous » est la position de repos du crossfader : plus haut et
      plus marqué que les autres, pour se retrouver sans regarder. */
-  .fader-cran.tous i { height: 30px; margin-top: -4px; background: var(--ink-softer); }
+  .fader-cran.tous i { height: 30px; margin-top: -4px; width: 2px; background: var(--ink-softer); }
   .fader-cran.tous b { letter-spacing: 0.18em; color: var(--ink-soft); }
   .fader-cran.tous.actif i { background: var(--ink); }
 
