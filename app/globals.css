@@ -5074,11 +5074,11 @@
      Un curseur, pas un menu : sur une console on pousse, on ne déroule pas.
      L'input natif porte l'interaction (souris, clavier, tactile) ; il est rendu
      transparent et les crans sont dessinés dessous. */
+  /* Pas de filet au-dessus : le fader appartient au même appareil que la
+     console, et un trait les séparait en deux blocs. L'écart suffit. */
   .fader {
     max-width: 620px;
-    margin: 30px auto 0;
-    padding-top: 24px;
-    border-top: 0.5px solid var(--rule);
+    margin: 38px auto 0;
   }
   /* « Source » est SOUS le curseur : c'est une étiquette d'appareil, pas un
      titre. Centrée, discrète, elle nomme la commande sans la précéder. */
