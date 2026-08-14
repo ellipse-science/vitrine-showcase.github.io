@@ -23,7 +23,7 @@ if (problemes.length === 0) {
 
 for (const p of problemes) console.error(`✘ ${p}`);
 console.error(
-  "\nCette note sera publiée telle quelle sur https://…/journal/, lisible par les visiteurs," +
+  "\nCette note sera publiée telle quelle sur https://ellipse.science/vitrine-showcase.github.io/journal/, lisible par les visiteurs," +
     "\nles partenaires et la presse. Le check se relance dès que vous modifiez le corps de la PR." +
     "\nRègles d'écriture : .claude/skills/redaction-editoriale/SKILL.md",
 );

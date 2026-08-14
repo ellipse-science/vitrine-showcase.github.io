@@ -39,9 +39,12 @@ jobs:
       # Aucun `npm ci` : le script ne lit que du texte, il n'a pas de
       # dépendance. Le verdict tombe en quelques secondes.
       #
-      # Le corps de la PR passe par l'entrée standard, jamais par la ligne de
-      # commande ni par une interpolation dans le shell : c'est une donnée
-      # écrite par un tiers, et `${{ }}` l'injecterait dans le script.
+      # Le corps de la PR transite par une variable d'env (PR_BODY), jamais
+      # par une interpolation GitHub `${{ }}` dans `run:` : c'est une donnée
+      # écrite par un tiers, et `${{ }}` l'injecterait telle quelle dans le
+      # script shell généré. Ici "$PR_BODY" est une simple expansion de
+      # variable shell — le contenu n'est jamais évalué, seulement lu comme
+      # texte par printf puis passé sur l'entrée standard du script Node.
       - name: Vérifier la note de journal
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
