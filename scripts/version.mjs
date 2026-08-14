@@ -16,6 +16,10 @@
 //
 //   2.0.0-beta.3 → « Bêta v2.0.0 (b3) »  (compteur bêta visible)
 //   2.0.0        → « v2.0.0 »             (hors bêta)
+/**
+ * @param {string} version - semver de package.json (ex. "2.23.0-beta.1").
+ * @returns {string} Le libellé affiché à l'écran (ex. "Bêta v2.23.0 (b1)").
+ */
 export function formatVersion(version) {
   const [core, pre] = version.split("-");
   const beta = pre?.match(/^beta\.(\d+)$/);

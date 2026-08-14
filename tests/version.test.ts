@@ -8,7 +8,11 @@ import pkg from "../package.json";
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
 
 function htmlFiles(dir: string): string[] {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+  // Trié : l'ordre de readdirSync() n'est pas garanti d'un système de
+  // fichiers à l'autre, et il alimente it.each() plus bas — un ordre
+  // instable ferait bouger les noms de cas de test sans raison.
+  const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+  return entries.flatMap((e) => {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) return htmlFiles(full);
     return e.name.endsWith(".html") ? [full] : [];
