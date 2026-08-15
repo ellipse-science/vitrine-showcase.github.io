@@ -653,7 +653,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <div
             className="hab"
             style={{ left: `${s.habitualConvPct}%` }}
-            title={`« Habituel » = la convergence médiane, mesurée sur une année complète de référence (~${s.habitualConvPct} %).`}
+            title={`« Habituel » = la convergence médiane, mesurée sur une année complète de référence (~${s.habitualConvPct} %).`}
           />
           <div className="marker" style={{ left: `${s.convPct}%` }}>
             <span className="marker-bubble">
