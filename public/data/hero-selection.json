@@ -1,10 +1,10 @@
 {
-  "event_id": "20260815T030000Z-evt-ottawa-demande-provinces-preparer-remettre-440653e4",
+  "event_id": "20260815T070000Z-evt-discuss-critical-minerals-defence-trade-3f3081be",
   "storyline_id": "story-tariffs-2a5e7c2c",
-  "title": "Ottawa presse les provinces de préparer le retour de l'alcool américain",
+  "title": "Canada-Etats-Unis: négociations tendues sur le commerce et les tarifs",
   "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-15",
-  "time_interval_utc": "03-07",
-  "sum_qc": 123.24,
+  "time_interval_utc": "07-11",
+  "sum_qc": 115.278,
   "peak_qc": 64.28
 }
