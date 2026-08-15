@@ -644,7 +644,8 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             que la piste mesure une seule grandeur. Les mots divergent/convergent
             restent aux deux bouts comme repères de sens. Marqueur = convergence
             sur la fenêtre glissante 24 h (s.convPct), pas un bloc 4 h. Le repère
-            « habituel » = convergence event-level médiane des derniers mois. */}
+            « habituel » = médiane event-level d'une année complète, ANCRÉE
+            (#477, décision A0 — voir HABITUAL_EVENT_CONV dans le loader). */}
         <div className="rel-strip" aria-hidden>
           <span className="lbl l">divergent</span>
           <span className="lbl r">convergent</span>
@@ -652,7 +653,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
           <div
             className="hab"
             style={{ left: `${s.habitualConvPct}%` }}
-            title={`« Habituel » = la convergence médiane des derniers mois (~${s.habitualConvPct} %). En temps normal, les deux agendas se recoupent peu : la divergence est la règle.`}
+            title={`« Habituel » = la convergence médiane, mesurée sur une année complète de référence (~${s.habitualConvPct} %).`}
           />
           <div className="marker" style={{ left: `${s.convPct}%` }}>
             <span className="marker-bubble">

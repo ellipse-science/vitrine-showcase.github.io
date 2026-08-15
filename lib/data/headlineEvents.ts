@@ -202,27 +202,29 @@ const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [10
 // place le marqueur en temps normal). ATTENTION : c'est la médiane du score au
 // niveau HISTOIRE (windowEventConvergence), PAS la métrique `convergence` de la
 // calibration glissante, qui reste l'ancienne convergence OBJET (interval_convergence_score,
-// médiane ≈ 3 %). Mesuré le 2026-07-15 en rejouant le VRAI code du loader
-// (dédup par event_id avec préférence QC + filtre country_id≠USA, puis
-// storiesFrom24h + windowEventConvergence) sur chaque fenêtre glissante 24 h de
-// l'historique DEV (headline_events_4h, 2026-05-14 → 2026-07-15, 323 fenêtres) :
-// p50 = 31 % (p20=16, p80=42).
+// médiane ≈ 3 %).
 //
-// CONFIRMÉ au #272 : `metrics.event_convergence` est désormais publiée
-// (n = 394 sur 365 jours) et son p50 vaut **31** — exactement la constante
-// mesurée à la main. Le loader préfère la valeur publiée ; celle-ci n'est plus
-// qu'un repli, et on sait maintenant qu'il est juste.
-//
-// Le « 41 % au lieu de 31 » qui était noté ici appartenait au repli
-// `saillance − qc` retiré au #272, lequel réabsorbait les USA du côté canadien.
-const HABITUAL_EVENT_CONV = 31;
+// ⚓ ANCRÉ depuis #477 — même décision que les bandes de saillance (#430 A0,
+// #476) : mesuré sur une année complète en régime de regroupement uniforme
+// (rejeu 15 mois, 2 678 fenêtres de 6 blocs, demi-vie 10 h — script
+// _chantiers-vitrine/banc-235/convergence_annee_specv1.R), et plus jamais
+// dérivé de la calibration glissante. L'ancienne dérivation « 365 jours » ne
+// contenait en réalité que ~82 jours (headline_events_4h commence au
+// 2026-05-14 ; n publié = 503), aux trois quarts antérieurs au regroupement
+// LLM du 23-07 : des histoires plus fragmentées, donc moins de bilatérales,
+// donc un repère écrasé 19 points sous la réalité (33 contre 52) — le site
+// disait « nettement plus que d'habitude » à des valeurs SOUS la médiane
+// annuelle. La formule de l'indice n'y est pour rien : l'ancien indice donne
+// la même médiane (52) sur la même année, la convergence est un rapport de
+// parts. Provisoire au même titre que les grilles du § 03 : rebasé quand la
+// référence datée (`ref-2025`) sera posée.
+const HABITUAL_EVENT_CONV = 52;
 // Bandes du score RELATIF (#258, demande Yannick « plus/moins que d'habitude,
-// et de combien ») : au-delà de p80 (ou sous p20) de la même distribution de
-// 323 fenêtres 24 h, l'écart n'est plus « un peu » mais « nettement ». Repli
-// codé ; la calibration publiée (event_convergence.p20/p80) prime quand
-// présente et monotone.
-const HABITUAL_EVENT_CONV_P20 = 16;
-const HABITUAL_EVENT_CONV_P80 = 42;
+// et de combien ») : au-delà de p80 (ou sous p20) de la distribution d'année,
+// l'écart n'est plus « un peu » mais « nettement ». Ancrées avec la médiane —
+// même mesure, même script, même statut provisoire.
+const HABITUAL_EVENT_CONV_P20 = 36;
+const HABITUAL_EVENT_CONV_P80 = 68;
 
 function pctile(v: number, cal: [number, number][]): number {
   if (!(v > 0)) return 0;
@@ -245,8 +247,11 @@ function pctile(v: number, cal: [number, number][]): number {
 type CalMetric = { region?: string | null; n?: number; p5: number; p20: number; p50: number; p80: number; p95: number };
 // `convergence` = convergence OBJET (interval_convergence_score) — calibre la
 // table de percentiles CAL_CONV. `event_convergence` = convergence au niveau
-// HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27 ; son p50
-// prime sur HABITUAL_EVENT_CONV pour le repère « habituel ».
+// HISTOIRE (windowEventConvergence) — publiée depuis le 2026-07-27. ⚓ Le site
+// ne la LIT PLUS depuis #477 : le repère « habituel » est ancré sur l'année
+// (HABITUAL_EVENT_CONV*), même décision A0 que les grilles de saillance. Elle
+// reste publiée par fetch_data.R, utile pour surveiller la distribution — ne
+// pas la rebrancher sans rouvrir A0.
 // Les clés `salience_index_*` sont les homologues des `score_*` pour le NOUVEL
 // indice (cf. build_salience_calibration dans scripts/fetch_data.R). ⚓ Le site
 // ne les LIT PLUS depuis la décision A0 : les bandes du nouvel indice sont
@@ -2188,21 +2193,12 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const sumThresholds = SALIENCE_CUTOVER
     ? NEW_SUM_QC_THRESHOLDS
     : salThresholdsFrom(calibration?.metrics?.score_qc_sum_24h) ?? SUM_QC_THRESHOLDS;
-  // Repère « habituel » = médiane event-level. Dérivé de la calibration glissante
-  // dès qu'elle publiera `event_convergence` (p50) ; d'ici là, constante mesurée.
-  const evConv = calibration?.metrics?.event_convergence;
-  const evConvP50 = evConv?.p50;
-  const habitualConvPct =
-    typeof evConvP50 === "number" && Number.isFinite(evConvP50)
-      ? Math.round(Math.max(0, Math.min(100, evConvP50)))
-      : HABITUAL_EVENT_CONV;
-  // Bandes « un peu / nettement » du score relatif (#258) : p20/p80 publiés,
-  // exigés finis et strictement encadrants de p50 (sinon repli codé 16/42).
-  const habBands =
-    evConv && [evConv.p20, evConv.p80].every((v) => typeof v === "number" && Number.isFinite(v)) &&
-    evConv.p20 < habitualConvPct && habitualConvPct < evConv.p80
-      ? { p20: Math.round(evConv.p20), p80: Math.round(evConv.p80) }
-      : undefined;
+  // Repère « habituel » : ANCRÉ (#477, décision A0) — les constantes d'année
+  // parlent, la calibration glissante `event_convergence` n'est plus consultée
+  // (voir la note sur HABITUAL_EVENT_CONV). Le test « le repère de la jauge
+  // ignore lui aussi la calibration publiée » verrouille ce débranchement.
+  const habitualConvPct = HABITUAL_EVENT_CONV;
+  const habBands = { p20: HABITUAL_EVENT_CONV_P20, p80: HABITUAL_EVENT_CONV_P80 };
 
   // Niveaux de badge reconstitués en rejouant les éditions du snapshot. Plus
   // aucun LISSAGE depuis le retrait de l'hystérésis (A4) : le rang de chaque
