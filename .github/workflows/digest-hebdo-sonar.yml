@@ -7,7 +7,12 @@ name: Digest hebdo — sonar vitrine
 #   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/digest-hebdo-sonar.yml/dispatches
 #   Method: POST   Body: {"ref":"main"}
 #   Header: Authorization: token <GitHub PAT avec scope workflow>
-#   Cron:   15 12 * * 0  (UTC, dimanche — ≈ 08:15 heure de Montréal en EDT)
+#   Cron:   0 12 * * 2  (UTC, mardi — ≈ 08:00 heure de Montréal en EDT)
+#
+# Mardi plutôt que dimanche (décision Adrien, 2026-08-15) : personne ne lit
+# Slack la fin de semaine, un digest du dimanche ne sert à personne avant le
+# lundi matin au plus tôt — mardi 8h laisse aussi le lundi absorber ce qui a
+# pu casser pendant le week-end avant que le digest en parle.
 #
 # Portée : LIVRAISON, pas tables de raffineurs. Règle du 2026-08-12 (voir
 # CLAUDE.md du dépôt aws-refiners) : #02_vitrine_sonar surveille si le site
