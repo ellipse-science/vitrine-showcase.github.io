@@ -1,10 +1,10 @@
 {
-  "event_id": "20260815T190000Z-evt-congres-aile-jeunesse-plq-charles-492e7f1d",
+  "event_id": "20260815T230000Z-evt-question-disposition-derogation-est-pas-1a6494b2",
   "storyline_id": "story-parti-liberal-quebec-41ed6532",
-  "title": "Charles Milliard mobilise la jeunesse libérale à Saint-Lambert",
-  "main_issue": "education",
+  "title": "Les jeunes libéraux évitent la loi 96 au congrès de Saint-Lambert",
+  "main_issue": "culture_and_nationalism",
   "date_utc": "2026-08-15",
-  "time_interval_utc": "19-23",
-  "sum_qc": 86.436,
+  "time_interval_utc": "23-03",
+  "sum_qc": 115.376,
   "peak_qc": 53.22
 }
