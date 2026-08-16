@@ -260,7 +260,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
 
     const refSov = stat.sov[cfg.refKey];
     const refLeftPct = Math.min(100, refSov * 100);
-    const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
+    const refTitle = `${cfg.refLabel} : ${Math.round(refSov * 100)} %`;
 
     const toneHist =
       range === "month"
@@ -273,7 +273,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
     const unit =
       range === "month" ? "mois" : range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
-      streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—";
+      streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—"; // garde-redaction: ok (tiret = glyphe, aucune direction)
     const dirLabel =
       streak.direction === "positive"
         ? "Positif"
@@ -284,7 +284,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
-    const toneTitle = `Ton de la couverture — ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
+    const toneTitle = `Ton de la couverture : ${toneLabel} (proportion nette de mots positifs : ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)} %)`;
 
     const rawHistory =
       range === "month"
@@ -309,7 +309,7 @@ function buildRangeView(stats: Stat[], range: RangeKey): RangeView {
       color: PARTY_COLORS[stat.key],
       sovPct,
       barWidthPct: Number(barWidthPct.toFixed(1)),
-      barTitle: `${sovPct} % de part de voix`,
+      barTitle: `${sovPct} % de part de voix`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
       showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,

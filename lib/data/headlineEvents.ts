@@ -362,7 +362,7 @@ function relScore(convPct: number, hab: number, p20: number, p80: number): {
   const qual = Math.abs(diff) < 1 ? "autant" : `${intensity} ${conv ? "plus" : "moins"}`;
   const relInfo =
     `Règle générale, les médias du Québec et du Canada consacrent ${hab} % de leur attention ` +
-    `aux mêmes histoires. En ce moment : ${convPct} %, ${qual} que d'habitude.`;
+    `aux mêmes histoires. En ce moment : ${convPct} %, ${qual} que d'habitude.`;
   return { relDiffPct: Math.abs(diff), relLabel, relCls, relInfo };
 }
 
@@ -377,12 +377,12 @@ function solitudesEdito(convPct: number, shared: number): string {
       : "Sur les 24 dernières heures, les médias québécois et canadiens ont mis l'accent sur des sujets presque entièrement différents.";
   }
   if (convPct < 50) {
-    return "Quelques grandes histoires traversent la frontière ; le reste des deux agendas se croise à peine.";
+    return "Quelques grandes histoires traversent la frontière; le reste des deux agendas se croise à peine.";
   }
   if (convPct < 75) {
     return "Une bonne partie de l'actualité est suivie des deux côtés, chacun avec ses propres mots.";
   }
-  return "Fait rare : les deux espaces médiatiques mettent de l'avant surtout les mêmes sujets.";
+  return "Fait rare : les deux espaces médiatiques mettent de l'avant surtout les mêmes sujets.";
 }
 
 // Clé de bloc triable (date + heure de début du créneau 4h).
@@ -949,7 +949,7 @@ function buildSolitudes(
     // posé à `convPct` sur la piste, donc l'annoncer en divergence chiffrerait
     // le point là où il n'est pas.
     markerTitle:
-      `Aujourd'hui : ${convPct} % de convergence. Habituel : ${habitualConvPct} %.`,
+      `Aujourd'hui : ${convPct} % de convergence. Habituel : ${habitualConvPct} %.`,
     coverageQcInCan: qcRow?.coverage_qc_in_can ?? null,
     coverageCanInQc: qcRow?.coverage_can_in_qc ?? null,
     edito: solitudesEdito(convPct, shared),
@@ -1080,12 +1080,12 @@ const POP_ROC = "canadiennes";
 // trois composantes que `hintFromCentile` : ces phrases sortent aux mêmes
 // endroits, elles ne peuvent pas parler une autre langue.
 const HINT_BY_RANK: Record<number, (pop: string) => string> = {
-  6: (p) => `Sur les 24 dernières heures, elle dépasse 95 % des Unes ${p} de l’année.`,
-  5: (p) => `Sur les 24 dernières heures, elle dépasse environ 85 % des Unes ${p} de l’année.`,
-  4: (p) => `Sur les 24 dernières heures, elle dépasse environ 65 % des Unes ${p} de l’année.`,
-  3: (p) => `Sur les 24 dernières heures, environ 65 % des Unes ${p} de l’année sont plus saillantes.`,
-  2: (p) => `Sur les 24 dernières heures, environ 85 % des Unes ${p} de l’année sont plus saillantes.`,
-  1: (p) => `Sur les 24 dernières heures, 95 % des Unes ${p} de l’année sont plus saillantes.`,
+  6: (p) => `Sur les 24 dernières heures, elle dépasse 95 % des Unes ${p} de l’année.`,
+  5: (p) => `Sur les 24 dernières heures, elle dépasse environ 85 % des Unes ${p} de l’année.`,
+  4: (p) => `Sur les 24 dernières heures, elle dépasse environ 65 % des Unes ${p} de l’année.`,
+  3: (p) => `Sur les 24 dernières heures, environ 65 % des Unes ${p} de l’année sont plus saillantes.`,
+  2: (p) => `Sur les 24 dernières heures, environ 85 % des Unes ${p} de l’année sont plus saillantes.`,
+  1: (p) => `Sur les 24 dernières heures, 95 % des Unes ${p} de l’année sont plus saillantes.`,
 };
 
 // ── Le VRAI centile, plutôt qu'un centile arrondi à six paliers (#430, A7) ───
@@ -1133,8 +1133,8 @@ function hintFromCentile(v: number, t: typeof SUM_QC_THRESHOLDS, pop: string): s
   // Unes, il ne dessine aucun sommet ; lui en faire dire un décrirait ce que
   // l'image ne montre pas. La portée devait donc être ÉNONCÉE, pas changée.
   return c >= 50
-    ? `Sur les 24 dernières heures, elle dépasse environ ${c} % des Unes ${pop} de l’année.`
-    : `Sur les 24 dernières heures, environ ${100 - c} % des Unes ${pop} de l’année sont plus saillantes.`;
+    ? `Sur les 24 dernières heures, elle dépasse environ ${c} % des Unes ${pop} de l’année.`
+    : `Sur les 24 dernières heures, environ ${100 - c} % des Unes ${pop} de l’année sont plus saillantes.`;
 }
 
 const TIER_BY_RANK: Record<number, { label: string; cls: string; hint: string }> = {
@@ -1740,7 +1740,7 @@ function buildSalienceTrend(
   const capLabel =
     situation === "nouvelle" ? (hCourant ? `Nouveau (arrivée ${hCourant})` : "Nouveau")
       : situation === "sommet" ? (hPrec
-        ? `Nouveau sommet aujourd’hui (+${Math.abs(deltaPct)} % depuis ${hPrec})`
+        ? `Nouveau sommet aujourd’hui (+${Math.abs(deltaPct)} % depuis ${hPrec})`
         : "Nouveau sommet aujourd’hui")
         : situation === "retombee" ? (hRetombee
           ? `L’attention est retombée depuis ${hRetombee} ${incise}`
@@ -1750,7 +1750,7 @@ function buildSalienceTrend(
               ? `Remonte depuis ${hPrec} ${incise}`
               : `Remonte ${incise}`)
               : situation === "stable" ? `Se maintient ${incise}`
-                : `En recul de ${reculSommet} % ${incise}`;
+                : `En recul de ${reculSommet} % ${incise}`;
 
 
   // La FLÈCHE suit le dernier mouvement de la courbe, pas la position vis-à-vis

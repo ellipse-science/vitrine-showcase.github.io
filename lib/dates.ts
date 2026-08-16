@@ -47,14 +47,14 @@ export function formatDateFr(dateStr: string): string {
  */
 export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null): string {
   const parsed = parseIsoDate(dateStr);
-  if (!parsed) return "Dernière mise à jour du module : —";
+  if (!parsed) return "Dernière mise à jour du module : —"; // garde-redaction: ok (tiret = glyphe de donnée absente)
   const dateFr = formatDateFr(dateStr);
   const dateLower = dateFr.charAt(0).toLowerCase() + dateFr.slice(1);
   if (blockEndHour == null || Number.isNaN(blockEndHour)) {
-    return `Dernière mise à jour du module : ${dateLower}`;
+    return `Dernière mise à jour du module : ${dateLower}`;
   }
   const hourLabel = blockEndHour >= 24 ? "minuit" : `${blockEndHour}h`;
-  return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
+  return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
 }
 
 /**

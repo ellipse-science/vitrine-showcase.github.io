@@ -290,7 +290,7 @@ export function AssembleeBilliard({ rows, shadowRows = [] }: { rows: AssembleeRo
         className="ass-billiard"
         viewBox={`0 0 ${W} ${svgHeight}`}
         role="group"
-        aria-label="Jeu de billard : vise une bille vers une poche pour découvrir le profil du parti selon cette facette"
+        aria-label="Jeu de billard&nbsp;: vise une bille vers une poche pour découvrir le profil du parti selon cette facette"
         onPointerMove={moveAim}
         onPointerUp={releaseAim}
         onPointerCancel={() => setAim(null)}

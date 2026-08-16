@@ -153,7 +153,7 @@ export function IssueReporter() {
   const selectFile = (file: File) => {
     setScreenshotError('')
     if (!file.type.startsWith('image/')) {
-      setScreenshotError('Fichier non supporté — joignez une image.')
+      setScreenshotError('Fichier non supporté. Joignez une image.')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -205,7 +205,7 @@ export function IssueReporter() {
       `Module : ${reportCtx.section || 'non précisé'}`,
     ]
     if (reportCtx.elementContext) lignes.push(`Contexte visible : ${reportCtx.elementContext}`)
-    if (screenshotFile) lignes.push('', '(Une capture d’écran était jointe au signalement — à rattacher à ce courriel.)')
+    if (screenshotFile) lignes.push('', '(Une capture d’écran était jointe au signalement, à rattacher à ce courriel.)')
     lignes.push('', 'Description :', description.trim())
     return `mailto:${CONTACT_EMAIL}`
       + `?subject=${encodeURIComponent('Signalement — La Vitrine démocratique')}`
@@ -236,7 +236,7 @@ export function IssueReporter() {
         const baseName = screenshotFile.name.replace(/\.[^.]+$/, '')
         screenshot = { name: `${baseName}.jpg`, base64: b64 }
       } else {
-        setScreenshotError("Image trop volumineuse même après compression — elle ne sera pas jointe.")
+        setScreenshotError("Image trop volumineuse même après compression. Elle ne sera pas jointe.")
         setUiState('modal')
         return
       }
@@ -383,7 +383,7 @@ export function IssueReporter() {
                 </h2>
                 <p style={dek}>
                   {failureKind === 'reseau'
-                    ? 'Votre signalement n’est pas parti. Vérifiez votre connexion, puis réessayez — votre texte est conservé.'
+                    ? 'Votre signalement n’est pas parti. Vérifiez votre connexion, puis réessayez. Votre texte est conservé.'
                     : 'Votre signalement n’a pas pu être enregistré, et réessayer n’y changera rien tant que ce n’est pas réparé. Votre texte est conservé ci-dessous : envoyez-le-nous par courriel, ou copiez-le pour le garder.'}
                 </p>
 
@@ -415,7 +415,7 @@ export function IssueReporter() {
 
                 <p style={{ ...fieldLabel, textTransform: 'none', letterSpacing: 0, fontFamily: "'Source Serif 4', serif", fontSize: '12px', fontStyle: 'italic', marginTop: '18px' }}>
                   Écrivez-nous à <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--cordovan)' }}>{CONTACT_EMAIL}</a>.
-                  {screenshotFile && ' Pensez à rattacher votre capture d’écran au courriel : elle ne peut pas être jointe automatiquement.'}
+                  {screenshotFile && ' Pensez à rattacher votre capture d’écran au courriel : elle ne peut pas être jointe automatiquement.'}
                 </p>
 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
@@ -459,7 +459,7 @@ export function IssueReporter() {
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   disabled={uiState === 'submitting'}
-                  placeholder="Ex : l'image ne correspond pas, le score semble erroné…"
+                  placeholder="Ex&nbsp;: l'image ne correspond pas, le score semble erroné…"
                   style={{
                     width: '100%',
                     minHeight: '110px',

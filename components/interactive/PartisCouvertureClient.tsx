@@ -19,7 +19,7 @@ function shareTitle(data: PartiesData): string {
       : leader.toneDirection === "negative"
         ? "on en parle en mal"
         : "l'important, c'est qu'on en parle";
-  return `${leader.label} domine la couverture (${leader.sovPct} %) : ${tone}`;
+  return `${leader.label} domine la couverture (${leader.sovPct} %) : ${tone}`;
 }
 
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
@@ -143,7 +143,7 @@ function PartiRow({
         className={`parti-name-box ${row.key}`}
         style={nameStyle}
         onClick={isPcq ? onPcqTap : undefined}
-        title={isPcq ? "PCQ (Touchez 3 fois pour une surprise !)" : undefined}
+        title={isPcq ? "PCQ (Touchez 3 fois pour une surprise!)" : undefined}
       >
         {row.label}
       </span>

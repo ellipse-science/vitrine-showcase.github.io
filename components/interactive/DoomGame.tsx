@@ -43,11 +43,11 @@ export function DoomGame({ onExit }: { onExit: () => void }) {
   };
 
   return (
-    <div className="doom-seamless-wrap" role="group" aria-label="DOOM — Knee-Deep in the Media">
+    <div className="doom-seamless-wrap" role="group" aria-label="DOOM&nbsp;: Knee-Deep in the Media">
       <div className="doom-editorial-header">
         <div className="doom-header-titles">
           <span className="doom-header-brand">LA VITRINE · ÉDITION SPÉCIALE 💥</span>
-          <span className="doom-header-sub">« KNEE-DEEP IN THE MEDIA » · ÉRIC DUHAIME VS THE PRESS</span>
+          <span className="doom-header-sub">&laquo;&nbsp;KNEE-DEEP IN THE MEDIA&nbsp;&raquo; · ÉRIC DUHAIME VS THE PRESS</span>
         </div>
         <button
           type="button"
@@ -113,7 +113,7 @@ export function DoomGame({ onExit }: { onExit: () => void }) {
         <iframe
           src="https://raz0red.github.io/webprboom/"
           className="doom-iframe-seamless"
-          title="DOOM — Knee-Deep in the Media"
+          title="DOOM&nbsp;: Knee-Deep in the Media"
           allow="autoplay; keyboard; fullscreen; gamepad"
           allowFullScreen
         />
