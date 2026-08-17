@@ -62,9 +62,23 @@ jobs:
 
           TOTAL=$(jq 'length' runs_semaine.json)
           SUCCES=$(jq '[.[] | select(.conclusion == "success")] | length' runs_semaine.json)
-          ECHECS=$(jq '[.[] | select(.conclusion == "failure")]' runs_semaine.json)
+          # NON RÉUSSIS = tout run TERMINÉ dont la conclusion n'est pas "success".
+          # Ne PAS se limiter à "failure" : "cancelled", "timed_out",
+          # "action_required", "startup_failure", "stale" et "neutral" sont aussi
+          # des rafraîchissements qui n'ont pas livré. Les ignorer faisait
+          # annoncer « semaine propre » une semaine où des runs avaient manqué —
+          # exactement l'inverse de ce que ce digest est censé prouver.
+          ECHECS=$(jq '[.[] | select(.status == "completed" and .conclusion != "success")]' runs_semaine.json)
           N_ECHECS=$(echo "$ECHECS" | jq 'length')
           EN_COURS=$(jq '[.[] | select(.status != "completed")] | length' runs_semaine.json)
+
+          # Garde de cohérence : les trois compteurs doivent épuiser le total.
+          # S'ils ne le font pas, c'est qu'une catégorie nous échappe — on le
+          # DIT plutôt que de laisser le digest arrondir en silence.
+          RESTE=$((TOTAL - SUCCES - N_ECHECS - EN_COURS))
+          if [ "$RESTE" -ne 0 ]; then
+            echo "::warning::Digest incohérent : $RESTE run(s) sur $TOTAL ne tombent dans aucune catégorie." >&2
+          fi
 
           {
             echo "total=$TOTAL"
@@ -73,8 +87,10 @@ jobs:
             echo "en_cours=$EN_COURS"
           } >> "$GITHUB_OUTPUT"
 
-          # Liens des échecs (plafond 5 dans le message, comme sonar-pipeline).
-          LIENS_ECHECS=$(echo "$ECHECS" | jq -r '.[:5][] | "• <" + .url + "|run " + (.databaseId | tostring) + ">"')
+          # Liens des runs non réussis (plafond 5 dans le message, comme
+          # sonar-pipeline). La conclusion est affichée : « cancelled » et
+          # « failure » ne se diagnostiquent pas pareil.
+          LIENS_ECHECS=$(echo "$ECHECS" | jq -r '.[:5][] | "• <" + .url + "|run " + (.databaseId | tostring) + "> — " + (.conclusion // "sans conclusion")')
           {
             echo 'liens_echecs<<EOF_EEEE'
             echo "$LIENS_ECHECS"
@@ -108,7 +124,7 @@ jobs:
           if [ "$N_ECHECS" -eq 0 ] && [ "$N_PERIMEE" -eq 0 ]; then
             ETAT="✅ *Semaine propre* — $SUCCES/$TOTAL rafraîchissements réussis, aucune alerte de Une périmée."
           else
-            ETAT="⚠️ *$N_ECHECS échec(s) de rafraîchissement, $N_PERIMEE run(s) avec Une périmée* sur $TOTAL cette semaine."
+            ETAT="⚠️ *$N_ECHECS rafraîchissement(s) non réussi(s), $N_PERIMEE run(s) avec Une périmée* sur $TOTAL cette semaine."
           fi
 
           BLOCS=$(jq -n \
@@ -127,7 +143,12 @@ jobs:
                   {type: "section", text: {type: "mrkdwn", text: ("Rafraîchissements : *" + $succes + "/" + $total + "* réussis" + (if ($en_cours | tonumber) > 0 then " (" + $en_cours + " en cours au moment du digest)" else "" end))}}
                 ]
                 + (if ($echecs | tonumber) > 0 and ($liens | length) > 0 then
-                    [{type: "section", text: {type: "mrkdwn", text: ("*Échecs (5 max affichés) :*\n" + $liens)}}]
+                    [{type: "section", text: {type: "mrkdwn", text: (
+                      "*Runs non réussis"
+                      + (if ($echecs | tonumber) > 5
+                         then " (5 affichés sur " + $echecs + ")"
+                         else "" end)
+                      + " :*\n" + $liens)}}]
                   else [] end)
               )
             }')
