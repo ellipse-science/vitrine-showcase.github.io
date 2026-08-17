@@ -5260,7 +5260,6 @@
 
   @media (max-width: 768px) {
     .fader-cran b { font-size: 8px; }
-    .fader-valeur { font-size: 15px; }
   }
 
   /* La course vit DANS le pupitre : plus de filet lourd, seulement de l'air. */

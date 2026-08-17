@@ -674,8 +674,9 @@ function Tranche({
  * Le clavier fonctionne (flèches), et le lecteur d'écran annonce la valeur via
  * `aria-valuetext`, que le rendu visuel ne lui donnerait pas.
  *
- * Position 0 = tous les médias, c'est-à-dire la table AGRÉGÉE — pas la moyenne
- * des positions suivantes.
+ * « Tous les médias » n'est pas la position 0 mais le cran CENTRAL (index 3 de
+ * MEDIA_ORDER), la position de repos du crossfader. Il lit la table AGRÉGÉE —
+ * pas la moyenne des autres positions.
  */
 function Fader({
   medias,
