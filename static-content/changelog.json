@@ -1,5 +1,11 @@
 [
   {
+    "pr": 488,
+    "date": "2026-08-17T21:39:26Z",
+    "note": "Les textes du site suivent maintenant partout les mêmes règles de typographie française : espaces insécables devant les pourcentages et les deux-points, guillemets qui ne se retrouvent plus seuls en début de ligne, et heures écrites sans espace.",
+    "version": "2.23.0-beta.6"
+  },
+  {
     "pr": 486,
     "date": "2026-08-17T21:39:18Z",
     "note": "Rien pour le visiteur du site — outillage de surveillance interne.",
