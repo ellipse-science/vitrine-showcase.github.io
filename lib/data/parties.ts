@@ -15,7 +15,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { lastUpdatedLabel } from "@/lib/dates";
+import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS } from "@/lib/medias";
 
@@ -214,8 +214,39 @@ export type MediaView = {
   ranges: Record<RangeKey, RangeView>;
 };
 
+/** Pourquoi le module n'a rien à montrer.
+ *
+ *  La distinction est tout le sujet : « les médias n'ont pas parlé des partis »
+ *  et « notre instrument de mesure est hors service » sont deux affirmations
+ *  différentes, et le module n'a le droit d'énoncer la première que lorsqu'elle
+ *  est vraie. Jusqu'ici il affichait « tous les canaux sont silencieux » dans
+ *  les deux cas — il imputait donc aux médias un silence qui était le nôtre.
+ *
+ *  - `perimee`  : plus rien n'est publié depuis `lastDate` (pipeline arrêté).
+ *  - `recalibrage` : le raffineur publie bien, chaque jour, mais le modèle de
+ *    détection des partis ne reconnaît plus rien — toute la fenêtre est à zéro.
+ *    Cause connue : six des onze seuils du classifieur « canadian political
+ *    parties » sont au-dessus de ce que le modèle atteint réellement, les
+ *    classes provinciales n'ayant pas été apprises (aws-refiners#223, #248).
+ */
+export type Indisponibilite = {
+  raison: "perimee" | "recalibrage";
+  /** Dernière date effectivement présente dans la donnée. */
+  lastDate: string;
+  /** « 31 juillet 2026 » — formaté ici, côté serveur, pour que le rendu
+   *  statique et le rendu client donnent exactement la même chaîne. */
+  lastDateLabel: string;
+  /** Écart en jours entre `lastDate` et l'édition affichée. 0 si à jour. */
+  joursDeRetard: number;
+};
+
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
+  /** Non nul quand le module ne peut rien affirmer — voir `Indisponibilite`.
+   *  Le module reste affiché (il garde sa place et son explication), mais il
+   *  dit ce qu'il ne sait pas au lieu de présenter des zéros comme un
+   *  résultat. */
+  indisponible: Indisponibilite | null;
   /** Positions du fader, « tous les médias » en tête. Vide si la ventilation
    *  par média n'est pas publiée — le fader disparaît alors, plutôt que de
    *  s'afficher inerte. */
@@ -232,6 +263,63 @@ export type PartiesData = {
 
 const TONE_THRESHOLD = 0.002;
 const SPARK_CIRCLE_COUNT = 7;
+
+/** Au-delà de ce retard, la série est déclarée périmée. La table journalière
+ *  est republiée à chaque run (6×/jour) : trois jours sans nouvelle ligne ne
+ *  s'expliquent pas par un simple décalage de publication. */
+const RETARD_MAX_JOURS = 3;
+
+/** Aujourd'hui en heure de MONTRÉAL, pas en UTC (AGENTS.md règle #2).
+ *  `toISOString()` bascule de jour dès 20 h heure locale : le module aurait
+ *  annoncé « 17 jours » de retard un soir où il n'y en avait que 16. */
+function aujourdhuiMontreal(): string {
+  return new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "America/Toronto",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function ecartEnJours(depuis: string, jusqu: string): number {
+  const a = Date.parse(`${depuis}T00:00:00Z`);
+  const b = Date.parse(`${jusqu}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
+  return Math.max(0, Math.round((b - a) / 86_400_000));
+}
+
+/** Décide si le module peut affirmer quelque chose.
+ *
+ *  `asOfIso` (édition passée) sert de « aujourd'hui » : une archive du 30 juin
+ *  ne doit pas être marquée périmée parce qu'on la consulte en août. */
+function detecterIndisponibilite(
+  rows: ShadowRow[],
+  lastDate: string,
+  asOfIso?: string,
+): Indisponibilite | null {
+  if (!lastDate) return null;
+  const aujourdhui = asOfIso ?? aujourdhuiMontreal();
+  const joursDeRetard = ecartEnJours(lastDate, aujourdhui);
+
+  // Minuscule initiale : le libellé est inséré après « depuis le », où
+  // « Vendredi 31 juillet » se lirait comme une coquille. Même geste que
+  // `lastUpdatedLabel`.
+  const brut = formatDateFr(lastDate);
+  const lastDateLabel = brut.charAt(0).toLowerCase() + brut.slice(1);
+
+  if (joursDeRetard > RETARD_MAX_JOURS) {
+    return { raison: "perimee", lastDate, lastDateLabel, joursDeRetard };
+  }
+
+  // Toute la fenêtre à zéro : le raffineur tourne, mais le modèle ne détecte
+  // plus rien. Un seul jour creux ne suffit pas à conclure — les médias
+  // peuvent réellement ne pas avoir parlé des partis un jour donné, et c'est
+  // l'état vide ordinaire de la console qui le dit alors.
+  const aDuSignal = rows.some((r) => Number(r.weighted_mentions) > 0);
+  if (!aDuSignal) return { raison: "recalibrage", lastDate, lastDateLabel, joursDeRetard };
+
+  return null;
+}
 
 function computeToneStreak(
   history: number[],
@@ -682,6 +770,7 @@ export const __test__ = {
   buildRangeView,
   buildChart,
   axisTop,
+  detecterIndisponibilite,
 };
 
 // Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
@@ -761,6 +850,7 @@ export async function loadParties(
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
+      indisponible: detecterIndisponibilite(dayRows, lastDate, asOfIso),
       medias,
       byMedia,
       ranges: {

@@ -294,3 +294,50 @@ describe("palette des partis — accord avec le module Assemblée", () => {
     }
   });
 });
+
+/** L'état « le module n'a rien à dire » doit distinguer deux causes que le
+ *  module confondait : le silence des médias et la panne de notre mesure.
+ *  C'est la seule chose qui l'autorise à parler au présent (aws-refiners#223). */
+describe("detecterIndisponibilite", () => {
+  const { detecterIndisponibilite } = __test__;
+  const AUJOURDHUI = "2026-08-16";
+
+  it("ne signale rien quand la série est fraîche et porte du signal", () => {
+    const rows = [row("caq", AUJOURDHUI, 0.6), row("pq", AUJOURDHUI, 0.4)];
+    expect(detecterIndisponibilite(rows, AUJOURDHUI, AUJOURDHUI)).toBeNull();
+  });
+
+  it("déclare la série périmée au-delà de 3 jours sans publication", () => {
+    const rows = [row("caq", "2026-07-31", 1)];
+    const info = detecterIndisponibilite(rows, "2026-07-31", AUJOURDHUI)!;
+    expect(info.raison).toBe("perimee");
+    expect(info.joursDeRetard).toBe(16);
+  });
+
+  it("tolère un retard court : la table est republiée plusieurs fois par jour", () => {
+    const rows = [row("caq", "2026-08-14", 1)];
+    expect(detecterIndisponibilite(rows, "2026-08-14", AUJOURDHUI)).toBeNull();
+  });
+
+  it("déclare le recalibrage quand la série est fraîche mais entièrement à zéro", () => {
+    // C'est l'état que produit le garde-fou du raffineur : il publie tous les
+    // jours, mais le modèle ne détecte plus aucun parti.
+    const rows = PARTY_KEYS.map((k) => row(k, AUJOURDHUI, 0));
+    const info = detecterIndisponibilite(rows, AUJOURDHUI, AUJOURDHUI)!;
+    expect(info.raison).toBe("recalibrage");
+    expect(info.lastDateLabel).toContain("2026");
+  });
+
+  it("ne crie pas au recalibrage pour un simple jour creux", () => {
+    // Un jour à zéro au milieu d'une fenêtre qui porte du signal reste un fait
+    // sur les médias, pas une panne : la console le dit avec son état vide.
+    const rows = [row("caq", "2026-08-14", 0.7), ...PARTY_KEYS.map((k) => row(k, AUJOURDHUI, 0))];
+    expect(detecterIndisponibilite(rows, AUJOURDHUI, AUJOURDHUI)).toBeNull();
+  });
+
+  it("une archive n'est pas périmée : elle se juge à SA date d'édition", () => {
+    // Sans cela, toute édition passée afficherait un bandeau de panne.
+    const rows = [row("caq", "2026-06-30", 0.8)];
+    expect(detecterIndisponibilite(rows, "2026-06-30", "2026-06-30")).toBeNull();
+  });
+});

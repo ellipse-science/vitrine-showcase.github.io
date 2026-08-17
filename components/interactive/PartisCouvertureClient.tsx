@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, RangeKey, RangeView, RowView, ChartView } from "@/lib/data/parties";
+import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -101,6 +101,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
+      {data.indisponible && <AvisIndisponible info={data.indisponible} />}
+
       <div className="pupitre">
         <div className="pupitre-aide">
           <InfoTip size="lg" label="Comment lire cette visualisation">
@@ -152,6 +154,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           selection={platines}
           onSelect={chargerPlatine}
           onPcqTap={handlePcqTap}
+          indisponible={data.indisponible}
         />
 
         <Platine
@@ -182,6 +185,57 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
+  );
+}
+
+/**
+ * Le module n'a rien à affirmer — et il le dit.
+ *
+ * Placé AVANT le pupitre, pas après : le lecteur doit savoir ce qu'il regarde
+ * avant de lire des colonnes à zéro, sinon il en tire une conclusion (« on ne
+ * parle pas des partis ») que la donnée ne permet pas.
+ *
+ * Le module reste affiché plutôt que d'être masqué. Le retirer effacerait
+ * l'information la plus utile du moment : que la mesure existe, qu'elle est
+ * en panne, et pourquoi.
+ *
+ * Vocabulaire visuel repris du bandeau d'archive (`.archive-notice`) : pastille
+ * cordovan et filets fins, sans barre latérale ni ombre portée — le site emploie
+ * déjà cet idiome pour signaler un état, et Adrien avait écarté les autres.
+ */
+function AvisIndisponible({ info }: { info: Indisponibilite }) {
+  const recalibrage = info.raison === "recalibrage";
+  return (
+    <div className="partis-avis" role="status">
+      <p className="partis-avis-line">
+        <span className="partis-avis-tag">
+          {recalibrage ? "Mesure suspendue" : "Données périmées"}
+        </span>
+        <span className="partis-avis-body">
+          {recalibrage ? (
+            <>
+              Le modèle qui repère les partis dans les articles est en cours de
+              recalibration&nbsp;: il ne reconnaît plus les partis québécois. Aucune
+              détection n&apos;est publiée depuis le {info.lastDateLabel}, et les colonnes
+              ci-dessous restent donc à zéro. <b>Ce silence est celui de notre instrument,
+              pas celui des médias.</b>
+            </>
+          ) : (
+            <>
+              Ce module n&apos;a reçu aucune donnée depuis le {info.lastDateLabel}, soit{" "}
+              {info.joursDeRetard}&nbsp;jour{info.joursDeRetard > 1 ? "s" : ""}. Ce qui suit
+              décrit cette date-là, pas la couverture d&apos;aujourd&apos;hui.
+            </>
+          )}
+        </span>
+      </p>
+      <a
+        className="partis-avis-lien"
+        href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}
+      >
+        En savoir plus →
+      </a>
+    </div>
   );
 }
 
@@ -266,6 +320,7 @@ function Console({
   selection,
   onSelect,
   onPcqTap,
+  indisponible,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -274,6 +329,9 @@ function Console({
   selection: [string | null, string | null];
   onSelect: (key: string) => void;
   onPcqTap: () => void;
+  /** Non nul quand la mesure elle-même est en cause : l'état vide ne peut
+   *  alors plus être formulé comme un silence des médias. */
+  indisponible: Indisponibilite | null;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -289,9 +347,15 @@ function Console({
   const tete = rows.filter((r) => !r.inShadow)[0];
 
   if (!tete || tete.sovPct <= 0) {
+    // « Tous les canaux sont silencieux » n'est vrai que si l'instrument
+    // fonctionne. Quand il est en panne, le dire ainsi imputerait aux médias
+    // un silence qui est le nôtre — c'est le bandeau qui porte l'explication,
+    // et la console se contente de constater qu'elle n'affiche rien.
     return (
       <p className="console-vide">
-        Aucun signal sur cette période. Tous les canaux sont silencieux.
+        {indisponible
+          ? "Aucun niveau à afficher : la mesure est suspendue (voir l’avis ci-dessus)."
+          : "Aucun signal sur cette période. Tous les canaux sont silencieux."}
       </p>
     );
   }

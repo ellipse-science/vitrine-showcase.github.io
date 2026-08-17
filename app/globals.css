@@ -865,6 +865,62 @@
     color: var(--ink-softer);
   }
 
+  /* Avis d'indisponibilité du module Partis (aws-refiners#223).
+     Même idiome que `.archive-notice` — pastille cordovan, filets fins, aucun
+     aplat ni ombre — mais NON collant : il appartient au module, pas à la page,
+     et n'a donc pas à suivre le lecteur au défilement. Il se place dans le flux,
+     entre le titre et le pupitre. */
+  .partis-avis {
+    margin: 14px 0 18px;
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, var(--paper-deep));
+    padding: 12px 18px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px 24px;
+    flex-wrap: wrap;
+  }
+  .partis-avis-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    /* `min-width: 0` : sans lui la phrase refuse de se couper et pousse le lien
+       hors de la bande sur les largeurs intermédiaires (cf. archive-notice). */
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+  .partis-avis-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 4px 9px;
+    line-height: 1.2;
+  }
+  .partis-avis-body { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .partis-avis-lien {
+    display: inline-block;
+    flex: 0 0 auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+  }
+  .partis-avis-lien:hover { color: var(--ink); }
+
   .archive-pager {
     display: flex;
     align-items: center;
