@@ -1,10 +1,10 @@
 {
-  "event_id": "20260813T190000Z-evt-leblanc-will-meet-greer-clock-3f2b3c78",
-  "storyline_id": "story-tariffs-2a5e7c2c",
-  "title": "LeBlanc à Washington pour éviter des tarifs américains de 50 %",
-  "main_issue": "international_affairs_and_defense",
-  "date_utc": "2026-08-13",
-  "time_interval_utc": "19-23",
-  "sum_qc": 83.013,
-  "peak_qc": 48.37
+  "event_id": "20260817T030000Z-evt-churchill-falls-mark-carney-sera-4265f5bf",
+  "storyline_id": "story-churchill-falls-61057039",
+  "title": "Mark Carney à Saint-Jean pour l'entente énergétique Québec-Terre-Neuve",
+  "main_issue": "environment_and_energy",
+  "date_utc": "2026-08-17",
+  "time_interval_utc": "03-07",
+  "sum_qc": 66.771,
+  "peak_qc": 62.15
 }

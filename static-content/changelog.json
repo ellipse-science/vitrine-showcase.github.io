@@ -1,5 +1,41 @@
 [
   {
+    "pr": 484,
+    "date": "2026-08-17T02:59:40Z",
+    "note": "Le repère « habituel » de la jauge Québec-Canada est maintenant mesuré sur une année complète d'actualité. La comparaison « plus ou moins que d'habitude » devient plus juste et ne bougera plus d'une mise à jour à l'autre.",
+    "version": "2.23.0-beta.4"
+  },
+  {
+    "pr": 487,
+    "date": "2026-08-17T02:49:55Z",
+    "note": "Rien ne change sur le site. Cette mise à jour ne touche que les consignes internes de l'équipe sur la façon de rédiger ses demandes de modification.",
+    "version": null
+  },
+  {
+    "pr": 476,
+    "date": "2026-08-14T23:16:41Z",
+    "note": "Les niveaux de saillance (« Modérée », « Élevée »…) se lisent désormais contre une référence fixe, mesurée sur une année complète, plutôt que contre une référence recalculée à chaque mise à jour. Une même valeur porte donc la même étiquette d'un jour à l'autre.",
+    "version": "2.23.0-beta.3"
+  },
+  {
+    "pr": 475,
+    "date": "2026-08-14T22:44:59Z",
+    "note": "La page Méthodologie affiche maintenant le même numéro de version que le reste du site, au lieu d'un numéro figé depuis des mois.",
+    "version": "2.23.0-beta.2"
+  },
+  {
+    "pr": 471,
+    "date": "2026-08-14T18:34:09Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique des textes du journal des mises à jour avant leur publication.",
+    "version": null
+  },
+  {
+    "pr": 451,
+    "date": "2026-08-14T17:09:55Z",
+    "note": "Aucune — page de documentation technique interne, rien de visible pour le visiteur du site.",
+    "version": null
+  },
+  {
     "pr": 464,
     "date": "2026-08-13T17:23:42Z",
     "note": "_Aucune — changement interne, invisible pour le visiteur._",
