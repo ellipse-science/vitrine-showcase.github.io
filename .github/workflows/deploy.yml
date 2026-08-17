@@ -49,6 +49,12 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /vitrine-showcase.github.io
           # URL publique du Worker Cloudflare — pas un secret, juste une URL
           NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
+          # Classement Flappy, EN LECTURE SEULE. Ces deux valeurs finissent dans
+          # le bundle client (préfixe NEXT_PUBLIC_) : c'est assumé pour un jeton
+          # de lecture, jamais pour un jeton d'écriture — cf. lib/flappyLeaderboard.ts.
+          # Absentes, le classement s'affiche vide, sans erreur.
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
