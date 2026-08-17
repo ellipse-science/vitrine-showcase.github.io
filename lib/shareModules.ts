@@ -69,7 +69,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "2", label: "régions, une seule actualité qui diverge" },
   },
   "partis-et-couverture": {
-    title: "Couverture médiatique des partis politiques",
+    title: "De quel parti parle-t-on dans les médias?",
     description: "Saillance et ton de la couverture médiatique de chaque parti québécois.",
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
@@ -138,8 +138,16 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "partis-et-couverture") {
-    const leader = (await loadParties())?.ranges.today.rows[0];
-    if (leader && leader.sovPct > 0 && !leader.inShadow) {
+    const parties = await loadParties();
+    const leader = parties?.ranges.today.rows[0];
+    // `indisponible` est décisif ICI en particulier : une carte de partage ne
+    // peut pas porter le bandeau qui nuance le module, et elle parle au présent
+    // (« domine la couverture aujourd'hui »). Sans ce test, la carte publiait
+    // « CAQ 100 % » tiré d'une journée où le classifieur n'avait détecté qu'un
+    // seul parti — une affirmation que la donnée ne soutient pas, dans
+    // l'artefact le plus public du module. On retombe sur le fallback, qui
+    // présente le module sans en affirmer un résultat.
+    if (!parties?.indisponible && leader && leader.sovPct > 0 && !leader.inShadow) {
       // Le ton réel de la couverture (RowView.toneDirection) pilote la
       // pointe éditoriale — écho du vieil adage « qu'on en parle en bien ou
       // en mal, l'important c'est qu'on en parle ».

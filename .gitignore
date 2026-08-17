@@ -46,3 +46,8 @@ _worktrees/
 
 # Agent config: share skills/hooks/settings, keep personal settings local
 /.claude/settings.local.json
+
+# Jeu de données FICTIF du module Partis — régénérable par
+# `node scripts/make_parties_fixtures.mjs`. Volontairement NON versionné :
+# aucune donnée inventée ne doit pouvoir être confondue avec la donnée réelle.
+/fixtures/
