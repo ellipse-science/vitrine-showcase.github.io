@@ -1,10 +1,10 @@
 {
-  "event_id": "20260816T070000Z-evt-question-disposition-derogation-est-pas-42776128",
-  "storyline_id": "story-parti-liberal-quebec-41ed6532",
-  "title": "Les jeunes libéraux écartent la loi 96 de leur congrès",
-  "main_issue": "culture_and_nationalism",
+  "event_id": "20260816T190000Z-evt-entente-churchill-falls-christine-frechette-34577c43",
+  "storyline_id": "story-churchill-falls-61057039",
+  "title": "Fréchette et Carney à Terre-Neuve pour l'entente de Churchill Falls",
+  "main_issue": "environment_and_energy",
   "date_utc": "2026-08-16",
-  "time_interval_utc": "07-11",
-  "sum_qc": 56.826,
-  "peak_qc": 53.22
+  "time_interval_utc": "19-23",
+  "sum_qc": 75.084,
+  "peak_qc": 54.45
 }
