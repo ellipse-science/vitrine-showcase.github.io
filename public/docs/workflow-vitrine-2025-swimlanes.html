@@ -1127,7 +1127,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🗳️ Polimètre+ (Suivi des promesses CAQ)</span>
-                <span class="frequency">Quotidien: 12:30 (heure du Québec) • analyse par semaine glissante</span>
+                <span class="frequency">Saillance quotidienne: 12:30 (heure du Québec) • identification 6×/jour à :32 • analyse par semaine glissante</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -1136,9 +1136,9 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="12:30">
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="03:32,07:32,11:32,12:30,15:32,19:32,23:32">
                     polimetre-plus.R
-                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo; enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés)</div>
+                    <div class="node-detail">Deux fonctions Lambda sur la même image&nbsp;: identification des promesses par bloc de 4h (6×/jour à :32) et saillance/progression hebdo (12:30); enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
