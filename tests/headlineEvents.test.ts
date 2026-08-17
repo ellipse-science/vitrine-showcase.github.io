@@ -1111,15 +1111,16 @@ describe("buildSolitudes", () => {
     expect(s.axes[0].side).toBe("qc");
   });
 
-  it("repère « habituel » = médiane event-level (défaut mesuré, sinon param calibré)", () => {
+  it("repère « habituel » = médiane d'ANNÉE ancrée (#477), param explicite respecté", () => {
     const row = ev({ interval_convergence_score: 80, score_qc: 20, score_roc: 18 });
-    // Repli = médiane event-level mesurée via le vrai code (HABITUAL_EVENT_CONV
-    // = 31 %), confirmée au #272 par la métrique publiée event_convergence.p50,
-    // qui vaut aussi 31.
-    expect(sol([row], [row]).habitualConvPct).toBe(31);
-    // La valeur publiée (event_convergence.p50) prime quand elle est là.
-    const calibré = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
-    expect(calibré.habitualConvPct).toBe(44);
+    // Défaut = médiane event-level mesurée sur l'ANNÉE en régime de
+    // regroupement uniforme (2 678 fenêtres, convergence_annee_specv1.R).
+    // L'ancien 31 venait d'une fenêtre réelle de ~82 jours aux trois quarts
+    // pré-fusion, 19 points sous la réalité (#477).
+    expect(sol([row], [row]).habitualConvPct).toBe(52);
+    // Le paramètre explicite reste respecté (chemin des tests et du banc).
+    const explicite = buildSolitudes([row] as never, storiesFrom24h([row] as never), 80, 44);
+    expect(explicite.habitualConvPct).toBe(44);
   });
 
   it("verrouille l'orientation de l'axe : Québec à DROITE, Canada à GAUCHE (#395/#399)", () => {
