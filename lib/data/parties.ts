@@ -826,6 +826,26 @@ export const __test__ = {
 // d'y juger un changement visuel. Variable absente ⇒ comportement inchangé.
 const SUR_FIXTURES = Boolean(process.env.VITRINE_PARTIES_FIXTURES);
 
+// GARDE-FOU : des fausses données ne doivent JAMAIS partir en production.
+//
+// Le miroir dev (GitHub Pages) épingle NEXT_PUBLIC_BASE_PATH ; la production, à
+// la racine du domaine, le laisse vide. C'est déjà le signal dont `app/robots.ts`
+// se sert pour désindexer le dev — on le réutilise plutôt que d'en inventer un
+// second, qui pourrait diverger du premier.
+//
+// Restreint aux builds de CI (`process.env.CI`) : en local le basePath est vide
+// lui aussi, et bloquer là interdirait précisément l'usage pour lequel les
+// fixtures existent. Un build de CI à la racine du domaine, en revanche, ne peut
+// être qu'une production — on échoue bruyamment plutôt que de publier des
+// chiffres inventés sur les partis politiques.
+if (SUR_FIXTURES && process.env.CI && !process.env.NEXT_PUBLIC_BASE_PATH) {
+  throw new Error(
+    "VITRINE_PARTIES_FIXTURES est défini sur un build de production (NEXT_PUBLIC_BASE_PATH vide). " +
+      "Les fausses données du module des partis sont réservées au miroir dev. " +
+      "Retirez la variable, ou épinglez NEXT_PUBLIC_BASE_PATH si c'est bien un build dev.",
+  );
+}
+
 const DATA_DIR = SUR_FIXTURES
   ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES as string)
   : path.resolve(process.cwd(), "public", "data", "refined");
