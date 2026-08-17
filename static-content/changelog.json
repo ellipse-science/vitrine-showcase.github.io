@@ -1,5 +1,11 @@
 [
   {
+    "pr": 491,
+    "date": "2026-08-17T21:23:45Z",
+    "note": "L'illustration de la une se charge environ quarante fois plus vite, et le site est prêt à être publié sur son propre domaine.",
+    "version": "2.23.0-beta.5"
+  },
+  {
     "pr": 484,
     "date": "2026-08-17T02:59:40Z",
     "note": "Le repère « habituel » de la jauge Québec-Canada est maintenant mesuré sur une année complète d'actualité. La comparaison « plus ou moins que d'habitude » devient plus juste et ne bougera plus d'une mise à jour à l'autre.",
