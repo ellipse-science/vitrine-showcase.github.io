@@ -121,3 +121,82 @@ describe("chargeur, flag ALLUMÉ", () => {
     await expect(loadHeadlineEvents()).rejects.toThrow(/SALIENCE_CUTOVER est allumé/);
   });
 });
+
+// ⚓ LE GARDE DE LA RÉFÉRENCE ANCRÉE (vitrine#430 A0).
+//
+// Sans lui, rien n'empêche la primauté de la calibration glissante de revenir :
+// c'était le câblage d'origine, il tenait en un `??`, et il se serait déclenché
+// TOUT SEUL — pas au prochain déploiement, mais au prochain refresh de données
+// qui aurait fait passer `salience_index_qc_sum_24h` au-dessus de CAL_MIN_N.
+// Un changement de règle de classement sans commit, sans PR et sans revue.
+//
+// Le test sert donc une calibration COMPLÈTE et volontairement très différente
+// des grilles codées, et vérifie que le site n'en tient aucun compte. Il ne
+// vérifie pas une valeur, il verrouille une DÉCISION : le jour où quelqu'un
+// rebranchera la glissante, il faudra passer ici et l'assumer.
+describe("référence ancrée : la calibration glissante ne classe plus", () => {
+  // Une grille glissante crédible mais franchement plus basse — exactement le
+  // sens du décalage attendu le jour où la fenêtre courte atteindra son quorum
+  // (borne « Exceptionnelle » estimée à ~105 contre 157,1 codée, et bien plus
+  // bas encore tant que n est petit). Si elle prenait la main, une valeur au-
+  // dessus de sa borne haute porterait « Exceptionnelle » alors que la grille
+  // d'année la range en « Modérée ».
+  const glissante = {
+    metrics: {
+      salience_index_qc_sum_24h: { p5: 0.15, p20: 0.22, p50: 0.30, p80: 0.38, p95: 0.45 },
+      salience_index_qc:         { p5: 0.05, p20: 0.08, p50: 0.11, p80: 0.15, p95: 0.20 },
+      // Le repère de la jauge de convergence, aux valeurs RÉELLEMENT publiées
+      // au moment de #477 — celles d'une « fenêtre 365 j » qui ne contenait
+      // que ~82 jours, aux trois quarts pré-fusion (p50 = 33 contre 52 sur
+      // l'année). Si le loader les relisait, le signe de « plus/moins que
+      // d'habitude » se réinverserait en silence.
+      event_convergence:         { p5: 4.1, p20: 15.4, p50: 33, p80: 48, p95: 63 },
+    },
+  };
+
+  const serveAvecCalibration = (rows: unknown[]) => {
+    readFileMock.mockReset();
+    readFileMock.mockImplementation((p: string) =>
+      String(p).includes("headline-events.json")
+        ? Promise.resolve(JSON.stringify(rows))
+        : Promise.resolve(JSON.stringify(glissante)));
+  };
+
+  it("une grille glissante publiée ne remplace PAS la grille d'année", async () => {
+    // Entre les deux mondes : « Exceptionnelle » sous la glissante (> 45),
+    // « Modérée » sous la grille ancrée (entre 41,8 et 59,2).
+    const cumulVise = 50;
+    serveAvecCalibration(dataset(blocPourCumul(cumulVise)));
+    const data = await loadHeadlineEvents();
+    const une = data!.top3[0];
+
+    expect(une.scoreQcSum24h).toBeCloseTo(cumulVise, 1);
+    // Le p95 de la glissante (45) est bien FRANCHI par cumulVise (50) : sans
+    // le débranchement, ce test échouerait au lieu de ne rien prouver.
+    expect(cumulVise).toBeGreaterThan(glissante.metrics.salience_index_qc_sum_24h.p95 * 100);
+    // Et pourtant c'est la grille d'année qui parle.
+    expect(une.saillanceLabel).toBe("Modérée");
+    const g = NEW_SUM_QC_THRESHOLDS;
+    expect(une.salThresholds).toEqual([g.faible, g.moyenne, g.eleve, g.tresEleve, g.extreme]);
+  });
+
+  it("la figure du ⓘ montre la grille ancrée, pas la glissante", async () => {
+    serveAvecCalibration(dataset(blocPourCumul(70)));
+    const data = await loadHeadlineEvents();
+    const publiees = data!.top3[0].salThresholds;
+    const glissantesMisesALEchelle = Object.values(glissante.metrics.salience_index_qc_sum_24h)
+      .map((v) => v * 100);
+    expect(publiees).not.toEqual(glissantesMisesALEchelle);
+  });
+
+  it("le repère « habituel » de la jauge ignore lui aussi la calibration publiée (#477)", async () => {
+    // Même décision A0, même verrou : la calibration sert un event_convergence
+    // complet et plausible (le vrai fichier du 14-08), et le repère reste la
+    // médiane d'ANNÉE ancrée. Le jour où quelqu'un rebranchera la glissante,
+    // il faudra passer ici et l'assumer.
+    serveAvecCalibration(dataset(blocPourCumul(50)));
+    const data = await loadHeadlineEvents();
+    expect(data!.solitudes.habitualConvPct).toBe(52);
+    expect(data!.solitudes.habitualConvPct).not.toBe(glissante.metrics.event_convergence.p50);
+  });
+});

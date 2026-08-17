@@ -14,21 +14,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import pkg from "../../package.json";
+// Libellé de version : source unique, partagée avec scripts/postbuild.mjs, qui
+// fait la même substitution sur les pages statiques de public/ (elles ne
+// traversent pas React). Voir scripts/version.mjs.
+import { formatVersion, VERSION_PLACEHOLDER } from "../../scripts/version.mjs";
 
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
 export type ChunkName = "top" | "bottom" | "polimeter_plus";
 
-// `package.json` est la source de vérité de la version (bumpée en CI, cf.
-// .github/workflows/version-bump.yml). Le footer contient un placeholder
-// `__VERSION__` substitué ici au build.
-//   2.0.0-beta.3 → « Bêta v2.0.0 (b3) »  (compteur bêta visible)
-//   2.0.0        → « v2.0.0 »             (hors bêta)
-export function formatVersion(version: string): string {
-  const [core, pre] = version.split("-");
-  const beta = pre?.match(/^beta\.(\d+)$/);
-  return beta ? `Bêta v${core} (b${beta[1]})` : `v${core}`;
-}
+export { formatVersion };
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
@@ -48,7 +43,7 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
 
   // Substitue la version (source de vérité : package.json) — no-op sur les
   // chunks qui ne contiennent pas le placeholder.
-  html = html.replaceAll("__VERSION__", formatVersion(pkg.version));
+  html = html.replaceAll(VERSION_PLACEHOLDER, formatVersion(pkg.version));
 
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }

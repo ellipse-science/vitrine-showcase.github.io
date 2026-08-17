@@ -1,10 +1,10 @@
 {
-  "event_id": "20260813T110000Z-evt-medecins-offrent-surtout-plages-horaires-5c3772cf",
-  "storyline_id": "story-doctors-3f31061d",
-  "title": "Les médecins de famille privilégient les horaires en semaine avant 15 h",
-  "main_issue": "health_and_social_services",
-  "date_utc": "2026-08-13",
-  "time_interval_utc": "11-15",
-  "sum_qc": 44.669,
-  "peak_qc": 19.53
+  "event_id": "20260817T030000Z-evt-churchill-falls-mark-carney-sera-4265f5bf",
+  "storyline_id": "story-churchill-falls-61057039",
+  "title": "Mark Carney à Saint-Jean pour l'entente énergétique Québec-Terre-Neuve",
+  "main_issue": "environment_and_energy",
+  "date_utc": "2026-08-17",
+  "time_interval_utc": "03-07",
+  "sum_qc": 88.104,
+  "peak_qc": 62.15
 }
