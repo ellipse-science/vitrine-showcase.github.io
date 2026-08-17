@@ -1,5 +1,11 @@
 [
   {
+    "pr": 486,
+    "date": "2026-08-17T21:39:18Z",
+    "note": "Rien pour le visiteur du site — outillage de surveillance interne.",
+    "version": null
+  },
+  {
     "pr": 491,
     "date": "2026-08-17T21:23:45Z",
     "note": "L'illustration de la une se charge environ quarante fois plus vite, et le site est prêt à être publié sur son propre domaine.",
