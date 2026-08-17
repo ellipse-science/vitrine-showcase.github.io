@@ -1,5 +1,23 @@
 [
   {
+    "pr": 488,
+    "date": "2026-08-17T21:39:26Z",
+    "note": "Les textes du site suivent maintenant partout les mêmes règles de typographie française : espaces insécables devant les pourcentages et les deux-points, guillemets qui ne se retrouvent plus seuls en début de ligne, et heures écrites sans espace.",
+    "version": "2.23.0-beta.6"
+  },
+  {
+    "pr": 486,
+    "date": "2026-08-17T21:39:18Z",
+    "note": "Rien pour le visiteur du site — outillage de surveillance interne.",
+    "version": null
+  },
+  {
+    "pr": 491,
+    "date": "2026-08-17T21:23:45Z",
+    "note": "L'illustration de la une se charge environ quarante fois plus vite, et le site est prêt à être publié sur son propre domaine.",
+    "version": "2.23.0-beta.5"
+  },
+  {
     "pr": 484,
     "date": "2026-08-17T02:59:40Z",
     "note": "Le repère « habituel » de la jauge Québec-Canada est maintenant mesuré sur une année complète d'actualité. La comparaison « plus ou moins que d'habitude » devient plus juste et ne bougera plus d'une mise à jour à l'autre.",

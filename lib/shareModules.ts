@@ -64,8 +64,8 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "#1", label: "à la Une des médias québécois" },
   },
   "deux-solitudes": {
-    title: "Deux solitudes ?",
-    description: "La couverture médiatique diverge-t-elle entre le Québec et le Canada ?",
+    title: "Deux solitudes?",
+    description: "La couverture médiatique diverge-t-elle entre le Québec et le Canada?",
     stat: { value: "2", label: "régions, une seule actualité qui diverge" },
   },
   "partis-et-couverture": {
@@ -74,7 +74,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
-    title: "De quoi parle-t-on ?",
+    title: "De quoi parle-t-on?",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
   },
@@ -124,11 +124,11 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       return {
         title: fallback.title,
         description:
-          `${relDiffPct} % ${relLabel}. Les médias québécois et canadiens consacrent ` +
-          `aujourd'hui ${convPct} % de leur attention aux mêmes histoires ` +
-          `(habituel : ${habitualConvPct} %).`,
+          `${relDiffPct} % ${relLabel}. Les médias québécois et canadiens consacrent ` +
+          `aujourd'hui ${convPct} % de leur attention aux mêmes histoires ` +
+          `(habituel : ${habitualConvPct} %).`,
         stat: {
-          value: `${relDiffPct} %`,
+          value: `${relDiffPct} %`,
           label: relLabel,
           context: data.solitudes.edito,
         },

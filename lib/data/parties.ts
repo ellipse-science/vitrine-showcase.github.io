@@ -733,7 +733,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     const unclamped = toneHist.length > 0 ? toneHist[toneHist.length - 1] : 0;
     const unit = range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
-      streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—";
+      streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—"; // garde-redaction: ok (tiret = glyphe, aucune direction)
     const dirLabel =
       streak.direction === "positive"
         ? "Positif"
