@@ -1,5 +1,11 @@
 [
   {
+    "pr": 494,
+    "date": "2026-08-17T22:50:27Z",
+    "note": "Rien ne change sur le site. Cette modification sert au développement : elle permet de faire évoluer le module des partis sur des données fictives pendant que la mesure réelle est suspendue.",
+    "version": "2.24.0-beta.1"
+  },
+  {
     "pr": 482,
     "date": "2026-08-17T22:21:36Z",
     "note": "Le module des partis cesse de publier un classement : le modèle qui repère les partis dans les articles ne distingue pas de façon fiable les partis québécois. Nous préférons ne rien afficher plutôt qu'un palmarès que nous ne pourrions pas défendre — le module reste en place et explique pourquoi. Sa refonte visuelle est livrée, prête pour la reprise de la mesure.",
