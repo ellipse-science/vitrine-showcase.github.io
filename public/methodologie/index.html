@@ -239,6 +239,20 @@
     max-width: 560px;
   }
 
+  /* Avis d'état d'un module, quand une mesure est suspendue ou dégradée.
+     La page décrit ce que le système fait ; quand il ne le fait plus, elle
+     doit le dire au même endroit, sans quoi le contrat public devient faux. */
+  .metho-avis {
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, transparent);
+    margin: 24px 0;
+    padding: 14px 18px;
+    max-width: 680px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
   /* Lists */
   .metho-list {
     max-width: 680px;
@@ -634,7 +648,10 @@
     <p class="metho-section-label">§ 05</p>
     <h2>Module&nbsp;: De quel parti parle-t-on dans les médias?</h2>
     <p class="metho-body"><em>Anciennement «&nbsp;Couverture médiatique des partis politiques&nbsp;».</em></p>
-    <p class="metho-body">Ce module mesure la <strong>saillance</strong> (visibilité dans les médias) et le <strong>ton</strong> (valence du traitement médiatique) des partis politiques québécois dans la couverture des 13 sources d'information suivies.</p>
+
+    <p class="metho-avis"><strong>État actuel&nbsp;: la mesure est suspendue.</strong> Le modèle qui reconnaît les partis dans les articles ne distingue pas de façon fiable les partis québécois les uns des autres. Nous avons choisi de <strong>ne rien afficher plutôt que de publier un classement que nous ne pourrions pas défendre</strong>. Le module reste en place et signale lui-même cette suspension. Un jeu d'exemples annotés à la main est en cours de constitution pour réentraîner le modèle. La mesure ne reprendra qu'une fois cette validation faite. Voir le point&nbsp;10 du §&nbsp;10.</p>
+
+    <p class="metho-body">Ce module mesure la <strong>part de voix</strong> des partis politiques québécois (la portion du temps de une qui revient à chacun, <em>lorsque les médias parlent d'un parti</em>) ainsi que le <strong>ton</strong> de ce traitement, dans la couverture des 13 sources d'information suivies. La part de voix ne dit donc pas quelle place les partis occupent dans l'actualité en général, où elle est bien plus modeste&nbsp;: elle répartit entre eux l'attention qui leur est consacrée.</p>
 
     <h3>Partis provinciaux suivis</h3>
     <div class="metho-table-wrap">
@@ -651,18 +668,21 @@
     </div>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le système analyse la couverture médiatique et produit, pour chaque parti, chaque date et chaque bloc de collecte, deux mesures clés&nbsp;: une <strong>saillance pondérée</strong> (visibilité) et un <strong>ton net pondéré</strong> (valence du traitement), disponibles sur les fenêtres jour, semaine et mois.</p>
+    <p class="metho-body">Le système produit, pour chaque parti et chaque date, deux mesures&nbsp;: une <strong>part de voix</strong> et un <strong>ton</strong>, sur trois fenêtres (la journée, la semaine et l'ensemble de la période conservée). Les compteurs sont mis à jour six fois par jour, au fil des collectes.</p>
 
     <h3>Algorithme</h3>
     <ol class="metho-list">
-      <li>Les articles sont segmentés en phrases. Un dictionnaire de partis et un dictionnaire de sentiment sont appliqués simultanément à chaque phrase.</li>
-      <li><strong>Saillance pondérée</strong>&nbsp;: nombre de mentions du parti dans la phrase, divisé par le nombre total de mots, pondéré par l'indice inter-médias du média source.</li>
-      <li><strong>Ton net pondéré</strong>&nbsp;: nombre de termes positifs moins nombre de termes négatifs, rapporté au total des mots et pondéré de la même façon.</li>
-      <li>Agrégation journalière, puis calcul de moyennes glissantes pour les fenêtres semaine et mois.</li>
+      <li>Les articles sont découpés en phrases. Chaque phrase passe par deux classifieurs entraînés&nbsp;: l'un estime quels partis y sont évoqués, l'autre la tonalité du passage.</li>
+      <li>Une phrase n'est retenue pour un parti que si la confiance du classifieur dépasse un seuil propre à ce parti. Ces seuils sont fixés parti par parti, de façon à écarter les mentions incertaines. Un même degré de confiance n'a pas la même valeur d'un parti à l'autre.</li>
+      <li><strong>Part de voix</strong>&nbsp;: pour chaque parti, on additionne le temps passé en une par les articles qui l'évoquent, puis on rapporte ce total à celui de l'ensemble des partis québécois. Les cinq parts se partagent donc 100&nbsp;%.</li>
+      <li><strong>Ton</strong>&nbsp;: moyenne des tonalités des articles retenus, pondérée par leur temps en une. Un article longtemps exposé pèse davantage qu'un article vite remplacé.</li>
+      <li>Les compteurs repartent de zéro à date fixe&nbsp;: chaque jour à minuit, chaque lundi et le premier de chaque mois, à l'heure de Montréal. Il ne s'agit donc pas de moyennes glissantes, mais d'accumulations depuis le début de la période en cours.</li>
     </ol>
 
     <h3>Affichage</h3>
-    <p class="metho-body">Classement des partis par saillance. Trois onglets permettent de basculer entre les fenêtres aujourd'hui, cette semaine et ce mois. Le ton est visualisé par un indicateur coloré (positif / neutre / négatif) pour chaque parti.</p>
+    <p class="metho-body">Chaque parti occupe une colonne dont la hauteur donne sa part de voix. Trois onglets (<em>Jour</em>, <em>Semaine</em> et <em>Tout</em>) font varier la fenêtre observée. «&nbsp;Tout&nbsp;» est la moyenne des journées disponibles. Un repère signale le niveau habituel de chaque parti, ce qui permet de voir s'il est au-dessus ou en dessous de son ordinaire, et une courbe retrace l'évolution récente.</p>
+    <p class="metho-body">Un parti dont la part de voix passe sous <strong>5&nbsp;%</strong> est mis en «&nbsp;sourdine&nbsp;»&nbsp;: sa colonne reste affichée, en gris, car un parti peu présent est une information en soi. Ce seuil d'affichage est plus exigeant que celui inscrit dans les données elles-mêmes, fixé à 2&nbsp;%&nbsp;: en deçà de 5&nbsp;%, l'écart entre deux partis repose sur trop peu d'articles pour être commenté.</p>
+    <p class="metho-body">Lorsque la répartition par média est disponible, un curseur permet de passer de l'ensemble des médias à un média en particulier. Les couleurs indiquent alors si ce média accorde à un parti plus ou moins de place que la moyenne des autres.</p>
   </section>
 
   <!-- §6 Enjeux (treemap) -->
@@ -828,6 +848,10 @@
 
     <h3>9 · Pages permanentes exclues du corpus</h3>
     <p class="metho-body">Certaines pages ne sont jamais des nouvelles mais occupent parfois la une&nbsp;: flux vidéo continu, page de chaîne. Une page qui ne change jamais accumule du temps&#8209;en&#8209;une sans rien raconter, ce qui gonfle artificiellement la durée mesurée. Ces pages sont donc <strong>exclues du calcul</strong>, à partir d'une liste d'adresses tenue à la main et révisée par un humain. Le critère est la <em>durée de vie</em> et non le libellé&nbsp;: les pages «&nbsp;en direct&nbsp;» consacrées à un événement réel, qui portent un titre propre et disparaissent en quelques jours, sont conservées. Au 8&nbsp;août 2026, la liste compte deux adresses.</p>
+
+    <h3>10 · Les partis québécois ne sont pas reconnus de façon fiable</h3>
+    <p class="metho-body">Le modèle qui repère les partis politiques dans les articles a été validé sur les partis fédéraux, mais il ne dispose pas d'assez d'exemples d'entraînement pour distinguer les partis québécois les uns des autres. Vérification faite sur plus de 17&nbsp;000 phrases de notre corpus, il ne produit, pour cinq d'entre eux, aucun degré de confiance qui permette de trancher. L'un d'eux tend en outre à être attribué à des passages sans contenu politique. Abaisser les exigences pour obtenir malgré tout des chiffres donnerait une répartition dictée par le hasard plutôt que par la couverture réelle. Nous l'avons mesuré, et écarté.</p>
+    <p class="metho-body">En conséquence, le module «&nbsp;De quel parti parle-t-on dans les médias?&nbsp;» <strong>n'affiche aucune donnée</strong> et le signale sur le site. Un corpus d'exemples annotés à la main est en cours de constitution pour réentraîner le modèle. La mesure ne reprendra qu'après cette validation, et la présente page sera mise à jour à ce moment.</p>
   </section>
 
   <!-- §11 Éthique -->
