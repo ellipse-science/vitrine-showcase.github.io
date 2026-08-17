@@ -21,6 +21,11 @@ description: Règles de rédaction de TOUT texte public ou d'équipe de la Vitri
 > - Typographie : **OQLF par défaut**, sauf exception explicitement décidée par
 >   l'équipe (voir la PR #246).
 > - Dernière synchro Notion → skill : **2026-08-13**.
+> - **2026-08-14** — arbitrage d'Adrien (vitrine#477/#484) : règles « deux
+>   moitiés », base de « que d'habitude » (année ancrée) et vocabulaire
+>   histoires/sujets mises à jour ici, à répercuter dans Notion (section
+>   Vitrine) — exception assumée au sens Notion-d'abord, décision prise sur
+>   GitHub/chat le jour même.
 
 ## Voix et ton
 
@@ -166,18 +171,28 @@ guide qu'il faut trancher, pas le code. Vérifié par la règle `projet-italique
 
 ## Honnêteté méthodologique (issue du red-team — non négociable)
 
-- L'indice de convergence mesure les **mêmes sujets saillants**, jamais
-  « les mêmes nouvelles » ni « les mêmes histoires ».
-- La divergence est « réelle et majoritaire » ; si on parle de ses limites,
-  dire « sur-quantifiée par le clustering », jamais « artefact ».
+- Deux vocabulaires de convergence, à ne pas croiser : l'indice de
+  convergence **par objets** mesure les « mêmes sujets saillants » ; la
+  jauge du module Deux solitudes travaille **par histoires regroupées**,
+  et « les mêmes histoires » y est le mot juste (métho § 04). La vieille
+  interdiction absolue de « mêmes histoires » datait de la jauge par
+  objets (précision du 2026-08-14, vitrine#477).
+- **Les deux moitiés** (arbitrage d'Adrien, 2026-08-14, vitrine#477/#484) :
+  au niveau des histoires, environ la moitié de l'attention va aux mêmes
+  histoires, l'autre moitié reste d'un seul côté. Ne plus écrire « la
+  divergence est la règle » ni « réelle et majoritaire » pour la jauge par
+  histoires — la mesure d'année (médiane 52 %) ne le soutient plus. Pour
+  les limites du clustering par objets, dire « sur-quantifiée par le
+  clustering », jamais « artefact ».
 - **Aucun chiffre inventé, arrondi trompeur ou superlatif non calibré** :
   « exceptionnel » et « rare » sont réservés aux vrais extrêmes de
   distribution (≥ p95 / ≤ p5 sur la fenêtre de calibration) ; « habituel »
   = autour de la médiane. Le mot suit le percentile, pas l'effet
   dramatique recherché.
-- Toute comparaison relative précise sa base : « …que d'habitude » =
-  fenêtre glissante de six mois ; « parmi les Unes de sa région » =
-  distribution régionale.
+- Toute comparaison relative précise sa base : « …que d'habitude » = la
+  médiane d'une **année de référence complète, ancrée** (vitrine#477/#484,
+  décision A0 — plus jamais une fenêtre glissante) ; « parmi les Unes de
+  sa région » = distribution régionale.
 - Corollaire FAIT vs VISION : un texte public ne décrit jamais une
   mécanique non déployée.
 
