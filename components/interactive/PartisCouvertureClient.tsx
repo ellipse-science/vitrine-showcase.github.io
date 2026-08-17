@@ -21,7 +21,11 @@ const ARTICLE: Record<string, string> = {
 
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
-  if (!leader || leader.sovPct === 0 || leader.inShadow) {
+  // `indisponible` en tête, comme partout ailleurs : ce titre part dans le
+  // bouton de partage ET dans l'`aria-label`, donc il s'énonce au survol et à
+  // voix haute pour les lecteurs d'écran. Sans ce test, il annonçait « c'est
+  // CAQ 100 % du temps » alors que la page affiche un avis de suspension.
+  if (data.indisponible || !leader || leader.sovPct === 0 || leader.inShadow) {
     return "De quel parti parle-t-on dans les médias?";
   }
   const tone =
@@ -137,6 +141,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         reference={data.ranges[range].rows}
         media={media === TOUS_MEDIAS ? null : media}
         mediaLabel={data.medias.find((m) => m.id === media)?.label ?? null}
+        indisponible={data.indisponible}
       />
 
       <div className="regie">
@@ -146,6 +151,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           moyennePct={
             data.ranges[range].rows.find((r) => r.key === platines[0])?.sovPct ?? 0
           }
+          indisponible={data.indisponible}
         />
 
         <Console
@@ -163,6 +169,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           moyennePct={
             data.ranges[range].rows.find((r) => r.key === platines[1])?.sovPct ?? 0
           }
+          indisponible={data.indisponible}
         />
       </div>
 
@@ -176,11 +183,17 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
 
         {/* La course vit DANS le pupitre : c'est le même appareil, et la
-            séparer par un filet la faisait lire comme un second module. */}
-        <section className="partis-course">
-          <p className="course-tete">La tendance</p>
-          <Course chart={view.chart} />
-        </section>
+            séparer par un filet la faisait lire comme un second module.
+            Masquée EN ENTIER quand la mesure est suspendue — titre compris :
+            une section « La tendance » vide inviterait à chercher une courbe
+            absente, et la courbe elle-même trace le classement que l'avis
+            promet de ne pas publier. */}
+        {!data.indisponible && (
+          <section className="partis-course">
+            <p className="course-tete">La tendance</p>
+            <Course chart={view.chart} />
+          </section>
+        )}
       </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
@@ -429,12 +442,19 @@ function Manchette({
   reference,
   media,
   mediaLabel,
+  indisponible,
 }: {
   rows: RowView[];
   reference: RowView[];
   media: string | null;
   mediaLabel: string | null;
+  indisponible: Indisponibilite | null;
 }) {
+  // La manchette est la phrase la plus affirmative du module (« c'est de la CAQ
+  // 100 % du temps », en gros et en gras). Elle doit donc être la PREMIÈRE à se
+  // taire : sans ce garde, elle énonçait le classement deux blocs sous l'avis
+  // qui promet de ne pas le publier.
+  if (indisponible) return null;
   const tete = rows.filter((r) => !r.inShadow)[0];
   if (!tete || tete.sovPct <= 0) return null;
 
@@ -504,12 +524,18 @@ function Platine({
   cote,
   row,
   moyennePct,
+  indisponible,
 }: {
   cote: "A" | "B";
   row: RowView | null;
   moyennePct: number;
+  indisponible: Indisponibilite | null;
 }) {
-  if (!row) {
+  // Aujourd'hui une platine ne peut PAS se remplir sous suspension : elle part
+  // à `null` et ne se charge qu'au clic sur une tranche, or la console n'en
+  // affiche plus. Elle est donc sûre — mais par accident. Le garde est explicite
+  // pour qu'une future sélection par défaut ne rouvre pas la fuite en silence.
+  if (indisponible || !row) {
     return (
       <div className={`platine vide cote-${cote}`}>
         <span className="platine-cote">{cote}</span>
