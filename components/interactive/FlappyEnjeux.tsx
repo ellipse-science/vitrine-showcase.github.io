@@ -200,7 +200,10 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
       score: finalScore,
       date: new Date().toISOString().slice(0, 10),
     };
-    submitScoreToLeaderboard(entry).then((b) => {
+    // On passe le classement courant : sans endpoint d'écriture, la fonction
+    // renvoie la fusion locale plutôt qu'un tableau vide (qui effacerait
+    // l'affichage). Cf. lib/flappyLeaderboard.ts.
+    submitScoreToLeaderboard(entry, board).then((b) => {
       setBoard(b);
       setSaved(true);
     });
