@@ -27,9 +27,25 @@ import path from "node:path";
 const DENSE = process.argv.includes("--dense");
 const OUT_DIR = path.resolve(process.cwd(), "fixtures", "parties");
 
-// Ancre temporelle fixe : un jeu de test qui change tout seul chaque jour ne
-// permet pas de comparer deux captures d'écran à une semaine d'intervalle.
-const TODAY = "2026-08-13";
+// Ancre temporelle : AUJOURD'HUI par défaut, épinglable par
+// VITRINE_FIXTURES_TODAY=AAAA-MM-JJ.
+//
+// L'ancre était figée au 2026-08-13, pour qu'un jeu de test ne change pas tout
+// seul d'un jour à l'autre et qu'on puisse comparer deux captures d'écran à une
+// semaine d'intervalle. Cette intention reste bonne, mais elle est devenue un
+// piège le jour où le module a appris à se déclarer périmé au-delà de trois
+// jours sans donnée (`RETARD_MAX_JOURS`) : passé ce délai, des fixtures à ancre
+// fixe ne peuplent plus rien, elles déclenchent le bandeau « données périmées »
+// et le module reste vide — soit exactement ce qu'elles existent pour éviter.
+// Constaté le 2026-08-17, quatre jours après l'ancre.
+//
+// Le défaut suit donc le jour courant, et l'épinglage reste disponible pour qui
+// veut deux captures comparables.
+const TODAY = process.env.VITRINE_FIXTURES_TODAY
+  ?? new Intl.DateTimeFormat("fr-CA", {
+       timeZone: "America/Toronto",
+       year: "numeric", month: "2-digit", day: "2-digit",
+     }).format(new Date());
 
 const PARTIES = ["CAQ", "PQ", "PLQ", "QS", "PCQ"];
 
