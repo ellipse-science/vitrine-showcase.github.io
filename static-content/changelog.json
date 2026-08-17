@@ -1,5 +1,11 @@
 [
   {
+    "pr": 484,
+    "date": "2026-08-17T02:59:40Z",
+    "note": "Le repère « habituel » de la jauge Québec-Canada est maintenant mesuré sur une année complète d'actualité. La comparaison « plus ou moins que d'habitude » devient plus juste et ne bougera plus d'une mise à jour à l'autre.",
+    "version": "2.23.0-beta.4"
+  },
+  {
     "pr": 487,
     "date": "2026-08-17T02:49:55Z",
     "note": "Rien ne change sur le site. Cette mise à jour ne touche que les consignes internes de l'équipe sur la façon de rédiger ses demandes de modification.",
