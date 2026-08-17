@@ -105,6 +105,28 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
       </div>
 
+      {/* Le marqueur de développement passe AVANT tout le reste, et il est
+          volontairement laid : une capture d'écran d'un rendu sur fixtures ne
+          doit pas pouvoir circuler comme si c'était le site. Il ne se rend
+          jamais en production, `VITRINE_PARTIES_FIXTURES` étant absent. */}
+      {data.surFixtures && (
+        <p
+          role="status"
+          style={{
+            margin: "0 0 16px",
+            padding: "10px 14px",
+            background: "#6B1E2A",
+            color: "#F3ECDD",
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 13,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+          }}
+        >
+          Données fictives (développement)&nbsp;: ne pas diffuser
+        </p>
+      )}
+
       {data.indisponible && <AvisIndisponible info={data.indisponible} />}
 
       <div className="pupitre">

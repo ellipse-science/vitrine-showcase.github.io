@@ -262,6 +262,10 @@ export type PartiesData = {
    *  agrégée. Et c'est volontaire — l'agrégat est pondéré par les minutes de
    *  chaque média, il n'est donc pas la moyenne des vues par média. */
   byMedia: Record<string, MediaView>;
+  /** Vrai quand la donnée vient de `fixtures/` et non de `public/data/`.
+   *  Le module l'affiche en toutes lettres — cf. `.gitignore` : « aucune donnée
+   *  inventée ne doit pouvoir être confondue avec la donnée réelle ». */
+  surFixtures: boolean;
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
@@ -293,7 +297,17 @@ const RETARD_MAX_JOURS = 3;
  *  ne commence pas à cette date. Le module reste affiché et dit pourquoi.
  *
  *  À repasser à `false` quand le réentraînement est validé, avec la métho §05
- *  et le §10 (Limites reconnues) mis à jour dans le même geste. */
+ *  et le §10 (Limites reconnues) mis à jour dans le même geste.
+ *
+ *  UNE SEULE DÉROGATION : les fixtures (voir `SUR_FIXTURES` plus bas). La
+ *  suspension protège le PUBLIC d'une affirmation que la donnée ne soutient
+ *  pas ; une donnée fictive n'affirme rien sur le monde, donc il n'y a rien à
+ *  protéger. Sans cette dérogation, le module ne se rend plus du tout et
+ *  devient impossible à faire évoluer — il a fallu basculer cette constante à
+ *  la main pour la vérification responsive du 2026-08-17, ce qui est
+ *  exactement le genre de manipulation qui finit par être commitée par
+ *  accident. Le rendu sur fixtures porte un bandeau « DONNÉES FICTIVES »
+ *  (`GabaritFictif`), pour qu'aucune capture ne puisse passer pour le site. */
 const MESURE_PROVINCIALE_SUSPENDUE = true;
 
 /** Aujourd'hui en heure de MONTRÉAL, pas en UTC (AGENTS.md règle #2).
@@ -810,8 +824,30 @@ export const __test__ = {
 // (cf. scripts/make_parties_fixtures.mjs) — la donnée réelle est aujourd'hui
 // dégénérée (un seul parti détecté, cf. aws-refiners#223/#248), donc impossible
 // d'y juger un changement visuel. Variable absente ⇒ comportement inchangé.
-const DATA_DIR = process.env.VITRINE_PARTIES_FIXTURES
-  ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES)
+const SUR_FIXTURES = Boolean(process.env.VITRINE_PARTIES_FIXTURES);
+
+// GARDE-FOU : des fausses données ne doivent JAMAIS partir en production.
+//
+// Le miroir dev (GitHub Pages) épingle NEXT_PUBLIC_BASE_PATH ; la production, à
+// la racine du domaine, le laisse vide. C'est déjà le signal dont `app/robots.ts`
+// se sert pour désindexer le dev — on le réutilise plutôt que d'en inventer un
+// second, qui pourrait diverger du premier.
+//
+// Restreint aux builds de CI (`process.env.CI`) : en local le basePath est vide
+// lui aussi, et bloquer là interdirait précisément l'usage pour lequel les
+// fixtures existent. Un build de CI à la racine du domaine, en revanche, ne peut
+// être qu'une production — on échoue bruyamment plutôt que de publier des
+// chiffres inventés sur les partis politiques.
+if (SUR_FIXTURES && process.env.CI && !process.env.NEXT_PUBLIC_BASE_PATH) {
+  throw new Error(
+    "VITRINE_PARTIES_FIXTURES est défini sur un build de production (NEXT_PUBLIC_BASE_PATH vide). " +
+      "Les fausses données du module des partis sont réservées au miroir dev. " +
+      "Retirez la variable, ou épinglez NEXT_PUBLIC_BASE_PATH si c'est bien un build dev.",
+  );
+}
+
+const DATA_DIR = SUR_FIXTURES
+  ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES as string)
   : path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(
@@ -885,9 +921,17 @@ export async function loadParties(
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.
-      indisponible: MESURE_PROVINCIALE_SUSPENDUE
-        ? { raison: "recalibrage" as const, lastDate, lastDateLabel: labelDateIndispo(lastDate), joursDeRetard: 0 }
-        : detecterIndisponibilite(dayRows, lastDate, asOfIso),
+      // Sur fixtures, on laisse la détection ordinaire faire son travail : c'est
+      // elle qu'on veut pouvoir éprouver (bandeau périmé, série à zéro), et la
+      // suspension éditoriale la court-circuiterait toujours.
+      indisponible:
+        MESURE_PROVINCIALE_SUSPENDUE && !SUR_FIXTURES
+          ? { raison: "recalibrage" as const, lastDate, lastDateLabel: labelDateIndispo(lastDate), joursDeRetard: 0 }
+          : detecterIndisponibilite(dayRows, lastDate, asOfIso),
+      /** Vrai quand la vue vient d'un jeu FICTIF. Voyage jusqu'au composant
+       *  pour qu'il puisse le dire à l'écran : une capture d'un rendu sur
+       *  fixtures ne doit jamais pouvoir passer pour le site. */
+      surFixtures: SUR_FIXTURES,
       medias,
       byMedia,
       ranges: {
