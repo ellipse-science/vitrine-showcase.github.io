@@ -330,7 +330,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                   className="ldr-end"
                   tabIndex={bulleSal ? 0 : undefined}
                   role={bulleSal ? "img" : undefined}
-                  aria-label={bulleSal ? `${a.label} — saillance ${a.salienceLabel!.toLowerCase()}. ${a.salienceHint}` : undefined}
+                  aria-label={bulleSal ? `${a.label}, saillance ${a.salienceLabel!.toLowerCase()}. ${a.salienceHint}` : undefined}
                   onMouseEnter={bulleSal ? (e) => place(e, bulleSal) : undefined}
                   onMouseMove={bulleSal ? (e) => place(e, bulleSal) : undefined}
                   onMouseLeave={bulleSal ? () => setTip(null) : undefined}
@@ -384,7 +384,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                   role="img"
                   /* Le lecteur d'écran, lui, n'a pas le titre sous les yeux :
                      l'étiquette accessible reste complète. */
-                  aria-label={`${kk} : ${axes[i].label} — ${share} % de l'attention médiatique des 24 dernières heures.`}
+                  aria-label={`${kk} : ${axes[i].label}, ${share} % de l'attention médiatique des 24 dernières heures.`}
                   onMouseEnter={(e) => place(e, bulle)}
                   onMouseMove={(e) => place(e, bulle)}
                   onMouseLeave={() => setTip(null)}
@@ -548,7 +548,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                   const rowX = lx - tot / 2;
                   const ry = rowY + r * ROW_H;
                   const moreChip = showMore ? (
-                    <g key="more" className="m-chip chip-more" role="img" aria-label={`Et ${hiddenMediaCount} autre${hiddenMediaCount > 1 ? "s" : ""} média${hiddenMediaCount > 1 ? "s" : ""} ayant couvert : ${a.label}`}>
+                    <g key="more" className="m-chip chip-more" role="img" aria-label={`Et ${hiddenMediaCount} autre${hiddenMediaCount > 1 ? "s" : ""} média${hiddenMediaCount > 1 ? "s" : ""} ayant couvert : ${a.label}`}>
                       <text className="m-code" x={(rowX + row.length * (BW + CHGAP) + BW / 2).toFixed(1)} y={(ry + 16).toFixed(1)} textAnchor="middle">
                         {`+${hiddenMediaCount}`}
                       </text>
@@ -576,7 +576,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                       {inner}
                     </a>
                   ) : (
-                    <g key={m.id} className={`m-chip chip-${m.region}`} role="img" aria-label={`${m.name} a couvert : ${a.label}`}>
+                    <g key={m.id} className={`m-chip chip-${m.region}`} role="img" aria-label={`${m.name} a couvert : ${a.label}`}>
                       {inner}
                     </g>
                   );
@@ -613,7 +613,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
                       <a key={m.id} className={`chip-${m.region}`} href={m.url} target="_blank" rel="noopener noreferrer"
                         aria-label={`Dernier article de ${m.name} sur ${a.label}`}>{m.badge}</a>
                     ) : (
-                      <span key={m.id} className={`chip-${m.region}`} aria-label={`${m.name} a couvert : ${a.label}`}>{m.badge}</span>
+                      <span key={m.id} className={`chip-${m.region}`} aria-label={`${m.name} a couvert : ${a.label}`}>{m.badge}</span>
                     ))}
                   </p>
                 )}

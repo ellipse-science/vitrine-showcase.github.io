@@ -99,7 +99,7 @@ export function EditionNav({ editions, currentKey }: {
         el.removeAttribute("href");
         el.removeAttribute("aria-current");
         el.setAttribute("aria-disabled", "true");
-        el.title = `Mise à jour de ${String(i * 4).padStart(2, "0")} h (pas d'édition disponible)`;
+        el.title = `Mise à jour de ${String(i * 4).padStart(2, "0")}h (pas d'édition disponible)`;
       }
     });
 
@@ -184,7 +184,7 @@ export function EditionNav({ editions, currentKey }: {
       // Le compte à rebours reste vrai sur une archive : le SITE se rafraîchit
       // toujours six fois par jour, quelle que soit l'édition qu'on regarde.
       const bigEl = document.getElementById("cd-big");
-      if (bigEl) bigEl.textContent = `${hh} h ${mm < 10 ? "0" : ""}${mm} min`;
+      if (bigEl) bigEl.textContent = `${hh}h${mm < 10 ? "0" : ""}${mm}min`;
 
       // `current` / `past` suivent l'HORLOGE sur l'accueil (l'édition du site,
       // décision Adrien 2026-07-09) et l'ÉDITION AFFICHÉE sur une archive — où

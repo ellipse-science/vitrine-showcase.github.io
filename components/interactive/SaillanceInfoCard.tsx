@@ -14,14 +14,14 @@ const BAND_COLORS = ["#E4DCC6", "#DCCBA2", "#D2B488", "#C99A76", "#BE7C6A", "#A8
 // Phrase par niveau (1→6), registre public — ancre le référent (« typique »,
 // « 1 sur 20 ») sans jargon.
 const MICRO: Record<number, string> = {
-  1: "Le bas de l’échelle : sur un an de Unes québécoises, 19 sur 20 attirent plus d’attention que celle-ci.",
-  2: "Sous la Une typique : 4 Unes sur 5 attirent plus d’attention que celle-ci.",
-  3: "Le niveau d’une Une typique : la moitié des Unes québécoises de l’année en attire plus, l’autre moitié moins.",
-  4: "Au-dessus de la Une typique : deux Unes sur trois attirent moins d’attention que celle-ci.",
+  1: "Le bas de l’échelle : sur un an de Unes québécoises, 19 sur 20 attirent plus d’attention que celle-ci.",
+  2: "Sous la Une typique : 4 Unes sur 5 attirent plus d’attention que celle-ci.",
+  3: "Le niveau d’une Une typique : la moitié des Unes québécoises de l’année en attire plus, l’autre moitié moins.",
+  4: "Au-dessus de la Une typique : deux Unes sur trois attirent moins d’attention que celle-ci.",
   5: "Dans le cinquième le plus marquant des Unes québécoises de l’année.",
   // « à son meilleur » retiré : le niveau ne décrit plus le SOMMET de l'histoire
   // mais son attention cumulée à cette édition — il redescend avec elle.
-  6: "Le sommet de l’échelle : sur un an de Unes québécoises, à peine 1 sur 20 attire autant d’attention que celle-ci.",
+  6: "Le sommet de l’échelle : sur un an de Unes québécoises, à peine 1 sur 20 attire autant d’attention que celle-ci.",
 };
 
 // Deux rangées de libellés : SOMMET au-dessus du tracé, CETTE UNE en dessous
@@ -136,18 +136,18 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           du moment (A4). Le présent n'est donc jamais nié : il est au-dessus. */}
       <span className="sic-lede">{
         sommet != null && typeof sommetCentile === "number" && sommetTier
-          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"}. Elle était alors ${sommetTier}, ${
+          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"}. Elle était alors ${sommetTier}, ${
               sommetCentile >= 50
-                ? `devant environ ${sommetCentile} % des Unes québécoises de l’année.`
-                : `mais environ ${100 - sommetCentile} % des Unes québécoises de l’année restaient plus saillantes.`}`
+                ? `devant environ ${sommetCentile} % des Unes québécoises de l’année.`
+                : `mais environ ${100 - sommetCentile} % des Unes québécoises de l’année restaient plus saillantes.`}`
           : typeof centile === "number"
             ? (centile >= 50
-                ? `C’est son sommet. Elle dépasse environ ${centile} % des Unes québécoises de l’année.`
-                : `C’est son sommet. Environ ${100 - centile} % des Unes québécoises de l’année sont plus saillantes.`)
+                ? `C’est son sommet. Elle dépasse environ ${centile} % des Unes québécoises de l’année.`
+                : `C’est son sommet. Environ ${100 - centile} % des Unes québécoises de l’année sont plus saillantes.`)
             : (MICRO[rank] ?? "")
       }</span>
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
-        aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
+        aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
         {/* RANGÉE DU HAUT — le sommet, sur deux lignes centrées. */}
         {sommetX != null && (
           <text x={xSom!.toFixed(1)} textAnchor="middle" className="sic-marker-label sic-marker-som">

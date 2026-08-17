@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     // metadataBase est hérité de app/layout.tsx (#209) — pas besoin de le
     // redéfinir ici pour résoudre l'URL absolue de opengraph-image.tsx.
+    // garde-redaction: ok (séparateur <title>, exception PR #246)
     title: `${title} — La Vitrine démocratique`,
     description,
     openGraph: {

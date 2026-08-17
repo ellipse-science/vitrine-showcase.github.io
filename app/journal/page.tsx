@@ -4,6 +4,7 @@ import { IssueReporter } from "@/components/interactive/IssueReporter";
 import changelog from "@/static-content/changelog.json";
 
 export const metadata: Metadata = {
+  // garde-redaction: ok (séparateur <title>, exception PR #246)
   title: "Journal des mises à jour — La Vitrine démocratique",
 };
 

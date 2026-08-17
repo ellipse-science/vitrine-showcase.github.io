@@ -99,7 +99,7 @@ export function facetResult(row: AssembleeRow, kind: FacetKind, allRows: Assembl
       return { title: "Angle éditorial", body: row.editorialAngle || "Aucun angle éditorial généré pour cette période." };
     case "bonus-word":
       return row.signatureWord
-        ? { title: "Mot distinctif", body: `« ${row.signatureWord} »${row.signatureWordContext ? ` (${row.signatureWordContext})` : ""}. Le mot qui distingue le plus ${row.label} des autres partis cette période.` }
+        ? { title: "Mot distinctif", body: `« ${row.signatureWord} »${row.signatureWordContext ? ` (${row.signatureWordContext})` : ""}. Le mot qui distingue le plus ${row.label} des autres partis cette période.` }
         : { title: "Mot distinctif", body: "Calcul en cours, bientôt disponible." };
   }
 }

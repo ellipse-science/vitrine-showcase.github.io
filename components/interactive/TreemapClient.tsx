@@ -487,7 +487,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
   return (
     <div className="spaghetti-container" style={containerStyle}>
       <div style={{ marginBottom: "18px", fontFamily: "Source Serif 4, serif", fontStyle: "italic", fontSize: "14.5px", color: "var(--ink-soft)", lineHeight: 1.5, maxWidth: "74ch" }}>
-        Évolution du rang de saillance des douze enjeux, jour après jour. Le rang 1 est l&apos;enjeu le plus saillant&nbsp;; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
+        Évolution du rang de saillance des douze enjeux, jour après jour. Le rang 1 est l&apos;enjeu le plus saillant; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
       </div>
 
       <div style={{ overflowX: "auto", overflowY: "hidden" }}>
@@ -666,9 +666,9 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
           <h2 className="partis-title" onClick={handleTitleTap} style={{ cursor: "pointer" }}>
             De quoi parle-t-on?{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
-              <b>Comment interpréter cette visualisation :</b><br /><br />
-              • <b>Aujourd’hui</b> : Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Cette semaine &amp; Ce mois</b> : Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
+              • <b>Aujourd’hui</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Cette semaine &amp; Ce mois</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>

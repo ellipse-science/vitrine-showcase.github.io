@@ -28,7 +28,7 @@ export async function DeuxSolitudesSection({ editionKey }: { editionKey?: string
               selon la journée — « X % de convergence » au-dessus de 50 %,
               « X % de divergence » en dessous — donc un même module se
               partageait dans deux vocabulaires d'un jour à l'autre. */}
-          <ShareButton title={`Deux solitudes — ${s.relDiffPct} % ${s.relLabel}`} anchor="deux-solitudes" />
+          <ShareButton title={`Deux solitudes : ${s.relDiffPct} % ${s.relLabel}`} anchor="deux-solitudes" />
         </div>
         <div className="sol-rule" aria-hidden />
         <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise<br />et canadienne des 24 dernières heures.</p>

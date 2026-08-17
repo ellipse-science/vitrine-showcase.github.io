@@ -826,7 +826,7 @@ describe("buildSalienceTrend (#430 B3 — la bande ne parle que du CUMUL 24 h)",
     // Seul cas où l'écart se compte depuis le BLOC PRÉCÉDENT : au sommet,
     // « sous le sommet » n'a pas de sens, la question est « de combien elle a monté ».
     // Notation en % (et non « points »), alignée sur le module des enjeux.
-    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+15 % depuis /);
+    expect(t.capLabel).toMatch(/^Nouveau sommet aujourd’hui \(\+15 % depuis /);
   });
   // Ampleur = variation RELATIVE du cumul entre les deux dernières éditions.
   it("deltaPct baisse : cumul 40 → 30 = −25 %", () => {
@@ -1074,8 +1074,8 @@ describe("buildSolitudes", () => {
     // aussi si 80 n'apparaissait que dans « Habituel », sans rien garantir sur
     // la valeur du moment — le défaut que ce test est censé verrouiller.
     // L'espace avant % est insécable, comme dans toute l'interface.
-    expect(s.markerTitle).toMatch(/^Aujourd'hui : 80 % de convergence\./);
-    expect(s.markerTitle).toMatch(/Habituel : \d+ %\.$/);
+    expect(s.markerTitle).toMatch(/^Aujourd'hui : 80 % de convergence\./);
+    expect(s.markerTitle).toMatch(/Habituel : \d+ %\.$/);
   });
 
   it("repli 24h : sans indice publié, exclusivité pondérée des histoires (pas du bloc)", () => {
