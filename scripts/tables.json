@@ -1,5 +1,6 @@
 {
   "_comment": "Whitelist of Athena tables published as static JSON every 4h by scripts/fetch_data.R. To add a new table: append an object below and set enabled=true. To deprecate: set enabled=false (the file is left untouched on disk). Columns are inlined per-table; rows from Athena are projected to that subset before write. Special per-table filtering (e.g., date cutoffs) is keyed by the 'filter' field and implemented in fetch_data.R.",
+  "_contract": "CONTRAT DE SCHÉMA. Ce fichier n'est plus seulement une liste d'extraction : les noms de colonnes ci-dessous sont ceux que l'API payante exposera (cf. docs/reference/api-direction.md). Renommer une colonne cassera des clients externes — prévoir une dépréciation, pas un simple commit. Les JSON produits ne sont PAS livrés au CDN : scripts/postbuild.mjs les retire de out/ car ils sont lus au build par node:fs et inlinés dans le HTML, jamais requêtés par un navigateur.",
   "_discover": {
     "_comment": "Used by scripts/discover_tables.R (triggered manually via .github/workflows/discover-tables.yml). Tables matching match_regex on Athena that are not already in 'tables' below get appended as disabled stubs.",
     "match_regex": "^(vitrine_datamart|agora_datamart)-"
