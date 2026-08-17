@@ -107,6 +107,11 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
+        # Pillow ≥ 11.3 encode l'AVIF nativement (vérifié en 12.3) : pas de
+        # pillow-avif-plugin ici, on n'ajoute pas un paquet dont l'échec
+        # d'installation ferait tomber toute l'étape. generate_art.py tente
+        # quand même l'import du plugin, au cas où l'environnement serait plus
+        # ancien, et se rabat sur le WebP seul si l'AVIF n'est pas disponible.
         run: pip install openai pillow python-dotenv replicate
 
       - name: Fetch data from Athena
