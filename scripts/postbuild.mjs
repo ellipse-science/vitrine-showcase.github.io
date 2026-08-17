@@ -2,16 +2,13 @@
 // public/ into the output directory:
 //
 // - The R refresher writes JSON to /public/data/ on a 4-hour cron — Next.js
-//   handles those automatically via its public/ convention, but this script
-//   stays in case we ever want explicit control or want to copy other roots.
+//   copies those into out/ via its public/ convention. We take that back out
+//   again: see pruneDataJson() below, c'est le « contrôle explicite » que ce
+//   commentaire anticipait.
 // - /presentation/ is a separate static deliverable (RevealJS deck) that
 //   lives at the repo root, not inside public/.
-//
-// Today the script is mostly a no-op for /public/* since Next.js already
-// copies those, but it keeps /presentation/ wired in and lets us include
-// any future repo-root static directory without touching the workflow.
 
-import { cp, readdir, readFile, writeFile } from "node:fs/promises";
+import { cp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import pkg from "../package.json" with { type: "json" };
@@ -39,13 +36,15 @@ async function copyIfPresent(src, dest) {
 //
 // On balaie donc tout out/ après le build : les pages Next y ont déjà leur
 // version (substituée au rendu), les statiques y portent encore le jeton.
-async function* htmlFiles(dir) {
+async function* filesWithSuffix(dir, suffix) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) yield* htmlFiles(full);
-    else if (entry.name.endsWith(".html")) yield full;
+    if (entry.isDirectory()) yield* filesWithSuffix(full, suffix);
+    else if (entry.name.endsWith(suffix)) yield full;
   }
 }
+
+const htmlFiles = (dir) => filesWithSuffix(dir, ".html");
 
 async function substituteVersion() {
   const label = formatVersion(pkg.version);
@@ -57,6 +56,39 @@ async function substituteVersion() {
     touched++;
   }
   console.log(`postbuild: version « ${label} » posée dans ${touched} page(s) statique(s)`);
+}
+
+// Les JSON de out/data/ ne sont JAMAIS demandés par un navigateur : les loaders
+// de lib/data/*.ts les lisent avec node:fs AU BUILD, et Next.js inline le
+// résultat dans le HTML prérendu. Les livrer au CDN, c'est publier ~9,5 Mo de
+// jeu de données à des URL devinables — celui-là même dont le projet compte
+// vendre l'accès (cf. docs/reference/api-direction.md) — et alourdir chaque
+// déploiement pour rien.
+//
+// Règle en LISTE NOIRE, pas en liste blanche : on supprime « *.json sous
+// out/data/ » et rien d'autre. Tout actif non-JSON survit par construction —
+// latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
+// d'image plus tard ne demande aucune retouche ici.
+async function pruneDataJson() {
+  const dataDir = path.join(OUT_DIR, "data");
+  let removed = 0;
+  let bytes = 0;
+
+  try {
+    await readdir(dataDir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+
+  for await (const file of filesWithSuffix(dataDir, ".json")) {
+    bytes += (await stat(file)).size;
+    await rm(file);
+    removed++;
+  }
+
+  const mb = (bytes / 1024 / 1024).toFixed(1);
+  console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
 }
 
 async function main() {
@@ -76,6 +108,9 @@ async function main() {
 
   // APRÈS la copie : /presentation peut elle aussi porter le jeton un jour.
   await substituteVersion();
+
+  // EN DERNIER : après la substitution de version, qui balaie tout out/.
+  await pruneDataJson();
 }
 
 main().catch((err) => {

@@ -8164,3 +8164,14 @@
     font-size: 10px;
   }
 }
+
+/* L'illustration de la une est servie en AVIF/WebP avec repli PNG, donc le
+   <img> est désormais enveloppé dans un <picture>. Toutes les règles de mise en
+   page ciblent `img.editorial-img` (sélecteurs descendants, jamais `>`), donc
+   elles continuent de s'appliquer — mais <picture> est un élément inline, qui
+   introduirait une boîte de ligne parasite dans .figure-frame. `display:
+   contents` rend l'enveloppe totalement transparente : la mise en page est
+   strictement celle d'avant. */
+.hero-figure picture {
+  display: contents;
+}
