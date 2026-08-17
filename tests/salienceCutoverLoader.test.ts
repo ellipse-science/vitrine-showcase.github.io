@@ -145,6 +145,12 @@ describe("référence ancrée : la calibration glissante ne classe plus", () => 
     metrics: {
       salience_index_qc_sum_24h: { p5: 0.15, p20: 0.22, p50: 0.30, p80: 0.38, p95: 0.45 },
       salience_index_qc:         { p5: 0.05, p20: 0.08, p50: 0.11, p80: 0.15, p95: 0.20 },
+      // Le repère de la jauge de convergence, aux valeurs RÉELLEMENT publiées
+      // au moment de #477 — celles d'une « fenêtre 365 j » qui ne contenait
+      // que ~82 jours, aux trois quarts pré-fusion (p50 = 33 contre 52 sur
+      // l'année). Si le loader les relisait, le signe de « plus/moins que
+      // d'habitude » se réinverserait en silence.
+      event_convergence:         { p5: 4.1, p20: 15.4, p50: 33, p80: 48, p95: 63 },
     },
   };
 
@@ -181,5 +187,16 @@ describe("référence ancrée : la calibration glissante ne classe plus", () => 
     const glissantesMisesALEchelle = Object.values(glissante.metrics.salience_index_qc_sum_24h)
       .map((v) => v * 100);
     expect(publiees).not.toEqual(glissantesMisesALEchelle);
+  });
+
+  it("le repère « habituel » de la jauge ignore lui aussi la calibration publiée (#477)", async () => {
+    // Même décision A0, même verrou : la calibration sert un event_convergence
+    // complet et plausible (le vrai fichier du 14-08), et le repère reste la
+    // médiane d'ANNÉE ancrée. Le jour où quelqu'un rebranchera la glissante,
+    // il faudra passer ici et l'assumer.
+    serveAvecCalibration(dataset(blocPourCumul(50)));
+    const data = await loadHeadlineEvents();
+    expect(data!.solitudes.habitualConvPct).toBe(52);
+    expect(data!.solitudes.habitualConvPct).not.toBe(glissante.metrics.event_convergence.p50);
   });
 });
