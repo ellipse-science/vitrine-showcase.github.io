@@ -1,5 +1,11 @@
 [
   {
+    "pr": 493,
+    "date": "2026-08-17T23:30:17Z",
+    "note": "Aucune — changement interne sans effet visible sur le site.",
+    "version": null
+  },
+  {
     "pr": 494,
     "date": "2026-08-17T22:50:27Z",
     "note": "Rien ne change sur le site. Cette modification sert au développement : elle permet de faire évoluer le module des partis sur des données fictives pendant que la mesure réelle est suspendue.",
