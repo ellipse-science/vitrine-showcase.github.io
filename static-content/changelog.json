@@ -1,5 +1,11 @@
 [
   {
+    "pr": 487,
+    "date": "2026-08-17T02:49:55Z",
+    "note": "Rien ne change sur le site. Cette mise à jour ne touche que les consignes internes de l'équipe sur la façon de rédiger ses demandes de modification.",
+    "version": null
+  },
+  {
     "pr": 476,
     "date": "2026-08-14T23:16:41Z",
     "note": "Les niveaux de saillance (« Modérée », « Élevée »…) se lisent désormais contre une référence fixe, mesurée sur une année complète, plutôt que contre une référence recalculée à chaque mise à jour. Une même valeur porte donc la même étiquette d'un jour à l'autre.",
