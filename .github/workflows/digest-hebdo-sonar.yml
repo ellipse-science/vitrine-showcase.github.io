@@ -7,7 +7,12 @@ name: Digest hebdo — sonar vitrine
 #   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/digest-hebdo-sonar.yml/dispatches
 #   Method: POST   Body: {"ref":"main"}
 #   Header: Authorization: token <GitHub PAT avec scope workflow>
-#   Cron:   0 12 * * 2  (UTC, mardi — ≈ 08:00 heure de Montréal en EDT)
+#   Cron:   0 8 * * 2   — mardi 8h, avec le champ « Timezone » de l'entrée
+#           cron-job.org réglé sur America/Toronto. PAS en UTC : un `0 12 * * 2`
+#           fixe donne bien 8h l'été, mais 7h dès le retour à l'heure normale,
+#           alors que ce fichier et la PR promettent mardi 8h heure de Montréal
+#           toute l'année. Le fuseau se règle dans l'entrée, il n'est pas à
+#           deviner — même règle que partout ici : on écrit l'heure de Montréal.
 #
 # Mardi plutôt que dimanche (décision Adrien, 2026-08-15) : personne ne lit
 # Slack la fin de semaine, un digest du dimanche ne sert à personne avant le
