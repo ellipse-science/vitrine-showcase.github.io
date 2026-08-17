@@ -223,11 +223,17 @@ export type MediaView = {
  *  les deux cas — il imputait donc aux médias un silence qui était le nôtre.
  *
  *  - `perimee`  : plus rien n'est publié depuis `lastDate` (pipeline arrêté).
- *  - `recalibrage` : le raffineur publie bien, chaque jour, mais le modèle de
- *    détection des partis ne reconnaît plus rien — toute la fenêtre est à zéro.
+ *  - `recalibrage` : l'instrument lui-même ne mesure pas. Deux chemins y
+ *    mènent — la fenêtre entièrement à zéro (le raffineur publie, le modèle ne
+ *    détecte rien), et surtout la suspension éditoriale déclarée par
+ *    `MESURE_PROVINCIALE_SUSPENDUE`, qui prime sur tout le reste.
  *    Cause connue : six des onze seuils du classifieur « canadian political
  *    parties » sont au-dessus de ce que le modèle atteint réellement, les
  *    classes provinciales n'ayant pas été apprises (aws-refiners#223, #248).
+ *
+ *  Ordre de priorité voulu : la suspension d'abord. `perimee` décrit un
+ *  symptôme (« ça s'est arrêté le 31 juillet ») qui laisserait croire que la
+ *  donnée d'avant était bonne — elle ne l'était pas.
  */
 export type Indisponibilite = {
   raison: "perimee" | "recalibrage";
@@ -269,6 +275,27 @@ const SPARK_CIRCLE_COUNT = 7;
  *  s'expliquent pas par un simple décalage de publication. */
 const RETARD_MAX_JOURS = 3;
 
+/** La mesure provinciale est suspendue, par décision éditoriale, tant que le
+ *  modèle n'a pas été réentraîné et validé (aws-refiners#248).
+ *
+ *  Pourquoi une constante plutôt qu'une détection sur la donnée : le défaut
+ *  n'est pas un trou qu'on peut repérer, c'est que les valeurs publiées ne
+ *  mesurent pas ce qu'elles prétendent mesurer. Elles en ont toute l'apparence
+ *  — un nombre, une date, cinq partis. Sur les 32 jours de la dernière fenêtre
+ *  publiée, 19 ne détectaient que deux partis ou moins, et 7 un seul (un parti
+ *  à 100 %, les quatre autres à zéro). Aucune heuristique honnête ne distingue
+ *  ça d'une vraie journée creuse ; et le préprint qui documente le modèle le
+ *  confirme en amont : QS obtient un F1 de 0,000, le PQ n'est pas rapporté, le
+ *  PCQ est absent de l'évaluation, le PLQ plafonne à 0,15–0,20.
+ *
+ *  Conséquence assumée : le module ne montre AUCUN niveau, y compris dans les
+ *  éditions archivées — le défaut est antérieur au gel du 31 juillet 2026, il
+ *  ne commence pas à cette date. Le module reste affiché et dit pourquoi.
+ *
+ *  À repasser à `false` quand le réentraînement est validé, avec la métho §05
+ *  et le §10 (Limites reconnues) mis à jour dans le même geste. */
+const MESURE_PROVINCIALE_SUSPENDUE = true;
+
 /** Aujourd'hui en heure de MONTRÉAL, pas en UTC (AGENTS.md règle #2).
  *  `toISOString()` bascule de jour dès 20 h heure locale : le module aurait
  *  annoncé « 17 jours » de retard un soir où il n'y en avait que 16. */
@@ -279,6 +306,15 @@ function aujourdhuiMontreal(): string {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+}
+
+/** Minuscule initiale : le libellé est inséré après « depuis le », où
+ *  « Vendredi 31 juillet » se lirait comme une coquille. Même geste que
+ *  `lastUpdatedLabel`. Partagé par les deux chemins d'indisponibilité, pour
+ *  qu'ils produisent exactement la même chaîne. */
+function labelDateIndispo(lastDate: string): string {
+  const brut = formatDateFr(lastDate);
+  return brut.charAt(0).toLowerCase() + brut.slice(1);
 }
 
 function ecartEnJours(depuis: string, jusqu: string): number {
@@ -301,11 +337,7 @@ function detecterIndisponibilite(
   const aujourdhui = asOfIso ?? aujourdhuiMontreal();
   const joursDeRetard = ecartEnJours(lastDate, aujourdhui);
 
-  // Minuscule initiale : le libellé est inséré après « depuis le », où
-  // « Vendredi 31 juillet » se lirait comme une coquille. Même geste que
-  // `lastUpdatedLabel`.
-  const brut = formatDateFr(lastDate);
-  const lastDateLabel = brut.charAt(0).toLowerCase() + brut.slice(1);
+  const lastDateLabel = labelDateIndispo(lastDate);
 
   if (joursDeRetard > RETARD_MAX_JOURS) {
     return { raison: "perimee", lastDate, lastDateLabel, joursDeRetard };
@@ -850,7 +882,12 @@ export async function loadParties(
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
-      indisponible: detecterIndisponibilite(dayRows, lastDate, asOfIso),
+      // La suspension éditoriale prime sur la détection par la donnée : celle-ci
+      // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
+      // archivée n'en présente aucun tout en portant la même donnée invalide.
+      indisponible: MESURE_PROVINCIALE_SUSPENDUE
+        ? { raison: "recalibrage" as const, lastDate, lastDateLabel: labelDateIndispo(lastDate), joursDeRetard: 0 }
+        : detecterIndisponibilite(dayRows, lastDate, asOfIso),
       medias,
       byMedia,
       ranges: {

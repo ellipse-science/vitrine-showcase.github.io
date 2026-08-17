@@ -214,17 +214,19 @@ function AvisIndisponible({ info }: { info: Indisponibilite }) {
         <span className="partis-avis-body">
           {recalibrage ? (
             <>
-              Le modèle qui repère les partis dans les articles est en cours de
-              recalibration&nbsp;: il ne reconnaît plus les partis québécois. Aucune
-              détection n&apos;est publiée depuis le {info.lastDateLabel}, et les colonnes
-              ci-dessous restent donc à zéro. <b>Ce silence est celui de notre instrument,
-              pas celui des médias.</b>
+              Le modèle qui repère les partis dans les articles ne distingue pas de façon
+              fiable les partis québécois les uns des autres. Le défaut n&apos;est pas
+              récent&nbsp;: il touche aussi les valeurs publiées avant le{" "}
+              {info.lastDateLabel}. Nous préférons ne rien afficher plutôt qu&apos;un
+              classement que nous ne pourrions pas défendre. <b>Ce silence est celui de
+              notre instrument, pas celui des médias.</b>
             </>
           ) : (
             <>
               Ce module n&apos;a reçu aucune donnée depuis le {info.lastDateLabel}, soit{" "}
-              {info.joursDeRetard}&nbsp;jour{info.joursDeRetard > 1 ? "s" : ""}. Ce qui suit
-              décrit cette date-là, pas la couverture d&apos;aujourd&apos;hui.
+              {info.joursDeRetard}&nbsp;jour{info.joursDeRetard > 1 ? "s" : ""}. Rien
+              n&apos;est affiché&nbsp;: nous ne présentons pas une donnée périmée comme la
+              couverture d&apos;aujourd&apos;hui.
             </>
           )}
         </span>
@@ -346,7 +348,14 @@ function Console({
   // ne disparaît pas. C'est aussi ce que montre un afficheur de table de mix.
   const tete = rows.filter((r) => !r.inShadow)[0];
 
-  if (!tete || tete.sovPct <= 0) {
+  // `indisponible` d'abord, AVANT de regarder s'il y a un meneur : la donnée
+  // gelée contient des journées à un seul parti détecté (CAQ à 100 %, les
+  // quatre autres à zéro). Elles passaient `sovPct > 0` et se rendaient donc
+  // comme une part de voix, sous un bandeau qui les cautionnait. Ce n'est pas
+  // une mesure : c'est un classifieur qui déclenche une fois. Tant que le
+  // module est déclaré indisponible, il n'affiche AUCUN niveau — y compris
+  // dans les éditions archivées, qui traversent le même chemin.
+  if (indisponible || !tete || tete.sovPct <= 0) {
     // « Tous les canaux sont silencieux » n'est vrai que si l'instrument
     // fonctionne. Quand il est en panne, le dire ainsi imputerait aux médias
     // un silence qui est le nôtre — c'est le bandeau qui porte l'explication,
