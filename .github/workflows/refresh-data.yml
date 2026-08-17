@@ -114,6 +114,69 @@ jobs:
         # ancien, et se rabat sur le WebP seul si l'AVIF n'est pas disponible.
         run: pip install openai pillow python-dotenv replicate
 
+      # Les portraits changent quelques fois par AN (partielles), pas toutes
+      # les 4h : scraper à chaque déclenchement de ce workflow ferait ~250
+      # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
+      # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
+      # tourne donc que sur le PREMIER des six déclenchements quotidiens
+      # (00h50 UTC, cron cron-job.org) plutôt que d'ajouter un cron natif
+      # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
+      # natif pour les données électorales plus haut, ne compte pas ici.
+      #
+      # Placé ICI, juste après le setup Python, et pas plus bas dans le job :
+      # les étapes qui suivent (Athena, art IA, musique IA) peuvent prendre
+      # plusieurs minutes chacune. Vérifier l'heure APRÈS elles risquerait de
+      # lire 01h passé minuit UTC un jour de run lent, et de sauter la
+      # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
+      # plus sans qu'aucune alerte ne le signale.
+      - name: Check daily deputy-photo window
+        id: photo_window
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Python deps for deputy portraits (numpy, Pillow already present)
+        if: steps.photo_window.outputs.run == 'true'
+        run: pip install numpy
+
+      - name: Refresh deputy portraits (best-effort, non-blocking)
+        id: deputy_photos
+        if: steps.photo_window.outputs.run == 'true'
+        continue-on-error: true
+        run: python scripts/scrape_deputy_photos.py
+
+      # --force : sans ça, build_deputy_cards.py saute toute circonscription
+      # dont la carte de sortie existe déjà — y compris après une partielle,
+      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
+      # même nom de fichier (clé = siège, pas personne). Sans --force, la
+      # carte traitée que le site affiche resterait celle de l'ANCIEN
+      # titulaire alors que la source brute est déjà à jour. Le coût — tout
+      # regénérer plutôt que le nécessaire — est négligeable ici : 125
+      # images, une fois par jour.
+      - name: Rebuild deputy cards (best-effort, non-blocking)
+        id: deputy_cards
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: python scripts/build_deputy_cards.py --force
+
+      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
+      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
+      # watchdog comme art/musique — même famille de défaillance (un
+      # supplément visuel, pas le contenu de fond que sert la Une) — et la
+      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
+      - name: Warn Slack if deputy-photo refresh failed
+        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure')
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
+
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
 
@@ -203,7 +266,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/ public/audio/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -222,8 +285,9 @@ jobs:
         run: |
           # Dev/prod split: code is gated behind manual main→prod merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
-          # payload (public/data + public/audio) from the just-pushed main onto
-          # prod — never code. Replacing (not merging) the paths means no conflicts.
+          # payload (public/data + public/audio + public/images/deputes) from the
+          # just-pushed main onto prod — never code. Replacing (not merging) the
+          # paths means no conflicts.
           # No-op until the prod branch exists (created during Cloudflare setup),
           # so this is safe to merge to main before prod is stood up.
           if ! git ls-remote --exit-code --heads origin prod >/dev/null 2>&1; then
@@ -235,8 +299,11 @@ jobs:
           # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
           # origin/prod may not exist. FETCH_HEAD always points at the just-fetched tip.
           git checkout -B prod FETCH_HEAD
-          git checkout main -- public/data/ public/audio/
-          git add public/data/ public/audio/
+          # public/images/deputes/ included alongside data/audio: without it, a
+          # by-election winner's portrait would land on main daily but never
+          # reach the live prod site until someone happens to merge main→prod.
+          git checkout main -- public/data/ public/audio/ public/images/deputes/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "prod data already current — nothing to sync."
           else
