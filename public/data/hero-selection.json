@@ -1,10 +1,10 @@
 {
-  "event_id": "20260818T030000Z-evt-quebec-announce-new-year-churchill-68287065",
-  "storyline_id": "story-churchill-falls-61057039",
-  "title": "Québec et Terre-Neuve concluent un accord historique sur Churchill Falls",
-  "main_issue": "environment_and_energy",
+  "event_id": "20260818T110000Z-evt-chef-parti-quebecois-paul-pierre-4d42c3a9",
+  "storyline_id": "story-parti-quebecois-68a0e122",
+  "title": "Le PQ reporte le référendum jusqu'au départ de Trump",
+  "main_issue": "governments_and_governance",
   "date_utc": "2026-08-18",
-  "time_interval_utc": "03-07",
-  "sum_qc": 95.683,
-  "peak_qc": 70.85
+  "time_interval_utc": "11-15",
+  "sum_qc": 138.438,
+  "peak_qc": 70.05
 }
