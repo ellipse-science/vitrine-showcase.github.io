@@ -217,6 +217,49 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Recharge Postgres AVANT de pousser sur `prod`.
+      #
+      # C'EST UNE QUESTION D'ORDRE, ET ELLE A DÉJÀ COÛTÉ UNE RÉGRESSION. La
+      # poussée sur `prod` déclenche le déploiement dans la minute, et ce
+      # déploiement lit l'API. Si la synchro n'avait lieu que sur son propre
+      # horaire (le cron du Worker), le build lirait l'API à un moment où elle
+      # contient encore le cycle précédent : c'est ce qui s'est produit le
+      # 2026-08-18, le site affichant des données de plusieurs heures plus
+      # anciennes que celles qui venaient d'être publiées.
+      #
+      # Séquence garantie : JSON commités sur main → Postgres rechargé →
+      # poussée sur prod → build. Le cron du Worker reste comme filet.
+      #
+      # PAR TRANCHES DE QUATRE TABLES : sur le plan gratuit de Workers, un
+      # gestionnaire `fetch` dispose de 10 ms de CPU (le cron en a 30 s). Un
+      # appel unique meurt vers la sixième table ; quatre appels passent. La
+      # boucle suit `next` jusqu'à ce qu'il soit nul.
+      #
+      # `continue-on-error` : une synchro ratée ne doit pas empêcher les données
+      # d'atteindre `prod`. Le build a sa propre garde de fraîcheur et repartira
+      # des fichiers commités plutôt que de publier du périmé.
+      - name: Recharger Postgres (API) avant la poussée prod
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+        run: |
+          set -uo pipefail
+          offset=0
+          for _ in $(seq 1 8); do
+            body=$(curl -sS --max-time 180 -X POST \
+                     -H "Authorization: Bearer $VITRINE_API_KEY" \
+                     "https://api.vitrinedemocratique.com/v1/sync?offset=$offset&limit=4") || {
+              echo "::warning::Appel de synchro échoué. Le build repartira des fichiers."
+              exit 0
+            }
+            echo "$body"
+            next=$(printf '%s' "$body" | python3 -c "import sys,json;print(json.load(sys.stdin).get('next') or '')" 2>/dev/null || echo "")
+            [ -z "$next" ] && break
+            offset=$next
+          done
+          echo "Synchro Postgres terminée."
+
       - name: Sync fresh data to prod branch
         if: steps.commit.outputs.changed == 'true'
         run: |

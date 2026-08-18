@@ -33,6 +33,52 @@ const API_KEY = process.env.VITRINE_API_KEY ?? "";
  *  ce qui est bien pire qu'une erreur. */
 const PAGE_SIZE = 5000;
 
+/** Au-delà de ce délai, les données de l'API sont jugées périmées et le build
+ *  repart des fichiers.
+ *
+ *  POURQUOI CE GARDE-FOU EXISTE. Le 2026-08-18, la prod a servi des données de
+ *  plusieurs heures plus anciennes que celles qui venaient d'être publiées : le
+ *  déploiement se déclenche à la poussée sur `prod`, mais la synchro Postgres
+ *  tournait sur son propre horaire. refresh-data déclenche désormais la synchro
+ *  avant de pousser, ce qui règle l'ordre — ce contrôle est la seconde ligne,
+ *  pour que la même panne ne puisse pas repasser inaperçue.
+ *
+ *  Les fichiers, eux, sont frais par construction : ils viennent d'être
+ *  commités par le job qui déclenche le build. En cas de doute, ils gagnent. */
+const MAX_STALENESS_MS = 45 * 60 * 1000;
+
+let freshnessChecked: boolean | null = null;
+
+/** L'API est-elle assez fraîche pour qu'on s'y fie ? Vérifié une fois par build. */
+async function apiIsFresh(): Promise<boolean> {
+  if (freshnessChecked !== null) return freshnessChecked;
+  try {
+    const res = await fetch(`${API_BASE}/v1/health`, {
+      headers: { "cache-control": "no-cache" },
+    });
+    if (!res.ok) throw new Error(`santé ${res.status}`);
+    const body = (await res.json()) as { sync_state?: { synced_at: string }[] };
+    const stamps = (body.sync_state ?? []).map((r) => Date.parse(r.synced_at));
+    if (stamps.length === 0) throw new Error("aucun état de synchro");
+
+    // La table la plus EN RETARD décide : une seule table figée suffit à
+    // publier un module périmé.
+    const oldest = Math.min(...stamps);
+    const ageMin = Math.round((Date.now() - oldest) / 60000);
+    freshnessChecked = Date.now() - oldest <= MAX_STALENESS_MS;
+    if (!freshnessChecked) {
+      console.warn(
+        `[source] API périmée (synchro la plus ancienne il y a ${ageMin} min). Repli sur les fichiers.`,
+      );
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[source] fraîcheur de l'API invérifiable (${message}). Repli sur les fichiers.`);
+    freshnessChecked = false;
+  }
+  return freshnessChecked;
+}
+
 type TableSpec = { name: string; out: string; enabled: boolean };
 
 let datasetByPath: Map<string, string> | null = null;
@@ -93,6 +139,8 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     // calculées, pas projetées depuis une table. Elles restent des fichiers.
     return fs.readFile(absolute, "utf8");
   }
+
+  if (!(await apiIsFresh())) return fs.readFile(absolute, "utf8");
 
   if (!API_KEY) {
     console.warn(

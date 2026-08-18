@@ -131,7 +131,8 @@ export default {
       return res
     }
 
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+    const isSync = seg[0] === 'v1' && seg[1] === 'sync'
+    if (!isSync && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
@@ -154,6 +155,56 @@ export default {
     const segments = url.pathname.split('/').filter(Boolean)
 
     try {
+      // POST /v1/sync — recharge Postgres depuis les JSON publiés, à la demande.
+      //
+      // POURQUOI CETTE ROUTE EXISTE. Le cron seul ne suffit pas : refresh-data
+      // publie les JSON puis pousse sur `prod`, ce qui déclenche le
+      // déploiement dans la minute. Si la synchro n'a lieu que sur son propre
+      // horaire, le build lit l'API à un moment où elle contient encore le
+      // cycle précédent — c'est la régression observée le 2026-08-18.
+      //
+      // refresh-data appelle donc cette route APRÈS avoir commité sur main et
+      // AVANT de pousser sur `prod`. L'ordre devient garanti au lieu d'espéré,
+      // et le cron ne sert plus que de filet.
+      //
+      // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
+      // c'est une écriture qui remplace le contenu de quinze tables.
+      if (segments[0] === 'v1' && segments[1] === 'sync') {
+        if (request.method !== 'POST') {
+          return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
+        }
+        const auth = await authenticate(sql, request, 'sync')
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        // Par TRANCHES : un gestionnaire `fetch` n'a que 10 ms de CPU sur le
+        // plan gratuit, là où le cron en a 30 s. Quatre tables par appel
+        // passent confortablement ; l'appelant rappelle avec `next` jusqu'à
+        // recevoir null.
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
+        const limit = Math.min(
+          Math.max(1, Number(url.searchParams.get('limit') ?? '4') || 4),
+          15,
+        )
+
+        const started = Date.now()
+        const { synced, failed, total, next } = await runSync(env.DATABASE_URL, {
+          offset,
+          limit,
+        })
+        return json(
+          {
+            synced: synced.length,
+            tables: synced,
+            failed: failed.map((f) => f.table),
+            offset,
+            total,
+            next,
+            seconds: Math.round((Date.now() - started) / 1000),
+          },
+          { status: failed.length > 0 ? 207 : 200 },
+        )
+      }
+
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
