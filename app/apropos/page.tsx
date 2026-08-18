@@ -3,6 +3,7 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
+  // garde-redaction: ok (séparateur <title>, exception PR #246)
   title: "À propos — La Vitrine démocratique",
 };
 
@@ -22,7 +23,7 @@ export default function AproposPage() {
             La Vitrine démocratique est un observatoire numérique de l'espace
             public québécois, développé par le Centre d'analyse des politiques
             publiques (CAPP) de l'Université Laval. Elle mesure en continu deux
-            dimensions fondamentales de la vie démocratique : la visibilité des
+            dimensions fondamentales de la vie démocratique&nbsp;: la visibilité des
             enjeux dans les grands médias québécois et canadiens, et leur
             présence dans les débats à l'Assemblée nationale. En mettant ces
             deux dimensions en regard, elle offre une lecture scientifique de la
@@ -65,17 +66,17 @@ export default function AproposPage() {
                 médias et des décideurs politiques à un moment donné, et désigne
                 ainsi les enjeux priorisés dans le débat public. Ce concept
                 s'inscrit plus globalement dans la tradition de la théorie de
-                l'agenda-setting (McCombs & Shaw, 1972 ; Iyengar & Kinder, 1987)
+                l'agenda-setting (McCombs & Shaw, 1972; Iyengar & Kinder, 1987)
                 selon laquelle les médias et les élus se co-influencent
                 mutuellement dans la construction de l'agenda public.
               </p>
               <p className="apropos-text">
                 Depuis septembre 2019, le système Radar+ capte automatiquement
                 les grands titres de treize médias québécois et canadiens.
-                Ces données alimentent des indices de saillance médiatique — un
+                Ces données alimentent des indices de saillance médiatique (un
                 concept provenant de la littérature scientifique désignant
                 l'importance relative accordée par les médias aux différents
-                sujets et enjeux présents dans l'espace médiatique — calculés
+                sujets et enjeux présents dans l'espace médiatique), calculés
                 toutes les quatre heures.
               </p>
               <p className="apropos-text">
@@ -96,7 +97,7 @@ export default function AproposPage() {
               <h2 className="apropos-section-title">Pour qui?</h2>
               <p className="apropos-text">
                 La Vitrine démocratique s'adresse à toute personne souhaitant
-                mieux comprendre l'agenda public québécois :
+                mieux comprendre l'agenda public québécois&nbsp;:
               </p>
               <ul className="apropos-list">
                 <li className="apropos-list-item">
@@ -132,7 +133,7 @@ export default function AproposPage() {
                 numériques). Le projet réunit des chercheuses et chercheurs en science
                 politique, des développeuses et développeurs de systèmes de données et des
                 spécialistes en intelligence artificielle autour d'un objectif
-                commun : rendre l'observation de la démocratie québécoise plus
+                commun&nbsp;: rendre l'observation de la démocratie québécoise plus
                 rigoureuse, plus transparente et plus ouverte à l'ensemble de la
                 société.
               </p>
@@ -168,7 +169,7 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5", marginTop: "16px" }}
               >
-                Pour toute question ou collaboration :
+                Pour toute question ou collaboration&nbsp;:
                 <br />
                 <a href="mailto:capp@ulaval.ca" className="apropos-link">
                   capp@ulaval.ca
