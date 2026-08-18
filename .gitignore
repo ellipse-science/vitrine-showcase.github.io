@@ -51,3 +51,6 @@ _worktrees/
 # `node scripts/make_parties_fixtures.mjs`. Volontairement NON versionné :
 # aucune donnée inventée ne doit pouvoir être confondue avec la donnée réelle.
 /fixtures/
+
+# CSV intermédiaires de scripts/load_pg.mjs
+.pgload/
