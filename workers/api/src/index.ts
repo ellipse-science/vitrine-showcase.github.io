@@ -26,6 +26,8 @@
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
+import { authenticate, recordUsage } from './auth'
+import { handleAdmin } from './admin'
 import { isTargetHourInNY } from './schedule'
 
 interface Env {
@@ -117,6 +119,18 @@ export default {
     const url = new URL(request.url)
     const ttl = Number(env.CACHE_TTL_SECONDS ?? '14400')
 
+
+    // /admin d'abord : protégé par Cloudflare Access, jamais mis en cache, et
+    // servi avant toute logique de clé d'API — un administrateur n'a pas de
+    // clé, il a une identité.
+    const seg = url.pathname.split('/').filter(Boolean)
+    if (seg[0] === 'admin') {
+      const sqlAdmin = neon(env.DATABASE_URL)
+      const res = await handleAdmin(request, sqlAdmin, seg)
+      res.headers.set('cache-control', 'no-store')
+      return res
+    }
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
@@ -180,6 +194,13 @@ export default {
           })
         }
 
+        // Les données sont le produit : la lecture d'un jeu demande une clé.
+        // /v1/health et /v1/datasets restent ouverts — l'un sert à surveiller,
+        // l'autre à découvrir ce qui existe, et ni l'un ni l'autre ne livre de
+        // donnée.
+        const auth = await authenticate(sql, request, name)
+        if (!auth.ok) return problem(auth.status, auth.error)
+
         const limit = Math.min(Number(url.searchParams.get('limit') ?? DEFAULT_LIMIT) || DEFAULT_LIMIT, MAX_LIMIT)
         const offset = Math.max(Number(url.searchParams.get('offset') ?? '0') || 0, 0)
 
@@ -228,7 +249,13 @@ export default {
           {},
           ttl,
         )
-        if (!noCache) ctx.waitUntil(cache.put(request, response.clone()))
+        ctx.waitUntil(recordUsage(sql, auth.key.id, name, rows.length))
+
+        // PAS de mise en cache partagée ici : la réponse dépend de la clé
+        // (portées, quotas), et `caches.default` est commun à tous les
+        // appelants. Une réponse servie à une clé ne doit jamais être resservie
+        // à une autre. Le cache reste en place pour /v1/datasets, qui ne
+        // dépend d'aucune clé.
         return response
       }
 

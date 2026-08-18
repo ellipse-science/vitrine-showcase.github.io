@@ -23,6 +23,11 @@ import path from "node:path";
 const API_BASE = process.env.VITRINE_API_BASE ?? "https://api.vitrinedemocratique.com";
 const USE_API = process.env.VITRINE_DATA_SOURCE === "api";
 
+/** Clé d'API du build. Les jeux de données sont payants : même le site doit
+ *  s'authentifier. Sa clé porte la portée totale et aucun quota — ce n'est pas
+ *  un client, c'est le site lui-même. */
+const API_KEY = process.env.VITRINE_API_KEY ?? "";
+
 /** L'API plafonne une réponse à 5 000 lignes ; la plus grosse table en compte
  *  plus de 9 000. On pagine donc — sans quoi on perdrait des lignes en silence,
  *  ce qui est bien pire qu'une erreur. */
@@ -55,7 +60,12 @@ async function fetchAllRows(dataset: string): Promise<unknown[]> {
     const url = `${API_BASE}/v1/datasets/${dataset}?limit=${PAGE_SIZE}&offset=${offset}`;
     // Le build veut les données du cycle courant. Sans cet en-tête, il peut
     // recevoir une réponse mise en cache jusqu'à quatre heures plus tôt.
-    const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
+    const res = await fetch(url, {
+      headers: {
+        "cache-control": "no-cache",
+        ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
+      },
+    });
     if (!res.ok) throw new Error(`${res.status} sur ${url}`);
     const body = (await res.json()) as { rows?: unknown[] };
     const page = body.rows ?? [];
@@ -81,6 +91,13 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     // Tout ce que publie fetch_data.R n'est pas dans l'API : la calibration de
     // saillance, la sélection du hero et les métadonnées d'illustration sont
     // calculées, pas projetées depuis une table. Elles restent des fichiers.
+    return fs.readFile(absolute, "utf8");
+  }
+
+  if (!API_KEY) {
+    console.warn(
+      `[source] VITRINE_API_KEY absente — repli sur les fichiers pour ${dataset}.`,
+    );
     return fs.readFile(absolute, "utf8");
   }
 
