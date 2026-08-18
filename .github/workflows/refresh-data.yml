@@ -23,6 +23,11 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
+    # ~1h30 le 2026-08-18) tourne jusqu'à la limite dure de 6h de GitHub. Couplé
+    # à concurrency.cancel-in-progress: false, ce zombie met toutes les éditions
+    # suivantes EN FILE derrière lui → le site fige. 25 min ≈ 3× un run normal.
+    timeout-minutes: 25
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -63,6 +68,12 @@ jobs:
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
 
       - name: Setup R
+        # Coupable de l'incident du 2026-08-18 (gel ~1h30 au lieu de ~30s). Le
+        # timeout fait ÉCHOUER le step (failure) plutôt que de le laisser pendre :
+        # « Alert Slack on failure » sonne et la file se libère. Un timeout au
+        # niveau job marquerait « cancelled » sans déclencher failure() — d'où ce
+        # garde rapproché EN PLUS du plafond global du job.
+        timeout-minutes: 6
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.4'
