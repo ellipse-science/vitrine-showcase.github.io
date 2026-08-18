@@ -22,6 +22,21 @@ import { MEDIA_LABELS } from "@/lib/medias";
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
 
+/** Noms officiels, casse comprise, tels que le guide de rédaction les fixe.
+ *
+ *  Les sigles suffisent dans la console, où la place manque et où le contexte
+ *  lève l'ambiguïté. Une phrase destinée à être CITÉE, elle, porte le nom
+ *  complet : c'est ce qu'un journaliste recopiera dans son article, et
+ *  « Coalition avenir Québec » ne s'invente pas (minuscule à « avenir », pas de
+ *  trait d'union). */
+export const PARTY_FULL_NAMES: Record<PartyKey, string> = {
+  plq: "Parti libéral du Québec",
+  caq: "Coalition avenir Québec",
+  qs: "Québec solidaire",
+  pq: "Parti québécois",
+  pcq: "Parti conservateur du Québec",
+};
+
 export const PARTY_LABELS: Record<PartyKey, string> = {
   plq: "PLQ",
   caq: "CAQ",
@@ -68,7 +83,7 @@ export const PARTY_COLORS: Record<PartyKey, string> = {
  * colonne `threshold` de la donnée ne décrit PLUS ce que le site affiche.
  * À aligner si le seuil de 5 % est retenu durablement.
  */
-const SHADOW_THRESHOLD = 0.05;
+export const SHADOW_THRESHOLD = 0.05;
 const SPARK_W = 100;
 const SPARK_H = 30;
 
@@ -141,6 +156,9 @@ type SeriesDates = { daily: string[]; weekly: string[]; monthly: string[] };
 export type RowView = {
   key: PartyKey;
   label: string;
+  /** Nom officiel complet (« Coalition avenir Québec »), pour la phrase
+   *  citable du bloc journalistes. Le sigle suffit dans la console. */
+  fullLabel: string;
   inShadow: boolean;
   color: string;
   sovPct: number;
@@ -152,6 +170,16 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** Rang sur la période, 1 = le plus présent. « 2e sur 5 » se cite ; une
+   *  part de voix seule oblige le lecteur à comparer lui-même. */
+  rang: number;
+  /** Journées où ce parti a été le plus présent, sur celles que couvre
+   *  l'onglet. Les journées sans aucune détection ne comptent pour personne. */
+  joursEnTete: number;
+  joursComptes: number;
+  /** Évolution entre le premier et le dernier jour de la fenêtre, en POINTS de
+   *  pourcentage. Jamais en pourcentage d'un pourcentage. */
+  evolutionPts: number;
   /** Sommet atteint sur la fenêtre suivie, et le jour où il l'a été.
    *  C'est le « peak hold » de la console : le trait qui reste au niveau le
    *  plus haut atteint, longtemps après que le son soit redescendu. */
@@ -199,6 +227,9 @@ export type RangeView = {
   tabLabel: string;
   sparkHeadLabel: string;
   refLabel: string;
+  /** « du 11 au 17 août 2026 » : la fenêtre réellement couverte par la donnée,
+   *  formulée pour être recopiée telle quelle dans un article. */
+  periodeLabel: string;
   rows: RowView[];
   /** La course de CETTE période : sa fenêtre et sa ligne d'arrivée en
    *  dépendent. */
@@ -726,11 +757,74 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   };
 }
 
+/** Les indices de `history.daily` qui tombent dans la fenêtre de l'onglet.
+ *
+ *  Même borne que `libellePeriode`, et pour la même raison : les chiffres
+ *  affichés doivent porter sur exactement la période que le module annonce. */
+function fenetreDeLOnglet(range: RangeKey, joursIso: string[]): number[] {
+  const tous = joursIso.map((_, i) => i);
+  if (joursIso.length === 0) return tous;
+  const dernier = joursIso[joursIso.length - 1];
+
+  // « Jour » compte sur les SEPT DERNIERS jours, pas sur la seule journée.
+  //
+  // Sur un seul jour, « en tête 1 jour sur 1 » et « 0 point d'évolution » ne
+  // disent rien : ce sont des cases remplies, pas des informations. La courbe
+  // de la platine trace déjà sept jours dans cet onglet ; les chiffres suivent
+  // donc la même fenêtre, et l'affichage porte son propre libellé (« sur 7 »),
+  // ce qui les garde exacts sans dépendre du titre de l'onglet.
+  if (range === "today") return tous.slice(-7);
+  if (range === "overall") return tous;
+
+  const lundis = joursIso.filter(
+    (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
+  );
+  const debut = joursIso.indexOf(lundis[lundis.length - 1] ?? joursIso[0]);
+  return tous.filter((i) => i >= debut);
+}
+
+/** Trois chiffres « qui parlent », par parti, sur la fenêtre de l'onglet.
+ *
+ *  La platine affichait des mesures exactes mais muettes : une part de voix et
+ *  un écart relatif ne disent pas au lecteur ce qui s'est PASSÉ. Un rang, un
+ *  nombre de journées en tête et une évolution en points se recopient dans une
+ *  phrase sans calcul intermédiaire.
+ *
+ *  En points de pourcentage et jamais en pourcentage d'un pourcentage :
+ *  « +12 points » est sans ambiguïté, « +34 % » ne dit pas si l'on parle de
+ *  points ou d'un rapport, et c'est exactement le genre d'ambiguïté qui finit
+ *  mal citée. */
+function chiffresParlants(
+  stat: Stat,
+  tousLesStats: Stat[],
+  fenetre: number[],
+): { joursEnTete: number; joursComptes: number; evolutionPts: number } {
+  let joursEnTete = 0;
+  for (const i of fenetre) {
+    const valeurs = tousLesStats.map((s) => s.history.daily[i] ?? 0);
+    const max = Math.max(...valeurs);
+    // Une journée sans aucune détection n'a pas de meneur : la compter en
+    // donnerait une au premier parti de la liste, par pur effet d'ordre.
+    if (max > 0 && (stat.history.daily[i] ?? 0) === max) joursEnTete += 1;
+  }
+
+  const premier = stat.history.daily[fenetre[0]] ?? 0;
+  const dernier = stat.history.daily[fenetre[fenetre.length - 1]] ?? 0;
+
+  return {
+    joursEnTete,
+    joursComptes: fenetre.length,
+    evolutionPts: Math.round((dernier - premier) * 100),
+  };
+}
+
 function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
+  const fenetre = fenetreDeLOnglet(range, dates.daily);
 
   const rows: RowView[] = sorted.map((stat, idx) => {
+    const parlants = chiffresParlants(stat, stats, fenetre);
     const sov = stat.sov[cfg.barKey];
     const sovPct = Math.round(sov * 100);
     const barWidthPct = Math.min(100, sov * 100);
@@ -748,18 +842,23 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     const unit = range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
       streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—"; // garde-redaction: ok (tiret = glyphe, aucune direction)
+    // « Favorable / défavorable », jamais « positif / négatif » : règle du guide
+    // de rédaction pour CE module. Un ton « positif » se lit comme un jugement
+    // sur le parti ; « favorable » dit ce qu'on mesure vraiment, l'orientation
+    // de la couverture. La distinction compte d'autant plus qu'un journaliste
+    // peut citer ce mot tel quel.
     const dirLabel =
       streak.direction === "positive"
-        ? "Positif"
+        ? "Favorable"
         : streak.direction === "negative"
-          ? "Négatif"
+          ? "Défavorable"
           : "Neutre";
     const toneLabel =
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
     // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
-    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots positifs\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
+    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots favorables\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
 
     const rawHistory =
       range === "week" ? stat.history.weekly : stat.history.week;
@@ -779,6 +878,12 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     return {
       key: stat.key,
       label: PARTY_LABELS[stat.key],
+      /** Nom officiel complet, pour les textes destinés à être cités. */
+      fullLabel: PARTY_FULL_NAMES[stat.key],
+      rang: idx + 1,
+      joursEnTete: parlants.joursEnTete,
+      joursComptes: parlants.joursComptes,
+      evolutionPts: parlants.evolutionPts,
       inShadow: sov < SHADOW_THRESHOLD,
       peakPct: Math.round((dailyHist[peakIdx] ?? 0) * 100),
       peakDate: dates.daily[peakIdx] ?? "",
@@ -802,9 +907,42 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     tabLabel: TAB_LABELS[range],
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
+    periodeLabel: libellePeriode(range, dates.daily),
     rows,
     chart: buildChart(stats, dates, range),
   };
+}
+
+/** La période couverte, écrite pour être RECOPIÉE dans un article.
+ *
+ *  Un chiffre de part de voix ne veut rien dire sans sa fenêtre : « la CAQ à
+ *  35 % » se cite mal, « la CAQ à 35 % du 11 au 17 août » se cite. Le libellé
+ *  est donc calculé ici, où les dates réelles de la série sont disponibles,
+ *  plutôt que reconstruit côté client à partir d'une étiquette d'onglet.
+ *
+ *  Il décrit la donnée EFFECTIVEMENT présente, pas la fenêtre théorique de
+ *  l'onglet : si le raffineur n'a publié que trois jours cette semaine, la
+ *  phrase dit ces trois jours. */
+function libellePeriode(range: RangeKey, joursIso: string[]): string {
+  const jours = joursIso.filter(Boolean);
+  if (jours.length === 0) return "";
+  const dernier = jours[jours.length - 1];
+
+  if (range === "today") return `le ${formatDateFr(dernier).toLowerCase()}`;
+
+  // La semaine du raffineur repart le lundi : on borne au dernier lundi présent
+  // dans la série plutôt qu'aux 7 derniers jours, sinon le libellé annoncerait
+  // une fenêtre que la donnée ne couvre pas.
+  // Le DERNIER lundi, pas le premier : la série couvre plusieurs semaines, et
+  // chercher par le début annonçait « du 20 juillet au 17 août » pour un onglet
+  // qui montre une semaine.
+  const lundis = jours.filter(
+    (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
+  );
+  const premier = range === "week" ? (lundis[lundis.length - 1] ?? jours[0]) : jours[0];
+
+  if (premier === dernier) return `le ${formatDateFr(dernier).toLowerCase()}`;
+  return `du ${formatDateFr(premier).toLowerCase()} au ${formatDateFr(dernier).toLowerCase()}`;
 }
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
