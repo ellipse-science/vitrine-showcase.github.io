@@ -8676,50 +8676,90 @@
   margin: 0;
   padding: 0;
 }
-.platine-enjeux li {
+
+/* ── Les enjeux : une banque de pads ─────────────────────────────────────────
+   Le module est une table de mixage ; ses enjeux sont donc des pads de
+   performance. L'ÉCLAT de chaque pad porte la part de l'enjeu : plus on parle
+   de ce sujet à propos de ce parti, plus le pad est allumé. Le profil d'un
+   parti se saisit d'un regard, avant tout chiffre.
+
+   Deux colonnes, trois rangées : une banque de six, comme sur un contrôleur.
+   Le sixième est « Autres enjeux », éteint — ce n'est pas un sujet, c'est ce
+   qui reste. */
+.platine-enjeux ul.pads {
   display: grid;
-  /* Le nom prend ce qui reste, la barre a une largeur fixe pour que les cinq
-     s'alignent : des barres de longueurs de départ différentes ne se
-     compareraient pas. */
-  grid-template-columns: minmax(0, 1fr) 62px 32px 10px;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.platine-enjeu-nom {
-  font-size: 11px;
-  line-height: 1.25;
-  color: var(--ink-soft);
+
+.pad {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 6px 7px;
+  border-radius: 4px;
+  /* L'éclat est calculé en JS et borné à 0,55 : au-delà, l'encre du libellé
+     passe sous 5:1 sur le pad le plus foncé. Mesuré pour les cinq partis. */
+  background: color-mix(in srgb, var(--party) calc(var(--eclat) * 100%), var(--paper-deep));
+  /* Le liseré clair en haut et l'ombre courte en bas donnent le relief du
+     caoutchouc, sans passer au dégradé ni à l'ombre portée que le design
+     language écarte. */
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--paper) 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--ink);
+  animation: pad-allumer 420ms ease-out both;
 }
-.platine-enjeu-barre {
-  display: block;
-  height: 5px;
-  background: var(--paper-deep);
-  border-radius: 2px;
+/* Les pads s'allument l'un après l'autre, comme une banque qu'on réveille. */
+.pad:nth-child(1) { animation-delay: 0ms; }
+.pad:nth-child(2) { animation-delay: 60ms; }
+.pad:nth-child(3) { animation-delay: 120ms; }
+.pad:nth-child(4) { animation-delay: 180ms; }
+.pad:nth-child(5) { animation-delay: 240ms; }
+.pad:nth-child(6) { animation-delay: 300ms; }
+@keyframes pad-allumer { from { opacity: 0; transform: translateY(3px); } }
+
+/* Le pad du reste : éteint, et bordé plutôt que rempli. */
+.pad--reste {
+  background: transparent;
+  border: 1px dashed var(--rule);
+  box-shadow: none;
+  color: var(--ink-softer);
+}
+
+.pad-nom {
+  font-size: 9.5px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  /* Trois lignes au plus : « Droits, libertés, minorités et discrimination » est
+     le plus long des douze libellés CAP, et on ne les réécrit pas — ils sont
+     canoniques et partagés avec le Digital Society Lab. Le titre au survol et le
+     nom accessible portent le libellé entier. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.platine-enjeu-barre i {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  /* La barre se remplit à l'arrivée, comme les tracés de la course : le module
-     entier se met en place dans le même geste. */
-  animation: enjeu-remplir 600ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+.pad-pied {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 4px;
 }
-@keyframes enjeu-remplir { from { transform: scaleX(0); transform-origin: left; } }
-
-.platine-enjeu-pct {
+.pad-pct {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  text-align: right;
+  font-size: 11px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-soft);
 }
-.platine-enjeu-ton {
-  font-size: 10px;
-  text-align: right;
-}
+.pad-ton { font-size: 10px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .platine-enjeu-barre i { animation: none; }
+  .pad { animation: none; }
 }

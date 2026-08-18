@@ -906,19 +906,43 @@ function Platine({
               Seuls les cinq premiers sont affichés.
             </InfoTip>
           </p>
-          <ul>
+          {/* UNE BANQUE DE PADS, comme sur une table de mixage.
+              L'éclat de chaque pad porte la part de l'enjeu : plus on parle de
+              ce sujet à propos de ce parti, plus le pad est allumé. Le profil
+              d'un parti se lit alors d'un seul regard, avant même de lire un
+              chiffre — ce qu'une liste de barres ne donnait pas.
+
+              L'intensité est BORNÉE à 0,55 : au-delà, l'encre du libellé passe
+              sous 5:1 de contraste sur le pad le plus foncé (PQ). Mesuré pour
+              les cinq partis. Le pad reste donc toujours lisible, quelle que
+              soit la part.
+
+              Le libellé CAP complet part dans le `title` et dans le nom
+              accessible : ces douze catégories sont canoniques et partagées
+              avec le Digital Society Lab, on ne les réécrit pas. La face du pad
+              en montre autant que la place le permet. */}
+          <ul className="pads">
             {row.enjeux.map((e) => (
-              <li key={e.label}>
-                <span className="platine-enjeu-nom">{e.label}</span>
-                <span className="platine-enjeu-barre" aria-hidden="true">
-                  <i style={{ width: `${e.pct}%`, background: row.color }} />
+              <li
+                key={e.label}
+                className={`pad${e.reste ? " pad--reste" : ""}`}
+                style={{
+                  ["--eclat" as string]: e.reste ? 0 : Math.min(0.55, 0.1 + (e.pct / 100) * 1.5),
+                  ["--party" as string]: row.color,
+                }}
+                title={`${e.label}\u00a0: ${e.pct}\u00a0% de ce qu'on dit sur ${row.fullLabel}. Ton\u00a0: ${e.toneLabel}.`}
+              >
+                <span className="pad-nom">{e.label}</span>
+                <span className="pad-pied">
+                  <span className="pad-pct">{e.pct}&nbsp;%</span>
+                  {!e.reste && (
+                    <span className={`pad-ton tone-streak--${e.toneDirection}`} aria-hidden="true">
+                      {e.toneDirection === "positive" ? "↑" : e.toneDirection === "negative" ? "↓" : "–"}
+                    </span>
+                  )}
                 </span>
-                <span className="platine-enjeu-pct">{e.pct}&nbsp;%</span>
-                <span className={`platine-enjeu-ton tone-streak--${e.toneDirection}`}>
-                  <span aria-hidden="true">
-                    {e.toneDirection === "positive" ? "↑" : e.toneDirection === "negative" ? "↓" : "–"}
-                  </span>
-                  <span className="visually-hidden">Ton&nbsp;: {e.toneLabel}</span>
+                <span className="visually-hidden">
+                  {e.label}, {e.pct}&nbsp;%{e.reste ? "" : `, ton ${e.toneLabel}`}
                 </span>
               </li>
             ))}

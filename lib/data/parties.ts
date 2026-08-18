@@ -177,6 +177,9 @@ export type EnjeuView = {
   pct: number;
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
+  /** Vrai pour le pad « Autres enjeux », qui agrège la queue de distribution.
+   *  Il se rend éteint : ce n'est pas un enjeu, c'est ce qui reste. */
+  reste?: boolean;
 };
 
 export type RowView = {
@@ -1031,9 +1034,16 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
 
     if (siens.length === 0) continue;
 
+    // Le reste des enjeux, en un sixième pad. Une banque de pads se remplit par
+    // bancs pairs, et surtout la queue de distribution EST une information :
+    // sans elle, cinq parts qui ne somment pas à 100 laisseraient croire à une
+    // erreur de calcul.
+    const cumul = siens.reduce((t, r) => t + Number(r.issue_share), 0);
+    const reste = Math.max(0, 1 - cumul);
+
     out.set(
       key,
-      siens.map((r) => {
+      [...siens.map((r) => {
         const t = Number(r.weighted_tone) || 0;
         const dir = t > TONE_THRESHOLD ? "positive" : t < -TONE_THRESHOLD ? "negative" : "neutral";
         return {
@@ -1045,6 +1055,16 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
           toneDirection: dir as EnjeuView["toneDirection"],
         };
       }),
+      ...(reste > 0.01
+        ? [{
+            label: "Autres enjeux",
+            pct: Math.round(reste * 100),
+            toneLabel: "Neutre",
+            toneDirection: "neutral" as const,
+            reste: true,
+          }]
+        : []),
+      ],
     );
   }
   return out;
