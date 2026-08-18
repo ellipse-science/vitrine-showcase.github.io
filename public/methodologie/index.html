@@ -239,6 +239,20 @@
     max-width: 560px;
   }
 
+  /* Avis d'état d'un module, quand une mesure est suspendue ou dégradée.
+     La page décrit ce que le système fait ; quand il ne le fait plus, elle
+     doit le dire au même endroit, sans quoi le contrat public devient faux. */
+  .metho-avis {
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, transparent);
+    margin: 24px 0;
+    padding: 14px 18px;
+    max-width: 680px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
   /* Lists */
   .metho-list {
     max-width: 680px;
@@ -834,6 +848,10 @@
 
     <h3>9 · Pages permanentes exclues du corpus</h3>
     <p class="metho-body">Certaines pages ne sont jamais des nouvelles mais occupent parfois la une&nbsp;: flux vidéo continu, page de chaîne. Une page qui ne change jamais accumule du temps&#8209;en&#8209;une sans rien raconter, ce qui gonfle artificiellement la durée mesurée. Ces pages sont donc <strong>exclues du calcul</strong>, à partir d'une liste d'adresses tenue à la main et révisée par un humain. Le critère est la <em>durée de vie</em> et non le libellé&nbsp;: les pages «&nbsp;en direct&nbsp;» consacrées à un événement réel, qui portent un titre propre et disparaissent en quelques jours, sont conservées. Au 8&nbsp;août 2026, la liste compte deux adresses.</p>
+
+    <h3>10 · Les partis québécois ne sont pas reconnus de façon fiable</h3>
+    <p class="metho-body">Le modèle qui repère les partis politiques dans les articles a été validé sur les partis fédéraux, mais il ne dispose pas d'assez d'exemples d'entraînement pour distinguer les partis québécois les uns des autres. Vérification faite sur plus de 17&nbsp;000 phrases de notre corpus, il ne produit, pour cinq d'entre eux, aucun degré de confiance qui permette de trancher. L'un d'eux tend en outre à être attribué à des passages sans contenu politique. Abaisser les exigences pour obtenir malgré tout des chiffres donnerait une répartition dictée par le hasard plutôt que par la couverture réelle. Nous l'avons mesuré, et écarté.</p>
+    <p class="metho-body">En conséquence, le module «&nbsp;De quel parti parle-t-on dans les médias?&nbsp;» <strong>n'affiche aucune donnée</strong> et le signale sur le site. Un corpus d'exemples annotés à la main est en cours de constitution pour réentraîner le modèle. La mesure ne reprendra qu'après cette validation, et la présente page sera mise à jour à ce moment.</p>
   </section>
 
   <!-- §11 Éthique -->
