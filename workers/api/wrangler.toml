@@ -1,0 +1,17 @@
+name = "vitrine-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+# Le pilote Neon parle HTTP, pas TCP : pas besoin de nodejs_compat ni de
+# Hyperdrive. C'est ce qui rend l'API déployable sans autre infrastructure.
+
+[vars]
+# Durée de cache des réponses, calée sur le cycle de rafraîchissement des
+# données (4 h). C'est la pièce qui rend l'API insensible à la charge :
+# Postgres ne voit qu'une poignée de requêtes par fenêtre, que l'API serve dix
+# clients ou dix mille.
+CACHE_TTL_SECONDS = "14400"
+
+# Secret à poser hors du dépôt :
+#   wrangler secret put DATABASE_URL
