@@ -8,8 +8,8 @@ CREATE SCHEMA IF NOT EXISTS vitrine;
 -- consommé par lib/data/parties.ts + components/sections/PartisCouvertureSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_score_day" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision,
   "pass" text
@@ -22,11 +22,11 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_score_day_date_montreal_tz_idx" O
 -- consommé par lib/data/assemblee.ts + components/sections/AssembleeSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc" (
   "period_type" text,
-  "period_start_date" date,
-  "period_end_date" date,
+  "period_start_date" text,
+  "period_end_date" text,
   "party" text,
-  "n_interventions" bigint,
-  "word_count" bigint,
+  "n_interventions" integer,
+  "word_count" integer,
   "lexical_richness" double precision,
   "tone_score" double precision,
   "economy_and_labour" double precision,
@@ -54,12 +54,12 @@ CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_party_idx" ON vitrine."agora_deci
 -- consommé par lib/data/assemblee.ts + components/sections/AssembleeSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_deputes" (
   "period_type" text,
-  "period_start_date" date,
-  "period_end_date" date,
+  "period_start_date" text,
+  "period_end_date" text,
   "party" text,
   "deputy" text,
-  "n_interventions" bigint,
-  "word_count" bigint,
+  "n_interventions" integer,
+  "word_count" integer,
   "lexical_richness" double precision,
   "tone_score" double precision,
   "economy_and_labour" double precision,
@@ -86,8 +86,8 @@ CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_deputy_idx" ON vitrine."a
 -- federal_parties_score_week  (Athena : vitrine_datamart-federal_parties_score_week)
 CREATE TABLE IF NOT EXISTS vitrine."federal_parties_score_week" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision
 );
@@ -98,8 +98,8 @@ CREATE INDEX IF NOT EXISTS "federal_parties_score_week_date_montreal_tz_idx" ON 
 -- provincial_parties_score_week  (Athena : vitrine_datamart-provincial_parties_score_week)
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_score_week" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision
 );
@@ -110,8 +110,8 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_score_week_date_montreal_tz_idx" 
 -- federal_parties_score_month  (Athena : vitrine_datamart-federal_parties_score_month)
 CREATE TABLE IF NOT EXISTS vitrine."federal_parties_score_month" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision
 );
@@ -122,8 +122,8 @@ CREATE INDEX IF NOT EXISTS "federal_parties_score_month_date_montreal_tz_idx" ON
 -- provincial_parties_score_month  (Athena : vitrine_datamart-provincial_parties_score_month)
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_score_month" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision
 );
@@ -135,11 +135,11 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_score_month_date_montreal_tz_idx"
 -- consommé par components/interactive/PartisCouvertureClient.tsx
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_day" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision,
-  "computed_at" timestamptz
+  "computed_at" text
 );
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_day_party_idx" ON vitrine."provincial_parties_salient_shadow_day" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_day_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_day" ("date_utc");
@@ -149,11 +149,11 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_day_date_montreal_
 -- consommé par components/interactive/PartisCouvertureClient.tsx
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_week" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision,
-  "computed_at" timestamptz
+  "computed_at" text
 );
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_week_party_idx" ON vitrine."provincial_parties_salient_shadow_week" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_week_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_week" ("date_utc");
@@ -163,11 +163,11 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_week_date_montreal
 -- consommé par components/interactive/PartisCouvertureClient.tsx
 CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_month" (
   "party" text,
-  "date_utc" date,
-  "date_montreal_tz" date,
+  "date_utc" text,
+  "date_montreal_tz" text,
   "weighted_mentions" double precision,
   "weighted_tone" double precision,
-  "computed_at" timestamptz
+  "computed_at" text
 );
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_party_idx" ON vitrine."provincial_parties_salient_shadow_month" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_month" ("date_utc");
@@ -176,8 +176,8 @@ CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_date_montrea
 -- issues_score_day  (Athena : vitrine_datamart-issues_score_day)
 -- consommé par lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."issues_score_day" (
-  "date_montreal_tz" date,
-  "date_utc" date,
+  "date_montreal_tz" text,
+  "date_utc" text,
   "economy_and_labour" double precision,
   "rights_liberties_minorities_discrimination" double precision,
   "health_and_social_services" double precision,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS vitrine."issues_score_day" (
   "culture_and_nationalism" double precision,
   "pass" text,
   "issues_meta" text,
-  "tag" timestamptz
+  "tag" text
 );
 CREATE INDEX IF NOT EXISTS "issues_score_day_date_montreal_tz_idx" ON vitrine."issues_score_day" ("date_montreal_tz");
 CREATE INDEX IF NOT EXISTS "issues_score_day_date_utc_idx" ON vitrine."issues_score_day" ("date_utc");
@@ -200,8 +200,8 @@ CREATE INDEX IF NOT EXISTS "issues_score_day_date_utc_idx" ON vitrine."issues_sc
 -- issues_score_week  (Athena : vitrine_datamart-issues_score_week)
 -- consommé par lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."issues_score_week" (
-  "date_montreal_tz" date,
-  "date_utc" date,
+  "date_montreal_tz" text,
+  "date_utc" text,
   "economy_and_labour" double precision,
   "rights_liberties_minorities_discrimination" double precision,
   "health_and_social_services" double precision,
@@ -215,7 +215,7 @@ CREATE TABLE IF NOT EXISTS vitrine."issues_score_week" (
   "governments_and_governance" double precision,
   "culture_and_nationalism" double precision,
   "issues_meta" text,
-  "tag" timestamptz
+  "tag" text
 );
 CREATE INDEX IF NOT EXISTS "issues_score_week_date_montreal_tz_idx" ON vitrine."issues_score_week" ("date_montreal_tz");
 CREATE INDEX IF NOT EXISTS "issues_score_week_date_utc_idx" ON vitrine."issues_score_week" ("date_utc");
@@ -223,8 +223,8 @@ CREATE INDEX IF NOT EXISTS "issues_score_week_date_utc_idx" ON vitrine."issues_s
 -- issues_score_month  (Athena : vitrine_datamart-issues_score_month)
 -- consommé par lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx
 CREATE TABLE IF NOT EXISTS vitrine."issues_score_month" (
-  "date_montreal_tz" date,
-  "date_utc" date,
+  "date_montreal_tz" text,
+  "date_utc" text,
   "economy_and_labour" double precision,
   "rights_liberties_minorities_discrimination" double precision,
   "health_and_social_services" double precision,
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS vitrine."issues_score_month" (
   "governments_and_governance" double precision,
   "culture_and_nationalism" double precision,
   "issues_meta" text,
-  "tag" timestamptz
+  "tag" text
 );
 CREATE INDEX IF NOT EXISTS "issues_score_month_date_montreal_tz_idx" ON vitrine."issues_score_month" ("date_montreal_tz");
 CREATE INDEX IF NOT EXISTS "issues_score_month_date_utc_idx" ON vitrine."issues_score_month" ("date_utc");
@@ -247,12 +247,12 @@ CREATE INDEX IF NOT EXISTS "issues_score_month_date_utc_idx" ON vitrine."issues_
 -- consommé par lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx + app/edition/[key]/page.tsx
 CREATE TABLE IF NOT EXISTS vitrine."headline_events_4h" (
   "country_id" text,
-  "date_utc" date,
+  "date_utc" text,
   "time_interval_utc" text,
-  "date_montreal_tz" date,
+  "date_montreal_tz" text,
   "time_interval_montreal_tz" text,
   "event_id" text,
-  "event_rank" bigint,
+  "event_rank" integer,
   "event_label" text,
   "event_title_raw" text,
   "representative_url" text,
@@ -263,15 +263,15 @@ CREATE TABLE IF NOT EXISTS vitrine."headline_events_4h" (
   "score_us" double precision,
   "extracted_objects" text,
   "cluster_confidence" double precision,
-  "article_count" bigint,
-  "outlet_count" bigint,
-  "outlets_qc" bigint,
-  "total_outlets_qc" bigint,
+  "article_count" integer,
+  "outlet_count" integer,
+  "outlets_qc" integer,
+  "total_outlets_qc" integer,
   "media_ids" text,
   "media_ids_qc" text,
   "media_ids_roc" text,
-  "coverage_qc_in_can" bigint,
-  "coverage_can_in_qc" bigint,
+  "coverage_qc_in_can" integer,
+  "coverage_can_in_qc" integer,
   "intensity_tier" text,
   "title" text,
   "text" text,
@@ -279,17 +279,17 @@ CREATE TABLE IF NOT EXISTS vitrine."headline_events_4h" (
   "main_issue_text_fr" text,
   "main_issue_text_en" text,
   "target_region" text,
-  "event_rank_in_region" bigint,
-  "interval_convergence_score" bigint,
+  "event_rank_in_region" integer,
+  "interval_convergence_score" integer,
   "top_objects_divergence" text,
   "articles" text,
-  "tag" timestamptz,
+  "tag" text,
   "storyline_id" text,
   "media_ids_24h" text,
   "articles_24h" text,
   "score_qc_peak_24h" double precision,
-  "first_seen_utc" timestamptz,
-  "n_blocks_24h" bigint,
+  "first_seen_utc" text,
+  "n_blocks_24h" integer,
   "salience_index_qc" double precision,
   "salience_index_roc" double precision
 );
@@ -300,7 +300,7 @@ CREATE INDEX IF NOT EXISTS "headline_events_4h_date_montreal_tz_idx" ON vitrine.
 -- consommé par lib/data/polimetre.ts
 CREATE TABLE IF NOT EXISTS vitrine."polimetre_plus" (
   "country_id" text,
-  "week_end_date" date,
+  "week_end_date" text,
   "pledge_number" text,
   "pledge_text_fr" text,
   "verdict" text,

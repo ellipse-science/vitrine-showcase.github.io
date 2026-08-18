@@ -8,6 +8,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { readDatasetText } from "@/lib/data/source";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 
@@ -511,7 +512,7 @@ async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
   // ne l'a pas encore matérialisée localement, on dégrade en l'absence de
   // cartes satellites plutôt que de faire échouer toute la section.
   try {
-    const raw = await fs.readFile(ASSEMBLEE_DEPUTES_JSON_PATH, "utf8");
+    const raw = await readDatasetText("public/data/agora/agora_decideurs_qc_deputes.json");
     const rows = JSON.parse(raw) as DeputyAgoraRow[];
     return Array.isArray(rows) ? rows : [];
   } catch {
@@ -546,7 +547,7 @@ export async function loadAssemblee(
    *  la cadence de l'Assemblée, pas celle des éditions. */
   asOfIso?: string,
 ): Promise<AssembleeData | null> {
-  const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
+  const raw = await readDatasetText("public/data/agora/agora_decideurs_qc.json");
   const parsed = JSON.parse(raw) as AgoraRow[];
   if (!Array.isArray(parsed) || parsed.length === 0) return null;
   const allRows = asOfIso

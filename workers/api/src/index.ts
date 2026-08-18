@@ -31,6 +31,12 @@ import { isTargetHourInNY } from './schedule'
 interface Env {
   DATABASE_URL: string
   CACHE_TTL_SECONDS?: string
+  /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
+   *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
+   *  sinon tout déclenchement manuel qui ne tombe pas pile sur une heure de
+   *  New York, ce qui rend la synchro intestable onze heures sur douze.
+   *  Défini dans .dev.vars (non versionné), jamais en production. */
+  SYNC_FORCE?: string
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -59,6 +65,16 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
 const MAX_LIMIT = 5000
 const DEFAULT_LIMIT = 1000
 
+// Pas de conversion de types ici, et c'est voulu : le schéma stocke les
+// chaînes telles qu'Athena les publie (`text`), et les entiers en `integer`
+// plutôt qu'en `bigint`. L'aller-retour est donc fidèle au caractère près sans
+// que l'API n'ait à reformater quoi que ce soit.
+//
+// La version précédente typait les dates en `date`/`timestamptz` et tentait de
+// les restituer avec to_char. Impossible : la source mélange au moins trois
+// formes — « 2026-06-12 », « 2026-07-31T20:01:35Z », « 2025-05-28 16:13 ». Un
+// seul format de sortie ne pouvait pas les reproduire toutes.
+
 function json(body: unknown, init: ResponseInit = {}, ttl = 0): Response {
   const headers = new Headers(init.headers)
   headers.set('content-type', 'application/json; charset=utf-8')
@@ -82,7 +98,7 @@ export default {
     // d'hiver — pour que l'horaire reste fixe à New York sans intervention
     // semestrielle. Six d'entre eux ressortent ici sans rien faire.
     const now = new Date(event.scheduledTime)
-    if (!isTargetHourInNY(now)) {
+    if (env.SYNC_FORCE !== '1' && !isTargetHourInNY(now)) {
       console.log('déclenchement hors heure visée à New York — ignoré')
       return
     }
@@ -107,9 +123,18 @@ export default {
 
     // Le cache d'abord : c'est lui qui absorbe la charge. Une réponse servie
     // ici ne touche jamais Postgres.
+    //
+    // `Cache-Control: no-cache` court-circuite ce cache, selon la sémantique
+    // HTTP habituelle. Le build du site s'en sert : il veut les données du
+    // cycle courant, pas une réponse vieille de quatre heures. Sans cela, un
+    // correctif de format restait invisible au build jusqu'à expiration — ce
+    // qui est exactement ce qui s'est produit la première fois.
+    const noCache = (request.headers.get('cache-control') ?? '').includes('no-cache')
     const cache = caches.default
-    const cached = await cache.match(request)
-    if (cached) return cached
+    if (!noCache) {
+      const cached = await cache.match(request)
+      if (cached) return cached
+    }
 
     const sql = neon(env.DATABASE_URL)
     const segments = url.pathname.split('/').filter(Boolean)
@@ -203,7 +228,7 @@ export default {
           {},
           ttl,
         )
-        ctx.waitUntil(cache.put(request, response.clone()))
+        if (!noCache) ctx.waitUntil(cache.put(request, response.clone()))
         return response
       }
 
