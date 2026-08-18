@@ -246,6 +246,46 @@ const files = [
   ["month", "provincial_parties_salient_shadow_by_media_month.json", buildRowsByMedia(M, 13, "month")],
 ];
 
+// ── Série INTRA-JOURNÉE ──────────────────────────────────────────────────────
+// Six blocs de 4 h par jour, comme le raffineur en publie depuis
+// aws-refiners#355. Sans elle, l'onglet « Jour » n'a qu'un point par journée et
+// ne peut pas tracer une journée.
+//
+// La part de voix OSCILLE au fil de la journée sans dériver : c'est une part
+// (les cinq partis somment à 1), pas un cumul. Une courbe monotone donnerait
+// une fausse idée de ce que la mesure fait.
+const BLOCS = [0, 4, 8, 12, 16, 20];
+const intraday = [];
+const randIntra = rng(97);
+for (const date of D.slice(-8)) {
+  for (const h of BLOCS) {
+    const brut = {};
+    let total = 0;
+    for (const party of PARTIES) {
+      const base = sovFor(party, date, randIntra, 0);
+      // Un léger balancement propre au bloc, pour que la journée ait un relief.
+      const onde = 1 + 0.22 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party));
+      brut[party] = Math.max(0, base * onde);
+      total += brut[party];
+    }
+    for (const party of PARTIES) {
+      intraday.push({
+        party,
+        block_hour: h,
+        block_label: String(h).padStart(2, "0") + "h",
+        weighted_mentions: total > 0 ? Number((brut[party] / total).toFixed(6)) : 0,
+        weighted_tone: 0,
+        total_raw_score: Number((brut[party] * 100).toFixed(2)),
+        date_utc: date,
+        date_montreal_tz: date,
+        computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
+        threshold: 0.02,
+      });
+    }
+  }
+}
+files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday]);
+
 for (const [sub, name, rows] of files) {
   const dir = path.join(OUT_DIR, sub);
   await fs.mkdir(dir, { recursive: true });

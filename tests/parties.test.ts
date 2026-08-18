@@ -195,11 +195,25 @@ describe("buildChart — la course", () => {
     }
   });
 
-  it("étiquette l'axe horizontal avec la première et la dernière date", () => {
+  it("étiquette l'axe en jj/mm sur toute la période, jusqu'au scrutin", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
     const chart = buildChart(stats, dates, "overall");
-    expect(chart.xLabels[0].label).toBe("8 juin");
-    expect(chart.xLabels.at(-1)!.label).toBe("10 juin");
+    // L'axe se construit sur le TEMPS et non sur les dates publiées : il court
+    // jusqu'au scrutin, donc bien au-delà des trois jours de données.
+    expect(chart.xLabels.length).toBeGreaterThan(2);
+    for (const l of chart.xLabels) expect(l.label).toMatch(/^\d{2}\/\d{2}$/);
+    expect(chart.xLabels.at(-1)!.x).toBeGreaterThan(chart.xLabels[0].x);
+  });
+
+  it("étiquette la semaine en jours, y compris ceux à venir", () => {
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    const chart = buildChart(stats, dates, "week");
+    // Trois jours de données, mais l'axe montre la semaine entière jusqu'à son
+    // arrivée : c'est ce qui laisse voir le chemin restant.
+    expect(chart.xLabels.length).toBeGreaterThan(3);
+    for (const l of chart.xLabels) {
+      expect(["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."]).toContain(l.label);
+    }
   });
 });
 

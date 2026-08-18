@@ -135,6 +135,9 @@ type ShadowRow = {
   media_id?: string;
 };
 
+/** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
+type IntradayRow = ShadowRow & { block_hour: number; block_label: string };
+
 type Entry = { mentions: number; tone: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
@@ -701,6 +704,130 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  * LA TENDANCE, pas de lire une valeur au pixel près. Les valeurs, elles, sont
  * écrites en toutes lettres au bout de chaque ligne.
  */
+/** La course d'UNE JOURNÉE, tracée sur ses blocs de 4 h.
+ *
+ *  L'onglet « Jour » montrait en réalité les sept derniers jours : le raffineur
+ *  ne publiait qu'un relevé par journée, et une journée ne pouvait donc pas se
+ *  tracer. Depuis aws-refiners#355 il conserve ses six blocs (00h … 20h), les
+ *  mêmes que le sélecteur d'édition en tête du site.
+ *
+ *  L'axe couvre la journée ENTIÈRE, de minuit à 20h, même si la donnée s'arrête
+ *  au bloc courant : le vide à droite est ce qu'il reste à courir, exactement
+ *  comme la ligne d'arrivée des autres onglets.
+ */
+function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
+  if (rows.length === 0) return null;
+  const dernierJour = rows.map((r) => String(r.date_montreal_tz ?? r.date_utc)).sort().at(-1);
+  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc) === dernierJour);
+  const blocs = [...new Set(duJour.map((r) => Number(r.block_hour)))].sort((a, b) => a - b);
+  if (blocs.length <= 1) return null;
+
+  const plotW = CHART_W - CHART_PAD_R;
+  // 20h est le dernier bloc publié, donc la fin de l'axe : au-delà, le
+  // raffineur ne produit plus rien avant le reset de minuit.
+  const xAtH = (h: number) => (h / 20) * plotW;
+
+  const series: ChartSeries[] = parts.map((key) => {
+    const parBloc = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [Number(r.block_hour), Number(r.weighted_mentions) || 0]),
+    );
+    const hist = blocs.map((h) => parBloc.get(h) ?? 0);
+    const pts = blocs.map((h, i) => [xAtH(h), soloY(hist)[i]] as const);
+    const last = pts.at(-1)!;
+    return {
+      key,
+      label: PARTY_LABELS[key],
+      color: PARTY_COLORS[key],
+      inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
+      polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      lastX: Number(last[0].toFixed(2)),
+      lastY: Number(last[1].toFixed(2)),
+      labelY: Number(last[1].toFixed(2)),
+      lastPct: Math.round((hist.at(-1) ?? 0) * 100),
+    };
+  });
+
+  return {
+    series,
+    xLabels: [0, 4, 8, 12, 16, 20].map((h) => ({
+      label: `${String(h).padStart(2, "0")}h`,
+      x: Number(xAtH(h).toFixed(2)),
+    })),
+    finish: { x: Number(xAtH(20).toFixed(2)), label: "20h", sub: "fin du jour" },
+    width: CHART_W,
+    height: CHART_H,
+    tooShort: false,
+  };
+}
+
+const JOURS_COURTS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+
+/** Les repères de l'axe horizontal, propres à chaque onglet.
+ *
+ *  - `today`   : toutes les 4 h, soit les six blocs du pipeline (00h … 20h) —
+ *                les mêmes que le sélecteur d'édition en tête du site, plutôt
+ *                qu'un second vocabulaire du temps ;
+ *  - `week`    : les SEPT jours de la semaine, y compris ceux à venir ;
+ *  - `overall` : des dates en jj/mm, réparties jusqu'au scrutin.
+ *
+ *  Dans les trois cas les repères sont posés sur des instants, jamais sur les
+ *  dates publiées : c'est ce qui laisse voir le chemin qu'il reste à parcourir.
+ */
+function reperesAxe(
+  range: RangeKey,
+  t0: number,
+  tFin: number,
+  xAt: (t: number) => number,
+  axisDates: string[],
+): { label: string; x: number }[] {
+  const JOUR = 86_400_000;
+  const out: { label: string; x: number }[] = [];
+  const pousser = (t: number, label: string) => {
+    const x = xAt(t);
+    if (x >= -1 && x <= 101) out.push({ label, x: Number(x.toFixed(2)) });
+  };
+
+  if (range === "today") {
+    // Minuit du dernier jour couvert, puis un repère toutes les 4 h.
+    const dernier = axisDates.at(-1);
+    if (!dernier) return [];
+    const minuit = Date.parse(`${dernier}T00:00:00Z`);
+    for (let h = 0; h <= 20; h += 4) pousser(minuit + h * 3_600_000, `${String(h).padStart(2, "0")}h`);
+    return out;
+  }
+
+  if (range === "week") {
+    // Le lundi de la semaine d'arrivée, puis les sept jours.
+    const fin = new Date(tFin);
+    const versLundi = ((fin.getUTCDay() || 7) - 1) * JOUR;
+    const lundi = Date.parse(
+      `${new Date(fin.getTime() - versLundi).toISOString().slice(0, 10)}T00:00:00Z`,
+    );
+    // Du lundi JUSQU'À la ligne d'arrivée, jours à venir compris : c'est ce qui
+    // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
+    // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
+    // repère posé au-delà désignerait un moment qui ne sera jamais couru.
+    for (let t = lundi; t <= tFin + 1; t += JOUR) {
+      pousser(t, JOURS_COURTS[new Date(t).getUTCDay()]);
+    }
+    return out;
+  }
+
+  // `overall` : jusqu'à six dates en jj/mm, du début du suivi au scrutin.
+  const REPERES = 6;
+  const pas = (tFin - t0) / (REPERES - 1);
+  for (let i = 0; i < REPERES; i += 1) {
+    const d = new Date(t0 + i * pas);
+    const jj = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    pousser(t0 + i * pas, `${jj}/${mm}`);
+  }
+  return out;
+}
+
 /** Les ordonnées d'une piste, normalisées sur la PROPRE amplitude du parti.
  *
  *  Une marge de 15 % en haut et en bas évite que le tracé colle aux bords : une
@@ -770,37 +897,13 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
 
   spreadLabels(series);
 
-  // DES REPÈRES RÉGULIERS, et non les deux seules bornes.
+  // L'AXE SE CONSTRUIT SUR LE TEMPS, pas sur les dates présentes dans la donnée.
   //
-  // Deux dates aux extrémités disaient la fenêtre, mais pas la position : un
-  // creux au milieu de la courbe ne pouvait se dater qu'à l'estime. On place
-  // donc jusqu'à cinq repères, en sautant des jours quand la fenêtre est
-  // longue — au-delà, les étiquettes se chevauchent sur un axe de 100 unités.
-  //
-  // Le libellé suit l'échelle : sur une semaine, le JOUR DE LA SEMAINE se lit
-  // plus vite qu'une date (« mer. » plutôt que « 13 août ») ; au-delà, la date
-  // reste nécessaire, deux mercredis n'étant pas le même point.
-  const MAX_REPERES = 5;
-  const pas = Math.max(1, Math.ceil(n / MAX_REPERES));
-  const indices: number[] = [];
-  for (let i = 0; i < n; i += pas) indices.push(i);
-  // Le dernier point est toujours étiqueté : c'est « où on en est », le repère
-  // le plus regardé de la course.
-  if (indices.at(-1) !== n - 1) indices.push(n - 1);
-
-  const JOURS_COURTS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
-  const libelle = (iso: string) =>
-    range === "overall"
-      ? shortDateFr(iso)
-      : JOURS_COURTS[new Date(`${iso}T12:00:00Z`).getUTCDay()] ?? shortDateFr(iso);
-
-  const xLabels =
-    n <= 1
-      ? [{ label: shortDateFr(axisDates[0] ?? ""), x: 0 }]
-      : indices.map((i) => ({
-          label: libelle(axisDates[i]),
-          x: Number(xAtDate(axisDates[i]).toFixed(2)),
-        }));
+  // C'est ce qui permet d'étiqueter des jours À VENIR : sur la semaine, l'axe
+  // court jusqu'au vendredi même si la donnée s'arrête mercredi, et le lecteur
+  // voit ce qu'il reste à courir. Une version antérieure dérivait les repères
+  // des dates publiées, donc l'axe s'arrêtait avec elles.
+  const xLabels = reperesAxe(range, t0, but.t, xAt, axisDates);
 
   return {
     series,
@@ -873,7 +976,7 @@ function chiffresParlants(
   };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
+function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, chartJour?: ChartView | null): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
   const fenetre = fenetreDeLOnglet(range, dates.daily);
@@ -964,7 +1067,10 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     refLabel: cfg.refLabel,
     periodeLabel: libellePeriode(range, dates.daily),
     rows,
-    chart: buildChart(stats, dates, range),
+    // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
+    // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
+    // fine.
+    chart: (range === "today" && chartJour) || buildChart(stats, dates, range),
   };
 }
 
@@ -1057,6 +1163,14 @@ export async function loadParties(
       fs.readFile(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_month.json"), "utf8"),
     ]);
 
+    // La série intra-journée est FACULTATIVE : elle n'existe que depuis
+    // aws-refiners#355, et les archives antérieures n'en ont pas. Son absence
+    // fait retomber l'onglet « Jour » sur la courbe au jour le jour, plutôt que
+    // de casser tout le module.
+    const intradayRaw = await fs
+      .readFile(path.join(DATA_DIR, "day", "provincial_parties_salient_shadow_intraday.json"), "utf8")
+      .catch(() => null);
+
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
     const dayRows   = upTo(JSON.parse(dayRaw)   as ShadowRow[]);
@@ -1108,6 +1222,12 @@ export async function loadParties(
       }
     }
 
+    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
+    // pas encore deux blocs — un seul point ne dessine pas une journée.
+    const chartJour = intradayRaw
+      ? buildChartIntraday(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[], [...PARTY_KEYS])
+      : null;
+
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
@@ -1128,7 +1248,7 @@ export async function loadParties(
       medias,
       byMedia,
       ranges: {
-        today: buildRangeView(stats, "today", dates),
+        today: buildRangeView(stats, "today", dates, chartJour),
         week:  buildRangeView(stats, "week", dates),
         overall: buildRangeView(stats, "overall", dates),
       },
