@@ -1,5 +1,11 @@
 [
   {
+    "pr": 520,
+    "date": "2026-08-18T22:13:40Z",
+    "note": "Aucun changement pour le site : document interne de conception.",
+    "version": null
+  },
+  {
     "pr": 521,
     "date": "2026-08-18T21:31:33Z",
     "note": "Corrige un bug qui empêchait le module « L'alignement de l'Assemblée » de recevoir de nouvelles données depuis le 28 juillet. Aucun autre changement visible sur le site.",
