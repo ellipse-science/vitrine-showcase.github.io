@@ -6,6 +6,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { readDatasetText } from "@/lib/data/source";
 import { cache } from "react";
 
 import { editionLabel, editionSlot } from "@/lib/editions";
@@ -2033,7 +2034,7 @@ export type EditionRef = {
 export const listEditions = cache(async (): Promise<EditionRef[]> => {
   let raw: string;
   try {
-    raw = await fs.readFile(DATA_PATH, "utf8");
+    raw = await readDatasetText("public/data/headline-events.json");
   } catch {
     return [];
   }
@@ -2097,7 +2098,7 @@ export const listEditions = cache(async (): Promise<EditionRef[]> => {
 export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<HeadlineData | null> => {
   let raw: string;
   try {
-    raw = await fs.readFile(DATA_PATH, "utf8");
+    raw = await readDatasetText("public/data/headline-events.json");
   } catch {
     return null;
   }
@@ -2457,7 +2458,7 @@ type FallbackEntry = { topObject: string; context: string; url: string | null };
 async function loadFallbackIssueContent(editionKey?: string): Promise<Map<string, FallbackEntry>> {
   const map = new Map<string, FallbackEntry>();
   let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return map; }
+  try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return map; }
   const allRaw = eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey);
 
   const unique = uniqueQcEvents(allRaw);
@@ -2574,7 +2575,7 @@ function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
 
 async function loadArticlesByIssue(editionKey?: string): Promise<Map<string, IssueMedia>> {
   let rawEvents: string;
-  try { rawEvents = await fs.readFile(DATA_PATH, "utf8"); } catch { return new Map(); }
+  try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return new Map(); }
   return buildIssueMedia(eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey));
 }
 

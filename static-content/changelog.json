@@ -1,5 +1,53 @@
 [
   {
+    "pr": 519,
+    "date": "2026-08-18T20:17:52Z",
+    "note": "Le diagramme public des pipelines montre maintenant deux traitements automatiques qui tournaient déjà sans y apparaître. L'un publie chaque semaine un rapport de surveillance du pipeline, l'autre repère les promesses gouvernementales. Rien ne change dans les données ni dans l'affichage du site.",
+    "version": null
+  },
+  {
+    "pr": 518,
+    "date": "2026-08-18T19:27:57Z",
+    "note": "Aucune — décision interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 517,
+    "date": "2026-08-18T19:22:39Z",
+    "note": "Aucune — documentation interne à l'offre API, non annoncée publiquement.",
+    "version": null
+  },
+  {
+    "pr": 516,
+    "date": "2026-08-18T19:16:33Z",
+    "note": "Aucune — correctif d'outillage.",
+    "version": null
+  },
+  {
+    "pr": 513,
+    "date": "2026-08-18T19:10:05Z",
+    "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
+    "version": null
+  },
+  {
+    "pr": 512,
+    "date": "2026-08-18T18:36:08Z",
+    "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",
+    "version": null
+  },
+  {
+    "pr": 511,
+    "date": "2026-08-18T18:03:19Z",
+    "note": "Aucune — correctif d'infrastructure ; le site retrouve simplement la fraîcheur qu'il avait.",
+    "version": "2.24.0-beta.2"
+  },
+  {
+    "pr": 508,
+    "date": "2026-08-18T17:49:30Z",
+    "note": "Aucune — l'API n'est pas encore annoncée, et rien ne change pour un visiteur du site.",
+    "version": null
+  },
+  {
     "pr": 507,
     "date": "2026-08-18T14:26:21Z",
     "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",

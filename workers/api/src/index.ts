@@ -26,11 +26,25 @@
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
+import { authenticate, recordUsage } from './auth'
+import { handleAdmin } from './admin'
 import { isTargetHourInNY } from './schedule'
 
 interface Env {
   DATABASE_URL: string
+  /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
+  ACCESS_TEAM_DOMAIN?: string
+  /** `aud` de l'application Access devant /admin. Lie le jeton à CETTE
+   *  application : sans lui, un jeton émis pour le miroir dev ouvrirait
+   *  l'administration. */
+  ACCESS_AUD?: string
   CACHE_TTL_SECONDS?: string
+  /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
+   *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
+   *  sinon tout déclenchement manuel qui ne tombe pas pile sur une heure de
+   *  New York, ce qui rend la synchro intestable onze heures sur douze.
+   *  Défini dans .dev.vars (non versionné), jamais en production. */
+  SYNC_FORCE?: string
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -59,6 +73,16 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
 const MAX_LIMIT = 5000
 const DEFAULT_LIMIT = 1000
 
+// Pas de conversion de types ici, et c'est voulu : le schéma stocke les
+// chaînes telles qu'Athena les publie (`text`), et les entiers en `integer`
+// plutôt qu'en `bigint`. L'aller-retour est donc fidèle au caractère près sans
+// que l'API n'ait à reformater quoi que ce soit.
+//
+// La version précédente typait les dates en `date`/`timestamptz` et tentait de
+// les restituer avec to_char. Impossible : la source mélange au moins trois
+// formes — « 2026-06-12 », « 2026-07-31T20:01:35Z », « 2025-05-28 16:13 ». Un
+// seul format de sortie ne pouvait pas les reproduire toutes.
+
 function json(body: unknown, init: ResponseInit = {}, ttl = 0): Response {
   const headers = new Headers(init.headers)
   headers.set('content-type', 'application/json; charset=utf-8')
@@ -82,7 +106,7 @@ export default {
     // d'hiver — pour que l'horaire reste fixe à New York sans intervention
     // semestrielle. Six d'entre eux ressortent ici sans rien faire.
     const now = new Date(event.scheduledTime)
-    if (!isTargetHourInNY(now)) {
+    if (env.SYNC_FORCE !== '1' && !isTargetHourInNY(now)) {
       console.log('déclenchement hors heure visée à New York — ignoré')
       return
     }
@@ -101,20 +125,92 @@ export default {
     const url = new URL(request.url)
     const ttl = Number(env.CACHE_TTL_SECONDS ?? '14400')
 
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+
+    // /admin d'abord : protégé par Cloudflare Access, jamais mis en cache, et
+    // servi avant toute logique de clé d'API — un administrateur n'a pas de
+    // clé, il a une identité.
+    const seg = url.pathname.split('/').filter(Boolean)
+    if (seg[0] === 'admin') {
+      const sqlAdmin = neon(env.DATABASE_URL)
+      const res = await handleAdmin(request, sqlAdmin, seg, env)
+      res.headers.set('cache-control', 'no-store')
+      return res
+    }
+
+    const isSync = seg[0] === 'v1' && seg[1] === 'sync'
+    if (!isSync && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
     // Le cache d'abord : c'est lui qui absorbe la charge. Une réponse servie
     // ici ne touche jamais Postgres.
+    //
+    // `Cache-Control: no-cache` court-circuite ce cache, selon la sémantique
+    // HTTP habituelle. Le build du site s'en sert : il veut les données du
+    // cycle courant, pas une réponse vieille de quatre heures. Sans cela, un
+    // correctif de format restait invisible au build jusqu'à expiration — ce
+    // qui est exactement ce qui s'est produit la première fois.
+    const noCache = (request.headers.get('cache-control') ?? '').includes('no-cache')
     const cache = caches.default
-    const cached = await cache.match(request)
-    if (cached) return cached
+    if (!noCache) {
+      const cached = await cache.match(request)
+      if (cached) return cached
+    }
 
     const sql = neon(env.DATABASE_URL)
     const segments = url.pathname.split('/').filter(Boolean)
 
     try {
+      // POST /v1/sync — recharge Postgres depuis les JSON publiés, à la demande.
+      //
+      // POURQUOI CETTE ROUTE EXISTE. Le cron seul ne suffit pas : refresh-data
+      // publie les JSON puis pousse sur `prod`, ce qui déclenche le
+      // déploiement dans la minute. Si la synchro n'a lieu que sur son propre
+      // horaire, le build lit l'API à un moment où elle contient encore le
+      // cycle précédent — c'est la régression observée le 2026-08-18.
+      //
+      // refresh-data appelle donc cette route APRÈS avoir commité sur main et
+      // AVANT de pousser sur `prod`. L'ordre devient garanti au lieu d'espéré,
+      // et le cron ne sert plus que de filet.
+      //
+      // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
+      // c'est une écriture qui remplace le contenu de quinze tables.
+      if (segments[0] === 'v1' && segments[1] === 'sync') {
+        if (request.method !== 'POST') {
+          return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
+        }
+        const auth = await authenticate(sql, request, 'sync')
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        // Par TRANCHES : un gestionnaire `fetch` n'a que 10 ms de CPU sur le
+        // plan gratuit, là où le cron en a 30 s. Quatre tables par appel
+        // passent confortablement ; l'appelant rappelle avec `next` jusqu'à
+        // recevoir null.
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
+        const limit = Math.min(
+          Math.max(1, Number(url.searchParams.get('limit') ?? '4') || 4),
+          15,
+        )
+
+        const started = Date.now()
+        const { synced, failed, total, next } = await runSync(env.DATABASE_URL, {
+          offset,
+          limit,
+        })
+        return json(
+          {
+            synced: synced.length,
+            tables: synced,
+            failed: failed.map((f) => f.table),
+            offset,
+            total,
+            next,
+            seconds: Math.round((Date.now() - started) / 1000),
+          },
+          { status: failed.length > 0 ? 207 : 200 },
+        )
+      }
+
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
@@ -154,6 +250,13 @@ export default {
             available: Object.keys(DATASETS),
           })
         }
+
+        // Les données sont le produit : la lecture d'un jeu demande une clé.
+        // /v1/health et /v1/datasets restent ouverts — l'un sert à surveiller,
+        // l'autre à découvrir ce qui existe, et ni l'un ni l'autre ne livre de
+        // donnée.
+        const auth = await authenticate(sql, request, name)
+        if (!auth.ok) return problem(auth.status, auth.error)
 
         const limit = Math.min(Number(url.searchParams.get('limit') ?? DEFAULT_LIMIT) || DEFAULT_LIMIT, MAX_LIMIT)
         const offset = Math.max(Number(url.searchParams.get('offset') ?? '0') || 0, 0)
@@ -203,7 +306,13 @@ export default {
           {},
           ttl,
         )
-        ctx.waitUntil(cache.put(request, response.clone()))
+        ctx.waitUntil(recordUsage(sql, auth.key.id, name, rows.length))
+
+        // PAS de mise en cache partagée ici : la réponse dépend de la clé
+        // (portées, quotas), et `caches.default` est commun à tous les
+        // appelants. Une réponse servie à une clé ne doit jamais être resservie
+        // à une autre. Le cache reste en place pour /v1/datasets, qui ne
+        // dépend d'aucune clé.
         return response
       }
 

@@ -30,9 +30,29 @@ const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 
 /** Postgres type for a column, inferred from every non-null value seen.
  *
- *  Volontairement conservateur : au moindre doute on élargit (int → numeric →
- *  text). Une colonne trop large ne casse rien ; une colonne trop étroite fait
- *  échouer le chargement à 4 h du matin. */
+ *  DEUX RÈGLES APPRISES EN COMPARANT L'API AUX FICHIERS PUBLIÉS :
+ *
+ *  1. LES CHAÎNES RESTENT DU `text`, y compris les dates. Une colonne typée
+ *     `date` ou `timestamptz` perd la forme LEXICALE d'origine : Athena publie
+ *     tantôt « 2026-06-12 », tantôt « 2026-07-31T20:01:35Z », tantôt
+ *     « 2025-05-28 16:13 ». Postgres normalise, le pilote renvoie un ISO
+ *     complet, et le fichier ne se retrouve plus. Comme les loaders du site
+ *     analysent ces chaînes eux-mêmes, l'aller-retour doit être fidèle au
+ *     caractère près. En `text`, il l'est — et un filtre de plage de dates
+ *     fonctionne encore, l'ordre lexicographique coïncidant avec l'ordre
+ *     chronologique sur toutes ces formes.
+ *
+ *  2. LES ENTIERS PRENNENT `integer`, PAS `bigint`. Un `bigint` dépasse la
+ *     plage sûre de JavaScript, donc le pilote le renvoie en CHAÎNE : 231
+ *     devenait « 231 ». On ne passe à `bigint` que si une valeur observée sort
+ *     de la plage d'`integer`, auquel cas la fidélité numérique primerait.
+ *
+ *  Volontairement conservateur : au moindre doute on élargit. Une colonne trop
+ *  large ne casse rien ; une colonne trop étroite fait échouer le chargement à
+ *  4 h du matin.
+ */
+const INT4_MAX = 2147483647;
+
 function inferType(values) {
   const seen = values.filter((v) => v !== null && v !== undefined && v !== "");
   if (seen.length === 0) return "text"; // aucune donnée : on ne devine pas
@@ -40,17 +60,11 @@ function inferType(values) {
   if (seen.every((v) => typeof v === "boolean")) return "boolean";
 
   if (seen.every((v) => typeof v === "number")) {
-    return seen.every((v) => Number.isInteger(v)) ? "bigint" : "double precision";
+    if (!seen.every((v) => Number.isInteger(v))) return "double precision";
+    return seen.every((v) => Math.abs(v) <= INT4_MAX) ? "integer" : "bigint";
   }
 
-  if (seen.every((v) => typeof v === "string")) {
-    // Dates ISO (2026-08-17) et horodatages (2026-08-17T12:04:00Z)
-    if (seen.every((v) => /^\d{4}-\d{2}-\d{2}$/.test(v))) return "date";
-    if (seen.every((v) => /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v))) {
-      return "timestamptz";
-    }
-  }
-
+  // Tout le reste — dates comprises — reste du texte : cf. règle 1 ci-dessus.
   return "text";
 }
 
