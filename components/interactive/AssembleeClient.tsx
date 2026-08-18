@@ -22,7 +22,7 @@ function SourceTip() {
       {open && (
         <span className="assemblee-info-bubble">
           Les données proviennent des transcriptions officielles du Journal des débats de l&apos;Assemblée nationale.
-          Leur publication peut prendre quelques semaines après les séances — la date affichée reflète la dernière version disponible.
+          Leur publication peut prendre quelques semaines après les séances. La date affichée reflète la dernière version disponible.
         </span>
       )}
     </button>
@@ -87,7 +87,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
             type="button"
             className="ass-easter-btn"
             onClick={() => setPlaying(true)}
-            aria-label="Easter egg : jeu de billard"
+            aria-label="Easter egg&nbsp;: jeu de billard"
             title="🎱"
           >
             🎱

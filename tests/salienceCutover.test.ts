@@ -233,9 +233,9 @@ describe("centile réel de l'infobulle", () => {
   });
   it("le cadrage bascule à la médiane pour garder un chiffre parlant", () => {
     expect(hintFromCentile(T.tresEleve, T, "québécoises"))
-      .toBe("Sur les 24 dernières heures, elle dépasse environ 80 % des Unes québécoises de l’année.");
+      .toBe("Sur les 24 dernières heures, elle dépasse environ 80 % des Unes québécoises de l’année.");
     expect(hintFromCentile(T.faible, T, "québécoises"))
-      .toBe("Sur les 24 dernières heures, environ 95 % des Unes québécoises de l’année sont plus saillantes.");
+      .toBe("Sur les 24 dernières heures, environ 95 % des Unes québécoises de l’année sont plus saillantes.");
   });
   // A9 (#430) — GARDE DE COHÉRENCE. Toute phrase de distribution doit nommer ses
   // TROIS composantes : la portée (sur quoi on situe), la population, la
@@ -258,7 +258,7 @@ describe("centile réel de l'infobulle", () => {
     }
   });
   it("borne à [1, 99] — « moins saillante que 100 % » serait faux, elle fait partie du lot", () => {
-    expect(hintFromCentile(T.extreme * 10, T, "p")).toContain("99 %");
-    expect(hintFromCentile(0, T, "p")).toContain("99 %");
+    expect(hintFromCentile(T.extreme * 10, T, "p")).toContain("99 %");
+    expect(hintFromCentile(0, T, "p")).toContain("99 %");
   });
 });

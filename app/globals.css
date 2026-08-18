@@ -865,6 +865,62 @@
     color: var(--ink-softer);
   }
 
+  /* Avis d'indisponibilité du module Partis (aws-refiners#223).
+     Même idiome que `.archive-notice` — pastille cordovan, filets fins, aucun
+     aplat ni ombre — mais NON collant : il appartient au module, pas à la page,
+     et n'a donc pas à suivre le lecteur au défilement. Il se place dans le flux,
+     entre le titre et le pupitre. */
+  .partis-avis {
+    margin: 14px 0 18px;
+    border-top: 2px solid var(--cordovan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cordovan) 35%, transparent);
+    background: color-mix(in srgb, var(--cordovan) 8%, var(--paper-deep));
+    padding: 12px 18px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px 24px;
+    flex-wrap: wrap;
+  }
+  .partis-avis-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    /* `min-width: 0` : sans lui la phrase refuse de se couper et pousse le lien
+       hors de la bande sur les largeurs intermédiaires (cf. archive-notice). */
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+  .partis-avis-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 4px 9px;
+    line-height: 1.2;
+  }
+  .partis-avis-body { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .partis-avis-lien {
+    display: inline-block;
+    flex: 0 0 auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+  }
+  .partis-avis-lien:hover { color: var(--ink); }
+
   .archive-pager {
     display: flex;
     align-items: center;
@@ -4643,6 +4699,751 @@
     height: auto;
     overflow: visible;
   }
+
+  /* ── La course : toutes les lignes sur une échelle commune ─────────────
+     Le SVG ne porte que la géométrie et s'étire librement en largeur
+     (preserveAspectRatio="none"). Tout le texte est en HTML posé par-dessus,
+     positionné en pourcentage — donc net à toutes les tailles, là où du texte
+     dans un SVG étiré serait déformé. */
+  /* Le pupitre — le filet qui rassemble la manchette, les deux platines, la
+     console et le fader en UN poste de travail. Sans fond : c'est un contour,
+     et il laisse le châssis de la console ressortir à l'intérieur. */
+  .pupitre {
+    border: 1px solid var(--rule);
+    padding: 8px 30px 30px;
+    margin-top: 26px;
+  }
+  /* La marque d'aide vit sur le PUPITRE, pas dans le titre : ajoutée au titre,
+     elle le faisait déborder sur deux lignes. */
+  .pupitre-aide { display: flex; justify-content: flex-end; }
+  .pupitre .manchette-zone { margin-top: 10px; }
+  /* Une DÉLIMITATION LÉGÈRE entre la manchette et la table de mix : le filet
+     dit qu'on change d'objet — d'une phrase à un instrument — sans dire qu'on
+     change de module. Court et centré, pas pleine largeur : un filet qui
+     traverse tout séparerait au lieu d'articuler. */
+  .pupitre .regie {
+    margin-top: 26px;
+    padding-top: 26px;
+    position: relative;
+  }
+  .pupitre .regie::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    border-top: 0.5px solid var(--rule);
+  }
+
+  /* HAUTEUR RÉSERVÉE pour la manchette. Elle fait deux lignes sur « tous les
+     médias » et trois dès qu'un média est choisi (mesuré : 62 px contre 98).
+     Sans réserve, bouger le fader faisait sauter toute la console.
+     La réserve est portée par une ZONE qui enveloppe le paragraphe, jamais par
+     le paragraphe lui-même : `display: grid` sur un <p> transforme chacun de
+     ses enfants inline en cellule, et la phrase se répand alors sur une
+     colonne. La font-size sert seulement au calcul en `em`. */
+  .manchette-zone {
+    /* La marge haute appartient à la ZONE, pas au paragraphe : à l'intérieur,
+       elle s'ajoutait à la hauteur du texte et faisait déborder la réserve — le
+       décalage résiduel de 12 px venait de là. */
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    min-height: calc(3 * 1.45em);
+  }
+
+  /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
+     module après son titre, centré, avec de l'air autour — c'est elle qui
+     porte la réponse, l'instrument ne fait que la prouver. */
+  .manchette {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+    /* Même famille, même interligne et même couleur que `.une-main .dek`, le
+       chapeau principal du site : Playfair Display en normale, `--ink-soft`,
+       l'accent porté par le POIDS et non par un changement de police. Plus
+       grand que le dek d'origine (19 px) parce que c'est la phrase-clé du
+       module, mais dans la même famille. */
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: -0.1px;
+    color: var(--ink-soft);
+    text-wrap: balance;
+  }
+  .manchette b { font-weight: 700; color: var(--ink); }
+  .manchette-chiffre { white-space: nowrap; }
+  /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
+     bien au-dessus. */
+  /* Le chiffre du média prend la couleur de son écart, comme les segments. */
+  .manchette-chiffre.sur      { color: var(--amber); }
+  .manchette-chiffre.sur-fort { color: var(--red); }
+  .manchette-chiffre.sous     { color: var(--green); }
+
+  /* La régie : platine — console — platine. Les deux plateaux occupent
+     l'espace qui restait vide de part et d'autre des vumètres, et la console
+     peut donc s'élargir. */
+  .regie {
+    display: grid;
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
+    align-items: start;
+    gap: 26px;
+    margin-top: 26px;
+  }
+
+  .platine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 26px;
+  }
+  .platine-cote {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+  /* Le plateau : des cercles concentriques à l'encre, pas un objet en volume. */
+  .platine-plateau {
+    position: relative;
+    width: 138px;
+    height: 138px;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background:
+      repeating-radial-gradient(circle at 50% 50%,
+        transparent 0 6px, color-mix(in srgb, var(--rule-faint) 55%, transparent) 6px 7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .platine.vide .platine-plateau { opacity: 0.45; }
+  /* L'arc que parcourt l'aiguille — sans lui, sa position ne se rapporte à
+     rien. Deux traits aux extrémités : 0 % à gauche, 50 % à droite. */
+  .platine-plateau::before,
+  .platine-plateau::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    width: 1px;
+    height: 9px;
+    background: var(--rule);
+    transform-origin: 50% 55px;
+  }
+  .platine-plateau::before { transform: rotate(-52deg); }
+  .platine-plateau::after  { transform: rotate(52deg); }
+
+  .platine-axe {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  /* L'aiguille porte la part de voix : un tour vaut 50 %, la même échelle que
+     les vumètres — les deux lectures ne peuvent donc pas se contredire. */
+  .platine-aiguille {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: 2px;
+    height: 58px;
+    margin-left: -1px;
+    transform-origin: 50% 100%;
+    background: var(--party);
+  }
+  .platine-valeur {
+    position: absolute;
+    bottom: 22px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .platine-valeur b { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
+
+  .platine-nom {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  /* PROSE, donc police de lecture : le design language réserve IBM Plex Mono
+     aux étiquettes, toujours en capitales. Une phrase en monospace bas-de-casse
+     y contrevient. Même règle pour .console-vide et .course-vide. */
+  .platine-vide-txt {
+    margin: 0;
+    max-width: 140px;
+    text-align: center;
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
+  }
+
+  .platine-donnees { margin: 0; width: 100%; max-width: 172px; }
+  .platine-donnees > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 0.5px solid var(--rule-faint);
+  }
+  .platine-donnees > div:last-child { border-bottom: none; }
+  .platine-donnees dt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
+  .platine-donnees dd {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 14px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .platine-donnees dd span {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-softer);
+  }
+  .platine-donnees dd.haut { color: var(--red); }
+  .platine-donnees dd.bas  { color: var(--green); }
+
+  /* La table de mix est un APPAREIL : elle a son châssis. Fond `--paper-deep`,
+     le jeton que le design language réserve aux encadrés. Les platines, elles,
+     restent dehors — ce sont des appareils distincts dans une régie. */
+  .console {
+    /* Hauteur d'UN segment, déduite de la piste et des 19 gouttières. Sert aux
+       graduations, qui doivent tomber sur les frontières entre segments. */
+    --seg-h: calc((var(--piste) - 19 * var(--seg-gap)) / 20);
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: 20px 22px 24px;
+    margin-top: 4px;
+    --piste: 250px;   /* hauteur du vumètre */
+    --seg-gap: 3px;
+    /* Largeur d'une tranche — FIXE (voir plus bas), et calibrée pour que la
+       console TIENNE dans sa colonne. Budget : colonne centrale 548 px, moins
+       44 de rembourrage du châssis, moins 46 de graduations et 20 de gouttière
+       → 438 px pour 5 tranches et 4 écarts. 5×72 + 4×16 = 424, il reste 14. */
+    --tranche: 72px;
+    --gradu: 46px;    /* largeur de la colonne de graduations */
+    --gradu-gap: 20px;
+  }
+
+  /* La console et ses graduations, côte à côte. */
+  .console-corps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--gradu-gap);
+    max-width: none;
+    margin: 0 auto;
+    /* Compense la colonne de graduations, à droite : sans ce décalage, centrer
+       le bloc entier décentre les VUMÈTRES, qui sont ce que l'œil lit. */
+    padding-left: calc(var(--gradu) + var(--gradu-gap));
+  }
+
+  .console-tranches {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 16px;
+    /* Largeur au CONTENU : réserver une largeur fixe laisserait les
+       graduations flotter loin des vumètres qu'elles annoncent. */
+    flex: 0 0 auto;
+  }
+
+  /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
+  .console-tranche { position: relative; }
+  .console-charge {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    font-weight: 500;
+    color: var(--cordovan);
+  }
+  .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
+  /* Le ruban d'un canal coupé perd sa couleur de parti : il n'est plus une
+     identité qui joue, seulement une tranche présente. */
+  .console-tranche.coupee .console-ruban-nom {
+    background: transparent;
+    color: var(--ink-softer);
+    border: 1px solid var(--rule);
+  }
+  .console-sourdine {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+
+  /* Largeur FIXE, et non `flex: 1 1 0`. Dans un conteneur dimensionné par son
+     contenu, une base de 0 sans espace libre à répartir fait retomber chaque
+     tranche sur la largeur de son TEXTE : « PCQ » sortait à 70 px quand « QS »
+     en faisait 45. Mesuré. */
+  .console-tranche {
+    order: var(--ordre);
+    flex: none;
+    width: var(--tranche);
+    min-width: 0;
+    display: grid;
+    grid-template-rows: var(--piste) auto auto;
+    align-items: end;
+    justify-items: center;
+    row-gap: 9px;
+  }
+
+  /* Le vumètre : une pile de segments, du bas vers le haut. */
+  .console-vumetre {
+    position: relative;
+    width: 100%;
+    height: var(--piste);
+    display: flex;
+    flex-direction: column;
+    gap: var(--seg-gap);
+    padding: 0;
+  }
+  .console-vumetre .seg {
+    flex: 1 1 0;
+    min-height: 3px;
+    /* Éteint : le segment existe, mais il ne s'allume pas. C'est ce contraste
+       plein/vide qui fait lire l'échelle, pas seulement la hauteur. Assombri
+       depuis que la console a un fond `--paper-deep`, sur lequel l'ancien
+       `--rule-faint` disparaissait presque. */
+    background: color-mix(in srgb, var(--rule) 62%, transparent);
+  }
+  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau, et elle se lit DANS la
+     colonne : vert jusqu'à la moyenne du parti, ambre au-dessus, rouge bien
+     au-dessus. La frontière verte marque donc, sans repère supplémentaire,
+     l'endroit exact où ce média dépasse l'ordinaire de ce parti. */
+  .console-vumetre .seg.on.green { background: var(--green); }
+  .console-vumetre .seg.on.amber { background: var(--amber); }
+  .console-vumetre .seg.on.red   { background: var(--red); }
+  /* Sourdine : deux segments GRIS en bas, et rien d'autre. La tranche reste
+     là — un canal muet se voit, il ne disparaît pas. Gris et non vert : le vert
+     appartient à l'échelle des canaux qui jouent. */
+  .console-vumetre .seg.on.mute { background: var(--ink-softer); }
+
+  /* Le ruban d'identité — l'adhésif de couleur d'une tranche de mixeur. */
+  .console-ruban-nom {
+    display: block;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    background: var(--party);
+    color: var(--paper);
+    text-align: center;
+    padding: 5px 4px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+  }
+
+  /* Graduations : posées en absolu sur la hauteur du vumètre, pour tomber
+     exactement en face du niveau qu'elles annoncent. */
+  .console-graduations {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: var(--gradu);
+    height: var(--piste);
+    flex: none;
+  }
+  .console-graduations li {
+    position: absolute;
+    left: 0;
+    /* Position = sommet du n-ième segment : n hauteurs de segment, plus les
+       (n−1) gouttières intercalées. Une position en pourcentage de la piste
+       ignorerait ces gouttières et décalerait les repères du milieu. */
+    bottom: calc(
+      var(--n) * var(--seg-h) + max(var(--n) - 1, 0) * var(--seg-gap)
+    );
+    transform: translateY(50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+  /* Le partage égal à cinq — la seule graduation qui veut dire quelque chose
+     en soi, donc la seule appuyée. */
+  .console-graduations b { color: var(--ink); font-weight: 500; }
+
+  .console-doute {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    max-width: 620px;
+    margin: 28px auto 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    text-align: left;
+  }
+  .console-doute b { color: var(--ink); font-weight: 700; }
+  .console-doute-marque {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--cordovan);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cordovan);
+    line-height: 1;
+  }
+
+  .console-vide {
+    padding: 30px 0;
+    text-align: center;
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
+  }
+
+  /* ── Le fader : choisir la source qu'on écoute ──────────────────────────
+     Un curseur, pas un menu : sur une console on pousse, on ne déroule pas.
+     L'input natif porte l'interaction (souris, clavier, tactile) ; il est rendu
+     transparent et les crans sont dessinés dessous. */
+  /* Pas de filet au-dessus : le fader appartient au même appareil que la
+     console, et un trait les séparait en deux blocs. L'écart suffit. */
+  .fader {
+    max-width: 620px;
+    margin: 38px auto 0;
+  }
+  /* « Source » est SOUS le curseur : c'est une étiquette d'appareil, pas un
+     titre. Centrée, discrète, elle nomme la commande sans la précéder. */
+  .fader-label {
+    display: block;
+    margin-top: 14px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+
+  .fader-piste { position: relative; height: 40px; --pouce: 15px; }
+
+  /* La POIGNÉE NATIVE est la tirette. Elle est visible et stylée, pas cachée
+     derrière un faux curseur dessiné : c'est elle qui suit le doigt ou la
+     souris pendant le glissement, et elle apporte gratuitement le clavier, le
+     tactile et l'accessibilité. */
+  .fader-input {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+    height: 30px;
+    margin: 0;
+    z-index: 2;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: grab;
+  }
+  .fader-input:active { cursor: grabbing; }
+
+  .fader-input::-webkit-slider-runnable-track { height: 30px; background: transparent; }
+  .fader-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--pouce);
+    height: 30px;
+    background: var(--ink);
+    border: none;
+    border-radius: 0;
+    cursor: grab;
+  }
+  .fader-input::-moz-range-track { height: 30px; background: transparent; }
+  .fader-input::-moz-range-thumb {
+    width: var(--pouce);
+    height: 30px;
+    background: var(--ink);
+    border: none;
+    border-radius: 0;
+    cursor: grab;
+  }
+  /* Une encoche claire au milieu de la tirette — le repère qu'on trouve sur
+     les vraies tirettes de console. */
+  .fader-input::-webkit-slider-thumb { box-shadow: inset 0 0 0 1px var(--ink), inset 0 14px 0 -13px var(--paper); }
+  .fader-input::-moz-range-thumb { box-shadow: inset 0 14px 0 -13px var(--paper); }
+
+  .fader-input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+  .fader-input:focus-visible::-moz-range-thumb { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
+  .fader-crans { position: absolute; inset: 0; pointer-events: none; }
+  /* Le rail */
+  .fader-crans::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 10px;
+    height: 2px;
+    background: var(--rule);
+  }
+  .fader-cran {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+  }
+  /* Les crans ne sont plus que des GRADUATIONS : la tirette est la poignée
+     native, et non le cran actif grossi comme auparavant. */
+  .fader-cran i {
+    display: block;
+    width: 1px;
+    height: 22px;
+    background: var(--rule);
+  }
+  .fader-cran b {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-softer);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  .fader-cran.actif i { background: var(--ink-soft); }
+  .fader-cran.actif b { color: var(--ink); font-weight: 500; }
+  /* Le cran « tous » est la position de repos du crossfader : plus haut et
+     plus marqué que les autres, pour se retrouver sans regarder. */
+  .fader-cran.tous i { height: 30px; margin-top: -4px; width: 2px; background: var(--ink-softer); }
+  .fader-cran.tous b { letter-spacing: 0.18em; color: var(--ink-soft); }
+  .fader-cran.tous.actif i { background: var(--ink); }
+
+  @media (max-width: 768px) {
+    .fader-cran b { font-size: 8px; }
+  }
+
+  /* La course vit DANS le pupitre : plus de filet lourd, seulement de l'air. */
+  .partis-course { margin-top: 40px; }
+
+  /* ── La tendance : épurée jusqu'à la direction ────────────────────────────
+     Ni grille, ni graduations, ni fond dégradé — l'objectif est de VOIR une
+     direction, pas de lire une valeur au pixel près. Les valeurs sont écrites
+     au bout de chaque ligne, là où l'œil arrive naturellement. */
+  .course-tete {
+    margin: 0 0 22px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    font-weight: 500;
+  }
+
+  .course-figure { margin: 0; }
+  .course-cadre { position: relative; }
+  .course-svg {
+    display: block;
+    width: 100%;
+    aspect-ratio: 100 / 26;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* La ligne d'ARRIVÉE — cordovan, l'accent unique du site. Le vide à sa
+     gauche est ce qu'il reste à courir. */
+  .course-arrivee { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
+  .course-arrivee-label {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding-bottom: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .course-arrivee-label b { font-weight: 500; letter-spacing: 0.1em; }
+
+  .course-point {
+    position: absolute;
+    z-index: 2;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .course-point.shadow { opacity: 0.45; }
+
+  .course-bout {
+    position: absolute;
+    z-index: 2;
+    transform: translate(9px, -50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .course-bout b {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .course-bout.shadow { opacity: 0.5; }
+
+  .course-x { position: relative; height: 14px; margin-top: 12px; }
+  .course-x span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    white-space: nowrap;
+  }
+  .course-x span:first-child { transform: none; }
+
+  .course-vide {
+    padding: 28px 0;
+    text-align: center;
+    line-height: 1.45;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
+  }
+
+
+  /* La régie s'empile bien AVANT le seuil mobile.
+     Mesuré au navigateur : à 901 px, les trois colonnes (200 / 1fr / 200, gap 26)
+     ne laissent que 291 px au centre, alors que la console en réclame 468 — ses
+     tranches sont en largeur fixe et ne rétrécissent pas. Les vumètres
+     débordaient donc du châssis en silence, sans déborder la page : rien ne le
+     signalait. Empilée, la console retrouve toute la largeur du pupitre et garde
+     ses dimensions de bureau, sans qu'on ait à rapetisser quoi que ce soit.
+     Seuil mesuré, pas choisi : la console réclame 523 px et les deux platines
+     en prennent 452 (2×200 + 2×26 de gouttière), soit 975 px de régie — atteints
+     vers 1133 px de fenêtre. 1160 laisse la marge. Placé AVANT le bloc ≤768
+     pour que celui-ci puisse encore surcharger. */
+  @media (max-width: 1160px) {
+    .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+    .platine { padding-top: 0; }
+  }
+
+  @media (max-width: 768px) {
+    /* Le podium se resserre : marches moins hautes, typographie réduite —
+       trois colonnes doivent tenir dans ~340 px de contenu. */
+    .console { --piste: 168px; --seg-gap: 2px; }
+    .console-tranches { gap: 9px; }
+    .console-ruban-nom { font-size: 13px; }
+    .manchette { font-size: 19px; }
+    .manchette-zone { font-size: 19px; min-height: calc(4 * 1.45em); }
+    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
+    /* Dès le seuil mobile, « Sourdine » et son ⓘ ne tiennent plus sur une ligne
+       dans une tranche de 58 px : sans repli, le canal muet s'élargit et pousse
+       ses voisins. Mesuré à 767 px. */
+    .console-sourdine { white-space: normal; min-width: 0; }
+    .regie { grid-template-columns: 1fr; gap: 30px; }
+    .platine { padding-top: 0; }
+
+    /* Sur étroit, la tendance s'allonge : cinq lignes dans 26 unités de haut
+       deviennent illisibles sous ~400 px de large. */
+    .course-svg { aspect-ratio: 100 / 44; }
+    .course-bout { font-size: 9px; transform: translate(6px, -50%); }
+    /* La réserve de droite ne fait que 16 % de la largeur : « CAQ 35 % » n'y
+       tient pas sur un écran étroit. Le sigle suffit. */
+    .course-bout b { display: none; }
+  }
+
+  /* Téléphone étroit. Le bloc ≤768 ne suffit pas : ses constantes demandent
+     456 px de console (5×58 + 4×9 d'écarts, 34 de graduations, 8 de gouttière,
+     42 de compensation et 44 de rembourrage), soit 81 de trop sur un écran de
+     375. Les tranches étant en `flex: none`, rien ne cède et la page déborde.
+     Vérifié au navigateur avant et après. */
+  @media (max-width: 480px) {
+    /* Le pupitre gardait ses 60 px de rembourrage horizontal jusque sur
+       téléphone : c'est là qu'était la place, pas dans les vumètres. La
+       récupérer vaut mieux que rapetisser le contenu. */
+    .pupitre { padding: 8px 14px 24px; }
+    .console {
+      --tranche: 44px;
+      --gradu: 26px;
+      --gradu-gap: 6px;
+      padding: 16px 12px 18px;
+    }
+    .console-tranches { gap: 6px; }
+    /* « Sourdine » suivi de son ⓘ, en `nowrap`, réclamait 70 px dans une tranche
+       qui en fait 44 : le canal muet s'élargissait et venait chevaucher les
+       graduations. Resserré ET replié — l'icône passe sous le mot au lieu de
+       pousser la tranche. Mesuré au navigateur avant et après. */
+    .console-sourdine {
+      font-size: 8px;
+      letter-spacing: 0.02em;
+      white-space: normal;
+      min-width: 0;
+    }
+    /* La compensation qui recentre les vumètres passe à la moitié : à cette
+       largeur, la tenue dans l'écran prime sur le centrage parfait. */
+    .console-corps { padding-left: calc(var(--gradu) / 2); }
+    /* Filet de sécurité, pas mécanisme de mise en page : si les constantes
+       dérivent un jour, la console défile en elle-même au lieu de faire
+       déborder la page entière. */
+    .console-corps { max-width: 100%; overflow-x: auto; }
+  }
   .in-shadow-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -7362,4 +8163,15 @@
     padding: 4px 8px;
     font-size: 10px;
   }
+}
+
+/* L'illustration de la une est servie en AVIF/WebP avec repli PNG, donc le
+   <img> est désormais enveloppé dans un <picture>. Toutes les règles de mise en
+   page ciblent `img.editorial-img` (sélecteurs descendants, jamais `>`), donc
+   elles continuent de s'appliquer — mais <picture> est un élément inline, qui
+   introduirait une boîte de ligne parasite dans .figure-frame. `display:
+   contents` rend l'enveloppe totalement transparente : la mise en page est
+   strictement celle d'avant. */
+.hero-figure picture {
+  display: contents;
 }

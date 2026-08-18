@@ -19,6 +19,49 @@ except ImportError:
 ROOT = Path(__file__).parent.parent
 
 
+def write_web_formats(image_bytes: bytes, out_dir: Path) -> None:
+    """Écrit latest.webp et latest.avif à côté du PNG.
+
+    POURQUOI : le PNG 1024×1024 de gpt-image-1 pèse ~1,5 Mo, soit environ 65 %
+    du poids d'une première visite — et `images: { unoptimized: true }`
+    (next.config.ts) exclut l'optimisation automatique de next/image sur un
+    export statique. Recompressé, le même visuel tombe sous les 200 Ko.
+
+    Le PNG reste écrit tel quel : c'est le dernier recours du <picture> côté
+    site, et ce script tourne en `continue-on-error` dans refresh-data.yml.
+    Chaque format est tenté séparément — un encodeur absent (AVIF demande
+    pillow-avif-plugin) ne doit jamais faire échouer les autres, ni le script.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        print("Pillow absent — pas de WebP/AVIF, le PNG suffit", file=sys.stderr)
+        return
+
+    # pillow-avif-plugin ne s'enregistre auprès de Pillow qu'à l'import : sans
+    # cette ligne, l'installer ne suffit pas. Pillow ≥ 11.3 gère l'AVIF nativement,
+    # d'où le except silencieux — l'encodeur est peut-être déjà là.
+    try:
+        import pillow_avif  # noqa: F401
+    except ImportError:
+        pass
+
+    with Image.open(io.BytesIO(image_bytes)) as img:
+        img = img.convert("RGB")
+        for suffix, params in (
+            ("webp", {"format": "WEBP", "quality": 82, "method": 6}),
+            ("avif", {"format": "AVIF", "quality": 55}),
+        ):
+            target = out_dir / f"latest.{suffix}"
+            try:
+                img.save(target, **params)
+                kb = target.stat().st_size / 1024
+                print(f"Saved → {target} ({kb:.0f} Ko)")
+            except Exception as err:  # encodeur absent, ou en échec
+                print(f"{suffix.upper()} non écrit ({err}) — on continue", file=sys.stderr)
+                target.unlink(missing_ok=True)
+
+
 def read_hero_selection(events: list[dict]) -> dict | None:
     """Return the event designated by scripts/select_hero.ts, or None.
 
@@ -299,6 +342,7 @@ def main() -> None:
     out_dir = ROOT / "public" / "data" / "generated-art"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "latest.png").write_bytes(image_bytes)
+    write_web_formats(image_bytes, out_dir)
 
     metadata = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),

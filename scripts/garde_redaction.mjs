@@ -36,7 +36,21 @@ const EXTENSIONS = [".ts", ".tsx", ".html"];
 // des PR et ajoutées sur `main` par un workflow, jamais relues dans une PR. La
 // garde ne peut donc rien y empêcher — c'est un trou connu, documenté dans la
 // PR d'installation, pas un oubli.
-const EXCLUS = [/node_modules/, /\.next/, /changelog\.json$/];
+//
+// `workflow-vitrine-2025-swimlanes.html` est EXEMPTÉ des règles de rédaction
+// (arbitrage d'Adrien, 2026-08-15). C'est un schéma de travail pour l'équipe,
+// pas une surface éditoriale pour les visiteurs : il vit sous `public/` parce
+// qu'il faut bien l'héberger quelque part, pas parce qu'on l'écrit pour le
+// public. Le garder sous la garde imposait de reformuler une centaine de
+// tirets d'un document technique que personne ne lit comme de la prose.
+// ⚠️ Ne PAS étendre l'exemption aux autres docs de `public/docs/` :
+// `horaire-refiners-2026.html` reste sous la garde et a été mis en conformité.
+const EXCLUS = [
+  /node_modules/,
+  /\.next/,
+  /changelog\.json$/,
+  /workflow-vitrine-2025-swimlanes\.html$/,
+];
 
 const ESPACES = "\\u0020\\u00a0\\u202f\\u2009";
 

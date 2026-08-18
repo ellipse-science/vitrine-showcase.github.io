@@ -208,7 +208,7 @@ export function SaillanceTrend({ trend, editionHrefs }: {
     <span className={`saillance-trend trend-${dirActif}`}>
       <span className="trend-spark-wrap">
         <svg className="trend-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
-          role="img" aria-label={`Niveau de saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
+          role="img" aria-label={`Niveau de saillance sur 24 heures : ${trend.capLabel.toLowerCase()}`}>
           <polyline points={line} fill="none" className="trend-line" strokeWidth="1.9" strokeLinejoin="round" />
           {/* Les points VISIBLES ne portent plus rien d'interactif : leur rayon
               encode un niveau (1,9 px à 4,8 px), il ne peut pas servir aussi de

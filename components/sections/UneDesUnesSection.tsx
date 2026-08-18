@@ -176,21 +176,57 @@ function Byline({ event }: { event: UneEvent }) {
  *  (#310) — la variante mobile la ramène sous le h1, fidèle à l'intention
  *  « titre → image → métadonnées ». Même URL des deux côtés = un seul
  *  téléchargement ; la variante cachée l'est via display:none. */
-function HeroFigure({ src, alt, variant }: {
+type ArtSource = { src: string; type: string };
+
+// Formats modernes de l'illustration, du plus léger au plus lourd — l'ordre est
+// celui que <picture> évalue, premier format supporté gagnant.
+const ART_FORMATS: { file: string; type: string }[] = [
+  { file: "latest.avif", type: "image/avif" },
+  { file: "latest.webp", type: "image/webp" },
+];
+
+/** Ne retient que les formats RÉELLEMENT présents sur disque au build.
+ *
+ *  generate_art.py tourne en `continue-on-error` et l'encodeur AVIF est
+ *  optionnel : n'importe lequel de ces fichiers peut manquer sans que ce soit
+ *  une anomalie. Déclarer un <source> vers un fichier absent afficherait une
+ *  image cassée au lieu de retomber sur le PNG. */
+async function detectArtSources(): Promise<ArtSource[]> {
+  const found = await Promise.all(ART_FORMATS.map((f) =>
+    fs.access(path.resolve(process.cwd(), "public", "data", "generated-art", f.file))
+      .then((): ArtSource => ({ src: `data/generated-art/${f.file}`, type: f.type }))
+      .catch(() => null),
+  ));
+  return found.filter((s): s is ArtSource => s !== null);
+}
+
+function HeroFigure({ src, sources = [], alt, variant }: {
   src: string;
+  /** Formats modernes réellement présents, du plus léger au plus lourd. */
+  sources?: ArtSource[];
   alt: string;
   variant: "desktop" | "mobile";
 }) {
   return (
     <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
       <div className="figure-frame">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          className="editorial-img"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
+        {/* Le PNG de gpt-image-1 pèse ~1,5 Mo ; l'AVIF/WebP tombe sous 200 Ko.
+            `sources` ne liste que les fichiers présents au build : si
+            generate_art.py échoue (il tourne en continue-on-error), la liste
+            est vide et <picture> se réduit au <img> PNG — jamais d'image
+            cassée. */}
+        <picture>
+          {sources.map((s) => (
+            <source key={s.type} srcSet={s.src} type={s.type} />
+          ))}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="editorial-img"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </picture>
       </div>
       <figcaption>
         <span className="cap-tag">Illustration</span>
@@ -200,7 +236,7 @@ function HeroFigure({ src, alt, variant }: {
   );
 }
 
-function MainUne({ event, secondEvent, generatedArtUrl, audioUrl, hrefs }: {
+function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, audioUrl, hrefs }: {
   event: UneEvent;
   hrefs?: Record<string, string>;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
@@ -209,6 +245,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl, hrefs }: {
    *  largeur sous le hero laissait un vide, rejeté.) */
   secondEvent?: UneEvent;
   generatedArtUrl?: string;
+  generatedArtSources?: ArtSource[];
   audioUrl?: string;
 }) {
   return (
@@ -228,7 +265,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl, hrefs }: {
           {/* alt="" : le titre est adjacent (h1 juste au-dessus) — un alt
               identique ferait lire le titre deux fois aux lecteurs d'écran. */}
           {generatedArtUrl && (
-            <HeroFigure src={generatedArtUrl} alt="" variant="mobile" />
+            <HeroFigure src={generatedArtUrl} sources={generatedArtSources} alt="" variant="mobile" />
           )}
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
           <Byline event={event} />
@@ -251,7 +288,7 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl, hrefs }: {
         )}
 
         {generatedArtUrl && (
-          <HeroFigure src={generatedArtUrl} alt={event.title} variant="desktop" />
+          <HeroFigure src={generatedArtUrl} sources={generatedArtSources} alt={event.title} variant="desktop" />
         )}
       </div>
     </div>
@@ -283,10 +320,11 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, editions, artExists, audioUrl] = await Promise.all([
+  const [data, editions, artExists, artSources, audioUrl] = await Promise.all([
     loadHeadlineEvents(editionKey),
     listEditions(),
     isArchive ? false : fs.access(artJsonPath).then(() => true).catch(() => false),
+    isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
     isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
@@ -366,6 +404,7 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
               event={main}
               secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
               generatedArtUrl={generatedArtUrl}
+              generatedArtSources={artSources}
               audioUrl={audioUrl}
               hrefs={hrefs}
             />

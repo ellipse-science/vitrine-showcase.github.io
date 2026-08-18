@@ -132,9 +132,9 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
       aria-pressed={flipped}
       aria-label={
         flipped
-          ? `${deputy.name} : revenir au recto de la carte`
+          ? `${deputy.name} : revenir au recto de la carte`
           : `${deputy.name}, ${partyLabel}, ${deputy.wordsFormatted} mots, `
-            + `${toneWording(deputy.toneScore, maxAbsTone)} — voir les statistiques au verso`
+            + `${toneWording(deputy.toneScore, maxAbsTone)}. Voir les statistiques au verso`
       }
     >
       <span className="carte-pivot">
@@ -434,7 +434,7 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
       {shadowRows.length > 0 && (
         <p className="in-shadow">
           <span className="in-shadow-label">Hors chambre&nbsp;:</span>{" "}
-          {shadowRows.map((r) => r.label).join(", ")} — aucune prise de parole
+          {shadowRows.map((r) => r.label).join(", ")}, aucune prise de parole
           relevée pour la période.
         </p>
       )}

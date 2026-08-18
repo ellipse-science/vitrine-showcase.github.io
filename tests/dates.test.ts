@@ -74,6 +74,6 @@ describe("publicationDateFromInterval (décalage de jour pour les blocs qui trav
       publicationDateFromInterval(dateStr, interval),
       publicationHourFromInterval(interval),
     );
-    expect(label).toBe("Dernière mise à jour du module : vendredi 7 août 2026, 4h");
+    expect(label).toBe("Dernière mise à jour du module : vendredi 7 août 2026, 4h");
   });
 });
