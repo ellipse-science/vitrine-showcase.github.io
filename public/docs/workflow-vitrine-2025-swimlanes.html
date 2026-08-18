@@ -1213,7 +1213,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-refiner">
                     vitrine-publish
-                    <div class="node-detail">🚧 EN COURS (phase d'ombre)&nbsp;: applique les filtres de rétention, puis écrit dans Postgres</div>
+                    <div class="node-detail">🚧 EN COURS (phase d'ombre)&nbsp;: écrira dans Postgres dès sa mise en service</div>
                     <div class="node-schedule">⏰ 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (Montréal)</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1222,13 +1222,13 @@
                     <div class="node-detail">sync_state, source « aws-refiner »</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner">
+                <div class="node node-output">
                     Deploy Hooks Cloudflare (prod + dev)
                     <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi ; en phase d'ombre, payload <code>trigger_deploys=false</code>, donc aucun build n'est déclenché</div>
                 </div>
             </div>
             <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,.07);font-size:.9em;line-height:1.5">
-                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>vitrine-publish</code> écrit déjà dans Postgres, mais ne déclenche aucun build tant que ses sorties ne sont pas comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
+                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>vitrine-publish</code> écrira dans Postgres dès sa mise en service, mais ne déclenchera aucun build tant que ses sorties n'auront pas été comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
             </div>
         </div>
 
