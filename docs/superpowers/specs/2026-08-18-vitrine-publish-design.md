@@ -48,6 +48,13 @@ L'ordre « synchro avant build », dont la violation a causé la régression du 
 - `deploy-prod.yml` et `deploy-dev-cloudflare.yml` : `workflow_dispatch` seulement. Obligatoire dès l'activation des builds Git Pages, sinon chaque poussée déploierait deux fois.
 - `deploy.yml` (GitHub Pages) : inchangé pour l'instant ; débranché plus tard par décision d'équipe.
 - Compte cron-job.org : fermé en fin de bascule.
+- **Le cron interne du Worker est COUPÉ à la bascule**, pas conservé : il recopie
+  les JSON de GitHub raw, qui ne seront plus rafraîchis qu'une fois par semaine.
+  Le laisser tourner écraserait toutes les 4 h les données fraîches du raffineur
+  par des données vieilles. Trois fichiers couplés à modifier ensemble :
+  `workers/api/wrangler.toml`, `workers/api/src/schedule.ts`,
+  `tests/cron-schedule.test.ts`. L'endpoint `/v1/sync` reste, lui, au service du
+  filet hebdomadaire.
 
 ## Bascule progressive, réversible à chaque phase
 
