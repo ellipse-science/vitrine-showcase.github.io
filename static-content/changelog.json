@@ -1,5 +1,11 @@
 [
   {
+    "pr": 517,
+    "date": "2026-08-18T19:22:39Z",
+    "note": "Aucune — documentation interne à l'offre API, non annoncée publiquement.",
+    "version": null
+  },
+  {
     "pr": 516,
     "date": "2026-08-18T19:16:33Z",
     "note": "Aucune — correctif d'outillage.",
