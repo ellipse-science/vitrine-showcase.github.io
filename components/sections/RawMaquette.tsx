@@ -38,6 +38,7 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="journal\/"/g, `href="${basePath}/journal/"`);
+  html = html.replace(/href="camille\/"/g, `href="${basePath}/camille/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
   html = html.replace(/src="\/images\//g, `src="${basePath}/images/`);
 
