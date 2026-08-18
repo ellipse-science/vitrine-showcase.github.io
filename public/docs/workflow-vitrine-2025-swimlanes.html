@@ -1198,6 +1198,40 @@
             </div>
         </div>
 
+        <!-- PUBLICATION VITRINE : VITRINE-PUBLISH (PHASE D'OMBRE) -->
+        <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>📤 Publication Vitrine, chaîne vitrine-publish (Athena → Postgres → builds Cloudflare) 🚧 EN COURS (phase d'ombre)</span>
+                <span class="frequency">6x/jour&nbsp;: 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (heure de Montréal), raffineur du dépôt aws-refiners, PR à venir</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
+                    15 tables du datamart
+                    <div class="node-detail">Mêmes tables et filtres de rétention que <code>scripts/tables.json</code></div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner">
+                    vitrine-publish
+                    <div class="node-detail">🚧 EN COURS (phase d'ombre)&nbsp;: écrira dans Postgres dès sa mise en service</div>
+                    <div class="node-schedule">⏰ 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (Montréal)</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output">
+                    Postgres (Neon, API)
+                    <div class="node-detail">sync_state, source « aws-refiner »</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output">
+                    Deploy Hooks Cloudflare (prod + dev)
+                    <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi ; en phase d'ombre, payload <code>trigger_deploys=false</code>, donc aucun build n'est déclenché</div>
+                </div>
+            </div>
+            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,.07);font-size:.9em;line-height:1.5">
+                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>vitrine-publish</code> écrira dans Postgres dès sa mise en service, mais ne déclenchera aucun build tant que ses sorties n'auront pas été comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
+            </div>
+        </div>
+
     </div>
 
     <!-- Modal -->
