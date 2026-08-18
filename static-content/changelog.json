@@ -1,5 +1,11 @@
 [
   {
+    "pr": 521,
+    "date": "2026-08-18T21:31:33Z",
+    "note": "Corrige un bug qui empêchait le module « L'alignement de l'Assemblée » de recevoir de nouvelles données depuis le 28 juillet. Aucun autre changement visible sur le site.",
+    "version": null
+  },
+  {
     "pr": 510,
     "date": "2026-08-18T20:42:42Z",
     "note": "Le rafraîchissement automatique des données s'interrompt maintenant de lui-même s'il reste bloqué, au lieu d'immobiliser les mises à jour suivantes. Rien ne change dans ce que le site affiche.",
