@@ -143,6 +143,10 @@ type IssueRow = {
   party: string;
   theme: string;
   issue_share: number;
+  /** Minutes en Une attribuées à ce couple. C'est CE champ, et non la part, qui
+   *  permet de recomposer une part de voix sur une sélection d'enjeux : les
+   *  parts sont normalisées par parti, donc non additionnables entre partis. */
+  total_raw_score: number;
   weighted_tone: number;
   date_utc: string;
   date_montreal_tz?: string;
@@ -165,6 +169,23 @@ type Stat = {
 /** Les dates effectivement retenues pour chaque échelle — l'axe horizontal de
  *  la courbe les étiquette, donc elles doivent voyager avec les valeurs. */
 type SeriesDates = { daily: string[]; weekly: string[]; monthly: string[] };
+
+/** La matrice parti × enjeu, telle que la console la consomme.
+ *
+ *  C'est ELLE qui rend les pads jouables : sélectionner des enjeux revient à
+ *  recalculer la part de voix sur les seules minutes attribuées à ces enjeux,
+ *  puis à renormaliser entre les cinq partis. Le calcul se fait côté client, à
+ *  chaque clic, sur un objet déjà en mémoire — aucune requête, aucun recalcul
+ *  de build. */
+export type EnjeuMix = {
+  /** Les enjeux réellement détectés, du plus au moins présent tous partis
+   *  confondus. L'ordre est stable d'un rendu à l'autre : une banque de pads
+   *  dont les touches changent de place à chaque mise à jour serait
+   *  injouable. */
+  enjeux: string[];
+  /** parti → enjeu → minutes attribuées et ton de ce couple. */
+  parParti: Record<string, Record<string, { score: number; tone: number }>>;
+};
 
 /** Un enjeu dont on parle à propos d'un parti. */
 export type EnjeuView = {
@@ -334,6 +355,10 @@ export type PartiesData = {
    *  agrégée. Et c'est volontaire — l'agrégat est pondéré par les minutes de
    *  chaque média, il n'est donc pas la moyenne des vues par média. */
   byMedia: Record<string, MediaView>;
+  /** La matrice parti × enjeu, pour la banque de pads de la console. Vide tant
+   *  que le croisement n'est pas publié : la banque disparaît alors, plutôt que
+   *  d'offrir des touches qui ne commandent rien. */
+  enjeuMix: EnjeuMix;
   /** Vrai quand la donnée vient de `fixtures/` et non de `public/data/`.
    *  Le module l'affiche en toutes lettres — cf. `.gitignore` : « aucune donnée
    *  inventée ne doit pouvoir être confondue avec la donnée réelle ». */
@@ -1013,6 +1038,47 @@ function chiffresParlants(
  *  table complète, donc le total affiché est volontairement inférieur — c'est
  *  un « les plus présents », pas une répartition exhaustive.
  */
+/** La matrice parti × enjeu du dernier jour publié.
+ *
+ *  On somme les MINUTES et non les parts : `issue_share` est normalisée par
+ *  parti (elle vaut 1 pour chacun), donc l'additionner entre partis n'aurait
+ *  aucun sens. Les minutes, elles, sont dans la même unité partout — c'est ce
+ *  qui permet de renormaliser après filtrage.
+ */
+function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
+  const vide: EnjeuMix = { enjeux: [], parParti: {} };
+  if (rows.length === 0) return vide;
+
+  const dernier = rows
+    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
+    .sort()
+    .at(-1);
+  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier);
+  if (duJour.length === 0) return vide;
+
+  const parParti: EnjeuMix["parParti"] = {};
+  const totalParEnjeu = new Map<string, number>();
+
+  for (const r of duJour) {
+    const key = String(r.party ?? "").toLowerCase();
+    if (!(PARTY_KEYS as readonly string[]).includes(key)) continue;
+    const theme = String(r.theme ?? "");
+    if (!theme) continue;
+    const score = Number(r.total_raw_score) || 0;
+    (parParti[key] ??= {})[theme] = { score, tone: Number(r.weighted_tone) || 0 };
+    totalParEnjeu.set(theme, (totalParEnjeu.get(theme) ?? 0) + score);
+  }
+
+  // Ordre STABLE, du plus au moins présent tous partis confondus : une banque
+  // de pads dont les touches changent de place à chaque mise à jour serait
+  // injouable.
+  const enjeux = [...totalParEnjeu.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
+    .map(([theme]) => theme);
+
+  return { enjeux, parParti };
+}
+
 function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
@@ -1326,6 +1392,11 @@ export async function loadParties(
     // Les enjeux du DERNIER jour publié, par parti. On ne moyenne pas sur la
     // fenêtre : la question posée est « de quoi parle-t-on en ce moment », et
     // une moyenne de trente jours lisserait précisément ce qui fait l'actualité.
+    const lignesEnjeux = enjeuxRaw
+      ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[])
+      : [];
+    const enjeuMix = buildEnjeuMix(lignesEnjeux);
+
     const enjeuxParParti = buildEnjeux(
       enjeuxRaw ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[]) : [],
     );
@@ -1352,6 +1423,7 @@ export async function loadParties(
       /** Vrai quand la vue vient d'un jeu FICTIF. Voyage jusqu'au composant
        *  pour qu'il puisse le dire à l'écran : une capture d'un rendu sur
        *  fixtures ne doit jamais pouvoir passer pour le site. */
+      enjeuMix,
       surFixtures: SUR_FIXTURES,
       medias,
       byMedia,

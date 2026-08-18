@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
+import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite, EnjeuMix } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -116,6 +116,133 @@ function BlocJournalistes({
   );
 }
 
+/** Recalcule les rangées de la console sur une SÉLECTION d'enjeux.
+ *
+ *  On somme les MINUTES attribuées aux enjeux retenus, parti par parti, puis on
+ *  renormalise entre les cinq. `issue_share` ne conviendrait pas : elle est
+ *  normalisée par parti (elle vaut 1 pour chacun), donc non additionnable entre
+ *  partis.
+ *
+ *  Ce qui n'est PAS recalculé est mis à zéro plutôt que laissé tel quel : le
+ *  sommet, les journées en tête et l'évolution portent sur l'ensemble des
+ *  enjeux, et les afficher à côté d'une part filtrée laisserait croire qu'ils
+ *  suivent le filtre. Le composant les masque tant qu'une sélection est active.
+ */
+function filtrerParEnjeux(rows: RowView[], mix: EnjeuMix, choisis: Set<string>): RowView[] {
+  if (choisis.size === 0) return rows;
+
+  const minutes = new Map<string, number>();
+  const tons = new Map<string, number>();
+  for (const r of rows) {
+    const parEnjeu = mix.parParti[r.key] ?? {};
+    let m = 0;
+    let tonPondere = 0;
+    for (const theme of choisis) {
+      const cell = parEnjeu[theme];
+      if (!cell) continue;
+      m += cell.score;
+      tonPondere += cell.tone * cell.score;
+    }
+    minutes.set(r.key, m);
+    tons.set(r.key, m > 0 ? tonPondere / m : 0);
+  }
+
+  const total = [...minutes.values()].reduce((a, b) => a + b, 0);
+
+  return rows
+    .map((r) => {
+      const part = total > 0 ? (minutes.get(r.key) ?? 0) / total : 0;
+      const pct = Math.round(part * 100);
+      const ton = tons.get(r.key) ?? 0;
+      const dir = ton > 0.002 ? "positive" : ton < -0.002 ? "negative" : "neutral";
+      return {
+        ...r,
+        sovPct: pct,
+        barWidthPct: pct,
+        inShadow: part < 0.05,
+        refLeftPct: 0,
+        refTitle: "",
+        toneDirection: dir as RowView["toneDirection"],
+        toneLabel: dir === "positive" ? "↑ Favorable" : dir === "negative" ? "↓ Défavorable" : "– Neutre",
+        toneTitle: `Ton\u00a0: ${dir === "positive" ? "favorable" : dir === "negative" ? "défavorable" : "neutre"} sur les enjeux choisis.`,
+        barTitle: `${pct}\u00a0% du temps consacré aux partis sur les enjeux choisis`,
+      };
+    })
+    .sort((a, b) => b.sovPct - a.sovPct)
+    .map((r, i) => ({ ...r, rang: i + 1, showLeaderLabel: i === 0 && !r.inShadow }));
+}
+
+/** La banque de pads : douze enjeux, qui commandent le vumètre.
+ *
+ *  Les pads ne décrivent plus un parti, ils FILTRENT la mesure. Choisir « santé »
+ *  répond à « qui domine la couverture quand on parle de santé ? », ce qu'aucune
+ *  autre commande du module ne permettait. Rien de choisi = tous les enjeux, la
+ *  vue par défaut.
+ *
+ *  De vrais <button> : la sélection doit être atteignable au clavier, et
+ *  `aria-pressed` dit l'état à un lecteur d'écran. L'éclat seul ne suffirait pas.
+ */
+function BanquePads({
+  mix,
+  choisis,
+  onBascule,
+  onVider,
+}: {
+  mix: EnjeuMix;
+  choisis: Set<string>;
+  onBascule: (theme: string) => void;
+  onVider: () => void;
+}) {
+  if (mix.enjeux.length === 0) return null;
+
+  // L'éclat au repos porte le poids de l'enjeu tous partis confondus : la banque
+  // n'est pas une grille inerte, elle montre déjà où se joue l'actualité.
+  const totalGeneral = mix.enjeux.reduce((t: number, theme: string) => {
+    return t + Object.values(mix.parParti).reduce((u: number, p) => u + (p[theme]?.score ?? 0), 0);
+  }, 0);
+
+  return (
+    <section className="pads-zone" aria-label="Filtrer par enjeu">
+      <p className="pads-tete">
+        <span>Filtrer par enjeu</span>
+        <InfoTip size="sm" label="Filtrer par enjeu">
+          Choisissez un ou plusieurs enjeux pour voir qui domine la couverture{" "}
+          <b>sur ces sujets seulement</b>. Les colonnes se recalculent sur les minutes
+          consacrées aux enjeux retenus. Rien de choisi&nbsp;: tous les enjeux.
+        </InfoTip>
+        {choisis.size > 0 && (
+          <button type="button" className="pads-vider" onClick={onVider}>
+            Tout réentendre
+          </button>
+        )}
+      </p>
+
+      <ul className="pads">
+        {mix.enjeux.map((theme) => {
+          const poids = Object.values(mix.parParti).reduce((u: number, p) => u + (p[theme]?.score ?? 0), 0);
+          const relatif = totalGeneral > 0 ? poids / totalGeneral : 0;
+          const actif = choisis.has(theme);
+          return (
+            <li key={theme}>
+              <button
+                type="button"
+                className={`pad${actif ? " pad--actif" : ""}`}
+                style={{ ["--eclat" as string]: actif ? 0.5 : Math.min(0.3, 0.05 + relatif * 1.2) }}
+                onClick={() => onBascule(theme)}
+                aria-pressed={actif}
+                title={`${theme}\u00a0: ${Math.round(relatif * 100)}\u00a0% de ce qui se dit sur les partis`}
+              >
+                <span className="pad-nom">{theme}</span>
+                <span className="pad-pct">{Math.round(relatif * 100)}&nbsp;%</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   // `indisponible` en tête, comme partout ailleurs : ce titre part dans le
@@ -175,6 +302,17 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
       if (cote === "A") return [key, b === key ? a : b];
       return [a === key ? b : a, key];
     });
+  // Les enjeux retenus. Vide = tous, la vue par défaut : on n'impose pas un
+  // filtre à qui arrive sur le module.
+  const [enjeuxChoisis, setEnjeuxChoisis] = useState<Set<string>>(new Set());
+  const basculerEnjeu = (theme: string) =>
+    setEnjeuxChoisis((prev) => {
+      const suivant = new Set(prev);
+      if (suivant.has(theme)) suivant.delete(theme);
+      else suivant.add(theme);
+      return suivant;
+    });
+
   const [showDoom, setShowDoom] = useState(false);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
@@ -200,7 +338,14 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
     media !== TOUS_MEDIAS && data.byMedia[media]
       ? data.byMedia[media]
       : { ranges: data.ranges };
-  const view: RangeView = source.ranges[range];
+  const vueBrute: RangeView = source.ranges[range];
+  // Le filtre s'applique à la CONSOLE et à ce qui en découle. Il ne touche ni la
+  // course ni les mesures historiques : celles-ci portent sur l'ensemble des
+  // enjeux, et le composant les masque plutôt que de les afficher à côté d'une
+  // part filtrée.
+  const rowsFiltrees = filtrerParEnjeux(vueBrute.rows, data.enjeuMix, enjeuxChoisis);
+  const view: RangeView = { ...vueBrute, rows: rowsFiltrees };
+  const filtreActif = enjeuxChoisis.size > 0;
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
 
@@ -308,6 +453,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           }
           indisponible={data.indisponible}
           comparaisonMedia={media !== TOUS_MEDIAS}
+          filtreActif={filtreActif}
         />
 
         {/* La manchette vit DANS la colonne du milieu, collée au-dessus de la
@@ -333,6 +479,17 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
             onPcqTap={handlePcqTap}
             indisponible={data.indisponible}
           />
+          {/* La banque de pads sous la console, comme les pads de performance
+              sous la table de mixage. Elle commande le vumètre : c'est lui la
+              visualisation, les pads sont l'instrument. */}
+          {!data.indisponible && (
+            <BanquePads
+              mix={data.enjeuMix}
+              choisis={enjeuxChoisis}
+              onBascule={basculerEnjeu}
+              onVider={() => setEnjeuxChoisis(new Set())}
+            />
+          )}
         </div>
 
         <Platine
@@ -344,6 +501,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           }
           indisponible={data.indisponible}
           comparaisonMedia={media !== TOUS_MEDIAS}
+          filtreActif={filtreActif}
         />
       </div>
 
@@ -712,6 +870,7 @@ function Platine({
   indisponible,
   comparaisonMedia,
   onDepot,
+  filtreActif,
 }: {
   cote: "A" | "B";
   row: RowView | null;
@@ -721,6 +880,11 @@ function Platine({
    *  des médias veut dire quelque chose. */
   comparaisonMedia: boolean;
   onDepot: (cote: "A" | "B", key: string) => void;
+  /** Vrai quand des enjeux sont retenus. Les mesures HISTORIQUES (sommet,
+   *  journées en tête, évolution) portent sur l'ensemble des enjeux : les
+   *  laisser à côté d'une part filtrée laisserait croire qu'elles suivent le
+   *  filtre. On les masque plutôt que de mentir par juxtaposition. */
+  filtreActif: boolean;
 }) {
   const [survole, setSurvole] = useState(false);
 
@@ -779,7 +943,7 @@ function Platine({
 
   // Une fenêtre d'un seul jour ne peut rien dire d'une progression ni d'un
   // nombre de journées en tête : « 1 jour sur 1 » et « 0 pt » sont du bruit.
-  const fenetreParlante = row.joursComptes > 1;
+  const fenetreParlante = row.joursComptes > 1 && !filtreActif;
   return (
     <div
       className={`platine cote-${cote}${survole ? " survolee" : ""}`}
@@ -862,14 +1026,16 @@ function Platine({
               <td className="platine-td-so">s.&nbsp;o.</td>
             )}
           </tr>
-          <tr>
-            <th scope="row" title="Part du temps la plus élevée atteinte sur la fenêtre suivie">
-              Sommet
-            </th>
-            <td>
-              {row.peakPct}&nbsp;% <span>le {formatCourt(row.peakDate)}</span>
-            </td>
-          </tr>
+          {!filtreActif && (
+            <tr>
+              <th scope="row" title="Part du temps la plus élevée atteinte sur la fenêtre suivie">
+                Sommet
+              </th>
+              <td>
+                {row.peakPct}&nbsp;% <span>le {formatCourt(row.peakDate)}</span>
+              </td>
+            </tr>
+          )}
           <tr>
             <th scope="row">Ton</th>
             <td className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</td>
@@ -888,67 +1054,6 @@ function Platine({
         </tbody>
       </table>
 
-      {/* LES ENJEUX : de quoi on parle quand on parle de ce parti.
-          Deux partis peuvent occuper la même place et parler de choses
-          entièrement différentes — c'est la dimension que le module annonçait
-          sans jamais la montrer. Une barre plutôt qu'un chiffre seul : à cinq
-          lignes, l'œil compare des longueurs bien plus vite que des nombres.
-          Absent tant que le croisement n'est pas publié, plutôt qu'un bloc vide
-          qui laisserait croire à une panne. */}
-      {row.enjeux.length > 0 && (
-        <div className="platine-enjeux">
-          <p className="platine-enjeux-tete">
-            On en parle à propos de
-            <InfoTip size="sm" label="Enjeux associés">
-              Les enjeux dont il est question dans les mêmes phrases que ce parti, sur la
-              dernière journée publiée. Les parts se lisent à l&apos;intérieur du parti&nbsp;:
-              elles disent de quoi on parle à son sujet, pas son poids dans l&apos;actualité.
-              Seuls les cinq premiers sont affichés.
-            </InfoTip>
-          </p>
-          {/* UNE BANQUE DE PADS, comme sur une table de mixage.
-              L'éclat de chaque pad porte la part de l'enjeu : plus on parle de
-              ce sujet à propos de ce parti, plus le pad est allumé. Le profil
-              d'un parti se lit alors d'un seul regard, avant même de lire un
-              chiffre — ce qu'une liste de barres ne donnait pas.
-
-              L'intensité est BORNÉE à 0,55 : au-delà, l'encre du libellé passe
-              sous 5:1 de contraste sur le pad le plus foncé (PQ). Mesuré pour
-              les cinq partis. Le pad reste donc toujours lisible, quelle que
-              soit la part.
-
-              Le libellé CAP complet part dans le `title` et dans le nom
-              accessible : ces douze catégories sont canoniques et partagées
-              avec le Digital Society Lab, on ne les réécrit pas. La face du pad
-              en montre autant que la place le permet. */}
-          <ul className="pads">
-            {row.enjeux.map((e) => (
-              <li
-                key={e.label}
-                className={`pad${e.reste ? " pad--reste" : ""}`}
-                style={{
-                  ["--eclat" as string]: e.reste ? 0 : Math.min(0.55, 0.1 + (e.pct / 100) * 1.5),
-                  ["--party" as string]: row.color,
-                }}
-                title={`${e.label}\u00a0: ${e.pct}\u00a0% de ce qu'on dit sur ${row.fullLabel}. Ton\u00a0: ${e.toneLabel}.`}
-              >
-                <span className="pad-nom">{e.label}</span>
-                <span className="pad-pied">
-                  <span className="pad-pct">{e.pct}&nbsp;%</span>
-                  {!e.reste && (
-                    <span className={`pad-ton tone-streak--${e.toneDirection}`} aria-hidden="true">
-                      {e.toneDirection === "positive" ? "↑" : e.toneDirection === "negative" ? "↓" : "–"}
-                    </span>
-                  )}
-                </span>
-                <span className="visually-hidden">
-                  {e.label}, {e.pct}&nbsp;%{e.reste ? "" : `, ton ${e.toneLabel}`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

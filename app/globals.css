@@ -8657,109 +8657,124 @@
    Une barre plutôt qu'un chiffre seul : sur cinq lignes, l'œil compare des
    longueurs bien plus vite que des nombres, et le profil d'un parti se saisit
    d'un coup. Le chiffre reste à droite pour qui veut citer. */
-.platine-enjeux {
-  width: 100%;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 0.5px solid var(--rule-faint);
+
+
+/* ── La banque de pads : douze enjeux qui commandent le vumètre ──────────────
+   Les pads ne décrivent plus un parti, ils FILTRENT la mesure. Choisir
+   « santé » répond à « qui domine la couverture quand on parle de santé ? »,
+   ce qu'aucune autre commande du module ne permettait. Le vumètre reste la
+   visualisation ; les pads sont l'instrument.
+
+   Placés SOUS la console, comme les pads de performance sous une table de
+   mixage. */
+.pads-zone {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
 }
-.platine-enjeux-tete {
-  margin: 0 0 8px;
+.pads-tete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.09em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-softer);
 }
-.platine-enjeux ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.pads-vider {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+  background: none;
+  border: none;
+  border-bottom: 1px solid currentColor;
+  padding: 0 0 1px;
+  cursor: pointer;
 }
 
-/* ── Les enjeux : une banque de pads ─────────────────────────────────────────
-   Le module est une table de mixage ; ses enjeux sont donc des pads de
-   performance. L'ÉCLAT de chaque pad porte la part de l'enjeu : plus on parle
-   de ce sujet à propos de ce parti, plus le pad est allumé. Le profil d'un
-   parti se saisit d'un regard, avant tout chiffre.
-
-   Deux colonnes, trois rangées : une banque de six, comme sur un contrôleur.
-   Le sixième est « Autres enjeux », éteint — ce n'est pas un sujet, c'est ce
-   qui reste. */
-.platine-enjeux ul.pads {
+/* Six colonnes par deux rangées : la banque de douze d'un contrôleur. */
+.pads {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
+.pads li { display: block; }
 
 .pad {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 52px;
-  padding: 6px 7px;
+  width: 100%;
+  min-height: 62px;
+  padding: 7px;
+  border: none;
   border-radius: 4px;
-  /* L'éclat est calculé en JS et borné à 0,55 : au-delà, l'encre du libellé
-     passe sous 5:1 sur le pad le plus foncé. Mesuré pour les cinq partis. */
-  background: color-mix(in srgb, var(--party) calc(var(--eclat) * 100%), var(--paper-deep));
-  /* Le liseré clair en haut et l'ombre courte en bas donnent le relief du
-     caoutchouc, sans passer au dégradé ni à l'ombre portée que le design
-     language écarte. */
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  /* L'éclat au repos porte le poids de l'enjeu tous partis confondus : la
+     banque montre déjà où se joue l'actualité avant qu'on y touche.
+     Le cordovan et non une couleur de parti : un pad filtre TOUS les partis à
+     la fois, l'attribuer à l'un d'eux serait faux. */
+  background: color-mix(in srgb, var(--cordovan) calc(var(--eclat) * 100%), var(--paper-deep));
+  /* Le relief du caoutchouc : un liseré clair en haut, une ombre courte en bas,
+     tous deux à l'intérieur. Ni dégradé ni ombre portée, que le design language
+     écarte. */
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--paper) 55%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent);
-  color: var(--ink);
-  animation: pad-allumer 420ms ease-out both;
+  transition: background 140ms ease, box-shadow 140ms ease, transform 90ms ease;
 }
-/* Les pads s'allument l'un après l'autre, comme une banque qu'on réveille. */
-.pad:nth-child(1) { animation-delay: 0ms; }
-.pad:nth-child(2) { animation-delay: 60ms; }
-.pad:nth-child(3) { animation-delay: 120ms; }
-.pad:nth-child(4) { animation-delay: 180ms; }
-.pad:nth-child(5) { animation-delay: 240ms; }
-.pad:nth-child(6) { animation-delay: 300ms; }
-@keyframes pad-allumer { from { opacity: 0; transform: translateY(3px); } }
+.pad:hover { box-shadow:
+  inset 0 1px 0 color-mix(in srgb, var(--paper) 70%, transparent),
+  inset 0 -1px 0 color-mix(in srgb, var(--ink) 16%, transparent),
+  0 0 0 1px var(--rule); }
+/* Le pad s'enfonce au clic : le geste doit se sentir. */
+.pad:active { transform: translateY(1px); }
 
-/* Le pad du reste : éteint, et bordé plutôt que rempli. */
-.pad--reste {
-  background: transparent;
-  border: 1px dashed var(--rule);
-  box-shadow: none;
-  color: var(--ink-softer);
+/* Un pad ALLUMÉ : cerclé de cordovan, pour que l'état se lise sans dépendre de
+   la seule intensité — un pad très présent au repos et un pad allumé peuvent
+   sinon se confondre. */
+.pad--actif {
+  box-shadow:
+    inset 0 0 0 2px var(--cordovan),
+    inset 0 -1px 0 color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
 .pad-nom {
   font-size: 9.5px;
   line-height: 1.2;
-  letter-spacing: 0.01em;
   /* Trois lignes au plus : « Droits, libertés, minorités et discrimination » est
-     le plus long des douze libellés CAP, et on ne les réécrit pas — ils sont
-     canoniques et partagés avec le Digital Society Lab. Le titre au survol et le
-     nom accessible portent le libellé entier. */
+     le plus long des douze libellés CAP, et on ne les réécrit pas — canoniques,
+     partagés avec le Digital Society Lab. Le survol et le nom accessible
+     portent le libellé entier. */
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.pad-pied {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  margin-top: 4px;
-}
 .pad-pct {
+  margin-top: 4px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
 }
-.pad-ton { font-size: 10px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .pad { animation: none; }
+@media (max-width: 900px) {
+  .pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .pads { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .pad { min-height: 56px; padding: 6px; }
 }
