@@ -1,5 +1,11 @@
 [
   {
+    "pr": 522,
+    "date": "2026-08-18T23:41:56Z",
+    "note": "Documentation interne du pipeline mise a jour.",
+    "version": null
+  },
+  {
     "pr": 520,
     "date": "2026-08-18T22:13:40Z",
     "note": "Aucun changement pour le site : document interne de conception.",
