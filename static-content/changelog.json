@@ -1,5 +1,11 @@
 [
   {
+    "pr": 507,
+    "date": "2026-08-18T14:26:21Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
     "pr": 506,
     "date": "2026-08-18T02:21:03Z",
     "note": "Aucune — infrastructure, sans effet visible.",
