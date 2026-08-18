@@ -1,5 +1,53 @@
 [
   {
+    "pr": 512,
+    "date": "2026-08-18T18:36:08Z",
+    "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",
+    "version": null
+  },
+  {
+    "pr": 511,
+    "date": "2026-08-18T18:03:19Z",
+    "note": "Aucune — correctif d'infrastructure ; le site retrouve simplement la fraîcheur qu'il avait.",
+    "version": "2.24.0-beta.2"
+  },
+  {
+    "pr": 508,
+    "date": "2026-08-18T17:49:30Z",
+    "note": "Aucune — l'API n'est pas encore annoncée, et rien ne change pour un visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 507,
+    "date": "2026-08-18T14:26:21Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 506,
+    "date": "2026-08-18T02:21:03Z",
+    "note": "Aucune — infrastructure, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 504,
+    "date": "2026-08-18T02:10:52Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 503,
+    "date": "2026-08-18T01:34:25Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 502,
+    "date": "2026-08-18T01:29:51Z",
+    "note": "Aucune — outillage interne, sans effet visible.",
+    "version": null
+  },
+  {
     "pr": 498,
     "date": "2026-08-18T00:23:36Z",
     "note": "Aucune — changement d'infrastructure sans effet visible pour le public.",
