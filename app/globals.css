@@ -8620,3 +8620,11 @@
   .course-rang, .course-delta { display: none; }
   .course-x { margin-left: 46px; margin-right: 46px; }
 }
+
+/* Une étiquette porteuse d'infobulle le dit : sans repère, personne ne survole.
+   Le pointillé est plus discret qu'un ⓘ, qui encombrerait huit lignes. */
+.platine-table th[title] {
+  cursor: help;
+  text-decoration: underline dotted var(--rule);
+  text-underline-offset: 3px;
+}

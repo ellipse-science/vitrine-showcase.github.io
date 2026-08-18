@@ -811,7 +811,9 @@ function Platine({
           </tr>
           {fenetreParlante && (
             <tr>
-              <th scope="row">En tête</th>
+              <th scope="row" title="Journées où ce parti a occupé le plus de temps, parmi celles que couvre la période">
+                En tête
+              </th>
               <td>
                 {row.joursEnTete}&nbsp;jour{row.joursEnTete > 1 ? "s" : ""}{" "}
                 <span>sur {row.joursComptes}</span>
@@ -842,7 +844,12 @@ function Platine({
               tant qu'on regarde l'ensemble des médias, où chaque parti est par
               construction à sa propre moyenne. */}
           <tr>
-            <th scope="row">Écart aux médias</th>
+            <th
+              scope="row"
+              title="Écart entre ce média et l'ensemble des médias, en points. Sans objet tant qu'aucun média n'est choisi : chaque parti est alors à sa propre moyenne."
+            >
+              Écart aux médias
+            </th>
             {ecartUtile ? (
               <td className={ecartPts > 0 ? "haut" : ecartPts < 0 ? "bas" : undefined}>
                 {ecartPts > 0 ? "+" : ""}{ecartPts}&nbsp;points
@@ -852,9 +859,11 @@ function Platine({
             )}
           </tr>
           <tr>
-            <th scope="row">Record</th>
+            <th scope="row" title="Part du temps la plus élevée atteinte sur la fenêtre suivie">
+              Sommet
+            </th>
             <td>
-              {row.peakPct}&nbsp;% <span>{formatCourt(row.peakDate)}</span>
+              {row.peakPct}&nbsp;% <span>le {formatCourt(row.peakDate)}</span>
             </td>
           </tr>
           <tr>
@@ -865,8 +874,12 @@ function Platine({
               le seuil ; formulée comme un seuil, elle dit quelque chose dans les
               deux cas et ne fait plus varier la hauteur. */}
           <tr>
-            <th scope="row">Seuil</th>
-            <td>{row.inShadow ? "Sous 5\u00a0%" : "Au-dessus de 5\u00a0%"}</td>
+            <th scope="row" title="Sous 5 % du temps, un parti compte trop peu pour qu'on tire une lecture de ses variations">
+              Seuil
+            </th>
+            <td className={row.inShadow ? "platine-td-so" : undefined}>
+              {row.inShadow ? "Sous 5\u00a0%" : "Au-dessus de 5\u00a0%"}
+            </td>
           </tr>
         </tbody>
       </table>
