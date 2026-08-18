@@ -5258,66 +5258,12 @@
   }
 
   .course-figure { margin: 0; }
-  .course-cadre { position: relative; }
-  .course-svg {
-    display: block;
-    width: 100%;
-    aspect-ratio: 100 / 26;
-    height: auto;
-    overflow: visible;
-  }
 
   /* La ligne d'ARRIVÉE — cordovan, l'accent unique du site. Le vide à sa
      gauche est ce qu'il reste à courir. */
   .course-arrivee { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
-  .course-arrivee-label {
-    position: absolute;
-    z-index: 2;
-    top: 0;
-    transform: translate(-50%, -100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    padding-bottom: 7px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--cordovan);
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .course-arrivee-label b { font-weight: 500; letter-spacing: 0.1em; }
 
-  .course-point {
-    position: absolute;
-    z-index: 2;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-  .course-point.shadow { opacity: 0.45; }
 
-  .course-bout {
-    position: absolute;
-    z-index: 2;
-    transform: translate(9px, -50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .course-bout b {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .course-bout.shadow { opacity: 0.5; }
 
   .course-x { position: relative; height: 14px; margin-top: 12px; }
   .course-x span {
@@ -5382,11 +5328,8 @@
 
     /* Sur étroit, la tendance s'allonge : cinq lignes dans 26 unités de haut
        deviennent illisibles sous ~400 px de large. */
-    .course-svg { aspect-ratio: 100 / 44; }
-    .course-bout { font-size: 9px; transform: translate(6px, -50%); }
     /* La réserve de droite ne fait que 16 % de la largeur : « CAQ 35 % » n'y
        tient pas sur un écran étroit. Le sigle suffit. */
-    .course-bout b { display: none; }
   }
 
   /* Téléphone étroit. Le bloc ≤768 ne suffit pas : ses constantes demandent
@@ -8548,3 +8491,132 @@
 /* La console porte déjà `align-self: end` pour ne pas s'étirer dans la grille ;
    dans ce conteneur en colonne, c'est `margin-top: 0` qui la colle à la phrase. */
 .regie-centre .console { align-self: stretch; }
+
+/* ── La course en tête du module ─────────────────────────────────────────────
+   Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
+   dans la console et les platines. */
+.partis-course--tete { margin: 0 0 22px; }
+.partis-course--tete .course-tete { margin: 0 0 10px; }
+
+/* ── Une piste par parti ─────────────────────────────────────────────────────
+   Cinq courbes superposées étaient illisibles PAR CONSTRUCTION, et pas
+   seulement encombrées : le validateur de palette place PCQ et PQ à ΔE 10,0 en
+   vision normale, sous le plancher de 15. La règle, dans ce cas, est de
+   facetter. Chaque parti a donc sa piste et son nom, la couleur n'étant plus
+   qu'un rappel.
+
+   Grille de cinq colonnes : rang, sigle, tracé, valeur, écart. Les colonnes de
+   texte sont en largeur fixe pour que les chiffres s'alignent verticalement
+   d'une piste à l'autre : c'est ce qui permet de lire le classement en
+   descendant la colonne. */
+.course-pistes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.course-piste {
+  display: grid;
+  grid-template-columns: 18px 42px minmax(0, 1fr) 52px 34px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+.course-piste.shadow { opacity: 0.5; }
+
+.course-rang {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-softer);
+  text-align: right;
+}
+.course-nom {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--party);
+  letter-spacing: 0.04em;
+}
+
+/* `preserveAspectRatio` explicite : l'ancienne course utilisait `none`, ce qui
+   étirait un viewBox de 100 × 30 sur ~1100 px de large et mentait donc sur
+   TOUTES les pentes (x multiplié par 11, y par 3). */
+.course-piste-svg {
+  display: block;
+  width: 100%;
+  height: 26px;
+  overflow: visible;
+}
+
+.course-valeur {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.course-delta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-softer);
+}
+.course-delta.haut { color: var(--red); }
+.course-delta.bas  { color: var(--green); }
+
+/* Le trait se dessine de gauche à droite, une piste après l'autre : la course
+   s'écrit sous les yeux au lieu d'apparaître déjà courue. 1000 dépasse
+   largement la longueur réelle d'un tracé dans un viewBox de 100 × 30, ce qui
+   évite de mesurer chaque chemin en JavaScript pour un gain invisible. */
+.course-trait {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: course-tracer 900ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+@keyframes course-tracer { to { stroke-dashoffset: 0; } }
+
+/* La tête arrive APRÈS son trait, et reste : c'est le point « où on en est ». */
+.course-tete-point {
+  opacity: 0;
+  animation: course-tete-apparait 400ms ease-out forwards;
+  animation-delay: 900ms;
+}
+@keyframes course-tete-apparait {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* L'axe, aligné sur la colonne du tracé. */
+.course-x {
+  position: relative;
+  height: 16px;
+  margin-left: 80px;   /* 18 + 42 + 2 × 10 de gouttière */
+  margin-right: 96px;  /* 52 + 34 + 2 × 10 */
+  margin-top: 4px;
+}
+.course-x span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+.course-x-arrivee { color: var(--cordovan) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .course-trait { animation: none; stroke-dashoffset: 0; }
+  .course-tete-point { animation: none; opacity: 1; }
+}
+
+/* Sous 620 px, le rang et l'écart sortent : quatre colonnes de texte autour
+   d'un tracé ne laissent plus rien au tracé. */
+@media (max-width: 620px) {
+  .course-piste { grid-template-columns: 38px minmax(0, 1fr) 46px; gap: 8px; }
+  .course-rang, .course-delta { display: none; }
+  .course-x { margin-left: 46px; margin-right: 46px; }
+}

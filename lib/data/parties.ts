@@ -544,7 +544,10 @@ function computeStats(
 }
 
 const CHART_W = 100;
-const CHART_H = 46;
+// 30 et non 46 : la course passe en TÊTE du module, où elle sert de repère
+// d'entrée et non de pièce à examiner. Une bande basse se lit d'un coup d'œil
+// et laisse la place à la console, qui porte le détail.
+const CHART_H = 30;
 /** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
  *  Resserrée pour que la ligne d'arrivée se rapproche du bord. */
 const CHART_PAD_R = 9;
@@ -734,18 +737,37 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
 
   spreadLabels(series);
 
-  // Deux dates seulement : le début et la fin de ce qui est mesuré. La ligne
-  // d'arrivée porte sa propre étiquette.
+  // DES REPÈRES RÉGULIERS, et non les deux seules bornes.
+  //
+  // Deux dates aux extrémités disaient la fenêtre, mais pas la position : un
+  // creux au milieu de la courbe ne pouvait se dater qu'à l'estime. On place
+  // donc jusqu'à cinq repères, en sautant des jours quand la fenêtre est
+  // longue — au-delà, les étiquettes se chevauchent sur un axe de 100 unités.
+  //
+  // Le libellé suit l'échelle : sur une semaine, le JOUR DE LA SEMAINE se lit
+  // plus vite qu'une date (« mer. » plutôt que « 13 août ») ; au-delà, la date
+  // reste nécessaire, deux mercredis n'étant pas le même point.
+  const MAX_REPERES = 5;
+  const pas = Math.max(1, Math.ceil(n / MAX_REPERES));
+  const indices: number[] = [];
+  for (let i = 0; i < n; i += pas) indices.push(i);
+  // Le dernier point est toujours étiqueté : c'est « où on en est », le repère
+  // le plus regardé de la course.
+  if (indices.at(-1) !== n - 1) indices.push(n - 1);
+
+  const JOURS_COURTS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+  const libelle = (iso: string) =>
+    range === "overall"
+      ? shortDateFr(iso)
+      : JOURS_COURTS[new Date(`${iso}T12:00:00Z`).getUTCDay()] ?? shortDateFr(iso);
+
   const xLabels =
     n <= 1
       ? [{ label: shortDateFr(axisDates[0] ?? ""), x: 0 }]
-      : [
-          { label: shortDateFr(axisDates[0]), x: 0 },
-          {
-            label: shortDateFr(axisDates[n - 1]),
-            x: Number(xAtDate(axisDates[n - 1]).toFixed(2)),
-          },
-        ];
+      : indices.map((i) => ({
+          label: libelle(axisDates[i]),
+          x: Number(xAtDate(axisDates[i]).toFixed(2)),
+        }));
 
   return {
     series,

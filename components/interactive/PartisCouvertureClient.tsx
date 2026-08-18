@@ -257,6 +257,18 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
 
       {data.indisponible && <AvisIndisponible info={data.indisponible} />}
 
+      {/* La course EN TÊTE du module.
+          Elle vivait sous le fader, tout en bas : le lecteur arrivait donc sur
+          un instrument avant d'avoir vu qu'il y avait une course en train de se
+          jouer. En tête, elle donne le mouvement d'abord et l'examen ensuite,
+          ce qui est l'ordre dans lequel on lit une compétition. */}
+      {!data.indisponible && !view.chart.tooShort && (
+        <section className="partis-course partis-course--tete">
+          <p className="course-tete">La course</p>
+          <Course chart={view.chart} rows={view.rows} />
+        </section>
+      )}
+
       <div className="pupitre">
         <div className="pupitre-aide">
           <InfoTip size="lg" label="Comment lire cette visualisation">
@@ -355,20 +367,6 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           onChange={setMedia}
         />
       )}
-
-
-        {/* La course vit DANS le pupitre : c'est le même appareil, et la
-            séparer par un filet la faisait lire comme un second module.
-            Masquée EN ENTIER quand la mesure est suspendue — titre compris :
-            une section « La tendance » vide inviterait à chercher une courbe
-            absente, et la courbe elle-même trace le classement que l'avis
-            promet de ne pas publier. */}
-        {!data.indisponible && (
-          <section className="partis-course">
-            <p className="course-tete">La tendance</p>
-            <Course chart={view.chart} />
-          </section>
-        )}
       </div>
 
       {!data.indisponible && (
@@ -1094,7 +1092,7 @@ function Fader({
  * le jour du scrutin. Le vide entre la dernière donnée et elle est l'espace
  * qu'il reste à courir.
  */
-function Course({ chart }: { chart: ChartView }) {
+function Course({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
   if (chart.tooShort) {
     return (
       <p className="course-vide">
@@ -1103,73 +1101,91 @@ function Course({ chart }: { chart: ChartView }) {
     );
   }
 
-  const pct = (v: number, max: number) => `${(v / max) * 100}%`;
+  const parKey = new Map(chart.series.map((s) => [s.key, s]));
+  // L'ordre est celui du CLASSEMENT : on lit un tableau de position, donc le
+  // premier est en haut.
+  const pistes = rows.filter((r) => parKey.has(r.key));
 
   return (
     <figure className="course-figure">
-      <div className="course-cadre">
-        <svg
-          className="course-svg"
-          viewBox={`0 0 ${chart.width} ${chart.height}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {chart.series.map((s) => (
-            <polyline
-              key={s.key}
-              points={s.polyline}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={s.inShadow ? 1 : 1.5}
-              strokeDasharray={s.inShadow ? "2 3" : undefined}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-              opacity={s.inShadow ? 0.45 : 1}
-            />
-          ))}
+      <ol className="course-pistes">
+        {pistes.map((r, i) => {
+          const s = parKey.get(r.key)!;
+          return (
+            <li
+              key={r.key}
+              className={`course-piste${r.inShadow ? " shadow" : ""}`}
+              style={{ ["--party" as string]: r.color }}
+            >
+              <span className="course-rang">{r.rang}</span>
+              <span className="course-nom">{r.label}</span>
 
-          <line
-            x1={chart.finish.x}
-            x2={chart.finish.x}
-            y1="0"
-            y2={chart.height}
-            className="course-arrivee"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+              {/* UNE PISTE PAR PARTI, et non cinq lignes superposées.
+                  Le validateur de palette échoue sur ces couleurs : PCQ et PQ
+                  sont à ΔE 10,0 en vision normale, sous le plancher de 15. Cinq
+                  courbes qui se croisent dans une même bande sont donc
+                  illisibles par construction, et pas seulement encombrées. La
+                  règle, dans ce cas, est de FACETTER plutôt que d'empiler :
+                  chaque parti a sa piste et son nom, la couleur ne portant plus
+                  seule l'identité.
+                  L'échelle verticale reste COMMUNE (le tracé vient du même
+                  calcul qu'avant) : une piste haute est vraiment plus haute. */}
+              <svg
+                className="course-piste-svg"
+                viewBox={`0 0 ${chart.width} ${chart.height}`}
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
+                <line
+                  x1={chart.finish.x}
+                  x2={chart.finish.x}
+                  y1="0"
+                  y2={chart.height}
+                  className="course-arrivee"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <polyline
+                  points={s.polyline}
+                  fill="none"
+                  stroke={r.color}
+                  strokeWidth="2"
+                  strokeDasharray={r.inShadow ? "3 3" : undefined}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                  className={r.inShadow ? undefined : "course-trait"}
+                  style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
+                />
+                <circle
+                  cx={s.lastX}
+                  cy={s.lastY}
+                  r="3"
+                  fill={r.color}
+                  className={r.inShadow ? undefined : "course-tete-point"}
+                  style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
+                />
+              </svg>
 
-        {chart.series.map((s) => (
-          <i
-            key={s.key}
-            className={`course-point${s.inShadow ? " shadow" : ""}`}
-            style={{ top: pct(s.lastY, chart.height), left: pct(s.lastX, chart.width), background: s.color }}
-            aria-hidden="true"
-          />
-        ))}
-
-        {chart.series.map((s) => (
-          <span
-            key={s.key}
-            className={`course-bout${s.inShadow ? " shadow" : ""}`}
-            style={{ top: pct(s.labelY, chart.height), left: pct(s.lastX, chart.width), color: s.color }}
-          >
-            {s.label} <b>{s.lastPct}&nbsp;%</b>
-          </span>
-        ))}
-
-        <span className="course-arrivee-label" style={{ left: pct(chart.finish.x, chart.width) }}>
-          {chart.finish.label}
-          <b>{chart.finish.sub}</b>
-        </span>
-      </div>
+              <span className="course-valeur">{r.sovPct}&nbsp;%</span>
+              <span
+                className={`course-delta${r.evolutionPts > 0 ? " haut" : r.evolutionPts < 0 ? " bas" : ""}`}
+              >
+                {r.evolutionPts > 0 ? "+" : ""}{r.evolutionPts}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
 
       <div className="course-x">
         {chart.xLabels.map((l) => (
-          <span key={l.label} style={{ left: pct(l.x, chart.width) }}>
+          <span key={l.label} style={{ left: `${(l.x / chart.width) * 100}%` }}>
             {l.label}
           </span>
         ))}
+        <span className="course-x-arrivee" style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}>
+          {chart.finish.label}
+        </span>
       </div>
     </figure>
   );
