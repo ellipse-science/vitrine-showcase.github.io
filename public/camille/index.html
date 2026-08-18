@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Camille Pelletier — Édition spéciale</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3ECDD;
+    --paper-deep: #ECE3CF;
+    --ink: #1C1917;
+    --ink-soft: #433F38;
+    --ink-softer: #6E685F;
+    --rule: #C8BDA6;
+    --rule-faint: #DED3B9;
+    --cordovan: #6B1E2A;
+    --brass: #A07A3D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body {
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { color: var(--cordovan); }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 40px 100px; }
+
+  .mast {
+    text-align: center;
+    padding-bottom: 22px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .mast .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin-bottom: 14px;
+  }
+  .mast .masthead-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: clamp(40px, 7vw, 68px);
+    letter-spacing: -1.2px;
+    line-height: 1.0;
+    margin: 0 0 10px;
+  }
+  .mast .dateline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .dbl-rule {
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule);
+    height: 4px;
+    margin: 40px 0;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin: 52px 0 18px;
+  }
+
+  .dek {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    text-align: center;
+    margin: 28px 0 0;
+  }
+
+  .dek-with-cap::first-letter {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 56px;
+    color: var(--cordovan);
+    line-height: 0.85;
+    float: left;
+    padding: 6px 10px 0 0;
+    font-style: normal;
+  }
+
+  p { margin: 0 0 20px; }
+
+  .headline-block {
+    margin-top: 44px;
+  }
+  .headline-block h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.3px;
+    line-height: 1.15;
+    margin: 0 0 18px;
+  }
+
+  .pulse-band {
+    background: var(--paper-deep);
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule);
+    padding: 30px 34px;
+    margin: 44px 0;
+    text-align: center;
+  }
+  .pulse-band .stat {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 48px;
+    letter-spacing: -1.1px;
+    color: var(--cordovan);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .pulse-band .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .brief-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin: 44px 0;
+    border-top: 0.5px solid var(--rule);
+  }
+  .brief-item {
+    padding: 22px 26px;
+    border-bottom: 0.5px solid var(--rule);
+  }
+  .brief-item:nth-child(odd) {
+    border-right: 0.5px solid var(--rule);
+  }
+  .brief-item .brief-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+    margin-bottom: 8px;
+  }
+  .brief-item .brief-value {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.1px;
+  }
+
+  .saillance-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    margin-bottom: 20px;
+  }
+
+  blockquote {
+    margin: 40px 0;
+    padding: 4px 0 4px 26px;
+    border-left: 2px solid var(--cordovan);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  blockquote cite {
+    display: block;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .caption {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-top: -8px;
+  }
+
+  .signoff {
+    margin-top: 60px;
+    padding-top: 26px;
+    border-top: 2px solid var(--ink);
+    text-align: center;
+  }
+  .signoff .signoff-line {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 21px;
+    margin-bottom: 14px;
+  }
+  .signoff .byline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 32px 20px 70px; }
+    .brief-grid { grid-template-columns: 1fr; }
+    .brief-item:nth-child(odd) { border-right: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="mast">
+    <div class="kicker">Édition spéciale · Portrait</div>
+    <h1 class="masthead-name">Camille Pelletier</h1>
+    <div class="dateline">Direction : sciences politiques — Northwestern University</div>
+  </header>
+
+  <p class="dek">Une plume qui a fait ses classes ici s'apprête à traverser la frontière pour continuer d'apprendre, ailleurs, plus loin, plus grand.</p>
+
+  <div class="dbl-rule"></div>
+
+  <div class="section-label">À la une</div>
+  <div class="headline-block">
+    <h2>De la Vitrine à Evanston</h2>
+    <span class="saillance-tag">Départ imminent</span>
+    <p class="dek-with-cap">Camille Pelletier s'en va étudier les sciences politiques à Northwestern University — un aboutissement mérité, et le début d'un nouveau chapitre qui, on le sait déjà, sera à la hauteur de tout ce qui a précédé. Curiosité, rigueur et une façon bien à elle de poser les bonnes questions : voilà ce qui part avec elle, et voilà aussi ce qui restera d'elle ici.</p>
+  </div>
+
+  <div class="pulse-band">
+    <div class="stat">1</div>
+    <div class="stat-label">Camille Pelletier, irremplaçable</div>
+  </div>
+
+  <div class="brief-grid">
+    <div class="brief-item">
+      <div class="brief-label">Discipline</div>
+      <div class="brief-value">Sciences politiques</div>
+    </div>
+    <div class="brief-item">
+      <div class="brief-label">Destination</div>
+      <div class="brief-value">Northwestern University</div>
+    </div>
+    <div class="brief-item">
+      <div class="brief-label">Échéance</div>
+      <div class="brief-value">Très bientôt</div>
+    </div>
+    <div class="brief-item">
+      <div class="brief-label">Ce qui reste</div>
+      <div class="brief-value">Tout notre respect</div>
+    </div>
+  </div>
+
+  <blockquote>
+    « Certaines personnes traversent une équipe sans faire de bruit — et laissent derrière elles un silence qu'on remarque tout de suite. »
+    <cite>La rédaction</cite>
+  </blockquote>
+
+  <div class="section-label">En clôture</div>
+  <p>Northwestern gagne une étudiante qui sait déjà pourquoi la politique mérite qu'on s'y attarde sérieusement. Bonne chance, Camille — cette page restera, même quand vous serez loin.</p>
+
+  <footer class="signoff">
+    <div class="signoff-line">Félicitations et bon vent, Camille.</div>
+    <div class="byline">La Vitrine démocratique</div>
+  </footer>
+
+</div>
+</body>
+</html>
