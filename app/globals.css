@@ -2681,7 +2681,7 @@
   .ass-card-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 26px;
+    gap: 38px;
   }
   .ass-tone {
     display: block;
@@ -4630,7 +4630,7 @@
     background: var(--party);
     color: var(--paper);
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 17px;
+    font-size: 23px;
     font-weight: 700;
     letter-spacing: 1.5px;
     padding: 5px 10px;
@@ -4690,7 +4690,7 @@
 
   .parti-pct {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px; text-align: right; font-weight: 400;
+    font-size: 23px; text-align: right; font-weight: 400;
   }
   .parti-spark svg {
     display: block;
@@ -4710,30 +4710,26 @@
      et il laisse le châssis de la console ressortir à l'intérieur. */
   .pupitre {
     border: 1px solid var(--rule);
-    padding: 8px 30px 30px;
+    /* Cadre resserré : 30 px de rembourrage latéral et bas éloignaient le trait
+       d'un contenu qui a maigri (manchette plus petite, console plus courte,
+       filets internes retirés). Le cadre suit le contenu au lieu de flotter
+       autour. */
+    padding: 6px 18px 18px;
     margin-top: 26px;
   }
   /* La marque d'aide vit sur le PUPITRE, pas dans le titre : ajoutée au titre,
      elle le faisait déborder sur deux lignes. */
   .pupitre-aide { display: flex; justify-content: flex-end; }
-  .pupitre .manchette-zone { margin-top: 10px; }
-  /* Une DÉLIMITATION LÉGÈRE entre la manchette et la table de mix : le filet
-     dit qu'on change d'objet — d'une phrase à un instrument — sans dire qu'on
-     change de module. Court et centré, pas pleine largeur : un filet qui
-     traverse tout séparerait au lieu d'articuler. */
+  /* La manchette vit maintenant DANS la colonne centrale de la régie, où c'est
+     `justify-content: flex-end` qui la place : toute marge haute ici ne ferait
+     que gonfler sa zone sans la déplacer. */
+  .pupitre .manchette-zone { margin-top: 0; }
+  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
+     articulé les deux, mais depuis que chaque platine porte la couleur de son
+     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas. */
   .pupitre .regie {
     margin-top: 26px;
     padding-top: 26px;
-    position: relative;
-  }
-  .pupitre .regie::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    border-top: 0.5px solid var(--rule);
   }
 
   /* HAUTEUR RÉSERVÉE pour la manchette. Elle fait deux lignes sur « tous les
@@ -4747,11 +4743,24 @@
     /* La marge haute appartient à la ZONE, pas au paragraphe : à l'intérieur,
        elle s'ajoutait à la hauteur du texte et faisait déborder la réserve — le
        décalage résiduel de 12 px venait de là. */
-    margin-top: 30px;
+    /* Marge et corps réduits pour raccourcir l'encadré : la manchette occupait
+       trois lignes réservées à 24 px, soit 104 px, plus 30 px de marge. */
+    margin-top: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    /* La réserve est en `em`, donc elle suit le corps du texte. Elle doit être
+       réglée sur le PIRE cas, mesuré en pilotant le fader sur ses six
+       positions : à 17 px la manchette tient partout en deux lignes (49 px), à
+       20 px deux médias la poussent à trois (87 px), à 24 px c'était le cas de
+       référence.
+       ⚠️ Cette font-size doit rester ÉGALE à celle de `.manchette` : les deux
+       ont divergé une fois (zone à 17, texte à 20), et la réserve calculée sur
+       la mauvaise base laissait la zone varier de 58 à 87 px au fader, soit
+       exactement le saut qu'elle existe pour empêcher.
+       ⚠️ À REMESURER si l'on ajoute un média : un libellé plus long rouvrirait
+       une ligne de plus. */
+    font-size: 23px;
     min-height: calc(3 * 1.45em);
   }
 
@@ -4768,7 +4777,7 @@
        grand que le dek d'origine (19 px) parce que c'est la phrase-clé du
        module, mais dans la même famille. */
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 24px;
+    font-size: 23px;
     font-weight: 400;
     line-height: 1.45;
     letter-spacing: -0.1px;
@@ -4790,8 +4799,23 @@
   .regie {
     display: grid;
     grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
-    align-items: start;
-    gap: 26px;
+    /* Les trois colonnes s'alignent par le BAS, et non par le haut.
+       Le tableau d'une platine est plus haut que la console : aligner les bas
+       remonte donc les platines et fait descendre la console, ce que deux
+       réglages à la main (marge négative sur la platine, marge positive sur la
+       console) obtenaient auparavant à l'aveugle. La règle vaut mieux que les
+       chiffres : elle tient quand une platine gagne une ligne, par exemple
+       « Contre l'ensemble des médias » dès qu'un média est choisi, alors que
+       les valeurs fixes dérivaient à chaque changement de contenu.
+
+       `stretch` plutôt que `end` : les trois colonnes prennent la hauteur de la
+       PLUS HAUTE, et chacune pousse son contenu vers le bas (`justify-content:
+       flex-end` sur la platine). Le résultat visuel est le même, mais la hauteur
+       de la rangée ne dépend plus du contenu d'UNE colonne : retirer un parti
+       d'une platine ne fait plus s'effondrer sa colonne, donc plus sauter tout
+       le module. Même raison d'être que la hauteur réservée à la manchette. */
+    align-items: stretch;
+    gap: 38px;
     margin-top: 26px;
   }
 
@@ -4800,14 +4824,19 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding-top: 26px;
-  }
-  .platine-cote {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.28em;
-    color: var(--ink-softer);
-    font-weight: 500;
+    /* Ni retrait ni marge négative : c'est la régie qui place la platine.
+       Le contenu est poussé vers le BAS de la colonne étirée, ce qui aligne les
+       bas sans faire dépendre la hauteur de la rangée d'une seule colonne. */
+    padding-top: 0;
+    justify-content: flex-end;
+    /* Hauteur RÉSERVÉE, mesurée au navigateur sur une platine chargée (500 px :
+       disque 124, nom, et tableau de 346 px à huit lignes).
+       Sans elle, vider une platine raccourcit sa colonne, la rangée de la régie
+       suit, et le cadre de la console se redimensionne sous les yeux. Le
+       tableau ayant désormais un nombre de lignes CONSTANT, cette hauteur ne
+       dépend plus du contenu : elle n'est à revoir que si l'on ajoute ou retire
+       une ligne au tableau. */
+    min-height: 500px;
   }
   /* Le plateau : des cercles concentriques à l'encre, pas un objet en volume. */
   .platine-plateau {
@@ -4839,40 +4868,11 @@
   .platine-plateau::before { transform: rotate(-52deg); }
   .platine-plateau::after  { transform: rotate(52deg); }
 
-  .platine-axe {
-    position: absolute;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--ink);
-  }
-  /* L'aiguille porte la part de voix : un tour vaut 50 %, la même échelle que
-     les vumètres — les deux lectures ne peuvent donc pas se contredire. */
-  .platine-aiguille {
-    position: absolute;
-    left: 50%;
-    bottom: 50%;
-    width: 2px;
-    height: 58px;
-    margin-left: -1px;
-    transform-origin: 50% 100%;
-    background: var(--party);
-  }
-  .platine-valeur {
-    position: absolute;
-    bottom: 22px;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1;
-  }
-  .platine-valeur b { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
 
   .platine-nom {
     margin: 0;
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px;
+    font-size: 23px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--ink);
@@ -4893,38 +4893,8 @@
     color: var(--ink-soft);
   }
 
-  .platine-donnees { margin: 0; width: 100%; max-width: 172px; }
-  .platine-donnees > div {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    padding: 5px 0;
-    border-bottom: 0.5px solid var(--rule-faint);
-  }
-  .platine-donnees > div:last-child { border-bottom: none; }
-  .platine-donnees dt {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-  }
-  .platine-donnees dd {
-    margin: 0;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 14px;
-    color: var(--ink);
-    white-space: nowrap;
-  }
-  .platine-donnees dd span {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    color: var(--ink-softer);
-  }
-  .platine-donnees dd.haut { color: var(--red); }
-  .platine-donnees dd.bas  { color: var(--green); }
+  .platine-table td.haut { color: var(--red); }
+  .platine-table td.bas  { color: var(--green); }
 
   /* La table de mix est un APPAREIL : elle a son châssis. Fond `--paper-deep`,
      le jeton que le design language réserve aux encadrés. Les platines, elles,
@@ -4936,7 +4906,20 @@
     background: var(--paper-deep);
     border: 1px solid var(--rule);
     padding: 20px 22px 24px;
-    margin-top: 4px;
+    /* Aucune marge haute : la position verticale de la console vient de
+       l'alignement par le bas de la régie. */
+    margin-top: 0;
+    /* La console ne s'ÉTIRE pas avec la rangée : elle garde sa hauteur propre,
+       fixée par la piste du vumètre, et se pose au bas de la colonne. Son cadre
+       devient donc statique, quoi qu'il arrive aux platines, et son haut se
+       trouve plus bas que le leur. */
+    align-self: end;
+    /* La piste reste à 250 px : `align-self: end` suffit à poser la console plus
+       bas que les platines, sans amputer le vumètre. Mesuré : la console tombe
+       à 359 px de haut contre 524 pour une platine, et les deux bas coïncident
+       au pixel. Raccourcir la piste en plus la ramenait à 299 px, ce qui ôtait
+       de la résolution à la seule vraie visualisation du module pour un gain de
+       mise en page déjà acquis. */
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
     /* Largeur d'une tranche — FIXE (voir plus bas), et calibrée pour que la
@@ -4976,17 +4959,6 @@
 
   /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
   .console-tranche { position: relative; }
-  .console-charge {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    font-weight: 500;
-    color: var(--cordovan);
-  }
   .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
   /* Le ruban d'un canal coupé perd sa couleur de parti : il n'est plus une
@@ -5002,7 +4974,12 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-softer);
-    white-space: nowrap;
+    /* Le repli est AUTORISÉ. En `nowrap`, une étiquette plus longue que la
+       tranche (44 px) déborde par-dessus ses voisines au lieu d'être contenue,
+       ce qui a cassé la colonne du PCQ le jour où « Sourdine » est devenu
+       « Trop peu présent ». La largeur de la tranche ne doit jamais dépendre de
+       la longueur d'un mot. */
+    white-space: normal;
   }
 
   /* Largeur FIXE, et non `flex: 1 1 0`. Dans un conteneur dimensionné par son
@@ -5585,7 +5562,7 @@
     padding: 22px 26px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 26px;
+    gap: 38px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.1em;
     color: var(--ink-soft);
@@ -6495,7 +6472,7 @@
   }
   .ambiance-ref-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px;
+    font-size: 23px;
     font-weight: 700;
     color: var(--ink);
     margin: 0;
@@ -8175,3 +8152,396 @@
 .hero-figure picture {
   display: contents;
 }
+
+/* ── « Reprendre ces chiffres » : le bloc de reprise pour la presse ──────────
+   Replié par défaut, et discret une fois ouvert : il s'adresse à une minorité
+   de visiteurs, et le module doit rester lisible pour tous les autres. On
+   reprend les filets fins et le papier creusé du reste du site plutôt que
+   d'inventer un encadré de plus. */
+.partis-presse {
+  margin-top: 28px;
+  border-top: 1px solid var(--rule);
+  padding-top: 14px;
+}
+
+.partis-presse > summary {
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  list-style: none;
+}
+.partis-presse > summary::-webkit-details-marker { display: none; }
+.partis-presse > summary::before {
+  content: "+ ";
+  color: var(--cordovan);
+}
+.partis-presse[open] > summary::before { content: "− "; }
+.partis-presse > summary:hover { color: var(--ink); }
+
+/* La phrase est un OBJET À PRENDRE, pas un paragraphe de plus : le papier
+   creusé et le filet cordovan disent « ceci se recopie ». */
+.partis-presse-phrase {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  background: var(--paper-deep);
+  border-left: 3px solid var(--cordovan);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.partis-presse-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.partis-presse-actions button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.partis-presse-actions button:hover {
+  border-color: var(--cordovan);
+  color: var(--cordovan);
+}
+
+.partis-presse-source {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.partis-presse-source li { margin-bottom: 5px; }
+
+@media (max-width: 480px) {
+  /* Les deux boutons passent pleine largeur : à 375 px, côte à côte, chacun
+     tombe sous la cible tactile confortable. */
+  .partis-presse-actions { flex-direction: column; }
+  .partis-presse-actions button { width: 100%; }
+}
+
+/* ── Platine : le rang, la trajectoire ──────────────────────────────────────
+   La platine donnait des mesures exactes mais muettes. Le rang et la courbe
+   répondent à « où en est ce parti ? » avant que l'œil ait lu un chiffre. */
+.platine-rang {
+  display: block;
+  margin-top: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  font-weight: 400;
+}
+.platine-rang sup { font-size: 0.7em; }
+
+
+
+/* Mode d'emploi des platines. Discret mais permanent : l'information vivait
+   dans l'infobulle du module, donc invisible pour qui ne l'ouvre pas, et rien
+   n'indiquait plus que les platines sont pilotables depuis qu'elles se
+   remplissent d'elles-mêmes. */
+.regie-aide {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-softer);
+}
+.regie-aide b {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* ── Platines : identité du parti, tableau lisible, cible de dépôt ───────────
+   La platine portait déjà `--party` (la couleur du parti), mais ne s'en servait
+   que pour l'aiguille. Le disque plein la porte désormais, et lui seul : un
+   filet de rappel au-dessus de la platine disait la même chose une deuxième
+   fois, dans une zone qui ne manquait pas de traits. */
+.platine {
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 2px;
+  transition: background 120ms ease;
+}
+
+.platine .platine-nom {
+  color: var(--party, var(--ink));
+  font-weight: 600;
+}
+
+/* Cible de dépôt survolée : le fond se teinte de la couleur du parti saisi ne
+   pouvant être connue à l'avance, on prend celle de la platine, ou le cordovan
+   quand elle est vide. Le pointillé dit « déposez ici » sans texte. */
+.platine.survolee {
+  background: color-mix(in srgb, var(--party, var(--cordovan)) 10%, transparent);
+  outline: 2px dashed color-mix(in srgb, var(--party, var(--cordovan)) 55%, transparent);
+  outline-offset: 3px;
+}
+
+/* Le tableau des données : plus large, plus aéré, et les valeurs alignées à
+   droite pour que l'œil descende une colonne au lieu de zigzaguer. */
+/* La précision (« sur 7 », la date du record) descend d'un cran : c'est un
+   complément, pas la valeur qu'on vient chercher. */
+
+/* Le curseur dit que la tranche se saisit. */
+.console-tranche { cursor: grab; }
+.console-tranche:active { cursor: grabbing; }
+
+/* Le plateau et son axe prennent la couleur du parti chargé.
+   L'aiguille la portait déjà, mais elle est fine : le cercle qui l'entoure
+   restait gris, si bien que l'identité du parti ne se lisait qu'au sigle. Les
+   sillons restent très pâles, sinon le disque concurrence les vumètres au lieu
+   de les accompagner. Une platine vide garde ses teintes neutres, faute de
+   parti à représenter. */
+.platine:not(.vide) .platine-plateau {
+  border-color: color-mix(in srgb, var(--party) 55%, transparent);
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      transparent 0 6px,
+      color-mix(in srgb, var(--party) 22%, transparent) 6px 7px);
+}
+
+/* ── Le disque : un aplat plein à la couleur du parti ────────────────────────
+   Remplace le vumètre à aiguille. La part de voix reste encodée par les
+   vumètres de la console, où les cinq partis se comparent côte à côte ; la
+   platine, elle, identifie et détaille. Un aplat lit mieux qu'une aiguille à
+   cette taille, et la couleur devient reconnaissable d'un coup d'œil.
+
+   Ces règles neutralisent celles définies plus haut dans le fichier (sillons,
+   repères d'arc, axe) plutôt que de les supprimer sur place : le bloc d'origine
+   reste lisible d'un tenant, et la surcharge dit explicitement ce qu'elle
+   remplace. */
+.platine:not(.vide) .platine-plateau {
+  background: var(--party);
+  border-color: var(--party);
+}
+/* Les deux repères d'arc marquaient les extrémités de la course de l'aiguille.
+   Sans aiguille, ils ne se rapportent plus à rien. */
+.platine-plateau::before,
+.platine-plateau::after {
+  display: none;
+}
+
+/* La valeur passe sur le papier : sur un aplat foncé, l'encre ne se lit plus.
+   Les cinq couleurs de partis tiennent toutes au moins 3:1 sur le papier ivoire
+   (la plus faible, QS, à 3,94), donc le contraste inverse est acquis. */
+
+/* Platine vide : un cercle en pointillé, qui dit « ici » sans rien affirmer. */
+.platine.vide .platine-plateau {
+  background: transparent;
+  border: 1px dashed var(--rule);
+}
+
+/* Réservé aux lecteurs d'écran. Introduit pour la légende des tableaux de
+   platine : un <table> sans <caption> laisse l'utilisateur d'un lecteur d'écran
+   deviner de quel parti viennent les chiffres, alors que la couleur et le sigle
+   le disent à l'œil. La technique du rectangle de 1 px reste préférée à
+   `display: none`, qui retirerait la légende de l'arbre d'accessibilité. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Le tableau d'une platine ───────────────────────────────────────────────
+   Trois révisions successives ont mené ici. Les filets horizontaux seuls
+   laissaient les valeurs flotter sans colonne ; la grille complète, cadre et
+   traits de même poids partout, enfermait le tableau dans une boîte qui
+   concurrençait les chiffres. La version retenue tient le milieu :
+
+   - la valeur d'entrée occupe une BANDE, teintée de la couleur du parti, qui
+     prolonge le disque au lieu de répéter une ligne de plus ;
+   - les mesures secondaires suivent en lignes à filet fin, sans cadre ni
+     séparation de colonne : l'alignement à droite suffit à tenir la colonne,
+     et deux tableaux côte à côte se comparent ligne à ligne. */
+.platine-table {
+  width: 100%;
+  /* Jamais plus large que sa colonne : la régie donne 200 px aux côtés, et un
+     plafond supérieur poussait le tableau hors de sa case. */
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.platine-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  text-align: left;
+  padding: 5px 8px 5px 0;
+  vertical-align: baseline;
+}
+.platine-table td {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  color: var(--ink);
+  text-align: right;
+  padding: 5px 0;
+  vertical-align: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.platine-table tr + tr { border-top: 0.5px solid var(--rule-faint); }
+
+/* La bande de tête : le prolongement du disque, pas une ligne de tableau. */
+.platine-table tr:first-child th,
+.platine-table tr:first-child td {
+  background: color-mix(in srgb, var(--party) 12%, transparent);
+  border-top: none;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.platine-table tr:first-child th { padding-left: 8px; }
+.platine-table tr:first-child td { padding-right: 8px; }
+.platine-table .platine-td-cle {
+  font-size: 20px;
+  line-height: 1.05;
+  color: var(--party, var(--ink));
+  font-weight: 600;
+}
+
+/* Les précisions (« sur 7 », la date du record) descendent d'un cran : ce sont
+   des compléments, pas la valeur qu'on vient chercher. */
+.platine-table td span {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink-softer);
+}
+.platine-table sup { font-size: 0.65em; }
+
+/* Le disque n'a plus de texte : il rétrécit et devient un pur repère
+   d'identité. */
+/* Un disque plus large : c'est le seul porteur de l'identité du parti depuis
+   que le filet coloré a disparu, et il doit donc peser dans la colonne. */
+.platine .platine-plateau { width: 124px; height: 124px; }
+
+/* ── Démonstration du glisser, sur un emplacement vide ───────────────────────
+   Un carré de couleur qui glisse ne dit pas CE QU'ON glisse. La pastille a donc
+   l'allure d'un ruban de parti, celui-là même qu'on saisit dans la console :
+   sigle, coins arrondis, couleur pleine. Elle vient de la gauche, où se trouve
+   la console, et le trajet imite celui que fera la main.
+   Un anneau marque l'arrivée au moment du dépôt, pour que la fin du geste se
+   lise comme un dépôt et non comme une disparition. */
+.platine-demo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 22px;
+  margin: -11px 0 0 -26px;
+  border-radius: 3px;
+  /* Cordovan, et non la couleur d'un parti réel. Deux raisons : la démonstration
+     montre le GESTE, pas un choix (une pastille aux couleurs du PQ suggérerait
+     qu'il faut glisser celui-là) ; et coder une teinte de parti ici la
+     dupliquerait, ce contre quoi `parties.ts` met en garde en toutes lettres. */
+  background: var(--cordovan);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
+  opacity: 0;
+  animation: platine-demo-geste 3.2s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+}
+
+/* L'anneau d'arrivée : il ne pulse qu'au moment où la pastille se pose. */
+.platine-demo-cible {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cordovan);
+  opacity: 0;
+  animation: platine-demo-arrivee 3.2s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+}
+
+@keyframes platine-demo-geste {
+  0%   { transform: translate(-70px, 10px) rotate(-6deg); opacity: 0; }
+  12%  { opacity: 1; }
+  /* L'approche ralentit avant de se poser : c'est ce ralenti qui fait lire un
+     dépôt plutôt qu'un passage. */
+  52%  { transform: translate(-8px, 2px) rotate(-2deg); opacity: 1; }
+  64%  { transform: translate(0, 0) rotate(0deg) scale(0.92); opacity: 1; }
+  78%  { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.85; }
+  92%  { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0; }
+  100% { transform: translate(-70px, 10px) rotate(-6deg); opacity: 0; }
+}
+
+@keyframes platine-demo-arrivee {
+  0%, 60% { transform: scale(0.55); opacity: 0; }
+  70%     { transform: scale(1); opacity: 0.55; }
+  88%     { transform: scale(1.35); opacity: 0; }
+  100%    { transform: scale(0.55); opacity: 0; }
+}
+
+/* Une animation en boucle est une distraction permanente pour qui a réglé son
+   système là-dessus : la consigne écrite suffit alors. */
+@media (prefers-reduced-motion: reduce) {
+  .platine-demo,
+  .platine-demo-cible { animation: none; opacity: 0; }
+}
+
+/* « s. o. » : une valeur sans objet, plus discrète que les vraies mesures pour
+   qu'on ne la lise pas comme un résultat. */
+.platine-table .platine-td-so {
+  color: var(--ink-softer);
+  font-size: 13px;
+}
+
+/* Une platine vide place son disque EXACTEMENT là où se trouvera le disque
+   coloré une fois le parti chargé.
+   Le contenu d'une platine chargée remplit la hauteur réservée (500 px), donc
+   son disque se trouve tout en haut. Centrer le contenu d'une platine vide,
+   comme je l'avais fait, posait son disque plus bas : la démonstration du
+   glisser désignait alors un endroit où rien n'apparaîtrait, et le geste montré
+   ne menait pas à la cible réelle. */
+.platine.vide { justify-content: flex-start; }
+
+/* La colonne du milieu de la régie : la manchette puis la console, poussées
+   vers le bas comme les platines. La phrase se retrouve ainsi juste au-dessus
+   du cadre de l'instrument qu'elle commente, et l'espace laissé vide par une
+   console plus courte que les platines sert enfin à quelque chose. */
+.regie-centre {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  /* L'air sous la phrase : à zéro, elle se lisait comme une étiquette collée
+     sur la console plutôt que comme la phrase-clé du module. */
+  gap: 38px;
+}
+/* La console porte déjà `align-self: end` pour ne pas s'étirer dans la grille ;
+   dans ce conteneur en colonne, c'est `margin-top: 0` qui la colle à la phrase. */
+.regie-centre .console { align-self: stretch; }
