@@ -2,32 +2,49 @@
 //
 // ── PROTECTION ──────────────────────────────────────────────────────────────
 //
-// Ces routes ne portent AUCUNE authentification applicative. Elles sont
-// protégées par une application Cloudflare Access placée devant
-// `api.vitrinedemocratique.com/admin*`, exactement comme le miroir dev.
+// Deux verrous, et le second ne dépend pas d'une configuration extérieure.
 //
-// Ce choix est délibéré : écrire un second système de mots de passe, c'est
-// écrire un second système à tenir à jour, à faire tourner et à auditer. Access
-// fait déjà de l'identité (code à usage unique par courriel, sans mot de passe
-// à partager) et journalise les accès.
+// 1. Une application Cloudflare Access devant api.vitrinedemocratique.com/admin
+//    authentifie l'identité (code à usage unique par courriel). Écrire un
+//    second système de mots de passe reviendrait à en tenir un de plus à jour,
+//    à faire tourner et à auditer.
 //
-// LE COROLLAIRE EST CRITIQUE : si l'application Access est retirée ou mal
-// configurée, ces routes deviennent publiques et n'importe qui peut émettre une
-// clé. D'où le garde-fou ci-dessous, qui REFUSE de servir /admin sans en-tête
-// d'identité Access. Mieux vaut une administration inaccessible qu'ouverte.
+// 2. Le Worker VÉRIFIE LUI-MÊME la signature du jeton Access (voir access.ts).
+//    Sans cela, la sécurité reposerait entièrement sur la présence de
+//    l'application Access : la retirer — un clic — rendrait ces routes
+//    publiques, et n'importe qui pourrait émettre des clés d'API en fabriquant
+//    un simple en-tête. Le jeton, lui, ne se fabrique pas sans la clé privée de
+//    Cloudflare.
+//
+// En cas de doute, on FERME : jeton absent, invalide, expiré, destiné à une
+// autre application, ou variables ACCESS_* non configurées donnent tous un 403.
+// Une administration inaccessible vaut mieux qu'une administration ouverte.
 
 import type { NeonQueryFunction } from '@neondatabase/serverless'
 
 import { mintKey } from './auth'
+import { verifyAccessJwt } from './access'
 
 /** Identité prouvée par Cloudflare Access, ou null.
  *
- *  Access injecte `Cf-Access-Authenticated-User-Email` après avoir vérifié
- *  l'identité. L'en-tête ne peut pas être forgé de l'extérieur : Cloudflare
- *  écrase toute valeur fournie par le client avant d'atteindre le Worker. */
-export function accessUser(request: Request): string | null {
-  const email = request.headers.get('cf-access-authenticated-user-email')
-  return email && email.includes('@') ? email : null
+ *  On VÉRIFIE LA SIGNATURE du jeton, on ne se contente pas de l'en-tête
+ *  courriel. Cet en-tête n'est digne de confiance que tant qu'Access est
+ *  effectivement devant le Worker ; retirer l'application Access — un clic —
+ *  suffirait sinon à laisser n'importe qui émettre des clés d'API. Voir
+ *  access.ts pour le détail.
+ *
+ *  `ACCESS_TEAM_DOMAIN` et `ACCESS_AUD` doivent être configurés. S'ils
+ *  manquent, on refuse : mieux vaut une administration inaccessible qu'une
+ *  administration dont on ne sait pas si elle est protégée. */
+export async function accessUser(request: Request, env: AdminEnv): Promise<string | null> {
+  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) return null
+  const identity = await verifyAccessJwt(request, env.ACCESS_TEAM_DOMAIN, env.ACCESS_AUD)
+  return identity?.email ?? null
+}
+
+export interface AdminEnv {
+  ACCESS_TEAM_DOMAIN?: string
+  ACCESS_AUD?: string
 }
 
 async function log(
@@ -56,16 +73,18 @@ export async function handleAdmin(
   request: Request,
   sql: NeonQueryFunction<false, false>,
   segments: string[],
+  env: AdminEnv,
 ): Promise<Response> {
-  const actor = accessUser(request)
+  const actor = await accessUser(request, env)
   if (!actor) {
     // Voir le commentaire d'en-tête : on préfère fermer que risquer d'ouvrir.
     return json(
       {
         error:
-          "Administration inaccessible : aucune identité Cloudflare Access n'a été " +
-          'présentée. Si vous voyez ceci depuis un navigateur connecté, ' +
-          "l'application Access devant /admin est absente ou mal configurée.",
+          "Administration inaccessible : aucun jeton Cloudflare Access valide n'a " +
+          'été présenté. Si vous voyez ceci depuis un navigateur connecté, ' +
+          "l'application Access devant /admin est absente, mal configurée, ou " +
+          'ACCESS_AUD ne correspond pas à celui de cette application.',
       },
       403,
     )

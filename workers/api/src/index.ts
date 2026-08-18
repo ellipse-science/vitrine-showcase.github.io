@@ -32,6 +32,12 @@ import { isTargetHourInNY } from './schedule'
 
 interface Env {
   DATABASE_URL: string
+  /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
+  ACCESS_TEAM_DOMAIN?: string
+  /** `aud` de l'application Access devant /admin. Lie le jeton à CETTE
+   *  application : sans lui, un jeton émis pour le miroir dev ouvrirait
+   *  l'administration. */
+  ACCESS_AUD?: string
   CACHE_TTL_SECONDS?: string
   /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
    *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
@@ -126,7 +132,7 @@ export default {
     const seg = url.pathname.split('/').filter(Boolean)
     if (seg[0] === 'admin') {
       const sqlAdmin = neon(env.DATABASE_URL)
-      const res = await handleAdmin(request, sqlAdmin, seg)
+      const res = await handleAdmin(request, sqlAdmin, seg, env)
       res.headers.set('cache-control', 'no-store')
       return res
     }
