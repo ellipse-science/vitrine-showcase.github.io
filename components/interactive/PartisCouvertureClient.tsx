@@ -1001,7 +1001,16 @@ function Tranche({
         </span>
       ) : (
         <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-          {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "–"}
+          <span aria-hidden="true">
+            {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "–"}
+          </span>
+          {/* Le ton ne tenait QUE dans une flèche colorée et un `title`. La
+              flèche n'a pas de nom accessible, et `title` sur un <span> n'est ni
+              atteignable au clavier ni annoncé de façon fiable : la tonalité,
+              l'une des trois mesures du module, était donc muette pour un
+              lecteur d'écran. Le libellé complet part maintenant dans le flux,
+              masqué visuellement. */}
+          <span className="visually-hidden">{row.toneTitle}</span>
         </span>
       )}
     </li>

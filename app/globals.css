@@ -12,6 +12,8 @@
     --bleu: #2E4663;
     --green: #3D6B3A;
     --amber: #B88A3D;
+    /* Variante lisible en TEXTE de --amber (4,61:1 sur le papier). */
+    --amber-encre: #86642C;
     --tag-new-bg: #6B1E2A;
     --tag-new-fg: #F3ECDD;
     --tag-keep-bg: transparent;
@@ -4789,7 +4791,14 @@
   /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
      bien au-dessus. */
   /* Le chiffre du média prend la couleur de son écart, comme les segments. */
-  .manchette-chiffre.sur      { color: var(--amber); }
+  /* `--amber` (#B88A3D) ne fait que 2,65:1 sur le papier : sous le seuil de
+     4,5:1 des textes, et même sous les 3:1 des grands textes. Il reste juste
+     pour les SEGMENTS du vumètre, où la position encode déjà le niveau, mais
+     pas pour un chiffre que le lecteur vient lire — et c'est ici le chiffre de
+     la manchette, la phrase la plus lue du module.
+     `--amber-encre` est le même ambre assombri jusqu'à 4,61:1 : même teinte,
+     même sens, lisible. */
+  .manchette-chiffre.sur      { color: var(--amber-encre); }
   .manchette-chiffre.sur-fort { color: var(--red); }
   .manchette-chiffre.sous     { color: var(--green); }
 
