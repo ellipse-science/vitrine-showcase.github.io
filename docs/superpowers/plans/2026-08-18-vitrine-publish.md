@@ -429,6 +429,9 @@ sync_one_table <- function(con_athena, con_pg, spec) {
   n <- tryCatch({
     DBI::dbExecute(con_pg, paste0('TRUNCATE vitrine."', spec$name, '"'))
     if (nrow(rows) > 0) DBI::dbAppendTable(con_pg, target, rows)
+    counted <- DBI::dbGetQuery(
+      con_pg, paste0('SELECT count(*)::int AS n FROM vitrine."', spec$name, '"')
+    )$n
     DBI::dbExecute(
       con_pg,
       paste0(
@@ -438,11 +441,8 @@ sync_one_table <- function(con_athena, con_pg, spec) {
         "synced_at = EXCLUDED.synced_at, row_count = EXCLUDED.row_count, ",
         "source = EXCLUDED.source"
       ),
-      params = list(spec$name, nrow(rows))
+      params = list(spec$name, counted)
     )
-    counted <- DBI::dbGetQuery(
-      con_pg, paste0('SELECT count(*)::int AS n FROM vitrine."', spec$name, '"')
-    )$n
     DBI::dbCommit(con_pg)
     logger::log_info("  ", counted, " lignes en base")
     counted
@@ -496,11 +496,9 @@ lambda_handler <- function(event, context) {
 
   whitelist <- load_whitelist()
   con_athena <- tube::ellipse_connect(env = source_env, database = "datamarts")
+  on.exit(try(DBI::dbDisconnect(con_athena), silent = TRUE), add = TRUE)
   con_pg <- pg_connect(get_ssm_param("/vitrine/api/database-url"))
-  on.exit({
-    try(DBI::dbDisconnect(con_athena), silent = TRUE)
-    try(DBI::dbDisconnect(con_pg), silent = TRUE)
-  })
+  on.exit(try(DBI::dbDisconnect(con_pg), silent = TRUE), add = TRUE)
 
   results <- list()
   for (spec in whitelist) {
