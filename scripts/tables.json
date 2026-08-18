@@ -425,6 +425,39 @@
       "filter": "polimetre_plus_recent",
       "enabled": true,
       "used_by": "lib/data/polimetre.ts"
+    },
+    {
+      "name": "provincial_parties_salient_shadow_intraday",
+      "athena": "vitrine_datamart-provincial_parties_salient_shadow_intraday",
+      "out": "public/data/refined/day/provincial_parties_salient_shadow_intraday.json",
+      "cols": [
+        "party",
+        "block_hour",
+        "block_label",
+        "weighted_mentions",
+        "weighted_tone",
+        "date_utc",
+        "date_montreal_tz",
+        "computed_at"
+      ],
+      "enabled": true,
+      "used_by": "components/interactive/PartisCouvertureClient.tsx"
+    },
+    {
+      "name": "parties_issues_salient_shadow_day",
+      "athena": "vitrine_datamart-parties_issues_salient_shadow_day",
+      "out": "public/data/refined/day/parties_issues_salient_shadow_day.json",
+      "cols": [
+        "party",
+        "theme",
+        "issue_share",
+        "weighted_tone",
+        "date_utc",
+        "date_montreal_tz",
+        "computed_at"
+      ],
+      "enabled": true,
+      "used_by": "components/interactive/PartisCouvertureClient.tsx"
     }
   ],
   "post_process": [

@@ -138,6 +138,16 @@ type ShadowRow = {
 /** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
 type IntradayRow = ShadowRow & { block_hour: number; block_label: string };
 
+/** Une ligne de `parties_issues_salient_shadow_day`. */
+type IssueRow = {
+  party: string;
+  theme: string;
+  issue_share: number;
+  weighted_tone: number;
+  date_utc: string;
+  date_montreal_tz?: string;
+};
+
 type Entry = { mentions: number; tone: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
@@ -155,6 +165,19 @@ type Stat = {
 /** Les dates effectivement retenues pour chaque échelle — l'axe horizontal de
  *  la courbe les étiquette, donc elles doivent voyager avec les valeurs. */
 type SeriesDates = { daily: string[]; weekly: string[]; monthly: string[] };
+
+/** Un enjeu dont on parle à propos d'un parti. */
+export type EnjeuView = {
+  /** Libellé CAP canonique, repris au caractère près : ces douze catégories
+   *  sont partagées avec le Digital Society Lab, les changer casserait la
+   *  comparabilité entre projets. */
+  label: string;
+  /** Part de cet enjeu DANS ce parti, en % entier. Les parts d'un même parti
+   *  somment à 100. */
+  pct: number;
+  toneLabel: string;
+  toneDirection: "positive" | "negative" | "neutral";
+};
 
 export type RowView = {
   key: PartyKey;
@@ -183,6 +206,9 @@ export type RowView = {
   /** Évolution entre le premier et le dernier jour de la fenêtre, en POINTS de
    *  pourcentage. Jamais en pourcentage d'un pourcentage. */
   evolutionPts: number;
+  /** Les enjeux dont on parle à propos de ce parti, du plus au moins présent.
+   *  Vide tant que la table de croisement n'est pas publiée. */
+  enjeux: EnjeuView[];
   /** Sommet atteint sur la fenêtre suivie, et le jour où il l'a été.
    *  C'est le « peak hold » de la console : le trait qui reste au niveau le
    *  plus haut atteint, longtemps après que le son soit redescendu. */
@@ -976,7 +1002,55 @@ function chiffresParlants(
   };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, chartJour?: ChartView | null): RangeView {
+/** Les enjeux du dernier jour publié, groupés par parti et triés.
+ *
+ *  On garde les CINQ premiers : au-delà, la queue est faite de parts sous 3 %
+ *  que le lecteur ne peut pas comparer utilement, et qui allongeraient la
+ *  platine sans rien apprendre. La somme des parts d'un parti vaut 100 sur la
+ *  table complète, donc le total affiché est volontairement inférieur — c'est
+ *  un « les plus présents », pas une répartition exhaustive.
+ */
+function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
+  const out = new Map<PartyKey, EnjeuView[]>();
+  if (rows.length === 0) return out;
+
+  const dernier = rows
+    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
+    .sort()
+    .at(-1);
+
+  for (const key of PARTY_KEYS) {
+    const siens = rows
+      .filter(
+        (r) =>
+          String(r.party ?? "").toLowerCase() === key &&
+          String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier,
+      )
+      .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
+      .slice(0, 5);
+
+    if (siens.length === 0) continue;
+
+    out.set(
+      key,
+      siens.map((r) => {
+        const t = Number(r.weighted_tone) || 0;
+        const dir = t > TONE_THRESHOLD ? "positive" : t < -TONE_THRESHOLD ? "negative" : "neutral";
+        return {
+          label: String(r.theme ?? ""),
+          pct: Math.round(Number(r.issue_share) * 100),
+          // « Favorable / défavorable », jamais « positif / négatif » : règle du
+          // guide de rédaction pour ce module.
+          toneLabel: dir === "positive" ? "Favorable" : dir === "negative" ? "Défavorable" : "Neutre",
+          toneDirection: dir as EnjeuView["toneDirection"],
+        };
+      }),
+    );
+  }
+  return out;
+}
+
+function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, chartJour?: ChartView | null, enjeux?: Map<PartyKey, EnjeuView[]>): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
   const fenetre = fenetreDeLOnglet(range, dates.daily);
@@ -1039,6 +1113,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       /** Nom officiel complet, pour les textes destinés à être cités. */
       fullLabel: PARTY_FULL_NAMES[stat.key],
       rang: idx + 1,
+      enjeux: enjeux?.get(stat.key) ?? [],
       joursEnTete: parlants.joursEnTete,
       joursComptes: parlants.joursComptes,
       evolutionPts: parlants.evolutionPts,
@@ -1167,6 +1242,12 @@ export async function loadParties(
     // aws-refiners#355, et les archives antérieures n'en ont pas. Son absence
     // fait retomber l'onglet « Jour » sur la courbe au jour le jour, plutôt que
     // de casser tout le module.
+    // Le croisement parti × enjeu, lui aussi FACULTATIF : la table date
+    // d'aws-refiners#355 et les archives antérieures n'en ont pas.
+    const enjeuxRaw = await fs
+      .readFile(path.join(DATA_DIR, "day", "parties_issues_salient_shadow_day.json"), "utf8")
+      .catch(() => null);
+
     const intradayRaw = await fs
       .readFile(path.join(DATA_DIR, "day", "provincial_parties_salient_shadow_intraday.json"), "utf8")
       .catch(() => null);
@@ -1222,6 +1303,13 @@ export async function loadParties(
       }
     }
 
+    // Les enjeux du DERNIER jour publié, par parti. On ne moyenne pas sur la
+    // fenêtre : la question posée est « de quoi parle-t-on en ce moment », et
+    // une moyenne de trente jours lisserait précisément ce qui fait l'actualité.
+    const enjeuxParParti = buildEnjeux(
+      enjeuxRaw ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[]) : [],
+    );
+
     // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
     // pas encore deux blocs — un seul point ne dessine pas une journée.
     const chartJour = intradayRaw
@@ -1248,9 +1336,9 @@ export async function loadParties(
       medias,
       byMedia,
       ranges: {
-        today: buildRangeView(stats, "today", dates, chartJour),
-        week:  buildRangeView(stats, "week", dates),
-        overall: buildRangeView(stats, "overall", dates),
+        today: buildRangeView(stats, "today", dates, chartJour, enjeuxParParti),
+        week:  buildRangeView(stats, "week", dates, null, enjeuxParParti),
+        overall: buildRangeView(stats, "overall", dates, null, enjeuxParParti),
       },
     };
   } catch (err) {

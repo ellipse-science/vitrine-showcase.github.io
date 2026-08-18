@@ -108,7 +108,7 @@ function BlocJournalistes({
           total des cinq partis québécois. Ce n&apos;est pas une intention de vote.
         </li>
         <li>
-          <b>Trop peu présent&nbsp;:</b> sous 5&nbsp;% du temps, un parti compte trop peu pour
+          <b>Sourdine&nbsp;:</b> sous 5&nbsp;% du temps, un parti compte trop peu pour
           qu&apos;on en tire une lecture. Sa colonne reste affichée, en gris.
         </li>
       </ul>
@@ -287,7 +287,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
               tout est vert, puisqu&apos;il n&apos;y a rien à comparer. Les couleurs
               n&apos;apparaissent qu&apos;en choisissant un média en particulier.
               <br />
-              <br />• <b>Trop peu présent</b> : sous 5&nbsp;% du temps, un parti compte trop peu pour
+              <br />• <b>Sourdine</b> : sous 5&nbsp;% du temps, un parti compte trop peu pour
               qu&apos;on puisse en tirer quelque chose. Sa colonne reste affichée, en gris.
               <br />
               <br />• <b>Cliquez un parti</b> pour l&apos;examiner en détail.
@@ -447,9 +447,13 @@ function AvisIndisponible({ info }: { info: Indisponibilite }) {
  * 20 % est le PARTAGE ÉGAL entre cinq partis, donc la frontière entre un canal
  * en dessous de sa part et un canal au-dessus.
  */
-/** 20 crans pour une pleine échelle de 50 % : un cran vaut 2,5 points. */
+/** 20 crans pour une pleine échelle de 100 % : un cran vaut 5 points. */
 const METER_SEGMENTS = 20;
-const METER_FULL_SCALE = 50;
+// Pleine échelle à 100 % et non 50 : le vumètre couvre désormais la TOTALITÉ du
+// temps consacré aux partis, si bien qu'un canal plein veut dire « ce parti
+// occupe tout ». À 50, un parti à la moitié saturait déjà l'échelle, ce qui
+// exagérait les écarts en haut du classement.
+const METER_FULL_SCALE = 100;
 
 /**
  * La couleur d'un canal dit son ÉCART À LA MOYENNE, pas son niveau.
@@ -585,10 +589,10 @@ function Console({
             `--n` est le NOMBRE DE SEGMENTS sous le repère, pas une fraction de
             hauteur : les segments sont séparés par des gouttières, donc la
             pile n'est pas linéaire et une position en pourcentage tombe à côté.
-            Chaque graduation choisie est un multiple de 2,5 %, donc elle tombe
+            Chaque graduation choisie est un multiple de 5 %, donc elle tombe
             exactement sur une frontière entre deux segments. */}
         <ul className="console-graduations" aria-hidden="true">
-          {[50, 40, 30, 20, 10, 0].map((v) => (
+          {[100, 80, 60, 40, 20, 0].map((v) => (
             <li
               key={v}
               style={{ ["--n" as string]: (v / METER_FULL_SCALE) * METER_SEGMENTS }}
@@ -827,7 +831,7 @@ function Platine({
                   entre quand et quand. Le survol précise que la mesure compare
                   les deux bouts de la période, et non une moyenne. */}
               <th scope="row" title="Écart entre le premier et le dernier jour de la période, en points de pourcentage">
-                Depuis {row.joursComptes}&nbsp;jours
+                Sur {row.joursComptes}&nbsp;j
               </th>
               <td className={row.evolutionPts > 0 ? "haut" : row.evolutionPts < 0 ? "bas" : undefined}>
                 {row.evolutionPts > 0 ? "+" : ""}{row.evolutionPts}&nbsp;point
@@ -848,7 +852,7 @@ function Platine({
               scope="row"
               title="Écart entre ce média et l'ensemble des médias, en points. Sans objet tant qu'aucun média n'est choisi : chaque parti est alors à sa propre moyenne."
             >
-              Écart aux médias
+              Écart médias
             </th>
             {ecartUtile ? (
               <td className={ecartPts > 0 ? "haut" : ecartPts < 0 ? "bas" : undefined}>
@@ -878,11 +882,49 @@ function Platine({
               Seuil
             </th>
             <td className={row.inShadow ? "platine-td-so" : undefined}>
-              {row.inShadow ? "Sous 5\u00a0%" : "Au-dessus de 5\u00a0%"}
+              {row.inShadow ? "Sourdine" : "Audible"}
             </td>
           </tr>
         </tbody>
       </table>
+
+      {/* LES ENJEUX : de quoi on parle quand on parle de ce parti.
+          Deux partis peuvent occuper la même place et parler de choses
+          entièrement différentes — c'est la dimension que le module annonçait
+          sans jamais la montrer. Une barre plutôt qu'un chiffre seul : à cinq
+          lignes, l'œil compare des longueurs bien plus vite que des nombres.
+          Absent tant que le croisement n'est pas publié, plutôt qu'un bloc vide
+          qui laisserait croire à une panne. */}
+      {row.enjeux.length > 0 && (
+        <div className="platine-enjeux">
+          <p className="platine-enjeux-tete">
+            On en parle à propos de
+            <InfoTip size="sm" label="Enjeux associés">
+              Les enjeux dont il est question dans les mêmes phrases que ce parti, sur la
+              dernière journée publiée. Les parts se lisent à l&apos;intérieur du parti&nbsp;:
+              elles disent de quoi on parle à son sujet, pas son poids dans l&apos;actualité.
+              Seuls les cinq premiers sont affichés.
+            </InfoTip>
+          </p>
+          <ul>
+            {row.enjeux.map((e) => (
+              <li key={e.label}>
+                <span className="platine-enjeu-nom">{e.label}</span>
+                <span className="platine-enjeu-barre" aria-hidden="true">
+                  <i style={{ width: `${e.pct}%`, background: row.color }} />
+                </span>
+                <span className="platine-enjeu-pct">{e.pct}&nbsp;%</span>
+                <span className={`platine-enjeu-ton tone-streak--${e.toneDirection}`}>
+                  <span aria-hidden="true">
+                    {e.toneDirection === "positive" ? "↑" : e.toneDirection === "negative" ? "↓" : "–"}
+                  </span>
+                  <span className="visually-hidden">Ton&nbsp;: {e.toneLabel}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -984,16 +1026,15 @@ function Tranche({
       >
         {row.label}
       </button>
-      {/* « Sous 5 % » et non « Trop peu présent » : la tranche fait 44 px de large,
-          et l'étiquette longue en débordait par-dessus ses voisines. Le critère
-          dit d'ailleurs plus que l'étiquette, et l'infobulle porte l'explication
-          complète. Même état, nommé selon la place disponible : « trop peu
-          présent » dans le tableau de la platine et dans le bloc de reprise, où
-          la largeur ne manque pas. */}
+      {/* « Sourdine » : le mot tient dans les 44 px de la tranche, contrairement
+          à « Trop peu présent » qui débordait par-dessus ses voisines. Il reste
+          le seul emprunt au vocabulaire de la table de mixage dans le texte
+          visible, et c'est un choix assumé — le mot est court, connu, et dit
+          l'état mieux qu'un seuil chiffré. */}
       {coupe ? (
         <span className="console-sourdine">
-          Sous 5&nbsp;%
-          <InfoTip size="sm" label="Trop peu présent">
+          Sourdine
+          <InfoTip size="sm" label="Sourdine">
             Sur cette période, ce parti reçoit moins de 5&nbsp;% du temps que les médias
             consacrent aux partis. Trop peu pour qu&apos;on puisse en tirer quelque chose. Sa
             colonne reste affichée, mais sans valeur.

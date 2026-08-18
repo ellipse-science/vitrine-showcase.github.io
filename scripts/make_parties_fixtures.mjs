@@ -286,6 +286,51 @@ for (const date of D.slice(-8)) {
 }
 files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday]);
 
+// ── Croisement PARTI × ENJEU ─────────────────────────────────────────────────
+// Ce que publie aws-refiners#355 : pour chaque parti, la répartition des enjeux
+// dont on parle quand on parle de lui. Les libellés sont les 12 catégories CAP
+// canoniques, partagées avec le Digital Society Lab — à reprendre au caractère
+// près, les changer casserait la comparabilité.
+const ENJEUX = [
+  "Santé et politiques sociales", "Économie et travail", "Éducation",
+  "Environnement et énergie", "Gouvernements et gouvernance", "Immigration",
+  "Loi et crime", "Culture et nationalisme", "Affaires internationales et défense",
+  "Terres publiques et agriculture", "Technologie",
+  "Droits, libertés, minorités et discrimination",
+];
+// Chaque parti a SON profil : c'est tout l'intérêt de la mesure, deux partis
+// peuvent occuper la même place et parler de choses différentes.
+const PROFILS = {
+  CAQ: [0.24, 0.20, 0.10, 0.08, 0.14, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02, 0.01],
+  PQ:  [0.10, 0.12, 0.09, 0.07, 0.13, 0.11, 0.05, 0.24, 0.04, 0.02, 0.01, 0.02],
+  PLQ: [0.18, 0.16, 0.12, 0.06, 0.16, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01],
+  QS:  [0.22, 0.14, 0.13, 0.21, 0.07, 0.05, 0.03, 0.04, 0.03, 0.03, 0.02, 0.03],
+  PCQ: [0.12, 0.19, 0.08, 0.05, 0.15, 0.14, 0.13, 0.05, 0.04, 0.03, 0.01, 0.01],
+};
+const randEnj = rng(311);
+const croises = [];
+for (const date of D.slice(-8)) {
+  for (const party of PARTIES) {
+    const profil = PROFILS[party];
+    const brut = profil.map((v) => Math.max(0, v * (0.75 + 0.5 * randEnj())));
+    const total = brut.reduce((a, b) => a + b, 0);
+    ENJEUX.forEach((theme, i) => {
+      if (brut[i] / total < 0.008) return;   // le raffineur ne publie pas les couples sans détection
+      croises.push({
+        party, theme,
+        issue_share: Number((brut[i] / total).toFixed(6)),
+        total_raw_score: Number((brut[i] * 420).toFixed(2)),
+        weighted_tone: Number((randEnj() * 1.4 - 0.8).toFixed(3)),
+        sentence_weight: Number((brut[i] * 60).toFixed(2)),
+        date_utc: date, date_montreal_tz: date,
+        period_start: D[0], period_end: date,
+        computed_at: `${date}T20:31:00Z`, threshold: 0.02,
+      });
+    });
+  }
+}
+files.push(["day", "parties_issues_salient_shadow_day.json", croises]);
+
 for (const [sub, name, rows] of files) {
   const dir = path.join(OUT_DIR, sub);
   await fs.mkdir(dir, { recursive: true });

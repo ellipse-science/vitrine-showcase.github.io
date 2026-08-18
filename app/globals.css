@@ -4807,7 +4807,11 @@
      peut donc s'élargir. */
   .regie {
     display: grid;
-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
+    /* 236 px et non 200 : à 200, presque toutes les étiquettes du tableau se
+       repliaient sur deux lignes (« Part du temps », « Écart médias », « Depuis
+       7 jours »), ce qui décalait les valeurs d'une platine à l'autre et rendait
+       la comparaison pénible. */
+    grid-template-columns: minmax(0, 236px) minmax(0, 1fr) minmax(0, 236px);
     /* Les trois colonnes s'alignent par le BAS, et non par le haut.
        Le tableau d'une platine est plus haut que la console : aligner les bas
        remonte donc les platines et fait descendre la console, ce que deux
@@ -8644,4 +8648,78 @@
   .course-piste { grid-template-columns: 36px minmax(0, 1fr) 44px; gap: 10px; }
   .course-rang, .course-delta { display: none; }
   .course-x { margin: 6px 54px 0 46px; }
+}
+
+/* ── Les enjeux d'un parti, sous son tableau ─────────────────────────────────
+   « De quoi parle-t-on quand on parle de ce parti ? » — la troisième mesure du
+   module, longtemps annoncée sans être montrée.
+
+   Une barre plutôt qu'un chiffre seul : sur cinq lignes, l'œil compare des
+   longueurs bien plus vite que des nombres, et le profil d'un parti se saisit
+   d'un coup. Le chiffre reste à droite pour qui veut citer. */
+.platine-enjeux {
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--rule-faint);
+}
+.platine-enjeux-tete {
+  margin: 0 0 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.platine-enjeux ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.platine-enjeux li {
+  display: grid;
+  /* Le nom prend ce qui reste, la barre a une largeur fixe pour que les cinq
+     s'alignent : des barres de longueurs de départ différentes ne se
+     compareraient pas. */
+  grid-template-columns: minmax(0, 1fr) 62px 32px 10px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.platine-enjeu-nom {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+.platine-enjeu-barre {
+  display: block;
+  height: 5px;
+  background: var(--paper-deep);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.platine-enjeu-barre i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  /* La barre se remplit à l'arrivée, comme les tracés de la course : le module
+     entier se met en place dans le même geste. */
+  animation: enjeu-remplir 600ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+@keyframes enjeu-remplir { from { transform: scaleX(0); transform-origin: left; } }
+
+.platine-enjeu-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.platine-enjeu-ton {
+  font-size: 10px;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platine-enjeu-barre i { animation: none; }
 }
