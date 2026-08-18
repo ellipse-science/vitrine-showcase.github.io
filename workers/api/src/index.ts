@@ -26,11 +26,19 @@
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
+import { authenticate, recordUsage } from './auth'
+import { handleAdmin } from './admin'
 import { isTargetHourInNY } from './schedule'
 
 interface Env {
   DATABASE_URL: string
   CACHE_TTL_SECONDS?: string
+  /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
+   *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
+   *  sinon tout déclenchement manuel qui ne tombe pas pile sur une heure de
+   *  New York, ce qui rend la synchro intestable onze heures sur douze.
+   *  Défini dans .dev.vars (non versionné), jamais en production. */
+  SYNC_FORCE?: string
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -59,6 +67,16 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
 const MAX_LIMIT = 5000
 const DEFAULT_LIMIT = 1000
 
+// Pas de conversion de types ici, et c'est voulu : le schéma stocke les
+// chaînes telles qu'Athena les publie (`text`), et les entiers en `integer`
+// plutôt qu'en `bigint`. L'aller-retour est donc fidèle au caractère près sans
+// que l'API n'ait à reformater quoi que ce soit.
+//
+// La version précédente typait les dates en `date`/`timestamptz` et tentait de
+// les restituer avec to_char. Impossible : la source mélange au moins trois
+// formes — « 2026-06-12 », « 2026-07-31T20:01:35Z », « 2025-05-28 16:13 ». Un
+// seul format de sortie ne pouvait pas les reproduire toutes.
+
 function json(body: unknown, init: ResponseInit = {}, ttl = 0): Response {
   const headers = new Headers(init.headers)
   headers.set('content-type', 'application/json; charset=utf-8')
@@ -82,7 +100,7 @@ export default {
     // d'hiver — pour que l'horaire reste fixe à New York sans intervention
     // semestrielle. Six d'entre eux ressortent ici sans rien faire.
     const now = new Date(event.scheduledTime)
-    if (!isTargetHourInNY(now)) {
+    if (env.SYNC_FORCE !== '1' && !isTargetHourInNY(now)) {
       console.log('déclenchement hors heure visée à New York — ignoré')
       return
     }
@@ -101,15 +119,36 @@ export default {
     const url = new URL(request.url)
     const ttl = Number(env.CACHE_TTL_SECONDS ?? '14400')
 
+
+    // /admin d'abord : protégé par Cloudflare Access, jamais mis en cache, et
+    // servi avant toute logique de clé d'API — un administrateur n'a pas de
+    // clé, il a une identité.
+    const seg = url.pathname.split('/').filter(Boolean)
+    if (seg[0] === 'admin') {
+      const sqlAdmin = neon(env.DATABASE_URL)
+      const res = await handleAdmin(request, sqlAdmin, seg)
+      res.headers.set('cache-control', 'no-store')
+      return res
+    }
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
     // Le cache d'abord : c'est lui qui absorbe la charge. Une réponse servie
     // ici ne touche jamais Postgres.
+    //
+    // `Cache-Control: no-cache` court-circuite ce cache, selon la sémantique
+    // HTTP habituelle. Le build du site s'en sert : il veut les données du
+    // cycle courant, pas une réponse vieille de quatre heures. Sans cela, un
+    // correctif de format restait invisible au build jusqu'à expiration — ce
+    // qui est exactement ce qui s'est produit la première fois.
+    const noCache = (request.headers.get('cache-control') ?? '').includes('no-cache')
     const cache = caches.default
-    const cached = await cache.match(request)
-    if (cached) return cached
+    if (!noCache) {
+      const cached = await cache.match(request)
+      if (cached) return cached
+    }
 
     const sql = neon(env.DATABASE_URL)
     const segments = url.pathname.split('/').filter(Boolean)
@@ -154,6 +193,13 @@ export default {
             available: Object.keys(DATASETS),
           })
         }
+
+        // Les données sont le produit : la lecture d'un jeu demande une clé.
+        // /v1/health et /v1/datasets restent ouverts — l'un sert à surveiller,
+        // l'autre à découvrir ce qui existe, et ni l'un ni l'autre ne livre de
+        // donnée.
+        const auth = await authenticate(sql, request, name)
+        if (!auth.ok) return problem(auth.status, auth.error)
 
         const limit = Math.min(Number(url.searchParams.get('limit') ?? DEFAULT_LIMIT) || DEFAULT_LIMIT, MAX_LIMIT)
         const offset = Math.max(Number(url.searchParams.get('offset') ?? '0') || 0, 0)
@@ -203,7 +249,13 @@ export default {
           {},
           ttl,
         )
-        ctx.waitUntil(cache.put(request, response.clone()))
+        ctx.waitUntil(recordUsage(sql, auth.key.id, name, rows.length))
+
+        // PAS de mise en cache partagée ici : la réponse dépend de la clé
+        // (portées, quotas), et `caches.default` est commun à tous les
+        // appelants. Une réponse servie à une clé ne doit jamais être resservie
+        // à une autre. Le cache reste en place pour /v1/datasets, qui ne
+        // dépend d'aucune clé.
         return response
       }
 
