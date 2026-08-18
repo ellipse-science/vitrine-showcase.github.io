@@ -15,3 +15,28 @@ CACHE_TTL_SECONDS = "14400"
 
 # Secret à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
+
+# Recharge Postgres depuis les JSON publiés.
+#
+# HORAIRE VISÉ : 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 HEURE DE NEW YORK.
+#
+# Pourquoi 02:00 et pas minuit : refresh-data.yml part à :50 (00:50 NY l'été)
+# et dure plusieurs minutes — Athena, illustration, musique, commit. On lit
+# 70 minutes plus tard, une fois les données atterries. Lire trop tôt servirait
+# le cycle précédent.
+#
+# ⚠️ LE CRON CLOUDFLARE EST EN UTC, ET UTC N'A PAS D'HEURE AVANCÉE.
+# Il faut donc CHANGER cette ligne deux fois par an, sinon l'horaire local
+# dérive d'une heure :
+#
+#   Heure avancée (mars → novembre, EDT = UTC-4) :
+#     crons = ["0 2,6,10,14,18,22 * * *"]
+#   Heure normale (novembre → mars, EST = UTC-5) :
+#     crons = ["0 3,7,11,15,19,23 * * *"]
+#
+# Laisser le réglage d'été tourner en hiver donnerait 21:00, 01:00, 05:00 NY.
+# Rappel suivi dans une issue dédiée.
+#
+# Réglage actuel : HEURE AVANCÉE (été).
+[triggers]
+crons = ["0 2,6,10,14,18,22 * * *"]
