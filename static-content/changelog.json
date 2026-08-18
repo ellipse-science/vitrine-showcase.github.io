@@ -1,5 +1,11 @@
 [
   {
+    "pr": 510,
+    "date": "2026-08-18T20:42:42Z",
+    "note": "Le rafraîchissement automatique des données s'interrompt maintenant de lui-même s'il reste bloqué, au lieu d'immobiliser les mises à jour suivantes. Rien ne change dans ce que le site affiche.",
+    "version": null
+  },
+  {
     "pr": 519,
     "date": "2026-08-18T20:17:52Z",
     "note": "Le diagramme public des pipelines montre maintenant deux traitements automatiques qui tournaient déjà sans y apparaître. L'un publie chaque semaine un rapport de surveillance du pipeline, l'autre repère les promesses gouvernementales. Rien ne change dans les données ni dans l'affichage du site.",
