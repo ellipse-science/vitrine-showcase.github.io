@@ -155,13 +155,31 @@ async function syncTable(
   }
 }
 
-export async function runSync(databaseUrl: string): Promise<{
+/** Recharge les tables, éventuellement par TRANCHE.
+ *
+ *  POURQUOI LES TRANCHES : sur le plan gratuit de Workers, un gestionnaire
+ *  `scheduled` dispose de 30 s de CPU, mais un gestionnaire `fetch` n'en a que
+ *  10 ms. Le cron passe donc les quinze tables d'un coup, tandis qu'un
+ *  déclenchement HTTP meurt vers la sixième. Plutôt que de faire dépendre la
+ *  fraîcheur du site d'un abonnement, l'appelant HTTP demande quelques tables
+ *  à la fois et rappelle jusqu'à épuisement.
+ *
+ *  `offset`/`limit` portent sur la LISTE DES TABLES, pas sur les lignes. */
+export async function runSync(
+  databaseUrl: string,
+  slice?: { offset: number; limit: number },
+): Promise<{
   synced: string[]
   failed: { table: string; error: string }[]
+  total: number
+  next: number | null
 }> {
   const sql = neon(databaseUrl)
   const config = await fetchJson<{ tables: TableSpec[] }>(`${RAW_BASE}/scripts/tables.json`)
-  const enabled = config.tables.filter((t) => t.enabled)
+  const all = config.tables.filter((t) => t.enabled)
+  const total = all.length
+  const start = slice ? Math.max(0, slice.offset) : 0
+  const enabled = slice ? all.slice(start, start + slice.limit) : all
 
   const synced: string[] = []
   const failed: { table: string; error: string }[] = []
@@ -180,5 +198,6 @@ export async function runSync(databaseUrl: string): Promise<{
     }
   }
 
-  return { synced, failed }
+  const consumed = start + enabled.length
+  return { synced, failed, total, next: consumed < total ? consumed : null }
 }
