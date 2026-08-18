@@ -15,3 +15,23 @@ CACHE_TTL_SECONDS = "14400"
 
 # Secret à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
+
+# Recharge Postgres depuis les JSON publiés.
+#
+# HORAIRE VISÉ : 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 HEURE DE NEW YORK,
+# fixe toute l'année, sans intervention.
+#
+# Pourquoi 02:00 et pas minuit : refresh-data.yml part à :50 et dure plusieurs
+# minutes — Athena, illustration, musique, commit. On lit 70 minutes plus tard,
+# une fois les données atterries.
+#
+# POURQUOI DOUZE HEURES POUR SIX EXÉCUTIONS : le cron Cloudflare est en UTC, et
+# UTC ignore l'heure avancée. On enregistre donc les deux jeux — 2,6,10,14,18,22
+# (valables l'été) et 3,7,11,15,19,23 (valables l'hiver) — et `isTargetHourInNY`
+# dans src/sync.ts laisse passer seulement ceux qui tombent sur une heure visée
+# à New York. Les six autres ressortent immédiatement.
+#
+# L'alternative était de changer cette ligne deux fois par an. Un rappel
+# semestriel finit toujours par être oublié, et l'oubli est silencieux.
+[triggers]
+crons = ["0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"]

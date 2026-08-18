@@ -25,6 +25,8 @@
 // de direction.
 
 import { neon } from '@neondatabase/serverless'
+import { runSync } from './sync'
+import { isTargetHourInNY } from './schedule'
 
 interface Env {
   DATABASE_URL: string
@@ -70,6 +72,31 @@ function problem(status: number, detail: string, extra: Record<string, unknown> 
 }
 
 export default {
+  /** Cron Trigger : recharge Postgres depuis les JSON publiés, toutes les 4 h.
+   *
+   *  Le déclencheur est chez Cloudflare — précis à la minute, indépendant de la
+   *  file d'attente de GitHub Actions. Voir sync.ts pour ce que cela découple
+   *  réellement, et ce que cela ne découple pas. */
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Douze déclenchements sont enregistrés — les heures UTC d'été ET celles
+    // d'hiver — pour que l'horaire reste fixe à New York sans intervention
+    // semestrielle. Six d'entre eux ressortent ici sans rien faire.
+    const now = new Date(event.scheduledTime)
+    if (!isTargetHourInNY(now)) {
+      console.log('déclenchement hors heure visée à New York — ignoré')
+      return
+    }
+
+    ctx.waitUntil(
+      runSync(env.DATABASE_URL).then(({ synced, failed }) => {
+        console.log(`sync terminée : ${synced.length} tables, ${failed.length} en échec`)
+        if (failed.length > 0) {
+          console.error('tables en échec :', failed.map((f) => f.table).join(', '))
+        }
+      }),
+    )
+  },
+
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     const ttl = Number(env.CACHE_TTL_SECONDS ?? '14400')
