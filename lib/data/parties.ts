@@ -15,6 +15,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { readDatasetText } from "@/lib/data/source";
+
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS } from "@/lib/medias";
@@ -865,10 +867,19 @@ export async function loadParties(
   asOfIso?: string,
 ): Promise<PartiesData | null> {
   try {
+    // SUR FIXTURES, ON NE PASSE JAMAIS PAR L'API : les fausses données vivent
+    // dans un dossier local et n'existent nulle part en base. Confondre les
+    // deux ferait apparaître de vrais chiffres sous le bandeau « DONNÉES
+    // FICTIVES », ou l'inverse — les deux étant pires qu'une erreur franche.
+    const lireJeu = (periode: "day" | "week" | "month", fichier: string) =>
+      SUR_FIXTURES
+        ? fs.readFile(path.join(DATA_DIR, periode, fichier), "utf8")
+        : readDatasetText(`public/data/refined/${periode}/${fichier}`);
+
     const [dayRaw, weekRaw, monthRaw] = await Promise.all([
-      fs.readFile(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_day.json"),   "utf8"),
-      fs.readFile(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_week.json"),  "utf8"),
-      fs.readFile(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_month.json"), "utf8"),
+      lireJeu("day",   "provincial_parties_salient_shadow_day.json"),
+      lireJeu("week",  "provincial_parties_salient_shadow_week.json"),
+      lireJeu("month", "provincial_parties_salient_shadow_month.json"),
     ]);
 
     const upTo = (rows: ShadowRow[]) =>

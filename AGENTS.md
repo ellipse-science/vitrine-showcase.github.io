@@ -13,7 +13,12 @@ Self-contained repository for **La Vitrine démocratique** — a media-focused d
 - **React 19** Server Components for the data-bound sections; Client Components for interactive bits (tabs, countdown)
 - **TypeScript strict**
 - No CSS framework — the maquette's CSS lives verbatim in `app/globals.css`
-- No backend, no API routes, no SSR — pure SSG
+- No SSR, no API routes **in the site** — pure SSG
+- **Cloudflare Workers** for what the static site cannot do: the paid read API
+  (`workers/api/`) and the issue reporter (`workers/report-issue/`)
+- **Postgres (Neon)** behind the API. The site itself never queries it at
+  runtime: data is read **at build time** and inlined into the prerendered HTML.
+  That is why traffic costs nothing — never call the API from a client component.
 
 ## Commands
 
@@ -29,8 +34,29 @@ CI (`ci.yml`) runs **type-check + build + `npm run test`** on every PR; run all 
 
 ## Branches, PRs, deployment
 
-- **Push to `main`** → `.github/workflows/deploy.yml` runs `npm ci && npm run build` and publishes `out/` to GitHub Pages (live within ~2 min). Site: https://ellipse.science/vitrine-showcase.github.io/
-- **Pull requests** → `.github/workflows/ci.yml` runs type-check + full build, no deploy. Nothing broken reaches `main`.
+**Référence complète : [`docs/reference/environnements.md`](./docs/reference/environnements.md).**
+En cas de doute sur l'hébergement, c'est ce document qui fait foi.
+
+| Adresse | Rôle | Branche |
+|---|---|---|
+| `vitrinedemocratique.com` | **production**, publique | `prod` |
+| `dev.vitrinedemocratique.com` | **miroir de travail** (Cloudflare Access) | `main` |
+| `api.vitrinedemocratique.com` | API de lecture (clé requise) | Worker |
+| `ellipse.science/vitrine-showcase.github.io` | ancien miroir, **filet seulement** | `main` |
+
+- **On travaille sur `dev.vitrinedemocratique.com`.** GitHub Pages tourne
+  encore comme chemin de retour arrière, mais ne sert plus de référence : une
+  capture ou une recette qui en vient décrit un site que personne ne surveille.
+- **Push to `main`** → déploie les DEUX miroirs dev (Cloudflare et Pages).
+- **`prod` n'avance que de deux façons** : les données automatiquement toutes
+  les 4 h, et le code **uniquement par une fusion délibérée `main → prod`**.
+  ⚠️ Un correctif fusionné dans `main` **n'est pas en production**. Vérifier :
+  `git log --oneline origin/prod..origin/main -- app lib components`
+- `prod` est protégé : PR + une approbation, **sans dérogation admin**.
+- **Pull requests** → `ci.yml` : type-check + build + tests. Rien de cassé
+  n'atteint `main`.
+
+Travailler avec un agent : [`docs/reference/travail-avec-agents.md`](./docs/reference/travail-avec-agents.md).
 
 ## Versionnage
 
