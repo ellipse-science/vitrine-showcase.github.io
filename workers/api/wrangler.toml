@@ -13,6 +13,12 @@ workers_dev = true
 # clients ou dix mille.
 CACHE_TTL_SECONDS = "14400"
 
+# Identité de l'administration. Ces deux valeurs ne sont pas des secrets — le
+# `aud` figure déjà dans l'URL de redirection d'Access — mais elles sont
+# INDISPENSABLES : sans elles, /admin refuse de répondre, par choix.
+ACCESS_TEAM_DOMAIN = "capp-vitrine.cloudflareaccess.com"
+ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
+
 # Secret à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
 
