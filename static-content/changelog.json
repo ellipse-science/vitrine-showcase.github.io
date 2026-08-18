@@ -1,5 +1,11 @@
 [
   {
+    "pr": 516,
+    "date": "2026-08-18T19:16:33Z",
+    "note": "Aucune — correctif d'outillage.",
+    "version": null
+  },
+  {
     "pr": 513,
     "date": "2026-08-18T19:10:05Z",
     "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
