@@ -5354,9 +5354,12 @@
      ses dimensions de bureau, sans qu'on ait à rapetisser quoi que ce soit.
      Seuil mesuré, pas choisi : la console réclame 523 px et les deux platines
      en prennent 452 (2×200 + 2×26 de gouttière), soit 975 px de régie — atteints
-     vers 1133 px de fenêtre. 1160 laisse la marge. Placé AVANT le bloc ≤768
+     vers 1133 px de fenêtre. 1160 laissait la marge en théorie, mais la mesure
+     au navigateur montre un débordement résiduel de 4 px À 1161 px, soit juste
+     au-dessus du seuil : la console y réclame 4 px de plus que sa colonne. Seuil
+     porté à 1184, vérifié aux deux bords. Placé AVANT le bloc ≤768
      pour que celui-ci puisse encore surcharger. */
-  @media (max-width: 1160px) {
+  @media (max-width: 1184px) {
     .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }
     .platine { padding-top: 0; }
   }
