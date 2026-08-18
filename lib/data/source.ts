@@ -96,7 +96,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
 
   if (!API_KEY) {
     console.warn(
-      `[source] VITRINE_API_KEY absente — repli sur les fichiers pour ${dataset}.`,
+      `[source] VITRINE_API_KEY absente. Repli sur les fichiers pour ${dataset}.`,
     );
     return fs.readFile(absolute, "utf8");
   }
@@ -109,7 +109,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     // construit avec des données d'il y a quatre heures vaut mieux qu'un site
     // qui ne se construit pas — et l'écart est visible dans /v1/health.
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[source] API indisponible pour ${dataset} (${message}) — repli sur le fichier`);
+    console.warn(`[source] API indisponible pour ${dataset} (${message}). Repli sur le fichier.`);
     return fs.readFile(absolute, "utf8");
   }
 }
