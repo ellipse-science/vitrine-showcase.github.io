@@ -18,7 +18,7 @@ const RANGES: RangeKey[] = ["week", "month"];
 
 // Résumé placeholder until AI-generated text is wired in.
 const SUMMARY_PLACEHOLDER =
-  "Résumé en préparation — un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
+  "Résumé en préparation : un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
 
 const VERDICT_FILTERS: { value: VerdictSlug | "all"; label: string; short?: string }[] = [
   { value: "all", label: "Tous les verdicts" },
@@ -47,6 +47,7 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
   if (trend.dir === "flat") {
     return (
       <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
+        {/* garde-redaction: ok (tiret = glyphe de donnée absente) */}
         —
       </span>
     );
@@ -298,7 +299,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       }
                     >
                       {name}
-                      {present ? "" : " — aucune donnée"}
+                      {present ? "" : " (aucune donnée)"}
                     </li>
                   );
                 })}
@@ -342,7 +343,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                        lecteur d'écran annonçait « Réalisée, bouton » sans jamais
                        nommer la promesse. Le verdict reste en second — il n'est
                        porté que par la couleur, donc invisible sans la vue. */
-                    aria-label={p.verdictLabel ? `${p.title} — ${p.verdictLabel}` : p.title}
+                    aria-label={p.verdictLabel ? `${p.title}, ${p.verdictLabel}` : p.title}
                     role="button"
                     tabIndex={0}
                     aria-expanded={open}

@@ -1625,7 +1625,7 @@
                         '📊 63 colonnes au total (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag)',
                         '🎯 Granularité: 1 ligne = 1 événement (cluster d\'articles) dans un bloc 4h par pays',
                         '📈 Volume estimé: ~270 lignes/jour (9-15 events × 3 pays × 6 blocs)',
-                        '🔬 Méthode regroupement: 1 appel LLM par bloc (aws-refiners#243) — regroupe les articles ET dit lesquels continuent une histoire des 24 h. Le cosinus BFS ne sert plus que de repli si l\'appel échoue.',
+                        '🔬 Méthode regroupement: 1 appel LLM par bloc (aws-refiners#243) — regroupe les articles ET dit lesquels continuent une histoire des 24h. Le cosinus BFS ne sert plus que de repli si l\'appel échoue.',
                         '⚙️ Garantie minimum: 3 événements par bloc/pays',
                         '🤖 LLM: gpt-4o, ~19 appels par run (1 regroupement des articles en événements + 3 events × 3 pays × 2 appels: titre/texte + main_issue). Pattern hérité de headline-of-headlines.',
                         'ℹ️ Consommée par le nouveau frontend Vitrine (« Les Unes du jour »)'

@@ -146,7 +146,7 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
         type="button"
         className={`share-btn${copied ? ' copied' : ''}`}
         onClick={handleClick}
-        aria-label={`Partager : ${title}`}
+        aria-label={`Partager : ${title}`}
         aria-expanded={panelOpen}
         title={copied ? 'Copié !' : 'Partager'}
       >
