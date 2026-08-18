@@ -1,5 +1,11 @@
 [
   {
+    "pr": 513,
+    "date": "2026-08-18T19:10:05Z",
+    "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
+    "version": null
+  },
+  {
     "pr": 512,
     "date": "2026-08-18T18:36:08Z",
     "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",
