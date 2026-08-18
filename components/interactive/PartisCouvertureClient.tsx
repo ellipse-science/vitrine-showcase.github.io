@@ -1143,41 +1143,59 @@ function Course({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
                   seule l'identité.
                   L'échelle verticale reste COMMUNE (le tracé vient du même
                   calcul qu'avant) : une piste haute est vraiment plus haute. */}
-              <svg
-                className="course-piste-svg"
-                viewBox={`0 0 ${chart.width} ${chart.height}`}
-                preserveAspectRatio="xMidYMid meet"
-                aria-hidden="true"
-              >
-                <line
-                  x1={chart.finish.x}
-                  x2={chart.finish.x}
-                  y1="0"
-                  y2={chart.height}
-                  className="course-arrivee"
-                  vectorEffect="non-scaling-stroke"
+              {/* La piste OCCUPE toute sa colonne, donc `preserveAspectRatio`
+                  vaut « none ».
+                  « xMidYMid meet » conservait le rapport 100:30 : dans une bande
+                  de 26 px de haut, le tracé se réduisait à ~86 px de large,
+                  centré au milieu d'une colonne vide, et l'axe des jours ne
+                  correspondait plus à rien.
+                  L'étirement est ici sans conséquence, contrairement à la
+                  version en courbes superposées : toutes les pistes subissent
+                  EXACTEMENT la même transformation, donc elles restent
+                  comparables entre elles, et l'épaisseur du trait est figée par
+                  `non-scaling-stroke`. C'est la convention de toute sparkline.
+                  La tête est un élément HTML positionné en pourcentage, et non
+                  un <circle> : sous un étirement non uniforme, un cercle SVG
+                  deviendrait une ellipse. */}
+              <span className="course-piste-zone">
+                <svg
+                  className="course-piste-svg"
+                  viewBox={`0 0 ${chart.width} ${chart.height}`}
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <line
+                    x1={chart.finish.x}
+                    x2={chart.finish.x}
+                    y1="0"
+                    y2={chart.height}
+                    className="course-arrivee"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <polyline
+                    points={s.polylineSolo}
+                    fill="none"
+                    stroke={r.color}
+                    strokeWidth="2"
+                    strokeDasharray={r.inShadow ? "3 3" : undefined}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    className={r.inShadow ? undefined : "course-trait"}
+                    style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
+                  />
+                </svg>
+                <i
+                  className={`course-tete-point${r.inShadow ? " shadow" : ""}`}
+                  style={{
+                    left: `${((Number(s.polylineSolo.split(" ").at(-1)?.split(",")[0]) || 0) / chart.width) * 100}%`,
+                    top: `${((Number(s.polylineSolo.split(" ").at(-1)?.split(",")[1]) || 0) / chart.height) * 100}%`,
+                    background: r.color,
+                    animationDelay: `${i * 120 + 700}ms`,
+                  }}
+                  aria-hidden="true"
                 />
-                <polyline
-                  points={s.polyline}
-                  fill="none"
-                  stroke={r.color}
-                  strokeWidth="2"
-                  strokeDasharray={r.inShadow ? "3 3" : undefined}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                  className={r.inShadow ? undefined : "course-trait"}
-                  style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
-                />
-                <circle
-                  cx={s.lastX}
-                  cy={s.lastY}
-                  r="3"
-                  fill={r.color}
-                  className={r.inShadow ? undefined : "course-tete-point"}
-                  style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
-                />
-              </svg>
+              </span>
 
               <span className="course-valeur">{r.sovPct}&nbsp;%</span>
               <span

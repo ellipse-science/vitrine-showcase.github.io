@@ -199,6 +199,15 @@ export type ChartSeries = {
   /** Bout de ligne — position du point terminal. */
   lastX: number;
   lastY: number;
+  /** Le même tracé, mais normalisé sur la propre amplitude du parti.
+   *
+   *  L'échelle commune répond à « qui est devant », ce que le rang et le
+   *  pourcentage disent déjà mieux ; elle écrase en revanche le mouvement d'un
+   *  parti qui joue dans les basses eaux. Chaque piste porte donc sa propre
+   *  amplitude, et la comparaison des NIVEAUX se lit sur les chiffres, à côté.
+   *  Les deux lectures ne se contredisent pas : elles répondent à deux
+   *  questions différentes. */
+  polylineSolo: string;
   /** Position de l'ÉTIQUETTE : `lastY` écarté de ses voisines si nécessaire.
    *  Distinct de `lastY` pour que le point reste sur la donnée exacte même
    *  quand son étiquette a dû être déplacée. */
@@ -692,6 +701,27 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  * LA TENDANCE, pas de lire une valeur au pixel près. Les valeurs, elles, sont
  * écrites en toutes lettres au bout de chaque ligne.
  */
+/** Les ordonnées d'une piste, normalisées sur la PROPRE amplitude du parti.
+ *
+ *  Une marge de 15 % en haut et en bas évite que le tracé colle aux bords : une
+ *  courbe qui touche le plafond se lit comme tronquée.
+ *
+ *  Amplitude nulle (série parfaitement plate, ou parti à zéro toute la période)
+ *  : on centre au lieu de diviser par zéro. Une ligne droite au milieu dit
+ *  exactement ce qu'il y a à dire — rien n'a bougé. */
+function soloY(hist: number[]): number[] {
+  // Les bornes RÉELLES de la série, sans ancrage à zéro : `Math.min(..., 0)`
+  // ramenait le plancher à 0, si bien qu'une série oscillant entre 33 % et 37 %
+  // s'étalait sur une plage 0–37 et restait plate. C'est tout le contraire du
+  // but : ici on veut voir le mouvement, le niveau étant dit par le chiffre.
+  const hi = Math.max(...hist);
+  const lo = Math.min(...hist);
+  const marge = CHART_H * 0.15;
+  const utile = CHART_H - 2 * marge;
+  if (hi - lo < 1e-9) return hist.map(() => CHART_H / 2);
+  return hist.map((v) => marge + (1 - (v - lo) / (hi - lo)) * utile);
+}
+
 function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartView {
   const toutes = dates.daily;
   const garde = FENETRE[range];
@@ -728,6 +758,9 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         color: PARTY_COLORS[stat.key],
         inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
         polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      polylineSolo: soloY(hist)
+        .map((y, i) => `${xAtDate(axisDates[i] ?? "").toFixed(2)},${y.toFixed(2)}`)
+        .join(" "),
         lastX: Number((pts.at(-1)?.[0] ?? 0).toFixed(2)),
         lastY: Number((pts.at(-1)?.[1] ?? CHART_H).toFixed(2)),
         labelY: 0,

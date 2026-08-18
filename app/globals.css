@@ -8498,33 +8498,44 @@
 .partis-course--tete { margin: 0 0 22px; }
 .partis-course--tete .course-tete { margin: 0 0 10px; }
 
-/* ── Une piste par parti ─────────────────────────────────────────────────────
-   Cinq courbes superposées étaient illisibles PAR CONSTRUCTION, et pas
-   seulement encombrées : le validateur de palette place PCQ et PQ à ΔE 10,0 en
-   vision normale, sous le plancher de 15. La règle, dans ce cas, est de
-   facetter. Chaque parti a donc sa piste et son nom, la couleur n'étant plus
-   qu'un rappel.
+/* Une étiquette porteuse d'infobulle le dit : sans repère, personne ne survole.
+   Le pointillé est plus discret qu'un ⓘ, qui encombrerait huit lignes. */
+.platine-table th[title] {
+  cursor: help;
+  text-decoration: underline dotted var(--rule);
+  text-underline-offset: 3px;
+}
 
-   Grille de cinq colonnes : rang, sigle, tracé, valeur, écart. Les colonnes de
-   texte sont en largeur fixe pour que les chiffres s'alignent verticalement
-   d'une piste à l'autre : c'est ce qui permet de lire le classement en
-   descendant la colonne. */
+/* ── Une piste par parti ─────────────────────────────────────────────────────
+   Cinq courbes superposées étaient illisibles PAR CONSTRUCTION : le validateur
+   de palette place PCQ et PQ à ΔE 10,0 en vision normale, sous le plancher de
+   15. La règle, dans ce cas, est de facetter. Chaque parti a donc sa piste et
+   son nom, la couleur n'étant plus qu'un rappel.
+
+   Largeur BORNÉE et centrée : étalée sur 1200 px, la course laissait un vide
+   entre le sigle et sa valeur, et le tracé flottait au milieu de nulle part.
+   Resserrée, les cinq colonnes se lisent d'un seul balayage de l'œil. */
+.course-figure {
+  max-width: 660px;
+  margin: 0 auto;
+}
 .course-pistes {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 .course-piste {
   display: grid;
-  grid-template-columns: 18px 42px minmax(0, 1fr) 52px 34px;
+  grid-template-columns: 16px 40px minmax(0, 1fr) 46px 30px;
   align-items: center;
-  gap: 10px;
-  padding: 3px 0;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
 }
-.course-piste.shadow { opacity: 0.5; }
+.course-piste:last-child { border-bottom: none; }
+.course-piste.shadow { opacity: 0.55; }
 
 .course-rang {
   font-family: 'IBM Plex Mono', monospace;
@@ -8540,15 +8551,31 @@
   letter-spacing: 0.04em;
 }
 
-/* `preserveAspectRatio` explicite : l'ancienne course utilisait `none`, ce qui
-   étirait un viewBox de 100 × 30 sur ~1100 px de large et mentait donc sur
-   TOUTES les pentes (x multiplié par 11, y par 3). */
+/* La zone du tracé : le SVG l'occupe entièrement, la tête s'y positionne. */
+.course-piste-zone {
+  position: relative;
+  display: block;
+  height: 34px;
+}
 .course-piste-svg {
   display: block;
   width: 100%;
-  height: 26px;
+  height: 100%;
   overflow: visible;
 }
+/* La tête, en HTML : sous un étirement non uniforme, un <circle> SVG
+   deviendrait une ellipse. */
+.course-tete-point {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: course-tete-apparait 350ms ease-out forwards;
+}
+.course-tete-point.shadow { animation: none; opacity: 0.6; }
+@keyframes course-tete-apparait { to { opacity: 1; } }
 
 .course-valeur {
   font-family: 'Playfair Display', Georgia, serif;
@@ -8567,10 +8594,9 @@
 .course-delta.haut { color: var(--red); }
 .course-delta.bas  { color: var(--green); }
 
-/* Le trait se dessine de gauche à droite, une piste après l'autre : la course
-   s'écrit sous les yeux au lieu d'apparaître déjà courue. 1000 dépasse
-   largement la longueur réelle d'un tracé dans un viewBox de 100 × 30, ce qui
-   évite de mesurer chaque chemin en JavaScript pour un gain invisible. */
+/* Le trait se dessine de gauche à droite, une piste après l'autre. 1000 dépasse
+   largement la longueur d'un tracé dans un viewBox de 100 × 30, ce qui évite de
+   mesurer chaque chemin en JavaScript pour un gain invisible. */
 .course-trait {
   stroke-dasharray: 1000;
   stroke-dashoffset: 1000;
@@ -8578,24 +8604,14 @@
 }
 @keyframes course-tracer { to { stroke-dashoffset: 0; } }
 
-/* La tête arrive APRÈS son trait, et reste : c'est le point « où on en est ». */
-.course-tete-point {
-  opacity: 0;
-  animation: course-tete-apparait 400ms ease-out forwards;
-  animation-delay: 900ms;
-}
-@keyframes course-tete-apparait {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 
-/* L'axe, aligné sur la colonne du tracé. */
+/* L'axe s'aligne EXACTEMENT sur la colonne du tracé : mêmes largeurs que la
+   grille, gouttières comprises. Décalé d'un pixel, il daterait les creux à
+   côté. */
 .course-x {
   position: relative;
-  height: 16px;
-  margin-left: 80px;   /* 18 + 42 + 2 × 10 de gouttière */
-  margin-right: 96px;  /* 52 + 34 + 2 × 10 */
-  margin-top: 4px;
+  height: 14px;
+  margin: 6px 88px 0 80px;   /* droite : 46 + 30 + 12 · gauche : 16 + 40 + 2×12 */
 }
 .course-x span {
   position: absolute;
@@ -8616,15 +8632,7 @@
 /* Sous 620 px, le rang et l'écart sortent : quatre colonnes de texte autour
    d'un tracé ne laissent plus rien au tracé. */
 @media (max-width: 620px) {
-  .course-piste { grid-template-columns: 38px minmax(0, 1fr) 46px; gap: 8px; }
+  .course-piste { grid-template-columns: 36px minmax(0, 1fr) 44px; gap: 10px; }
   .course-rang, .course-delta { display: none; }
-  .course-x { margin-left: 46px; margin-right: 46px; }
-}
-
-/* Une étiquette porteuse d'infobulle le dit : sans repère, personne ne survole.
-   Le pointillé est plus discret qu'un ⓘ, qui encombrerait huit lignes. */
-.platine-table th[title] {
-  cursor: help;
-  text-decoration: underline dotted var(--rule);
-  text-underline-offset: 3px;
+  .course-x { margin: 6px 54px 0 46px; }
 }
