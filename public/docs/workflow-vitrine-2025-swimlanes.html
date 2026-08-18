@@ -1127,7 +1127,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🗳️ Polimètre+ (Suivi des promesses CAQ)</span>
-                <span class="frequency">Saillance quotidienne: 12:30 (heure du Québec) • identification 6×/jour à :32 • analyse par semaine glissante</span>
+                <span class="frequency">Quotidien: 12:30 (heure du Québec) • analyse par semaine glissante</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -1136,9 +1136,9 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="03:32,07:32,11:32,12:30,15:32,19:32,23:32">
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="12:30">
                     polimetre-plus.R
-                    <div class="node-detail">Deux fonctions Lambda sur la même image&nbsp;: identification des promesses par bloc de 4h (6×/jour à :32) et saillance/progression hebdo (12:30); enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés)</div>
+                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo; enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1233,7 +1233,7 @@
                 },
                 'polimetre_plus': {
                     title: 'Table: polimetre_plus',
-                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification par IA (classifieur + LLM Gemma), lue depuis la table polimetre_plus_identification ; repli regex publié comme tel (colonne identification_method) ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
+                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification 100 % regex ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
                     columns: [
                         '📍 IDENTIFIANTS:',
                         'country_id - Pays (QC)',
@@ -1779,7 +1779,7 @@
                 },
                 'polimetre-plus': {
                     title: 'Refiner: polimetre-plus.R',
-                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification par IA : lit vitrine_datamart.polimetre_plus_identification (produite par l'étage polimetre-plus-identification, 6x/jour par bloc de 4 h) au lieu d'appeler le LLM ; le regex reste le repli, et la méthode retenue est publiée par ligne (identification_method) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
+                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification 100 % regex (source de vérité) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
                     details: [
                         '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation »)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
