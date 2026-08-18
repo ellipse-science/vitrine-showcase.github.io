@@ -1488,7 +1488,7 @@
                         'threshold - Seuil d\'éclipse (0.02).'
                     ],
                     details: [
-                        '📋 6 tables publiées : federal_ et provincial_ × day / week / month',
+                        '📋 9 tables publiées : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu)',
                         '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
                         '🌐 Consommées par la Vitrine : <strong>uniquement les 3 provinciales</strong> (provincial_parties_salient_shadow_day/week/month → components/interactive/PartisCouvertureClient.tsx). Les 3 fédérales sont produites mais non lues.'
                     ]
@@ -1746,6 +1746,9 @@
                         'vitrine_datamart-provincial_parties_score_day / _week / _month',
                         'vitrine_datamart-federal_parties_score_week / _month',
                         'vitrine_datamart-provincial_parties_salient_shadow_day / _week / _month',
+                        'vitrine_datamart-federal_parties_salient_shadow_intraday',
+                        'vitrine_datamart-provincial_parties_salient_shadow_intraday',
+                        'vitrine_datamart-parties_issues_salient_shadow_day',
                         'vitrine_datamart-headline_events_4h',
                         'vitrine_datamart-polimetre_plus',
                         'agora_datamart-agora_decideurs_qc',
