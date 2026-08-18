@@ -18,25 +18,20 @@ CACHE_TTL_SECONDS = "14400"
 
 # Recharge Postgres depuis les JSON publiés.
 #
-# HORAIRE VISÉ : 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 HEURE DE NEW YORK.
+# HORAIRE VISÉ : 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 HEURE DE NEW YORK,
+# fixe toute l'année, sans intervention.
 #
-# Pourquoi 02:00 et pas minuit : refresh-data.yml part à :50 (00:50 NY l'été)
-# et dure plusieurs minutes — Athena, illustration, musique, commit. On lit
-# 70 minutes plus tard, une fois les données atterries. Lire trop tôt servirait
-# le cycle précédent.
+# Pourquoi 02:00 et pas minuit : refresh-data.yml part à :50 et dure plusieurs
+# minutes — Athena, illustration, musique, commit. On lit 70 minutes plus tard,
+# une fois les données atterries.
 #
-# ⚠️ LE CRON CLOUDFLARE EST EN UTC, ET UTC N'A PAS D'HEURE AVANCÉE.
-# Il faut donc CHANGER cette ligne deux fois par an, sinon l'horaire local
-# dérive d'une heure :
+# POURQUOI DOUZE HEURES POUR SIX EXÉCUTIONS : le cron Cloudflare est en UTC, et
+# UTC ignore l'heure avancée. On enregistre donc les deux jeux — 2,6,10,14,18,22
+# (valables l'été) et 3,7,11,15,19,23 (valables l'hiver) — et `isTargetHourInNY`
+# dans src/sync.ts laisse passer seulement ceux qui tombent sur une heure visée
+# à New York. Les six autres ressortent immédiatement.
 #
-#   Heure avancée (mars → novembre, EDT = UTC-4) :
-#     crons = ["0 2,6,10,14,18,22 * * *"]
-#   Heure normale (novembre → mars, EST = UTC-5) :
-#     crons = ["0 3,7,11,15,19,23 * * *"]
-#
-# Laisser le réglage d'été tourner en hiver donnerait 21:00, 01:00, 05:00 NY.
-# Rappel suivi dans une issue dédiée.
-#
-# Réglage actuel : HEURE AVANCÉE (été).
+# L'alternative était de changer cette ligne deux fois par an. Un rappel
+# semestriel finit toujours par être oublié, et l'oubli est silencieux.
 [triggers]
-crons = ["0 2,6,10,14,18,22 * * *"]
+crons = ["0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"]

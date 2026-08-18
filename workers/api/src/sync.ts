@@ -36,6 +36,8 @@ const RAW_BASE =
  *  limite si une colonne est ajoutée au contrat. */
 const BATCH_ROWS = 500
 
+export { isTargetHourInNY, TARGET_HOURS_NY } from './schedule'
+
 interface TableSpec {
   name: string
   out: string
