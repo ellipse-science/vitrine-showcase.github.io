@@ -1,5 +1,11 @@
 [
   {
+    "pr": 511,
+    "date": "2026-08-18T18:03:19Z",
+    "note": "Aucune — correctif d'infrastructure ; le site retrouve simplement la fraîcheur qu'il avait.",
+    "version": "2.24.0-beta.2"
+  },
+  {
     "pr": 508,
     "date": "2026-08-18T17:49:30Z",
     "note": "Aucune — l'API n'est pas encore annoncée, et rien ne change pour un visiteur du site.",
