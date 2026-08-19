@@ -1,5 +1,11 @@
 [
   {
+    "pr": 252,
+    "date": "2026-08-19T18:13:28Z",
+    "note": "Rien ne change sur le site public — mise à jour de documentation technique interne (référence du backend AWS).",
+    "version": null
+  },
+  {
     "pr": 497,
     "date": "2026-08-19T18:08:01Z",
     "note": "Les portraits des député·es se mettent désormais à jour tout seuls, une fois par jour. Après une élection partielle, la photo du nouvel élu remplace celle de son prédécesseur sans intervention manuelle.",
