@@ -36,6 +36,7 @@ ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv86
 #   wrangler secret put SLACK_WEBHOOK_URL          (optionnel, alertes)
 #   wrangler secret put DEPLOY_HOOK_PROD           (à la bascule)
 #   wrangler secret put DEPLOY_HOOK_DEV            (à la bascule)
+#   wrangler secret put SYNC_INTERNAL_TOKEN       (orchestration du cron)
 
 # Recharge Postgres depuis les JSON publiés.
 #
