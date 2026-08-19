@@ -75,15 +75,33 @@ export const PARTY_COLORS: Record<PartyKey, string> = {
 };
 
 /**
- * Sourdine : sous ce seuil, un parti n'est plus considéré comme audible.
+ * Les partis en sourdine : ceux qui occupent le MOINS de place, quelle que soit
+ * leur part.
  *
- * ⚠️ 5 % est un choix d'AFFICHAGE, plus élevé que le seuil du raffineur, qui
- * reste à 2 % (ECLIPSE_THRESHOLD dans radar-party-score-salient-shadow, publié
- * dans la colonne `threshold`). Les deux divergent donc volontairement : la
- * colonne `threshold` de la donnée ne décrit PLUS ce que le site affiche.
- * À aligner si le seuil de 5 % est retenu durablement.
+ * La sourdine était un seuil (sous 5 %, un parti passait en gris). Elle est
+ * devenue un RANG : le dernier est toujours en sourdine, même à 19 %. Le module
+ * y gagne une propriété que le seuil ne donnait pas — il reste exactement quatre
+ * partis actifs, donc quatre decks, quelle que soit la journée.
+ *
+ * Égalité au plus bas : TOUS les ex æquo passent en sourdine, et les decks
+ * correspondants restent vides. Une égalité est presque toujours une égalité à
+ * zéro (un parti dont on ne parle pas du tout), et départager deux néants par
+ * ordre alphabétique donnerait un classement que la donnée ne soutient pas.
+ *
+ * Conséquence assumée du cas dégénéré : si les cinq partis sont à égalité — en
+ * pratique tous à zéro, mesure suspendue ou détection en panne — les cinq
+ * passent en sourdine et aucun deck ne se remplit. C'est le comportement voulu :
+ * l'avis d'indisponibilité prend alors toute la place, plutôt que quatre decks
+ * qui prétendraient classer du vide.
+ *
+ * L'égalité se teste sur la part BRUTE, pas sur le pourcentage affiché : deux
+ * partis à 11,6 % et 12,4 % s'affichent tous deux « 12 % » sans être à égalité.
  */
-export const SHADOW_THRESHOLD = 0.05;
+export function clesEnSourdine(parts: [PartyKey, number][]): Set<PartyKey> {
+  if (parts.length === 0) return new Set();
+  const min = Math.min(...parts.map(([, v]) => v));
+  return new Set(parts.filter(([, v]) => v === min).map(([k]) => k));
+}
 const SPARK_W = 100;
 const SPARK_H = 30;
 
@@ -809,6 +827,15 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
   // raffineur ne produit plus rien avant le reset de minuit.
   const xAtH = (h: number) => (h / 20) * plotW;
 
+  // Même définition de sourdine que le vumètre : le dernier au classement, pas
+  // ceux sous un seuil. Jugée sur le dernier bloc publié, qui est l'état courant
+  // de la journée — c'est ce que le vumètre montre au même instant.
+  const valeurCourante = (key: PartyKey) =>
+    duJour
+      .filter((r) => String(r.party ?? "").toLowerCase() === key && Number(r.block_hour) === blocs.at(-1))
+      .reduce((s, r) => s + (Number(r.weighted_mentions) || 0), 0);
+  const sourdineCourse = clesEnSourdine(parts.map((k) => [k, valeurCourante(k)]));
+
   const series: ChartSeries[] = parts.map((key) => {
     const parBloc = new Map(
       duJour
@@ -822,7 +849,7 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
       key,
       label: PARTY_LABELS[key],
       color: PARTY_COLORS[key],
-      inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
+      inShadow: sourdineCourse.has(key),
       polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       lastX: Number(last[0].toFixed(2)),
@@ -955,6 +982,9 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));
   const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
 
+  // Même définition de sourdine que le vumètre (voir `clesEnSourdine`).
+  const sourdineCourse = clesEnSourdine(stats.map((s) => [s.key, histOf(s).at(-1) ?? 0]));
+
   const series: ChartSeries[] = stats
     .slice()
     .sort((a, b) => histOf(b).at(-1)! - histOf(a).at(-1)!)
@@ -965,7 +995,7 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         key: stat.key,
         label: PARTY_LABELS[stat.key],
         color: PARTY_COLORS[stat.key],
-        inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
+        inShadow: sourdineCourse.has(stat.key),
         polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: soloY(hist)
         .map((y, i) => `${xAtDate(axisDates[i] ?? "").toFixed(2)},${y.toFixed(2)}`)
@@ -1243,6 +1273,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
   const fenetre = fenetreDeLOnglet(range, dates.daily);
+  const sourdine = clesEnSourdine(sorted.map((s) => [s.key, s.sov[cfg.barKey]]));
 
   const rows: RowView[] = sorted.map((stat, idx) => {
     const parlants = chiffresParlants(stat, stats, fenetre);
@@ -1307,7 +1338,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       joursEnTete: parlants.joursEnTete,
       joursComptes: parlants.joursComptes,
       evolutionPts: parlants.evolutionPts,
-      inShadow: sov < SHADOW_THRESHOLD,
+      inShadow: sourdine.has(stat.key),
       peakPct: Math.round((dailyHist[peakIdx] ?? 0) * 100),
       peakDate: dates.daily[peakIdx] ?? "",
       color: PARTY_COLORS[stat.key],
@@ -1316,7 +1347,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       barTitle: `${sovPct}\u00a0% du temps consacré aux partis`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
-      showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,
+      showLeaderLabel: idx === 0 && !sourdine.has(stat.key),
       toneLabel,
       toneDirection: streak.direction,
       toneTitle,
