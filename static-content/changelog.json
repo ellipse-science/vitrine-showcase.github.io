@@ -1,5 +1,11 @@
 [
   {
+    "pr": 532,
+    "date": "2026-08-19T18:01:34Z",
+    "note": "Aucun changement pour le site : correctifs internes de la chaîne de données.",
+    "version": null
+  },
+  {
     "pr": 529,
     "date": "2026-08-19T15:00:57Z",
     "note": "Aucun changement pour le site : correctifs internes de l'API.",
