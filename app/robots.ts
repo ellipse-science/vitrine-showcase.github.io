@@ -26,5 +26,10 @@ export default function robots(): MetadataRoute.Robots {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
 
-  return { rules: { userAgent: "*", allow: "/" } };
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  return {
+    rules: { userAgent: "*", allow: "/" },
+    sitemap: `${siteOrigin}${basePath}/sitemap.xml`,
+  };
 }
