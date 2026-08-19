@@ -63,6 +63,27 @@ export const MEDIA_DANS: Record<string, string> = {
  * dérivé des données, et il ne porte aucune étiquette dans l'interface : ne pas
  * le « corriger » en croyant à un tri cassé.
  */
+/**
+ * Sigles affichés sur les crans du fader.
+ *
+ * Les crans portaient l'identifiant brut du corpus (`RCI`, `LAP`, `LED`,
+ * `JDM`), qui est une clé technique et non un nom : `RCI` se lit « Radio Canada
+ * International » pour qui connaît, et rien pour les autres. Ces sigles-ci sont
+ * ceux qu'on emploie à l'oral dans la salle.
+ *
+ * Le nom complet reste porté par `aria-valuetext` sur le curseur et par
+ * l'attribut `title` du cran : le sigle est un repère visuel court, jamais la
+ * seule forme sous laquelle le média est nommé.
+ */
+export const MEDIA_SIGLES: Record<string, string> = {
+  LED: "LD",   // Le Devoir
+  RCI: "RC",   // Radio-Canada
+  LAP: "LP",   // La Presse
+  MG:  "MG",   // Montreal Gazette
+  TVA: "TVA",  // TVA Nouvelles
+  JDM: "JdM",  // Le Journal de Montréal
+};
+
 export const MEDIA_ORDER: string[] = [
   "LED", "RCI", "LAP",
   TOUS_MEDIAS,

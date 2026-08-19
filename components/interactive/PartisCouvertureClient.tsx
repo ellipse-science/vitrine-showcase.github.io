@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite, EnjeuMix } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS, MEDIA_SIGLES } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -1289,9 +1289,10 @@ function Fader({
                   i / (positions.length - 1)
                 } * (100% - var(--pouce)))`,
               }}
+              title={p.label}
             >
               <i />
-              <b>{p.id === TOUS_MEDIAS ? "TOUS" : p.id}</b>
+              <b>{p.id === TOUS_MEDIAS ? "tous" : (MEDIA_SIGLES[p.id] ?? p.id)}</b>
             </span>
           ))}
         </div>
