@@ -688,8 +688,8 @@ function Deck({
     return (
       <div className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}>
         <div className="deck-carre">
-          <span className="deck-vinyle deck-vinyle--vide" aria-hidden="true">
-            <span className="deck-etiquette" />
+          <span className="deck-jog deck-jog--vide" aria-hidden="true">
+            <span className="deck-jog-cap" />
           </span>
         </div>
         <p className="deck-vide-txt">
@@ -721,11 +721,11 @@ function Deck({
         aria-expanded={ouverte}
         aria-label={`${row.fullLabel} : ${ouverte ? "masquer" : "afficher"} la pochette`}
       >
-        {/* Face avant — le disque. Purement décoratif : tout ce qu'il porte
+        {/* Face avant — la molette. Purement décorative : tout ce qu'elle porte
             (la couleur, donc l'identité) est déjà dit par le nom en dessous. */}
         <span className="deck-face deck-face--disque" aria-hidden="true">
-          <span className="deck-vinyle">
-            <span className="deck-etiquette" />
+          <span className="deck-jog">
+            <span className="deck-jog-cap" />
           </span>
         </span>
 
@@ -734,21 +734,23 @@ function Deck({
             `aria-hidden` suit le retournement : les deux faces coexistent dans
             le DOM, et sans cela un lecteur d'écran lirait celle qu'on ne voit
             pas. */}
-        <span
-          className={`deck-face deck-face--pochette ton-${ton}`}
-          aria-hidden={!ouverte}
-        >
-          <svg className="deck-motif" viewBox="0 0 24 24" aria-hidden="true">
-            {pictoEnjeu(enjeu?.label)}
-          </svg>
-
-          <span className="deck-pochette-tete">
-            <b className="deck-groupe">{row.fullLabel}</b>
-            {/* Le ton EN TOUTES LETTRES, et pas seulement par la couleur du
-                fond : le vert et le rouge sont la paire que confondent les
-                daltoniens, et l'information disparaîtrait pour eux. */}
-            <i className="deck-ton">{row.toneLabel.toLowerCase()}</i>
+        <span className="deck-face deck-face--pochette" aria-hidden={!ouverte}>
+          {/* L'illustration porte les trois faits d'un coup d'œil : le
+              pictogramme dit l'enjeu, le grand chiffre la part de voix, la
+              bande le ton. La liste des pistes, en dessous, les redonne
+              exactement — on lit l'image d'abord, les chiffres ensuite. */}
+          <span className="pochette-art">
+            <svg className="deck-motif" viewBox="0 0 24 24" aria-hidden="true">
+              {pictoEnjeu(enjeu?.label)}
+            </svg>
+            <b className="pochette-chiffre">{row.sovPct}&nbsp;%</b>
+            <span className="pochette-groupe">{row.fullLabel}</span>
           </span>
+
+          {/* Le ton EN TOUTES LETTRES sur sa bande, et pas seulement par sa
+              couleur : le vert et le rouge sont la paire que confondent les
+              daltoniens, et l'information disparaîtrait pour eux. */}
+          <span className={`pochette-ton ton-${ton}`}>{row.toneLabel}</span>
 
           <span className="deck-pistes">
             {pistes.map(([nom, valeur]) => (

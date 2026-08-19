@@ -8392,68 +8392,124 @@
   .deck-face { transition: none; }
 }
 
-/* Le vinyle : sillons concentriques, étiquette centrale à la couleur du parti,
-   et le trou de broche au milieu. */
-.deck-vinyle {
+/* La molette — la face avant, abstraite comme le plateau d'un contrôleur DJ et
+   non comme un microsillon. Quatre couches, du dessus vers le dessous : le
+   capuchon central à la couleur du parti, le plateau lisse qui masque les crans
+   en son milieu, la couronne de crans, puis le fond. */
+.deck-jog {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  /* `closest-side` et non le défaut `farthest-corner` : sans lui, 100 % vaut la
+     distance au COIN du carré (1,41 fois le rayon), et une couronne posée à
+     74 % tombe déjà hors du disque visible. */
   background:
-    radial-gradient(circle at 50% 50%, transparent 0 33%, rgba(243, 236, 221, 0.07) 33.3% 33.9%, transparent 34.2%),
-    repeating-radial-gradient(circle at 50% 50%, #16140F 0 2px, #23201A 2px 4.4px);
+    radial-gradient(circle closest-side at 50% 50%, transparent 0 30%, var(--paper) 30.5% 84%, transparent 84.5%),
+    repeating-conic-gradient(from 0deg, var(--ink-softer) 0 0.8deg, transparent 0.8deg 6deg),
+    radial-gradient(circle closest-side at 50% 50%, var(--paper-deep) 0 89%, var(--rule-faint) 89.5% 100%);
   box-shadow:
-    0 3px 12px rgba(28, 25, 23, 0.3),
-    inset 0 0 0 1px rgba(243, 236, 221, 0.08);
+    inset 0 0 0 1px var(--rule),
+    inset 0 1px 3px rgba(28, 25, 23, 0.09),
+    0 2px 9px rgba(28, 25, 23, 0.13);
 }
-.deck-etiquette {
+/* Le filet qui sépare le plateau de la couronne : c'est lui qui donne
+   l'impression d'une pièce mécanique plutôt que d'un aplat. */
+.deck-jog::before {
+  content: "";
+  position: absolute;
+  inset: 29%;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  opacity: 0.7;
+}
+/* Le repère de position, à midi. */
+.deck-jog::after {
+  content: "";
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 2px;
+  height: 8%;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink-softer);
+  opacity: 0.7;
+}
+.deck-jog-cap {
   position: relative;
+  z-index: 1;
   width: 40%;
   height: 40%;
   border-radius: 50%;
   background: var(--party, var(--ink-soft));
-  box-shadow: inset 0 0 0 1px rgba(28, 25, 23, 0.28);
-}
-.deck-etiquette::after {
-  content: "";
-  position: absolute;
-  inset: 43%;
-  border-radius: 50%;
-  background: var(--paper);
+  box-shadow:
+    inset 0 0 0 1px rgba(28, 25, 23, 0.22),
+    0 1px 3px rgba(28, 25, 23, 0.18);
 }
 
-/* La pochette. Le fond porte le TON, le pictogramme l'enjeu de tête. */
+/* La pochette. DEUX couleurs : le fond est celui du PARTI, le ton n'occupe
+   qu'une bande.
+
+   Le fond est la couleur du parti assombrie de 18 % d'encre. Ce n'est pas un
+   effet : en crème sur l'orange brut de Québec solidaire, le contraste tombe à
+   3,94:1, sous le seuil AA de 4,5. 18 % est le minimum qui fait passer les cinq
+   partis (QS remonte à 5,05:1) tout en les laissant reconnaissables. */
 .deck-face--pochette {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
   overflow: hidden;
-  padding: 13px 14px;
   color: var(--paper);
   text-align: left;
-  box-shadow: 0 3px 12px rgba(28, 25, 23, 0.26);
+  background: color-mix(in srgb, var(--party, #433F38) 82%, #1C1917);
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 236, 221, 0.16),
+    0 3px 12px rgba(28, 25, 23, 0.26);
 }
-.deck-face--pochette.ton-positive { background: var(--green); }
-.deck-face--pochette.ton-negative { background: var(--red); }
-.deck-face--pochette.ton-neutral  { background: var(--ink-soft); }
 
-/* Le pictogramme est un FILIGRANE, pas une information : l'enjeu est écrit en
-   clair sur la piste « Enjeu clé », donc un dessin qu'on ne reconnaît pas ne
-   coûte rien.
+/* L'illustration : ce qu'on lit AVANT la liste des pistes. */
+.pochette-art {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1px;
+  overflow: hidden;
+  padding: 11px 12px 8px;
+}
+.pochette-chiffre {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.pochette-groupe {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 0.92;
+}
+
+/* Le pictogramme est un FILIGRANE : l'enjeu est écrit en clair sur la piste
+   « Enjeu clé », donc un dessin qu'on ne reconnaît pas ne coûte rien.
 
    Il est tracé en ENCRE et non en papier. Un trait clair sous un texte clair
    éclaircit le fond là où il passe et fait tomber le contraste : mesuré à
-   3,95:1 sur le vert dès 15 % d'opacité, sous le seuil AA de 4,5. Un trait
-   sombre fait l'inverse — il assombrit le fond et porte le contraste de 5,31:1
-   à 6,78:1. C'est ce qui permet de l'agrandir jusqu'à occuper la pochette. */
+   3,95:1 dès 15 % d'opacité, sous le seuil AA. Un trait sombre fait l'inverse,
+   il assombrit le fond — c'est ce qui permet de l'agrandir jusqu'à occuper la
+   pochette. */
 .deck-motif {
   position: absolute;
-  top: 6%;
-  left: 8%;
-  width: 84%;
-  height: 84%;
+  top: -6%;
+  right: -8%;
+  width: 76%;
+  height: 76%;
   fill: none;
   stroke: #1C1917;
   stroke-width: 1.3;
@@ -8463,43 +8519,40 @@
   pointer-events: none;
 }
 
-.deck-pochette-tete {
-  position: relative;
-  display: block;
-}
-.deck-groupe {
-  display: block;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-}
-.deck-ton {
-  display: block;
-  margin-top: 3px;
+/* La bande de ton — la SECONDE couleur de la pochette.
+
+   Le filet crème au-dessus n'est pas un ornement : la couleur du PLQ est un
+   rouge (#A03440) et celle du ton défavorable en est un autre (#A8302C). Sans
+   séparation, la bande se fondait dans le fond et la pochette retombait à une
+   seule couleur. Le filet la détache quelle que soit la proximité des deux. */
+.pochette-ton {
+  padding: 4px 12px 3px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  font-style: normal;
+  font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.82;
+  box-shadow: inset 0 1px 0 rgba(243, 236, 221, 0.55);
 }
+.pochette-ton.ton-positive { background: var(--green); }
+.pochette-ton.ton-negative { background: var(--red); }
+.pochette-ton.ton-neutral  { background: var(--ink-soft); }
 
 /* Les trois pistes, comme le verso d'un disque : l'étiquette, des pointillés,
-   la valeur. */
+   la valeur. Elles REDONNENT ce que l'illustration a déjà dit, en exact. */
 .deck-pistes {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 12px 9px;
+  background: rgba(28, 25, 23, 0.17);
 }
 .deck-piste {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  font-size: 10.5px;
-  line-height: 1.3;
+  font-size: 10px;
+  line-height: 1.25;
 }
 .deck-piste-nom {
   flex: 1 1 auto;
@@ -8507,20 +8560,19 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  border-bottom: 1px dotted rgba(243, 236, 221, 0.38);
-  opacity: 0.9;
+  border-bottom: 1px dotted rgba(243, 236, 221, 0.34);
+  opacity: 0.88;
 }
 /* La valeur s'enroule plutôt que de se couper : « Santé et politiques sociales »
    sortait en « Santé et pol… », ce qui vidait la piste « Enjeu clé » de son
-   contenu. Les deux premières pistes tiennent sur une ligne de toute façon. */
+   contenu. */
 .deck-piste-val {
   flex: 0 1 auto;
-  max-width: 66%;
+  max-width: 68%;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: 0.01em;
   text-align: right;
 }
 
@@ -8549,14 +8601,10 @@
 
 /* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
    deux s'étant partagé la dernière place en sourdine. */
-.deck--vide .deck-vinyle--vide {
-  background: repeating-radial-gradient(circle at 50% 50%, #E4DAC3 0 2px, #DED3B9 2px 4.4px);
-  box-shadow: inset 0 0 0 1px var(--rule-faint);
-  opacity: 0.62;
-}
-.deck--vide .deck-etiquette {
+.deck--vide .deck-jog--vide { opacity: 0.5; }
+.deck--vide .deck-jog-cap {
   background: var(--rule);
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
 .deck-vide-txt {
   margin: 0;
