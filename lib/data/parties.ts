@@ -1051,6 +1051,61 @@ function chiffresParlants(
  *  treizième sujet. */
 export const SANS_ENJEU = "Aucun enjeu identifié";
 
+/** Les enjeux CAP, de l'identifiant technique au libellé français.
+ *
+ *  Le raffineur publie la clé du modèle (`public_lands`, `foreign_trade`), pas
+ *  un libellé : `radar-data-preparation` DÉCOUVRE ses têtes de classification
+ *  auprès de l'API INFER (`startsWith(id, "cap_theme_")`) au lieu de travailler
+ *  sur une liste figée. La traduction appartient donc au site.
+ *
+ *  ⚠️ GRANULARITÉ FINE, ET C'EST DÉLIBÉRÉ. Ce sont les catégories majeures du
+ *  Comparative Agendas Project, plus fines que les douze catégories du guide de
+ *  rédaction — lesquelles en sont une agrégation (« Économie et travail »
+ *  regroupe macroéconomie, travail, commerce intérieur et commerce extérieur).
+ *  Agréger ici demanderait de trancher quelle tête fine tombe dans quelle
+ *  catégorie, ce qui est une décision méthodologique et non un travail
+ *  d'affichage. En attendant cet arbitrage d'équipe, on nomme fidèlement ce que
+ *  la donnée contient plutôt que de la ranger dans des cases devinées.
+ */
+const ENJEU_LABELS: Record<string, string> = {
+  macroeconomics: "Macroéconomie",
+  labor: "Travail et emploi",
+  domestic_commerce: "Commerce intérieur",
+  foreign_trade: "Commerce extérieur",
+  health: "Santé",
+  social_welfare: "Politiques sociales",
+  education: "Éducation",
+  environment: "Environnement",
+  energy: "Énergie",
+  agriculture: "Agriculture",
+  public_lands: "Terres publiques",
+  immigration: "Immigration",
+  law_and_crime: "Loi et crime",
+  rights_liberties_minorities_discrimination: "Droits et libertés",
+  defense: "Défense",
+  international_affairs: "Affaires internationales",
+  governments_governance: "Gouvernements et gouvernance",
+  technology: "Technologie",
+  culture_nationalism: "Culture et nationalisme",
+  transportation: "Transports",
+  housing: "Logement",
+};
+
+/** Le libellé d'un enjeu, tolérant à une clé inconnue.
+ *
+ *  La liste des modèles étant découverte à l'exécution, une tête ajoutée en
+ *  amont arriverait ici sans traduction. On la rend lisible (tirets bas en
+ *  espaces, initiale en capitale) plutôt que d'afficher une clé brute ou, pire,
+ *  de la jeter : un enjeu absent fausserait les parts, qui doivent sommer à 1.
+ */
+export function libelleEnjeu(cle: string): string {
+  if (cle === SANS_ENJEU) return cle;
+  const connu = ENJEU_LABELS[cle];
+  if (connu) return connu;
+  const brut = cle.replace(/_/g, " ").trim();
+  return brut.charAt(0).toUpperCase() + brut.slice(1);
+}
+
 function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   const vide: EnjeuMix = { enjeux: [], parParti: {} };
   if (rows.length === 0) return vide;
@@ -1071,8 +1126,9 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
     const theme = String(r.theme ?? "");
     if (!theme) continue;
     const score = Number(r.total_raw_score) || 0;
-    (parParti[key] ??= {})[theme] = { score, tone: Number(r.weighted_tone) || 0 };
-    totalParEnjeu.set(theme, (totalParEnjeu.get(theme) ?? 0) + score);
+    const nom = libelleEnjeu(theme);
+    (parParti[key] ??= {})[nom] = { score, tone: Number(r.weighted_tone) || 0 };
+    totalParEnjeu.set(nom, (totalParEnjeu.get(nom) ?? 0) + score);
   }
 
   // Ordre STABLE, du plus au moins présent tous partis confondus : une banque
@@ -1127,7 +1183,7 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
         const t = Number(r.weighted_tone) || 0;
         const dir = t > TONE_THRESHOLD ? "positive" : t < -TONE_THRESHOLD ? "negative" : "neutral";
         return {
-          label: String(r.theme ?? ""),
+          label: libelleEnjeu(String(r.theme ?? "")),
           pct: Math.round(Number(r.issue_share) * 100),
           // « Favorable / défavorable », jamais « positif / négatif » : règle du
           // guide de rédaction pour ce module.

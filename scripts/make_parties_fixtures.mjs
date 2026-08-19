@@ -291,17 +291,21 @@ files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday])
 // dont on parle quand on parle de lui. Les libellés sont les 12 catégories CAP
 // canoniques, partagées avec le Digital Society Lab — à reprendre au caractère
 // près, les changer casserait la comparabilité.
+// Les CLÉS TECHNIQUES du raffineur, et non des libellés français : c'est ce que
+// publie `parties_issues_salient_shadow_day` (relevé en DEV), et c'est le site
+// qui traduit (`libelleEnjeu` dans lib/data/parties.ts). Écrire des libellés ici
+// masquerait toute la couche de traduction en développement, et un identifiant
+// non traduit ne se verrait qu'en production.
+//
+// « Aucun enjeu identifié » est en revanche déjà un libellé : c'est le raffineur
+// qui le pose, pour les phrases qui nomment un parti sans qu'aucun modèle CAP ne
+// franchisse son seuil.
 const ENJEUX = [
-  "Santé et politiques sociales", "Économie et travail", "Éducation",
-  "Environnement et énergie", "Gouvernements et gouvernance", "Immigration",
-  "Loi et crime", "Culture et nationalisme", "Affaires internationales et défense",
-  "Terres publiques et agriculture", "Technologie",
-  "Droits, libertés, minorités et discrimination",
-  // L'enjeu de RESTE, tel que le raffineur le publie depuis la correction du
-  // croisement (aws-refiners#355) : les phrases qui nomment un parti sans
-  // qu'aucun modèle CAP ne franchisse son seuil. Sans lui, les fausses données
-  // décriraient un monde où l'on ne parle jamais d'un parti sans sujet, et le
-  // module se comporterait autrement en développement qu'en production.
+  "health", "macroeconomics", "education",
+  "energy", "governments_governance", "immigration",
+  "law_and_crime", "culture_nationalism", "international_affairs",
+  "public_lands", "technology",
+  "rights_liberties_minorities_discrimination",
   "Aucun enjeu identifié",
 ];
 // Chaque parti a SON profil : c'est tout l'intérêt de la mesure, deux partis
