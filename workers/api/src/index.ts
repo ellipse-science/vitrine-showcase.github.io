@@ -160,7 +160,7 @@ export default {
       return res
     }
 
-    const isSync = seg[0] === 'v1' && seg[1] === 'sync'
+    const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
     if (!isSync && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
