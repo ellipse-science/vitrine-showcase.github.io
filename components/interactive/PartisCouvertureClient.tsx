@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite, EnjeuMix } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS, MEDIA_SIGLES } from "@/lib/medias";
+import { pictoEnjeu } from "@/lib/enjeuxPictos";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -129,133 +130,6 @@ function BlocJournalistes({
   );
 }
 
-/** Recalcule les rangées de la console sur une SÉLECTION d'enjeux.
- *
- *  On somme les MINUTES attribuées aux enjeux retenus, parti par parti, puis on
- *  renormalise entre les cinq. `issue_share` ne conviendrait pas : elle est
- *  normalisée par parti (elle vaut 1 pour chacun), donc non additionnable entre
- *  partis.
- *
- *  Ce qui n'est PAS recalculé est mis à zéro plutôt que laissé tel quel : le
- *  sommet, les journées en tête et l'évolution portent sur l'ensemble des
- *  enjeux, et les afficher à côté d'une part filtrée laisserait croire qu'ils
- *  suivent le filtre. Le composant les masque tant qu'une sélection est active.
- */
-function filtrerParEnjeux(rows: RowView[], mix: EnjeuMix, choisis: Set<string>): RowView[] {
-  if (choisis.size === 0) return rows;
-
-  const minutes = new Map<string, number>();
-  const tons = new Map<string, number>();
-  for (const r of rows) {
-    const parEnjeu = mix.parParti[r.key] ?? {};
-    let m = 0;
-    let tonPondere = 0;
-    for (const theme of choisis) {
-      const cell = parEnjeu[theme];
-      if (!cell) continue;
-      m += cell.score;
-      tonPondere += cell.tone * cell.score;
-    }
-    minutes.set(r.key, m);
-    tons.set(r.key, m > 0 ? tonPondere / m : 0);
-  }
-
-  const total = [...minutes.values()].reduce((a, b) => a + b, 0);
-
-  return rows
-    .map((r) => {
-      const part = total > 0 ? (minutes.get(r.key) ?? 0) / total : 0;
-      const pct = Math.round(part * 100);
-      const ton = tons.get(r.key) ?? 0;
-      const dir = ton > 0.002 ? "positive" : ton < -0.002 ? "negative" : "neutral";
-      return {
-        ...r,
-        sovPct: pct,
-        barWidthPct: pct,
-        inShadow: part < 0.05,
-        refLeftPct: 0,
-        refTitle: "",
-        toneDirection: dir as RowView["toneDirection"],
-        toneLabel: dir === "positive" ? "↑ Favorable" : dir === "negative" ? "↓ Défavorable" : "– Neutre",
-        toneTitle: `Ton\u00a0: ${dir === "positive" ? "favorable" : dir === "negative" ? "défavorable" : "neutre"} sur les enjeux choisis.`,
-        barTitle: `${pct}\u00a0% du temps consacré aux partis sur les enjeux choisis`,
-      };
-    })
-    .sort((a, b) => b.sovPct - a.sovPct)
-    .map((r, i) => ({ ...r, rang: i + 1, showLeaderLabel: i === 0 && !r.inShadow }));
-}
-
-/** La banque de pads : douze enjeux, qui commandent le vumètre.
- *
- *  Les pads ne décrivent plus un parti, ils FILTRENT la mesure. Choisir « santé »
- *  répond à « qui domine la couverture quand on parle de santé ? », ce qu'aucune
- *  autre commande du module ne permettait. Rien de choisi = tous les enjeux, la
- *  vue par défaut.
- *
- *  De vrais <button> : la sélection doit être atteignable au clavier, et
- *  `aria-pressed` dit l'état à un lecteur d'écran. L'éclat seul ne suffirait pas.
- */
-function BanquePads({
-  mix,
-  choisis,
-  onBascule,
-  onVider,
-}: {
-  mix: EnjeuMix;
-  choisis: Set<string>;
-  onBascule: (theme: string) => void;
-  onVider: () => void;
-}) {
-  if (mix.enjeux.length === 0) return null;
-
-  // L'éclat au repos porte le poids de l'enjeu tous partis confondus : la banque
-  // n'est pas une grille inerte, elle montre déjà où se joue l'actualité.
-  const totalGeneral = mix.enjeux.reduce((t: number, theme: string) => {
-    return t + Object.values(mix.parParti).reduce((u: number, p) => u + (p[theme]?.score ?? 0), 0);
-  }, 0);
-
-  return (
-    <section className="pads-zone" aria-label="Filtrer par enjeu">
-      <p className="pads-tete">
-        <span>Filtrer par enjeu</span>
-        <InfoTip size="sm" label="Filtrer par enjeu">
-          Choisissez un ou plusieurs enjeux pour voir qui domine la couverture{" "}
-          <b>sur ces sujets seulement</b>. Les colonnes se recalculent sur les minutes
-          consacrées aux enjeux retenus. Rien de choisi&nbsp;: tous les enjeux.
-        </InfoTip>
-        {choisis.size > 0 && (
-          <button type="button" className="pads-vider" onClick={onVider}>
-            Tout réentendre
-          </button>
-        )}
-      </p>
-
-      <ul className="pads">
-        {mix.enjeux.map((theme) => {
-          const poids = Object.values(mix.parParti).reduce((u: number, p) => u + (p[theme]?.score ?? 0), 0);
-          const relatif = totalGeneral > 0 ? poids / totalGeneral : 0;
-          const actif = choisis.has(theme);
-          return (
-            <li key={theme} className={theme === SANS_ENJEU ? "pads-reste" : undefined}>
-              <button
-                type="button"
-                className={`pad${actif ? " pad--actif" : ""}${theme === SANS_ENJEU ? " pad--sans" : ""}`}
-                style={{ ["--eclat" as string]: actif ? 0.5 : Math.min(0.3, 0.05 + relatif * 1.2) }}
-                onClick={() => onBascule(theme)}
-                aria-pressed={actif}
-                title={`${theme}\u00a0: ${Math.round(relatif * 100)}\u00a0% de ce qui se dit sur les partis`}
-              >
-                <span className="pad-nom">{theme}</span>
-                <span className="pad-pct">{Math.round(relatif * 100)}&nbsp;%</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   // `indisponible` en tête, comme partout ailleurs : ce titre part dans le
@@ -277,55 +151,6 @@ function shareTitle(data: PartiesData): string {
 export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
-  // Les deux platines : la dernière sélection à gauche, la précédente à droite.
-  // Cliquer un canal fait donc glisser A vers B — on compare toujours les deux
-  // derniers partis regardés, sans avoir à choisir un « emplacement ».
-  // Les deux premiers partis sont chargés D'EMBLÉE, au lieu de deux panneaux
-  // vides invitant à cliquer. Un lecteur pressé voyait auparavant deux tiers du
-  // module lui demander un geste avant de rien montrer ; il voit maintenant la
-  // comparaison qui l'intéresse le plus souvent, celle de la tête du
-  // classement. Cliquer reste possible et remplace la sélection.
-  const [platines, setPlatines] = useState<[string | null, string | null]>(() => {
-    const tete = data.ranges.today.rows.filter((r) => !r.inShadow);
-    return [tete[0]?.key ?? null, tete[1]?.key ?? null];
-  });
-
-  /** Un clic charge, un second retire.
-   *
-   *  Le geste devient réversible sans chercher de bouton de fermeture : on
-   *  reclique le parti pour l'enlever. Chaque emplacement se vide SUR PLACE
-   *  (l'autre ne bouge pas), parce que voir la seconde platine sauter à gauche
-   *  après avoir désélectionné la première se lit comme une erreur. */
-  const chargerPlatine = (key: string) =>
-    setPlatines(([a, b]) => {
-      if (a === key) return [null, b];
-      if (b === key) return [a, null];
-      return [key, a];
-    });
-
-  /** Déposer un parti sur UNE platine précise l'y met, elle et pas l'autre.
-   *
-   *  Le clic empile (le nouveau arrive à gauche, l'ancien glisse à droite), ce
-   *  qui va bien pour comparer au fil de l'eau. Mais quand on vise une platine,
-   *  on a déjà choisi où : respecter ce choix est tout l'intérêt du geste.
-   *  Si le parti occupait l'autre platine, les deux s'échangent plutôt que
-   *  d'apparaître en double. */
-  const deposerSurPlatine = (cote: "A" | "B", key: string) =>
-    setPlatines(([a, b]) => {
-      if (cote === "A") return [key, b === key ? a : b];
-      return [a === key ? b : a, key];
-    });
-  // Les enjeux retenus. Vide = tous, la vue par défaut : on n'impose pas un
-  // filtre à qui arrive sur le module.
-  const [enjeuxChoisis, setEnjeuxChoisis] = useState<Set<string>>(new Set());
-  const basculerEnjeu = (theme: string) =>
-    setEnjeuxChoisis((prev) => {
-      const suivant = new Set(prev);
-      if (suivant.has(theme)) suivant.delete(theme);
-      else suivant.add(theme);
-      return suivant;
-    });
-
   const [showDoom, setShowDoom] = useState(false);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
@@ -351,16 +176,19 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
     media !== TOUS_MEDIAS && data.byMedia[media]
       ? data.byMedia[media]
       : { ranges: data.ranges };
-  const vueBrute: RangeView = source.ranges[range];
-  // Le filtre s'applique à la CONSOLE et à ce qui en découle. Il ne touche ni la
-  // course ni les mesures historiques : celles-ci portent sur l'ensemble des
-  // enjeux, et le composant les masque plutôt que de les afficher à côté d'une
-  // part filtrée.
-  const rowsFiltrees = filtrerParEnjeux(vueBrute.rows, data.enjeuMix, enjeuxChoisis);
-  const view: RangeView = { ...vueBrute, rows: rowsFiltrees };
-  const filtreActif = enjeuxChoisis.size > 0;
+  const view: RangeView = source.ranges[range];
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
+
+  // Les quatre decks, dans l'ordre du classement : 1er en haut à gauche, 2e en
+  // haut à droite, 3e en bas à gauche, 4e en bas à droite. L'assignation est
+  // AUTOMATIQUE — il n'y a plus rien à charger ni à déposer, puisque la sourdine
+  // garantit qu'il reste exactement quatre partis actifs.
+  //
+  // Le tableau est complété à quatre : à égalité au plus bas, deux partis
+  // passent en sourdine et le dernier deck reste donc vide. Ce vide est la
+  // lecture juste — il dit qu'un seul parti se disputait la dernière place.
+  const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
 
   if (showDoom) {
     return <DoomGame onExit={() => setShowDoom(false)} />;
@@ -456,26 +284,20 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
             </InfoTip>
         </div>
 
+      {/* Quatre decks aux quatre coins, le vumètre entre eux.
+          La colonne de gauche porte les rangs 1 et 3, celle de droite les rangs
+          2 et 4 : la lecture suit l'ordre naturel de la page, le premier en haut
+          à gauche. Les decks débordent volontairement au-dessus et au-dessous de
+          la console — ce sont eux les objets, la console est l'instrument qui
+          les mesure. */}
       <div className="regie">
-        <Platine
-          cote="A"
-          onDepot={deposerSurPlatine}
-          row={view.rows.find((r) => r.key === platines[0]) ?? null}
-          moyennePct={
-            data.ranges[range].rows.find((r) => r.key === platines[0])?.sovPct ?? 0
-          }
-          indisponible={data.indisponible}
-          comparaisonMedia={media !== TOUS_MEDIAS}
-          filtreActif={filtreActif}
-        />
+        <div className="regie-flanc regie-flanc--gauche">
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} />
+        </div>
 
         {/* La manchette vit DANS la colonne du milieu, collée au-dessus de la
-            console. Elle était auparavant un bloc pleine largeur posé au-dessus
-            de toute la régie : comme la console se trouve au fond de sa colonne,
-            165 px plus bas que les platines, la phrase restait loin de
-            l'instrument qu'elle commente, et l'espace au-dessus de la console
-            restait vide. Ici, elle remplit cet espace et touche presque le
-            cadre. */}
+            console : la phrase commente l'instrument, elle doit le toucher. */}
         <div className="regie-centre">
           <Manchette
             rows={view.rows}
@@ -487,47 +309,23 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <Console
             rows={view.rows}
             reference={data.ranges[range].rows}
-            selection={platines}
-            onSelect={chargerPlatine}
             onPcqTap={handlePcqTap}
             indisponible={data.indisponible}
           />
-          {/* La banque de pads sous la console, comme les pads de performance
-              sous la table de mixage. Elle commande le vumètre : c'est lui la
-              visualisation, les pads sont l'instrument. */}
-          {!data.indisponible && (
-            <BanquePads
-              mix={data.enjeuMix}
-              choisis={enjeuxChoisis}
-              onBascule={basculerEnjeu}
-              onVider={() => setEnjeuxChoisis(new Set())}
-            />
-          )}
         </div>
 
-        <Platine
-          cote="B"
-          onDepot={deposerSurPlatine}
-          row={view.rows.find((r) => r.key === platines[1]) ?? null}
-          moyennePct={
-            data.ranges[range].rows.find((r) => r.key === platines[1])?.sovPct ?? 0
-          }
-          indisponible={data.indisponible}
-          comparaisonMedia={media !== TOUS_MEDIAS}
-          filtreActif={filtreActif}
-        />
+        <div className="regie-flanc regie-flanc--droite">
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} />
+        </div>
       </div>
 
-      {/* Le mode d'emploi des platines, en clair et à leur hauteur.
-          Il vivait dans l'infobulle du module, donc invisible pour qui ne
-          l'ouvre pas ; et depuis que les deux platines se remplissent d'emblée,
-          plus rien à l'écran ne disait qu'elles sont pilotables. Une ligne
-          suffit, et elle décrit le geste réel : le clic charge à gauche et
-          repousse la sélection précédente à droite. */}
+      {/* Le geste, écrit en clair. Rien à l'écran ne dit qu'un disque se
+          retourne : sans cette ligne, la pochette reste invisible pour qui
+          n'essaie pas de cliquer. */}
       {!data.indisponible && (
         <p className="regie-aide">
-          Cliquez un parti pour l&apos;examiner, ou faites-le glisser sur l&apos;un des
-          deux emplacements.
+          Cliquez un disque pour retourner la pochette.
         </p>
       )}
 
@@ -688,8 +486,6 @@ function positionVisuelle(rang: number, total: number): number {
 function Console({
   rows,
   reference,
-  selection,
-  onSelect,
   onPcqTap,
   indisponible,
 }: {
@@ -697,8 +493,6 @@ function Console({
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
    *  couleurs. Identique à `rows` quand le fader est sur « tous ». */
   reference: RowView[];
-  selection: [string | null, string | null];
-  onSelect: (key: string) => void;
   onPcqTap: () => void;
   /** Non nul quand la mesure elle-même est en cause : l'état vide ne peut
    *  alors plus être formulé comme un silence des médias. */
@@ -749,8 +543,6 @@ function Console({
               rang={i + 1}
               total={tranches.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
-              charge={selection[0] === row.key ? "A" : selection[1] === row.key ? "B" : null}
-              onSelect={onSelect}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
             />
           ))}
@@ -867,229 +659,126 @@ function Manchette({
 }
 
 /**
- * Une platine — le plateau sur lequel on charge un parti pour l'examiner.
+ * Un deck — un parti, son disque, et la pochette qu'on découvre en le retournant.
  *
- * Deux platines encadrent la console, comme deux lecteurs encadrent un mixeur.
- * Elles occupent aussi l'espace qui restait vide de part et d'autre.
+ * Quatre decks occupent les quatre coins de la régie et encadrent le vumètre.
+ * Leur ordre EST le classement : premier en haut à gauche, deuxième en haut à
+ * droite, puis la seconde rangée. Rien à charger, rien à déposer — la sourdine
+ * garantit qu'il reste exactement quatre partis actifs, donc quatre decks.
  *
- * La position de l'aiguille sur le plateau porte la part de voix : plus le
- * parti occupe de place, plus l'aiguille a tourné. Ce n'est pas un ornement —
- * c'est la même donnée que la hauteur du vumètre, lue autrement.
+ * Au repos, le disque ne porte que la couleur du parti sur son étiquette
+ * centrale : il identifie, il ne chiffre pas. Les chiffres sont au dos.
  */
-function Platine({
-  cote,
+function Deck({
   row,
-  moyennePct,
+  rang,
   indisponible,
-  comparaisonMedia,
-  onDepot,
-  filtreActif,
 }: {
-  cote: "A" | "B";
   row: RowView | null;
-  moyennePct: number;
+  /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
+   *  les cinq (ils coïncident, la sourdine ne retirant que la queue). */
+  rang: number;
   indisponible: Indisponibilite | null;
-  /** Vrai quand le fader désigne UN média : seul cas où comparer à l'ensemble
-   *  des médias veut dire quelque chose. */
-  comparaisonMedia: boolean;
-  onDepot: (cote: "A" | "B", key: string) => void;
-  /** Vrai quand des enjeux sont retenus. Les mesures HISTORIQUES (sommet,
-   *  journées en tête, évolution) portent sur l'ensemble des enjeux : les
-   *  laisser à côté d'une part filtrée laisserait croire qu'elles suivent le
-   *  filtre. On les masque plutôt que de mentir par juxtaposition. */
-  filtreActif: boolean;
 }) {
-  const [survole, setSurvole] = useState(false);
+  const [ouverte, setOuverte] = useState(false);
 
-  // Glisser-déposer natif : suffisant ici, et sans dépendance. Il ne fonctionne
-  // pas au toucher, d'où le maintien du CLIC comme chemin principal — c'est lui
-  // que décrit la phrase d'aide, et le seul disponible au clavier et sur
-  // téléphone. Le dépôt est un raccourci pour qui vise une platine précise,
-  // jamais le seul moyen d'y arriver.
-  const cibleDepot = {
-    onDragOver: (e: React.DragEvent) => {
-      e.preventDefault();
-      setSurvole(true);
-    },
-    onDragLeave: () => setSurvole(false),
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault();
-      setSurvole(false);
-      const key = e.dataTransfer.getData("text/plain");
-      if (key) onDepot(cote, key);
-    },
-  };
-  // Aujourd'hui une platine ne peut PAS se remplir sous suspension : elle part
-  // à `null` et ne se charge qu'au clic sur une tranche, or la console n'en
-  // affiche plus. Elle est donc sûre — mais par accident. Le garde est explicite
-  // pour qu'une future sélection par défaut ne rouvre pas la fuite en silence.
+  /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
+   *  ce rang, deux partis s'étant partagé la dernière place en sourdine. */
   if (indisponible || !row) {
     return (
-      <div
-        className={`platine vide cote-${cote}${survole ? " survolee" : ""}`}
-        {...(indisponible ? {} : cibleDepot)}
-      >
-        <div className="platine-plateau" aria-hidden="true">
-          {/* Démonstration du geste, jouée en boucle sur un emplacement vide.
-              Une pastille part de la gauche (là où se trouve la console) et
-              vient se poser au centre du disque. Montrer le geste vaut mieux
-              que l'écrire : « faites-le glisser » suppose qu'on ait compris
-              qu'une tranche se saisit, ce que rien n'indiquait.
-              Purement décorative, donc `aria-hidden` sur le disque : la
-              consigne écrite juste en dessous porte l'information. */}
-          <i className="platine-demo-cible" />
-          <i className="platine-demo">Parti</i>
+      <div className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}>
+        <div className="deck-carre">
+          <span className="deck-vinyle deck-vinyle--vide" aria-hidden="true">
+            <span className="deck-etiquette" />
+          </span>
         </div>
-        <p className="platine-vide-txt">
-          Cliquez un parti, ou faites-le glisser ici
+        <p className="deck-vide-txt">
+          {indisponible
+            ? "Mesure suspendue"
+            : `Pas de ${rang}${rang === 1 ? "er" : "e"} parti audible`}
         </p>
       </div>
     );
   }
 
-  // L'écart n'a de sens QUE si l'on regarde un média en particulier : sur
-  // « tous les médias », chaque parti est à sa propre moyenne, donc l'écart vaut
-  // zéro par construction. Il occupait pourtant une ligne dans la vue par
-  // défaut, ce qui donnait un chiffre exact et vide de sens.
-  const ecartUtile = comparaisonMedia && moyennePct > 0;
-  const ecartPts = ecartUtile ? row.sovPct - moyennePct : 0;
+  // L'enjeu de tête, hors « Autres enjeux » : ce dernier agrège la queue de
+  // distribution et ne nomme rien, donc il ne peut pas être un « enjeu clé ».
+  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+  const ton = row.toneDirection;
 
-  // Une fenêtre d'un seul jour ne peut rien dire d'une progression ni d'un
-  // nombre de journées en tête : « 1 jour sur 1 » et « 0 pt » sont du bruit.
-  const fenetreParlante = row.joursComptes > 1 && !filtreActif;
+  const pistes: [string, string][] = [
+    ["Temps en Une", formatDuree(row.minutesUne)],
+    ["Part de voix", `${row.sovPct} %`],
+    ["Enjeu clé", enjeu?.label ?? SANS_ENJEU],
+  ];
+
   return (
-    <div
-      className={`platine cote-${cote}${survole ? " survolee" : ""}`}
-      style={{ ["--party" as string]: row.color }}
-      {...cibleDepot}
-    >
-      {/* Le disque ne porte plus que la COULEUR : il identifie, il ne chiffre
-          pas. Tous les nombres descendent dans le tableau, où ils s'alignent et
-          se comparent d'une platine à l'autre. */}
-      <div className="platine-plateau" aria-hidden="true" />
+    <div className="deck" style={{ ["--party" as string]: row.color }}>
+      <button
+        type="button"
+        className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
+        onClick={() => setOuverte((v) => !v)}
+        aria-expanded={ouverte}
+        aria-label={`${row.fullLabel} : ${ouverte ? "masquer" : "afficher"} la pochette`}
+      >
+        {/* Face avant — le disque. Purement décoratif : tout ce qu'il porte
+            (la couleur, donc l'identité) est déjà dit par le nom en dessous. */}
+        <span className="deck-face deck-face--disque" aria-hidden="true">
+          <span className="deck-vinyle">
+            <span className="deck-etiquette" />
+          </span>
+        </span>
 
-      <p className="platine-nom">{row.label}</p>
+        {/* Face arrière — la pochette. Le fond porte le ton, le pictogramme
+            l'enjeu de tête, et les trois pistes les chiffres à citer.
+            `aria-hidden` suit le retournement : les deux faces coexistent dans
+            le DOM, et sans cela un lecteur d'écran lirait celle qu'on ne voit
+            pas. */}
+        <span
+          className={`deck-face deck-face--pochette ton-${ton}`}
+          aria-hidden={!ouverte}
+        >
+          <svg className="deck-motif" viewBox="0 0 24 24" aria-hidden="true">
+            {pictoEnjeu(enjeu?.label)}
+          </svg>
 
-      {/* Un vrai <table>, et non une liste de définitions maquillée.
-          Trois raisons : un lecteur d'écran annonce les couples étiquette-valeur
-          comme des lignes, la sélection à la souris se colle dans un tableur en
-          gardant ses colonnes (ce que demandait le besoin journaliste), et
-          l'alignement des chiffres devient l'affaire du navigateur. */}
-      <table className="platine-table">
-        <caption className="visually-hidden">
-          Chiffres de {row.fullLabel} sur la période affichée
-        </caption>
-        <tbody>
-          <tr>
-            <th scope="row">Part du temps</th>
-            <td className="platine-td-cle">{row.sovPct}&nbsp;%</td>
-          </tr>
-          {/* Les MINUTES, à côté de la part. « La CAQ a occupé 2 h 27 de Une »
-              se cite mieux qu'un pourcentage, et la valeur n'est interprétable
-              que depuis la répartition des minutes (aws-refiners#355) : leur
-              somme égale enfin le temps réellement passé en Une, au lieu d'un
-              multiple. */}
-          <tr>
-            <th scope="row" title="Temps cumulé passé en Une par les articles où ce parti est mentionné, réparti entre les partis de chaque article">
-              Temps en Une
-            </th>
-            <td>{formatDuree(row.minutesUne)}</td>
-          </tr>
-          <tr>
-            <th scope="row">Rang</th>
-            <td>
-              {row.rang}<sup>{row.rang === 1 ? "er" : "e"}</sup> sur 5
-            </td>
-          </tr>
-          {fenetreParlante && (
-            <tr>
-              <th scope="row" title="Journées où ce parti a occupé le plus de temps, parmi celles que couvre la période">
-                En tête
-              </th>
-              <td>
-                {row.joursEnTete}&nbsp;jour{row.joursEnTete > 1 ? "s" : ""}{" "}
-                <span>sur {row.joursComptes}</span>
-              </td>
-            </tr>
-          )}
-          {fenetreParlante && (
-            <tr>
-              {/* La période va dans l'étiquette et l'unité s'écrit en toutes
-                  lettres : « Évolution : +7 pts » ne disait ni sur quoi ni
-                  entre quand et quand. Le survol précise que la mesure compare
-                  les deux bouts de la période, et non une moyenne. */}
-              <th scope="row" title="Écart entre le premier et le dernier jour de la période, en points de pourcentage">
-                Sur {row.joursComptes}&nbsp;j
-              </th>
-              <td className={row.evolutionPts > 0 ? "haut" : row.evolutionPts < 0 ? "bas" : undefined}>
-                {row.evolutionPts > 0 ? "+" : ""}{row.evolutionPts}&nbsp;point
-                {Math.abs(row.evolutionPts) > 1 ? "s" : ""}
-              </td>
-            </tr>
-          )}
-          {/* TOUJOURS présente, même sans média choisi.
-              Les lignes qui apparaissent et disparaissent changeaient la hauteur
-              du tableau, donc celle de la rangée de la régie, donc la taille du
-              cadre de la console : le module bougeait à chaque clic. Un tableau
-              de hauteur CONSTANTE règle la cause plutôt que de compenser après
-              coup. « s. o. » dit honnêtement que la comparaison n'a pas d'objet
-              tant qu'on regarde l'ensemble des médias, où chaque parti est par
-              construction à sa propre moyenne. */}
-          <tr>
-            <th
-              scope="row"
-              title="Écart entre ce média et l'ensemble des médias, en points. Sans objet tant qu'aucun média n'est choisi : chaque parti est alors à sa propre moyenne."
-            >
-              Écart médias
-            </th>
-            {ecartUtile ? (
-              <td className={ecartPts > 0 ? "haut" : ecartPts < 0 ? "bas" : undefined}>
-                {ecartPts > 0 ? "+" : ""}{ecartPts}&nbsp;points
-              </td>
-            ) : (
-              <td className="platine-td-so">s.&nbsp;o.</td>
-            )}
-          </tr>
-          {!filtreActif && (
-            <tr>
-              <th scope="row" title="Part du temps la plus élevée atteinte sur la fenêtre suivie">
-                Sommet
-              </th>
-              <td>
-                {row.peakPct}&nbsp;% <span>le {formatCourt(row.peakDate)}</span>
-              </td>
-            </tr>
-          )}
-          <tr>
-            <th scope="row">Ton</th>
-            <td className={`tone-streak tone-streak--${row.toneDirection}`}>{row.toneLabel}</td>
-          </tr>
-          {/* Également constante. L'ancienne ligne « État » n'existait que sous
-              le seuil ; formulée comme un seuil, elle dit quelque chose dans les
-              deux cas et ne fait plus varier la hauteur. */}
-          <tr>
-            <th scope="row" title="Sous 5 % du temps, un parti compte trop peu pour qu'on tire une lecture de ses variations">
-              Seuil
-            </th>
-            <td className={row.inShadow ? "platine-td-so" : undefined}>
-              {row.inShadow ? "Sourdine" : "Audible"}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          <span className="deck-pochette-tete">
+            <b className="deck-groupe">{row.fullLabel}</b>
+            {/* Le ton EN TOUTES LETTRES, et pas seulement par la couleur du
+                fond : le vert et le rouge sont la paire que confondent les
+                daltoniens, et l'information disparaîtrait pour eux. */}
+            <i className="deck-ton">{row.toneLabel.toLowerCase()}</i>
+          </span>
 
+          <span className="deck-pistes">
+            {pistes.map(([nom, valeur]) => (
+              <span className="deck-piste" key={nom}>
+                <span className="deck-piste-nom">{nom}</span>
+                <span className="deck-piste-val">{valeur}</span>
+              </span>
+            ))}
+          </span>
+        </span>
+      </button>
+
+      <p className="deck-nom">
+        <span className="deck-rang">{rang}</span>
+        {row.label}
+      </p>
     </div>
   );
 }
 
-/** « 147 min » devient « 2 h 27 » : au-delà de l'heure, les minutes seules
- *  cessent de se représenter. En deçà, l'unité reste la minute — « 0 h 05 »
- *  se lit moins bien que « 5 min ». */
+/** Une durée en heures collées : `4h12`, `4h`, `45 min`.
+ *
+ *  Sans espace autour du `h`. Le guide de rédaction est explicite là-dessus et
+ *  l'assume comme un écart à l'OQLF : « L'OQLF dit d'en mettre, mais on ne le
+ *  fait pas. » Cette fonction écrivait `4 h 12`. */
 function formatDuree(minutes: number): string {
   if (minutes < 60) return `${minutes}\u00a0min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${h}\u00a0h${m > 0 ? `\u00a0${String(m).padStart(2, "0")}` : ""}`;
+  return `${h}h${m > 0 ? String(m).padStart(2, "0") : ""}`;
 }
 
 const MOIS_COURTS = [
@@ -1110,16 +799,12 @@ function Tranche({
   rang,
   total,
   moyennePct,
-  charge,
-  onSelect,
   onPcqTap,
 }: {
   row: RowView;
   rang: number;
   total: number;
   moyennePct: number;
-  charge: "A" | "B" | null;
-  onSelect: (key: string) => void;
   onPcqTap?: () => void;
 }) {
   // Sourdine : DEUX segments GRIS en bas — le signal résiduel qu'affiche une
@@ -1137,16 +822,8 @@ function Tranche({
 
   return (
     <li
-      className={`console-tranche${charge ? " chargee" : ""}${coupe ? " coupee" : ""}`}
+      className={`console-tranche${coupe ? " coupee" : ""}`}
       style={{ ["--ordre" as string]: positionVisuelle(rang, total) }}
-      // Saisissable pour être déposé sur une platine précise. `text/plain`
-      // plutôt qu'un type maison : c'est le seul format que tous les
-      // navigateurs acceptent d'écrire ET de relire sans réglage.
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData("text/plain", row.key);
-        e.dataTransfer.effectAllowed = "copy";
-      }}
     >
       <div
         className="console-vumetre"
@@ -1168,27 +845,17 @@ function Tranche({
         ))}
       </div>
 
-      <button
-        type="button"
+      {/* Le ruban n'est plus une commande : les decks se remplissent seuls, par
+          rang. Un <button> annoncerait donc aux lecteurs d'écran un contrôle
+          qui ne fait rien. Le clic ne sert plus qu'au jeu caché, volontairement
+          hors du parcours clavier. */}
+      <span
         className="console-ruban-nom"
         style={{ ["--party" as string]: row.color }}
-        /* Un <button> n'amorce pas un glisser par défaut, et c'est justement la
-           cible la plus évidente de la tranche : sans ces deux attributs, la
-           moitié des tentatives de glisser échouaient sans rien dire. */
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData("text/plain", row.key);
-          e.dataTransfer.effectAllowed = "copy";
-        }}
-        onClick={() => {
-          onSelect(row.key);
-          onPcqTap?.();
-        }}
-        aria-pressed={charge !== null}
-        title={`${row.label}\u00a0: cliquer pour charger, recliquer pour retirer, ou glisser vers un emplacement`}
+        onClick={() => onPcqTap?.()}
       >
         {row.label}
-      </button>
+      </span>
       {/* « Sourdine » : le mot tient dans les 44 px de la tranche, contrairement
           à « Trop peu présent » qui débordait par-dessus ses voisines. Il reste
           le seul emprunt au vocabulaire de la table de mixage dans le texte

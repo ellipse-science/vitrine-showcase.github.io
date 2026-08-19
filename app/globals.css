@@ -4811,7 +4811,7 @@
        repliaient sur deux lignes (« Part du temps », « Écart médias », « Depuis
        7 jours »), ce qui décalait les valeurs d'une platine à l'autre et rendait
        la comparaison pénible. */
-    grid-template-columns: minmax(0, 236px) minmax(0, 1fr) minmax(0, 236px);
+    grid-template-columns: minmax(0, 212px) minmax(0, 1fr) minmax(0, 212px);
     /* Les trois colonnes s'alignent par le BAS, et non par le haut.
        Le tableau d'une platine est plus haut que la console : aligner les bas
        remonte donc les platines et fait descendre la console, ce que deux
@@ -4827,88 +4827,10 @@
        de la rangée ne dépend plus du contenu d'UNE colonne : retirer un parti
        d'une platine ne fait plus s'effondrer sa colonne, donc plus sauter tout
        le module. Même raison d'être que la hauteur réservée à la manchette. */
-    align-items: stretch;
+    align-items: end;
     gap: 38px;
     margin-top: 26px;
   }
-
-  .platine {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    /* Ni retrait ni marge négative : c'est la régie qui place la platine.
-       Le contenu est poussé vers le BAS de la colonne étirée, ce qui aligne les
-       bas sans faire dépendre la hauteur de la rangée d'une seule colonne. */
-    padding-top: 0;
-    justify-content: flex-end;
-    /* Hauteur RÉSERVÉE, mesurée au navigateur sur une platine chargée (500 px :
-       disque 124, nom, et tableau de 346 px à huit lignes).
-       Sans elle, vider une platine raccourcit sa colonne, la rangée de la régie
-       suit, et le cadre de la console se redimensionne sous les yeux. Le
-       tableau ayant désormais un nombre de lignes CONSTANT, cette hauteur ne
-       dépend plus du contenu : elle n'est à revoir que si l'on ajoute ou retire
-       une ligne au tableau. */
-    min-height: 500px;
-  }
-  /* Le plateau : des cercles concentriques à l'encre, pas un objet en volume. */
-  .platine-plateau {
-    position: relative;
-    width: 138px;
-    height: 138px;
-    border-radius: 50%;
-    border: 1px solid var(--rule);
-    background:
-      repeating-radial-gradient(circle at 50% 50%,
-        transparent 0 6px, color-mix(in srgb, var(--rule-faint) 55%, transparent) 6px 7px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .platine.vide .platine-plateau { opacity: 0.45; }
-  /* L'arc que parcourt l'aiguille — sans lui, sa position ne se rapporte à
-     rien. Deux traits aux extrémités : 0 % à gauche, 50 % à droite. */
-  .platine-plateau::before,
-  .platine-plateau::after {
-    content: '';
-    position: absolute;
-    top: 14px;
-    width: 1px;
-    height: 9px;
-    background: var(--rule);
-    transform-origin: 50% 55px;
-  }
-  .platine-plateau::before { transform: rotate(-52deg); }
-  .platine-plateau::after  { transform: rotate(52deg); }
-
-
-  .platine-nom {
-    margin: 0;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 23px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink);
-  }
-  /* PROSE, donc police de lecture : le design language réserve IBM Plex Mono
-     aux étiquettes, toujours en capitales. Une phrase en monospace bas-de-casse
-     y contrevient. Même règle pour .console-vide et .course-vide. */
-  .platine-vide-txt {
-    margin: 0;
-    max-width: 140px;
-    text-align: center;
-    line-height: 1.45;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--ink-soft);
-  }
-
-  .platine-table td.haut { color: var(--red); }
-  .platine-table td.bas  { color: var(--green); }
-
   /* La table de mix est un APPAREIL : elle a son châssis. Fond `--paper-deep`,
      le jeton que le design language réserve aux encadrés. Les platines, elles,
      restent dehors — ce sont des appareils distincts dans une régie. */
@@ -5319,9 +5241,7 @@
      porté à 1184, vérifié aux deux bords. Placé AVANT le bloc ≤768
      pour que celui-ci puisse encore surcharger. */
   @media (max-width: 1184px) {
-    .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }
-    .platine { padding-top: 0; }
-  }
+    .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }  }
 
   @media (max-width: 768px) {
     /* Le podium se resserre : marches moins hautes, typographie réduite —
@@ -5337,8 +5257,6 @@
        ses voisins. Mesuré à 767 px. */
     .console-sourdine { white-space: normal; min-width: 0; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
-    .platine { padding-top: 0; }
-
     /* Sur étroit, la tendance s'allonge : cinq lignes dans 26 unités de haut
        deviennent illisibles sous ~400 px de large. */
     /* La réserve de droite ne fait que 16 % de la largeur : « CAQ 35 % » n'y
@@ -8191,22 +8109,6 @@
   .partis-presse-actions button { width: 100%; }
 }
 
-/* ── Platine : le rang, la trajectoire ──────────────────────────────────────
-   La platine donnait des mesures exactes mais muettes. Le rang et la courbe
-   répondent à « où en est ce parti ? » avant que l'œil ait lu un chiffre. */
-.platine-rang {
-  display: block;
-  margin-top: 3px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-  font-weight: 400;
-}
-.platine-rang sup { font-size: 0.7em; }
-
-
 
 /* Mode d'emploi des platines. Discret mais permanent : l'information vivait
    dans l'infobulle du module, donc invisible pour qui ne l'ouvre pas, et rien
@@ -8224,33 +8126,6 @@
   font-weight: 500;
   color: var(--ink-soft);
 }
-
-/* ── Platines : identité du parti, tableau lisible, cible de dépôt ───────────
-   La platine portait déjà `--party` (la couleur du parti), mais ne s'en servait
-   que pour l'aiguille. Le disque plein la porte désormais, et lui seul : un
-   filet de rappel au-dessus de la platine disait la même chose une deuxième
-   fois, dans une zone qui ne manquait pas de traits. */
-.platine {
-  padding-left: 10px;
-  padding-right: 10px;
-  border-radius: 2px;
-  transition: background 120ms ease;
-}
-
-.platine .platine-nom {
-  color: var(--party, var(--ink));
-  font-weight: 600;
-}
-
-/* Cible de dépôt survolée : le fond se teinte de la couleur du parti saisi ne
-   pouvant être connue à l'avance, on prend celle de la platine, ou le cordovan
-   quand elle est vide. Le pointillé dit « déposez ici » sans texte. */
-.platine.survolee {
-  background: color-mix(in srgb, var(--party, var(--cordovan)) 10%, transparent);
-  outline: 2px dashed color-mix(in srgb, var(--party, var(--cordovan)) 55%, transparent);
-  outline-offset: 3px;
-}
-
 /* Le tableau des données : plus large, plus aéré, et les valeurs alignées à
    droite pour que l'œil descende une colonne au lieu de zigzaguer. */
 /* La précision (« sur 7 », la date du record) descend d'un cran : c'est un
@@ -8259,52 +8134,6 @@
 /* Le curseur dit que la tranche se saisit. */
 .console-tranche { cursor: grab; }
 .console-tranche:active { cursor: grabbing; }
-
-/* Le plateau et son axe prennent la couleur du parti chargé.
-   L'aiguille la portait déjà, mais elle est fine : le cercle qui l'entoure
-   restait gris, si bien que l'identité du parti ne se lisait qu'au sigle. Les
-   sillons restent très pâles, sinon le disque concurrence les vumètres au lieu
-   de les accompagner. Une platine vide garde ses teintes neutres, faute de
-   parti à représenter. */
-.platine:not(.vide) .platine-plateau {
-  border-color: color-mix(in srgb, var(--party) 55%, transparent);
-  background:
-    repeating-radial-gradient(circle at 50% 50%,
-      transparent 0 6px,
-      color-mix(in srgb, var(--party) 22%, transparent) 6px 7px);
-}
-
-/* ── Le disque : un aplat plein à la couleur du parti ────────────────────────
-   Remplace le vumètre à aiguille. La part de voix reste encodée par les
-   vumètres de la console, où les cinq partis se comparent côte à côte ; la
-   platine, elle, identifie et détaille. Un aplat lit mieux qu'une aiguille à
-   cette taille, et la couleur devient reconnaissable d'un coup d'œil.
-
-   Ces règles neutralisent celles définies plus haut dans le fichier (sillons,
-   repères d'arc, axe) plutôt que de les supprimer sur place : le bloc d'origine
-   reste lisible d'un tenant, et la surcharge dit explicitement ce qu'elle
-   remplace. */
-.platine:not(.vide) .platine-plateau {
-  background: var(--party);
-  border-color: var(--party);
-}
-/* Les deux repères d'arc marquaient les extrémités de la course de l'aiguille.
-   Sans aiguille, ils ne se rapportent plus à rien. */
-.platine-plateau::before,
-.platine-plateau::after {
-  display: none;
-}
-
-/* La valeur passe sur le papier : sur un aplat foncé, l'encre ne se lit plus.
-   Les cinq couleurs de partis tiennent toutes au moins 3:1 sur le papier ivoire
-   (la plus faible, QS, à 3,94), donc le contraste inverse est acquis. */
-
-/* Platine vide : un cercle en pointillé, qui dit « ici » sans rien affirmer. */
-.platine.vide .platine-plateau {
-  background: transparent;
-  border: 1px dashed var(--rule);
-}
-
 /* Réservé aux lecteurs d'écran. Introduit pour la légende des tableaux de
    platine : un <table> sans <caption> laisse l'utilisateur d'un lecteur d'écran
    deviner de quel parti viennent les chiffres, alors que la couleur et le sigle
@@ -8321,131 +8150,6 @@
   white-space: nowrap;
   border: 0;
 }
-
-/* ── Le tableau d'une platine ───────────────────────────────────────────────
-   Trois révisions successives ont mené ici. Les filets horizontaux seuls
-   laissaient les valeurs flotter sans colonne ; la grille complète, cadre et
-   traits de même poids partout, enfermait le tableau dans une boîte qui
-   concurrençait les chiffres. La version retenue tient le milieu :
-
-   - la valeur d'entrée occupe une BANDE, teintée de la couleur du parti, qui
-     prolonge le disque au lieu de répéter une ligne de plus ;
-   - les mesures secondaires suivent en lignes à filet fin, sans cadre ni
-     séparation de colonne : l'alignement à droite suffit à tenir la colonne,
-     et deux tableaux côte à côte se comparent ligne à ligne. */
-.platine-table {
-  width: 100%;
-  /* Jamais plus large que sa colonne : la régie donne 200 px aux côtés, et un
-     plafond supérieur poussait le tableau hors de sa case. */
-  max-width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.platine-table th {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  font-weight: 400;
-  line-height: 1.35;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-  text-align: left;
-  padding: 5px 8px 5px 0;
-  vertical-align: baseline;
-}
-.platine-table td {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 14px;
-  color: var(--ink);
-  text-align: right;
-  padding: 5px 0;
-  vertical-align: baseline;
-  font-variant-numeric: tabular-nums;
-}
-.platine-table tr + tr { border-top: 0.5px solid var(--rule-faint); }
-
-/* La bande de tête : le prolongement du disque, pas une ligne de tableau. */
-.platine-table tr:first-child th,
-.platine-table tr:first-child td {
-  background: color-mix(in srgb, var(--party) 12%, transparent);
-  border-top: none;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-.platine-table tr:first-child th { padding-left: 8px; }
-.platine-table tr:first-child td { padding-right: 8px; }
-.platine-table .platine-td-cle {
-  font-size: 20px;
-  line-height: 1.05;
-  color: var(--party, var(--ink));
-  font-weight: 600;
-}
-
-/* Les précisions (« sur 7 », la date du record) descendent d'un cran : ce sont
-   des compléments, pas la valeur qu'on vient chercher. */
-.platine-table td span {
-  display: block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-}
-.platine-table sup { font-size: 0.65em; }
-
-/* Le disque n'a plus de texte : il rétrécit et devient un pur repère
-   d'identité. */
-/* Un disque plus large : c'est le seul porteur de l'identité du parti depuis
-   que le filet coloré a disparu, et il doit donc peser dans la colonne. */
-.platine .platine-plateau { width: 124px; height: 124px; }
-
-/* ── Démonstration du glisser, sur un emplacement vide ───────────────────────
-   Un carré de couleur qui glisse ne dit pas CE QU'ON glisse. La pastille a donc
-   l'allure d'un ruban de parti, celui-là même qu'on saisit dans la console :
-   sigle, coins arrondis, couleur pleine. Elle vient de la gauche, où se trouve
-   la console, et le trajet imite celui que fera la main.
-   Un anneau marque l'arrivée au moment du dépôt, pour que la fin du geste se
-   lise comme un dépôt et non comme une disparition. */
-.platine-demo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 22px;
-  margin: -11px 0 0 -26px;
-  border-radius: 3px;
-  /* Cordovan, et non la couleur d'un parti réel. Deux raisons : la démonstration
-     montre le GESTE, pas un choix (une pastille aux couleurs du PQ suggérerait
-     qu'il faut glisser celui-là) ; et coder une teinte de parti ici la
-     dupliquerait, ce contre quoi `parties.ts` met en garde en toutes lettres. */
-  background: var(--cordovan);
-  color: var(--paper);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  font-style: normal;
-  letter-spacing: 0.08em;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
-  opacity: 0;
-  animation: platine-demo-geste 3.2s cubic-bezier(0.3, 0, 0.2, 1) infinite;
-}
-
-/* L'anneau d'arrivée : il ne pulse qu'au moment où la pastille se pose. */
-.platine-demo-cible {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 46px;
-  height: 46px;
-  margin: -23px 0 0 -23px;
-  border-radius: 50%;
-  border: 1.5px solid var(--cordovan);
-  opacity: 0;
-  animation: platine-demo-arrivee 3.2s cubic-bezier(0.3, 0, 0.2, 1) infinite;
-}
-
 @keyframes platine-demo-geste {
   0%   { transform: translate(-70px, 10px) rotate(-6deg); opacity: 0; }
   12%  { opacity: 1; }
@@ -8467,27 +8171,6 @@
 
 /* Une animation en boucle est une distraction permanente pour qui a réglé son
    système là-dessus : la consigne écrite suffit alors. */
-@media (prefers-reduced-motion: reduce) {
-  .platine-demo,
-  .platine-demo-cible { animation: none; opacity: 0; }
-}
-
-/* « s. o. » : une valeur sans objet, plus discrète que les vraies mesures pour
-   qu'on ne la lise pas comme un résultat. */
-.platine-table .platine-td-so {
-  color: var(--ink-softer);
-  font-size: 13px;
-}
-
-/* Une platine vide place son disque EXACTEMENT là où se trouvera le disque
-   coloré une fois le parti chargé.
-   Le contenu d'une platine chargée remplit la hauteur réservée (500 px), donc
-   son disque se trouve tout en haut. Centrer le contenu d'une platine vide,
-   comme je l'avais fait, posait son disque plus bas : la démonstration du
-   glisser désignait alors un endroit où rien n'apparaîtrait, et le geste montré
-   ne menait pas à la cible réelle. */
-.platine.vide { justify-content: flex-start; }
-
 /* La colonne du milieu de la régie : la manchette puis la console, poussées
    vers le bas comme les platines. La phrase se retrouve ainsi juste au-dessus
    du cadre de l'instrument qu'elle commente, et l'espace laissé vide par une
@@ -8510,15 +8193,6 @@
    dans la console et les platines. */
 .partis-course--tete { margin: 0 0 22px; }
 .partis-course--tete .course-tete { margin: 0 0 10px; }
-
-/* Une étiquette porteuse d'infobulle le dit : sans repère, personne ne survole.
-   Le pointillé est plus discret qu'un ⓘ, qui encombrerait huit lignes. */
-.platine-table th[title] {
-  cursor: help;
-  text-decoration: underline dotted var(--rule);
-  text-underline-offset: 3px;
-}
-
 /* ── Une piste par parti ─────────────────────────────────────────────────────
    Cinq courbes superposées étaient illisibles PAR CONSTRUCTION : le validateur
    de palette place PCQ et PQ à ΔE 10,0 en vision normale, sous le plancher de
@@ -8650,154 +8324,246 @@
   .course-x { margin: 6px 54px 0 46px; }
 }
 
-/* ── Les enjeux d'un parti, sous son tableau ─────────────────────────────────
-   « De quoi parle-t-on quand on parle de ce parti ? » — la troisième mesure du
-   module, longtemps annoncée sans être montrée.
+/* ─────────────────────────────────────────────────────────────────────────
+   Les decks — quatre disques aux quatre coins de la régie.
 
-   Une barre plutôt qu'un chiffre seul : sur cinq lignes, l'œil compare des
-   longueurs bien plus vite que des nombres, et le profil d'un parti se saisit
-   d'un coup. Le chiffre reste à droite pour qui veut citer. */
+   Ils remplacent les deux platines : plus rien à charger ni à déposer, la
+   sourdine garantissant qu'il reste exactement quatre partis actifs. Le rang
+   fait la position, la colonne de gauche portant les rangs 1 et 3.
+   ───────────────────────────────────────────────────────────────────────── */
 
-
-/* ── La banque de pads : douze enjeux qui commandent le vumètre ──────────────
-   Les pads ne décrivent plus un parti, ils FILTRENT la mesure. Choisir
-   « santé » répond à « qui domine la couverture quand on parle de santé ? »,
-   ce qu'aucune autre commande du module ne permettait. Le vumètre reste la
-   visualisation ; les pads sont l'instrument.
-
-   Placés SOUS la console, comme les pads de performance sous une table de
-   mixage. */
-.pads-zone {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--rule);
-}
-.pads-tete {
+.regie-flanc {
   display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  /* Les decks DÉBORDENT la console, en haut et en bas. Ce sont eux les objets ;
+     la console est l'instrument qui les mesure, et elle doit paraître logée
+     entre eux plutôt que posée à côté. La marge négative est préférée à une
+     hauteur fixe : elle tient quand un deck gagne une ligne de nom.
+
+     Le débordement doit rester DISCRET : la taille du carré est bornée pour que
+     la pile des deux decks dépasse le vumètre d'une trentaine de pixels de part
+     et d'autre, pas de deux cents. */
+  margin-bottom: -32px;
+}
+
+.deck {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-}
-.pads-vider {
-  margin-left: auto;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cordovan);
-  background: none;
-  border: none;
-  border-bottom: 1px solid currentColor;
-  padding: 0 0 1px;
-  cursor: pointer;
+  gap: 10px;
+  min-width: 0;
 }
 
-/* Six colonnes par deux rangées : la banque de douze d'un contrôleur. */
-.pads {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.pads li { display: block; }
-
-.pad {
+/* Le carré : contenant du retournement, et format de la pochette. Le disque y
+   est inscrit, la pochette l'occupe en entier. */
+.deck-carre {
   position: relative;
+  width: 100%;
+  max-width: 176px;
+  aspect-ratio: 1;
+}
+.deck-carre--pivot {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 1000px;
+}
+.deck-carre--pivot:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 6px;
+}
+
+.deck-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.deck-face--disque { transform: rotateY(0deg); }
+.deck-face--pochette { transform: rotateY(180deg); }
+.deck-carre--pivot.retournee .deck-face--disque { transform: rotateY(-180deg); }
+.deck-carre--pivot.retournee .deck-face--pochette { transform: rotateY(0deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-face { transition: none; }
+}
+
+/* Le vinyle : sillons concentriques, étiquette centrale à la couleur du parti,
+   et le trou de broche au milieu. */
+.deck-vinyle {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 33%, rgba(243, 236, 221, 0.07) 33.3% 33.9%, transparent 34.2%),
+    repeating-radial-gradient(circle at 50% 50%, #16140F 0 2px, #23201A 2px 4.4px);
+  box-shadow:
+    0 3px 12px rgba(28, 25, 23, 0.3),
+    inset 0 0 0 1px rgba(243, 236, 221, 0.08);
+}
+.deck-etiquette {
+  position: relative;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  box-shadow: inset 0 0 0 1px rgba(28, 25, 23, 0.28);
+}
+.deck-etiquette::after {
+  content: "";
+  position: absolute;
+  inset: 43%;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+/* La pochette. Le fond porte le TON, le pictogramme l'enjeu de tête. */
+.deck-face--pochette {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 100%;
-  min-height: 62px;
-  padding: 7px;
-  border: none;
-  border-radius: 4px;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  color: var(--ink);
-  /* L'éclat au repos porte le poids de l'enjeu tous partis confondus : la
-     banque montre déjà où se joue l'actualité avant qu'on y touche.
-     Le cordovan et non une couleur de parti : un pad filtre TOUS les partis à
-     la fois, l'attribuer à l'un d'eux serait faux. */
-  background: color-mix(in srgb, var(--cordovan) calc(var(--eclat) * 100%), var(--paper-deep));
-  /* Le relief du caoutchouc : un liseré clair en haut, une ombre courte en bas,
-     tous deux à l'intérieur. Ni dégradé ni ombre portée, que le design language
-     écarte. */
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--paper) 55%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent);
-  transition: background 140ms ease, box-shadow 140ms ease, transform 90ms ease;
-}
-.pad:hover { box-shadow:
-  inset 0 1px 0 color-mix(in srgb, var(--paper) 70%, transparent),
-  inset 0 -1px 0 color-mix(in srgb, var(--ink) 16%, transparent),
-  0 0 0 1px var(--rule); }
-/* Le pad s'enfonce au clic : le geste doit se sentir. */
-.pad:active { transform: translateY(1px); }
-
-/* Un pad ALLUMÉ : cerclé de cordovan, pour que l'état se lise sans dépendre de
-   la seule intensité — un pad très présent au repos et un pad allumé peuvent
-   sinon se confondre. */
-.pad--actif {
-  box-shadow:
-    inset 0 0 0 2px var(--cordovan),
-    inset 0 -1px 0 color-mix(in srgb, var(--ink) 16%, transparent);
-}
-
-.pad-nom {
-  font-size: 9.5px;
-  line-height: 1.2;
-  /* Trois lignes au plus : « Droits, libertés, minorités et discrimination » est
-     le plus long des douze libellés CAP, et on ne les réécrit pas — canoniques,
-     partagés avec le Digital Society Lab. Le survol et le nom accessible
-     portent le libellé entier. */
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  gap: 10px;
   overflow: hidden;
+  padding: 13px 14px;
+  color: var(--paper);
+  text-align: left;
+  box-shadow: 0 3px 12px rgba(28, 25, 23, 0.26);
 }
-.pad-pct {
-  margin-top: 4px;
+.deck-face--pochette.ton-positive { background: var(--green); }
+.deck-face--pochette.ton-negative { background: var(--red); }
+.deck-face--pochette.ton-neutral  { background: var(--ink-soft); }
+
+/* Le pictogramme est un FILIGRANE, pas une information : l'enjeu est écrit en
+   clair sur la piste « Enjeu clé », donc un dessin qu'on ne reconnaît pas ne
+   coûte rien.
+
+   Il est tracé en ENCRE et non en papier. Un trait clair sous un texte clair
+   éclaircit le fond là où il passe et fait tomber le contraste : mesuré à
+   3,95:1 sur le vert dès 15 % d'opacité, sous le seuil AA de 4,5. Un trait
+   sombre fait l'inverse — il assombrit le fond et porte le contraste de 5,31:1
+   à 6,78:1. C'est ce qui permet de l'agrandir jusqu'à occuper la pochette. */
+.deck-motif {
+  position: absolute;
+  top: 6%;
+  left: 8%;
+  width: 84%;
+  height: 84%;
+  fill: none;
+  stroke: #1C1917;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.deck-pochette-tete {
+  position: relative;
+  display: block;
+}
+.deck-groupe {
+  display: block;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+.deck-ton {
+  display: block;
+  margin-top: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+/* Les trois pistes, comme le verso d'un disque : l'étiquette, des pointillés,
+   la valeur. */
+.deck-pistes {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.deck-piste {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.deck-piste-nom {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-bottom: 1px dotted rgba(243, 236, 221, 0.38);
+  opacity: 0.9;
+}
+/* La valeur s'enroule plutôt que de se couper : « Santé et politiques sociales »
+   sortait en « Santé et pol… », ce qui vidait la piste « Enjeu clé » de son
+   contenu. Les deux premières pistes tiennent sur une ligne de toute façon. */
+.deck-piste-val {
+  flex: 0 1 auto;
+  max-width: 66%;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  text-align: right;
+}
+
+.deck-nom {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--ink-soft);
 }
-
-@media (max-width: 900px) {
-  .pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.deck-rang {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  color: var(--paper);
+  font-size: 9.5px;
+  letter-spacing: 0;
 }
-@media (max-width: 560px) {
-  .pads { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-  .pad { min-height: 56px; padding: 6px; }
-}
 
-/* L'enjeu de reste occupe toute la dernière rangée : ce n'est pas un sujet
-   parmi les douze, c'est ce qui n'en a pas. Le mettre en case ordinaire le
-   ferait lire comme un treizième thème, et laisserait une case orpheline au
-   bout d'une grille de six. */
-.pads-reste { grid-column: 1 / -1; }
-.pad--sans {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 0;
-  padding: 6px 9px;
-  background: transparent;
-  border: 1px dashed var(--rule);
+/* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
+   deux s'étant partagé la dernière place en sourdine. */
+.deck--vide .deck-vinyle--vide {
+  background: repeating-radial-gradient(circle at 50% 50%, #E4DAC3 0 2px, #DED3B9 2px 4.4px);
+  box-shadow: inset 0 0 0 1px var(--rule-faint);
+  opacity: 0.62;
+}
+.deck--vide .deck-etiquette {
+  background: var(--rule);
   box-shadow: none;
-  color: var(--ink-softer);
 }
-.pad--sans .pad-nom { -webkit-line-clamp: 1; }
-.pad--sans .pad-pct { margin-top: 0; }
-.pad--sans.pad--actif {
-  border-style: solid;
-  box-shadow: inset 0 0 0 2px var(--cordovan);
+.deck-vide-txt {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  text-align: center;
 }
