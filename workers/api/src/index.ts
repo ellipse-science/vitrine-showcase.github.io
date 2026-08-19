@@ -26,7 +26,7 @@
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
-import { runAthenaSync, type SyncAthenaEnv } from './sync-athena'
+import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
@@ -46,6 +46,11 @@ interface Env extends SyncAthenaEnv {
    *  New York, ce qui rend la synchro intestable onze heures sur douze.
    *  Défini dans .dev.vars (non versionné), jamais en production. */
   SYNC_FORCE?: string
+  /** Jeton interne de l'orchestration par tranches : le cron s'appelle
+   *  lui-même sur /v1/sync-athena (chaque appel = un budget CPU neuf).
+   *  Généré aléatoirement, posé par `wrangler secret put`, connu de
+   *  personne d'autre que le Worker. */
+  SYNC_INTERNAL_TOKEN?: string
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -116,15 +121,58 @@ export default {
         console.log('sync-athena : hors heure visée à New York — ignoré')
         return
       }
+      // Orchestration PAR TRANCHES : le cron s'appelle lui-même sur la route
+      // HTTP, deux tables par appel — chaque appel est une invocation neuve
+      // avec son propre budget CPU. La passe monolithique mourait après
+      // 8 tables sur 15 (constaté le 2026-08-19) : même leçon que /v1/sync.
+      // La règle TOUT OU RIEN vit ici, sur l'agrégat des tranches.
       ctx.waitUntil(
-        runAthenaSync(env).then(({ synced, failed }) => {
-          console.log(
-            `sync-athena terminée : ${synced.length} tables, ${failed.length} en échec`,
-          )
-          if (failed.length > 0) {
-            console.error('tables en échec :', failed.map((f) => f.table).join(', '))
+        (async () => {
+          if (!env.SYNC_INTERNAL_TOKEN) {
+            console.error('SYNC_INTERNAL_TOKEN absent : orchestration impossible')
+            return
           }
-        }),
+          const failed: string[] = []
+          let synced = 0
+          let offset: number | null = 0
+          while (offset !== null) {
+            const res = await fetch(
+              `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+              {
+                method: 'POST',
+                headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
+              },
+            )
+            if (!res.ok && res.status !== 207) {
+              failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
+              break
+            }
+            const body = (await res.json()) as {
+              synced: number
+              failed: string[]
+              next: number | null
+            }
+            synced += body.synced
+            failed.push(...body.failed)
+            offset = body.next
+          }
+          console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
+          if (failed.length > 0) {
+            await notifySlack(
+              env,
+              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+            )
+            return
+          }
+          if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
+            try {
+              await triggerDeployHooks(env)
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err)
+              await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
+            }
+          }
+        })(),
       )
       return
     }
@@ -243,8 +291,17 @@ export default {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
         }
-        const auth = await authenticate(sql, request, 'sync')
-        if (!auth.ok) return problem(auth.status, auth.error)
+        // Deux voies d'entrée : le jeton INTERNE de l'orchestrateur du cron
+        // (le Worker s'appelle lui-même par tranches), ou une clé d'API de
+        // portée sync pour les déclenchements manuels.
+        const authHeader = request.headers.get('authorization') ?? ''
+        const interne =
+          Boolean(env.SYNC_INTERNAL_TOKEN) &&
+          authHeader === `Bearer interne:${env.SYNC_INTERNAL_TOKEN}`
+        if (!interne) {
+          const auth = await authenticate(sql, request, 'sync')
+          if (!auth.ok) return problem(auth.status, auth.error)
+        }
 
         const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
         const limit = Math.min(

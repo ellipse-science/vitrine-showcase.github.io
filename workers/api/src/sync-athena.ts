@@ -182,7 +182,7 @@ async function writeTable(
   }
 }
 
-async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
+export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
   if (!env.SLACK_WEBHOOK_URL) return
   try {
     const res = await fetch(env.SLACK_WEBHOOK_URL, {
@@ -196,7 +196,7 @@ async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
   }
 }
 
-async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
+export async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
   const hooks: [string, string | undefined][] = [
     ['prod', env.DEPLOY_HOOK_PROD],
     ['dev', env.DEPLOY_HOOK_DEV],
@@ -269,24 +269,10 @@ export async function runAthenaSync(
     await pg.end().catch(() => {})
   }
 
-  const fullPass = offset === 0 && next === null
-  if (fullPass && failed.length > 0) {
-    await notifySlack(
-      env,
-      `sync-athena : ${failed.length} table(s) en échec (${failed
-        .map((f) => f.table)
-        .join(', ')}) ; builds NON déclenchés.`,
-    )
-  }
-  if (fullPass && failed.length === 0 && env.SYNC_TRIGGER_DEPLOYS === 'true') {
-    try {
-      await triggerDeployHooks(env)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
-      throw err
-    }
-  }
-
+  // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
+  // La règle tout-ou-rien appartient à l'orchestrateur du cron (index.ts),
+  // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
+  // survit pas aux 15 tables d'un coup (constaté le 2026-08-19 : la passe
+  // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
   return { synced, failed, total: TABLES.length, next }
 }
