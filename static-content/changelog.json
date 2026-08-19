@@ -1,5 +1,11 @@
 [
   {
+    "pr": 526,
+    "date": "2026-08-19T13:56:57Z",
+    "note": "Aucun changement pour le site : document interne de vision.",
+    "version": null
+  },
+  {
     "pr": 525,
     "date": "2026-08-19T13:23:14Z",
     "note": "Le site se met maintenant à jour de lui-même dans votre navigateur quand de nouvelles données sont publiées, sans devoir rafraîchir la page.",
