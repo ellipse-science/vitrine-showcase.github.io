@@ -39,6 +39,13 @@ export type ShareModuleStat = {
   // (couleur du parti en tête, de l'enjeu dominant...) quand elle existe, jamais
   // inventée. Absente ⇒ le rendu retombe sur le cordovan par défaut.
   color?: string;
+  // `context` COMPLÈTE grammaticalement `label` au lieu d'être une phrase
+  // autonome : l'Assemblée se lit « 23 % » + « des interventions portent
+  // sur » + « Terres publiques et agriculture (CAQ) ». Les deux morceaux
+  // doivent rester soudés dans la légende du chiffre. Sans ce drapeau,
+  // l'affiche renvoyait `context` dans le cadre du bas et publiait une
+  // légende tronquée sur la préposition (« …portent sur », puis rien).
+  contextCompletesLabel?: boolean;
   // Petite étiquette au-dessus du titre (l'enjeu CAP) — une-des-unes affiche
   // le titre en gros plutôt qu'un chiffre (c'est une manchette, pas une
   // statistique) ; les générateurs d'image branchent sur sa présence.
@@ -50,6 +57,10 @@ export type ShareModuleStat = {
 export type ShareModuleContent = {
   title: string;
   description: string;
+  // Accroche d'une ligne sous le titre de l'affiche de partage
+  // (lib/shareCardTemplate.tsx), rendue en capitales espacées. Sans verbe
+  // conjugué : c'est une étiquette de rubrique, pas une phrase.
+  subtitle: string;
   stat: ShareModuleStat;
 };
 
@@ -59,33 +70,39 @@ export type ShareModuleContent = {
 // éditorial stable du module.
 const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
   "une-des-unes": {
-    title: "Les Unes du jour",
+    title: "La Une des Unes",
     description: "Les nouvelles qui font la Une des médias québécois et canadiens en ce moment.",
+    subtitle: "Ce qui domine l'actualité",
     stat: { value: "#1", label: "à la Une des médias québécois" },
   },
   "deux-solitudes": {
     title: "Deux solitudes?",
     description: "La couverture médiatique diverge-t-elle entre le Québec et le Canada?",
+    subtitle: "Québec et Canada, deux agendas",
     stat: { value: "2", label: "régions, une seule actualité qui diverge" },
   },
   "partis-et-couverture": {
     title: "De quel parti parle-t-on dans les médias?",
     description: "Saillance et ton de la couverture médiatique de chaque parti québécois.",
+    subtitle: "Saillance et ton, parti par parti",
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
     title: "De quoi parle-t-on?",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
+    subtitle: "Les enjeux qui dominent",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
   },
   "assemblee-nationale": {
     title: "L'alignement de l'Assemblée nationale",
     description: "Répartition des enjeux, ton et richesse lexicale des débats parlementaires.",
-    stat: { value: "125", label: "député·e·s scrutés à chaque séance" },
+    subtitle: "Ce que disent les décideurs",
+    stat: { value: "125", label: "député.es scrutés à chaque séance" },
   },
   "polimetre-plus": {
     title: "Polimètre+ : promesses sous la loupe médiatique",
     description: "Les promesses électorales de la CAQ (2022), classées selon leur écho médiatique.",
+    subtitle: "Les promesses au suivi",
     stat: { value: "2022", label: "les promesses électorales de la CAQ, passées au crible" },
   },
 };
@@ -98,6 +115,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
     if (top) {
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: top.title,
         stat: {
           value: `${top.qcOutletCount}/${top.totalQcOutlets}`,
@@ -123,6 +141,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const { convPct, habitualConvPct, relDiffPct, relLabel } = data.solitudes;
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description:
           `${relDiffPct} % ${relLabel}. Les médias québécois et canadiens consacrent ` +
           `aujourd'hui ${convPct} % de leur attention aux mêmes histoires ` +
@@ -159,6 +178,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
             : ["L'important,", "c'est qu'on en parle."];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${leader.sovPct} %`,
@@ -180,6 +200,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const sharePct = Math.round((top.score / total) * 100);
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${sharePct} %`,
@@ -203,11 +224,13 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const issueFullName = topIssue.title.split(" · ")[0];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${topIssue.widthPct} %`,
           label: "des interventions à l'Assemblée nationale portent sur",
           context: `${issueFullName} (${row.label})`,
+          contextCompletesLabel: true,
           color: topIssue.color,
         },
       };
@@ -229,6 +252,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const topPromise = polimetre?.ranges.week[0];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${pct} %`,
