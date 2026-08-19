@@ -1,5 +1,11 @@
 [
   {
+    "pr": 525,
+    "date": "2026-08-19T13:23:14Z",
+    "note": "Le site se met maintenant à jour de lui-même dans votre navigateur quand de nouvelles données sont publiées, sans devoir rafraîchir la page.",
+    "version": "2.25.0-beta.0"
+  },
+  {
     "pr": 524,
     "date": "2026-08-19T13:13:14Z",
     "note": "Aucun changement pour le site : règle interne de qualité (tout passe par l'environnement de travail avant la production).",
