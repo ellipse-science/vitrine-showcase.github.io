@@ -8778,3 +8778,26 @@
   .pads { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
   .pad { min-height: 56px; padding: 6px; }
 }
+
+/* L'enjeu de reste occupe toute la dernière rangée : ce n'est pas un sujet
+   parmi les douze, c'est ce qui n'en a pas. Le mettre en case ordinaire le
+   ferait lire comme un treizième thème, et laisserait une case orpheline au
+   bout d'une grille de six. */
+.pads-reste { grid-column: 1 / -1; }
+.pad--sans {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 0;
+  padding: 6px 9px;
+  background: transparent;
+  border: 1px dashed var(--rule);
+  box-shadow: none;
+  color: var(--ink-softer);
+}
+.pad--sans .pad-nom { -webkit-line-clamp: 1; }
+.pad--sans .pad-pct { margin-top: 0; }
+.pad--sans.pad--actif {
+  border-style: solid;
+  box-shadow: inset 0 0 0 2px var(--cordovan);
+}

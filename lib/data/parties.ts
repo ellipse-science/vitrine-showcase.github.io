@@ -1045,6 +1045,12 @@ function chiffresParlants(
  *  aucun sens. Les minutes, elles, sont dans la même unité partout — c'est ce
  *  qui permet de renormaliser après filtrage.
  */
+/** Le libellé de l'enjeu de reste, tel que le raffineur le publie. Doit rester
+ *  identique à `SANS_ENJEU` dans `radar-party-score-salient-shadow/runtime.R` :
+ *  les deux se répondent, et une divergence ferait passer le reste pour un
+ *  treizième sujet. */
+export const SANS_ENJEU = "Aucun enjeu identifié";
+
 function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   const vide: EnjeuMix = { enjeux: [], parParti: {} };
   if (rows.length === 0) return vide;
@@ -1072,8 +1078,16 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   // Ordre STABLE, du plus au moins présent tous partis confondus : une banque
   // de pads dont les touches changent de place à chaque mise à jour serait
   // injouable.
+  // L'enjeu de RESTE est forcé en dernier, quel que soit son poids : il occupe
+  // toute la largeur de la banque, donc le laisser au milieu du classement
+  // couperait la grille en deux. Et il se lit de toute façon comme un pied de
+  // liste, pas comme un sujet parmi les autres.
   const enjeux = [...totalParEnjeu.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
+    .sort((a, b) => {
+      if (a[0] === SANS_ENJEU) return 1;
+      if (b[0] === SANS_ENJEU) return -1;
+      return b[1] - a[1] || a[0].localeCompare(b[0], "fr");
+    })
     .map(([theme]) => theme);
 
   return { enjeux, parParti };

@@ -7,6 +7,19 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
 
+/** L'enjeu de reste : les phrases qui nomment un parti sans qu'aucun modèle CAP
+ *  ne franchisse son seuil. Il EST sélectionnable — sans lui, cocher tous les
+ *  pads ne redonnerait pas la vue d'ensemble — mais il se rend à part : ce n'est
+ *  pas un sujet, c'est ce qui n'en a pas.
+ *
+ *  ⚠️ DUPLIQUÉ à dessein, et non importé de `parties.ts`. Un import de VALEUR
+ *  depuis ce module embarquerait tout son contenu dans le paquet client, y
+ *  compris `node:fs/promises`, et le build échoue (« the chunking context does
+ *  not support external modules »). Seuls les imports de TYPE s'effacent à la
+ *  compilation. La chaîne doit rester identique ici, dans `parties.ts` et dans
+ *  `radar-party-score-salient-shadow/runtime.R`. */
+const SANS_ENJEU = "Aucun enjeu identifié";
+
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
 /** Article défini de chaque parti — « LA CAQ », « LE PQ », mais « Québec
@@ -223,10 +236,10 @@ function BanquePads({
           const relatif = totalGeneral > 0 ? poids / totalGeneral : 0;
           const actif = choisis.has(theme);
           return (
-            <li key={theme}>
+            <li key={theme} className={theme === SANS_ENJEU ? "pads-reste" : undefined}>
               <button
                 type="button"
-                className={`pad${actif ? " pad--actif" : ""}`}
+                className={`pad${actif ? " pad--actif" : ""}${theme === SANS_ENJEU ? " pad--sans" : ""}`}
                 style={{ ["--eclat" as string]: actif ? 0.5 : Math.min(0.3, 0.05 + relatif * 1.2) }}
                 onClick={() => onBascule(theme)}
                 aria-pressed={actif}
