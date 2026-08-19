@@ -52,6 +52,11 @@ interface Env extends SyncAthenaEnv, ArtEnv {
    *  Généré aléatoirement, posé par `wrangler secret put`, connu de
    *  personne d'autre que le Worker. */
   SYNC_INTERNAL_TOKEN?: string
+  /** Service binding vers CE Worker (wrangler.toml). Indispensable : un
+   *  fetch() du Worker vers son propre nom d'hôte ne lui revient jamais —
+   *  Cloudflare coupe la boucle — et l'orchestration échouait en silence à
+   *  chaque cycle (constaté le 2026-08-19 : six occurrences sans trace). */
+  SELF?: Fetcher
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -140,29 +145,51 @@ export default {
             console.error('SYNC_INTERNAL_TOKEN absent : orchestration impossible')
             return
           }
+          // PAR LE SERVICE BINDING, jamais par fetch() global : un Worker qui
+          // fetch son propre nom d'hôte ne se rappelle pas lui-même —
+          // Cloudflare coupe la boucle — et c'est exactement pourquoi la
+          // passe autonome n'a laissé aucune trace sur six cycles le
+          // 2026-08-19 pendant que les mêmes tranches, appelées de
+          // l'extérieur, réussissaient 15/15. Le binding invoque le Worker
+          // pour de vrai, avec un budget CPU neuf par appel.
+          if (!env.SELF) {
+            await notifySlack(
+              env,
+              'sync-athena : service binding SELF absent — orchestration impossible, le site ne se rafraîchit plus.',
+            )
+            console.error('SELF absent : orchestration impossible')
+            return
+          }
           const failed: string[] = []
           let synced = 0
           let offset: number | null = 0
-          while (offset !== null) {
-            const res = await fetch(
-              `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
-              {
-                method: 'POST',
-                headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
-              },
-            )
-            if (!res.ok && res.status !== 207) {
-              failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
-              break
+          try {
+            while (offset !== null) {
+              const res = await env.SELF.fetch(
+                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+                {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
+                },
+              )
+              if (!res.ok && res.status !== 207) {
+                failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
+                break
+              }
+              const body = (await res.json()) as {
+                synced: number
+                failed: string[]
+                next: number | null
+              }
+              synced += body.synced
+              failed.push(...body.failed)
+              offset = body.next
             }
-            const body = (await res.json()) as {
-              synced: number
-              failed: string[]
-              next: number | null
-            }
-            synced += body.synced
-            failed.push(...body.failed)
-            offset = body.next
+          } catch (err) {
+            // Une exception ici (réseau, boucle coupée, JSON invalide) était
+            // le SILENCE TOTAL : waitUntil l'avalait, ni Slack ni journal.
+            const message = err instanceof Error ? err.message : String(err)
+            failed.push(`orchestration : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
           if (failed.length > 0) {

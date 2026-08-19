@@ -35,6 +35,17 @@ ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv86
 binding = "ART_BUCKET"
 bucket_name = "vitrine-art"
 
+# L'orchestrateur du cron s'appelle lui-même par tranches (/v1/sync-athena).
+# Un fetch() vers son PROPRE nom d'hôte ne revient JAMAIS au Worker —
+# Cloudflare coupe la boucle — et c'est pourquoi la passe autonome n'a laissé
+# aucune trace sur six occurrences le 2026-08-19, pendant que les passes
+# pilotées de l'extérieur réussissaient. Le service binding vers soi-même est
+# le chemin sanctionné : chaque appel est une invocation NEUVE, avec son
+# budget CPU à elle — exactement ce que l'orchestration par tranches cherchait.
+[[services]]
+binding = "SELF"
+service = "vitrine-api"
+
 # Secrets à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
 #   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena)
