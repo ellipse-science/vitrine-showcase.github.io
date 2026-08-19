@@ -91,6 +91,23 @@ async function pruneDataJson() {
   console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
 }
 
+// Identifiant de build pour l'actualisation côté navigateur (composant
+// ActualisationAuto) : ~100 octets consultés par la sonde du client, servis
+// par le CDN avec Cache-Control: no-store (public/_headers). L'horodatage
+// fait partie de l'identifiant : un rebuild « données seulement » (même
+// commit, nouvelles données via Deploy Hook) change l'identifiant quand même.
+async function writeBuildId() {
+  const sha = (process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA || "local").slice(0, 7);
+  const builtAt = new Date().toISOString();
+  const id = `${sha}-${Date.parse(builtAt)}`;
+  await writeFile(
+    path.join(OUT_DIR, "build-id.json"),
+    JSON.stringify({ id, builtAt }) + "\n",
+    "utf8",
+  );
+  console.log(`postbuild: build-id « ${id} » écrit`);
+}
+
 async function main() {
   try {
     await readdir(OUT_DIR);
@@ -111,6 +128,9 @@ async function main() {
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
+
+  // Hors de out/data/ : survit à pruneDataJson par construction.
+  await writeBuildId();
 }
 
 main().catch((err) => {

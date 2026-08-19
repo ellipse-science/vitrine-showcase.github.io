@@ -72,8 +72,18 @@ All refiners have `active: !isProd(envName)` — they run in DEV, not PROD. The 
 | `radar-headline-of-headlines` | `headline_of_headlines` — ⚠️ **plus consommée par le site** (remplacée par `headline_events_4h` d'event-salience) | 6×/day :46 | `refiners/radar-headline-of-headlines/` |
 | `radar-hot-20` | hot-20 data | Fridays 12:00 | `refiners/radar-hot-20/` |
 | `vitrine-graph-data` | graph data tables | 6×/day :57 | `refiners/vitrine-graph-data/` |
-| `agora-decideurs-qc` | `agora_decideurs_qc` | 6×/day :50 | `refiners/agora-decideurs-qc/` |
-| `polimetre-plus` | `polimetre_plus` | TBD (weekly snapshot — confirm cron in `aws-infra`) | `refiners/polimetre-plus/` |
+| `agora-decideurs-qc-phrases` | `agora_decideurs_qc_phrases` (intermédiaire) | Tuesdays 05:00 | `refiners/agora-decideurs-qc-phrases/` |
+| `agora-decideurs-qc` | `agora_decideurs_qc` | Tuesdays 06:00 | `refiners/agora-decideurs-qc/` |
+| `polimetre-plus` | `polimetre_plus` | Fridays 12:30 | `refiners/polimetre-plus/` |
+
+### Pipeline Agora en deux raffineurs (split du 2026-07-02)
+
+Le module « Que dit-on à l'Assemblée ? » est produit par **deux raffineurs à exécuter dans l'ordre** (mardis, après l'extracteur `qc-parliament-debates` du lundi 22:00) :
+
+1. **`agora-decideurs-qc-phrases`** (05:00) — lit `a-qc-parliament-debates` (datawarehouse PROD), apparie locuteur→parti via `pplmatch`, segmente en phrases (WTPSPLIT) et classe chaque phrase (thèmes CAP + sentiment) via l'**API INFER**, puis **persiste les phrases annotées individuelles** dans `agora_datamart.agora_decideurs_qc_phrases`.
+2. **`agora-decideurs-qc`** (06:00) — lit cette table de phrases et agrège par `event_date × parti` puis par période (`last_pdq` / `session` / `legislature`), génère les angles éditoriaux LLM, et publie le snapshot `agora_decideurs_qc` consommé par `vitrine-graph-data`.
+
+Le but du split : conserver les phrases annotées comme **source pérenne** (échantillons de validation des classifieurs, réutilisation pour articles/thèses/mémoires) sans avoir à ré-appeler l'API INFER à chaque fois. Incrémental : chaque run ne traite que `event_date > max(event_date)` déjà publié (fenêtre initiale `initial_days = 30` si la table est absente). Ne **pas** injecter manuellement des lignes dans `agora_decideurs_qc_phrases` : ça fausserait cette fenêtre incrémentale et l'agrégation. Pour un tirage de validation ponctuel, voir `aws-refiners/tools/export_agora_validation_sample.R` (échantillon depuis la table existante) et `annotate_agora_validation_sample.R` (annotation locale d'un échantillon stratifié d'interventions brutes).
 
 ## Inspecting Athena data directly from R
 

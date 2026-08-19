@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ActualisationAuto from "@/components/interactive/ActualisationAuto";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
 
 // Icônes servies depuis public/ : jamais résolues automatiquement par le
@@ -81,6 +82,7 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegistration />
+        <ActualisationAuto />
         {children}
       </body>
     </html>

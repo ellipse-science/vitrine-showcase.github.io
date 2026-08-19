@@ -1,10 +1,10 @@
 {
-  "event_id": "20260817T190000Z-evt-churchill-falls-carney-frechette-wakeham-663a58a3",
-  "storyline_id": "story-churchill-falls-61057039",
-  "title": "Fréchette et Wakeham annoncent une entente historique sur Churchill Falls",
-  "main_issue": "environment_and_energy",
-  "date_utc": "2026-08-17",
-  "time_interval_utc": "19-23",
-  "sum_qc": 139.611,
-  "peak_qc": 70.85
+  "event_id": "20260819T070000Z-evt-tarifs-douaniers-trump-annonce-sursis-4ef2118d",
+  "storyline_id": "story-tariffs-57d1caaf",
+  "title": "Trump accorde un sursis de trois jours aux tarifs douaniers canadiens",
+  "main_issue": "international_affairs_and_defense",
+  "date_utc": "2026-08-19",
+  "time_interval_utc": "07-11",
+  "sum_qc": 219.527,
+  "peak_qc": 73.58
 }

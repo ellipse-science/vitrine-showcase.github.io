@@ -40,6 +40,12 @@
 /assets/*
   Cache-Control: public, max-age=86400
 
+# La sonde d'actualisation du navigateur (composant ActualisationAuto) : le
+# fichier fait ~100 octets et DOIT toujours refléter le dernier déploiement,
+# sinon la détection de nouvelles données ment.
+/build-id.json
+  Cache-Control: no-store
+
 # Catch-all : en-têtes de sécurité UNIQUEMENT. Pas de Cache-Control ici — voir
 # l'avertissement en tête de fichier, il contaminerait toutes les règles
 # ci-dessus par concaténation.

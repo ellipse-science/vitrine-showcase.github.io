@@ -38,3 +38,17 @@ export function hourInNY(now: Date): number {
 export function isTargetHourInNY(now: Date): boolean {
   return TARGET_HOURS_NY.includes(hourInNY(now))
 }
+
+/** Heures visées du sync DIRECT Athena (chaîne émancipée de GitHub), en heure
+ *  de New York : minute 10 de l'heure qui SUIT la fin de cascade des
+ *  raffineurs ({23,03,07,11,15,19} Montréal, dernier étage vers :57). Même
+ *  double-jeu été/hiver que ci-dessus, même garde-fou. */
+export const ATHENA_TARGET_HOURS_NY = [0, 4, 8, 12, 16, 20]
+
+/** Heures UTC enregistrées pour le sync Athena (minute 10). Doit rester
+ *  d'accord avec `crons` dans wrangler.toml. */
+export const ATHENA_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
+
+export function isAthenaTargetHourInNY(now: Date): boolean {
+  return ATHENA_TARGET_HOURS_NY.includes(hourInNY(now))
+}
