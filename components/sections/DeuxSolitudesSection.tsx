@@ -13,8 +13,8 @@ import { DeuxSolitudesRadar } from "@/components/interactive/DeuxSolitudesRadar"
 // Server component : charge les données et les passe au radar (client) qui
 // gère les interactions (infobulle des points, bulle éditoriale).
 
-export async function DeuxSolitudesSection() {
-  const data = await loadHeadlineEvents();
+export async function DeuxSolitudesSection({ editionKey }: { editionKey?: string } = {}) {
+  const data = await loadHeadlineEvents(editionKey);
   if (!data) return null;
   const s = data.solitudes;
 
@@ -22,10 +22,16 @@ export async function DeuxSolitudesSection() {
     <>
       <section className="solitudes">
         <div className="sol-title-row">
-          <h3 className="sol-title">Deux solitudes&nbsp;?</h3>
-          <ShareButton title={`Deux solitudes — ${s.divPct} % de divergence aujourd'hui`} anchor="deux-solitudes" />
+          <h3 className="sol-title">Deux solitudes?</h3>
+          {/* Le partage reprend le grand chiffre du module, mot pour mot
+              (relDiffPct + relLabel). L'ancienne formule basculait de grandeur
+              selon la journée — « X % de convergence » au-dessus de 50 %,
+              « X % de divergence » en dessous — donc un même module se
+              partageait dans deux vocabulaires d'un jour à l'autre. */}
+          <ShareButton title={`Deux solitudes : ${s.relDiffPct} % ${s.relLabel}`} anchor="deux-solitudes" />
         </div>
-        <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise et canadienne.</p>
+        <div className="sol-rule" aria-hidden />
+        <p className="sol-sub">Les sujets qui dominent l&apos;actualité québécoise<br />et canadienne des 24 dernières heures.</p>
         <DeuxSolitudesRadar solitudes={s} />
       </section>
       {/* Hors du cadre, comme la Une des Unes (uniformité inter-modules). */}

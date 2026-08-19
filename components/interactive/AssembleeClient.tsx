@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { AssembleeData, AssembleeRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { AssembleeBilliard } from "@/components/interactive/AssembleeBilliard";
+import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -20,7 +22,7 @@ function SourceTip() {
       {open && (
         <span className="assemblee-info-bubble">
           Les données proviennent des transcriptions officielles du Journal des débats de l&apos;Assemblée nationale.
-          Leur publication peut prendre quelques semaines après les séances — la date affichée reflète la dernière version disponible.
+          Leur publication peut prendre quelques semaines après les séances. La date affichée reflète la dernière version disponible.
         </span>
       )}
     </button>
@@ -31,6 +33,7 @@ const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
 export function AssembleeClient({ data }: { data: AssembleeData }) {
   const [period, setPeriod] = useState<PeriodKey>("last_pdq");
+  const [playing, setPlaying] = useState(false);
   const view: PeriodView = data.periods[period];
 
   const visibleRows = view.rows.filter((r) => !r.inShadow);
@@ -40,7 +43,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
     <>
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Que dit-on à l&apos;Assemblée?</h2>
+          <h2 className="partis-title">L&apos;alignement de l&apos;Assemblée</h2>
           <div className="period-subtitle">
             {view.subtitle}
             <SourceTip />
@@ -60,98 +63,37 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Que dit-on à l'Assemblée nationale?" anchor="assemblee-nationale" />
+            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" />
           </div>
         </div>
       </div>
 
       <section className="assemblee">
-        <div className="ass-row header">
-          <div></div>
-          <div>Répartition des mots par enjeu</div>
-          <div>Ton en chambre</div>
-          <div style={{ textAlign: "right" }}>Mots prononcés</div>
-          <div style={{ textAlign: "center" }}>Richesse lexicale</div>
-        </div>
-
-        {visibleRows.map((row) => (
-          <ActiveRow key={row.key} row={row} />
-        ))}
-
-        {shadowRows.length > 0 && (
-          <div className="in-shadow">
-            <div className="label">Hors chambre</div>
-            {shadowRows.map((row) => (
-              <ShadowRow key={row.key} row={row} />
-            ))}
-          </div>
+        {playing ? (
+          <>
+            <button type="button" className="ass-back-btn" onClick={() => setPlaying(false)}>
+              ← Retour aux dossiers
+            </button>
+            <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
+          </>
+        ) : (
+          <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
         )}
       </section>
-      <div className="module-last-updated">{view.lastUpdated}</div>
+      <div className="module-last-updated">
+        {view.lastUpdated}
+        {!playing && (
+          <button
+            type="button"
+            className="ass-easter-btn"
+            onClick={() => setPlaying(true)}
+            aria-label="Easter egg&nbsp;: jeu de billard"
+            title="🎱"
+          >
+            🎱
+          </button>
+        )}
+      </div>
     </>
   );
-}
-
-function ActiveRow({ row }: { row: AssembleeRow }) {
-  return (
-    <div className="ass-row">
-      <span className={`parti-name-box ${row.key}`}>{row.label}</span>
-      <div className="ass-issue">
-        <div className="enjeu-stack">
-          {row.enjeuStack?.map((seg, i) => (
-            <span
-              key={i}
-              className={seg.isReste ? "seg reste" : "seg"}
-              style={
-                seg.isReste
-                  ? { width: `${seg.widthPct}%` }
-                  : { background: seg.color, width: `${seg.widthPct}%` }
-              }
-              title={seg.title}
-            >
-              {seg.label}
-            </span>
-          ))}
-        </div>
-        {row.editorialAngle && <span className="ass-angle">{row.editorialAngle}</span>}
-      </div>
-      <div className="ass-ton-label">Ton en chambre</div>
-      <div className="ass-tone">
-        <div className="ass-tone-dot" style={{ left: `${row.toneLeftPct}%` }} />
-      </div>
-      <div className="ass-words">{row.wordsFormatted}</div>
-      <div className="ass-richness">
-        <RichnessDots level={row.richnessLevel || 1} />
-      </div>
-    </div>
-  );
-}
-
-function ShadowRow({ row }: { row: AssembleeRow }) {
-  return (
-    <div className="ass-row" style={{ borderBottom: "none" }}>
-      <span className={`parti-name-box ${row.key}`} style={{ opacity: 0.5 }}>
-        {row.label}
-      </span>
-      <div className="ass-empty" style={{ gridColumn: "2 / -1" }}>
-        Aucun député élu à l&apos;Assemblée nationale en cette législature.
-      </div>
-    </div>
-  );
-}
-
-function RichnessDots({ level }: { level: number }) {
-  const dots = [];
-  for (let i = 1; i <= 5; i++) {
-    if (i <= level) {
-      dots.push(<span key={i}>●</span>);
-    } else {
-      dots.push(
-        <span key={i} className="empty">
-          ○
-        </span>,
-      );
-    }
-  }
-  return <>{dots}</>;
 }

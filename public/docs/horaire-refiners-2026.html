@@ -1393,20 +1393,22 @@
         <h1>📅 Réforme des horaires pour une Vitrine démocratique Bêta 2.0</h1>
         <p class="subtitle">Système de mise à jour 6 fois/jour - Architecture complète (Heure de Montréal)</p>
         <div style="margin:1rem auto;max-width:900px;padding:1rem 1.2rem;border:2px solid #10b981;border-radius:8px;background:rgba(16,185,129,.08);text-align:left;font-size:.95em;line-height:1.55">
-          <strong>📌 Document vivant — copie canonique.</strong> Hébergé sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>) : modifiez-le par PR, il est en ligne ~2 min après le merge. Ne plus téléverser de copies ailleurs.<br><br>
-          <strong>✅ État réel au 14 juillet 2026 — réforme des horaires LIVRÉE (grille de blocs ancrée Montréal)</strong> :
+          <strong>📌 Document vivant (copie canonique).</strong> Hébergé sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>) : modifiez-le par PR, il est en ligne ~2 min après le merge. Ne plus téléverser de copies ailleurs.<br><br>
+          <strong>✅ État réel au 16 juillet 2026, réforme des horaires LIVRÉE (grille de blocs ancrée Montréal)</strong> :
           <ul style="margin:.5rem 0 0 1.2rem;padding:0">
-            <li><strong>✅ Les crons sont réformés et déployés</strong> : construct <code>LocalCronLambdaScheduler</code> (tz <code>America/Toronto</code>) — PR #369 (Patrick) ; cascade des raffineurs → <code>{23,3,7,11,15,19}</code> Mtl — PR #370 (Adrien). Le « revert du 23 mars » (<code>254f41fa</code>) ne portait QUE sur les payloads <code>pass</code> (→ am/noon/pm), <strong>pas</strong> sur les heures de crons.</li>
-            <li><strong>✅ LIVRÉ (14 juillet 2026) — la grille de blocs est portée sur l'heure de Montréal</strong> (<code>03-07/07-11/11-15/15-19/19-23/23-03</code>) : <a href="https://github.com/ellipse-science/aws-refiners/pull/214">aws-refiners#214</a> (closes <a href="https://github.com/ellipse-science/aws-refiners/issues/195">#195</a> phase A). 3 raffineurs de la chaîne de la Une ré-ancrés ensemble — <code>radar-salient-objects</code> (fenêtre + étiquettes dérivées d'un bloc unique), <code>radar-salient-index</code> (stepper grid-aware + chargement par intervalle datetime), <code>radar-event-salience</code> (chargement du bloc par intervalle <code>[début, +4h)</code>, robuste au bloc du soir 19-23 Mtl qui traverse minuit UTC). Crons et grille sont désormais alignés → fraîcheur ~1h (à 20h, le site sert le bloc 15-19).</li>
-            <li><strong>🎯 Tag public = heure de publication</strong> (bloc 15-19 → « 20h », vitrine <a href="https://github.com/ellipse-science/vitrine-showcase.github.io/pull/244">#244</a>), pas la fin de bloc ; la fenêtre de données (15-19) est documentée dans la métho (§03 <em>indice-saillance</em> pour les blocs 4h, §08 <em>fenêtres-temporelles</em> pour la lecture « Aujourd'hui »).</li>
+            <li><strong>✅ Les crons sont réformés et déployés</strong> : construct <code>LocalCronLambdaScheduler</code> (tz <code>America/Toronto</code>), PR #369 (Patrick); cascade des raffineurs → <code>{23,3,7,11,15,19}</code> Mtl, PR #370 (Adrien). Le &laquo;&nbsp;revert du 23 mars&nbsp;&raquo; (<code>254f41fa</code>) ne portait QUE sur les payloads <code>pass</code> (→ am/noon/pm), <strong>pas</strong> sur les heures de crons.</li>
+            <li><strong>✅ LIVRÉ (15 juillet 2026), la grille de blocs est portée sur l'heure de Montréal</strong> (<code>03-07/07-11/11-15/15-19/19-23/23-03</code>) : <a href="https://github.com/ellipse-science/aws-refiners/pull/214">aws-refiners#214</a> + <a href="https://github.com/ellipse-science/aws-refiners/pull/215">aws-refiners#215</a> (closes <a href="https://github.com/ellipse-science/aws-refiners/issues/195">#195</a> phase A). 3 raffineurs de la chaîne de la Une ré-ancrés ensemble&nbsp;: <code>radar-salient-objects</code> (fenêtre + étiquettes dérivées d'un bloc unique), <code>radar-salient-index</code> (stepper grid-aware + chargement par intervalle datetime), <code>radar-event-salience</code> (chargement du bloc par intervalle <code>[début, +4h)</code>, robuste au bloc du soir 19-23 Mtl qui traverse minuit UTC). Crons et grille sont désormais alignés → fraîcheur ~1h (à 20h, le site sert le bloc 15-19).</li>
+            <li><strong>🎯 Tag public = heure de publication</strong> (bloc 15-19 → &laquo;&nbsp;20h&nbsp;&raquo;, vitrine <a href="https://github.com/ellipse-science/vitrine-showcase.github.io/pull/244">#244</a>), pas la fin de bloc; la fenêtre de données (15-19) est documentée dans la métho (§03 <em>indice-saillance</em> pour les blocs 4h, §08 <em>fenêtres-temporelles</em> pour la lecture &laquo;&nbsp;Aujourd'hui&nbsp;&raquo;).</li>
             <li><strong><code>radar-event-salience</code> est ABSENT de ce plan</strong> (créé après, mai 2026) : c'est lui qui produit la Une (<code>headline_events_4h</code>, 6×/jour à :51, storyline_id inclus). <code>headline_of_headlines</code> n'alimente plus le site.</li>
-            <li>L'étape « GLiNER + Gemma3 » de <code>radar-salient-objects</code> n'a <strong>pas été réalisée</strong> (toujours GPT-4o) — à re-prioriser.</li>
+            <li>L'étape &laquo;&nbsp;GLiNER + Gemma3&nbsp;&raquo; de <code>radar-salient-objects</code> n'a <strong>pas été réalisée</strong> (toujours GPT-4o), à re-prioriser. (Le GLiNER v1 + gemma3:27b existe ailleurs, dans <code>radar-object-extraction</code> → <code>headlines_objects_extracted</code>.)</li>
+            <li><strong>✅ LIVRÉ (16 juillet 2026), ménage des raffineurs morts + promotion en PROD</strong> : Phase A promue <code>develop→main</code> (<a href="https://github.com/ellipse-science/aws-refiners/pull/218">refiners#218</a>). <a href="https://github.com/ellipse-science/aws-infra/pull/428">aws-infra#428</a> met <code>active:false</code> sur les 7 raffineurs devenus corps morts&nbsp;: <code>radar-headlines-issues</code> ×3, <code>radar-reflet</code> ×3, <code>radar-headline-of-headlines</code>, qui n'alimentaient plus le site. Ça débloque la suppression des dictionnaires fautifs (<code>dict-ai</code>, <code>dict-issues</code>, <code>dict-issues-two-categories</code>) d'Alex FC. <em>NB&nbsp;: le diagramme de Gantt ci-dessous garde ces 7 raffineurs à titre historique (leur ancienne planification); ils ne s'exécutent plus. Les pipelines correspondants sont marqués DÉPRÉCIÉ dans le diagramme swimlanes.</em></li>
+            <li><strong>🚧 EN COURS (18 août 2026, phase d'ombre), le raffineur vitrine-publish (Athena → Postgres → builds Cloudflare)</strong> : six passages par jour à :10 de l'heure suivant la fin de cascade (heure de Montréal)&nbsp;: <code>00:10, 04:10, 08:10, 12:10, 16:10, 20:10</code>. Est destiné à lire les 15 tables de <code>scripts/tables.json</code> et à écrire dans Postgres (Neon, <code>sync_state</code> source&nbsp;&laquo;&nbsp;aws-refiner&nbsp;&raquo;) dès sa mise en service, mais ne déclenchera aucun build (payload <code>trigger_deploys=false</code>) tant que ses sorties n'auront pas été comparées à la chaîne GitHub Actions existante, qui reste pour l'instant le chemin critique. Dépôt aws-refiners, branche <code>feature/vitrine-publish</code>, PR à venir. Détail des couloirs&nbsp;: <a href="workflow-vitrine-2025-swimlanes.html">workflow-vitrine-2025-swimlanes.html</a>.</li>
           </ul>
         </div>
         <div class="meta">
           <div class="meta-item">
             <span>📅</span>
-            <span class="badge">14 juillet 2026</span>
+            <span class="badge">16 juillet 2026</span>
           </div>
           <div class="meta-item">
             <span>🎯</span>
@@ -1422,7 +1424,7 @@
       <div class="section">
         <h2>🎯 Contexte et Objectifs</h2>
         <div class="highlight-box">
-          <strong>⚠️ Nouvelle contrainte AWS Lambda :</strong> <br>
+          <strong>⚠️ Nouvelle contrainte AWS Lambda&nbsp;:</strong> <br>
           Tous les raffineurs doivent être découpés en plusieurs lambdas si leur exécution dépasse <strong>15 minutes</strong>.<br>
           L’architecture a été adaptée pour garantir que chaque lambda respecte ce timeout maximal.
         </div>
@@ -1673,8 +1675,8 @@
                       <strong>4 dernières heures</strong> (datawarehouse)
                     </li>
                     <li>
-                      Les convertit en fichiers <strong>Parquet</strong> (format orienté colonnes requis par AWS Athena
-                      — Athena ne peut pas lire du CSV)
+                      Les convertit en fichiers <strong>Parquet</strong> (format orienté colonnes requis par AWS Athena,
+                      car Athena ne peut pas lire du CSV)
                     </li>
                     <li>
                       Indexe les données dans les <strong>tables Glue</strong> correspondantes → rendues requêtables via
@@ -1688,7 +1690,7 @@
                 <div style="margin-top: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px">
                   <strong style="color: var(--success)">2️⃣ Glue Jobs SPÉCIFIQUES (après chaque raffineur)</strong>
                   <ul style="margin-top: 0.5rem; padding-left: 1.5rem; font-size: 0.95em">
-                    <li>1 par raffineur — écrit les résultats vers Athena</li>
+                    <li>1 par raffineur, écrit les résultats vers Athena</li>
                     <li>
                       <strong>Durée:</strong> ~3 min chacun, mais ils tournent en parallèle →
                       <strong>+9 min au total</strong> sur le chemin critique
@@ -1705,29 +1707,29 @@
                 </p>
 
                 <p style="margin-top: 1rem">
-                  <strong>Pipeline scientifique — DATA_PREPARATION (6 phases, 5 modèles):</strong>
+                  <strong>Pipeline scientifique DATA_PREPARATION (6 phases, 5 modèles):</strong>
                 </p>
                 <ol style="margin-top: 0.5rem; padding-left: 2rem">
                   <li>
-                    <strong>Phase 1/6 — CAP themes:</strong> Classification thématique sur toutes les phrases (batch)
+                    <strong>Phase 1/6, CAP themes:</strong> Classification thématique sur toutes les phrases (batch)
                   </li>
                   <li style="margin-top: 0.5rem">
-                    <strong>Phase 2/6 — Canadian political parties:</strong> Détection des partis politiques sur toutes
+                    <strong>Phase 2/6, Canadian political parties:</strong> Détection des partis politiques sur toutes
                     les phrases (batch)
                   </li>
                   <li style="margin-top: 0.5rem">
-                    <strong>Phase 3/6 — Sentiment:</strong> Analyse de sentiment sur toutes les phrases (batch)
+                    <strong>Phase 3/6, Sentiment:</strong> Analyse de sentiment sur toutes les phrases (batch)
                   </li>
                   <li style="margin-top: 0.5rem">
-                    <strong>Phase 4/6 — GLiNER (INFER API):</strong> Extraction NER sur toutes les phrases (batch) — 18
+                    <strong>Phase 4/6, GLiNER (INFER API):</strong> Extraction NER sur toutes les phrases (batch), 18
                     labels
                   </li>
                   <li style="margin-top: 0.5rem">
-                    <strong>Phase 5/6 — gemma3:27b (Ollama):</strong> Normalisation + traduction EN/FR des entités, avec
+                    <strong>Phase 5/6, gemma3:27b (Ollama):</strong> Normalisation + traduction EN/FR des entités, avec
                     cache inter-articles
                   </li>
                   <li style="margin-top: 0.5rem">
-                    <strong>Phase 6/6 — Assemblage:</strong> Fusion sentence_analysis + colonnes entités par article →
+                    <strong>Phase 6/6, Assemblage:</strong> Fusion sentence_analysis + colonnes entités par article →
                     <code>radar_articles</code> (29 colonnes)
                   </li>
                 </ol>
@@ -2035,7 +2037,7 @@
                       data-start="11:24"
                       data-end="11:39"
                       data-duration="15 min"
-                      data-notes="Extraction/normalisation d'objets — démarre après DATA_PREPARATION + Glue"
+                      data-notes="Extraction/normalisation d'objets, démarre après DATA_PREPARATION + Glue"
                       style="
                         position: absolute;
                         top: 75px;
@@ -2115,7 +2117,7 @@
                       data-start="11:42"
                       data-end="11:43"
                       data-duration="1 min"
-                      data-notes="Calcul scores saillance — dépend de OBJECT_EXTRACTION + Glue"
+                      data-notes="Calcul scores saillance, dépend de OBJECT_EXTRACTION + Glue"
                       style="
                         position: absolute;
                         top: 110px;
@@ -2180,7 +2182,7 @@
                       data-start="11:31"
                       data-end="11:32"
                       data-duration="1 min"
-                      data-notes="Classification enjeux du CAPP — dépend de DATA_PREPARATION"
+                      data-notes="Classification enjeux du CAPP, dépend de DATA_PREPARATION"
                       style="
                         position: absolute;
                         top: 165px;
@@ -2245,7 +2247,7 @@
                       data-start="11:31"
                       data-end="11:32"
                       data-duration="1 min"
-                      data-notes="Scores partis salient shadow — dépend de DATA_PREPARATION"
+                      data-notes="Scores partis salient shadow, dépend de DATA_PREPARATION"
                       style="
                         position: absolute;
                         top: 220px;
@@ -2310,7 +2312,7 @@
                       data-start="11:46"
                       data-end="11:47"
                       data-duration="1 min"
-                      data-notes="Scores partis — dépend de SALIENT_INDEX"
+                      data-notes="Scores partis, dépend de SALIENT_INDEX"
                       style="
                         position: absolute;
                         top: 278px;
@@ -2375,7 +2377,7 @@
                       data-start="11:46"
                       data-end="11:51"
                       data-duration="5 min"
-                      data-notes="Génération titres — dépend de SALIENT_INDEX"
+                      data-notes="Génération titres, dépend de SALIENT_INDEX"
                       style="
                         position: absolute;
                         top: 342px;
@@ -2441,7 +2443,7 @@
                       data-start="11:46"
                       data-end="11:51"
                       data-duration="5 min"
-                      data-notes="Headlines daily — dépend de ISSUES_SCORE"
+                      data-notes="Headlines daily, dépend de ISSUES_SCORE"
                       style="
                         position: absolute;
                         top: 397px;
@@ -2507,7 +2509,7 @@
                       data-start="11:46"
                       data-end="11:51"
                       data-duration="5 min"
-                      data-notes="Synthèse reflet — dépend de ISSUES_SCORE, PARTY_SCORE, PARTY_SCORE_SALIENT_SHADOW, SALIENT_INDEX"
+                      data-notes="Synthèse reflet, dépend de ISSUES_SCORE, PARTY_SCORE, PARTY_SCORE_SALIENT_SHADOW, SALIENT_INDEX"
                       style="
                         position: absolute;
                         top: 452px;
@@ -2572,7 +2574,7 @@
                       data-start="11:54"
                       data-end="11:57"
                       data-duration="3 min"
-                      data-notes="Publication JSON frontend — toujours actif"
+                      data-notes="Publication JSON frontend, toujours actif"
                       style="
                         position: absolute;
                         top: 507px;
@@ -2708,7 +2710,7 @@
 
             <div class="schedule-compare">
               <div class="schedule-box schedule-old">
-                <div class="schedule-label old">✅ HORAIRE ACTUEL (APPLIQUÉ DANS LE TS) — UTC</div>
+                <div class="schedule-label old">✅ HORAIRE ACTUEL (APPLIQUÉ DANS LE TS), UTC</div>
                 <div class="time-block">
                   <div class="time-line">
                     <span class="refiner-name">GLUE JOB:</span>
@@ -2838,7 +2840,7 @@
               </div>
 
               <div class="schedule-box schedule-new">
-                <div class="schedule-label new">🟡 HORAIRE CIBLE (À VENIR) — Montréal (EST/EDT)</div>
+                <div class="schedule-label new">🟡 HORAIRE CIBLE (À VENIR), Montréal (EST/EDT)</div>
                 <div class="time-block">
                   <div class="time-line">
                     <span class="refiner-name">GLUE JOB:</span>
@@ -3013,6 +3015,7 @@
                 <tr>
                   <td>SALIENT_OBJECTS</td>
                   <td>11:16</td>
+                  <!-- garde-redaction: ok (tiret = glyphe de donnée absente) -->
                   <td>—</td>
                   <td style="color: var(--danger); font-weight: 700">🔴 À débrancher</td>
                 </tr>
@@ -3025,6 +3028,7 @@
                 <tr>
                   <td>PARTY_SCORE (daily)</td>
                   <td>6x/jour @ :29</td>
+                  <!-- garde-redaction: ok (tiret = glyphe de donnée absente) -->
                   <td>—</td>
                   <td style="color: var(--danger); font-weight: 700">🔴 À débrancher</td>
                 </tr>
@@ -3061,6 +3065,7 @@
                 <tr>
                   <td>VITRINE_GRAPH_DATA</td>
                   <td>5x/jour @ :39</td>
+                  <!-- garde-redaction: ok (tiret = glyphe de donnée absente) -->
                   <td>—</td>
                   <td style="color: var(--danger); font-weight: 700">🔴 À débrancher (post-API)</td>
                 </tr>
@@ -3101,7 +3106,7 @@
                   <td>11:24</td>
                   <td>11:39</td>
                   <td><strong>15 min</strong></td>
-                  <td>Extraction/normalisation d'objets (radar-object-extraction) — démarre après DATA_PREPARATION + Glue</td>
+                  <td>Extraction/normalisation d'objets (radar-object-extraction), démarre après DATA_PREPARATION + Glue</td>
                 </tr>
                 <tr style="opacity: 0.7">
                   <td>+ Glue Job spécifique</td>
@@ -3164,7 +3169,7 @@
                 </tr>
                 <tr style="background: rgba(241, 196, 15, 0.1)">
                   <td colspan="5" style="text-align: center; font-weight: 600; color: var(--warning)">
-                    ⚡ Phase 2 — Agrégations finales (dès 11:46)
+                    ⚡ Phase 2&nbsp;: Agrégations finales (dès 11:46)
                   </td>
                 </tr>
                 <tr>
@@ -3360,15 +3365,15 @@
               <div class="timeline-item">
                 <h4>✅ Déploiement de RADAR_DATA_PREPARATION</h4>
                 <p>
-                  Remplace radar-articles-segmented — 5 modèles, 6 phases, 29 colonnes vers
-                  <code>radar_articles</code> — SALIENT_INDEX lit désormais directement depuis
+                  Remplace radar-articles-segmented&nbsp;: 5 modèles, 6 phases, 29 colonnes vers
+                  <code>radar_articles</code>. SALIENT_INDEX lit désormais directement depuis
                   <code>radar_articles</code>
                 </p>
               </div>
 
               <div class="timeline-item">
-                <h4>✅ Mise à jour de tous les raffineurs (LIVRÉ — 14 juillet 2026)</h4>
-                <p>Migration UTC → heure locale Montréal de la grille de blocs (aws-refiners#214, chaîne de la Une : salient-objects, salient-index, event-salience) - Application du nouvel horaire (crons livrés en mars, PR #369/#370) - Payloads <code>pass</code> : maintien assumé de am/noon/pm (décision 2026-07-14 — étiquette interne sans effet sur les calculs)</p>
+                <h4>✅ Mise à jour de tous les raffineurs (LIVRÉ le 15 juillet 2026)</h4>
+                <p>Migration UTC → heure locale Montréal de la grille de blocs (aws-refiners#214, chaîne de la Une&nbsp;: salient-objects, salient-index, event-salience) - Application du nouvel horaire (crons livrés en mars, PR #369/#370) - Payloads <code>pass</code> : maintien assumé de am/noon/pm (décision 2026-07-14, étiquette interne sans effet sur les calculs)</p>
               </div>
 
               <div class="timeline-item">
@@ -3387,7 +3392,7 @@
           </div>
 
           <footer>
-            <p><strong>Version:</strong> Bêta 2.0 | <strong>Dernière mise à jour:</strong> 14 juillet 2026</p>
+            <p><strong>Version:</strong> Bêta 2.0 | <strong>Dernière mise à jour:</strong> 16 juillet 2026</p>
           </footer>
         </div>
 

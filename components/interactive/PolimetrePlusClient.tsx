@@ -18,7 +18,7 @@ const RANGES: RangeKey[] = ["week", "month"];
 
 // Résumé placeholder until AI-generated text is wired in.
 const SUMMARY_PLACEHOLDER =
-  "Résumé en préparation — un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
+  "Résumé en préparation : un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
 
 const VERDICT_FILTERS: { value: VerdictSlug | "all"; label: string; short?: string }[] = [
   { value: "all", label: "Tous les verdicts" },
@@ -44,9 +44,66 @@ function TrendBadge({ trend }: { trend: PromiseView["trend"] }) {
       </span>
     );
   }
+  if (trend.dir === "flat") {
+    return (
+      <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
+        {/* garde-redaction: ok (tiret = glyphe de donnée absente) */}
+        —
+      </span>
+    );
+  }
+  // Pas de rang antérieur comparable : on n'affirme rien sur le mouvement.
   return (
-    <span className="ppl-trend ppl-trend--flat" aria-label="Aucun changement">
-      —
+    <span className="ppl-trend ppl-trend--unknown" aria-label="Aucune période de comparaison" title="Aucune période de comparaison">
+      ·
+    </span>
+  );
+}
+
+/* Chevron d'affordance (#—) : signale que le rang est dépliable. Pivote de 180°
+   à l'ouverture (voir .ppl-promise--open .ppl-chevron dans globals.css).
+   aria-hidden : l'état est déjà porté par aria-expanded sur le <li>. */
+function Chevron() {
+  return (
+    <span className="ppl-chevron" aria-hidden="true">
+      <svg viewBox="0 0 12 12" width="12" height="12" fill="none">
+        <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+/* Marque du Polimètre, reprise telle quelle du logo officiel (polimeter.org,
+   viewBox 50×43). En currentColor : dans le bouton d'encre elle sort en papier,
+   et elle suit le thème sans deuxième fichier. aria-hidden parce que le libellé
+   du lien nomme déjà le Polimètre. */
+function PolimetreMark() {
+  return (
+    <svg className="ppl-discover__mark" viewBox="0 0 50 43" width="20" height="17" fill="none" aria-hidden="true">
+      <circle cx="7.5" cy="35.5" r="5.5" fill="currentColor" stroke="currentColor" strokeWidth="4" />
+      <rect x="14.5" y="4.5" width="31" height="17" rx="8.5" stroke="currentColor" strokeWidth="9" />
+    </svg>
+  );
+}
+
+/* Libellé + chevron. Le chevron est solidaire du DERNIER MOT (.ppl-title__last
+   en white-space: nowrap) : sans ça, un titre dont le dernier mot tombe pile en
+   fin de ligne laisse le chevron seul sur la ligne suivante — cas le plus
+   probable à 375 px, où la colonne du titre est la plus étroite. Au pire le
+   chevron descend maintenant AVEC son mot. Rendu identique dans les deux états
+   du rang (fermé et ouvert), d'où le composant plutôt que deux blocs jumeaux. */
+function PromiseTitle({ title }: { title: string }) {
+  const words = title.split(" ");
+  const last = words.pop() ?? "";
+  return (
+    <span className="ppl-title">
+      <span className="ppl-title__text">
+        {words.length > 0 ? `${words.join(" ")} ` : null}
+        <span className="ppl-title__last">
+          {last}
+          <Chevron />
+        </span>
+      </span>
     </span>
   );
 }
@@ -112,7 +169,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
     <section className="polimeter-plus" aria-label="Polimètre+">
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+ : promesses électorales à la une</h2>
+          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
           <div className="period-subtitle">
             Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
             <InfoTip size="sm" label="À propos du Polimètre+">
@@ -242,7 +299,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       }
                     >
                       {name}
-                      {present ? "" : " — aucune donnée"}
+                      {present ? "" : " (aucune donnée)"}
                     </li>
                   );
                 })}
@@ -281,7 +338,12 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                   <li
                     key={p.pledgeNumber}
                     className={cls}
-                    aria-label={p.verdictLabel || undefined}
+                    /* Le nom accessible doit d'abord dire SUR QUOI porte le bouton.
+                       L'aria-label écrase le contenu : avec le seul verdict, un
+                       lecteur d'écran annonçait « Réalisée, bouton » sans jamais
+                       nommer la promesse. Le verdict reste en second — il n'est
+                       porté que par la couleur, donc invisible sans la vue. */
+                    aria-label={p.verdictLabel ? `${p.title}, ${p.verdictLabel}` : p.title}
                     role="button"
                     tabIndex={0}
                     aria-expanded={open}
@@ -298,7 +360,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <span className="ppl-title">{p.title}</span>
+                          <PromiseTitle title={p.title} />
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -337,7 +399,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <span className="ppl-title">{p.title}</span>
+                        <PromiseTitle title={p.title} />
                         <TrendBadge trend={p.trend} />
                       </>
                     )}
@@ -353,7 +415,8 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
               target="_blank"
               rel="noopener"
             >
-              Découvrir toutes les promesses sur le site Web (Vox Pop Labs)
+              <PolimetreMark />
+              Découvrir toutes les promesses sur le site Web du Polimètre
             </a>
           </div>
         </div>

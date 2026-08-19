@@ -1,8 +1,14 @@
 {
   "_comment": "Whitelist of Athena tables published as static JSON every 4h by scripts/fetch_data.R. To add a new table: append an object below and set enabled=true. To deprecate: set enabled=false (the file is left untouched on disk). Columns are inlined per-table; rows from Athena are projected to that subset before write. Special per-table filtering (e.g., date cutoffs) is keyed by the 'filter' field and implemented in fetch_data.R.",
+  "_contract": "CONTRAT DE SCHÉMA. Ce fichier n'est plus seulement une liste d'extraction : les noms de colonnes ci-dessous sont ceux que l'API payante exposera (cf. docs/reference/api-direction.md). Renommer une colonne cassera des clients externes — prévoir une dépréciation, pas un simple commit. Les JSON produits ne sont PAS livrés au CDN : scripts/postbuild.mjs les retire de out/ car ils sont lus au build par node:fs et inlinés dans le HTML, jamais requêtés par un navigateur.",
   "_discover": {
     "_comment": "Used by scripts/discover_tables.R (triggered manually via .github/workflows/discover-tables.yml). Tables matching match_regex on Athena that are not already in 'tables' below get appended as disabled stubs.",
     "match_regex": "^(vitrine_datamart|agora_datamart)-"
+  },
+  "_calibration": {
+    "_comment": "NOT a table projection — computed by build_salience_calibration() in fetch_data.R (suivi aws-refiners#212). Publishes rolling-window percentiles (p5/p20/p50/p80/p95) of score_qc, score_roc and interval_convergence_score to public/data/salience_calibration.json. The frontend (lib/data/headlineEvents.ts) derives SAL_QC_THRESHOLDS and CAL_CONV from it, falling back to hardcoded values if the file is absent or a metric is missing.",
+    "out": "public/data/salience_calibration.json",
+    "window_days": 365
   },
   "tables": [
     {
@@ -45,7 +51,41 @@
         "technology",
         "governments_and_governance",
         "culture_and_nationalism",
-        "editorial_angle"
+        "editorial_angle",
+        "signature_word",
+        "signature_word_context"
+      ],
+      "enabled": true,
+      "used_by": "lib/data/assemblee.ts + components/sections/AssembleeSection.tsx"
+    },
+    {
+      "name": "agora_decideurs_qc_deputes",
+      "athena": "agora_datamart-agora_decideurs_qc_deputes",
+      "out": "public/data/agora/agora_decideurs_qc_deputes.json",
+      "cols": [
+        "period_type",
+        "period_start_date",
+        "period_end_date",
+        "party",
+        "deputy",
+        "n_interventions",
+        "word_count",
+        "lexical_richness",
+        "tone_score",
+        "economy_and_labour",
+        "rights_liberties_minorities_discrimination",
+        "health_and_social_services",
+        "public_lands_and_agriculture",
+        "immigration",
+        "education",
+        "environment_and_energy",
+        "law_and_crime",
+        "international_affairs_and_defense",
+        "technology",
+        "governments_and_governance",
+        "culture_and_nationalism",
+        "signature_word",
+        "signature_word_context"
       ],
       "enabled": true,
       "used_by": "lib/data/assemblee.ts + components/sections/AssembleeSection.tsx"
@@ -347,12 +387,16 @@
         "articles_24h",
         "score_qc_peak_24h",
         "first_seen_utc",
-        "n_blocks_24h"
+        "n_blocks_24h",
+        "salience_index_qc",
+        "salience_index_roc"
       ],
       "_note": "total_headline_minutes excluded: DOUBLE/integer type mismatch in Parquet vs Glue catalog — column projection bypasses it",
-      "filter": "headline_events_3day",
+      "_note_cutover": "salience_index_qc/roc = indice spec v1 (aws-refiners#287, tag spec-v1). Projetés AVANT la bascule pour que la donnée soit déjà dans le snapshot le jour où SALIENCE_CUTOVER passe à true (lib/data/salienceCutover.ts) : le flip devient un changement d'une ligne, sans attendre un refresh. score_qc/roc restent projetés APRÈS la bascule — ils servent de repli et de poids au module 3 (treemap d'objets).",
+      "_note_archive": "vitrine#434 : la fenêtre passe de 3 à 14 jours pour alimenter la navigation dans les éditions passées. Profondeur pilotée par HEADLINE_KEEP_DAYS dans fetch_data.R. Coût Athena nul — la requête n'a pas de WHERE, la table est déjà scannée en entier à chaque run.",
+      "filter": "headline_events_window",
       "enabled": true,
-      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx"
+      "used_by": "lib/data/headlineEvents.ts + components/sections/UneDesUnesSection.tsx + components/sections/DeuxSolitudesSection.tsx + app/edition/[key]/page.tsx"
     },
     {
       "name": "polimetre_plus",
@@ -363,19 +407,22 @@
         "week_end_date",
         "pledge_number",
         "pledge_text_fr",
-        "pledge_en",
         "verdict",
         "category",
         "salience_index",
         "previous_salience_index",
         "delta_index",
-        "rank_current",
-        "rank_delta",
-        "n_mentions",
         "titles",
-        "urls"
+        "urls",
+        "articles",
+        "pledge_short_fr",
+        "coverage_summary_week",
+        "coverage_summary_month"
       ],
-      "_note": "articles column removed: absent from Athena table as of 2026-06-22; polimetre.ts falls back to host-mapping from urls",
+      "_note": "articles restored 2026-07-27 by ALTER TABLE ADD COLUMNS on the DEV datamart: populated from week_end_date 2026-07-03 onward, NULL/\"NA\" before — polimetre.ts already falls back to host-mapping from urls when it is absent or unparseable",
+      "_note_pledge_en": "pledge_en retirée 2026-07-29 : 280 o/ligne (13,2% du fichier, autant que la colonne articles) pour un libellé anglais jamais lu — la Vitrine est unilingue (lang=\"fr\", locale fr_CA, aucune i18n).",
+      "_note_int32": "rank_current, rank_delta et n_mentions retirées 2026-07-29 — RAISON DE ROBUSTESSE, pas de poids (1,5% à elles trois). Le raffineur les produit via dplyr::n() et dplyr::min_rank(), donc en ENTIERS, que le writer Parquet sérialise en INT32 ; le catalogue Glue les déclare double. Athena refuse alors de lire la table pour toute requête qui en projette une (HIVE_BAD_DATA), ce qui a gelé le module le 2026-07-28 sans aucune erreur côté raffineur. CAST et try_cast ne contournent rien : l'échec est à la lecture du Parquet. Ne pas les projeter met la Vitrine à l'abri de cette dérive de façon permanente, quel que soit l'état du raffineur. Aucune n'était lue : les rangs sont recalculés dans lib/data/polimetre.ts, et n_mentions n'est affichée par aucun composant. previous_salience_index et delta_index sont CONSERVÉES : elles sont en double (donc hors de portée de la dérive), coûtent 2,3%, et portent le calcul de mouvement du raffineur — piste ouverte pour les tendances.",
+      "filter": "polimetre_plus_recent",
       "enabled": true,
       "used_by": "lib/data/polimetre.ts"
     }

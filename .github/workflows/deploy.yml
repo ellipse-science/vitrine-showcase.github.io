@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -40,15 +40,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Fausses données du module des partis, pour le MIROIR DEV seulement.
+      #
+      # La mesure provinciale est suspendue (aws-refiners#248) : sans fixtures,
+      # le module n'affiche que son avis de suspension, et l'équipe ne peut ni
+      # l'essayer ni ouvrir d'issues dessus. Les fixtures ne sont pas versionnées
+      # (`.gitignore`), on les génère donc ici, à chaque déploiement.
+      #
+      # Sûr parce que ce workflow ne publie QUE sur GitHub Pages, qui est le
+      # miroir dev et sert un robots.txt `Disallow: /` (cf. app/robots.ts). La
+      # production (vitrinedemocratique.com) n'est pas déployée depuis ce dépôt
+      # et ne peut donc pas hériter de cette variable. Le module porte en plus un
+      # bandeau « Données fictives : ne pas diffuser », et `lib/data/parties.ts`
+      # fait ÉCHOUER un build qui combinerait fixtures et domaine racine.
+      - name: Générer les fausses données (miroir dev)
+        run: node scripts/make_parties_fixtures.mjs
+
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
         env:
+          VITRINE_PARTIES_FIXTURES: fixtures/parties
           # Dev (GitHub Pages) is served under a repo subpath. Pin it explicitly
           # so next.config.ts doesn't fall back to its default — prod (Cloudflare)
           # sets NEXT_PUBLIC_BASE_PATH="" in its own build env for the root domain.
           NEXT_PUBLIC_BASE_PATH: /vitrine-showcase.github.io
+          # Pilote robots.txt (Disallow) ET l'autorisation des fixtures. Le
+          # basePath ne peut plus servir de signal : dev.vitrinedemocratique.com
+          # est servi à la racine, donc son basePath est vide comme celui de la
+          # prod. Sans cette ligne, `lib/data/parties.ts` ferait échouer ce build.
+          NEXT_PUBLIC_SITE_ENV: dev
           # URL publique du Worker Cloudflare — pas un secret, juste une URL
           NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
+          # Classement Flappy, EN LECTURE SEULE. Ces deux valeurs finissent dans
+          # le bundle client (préfixe NEXT_PUBLIC_) : c'est assumé pour un jeton
+          # de lecture, jamais pour un jeton d'écriture — cf. lib/flappyLeaderboard.ts.
+          # Absentes, le classement s'affiche vide, sans erreur.
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

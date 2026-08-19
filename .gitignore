@@ -40,5 +40,17 @@ __pycache__/
 /next-site/
 yarn.lock
 
+# Worktrees git imbriqués (git worktree add _worktrees/<nom>) — copies locales
+# du projet : jamais commitées, et exclues du type-check via tsconfig.json
+_worktrees/
+
 # Agent config: share skills/hooks/settings, keep personal settings local
 /.claude/settings.local.json
+
+# Jeu de données FICTIF du module Partis — régénérable par
+# `node scripts/make_parties_fixtures.mjs`. Volontairement NON versionné :
+# aucune donnée inventée ne doit pouvoir être confondue avec la donnée réelle.
+/fixtures/
+
+# CSV intermédiaires de scripts/load_pg.mjs
+.pgload/

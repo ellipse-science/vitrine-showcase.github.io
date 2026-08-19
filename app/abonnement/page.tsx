@@ -3,6 +3,7 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
+  // garde-redaction: ok (séparateur <title>, exception PR #246)
   title: "S'abonner — La Vitrine démocratique",
 };
 

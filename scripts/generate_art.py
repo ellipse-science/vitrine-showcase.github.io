@@ -19,20 +19,107 @@ except ImportError:
 ROOT = Path(__file__).parent.parent
 
 
+def write_web_formats(image_bytes: bytes, out_dir: Path) -> None:
+    """Écrit latest.webp et latest.avif à côté du PNG.
+
+    POURQUOI : le PNG 1024×1024 de gpt-image-1 pèse ~1,5 Mo, soit environ 65 %
+    du poids d'une première visite — et `images: { unoptimized: true }`
+    (next.config.ts) exclut l'optimisation automatique de next/image sur un
+    export statique. Recompressé, le même visuel tombe sous les 200 Ko.
+
+    Le PNG reste écrit tel quel : c'est le dernier recours du <picture> côté
+    site, et ce script tourne en `continue-on-error` dans refresh-data.yml.
+    Chaque format est tenté séparément — un encodeur absent (AVIF demande
+    pillow-avif-plugin) ne doit jamais faire échouer les autres, ni le script.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        print("Pillow absent — pas de WebP/AVIF, le PNG suffit", file=sys.stderr)
+        return
+
+    # pillow-avif-plugin ne s'enregistre auprès de Pillow qu'à l'import : sans
+    # cette ligne, l'installer ne suffit pas. Pillow ≥ 11.3 gère l'AVIF nativement,
+    # d'où le except silencieux — l'encodeur est peut-être déjà là.
+    try:
+        import pillow_avif  # noqa: F401
+    except ImportError:
+        pass
+
+    with Image.open(io.BytesIO(image_bytes)) as img:
+        img = img.convert("RGB")
+        for suffix, params in (
+            ("webp", {"format": "WEBP", "quality": 82, "method": 6}),
+            ("avif", {"format": "AVIF", "quality": 55}),
+        ):
+            target = out_dir / f"latest.{suffix}"
+            try:
+                img.save(target, **params)
+                kb = target.stat().st_size / 1024
+                print(f"Saved → {target} ({kb:.0f} Ko)")
+            except Exception as err:  # encodeur absent, ou en échec
+                print(f"{suffix.upper()} non écrit ({err}) — on continue", file=sys.stderr)
+                target.unlink(missing_ok=True)
+
+
+def read_hero_selection(events: list[dict]) -> dict | None:
+    """Return the event designated by scripts/select_hero.ts, or None.
+
+    C'est la SOURCE DE VÉRITÉ (issue #259). `select_hero.ts` appelle les mêmes
+    fonctions que le loader du site — même fenêtre 24 h, même pondération de
+    récence, même fusion de storylines, même seuil éditorial — et dépose son
+    verdict dans public/data/hero-selection.json. On se contente de le relire.
+
+    Ne JAMAIS re-calculer la sélection ici : c'est cette double implémentation
+    qui a fait diverger l'illustration du hero pendant des semaines.
+    """
+    path = ROOT / "public" / "data" / "hero-selection.json"
+    try:
+        selection = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        print(f"WARNING: hero-selection.json illisible ({exc}) — repli heuristique", file=sys.stderr)
+        return None
+
+    # Le fichier peut être du JSON VALIDE sans être la structure attendue (liste,
+    # nombre, objet sans event_id...). Sans ce contrôle, `.get` lèverait une
+    # AttributeError et on perdrait le caractère best-effort de l'étape.
+    if not isinstance(selection, dict):
+        print(
+            f"WARNING: hero-selection.json n'est pas un objet ({type(selection).__name__}) — repli heuristique",
+            file=sys.stderr,
+        )
+        return None
+
+    event_id = selection.get("event_id")
+    if not isinstance(event_id, str) or not event_id:
+        print(
+            "WARNING: hero-selection.json sans event_id exploitable — repli heuristique",
+            file=sys.stderr,
+        )
+        return None
+
+    for event in events:
+        if event.get("event_id") == event_id:
+            return event
+    print(
+        f"WARNING: hero-selection.json désigne {event_id!r}, absent du snapshot — repli heuristique",
+        file=sys.stderr,
+    )
+    return None
+
+
 def find_top_headline(events: list[dict]) -> dict | None:
-    """Return the event the site renders as its #1 "une des unes" headline.
+    """REPLI uniquement — utilisé si hero-selection.json manque ou est périmé.
 
-    SOURCE OF TRUTH: loadHeadlineEvents() in lib/data/headlineEvents.ts
-    (~lines 199-231). The AI illustration sits in the same `une-main` block as
-    that headline, so it must depict the *same* event. Mirror that selection:
-    dedupe by event_id (prefer target_region == "QC"), drop country_id == "USA",
-    restrict to the latest (date_utc, time_interval_utc) bucket, then pick the
-    highest score_qc, tie-broken by score_saillance, among events with a title.
+    Heuristique historique : dédup par event_id (préférence target_region ==
+    "QC"), retrait de country_id == "USA", restriction au dernier bloc
+    (date_utc, time_interval_utc), puis meilleur score_qc, départagé par
+    score_saillance, parmi les événements qui ont un titre.
 
-    (Old behaviour selected event_rank == 1 — a global rank that diverges from
-    the QC-weighted lead the site actually shows: La Vitrine démocratique *du
-    Québec*. That mismatch produced a pipeline image beside a Québec headline.)
-    If the two selectors ever drift apart again, fix them together.
+    ⚠️ Elle NE reproduit PAS la sélection du site et ne le peut pas : le site
+    classe sur 24 h avec pondération de récence, et sa Une n°1 est absente du
+    dernier bloc environ 38 % du temps (mesuré sur l'historique DEV). Ce repli
+    existe pour que la génération d'image ne casse jamais, pas pour être juste.
     """
     by_id: dict[str, dict] = {}
     for e in events:
@@ -220,10 +307,12 @@ def main() -> None:
 
     data_path = ROOT / "public" / "data" / "headline-events.json"
     events = json.loads(data_path.read_text())
-    event = find_top_headline(events)
+    # La sélection écrite par select_hero.ts fait foi ; l'heuristique n'est là
+    # que pour ne jamais bloquer la génération (issue #259).
+    event = read_hero_selection(events) or find_top_headline(events)
 
     if event is None:
-        print("WARNING: no event_rank=1 event found — skipping image generation")
+        print("WARNING: aucune Une identifiable — génération d'image ignorée")
         sys.exit(0)
 
     headline_fr = event.get("title") or event.get("event_title_raw") or ""
@@ -253,6 +342,7 @@ def main() -> None:
     out_dir = ROOT / "public" / "data" / "generated-art"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "latest.png").write_bytes(image_bytes)
+    write_web_formats(image_bytes, out_dir)
 
     metadata = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),

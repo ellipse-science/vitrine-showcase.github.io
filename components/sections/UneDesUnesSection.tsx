@@ -2,18 +2,128 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import React from "react";
-import { loadHeadlineEvents, type UneEvent } from "@/lib/data/headlineEvents";
+import { loadHeadlineEvents, listEditions, type UneEvent } from "@/lib/data/headlineEvents";
+import { editionHrefs } from "@/lib/editionLinks";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { SaillanceTrend } from "@/components/interactive/SaillanceTrend";
+import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { HeadlineLink } from "@/components/interactive/HeadlineLink";
 
-// Introduit volontairement le mot « saillant » (cf. #126) : « Saillant au
-// Québec depuis ce matin, 8 h ». Le moment est pré-calculé dans le loader.
-function saillantLabel(event: UneEvent): string {
-  return event.saillantSince
-    ? `Saillant au Québec depuis ${event.saillantSince}`
-    : "Saillant au Québec";
+// Titre cliquable d'une Une : ouvre un article au hasard parmi les médias QC
+// qui la couvrent (chance égale). Repli sur l'article représentatif si besoin.
+// Rendu en texte simple si aucun lien connu.
+function HeadlineTitle({ event, children }: { event: UneEvent; children: React.ReactNode }) {
+  const urls = event.mediaToday.map((m) => m.url).filter((u): u is string => !!u);
+  const fallback = event.representativeUrl ?? urls[0];
+  return fallback
+    ? <HeadlineLink urls={urls} fallback={fallback}>{children}</HeadlineLink>
+    : <>{children}</>;
+}
+
+// En-tête d'une Une : rubrique (enjeu) → badge de saillance (au pic 24 h) + ⓘ →
+// trajectoire (#274). Le badge tombe toujours sous l'enjeu (CSS flex-basis 100 %),
+// et la trajectoire prend sa propre ligne dessous. Factorisé : hero et secondaires
+// partagent exactement la même structure (seule la classe du conteneur change).
+function SaillanceHead({ event, className, hrefs }: {
+  event: UneEvent;
+  className: string;
+  hrefs?: Record<string, string>;
+}) {
+  return (
+    <div className={className}>
+      <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+        {event.issueFr}
+      </span>
+      {/* UN SEUL badge : la saillance cumulée sur 24 h pondérée par récence — la
+          grandeur qui décide déjà de l'ordre des cartes. Elle existe toujours
+          (contrairement au bloc courant, absent 38 % du temps) et elle décroît
+          d'elle-même (contrairement au sommet, figé). Le sommet, lui, est nommé
+          dans la phrase de trajectoire juste dessous. */}
+      {/* UNE SEULE bande de saillance, en deux temps :
+            ligne 1 — le COUP D'ŒIL : pastille de niveau, ⓘ, courbe
+            ligne 2 — la LECTURE  : flèche + phrase
+          Une seule ligne pour tout serait plus compact, mais la phrase varie de
+          35 à 60 caractères selon la situation : elle déborderait une fois sur
+          deux et la bande sauterait d'une hauteur à l'autre d'une édition à
+          l'autre. Deux lignes stables valent mieux qu'une ligne intermittente.
+          La courbe reste AVANT la phrase : elle est ancrée et ne bouge pas
+          quand le libellé s'allonge au survol (décision #286). */}
+      <span className="saillance-tag-row">
+        <span className={`saillance-tag ${event.saillanceCls}`}>
+          Saillance {event.saillanceLabel}
+        </span>
+        <InfoTip size="sm" label="Détail du niveau de saillance">
+          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} centile={event.saillanceCentile}
+            peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
+            sommetCentile={event.sommetCentile} sommetTier={event.sommetTier}
+            thresholds={event.salThresholds}
+            qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
+            since={event.saillantSince} />
+        </InfoTip>
+        {event.salienceTrend && <SaillanceTrend trend={event.salienceTrend} editionHrefs={hrefs} />}
+      </span>
+    </div>
+  );
+}
+
+// Résonance cross-région (#230) : « le même sujet est aussi en Une ailleurs ».
+// Deux libellés SÉPARÉS — canadienne / américaine — et jamais un « Résonance
+// internationale » unique : c'est précisément la distinction QC/CAN ↔ US qui
+// était demandée, et la fondre reviendrait à qualifier d'internationale une
+// fusillade à Toronto. Une Une peut porter les deux tags.
+//
+// Posée SOUS la byline (« À la Une aujourd'hui sur … »), pas dans l'en-tête :
+// c'est la même question que la byline — qui a mis ce sujet en Une — posée
+// ailleurs, et les deux se lisent d'affilée. L'en-tête, lui, reste la suite
+// arbitrée rubrique → badge → trajectoire (#286). Rien n'est rendu sans
+// résonance : l'absence de tag dit déjà « sujet d'ici seulement ».
+//
+// Chaque tag porte SON ⓘ : la bulle est propre à une région (part d'attention
+// + médias de cette région-là), une bulle commune mélangerait deux mesures.
+function ResonanceRow({ event }: { event: UneEvent }) {
+  const { resonanceCan: can, resonanceUs: us } = event;
+  if (!can && !us) return null;
+  return (
+    <p className="resonance-row">
+      {can && <ResonanceTag label="Résonance canadienne" region="canadiennes-anglaises" echo={can} />}
+      {us && <ResonanceTag label="Résonance américaine" region="américaines" echo={us} />}
+    </p>
+  );
+}
+
+function ResonanceTag({ label, region, echo }: {
+  label: string;
+  /** Accord au féminin pluriel : « … des Unes canadiennes-anglaises ». */
+  region: string;
+  echo: NonNullable<UneEvent["resonanceCan"]>;
+}) {
+  return (
+    <span className="resonance-item">
+      <span className="resonance-tag">{label}</span>
+      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
+        <span className="resonance-card">
+          {/* La fenêtre était TUE (demande d'Adrien, 2026-08-09) : « 61 % de
+              l'attention des Unes canadiennes-anglaises » se lisait comme un
+              état permanent, alors que la part est calculée sur la fenêtre
+              glissante de 24 h pondérée par la récence — la même que le
+              classement, le badge et les axes du radar (`sumRoc / totalRoc`,
+              issus de storiesFrom24h). Un pourcentage sans période n'est pas
+              interprétable. */}
+          <span className="resonance-card-share">
+            {echo.share}&nbsp;% de l&apos;attention des Unes {region} sur les 24 dernières heures
+          </span>
+          {echo.media.length > 0 && (
+            <span className="resonance-card-media">
+              <MediaLinkList media={echo.media} />
+            </span>
+          )}
+        </span>
+      </InfoTip>
+    </span>
+  );
 }
 
 function MediaLinkList({ media }: { media: { name: string; url: string | null }[] }) {
@@ -33,15 +143,19 @@ function MediaLinkList({ media }: { media: { name: string; url: string | null }[
   );
 }
 
-function Byline({ mediaToday, mediaAbsent }: {
-  mediaToday: { name: string; url: string | null }[];
-  mediaAbsent: string[];
-}) {
-  // Une seule ligne de présence (décision Adrien 2026-07-11) : « À la Une
-  // aujourd'hui sur » = union des médias QC ayant mis l'histoire en Une sur la
-  // fenêtre 24h (#213/#215/#51) — remplace l'ancien « À lire en Une sur »,
-  // limité au bloc 4h courant. Les liens pointent vers le DERNIER article mis
-  // en Une par chaque média, même s'il vient d'un bloc précédent (#129).
+function Byline({ event }: { event: UneEvent }) {
+  // Une seule ligne de présence : « À la Une aujourd'hui sur » = union des
+  // médias QC ayant mis l'histoire en Une sur la fenêtre 24h (#213/#215/#51).
+  // Les liens pointent vers le DERNIER article mis en Une par chaque média,
+  // même s'il vient d'un bloc précédent (#129). (« Absent de la Une sur »
+  // retiré 2026-07-20 — décision Adrien, peu utile.)
+  //
+  // La résonance (#230) vient juste dessous : même question — qui a mis ce
+  // sujet en Une — posée ailleurs qu'ici. Le bloc s'affiche donc dès que l'une
+  // OU l'autre existe : une Une sans média QC connu mais reprise au Canada
+  // anglais garde sa ligne de résonance.
+  const { mediaToday, resonanceCan, resonanceUs } = event;
+  if (mediaToday.length === 0 && !resonanceCan && !resonanceUs) return null;
   return (
     <div className="byline-block">
       {mediaToday.length > 0 && (
@@ -50,24 +164,88 @@ function Byline({ mediaToday, mediaAbsent }: {
           <MediaLinkList media={mediaToday} />
         </p>
       )}
-      {mediaAbsent.length > 0 && (
-        <p className="byline-line">
-          <span className="byline-label">Absent de la Une sur</span>{" "}
-          <span className="byline-absent-media">{mediaAbsent.join(" · ")}</span>
-        </p>
-      )}
+      <ResonanceRow event={event} />
     </div>
   );
 }
 
-function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
+/** L'illustration est rendue DEUX fois (variante desktop en colonne 2 de la
+ *  grille, variante mobile dans la colonne texte juste sous le titre) et la
+ *  bascule se fait en CSS. Sur mobile, la grille passe en 1 colonne et suit
+ *  l'ordre DOM : la figure en fin de grille arrivait à ~2 écrans de défilement
+ *  (#310) — la variante mobile la ramène sous le h1, fidèle à l'intention
+ *  « titre → image → métadonnées ». Même URL des deux côtés = un seul
+ *  téléchargement ; la variante cachée l'est via display:none. */
+type ArtSource = { src: string; type: string };
+
+// Formats modernes de l'illustration, du plus léger au plus lourd — l'ordre est
+// celui que <picture> évalue, premier format supporté gagnant.
+const ART_FORMATS: { file: string; type: string }[] = [
+  { file: "latest.avif", type: "image/avif" },
+  { file: "latest.webp", type: "image/webp" },
+];
+
+/** Ne retient que les formats RÉELLEMENT présents sur disque au build.
+ *
+ *  generate_art.py tourne en `continue-on-error` et l'encodeur AVIF est
+ *  optionnel : n'importe lequel de ces fichiers peut manquer sans que ce soit
+ *  une anomalie. Déclarer un <source> vers un fichier absent afficherait une
+ *  image cassée au lieu de retomber sur le PNG. */
+async function detectArtSources(): Promise<ArtSource[]> {
+  const found = await Promise.all(ART_FORMATS.map((f) =>
+    fs.access(path.resolve(process.cwd(), "public", "data", "generated-art", f.file))
+      .then((): ArtSource => ({ src: `data/generated-art/${f.file}`, type: f.type }))
+      .catch(() => null),
+  ));
+  return found.filter((s): s is ArtSource => s !== null);
+}
+
+function HeroFigure({ src, sources = [], alt, variant }: {
+  src: string;
+  /** Formats modernes réellement présents, du plus léger au plus lourd. */
+  sources?: ArtSource[];
+  alt: string;
+  variant: "desktop" | "mobile";
+}) {
+  return (
+    <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
+      <div className="figure-frame">
+        {/* Le PNG de gpt-image-1 pèse ~1,5 Mo ; l'AVIF/WebP tombe sous 200 Ko.
+            `sources` ne liste que les fichiers présents au build : si
+            generate_art.py échoue (il tourne en continue-on-error), la liste
+            est vide et <picture> se réduit au <img> PNG — jamais d'image
+            cassée. */}
+        <picture>
+          {sources.map((s) => (
+            <source key={s.type} srcSet={s.src} type={s.type} />
+          ))}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="editorial-img"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </picture>
+      </div>
+      <figcaption>
+        <span className="cap-tag">Illustration</span>
+        <span className="cap-body">Image générée par intelligence artificielle. Direction artistique de Mathieu Fortin (Anorak Studio).</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, audioUrl, hrefs }: {
   event: UneEvent;
+  hrefs?: Record<string, string>;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
    *  première dans la colonne de gauche — sans lead — et l'illustration garde
    *  toute la hauteur des deux à droite. (L'essai « carte large » pleine
    *  largeur sous le hero laissait un vide, rejeté.) */
   secondEvent?: UneEvent;
   generatedArtUrl?: string;
+  generatedArtSources?: ArtSource[];
   audioUrl?: string;
 }) {
   return (
@@ -79,50 +257,25 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
               négative) et le tag « Exceptionnelle » agrandi finissait par le
               chevaucher quand l'enjeu était long. Ici, le chevauchement est
               impossible par construction. */}
-          <div className="une-main-head">
-            <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-              {event.issueFr}
-            </span>
-            <span className="saillance-tag-row">
-              <span className={`saillance-tag ${event.saillanceCls}`}>
-                Saillance {event.saillanceLabel}
-              </span>
-              <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-            </span>
-          </div>
+          <SaillanceHead event={event} className="une-main-head" hrefs={hrefs} />
           {/* La Une principale ne descend jamais sous le rang 3 pour garder l’impact du hero. */}
           <h1 data-saillance={Math.max(3, event.saillanceRank)}>
-            {event.representativeUrl ? (
-              <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-            ) : event.title}
+            <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
           </h1>
+          {/* alt="" : le titre est adjacent (h1 juste au-dessus) — un alt
+              identique ferait lire le titre deux fois aux lecteurs d'écran. */}
+          {generatedArtUrl && (
+            <HeroFigure src={generatedArtUrl} sources={generatedArtSources} alt="" variant="mobile" />
+          )}
           {event.excerpt && <p className="dek">{event.excerpt}</p>}
-          <div className="saillance-row">
-            <span className="time">{saillantLabel(event)}</span>
-          </div>
-          <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+          <Byline event={event} />
           {secondEvent && (
             <div className="une-side une-second">
-              <div className="une-side-head">
-                <span className="une-enjeu" style={{ "--c": secondEvent.issueColor } as React.CSSProperties}>
-                  {secondEvent.issueFr}
-                </span>
-                <span className="saillance-tag-row">
-                  <span className={`saillance-tag ${secondEvent.saillanceCls}`}>
-                    Saillance {secondEvent.saillanceLabel}
-                  </span>
-                  <InfoTip size="sm" label="Détail du niveau de saillance">{secondEvent.saillanceHint}</InfoTip>
-                </span>
-              </div>
+              <SaillanceHead event={secondEvent} className="une-side-head" hrefs={hrefs} />
               <h2 data-saillance={secondEvent.saillanceRank}>
-                {secondEvent.representativeUrl ? (
-                  <a href={secondEvent.representativeUrl} target="_blank" rel="noopener noreferrer">{secondEvent.title}</a>
-                ) : secondEvent.title}
+                <HeadlineTitle event={secondEvent}>{secondEvent.title}</HeadlineTitle>
               </h2>
-              <div className="saillance-row">
-                <span className="time">{saillantLabel(secondEvent)}</span>
-              </div>
-              <Byline mediaToday={secondEvent.mediaToday} mediaAbsent={secondEvent.mediaAbsent} />
+              <Byline event={secondEvent} />
             </div>
           )}
         </div>
@@ -135,63 +288,44 @@ function MainUne({ event, secondEvent, generatedArtUrl, audioUrl }: {
         )}
 
         {generatedArtUrl && (
-          <figure className="hero-figure hero-figure-inline">
-            <div className="figure-frame">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={generatedArtUrl}
-                alt={event.title}
-                className="editorial-img"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-            <figcaption>
-              <span className="cap-tag">Illustration</span>
-              <span className="cap-body">Image générée par intelligence artificielle, inspirée du style de l&apos;artiste Mathieu Fortin, partenaire du projet.</span>
-            </figcaption>
-          </figure>
+          <HeroFigure src={generatedArtUrl} sources={generatedArtSources} alt={event.title} variant="desktop" />
         )}
       </div>
     </div>
   );
 }
 
-function SideUne({ event }: { event: UneEvent }) {
+function SideUne({ event, hrefs }: { event: UneEvent; hrefs?: Record<string, string> }) {
   return (
     <div className="une-side">
-      <div className="une-side-head">
-        <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
-          {event.issueFr}
-        </span>
-        <span className="saillance-tag-row">
-          <span className={`saillance-tag ${event.saillanceCls}`}>
-            Saillance {event.saillanceLabel}
-          </span>
-          <InfoTip size="sm" label="Détail du niveau de saillance">{event.saillanceHint}</InfoTip>
-        </span>
-      </div>
+      <SaillanceHead event={event} className="une-side-head" hrefs={hrefs} />
       <h2 data-saillance={event.saillanceRank}>
-        {event.representativeUrl ? (
-          <a href={event.representativeUrl} target="_blank" rel="noopener noreferrer">{event.title}</a>
-        ) : event.title}
+        <HeadlineTitle event={event}>{event.title}</HeadlineTitle>
       </h2>
-      <div className="saillance-row">
-        <span className="time">{saillantLabel(event)}</span>
-      </div>
-      {/* QC seulement — Shannon: "Médias Qc seulement", "Conserver logique présent/absent", "Supprimer ROC, US pour les deux" */}
-      <Byline mediaToday={event.mediaToday} mediaAbsent={event.mediaAbsent} />
+      {/* QC seulement — Shannon: "Médias Qc seulement" */}
+      <Byline event={event} />
     </div>
   );
 }
 
-export async function UneDesUnesSection() {
+export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
+  // ÉDITIONS PASSÉES (#434). L'illustration et la musique ne sont PAS
+  // archivées : `generated-art/latest.png` et `audio/latest.mp3` sont écrasés à
+  // chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
+  // servir sur une édition passée collerait l'image d'aujourd'hui sur les Unes
+  // d'avant-hier — une illustration qui affirme un faux. Une édition passée
+  // s'affiche donc sans image ni musique, et la mise en page « no-art » du
+  // module (déjà prévue pour les blocs sans illustration) s'en charge.
+  const isArchive = Boolean(editionKey);
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, artExists, audioUrl] = await Promise.all([
-    loadHeadlineEvents(),
-    fs.access(artJsonPath).then(() => true).catch(() => false),
-    fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
+  const [data, editions, artExists, artSources, audioUrl] = await Promise.all([
+    loadHeadlineEvents(editionKey),
+    listEditions(),
+    isArchive ? false : fs.access(artJsonPath).then(() => true).catch(() => false),
+    isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
+    isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
         .then(() => "audio/latest.wav")
@@ -200,6 +334,8 @@ export async function UneDesUnesSection() {
   if (!data || data.top3.length === 0) return null;
 
   const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
+  // Chaque point de trajectoire EST une édition : on lui donne son adresse.
+  const hrefs = editionHrefs(editions);
   const [main, sideLeft, sideRight] = data.top3;
 
   // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
@@ -214,7 +350,25 @@ export async function UneDesUnesSection() {
   // l'en-tête (#edition-name) et la fraîcheur réelle dans « Dernière mise à
   // jour du module » en bas — le titre, lui, ne doit pas trahir un retard de
   // données. Partagé avec le ShareButton pour éviter toute divergence.
-  const sectionTitle = "Les Unes saillantes du moment";
+  // « au Québec » (demande d'Adrien, A9) : le module ne disait pas de quelle
+  // population il parlait, alors que son voisin « Deux solitudes » compare deux
+  // régions et que les niveaux affichés se situent parmi les Unes QUÉBÉCOISES.
+  // Le titre porte donc la même règle que les phrases de distribution.
+  // « L'actualité saillante » plutôt que « Les Unes saillantes » (Adrien,
+  // 2026-08-10, closes #307) : au pluriel, le titre PROMETTAIT des Unes, donc
+  // plusieurs. Les jours où le module n'en affiche qu'une, Yannick lisait un
+  // bug (« on dirait qu'il manque quelque chose ») alors que c'est le résultat
+  // normal d'une journée dominée par une seule histoire. Le singulier ne promet
+  // plus de compte, et l'infobulle ⓘ à côté du titre (SaillanceTip) dit
+  // explicitement pourquoi il varie.
+  // « du moment » est vrai de l'édition courante et faux de toutes les autres :
+  // sur une archive, le titre est le seul élément qui daterait le contenu à tort
+  // (la pastille de date, elle, porte déjà le bon jour). On retire donc les deux
+  // mots plutôt que d'affirmer un présent qui n'est plus (#434) — le reste du
+  // libellé approuvé en #307 est intact.
+  const sectionTitle = isArchive
+    ? "L'actualité saillante au Québec"
+    : "L'actualité saillante du moment au Québec";
 
   // L'anchor #une-des-unes + le data-section vivent sur le wrapper dans
   // app/page.tsx (convention PR #199) ; le module 2 « Deux solitudes » est une
@@ -250,15 +404,17 @@ export async function UneDesUnesSection() {
               event={main}
               secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
               generatedArtUrl={generatedArtUrl}
+              generatedArtSources={artSources}
               audioUrl={audioUrl}
+              hrefs={hrefs}
             />
           )}
         </section>
 
         {sideLeft && sideRight && (
           <section className="hero-secondaries">
-            <SideUne event={sideLeft} />
-            <SideUne event={sideRight} />
+            <SideUne event={sideLeft} hrefs={hrefs} />
+            <SideUne event={sideRight} hrefs={hrefs} />
           </section>
         )}
         <div className="module-last-updated">{data.lastUpdated}</div>

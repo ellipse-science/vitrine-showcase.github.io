@@ -100,10 +100,42 @@ demander : « ce texte reste-t-il vrai ? »
 
 | Changement | Doc à mettre à jour |
 |---|---|
-| Cron/horaire d'un raffineur (aws-infra `src/pipelines/`) | `horaire-refiners-2026.html` (+ § 02/§ 08 métho si la fréquence y est décrite) |
-| Nouveau raffineur, raffineur débranché, nouvelle table, colonnes structurantes | `workflow-vitrine-2025-swimlanes.html` |
+| Cron/horaire d'un raffineur (aws-infra `lib/data-stacks/refiners/refiners.ts`) | `horaire-refiners-2026.html` **et** `workflow-vitrine-2025-swimlanes.html` (attributs `data-cron`) (+ § 02/§ 08 métho si la fréquence y est décrite) |
+| Nouveau raffineur, raffineur débranché (`active:false`), nouvelle table, colonnes structurantes | `workflow-vitrine-2025-swimlanes.html` |
+| Raffineur **renommé** (ECR ou tables produites) | `workflow-vitrine-2025-swimlanes.html` — nœuds ET panneaux de détail |
 | Changement de modèle dans un raffineur (LLM, NER…) | `workflow-vitrine-2025-swimlanes.html` + section métho concernée |
+| Changement dans `scripts/tables.json` (table ou colonne ajoutée/retirée) | `workflow-vitrine-2025-swimlanes.html` — couloir Publication |
+| Changement dans `.github/workflows/refresh-data.yml` | `workflow-vitrine-2025-swimlanes.html` — couloir Publication |
 | Grille de blocs 4h | les deux diagrammes + § 08 métho |
+
+### ⚠️ Le piège du « aucun impact » (aws-infra#429)
+
+Le 2026-07-16, la PR qui a mis `vitrine-graph-data` en `active:false` a coché
+« aucun impact métho », avec pour justification : *« il n'est pas décrit dans
+la page Méthodologie publique »*. C'était vrai — et hors sujet : ce raffineur
+occupait **un couloir entier** des swimlanes. La page est restée fausse
+17 jours, en décrivant comme vivante une chaîne de publication morte.
+
+**Règle qui en découle : « métho » = TROIS documents.** Une justification
+d'absence d'impact qui ne parle que de `public/methodologie/index.html` est
+incomplète par construction — la refuser en review. Le libellé de la case dans
+le template exige maintenant de nommer les trois.
+
+### Le check mécanique `garde-swimlanes` (aws-infra)
+
+Depuis le 2026-08-02, chaque nœud des swimlanes qui correspond à un raffineur
+**AWS** porte `data-ecr` / `data-active` / `data-cron`. Les nœuds `[data-refiner]`
+hors AWS (`fetch-data`, `enrichissements-vitrine`) n'ont pas d'entrée dans
+`refiners.ts` : ils ne portent pas ces attributs et le check les ignore.
+Un job d'aws-infra compare ces
+attributs à `refiners.ts` (à chaque PR qui y touche, plus une passe
+quotidienne) et échoue à la première divergence : horaire faux, `active`
+faux, raffineur actif non documenté, ou horaire affiché qui ne correspond pas
+à `data-cron`. **Ce check ne dépend d'aucune case cochée** — c'est le seul
+garde-fou qui survit à un oubli humain. Format des jetons : `HH:MM` (heure de
+Montréal) ou `MON|TUE|WED|THU|FRI|SAT|SUN HH:MM`. Un raffineur dont le code
+existe mais qui n'a aucune entrée dans `refiners.ts` se déclare
+`data-active="unscheduled"`.
 
 ## Rôle d'exécuteur (Claude)
 

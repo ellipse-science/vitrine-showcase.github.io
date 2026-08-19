@@ -16,27 +16,55 @@ interface ShareButtonProps {
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
 // Réseaux ouverts en repli quand le navigateur ne supporte pas
-// navigator.share() (la plupart des navigateurs desktop). URL de partage
-// standard, sans dépendance externe.
+// navigator.share() (la plupart des navigateurs desktop), ou en complément
+// sur mobile. URL de partage standard, sans dépendance externe. `code` est le
+// badge affiché (façon tag d'annotation) plutôt qu'un logo — pas de couleurs
+// de marque dans le langage design du site.
 function networkLinks(title: string, url: string) {
   return [
-    { key: 'x', label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
-    { key: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
-    { key: 'linkedin', label: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
+    { key: 'x', code: 'X', label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
+    { key: 'facebook', code: 'FB', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+    { key: 'linkedin', code: 'IN', label: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
   ]
 }
 
+// PNG transparent 1×1 — sonde locale (aucun fetch réseau) pour tester si le
+// navigateur sait partager des fichiers (navigator.canShare) avant d'exposer
+// l'action Instagram. Le vrai visuel n'est récupéré qu'au moment du partage.
+const PROBE_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+
+async function canShareFiles(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') return false
+  try {
+    const res = await fetch(PROBE_PNG)
+    const blob = await res.blob()
+    const file = new File([blob], 'probe.png', { type: 'image/png' })
+    return navigator.canShare({ files: [file] })
+  } catch {
+    return false
+  }
+}
+
 // Icône seule (pas de libellé) pour rester discret dans les en-têtes de
-// module. navigator.share() ouvre la feuille native (mobile, et certains
-// navigateurs desktop) ; sinon un petit menu de réseaux s'ouvre — plutôt
-// qu'une simple copie de lien silencieuse, peu utile sur desktop.
+// module. Sur mobile capable de partager des fichiers, un tap ouvre le
+// panneau (choix entre le lien et la story Instagram) plutôt que de partager
+// le lien directement — les deux artefacts sont désormais distincts. Sinon,
+// navigator.share() du lien reste immédiat ; en dernier repli, le panneau
+// desktop s'ouvre.
 export function ShareButton({ title, anchor }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [igSupported, setIgSupported] = useState(false)
   const copiedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => () => clearTimeout(copiedTimeout.current), [])
+
+  useEffect(() => {
+    let cancelled = false
+    canShareFiles().then((supported) => { if (!cancelled) setIgSupported(supported) })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     if (!panelOpen) return
@@ -66,17 +94,47 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
     return `${window.location.origin}${basePath}/partage/${anchor}/`
   }
 
-  const handleClick = async () => {
-    const url = shareUrl()
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title, url })
-        return
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') return
-        // échec autre qu'une annulation — on retombe sur la copie du lien
+  const previewSrc = anchor ? `${basePath}/partage/${anchor}/opengraph-image` : undefined
+  // Pas de barre oblique finale : comme opengraph-image, cette route génère
+  // un fichier "story" (pas un dossier avec index), même sur GitHub Pages.
+  const storyUrl = () => `${window.location.origin}${basePath}/partage/${anchor}/story`
+
+  const shareLinkNatively = async () => {
+    try {
+      await navigator.share({ title, url: shareUrl() })
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      await copyLink(shareUrl())
+    }
+    setPanelOpen(false)
+  }
+
+  // Story verticale 1080×1920 (app/partage/[module]/story/route.tsx) plutôt
+  // que le lien : Instagram ne déballe pas les liens, la feuille de partage
+  // native est le seul chemin fiable vers Stories/Post/DM depuis le web.
+  const shareToInstagram = async () => {
+    try {
+      const res = await fetch(storyUrl())
+      const blob = await res.blob()
+      const file = new File([blob], `vitrine-${anchor}.png`, { type: 'image/png' })
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title })
       }
-      await copyLink(url)
+    } catch (err) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
+        // échec de récupération/partage — l'utilisateur reste sur le panneau
+      }
+    }
+    setPanelOpen(false)
+  }
+
+  const handleClick = async () => {
+    if (igSupported) {
+      setPanelOpen((v) => !v)
+      return
+    }
+    if (typeof navigator.share === 'function') {
+      await shareLinkNatively()
       return
     }
     setPanelOpen((v) => !v)
@@ -88,7 +146,7 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
         type="button"
         className={`share-btn${copied ? ' copied' : ''}`}
         onClick={handleClick}
-        aria-label={`Partager : ${title}`}
+        aria-label={`Partager : ${title}`}
         aria-expanded={panelOpen}
         title={copied ? 'Copié !' : 'Partager'}
       >
@@ -109,18 +167,40 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
 
       {panelOpen && (
         <div className="share-panel">
-          {networkLinks(title, shareUrl()).map((n) => (
-            <a
-              key={n.key}
-              href={n.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="share-panel-item"
-              onClick={() => setPanelOpen(false)}
-            >
-              {n.label}
-            </a>
-          ))}
+          {previewSrc && (
+            <div className="share-preview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewSrc} alt="" className="share-preview-img" />
+              <div className="share-preview-title">{title}</div>
+            </div>
+          )}
+
+          <div className="share-networks">
+            {networkLinks(title, shareUrl()).map((n) => (
+              <a
+                key={n.key}
+                href={n.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="share-network-btn"
+                aria-label={`Partager sur ${n.label}`}
+                onClick={() => setPanelOpen(false)}
+              >
+                {n.code}
+              </a>
+            ))}
+          </div>
+
+          {igSupported && (
+            <button type="button" className="share-panel-item" onClick={shareToInstagram}>
+              Partager sur Instagram
+            </button>
+          )}
+          {igSupported && (
+            <button type="button" className="share-panel-item" onClick={shareLinkNatively}>
+              Envoyer le lien…
+            </button>
+          )}
           <button
             type="button"
             className="share-panel-item"

@@ -11,7 +11,10 @@ export type VerdictSlug =
   | "en-suspens"
   | "rompue";
 
-export type Trend = { dir: "up" | "down" | "flat"; delta: number };
+// "flat" = rang inchangé (constat). "unknown" = pas de rang antérieur comparable
+// — période précédente non publiée, ou promesse entrante. Les confondre ferait
+// affirmer « aucun changement » là où l'on ne sait simplement pas.
+export type Trend = { dir: "up" | "down" | "flat" | "unknown"; delta: number };
 
 // The most recent article from a single outlet's coverage of a promise:
 // outlet name, headline, and a link to the piece.
@@ -51,7 +54,6 @@ export type PromiseView = {
   verdictLabel: string;
   category: string | null; // full French category name
   salienceIndex: number;
-  nMentions: number;
   url: string;
   trend: Trend;
   // One article per outlet that covered the promise — the most recent piece

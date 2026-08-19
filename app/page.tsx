@@ -5,17 +5,22 @@ import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
 import { DeuxSolitudesSection } from "@/components/sections/DeuxSolitudesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
-import { PulseCountdown } from "@/components/interactive/PulseCountdown";
+import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
+import { listEditions } from "@/lib/data/headlineEvents";
 
-export default function Home() {
+export default async function Home() {
+  // Les éditions consultables du snapshot (#434) : le bandeau de l'en-tête ne
+  // devine pas ce qui existe, il le reçoit.
+  const editions = await listEditions();
+
   return (
     <div className="page">
       <div data-section="En-tête">
         <RawMaquette chunk="top" />
       </div>
 
-      <div id="une-des-unes" data-section="Une des unes">
+      <div id="une-des-unes" data-section="Une des Unes">
         <UneDesUnesSection />
       </div>
 
@@ -43,7 +48,7 @@ export default function Home() {
         <RawMaquette chunk="bottom" />
       </div>
 
-      <PulseCountdown />
+      <EditionNav editions={editions} />
       <IssueReporter />
     </div>
   );

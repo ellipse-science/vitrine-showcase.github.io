@@ -47,12 +47,53 @@ export function formatDateFr(dateStr: string): string {
  */
 export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null): string {
   const parsed = parseIsoDate(dateStr);
-  if (!parsed) return "Dernière mise à jour du module : —";
+  if (!parsed) return "Dernière mise à jour du module : —"; // garde-redaction: ok (tiret = glyphe de donnée absente)
   const dateFr = formatDateFr(dateStr);
   const dateLower = dateFr.charAt(0).toLowerCase() + dateFr.slice(1);
   if (blockEndHour == null || Number.isNaN(blockEndHour)) {
-    return `Dernière mise à jour du module : ${dateLower}`;
+    return `Dernière mise à jour du module : ${dateLower}`;
   }
   const hourLabel = blockEndHour >= 24 ? "minuit" : `${blockEndHour}h`;
-  return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
+  return `Dernière mise à jour du module : ${dateLower}, ${hourLabel}`;
+}
+
+/**
+ * Heure de PUBLICATION à partir d'un intervalle de bloc « HH-HH » (réforme #195).
+ * Le bloc de données est servi ~1 h après sa fin → heure = fin + 1 h.
+ * Un bord de bloc à 24 (« 20-24 », legacy/UTC) EST déjà minuit : on le normalise
+ * à 0 avant +1, sinon 24+1=25 (≥ 24) réafficherait « minuit » au lieu de « 1h ».
+ * La valeur 24 (issue d'une fin à 23) reste 24 → « minuit » via lastUpdatedLabel.
+ * Retourne null si l'intervalle n'a pas de borne de fin numérique.
+ */
+export function publicationHourFromInterval(interval: string | null | undefined): number | null {
+  const blockEnd = parseInt((interval ?? "").split("-")[1] ?? "", 10);
+  return Number.isNaN(blockEnd) ? null : (blockEnd % 24) + 1;
+}
+
+/**
+ * Date de PUBLICATION à partir de la date de DÉBUT du bloc (`date_montreal_tz`)
+ * et de son intervalle. `date_montreal_tz` porte le jour où le bloc COMMENCE ;
+ * l'heure de publication (fin + 1 h, cf. `publicationHourFromInterval`) tombe
+ * un jour plus tard dès que le bloc traverse minuit — soit qu'il « wrap »
+ * (« 23-03 » : fin < début) soit en légacy (« 20-24 » : fin = 24). Sans ce
+ * décalage, `lastUpdatedLabel` affiche un jour de retard : un bloc « 23-03 »
+ * daté du 6 août, publié à 4h, s'affichait « 6 août, 4h » au lieu de
+ * « 7 août, 4h ». Retourne `dateStr` inchangé si l'intervalle est invalide ou
+ * ne traverse pas minuit.
+ */
+export function publicationDateFromInterval(
+  dateStr: string,
+  interval: string | null | undefined,
+): string {
+  const parsed = parseIsoDate(dateStr);
+  if (!parsed) return dateStr;
+  const parts = (interval ?? "").split("-");
+  const start = parseInt(parts[0] ?? "", 10);
+  const end = parseInt(parts[1] ?? "", 10);
+  if (Number.isNaN(start) || Number.isNaN(end)) return dateStr;
+  const crossesMidnight = end === 24 || end < start;
+  if (!crossesMidnight) return dateStr;
+  const next = new Date(parsed.y, parsed.m - 1, parsed.d + 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
 }

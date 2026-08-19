@@ -19,6 +19,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { lastUpdatedLabel } from "@/lib/dates";
+import { readDatasetText } from "@/lib/data/source";
 import type {
   ArticleRef,
   PolimetreData,
@@ -37,6 +38,10 @@ export type {
   VerdictSlug,
 } from "@/lib/data/polimetre-meta";
 
+/** Chemin tel qu'il figure dans scripts/tables.json : c'est la clé qui permet
+ *  à lib/data/source.ts de servir ce jeu depuis l'API plutôt que du disque. */
+const POLIMETRE_DATASET = "public/data/refined/week/polimetre_plus.json";
+
 const POLIMETRE_JSON_PATH = path.resolve(
   process.cwd(),
   "public",
@@ -48,6 +53,14 @@ const POLIMETRE_JSON_PATH = path.resolve(
 
 // Number of weekly snapshots rolled up into the "month" view.
 const MONTH_WEEKS = 4;
+
+// Snapshots are selected by DATE, never by row position — see snapshotWindow().
+const DAY_MS = 86_400_000;
+const WEEK_DAYS = 7;
+// How far a snapshot may sit from its nominal stride and still stand in for it.
+// Disjointness does NOT follow from this bound — two picks 3 days off in
+// opposite directions would land a day apart — so it is enforced separately.
+const SNAPSHOT_TOLERANCE_DAYS = 3;
 
 // French verdict label (from mastersheet_Promesses) → CSS/aria slug.
 const VERDICT_SLUG: Record<string, VerdictSlug> = {
@@ -216,21 +229,27 @@ type Row = {
   week_end_date: string;
   pledge_number: string;
   pledge_text_fr: string;
-  pledge_en: string;
   verdict: string;
   category: string; // full French category name
   salience_index: number;
   previous_salience_index: number;
   delta_index: number;
-  rank_current: number;
-  rank_delta: number;
-  n_mentions: number;
+  // rank_current, rank_delta et n_mentions sont ABSENTES à dessein : le raffineur
+  // les sérialise en INT32 alors que le catalogue Glue les déclare double, ce qui
+  // rend la table illisible pour toute requête qui les projette (HIVE_BAD_DATA).
+  // Aucune n'était lue — les rangs sont recalculés ici (indispensable : la vue
+  // « mois » agrège plusieurs snapshots et reclasse), et n_mentions n'était
+  // affichée nulle part. Les exclure met la Vitrine à l'abri de cette dérive de
+  // façon permanente, indépendamment de l'état du raffineur. Cf. tables.json.
   titles: string;
   urls: string;
+  pledge_short_fr?: string; // AI short label; literal "NA" when LLM unavailable
+  coverage_summary_week?: string; // AI weekly summary; literal "NA" when unavailable
+  coverage_summary_month?: string; // AI monthly summary; literal "NA" when unavailable
   articles?: string; // JSON array of {media_id, title, url}; absent pre-redeploy
 };
 
-type Agg = { salience: number; nMentions: number; row: Row };
+type Agg = { salience: number; row: Row };
 
 // Strip Polimètre quoting artefacts («», [], surrounding quotes).
 function cleanText(s: string | null | undefined): string {
@@ -241,6 +260,15 @@ function cleanText(s: string | null | undefined): string {
     .trim()
     .replace(/^["']+|["']+$/g, "")
     .trim();
+}
+
+// The refiner writes the literal string "NA" (not null) when the LLM enrichment
+// (AI short label, AI coverage summary) is unavailable — e.g. the infer-api is
+// down during a run. Treat "NA"/empty as "no value" so the title and summary
+// fall back gracefully instead of showing a literal "NA".
+function realText(s: string | null | undefined): string | null {
+  const t = (s ?? "").trim();
+  return t && t.toUpperCase() !== "NA" ? t : null;
 }
 
 // Build a short, unique display title from the full pledge text: drop the
@@ -270,10 +298,9 @@ function aggregateWeeks(rows: Row[], weeks: Set<string>): Map<string, Agg> {
     if (!weeks.has(r.week_end_date)) continue;
     const cur = out.get(r.pledge_number);
     if (!cur) {
-      out.set(r.pledge_number, { salience: r.salience_index, nMentions: r.n_mentions, row: r });
+      out.set(r.pledge_number, { salience: r.salience_index, row: r });
     } else {
       cur.salience += r.salience_index;
-      cur.nMentions += r.n_mentions;
       if (r.week_end_date > cur.row.week_end_date) cur.row = r;
     }
   }
@@ -296,27 +323,28 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     .map(([num, a]): PromiseView => {
       const currRank = currentRanks.get(num) ?? 0;
       const before = prevRanks.get(num);
-      const movement = before == null ? 0 : before - currRank; // up = gained positions
+      const movement = before == null ? null : before - currRank; // up = gained positions
       const trend: Trend =
-        movement > 0
-          ? { dir: "up", delta: movement }
-          : movement < 0
-            ? { dir: "down", delta: -movement }
-            : { dir: "flat", delta: 0 };
+        movement == null
+          ? { dir: "unknown", delta: 0 }
+          : movement > 0
+            ? { dir: "up", delta: movement }
+            : movement < 0
+              ? { dir: "down", delta: -movement }
+              : { dir: "flat", delta: 0 };
 
       const r = a.row;
       const category = (r.category ?? "").trim();
 
       return {
         pledgeNumber: num,
-        title: shortenPledge(r.pledge_text_fr),
+        title: realText(r.pledge_short_fr) ?? shortenPledge(r.pledge_text_fr),
         fullTitle: cleanText(r.pledge_text_fr),
-        summary: null, // résumé AI à venir
+        summary: realText(currentWeeks.length > 1 ? r.coverage_summary_month : r.coverage_summary_week),
         verdict: VERDICT_SLUG[r.verdict] ?? null,
         verdictLabel: r.verdict ?? "",
         category: category || null,
         salienceIndex: a.salience,
-        nMentions: a.nMentions,
         url: `https://polimeter.org/fr/legault/${num}`,
         trend,
         articles: pickArticlesByMedia(r),
@@ -325,17 +353,81 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
 }
 
-export async function loadPolimetre(): Promise<PolimetreData | null> {
+function shiftDays(date: string, delta: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + delta * DAY_MS).toISOString().slice(0, 10);
+}
+
+function daysApart(a: string, b: string): number {
+  return Math.abs(Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / DAY_MS));
+}
+
+// Snapshot nearest `target`, or null when the closest one is further away than
+// SNAPSHOT_TOLERANCE_DAYS — a missing run must yield a hole, not a stand-in
+// borrowed from an adjacent stride. Candidates at less than WEEK_DAYS before
+// `floor` are rejected outright: a snapshot covers the 7 days ending on its own
+// date, so anything closer than that overlaps the pick already made.
+function nearestSnapshot(weeks: string[], target: string, floor: string | null): string | null {
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const w of weeks) {
+    if (floor !== null && daysApart(floor, w) < WEEK_DAYS) continue;
+    if (floor !== null && w > floor) continue;
+    const d = daysApart(w, target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = w;
+    }
+  }
+  return best !== null && bestDist <= SNAPSHOT_TOLERANCE_DAYS ? best : null;
+}
+
+// Walk back from `anchor` in 7-day strides, keeping the snapshot nearest each
+// one. Selecting by date rather than by row position is what keeps the rolled-up
+// windows disjoint whatever the publication cadence: the refiner publishes a
+// 7-day ROLLING window per run (current_week_start = week_end_date - 6), so
+// consecutive daily snapshots overlap by six days. Summing those — which taking
+// the last N rows did — counted the same coverage up to N times and collapsed
+// the week-over-week trend to a comparison between two near-identical windows.
+// `offsetWeeks` shifts the whole walk back; `floor` seeds it with a pick made by
+// an earlier walk, so the preceding window stays disjoint from the current one
+// and the trend compares two genuinely separate periods.
+function snapshotWindow(
+  weeks: string[],
+  anchor: string,
+  count: number,
+  offsetWeeks = 0,
+  floor: string | null = null,
+): string[] {
+  const picked: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const hit = nearestSnapshot(weeks, shiftDays(anchor, -(offsetWeeks + i) * WEEK_DAYS), floor);
+    if (hit) {
+      picked.push(hit);
+      floor = hit;
+    }
+  }
+  return picked;
+}
+
+// Exported for unit testing only — not part of the public API.
+export const __test__ = { realText, shortenPledge, buildView, snapshotWindow };
+
+export async function loadPolimetre(
+  /** Édition passée (#434) : jour de publication de l'édition affichée. Le
+   *  Polimètre+ publie un instantané par SEMAINE — même remarque de cadence. */
+  asOfIso?: string,
+): Promise<PolimetreData | null> {
   let raw: string;
   try {
-    raw = await fs.readFile(POLIMETRE_JSON_PATH, "utf8");
+    raw = await readDatasetText(POLIMETRE_DATASET);
   } catch {
     return null; // refiner has not published yet
   }
 
   let rows: Row[];
   try {
-    rows = (JSON.parse(raw) as Row[]).filter((r) => r && r.country_id === "QC");
+    rows = (JSON.parse(raw) as Row[]).filter((r) =>
+      r && r.country_id === "QC" && (!asOfIso || String(r.week_end_date ?? "") <= asOfIso));
   } catch {
     return null;
   }
@@ -344,9 +436,16 @@ export async function loadPolimetre(): Promise<PolimetreData | null> {
   const weeks = Array.from(new Set(rows.map((r) => r.week_end_date))).sort();
   const latestWeek = weeks[weeks.length - 1];
 
+  const weekCurrent = snapshotWindow(weeks, latestWeek, 1);
+  const monthCurrent = snapshotWindow(weeks, latestWeek, MONTH_WEEKS);
+
   const ranges: Record<RangeKey, PromiseView[]> = {
-    week: buildView(rows, weeks.slice(-1), weeks.slice(-2, -1)),
-    month: buildView(rows, weeks.slice(-MONTH_WEEKS), weeks.slice(-2 * MONTH_WEEKS, -MONTH_WEEKS)),
+    week: buildView(rows, weekCurrent, snapshotWindow(weeks, latestWeek, 1, 1, weekCurrent.at(-1) ?? null)),
+    month: buildView(
+      rows,
+      monthCurrent,
+      snapshotWindow(weeks, latestWeek, MONTH_WEEKS, MONTH_WEEKS, monthCurrent.at(-1) ?? null),
+    ),
   };
 
   if (ranges.week.length === 0 && ranges.month.length === 0) return null;
