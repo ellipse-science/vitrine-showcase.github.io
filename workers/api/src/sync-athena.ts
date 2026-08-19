@@ -93,7 +93,17 @@ async function fetchTableRows(
   spec: TableSpec,
 ): Promise<(string | null)[][]> {
   const colList = spec.cols.map(quoteIdent).join(', ')
-  const id = await athena.start(`SELECT ${colList} FROM ${quoteIdent(spec.athena)}`)
+  // La fenêtre headline est poussée DANS Athena : rapatrier la table entière
+  // (4669 lignes aux blobs d'articles) dépassait les ressources du Worker
+  // (erreur 1102 constatée) ; filtrée à la source, il reste ~770 lignes.
+  // Le filtre JS en aval reste comme ceinture et bretelles.
+  const where =
+    spec.filter === 'headline_events_window'
+      ? ` WHERE ${quoteIdent('date_utc')} >= date_add('day', -${HEADLINE_KEEP_DAYS}, current_date)`
+      : ''
+  const id = await athena.start(
+    `SELECT ${colList} FROM ${quoteIdent(spec.athena)}${where}`,
+  )
   await athena.waitUntilDone(id)
 
   const rows: (string | null)[][] = []
