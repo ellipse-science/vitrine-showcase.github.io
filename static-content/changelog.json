@@ -1,5 +1,11 @@
 [
   {
+    "pr": 497,
+    "date": "2026-08-19T18:08:01Z",
+    "note": "Les portraits des député·es se mettent désormais à jour tout seuls, une fois par jour. Après une élection partielle, la photo du nouvel élu remplace celle de son prédécesseur sans intervention manuelle.",
+    "version": null
+  },
+  {
     "pr": 532,
     "date": "2026-08-19T18:01:34Z",
     "note": "Aucun changement pour le site : correctifs internes de la chaîne de données.",
