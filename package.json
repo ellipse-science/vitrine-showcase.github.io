@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/fetch_art.mjs",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "garde-redaction": "node scripts/garde_redaction.mjs",
-    "select-hero": "npx --yes tsx@4 scripts/select_hero.ts"
+    "garde-redaction": "node scripts/garde_redaction.mjs"
   },
   "dependencies": {
     "next": "16.3.0",

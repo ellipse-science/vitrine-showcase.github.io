@@ -29,9 +29,10 @@ import { runSync } from './sync'
 import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
+import { handleArt, type ArtEnv } from './art'
 import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
 
-interface Env extends SyncAthenaEnv {
+interface Env extends SyncAthenaEnv, ArtEnv {
   DATABASE_URL: string
   /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string
@@ -208,8 +209,12 @@ export default {
       return res
     }
 
+    // /v1/art accepte PUT (téléversement du raffineur) et POST (publish) : il
+    // doit être exempté du garde 405 global, comme les routes de synchro —
+    // la leçon du 2026-08-19, où le garde avalait POST /v1/sync-athena.
     const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
-    if (!isSync && request.method !== 'GET' && request.method !== 'HEAD') {
+    const isArt = seg[0] === 'v1' && seg[1] === 'art'
+    if (!isSync && !isArt && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
@@ -325,6 +330,12 @@ export default {
         )
       }
 
+      // /v1/art/* — l'illustration de la Une des unes (R2). Lecture publique,
+      // écriture sous clé `sync`, publication conditionnelle. Cf. art.ts.
+      if (segments[0] === 'v1' && segments[1] === 'art') {
+        return handleArt(request, env, ctx, sql, segments[2] ?? '')
+      }
+
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
@@ -438,7 +449,7 @@ export default {
             version: 'v1',
             description:
               "Indicateurs dérivés de la couverture médiatique et des discours politiques au Québec.",
-            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}'],
+            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}', '/v1/art/latest.{png,webp,avif,json}'],
             note: "Version de lecture, sans authentification. Les clés d'API viendront avec l'offre payante.",
           },
           {},

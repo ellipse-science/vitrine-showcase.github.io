@@ -29,6 +29,12 @@ ATHENA_REGION = "ca-central-1"
 ATHENA_DATABASE = "gluestackdatamartdbd046f685"
 ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3/"
 
+# L'illustration de la Une des unes (routes /v1/art, src/art.ts). Le bucket
+# est créé une fois : npx wrangler r2 bucket create vitrine-art
+[[r2_buckets]]
+binding = "ART_BUCKET"
+bucket_name = "vitrine-art"
+
 # Secrets à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
 #   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena)

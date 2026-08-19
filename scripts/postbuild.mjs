@@ -69,6 +69,13 @@ async function substituteVersion() {
 // out/data/ » et rien d'autre. Tout actif non-JSON survit par construction —
 // latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
 // d'image plus tard ne demande aucune retouche ici.
+//
+// UNE exception nommée : hero-selection.json, le verdict de Une publié par
+// app/data/hero-selection.json/route.ts. Le raffineur vitrine-art le lit sur
+// le site déployé pour savoir QUOI illustrer — et ce n'est pas une donnée
+// vendue : c'est la Une déjà affichée en page d'accueil.
+const PRUNE_KEEP = new Set(["hero-selection.json"]);
+
 async function pruneDataJson() {
   const dataDir = path.join(OUT_DIR, "data");
   let removed = 0;
@@ -82,6 +89,7 @@ async function pruneDataJson() {
   }
 
   for await (const file of filesWithSuffix(dataDir, ".json")) {
+    if (PRUNE_KEEP.has(path.basename(file))) continue;
     bytes += (await stat(file)).size;
     await rm(file);
     removed++;
