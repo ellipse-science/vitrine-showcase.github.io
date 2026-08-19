@@ -1,5 +1,11 @@
 [
   {
+    "pr": 527,
+    "date": "2026-08-19T14:32:35Z",
+    "note": "Le site tire maintenant ses données par un chemin plus direct et plus fiable, indépendant des services qui tombaient en panne.",
+    "version": null
+  },
+  {
     "pr": 526,
     "date": "2026-08-19T13:56:57Z",
     "note": "Aucun changement pour le site : document interne de vision.",
