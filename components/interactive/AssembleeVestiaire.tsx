@@ -26,14 +26,20 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 // guise d'écusson, enjeu dominant en guise de position. Le portrait est un
 // duotone redressé (scripts/build_deputy_cards.py).
 
-// Garde-fou d'affichage sur le concept distinctif AU NIVEAU DU PARTI. Le
-// raffineur déployé y produit encore des mots-outils : sur les douze valeurs
-// publiées, on trouve « the », « and », « considérant » et « cède » (extrait de
-// « je cède la parole »). Un mot-outil n'est pas un concept, et le publier tel
-// quel n'apprendrait rien à personne.
-// Ce filtre ne rattrape QUE les cas indiscutables. Il ne peut rien contre
-// « cède » ni contre « bérubé » (le nom d'un député) : la vraie correction est
-// dans le raffineur, pas ici.
+// Garde-fou d'affichage, VOLONTAIREMENT MINIMAL. Le nettoyage réel vit dans
+// le raffineur (aws-refiners, `refiners/agora-decideurs-qc/runtime.R`), qui
+// depuis le 2026-07-29 nettoie le corpus AVANT le calcul TF-IDF :
+// `strip_speaker_tag()` retire les étiquettes « M. Tanguay : » (la cause du
+// mot distinctif « tanguay » chez Marc Tanguay), `build_name_exclusions()`
+// écarte les noms d'élus et les sigles de partis, et STOPWORDS_FR /
+// STOPWORDS_EN / PROCEDURAL_TERMS couvrent « the », « cède », « considérant ».
+//
+// Ne PAS réimplémenter ces règles ici. Filtrer la sortie après coup est plus
+// faible que nettoyer le corpus en amont (le mot écarté laisse alors la place
+// au suivant, au lieu de laisser un trou), et deux listes concurrentes
+// divergent. Ce Set ne reste qu'en filet pour un JSON antérieur au correctif :
+// un snapshot de `public/data/agora/` plus ancien que le dernier passage du
+// raffineur contient encore ces valeurs.
 const MOTS_OUTILS = new Set([
   "the", "and", "of", "to", "for", "with", "that", "this",
   "le", "la", "les", "des", "une", "un", "du", "de", "et", "ou",
@@ -47,11 +53,52 @@ function conceptPubliable(mot?: string): string | undefined {
 }
 
 // L'intitulé seul ne dit pas d'où vient la distinction. Le calcul retient
-// l'expression bien plus fréquente ici qu'ailleurs, pas la plus fréquente dans
-// l'absolu : on l'écrit sous le concept plutôt que de laisser deviner.
+// l'expression bien plus fréquente dans CE sous-ensemble (un.e député.e, un
+// parti) que dans le reste de l'Assemblée, pas la plus fréquente dans
+// l'absolu. Le premier jet disait « ici qu'ailleurs » sans préciser ici-QUOI :
+// on nomme donc la base de comparaison. Formulation NEUTRE en genre, la même
+// pour les 125 sièges : la carte ne connaît pas le genre de la personne.
 // « Concept » et non « mot » : l'extraction produit des expressions d'un OU
 // deux mots, et c'est le terme retenu par le raffineur et par la méthodologie.
-const GLOSE_CONCEPT = "Bien plus fréquent ici qu'ailleurs à l'Assemblée.";
+//
+// Ces gloses restent COURTES et VISIBLES en permanence. Une carte finit
+// imprimée (tirage impression dans images/deputes/cartes/, cf. assemblee.ts) :
+// tout ce qui n'existe qu'au survol disparaît du carton, et ne s'atteint pas
+// non plus au doigt sur mobile. Rien d'essentiel ne se cache derrière un
+// survol.
+function conceptGlose(sujet: "deputy" | "party"): string {
+  return sujet === "party"
+    ? "Mot bien plus fréquent que chez les autres partis."
+    : "Mot bien plus fréquent que chez les autres élu.es.";
+}
+
+// Bloc du concept distinctif, partagé par la carte de député et le tiroir de
+// parti. Tout est VISIBLE en permanence : pas de survol, pas de repli.
+//
+// Le premier jet cachait la glose et la citation derrière une pastille ⓘ au
+// survol, pour gagner de la place. Deux raisons de revenir en arrière : une
+// carte finit imprimée (un survol n'existe pas sur du carton), et un doigt
+// sur mobile ne survole rien non plus. La place se gagne donc en écrivant
+// plus court, pas en cachant.
+//
+// La citation fait le gros du travail d'explication : elle montre le mot en
+// situation, ce qu'aucune glose ne remplace. Elle passe donc avant la
+// mécanique du calcul dans la hiérarchie visuelle.
+function ConceptBloc({ concept, glose, citation }: {
+  concept: string;
+  glose: string;
+  citation?: string;
+}) {
+  return (
+    <>
+      <span className="concept-mot">{concept}</span>
+      {citation && (
+        <span className="concept-citation">«&nbsp;{citation}&nbsp;»</span>
+      )}
+      <i className="concept-glose">{glose}</i>
+    </>
+  );
+}
 
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
@@ -219,13 +266,11 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
           {concept && (
             <span className="carte-v-bloc bloc-concept">
               <span className="carte-v-titre">Concept distinctif</span>
-              <span className="carte-v-concept">{concept}</span>
-              <span className="carte-v-glose">{GLOSE_CONCEPT}</span>
-              {deputy.signatureWordContext && (
-                <span className="carte-v-citation">
-                  «&nbsp;{deputy.signatureWordContext}&nbsp;»
-                </span>
-              )}
+              <ConceptBloc
+                concept={concept}
+                glose={conceptGlose("deputy")}
+                citation={deputy.signatureWordContext}
+              />
             </span>
           )}
 
@@ -336,7 +381,10 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
   rows: AssembleeRow[];
   shadowRows: AssembleeRow[];
 }) {
-  const [openParty, setOpenParty] = useState<PartyKey | null>(null);
+  // Le banc est trié par interventions décroissantes (buildPeriodView) : le
+  // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
+  // défaut plutôt que de laisser le tiroir vide au premier coup d'œil.
+  const [openParty, setOpenParty] = useState<PartyKey | null>(rows[0]?.key ?? null);
   const [flipped, setFlipped] = useState<string | null>(null);
 
   // Une seule échelle de ton pour tout le module : les positions ne veulent
@@ -353,6 +401,7 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
   const openRow = rows.find((r) => r.key === openParty) ?? null;
   const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
   const deputies = openRow?.deputies ?? [];
+  const partyConcept = conceptPubliable(openRow?.signatureWord);
 
   // Échap referme le tiroir : réflexe attendu de tout panneau qui se déroule.
   useEffect(() => {
@@ -407,6 +456,20 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
               elle vit dans le tiroir et non sur une porte de casier. */}
           {openRow.editorialAngle && (
             <p className="tiroir-angle">{openRow.editorialAngle}</p>
+          )}
+
+          {/* Concept distinctif agrégé au niveau du parti (TF-IDF inter-partis,
+              cf. AssembleeRow.signatureWord) — distinct du concept par député,
+              qui compare chaque élu.e au reste de l'Assemblée. */}
+          {partyConcept && (
+            <p className="tiroir-concept">
+              <span className="tiroir-concept-titre">Concept distinctif du parti</span>
+              <ConceptBloc
+                concept={partyConcept}
+                glose={conceptGlose("party")}
+                citation={openRow.signatureWordContext}
+              />
+            </p>
           )}
 
           {deputies.length > 0 ? (
