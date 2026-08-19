@@ -3,7 +3,7 @@
 // balises Open Graph/Twitter, faute de quoi les réseaux sociaux ignorent le
 // fragment #module et affichent tous la carte globale du site (#209).
 
-import { loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
+import { listEditions, loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
 import { loadParties } from "@/lib/data/parties";
 import { loadAssemblee } from "@/lib/data/assemblee";
 import { loadPolimetre } from "@/lib/data/polimetre";
@@ -107,11 +107,52 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
   },
 };
 
-export async function getShareModuleContent(slug: ShareModuleSlug): Promise<ShareModuleContent> {
+// ÉDITIONS PASSÉES (#265, sur les rails de #434). Une carte de partage doit
+// pouvoir montrer la Vitrine TELLE QU'ELLE ÉTAIT : partager le module depuis
+// /edition/2026-08-10T07/ et publier le chiffre d'aujourd'hui produirait une
+// carte qui contredit la page qu'elle annonce.
+//
+// Les deux coordonnées ne sont pas interchangeables, et c'est une propriété de
+// la DONNÉE : les modules 1, 2 et 4 sortent de l'instantané 4 h et se rejouent
+// au BLOC près (`key`) ; les modules 3, 5 et 6 sont publiés au jour ou à la
+// semaine et se rejouent à leur cadence (`navDateIso`). C'est exactement le
+// découpage qu'applique déjà app/edition/[key]/page.tsx.
+export type ShareEdition = {
+  /** Clé de bloc, aussi segment d'URL (« 2026-08-10T07 »). */
+  key: string;
+  /** Jour de publication de l'édition, pour les modules au jour/semaine. */
+  navDateIso: string;
+  /** « Édition du matin ». */
+  label: string;
+  /** « mardi 19 août 2026 ». */
+  dateLabel: string;
+};
+
+// Les éditions PARTAGEABLES sont exactement celles que le site expose déjà
+// (`listEditions`), jamais une liste parallèle : une carte pointant vers une
+// édition qu'on ne peut pas ouvrir serait un lien mort. La fenêtre est bornée
+// par l'instantané roulant, donc le nombre de cartes à générer l'est aussi.
+export async function listShareEditions(): Promise<ShareEdition[]> {
+  const editions = await listEditions();
+  return editions.map(({ key, navDateIso, label, dateLabel }) => ({ key, navDateIso, label, dateLabel }));
+}
+
+/** Pied de carte d'archive : « Édition du matin, mardi 19 août 2026 ». */
+export function shareEditionLabel(edition: ShareEdition): string {
+  return `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
+}
+
+export async function getShareModuleContent(
+  slug: ShareModuleSlug,
+  /** Absent = édition courante, exactement comme les loaders. */
+  edition?: ShareEdition,
+): Promise<ShareModuleContent> {
   const fallback = STATIC_CONTENT[slug];
+  const editionKey = edition?.key;
+  const asOfIso = edition?.navDateIso;
 
   if (slug === "une-des-unes") {
-    const top = (await loadHeadlineEvents())?.top3[0];
+    const top = (await loadHeadlineEvents(editionKey))?.top3[0];
     if (top) {
       return {
         title: fallback.title,
@@ -131,7 +172,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "deux-solitudes") {
-    const data = await loadHeadlineEvents();
+    const data = await loadHeadlineEvents(editionKey);
     if (data) {
       // La carte reprend le grand chiffre du module (écart à l'habituel), et
       // pas un niveau absolu dans un vocabulaire qui basculait selon la
@@ -157,7 +198,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "partis-et-couverture") {
-    const parties = await loadParties();
+    const parties = await loadParties(asOfIso);
     const leader = parties?.ranges.today.rows[0];
     // `indisponible` est décisif ICI en particulier : une carte de partage ne
     // peut pas porter le bandeau qui nuance le module, et elle parle au présent
@@ -193,7 +234,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "enjeux-saillants") {
-    const tiles = (await loadTreemap())?.day.tiles;
+    const tiles = (await loadTreemap(editionKey, asOfIso))?.day.tiles;
     const top = tiles?.[0];
     const total = tiles?.reduce((sum, t) => sum + t.score, 0) ?? 0;
     if (top && total > 0) {
@@ -214,7 +255,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "assemblee-nationale") {
-    const row = (await loadAssemblee())?.periods.session.rows[0];
+    const row = (await loadAssemblee(asOfIso))?.periods.session.rows[0];
     const topIssue = row?.enjeuStack?.[0];
     if (row && !row.inShadow && topIssue) {
       // `title` porte le nom complet de l'enjeu (« Gouvernements et
@@ -239,7 +280,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "polimetre-plus") {
-    const polimetre = await loadPolimetre();
+    const polimetre = await loadPolimetre(asOfIso);
     const monthPromises = polimetre?.ranges.month;
     const verdicted = monthPromises?.filter((p) => p.verdict !== null) ?? [];
     if (verdicted.length > 0) {
