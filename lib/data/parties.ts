@@ -1051,56 +1051,61 @@ function chiffresParlants(
  *  treizième sujet. */
 export const SANS_ENJEU = "Aucun enjeu identifié";
 
-/** Les enjeux CAP, de l'identifiant technique au libellé français.
+/** Les 21 têtes CAP fines, agrégées en 12 catégories, puis nommées.
  *
- *  Le raffineur publie la clé du modèle (`public_lands`, `foreign_trade`), pas
- *  un libellé : `radar-data-preparation` DÉCOUVRE ses têtes de classification
- *  auprès de l'API INFER (`startsWith(id, "cap_theme_")`) au lieu de travailler
- *  sur une liste figée. La traduction appartient donc au site.
+ *  L'AGRÉGATION N'EST PAS DE MON INVENTION : elle est reprise telle quelle de
+ *  `THEME_TO_CATEGORY`, identique dans `radar-issues-score/runtime.R` et
+ *  `agora-decideurs-qc/runtime.R`. Les recopier plutôt que d'en imaginer une
+ *  autre est ce qui garde ce module comparable aux enjeux saillants et à
+ *  l'Assemblée : trois modules qui découperaient l'actualité différemment ne se
+ *  liraient plus ensemble.
  *
- *  ⚠️ GRANULARITÉ FINE, ET C'EST DÉLIBÉRÉ. Ce sont les catégories majeures du
- *  Comparative Agendas Project, plus fines que les douze catégories du guide de
- *  rédaction — lesquelles en sont une agrégation (« Économie et travail »
- *  regroupe macroéconomie, travail, commerce intérieur et commerce extérieur).
- *  Agréger ici demanderait de trancher quelle tête fine tombe dans quelle
- *  catégorie, ce qui est une décision méthodologique et non un travail
- *  d'affichage. En attendant cet arbitrage d'équipe, on nomme fidèlement ce que
- *  la donnée contient plutôt que de la ranger dans des cases devinées.
+ *  Elle tranche notamment deux cas qui n'ont pas de catégorie évidente :
+ *  `transportation` et `housing` sont rattachés à « Culture et nationalisme ».
+ *  Surprenant, mais c'est la convention en place — la changer ici la ferait
+ *  diverger des deux autres raffineurs en silence.
+ *
+ *  Les libellés viennent du dictionnaire `CAP_ISSUES` de `radar-event-salience`,
+ *  qui note : « les libellés FR sont ceux du Polimètre […] c'est la seule
+ *  orthographe publiée côté Vitrine, tous modules confondus. Ne pas les
+ *  reformuler. »
  */
-const ENJEU_LABELS: Record<string, string> = {
-  macroeconomics: "Macroéconomie",
-  labor: "Travail et emploi",
-  domestic_commerce: "Commerce intérieur",
-  foreign_trade: "Commerce extérieur",
-  health: "Santé",
-  social_welfare: "Politiques sociales",
-  education: "Éducation",
-  environment: "Environnement",
-  energy: "Énergie",
-  agriculture: "Agriculture",
-  public_lands: "Terres publiques",
+const THEME_VERS_CATEGORIE: Record<string, string> = {
+  macroeconomics: "Économie et travail",
+  labor: "Économie et travail",
+  domestic_commerce: "Économie et travail",
+  foreign_trade: "Économie et travail",
+  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
+  health: "Santé et politiques sociales",
+  social_welfare: "Santé et politiques sociales",
+  public_lands: "Terres publiques et agriculture",
+  agriculture: "Terres publiques et agriculture",
   immigration: "Immigration",
+  education: "Éducation",
+  environment: "Environnement et énergie",
+  energy: "Environnement et énergie",
   law_and_crime: "Loi et crime",
-  rights_liberties_minorities_discrimination: "Droits et libertés",
-  defense: "Défense",
-  international_affairs: "Affaires internationales",
-  governments_governance: "Gouvernements et gouvernance",
+  international_affairs: "Affaires internationales et défense",
+  defense: "Affaires internationales et défense",
   technology: "Technologie",
+  governments_governance: "Gouvernements et gouvernance",
   culture_nationalism: "Culture et nationalisme",
-  transportation: "Transports",
-  housing: "Logement",
+  transportation: "Culture et nationalisme",
+  housing: "Culture et nationalisme",
 };
 
-/** Le libellé d'un enjeu, tolérant à une clé inconnue.
+/** La catégorie d'affichage d'une tête CAP, tolérante à une clé inconnue.
  *
- *  La liste des modèles étant découverte à l'exécution, une tête ajoutée en
- *  amont arriverait ici sans traduction. On la rend lisible (tirets bas en
- *  espaces, initiale en capitale) plutôt que d'afficher une clé brute ou, pire,
- *  de la jeter : un enjeu absent fausserait les parts, qui doivent sommer à 1.
+ *  La liste des modèles est DÉCOUVERTE à l'exécution par
+ *  `radar-data-preparation` (`startsWith(id, "cap_theme_")`), jamais figée : une
+ *  tête ajoutée en amont arriverait ici sans correspondance. On la rend lisible
+ *  plutôt que d'afficher une clé brute ou, pire, de la jeter — un enjeu absent
+ *  fausserait les parts, qui doivent sommer à 1. Elle apparaîtra alors comme une
+ *  treizième catégorie, ce qui est un signal utile : il manque une entrée.
  */
 export function libelleEnjeu(cle: string): string {
   if (cle === SANS_ENJEU) return cle;
-  const connu = ENJEU_LABELS[cle];
+  const connu = THEME_VERS_CATEGORIE[cle];
   if (connu) return connu;
   const brut = cle.replace(/_/g, " ").trim();
   return brut.charAt(0).toUpperCase() + brut.slice(1);

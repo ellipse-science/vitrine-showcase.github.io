@@ -300,22 +300,34 @@ files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday])
 // « Aucun enjeu identifié » est en revanche déjà un libellé : c'est le raffineur
 // qui le pose, pour les phrases qui nomment un parti sans qu'aucun modèle CAP ne
 // franchisse son seuil.
+// Des têtes qui FUSIONNENT volontairement : `macroeconomics` + `labor` +
+// `foreign_trade` tombent tous dans « Économie et travail », `health` +
+// `social_welfare` dans « Santé et politiques sociales », `international_affairs`
+// + `defense` dans « Affaires internationales et défense ». Sans elles,
+// l'agrégation des 21 têtes en 12 catégories ne serait jamais éprouvée en
+// développement — chaque clé tomberait dans une catégorie distincte et le
+// regroupement passerait inaperçu jusqu'en production.
 const ENJEUX = [
-  "health", "macroeconomics", "education",
-  "energy", "governments_governance", "immigration",
-  "law_and_crime", "culture_nationalism", "international_affairs",
-  "public_lands", "technology",
+  "health", "social_welfare",
+  "macroeconomics", "labor", "foreign_trade",
+  "education",
+  "energy", "environment",
+  "governments_governance", "immigration",
+  "law_and_crime", "culture_nationalism", "transportation",
+  "international_affairs", "defense",
+  "public_lands", "agriculture",
+  "technology",
   "rights_liberties_minorities_discrimination",
   "Aucun enjeu identifié",
 ];
 // Chaque parti a SON profil : c'est tout l'intérêt de la mesure, deux partis
 // peuvent occuper la même place et parler de choses différentes.
 const PROFILS = {
-  CAQ: [0.24, 0.20, 0.10, 0.08, 0.14, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02, 0.01, 0.11],
-  PQ:  [0.10, 0.12, 0.09, 0.07, 0.13, 0.11, 0.05, 0.24, 0.04, 0.02, 0.01, 0.02, 0.14],
-  PLQ: [0.18, 0.16, 0.12, 0.06, 0.16, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01, 0.12],
-  QS:  [0.22, 0.14, 0.13, 0.21, 0.07, 0.05, 0.03, 0.04, 0.03, 0.03, 0.02, 0.03, 0.10],
-  PCQ: [0.12, 0.19, 0.08, 0.05, 0.15, 0.14, 0.13, 0.05, 0.04, 0.03, 0.01, 0.01, 0.13],
+  CAQ: [0.15, 0.06, 0.12, 0.05, 0.03, 0.09, 0.05, 0.03, 0.11, 0.04, 0.04, 0.02, 0.01, 0.02, 0.01, 0.02, 0.01, 0.02, 0.01, 0.11],
+  PQ:  [0.07, 0.03, 0.07, 0.03, 0.02, 0.08, 0.04, 0.02, 0.10, 0.09, 0.04, 0.15, 0.02, 0.02, 0.01, 0.01, 0.01, 0.01, 0.02, 0.16],
+  PLQ: [0.12, 0.05, 0.10, 0.04, 0.02, 0.11, 0.03, 0.02, 0.13, 0.07, 0.06, 0.04, 0.01, 0.03, 0.01, 0.02, 0.01, 0.02, 0.01, 0.10],
+  QS:  [0.14, 0.07, 0.08, 0.05, 0.02, 0.12, 0.11, 0.07, 0.05, 0.04, 0.02, 0.03, 0.01, 0.02, 0.01, 0.02, 0.01, 0.02, 0.02, 0.09],
+  PCQ: [0.08, 0.03, 0.12, 0.04, 0.03, 0.07, 0.03, 0.02, 0.12, 0.11, 0.10, 0.04, 0.01, 0.02, 0.01, 0.02, 0.01, 0.01, 0.01, 0.12],
 };
 const randEnj = rng(311);
 const croises = [];
