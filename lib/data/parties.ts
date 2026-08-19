@@ -129,6 +129,11 @@ type ShadowRow = {
   date_utc: string;
   date_montreal_tz: string;
   weighted_mentions: number; // already SOV (0–1)
+  /** Minutes en Une attribuées à ce parti, cumulées depuis le reset de la
+   *  période. Depuis aws-refiners#355 elles sont RÉPARTIES entre les partis
+   *  d'un article au prorata de leurs phrases : leur somme égale donc les
+   *  minutes réelles, ce qui n'était pas le cas auparavant. */
+  total_raw_score?: number;
   weighted_tone: number;
   computed_at?: string;
   /** Présent uniquement dans les tables `*_by_media_*`. */
@@ -152,11 +157,13 @@ type IssueRow = {
   date_montreal_tz?: string;
 };
 
-type Entry = { mentions: number; tone: number };
+type Entry = { mentions: number; tone: number; minutes: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
 type Stat = {
   key: PartyKey;
+  /** Minutes en Une, par période. Même structure que `sov`. */
+  minutes: Sov;
   sov: Sov;
   tone: Tone;
   /** `daily` couvre TOUTE la fenêtre disponible ; `week` n'en garde que les 7
@@ -220,6 +227,13 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** Minutes en Une attribuées à ce parti sur la période, arrondies.
+   *
+   *  Publiées telles quelles pour un palmarès : « la CAQ a occupé 2 h 15 de
+   *  Une » se cite mieux qu'une part de voix, et la valeur est désormais
+   *  interprétable — depuis la répartition, la somme sur tous les partis égale
+   *  le temps réellement passé en Une, et non un multiple. */
+  minutesUne: number;
   /** Rang sur la période, 1 = le plus présent. « 2e sur 5 » se cite ; une
    *  part de voix seule oblige le lecteur à comparer lui-même. */
   rang: number;
@@ -543,7 +557,11 @@ function buildLookup(rows: ShadowRow[]): Lookup {
     if (vus[cle] !== undefined && vus[cle] >= quand) continue;
     vus[cle] = quand;
     if (!result[row.date_utc]) result[row.date_utc] = Object.create(null);
-    result[row.date_utc][pKey] = { mentions: row.weighted_mentions, tone: row.weighted_tone };
+    result[row.date_utc][pKey] = {
+      mentions: row.weighted_mentions,
+      tone: row.weighted_tone,
+      minutes: Number(row.total_raw_score) || 0,
+    };
   }
   return result;
 }
@@ -584,8 +602,18 @@ function computeStats(
     const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone  || 0;
     const monthTone = monthLookup[latestMonth]?.[pKey]?.tone || 0;
 
+    // Les minutes de chaque période, à côté des parts. Le `year` somme la
+    // fenêtre entière, puisqu'il n'existe pas de table annuelle.
+    const minutes: Sov = {
+      today: dayLookup[latestDay]?.[pKey]?.minutes || 0,
+      week:  weekLookup[latestWeek]?.[pKey]?.minutes || 0,
+      month: monthLookup[latestMonth]?.[pKey]?.minutes || 0,
+      year:  allDayDates.reduce((t, d) => t + (dayLookup[d]?.[pKey]?.minutes || 0), 0),
+    };
+
     return {
       key: pKey,
+      minutes,
       sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
       tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
       history: {
@@ -1274,6 +1302,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       /** Nom officiel complet, pour les textes destinés à être cités. */
       fullLabel: PARTY_FULL_NAMES[stat.key],
       rang: idx + 1,
+      minutesUne: Math.round(stat.minutes[cfg.barKey] ?? 0),
       enjeux: enjeux?.get(stat.key) ?? [],
       joursEnTete: parlants.joursEnTete,
       joursComptes: parlants.joursComptes,

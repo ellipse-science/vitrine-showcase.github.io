@@ -49,6 +49,12 @@ const TODAY = process.env.VITRINE_FIXTURES_TODAY
 
 const PARTIES = ["CAQ", "PQ", "PLQ", "QS", "PCQ"];
 
+// Minutes de Une consacrées aux partis sur une journée, tous partis confondus.
+// Ordre de grandeur : quelques articles restés une à deux heures en Une. Sert à
+// donner des `total_raw_score` réalistes — le palmarès s'exprime en minutes, et
+// des valeurs absurdes s'y verraient tout de suite.
+const MINUTES_JOUR = 1420;
+
 // Panel de médias, repris des identifiants réels de radar_annotated. Chaque
 // média a un PENCHANT : un multiplicateur par parti, qui décale sa répartition
 // par rapport à la moyenne. Sans ça, un sélecteur de média n'aurait rien à
@@ -179,6 +185,11 @@ function buildRowsByMedia(dates, seed, periodLabel) {
           date_utc: date,
           date_montreal_tz: date,
           weighted_mentions: round4(sov),
+        total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
+          // Les minutes en Une, cohérentes avec la part : leur somme sur les
+          // cinq partis vaut le total du jour, comme le raffineur les produit
+          // depuis qu'elles sont RÉPARTIES et non dupliquées.
+          total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
           total_raw_score: round4(sov * (periodLabel === "day" ? 70 : periodLabel === "week" ? 430 : 1800)),
           weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
           threshold: 0.02,
@@ -212,6 +223,7 @@ function buildRows(dates, seed, periodLabel) {
         date_utc: date,
         date_montreal_tz: date,
         weighted_mentions: round4(sov),
+        total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
         // Minutes cumulées en Une — proportionnelles à la part de voix, avec
         // un volume total plausible pour une journée de Unes québécoises.
         total_raw_score: round4(sov * (periodLabel === "day" ? 420 : periodLabel === "week" ? 2600 : 11000)),
@@ -274,6 +286,7 @@ for (const date of D.slice(-8)) {
         block_hour: h,
         block_label: String(h).padStart(2, "0") + "h",
         weighted_mentions: total > 0 ? Number((brut[party] / total).toFixed(6)) : 0,
+        total_raw_score: total > 0 ? Math.round((brut[party] / total) * MINUTES_JOUR * 10) / 10 : 0,
         weighted_tone: 0,
         total_raw_score: Number((brut[party] * 100).toFixed(2)),
         date_utc: date,

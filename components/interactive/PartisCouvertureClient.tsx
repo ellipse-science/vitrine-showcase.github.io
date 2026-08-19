@@ -77,9 +77,9 @@ function BlocJournalistes({
   // colonnes sans boîte de dialogue d'import, et aucun nom de parti n'a besoin
   // d'être protégé par des guillemets.
   const tableau = [
-    ["Parti", "Part du temps (%)", "Ton", "Sommet (%)", "Date du sommet"].join("\t"),
+    ["Parti", "Part du temps (%)", "Temps en Une (min)", "Ton", "Sommet (%)", "Date du sommet"].join("\t"),
     ...rows.map((r) =>
-      [r.fullLabel, r.sovPct, r.toneLabel.replace(/[↑↓—]\s*/g, ""), r.peakPct, r.peakDate].join("\t"),
+      [r.fullLabel, r.sovPct, r.minutesUne, r.toneLabel.replace(/[↑↓—]\s*/g, ""), r.peakPct, r.peakDate].join("\t"),
     ),
   ].join("\n");
 
@@ -984,6 +984,17 @@ function Platine({
             <th scope="row">Part du temps</th>
             <td className="platine-td-cle">{row.sovPct}&nbsp;%</td>
           </tr>
+          {/* Les MINUTES, à côté de la part. « La CAQ a occupé 2 h 27 de Une »
+              se cite mieux qu'un pourcentage, et la valeur n'est interprétable
+              que depuis la répartition des minutes (aws-refiners#355) : leur
+              somme égale enfin le temps réellement passé en Une, au lieu d'un
+              multiple. */}
+          <tr>
+            <th scope="row" title="Temps cumulé passé en Une par les articles où ce parti est mentionné, réparti entre les partis de chaque article">
+              Temps en Une
+            </th>
+            <td>{formatDuree(row.minutesUne)}</td>
+          </tr>
           <tr>
             <th scope="row">Rang</th>
             <td>
@@ -1069,6 +1080,16 @@ function Platine({
 
     </div>
   );
+}
+
+/** « 147 min » devient « 2 h 27 » : au-delà de l'heure, les minutes seules
+ *  cessent de se représenter. En deçà, l'unité reste la minute — « 0 h 05 »
+ *  se lit moins bien que « 5 min ». */
+function formatDuree(minutes: number): string {
+  if (minutes < 60) return `${minutes}\u00a0min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}\u00a0h${m > 0 ? `\u00a0${String(m).padStart(2, "0")}` : ""}`;
 }
 
 const MOIS_COURTS = [

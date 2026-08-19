@@ -170,6 +170,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -185,6 +186,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -200,6 +202,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -435,6 +438,7 @@
         "block_hour",
         "block_label",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "date_utc",
         "date_montreal_tz",
@@ -451,6 +455,7 @@
         "party",
         "theme",
         "issue_share",
+        "total_raw_score",
         "weighted_tone",
         "date_utc",
         "date_montreal_tz",
