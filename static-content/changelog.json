@@ -1,5 +1,11 @@
 [
   {
+    "pr": 530,
+    "date": "2026-08-19T18:24:56Z",
+    "note": "Le site se met à jour par un chemin plus direct et plus fiable, indépendant des services externes qui tombaient en panne.",
+    "version": null
+  },
+  {
     "pr": 252,
     "date": "2026-08-19T18:13:28Z",
     "note": "Rien ne change sur le site public — mise à jour de documentation technique interne (référence du backend AWS).",
