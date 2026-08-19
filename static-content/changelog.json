@@ -1,5 +1,11 @@
 [
   {
+    "pr": 528,
+    "date": "2026-08-19T14:40:16Z",
+    "note": "Aucun changement pour le site : correctif interne de l'API.",
+    "version": null
+  },
+  {
     "pr": 527,
     "date": "2026-08-19T14:32:35Z",
     "note": "Le site tire maintenant ses données par un chemin plus direct et plus fiable, indépendant des services qui tombaient en panne.",
