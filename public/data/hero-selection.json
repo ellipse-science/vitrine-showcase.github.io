@@ -1,10 +1,10 @@
 {
-  "event_id": "20260818T150000Z-evt-chef-parti-quebecois-paul-pierre-3255b642",
-  "storyline_id": "story-parti-quebecois-68a0e122",
-  "title": "Le PQ reporte le référendum jusqu'à la fin du mandat de Trump",
-  "main_issue": "governments_and_governance",
+  "event_id": "20260818T190000Z-evt-nouveaux-tarifs-douaniers-trump-appliqueront-0777a7b3",
+  "storyline_id": "story-tariffs-57d1caaf",
+  "title": "Trump impose des tarifs de 50 % sur les produits canadiens dès minuit",
+  "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-18",
-  "time_interval_utc": "15-19",
-  "sum_qc": 152.646,
-  "peak_qc": 70.05
+  "time_interval_utc": "19-23",
+  "sum_qc": 151.261,
+  "peak_qc": 63.81
 }
