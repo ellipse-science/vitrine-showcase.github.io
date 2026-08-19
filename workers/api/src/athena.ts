@@ -66,6 +66,10 @@ export class AthenaClient {
       QueryString: query,
       QueryExecutionContext: { Database: this.cfg.database },
       ResultConfiguration: { OutputLocation: this.cfg.outputLocation },
+      // Jeton d'idempotence : les SDK AWS le génèrent en silence, l'API REST
+      // brute l'EXIGE (InvalidRequestException « clientRequestToken is null »,
+      // constaté au premier passage d'ombre du 2026-08-19).
+      ClientRequestToken: crypto.randomUUID(),
     })
     return res.QueryExecutionId
   }
