@@ -451,14 +451,39 @@ function buildPeriodView(
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
 
-  // Map party → row, preserving the static PARTY_KEYS order then re-sorting
-  // by interventions descending.
-  type WithData = { key: PartyKey; data: AgoraRow | null; interventions: number };
+  // Ordre du banc : par VOLUME DE PAROLE (mots) décroissant.
+  //
+  // Le tri se faisait sur le nombre d'interventions, qui n'est écrit NULLE PART
+  // sur une porte fermée : la porte affiche les mots et le nombre de député.es.
+  // Dès que les deux mesures divergent, la rangée paraissait donc arbitraire —
+  // un parti passait devant avec 7 284 mots pendant que la porte voisine
+  // annonçait 9 631 mots. Les deux comptes divergent structurellement : un
+  // parti qui prend peu la parole mais longuement (15 interventions, 8 673
+  // mots au relevé du 2026-02-19) n'a pas le même profil qu'un parti qui
+  // intervient sans cesse et brièvement (101 interventions, 8 919 mots).
+  //
+  // On trie donc sur ce que la porte MONTRE. « Qui a le plus parlé » se lit
+  // alors de gauche à droite sans avoir à ouvrir un casier.
+  //
+  // Départage : à volume égal, l'ordre statique de PARTY_KEYS tranche, pour
+  // qu'une égalité ne fasse pas sauter la rangée d'une période à l'autre
+  // (Array.prototype.sort est stable, et PARTY_KEYS est l'ordre d'entrée).
+  type WithData = {
+    key: PartyKey;
+    data: AgoraRow | null;
+    interventions: number;
+    words: number;
+  };
   const sorted: WithData[] = PARTY_KEYS.map((key) => {
     const partyData = rows.find((r) => r.party && r.party.toLowerCase() === key) || null;
-    return { key, data: partyData, interventions: partyData?.n_interventions || 0 };
+    return {
+      key,
+      data: partyData,
+      interventions: partyData?.n_interventions || 0,
+      words: Number(partyData?.word_count || 0),
+    };
   });
-  sorted.sort((a, b) => b.interventions - a.interventions);
+  sorted.sort((a, b) => b.words - a.words);
 
   const mattrs: Record<string, number> = {};
   for (const item of sorted) {
