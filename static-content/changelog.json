@@ -1,5 +1,11 @@
 [
   {
+    "pr": 524,
+    "date": "2026-08-19T13:13:14Z",
+    "note": "Aucun changement pour le site : règle interne de qualité (tout passe par l'environnement de travail avant la production).",
+    "version": null
+  },
+  {
     "pr": 522,
     "date": "2026-08-18T23:41:56Z",
     "note": "Documentation interne du pipeline mise a jour.",
