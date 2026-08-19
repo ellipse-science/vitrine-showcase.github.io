@@ -64,6 +64,14 @@ seul son comportement est ancien.
 **sans dérogation administrateur**. Seule la clé de déploiement passe outre,
 pour que la synchro des données continue.
 
+**Et depuis le 2026-08-19, la promotion exige une vérification sur dev**
+(règle dure #10, `AGENTS.md`) : la PR de promotion doit contenir la ligne
+« `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` », bloquée
+mécaniquement par le check `garde-promotion` sinon. Un agent sans accès
+Cloudflare Access fait sa vérification sur le miroir GitHub Pages (même
+contenu que dev) et le précise dans la ligne. Les poussées de données
+automatiques (`[prod data sync]`) ne sont pas concernées.
+
 ## D'où viennent les données
 
 ```
