@@ -26,11 +26,12 @@
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
+import { runAthenaSync, type SyncAthenaEnv } from './sync-athena'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
-import { isTargetHourInNY } from './schedule'
+import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
 
-interface Env {
+interface Env extends SyncAthenaEnv {
   DATABASE_URL: string
   /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string
@@ -106,6 +107,28 @@ export default {
     // d'hiver — pour que l'horaire reste fixe à New York sans intervention
     // semestrielle. Six d'entre eux ressortent ici sans rien faire.
     const now = new Date(event.scheduledTime)
+
+    // Deux crons cohabitent, distingués par leur MINUTE :
+    //   :10 = sync DIRECT Athena -> Postgres (chaîne émancipée de GitHub) ;
+    //   :00 = ancien chemin JSON publiés -> Postgres (filet, phase d'ombre).
+    if (now.getUTCMinutes() === 10) {
+      if (env.SYNC_FORCE !== '1' && !isAthenaTargetHourInNY(now)) {
+        console.log('sync-athena : hors heure visée à New York — ignoré')
+        return
+      }
+      ctx.waitUntil(
+        runAthenaSync(env).then(({ synced, failed }) => {
+          console.log(
+            `sync-athena terminée : ${synced.length} tables, ${failed.length} en échec`,
+          )
+          if (failed.length > 0) {
+            console.error('tables en échec :', failed.map((f) => f.table).join(', '))
+          }
+        }),
+      )
+      return
+    }
+
     if (env.SYNC_FORCE !== '1' && !isTargetHourInNY(now)) {
       console.log('déclenchement hors heure visée à New York — ignoré')
       return
@@ -197,6 +220,40 @@ export default {
           offset,
           limit,
         })
+        return json(
+          {
+            synced: synced.length,
+            tables: synced,
+            failed: failed.map((f) => f.table),
+            offset,
+            total,
+            next,
+            seconds: Math.round((Date.now() - started) / 1000),
+          },
+          { status: failed.length > 0 ? 207 : 200 },
+        )
+      }
+
+      // Déclenchement manuel du sync DIRECT Athena (chaîne émancipée). Même
+      // contrat de tranches que /v1/sync, mais le travail CPU par table est
+      // plus lourd (analyse des pages Athena) : défaut à 2 tables par appel.
+      // Le cron de la minute :10 fait la passe complète ; cette route sert la
+      // phase d'ombre et les reprises.
+      if (segments[0] === 'v1' && segments[1] === 'sync-athena') {
+        if (request.method !== 'POST') {
+          return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
+        }
+        const auth = await authenticate(sql, request, 'sync')
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
+        const limit = Math.min(
+          Math.max(1, Number(url.searchParams.get('limit') ?? '2') || 2),
+          15,
+        )
+
+        const started = Date.now()
+        const { synced, failed, total, next } = await runAthenaSync(env, { offset, limit })
         return json(
           {
             synced: synced.length,
