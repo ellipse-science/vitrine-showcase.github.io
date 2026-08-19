@@ -1,10 +1,10 @@
 {
-  "event_id": "20260818T190000Z-evt-nouveaux-tarifs-douaniers-trump-appliqueront-0777a7b3",
+  "event_id": "20260818T230000Z-evt-trump-carney-speak-again-clock-62ad1c5f",
   "storyline_id": "story-tariffs-57d1caaf",
-  "title": "Trump impose des tarifs de 50 % sur les produits canadiens dès minuit",
+  "title": "Trump accorde un sursis de trois jours sur les tarifs canadiens",
   "main_issue": "international_affairs_and_defense",
   "date_utc": "2026-08-18",
-  "time_interval_utc": "19-23",
-  "sum_qc": 151.261,
-  "peak_qc": 63.81
+  "time_interval_utc": "23-03",
+  "sum_qc": 188.214,
+  "peak_qc": 73.58
 }
