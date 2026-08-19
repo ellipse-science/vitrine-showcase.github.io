@@ -14,9 +14,11 @@ name: Déploiement dev (Cloudflare Pages)
 # régression (c'est l'état actuel), mais ça ne devient une vraie protection
 # qu'une fois GitHub Pages débranché, à la fin de la migration.
 
+# BASCULE 2026-08-19 : le build dev est déclenché par Cloudflare (intégration
+# Git de Pages au push, Deploy Hook du Worker au cycle de données). Ce
+# workflow ne se déclenche plus qu'à la main, en secours : le laisser au push
+# déploierait DEUX FOIS chaque poussée.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:

@@ -20,10 +20,9 @@ ACCESS_TEAM_DOMAIN = "capp-vitrine.cloudflareaccess.com"
 ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 
 # Sync DIRECT Athena (chaîne émancipée de GitHub, cron de la minute :10).
-# 'false' = phase d'ombre : on écrit Postgres, aucun build déclenché. La
-# bascule consiste à passer cette valeur à "true" (et à poser les secrets
-# DEPLOY_HOOK_PROD / DEPLOY_HOOK_DEV).
-SYNC_TRIGGER_DEPLOYS = "false"
+# BASCULE 2026-08-19 : "true" = les Deploy Hooks partent quand LES 15 tables
+# ont réussi (tout ou rien). Retour à l'ombre : remettre "false".
+SYNC_TRIGGER_DEPLOYS = "true"
 # Coordonnées Athena (non secrètes) : base Glue des datamarts DEV et
 # compartiment de résultats, les mêmes que ceux que `tube` résout.
 ATHENA_REGION = "ca-central-1"
@@ -56,12 +55,17 @@ ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv86
 # L'alternative était de changer cette ligne deux fois par an. Un rappel
 # semestriel finit toujours par être oublié, et l'oubli est silencieux.
 [triggers]
-# Deux crons, distingués par leur MINUTE dans src/index.ts :
-#   :00 = ancien chemin (JSON publiés -> Postgres), filet de la phase d'ombre ;
-#   :10 = sync DIRECT Athena -> Postgres (chaîne émancipée de GitHub),
-#         heures visées {0,4,8,12,16,20} à New York, mêmes deux jeux UTC
-#         été/hiver, garde-fou isAthenaTargetHourInNY (src/schedule.ts).
+# BASCULE 2026-08-19 : un seul cron, la chaîne émancipée (minute :10 dans
+# src/index.ts) : sync DIRECT Athena -> Postgres, heures visées
+# {0,4,8,12,16,20} à New York, deux jeux UTC été/hiver, garde-fou
+# isAthenaTargetHourInNY (src/schedule.ts).
+#
+# Le cron :00 (JSON publiés -> Postgres) est RETIRÉ, pas seulement dormant :
+# refresh-data.yml ne tourne plus qu'une fois par semaine, et recopier ces
+# JSON vieillissants écraserait les données fraîches du raffineur toutes les
+# 4 h. Le code du chemin JSON reste (branche minute :00 de src/index.ts et
+# route /v1/sync) : retour arrière = remettre la ligne de cron ci-dessous.
+#   "0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"
 crons = [
-  "0 2,3,6,7,10,11,14,15,18,19,22,23 * * *",
   "10 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
 ]

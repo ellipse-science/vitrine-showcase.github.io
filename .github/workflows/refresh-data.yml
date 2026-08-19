@@ -10,8 +10,15 @@ name: Refresh Data
 #   Header: Authorization: token <GitHub PAT with workflow scope>
 #   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
 
+# BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
+# rafraîchissement vit dans le Worker Cloudflare (cron :10, sync-athena.ts).
+# Il reste un FILET hebdomadaire : il garde les JSON commités (source de
+# repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
+# n'a plus à l'appeler ; son compte peut être fermé.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1' # lundi 12:00 UTC, filet hebdomadaire
 
 permissions:
   contents: read
