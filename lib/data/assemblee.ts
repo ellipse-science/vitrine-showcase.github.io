@@ -329,30 +329,42 @@ const PORTRAIT_ALIASES: Record<string, string> = {
   valeriesetlakwe: "michellesetlakwe",   // prénom erroné au référentiel ; une seule Setlakwe siège
 };
 
-function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait> {
-  const byKey = new Map<string, DeputyPortrait>();
-  const seen = new Set<string>();
+// Un homonyme n'est plus jeté : on garde tous les candidats et on les
+// départage à la lecture (lookupPortrait), via le suffixe « (Circonscription) »
+// que le raffineur ajoute déjà au nom publié quand il détecte la collision
+// (build_display_names, aws-refiners). Tant que ce suffixe n'est pas publié
+// pour un homonyme donné, le comportement reste inchangé : aucun portrait.
+function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait[]> {
+  const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
     const key = tightKey(p.nom);
     if (!key) continue;
-    // Un homonyme rend la clé inutilisable : on la retire plutôt que de
-    // trancher au hasard entre deux personnes.
-    if (byKey.has(key)) {
-      seen.add(key);
-      byKey.delete(key);
-      continue;
-    }
-    if (!seen.has(key)) byKey.set(key, p);
+    const list = byKey.get(key);
+    if (list) list.push(p);
+    else byKey.set(key, [p]);
   }
   return byKey;
 }
 
+// « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
+const RIDING_HINT = /\s*\(([^()]+)\)\s*$/;
+
 function lookupPortrait(
   deputy: string,
-  index: Map<string, DeputyPortrait>,
+  index: Map<string, DeputyPortrait[]>,
 ): DeputyPortrait | undefined {
-  const key = tightKey(deputy);
-  return index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "");
+  const hint = deputy.match(RIDING_HINT);
+  const baseName = hint ? deputy.slice(0, hint.index) : deputy;
+  const key = tightKey(baseName);
+  const candidates = index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length > 1 && hint) {
+    const ridingKey = tightKey(hint[1]);
+    return candidates.find((c) => tightKey(c.circonscription) === ridingKey);
+  }
+  // Homonyme non départagé (pas d'indice de circonscription publié) : on ne
+  // devine pas entre plusieurs visages, la carte reste sans portrait.
+  return undefined;
 }
 
 // Repli quand le portrait manque : « jeanfrancois roberge » est illisible tel
@@ -370,7 +382,7 @@ function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
-  portraits: Map<string, DeputyPortrait>,
+  portraits: Map<string, DeputyPortrait[]>,
 ): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -434,7 +446,7 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: Map<string, DeputyPortrait> = new Map(),
+  portraits: Map<string, DeputyPortrait[]> = new Map(),
 ): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
