@@ -137,7 +137,7 @@ const RANGE_CONFIG: Record<
 const TAB_LABELS: Record<RangeKey, string> = {
   today: "Jour",
   week: "Semaine",
-  overall: "Tout",
+  overall: "Campagne",
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
