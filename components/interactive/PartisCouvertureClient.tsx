@@ -910,6 +910,15 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             {chart.yLabels.map((g) => (
               <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
             ))}
+            {/* Le sol. Sans lui les courbes flottaient : le zéro n'a pas de
+                graduation, c'est ce trait qui le dit. */}
+            <line
+              className="palmares-base"
+              x1="0"
+              x2={chart.width}
+              y1={chart.height}
+              y2={chart.height}
+            />
             {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
                 courir. C'est elle qui fait de la mesure une course. */}
             <line
@@ -948,7 +957,13 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             ))}
           </svg>
 
-          {series.map((s) => (
+          {/* Du DERNIER au premier : deux partis proches en minutes ont leurs
+              pochettes à quelques pixels l'une de l'autre, et c'est le dernier
+              dessiné qui passe dessus. Le meneur doit être celui-là. */}
+          {series
+            .slice()
+            .reverse()
+            .map((s) => (
             <i
               key={s.key}
               className={
@@ -962,7 +977,7 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
               }}
               aria-hidden="true"
             />
-          ))}
+            ))}
 
           <i
             className="palmares-damier"
@@ -991,10 +1006,9 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
               className="palmares-gagnant"
               style={{ ["--party" as string]: gagnant.color }}
             >
-              <i className="palmares-gagnant-album" aria-hidden="true">
-                {gagnant.label}
-              </i>
+              <i className="palmares-gagnant-album" aria-hidden="true" />
               <span className="palmares-gagnant-txt">
+                <span className="palmares-gagnant-nom">{gagnant.label}</span>
                 <b>{formatDuree(gagnant.lastMinutes)}</b> d&apos;écoute
               </span>
             </div>
@@ -1032,18 +1046,29 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
         </div>
       </div>
 
+      {/* Le repère d'arrivée MARQUE celui qui existe déjà, au lieu d'en poser
+          un second : `xLabels` porte un point à l'abscisse de l'arrivée sur les
+          deux vues (« 20h » sur la journée, le dernier jour sur les autres), et
+          en ajouter un l'écrivait exactement par-dessus. On ne l'ajoute que si
+          aucun ne coïncide. */}
       <ul className="palmares-x" aria-hidden="true">
         {chart.xLabels.map((l) => (
-          <li key={l.label} style={{ left: `${(l.x / chart.width) * 100}%` }}>
+          <li
+            key={l.label}
+            className={Math.abs(l.x - chart.finish.x) < 0.5 ? "palmares-x-arrivee" : undefined}
+            style={{ left: `${(l.x / chart.width) * 100}%` }}
+          >
             {l.label}
           </li>
         ))}
-        <li
-          className="palmares-x-arrivee"
-          style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
-        >
-          {chart.finish.label}
-        </li>
+        {!chart.xLabels.some((l) => Math.abs(l.x - chart.finish.x) < 0.5) && (
+          <li
+            className="palmares-x-arrivee"
+            style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
+          >
+            {chart.finish.label}
+          </li>
+        )}
       </ul>
     </figure>
   );
