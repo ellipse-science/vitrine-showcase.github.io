@@ -1,5 +1,11 @@
 [
   {
+    "pr": 534,
+    "date": "2026-08-20T15:47:11Z",
+    "note": "L'illustration de la une des unes est maintenant produite par un service dédié, qui la renouvelle dès que la une change plutôt qu'à heures fixes. Et si l'illustration disponible ne correspond pas à la une affichée, le site préfère ne rien montrer plutôt que d'illustrer la mauvaise nouvelle. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
     "pr": 540,
     "date": "2026-08-20T13:39:07Z",
     "note": "Dans le Polimètre+, les pastilles de rang des promesses rompues et en suspens ont maintenant le même style que les autres : une pastille pâle cerclée de la couleur du verdict.",
