@@ -236,8 +236,8 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} media={media} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} media={media} />
         </div>
 
         <div className="regie-centre">
@@ -252,8 +252,8 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} media={media} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} media={media} />
         </div>
       </div>
 
@@ -500,12 +500,16 @@ function Deck({
   row,
   rang,
   indisponible,
+  media,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
    *  les cinq (ils coïncident, la sourdine ne retirant que la queue). */
   rang: number;
   indisponible: Indisponibilite | null;
+  /** La source affichée. Elle ne change RIEN au contenu du deck : elle sert de
+   *  clé de remontage pour que le disque se rejoue quand on bouge le fader. */
+  media: string;
 }) {
   const [ouverte, setOuverte] = useState(false);
 
@@ -576,7 +580,15 @@ function Deck({
           <span className="deck-jog">
             {/* Le capuchon n'est plus un aplat : il reprend la composition de la
                 pochette, découpée en rond. On voit ce qu'on va retourner. */}
-            <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
+            {/* La clé porte la SOURCE et le parti : changer de média remonte le
+                capuchon, donc rejoue son animation. On voit le disque changer
+                au lieu de le voir avoir changé. */}
+            <svg
+              key={`${media}-${row.key}`}
+              className="deck-jog-cap"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
               <clipPath id={`cap-${row.key}`}>
                 <circle cx="50" cy="50" r="50" />
               </clipPath>
@@ -913,7 +925,12 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
      d'arrivée — 20h pour la journée, la fin de semaine, le jour du scrutin.
      C'est là seulement qu'on peut désigner un gagnant. */
   const termine = series.length > 0 && series[0].lastX >= chart.finish.x - 0.5;
-  const gagnant = termine ? series[0] : null;
+  /* Le bloc de tête est PERMANENT : pendant la course il montre qui mène, à
+     l'arrivée il couronne. Ne l'afficher qu'au terme faisait grandir la colonne
+     d'une cinquantaine de pixels d'un coup, et la rangée de grille prend la
+     hauteur du plus grand — tout le module sautait au moment même où le
+     graphique devenait intéressant. */
+  const tete = series[0] ?? null;
 
   return (
     <figure className={`palmares-figure${vedette ? " a-vedette" : ""}`}>
@@ -1019,15 +1036,18 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             chevauchaient PAR CONSTRUCTION, et aplatir ne pouvait qu'empirer.
             Une colonne ne dépend d'aucune hauteur. */}
         <div className="palmares-classement">
-          {gagnant && (
+          {tete && (
             <div
-              className="palmares-gagnant"
-              style={{ ["--party" as string]: gagnant.color }}
+              className={`palmares-gagnant${termine ? " termine" : ""}`}
+              style={{ ["--party" as string]: tete.color }}
             >
               <i className="palmares-gagnant-album" aria-hidden="true" />
               <span className="palmares-gagnant-txt">
-                <span className="palmares-gagnant-nom">{gagnant.label}</span>
-                <b>{formatDuree(gagnant.lastMinutes)}</b> d&apos;écoute
+                <span className="palmares-gagnant-etat">
+                  {termine ? "Disque d\u2019or" : "En tête"}
+                </span>
+                <span className="palmares-gagnant-nom">{tete.label}</span>
+                <b>{formatDuree(tete.lastMinutes)}</b> d&apos;écoute
               </span>
             </div>
           )}

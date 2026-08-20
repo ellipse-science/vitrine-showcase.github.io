@@ -8167,6 +8167,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .deck-face { transition: none; }
+  .deck-jog-cap { animation: none; }
 }
 
 /* La molette — la face avant, épurée : un plateau nu et, au centre, un
@@ -8209,9 +8210,19 @@
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
+/* Le changement de DISQUE, rejoué à chaque remontage du capuchon — donc à
+   chaque changement de source ou de classement. Une rotation courte et un
+   léger retrait : on voit le disque être remplacé, au lieu de constater après
+   coup qu'il l'a été. */
+@keyframes deck-changement {
+  0% { opacity: 0; transform: rotate(-38deg) scale(0.72); }
+  60% { opacity: 1; transform: rotate(6deg) scale(1.04); }
+  100% { opacity: 1; transform: rotate(0) scale(1); }
+}
 .deck-jog-cap {
   position: relative;
   z-index: 1;
+  animation: deck-changement 460ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   width: 46%;
   height: 46%;
   overflow: visible;
@@ -8743,6 +8754,22 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   color: var(--ink-soft);
+}
+/* « En tête » pendant la course, « Disque d'or » une fois l'arrivée franchie.
+   Le bloc est PERMANENT : ne le montrer qu'au terme faisait grandir la colonne
+   d'une cinquantaine de pixels d'un coup, et tout le module sautait. */
+.palmares-gagnant-etat {
+  display: block;
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.palmares-gagnant.termine .palmares-gagnant-etat { color: var(--cordovan); }
+.palmares-gagnant.termine .palmares-gagnant-album {
+  box-shadow:
+    0 0 0 2px var(--brass),
+    0 1px 4px rgba(28, 25, 23, 0.24);
 }
 .palmares-gagnant-txt {
   font-family: 'IBM Plex Mono', monospace;
