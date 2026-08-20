@@ -8176,35 +8176,45 @@
 
    Aucun remplissage sur ces images : à la fin, chaque face reprend la position
    que lui donne son état `retournee`, et le clic reste maître. */
+/* Le pivot s'ARRÊTE sur la pochette et l'y tient (40 % → 56 %) : c'est ce temps
+   posé qui dit « voici le disque qu'on va mettre ». Un tour continu enchaînait
+   les deux demi-tours sans jamais montrer la pochette autrement qu'en passant.
+
+   Le second demi-tour se fait ensuite, mais il est INVISIBLE : le disque est
+   encore transparent et minuscule à ce moment-là. Ce qu'on perçoit, c'est la
+   pochette qui s'efface et le disque qui en sort. */
 @keyframes deck-tour-avant {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(-360deg); }
+  0% { transform: rotateY(0deg); }
+  40%, 56% { transform: rotateY(-180deg); }
+  72%, 100% { transform: rotateY(-360deg); }
 }
 @keyframes deck-tour-arriere {
-  from { transform: rotateY(180deg); }
-  to { transform: rotateY(-180deg); }
+  0% { transform: rotateY(180deg); }
+  40%, 56% { transform: rotateY(0deg); }
+  72%, 100% { transform: rotateY(-180deg); }
 }
-/* Le disque sort de la pochette : il n'apparaît qu'à mi-parcours, quand la
-   pochette commence à s'effacer, et glisse jusqu'au centre du plateau. */
+/* Le disque SORT de la pochette : il ne paraît qu'une fois celle-ci posée, part
+   du coin bas-gauche — là où l'on tire un vinyle de sa pochette — petit et
+   penché, puis glisse jusqu'au centre du plateau. */
 @keyframes deck-sortie {
-  0%, 42% {
+  0%, 58% {
     opacity: 0;
-    transform: translate(-30%, 22%) scale(0.46) rotate(-26deg);
+    transform: translate(-34%, 28%) scale(0.38) rotate(-30deg);
   }
-  58% { opacity: 1; }
+  70% { opacity: 1; }
   100% {
     opacity: 1;
     transform: translate(0, 0) scale(1) rotate(0);
   }
 }
 .deck-carre--pivot .deck-face--disque {
-  animation: deck-tour-avant 980ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: deck-tour-avant 1240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .deck-carre--pivot .deck-face--pochette {
-  animation: deck-tour-arriere 980ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: deck-tour-arriere 1240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .deck-carre--pivot .deck-face--disque .deck-jog {
-  animation: deck-sortie 980ms cubic-bezier(0.25, 0.8, 0.3, 1);
+  animation: deck-sortie 1240ms cubic-bezier(0.25, 0.85, 0.3, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
