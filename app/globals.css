@@ -8845,7 +8845,6 @@
 }
 .palmares-figure.a-vedette .palmares-nom { opacity: 0.4; }
 .palmares-figure.a-vedette .palmares-nom.vedette { opacity: 1; }
-.palmares-nom:hover .palmares-rang,
 .palmares-nom.vedette .palmares-rang { transform: scale(1.15); }
 .palmares-trait,
 .palmares-pochette,

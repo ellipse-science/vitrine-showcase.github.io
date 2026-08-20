@@ -915,8 +915,14 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
    *  fixe. Le survol l'emporte tant qu'il dure, sinon on ne pourrait plus rien
    *  regarder d'autre sans d'abord relâcher sa sélection. */
   const [isole, setIsole] = useState<string | null>(null);
-  const [survole, setSurvole] = useState<string | null>(null);
-  const vedette = survole ?? isole;
+  /* Le CLAVIER prévisualise, la souris non. Passer le pointeur sur une courbe
+     mettait un parti en vedette : le graphique changeait sous le curseur au
+     moindre déplacement, et l'on ne pouvait plus lire le peloton sans écarter
+     la souris. La mise en vedette se demande maintenant d'un clic.
+     Le focus reste, lui : c'est le seul moyen pour qui navigue au clavier de
+     savoir sur quelle courbe il se trouve avant de la choisir. */
+  const [focalise, setFocalise] = useState<string | null>(null);
+  const vedette = focalise ?? isole;
 
   /* La période est-elle COURUE ? Le dernier point a-t-il atteint la ligne
      d'arrivée — 20h pour la journée, la fin de semaine, le jour du scrutin.
@@ -990,8 +996,6 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
                 key={`touche-${s.key}`}
                 className="palmares-touche"
                 points={s.polylineMin}
-                onMouseEnter={() => setSurvole(s.key)}
-                onMouseLeave={() => setSurvole(null)}
                 onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
               />
             ))}
@@ -1067,10 +1071,8 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
                     (vedette === s.key ? " vedette" : "")
                   }
                   style={{ ["--party" as string]: s.color }}
-                  onMouseEnter={() => setSurvole(s.key)}
-                  onMouseLeave={() => setSurvole(null)}
-                  onFocus={() => setSurvole(s.key)}
-                  onBlur={() => setSurvole(null)}
+                  onFocus={() => setFocalise(s.key)}
+                  onBlur={() => setFocalise(null)}
                   onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
                   aria-pressed={isole === s.key}
                   title={
@@ -1098,13 +1100,21 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
         {chart.xLabels.map((l) => (
           <li
             key={l.label}
-            className={Math.abs(l.x - chart.finish.x) < 0.5 ? "palmares-x-arrivee" : undefined}
+            className={
+              Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label
+                ? "palmares-x-arrivee"
+                : undefined
+            }
             style={{ left: `${(l.x / chart.width) * 100}%` }}
           >
             {l.label}
           </li>
         ))}
-        {!chart.xLabels.some((l) => Math.abs(l.x - chart.finish.x) < 0.5) && (
+        {/* On dédoublonne aussi sur le TEXTE : sur la semaine, le repère du
+            vendredi porte déjà le nom de l'arrivée sans être à sa position. */}
+        {!chart.xLabels.some(
+          (l) => Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label,
+        ) && (
           <li
             className="palmares-x-arrivee"
             style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}

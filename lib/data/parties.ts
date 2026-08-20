@@ -995,9 +995,18 @@ function reperesAxe(
     // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
     // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
     // repère posé au-delà désignerait un moment qui ne sera jamais couru.
-    const veille = tFin - 20 * 3_600_000; // minuit du vendredi
-    for (let t = lundi; t < veille - 1; t += JOUR) {
-      pousser(t, JOURS_COURTS[new Date(t).getUTCDay()]);
+    // Le VENDREDI reprend sa place, sinon l'écart entre jeudi et l'arrivée
+    // valait 44 h contre 24 h partout ailleurs — presque le double, ce qui se
+    // voyait comme un axe mal calé. Les sept jours sont maintenant régulièrement
+    // espacés ; l'écart plus court qui suit le vendredi est le reste de sa
+    // journée, jusqu'à l'édition de 20h.
+    //
+    // Il s'écrit en toutes lettres : c'est le jour d'arrivée, et le distinguer
+    // évite d'avoir à poser une étiquette de plus au bout de l'axe.
+    const minuitVendredi = tFin - HEURE_ARRIVEE * 3_600_000;
+    for (let t = lundi; t <= minuitVendredi + 1; t += JOUR) {
+      const j = new Date(t).getUTCDay();
+      pousser(t, j === 5 ? "vendredi" : JOURS_COURTS[j]);
     }
     return out;
   }
