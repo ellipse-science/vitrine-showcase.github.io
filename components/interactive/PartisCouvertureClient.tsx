@@ -236,8 +236,8 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} media={media} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} media={media} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} />
         </div>
 
         <div className="regie-centre">
@@ -252,8 +252,8 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} media={media} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} media={media} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} />
         </div>
       </div>
 
@@ -500,16 +500,12 @@ function Deck({
   row,
   rang,
   indisponible,
-  media,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
    *  les cinq (ils coïncident, la sourdine ne retirant que la queue). */
   rang: number;
   indisponible: Indisponibilite | null;
-  /** La source affichée. Elle ne change RIEN au contenu du deck : elle sert de
-   *  clé de remontage pour que le disque se rejoue quand on bouge le fader. */
-  media: string;
 }) {
   const [ouverte, setOuverte] = useState(false);
 
@@ -566,13 +562,16 @@ function Deck({
         ["--ton" as string]: `var(--ton-${ton})`,
       }}
     >
-      {/* La clé porte la SOURCE et le parti : changer de média remonte le carré,
-          qui rejoue alors son tour complet — la pochette passe devant, puis le
-          NOUVEAU disque revient. On voit le disque être changé, au lieu de
-          constater après coup qu'il l'a été. Le remontage referme aussi la
-          pochette ouverte, ce qui est juste : ses chiffres ont changé. */}
+      {/* La clé ne porte QUE le parti, et non la source.
+          Changer de média ne change pas forcément qui occupe ce deck : keyer sur
+          la source rejouait le changement de disque à chaque coup de fader, y
+          compris quand la piste restait la même. Ici le carré ne se remonte que
+          si le parti change vraiment — et c'est ce remontage qui rejoue la
+          sortie de pochette.
+          Il referme aussi la pochette ouverte, ce qui est juste : ce n'est plus
+          le même disque. */}
       <button
-        key={`${media}-${row.key}`}
+        key={row.key}
         type="button"
         className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
         onClick={() => setOuverte((v) => !v)}
