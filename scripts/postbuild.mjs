@@ -91,6 +91,47 @@ async function pruneDataJson() {
   console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
 }
 
+// Identifiant de build pour l'actualisation côté navigateur (composant
+// ActualisationAuto) : ~100 octets consultés par la sonde du client, servis
+// par le CDN avec Cache-Control: no-store (public/_headers). L'horodatage
+// fait partie de l'identifiant : un rebuild « données seulement » (même
+// commit, nouvelles données via Deploy Hook) change l'identifiant quand même.
+function computeBuildId() {
+  const sha = (process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA || "local").slice(0, 7);
+  const builtAt = new Date().toISOString();
+  return { id: `${sha}-${Date.parse(builtAt)}`, builtAt };
+}
+
+async function writeBuildId({ id, builtAt }) {
+  await writeFile(
+    path.join(OUT_DIR, "build-id.json"),
+    JSON.stringify({ id, builtAt }) + "\n",
+    "utf8",
+  );
+  console.log(`postbuild: build-id « ${id} » écrit`);
+}
+
+// Le cache du service worker retient du HTML aux données inlinées : sous un
+// nom constant, il survivait aux déploiements et pouvait resservir une vieille
+// édition indéfiniment (audit du 2026-08-19). Le nom porte donc l'identifiant
+// de build : l'activate du SW purge tout cache qui ne le porte pas.
+async function versionServiceWorker({ id }) {
+  const swPath = path.join(OUT_DIR, "sw.js");
+  let sw;
+  try {
+    sw = await readFile(swPath, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  if (!sw.includes("__BUILD_ID__")) {
+    console.warn("postbuild: sw.js sans jeton __BUILD_ID__ — cache non versionné");
+    return;
+  }
+  await writeFile(swPath, sw.replaceAll("__BUILD_ID__", id), "utf8");
+  console.log(`postbuild: service worker versionné (vitrine-${id})`);
+}
+
 async function main() {
   try {
     await readdir(OUT_DIR);
@@ -111,6 +152,13 @@ async function main() {
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
+
+  // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
+  // identifiant nomme le cache du service worker — la sonde ActualisationAuto
+  // et la purge du SW parlent du même build.
+  const build = computeBuildId();
+  await writeBuildId(build);
+  await versionServiceWorker(build);
 }
 
 main().catch((err) => {

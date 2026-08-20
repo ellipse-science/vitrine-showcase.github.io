@@ -16,6 +16,8 @@ import fs from "node:fs/promises";
 import { formatDuree } from "@/lib/duree";
 import path from "node:path";
 
+import { readDatasetText } from "@/lib/data/source";
+
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS } from "@/lib/medias";
@@ -1571,21 +1573,28 @@ const SUR_FIXTURES = Boolean(process.env.VITRINE_PARTIES_FIXTURES);
 
 // GARDE-FOU : des fausses données ne doivent JAMAIS partir en production.
 //
-// Le miroir dev (GitHub Pages) épingle NEXT_PUBLIC_BASE_PATH ; la production, à
-// la racine du domaine, le laisse vide. C'est déjà le signal dont `app/robots.ts`
-// se sert pour désindexer le dev — on le réutilise plutôt que d'en inventer un
-// second, qui pourrait diverger du premier.
+// Le signal est NEXT_PUBLIC_SITE_ENV, et non plus « basePath vide ». Ce dernier
+// signifiait « production » tant que le miroir dev vivait sous un sous-chemin
+// GitHub Pages. Depuis que le dev est servi à la racine de son propre domaine
+// (dev.vitrinedemocratique.com), son basePath est vide LUI AUSSI : l'ancien
+// signal aurait classé le dev comme production et fait échouer son build.
 //
-// Restreint aux builds de CI (`process.env.CI`) : en local le basePath est vide
-// lui aussi, et bloquer là interdirait précisément l'usage pour lequel les
-// fixtures existent. Un build de CI à la racine du domaine, en revanche, ne peut
-// être qu'une production — on échoue bruyamment plutôt que de publier des
+// On garde le principe du commentaire d'origine — UN seul signal, partagé avec
+// `app/robots.ts`, pour qu'ils ne puissent pas diverger — on remplace seulement
+// une déduction fragile par une déclaration explicite.
+//
+// Le défaut est SÛR : tout ce qui n'est pas explicitement « dev » compte comme
+// production. Oublier la variable fait échouer le build au lieu de publier des
 // chiffres inventés sur les partis politiques.
-if (SUR_FIXTURES && process.env.CI && !process.env.NEXT_PUBLIC_BASE_PATH) {
+//
+// Restreint aux builds de CI : en local, bloquer interdirait précisément
+// l'usage pour lequel les fixtures existent.
+if (SUR_FIXTURES && process.env.CI && process.env.NEXT_PUBLIC_SITE_ENV !== "dev") {
   throw new Error(
-    "VITRINE_PARTIES_FIXTURES est défini sur un build de production (NEXT_PUBLIC_BASE_PATH vide). " +
-      "Les fausses données du module des partis sont réservées au miroir dev. " +
-      "Retirez la variable, ou épinglez NEXT_PUBLIC_BASE_PATH si c'est bien un build dev.",
+    "VITRINE_PARTIES_FIXTURES est défini sur un build qui n'est pas le miroir dev " +
+      `(NEXT_PUBLIC_SITE_ENV=${process.env.NEXT_PUBLIC_SITE_ENV ?? "<absent>"}). ` +
+      "Les fausses données du module des partis sont réservées au dev. " +
+      "Retirez la variable, ou posez NEXT_PUBLIC_SITE_ENV=dev si c'est bien un build dev.",
   );
 }
 
@@ -1601,10 +1610,19 @@ export async function loadParties(
   asOfIso?: string,
 ): Promise<PartiesData | null> {
   try {
+    // SUR FIXTURES, ON NE PASSE JAMAIS PAR L'API : les fausses données vivent
+    // dans un dossier local et n'existent nulle part en base. Confondre les
+    // deux ferait apparaître de vrais chiffres sous le bandeau « DONNÉES
+    // FICTIVES », ou l'inverse — les deux étant pires qu'une erreur franche.
+    const lireJeu = (periode: "day" | "week" | "month", fichier: string) =>
+      SUR_FIXTURES
+        ? fs.readFile(path.join(DATA_DIR, periode, fichier), "utf8")
+        : readDatasetText(`public/data/refined/${periode}/${fichier}`);
+
     const [dayRaw, weekRaw, monthRaw] = await Promise.all([
-      fs.readFile(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_day.json"),   "utf8"),
-      fs.readFile(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_week.json"),  "utf8"),
-      fs.readFile(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_month.json"), "utf8"),
+      lireJeu("day",   "provincial_parties_salient_shadow_day.json"),
+      lireJeu("week",  "provincial_parties_salient_shadow_week.json"),
+      lireJeu("month", "provincial_parties_salient_shadow_month.json"),
     ]);
 
     // La série intra-journée est FACULTATIVE : elle n'existe que depuis
