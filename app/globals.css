@@ -4783,6 +4783,11 @@
 
   /* La console et ses graduations, côte à côte. */
   .console-corps {
+    /* La graduation du HAUT chevauche le sommet de la piste : elle est posée en
+       `bottom` puis ramenée de la moitié de sa hauteur par `translateY(50%)`,
+       si bien qu'elle déborde d'environ 6 px au-dessus. Sans cette réserve,
+       « 100 % » se faisait couper par le bord du cadre. */
+    padding-top: 7px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -7810,7 +7815,7 @@
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
      tout, la raccourcir changerait la lecture. */
-  .console { --piste: 92px; --seg-gap: 1.5px; padding: 8px 10px 6px; }
+  .console { --piste: 92px; --seg-gap: 1.5px; padding: 3px 10px 4px; }
   .console-tete { margin: 0 0 7px; font-size: 8px; letter-spacing: 0.14em; }
   .regie-centre { gap: 8px; }
   /* L'infobulle de la sourdine part : sur un doigt elle est un piège plus
