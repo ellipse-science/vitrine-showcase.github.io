@@ -996,9 +996,14 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {chart.yLabels.map((g) => (
-              <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
-            ))}
+            {/* Le zéro porte son étiquette mais PAS son filet : un trait au bas
+                du cadre reviendrait à remettre l'axe des x qu'on vient
+                d'enlever pour alléger le graphique. */}
+            {chart.yLabels
+              .filter((g) => g.y < chart.height)
+              .map((g) => (
+                <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
+              ))}
             {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
                 courir. C'est elle qui fait de la mesure une course. */}
             <line

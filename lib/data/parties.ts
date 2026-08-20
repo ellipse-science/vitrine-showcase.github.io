@@ -727,11 +727,14 @@ function paliersMinutes(maxMin: number): number {
   return paliers.find((p) => maxMin <= p) ?? Math.ceil(maxMin / 1440) * 1440;
 }
 
-/** Les graduations de l'axe des minutes : quatre repères, du bas vers le haut.
- *  Le zéro n'est pas étiqueté — la ligne de base le dit déjà. */
+/** Les graduations de l'axe des minutes, du bas vers le haut, zéro compris.
+ *  Il l'était devenu nécessaire : le trait qui marquait le sol a été retiré pour
+ *  alléger le graphique, et plus rien ne situait le départ de l'échelle. */
 function graduationsMinutes(topMin: number): { label: string; y: number }[] {
-  return [0.25, 0.5, 0.75, 1].map((f) => ({
-    label: formatDuree(topMin * f),
+  return [0, 0.25, 0.5, 0.75, 1].map((f) => ({
+    // Le zéro s'écrit « 0h » et non « 0 min » : il ouvre une échelle d'heures,
+    // et `formatDuree` bascule en minutes sous l'heure.
+    label: f === 0 ? "0h" : formatDuree(topMin * f),
     y: Number((CHART_H - f * CHART_H).toFixed(2)),
   }));
 }
