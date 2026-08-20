@@ -7822,8 +7822,7 @@
      `.piste-court { display: none }` est déclarée plus BAS dans le fichier, et
      à spécificité égale c'est elle qui l'emporterait. Les deux formes se
      masquaient alors l'une l'autre et le libellé disparaissait. */
-  .deck-piste-nom .piste-long { display: none; }
-  .deck-piste-nom .piste-court { display: inline; }
+
 }
 
 /* DOOM PCQ Easter Egg - Knee-Deep in the Media Editorial Header */
@@ -8599,6 +8598,13 @@
     margin-bottom: 0;
     gap: 18px;
   }
+  /* La forme COURTE du libellé dès que les decks rétrécissent — c'est-à-dire
+     ici, où la disposition passe en 2×2 — et non seulement sur téléphone.
+     « Ton de la couverture » mangeait la place et faisait élider sa propre
+     valeur : « ↓ Défavor… ». */
+  .deck-piste-nom .piste-long { display: none; }
+  .deck-piste-nom .piste-court { display: inline; }
+
   .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
   .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
   .regie-centre { grid-area: 2 / 1 / 3 / 3; }
