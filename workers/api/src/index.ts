@@ -129,6 +129,13 @@ export default {
       ctx.waitUntil(
         (async () => {
           if (!env.SYNC_INTERNAL_TOKEN) {
+            // Sans alerte, ce serait le GEL TOTAL SILENCIEUX : plus aucune
+            // synchro, plus aucun build, et personne ne le sait — la classe
+            // de panne la plus chère du chemin critique (audit 2026-08-19).
+            await notifySlack(
+              env,
+              'sync-athena : SYNC_INTERNAL_TOKEN absent — orchestration impossible, le site ne se rafraîchit plus.',
+            )
             console.error('SYNC_INTERNAL_TOKEN absent : orchestration impossible')
             return
           }
@@ -226,6 +233,18 @@ export default {
     if (!noCache) {
       const cached = await cache.match(request)
       if (cached) return cached
+    }
+
+    // Contrepartie du match ci-dessus, LONGTEMPS MANQUANTE : rien n'entrait
+    // jamais dans le cache, donc le match ne trouvait jamais rien et chaque
+    // requête publique descendait jusqu'à Postgres (audit 2026-08-19). À
+    // appeler sur les réponses publiques dont l'en-tête cache-control fait
+    // foi ; jamais sur les réponses à clé (elles dépendent de l'appelant).
+    const cachePublic = (res: Response): Response => {
+      if (request.method === 'GET' && res.status === 200) {
+        ctx.waitUntil(cache.put(request, res.clone()))
+      }
+      return res
     }
 
     const sql = neon(env.DATABASE_URL)
@@ -335,14 +354,16 @@ export default {
           (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
           null,
         )
-        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300)
+        return cachePublic(
+          json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300),
+        )
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.
       // `!segments[2]` est indispensable : sans lui cette route intercepte
       // aussi /v1/datasets/{nom} et renvoie l'index à la place des lignes.
       if (segments[0] === 'v1' && segments[1] === 'datasets' && !segments[2]) {
-        return json(
+        return cachePublic(json(
           {
             datasets: Object.entries(DATASETS).map(([name, spec]) => ({
               name,
@@ -352,7 +373,7 @@ export default {
           },
           {},
           ttl,
-        )
+        ))
       }
 
       // GET /v1/datasets/:name?from=&to=&party=&limit=&offset=
@@ -432,7 +453,7 @@ export default {
 
       // Racine : de quoi comprendre l'API sans documentation externe.
       if (segments.length === 0) {
-        return json(
+        return cachePublic(json(
           {
             name: 'API Vitrine démocratique',
             version: 'v1',
@@ -443,7 +464,7 @@ export default {
           },
           {},
           ttl,
-        )
+        ))
       }
 
       return problem(404, 'Route inconnue.', { endpoints: ['/v1/health', '/v1/datasets'] })

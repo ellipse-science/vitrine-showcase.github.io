@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(`${basePath}/`, siteOrigin),
   title: "La Vitrine démocratique",
   description: SITE_DESCRIPTION,
+  // Canonique par page, résolue contre metadataBase : l'apex fait foi. Sans
+  // elle, www, *.pages.dev et le miroir GitHub Pages servent le même contenu
+  // en 200 et se disputent le référencement au moment où les liens entrants
+  // arrivent (lancement médias).
+  alternates: { canonical: "./" },
   // Cartes de partage (Facebook/LinkedIn via Open Graph, X via Twitter card).
   // NB : les réseaux ignorent le fragment #module — tous les liens partagés
   // affichent cette carte globale. Cartes PAR module = mini-pages OG dédiées

@@ -1,10 +1,10 @@
 {
-  "event_id": "20260819T070000Z-evt-tarifs-douaniers-trump-annonce-sursis-4ef2118d",
+  "event_id": "20260820T030000Z-evt-que-savons-nous-brouillon-entente-44cc76e0",
   "storyline_id": "story-tariffs-57d1caaf",
-  "title": "Trump accorde un sursis de trois jours aux tarifs douaniers canadiens",
+  "title": "Entente commerciale Canada–États-Unis: levée de l'interdiction sur l'alcool",
   "main_issue": "international_affairs_and_defense",
-  "date_utc": "2026-08-19",
-  "time_interval_utc": "07-11",
-  "sum_qc": 219.527,
-  "peak_qc": 73.58
+  "date_utc": "2026-08-20",
+  "time_interval_utc": "03-07",
+  "sum_qc": 244.842,
+  "peak_qc": 81.03
 }
