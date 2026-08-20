@@ -548,7 +548,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 12 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar; horaires et état vérifiés contre <code>refiners.ts</code>) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 18 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar; horaires et état vérifiés contre <code>refiners.ts</code>; ajout des deux fonctions secondes qui partagent l'image de leur raffineur principal, soit le rapport hebdomadaire du sonar et l'identification de <code>polimetre-plus</code>) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1044,7 +1044,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🛰️ SONAR PIPELINE (Santé des raffineurs)</span>
-                <span class="frequency">Quotidien 08:15 (heure du Québec) — après le cycle de 07:xx, pour lire un état stabilisé. Remplace <code>agora-sonar</code>, jamais planifié.</span>
+                <span class="frequency">Quotidien 08:15 (heure du Québec), après le cycle de 07:xx, pour lire un état stabilisé. Rapport hebdomadaire le mardi à 08:00, sur la même image. Remplace <code>agora-sonar</code>, jamais planifié.</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="datamarts-tables" data-env-source="DEV">
@@ -1059,10 +1059,10 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-pipeline" data-ecr="sonar-pipeline" data-active="true" data-cron="08:15">
+                <div class="node node-refiner" data-type="refiner" data-refiner="sonar-pipeline" data-ecr="sonar-pipeline" data-active="true" data-cron="08:15,TUE 08:00">
                     sonar-pipeline.R
-                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest</div>
-                    <div class="node-schedule">⏰ 08:15 (quotidien)</div>
+                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest. Une seconde fonction tourne sur la même image, choisie par le payload&nbsp;: le rapport hebdomadaire (<code>mode: report</code>), qui publie même sans problème détecté. C'est la preuve de vie du sonar.</div>
+                    <div class="node-schedule">⏰ 08:15 (quotidien) • rapport hebdo mardi 08:00</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1127,7 +1127,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🗳️ Polimètre+ (Suivi des promesses CAQ)</span>
-                <span class="frequency">Quotidien: 12:30 (heure du Québec) • analyse par semaine glissante</span>
+                <span class="frequency">Quotidien&nbsp;: 12:30 (heure du Québec) • analyse par semaine glissante • identification six fois par jour aux&nbsp;:32</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -1136,9 +1136,10 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="12:30">
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-plus" data-ecr="polimetre-plus" data-active="true" data-cron="12:30,03:32,07:32,11:32,15:32,19:32,23:32">
                     polimetre-plus.R
-                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo; enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés)</div>
+                    <div class="node-detail">Identification regex des promesses + saillance/progression hebdo; enrichissement LLM best-effort (Gemma 3&nbsp;: libellés courts + résumés). Une seconde fonction tourne sur la même image, choisie par le payload&nbsp;: <code>polimetre-plus-identification</code>, six fois par jour aux&nbsp;:32.</div>
+                    <div class="node-schedule">⏰ 12:30 (quotidien) • identification 03:32, 07:32, 11:32, 15:32, 19:32, 23:32</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1194,6 +1195,40 @@
                 <code>vitrine-graph-data</code> (<code>active:false</code>) publiait jusqu'à 19 fichiers JSON dans un bucket S3 legacy servi par
                 <code>dev.vitrinedemocratique.com</code> — un placeholder jamais mis en service. Le site n'a jamais lu ce bucket. Bucket, distribution CloudFront
                 et domaine sont <strong>conservés</strong> en vue d'un futur environnement DEV protégé.
+            </div>
+        </div>
+
+        <!-- PUBLICATION VITRINE : VITRINE-PUBLISH (PHASE D'OMBRE) -->
+        <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>📤 Publication Vitrine, chaîne vitrine-publish (Athena → Postgres → builds Cloudflare) 🚧 EN COURS (phase d'ombre)</span>
+                <span class="frequency">6x/jour&nbsp;: 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (heure de Montréal), raffineur du dépôt aws-refiners, PR à venir</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
+                    15 tables du datamart
+                    <div class="node-detail">Mêmes tables et filtres de rétention que <code>scripts/tables.json</code></div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner">
+                    vitrine-publish
+                    <div class="node-detail">🚧 EN COURS (phase d'ombre)&nbsp;: écrira dans Postgres dès sa mise en service</div>
+                    <div class="node-schedule">⏰ 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (Montréal)</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output">
+                    Postgres (Neon, API)
+                    <div class="node-detail">sync_state, source « aws-refiner »</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output">
+                    Deploy Hooks Cloudflare (prod + dev)
+                    <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi ; en phase d'ombre, payload <code>trigger_deploys=false</code>, donc aucun build n'est déclenché</div>
+                </div>
+            </div>
+            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,.07);font-size:.9em;line-height:1.5">
+                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>vitrine-publish</code> écrira dans Postgres dès sa mise en service, mais ne déclenchera aucun build tant que ses sorties n'auront pas été comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
             </div>
         </div>
 

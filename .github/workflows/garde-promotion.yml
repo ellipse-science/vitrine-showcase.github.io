@@ -1,0 +1,41 @@
+# Garde-fou : rien n'atteint la production sans passage vérifié sur dev.
+#
+# Toute PR visant la branche `prod` (promotion de code) doit déclarer dans son
+# corps CE QUI a été vérifié sur l'environnement de travail : une ligne
+#   - [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé, en faits>
+# « Prouver, pas décrire » : la ligne doit nommer ce qui a été regardé (module,
+# donnée, comportement), pas seulement dire « vérifié ».
+#
+# Les poussées de données automatiques ([prod data sync] de refresh-data.yml)
+# passent par la clé de déploiement, pas par PR : elles ne sont pas concernées.
+# Le check se relance quand le corps de la PR est édité (type `edited`).
+name: garde-promotion
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [prod]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  verification-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exiger la déclaration de vérification sur dev
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Une case cochée suivie d'au moins 15 caractères de substance :
+          # une date et un contenu, pas une case cochée à vide.
+          if printf '%s' "$PR_BODY" | grep -qE -- '- \[[xX]\] Vérifié sur dev.{15,}'; then
+            echo "Déclaration de vérification sur dev présente — OK."
+            exit 0
+          fi
+          if printf '%s' "$PR_BODY" | grep -qE -- '- \[[xX]\] Vérifié sur dev'; then
+            echo "::error::La case « Vérifié sur dev » est cochée mais vide : dites CE QUI a été observé (module, donnée, comportement) et quand. Une vérification sans contenu n'est pas une vérification (règle dure #10, AGENTS.md)."
+            exit 1
+          fi
+          echo "::error::Cette PR vise la production : ajoutez au corps de la PR la ligne « - [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé> ». Une fonctionnalité passe par dev.vitrinedemocratique.com (ou son miroir GitHub Pages pour un agent sans accès Cloudflare) AVANT la production — règle dure #10, AGENTS.md. Le check se relance à l'édition du corps de la PR."
+          exit 1

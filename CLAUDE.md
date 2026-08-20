@@ -30,7 +30,10 @@
   `vitrinedemocratique.com` (branche `prod`). Travail = `dev.vitrinedemocratique.com`
   (branche `main`, derrière Cloudflare Access). GitHub Pages reste debout comme
   filet mais ne sert plus de référence. ⚠️ Le code fusionné dans `main` n'est
-  PAS en production : `prod` n'avance que par une fusion délibérée.
+  PAS en production : `prod` n'avance que par une fusion délibérée, et cette
+  fusion exige une **vérification préalable sur dev** déclarée dans la PR de
+  promotion (« `- [x] Vérifié sur dev le … : <observé>` », check
+  `garde-promotion`, règle dure #10).
   Détail : [`docs/reference/environnements.md`](./docs/reference/environnements.md).
 - **Les données sont lues AU BUILD**, jamais par le navigateur. Ne jamais
   appeler `api.vitrinedemocratique.com` depuis un composant client : c'est ce

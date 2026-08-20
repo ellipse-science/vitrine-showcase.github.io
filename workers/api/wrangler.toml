@@ -19,8 +19,41 @@ CACHE_TTL_SECONDS = "14400"
 ACCESS_TEAM_DOMAIN = "capp-vitrine.cloudflareaccess.com"
 ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 
-# Secret à poser hors du dépôt :
+# Sync DIRECT Athena (chaîne émancipée de GitHub, cron de la minute :10).
+# BASCULE 2026-08-19 : "true" = les Deploy Hooks partent quand LES 15 tables
+# ont réussi (tout ou rien). Retour à l'ombre : remettre "false".
+SYNC_TRIGGER_DEPLOYS = "true"
+# Coordonnées Athena (non secrètes) : base Glue des datamarts DEV et
+# compartiment de résultats, les mêmes que ceux que `tube` résout.
+ATHENA_REGION = "ca-central-1"
+ATHENA_DATABASE = "gluestackdatamartdbd046f685"
+ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3/"
+
+# L'illustration de la Une des unes (routes /v1/art, src/art.ts). Le bucket
+# est créé une fois : npx wrangler r2 bucket create vitrine-art
+[[r2_buckets]]
+binding = "ART_BUCKET"
+bucket_name = "vitrine-art"
+
+# L'orchestrateur du cron s'appelle lui-même par tranches (/v1/sync-athena).
+# Un fetch() vers son PROPRE nom d'hôte ne revient JAMAIS au Worker —
+# Cloudflare coupe la boucle — et c'est pourquoi la passe autonome n'a laissé
+# aucune trace sur six occurrences le 2026-08-19, pendant que les passes
+# pilotées de l'extérieur réussissaient. Le service binding vers soi-même est
+# le chemin sanctionné : chaque appel est une invocation NEUVE, avec son
+# budget CPU à elle — exactement ce que l'orchestration par tranches cherchait.
+[[services]]
+binding = "SELF"
+service = "vitrine-api"
+
+# Secrets à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
+#   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena)
+#   wrangler secret put AWS_SECRET_ACCESS_KEY_DEV  (idem)
+#   wrangler secret put SLACK_WEBHOOK_URL          (optionnel, alertes)
+#   wrangler secret put DEPLOY_HOOK_PROD           (à la bascule)
+#   wrangler secret put DEPLOY_HOOK_DEV            (à la bascule)
+#   wrangler secret put SYNC_INTERNAL_TOKEN       (orchestration du cron)
 
 # Recharge Postgres depuis les JSON publiés.
 #
@@ -40,4 +73,17 @@ ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 # L'alternative était de changer cette ligne deux fois par an. Un rappel
 # semestriel finit toujours par être oublié, et l'oubli est silencieux.
 [triggers]
-crons = ["0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"]
+# BASCULE 2026-08-19 : un seul cron, la chaîne émancipée (minute :10 dans
+# src/index.ts) : sync DIRECT Athena -> Postgres, heures visées
+# {0,4,8,12,16,20} à New York, deux jeux UTC été/hiver, garde-fou
+# isAthenaTargetHourInNY (src/schedule.ts).
+#
+# Le cron :00 (JSON publiés -> Postgres) est RETIRÉ, pas seulement dormant :
+# refresh-data.yml ne tourne plus qu'une fois par semaine, et recopier ces
+# JSON vieillissants écraserait les données fraîches du raffineur toutes les
+# 4 h. Le code du chemin JSON reste (branche minute :00 de src/index.ts et
+# route /v1/sync) : retour arrière = remettre la ligne de cron ci-dessous.
+#   "0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"
+crons = [
+  "10 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
+]
