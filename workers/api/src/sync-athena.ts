@@ -147,6 +147,27 @@ async function writeTable(
   const colList = spec.cols.map(quoteIdent).join(', ')
   await pg.query('BEGIN')
   try {
+    // GARDE ZÉRO-LIGNE. Une requête Athena qui renvoie 0 ligne sur une table
+    // qui en avait est presque toujours une panne amont (partition manquante,
+    // vue vide, permission), pas une réalité éditoriale. Sans cette garde, on
+    // TRUNCATE, on committe « 0 ligne, succès », le tout-ou-rien passe, les
+    // hooks tirent et le site se reconstruit avec un module VIDE. Le risque
+    // avait été accepté en phase d'ombre (M1, trigger_deploys=false) — il ne
+    // l'était plus depuis l'armement des hooks (audit 2026-08-19). Échouer la
+    // table suffit : le tout-ou-rien retient les hooks, la transaction est
+    // annulée, et l'ancienne donnée continue d'être servie.
+    if (rows.length === 0) {
+      const prev = await pg.query(
+        `SELECT row_count FROM vitrine.sync_state WHERE table_name = $1`,
+        [spec.name],
+      )
+      const previous = Number(prev.rows[0]?.row_count ?? 0)
+      if (previous > 0) {
+        throw new Error(
+          `0 ligne reçue d'Athena alors que ${spec.name} en comptait ${previous} — table préservée`,
+        )
+      }
+    }
     await pg.query(`TRUNCATE ${table}`)
     for (let start = 0; start < rows.length; start += BATCH_ROWS) {
       const batch = rows.slice(start, start + BATCH_ROWS)
@@ -182,7 +203,7 @@ async function writeTable(
   }
 }
 
-async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
+export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
   if (!env.SLACK_WEBHOOK_URL) return
   try {
     const res = await fetch(env.SLACK_WEBHOOK_URL, {
@@ -196,7 +217,7 @@ async function notifySlack(env: SyncAthenaEnv, text: string): Promise<void> {
   }
 }
 
-async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
+export async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
   const hooks: [string, string | undefined][] = [
     ['prod', env.DEPLOY_HOOK_PROD],
     ['dev', env.DEPLOY_HOOK_DEV],
@@ -269,24 +290,10 @@ export async function runAthenaSync(
     await pg.end().catch(() => {})
   }
 
-  const fullPass = offset === 0 && next === null
-  if (fullPass && failed.length > 0) {
-    await notifySlack(
-      env,
-      `sync-athena : ${failed.length} table(s) en échec (${failed
-        .map((f) => f.table)
-        .join(', ')}) ; builds NON déclenchés.`,
-    )
-  }
-  if (fullPass && failed.length === 0 && env.SYNC_TRIGGER_DEPLOYS === 'true') {
-    try {
-      await triggerDeployHooks(env)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
-      throw err
-    }
-  }
-
+  // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
+  // La règle tout-ou-rien appartient à l'orchestrateur du cron (index.ts),
+  // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
+  // survit pas aux 15 tables d'un coup (constaté le 2026-08-19 : la passe
+  // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
   return { synced, failed, total: TABLES.length, next }
 }
