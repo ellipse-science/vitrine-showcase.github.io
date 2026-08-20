@@ -215,7 +215,7 @@ export function PartisCouvertureClient({
               <br />
               <br />• Chaque colonne porte la <b>couleur de son parti</b>.
               <br />
-              <br />• Le curseur <b>Source</b> change de média : les hauteurs se recalculent
+              <br />• Le curseur <b>Source</b> change de média&nbsp;: les hauteurs se recalculent
               sur les Unes de ce média seul.
               <br />
               <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
