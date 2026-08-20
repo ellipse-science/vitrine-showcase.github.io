@@ -1069,7 +1069,20 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   const n = axisDates.length;
 
   const histOf = (s: Stat) => s.history.daily.slice(decalage);
-  const minOf = (s: Stat) => s.minutesHistory.daily.slice(decalage);
+  /** Les minutes CUMULÉES sur la fenêtre affichée.
+   *
+   *  Une courbe qui ne fait que monter, comme un compteur de course. Les
+   *  minutes du jour, elles, montaient et redescendaient au gré de l'actualité :
+   *  cinq lignes qui se croisent sans cesse ne se lisent pas, et surtout elles
+   *  ne racontent pas ce qu'on veut voir — qui prend de l'avance.
+   *
+   *  ⚠️ Le cumul se fait ICI et non sur la vue intra-journée : le raffineur
+   *  accumule DÉJÀ depuis minuit à chaque passage, donc y appliquer une somme
+   *  courante compterait deux fois. */
+  const minOf = (s: Stat) => {
+    let somme = 0;
+    return s.minutesHistory.daily.slice(decalage).map((m) => (somme += m));
+  };
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
   // ÉCHELLE COMMUNE des minutes : c'est la comparaison des durées qui fait le
   // palmarès. Une échelle par parti dirait la forme, pas le classement.

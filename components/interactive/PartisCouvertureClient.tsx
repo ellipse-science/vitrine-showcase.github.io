@@ -888,12 +888,28 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
           {chart.yLabels.map((g) => (
             <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
           ))}
-          {series.map((s) => (
+          {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
+              courir. C'est elle qui fait de la mesure une course. */}
+          <line
+            className="palmares-arrivee"
+            x1={chart.finish.x}
+            x2={chart.finish.x}
+            y1="0"
+            y2={chart.height}
+          />
+          {series.map((s, i) => (
             <polyline
               key={s.key}
               className={`palmares-trait${s.inShadow ? " shadow" : ""}`}
               points={s.polylineMin}
-              style={{ ["--party" as string]: s.color }}
+              style={{
+                ["--party" as string]: s.color,
+                /* Les courbes se tracent l'une après l'autre, du dernier au
+                   premier : le meneur arrive en dernier, donc l'œil finit sur
+                   lui. Un dixième de seconde d'écart suffit à faire une course
+                   plutôt qu'un dessin qui apparaît d'un bloc. */
+                ["--retard" as string]: `${(series.length - 1 - i) * 110}ms`,
+              }}
             />
           ))}
         </svg>
@@ -915,7 +931,7 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
         ))}
 
         {/* Le nom au bout de la courbe : c'est LUI qui identifie la série. */}
-        {series.map((s) => (
+        {series.map((s, i) => (
           <span
             key={s.key}
             className={`palmares-nom${s.inShadow ? " shadow" : ""}`}
@@ -925,6 +941,7 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
               top: `${(s.labelYMin / chart.height) * 100}%`,
             }}
           >
+            <i className="palmares-rang">{i + 1}</i>
             {s.label} <b>{formatDuree(s.lastMinutes)}</b>
           </span>
         ))}
@@ -944,6 +961,12 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             {l.label}
           </li>
         ))}
+        <li
+          className="palmares-x-arrivee"
+          style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
+        >
+          {chart.finish.label}
+        </li>
       </ul>
 
       {/* Le tableau que la courbe illustre : un lecteur d'écran ne voit aucun

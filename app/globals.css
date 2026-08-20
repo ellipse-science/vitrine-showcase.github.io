@@ -8499,7 +8499,14 @@
    (`preserveAspectRatio="none"`), donc tout ce qui doit garder sa forme — les
    pochettes miniatures — est en HTML positionné en pourcentage, jamais en SVG :
    un carré SVG deviendrait un rectangle sous cet étirement. */
-.palmares-figure { margin: 0; }
+.palmares-figure {
+  margin: 0;
+  /* Même cadre que le pupitre : les deux blocs du module sont de la même
+     famille, l'un raconte la course et l'autre l'examine. */
+  border: 1px solid var(--rule);
+  background: var(--paper-deep);
+  padding: 16px 20px 12px;
+}
 .palmares-zone {
   position: relative;
   height: 190px;
@@ -8515,11 +8522,27 @@
   overflow: visible;
 }
 .palmares-grille {
-  stroke: var(--rule-faint);
+  stroke: var(--rule);
   stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+/* La ligne d'arrivée : le vide à sa gauche est ce qu'il reste à courir. */
+.palmares-arrivee {
+  stroke: var(--cordovan);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.5;
   vector-effect: non-scaling-stroke;
 }
 .palmares-trait {
+  /* 1000 dépasse largement la longueur d'un tracé dans un viewBox de 100 × 30 :
+     inutile de mesurer chaque chemin en JavaScript pour un gain invisible. */
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--retard, 0ms);
   fill: none;
   stroke: var(--party, var(--ink-soft));
   stroke-width: 2;
@@ -8610,4 +8633,58 @@
   .palmares-x { margin: 5px 62px 0 34px; }
   .palmares-nom { font-size: 9px; margin-left: 9px; }
   .palmares-pochette { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; }
+}
+
+@keyframes palmares-tracer {
+  to { stroke-dashoffset: 0; }
+}
+/* La pochette et le nom n'apparaissent qu'une fois le trait arrivé. */
+.palmares-pochette,
+.palmares-nom {
+  opacity: 0;
+  animation: palmares-arrive 300ms ease-out forwards;
+  animation-delay: calc(var(--retard, 0ms) + 640ms);
+}
+@keyframes palmares-arrive {
+  from { opacity: 0; transform: translateY(-50%) scale(0.7); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+/* La pochette n'est pas centrée verticalement par `translateY` comme le nom :
+   sa marge négative s'en charge. Elle a donc sa propre arrivée. */
+@keyframes palmares-arrive-carre {
+  from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+.palmares-pochette { animation-name: palmares-arrive-carre; }
+
+/* Le rang, devant le nom — c'est un classement. */
+.palmares-rang {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  color: var(--paper);
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0;
+  vertical-align: 1px;
+}
+.palmares-nom.shadow .palmares-rang { background: var(--ink-softer); }
+
+.palmares-x-arrivee {
+  color: var(--cordovan);
+  font-weight: 600;
+}
+
+/* Rien de tout cela ne porte d'information : le mouvement s'arrête net pour qui
+   demande moins d'animation, et tout reste en place. */
+@media (prefers-reduced-motion: reduce) {
+  .palmares-trait { animation: none; stroke-dashoffset: 0; }
+  .palmares-pochette,
+  .palmares-nom { animation: none; opacity: 1; }
+  .palmares-nom { transform: translateY(-50%); }
+  .palmares-pochette { transform: none; }
 }

@@ -263,13 +263,18 @@ const files = [
 // aws-refiners#355. Sans elle, l'onglet « Jour » n'a qu'un point par journée et
 // ne peut pas tracer une journée.
 //
-// La part de voix OSCILLE au fil de la journée sans dériver : c'est une part
-// (les cinq partis somment à 1), pas un cumul. Une courbe monotone donnerait
-// une fausse idée de ce que la mesure fait.
+// La PART de voix oscille au fil de la journée sans dériver — c'est une part,
+// les cinq partis somment à 1. Les MINUTES, elles, s'accumulent depuis minuit
+// comme le fait le raffineur : deux grandeurs, deux comportements.
 const BLOCS = [0, 4, 8, 12, 16, 20];
 const intraday = [];
 const randIntra = rng(97);
 for (const date of D.slice(-8)) {
+  // Les minutes s'ACCUMULENT bloc après bloc, et ne peuvent donc que monter.
+  // La version précédente multipliait une part VARIABLE par la fraction de
+  // journée écoulée : le produit n'était pas monotone, et la courbe d'un parti
+  // dont la part baissait redescendait — ce qu'un cumul ne fait jamais.
+  const cumul = Object.fromEntries(PARTIES.map((p) => [p, 0]));
   for (const h of BLOCS) {
     const brut = {};
     let total = 0;
@@ -279,6 +284,11 @@ for (const date of D.slice(-8)) {
       const onde = 1 + 0.22 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party));
       brut[party] = Math.max(0, base * onde);
       total += brut[party];
+    }
+    // Le bloc apporte un sixième des minutes du jour, réparti selon les parts
+    // de CE bloc. Le cumul du dernier bloc vaut donc le total de la journée.
+    for (const party of PARTIES) {
+      cumul[party] += total > 0 ? (brut[party] / total) * (MINUTES_PARTIS.day / BLOCS.length) : 0;
     }
     for (const party of PARTIES) {
       intraday.push({
@@ -290,10 +300,7 @@ for (const date of D.slice(-8)) {
         // l'accumulation de la journée à chaque passage, si bien que le dernier
         // bloc vaut le total du jour. Sans ce cumul, le palmarès plafonnait à
         // 1 h là où la pochette du même parti annonçait 2 h 27.
-        total_raw_score:
-          total > 0
-            ? round4((brut[party] / total) * MINUTES_PARTIS.day * ((h + 4) / 24))
-            : 0,
+        total_raw_score: round4(cumul[party]),
         weighted_tone: 0,
         date_utc: date,
         date_montreal_tz: date,
