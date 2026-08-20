@@ -8520,6 +8520,9 @@
   width: 100%;
   height: 100%;
   overflow: visible;
+  /* Le calque ne capte rien par défaut : seules les bandes de saisie le font,
+     sinon le rectangle du SVG avalerait le survol des noms posés par-dessus. */
+  pointer-events: none;
 }
 .palmares-grille {
   stroke: var(--rule);
@@ -8639,10 +8642,15 @@
   to { stroke-dashoffset: 0; }
 }
 /* La pochette et le nom n'apparaissent qu'une fois le trait arrivé. */
+/* `backwards` et NON `forwards` : une animation dont le remplissage est
+   `forwards` fige son dernier état et l'emporte sur les déclarations normales,
+   qui appartiennent à une origine de cascade inférieure. L'effacement des
+   courbes non retenues n'aurait alors jamais pris. En `backwards`, le premier
+   état ne s'applique que pendant le délai, et l'élément revient ensuite à son
+   style déclaré — donc à l'opacité que lui donne la mise en vedette. */
 .palmares-pochette,
 .palmares-nom {
-  opacity: 0;
-  animation: palmares-arrive 300ms ease-out forwards;
+  animation: palmares-arrive 300ms ease-out backwards;
   animation-delay: calc(var(--retard, 0ms) + 640ms);
 }
 @keyframes palmares-arrive {
@@ -8687,4 +8695,94 @@
   .palmares-nom { animation: none; opacity: 1; }
   .palmares-nom { transform: translateY(-50%); }
   .palmares-pochette { transform: none; }
+}
+
+/* ── Le palmarès, suite : mise en vedette, meneur, damier ────────────────────
+   Un graphique de course qu'on ne peut pas toucher n'est qu'une image. Isoler
+   une courbe est ce qui le rend jouable — et c'est aussi ce qui rattrape la
+   faiblesse MESURÉE de la palette : QS et le PLQ sont à ΔE 10,9 en vision
+   normale, sous le plancher de 15. Tant que les cinq courbes se croisent, la
+   couleur ne les sépare pas ; isolée, une courbe ne se confond avec rien. */
+
+/* Le meneur porte un trait plus épais : on voit qui mène sans avoir à lire. */
+.palmares-trait.meneur { stroke-width: 2.6; }
+
+/* Quand un parti est en vedette, les autres s'effacent SANS disparaître : la
+   course reste lisible, on garde le peloton en fond. */
+.palmares-figure.a-vedette .palmares-trait { opacity: 0.13; }
+.palmares-figure.a-vedette .palmares-trait.vedette { opacity: 1; stroke-width: 3; }
+.palmares-figure.a-vedette .palmares-pochette { opacity: 0.2; }
+.palmares-figure.a-vedette .palmares-pochette.vedette {
+  opacity: 1;
+  transform: scale(1.25);
+}
+.palmares-figure.a-vedette .palmares-nom { opacity: 0.38; }
+.palmares-figure.a-vedette .palmares-nom.vedette { opacity: 1; }
+.palmares-trait,
+.palmares-pochette,
+.palmares-nom { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
+
+/* Le nom est un bouton : il doit s'annoncer comme tel au survol et au clavier,
+   sans pour autant ressembler à un bouton de formulaire. */
+.palmares-nom {
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  text-align: left;
+}
+.palmares-nom:hover .palmares-rang,
+.palmares-nom.vedette .palmares-rang { transform: scale(1.15); }
+.palmares-rang { transition: transform 180ms ease; }
+.palmares-nom:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 1px;
+}
+
+/* La pochette de tête : un carré plein, avec la tranche plus claire d'un
+   disque rangé de profil. Deux pixels suffisent à faire lire « pochette »
+   plutôt que « point ». */
+.palmares-pochette::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2.5px;
+  background: rgba(243, 236, 221, 0.5);
+}
+
+/* Le damier de l'arrivée, au sommet de la ligne. */
+.palmares-damier {
+  position: absolute;
+  top: -9px;
+  width: 14px;
+  height: 10px;
+  margin-left: -7px;
+  background-image:
+    linear-gradient(45deg, var(--cordovan) 25%, transparent 25% 75%, var(--cordovan) 75%),
+    linear-gradient(45deg, var(--cordovan) 25%, transparent 25% 75%, var(--cordovan) 75%);
+  background-size: 5px 5px;
+  background-position: 0 0, 2.5px 2.5px;
+  background-color: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palmares-trait,
+  .palmares-pochette,
+  .palmares-nom,
+  .palmares-rang { transition: none; }
+}
+
+/* La bande de saisie : large, invisible, et seule à capter le pointeur dans le
+   SVG. Un trait de 2 px ne se vise pas à la souris. */
+.palmares-touche {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: stroke;
+  cursor: pointer;
 }
