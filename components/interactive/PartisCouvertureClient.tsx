@@ -33,103 +33,6 @@ const ARTICLE: Record<string, string> = {
   qs: "",
 };
 
-/**
- * Le bloc « Reprendre ces chiffres ».
- *
- * Le module sait déjà MONTRER. Il ne savait pas encore se laisser EMPORTER : un
- * journaliste qui veut citer devait relever les nombres à l'écran, reconstituer
- * la période et deviner le périmètre, avec un risque d'erreur à chaque étape.
- *
- * Trois besoins distincts, donc trois réponses :
- *   1. une PHRASE prête à citer, période et source comprises ;
- *   2. le TABLEAU complet, collable dans un tableur ;
- *   3. la PROVENANCE, pour que la citation soit exacte et non seulement rapide.
- *
- * Replié par défaut : il s'adresse à une minorité de visiteurs, et le déplier
- * est un geste que seul celui qui en a besoin fera. Le module reste plus clair
- * pour tous les autres.
- *
- * Absent quand la mesure est indisponible : on ne propose pas de reprendre des
- * chiffres qu'on refuse d'afficher.
- */
-function BlocJournalistes({
-  rows,
-  periodeLabel,
-  mediaLabel,
-}: {
-  rows: RowView[];
-  periodeLabel: string;
-  mediaLabel: string | null;
-}) {
-  const [copie, setCopie] = useState<"phrase" | "tableau" | null>(null);
-
-  const tete = rows.filter((r) => !r.inShadow)[0];
-  if (!tete) return null;
-
-  const ou = mediaLabel ? `dans ${mediaLabel}` : "dans les médias québécois";
-  // Nom OFFICIEL et non le sigle : c'est cette chaîne qui partira dans un
-  // article, où « CAQ » sans antécédent ne se pose pas.
-  const phrase =
-    `${periodeLabel.charAt(0).toUpperCase()}${periodeLabel.slice(1)}, ${ou}, ` +
-    `${tete.fullLabel} a occupé ${tete.sovPct} % du temps consacré aux partis politiques québécois. ` +
-    `Source : Vitrine démocratique, CLESSN.`;
-
-  // Tabulations et non virgules : collé dans un tableur, un TSV se répartit en
-  // colonnes sans boîte de dialogue d'import, et aucun nom de parti n'a besoin
-  // d'être protégé par des guillemets.
-  const tableau = [
-    ["Parti", "Part du temps (%)", "Temps en Une (min)", "Ton", "Sommet (%)", "Date du sommet"].join("\t"),
-    ...rows.map((r) =>
-      [r.fullLabel, r.sovPct, r.minutesUne, r.toneLabel.replace(/[↑↓—]\s*/g, ""), r.peakPct, r.peakDate].join("\t"),
-    ),
-  ].join("\n");
-
-  const copier = async (quoi: "phrase" | "tableau") => {
-    try {
-      await navigator.clipboard.writeText(quoi === "phrase" ? phrase : tableau);
-      setCopie(quoi);
-      setTimeout(() => setCopie(null), 2000);
-    } catch {
-      // Presse-papiers refusé (permission, contexte non sécurisé) : on ne fait
-      // rien de plus, le texte reste sélectionnable à la main juste au-dessus.
-    }
-  };
-
-  return (
-    <details className="partis-presse">
-      <summary>Reprendre ces chiffres</summary>
-
-      <p className="partis-presse-phrase">{phrase}</p>
-
-      <div className="partis-presse-actions">
-        <button type="button" onClick={() => copier("phrase")}>
-          {copie === "phrase" ? "Phrase copiée ✓" : "Copier la phrase"}
-        </button>
-        <button type="button" onClick={() => copier("tableau")}>
-          {copie === "tableau" ? "Tableau copié ✓" : "Copier le tableau"}
-        </button>
-      </div>
-
-      <ul className="partis-presse-source">
-        <li>
-          <b>Période&nbsp;:</b> {periodeLabel}.
-        </li>
-        <li>
-          <b>Périmètre&nbsp;:</b> {mediaLabel ?? "l’ensemble des médias québécois suivis"}.
-        </li>
-        <li>
-          <b>Mesure&nbsp;:</b> la part du temps de Une consacrée à chaque parti, rapportée au
-          total des cinq partis québécois. Ce n&apos;est pas une intention de vote.
-        </li>
-        <li>
-          <b>Sourdine&nbsp;:</b> le parti dont on parle le moins sur la période, quelle
-          que soit sa part. Sa colonne reste affichée, en gris.
-        </li>
-      </ul>
-    </details>
-  );
-}
-
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
   // `indisponible` en tête, comme partout ailleurs : ce titre part dans le
@@ -148,7 +51,16 @@ function shareTitle(data: PartiesData): string {
   return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct}\u00a0% du temps\u00a0: ${tone}`;
 }
 
-export function PartisCouvertureClient({ data }: { data: PartiesData }) {
+export function PartisCouvertureClient({
+  data,
+  saillanceRang = 0,
+}: {
+  data: PartiesData;
+  /** Rang de saillance de la Une du moment, 1 (très faible) → 6
+   *  (exceptionnelle), 0 si la donnée manque. Ne pilote QUE le tempo des
+   *  vumètres : aucune lecture n'en dépend. */
+  saillanceRang?: number;
+}) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   const [showDoom, setShowDoom] = useState(false);
@@ -295,12 +207,12 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         </div>
 
         <div className="regie-centre">
-          <p className="console-tete">Part de voix</p>
           <Console
             rows={view.rows}
             reference={data.ranges[range].rows}
             onPcqTap={handlePcqTap}
             indisponible={data.indisponible}
+            saillanceRang={saillanceRang}
           />
         </div>
 
@@ -318,14 +230,6 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
         />
       )}
       </div>
-
-      {!data.indisponible && (
-        <BlocJournalistes
-          rows={view.rows}
-          periodeLabel={data.ranges[range].periodeLabel}
-          mediaLabel={media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null)}
-        />
-      )}
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
@@ -450,6 +354,7 @@ function Console({
   reference,
   onPcqTap,
   indisponible,
+  saillanceRang,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -459,6 +364,8 @@ function Console({
   /** Non nul quand la mesure elle-même est en cause : l'état vide ne peut
    *  alors plus être formulé comme un silence des médias. */
   indisponible: Indisponibilite | null;
+  /** Saillance de la Une, 1 → 6. Pilote le tempo, rien d'autre. */
+  saillanceRang: number;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -495,7 +402,17 @@ function Console({
   }
 
   return (
-    <section className="console" aria-label="Niveaux de couverture médiatique par parti">
+    <section
+      className="console"
+      aria-label="Niveaux de couverture médiatique par parti"
+      /* Le tempo des vumètres : 2 s quand l'actualité est très faible, 0,7 s
+         quand elle est exceptionnelle. Rang 0 (donnée absente) tombe au milieu
+         de l'échelle plutôt qu'à une extrémité. */
+      style={{ ["--tempo" as string]: `${saillanceRang > 0 ? 2.0 - (saillanceRang - 1) * 0.26 : 1.35}s` }}
+    >
+      {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
+          l'instrument, il ne l'introduit pas. */}
+      <p className="console-tete">Part de temps passé en Une de l&apos;actualité</p>
       <div className="console-corps">
         <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
           {tranches.map((row, i) => (
@@ -571,7 +488,7 @@ function Deck({
 
   const pistes: [string, string][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
-    ["Part de voix", `${row.sovPct} %`],
+    ["Part de temps", `${row.sovPct} %`],
     ["Enjeu clé", enjeu?.label ?? SANS_ENJEU],
   ];
 
@@ -712,6 +629,23 @@ function Tranche({
   const allumes = coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
+  /** Le rang d'un segment dans la tête du vumètre, de 1 (le plus bas des trois)
+   *  à 3 (le sommet), ou 0 s'il n'en fait pas partie.
+   *
+   *  Les trois derniers segments allumés vacillent comme la tête d'un vrai
+   *  vumètre : le sommet plonge fort et souvent, les deux du dessous de moins en
+   *  moins. Leurs durées sont volontairement incommensurables, pour qu'ils ne se
+   *  resynchronisent jamais — c'est ce désaccord qui fait vivant plutôt que
+   *  clignotant. Le mouvement ne mesure rien.
+   *
+   *  Jamais sur un canal en SOURDINE — un canal muet qui se charge annoncerait
+   *  une activité qu'il n'a justement pas. Et jamais plus de segments qu'il n'y
+   *  en a d'allumés : sous trois, la cascade se raccourcit au lieu de déborder
+   *  sur des segments éteints. */
+  const debutVu = Math.max(0, allumes - 3);
+  const vu = (i: number) =>
+    !coupe && i < allumes && i >= debutVu ? i - debutVu + 1 : 0;
+
   const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
   const ecart = Math.round((ratio - 1) * 100);
 
@@ -735,7 +669,10 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg${coupe ? " mute" : ""}${idx < allumes ? " on" : ""}`}
+            className={
+              `seg${coupe ? " mute" : ""}${idx < allumes ? " on" : ""}` +
+              (vu(idx) ? ` vu vu--${vu(idx)}` : "")
+            }
             aria-hidden="true"
           />
         ))}

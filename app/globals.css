@@ -4809,7 +4809,6 @@
 
   /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
   .console-tranche { position: relative; }
-  .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
   /* Le ruban d'un canal coupé perd sa couleur de parti : il n'est plus une
      identité qui joue, seulement une tranche présente. */
@@ -4877,6 +4876,56 @@
      jusqu'à la moyenne, ambre au-dessus, rouge bien au-dessus). Cet encodage
      est abandonné : bouger le fader ne change plus que les hauteurs. */
   .console-vumetre .seg.on { background: var(--party, var(--green)); }
+  /* La TÊTE du vumètre vacille, comme sur un appareil qui suit un signal.
+
+     Trois profondeurs : le sommet plonge le plus (0,52), le suivant à moitié
+     moins (0,74), le troisième à peine (0,89). C'est la signature d'un
+     vumètre — les diodes du haut battent, celles du bas tiennent. Les creux
+     restent volontairement peu profonds : le mouvement doit se remarquer du
+     coin de l'œil, pas attirer le regard hors de la lecture.
+
+     Les trois durées sont volontairement INCOMMENSURABLES entre elles (×1,
+     ×0,71, ×1,37) : elles ne retombent jamais en phase, et le mouvement ne se
+     laisse pas lire comme une boucle. Un délai commun aurait produit une
+     cascade régulière, donc mécanique.
+
+     `--tempo` vient de la saillance de la Une : 2 s quand l'actualité est très
+     faible, 0,7 s quand elle est exceptionnelle.
+
+     Sur l'opacité seule : animer une couleur de fond forcerait un repaint à
+     chaque image, alors que l'opacité reste sur le compositeur. */
+  .console-vumetre .seg.on.vu {
+    animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  .console-vumetre .seg.on.vu--1 {
+    animation-name: vu-bas;
+    animation-duration: calc(var(--tempo, 1.35s) * 1.37);
+  }
+  .console-vumetre .seg.on.vu--2 {
+    animation-name: vu-milieu;
+    animation-duration: calc(var(--tempo, 1.35s) * 0.71);
+  }
+  .console-vumetre .seg.on.vu--3 {
+    animation-name: vu-sommet;
+    animation-duration: var(--tempo, 1.35s);
+  }
+  /* Attaque franche, retombée lente : l'enveloppe d'un signal sonore. */
+  @keyframes vu-sommet {
+    0% { opacity: 1; }
+    18% { opacity: 0.52; }
+    100% { opacity: 1; }
+  }
+  @keyframes vu-milieu {
+    0% { opacity: 1; }
+    22% { opacity: 0.74; }
+    100% { opacity: 1; }
+  }
+  @keyframes vu-bas {
+    0% { opacity: 1; }
+    26% { opacity: 0.89; }
+    100% { opacity: 1; }
+  }
   /* Sourdine : deux segments GRIS en bas, et rien d'autre. La tranche reste
      là — un canal muet se voit, il ne disparaît pas. Gris et non vert : le vert
      appartient à l'échelle des canaux qui jouent. */
@@ -7944,85 +7993,7 @@
 .hero-figure picture {
   display: contents;
 }
-
-/* ── « Reprendre ces chiffres » : le bloc de reprise pour la presse ──────────
-   Replié par défaut, et discret une fois ouvert : il s'adresse à une minorité
-   de visiteurs, et le module doit rester lisible pour tous les autres. On
-   reprend les filets fins et le papier creusé du reste du site plutôt que
-   d'inventer un encadré de plus. */
-.partis-presse {
-  margin-top: 28px;
-  border-top: 1px solid var(--rule);
-  padding-top: 14px;
-}
-
-.partis-presse > summary {
-  cursor: pointer;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  list-style: none;
-}
-.partis-presse > summary::-webkit-details-marker { display: none; }
-.partis-presse > summary::before {
-  content: "+ ";
-  color: var(--cordovan);
-}
-.partis-presse[open] > summary::before { content: "− "; }
-.partis-presse > summary:hover { color: var(--ink); }
-
-/* La phrase est un OBJET À PRENDRE, pas un paragraphe de plus : le papier
-   creusé et le filet cordovan disent « ceci se recopie ». */
-.partis-presse-phrase {
-  margin: 14px 0 0;
-  padding: 14px 16px;
-  background: var(--paper-deep);
-  border-left: 3px solid var(--cordovan);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.partis-presse-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.partis-presse-actions button {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 8px 14px;
-  color: var(--ink);
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  cursor: pointer;
-}
-.partis-presse-actions button:hover {
-  border-color: var(--cordovan);
-  color: var(--cordovan);
-}
-
-.partis-presse-source {
-  margin: 16px 0 0;
-  padding-left: 18px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-soft);
-}
-.partis-presse-source li { margin-bottom: 5px; }
-
-@media (max-width: 480px) {
-  /* Les deux boutons passent pleine largeur : à 375 px, côte à côte, chacun
-     tombe sous la cible tactile confortable. */
-  .partis-presse-actions { flex-direction: column; }
-  .partis-presse-actions button { width: 100%; }
-}
+@media (max-width: 480px) {}
 
 
 /* Mode d'emploi des platines. Discret mais permanent : l'information vivait
@@ -8332,6 +8303,25 @@
   background: var(--paper-deep);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
+/* L'aiguille : un tour par minute, comme une trotteuse. Elle ne mesure rien —
+   elle dit seulement que l'instrument tourne. Son pivot est le centre du
+   plateau : elle part du haut et sa base tombe pile au milieu. */
+.deck-jog::after {
+  content: "";
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 1.5px;
+  height: 43%;
+  margin-left: -0.75px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, var(--ink-softer), rgba(110, 104, 95, 0.15));
+  transform-origin: 50% 100%;
+  animation: deck-aiguille 60s linear infinite;
+}
+@keyframes deck-aiguille {
+  to { transform: rotate(360deg); }
+}
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
@@ -8527,7 +8517,7 @@
    espacées, encre douce. Il remplace la phrase éditoriale qui occupait cette
    place au-dessus de la console. */
 .console-tete {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   text-align: center;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
@@ -8535,4 +8525,12 @@
   text-transform: uppercase;
   color: var(--ink-softer);
   font-weight: 500;
+}
+
+/* Mouvement décoratif : il s'arrête net pour qui demande moins d'animation.
+   Ni l'aiguille ni le clignotement ne portent d'information — les couper ne
+   retire donc rien à la lecture. */
+@media (prefers-reduced-motion: reduce) {
+  .deck-jog::after,
+  .console-vumetre .seg.on.vu { animation: none; opacity: 1; }
 }
