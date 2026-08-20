@@ -808,8 +808,8 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
     vendredi.setUTCDate(j.getUTCDate() + (5 - jour));
     return {
       t: vendredi.getTime() + HEURE_ARRIVEE * 3_600_000,
-      label: "Arrivée",
-      sub: `vendredi ${HEURE_ARRIVEE} h`,
+      label: "vendredi",
+      sub: `${HEURE_ARRIVEE} h`,
     };
   }
   return { t: j.getTime() + HEURE_ARRIVEE * 3_600_000, label: "Arrivée", sub: `${HEURE_ARRIVEE} h` };
@@ -826,17 +826,12 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  */
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
   if (range === "week") {
-    // LUNDI de la semaine d'arrivée, à minuit.
-    //
-    // L'axe partait de `arrivée − 7 jours − 2 h`, c'est-à-dire du VENDREDI
-    // précédent : le lundi tombait alors à 29 % de l'axe, et le premier tiers
-    // du graphique montrait une semaine qui n'était pas celle qu'on lit. La
-    // course va du lundi au vendredi, l'axe aussi.
+    // SAMEDI qui ouvre la semaine, à minuit — six jours avant le vendredi
+    // d'arrivée. L'axe partait de `arrivée − 7 jours − 2 h`, une borne calculée
+    // en heures qui ne tombait sur le début d'aucun jour.
     const fin = new Date(arriveeT);
-    const versLundi = ((fin.getUTCDay() || 7) - 1) * 86_400_000;
-    return Date.parse(
-      `${new Date(fin.getTime() - versLundi).toISOString().slice(0, 10)}T00:00:00Z`,
-    );
+    const samedi = new Date(fin.getTime() - 6 * 86_400_000);
+    return Date.parse(`${samedi.toISOString().slice(0, 10)}T00:00:00Z`);
   }
   if (range === "overall" && ELECTION_CALL_DATE) {
     return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
@@ -990,17 +985,18 @@ function reperesAxe(
   }
 
   if (range === "week") {
-    // Le lundi de la semaine d'arrivée, puis les sept jours.
+    // Du SAMEDI d'ouverture jusqu'à la veille de l'arrivée : le vendredi est
+    // porté par l'arrivée elle-même, l'écrire ici le doublerait.
     const fin = new Date(tFin);
-    const versLundi = ((fin.getUTCDay() || 7) - 1) * JOUR;
     const lundi = Date.parse(
-      `${new Date(fin.getTime() - versLundi).toISOString().slice(0, 10)}T00:00:00Z`,
+      `${new Date(fin.getTime() - 6 * JOUR).toISOString().slice(0, 10)}T00:00:00Z`,
     );
     // Du lundi JUSQU'À la ligne d'arrivée, jours à venir compris : c'est ce qui
     // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
     // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
     // repère posé au-delà désignerait un moment qui ne sera jamais couru.
-    for (let t = lundi; t <= tFin + 1; t += JOUR) {
+    const veille = tFin - 20 * 3_600_000; // minuit du vendredi
+    for (let t = lundi; t < veille - 1; t += JOUR) {
       pousser(t, JOURS_COURTS[new Date(t).getUTCDay()]);
     }
     return out;
