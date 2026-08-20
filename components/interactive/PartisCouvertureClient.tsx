@@ -532,6 +532,7 @@ function Deck({
     ["Temps en Une", formatDuree(row.minutesUne)],
     ["Part de temps", `${row.sovPct} %`],
     ["Enjeu clé", enjeu?.label ?? SANS_ENJEU],
+    ["Ton de la couverture", row.toneLabel],
   ];
 
   return (
@@ -608,10 +609,6 @@ function Deck({
                 </span>
               </span>
             ))}
-            {/* Le ton n'est plus qu'une couleur sur la pochette. Il reste
-                énonçable pour les lecteurs d'écran, qui ne voient aucune
-                couleur : sans cela l'information disparaîtrait pour eux. */}
-            <span className="visually-hidden">Ton de la couverture : {row.toneLabel}</span>
           </span>
         </span>
       </button>

@@ -8534,3 +8534,74 @@
   .deck-jog::after,
   .console-vumetre .seg.on.vu { animation: none; opacity: 1; }
 }
+
+/* ── Régie sous 1184 px : les quatre decks AU-DESSUS du vumètre, en 2×2 ──────
+   La grille à trois colonnes s'effondrait en une seule, ce qui déroulait
+   deck 1, deck 3, console, deck 2, deck 4 — le classement coupé en deux par
+   l'instrument. Les deux flancs sont replacés côte à côte sur la première
+   rangée, et la console passe dessous sur toute la largeur.
+
+   Placement EXPLICITE plutôt qu'`order` : le DOM intercale la console entre les
+   deux flancs, et le placement automatique l'aurait logée dans la cellule
+   voisine du premier. Les coordonnées de grille ne laissent pas ce doute.
+
+   Ce bloc vient APRÈS ceux de 1184 et de 768 : à spécificité égale, c'est
+   l'ordre source qui tranche, et il doit gagner sur les deux (piège de cascade
+   documenté dans le skill de vérification responsive). */
+@media (max-width: 1184px) {
+  .regie {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 22px 20px;
+  }
+  .regie-flanc {
+    /* Plus de débordement au-dessus ni au-dessous : il n'y a plus de vumètre
+       à encadrer, les decks sont posés dessus. */
+    margin-bottom: 0;
+    gap: 18px;
+  }
+  .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
+  .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
+  .regie-centre { grid-area: 2 / 1 / 3 / 3; }
+  .deck-carre { max-width: 168px; }
+}
+
+/* ── Téléphone : toute la table de mix sur un écran ──────────────────────────
+   Sans cela, changer de source au fader oblige à remonter pour voir les decks :
+   l'instrument et son résultat ne tiennent pas dans le même champ de vision, et
+   la manipulation perd son sens.
+
+   La place se prend sur les MARGES et sur la hauteur du vumètre, jamais sur les
+   decks : une pochette dont on ne peut plus lire les pistes ne sert plus à
+   rien. L'échelle du vumètre reste à 100 %, seule sa hauteur se comprime.
+
+   Budget sur un 375 × 667 : deux rangées de decks ≈ 350 px, vumètre ≈ 190 px,
+   fader ≈ 60 px, gouttières ≈ 40 px. Chaque valeur ci-dessous sert ce total. */
+@media (max-width: 640px) {
+  /* Marges rognées au minimum : c'est là qu'on prend la place, pas sur le
+     contenu. */
+  .pupitre { padding: 10px 8px 12px; }
+  .regie { gap: 9px 10px; margin-top: 8px; }
+  .regie-flanc { gap: 9px; }
+
+  /* Les decks restent GRANDS : la pochette doit rester lisible. */
+  .deck-carre { max-width: 146px; }
+  .deck { gap: 5px; }
+  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
+  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+
+  /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
+     jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
+     tout, la raccourcir changerait la lecture. */
+  .console { --piste: 100px; --seg-gap: 1.5px; padding: 9px 10px 11px; }
+  .console-tete { margin: 0 0 8px; font-size: 8px; letter-spacing: 0.14em; }
+  .regie-centre { gap: 10px; }
+
+  /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
+  .deck-piste { font-size: 8.5px; gap: 4px; }
+  .deck-piste-val { font-size: 7.5px; }
+  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
+  .pochette-sigle { font-size: 26px; }
+  .cap-sigle { font-size: 32px; }
+}
