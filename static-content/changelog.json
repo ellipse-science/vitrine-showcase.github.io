@@ -1,5 +1,11 @@
 [
   {
+    "pr": 544,
+    "date": "2026-08-20T18:37:30Z",
+    "note": "Deux modules encore en rodage — la couverture des partis et l'alignement de l'Assemblée — se retirent du site public le temps de mûrir ; ils restent visibles sur notre environnement de travail. L'outil de signalement de problème devient un outil interne à l'équipe. Le site mesure désormais sa fréquentation avec Cloudflare Web Analytics, une mesure agrégée sans témoin ni pistage individuel. Les…",
+    "version": null
+  },
+  {
     "pr": 534,
     "date": "2026-08-20T15:47:11Z",
     "note": "L'illustration de la une des unes est maintenant produite par un service dédié, qui la renouvelle dès que la une change plutôt qu'à heures fixes. Et si l'illustration disponible ne correspond pas à la une affichée, le site préfère ne rien montrer plutôt que d'illustrer la mauvaise nouvelle. 🤖 Assisté par Claude Code (Fable 5)",

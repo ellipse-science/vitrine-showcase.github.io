@@ -99,6 +99,30 @@ async function pruneDataJson() {
   console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
 }
 
+// Fonds Gratton RETIRÉS DE PROD (2026-08-20) : lib/shareImageBackgrounds.ts
+// vide déjà la table en prod — plus aucune carte n'y réfère — mais `output:
+// export` copierait quand même les photos dans out/images/share/, à des URL
+// devinables. On retire donc les fichiers eux-mêmes du livrable prod ; dev
+// les garde.
+async function pruneShareBackgrounds() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  const shareDir = path.join(OUT_DIR, "images", "share");
+  let entries;
+  try {
+    entries = await readdir(shareDir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  let removed = 0;
+  for (const name of entries) {
+    if (!name.startsWith("gratton-")) continue;
+    await rm(path.join(shareDir, name));
+    removed++;
+  }
+  console.log(`postbuild: ${removed} fond(s) Gratton retiré(s) du livrable prod`);
+}
+
 // Identifiant de build pour l'actualisation côté navigateur (composant
 // ActualisationAuto) : ~100 octets consultés par la sonde du client, servis
 // par le CDN avec Cache-Control: no-store (public/_headers). L'horodatage
@@ -160,6 +184,7 @@ async function main() {
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
+  await pruneShareBackgrounds();
 
   // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
   // identifiant nomme le cache du service worker — la sonde ActualisationAuto
