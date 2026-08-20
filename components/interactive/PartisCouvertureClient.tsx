@@ -54,10 +54,10 @@ function phraseColonne(row: RowView, ecartPts: number): string {
     );
   }
 
+  // Pas de « record sur la période » ici : deux pourcentages côte à côte, l'un
+  // courant et l'autre historique, se lisent comme une contradiction plutôt que
+  // comme une mise en perspective.
   let phrase = `${nom} occupe ${row.sovPct}\u00a0% ${base}.`;
-  if (row.peakPct > row.sovPct) {
-    phrase += ` Son record sur la période est de ${row.peakPct}\u00a0%.`;
-  }
   if (ecartPts !== 0) {
     phrase +=
       ` Ce média lui en donne ${Math.abs(ecartPts)}\u00a0% ` +
@@ -522,9 +522,11 @@ function Deck({
   /* Le survol du disque annonce ce qu'on va LIRE, pas seulement le geste :
      « retourner » ne disait pas qu'il y a des chiffres derrière. */
   const annonceDisque = ouverte
-    ? `${row.fullLabel}\u00a0: masquer la pochette`
-    : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"}\u00a0: retourner le disque pour voir ` +
-      `son temps en Une, sa part et son enjeu clé`;
+    ? `Refermer la pochette de ${row.fullLabel} et revenir au disque`
+    : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
+      `Retournez le disque pour voir combien de temps ce parti a occupé la Une, ` +
+      `quelle part de la couverture il représente, et l'enjeu dont on parle le plus ` +
+      `à son sujet.`;
 
   const pistes: [string, string][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
