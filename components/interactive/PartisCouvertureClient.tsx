@@ -930,7 +930,15 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
   const tete = series[0] ?? null;
 
   return (
-    <figure className={`palmares-figure${vedette ? " a-vedette" : ""}`}>
+    <figure
+      className={
+        "palmares-figure" +
+        (vedette ? " a-vedette" : "") +
+        // Sur téléphone, cet état décide de CE QU'ON MONTRE : les courbes tant
+        // que la course dure, le classement une fois l'arrivée franchie.
+        (termine ? " termine" : "")
+      }
+    >
       <div className="palmares-corps">
         <div className="palmares-zone">
           <svg

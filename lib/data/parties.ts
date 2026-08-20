@@ -825,7 +825,19 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  *   Jour    → la première journée montrée.
  */
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
-  if (range === "week") return arriveeT - 7 * 86_400_000 - 2 * 3_600_000;
+  if (range === "week") {
+    // LUNDI de la semaine d'arrivée, à minuit.
+    //
+    // L'axe partait de `arrivée − 7 jours − 2 h`, c'est-à-dire du VENDREDI
+    // précédent : le lundi tombait alors à 29 % de l'axe, et le premier tiers
+    // du graphique montrait une semaine qui n'était pas celle qu'on lit. La
+    // course va du lundi au vendredi, l'axe aussi.
+    const fin = new Date(arriveeT);
+    const versLundi = ((fin.getUTCDay() || 7) - 1) * 86_400_000;
+    return Date.parse(
+      `${new Date(fin.getTime() - versLundi).toISOString().slice(0, 10)}T00:00:00Z`,
+    );
+  }
   if (range === "overall" && ELECTION_CALL_DATE) {
     return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
   }

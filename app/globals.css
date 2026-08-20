@@ -8859,12 +8859,27 @@
   .palmares-rang { transition: none; }
 }
 
+/* Sur téléphone, le palmarès ne montre qu'UNE chose à la fois : il n'y a pas la
+   largeur pour un graphique ET une colonne, et les empiler l'un sous l'autre
+   allongerait le module au point de sortir de l'écran — or toute la table de
+   mix doit y tenir.
+
+   Tant que la course dure, ce sont les COURBES : c'est le mouvement qui
+   intéresse. Une fois l'arrivée franchie — l'édition de 20h, celle du vendredi
+   20h, le jour du scrutin — c'est le CLASSEMENT : la course est finie, seul le
+   résultat compte. */
 @media (max-width: 640px) {
-  .palmares-figure { padding: 10px 10px 8px; }
-  .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .palmares-figure { --marge-y: 32px; }
+  .palmares-figure { padding: 10px 10px 8px; --marge-y: 32px; }
+  .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .palmares-zone { min-height: 88px; }
   .palmares-x { margin: 4px 0 0 var(--marge-y); }
-  .palmares-liste { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-  .palmares-gagnant { margin-bottom: 8px; padding-bottom: 8px; }
+
+  .palmares-classement { display: none; }
+
+  .palmares-figure.termine .palmares-zone,
+  .palmares-figure.termine .palmares-x { display: none; }
+  .palmares-figure.termine .palmares-classement { display: block; }
+  .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
+  .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
+  .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
 }
