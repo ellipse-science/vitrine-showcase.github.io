@@ -528,11 +528,15 @@ function Deck({
       `quelle part de la couverture il représente, et l'enjeu dont on parle le plus ` +
       `à son sujet.`;
 
-  const pistes: [string, string][] = [
+  const pistes: [string, string, string?][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
     ["Part de temps", `${row.sovPct} %`],
     ["Enjeu clé", enjeu?.label ?? SANS_ENJEU],
-    ["Ton de la couverture", row.toneLabel],
+    // Le troisième champ est la forme COURTE, servie sur téléphone où la
+    // pochette n'a pas la largeur du libellé entier. Les deux sont dans le DOM
+    // et le CSS choisit : un lecteur d'écran entend donc toujours le libellé
+    // complet, quelle que soit la taille de l'écran.
+    ["Ton de la couverture", row.toneLabel, "Ton"],
   ];
 
   return (
@@ -598,9 +602,18 @@ function Deck({
           </span>
 
           <span className="deck-pistes">
-            {pistes.map(([nom, valeur]) => (
+            {pistes.map(([nom, valeur, court]) => (
               <span className="deck-piste" key={nom}>
-                <span className="deck-piste-nom">{nom}</span>
+                <span className="deck-piste-nom">
+                  {court ? (
+                    <>
+                      <span className="piste-long">{nom}</span>
+                      <span className="piste-court" aria-hidden="true">{court}</span>
+                    </>
+                  ) : (
+                    nom
+                  )}
+                </span>
                 {/* Les pointillés vivent ENTRE le titre et la valeur, comme au
                     dos d'un disque, et non sous le titre. */}
                 <i className="deck-piste-fil" aria-hidden="true" />

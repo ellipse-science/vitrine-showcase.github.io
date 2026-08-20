@@ -7789,34 +7789,52 @@
 }
 
 @media (max-width: 640px) {
-  .flappy-brand { font-size: 9.5px; letter-spacing: 0.14em; }
-  .flappy-target { padding: 6px 12px; }
-  .flappy-target-head { font-size: 13px; }
-  .flappy-overlay {
-    padding: 12px 10px;
-    gap: 10px;
-    justify-content: flex-start;
-  }
-  .flappy-title { font-size: 20px; padding-bottom: 4px; }
-  .flappy-hint { font-size: 12.5px; line-height: 1.4; max-width: 36ch; }
-  .flappy-score { font-size: 12px; }
-  .flappy-score b { font-size: 20px; }
-  .flappy-initials label { font-size: 10px; }
-  .flappy-initials input { width: 3.8rem; font-size: 1rem; padding: 4px; }
-  .flappy-initials button { padding: 6px 12px; font-size: 10px; }
-  .flappy-board-wrap { width: 100%; max-width: 280px; }
-  .flappy-board {
-    width: 100%;
-    font-size: 11.5px;
-    max-height: 140px;
-    overflow-y: auto;
-    border: 0.5px solid var(--rule-faint);
-    padding: 4px 8px;
-    background: var(--paper);
-  }
-  .flappy-board li { padding: 4px 0; }
-  .flappy-actions { gap: 8px; margin-top: 4px; }
-  .flappy-actions button { padding: 8px 14px; font-size: 10px; }
+  /* Le vide au-dessus des disques : `.pupitre .regie` ajoutait 26 px de marge
+     ET 26 px de rembourrage, hérités de l'époque où une manchette occupait le
+     haut du cadre. Elle n'existe plus. */
+  .pupitre { padding: 6px 8px 8px; }
+  .pupitre .regie { margin-top: 4px; padding-top: 4px; }
+  /* La rangée d'aide ne pousse plus rien : son ⓘ se pose dans le coin. */
+  .pupitre { position: relative; }
+  .pupitre-aide { position: absolute; top: 6px; right: 8px; z-index: 2; }
+  .regie { gap: 8px 10px; margin-top: 0; }
+  .regie-flanc { gap: 8px; }
+
+  /* Les decks prennent toute la place gagnée : c'est la pochette qu'on doit
+     pouvoir lire, et elle est le seul poste qu'on ne rogne pas. */
+  .deck-carre { max-width: 168px; }
+  .deck { gap: 4px; }
+  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
+  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+
+  /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
+     jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
+     tout, la raccourcir changerait la lecture. */
+  .console { --piste: 92px; --seg-gap: 1.5px; padding: 8px 10px 6px; }
+  .console-tete { margin: 0 0 7px; font-size: 8px; letter-spacing: 0.14em; }
+  .regie-centre { gap: 8px; }
+  /* L'infobulle de la sourdine part : sur un doigt elle est un piège plus
+     qu'une aide, et le mot « Sourdine » se suffit. */
+  .console-sourdine .saillance-info-tip { display: none; }
+  .console-sourdine { font-size: 8px; letter-spacing: 0.1em; }
+  /* La rangée réserve 26 px pour deux lignes plus l'infobulle. Celle-ci partie,
+     le mot tient sur une ligne et se retrouvait collé au bas d'une case trop
+     haute. Les colonnes restent alignées entre elles : la hauteur change pour
+     TOUTES, pas seulement pour celle en sourdine. */
+  .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
+
+  /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
+  .deck-piste { font-size: 8.5px; gap: 4px; }
+  .deck-piste-val { font-size: 7.5px; }
+  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
+  .pochette-sigle { font-size: 28px; }
+  .cap-sigle { font-size: 32px; }
+  /* Sélecteur DESCENDANT, pas la classe seule : la règle de base
+     `.piste-court { display: none }` est déclarée plus BAS dans le fichier, et
+     à spécificité égale c'est elle qui l'emporterait. Les deux formes se
+     masquaient alors l'une l'autre et le libellé disparaissait. */
+  .deck-piste-nom .piste-long { display: none; }
+  .deck-piste-nom .piste-court { display: inline; }
 }
 
 /* DOOM PCQ Easter Egg - Knee-Deep in the Media Editorial Header */
@@ -8445,6 +8463,9 @@
   line-height: 1.25;
 }
 .deck-piste-nom { flex: 0 0 auto; opacity: 0.9; white-space: nowrap; }
+/* Les deux formes du libellé cohabitent dans le DOM ; le CSS choisit laquelle
+   se voit. Le lecteur d'écran, lui, entend toujours la forme longue. */
+.piste-court { display: none; }
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
 .deck-piste-fil {
