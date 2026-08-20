@@ -13,6 +13,7 @@
 // The week file resets every Monday; the month file resets on the 1st.
 
 import fs from "node:fs/promises";
+import { formatDuree } from "@/lib/duree";
 import path from "node:path";
 
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
@@ -188,6 +189,10 @@ type Stat = {
    *  derniers jours. La courbe partagée veut la première, l'ancienne mini-courbe
    *  voulait la seconde. */
   history: { daily: number[]; week: number[]; weekly: number[]; month: number[]; monthly: number[] };
+  /** Le même découpage, mais en MINUTES de Une plutôt qu'en part de voix.
+   *  C'est ce que trace le palmarès : « la CAQ a occupé 2 h 15 » se cite, un
+   *  pourcentage oblige le lecteur à faire le calcul lui-même. */
+  minutesHistory: { daily: number[]; weekly: number[]; monthly: number[] };
   toneHistory: { daily: number[]; weekly: number[]; monthly: number[] };
 };
 
@@ -298,6 +303,17 @@ export type ChartSeries = {
    *  quand son étiquette a dû être déplacée. */
   labelY: number;
   lastPct: number;
+  /** Le tracé du PALMARÈS : mêmes abscisses, mais l'ordonnée porte les minutes
+   *  de Une. Les cinq partis partagent la même échelle — c'est tout l'intérêt,
+   *  on compare des durées. */
+  polylineMin: string;
+  /** Tête de courbe sur l'échelle des minutes : c'est là que se pose la
+   *  pochette miniature. L'abscisse est la même que `lastX`. */
+  lastYMin: number;
+  /** Minutes du dernier point, pour l'étiquette de bout de courbe. */
+  lastMinutes: number;
+  /** Ordonnée de l'étiquette du palmarès, écartée de ses voisines. */
+  labelYMin: number;
 };
 
 export type ChartView = {
@@ -314,6 +330,8 @@ export type ChartView = {
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
+  /** Graduations de l'axe des minutes, pour le palmarès. */
+  yLabels: { label: string; y: number }[];
 };
 
 export type RangeView = {
@@ -641,6 +659,11 @@ function computeStats(
         month:   [],
         monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.mentions || 0),
       },
+      minutesHistory: {
+        daily:   allDayDates.map((d)      => dayLookup[d]?.[pKey]?.minutes   || 0),
+        weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.minutes  || 0),
+        monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.minutes || 0),
+      },
       toneHistory: {
         daily:   allDayDates.map((d)       => dayLookup[d]?.[pKey]?.tone   || 0),
         weekly:  weekSampleDates.map((d)   => weekLookup[d]?.[pKey]?.tone  || 0),
@@ -692,6 +715,26 @@ function axisTop(maxPct: number): number {
   return Math.max(20, Math.ceil(maxPct / 10) * 10);
 }
 
+/** Le sommet de l'axe des MINUTES, arrondi à un palier lisible.
+ *
+ *  Les paliers suivent l'HORLOGE et non la base dix : on lit « 2 h » et
+ *  « 30 min », jamais « 250 minutes ». Un axe qui grimpe par 100 obligerait à
+ *  convertir de tête à chaque graduation. */
+function paliersMinutes(maxMin: number): number {
+  const paliers = [15, 30, 60, 90, 120, 180, 240, 360, 480, 720, 1440];
+  return paliers.find((p) => maxMin <= p) ?? Math.ceil(maxMin / 1440) * 1440;
+}
+
+/** Les graduations de l'axe des minutes : quatre repères, du bas vers le haut.
+ *  Le zéro n'est pas étiqueté — la ligne de base le dit déjà. */
+function graduationsMinutes(topMin: number): { label: string; y: number }[] {
+  return [0.25, 0.5, 0.75, 1].map((f) => ({
+    label: formatDuree(topMin * f),
+    y: Number((CHART_H - f * CHART_H).toFixed(2)),
+  }));
+}
+
+
 /** Écart vertical minimal entre deux étiquettes de bout de ligne, en unités du
  *  viewBox (hauteur totale 46). En dessous, elles se chevauchent. */
 const MIN_LABEL_GAP = 4.2;
@@ -707,6 +750,28 @@ const MIN_LABEL_GAP = 4.2;
  * croissant. On descend la liste en poussant vers le bas ce qui est trop haut,
  * puis on remonte si le paquet a débordé du cadre.
  */
+/** Écarte les étiquettes du PALMARÈS, dont l'ordre vertical n'est pas celui de
+ *  la part de voix : deux partis peuvent être proches en pourcentage et loin en
+ *  minutes, ou l'inverse. Il faut donc trier sur les minutes avant d'écarter,
+ *  sinon la correction se propage dans le désordre. */
+function spreadLabelsMin(series: ChartSeries[]): void {
+  const ordre = series.slice().sort((a, b) => a.lastYMin - b.lastYMin);
+  for (const s of ordre) s.labelYMin = s.lastYMin;
+  for (let i = 1; i < ordre.length; i++) {
+    const min = ordre[i - 1].labelYMin + MIN_LABEL_GAP;
+    if (ordre[i].labelYMin < min) ordre[i].labelYMin = min;
+  }
+  const overflow = (ordre.at(-1)?.labelYMin ?? 0) - CHART_H;
+  if (overflow > 0) {
+    for (const s of ordre) s.labelYMin -= overflow;
+    for (let i = ordre.length - 2; i >= 0; i--) {
+      const max = ordre[i + 1].labelYMin - MIN_LABEL_GAP;
+      if (ordre[i].labelYMin > max) ordre[i].labelYMin = max;
+    }
+  }
+  for (const s of ordre) s.labelYMin = Number(s.labelYMin.toFixed(2));
+}
+
 function spreadLabels(series: ChartSeries[]): void {
   for (const s of series) s.labelY = s.lastY;
 
@@ -836,6 +901,24 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
       .reduce((s, r) => s + (Number(r.weighted_mentions) || 0), 0);
   const sourdineCourse = clesEnSourdine(parts.map((k) => [k, valeurCourante(k)]));
 
+  // Les MINUTES du bloc : `total_raw_score` EST la somme des `headline_minutes`
+  // (radar-party-score-salient-shadow/runtime.R, où `total_raw_score` et
+  // `total_minutes` sont calculés à l'identique avant que le second soit jeté).
+  // Le nom trompe, la grandeur non.
+  //
+  // ⚠️ Le raffineur ACCUMULE depuis minuit à chaque passage : ces minutes sont
+  // donc un cumul de la journée, pas le temps du bloc seul. La courbe monte.
+  const minParBloc = (key: PartyKey) => {
+    const m = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [Number(r.block_hour), Number(r.total_raw_score) || 0]),
+    );
+    return blocs.map((h) => m.get(h) ?? 0);
+  };
+  const topMin = paliersMinutes(Math.max(0, ...parts.flatMap((k) => minParBloc(k))));
+  const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
+
   const series: ChartSeries[] = parts.map((key) => {
     const parBloc = new Map(
       duJour
@@ -850,6 +933,12 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
       label: PARTY_LABELS[key],
       color: PARTY_COLORS[key],
       inShadow: sourdineCourse.has(key),
+      polylineMin: minParBloc(key)
+        .map((m, i) => `${xAtH(blocs[i]).toFixed(2)},${yMin(m).toFixed(2)}`)
+        .join(" "),
+      lastYMin: Number(yMin(minParBloc(key).at(-1) ?? 0).toFixed(2)),
+      lastMinutes: Math.round(minParBloc(key).at(-1) ?? 0),
+      labelYMin: 0,
       polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       lastX: Number(last[0].toFixed(2)),
@@ -858,6 +947,9 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
       lastPct: Math.round((hist.at(-1) ?? 0) * 100),
     };
   });
+
+  spreadLabels(series);
+  spreadLabelsMin(series);
 
   return {
     series,
@@ -869,6 +961,7 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
     width: CHART_W,
     height: CHART_H,
     tooShort: false,
+    yLabels: graduationsMinutes(topMin),
   };
 }
 
@@ -976,7 +1069,12 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   const n = axisDates.length;
 
   const histOf = (s: Stat) => s.history.daily.slice(decalage);
+  const minOf = (s: Stat) => s.minutesHistory.daily.slice(decalage);
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
+  // ÉCHELLE COMMUNE des minutes : c'est la comparaison des durées qui fait le
+  // palmarès. Une échelle par parti dirait la forme, pas le classement.
+  const topMin = paliersMinutes(Math.max(0, ...stats.flatMap(minOf)));
+  const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
   const span = Math.max(but.t - t0, 86_400_000);
   const xAt = (t: number) => ((t - t0) / span) * plotW;
   const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));
@@ -990,7 +1088,9 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     .sort((a, b) => histOf(b).at(-1)! - histOf(a).at(-1)!)
     .map((stat) => {
       const hist = histOf(stat);
+      const mins = minOf(stat);
       const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
+      const ptsMin = mins.map((m, i) => [xAtDate(axisDates[i] ?? ""), yMin(m)] as const);
       return {
         key: stat.key,
         label: PARTY_LABELS[stat.key],
@@ -1004,10 +1104,15 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         lastY: Number((pts.at(-1)?.[1] ?? CHART_H).toFixed(2)),
         labelY: 0,
         lastPct: Math.round((hist.at(-1) ?? 0) * 100),
+        polylineMin: ptsMin.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+        lastYMin: Number((ptsMin.at(-1)?.[1] ?? CHART_H).toFixed(2)),
+        lastMinutes: Math.round(mins.at(-1) ?? 0),
+        labelYMin: 0,
       };
     });
 
   spreadLabels(series);
+  spreadLabelsMin(series);
 
   // L'AXE SE CONSTRUIT SUR LE TEMPS, pas sur les dates présentes dans la donnée.
   //
@@ -1024,7 +1129,8 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     width: CHART_W,
     height: CHART_H,
     tooShort: n <= 1,
-  };
+    yLabels: graduationsMinutes(topMin),
+};
 }
 
 /** Les indices de `history.daily` qui tombent dans la fenêtre de l'onglet.

@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
+import { formatDuree } from "@/lib/duree";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -188,15 +189,12 @@ export function PartisCouvertureClient({
 
       {data.indisponible && <AvisIndisponible info={data.indisponible} />}
 
-      {/* La course EN TÊTE du module.
-          Elle vivait sous le fader, tout en bas : le lecteur arrivait donc sur
-          un instrument avant d'avoir vu qu'il y avait une course en train de se
-          jouer. En tête, elle donne le mouvement d'abord et l'examen ensuite,
-          ce qui est l'ordre dans lequel on lit une compétition. */}
+      {/* Le palmarès EN TÊTE du module : le mouvement d'abord, l'examen
+          ensuite, ce qui est l'ordre dans lequel on lit un classement. */}
       {!data.indisponible && !view.chart.tooShort && (
         <section className="partis-course partis-course--tete">
-          <p className="course-tete">La course</p>
-          <Course chart={view.chart} rows={view.rows} />
+          <p className="course-tete">Le palmarès, en minutes de Une</p>
+          <Palmares chart={view.chart} rows={view.rows} />
         </section>
       )}
 
@@ -634,17 +632,6 @@ function Deck({
   );
 }
 
-/** Une durée en heures collées : `4h12`, `4h`, `45 min`.
- *
- *  Sans espace autour du `h`. Le guide de rédaction est explicite là-dessus et
- *  l'assume comme un écart à l'OQLF : « L'OQLF dit d'en mettre, mais on ne le
- *  fait pas. » Cette fonction écrivait `4 h 12`. */
-function formatDuree(minutes: number): string {
-  if (minutes < 60) return `${minutes}\u00a0min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}h${m > 0 ? String(m).padStart(2, "0") : ""}`;
-}
 
 const MOIS_COURTS = [
   "janv.", "févr.", "mars", "avr.", "mai", "juin",
@@ -857,17 +844,26 @@ function Fader({
 
 
 /**
- * La course — épurée jusqu'à la tendance.
+ * Le palmarès — les cinq partis sur UN seul graphique, en minutes de Une.
  *
- * Ni grille, ni graduations, ni fond dégradé : l'objectif est de VOIR une
- * direction, pas de lire une valeur au pixel près. Les valeurs sont écrites en
- * toutes lettres au bout de chaque ligne, là où l'œil arrive naturellement.
+ * L'axe des X est celui de l'onglet (heures, jours, dates) ; l'axe des Y porte
+ * des durées, sur une échelle commune aux cinq. C'est la comparaison des durées
+ * qui fait le palmarès : « la CAQ a occupé 2 h 15 » se cite, un pourcentage
+ * oblige le lecteur à faire le calcul.
  *
- * La LIGNE D'ARRIVÉE change avec l'onglet — 20 h aujourd'hui, vendredi 20 h,
- * le jour du scrutin. Le vide entre la dernière donnée et elle est l'espace
- * qu'il reste à courir.
+ * ⚠️ Les cinq courbes partagent la même bande, et le validateur de palette
+ * ÉCHOUE sur ces couleurs : QS et le PLQ sont à ΔE 10,9 en vision normale, sous
+ * le plancher de 15 — deux lecteurs sur trois les confondront à l'œil. Les
+ * couleurs des partis ne sont pas réétalonnables. C'est pourquoi le NOM de
+ * chaque parti est écrit au bout de sa courbe : c'est lui qui porte l'identité,
+ * la couleur ne fait que la rappeler.
+ *
+ * La zone est étirée (`preserveAspectRatio="none"`) pour occuper toute la
+ * largeur du module. Les têtes de courbe sont donc des éléments HTML placés en
+ * pourcentage, et non des formes SVG : sous un étirement non uniforme, un carré
+ * SVG deviendrait un rectangle.
  */
-function Course({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
+function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
   if (chart.tooShort) {
     return (
       <p className="course-vide">
@@ -876,110 +872,93 @@ function Course({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
     );
   }
 
-  const parKey = new Map(chart.series.map((s) => [s.key, s]));
-  // L'ordre est celui du CLASSEMENT : on lit un tableau de position, donc le
-  // premier est en haut.
-  const pistes = rows.filter((r) => parKey.has(r.key));
+  const parKey = new Map(rows.map((r) => [r.key, r]));
+  // De haut en bas : le plus de minutes en premier, comme un classement.
+  const series = chart.series.slice().sort((a, b) => b.lastMinutes - a.lastMinutes);
 
   return (
-    <figure className="course-figure">
-      <ol className="course-pistes">
-        {pistes.map((r, i) => {
-          const s = parKey.get(r.key)!;
-          return (
-            <li
-              key={r.key}
-              className={`course-piste${r.inShadow ? " shadow" : ""}`}
-              style={{ ["--party" as string]: r.color }}
-            >
-              <span className="course-rang">{r.rang}</span>
-              <span className="course-nom">{r.label}</span>
+    <figure className="palmares-figure">
+      <div className="palmares-zone">
+        <svg
+          className="palmares-svg"
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {chart.yLabels.map((g) => (
+            <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
+          ))}
+          {series.map((s) => (
+            <polyline
+              key={s.key}
+              className={`palmares-trait${s.inShadow ? " shadow" : ""}`}
+              points={s.polylineMin}
+              style={{ ["--party" as string]: s.color }}
+            />
+          ))}
+        </svg>
 
-              {/* UNE PISTE PAR PARTI, et non cinq lignes superposées.
-                  Le validateur de palette échoue sur ces couleurs : PCQ et PQ
-                  sont à ΔE 10,0 en vision normale, sous le plancher de 15. Cinq
-                  courbes qui se croisent dans une même bande sont donc
-                  illisibles par construction, et pas seulement encombrées. La
-                  règle, dans ce cas, est de FACETTER plutôt que d'empiler :
-                  chaque parti a sa piste et son nom, la couleur ne portant plus
-                  seule l'identité.
-                  L'échelle verticale reste COMMUNE (le tracé vient du même
-                  calcul qu'avant) : une piste haute est vraiment plus haute. */}
-              {/* La piste OCCUPE toute sa colonne, donc `preserveAspectRatio`
-                  vaut « none ».
-                  « xMidYMid meet » conservait le rapport 100:30 : dans une bande
-                  de 26 px de haut, le tracé se réduisait à ~86 px de large,
-                  centré au milieu d'une colonne vide, et l'axe des jours ne
-                  correspondait plus à rien.
-                  L'étirement est ici sans conséquence, contrairement à la
-                  version en courbes superposées : toutes les pistes subissent
-                  EXACTEMENT la même transformation, donc elles restent
-                  comparables entre elles, et l'épaisseur du trait est figée par
-                  `non-scaling-stroke`. C'est la convention de toute sparkline.
-                  La tête est un élément HTML positionné en pourcentage, et non
-                  un <circle> : sous un étirement non uniforme, un cercle SVG
-                  deviendrait une ellipse. */}
-              <span className="course-piste-zone">
-                <svg
-                  className="course-piste-svg"
-                  viewBox={`0 0 ${chart.width} ${chart.height}`}
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <line
-                    x1={chart.finish.x}
-                    x2={chart.finish.x}
-                    y1="0"
-                    y2={chart.height}
-                    className="course-arrivee"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  <polyline
-                    points={s.polylineSolo}
-                    fill="none"
-                    stroke={r.color}
-                    strokeWidth="2"
-                    strokeDasharray={r.inShadow ? "3 3" : undefined}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                    className={r.inShadow ? undefined : "course-trait"}
-                    style={r.inShadow ? undefined : { animationDelay: `${i * 120}ms` }}
-                  />
-                </svg>
-                <i
-                  className={`course-tete-point${r.inShadow ? " shadow" : ""}`}
-                  style={{
-                    left: `${((Number(s.polylineSolo.split(" ").at(-1)?.split(",")[0]) || 0) / chart.width) * 100}%`,
-                    top: `${((Number(s.polylineSolo.split(" ").at(-1)?.split(",")[1]) || 0) / chart.height) * 100}%`,
-                    background: r.color,
-                    animationDelay: `${i * 120 + 700}ms`,
-                  }}
-                  aria-hidden="true"
-                />
-              </span>
+        {/* La pochette miniature, au bout de chaque courbe. Elle ne porte que la
+            couleur du parti : à cette taille, la composition de la vraie
+            pochette ne se lirait pas. */}
+        {series.map((s) => (
+          <i
+            key={s.key}
+            className={`palmares-pochette${s.inShadow ? " shadow" : ""}`}
+            style={{
+              ["--party" as string]: s.color,
+              left: `${(s.lastX / chart.width) * 100}%`,
+              top: `${(s.lastYMin / chart.height) * 100}%`,
+            }}
+            aria-hidden="true"
+          />
+        ))}
 
-              <span className="course-valeur">{r.sovPct}&nbsp;%</span>
-              <span
-                className={`course-delta${r.evolutionPts > 0 ? " haut" : r.evolutionPts < 0 ? " bas" : ""}`}
-              >
-                {r.evolutionPts > 0 ? "+" : ""}{r.evolutionPts}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-
-      <div className="course-x">
-        {chart.xLabels.map((l) => (
-          <span key={l.label} style={{ left: `${(l.x / chart.width) * 100}%` }}>
-            {l.label}
+        {/* Le nom au bout de la courbe : c'est LUI qui identifie la série. */}
+        {series.map((s) => (
+          <span
+            key={s.key}
+            className={`palmares-nom${s.inShadow ? " shadow" : ""}`}
+            style={{
+              ["--party" as string]: s.color,
+              left: `${(s.lastX / chart.width) * 100}%`,
+              top: `${(s.labelYMin / chart.height) * 100}%`,
+            }}
+          >
+            {s.label} <b>{formatDuree(s.lastMinutes)}</b>
           </span>
         ))}
-        <span className="course-x-arrivee" style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}>
-          {chart.finish.label}
-        </span>
+
+        <ul className="palmares-y" aria-hidden="true">
+          {chart.yLabels.map((g) => (
+            <li key={g.label} style={{ top: `${(g.y / chart.height) * 100}%` }}>
+              {g.label}
+            </li>
+          ))}
+        </ul>
       </div>
+
+      <ul className="palmares-x" aria-hidden="true">
+        {chart.xLabels.map((l) => (
+          <li key={l.label} style={{ left: `${(l.x / chart.width) * 100}%` }}>
+            {l.label}
+          </li>
+        ))}
+      </ul>
+
+      {/* Le tableau que la courbe illustre : un lecteur d'écran ne voit aucun
+          tracé, et c'est ici qu'il lit le classement. */}
+      <table className="visually-hidden">
+        <caption>Minutes de Une par parti</caption>
+        <tbody>
+          {series.map((s) => (
+            <tr key={s.key}>
+              <th scope="row">{parKey.get(s.key)?.fullLabel ?? s.label}</th>
+              <td>{formatDuree(s.lastMinutes)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </figure>
   );
 }

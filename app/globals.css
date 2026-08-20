@@ -5163,28 +5163,9 @@
     color: var(--ink-softer);
     font-weight: 500;
   }
-
-  .course-figure { margin: 0; }
-
   /* La ligne d'ARRIVÉE — cordovan, l'accent unique du site. Le vide à sa
      gauche est ce qu'il reste à courir. */
   .course-arrivee { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
-
-
-
-  .course-x { position: relative; height: 14px; margin-top: 12px; }
-  .course-x span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-    white-space: nowrap;
-  }
-  .course-x span:first-child { transform: none; }
-
   .course-vide {
     padding: 28px 0;
     text-align: center;
@@ -8101,77 +8082,7 @@
    Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
    dans la console et les platines. */
 .partis-course--tete { margin: 0 0 22px; }
-.partis-course--tete .course-tete { margin: 0 0 10px; }
-/* ── Une piste par parti ─────────────────────────────────────────────────────
-   Cinq courbes superposées étaient illisibles PAR CONSTRUCTION : le validateur
-   de palette place PCQ et PQ à ΔE 10,0 en vision normale, sous le plancher de
-   15. La règle, dans ce cas, est de facetter. Chaque parti a donc sa piste et
-   son nom, la couleur n'étant plus qu'un rappel.
-
-   Largeur BORNÉE et centrée : étalée sur 1200 px, la course laissait un vide
-   entre le sigle et sa valeur, et le tracé flottait au milieu de nulle part.
-   Resserrée, les cinq colonnes se lisent d'un seul balayage de l'œil. */
-.course-figure {
-  max-width: 660px;
-  margin: 0 auto;
-}
-.course-pistes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-.course-piste {
-  display: grid;
-  grid-template-columns: 16px 40px minmax(0, 1fr) 46px 30px;
-  align-items: center;
-  gap: 12px;
-  padding: 5px 0;
-  border-bottom: 0.5px solid var(--rule-faint);
-}
-.course-piste:last-child { border-bottom: none; }
-.course-piste.shadow { opacity: 0.55; }
-
-.course-rang {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  color: var(--ink-softer);
-  text-align: right;
-}
-.course-nom {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--party);
-  letter-spacing: 0.04em;
-}
-
-/* La zone du tracé : le SVG l'occupe entièrement, la tête s'y positionne. */
-.course-piste-zone {
-  position: relative;
-  display: block;
-  height: 34px;
-}
-.course-piste-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-/* La tête, en HTML : sous un étirement non uniforme, un <circle> SVG
-   deviendrait une ellipse. */
-.course-tete-point {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  border-radius: 50%;
-  opacity: 0;
-  animation: course-tete-apparait 350ms ease-out forwards;
-}
-.course-tete-point.shadow { animation: none; opacity: 0.6; }
-@keyframes course-tete-apparait { to { opacity: 1; } }
+.partis-course--tete .course-tete { margin: 0 0 10px; }@keyframes course-tete-apparait { to { opacity: 1; } }
 
 .course-valeur {
   font-family: 'Playfair Display', Georgia, serif;
@@ -8179,59 +8090,10 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
-}
-.course-delta {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-softer);
-}
-.course-delta.haut { color: var(--red); }
-.course-delta.bas  { color: var(--green); }
-
-/* Le trait se dessine de gauche à droite, une piste après l'autre. 1000 dépasse
-   largement la longueur d'un tracé dans un viewBox de 100 × 30, ce qui évite de
-   mesurer chaque chemin en JavaScript pour un gain invisible. */
-.course-trait {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: course-tracer 900ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-}
-@keyframes course-tracer { to { stroke-dashoffset: 0; } }
-
-
-/* L'axe s'aligne EXACTEMENT sur la colonne du tracé : mêmes largeurs que la
-   grille, gouttières comprises. Décalé d'un pixel, il daterait les creux à
-   côté. */
-.course-x {
-  position: relative;
-  height: 14px;
-  margin: 6px 88px 0 80px;   /* droite : 46 + 30 + 12 · gauche : 16 + 40 + 2×12 */
-}
-.course-x span {
-  position: absolute;
-  transform: translateX(-50%);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-  white-space: nowrap;
-}
-.course-x-arrivee { color: var(--cordovan) !important; }
-
-@media (prefers-reduced-motion: reduce) {
-  .course-trait { animation: none; stroke-dashoffset: 0; }
-  .course-tete-point { animation: none; opacity: 1; }
-}
+}@media (prefers-reduced-motion: reduce) {}
 
 /* Sous 620 px, le rang et l'écart sortent : quatre colonnes de texte autour
    d'un tracé ne laissent plus rien au tracé. */
-@media (max-width: 620px) {
-  .course-piste { grid-template-columns: 36px minmax(0, 1fr) 44px; gap: 10px; }
-  .course-rang, .course-delta { display: none; }
-  .course-x { margin: 6px 54px 0 46px; }
-}
 
 /* ─────────────────────────────────────────────────────────────────────────
    Les decks — quatre disques aux quatre coins de la régie.
@@ -8630,4 +8492,122 @@
   .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
   .pochette-sigle { font-size: 26px; }
   .cap-sigle { font-size: 32px; }
+}
+
+/* ── Le palmarès : cinq courbes, une échelle de minutes ──────────────────────
+   Il occupe toute la largeur du module. La zone est ÉTIRÉE
+   (`preserveAspectRatio="none"`), donc tout ce qui doit garder sa forme — les
+   pochettes miniatures — est en HTML positionné en pourcentage, jamais en SVG :
+   un carré SVG deviendrait un rectangle sous cet étirement. */
+.palmares-figure { margin: 0; }
+.palmares-zone {
+  position: relative;
+  height: 190px;
+  /* Réserve à droite pour les noms de bout de courbe, et en haut pour la
+     graduation la plus élevée. */
+  margin: 10px 92px 0 44px;
+}
+.palmares-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.palmares-grille {
+  stroke: var(--rule-faint);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.palmares-trait {
+  fill: none;
+  stroke: var(--party, var(--ink-soft));
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  /* L'épaisseur ne suit pas l'étirement : sans cela le trait s'écraserait
+     horizontalement et s'épaissirait verticalement. */
+  vector-effect: non-scaling-stroke;
+}
+.palmares-trait.shadow {
+  stroke: var(--ink-softer);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+
+/* La pochette miniature au bout de la courbe : un carré plein, rien d'autre. */
+.palmares-pochette {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  background: var(--party, var(--ink-soft));
+  box-shadow:
+    0 0 0 1.5px var(--paper),
+    0 1px 3px rgba(28, 25, 23, 0.28);
+}
+.palmares-pochette.shadow { background: var(--ink-softer); opacity: 0.55; }
+
+/* Le NOM au bout de la courbe. C'est lui qui identifie la série : le validateur
+   place QS et le PLQ à ΔE 10,9 en vision normale, sous le plancher de 15, et
+   les couleurs des partis ne sont pas réétalonnables. */
+.palmares-nom {
+  position: absolute;
+  transform: translateY(-50%);
+  margin-left: 12px;
+  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.palmares-nom b { color: var(--ink); font-weight: 600; }
+.palmares-nom.shadow { color: var(--ink-softer); }
+.palmares-nom.shadow b { color: var(--ink-softer); font-weight: 500; }
+
+.palmares-y {
+  position: absolute;
+  left: -44px;
+  top: 0;
+  width: 38px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.palmares-y li {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+
+.palmares-x {
+  position: relative;
+  height: 16px;
+  margin: 6px 92px 0 44px;
+  padding: 0;
+  list-style: none;
+}
+.palmares-x li {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .palmares-zone { height: 140px; margin: 8px 62px 0 34px; }
+  .palmares-y { left: -34px; width: 30px; }
+  .palmares-x { margin: 5px 62px 0 34px; }
+  .palmares-nom { font-size: 9px; margin-left: 9px; }
+  .palmares-pochette { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; }
 }

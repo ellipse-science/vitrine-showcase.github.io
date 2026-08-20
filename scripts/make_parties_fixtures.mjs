@@ -53,7 +53,10 @@ const PARTIES = ["CAQ", "PQ", "PLQ", "QS", "PCQ"];
 // Ordre de grandeur : quelques articles restés une à deux heures en Une. Sert à
 // donner des `total_raw_score` réalistes — le palmarès s'exprime en minutes, et
 // des valeurs absurdes s'y verraient tout de suite.
-const MINUTES_JOUR = 1420;
+// Minutes de Une consacrées AUX PARTIS sur la période, tous partis confondus.
+// Ce n'est pas la durée de la journée : les partis n'occupent qu'une part des
+// Unes. La somme des cinq partis vaut ce total.
+const MINUTES_PARTIS = { day: 420, week: 2600, month: 11000 };
 
 // Panel de médias, repris des identifiants réels de radar_annotated. Chaque
 // média a un PENCHANT : un multiplicateur par parti, qui décale sa répartition
@@ -185,12 +188,10 @@ function buildRowsByMedia(dates, seed, periodLabel) {
           date_utc: date,
           date_montreal_tz: date,
           weighted_mentions: round4(sov),
-        total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
           // Les minutes en Une, cohérentes avec la part : leur somme sur les
-          // cinq partis vaut le total du jour, comme le raffineur les produit
-          // depuis qu'elles sont RÉPARTIES et non dupliquées.
-          total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
-          total_raw_score: round4(sov * (periodLabel === "day" ? 70 : periodLabel === "week" ? 430 : 1800)),
+          // cinq partis vaut le total de la période, comme le raffineur les
+          // produit depuis qu'elles sont RÉPARTIES et non dupliquées.
+          total_raw_score: round4(sov * MINUTES_PARTIS[periodLabel] / 6),
           weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
           threshold: 0.02,
           period_start: dates[0],
@@ -223,10 +224,9 @@ function buildRows(dates, seed, periodLabel) {
         date_utc: date,
         date_montreal_tz: date,
         weighted_mentions: round4(sov),
-        total_raw_score: Math.round(sov * MINUTES_JOUR * 10) / 10,
         // Minutes cumulées en Une — proportionnelles à la part de voix, avec
         // un volume total plausible pour une journée de Unes québécoises.
-        total_raw_score: round4(sov * (periodLabel === "day" ? 420 : periodLabel === "week" ? 2600 : 11000)),
+        total_raw_score: round4(sov * MINUTES_PARTIS[periodLabel]),
         weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
         variation_pct: round4((rand() - 0.5) * 40),
         threshold: 0.02,
@@ -286,9 +286,15 @@ for (const date of D.slice(-8)) {
         block_hour: h,
         block_label: String(h).padStart(2, "0") + "h",
         weighted_mentions: total > 0 ? Number((brut[party] / total).toFixed(6)) : 0,
-        total_raw_score: total > 0 ? Math.round((brut[party] / total) * MINUTES_JOUR * 10) / 10 : 0,
+        // Minutes CUMULÉES depuis minuit, comme le raffineur : il recalcule
+        // l'accumulation de la journée à chaque passage, si bien que le dernier
+        // bloc vaut le total du jour. Sans ce cumul, le palmarès plafonnait à
+        // 1 h là où la pochette du même parti annonçait 2 h 27.
+        total_raw_score:
+          total > 0
+            ? round4((brut[party] / total) * MINUTES_PARTIS.day * ((h + 4) / 24))
+            : 0,
         weighted_tone: 0,
-        total_raw_score: Number((brut[party] * 100).toFixed(2)),
         date_utc: date,
         date_montreal_tz: date,
         computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
