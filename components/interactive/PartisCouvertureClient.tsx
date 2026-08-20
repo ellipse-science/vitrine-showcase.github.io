@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite, EnjeuMix } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS, MEDIA_SIGLES } from "@/lib/medias";
-import { pictoEnjeu } from "@/lib/enjeuxPictos";
+import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -295,16 +294,8 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <Deck row={decks[2]} rang={3} indisponible={data.indisponible} />
         </div>
 
-        {/* La manchette vit DANS la colonne du milieu, collée au-dessus de la
-            console : la phrase commente l'instrument, elle doit le toucher. */}
         <div className="regie-centre">
-          <Manchette
-            rows={view.rows}
-            reference={data.ranges[range].rows}
-            media={media === TOUS_MEDIAS ? null : media}
-            mediaLabel={data.medias.find((m) => m.id === media)?.label ?? null}
-            indisponible={data.indisponible}
-          />
+          <p className="console-tete">Part de voix</p>
           <Console
             rows={view.rows}
             reference={data.ranges[range].rows}
@@ -541,105 +532,6 @@ function Console({
   );
 }
 
-/**
- * La manchette — ce qu'on doit comprendre sans effort, avant tout le reste.
- *
- * Le module est un instrument : on y lit des hauteurs, on les compare, on
- * remarque une position centrale. C'est riche, mais ça demande un travail. La
- * manchette dit la réponse en une phrase, et l'instrument la prouve — c'est
- * l'ordre d'un journal, pas celui d'un tableau de bord.
- *
- * Elle se réécrit quand le fader bouge : filtrée sur un média, elle nomme ce
- * média et l'écart à la moyenne, parce que c'est LÀ que se trouve l'information
- * que ce média-là apporte.
- *
- * Elle absorbe aussi le doute sur la victoire : une seule phrase éditoriale
- * plutôt que deux blocs de prose qui se disputent l'attention.
- */
-function Manchette({
-  rows,
-  reference,
-  media,
-  mediaLabel,
-  indisponible,
-}: {
-  rows: RowView[];
-  reference: RowView[];
-  media: string | null;
-  mediaLabel: string | null;
-  indisponible: Indisponibilite | null;
-}) {
-  // La manchette est la phrase la plus affirmative du module (« c'est de la CAQ
-  // 100 % du temps », en gros et en gras). Elle doit donc être la PREMIÈRE à se
-  // taire : sans ce garde, elle énonçait le classement deux blocs sous l'avis
-  // qui promet de ne pas le publier.
-  if (indisponible) return null;
-  const tete = rows.filter((r) => !r.inShadow)[0];
-  if (!tete || tete.sovPct <= 0) return null;
-
-  const moyenne = reference.find((r) => r.key === tete.key)?.sovPct ?? 0;
-  const ratio = moyenne > 0 ? tete.sovPct / moyenne : 1;
-
-  return (
-    <div className="manchette-zone">
-    <p className="manchette">
-      {media ? (
-        <>
-          {(() => {
-            const dans = MEDIA_DANS[media] ?? `Dans ${mediaLabel ?? media}`;
-            const [premier, ...reste] = dans.split(" ");
-            return (
-              <>
-                {premier} <b>{reste.join(" ")}</b>,{" "}
-              </>
-            );
-          })()}
-          quand on parle d&apos;un parti, c&apos;est{" "}
-          {(ARTICLE[tete.key] ?? "").replace("La ", "de la ").replace("Le ", "du ") || "de "}
-        </>
-      ) : (
-        <>
-          Quand les médias parlent d&apos;un parti, c&apos;est{" "}
-          {(ARTICLE[tete.key] ?? "").replace("La ", "de la ").replace("Le ", "du ") || "de "}
-        </>
-      )}
-      <b className="manchette-parti">{tete.label}</b>{" "}
-      <b className={`manchette-chiffre${media && tete.sovPct !== moyenne ? (tete.sovPct > moyenne ? (ratio > SEUIL_ROUGE ? " sur-fort" : " sur") : " sous") : ""}`}>
-        {tete.sovPct}&nbsp;% du temps
-      </b>
-      {media && tete.sovPct !== moyenne && (
-        <>
-          , contre <b>{moyenne}&nbsp;%</b>{" "}
-          dans l&apos;ensemble des médias
-        </>
-      )}
-      .
-      {tete.toneDirection === "negative" && (
-        <>
-          {" "}Et on en parle surtout en mal
-          <InfoTip size="sm" label="Beaucoup parler n'est pas bien parler">
-            Ce module compte le TEMPS que les médias consacrent à chaque parti, pas s&apos;ils en
-            disent du bien. Un parti peut être le plus présent parce qu&apos;on le critique.
-          </InfoTip>
-          .
-        </>
-      )}
-    </p>
-    </div>
-  );
-}
-
-/**
- * Un deck — un parti, son disque, et la pochette qu'on découvre en le retournant.
- *
- * Quatre decks occupent les quatre coins de la régie et encadrent le vumètre.
- * Leur ordre EST le classement : premier en haut à gauche, deuxième en haut à
- * droite, puis la seconde rangée. Rien à charger, rien à déposer — la sourdine
- * garantit qu'il reste exactement quatre partis actifs, donc quatre decks.
- *
- * Au repos, le disque ne porte que la couleur du parti sur son étiquette
- * centrale : il identifie, il ne chiffre pas. Les chiffres sont au dos.
- */
 function Deck({
   row,
   rang,
@@ -715,6 +607,9 @@ function Deck({
                 <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
               </g>
               <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
+              <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
+                {row.label}
+              </text>
             </svg>
           </span>
         </span>
@@ -727,8 +622,7 @@ function Deck({
         <span className="deck-face deck-face--pochette" aria-hidden={!ouverte}>
           {/* L'illustration, à la manière des Unes : des à-plats géométriques
               qui se chevauchent, en trois couleurs — le parti au fond, l'enjeu
-              et le ton en formes franches. Le pictogramme domine, l'acronyme se
-              pose dessus. */}
+              et le ton en formes franches. L'acronyme se pose dessus. */}
           <span className="pochette-art">
             <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {/* Un filet crème borde chaque forme. Sans lui, elles se perdent
@@ -738,9 +632,6 @@ function Deck({
                   filet d'épaisseur constante malgré le cadre déformé. */}
               <circle className="forme-enjeu" cx="80" cy="18" r="44" vectorEffect="non-scaling-stroke" />
               <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" vectorEffect="non-scaling-stroke" />
-            </svg>
-            <svg className="deck-motif" viewBox="0 0 24 24" aria-hidden="true">
-              {pictoEnjeu(enjeu?.label)}
             </svg>
             <b className="pochette-sigle">{row.label}</b>
           </span>

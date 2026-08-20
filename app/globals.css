@@ -4710,87 +4710,13 @@
   }
   /* La marque d'aide vit sur le PUPITRE, pas dans le titre : ajoutée au titre,
      elle le faisait déborder sur deux lignes. */
-  .pupitre-aide { display: flex; justify-content: flex-end; }
-  /* La manchette vit maintenant DANS la colonne centrale de la régie, où c'est
-     `justify-content: flex-end` qui la place : toute marge haute ici ne ferait
-     que gonfler sa zone sans la déplacer. */
-  .pupitre .manchette-zone { margin-top: 0; }
-  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
+  .pupitre-aide { display: flex; justify-content: flex-end; }  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
      articulé les deux, mais depuis que chaque platine porte la couleur de son
      parti, il ajoutait un trait de plus à une zone qui n'en manquait pas. */
   .pupitre .regie {
     margin-top: 26px;
     padding-top: 26px;
   }
-
-  /* HAUTEUR RÉSERVÉE pour la manchette. Elle fait deux lignes sur « tous les
-     médias » et trois dès qu'un média est choisi (mesuré : 62 px contre 98).
-     Sans réserve, bouger le fader faisait sauter toute la console.
-     La réserve est portée par une ZONE qui enveloppe le paragraphe, jamais par
-     le paragraphe lui-même : `display: grid` sur un <p> transforme chacun de
-     ses enfants inline en cellule, et la phrase se répand alors sur une
-     colonne. La font-size sert seulement au calcul en `em`. */
-  .manchette-zone {
-    /* La marge haute appartient à la ZONE, pas au paragraphe : à l'intérieur,
-       elle s'ajoutait à la hauteur du texte et faisait déborder la réserve — le
-       décalage résiduel de 12 px venait de là. */
-    /* Marge et corps réduits pour raccourcir l'encadré : la manchette occupait
-       trois lignes réservées à 24 px, soit 104 px, plus 30 px de marge. */
-    margin-top: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* La réserve est en `em`, donc elle suit le corps du texte. Elle doit être
-       réglée sur le PIRE cas, mesuré en pilotant le fader sur ses six
-       positions : à 17 px la manchette tient partout en deux lignes (49 px), à
-       20 px deux médias la poussent à trois (87 px), à 24 px c'était le cas de
-       référence.
-       ⚠️ Cette font-size doit rester ÉGALE à celle de `.manchette` : les deux
-       ont divergé une fois (zone à 17, texte à 20), et la réserve calculée sur
-       la mauvaise base laissait la zone varier de 58 à 87 px au fader, soit
-       exactement le saut qu'elle existe pour empêcher.
-       ⚠️ À REMESURER si l'on ajoute un média : un libellé plus long rouvrirait
-       une ligne de plus. */
-    font-size: 23px;
-    min-height: calc(3 * 1.45em);
-  }
-
-  /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
-     module après son titre, centré, avec de l'air autour — c'est elle qui
-     porte la réponse, l'instrument ne fait que la prouver. */
-  .manchette {
-    max-width: 700px;
-    margin: 0 auto;
-    text-align: center;
-    /* Même famille, même interligne et même couleur que `.une-main .dek`, le
-       chapeau principal du site : Playfair Display en normale, `--ink-soft`,
-       l'accent porté par le POIDS et non par un changement de police. Plus
-       grand que le dek d'origine (19 px) parce que c'est la phrase-clé du
-       module, mais dans la même famille. */
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 23px;
-    font-weight: 400;
-    line-height: 1.45;
-    letter-spacing: -0.1px;
-    color: var(--ink-soft);
-    text-wrap: balance;
-  }
-  .manchette b { font-weight: 700; color: var(--ink); }
-  .manchette-chiffre { white-space: nowrap; }
-  /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
-     bien au-dessus. */
-  /* Le chiffre du média prend la couleur de son écart, comme les segments. */
-  /* `--amber` (#B88A3D) ne fait que 2,65:1 sur le papier : sous le seuil de
-     4,5:1 des textes, et même sous les 3:1 des grands textes. Il reste juste
-     pour les SEGMENTS du vumètre, où la position encode déjà le niveau, mais
-     pas pour un chiffre que le lecteur vient lire — et c'est ici le chiffre de
-     la manchette, la phrase la plus lue du module.
-     `--amber-encre` est le même ambre assombri jusqu'à 4,61:1 : même teinte,
-     même sens, lisible. */
-  .manchette-chiffre.sur      { color: var(--amber-encre); }
-  .manchette-chiffre.sur-fort { color: var(--red); }
-  .manchette-chiffre.sous     { color: var(--green); }
-
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console
      peut donc s'élargir. */
@@ -4916,7 +4842,12 @@
     width: var(--tranche);
     min-width: 0;
     display: grid;
-    grid-template-rows: var(--piste) auto auto;
+    /* La troisième rangée est de hauteur FIXE, et réservée dans TOUTES les
+       colonnes. En `auto`, seule la colonne en sourdine avait du contenu à cet
+       étage : plus haute que ses voisines et alignée par le bas, elle remontait
+       sa piste de 20 px et se retrouvait décalée. 26 px laissent la place à
+       deux lignes de 9 px, le repli restant autorisé. */
+    grid-template-rows: var(--piste) auto 26px;
     align-items: end;
     justify-items: center;
     row-gap: 9px;
@@ -5235,10 +5166,7 @@
        trois colonnes doivent tenir dans ~340 px de contenu. */
     .console { --piste: 168px; --seg-gap: 2px; }
     .console-tranches { gap: 9px; }
-    .console-ruban-nom { font-size: 13px; }
-    .manchette { font-size: 19px; }
-    .manchette-zone { font-size: 19px; min-height: calc(4 * 1.45em); }
-    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
+    .console-ruban-nom { font-size: 13px; }    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
     /* Dès le seuil mobile, « Sourdine » et son ⓘ ne tiennent plus sur une ligne
        dans une tranche de 58 px : sans repli, le canal muet s'élargit et pousse
        ses voisins. Mesuré à 767 px. */
@@ -8398,10 +8326,11 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  /* Même fond ET même bord que la console : les deux surfaces portaient déjà
+     `--paper-deep`, mais l'ombre portée et le filet clair de la molette la
+     faisaient lire comme une seconde teinte de crème. */
   background: var(--paper-deep);
-  box-shadow:
-    inset 0 0 0 1px var(--rule-faint),
-    0 2px 9px rgba(28, 25, 23, 0.11);
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
@@ -8424,6 +8353,18 @@
    46 % de la molette, il mangerait les aplats au lieu de les séparer. */
 .deck-jog-cap .forme-enjeu,
 .deck-jog-cap .forme-ton { stroke: none; }
+/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. */
+.cap-sigle {
+  fill: var(--paper);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  paint-order: stroke;
+  stroke: rgba(28, 25, 23, 0.34);
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+}
 .deck-jog-cap--vide {
   display: block;
   width: 46%;
@@ -8476,29 +8417,6 @@
 }
 .forme-enjeu { fill: var(--enjeu, #463E3E); }
 .forme-ton { fill: var(--ton, #6E685F); }
-
-/* Le pictogramme domine : il déborde le cadre et se lit avant tout le reste.
-
-   Tracé en ENCRE, comme sur la face précédente : un trait clair sous l'acronyme
-   clair éclaircit le fond et fait tomber son contraste, un trait sombre
-   l'assombrit et le renforce. C'est ce qui permet de le pousser à cette
-   opacité sans nuire à la lisibilité du sigle. */
-.deck-motif {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 124%;
-  height: 124%;
-  transform: translate(-50%, -50%);
-  fill: none;
-  stroke: #1C1917;
-  stroke-width: 1.05;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
 /* L'acronyme, centré, par-dessus tout — le nom du groupe sur la pochette. */
 .pochette-sigle {
   position: relative;
@@ -8603,4 +8521,18 @@
   text-transform: uppercase;
   color: var(--ink-softer);
   text-align: center;
+}
+
+/* Le titre du vumètre, dans le même idiome que « La course » : mono, capitales
+   espacées, encre douce. Il remplace la phrase éditoriale qui occupait cette
+   place au-dessus de la console. */
+.console-tete {
+  margin: 0 0 12px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  font-weight: 500;
 }
