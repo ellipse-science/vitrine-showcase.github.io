@@ -8,6 +8,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { readDatasetText } from "@/lib/data/source";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 
@@ -328,30 +329,42 @@ const PORTRAIT_ALIASES: Record<string, string> = {
   valeriesetlakwe: "michellesetlakwe",   // prénom erroné au référentiel ; une seule Setlakwe siège
 };
 
-function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait> {
-  const byKey = new Map<string, DeputyPortrait>();
-  const seen = new Set<string>();
+// Un homonyme n'est plus jeté : on garde tous les candidats et on les
+// départage à la lecture (lookupPortrait), via le suffixe « (Circonscription) »
+// que le raffineur ajoute déjà au nom publié quand il détecte la collision
+// (build_display_names, aws-refiners). Tant que ce suffixe n'est pas publié
+// pour un homonyme donné, le comportement reste inchangé : aucun portrait.
+function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait[]> {
+  const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
     const key = tightKey(p.nom);
     if (!key) continue;
-    // Un homonyme rend la clé inutilisable : on la retire plutôt que de
-    // trancher au hasard entre deux personnes.
-    if (byKey.has(key)) {
-      seen.add(key);
-      byKey.delete(key);
-      continue;
-    }
-    if (!seen.has(key)) byKey.set(key, p);
+    const list = byKey.get(key);
+    if (list) list.push(p);
+    else byKey.set(key, [p]);
   }
   return byKey;
 }
 
+// « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
+const RIDING_HINT = /\s*\(([^()]+)\)\s*$/;
+
 function lookupPortrait(
   deputy: string,
-  index: Map<string, DeputyPortrait>,
+  index: Map<string, DeputyPortrait[]>,
 ): DeputyPortrait | undefined {
-  const key = tightKey(deputy);
-  return index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "");
+  const hint = deputy.match(RIDING_HINT);
+  const baseName = hint ? deputy.slice(0, hint.index) : deputy;
+  const key = tightKey(baseName);
+  const candidates = index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length > 1 && hint) {
+    const ridingKey = tightKey(hint[1]);
+    return candidates.find((c) => tightKey(c.circonscription) === ridingKey);
+  }
+  // Homonyme non départagé (pas d'indice de circonscription publié) : on ne
+  // devine pas entre plusieurs visages, la carte reste sans portrait.
+  return undefined;
 }
 
 // Repli quand le portrait manque : « jeanfrancois roberge » est illisible tel
@@ -369,7 +382,7 @@ function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
-  portraits: Map<string, DeputyPortrait>,
+  portraits: Map<string, DeputyPortrait[]>,
 ): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -433,19 +446,44 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: Map<string, DeputyPortrait> = new Map(),
+  portraits: Map<string, DeputyPortrait[]> = new Map(),
 ): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
 
-  // Map party → row, preserving the static PARTY_KEYS order then re-sorting
-  // by interventions descending.
-  type WithData = { key: PartyKey; data: AgoraRow | null; interventions: number };
+  // Ordre du banc : par VOLUME DE PAROLE (mots) décroissant.
+  //
+  // Le tri se faisait sur le nombre d'interventions, qui n'est écrit NULLE PART
+  // sur une porte fermée : la porte affiche les mots et le nombre de député.es.
+  // Dès que les deux mesures divergent, la rangée paraissait donc arbitraire —
+  // un parti passait devant avec 7 284 mots pendant que la porte voisine
+  // annonçait 9 631 mots. Les deux comptes divergent structurellement : un
+  // parti qui prend peu la parole mais longuement (15 interventions, 8 673
+  // mots au relevé du 2026-02-19) n'a pas le même profil qu'un parti qui
+  // intervient sans cesse et brièvement (101 interventions, 8 919 mots).
+  //
+  // On trie donc sur ce que la porte MONTRE. « Qui a le plus parlé » se lit
+  // alors de gauche à droite sans avoir à ouvrir un casier.
+  //
+  // Départage : à volume égal, l'ordre statique de PARTY_KEYS tranche, pour
+  // qu'une égalité ne fasse pas sauter la rangée d'une période à l'autre
+  // (Array.prototype.sort est stable, et PARTY_KEYS est l'ordre d'entrée).
+  type WithData = {
+    key: PartyKey;
+    data: AgoraRow | null;
+    interventions: number;
+    words: number;
+  };
   const sorted: WithData[] = PARTY_KEYS.map((key) => {
     const partyData = rows.find((r) => r.party && r.party.toLowerCase() === key) || null;
-    return { key, data: partyData, interventions: partyData?.n_interventions || 0 };
+    return {
+      key,
+      data: partyData,
+      interventions: partyData?.n_interventions || 0,
+      words: Number(partyData?.word_count || 0),
+    };
   });
-  sorted.sort((a, b) => b.interventions - a.interventions);
+  sorted.sort((a, b) => b.words - a.words);
 
   const mattrs: Record<string, number> = {};
   for (const item of sorted) {
@@ -511,7 +549,7 @@ async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
   // ne l'a pas encore matérialisée localement, on dégrade en l'absence de
   // cartes satellites plutôt que de faire échouer toute la section.
   try {
-    const raw = await fs.readFile(ASSEMBLEE_DEPUTES_JSON_PATH, "utf8");
+    const raw = await readDatasetText("public/data/agora/agora_decideurs_qc_deputes.json");
     const rows = JSON.parse(raw) as DeputyAgoraRow[];
     return Array.isArray(rows) ? rows : [];
   } catch {
@@ -546,7 +584,7 @@ export async function loadAssemblee(
    *  la cadence de l'Assemblée, pas celle des éditions. */
   asOfIso?: string,
 ): Promise<AssembleeData | null> {
-  const raw = await fs.readFile(ASSEMBLEE_JSON_PATH, "utf8");
+  const raw = await readDatasetText("public/data/agora/agora_decideurs_qc.json");
   const parsed = JSON.parse(raw) as AgoraRow[];
   if (!Array.isArray(parsed) || parsed.length === 0) return null;
   const allRows = asOfIso

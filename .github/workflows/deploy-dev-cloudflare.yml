@@ -14,9 +14,11 @@ name: Déploiement dev (Cloudflare Pages)
 # régression (c'est l'état actuel), mais ça ne devient une vraie protection
 # qu'une fois GitHub Pages débranché, à la fin de la migration.
 
+# BASCULE 2026-08-19 : le build dev est déclenché par Cloudflare (intégration
+# Git de Pages au push, Deploy Hook du Worker au cycle de données). Ce
+# workflow ne se déclenche plus qu'à la main, en secours : le laisser au push
+# déploierait DEUX FOIS chaque poussée.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -60,6 +62,17 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ""
           NEXT_PUBLIC_SITE_ENV: dev
           NEXT_PUBLIC_SITE_ORIGIN: https://dev.vitrinedemocratique.com
+          # Les données viennent désormais de l'API, pas des JSON commités.
+          # Le site reste un export statique : la lecture a lieu AU BUILD et le
+          # résultat est inliné dans le HTML. Aucun navigateur n'appelle l'API.
+          #
+          # refresh-data.yml continue de tourner et de commiter les JSON : c'est
+          # eux que la synchro charge dans Postgres, et ils servent de repli si
+          # l'API ne répond pas. Rien n'est débranché.
+          VITRINE_DATA_SOURCE: api
+          # Les jeux sont payants : même le site s'authentifie. Cette clé porte
+          # la portée totale et aucun quota — ce n'est pas un client.
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
           NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
           NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
           NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}

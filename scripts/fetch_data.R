@@ -129,6 +129,15 @@ fetch_table <- function(conn, entry) {
   col_list <- paste(sprintf('"%s"', cols), collapse = ", ")
   sql      <- sprintf('SELECT %s FROM "%s"', col_list, entry$athena)
   df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
+  # noctua (le pilote Athena) marque parfois une colonne texte d'un attribut
+  # d'encodage que R ne reconnaît pas comme UTF-8/Latin-1/bytes, même quand le
+  # contenu est du UTF-8 valide — observé sur signature_word_context et
+  # editorial_angle (agora_decideurs_qc*), qui portent des guillemets français
+  # et une densité d'accents plus élevée que les autres tables du site.
+  # jsonlite refuse alors d'écrire la colonne : « Character encoding must be
+  # UTF-8, Latin-1 or bytes ». enc2utf8() force l'attribut sans toucher aux
+  # octets, donc n'a aucun effet sur une colonne déjà correcte.
+  df[] <- lapply(df, function(col) if (is.character(col)) enc2utf8(col) else col)
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
   df       <- apply_filter(df, entry$filter)
   df       <- sort_rows_deterministically(df)

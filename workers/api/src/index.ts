@@ -25,10 +25,38 @@
 // de direction.
 
 import { neon } from '@neondatabase/serverless'
+import { runSync } from './sync'
+import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
+import { authenticate, recordUsage } from './auth'
+import { handleAdmin } from './admin'
+import { handleArt, type ArtEnv } from './art'
+import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
 
-interface Env {
+interface Env extends SyncAthenaEnv, ArtEnv {
   DATABASE_URL: string
+  /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
+  ACCESS_TEAM_DOMAIN?: string
+  /** `aud` de l'application Access devant /admin. Lie le jeton à CETTE
+   *  application : sans lui, un jeton émis pour le miroir dev ouvrirait
+   *  l'administration. */
+  ACCESS_AUD?: string
   CACHE_TTL_SECONDS?: string
+  /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
+   *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
+   *  sinon tout déclenchement manuel qui ne tombe pas pile sur une heure de
+   *  New York, ce qui rend la synchro intestable onze heures sur douze.
+   *  Défini dans .dev.vars (non versionné), jamais en production. */
+  SYNC_FORCE?: string
+  /** Jeton interne de l'orchestration par tranches : le cron s'appelle
+   *  lui-même sur /v1/sync-athena (chaque appel = un budget CPU neuf).
+   *  Généré aléatoirement, posé par `wrangler secret put`, connu de
+   *  personne d'autre que le Worker. */
+  SYNC_INTERNAL_TOKEN?: string
+  /** Service binding vers CE Worker (wrangler.toml). Indispensable : un
+   *  fetch() du Worker vers son propre nom d'hôte ne lui revient jamais —
+   *  Cloudflare coupe la boucle — et l'orchestration échouait en silence à
+   *  chaque cycle (constaté le 2026-08-19 : six occurrences sans trace). */
+  SELF?: Fetcher
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -57,6 +85,16 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
 const MAX_LIMIT = 5000
 const DEFAULT_LIMIT = 1000
 
+// Pas de conversion de types ici, et c'est voulu : le schéma stocke les
+// chaînes telles qu'Athena les publie (`text`), et les entiers en `integer`
+// plutôt qu'en `bigint`. L'aller-retour est donc fidèle au caractère près sans
+// que l'API n'ait à reformater quoi que ce soit.
+//
+// La version précédente typait les dates en `date`/`timestamptz` et tentait de
+// les restituer avec to_char. Impossible : la source mélange au moins trois
+// formes — « 2026-06-12 », « 2026-07-31T20:01:35Z », « 2025-05-28 16:13 ». Un
+// seul format de sortie ne pouvait pas les reproduire toutes.
+
 function json(body: unknown, init: ResponseInit = {}, ttl = 0): Response {
   const headers = new Headers(init.headers)
   headers.set('content-type', 'application/json; charset=utf-8')
@@ -70,24 +108,280 @@ function problem(status: number, detail: string, extra: Record<string, unknown> 
 }
 
 export default {
+  /** Cron Trigger : recharge Postgres depuis les JSON publiés, toutes les 4 h.
+   *
+   *  Le déclencheur est chez Cloudflare — précis à la minute, indépendant de la
+   *  file d'attente de GitHub Actions. Voir sync.ts pour ce que cela découple
+   *  réellement, et ce que cela ne découple pas. */
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Douze déclenchements sont enregistrés — les heures UTC d'été ET celles
+    // d'hiver — pour que l'horaire reste fixe à New York sans intervention
+    // semestrielle. Six d'entre eux ressortent ici sans rien faire.
+    const now = new Date(event.scheduledTime)
+
+    // Deux crons cohabitent, distingués par leur MINUTE :
+    //   :10 = sync DIRECT Athena -> Postgres (chaîne émancipée de GitHub) ;
+    //   :00 = ancien chemin JSON publiés -> Postgres (filet, phase d'ombre).
+    if (now.getUTCMinutes() === 10) {
+      if (env.SYNC_FORCE !== '1' && !isAthenaTargetHourInNY(now)) {
+        console.log('sync-athena : hors heure visée à New York — ignoré')
+        return
+      }
+      // Orchestration PAR TRANCHES : le cron s'appelle lui-même sur la route
+      // HTTP, deux tables par appel — chaque appel est une invocation neuve
+      // avec son propre budget CPU. La passe monolithique mourait après
+      // 8 tables sur 15 (constaté le 2026-08-19) : même leçon que /v1/sync.
+      // La règle TOUT OU RIEN vit ici, sur l'agrégat des tranches.
+      ctx.waitUntil(
+        (async () => {
+          if (!env.SYNC_INTERNAL_TOKEN) {
+            // Sans alerte, ce serait le GEL TOTAL SILENCIEUX : plus aucune
+            // synchro, plus aucun build, et personne ne le sait — la classe
+            // de panne la plus chère du chemin critique (audit 2026-08-19).
+            await notifySlack(
+              env,
+              'sync-athena : SYNC_INTERNAL_TOKEN absent — orchestration impossible, le site ne se rafraîchit plus.',
+            )
+            console.error('SYNC_INTERNAL_TOKEN absent : orchestration impossible')
+            return
+          }
+          // PAR LE SERVICE BINDING, jamais par fetch() global : un Worker qui
+          // fetch son propre nom d'hôte ne se rappelle pas lui-même —
+          // Cloudflare coupe la boucle — et c'est exactement pourquoi la
+          // passe autonome n'a laissé aucune trace sur six cycles le
+          // 2026-08-19 pendant que les mêmes tranches, appelées de
+          // l'extérieur, réussissaient 15/15. Le binding invoque le Worker
+          // pour de vrai, avec un budget CPU neuf par appel.
+          if (!env.SELF) {
+            await notifySlack(
+              env,
+              'sync-athena : service binding SELF absent — orchestration impossible, le site ne se rafraîchit plus.',
+            )
+            console.error('SELF absent : orchestration impossible')
+            return
+          }
+          const failed: string[] = []
+          let synced = 0
+          let offset: number | null = 0
+          try {
+            while (offset !== null) {
+              const res = await env.SELF.fetch(
+                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+                {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
+                },
+              )
+              if (!res.ok && res.status !== 207) {
+                failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
+                break
+              }
+              const body = (await res.json()) as {
+                synced: number
+                failed: string[]
+                next: number | null
+              }
+              synced += body.synced
+              failed.push(...body.failed)
+              offset = body.next
+            }
+          } catch (err) {
+            // Une exception ici (réseau, boucle coupée, JSON invalide) était
+            // le SILENCE TOTAL : waitUntil l'avalait, ni Slack ni journal.
+            const message = err instanceof Error ? err.message : String(err)
+            failed.push(`orchestration : ${message}`)
+          }
+          console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
+          if (failed.length > 0) {
+            await notifySlack(
+              env,
+              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+            )
+            return
+          }
+          if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
+            try {
+              await triggerDeployHooks(env)
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err)
+              await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
+            }
+          }
+        })(),
+      )
+      return
+    }
+
+    if (env.SYNC_FORCE !== '1' && !isTargetHourInNY(now)) {
+      console.log('déclenchement hors heure visée à New York — ignoré')
+      return
+    }
+
+    ctx.waitUntil(
+      runSync(env.DATABASE_URL).then(({ synced, failed }) => {
+        console.log(`sync terminée : ${synced.length} tables, ${failed.length} en échec`)
+        if (failed.length > 0) {
+          console.error('tables en échec :', failed.map((f) => f.table).join(', '))
+        }
+      }),
+    )
+  },
+
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     const ttl = Number(env.CACHE_TTL_SECONDS ?? '14400')
 
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+
+    // /admin d'abord : protégé par Cloudflare Access, jamais mis en cache, et
+    // servi avant toute logique de clé d'API — un administrateur n'a pas de
+    // clé, il a une identité.
+    const seg = url.pathname.split('/').filter(Boolean)
+    if (seg[0] === 'admin') {
+      const sqlAdmin = neon(env.DATABASE_URL)
+      const res = await handleAdmin(request, sqlAdmin, seg, env)
+      res.headers.set('cache-control', 'no-store')
+      return res
+    }
+
+    // /v1/art accepte PUT (téléversement du raffineur) et POST (publish) : il
+    // doit être exempté du garde 405 global, comme les routes de synchro —
+    // la leçon du 2026-08-19, où le garde avalait POST /v1/sync-athena.
+    const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
+    const isArt = seg[0] === 'v1' && seg[1] === 'art'
+    if (!isSync && !isArt && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
     // Le cache d'abord : c'est lui qui absorbe la charge. Une réponse servie
     // ici ne touche jamais Postgres.
+    //
+    // `Cache-Control: no-cache` court-circuite ce cache, selon la sémantique
+    // HTTP habituelle. Le build du site s'en sert : il veut les données du
+    // cycle courant, pas une réponse vieille de quatre heures. Sans cela, un
+    // correctif de format restait invisible au build jusqu'à expiration — ce
+    // qui est exactement ce qui s'est produit la première fois.
+    const noCache = (request.headers.get('cache-control') ?? '').includes('no-cache')
     const cache = caches.default
-    const cached = await cache.match(request)
-    if (cached) return cached
+    if (!noCache) {
+      const cached = await cache.match(request)
+      if (cached) return cached
+    }
+
+    // Contrepartie du match ci-dessus, LONGTEMPS MANQUANTE : rien n'entrait
+    // jamais dans le cache, donc le match ne trouvait jamais rien et chaque
+    // requête publique descendait jusqu'à Postgres (audit 2026-08-19). À
+    // appeler sur les réponses publiques dont l'en-tête cache-control fait
+    // foi ; jamais sur les réponses à clé (elles dépendent de l'appelant).
+    const cachePublic = (res: Response): Response => {
+      if (request.method === 'GET' && res.status === 200) {
+        ctx.waitUntil(cache.put(request, res.clone()))
+      }
+      return res
+    }
 
     const sql = neon(env.DATABASE_URL)
     const segments = url.pathname.split('/').filter(Boolean)
 
     try {
+      // POST /v1/sync — recharge Postgres depuis les JSON publiés, à la demande.
+      //
+      // POURQUOI CETTE ROUTE EXISTE. Le cron seul ne suffit pas : refresh-data
+      // publie les JSON puis pousse sur `prod`, ce qui déclenche le
+      // déploiement dans la minute. Si la synchro n'a lieu que sur son propre
+      // horaire, le build lit l'API à un moment où elle contient encore le
+      // cycle précédent — c'est la régression observée le 2026-08-18.
+      //
+      // refresh-data appelle donc cette route APRÈS avoir commité sur main et
+      // AVANT de pousser sur `prod`. L'ordre devient garanti au lieu d'espéré,
+      // et le cron ne sert plus que de filet.
+      //
+      // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
+      // c'est une écriture qui remplace le contenu de quinze tables.
+      if (segments[0] === 'v1' && segments[1] === 'sync') {
+        if (request.method !== 'POST') {
+          return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
+        }
+        const auth = await authenticate(sql, request, 'sync')
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        // Par TRANCHES : un gestionnaire `fetch` n'a que 10 ms de CPU sur le
+        // plan gratuit, là où le cron en a 30 s. Quatre tables par appel
+        // passent confortablement ; l'appelant rappelle avec `next` jusqu'à
+        // recevoir null.
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
+        const limit = Math.min(
+          Math.max(1, Number(url.searchParams.get('limit') ?? '4') || 4),
+          15,
+        )
+
+        const started = Date.now()
+        const { synced, failed, total, next } = await runSync(env.DATABASE_URL, {
+          offset,
+          limit,
+        })
+        return json(
+          {
+            synced: synced.length,
+            tables: synced,
+            failed: failed.map((f) => f.table),
+            offset,
+            total,
+            next,
+            seconds: Math.round((Date.now() - started) / 1000),
+          },
+          { status: failed.length > 0 ? 207 : 200 },
+        )
+      }
+
+      // Déclenchement manuel du sync DIRECT Athena (chaîne émancipée). Même
+      // contrat de tranches que /v1/sync, mais le travail CPU par table est
+      // plus lourd (analyse des pages Athena) : défaut à 2 tables par appel.
+      // Le cron de la minute :10 fait la passe complète ; cette route sert la
+      // phase d'ombre et les reprises.
+      if (segments[0] === 'v1' && segments[1] === 'sync-athena') {
+        if (request.method !== 'POST') {
+          return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
+        }
+        // Deux voies d'entrée : le jeton INTERNE de l'orchestrateur du cron
+        // (le Worker s'appelle lui-même par tranches), ou une clé d'API de
+        // portée sync pour les déclenchements manuels.
+        const authHeader = request.headers.get('authorization') ?? ''
+        const interne =
+          Boolean(env.SYNC_INTERNAL_TOKEN) &&
+          authHeader === `Bearer interne:${env.SYNC_INTERNAL_TOKEN}`
+        if (!interne) {
+          const auth = await authenticate(sql, request, 'sync')
+          if (!auth.ok) return problem(auth.status, auth.error)
+        }
+
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0)
+        const limit = Math.min(
+          Math.max(1, Number(url.searchParams.get('limit') ?? '2') || 2),
+          15,
+        )
+
+        const started = Date.now()
+        const { synced, failed, total, next } = await runAthenaSync(env, { offset, limit })
+        return json(
+          {
+            synced: synced.length,
+            tables: synced,
+            failed: failed.map((f) => f.table),
+            offset,
+            total,
+            next,
+            seconds: Math.round((Date.now() - started) / 1000),
+          },
+          { status: failed.length > 0 ? 207 : 200 },
+        )
+      }
+
+      // /v1/art/* — l'illustration de la Une des unes (R2). Lecture publique,
+      // écriture sous clé `sync`, publication conditionnelle. Cf. art.ts.
+      if (segments[0] === 'v1' && segments[1] === 'art') {
+        return handleArt(request, env, ctx, sql, segments[2] ?? '')
+      }
+
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
@@ -98,14 +392,16 @@ export default {
           (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
           null,
         )
-        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300)
+        return cachePublic(
+          json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300),
+        )
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.
       // `!segments[2]` est indispensable : sans lui cette route intercepte
       // aussi /v1/datasets/{nom} et renvoie l'index à la place des lignes.
       if (segments[0] === 'v1' && segments[1] === 'datasets' && !segments[2]) {
-        return json(
+        return cachePublic(json(
           {
             datasets: Object.entries(DATASETS).map(([name, spec]) => ({
               name,
@@ -115,7 +411,7 @@ export default {
           },
           {},
           ttl,
-        )
+        ))
       }
 
       // GET /v1/datasets/:name?from=&to=&party=&limit=&offset=
@@ -127,6 +423,13 @@ export default {
             available: Object.keys(DATASETS),
           })
         }
+
+        // Les données sont le produit : la lecture d'un jeu demande une clé.
+        // /v1/health et /v1/datasets restent ouverts — l'un sert à surveiller,
+        // l'autre à découvrir ce qui existe, et ni l'un ni l'autre ne livre de
+        // donnée.
+        const auth = await authenticate(sql, request, name)
+        if (!auth.ok) return problem(auth.status, auth.error)
 
         const limit = Math.min(Number(url.searchParams.get('limit') ?? DEFAULT_LIMIT) || DEFAULT_LIMIT, MAX_LIMIT)
         const offset = Math.max(Number(url.searchParams.get('offset') ?? '0') || 0, 0)
@@ -176,24 +479,30 @@ export default {
           {},
           ttl,
         )
-        ctx.waitUntil(cache.put(request, response.clone()))
+        ctx.waitUntil(recordUsage(sql, auth.key.id, name, rows.length))
+
+        // PAS de mise en cache partagée ici : la réponse dépend de la clé
+        // (portées, quotas), et `caches.default` est commun à tous les
+        // appelants. Une réponse servie à une clé ne doit jamais être resservie
+        // à une autre. Le cache reste en place pour /v1/datasets, qui ne
+        // dépend d'aucune clé.
         return response
       }
 
       // Racine : de quoi comprendre l'API sans documentation externe.
       if (segments.length === 0) {
-        return json(
+        return cachePublic(json(
           {
             name: 'API Vitrine démocratique',
             version: 'v1',
             description:
               "Indicateurs dérivés de la couverture médiatique et des discours politiques au Québec.",
-            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}'],
+            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}', '/v1/art/latest.{png,webp,avif,json}'],
             note: "Version de lecture, sans authentification. Les clés d'API viendront avec l'offre payante.",
           },
           {},
           ttl,
-        )
+        ))
       }
 
       return problem(404, 'Route inconnue.', { endpoints: ['/v1/health', '/v1/datasets'] })

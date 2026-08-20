@@ -2,7 +2,12 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    # `prod` autant que `main` : le ruleset de `prod` EXIGE le contrôle
+    # « check », et sans cette ligne il ne s'exécute jamais sur une PR de
+    # promotion — celle-ci reste alors bloquée pour toujours, en attendant un
+    # contrôle qui ne viendra pas. Une promotion mérite de toute façon d'être
+    # testée : c'est elle qui met le code en production.
+    branches: [main, prod]
 
 permissions:
   contents: read

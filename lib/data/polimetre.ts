@@ -19,6 +19,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { lastUpdatedLabel } from "@/lib/dates";
+import { readDatasetText } from "@/lib/data/source";
 import type {
   ArticleRef,
   PolimetreData,
@@ -36,6 +37,10 @@ export type {
   Trend,
   VerdictSlug,
 } from "@/lib/data/polimetre-meta";
+
+/** Chemin tel qu'il figure dans scripts/tables.json : c'est la clé qui permet
+ *  à lib/data/source.ts de servir ce jeu depuis l'API plutôt que du disque. */
+const POLIMETRE_DATASET = "public/data/refined/week/polimetre_plus.json";
 
 const POLIMETRE_JSON_PATH = path.resolve(
   process.cwd(),
@@ -414,7 +419,7 @@ export async function loadPolimetre(
 ): Promise<PolimetreData | null> {
   let raw: string;
   try {
-    raw = await fs.readFile(POLIMETRE_JSON_PATH, "utf8");
+    raw = await readDatasetText(POLIMETRE_DATASET);
   } catch {
     return null; // refiner has not published yet
   }
