@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -32,6 +32,39 @@ const ARTICLE: Record<string, string> = {
   pcq: "Le ",
   qs: "",
 };
+
+/** La phrase que porte une colonne du vumètre, en toutes lettres.
+ *
+ *  Elle dit la BASE du calcul, qui est l'incompréhension la plus fréquente sur
+ *  ce module : les cinq partis se partagent 100 %, pas toute l'actualité. Un
+ *  pourcentage nu la laissait deviner.
+ *
+ *  Le même texte sert au survol ET aux lecteurs d'écran. Un `title` seul ne
+ *  suffit pas : il n'est pas atteignable au clavier et son annonce est
+ *  irrégulière d'un lecteur à l'autre — c'est le défaut qui rendait la tonalité
+ *  muette avant 3158d9d9. */
+function phraseColonne(row: RowView, ecartPts: number): string {
+  const nom = `${ARTICLE[row.key] ?? ""}${row.label}`;
+  const base = "de la couverture médiatique réservée aux partis politiques en Une de l'actualité";
+
+  if (row.inShadow) {
+    return (
+      `${nom} est le parti dont les médias parlent le moins sur cette période\u00a0: ` +
+      `${row.sovPct}\u00a0% ${base}.`
+    );
+  }
+
+  let phrase = `${nom} occupe ${row.sovPct}\u00a0% ${base}.`;
+  if (row.peakPct > row.sovPct) {
+    phrase += ` Son record sur la période est de ${row.peakPct}\u00a0%.`;
+  }
+  if (ecartPts !== 0) {
+    phrase +=
+      ` Ce média lui en donne ${Math.abs(ecartPts)}\u00a0% ` +
+      `${ecartPts > 0 ? "de plus" : "de moins"} que l'ensemble des médias.`;
+  }
+  return phrase;
+}
 
 function shareTitle(data: PartiesData): string {
   const leader = data.ranges.today.rows[0];
@@ -486,6 +519,13 @@ function Deck({
   const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
   const ton = row.toneDirection;
 
+  /* Le survol du disque annonce ce qu'on va LIRE, pas seulement le geste :
+     « retourner » ne disait pas qu'il y a des chiffres derrière. */
+  const annonceDisque = ouverte
+    ? `${row.fullLabel}\u00a0: masquer la pochette`
+    : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"}\u00a0: retourner le disque pour voir ` +
+      `son temps en Une, sa part et son enjeu clé`;
+
   const pistes: [string, string][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
     ["Part de temps", `${row.sovPct} %`],
@@ -506,7 +546,8 @@ function Deck({
         className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
         onClick={() => setOuverte((v) => !v)}
         aria-expanded={ouverte}
-        aria-label={`${row.fullLabel} : ${ouverte ? "masquer" : "afficher"} la pochette`}
+        aria-label={annonceDisque}
+        title={annonceDisque}
       >
         {/* Face avant — la molette. Purement décorative : tout ce qu'elle porte
             (la couleur, donc l'identité) est déjà dit par le nom en dessous. */}
@@ -648,6 +689,7 @@ function Tranche({
 
   const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
   const ecart = Math.round((ratio - 1) * 100);
+  const phrase = phraseColonne(row, ecart);
 
   return (
     <li
@@ -657,14 +699,8 @@ function Tranche({
         ["--party" as string]: row.color,
       }}
     >
-      <div
-        className="console-vumetre"
-        title={
-          (coupe ? `${row.label}, en sourdine (le moins présent)\u00a0: ` : `${row.label}\u00a0: `) +
-          `${row.sovPct}\u00a0% du temps consacré aux partis (record de la période\u00a0: ${row.peakPct}\u00a0%)` +
-          (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart}\u00a0% par rapport à l'ensemble des médias`)
-        }
-      >
+      <div className="console-vumetre" title={phrase}>
+        <span className="visually-hidden">{phrase}</span>
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
@@ -776,7 +812,20 @@ function Fader({
                   i / (positions.length - 1)
                 } * (100% - var(--pouce)))`,
               }}
-              title={p.label}
+              title={
+                p.id === TOUS_MEDIAS
+                  ? "Tous les médias réunis, chacun pesé selon son temps de Une"
+                  : /* `MEDIA_DANS` est capitalisé pour OUVRIR une phrase
+                       (« Dans Le Devoir, … ») : en milieu de phrase il faut
+                       décapitaliser la préposition, sinon on lit « les Unes
+                       Dans Le Devoir ». Seule la première lettre bouge — le
+                       titre du quotidien garde la sienne. */
+                    `Ne montrer que les Unes ${
+                      MEDIA_DANS[p.id]
+                        ? MEDIA_DANS[p.id].charAt(0).toLowerCase() + MEDIA_DANS[p.id].slice(1)
+                        : `de ${p.label}`
+                    }`
+              }
             >
               <i />
               <b>{p.id === TOUS_MEDIAS ? "tous" : (MEDIA_SIGLES[p.id] ?? p.id)}</b>
