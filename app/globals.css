@@ -8816,7 +8816,16 @@
 .palmares-x-arrivee { color: var(--cordovan); font-weight: 600; }
 
 /* ── La colonne de classement ─────────────────────────────────────────────── */
-.palmares-classement { min-width: 0; }
+/* Le classement dans son propre encadré, à la manière du bandeau des données
+   fictives : filet cordovan et fond de papier. Il n'est pas de même nature que
+   la courbe — celle-ci raconte, celui-là arrête un résultat — et le cadre le
+   dit. */
+.palmares-classement {
+  min-width: 0;
+  border: 1px solid var(--cordovan);
+  background: var(--paper);
+  padding: 9px 10px;
+}
 .palmares-liste {
   margin: 0;
   padding: 0;
@@ -8964,6 +8973,7 @@
   .palmares-figure.termine .palmares-zone,
   .palmares-figure.termine .palmares-x { display: none; }
   .palmares-figure.termine .palmares-classement { display: block; }
+  .palmares-classement { padding: 8px 9px; }
   .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
   .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
   .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }

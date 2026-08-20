@@ -999,8 +999,11 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             {/* Le zéro porte son filet comme les autres graduations : c'est un
                 pointillé de grille, pas le trait plein de l'axe des x qui a été
                 retiré. */}
+            {/* Les filets s'arrêtent à l'ARRIVÉE et non au bord du cadre : au-delà
+                il n'y a plus de piste, et une grille qui la dépasse laisse croire
+                qu'on peut encore y lire quelque chose. */}
             {chart.yLabels.map((g) => (
-              <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
+              <line key={g.label} className="palmares-grille" x1="0" x2={chart.finish.x} y1={g.y} y2={g.y} />
             ))}
             {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
                 courir. C'est elle qui fait de la mesure une course. */}
