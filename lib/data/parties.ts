@@ -342,6 +342,8 @@ export type RangeView = {
   /** « du 11 au 17 août 2026 » : la fenêtre réellement couverte par la donnée,
    *  formulée pour être recopiée telle quelle dans un article. */
   periodeLabel: string;
+  /** Depuis quand la mesure court, pour l'écrire sous le titre du vumètre. */
+  depuisLabel: string;
   rows: RowView[];
   /** La course de CETTE période : sa fenêtre et sa ligne d'arrivée en
    *  dépendent. */
@@ -1472,6 +1474,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
     periodeLabel: libellePeriode(range, dates.daily),
+    depuisLabel: libelleDepuis(range, dates.daily),
     rows,
     // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
     // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
@@ -1502,6 +1505,26 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
  *  Il décrit la donnée EFFECTIVEMENT présente, pas la fenêtre théorique de
  *  l'onglet : si le raffineur n'a publié que trois jours cette semaine, la
  *  phrase dit ces trois jours. */
+/** Depuis quand la mesure court, en toutes lettres.
+ *
+ *  Ce n'est PAS une fenêtre glissante. Le raffineur accumule depuis un point de
+ *  départ et remet à zéro au calendrier : minuit pour la journée, le lundi pour
+ *  la semaine. Écrire « depuis les 4 dernières heures » sur la vue jour serait
+ *  faux — le bloc de 4 h est la fréquence de PUBLICATION, pas la fenêtre
+ *  mesurée : à 16h, la colonne porte tout ce qui s'est dit depuis minuit.
+ *
+ *  La semaine repart le LUNDI, comme le note `libellePeriode`, et non le samedi
+ *  qui ouvre l'axe du palmarès : celui-ci cadre la course, celle-là agrège la
+ *  donnée. Les deux ne se confondent pas.
+ */
+function libelleDepuis(range: RangeKey, joursIso: string[]): string {
+  if (range === "today") return "depuis minuit";
+  if (range === "week") return "depuis lundi";
+  const jours = joursIso.filter(Boolean);
+  const premier = jours[0];
+  return premier ? `depuis le ${formatDateFr(premier).toLowerCase()}` : "depuis le début du suivi";
+}
+
 function libellePeriode(range: RangeKey, joursIso: string[]): string {
   const jours = joursIso.filter(Boolean);
   if (jours.length === 0) return "";

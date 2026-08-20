@@ -7798,6 +7798,7 @@
      tout, la raccourcir changerait la lecture. */
   .console { --piste: 92px; --seg-gap: 1.5px; padding: 3px 10px 4px; }
   .console-tete { margin: 0 0 7px; font-size: 8px; letter-spacing: 0.14em; }
+  .console-depuis { font-size: 7px; margin-top: 2px; }
   .regie-centre { gap: 8px; }
   /* L'infobulle de la sourdine part : sur un doigt elle est un piège plus
      qu'une aide, et le mot « Sourdine » se suffit. */
@@ -8538,6 +8539,17 @@
 /* Le titre du vumètre, dans le même idiome que « La course » : mono, capitales
    espacées, encre douce. Il remplace la phrase éditoriale qui occupait cette
    place au-dessus de la console. */
+/* Le titre nomme la mesure ; la ligne du dessous dit depuis quand elle court.
+   Les deux vont ensemble : « part de temps » sans point de départ laisse
+   supposer une fenêtre glissante, ce que la mesure n'est pas. */
+.console-depuis {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  opacity: 0.78;
+}
 .console-tete {
   margin: 0 0 16px;
   text-align: center;

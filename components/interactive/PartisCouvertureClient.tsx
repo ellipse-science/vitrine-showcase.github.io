@@ -250,6 +250,7 @@ export function PartisCouvertureClient({
             indisponible={data.indisponible}
             saillanceRang={saillanceRang}
             media={media}
+            depuis={view.depuisLabel}
           />
         </div>
 
@@ -393,6 +394,7 @@ function Console({
   indisponible,
   saillanceRang,
   media,
+  depuis,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -406,6 +408,8 @@ function Console({
   saillanceRang: number;
   /** Le média affiché, ou `TOUS_MEDIAS`. Le titre le nomme. */
   media: string;
+  /** Depuis quand la mesure court : « depuis minuit », « depuis lundi »… */
+  depuis: string;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -461,7 +465,10 @@ function Console({
     >
       {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
           l'instrument, il ne l'introduit pas. */}
-      <p className="console-tete">{titre}</p>
+      <p className="console-tete">
+        {titre}
+        <span className="console-depuis">{depuis}</span>
+      </p>
       <div className="console-corps">
         <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
           {tranches.map((row, i) => (
