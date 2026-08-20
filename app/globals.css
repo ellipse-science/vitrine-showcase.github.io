@@ -8987,3 +8987,10 @@
   .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
   .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
 }
+
+/* Le fader d'un module suspendu : présent, mais sans prise. Le faire
+   disparaître raccourcissait le cadre et laissait croire que l'instrument
+   n'avait pas de curseur ; le montrer éteint dit qu'il en a un, et qu'il n'a
+   rien à filtrer pour l'instant. */
+.fader--inerte { opacity: 0.45; }
+.fader--inerte .fader-input { cursor: not-allowed; }

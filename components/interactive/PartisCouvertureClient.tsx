@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { ShareButton } from "@/components/interactive/ShareButton";
@@ -260,13 +260,26 @@ export function PartisCouvertureClient({
         </div>
       </div>
 
-      {data.medias.length > 0 && (
+      {/* Le fader reste EN PLACE quand la mesure est suspendue.
+          Il ne s'affichait que si la ventilation par média était publiée — ce
+          qu'elle n'est pas en production — et le module perdait donc encore de
+          la hauteur dans l'état sans donnée.
+          Le panel de médias est une CONSTANTE, connue indépendamment de toute
+          donnée : on peut donc le montrer. Inerte, parce qu'il n'y a rien à
+          filtrer, et le dire vaut mieux que de le faire disparaître. */}
+      {data.medias.length > 0 ? (
+        <Fader medias={data.medias} valeur={media} onChange={setMedia} />
+      ) : data.indisponible ? (
         <Fader
-          medias={data.medias}
-          valeur={media}
-          onChange={setMedia}
+          medias={MEDIA_ORDER.filter((id) => id !== TOUS_MEDIAS).map((id) => ({
+            id,
+            label: MEDIA_LABELS[id] ?? id,
+          }))}
+          valeur={TOUS_MEDIAS}
+          onChange={() => {}}
+          inerte
         />
-      )}
+      ) : null}
       </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
@@ -849,10 +862,14 @@ function Fader({
   medias,
   valeur,
   onChange,
+  inerte,
 }: {
   medias: { id: string; label: string }[];
   valeur: string;
   onChange: (v: string) => void;
+  /** Mesure suspendue : le curseur garde sa place mais ne commande rien — il
+   *  n'y a aucune donnée à filtrer. */
+  inerte?: boolean;
 }) {
   // Ordre du crossfader : « tous » AU CENTRE, les médias de part et d'autre.
   // MEDIA_ORDER fixe la disposition ; tout média publié mais absent de cette
@@ -871,7 +888,7 @@ function Fader({
   const courante = positions[idx];
 
   return (
-    <div className="fader">
+    <div className={`fader${inerte ? " fader--inerte" : ""}`}>
       <div className="fader-piste">
         <input
           type="range"
@@ -880,6 +897,7 @@ function Fader({
           step={1}
           value={idx}
           onChange={(e) => onChange(positions[Number(e.target.value)].id)}
+          disabled={inerte}
           aria-label="Source médiatique"
           aria-valuetext={courante.label}
           className="fader-input"
