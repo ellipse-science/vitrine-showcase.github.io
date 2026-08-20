@@ -1,5 +1,191 @@
 [
   {
+    "pr": 536,
+    "date": "2026-08-19T20:07:15Z",
+    "note": "Des garde-fous internes empêchent désormais le site de publier un module vide quand une source de données fait défaut, les visiteurs qui reviennent obtiennent l'édition la plus récente au lieu d'une copie gardée par leur navigateur, et le site se présente mieux aux moteurs de recherche (plan du site, adresse canonique). 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 530,
+    "date": "2026-08-19T18:24:56Z",
+    "note": "Le site se met à jour par un chemin plus direct et plus fiable, indépendant des services externes qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 252,
+    "date": "2026-08-19T18:13:28Z",
+    "note": "Rien ne change sur le site public — mise à jour de documentation technique interne (référence du backend AWS).",
+    "version": null
+  },
+  {
+    "pr": 497,
+    "date": "2026-08-19T18:08:01Z",
+    "note": "Les portraits des député·es se mettent désormais à jour tout seuls, une fois par jour. Après une élection partielle, la photo du nouvel élu remplace celle de son prédécesseur sans intervention manuelle.",
+    "version": null
+  },
+  {
+    "pr": 532,
+    "date": "2026-08-19T18:01:34Z",
+    "note": "Aucun changement pour le site : correctifs internes de la chaîne de données.",
+    "version": null
+  },
+  {
+    "pr": 529,
+    "date": "2026-08-19T15:00:57Z",
+    "note": "Aucun changement pour le site : correctifs internes de l'API.",
+    "version": null
+  },
+  {
+    "pr": 528,
+    "date": "2026-08-19T14:40:16Z",
+    "note": "Aucun changement pour le site : correctif interne de l'API.",
+    "version": null
+  },
+  {
+    "pr": 527,
+    "date": "2026-08-19T14:32:35Z",
+    "note": "Le site tire maintenant ses données par un chemin plus direct et plus fiable, indépendant des services qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 526,
+    "date": "2026-08-19T13:56:57Z",
+    "note": "Aucun changement pour le site : document interne de vision.",
+    "version": null
+  },
+  {
+    "pr": 525,
+    "date": "2026-08-19T13:23:14Z",
+    "note": "Le site se met maintenant à jour de lui-même dans votre navigateur quand de nouvelles données sont publiées, sans devoir rafraîchir la page.",
+    "version": "2.25.0-beta.0"
+  },
+  {
+    "pr": 524,
+    "date": "2026-08-19T13:13:14Z",
+    "note": "Aucun changement pour le site : règle interne de qualité (tout passe par l'environnement de travail avant la production).",
+    "version": null
+  },
+  {
+    "pr": 522,
+    "date": "2026-08-18T23:41:56Z",
+    "note": "Documentation interne du pipeline mise a jour.",
+    "version": null
+  },
+  {
+    "pr": 520,
+    "date": "2026-08-18T22:13:40Z",
+    "note": "Aucun changement pour le site : document interne de conception.",
+    "version": null
+  },
+  {
+    "pr": 521,
+    "date": "2026-08-18T21:31:33Z",
+    "note": "Corrige un bug qui empêchait le module « L'alignement de l'Assemblée » de recevoir de nouvelles données depuis le 28 juillet. Aucun autre changement visible sur le site.",
+    "version": null
+  },
+  {
+    "pr": 510,
+    "date": "2026-08-18T20:42:42Z",
+    "note": "Le rafraîchissement automatique des données s'interrompt maintenant de lui-même s'il reste bloqué, au lieu d'immobiliser les mises à jour suivantes. Rien ne change dans ce que le site affiche.",
+    "version": null
+  },
+  {
+    "pr": 519,
+    "date": "2026-08-18T20:17:52Z",
+    "note": "Le diagramme public des pipelines montre maintenant deux traitements automatiques qui tournaient déjà sans y apparaître. L'un publie chaque semaine un rapport de surveillance du pipeline, l'autre repère les promesses gouvernementales. Rien ne change dans les données ni dans l'affichage du site.",
+    "version": null
+  },
+  {
+    "pr": 518,
+    "date": "2026-08-18T19:27:57Z",
+    "note": "Aucune — décision interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 517,
+    "date": "2026-08-18T19:22:39Z",
+    "note": "Aucune — documentation interne à l'offre API, non annoncée publiquement.",
+    "version": null
+  },
+  {
+    "pr": 516,
+    "date": "2026-08-18T19:16:33Z",
+    "note": "Aucune — correctif d'outillage.",
+    "version": null
+  },
+  {
+    "pr": 513,
+    "date": "2026-08-18T19:10:05Z",
+    "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
+    "version": null
+  },
+  {
+    "pr": 512,
+    "date": "2026-08-18T18:36:08Z",
+    "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",
+    "version": null
+  },
+  {
+    "pr": 511,
+    "date": "2026-08-18T18:03:19Z",
+    "note": "Aucune — correctif d'infrastructure ; le site retrouve simplement la fraîcheur qu'il avait.",
+    "version": "2.24.0-beta.2"
+  },
+  {
+    "pr": 508,
+    "date": "2026-08-18T17:49:30Z",
+    "note": "Aucune — l'API n'est pas encore annoncée, et rien ne change pour un visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 507,
+    "date": "2026-08-18T14:26:21Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 506,
+    "date": "2026-08-18T02:21:03Z",
+    "note": "Aucune — infrastructure, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 504,
+    "date": "2026-08-18T02:10:52Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 503,
+    "date": "2026-08-18T01:34:25Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 502,
+    "date": "2026-08-18T01:29:51Z",
+    "note": "Aucune — outillage interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 498,
+    "date": "2026-08-18T00:23:36Z",
+    "note": "Aucune — changement d'infrastructure sans effet visible pour le public.",
+    "version": null
+  },
+  {
+    "pr": 495,
+    "date": "2026-08-17T23:30:27Z",
+    "note": "Aucune — correctif d'infrastructure sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 493,
+    "date": "2026-08-17T23:30:17Z",
+    "note": "Aucune — changement interne sans effet visible sur le site.",
+    "version": null
+  },
+  {
     "pr": 494,
     "date": "2026-08-17T22:50:27Z",
     "note": "Rien ne change sur le site. Cette modification sert au développement : elle permet de faire évoluer le module des partis sur des données fictives pendant que la mesure réelle est suspendue.",

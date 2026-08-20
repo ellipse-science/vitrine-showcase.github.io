@@ -1,23 +1,23 @@
 import type { MetadataRoute } from "next";
 
 // robots.txt généré au build, et non servi depuis public/ — parce qu'il doit
-// DIFFÉRER selon l'hôte.
+// DIFFÉRER selon l'environnement.
 //
-// Le site tourne sur deux environnements permanents (cf. le plan dev/prod) :
-//   - dev  : GitHub Pages, sous basePath /vitrine-showcase.github.io
-//   - prod : Cloudflare Pages, à la racine de vitrinedemocratique.com
+// Le site tourne sur deux environnements permanents :
+//   - dev  : dev.vitrinedemocratique.com, protégé par Cloudflare Access
+//   - prod : vitrinedemocratique.com, public
 //
-// Les deux sont publics et servent le MÊME contenu. Sans cette distinction, ils
-// se disputent le référencement : contenu dupliqué, et rien ne garantit que
-// Google retienne le bon. On interdit donc l'indexation du dev.
+// Les deux servent le MÊME contenu. Sans distinction, ils se disputent le
+// référencement : contenu dupliqué, et rien ne garantit que Google retienne le
+// bon. On interdit donc l'indexation du dev — ceinture et bretelles, puisque
+// Access empêche déjà tout robot d'y accéder.
 //
-// Signal : basePath non vide ⇒ GitHub Pages. C'est deploy.yml qui l'épingle
-// explicitement (NEXT_PUBLIC_BASE_PATH: /vitrine-showcase.github.io), alors que
-// Cloudflare le met à "" — la même bascule que next.config.ts et app/layout.tsx.
-// Le complément indispensable est NEXT_PUBLIC_SITE_ORIGIN côté Cloudflare, sans
-// quoi les URL canoniques de prod pointeraient vers le dev.
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const isDevMirror = basePath !== "";
+// Signal : NEXT_PUBLIC_SITE_ENV, et non plus « basePath vide ». Ce dernier
+// distinguait les deux tant que le dev vivait sous un sous-chemin GitHub Pages ;
+// à la racine de son propre domaine, le dev a un basePath vide lui aussi. Le
+// même signal pilote le garde-fou des fausses données dans lib/data/parties.ts —
+// un seul signal, pour qu'ils ne puissent pas diverger.
+const isDevMirror = process.env.NEXT_PUBLIC_SITE_ENV === "dev";
 
 export const dynamic = "force-static";
 
@@ -26,5 +26,10 @@ export default function robots(): MetadataRoute.Robots {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
 
-  return { rules: { userAgent: "*", allow: "/" } };
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  return {
+    rules: { userAgent: "*", allow: "/" },
+    sitemap: `${siteOrigin}${basePath}/sitemap.xml`,
+  };
 }
