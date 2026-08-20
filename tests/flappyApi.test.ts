@@ -32,6 +32,11 @@ describe("sanitizeSubmission (/v1/flappy/leaderboard)", () => {
     expect(e?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
+  it("bloque les grossièretés par sous-chaîne (revue #545) — l'égalité laissait passer ASSHOLE", () => {
+    expect(sanitizeSubmission({ initials: "asshole", score: 5 })?.initials).toBe("PLAYER");
+    expect(sanitizeSubmission({ initials: "fuKface", score: 5 })?.initials).toBe("PLAYER");
+  });
+
   it("rejette les corps non-objets", () => {
     expect(sanitizeSubmission(null)).toBeNull();
     expect(sanitizeSubmission([1, 2])).toBeNull();

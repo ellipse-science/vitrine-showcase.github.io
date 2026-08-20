@@ -9,29 +9,47 @@
 // tableau — il ne peut donc pas l'écraser), stockage dans le Neon qu'on a
 // déjà. Plus aucun secret côté client, plus d'Upstash du tout.
 //
-// ENJEU ASSUMÉ FAIBLE (cadrage de #499) : un tableau de scores de jeu. Pas de
-// clé d'API pour soumettre — les joueurs sont anonymes — mais des bornes
-// serveur (score plafonné, initiales assainies, top 10) et un tableau
-// réinitialisable en un TRUNCATE. Le GET passe par le cache edge : Postgres ne
-// voit qu'une requête par minute quel que soit le trafic.
+// C'est le PREMIER POST d'origine navigateur de ce Worker (les autres routes
+// d'écriture sont appelées de serveur à serveur) : il découvre le préflight
+// CORS. Un POST cross-origin en application/json déclenche un OPTIONS que le
+// navigateur doit voir accepté, sinon le POST n'est JAMAIS émis — et l'échec
+// serait silencieux côté joueur (revue d'AdriClout sur #545). D'où le
+// gestionnaire OPTIONS ci-dessous, avant tout garde de méthode.
+//
+// UNE LIGNE PAR SCORE, pas un tableau JSON réécrit : l'INSERT est atomique —
+// deux parties finies dans la même seconde ne peuvent pas s'écraser (le
+// get + merge + set d'un blob JSON le permettait). Le top 10 est recalculé à
+// la lecture. ENJEU ASSUMÉ FAIBLE (cadrage de #499) : soumission anonyme mais
+// bornée (score plafonné, initiales assainies), tableau réinitialisable en un
+// TRUNCATE, et le GET passe par le cache edge — Postgres ne voit qu'une
+// requête par minute quel que soit le trafic. Le CREATE IF NOT EXISTS sur le
+// chemin d'écriture est un choix, pas un oubli : pas de migration à
+// orchestrer pour un easter egg, au prix d'un no-op DDL par soumission.
 
 import type { NeonQueryFunction } from '@neondatabase/serverless'
-import { insertScore, type ScoreEntry } from '../../../lib/flappy'
+import { type ScoreEntry } from '../../../lib/flappy'
 import { FLAPPY_CACHE_TTL, MAX_SCORE, sanitizeSubmission } from './flappy-logic'
 
 export { FLAPPY_CACHE_TTL, MAX_SCORE, sanitizeSubmission } from './flappy-logic'
 
+const BOARD_SIZE = 10
+
 async function readBoard(sql: NeonQueryFunction<false, false>): Promise<ScoreEntry[]> {
   try {
-    const rows = await sql`SELECT board FROM vitrine.flappy_leaderboard WHERE id = 1`
-    const raw = rows[0]?.board
-    if (Array.isArray(raw)) return raw as ScoreEntry[]
-    if (typeof raw === 'string') return JSON.parse(raw) as ScoreEntry[]
+    const rows = await sql`
+      SELECT initials, score, date FROM vitrine.flappy_scores
+      ORDER BY score DESC, created_at ASC
+      LIMIT ${BOARD_SIZE}`
+    return rows.map((r) => ({
+      initials: String(r.initials),
+      score: Number(r.score),
+      date: String(r.date),
+    }))
   } catch {
-    // Table absente (premier déploiement) ou contenu illisible : tableau vide,
-    // jamais une erreur — même philosophie best-effort que le client.
+    // Table absente (premier déploiement) : tableau vide, jamais une erreur —
+    // même philosophie best-effort que le client.
+    return []
   }
-  return []
 }
 
 function json(body: unknown, status = 200, ttl = 0): Response {
@@ -48,6 +66,20 @@ export async function handleFlappy(
   ctx: ExecutionContext,
   sql: NeonQueryFunction<false, false>,
 ): Promise<Response> {
+  // Préflight CORS — AVANT tout garde de méthode. Sans ces trois en-têtes, le
+  // navigateur n'émet jamais le POST qui suit.
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+        'access-control-allow-headers': 'content-type',
+        'access-control-max-age': '86400',
+      },
+    })
+  }
+
   if (request.method === 'GET' || request.method === 'HEAD') {
     const board = await readBoard(sql)
     const response = json({ board }, 200, FLAPPY_CACHE_TTL)
@@ -58,7 +90,7 @@ export async function handleFlappy(
   }
 
   if (request.method !== 'POST') {
-    return json({ error: 'Méthodes admises : GET, POST.' }, 405)
+    return json({ error: 'Méthodes admises : GET, POST, OPTIONS.' }, 405)
   }
 
   const entry = sanitizeSubmission(await request.json().catch(() => null))
@@ -66,22 +98,19 @@ export async function handleFlappy(
     return json({ error: `Entrée invalide. Attendu : { initials, score (1..${MAX_SCORE}), date? }.` }, 422)
   }
 
-  // get + merge + set côté serveur (le contrat de #499). La table est créée au
-  // premier score : pas de migration à orchestrer pour un easter egg.
   await sql.query(
-    `CREATE TABLE IF NOT EXISTS vitrine.flappy_leaderboard (
-       id integer PRIMARY KEY CHECK (id = 1),
-       board jsonb NOT NULL,
-       updated_at timestamptz NOT NULL DEFAULT now()
+    `CREATE TABLE IF NOT EXISTS vitrine.flappy_scores (
+       id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+       initials text NOT NULL,
+       score integer NOT NULL,
+       date text NOT NULL,
+       created_at timestamptz NOT NULL DEFAULT now()
      )`,
     [],
   )
-  const board = insertScore(await readBoard(sql), entry)
   await sql.query(
-    `INSERT INTO vitrine.flappy_leaderboard (id, board, updated_at)
-     VALUES (1, $1, now())
-     ON CONFLICT (id) DO UPDATE SET board = EXCLUDED.board, updated_at = now()`,
-    [JSON.stringify(board)],
+    `INSERT INTO vitrine.flappy_scores (initials, score, date) VALUES ($1, $2, $3)`,
+    [entry.initials, entry.score, entry.date],
   )
 
   // Purge la copie edge du GET : le score soumis doit se voir tout de suite,
@@ -89,5 +118,5 @@ export async function handleFlappy(
   const getUrl = new URL(request.url)
   ctx.waitUntil(caches.default.delete(new Request(getUrl.toString(), { method: 'GET' })))
 
-  return json({ board })
+  return json({ board: await readBoard(sql) })
 }
