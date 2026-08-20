@@ -8521,6 +8521,10 @@
 
 /* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
    deux s'étant partagé la dernière place en sourdine. */
+/* La ligne du rang d'un deck vide : même hauteur que celle d'un deck plein,
+   pastille éteinte. C'est elle qui garde la géométrie du module identique,
+   qu'il y ait de la donnée ou non. */
+.deck-nom--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
 .deck--vide .deck-jog--vide { opacity: 0.5; }
 .deck--vide .deck-jog-cap {
   background: var(--rule);

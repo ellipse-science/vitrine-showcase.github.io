@@ -440,18 +440,20 @@ function Console({
   // une mesure : c'est un classifieur qui déclenche une fois. Tant que le
   // module est déclaré indisponible, il n'affiche AUCUN niveau — y compris
   // dans les éditions archivées, qui traversent le même chemin.
-  if (indisponible || !tete || tete.sovPct <= 0) {
-    // « Tous les canaux sont silencieux » n'est vrai que si l'instrument
-    // fonctionne. Quand il est en panne, le dire ainsi imputerait aux médias
-    // un silence qui est le nôtre — c'est le bandeau qui porte l'explication,
-    // et la console se contente de constater qu'elle n'affiche rien.
-    return (
-      <p className="console-vide">
-        {indisponible
-          ? "Aucun niveau à afficher : la mesure est suspendue (voir l’avis ci-dessus)."
-          : "Aucun parti n'a été détecté sur cette période."}
-      </p>
-    );
+  // La console MUETTE garde tout son cadre : titre, échelle, cinq pistes. Seuls
+  // les NIVEAUX disparaissent.
+  //
+  // Elle se réduisait à une ligne de texte, et le module tout entier rapetissait
+  // avec elle. L'état sans donnée doit être celui de l'état plein aux niveaux
+  // près : c'est la seule façon de voir que l'instrument est là et n'affiche
+  // rien, plutôt que de croire qu'il a disparu.
+  //
+  // « Tous les canaux sont silencieux » n'est vrai que si l'instrument
+  // fonctionne. Quand il est en panne, le dire ainsi imputerait aux médias un
+  // silence qui est le nôtre : c'est le bandeau au-dessus qui l'explique.
+  const muet = Boolean(indisponible) || !tete || tete.sovPct <= 0;
+  if (!indisponible && muet) {
+    return <p className="console-vide">Aucun parti n&apos;a été détecté sur cette période.</p>;
   }
 
   return (
@@ -473,6 +475,7 @@ function Console({
         <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
           {tranches.map((row, i) => (
             <Tranche
+              muet={muet}
               key={row.key}
               row={row}
               rang={i + 1}
@@ -529,24 +532,33 @@ function Deck({
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
    *  ce rang, deux partis s'étant partagé la dernière place en sourdine. */
+  /* Un deck vide garde EXACTEMENT la géométrie d'un deck plein : le carré, puis
+     la ligne du rang. Seule la molette est nue.
+
+     Sans cette ligne, le deck perdait une vingtaine de pixels, la rangée entière
+     se resserrait et le cadre du module rapetissait — l'absence de donnée
+     changeait la forme du module au lieu de n'en changer que le contenu.
+
+     Le rang reste écrit : c'est une position, pas une mesure. Il dit qu'il y a
+     bien quatre places, et que celle-ci attend. */
   if (indisponible || !row) {
     return (
-      <div className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}>
+      <div
+        className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}
+        title={
+          indisponible
+            ? "La mesure est suspendue : voir l'avis en tête du module."
+            : `Aucun parti au ${rang}${rang === 1 ? "er" : "e"} rang sur cette période.`
+        }
+      >
         <div className="deck-carre">
           <span className="deck-jog deck-jog--vide" aria-hidden="true">
             <span className="deck-jog-cap deck-jog-cap--vide" />
           </span>
         </div>
-        {/* Rien sous le deck quand la mesure est suspendue : l'avis en tête du
-            module le dit déjà, et le répéter quatre fois n'ajoutait rien — sinon
-            un texte qui débordait de son cadre. Le cas du deck VIDE, lui, garde
-            son mot : il dit pourquoi ce rang n'a personne alors que les autres
-            en ont. */}
-        {!indisponible && (
-          <p className="deck-vide-txt">
-            {`Pas de ${rang}${rang === 1 ? "er" : "e"} parti audible`}
-          </p>
-        )}
+        <p className="deck-nom deck-nom--vide">
+          <span className="deck-rang">{rang}</span>
+        </p>
       </div>
     );
   }
@@ -725,21 +737,25 @@ function Tranche({
   total,
   moyennePct,
   onPcqTap,
+  muet,
 }: {
   row: RowView;
   rang: number;
   total: number;
   moyennePct: number;
   onPcqTap?: () => void;
+  /** Mesure suspendue : la piste garde sa place et son échelle, mais AUCUN
+   *  segment ne s'allume et rien ne s'écrit dessous. */
+  muet?: boolean;
 }) {
   // Sourdine : DEUX segments GRIS en bas — le signal résiduel qu'affiche une
   // table de mix pour une tranche muette. Ni zéro (la tranche aurait l'air
   // absente), ni son vrai niveau (il n'est justement pas retenu comme audible).
   // Gris et non vert : le vert appartient à l'échelle des canaux qui jouent, et
   // une tranche en sourdine n'est pas sur cette échelle.
-  const coupe = row.inShadow;
+  const coupe = !muet && row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
-  const allumes = coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
+  const allumes = muet ? 0 : coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   /** Le rang d'un segment dans la tête du vumètre, de 1 (le plus bas des trois)
