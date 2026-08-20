@@ -8128,6 +8128,10 @@
   --ton-positive: #3D6B3A;
   --ton-negative: #A8302C;
   --ton-neutral: #6E685F;
+  /* Le fond des DEUX bandeaux de la pochette, celui du haut comme celui du bas.
+     Une seule déclaration : ils encadrent la même illustration et doivent se
+     répondre, et les tenir en phase à la main les avait déjà fait diverger. */
+  --bandeau: rgba(28, 25, 23, 0.42);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8380,10 +8384,7 @@
   right: 0;
   z-index: 2;
   padding: 3px 8px;
-  /* Même encre PLEINE que la bande des pistes, en bas : les deux bandeaux
-     encadrent l'illustration et doivent se répondre. En translucide, chacun
-     prenait une teinte différente selon la couleur du parti. */
-  background: var(--ink);
+  background: var(--bandeau);
   color: var(--paper);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 8px;
@@ -8439,7 +8440,7 @@
   min-width: 0;
   gap: 3px;
   padding: 8px 12px 9px;
-  background: var(--ink);
+  background: var(--bandeau);
 }
 .deck-piste {
   display: flex;
