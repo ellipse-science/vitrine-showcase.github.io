@@ -891,132 +891,145 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
   const [survole, setSurvole] = useState<string | null>(null);
   const vedette = survole ?? isole;
 
+  /* La période est-elle COURUE ? Le dernier point a-t-il atteint la ligne
+     d'arrivée — 20h pour la journée, la fin de semaine, le jour du scrutin.
+     C'est là seulement qu'on peut désigner un gagnant. */
+  const termine = series.length > 0 && series[0].lastX >= chart.finish.x - 0.5;
+  const gagnant = termine ? series[0] : null;
+
   return (
     <figure className={`palmares-figure${vedette ? " a-vedette" : ""}`}>
-      <div className="palmares-zone">
-        <svg
-          className="palmares-svg"
-          viewBox={`0 0 ${chart.width} ${chart.height}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {chart.yLabels.map((g) => (
-            <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
-          ))}
-          {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
-              courir. C'est elle qui fait de la mesure une course. */}
-          <line
-            className="palmares-arrivee"
-            x1={chart.finish.x}
-            x2={chart.finish.x}
-            y1="0"
-            y2={chart.height}
-          />
-          {series.map((s, i) => (
-            <polyline
+      <div className="palmares-corps">
+        <div className="palmares-zone">
+          <svg
+            className="palmares-svg"
+            viewBox={`0 0 ${chart.width} ${chart.height}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {chart.yLabels.map((g) => (
+              <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
+            ))}
+            {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
+                courir. C'est elle qui fait de la mesure une course. */}
+            <line
+              className="palmares-arrivee"
+              x1={chart.finish.x}
+              x2={chart.finish.x}
+              y1="0"
+              y2={chart.height}
+            />
+            {series.map((s, i) => (
+              <polyline
+                key={s.key}
+                className={
+                  `palmares-trait${s.inShadow ? " shadow" : ""}` +
+                  (vedette === s.key ? " vedette" : "") +
+                  (i === 0 ? " meneur" : "")
+                }
+                points={s.polylineMin}
+                style={{
+                  ["--party" as string]: s.color,
+                  ["--retard" as string]: `${(series.length - 1 - i) * 110}ms`,
+                }}
+              />
+            ))}
+            {/* Bande de SAISIE, large et invisible : un trait fin ne se vise pas
+                à la souris. Le clavier passe par la liste, pas par ici. */}
+            {series.map((s) => (
+              <polyline
+                key={`touche-${s.key}`}
+                className="palmares-touche"
+                points={s.polylineMin}
+                onMouseEnter={() => setSurvole(s.key)}
+                onMouseLeave={() => setSurvole(null)}
+                onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
+              />
+            ))}
+          </svg>
+
+          {series.map((s) => (
+            <i
               key={s.key}
               className={
-                `palmares-trait${s.inShadow ? " shadow" : ""}` +
-                (vedette === s.key ? " vedette" : "") +
-                // Le meneur porte un trait plus épais : dans une course, on voit
-                // qui mène sans avoir à lire.
-                (i === 0 ? " meneur" : "")
+                `palmares-pochette${s.inShadow ? " shadow" : ""}` +
+                (vedette === s.key ? " vedette" : "")
               }
-              points={s.polylineMin}
               style={{
                 ["--party" as string]: s.color,
-                /* Les courbes se tracent l'une après l'autre, du dernier au
-                   premier : le meneur arrive en dernier, donc l'œil finit sur
-                   lui. Un dixième de seconde d'écart suffit à faire une course
-                   plutôt qu'un dessin qui apparaît d'un bloc. */
-                ["--retard" as string]: `${(series.length - 1 - i) * 110}ms`,
+                left: `${(s.lastX / chart.width) * 100}%`,
+                top: `${(s.lastYMin / chart.height) * 100}%`,
               }}
+              aria-hidden="true"
             />
           ))}
-          {/* Une bande de SAISIE, large et invisible, sur chaque courbe : un
-              trait de 2 px est presque impossible à viser à la souris. Elle est
-              posée en dernier pour capter le pointeur au-dessus des tracés.
-              Le clavier passe par les boutons de nom, pas par ici. */}
-          {series.map((s) => (
-            <polyline
-              key={`touche-${s.key}`}
-              className="palmares-touche"
-              points={s.polylineMin}
-              onMouseEnter={() => setSurvole(s.key)}
-              onMouseLeave={() => setSurvole(null)}
-              onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
-            />
-          ))}
-        </svg>
 
-        {/* La pochette miniature, au bout de chaque courbe. Elle ne porte que la
-            couleur du parti : à cette taille, la composition de la vraie
-            pochette ne se lirait pas. */}
-        {series.map((s) => (
           <i
-            key={s.key}
-            className={
-              `palmares-pochette${s.inShadow ? " shadow" : ""}` +
-              (vedette === s.key ? " vedette" : "")
-            }
-            style={{
-              ["--party" as string]: s.color,
-              left: `${(s.lastX / chart.width) * 100}%`,
-              top: `${(s.lastYMin / chart.height) * 100}%`,
-            }}
+            className="palmares-damier"
+            style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
             aria-hidden="true"
           />
-        ))}
 
-        {/* Le nom au bout de la courbe : c'est LUI qui identifie la série. */}
-        {/* Le nom est un BOUTON, pas une étiquette : c'est la poignée par
-            laquelle on isole un parti. En <span>, la mise en vedette n'aurait
-            existé qu'à la souris — ni au clavier, ni au doigt. */}
-        {series.map((s, i) => (
-          <button
-            type="button"
-            key={s.key}
-            className={
-              `palmares-nom${s.inShadow ? " shadow" : ""}` +
-              (vedette === s.key ? " vedette" : "")
-            }
-            style={{
-              ["--party" as string]: s.color,
-              left: `${(s.lastX / chart.width) * 100}%`,
-              top: `${(s.labelYMin / chart.height) * 100}%`,
-            }}
-            onMouseEnter={() => setSurvole(s.key)}
-            onMouseLeave={() => setSurvole(null)}
-            onFocus={() => setSurvole(s.key)}
-            onBlur={() => setSurvole(null)}
-            onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
-            aria-pressed={isole === s.key}
-            title={
-              `${parKey.get(s.key)?.fullLabel ?? s.label}\u00a0: ` +
-              `${formatDuree(s.lastMinutes)} de Une cumulées sur la période. ` +
-              `Cliquez pour ne garder que cette courbe.`
-            }
-          >
-            <i className="palmares-rang">{i + 1}</i>
-            {s.label} <b>{formatDuree(s.lastMinutes)}</b>
-          </button>
-        ))}
+          <ul className="palmares-y" aria-hidden="true">
+            {chart.yLabels.map((g) => (
+              <li key={g.label} style={{ top: `${(g.y / chart.height) * 100}%` }}>
+                {g.label}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        {/* Le damier de l'arrivée. En HTML et non en SVG : la zone est étirée,
-            un damier tracé dedans deviendrait une grille de rectangles. */}
-        <i
-          className="palmares-damier"
-          style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
-          aria-hidden="true"
-        />
+        {/* LE CLASSEMENT, en colonne fixe à droite.
+            Les noms vivaient au bout des courbes, écartés par un jeu exprimé en
+            unités de viewBox : l'écart valait 14 % de la hauteur, soit 26 px
+            dans une zone de 190 mais 17 px dès qu'on l'aplatit. Ils se
+            chevauchaient PAR CONSTRUCTION, et aplatir ne pouvait qu'empirer.
+            Une colonne ne dépend d'aucune hauteur. */}
+        <div className="palmares-classement">
+          {gagnant && (
+            <div
+              className="palmares-gagnant"
+              style={{ ["--party" as string]: gagnant.color }}
+            >
+              <i className="palmares-gagnant-album" aria-hidden="true">
+                {gagnant.label}
+              </i>
+              <span className="palmares-gagnant-txt">
+                <b>{formatDuree(gagnant.lastMinutes)}</b> d&apos;écoute
+              </span>
+            </div>
+          )}
 
-        <ul className="palmares-y" aria-hidden="true">
-          {chart.yLabels.map((g) => (
-            <li key={g.label} style={{ top: `${(g.y / chart.height) * 100}%` }}>
-              {g.label}
-            </li>
-          ))}
-        </ul>
+          <ol className="palmares-liste">
+            {series.map((s, i) => (
+              <li key={s.key}>
+                <button
+                  type="button"
+                  className={
+                    `palmares-nom${s.inShadow ? " shadow" : ""}` +
+                    (vedette === s.key ? " vedette" : "")
+                  }
+                  style={{ ["--party" as string]: s.color }}
+                  onMouseEnter={() => setSurvole(s.key)}
+                  onMouseLeave={() => setSurvole(null)}
+                  onFocus={() => setSurvole(s.key)}
+                  onBlur={() => setSurvole(null)}
+                  onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
+                  aria-pressed={isole === s.key}
+                  title={
+                    `${parKey.get(s.key)?.fullLabel ?? s.label} : ` +
+                    `${formatDuree(s.lastMinutes)} de Une cumulées sur la période. ` +
+                    `Cliquez pour ne garder que cette courbe.`
+                  }
+                >
+                  <i className="palmares-rang">{i + 1}</i>
+                  <span className="palmares-sigle">{s.label}</span>
+                  <b className="palmares-duree">{formatDuree(s.lastMinutes)}</b>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
 
       <ul className="palmares-x" aria-hidden="true">
@@ -1032,20 +1045,6 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
           {chart.finish.label}
         </li>
       </ul>
-
-      {/* Le tableau que la courbe illustre : un lecteur d'écran ne voit aucun
-          tracé, et c'est ici qu'il lit le classement. */}
-      <table className="visually-hidden">
-        <caption>Minutes de Une par parti</caption>
-        <tbody>
-          {series.map((s) => (
-            <tr key={s.key}>
-              <th scope="row">{parKey.get(s.key)?.fullLabel ?? s.label}</th>
-              <td>{formatDuree(s.lastMinutes)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </figure>
   );
 }

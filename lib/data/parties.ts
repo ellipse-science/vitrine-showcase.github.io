@@ -312,8 +312,6 @@ export type ChartSeries = {
   lastYMin: number;
   /** Minutes du dernier point, pour l'étiquette de bout de courbe. */
   lastMinutes: number;
-  /** Ordonnée de l'étiquette du palmarès, écartée de ses voisines. */
-  labelYMin: number;
 };
 
 export type ChartView = {
@@ -750,28 +748,6 @@ const MIN_LABEL_GAP = 4.2;
  * croissant. On descend la liste en poussant vers le bas ce qui est trop haut,
  * puis on remonte si le paquet a débordé du cadre.
  */
-/** Écarte les étiquettes du PALMARÈS, dont l'ordre vertical n'est pas celui de
- *  la part de voix : deux partis peuvent être proches en pourcentage et loin en
- *  minutes, ou l'inverse. Il faut donc trier sur les minutes avant d'écarter,
- *  sinon la correction se propage dans le désordre. */
-function spreadLabelsMin(series: ChartSeries[]): void {
-  const ordre = series.slice().sort((a, b) => a.lastYMin - b.lastYMin);
-  for (const s of ordre) s.labelYMin = s.lastYMin;
-  for (let i = 1; i < ordre.length; i++) {
-    const min = ordre[i - 1].labelYMin + MIN_LABEL_GAP;
-    if (ordre[i].labelYMin < min) ordre[i].labelYMin = min;
-  }
-  const overflow = (ordre.at(-1)?.labelYMin ?? 0) - CHART_H;
-  if (overflow > 0) {
-    for (const s of ordre) s.labelYMin -= overflow;
-    for (let i = ordre.length - 2; i >= 0; i--) {
-      const max = ordre[i + 1].labelYMin - MIN_LABEL_GAP;
-      if (ordre[i].labelYMin > max) ordre[i].labelYMin = max;
-    }
-  }
-  for (const s of ordre) s.labelYMin = Number(s.labelYMin.toFixed(2));
-}
-
 function spreadLabels(series: ChartSeries[]): void {
   for (const s of series) s.labelY = s.lastY;
 
@@ -938,7 +914,6 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
         .join(" "),
       lastYMin: Number(yMin(minParBloc(key).at(-1) ?? 0).toFixed(2)),
       lastMinutes: Math.round(minParBloc(key).at(-1) ?? 0),
-      labelYMin: 0,
       polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       lastX: Number(last[0].toFixed(2)),
@@ -949,7 +924,6 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
   });
 
   spreadLabels(series);
-  spreadLabelsMin(series);
 
   return {
     series,
@@ -1120,12 +1094,10 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         polylineMin: ptsMin.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
         lastYMin: Number((ptsMin.at(-1)?.[1] ?? CHART_H).toFixed(2)),
         lastMinutes: Math.round(mins.at(-1) ?? 0),
-        labelYMin: 0,
       };
     });
 
   spreadLabels(series);
-  spreadLabelsMin(series);
 
   // L'AXE SE CONSTRUIT SUR LE TEMPS, pas sur les dates présentes dans la donnée.
   //
