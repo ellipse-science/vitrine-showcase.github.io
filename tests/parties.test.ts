@@ -65,18 +65,33 @@ describe("computeStats", () => {
 });
 
 describe("buildRangeView", () => {
-  it("met en sourdine un parti sous le seuil de 5 %", () => {
+  it("met en sourdine le DERNIER du classement, quelle que soit sa part", () => {
     const dayRows = [
       row("caq", DATE_A, 0.60), row("pq",  DATE_A, 0.25),
       row("qs",  DATE_A, 0.10), row("plq", DATE_A, 0.04), row("pcq", DATE_A, 0.01),
     ];
     const { stats, dates } = statsOf(dayRows, dayRows, dayRows);
     const view = buildRangeView(stats, "today", dates);
-    // 1 % et 4 % passent tous deux sous le seuil d'affichage de 5 %…
+    // Le dernier, et LUI SEUL : la sourdine est un rang, plus un seuil. À 4 %,
+    // le PLQ reste actif alors que l'ancien seuil de 5 % l'aurait éteint — sans
+    // quoi il ne resterait pas toujours quatre decks à remplir.
     expect(view.rows.find((r) => r.key === "pcq")!.inShadow).toBe(true);
-    expect(view.rows.find((r) => r.key === "plq")!.inShadow).toBe(true);
-    // …tandis que 10 % reste audible.
+    expect(view.rows.find((r) => r.key === "plq")!.inShadow).toBe(false);
     expect(view.rows.find((r) => r.key === "qs")!.inShadow).toBe(false);
+  });
+
+  it("met en sourdine TOUS les ex æquo du plus bas", () => {
+    const dayRows = [
+      row("caq", DATE_A, 0.50), row("pq",  DATE_A, 0.28),
+      row("qs",  DATE_A, 0.16), row("plq", DATE_A, 0.03), row("pcq", DATE_A, 0.03),
+    ];
+    const { stats, dates } = statsOf(dayRows, dayRows, dayRows);
+    const view = buildRangeView(stats, "today", dates);
+    // Départager deux néants donnerait un classement que la donnée ne soutient
+    // pas : les deux passent en sourdine, et un deck reste vide.
+    expect(view.rows.find((r) => r.key === "plq")!.inShadow).toBe(true);
+    expect(view.rows.find((r) => r.key === "pcq")!.inShadow).toBe(true);
+    expect(view.rows.filter((r) => !r.inShadow)).toHaveLength(3);
   });
   it("barWidthPct est dans [0, 100] pour tous les partis", () => {
     const dayRows = PARTY_KEYS.map((p, i) => row(p, DATE_A, [0.5, 0.25, 0.15, 0.07, 0.03][i]));
@@ -212,7 +227,9 @@ describe("buildChart — la course", () => {
     // arrivée : c'est ce qui laisse voir le chemin restant.
     expect(chart.xLabels.length).toBeGreaterThan(3);
     for (const l of chart.xLabels) {
-      expect(["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."]).toContain(l.label);
+      // « vendredi » en toutes lettres : c'est le jour d'ARRIVÉE, et le
+      // distinguer évite de poser une étiquette de plus au bout de l'axe.
+      expect(["lun.", "mar.", "mer.", "jeu.", "sam.", "dim.", "vendredi"]).toContain(l.label);
     }
   });
 });
@@ -247,7 +264,8 @@ describe("le portrait global", () => {
   it("chaque onglet a sa propre ligne d'arrivée", () => {
     const { stats, dates } = statsOf(rows(), rows(), rows());
     expect(buildChart(stats, dates, "overall").finish.label).toBe("Scrutin");
-    expect(buildChart(stats, dates, "week").finish.sub).toBe("vendredi 20 h");
+    expect(buildChart(stats, dates, "week").finish.label).toBe("vendredi");
+    expect(buildChart(stats, dates, "week").finish.sub).toBe("20 h");
     expect(buildChart(stats, dates, "today").finish.sub).toBe("20 h");
   });
 
