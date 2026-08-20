@@ -1,5 +1,11 @@
 [
   {
+    "pr": 540,
+    "date": "2026-08-20T13:39:07Z",
+    "note": "Dans le Polimètre+, les pastilles de rang des promesses rompues et en suspens ont maintenant le même style que les autres : une pastille pâle cerclée de la couleur du verdict.",
+    "version": "2.25.0-beta.1"
+  },
+  {
     "pr": 536,
     "date": "2026-08-19T20:07:15Z",
     "note": "Des garde-fous internes empêchent désormais le site de publier un module vide quand une source de données fait défaut, les visiteurs qui reviennent obtiennent l'édition la plus récente au lieu d'une copie gardée par leur navigateur, et le site se présente mieux aux moteurs de recherche (plan du site, adresse canonique). 🤖 Assisté par Claude Code (Fable 5)",
