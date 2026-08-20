@@ -4609,18 +4609,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .tone-streak {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  .tone-streak--positive { color: #3D6B3A; }
-  .tone-streak--negative { color: #A8302C; }
-  .tone-streak--neutral  { color: var(--ink-softer); }
-  .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
+  }  .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
   .parti-row.header div {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -4811,7 +4800,7 @@
        repliaient sur deux lignes (« Part du temps », « Écart médias », « Depuis
        7 jours »), ce qui décalait les valeurs d'une platine à l'autre et rendait
        la comparaison pénible. */
-    grid-template-columns: minmax(0, 212px) minmax(0, 1fr) minmax(0, 212px);
+    grid-template-columns: minmax(0, 236px) minmax(0, 1fr) minmax(0, 236px);
     /* Les trois colonnes s'alignent par le BAS, et non par le haut.
        Le tableau d'une platine est plus haut que la console : aligner les bas
        remonte donc les platines et fait descendre la console, ce que deux
@@ -4952,13 +4941,11 @@
        `--rule-faint` disparaissait presque. */
     background: color-mix(in srgb, var(--rule) 62%, transparent);
   }
-  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau, et elle se lit DANS la
-     colonne : vert jusqu'à la moyenne du parti, ambre au-dessus, rouge bien
-     au-dessus. La frontière verte marque donc, sans repère supplémentaire,
-     l'endroit exact où ce média dépasse l'ordinaire de ce parti. */
-  .console-vumetre .seg.on.green { background: var(--green); }
-  .console-vumetre .seg.on.amber { background: var(--amber); }
-  .console-vumetre .seg.on.red   { background: var(--red); }
+  /* La couleur dit le PARTI, et rien d'autre.
+     Elle codait auparavant l'écart à la moyenne tous médias confondus (vert
+     jusqu'à la moyenne, ambre au-dessus, rouge bien au-dessus). Cet encodage
+     est abandonné : bouger le fader ne change plus que les hauteurs. */
+  .console-vumetre .seg.on { background: var(--party, var(--green)); }
   /* Sourdine : deux segments GRIS en bas, et rien d'autre. La tranche reste
      là — un canal muet se voit, il ne disparaît pas. Gris et non vert : le vert
      appartient à l'échelle des canaux qui jouent. */
@@ -8361,7 +8348,7 @@
 .deck-carre {
   position: relative;
   width: 100%;
-  max-width: 176px;
+  max-width: 200px;
   aspect-ratio: 1;
 }
 .deck-carre--pivot {
@@ -8450,125 +8437,114 @@
     0 1px 3px rgba(28, 25, 23, 0.18);
 }
 
-/* La pochette. DEUX couleurs : le fond est celui du PARTI, le ton n'occupe
-   qu'une bande.
+/* La pochette — trois couleurs, à-plats géométriques.
+   Le fond est la couleur EXACTE du parti, celle du vumètre. Une forme porte
+   l'enjeu, une autre le ton. Le pictogramme domine, l'acronyme se pose dessus.
 
-   Le fond est la couleur du parti assombrie de 18 % d'encre. Ce n'est pas un
-   effet : en crème sur l'orange brut de Québec solidaire, le contraste tombe à
-   3,94:1, sous le seuil AA de 4,5. 18 % est le minimum qui fait passer les cinq
-   partis (QS remonte à 5,05:1) tout en les laissant reconnaissables. */
+   L'acronyme tient sur la couleur brute du parti parce qu'il est du GRAND texte
+   gras : son seuil est 3:1 et non 4,5. C'est ce qui sauve l'orange de Québec
+   solidaire, à 3,94:1 — aucun texte courant ne passerait dessus, ni en crème
+   (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
+   descendent sur une bande sombre où le contraste ne dépend plus du parti. */
 .deck-face--pochette {
+  --ton-positive: #3D6B3A;
+  --ton-negative: #A8302C;
+  --ton-neutral: #6E685F;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto;
   overflow: hidden;
   color: var(--paper);
   text-align: left;
-  background: color-mix(in srgb, var(--party, #433F38) 82%, #1C1917);
+  background: var(--party, var(--ink-soft));
   box-shadow:
     inset 0 0 0 1px rgba(243, 236, 221, 0.16),
     0 3px 12px rgba(28, 25, 23, 0.26);
 }
 
-/* L'illustration : ce qu'on lit AVANT la liste des pistes. */
 .pochette-art {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 1px;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  padding: 11px 12px 8px;
-}
-.pochette-chiffre {
-  position: relative;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.01em;
-}
-.pochette-groupe {
-  position: relative;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.2;
-  opacity: 0.92;
 }
 
-/* Le pictogramme est un FILIGRANE : l'enjeu est écrit en clair sur la piste
-   « Enjeu clé », donc un dessin qu'on ne reconnaît pas ne coûte rien.
+/* Les à-plats. `preserveAspectRatio: none` : ils doivent épouser le cadre, pas
+   garder leurs proportions — ce sont des masses de couleur, pas des dessins. */
+.pochette-formes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.forme-enjeu,
+.forme-ton {
+  stroke: rgba(243, 236, 221, 0.45);
+  stroke-width: 1.2;
+}
+.forme-enjeu { fill: var(--enjeu, #463E3E); }
+.forme-ton { fill: var(--ton, #6E685F); }
 
-   Il est tracé en ENCRE et non en papier. Un trait clair sous un texte clair
-   éclaircit le fond là où il passe et fait tomber le contraste : mesuré à
-   3,95:1 dès 15 % d'opacité, sous le seuil AA. Un trait sombre fait l'inverse,
-   il assombrit le fond — c'est ce qui permet de l'agrandir jusqu'à occuper la
-   pochette. */
+/* Le pictogramme domine : il déborde le cadre et se lit avant tout le reste.
+
+   Tracé en ENCRE, comme sur la face précédente : un trait clair sous l'acronyme
+   clair éclaircit le fond et fait tomber son contraste, un trait sombre
+   l'assombrit et le renforce. C'est ce qui permet de le pousser à cette
+   opacité sans nuire à la lisibilité du sigle. */
 .deck-motif {
   position: absolute;
-  top: -6%;
-  right: -8%;
-  width: 76%;
-  height: 76%;
+  top: 50%;
+  left: 50%;
+  width: 124%;
+  height: 124%;
+  transform: translate(-50%, -50%);
   fill: none;
   stroke: #1C1917;
-  stroke-width: 1.3;
+  stroke-width: 1.05;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.3;
+  opacity: 0.5;
   pointer-events: none;
 }
 
-/* La bande de ton — la SECONDE couleur de la pochette.
-
-   Le filet crème au-dessus n'est pas un ornement : la couleur du PLQ est un
-   rouge (#A03440) et celle du ton défavorable en est un autre (#A8302C). Sans
-   séparation, la bande se fondait dans le fond et la pochette retombait à une
-   seule couleur. Le filet la détache quelle que soit la proximité des deux. */
-.pochette-ton {
-  padding: 4px 12px 3px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  box-shadow: inset 0 1px 0 rgba(243, 236, 221, 0.55);
+/* L'acronyme, centré, par-dessus tout — le nom du groupe sur la pochette. */
+.pochette-sigle {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.3);
 }
-.pochette-ton.ton-positive { background: var(--green); }
-.pochette-ton.ton-negative { background: var(--red); }
-.pochette-ton.ton-neutral  { background: var(--ink-soft); }
 
-/* Les trois pistes, comme le verso d'un disque : l'étiquette, des pointillés,
-   la valeur. Elles REDONNENT ce que l'illustration a déjà dit, en exact. */
+/* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
+   il ne peut pas dépendre de la couleur du parti pour être lisible. */
 .deck-pistes {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 3px;
-  padding: 7px 12px 9px;
-  background: rgba(28, 25, 23, 0.17);
+  padding: 8px 12px 9px;
+  background: rgba(28, 25, 23, 0.42);
 }
 .deck-piste {
   display: flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 5px;
   font-size: 10px;
   line-height: 1.25;
 }
-.deck-piste-nom {
+.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; }
+/* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
+   c'est ainsi que se lit une liste de pistes. */
+.deck-piste-fil {
   flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  border-bottom: 1px dotted rgba(243, 236, 221, 0.34);
-  opacity: 0.88;
+  min-width: 8px;
+  border-bottom: 1px dotted rgba(243, 236, 221, 0.4);
+  transform: translateY(-2px);
 }
-/* La valeur s'enroule plutôt que de se couper : « Santé et politiques sociales »
-   sortait en « Santé et pol… », ce qui vidait la piste « Enjeu clé » de son
-   contenu. */
 .deck-piste-val {
   flex: 0 1 auto;
-  max-width: 68%;
+  max-width: 60%;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9.5px;
   font-weight: 600;

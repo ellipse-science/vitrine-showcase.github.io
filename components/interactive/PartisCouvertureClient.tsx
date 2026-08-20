@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite, EnjeuMix } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_DANS, MEDIA_SIGLES } from "@/lib/medias";
 import { pictoEnjeu } from "@/lib/enjeuxPictos";
+import { couleurEnjeu } from "@/lib/enjeux";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -122,8 +123,8 @@ function BlocJournalistes({
           total des cinq partis québécois. Ce n&apos;est pas une intention de vote.
         </li>
         <li>
-          <b>Sourdine&nbsp;:</b> sous 5&nbsp;% du temps, un parti compte trop peu pour
-          qu&apos;on en tire une lecture. Sa colonne reste affichée, en gris.
+          <b>Sourdine&nbsp;:</b> le parti dont on parle le moins sur la période, quelle
+          que soit sa part. Sa colonne reste affichée, en gris.
         </li>
       </ul>
     </details>
@@ -265,18 +266,16 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
               l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
               petite. Les cinq colonnes se partagent 100&nbsp;%.
               <br />
-              <br />• Les <b>couleurs</b> comparent un média à l&apos;ensemble des médias. Vert :
-              ce média donne à ce parti autant de temps que les autres, ou moins. Jaune puis rouge :
-              il lui en donne davantage.
+              <br />• Chaque colonne porte la <b>couleur de son parti</b>.
               <br />
-              <br />• Le curseur <b>Source</b> change de média. Au centre, «&nbsp;tous les médias&nbsp;»&nbsp;: là
-              tout est vert, puisqu&apos;il n&apos;y a rien à comparer. Les couleurs
-              n&apos;apparaissent qu&apos;en choisissant un média en particulier.
+              <br />• Le curseur <b>Source</b> change de média : les hauteurs se recalculent
+              sur les Unes de ce média seul.
               <br />
-              <br />• <b>Sourdine</b> : sous 5&nbsp;% du temps, un parti compte trop peu pour
-              qu&apos;on puisse en tirer quelque chose. Sa colonne reste affichée, en gris.
+              <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
+              que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
+              affichée sans valeur. À égalité au plus bas, les deux y passent.
               <br />
-              <br />• <b>Cliquez un parti</b> pour l&apos;examiner en détail.
+              <br />• <b>Cliquez un disque</b> pour retourner sa pochette.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -319,15 +318,6 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
           <Deck row={decks[3]} rang={4} indisponible={data.indisponible} />
         </div>
       </div>
-
-      {/* Le geste, écrit en clair. Rien à l'écran ne dit qu'un disque se
-          retourne : sans cette ligne, la pochette reste invisible pour qui
-          n'essaie pas de cliquer. */}
-      {!data.indisponible && (
-        <p className="regie-aide">
-          Cliquez un disque pour retourner la pochette.
-        </p>
-      )}
 
       {data.medias.length > 0 && (
         <Fader
@@ -438,25 +428,6 @@ const METER_FULL_SCALE = 100;
  */
 const SEUIL_ROUGE = 1.3;
 
-/**
- * Zone d'UN segment, d'après la part de voix qu'il représente et la moyenne du
- * parti. Le dégradé se lit donc DANS la colonne : vert jusqu'à la moyenne,
- * ambre au-dessus, rouge bien au-dessus.
- *
- * La frontière verte devient ainsi visible sans repère supplémentaire — c'est
- * exactement là où le canal dépasse ce que ce parti obtient d'habitude.
- */
-function zoneSegment(i: number, moyennePct: number): "green" | "amber" | "red" {
-  // On compare la BASE du segment, pas son sommet. Avec le sommet, le segment
-  // le plus haut d'un canal exactement à sa moyenne dépassait celle-ci par le
-  // seul effet de l'arrondi du nombre de segments allumés, et virait à l'ambre
-  // — ce qui cassait la propriété « tout est vert sur tous les médias ».
-  const base = (i / METER_SEGMENTS) * METER_FULL_SCALE;
-  if (moyennePct <= 0) return "green"; // pas de moyenne ⇒ rien à dépasser
-  if (base >= moyennePct * SEUIL_ROUGE) return "red";
-  if (base >= moyennePct) return "amber";
-  return "green";
-}
 
 /**
  * Position visuelle d'une tranche, pour que le canal le plus fort soit AU
@@ -734,31 +705,48 @@ function Deck({
             `aria-hidden` suit le retournement : les deux faces coexistent dans
             le DOM, et sans cela un lecteur d'écran lirait celle qu'on ne voit
             pas. */}
-        <span className="deck-face deck-face--pochette" aria-hidden={!ouverte}>
-          {/* L'illustration porte les trois faits d'un coup d'œil : le
-              pictogramme dit l'enjeu, le grand chiffre la part de voix, la
-              bande le ton. La liste des pistes, en dessous, les redonne
-              exactement — on lit l'image d'abord, les chiffres ensuite. */}
+        <span
+          className="deck-face deck-face--pochette"
+          aria-hidden={!ouverte}
+          style={{
+            ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
+            ["--ton" as string]: `var(--ton-${ton})`,
+          }}
+        >
+          {/* L'illustration, à la manière des Unes : des à-plats géométriques
+              qui se chevauchent, en trois couleurs — le parti au fond, l'enjeu
+              et le ton en formes franches. Le pictogramme domine, l'acronyme se
+              pose dessus. */}
           <span className="pochette-art">
+            <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              {/* Un filet crème borde chaque forme. Sans lui, elles se perdent
+                  quand leur couleur approche celle du parti : le rouge du PLQ
+                  contre le rouge du ton défavorable, le bleu du PQ contre celui
+                  de « Culture et nationalisme ». `non-scaling-stroke` garde le
+                  filet d'épaisseur constante malgré le cadre déformé. */}
+              <circle className="forme-enjeu" cx="80" cy="18" r="44" vectorEffect="non-scaling-stroke" />
+              <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" vectorEffect="non-scaling-stroke" />
+            </svg>
             <svg className="deck-motif" viewBox="0 0 24 24" aria-hidden="true">
               {pictoEnjeu(enjeu?.label)}
             </svg>
-            <b className="pochette-chiffre">{row.sovPct}&nbsp;%</b>
-            <span className="pochette-groupe">{row.fullLabel}</span>
+            <b className="pochette-sigle">{row.label}</b>
           </span>
-
-          {/* Le ton EN TOUTES LETTRES sur sa bande, et pas seulement par sa
-              couleur : le vert et le rouge sont la paire que confondent les
-              daltoniens, et l'information disparaîtrait pour eux. */}
-          <span className={`pochette-ton ton-${ton}`}>{row.toneLabel}</span>
 
           <span className="deck-pistes">
             {pistes.map(([nom, valeur]) => (
               <span className="deck-piste" key={nom}>
                 <span className="deck-piste-nom">{nom}</span>
+                {/* Les pointillés vivent ENTRE le titre et la valeur, comme au
+                    dos d'un disque, et non sous le titre. */}
+                <i className="deck-piste-fil" aria-hidden="true" />
                 <span className="deck-piste-val">{valeur}</span>
               </span>
             ))}
+            {/* Le ton n'est plus qu'une couleur sur la pochette. Il reste
+                énonçable pour les lecteurs d'écran, qui ne voient aucune
+                couleur : sans cela l'information disparaîtrait pour eux. */}
+            <span className="visually-hidden">Ton de la couverture : {row.toneLabel}</span>
           </span>
         </span>
       </button>
@@ -825,12 +813,15 @@ function Tranche({
   return (
     <li
       className={`console-tranche${coupe ? " coupee" : ""}`}
-      style={{ ["--ordre" as string]: positionVisuelle(rang, total) }}
+      style={{
+        ["--ordre" as string]: positionVisuelle(rang, total),
+        ["--party" as string]: row.color,
+      }}
     >
       <div
         className="console-vumetre"
         title={
-          (coupe ? `${row.label}, en sourdine, sous 5\u00a0%\u00a0: ` : `${row.label}\u00a0: `) +
+          (coupe ? `${row.label}, en sourdine (le moins présent)\u00a0: ` : `${row.label}\u00a0: `) +
           `${row.sovPct}\u00a0% du temps consacré aux partis (record de la période\u00a0: ${row.peakPct}\u00a0%)` +
           (ecart === 0 ? "" : ` · ${ecart > 0 ? "+" : ""}${ecart}\u00a0% par rapport à l'ensemble des médias`)
         }
@@ -839,9 +830,7 @@ function Tranche({
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
           <i
             key={idx}
-            className={`seg ${coupe ? "mute" : zoneSegment(idx, moyennePct)}${
-              idx < allumes ? " on" : ""
-            }`}
+            className={`seg${coupe ? " mute" : ""}${idx < allumes ? " on" : ""}`}
             aria-hidden="true"
           />
         ))}
@@ -851,39 +840,26 @@ function Tranche({
           rang. Un <button> annoncerait donc aux lecteurs d'écran un contrôle
           qui ne fait rien. Le clic ne sert plus qu'au jeu caché, volontairement
           hors du parcours clavier. */}
-      <span
-        className="console-ruban-nom"
-        style={{ ["--party" as string]: row.color }}
-        onClick={() => onPcqTap?.()}
-      >
+      <span className="console-ruban-nom" onClick={() => onPcqTap?.()}>
         {row.label}
       </span>
       {/* « Sourdine » : le mot tient dans les 44 px de la tranche, contrairement
           à « Trop peu présent » qui débordait par-dessus ses voisines. Il reste
           le seul emprunt au vocabulaire de la table de mixage dans le texte
           visible, et c'est un choix assumé — le mot est court, connu, et dit
-          l'état mieux qu'un seuil chiffré. */}
-      {coupe ? (
+          l'état mieux qu'un rang.
+
+          La flèche de ton qui occupait l'autre branche est retirée : le ton vit
+          désormais sur la pochette, et une seule fois. */}
+      {coupe && (
         <span className="console-sourdine">
           Sourdine
           <InfoTip size="sm" label="Sourdine">
-            Sur cette période, ce parti reçoit moins de 5&nbsp;% du temps que les médias
-            consacrent aux partis. Trop peu pour qu&apos;on puisse en tirer quelque chose. Sa
-            colonne reste affichée, mais sans valeur.
+            C&apos;est le parti dont les médias parlent le MOINS sur cette période. Le
+            dernier du classement passe toujours en sourdine, quelle que soit sa part,
+            et sa colonne reste affichée sans valeur. En cas d&apos;égalité au plus bas,
+            les deux y passent.
           </InfoTip>
-        </span>
-      ) : (
-        <span className={`tone-streak tone-streak--${row.toneDirection}`} title={row.toneTitle}>
-          <span aria-hidden="true">
-            {row.toneDirection === "positive" ? "↑" : row.toneDirection === "negative" ? "↓" : "–"}
-          </span>
-          {/* Le ton ne tenait QUE dans une flèche colorée et un `title`. La
-              flèche n'a pas de nom accessible, et `title` sur un <span> n'est ni
-              atteignable au clavier ni annoncé de façon fiable : la tonalité,
-              l'une des trois mesures du module, était donc muette pour un
-              lecteur d'écran. Le libellé complet part maintenant dans le flux,
-              masqué visuellement. */}
-          <span className="visually-hidden">{row.toneTitle}</span>
         </span>
       )}
     </li>
