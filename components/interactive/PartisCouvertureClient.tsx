@@ -867,7 +867,9 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
   if (chart.tooShort) {
     return (
       <p className="course-vide">
-        Une seule journée de données. Pas encore de tendance à lire.
+        {chart.raison === "sans-detail-horaire"
+          ? "Le détail heure par heure n'existe que pour l'ensemble des médias. Ramenez le curseur au centre pour suivre la journée."
+          : "Une seule journée de données. Pas encore de tendance à lire."}
       </p>
     );
   }

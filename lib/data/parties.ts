@@ -328,6 +328,8 @@ export type ChartView = {
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
+  /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
+  raison?: "court" | "sans-detail-horaire";
   /** Graduations de l'axe des minutes, pour le palmarès. */
   yLabels: { label: string; y: number }[];
 };
@@ -1457,7 +1459,19 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
     // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
     // fine.
-    chart: (range === "today" && chartJour) || buildChart(stats, dates, range),
+    // Vue JOUR sans détail horaire : on ne trace RIEN.
+    //
+    // `buildChart` sait tracer des jours, pas des heures : son axe couvre toute
+    // la fenêtre du suivi, et les six repères horaires d'une seule journée s'y
+    // écrasaient dans les 12 % de droite (mesuré : 00h à 79,9 et 20h à 91 sur un
+    // axe de 91). C'est exactement ce qui arrivait dès qu'on bougeait le fader,
+    // la table intra-journée n'étant PAS ventilée par média.
+    //
+    // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
+    chart:
+      range === "today"
+        ? chartJour ?? { ...buildChart(stats, dates, range), tooShort: true, raison: "sans-detail-horaire" as const }
+        : buildChart(stats, dates, range),
   };
 }
 
