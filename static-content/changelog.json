@@ -1,5 +1,11 @@
 [
   {
+    "pr": 533,
+    "date": "2026-08-20T18:55:01Z",
+    "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",
+    "version": null
+  },
+  {
     "pr": 531,
     "date": "2026-08-20T18:50:21Z",
     "note": "Les partis de l'Assemblée sont maintenant présentés du plus bavard au moins bavard, et le premier est ouvert d'emblée. Le mot qui distingue chaque parti et chaque élu.e s'affiche directement, avec un extrait qui le montre en contexte.",
