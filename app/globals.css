@@ -8336,6 +8336,13 @@
 }
 
 .deck {
+  /* La palette des tons vit ICI et non sur la pochette : `--ton` est calculée
+     sur `.deck`, et une variable ne se résout pas sur une valeur déclarée plus
+     bas dans l'arbre. Déclarée sur la face, elle sortait indéfinie et le coin
+     du ton retombait au gris pour tous les partis. */
+  --ton-positive: #3D6B3A;
+  --ton-negative: #A8302C;
+  --ton-neutral: #6E685F;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8379,10 +8386,11 @@
   .deck-face { transition: none; }
 }
 
-/* La molette — la face avant, abstraite comme le plateau d'un contrôleur DJ et
-   non comme un microsillon. Quatre couches, du dessus vers le dessous : le
-   capuchon central à la couleur du parti, le plateau lisse qui masque les crans
-   en son milieu, la couronne de crans, puis le fond. */
+/* La molette — la face avant, épurée : un plateau nu et, au centre, un
+   avant-goût de la pochette. Le cadran de crans qui la cernait est retiré.
+
+   Les couleurs (--party, --enjeu, --ton) sont posées sur `.deck`, pas sur une
+   face : les deux s'en servent maintenant. */
 .deck-jog {
   position: relative;
   display: grid;
@@ -8390,51 +8398,39 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* `closest-side` et non le défaut `farthest-corner` : sans lui, 100 % vaut la
-     distance au COIN du carré (1,41 fois le rayon), et une couronne posée à
-     74 % tombe déjà hors du disque visible. */
-  background:
-    radial-gradient(circle closest-side at 50% 50%, transparent 0 30%, var(--paper) 30.5% 84%, transparent 84.5%),
-    repeating-conic-gradient(from 0deg, var(--ink-softer) 0 0.8deg, transparent 0.8deg 6deg),
-    radial-gradient(circle closest-side at 50% 50%, var(--paper-deep) 0 89%, var(--rule-faint) 89.5% 100%);
+  background: var(--paper-deep);
   box-shadow:
-    inset 0 0 0 1px var(--rule),
-    inset 0 1px 3px rgba(28, 25, 23, 0.09),
-    0 2px 9px rgba(28, 25, 23, 0.13);
+    inset 0 0 0 1px var(--rule-faint),
+    0 2px 9px rgba(28, 25, 23, 0.11);
 }
-/* Le filet qui sépare le plateau de la couronne : c'est lui qui donne
-   l'impression d'une pièce mécanique plutôt que d'un aplat. */
-.deck-jog::before {
-  content: "";
-  position: absolute;
-  inset: 29%;
-  border-radius: 50%;
-  border: 1px solid var(--rule);
-  opacity: 0.7;
-}
-/* Le repère de position, à midi. */
-.deck-jog::after {
-  content: "";
-  position: absolute;
-  top: 7%;
-  left: 50%;
-  width: 2px;
-  height: 8%;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: var(--ink-softer);
-  opacity: 0.7;
-}
+
+/* Le capuchon central : la même composition que la pochette, découpée en rond.
+   Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
 .deck-jog-cap {
   position: relative;
   z-index: 1;
-  width: 40%;
-  height: 40%;
+  width: 46%;
+  height: 46%;
+  overflow: visible;
+  filter: drop-shadow(0 1px 3px rgba(28, 25, 23, 0.22));
+}
+.deck-jog-cap .forme-parti { fill: var(--party, var(--ink-soft)); }
+.deck-jog-cap .cap-cercle {
+  fill: none;
+  stroke: rgba(28, 25, 23, 0.2);
+  stroke-width: 1.2;
+}
+/* Les formes du capuchon ne portent PAS le filet crème de la pochette : à
+   46 % de la molette, il mangerait les aplats au lieu de les séparer. */
+.deck-jog-cap .forme-enjeu,
+.deck-jog-cap .forme-ton { stroke: none; }
+.deck-jog-cap--vide {
+  display: block;
+  width: 46%;
+  height: 46%;
   border-radius: 50%;
-  background: var(--party, var(--ink-soft));
-  box-shadow:
-    inset 0 0 0 1px rgba(28, 25, 23, 0.22),
-    0 1px 3px rgba(28, 25, 23, 0.18);
+  background: var(--rule);
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
 
 /* La pochette — trois couleurs, à-plats géométriques.
@@ -8447,9 +8443,6 @@
    (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
    descendent sur une bande sombre où le contraste ne dépend plus du parti. */
 .deck-face--pochette {
-  --ton-positive: #3D6B3A;
-  --ton-negative: #A8302C;
-  --ton-neutral: #6E685F;
   display: grid;
   grid-template-rows: 1fr auto;
   overflow: hidden;
@@ -8522,6 +8515,10 @@
 .deck-pistes {
   display: flex;
   flex-direction: column;
+  /* Enfant de grille : sans `min-width: 0` il refuse de rétrécir sous la
+     largeur de son contenu, et c'est TOUTE la bande qui sortait du cadre — les
+     valeurs se faisaient couper au bord de la pochette, « 2h27 » compris. */
+  min-width: 0;
   gap: 3px;
   padding: 8px 12px 9px;
   background: rgba(28, 25, 23, 0.42);
@@ -8530,25 +8527,41 @@
   display: flex;
   align-items: baseline;
   gap: 5px;
+  /* `min-width: 0` et `overflow: hidden` : sans eux, la valeur sortait du cadre
+     et se faisait couper NET par la pochette, sans points de suspension ni
+     marge. Un enfant flex refuse de rétrécir sous sa largeur de contenu tant
+     qu'on ne lève pas ce plancher. */
+  min-width: 0;
+  overflow: hidden;
   font-size: 10px;
   line-height: 1.25;
 }
-.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; }
+.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; white-space: nowrap; }
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
 .deck-piste-fil {
   flex: 1 1 auto;
-  min-width: 8px;
+  min-width: 6px;
   border-bottom: 1px dotted rgba(243, 236, 221, 0.4);
   transform: translateY(-2px);
 }
+/* La valeur tient sur UNE ligne, quitte à se couper.
+   Les libellés d'enjeux du CAP vont jusqu'à 44 caractères (« Droits, libertés,
+   minorités et discrimination ») : aucun corps lisible ne les fait tenir dans
+   une pochette de 200 px. Le texte complet reste dans le DOM — l'ellipse est
+   visuelle, un lecteur d'écran lit la chaîne entière — et l'attribut `title` le
+   donne au survol. La couleur du disque de l'illustration porte de toute façon
+   déjà l'enjeu. */
 .deck-piste-val {
   flex: 0 1 auto;
-  max-width: 60%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
+  font-size: 8.5px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
   text-align: right;
 }
 

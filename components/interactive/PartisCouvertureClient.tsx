@@ -660,7 +660,7 @@ function Deck({
       <div className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}>
         <div className="deck-carre">
           <span className="deck-jog deck-jog--vide" aria-hidden="true">
-            <span className="deck-jog-cap" />
+            <span className="deck-jog-cap deck-jog-cap--vide" />
           </span>
         </div>
         <p className="deck-vide-txt">
@@ -684,7 +684,14 @@ function Deck({
   ];
 
   return (
-    <div className="deck" style={{ ["--party" as string]: row.color }}>
+    <div
+      className="deck"
+      style={{
+        ["--party" as string]: row.color,
+        ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
+        ["--ton" as string]: `var(--ton-${ton})`,
+      }}
+    >
       <button
         type="button"
         className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
@@ -696,7 +703,19 @@ function Deck({
             (la couleur, donc l'identité) est déjà dit par le nom en dessous. */}
         <span className="deck-face deck-face--disque" aria-hidden="true">
           <span className="deck-jog">
-            <span className="deck-jog-cap" />
+            {/* Le capuchon n'est plus un aplat : il reprend la composition de la
+                pochette, découpée en rond. On voit ce qu'on va retourner. */}
+            <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
+              <clipPath id={`cap-${row.key}`}>
+                <circle cx="50" cy="50" r="50" />
+              </clipPath>
+              <g clipPath={`url(#cap-${row.key})`}>
+                <rect className="forme-parti" x="0" y="0" width="100" height="100" />
+                <circle className="forme-enjeu" cx="80" cy="18" r="44" />
+                <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
+              </g>
+              <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
+            </svg>
           </span>
         </span>
 
@@ -705,14 +724,7 @@ function Deck({
             `aria-hidden` suit le retournement : les deux faces coexistent dans
             le DOM, et sans cela un lecteur d'écran lirait celle qu'on ne voit
             pas. */}
-        <span
-          className="deck-face deck-face--pochette"
-          aria-hidden={!ouverte}
-          style={{
-            ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
-            ["--ton" as string]: `var(--ton-${ton})`,
-          }}
-        >
+        <span className="deck-face deck-face--pochette" aria-hidden={!ouverte}>
           {/* L'illustration, à la manière des Unes : des à-plats géométriques
               qui se chevauchent, en trois couleurs — le parti au fond, l'enjeu
               et le ton en formes franches. Le pictogramme domine, l'acronyme se
@@ -740,7 +752,9 @@ function Deck({
                 {/* Les pointillés vivent ENTRE le titre et la valeur, comme au
                     dos d'un disque, et non sous le titre. */}
                 <i className="deck-piste-fil" aria-hidden="true" />
-                <span className="deck-piste-val">{valeur}</span>
+                <span className="deck-piste-val" title={valeur}>
+                  {valeur}
+                </span>
               </span>
             ))}
             {/* Le ton n'est plus qu'une couleur sur la pochette. Il reste
