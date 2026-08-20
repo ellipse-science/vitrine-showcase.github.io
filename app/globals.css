@@ -8823,8 +8823,13 @@
 .palmares-classement {
   min-width: 0;
   border: 1px solid var(--cordovan);
+  /* `--paper`, le crème du journal, et NON `--paper-deep` qui est celui du bloc
+     du palmarès : l'encadré doit sembler posé sur la page, pas creusé dans le
+     graphique. */
   background: var(--paper);
   padding: 9px 10px;
+  /* Décalé vers la gauche : collé au bord du cadre, il se confondait avec lui. */
+  margin-right: 10px;
 }
 .palmares-liste {
   margin: 0;
