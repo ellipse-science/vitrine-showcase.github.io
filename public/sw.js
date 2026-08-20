@@ -1,4 +1,12 @@
-const CACHE_NAME = "vitrine-v1";
+// __BUILD_ID__ est substitué par scripts/postbuild.mjs à chaque déploiement.
+// POURQUOI : ce cache retient du HTML avec les DONNÉES INLINÉES dedans
+// (networkFirst ci-dessous). Sous un nom constant, l'activate ne purgeait
+// jamais rien, et un visiteur récurrent pouvait revoir indéfiniment une
+// édition d'il y a des jours au moindre raté réseau — relevé par l'audit de
+// lancement du 2026-08-19. Un nom par build = l'ancien cache meurt à chaque
+// déploiement. En dev local (public/ servi tel quel), le jeton non substitué
+// reste un nom valide.
+const CACHE_NAME = "vitrine-__BUILD_ID__";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
