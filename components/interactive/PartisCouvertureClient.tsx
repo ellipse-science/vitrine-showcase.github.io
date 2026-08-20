@@ -599,13 +599,14 @@ function Deck({
             {mediaLabel && (
               <svg className="deck-jog-media" viewBox="0 0 100 100" aria-hidden="true">
                 <defs>
-                  {/* Un cercle de rayon 34 : à l'extérieur du capuchon (23) et
-                      à l'intérieur du plateau (50). Le tracé part de la gauche
-                      et tourne dans le sens horaire, si bien qu'un décalage
-                      d'un quart place le texte en haut, à l'endroit. */}
+                  {/* Un cercle de rayon 25,5, soit deux unités et demie au-delà
+                      du capuchon (23) : le nom lui est collé, et non posé au
+                      milieu du plateau. Le tracé part de la gauche et tourne
+                      dans le sens horaire, si bien qu'un décalage d'un quart
+                      place le texte en haut, à l'endroit. */}
                   <path
                     id={`arc-${row.key}`}
-                    d="M 50,50 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0"
+                    d="M 50,50 m -25.5,0 a 25.5,25.5 0 1,1 51,0 a 25.5,25.5 0 1,1 -51,0"
                     fill="none"
                   />
                 </defs>

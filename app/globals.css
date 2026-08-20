@@ -8149,6 +8149,7 @@
   background: none;
   cursor: pointer;
   perspective: 1000px;
+  transform-style: preserve-3d;
 }
 .deck-carre--pivot:focus-visible {
   outline: 2px solid var(--cordovan);
@@ -8186,38 +8187,63 @@
    encore transparent et minuscule à ce moment-là. Ce qu'on perçoit, c'est la
    pochette qui s'efface et le disque qui en sort. */
 @keyframes deck-tour-avant {
-  0% { transform: rotateY(0deg); }
-  40%, 56% { transform: rotateY(-180deg); }
-  72%, 100% { transform: rotateY(-360deg); }
+  0% {
+    transform: rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  42% {
+    transform: rotateY(-180deg);
+    animation-timing-function: linear;
+  }
+  58% {
+    transform: rotateY(-180deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  76%, 100% { transform: rotateY(-360deg); }
 }
 @keyframes deck-tour-arriere {
-  0% { transform: rotateY(180deg); }
-  40%, 56% { transform: rotateY(0deg); }
-  72%, 100% { transform: rotateY(-180deg); }
+  0% {
+    transform: rotateY(180deg);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  42% {
+    transform: rotateY(0deg);
+    animation-timing-function: linear;
+  }
+  58% {
+    transform: rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  76%, 100% { transform: rotateY(-180deg); }
 }
 /* Le disque SORT de la pochette : il ne paraît qu'une fois celle-ci posée, part
    du coin bas-gauche — là où l'on tire un vinyle de sa pochette — petit et
    penché, puis glisse jusqu'au centre du plateau. */
 @keyframes deck-sortie {
-  0%, 58% {
+  0%, 56% {
     opacity: 0;
     transform: translate(-34%, 28%) scale(0.38) rotate(-30deg);
+    animation-timing-function: cubic-bezier(0.16, 0.72, 0.24, 1);
   }
-  70% { opacity: 1; }
+  68% { opacity: 1; }
   100% {
     opacity: 1;
     transform: translate(0, 0) scale(1) rotate(0);
   }
 }
 .deck-carre--pivot .deck-face--disque {
-  animation: deck-tour-avant 1240ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: deck-tour-avant 1240ms linear;
 }
 .deck-carre--pivot .deck-face--pochette {
-  animation: deck-tour-arriere 1240ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: deck-tour-arriere 1240ms linear;
 }
 .deck-carre--pivot .deck-face--disque .deck-jog {
-  animation: deck-sortie 1240ms cubic-bezier(0.25, 0.85, 0.3, 1);
+  animation: deck-sortie 1240ms linear;
 }
+/* Les trois éléments tournent ensemble : les prévenir évite que le navigateur
+   ne les repromeuve sur une couche à chaque image. */
+.deck-carre--pivot .deck-face,
+.deck-carre--pivot .deck-jog { will-change: transform, opacity; }
 
 @media (prefers-reduced-motion: reduce) {
   .deck-face { transition: none; }
@@ -8266,7 +8292,7 @@
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
-/* Le nom du média épouse la courbe du plateau, entre le capuchon et le bord.
+/* Le nom du média épouse la courbe du disque, COLLÉ au capuchon central.
    Il ne paraît QUE lorsqu'une source est choisie : sur l'ensemble des médias,
    il n'y aurait rien à nommer. */
 .deck-jog-media {
@@ -8354,7 +8380,10 @@
   right: 0;
   z-index: 2;
   padding: 3px 8px;
-  background: rgba(28, 25, 23, 0.62);
+  /* Même encre PLEINE que la bande des pistes, en bas : les deux bandeaux
+     encadrent l'illustration et doivent se répondre. En translucide, chacun
+     prenait une teinte différente selon la couleur du parti. */
+  background: var(--ink);
   color: var(--paper);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 8px;
@@ -8410,7 +8439,7 @@
   min-width: 0;
   gap: 3px;
   padding: 8px 12px 9px;
-  background: rgba(28, 25, 23, 0.42);
+  background: var(--ink);
 }
 .deck-piste {
   display: flex;
