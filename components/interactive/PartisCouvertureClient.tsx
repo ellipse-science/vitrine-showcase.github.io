@@ -547,7 +547,7 @@ function Deck({
         className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}
         title={
           indisponible
-            ? "La mesure est suspendue : voir l'avis en tête du module."
+            ? "La mesure est suspendue\u00a0: voir l'avis en tête du module."
             : `Aucun parti au ${rang}${rang === 1 ? "er" : "e"} rang sur cette période.`
         }
       >
