@@ -3284,6 +3284,68 @@
     margin: -4px 0 14px;
     max-width: 72ch;
   }
+  /* Concept distinctif au niveau du PARTI, dans le tiroir. Le mot passe à la
+     ligne sous son intitulé : sur une seule ligne, un mot long poussait la
+     glose hors du tiroir à 1280 px. */
+  .tiroir-concept {
+    margin: -2px 0 14px;
+    max-width: 72ch;
+  }
+  .tiroir-concept-titre {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin-bottom: 3px;
+  }
+
+  /* Bloc du concept distinctif, partagé par la carte et le tiroir. Tout est
+     visible en permanence : pas de survol (une carte finit imprimée, et un
+     doigt sur mobile ne survole rien). La hiérarchie porte donc seule la
+     lisibilité — le mot d'abord, la citation qui le montre en situation
+     ensuite, la mécanique du calcul en dernier et en plus petit. */
+  .concept-mot {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 17px;
+    line-height: 1.05;
+    color: var(--cordovan);
+  }
+  .concept-citation {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 10px;
+    line-height: 1.34;
+    color: var(--ink-soft);
+    margin-top: 3px;
+  }
+  .concept-glose {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 7.5px;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    color: var(--ink-softer);
+    margin-top: 4px;
+  }
+  /* Dans le tiroir, la largeur ne manque pas : la citation s'y lit en entier
+     et au corps du texte courant, pas au corps réduit de la carte. */
+  .tiroir-concept .concept-mot { font-size: 19px; color: var(--ink); }
+  .tiroir-concept .concept-citation {
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .tiroir-concept .concept-glose { font-size: 8.5px; }
+
   /* Le présentoir défile horizontalement : les cartes gardent leur format
      exact plutôt que de se comprimer pour tenir dans la largeur. */
   .tiroir-presentoir {
@@ -3539,36 +3601,6 @@
   }
   .carte-v-piste { display: block; height: 5px; background: var(--rule-faint); }
   .carte-v-piste > i { display: block; height: 5px; }
-  .carte-v-concept {
-    display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 17px;
-    line-height: 1;
-    color: var(--cordovan);
-  }
-  .carte-v-citation {
-    display: block;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 10px;
-    line-height: 1.34;
-    color: var(--ink-soft);
-    margin-top: 3px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-  .carte-v-glose {
-    display: block;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 9px;
-    line-height: 1.3;
-    color: var(--ink-softer);
-    margin-top: 2px;
-  }
   .carte-v-pied {
     display: block;
     margin-top: auto;
@@ -3670,12 +3702,10 @@
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
-    /* Le verso déborde de 8 px à cette taille : on resserre les interlignes et
-       on coupe la citation à deux lignes plutôt que trois. */
+    /* Le verso déborde de 8 px à cette taille : on resserre les interlignes. */
     .carte-v-stats { padding: 5px 0; }
     .carte-v-circo { margin: 3px 0 5px; }
     .carte-v-bloc { margin-top: 6px; }
-    .carte-v-citation { font-size: 9px; -webkit-line-clamp: 2; }
     .vestiaire-tiroir { padding: 18px 12px 12px; }
   }
 
@@ -6705,8 +6735,9 @@
 
   /* Rang dans un cercle de couleur (#268) : lavis pâle du verdict (un cran plus
      soutenu que la boîte du libellé) avec chiffre en encre noire.
-     Exception pour les deux verdicts sombres — Rompue (rouge foncé) et
-     En suspens (gris) : fond plein + chiffre en blanc papier, sinon illisible.
+     Même traitement pour les cinq verdicts (#538) : Rompue et En suspens
+     gardaient un fond plein hérité d'avant l'anneau, ce qui les faisait lire
+     comme une catégorie à part dans la colonne « Rang ».
      Gris neutre pâle pour une promesse sans verdict. */
   .ppl-rank {
     font-family: 'Playfair Display', Georgia, serif;
@@ -6733,11 +6764,8 @@
   .ppl-promise--realisee   .ppl-rank { background: color-mix(in srgb, var(--ppl-realisee)   20%, transparent); border-color: var(--ppl-realisee); }
   .ppl-promise--partielle  .ppl-rank { background: color-mix(in srgb, var(--ppl-partielle)  20%, transparent); border-color: var(--ppl-partielle); }
   .ppl-promise--en-cours   .ppl-rank { background: color-mix(in srgb, var(--ppl-en-cours)   20%, transparent); border-color: var(--ppl-en-cours); }
-  /* Les deux verdicts déjà sombres gardent leur fond plein ; l'anneau reprend
-     leur propre couleur — donc invisible, mais la géométrie reste identique
-     aux trois autres (même diamètre, même surface intérieure). */
-  .ppl-promise--en-suspens .ppl-rank { background: var(--ppl-en-suspens); color: var(--paper); border-color: var(--ppl-en-suspens); }
-  .ppl-promise--rompue     .ppl-rank { background: var(--ppl-rompue);     color: var(--paper); border-color: var(--ppl-rompue); }
+  .ppl-promise--en-suspens .ppl-rank { background: color-mix(in srgb, var(--ppl-en-suspens) 20%, transparent); border-color: var(--ppl-en-suspens); }
+  .ppl-promise--rompue     .ppl-rank { background: color-mix(in srgb, var(--ppl-rompue)     20%, transparent); border-color: var(--ppl-rompue); }
 
   .ppl-title {
     font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;

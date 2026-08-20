@@ -1807,6 +1807,9 @@ export type UneEvent = {
   totalQcOutlets: number;
   /** Identifiant de suivi cross-blocs (Jaccard 0.30, lookback 24h). */
   storylineId: string | null;
+  /** event_id du bloc représentatif — clé de REPLI de la garde d'appariement
+   *  de l'illustration (UneDesUnesSection), quand la storyline manque. */
+  eventId: string;
   /** Pic de score_qc sur la fenêtre 24h — base de l'étiquette phase C (#122). */
   scoreQcPeak24h: number | null;
   /** Saillance CUMULÉE 24 h pondérée par récence — la grandeur du badge. */
@@ -2268,6 +2271,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
 
     return {
       title: e.title ?? "",
+      eventId: e.event_id,
       excerpt,
       // ISSUE_LABELS_SHORT d'abord : c'est l'orthographe canonique du Polimètre
       // (« Loi et crime », « Santé et politiques sociales »). Le libellé FR du
