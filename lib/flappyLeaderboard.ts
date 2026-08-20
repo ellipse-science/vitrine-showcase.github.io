@@ -2,33 +2,22 @@ import { ScoreEntry, insertScore, sanitizeInitials } from "./flappy";
 
 // Classement global du jeu caché « Flappy Enjeux ».
 //
-// SÉCURITÉ — pourquoi il n'y a plus de jeton d'écriture ici : ce module tourne
+// HISTOIRE (issue #499) — pourquoi il n'y a AUCUN jeton ici : ce module tourne
 // dans le navigateur, et tout ce qui est préfixé NEXT_PUBLIC_* est inliné dans
-// le bundle client au build. Un jeton d'écriture placé ici est donc public par
-// construction — n'importe qui peut réécrire ou vider le classement. Le dépôt a
-// longtemps embarqué un jeton Upstash en clair dans ce fichier; il est révoqué.
+// le bundle client au build. Le dépôt a longtemps embarqué un jeton Upstash
+// d'ÉCRITURE en clair ; la PR #491 l'a retiré, mais les variables de
+// remplacement n'ont jamais été posées — le classement s'affichait vide.
 //
-// Le lecteur utilise un jeton Upstash **en lecture seule** (exposé sciemment :
-// il ne donne accès qu'à des scores déjà affichés). L'écriture passe par un
-// Worker qui, lui, détient le secret côté serveur — cf.
-// docs/reference/api-direction.md. Tant que ce Worker n'existe pas, les scores
-// restent locaux à la session : on n'écrit rien plutôt que d'écrire sans garde.
+// Depuis le 2026-08-20, le classement vit derrière l'API de la Vitrine
+// (workers/api/src/flappy.ts) : lecture publique cachée au edge, écriture
+// validée CÔTÉ SERVEUR — le client n'envoie que SON entrée, jamais le tableau,
+// il ne peut donc pas l'écraser. Zéro secret côté client, zéro variable
+// d'environnement à poser, plus d'Upstash du tout.
 
-const UPSTASH_URL = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL ?? "";
-
-// Jeton EN LECTURE SEULE. Ne jamais y mettre un jeton d'écriture (voir ci-dessus).
-const UPSTASH_READONLY_TOKEN =
-  process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN ?? "";
-
-// Endpoint d'écriture (Worker). Absent aujourd'hui : l'écriture est désactivée.
-const LEADERBOARD_WRITE_URL = process.env.NEXT_PUBLIC_LEADERBOARD_WRITE_URL ?? "";
-
-const REDIS_KEY = "vitrine-flappy-global-board";
+const API_BASE = process.env.NEXT_PUBLIC_VITRINE_API_BASE ?? "https://api.vitrinedemocratique.com";
+const LEADERBOARD_URL = `${API_BASE}/v1/flappy/leaderboard`;
 
 const DEFAULT_BOARD: ScoreEntry[] = [];
-
-const canRead = Boolean(UPSTASH_URL && UPSTASH_READONLY_TOKEN);
-const canWrite = Boolean(LEADERBOARD_WRITE_URL);
 
 function parseBoardResult(raw: unknown): ScoreEntry[] {
   if (!raw) return DEFAULT_BOARD;
@@ -43,14 +32,11 @@ function parseBoardResult(raw: unknown): ScoreEntry[] {
 }
 
 export async function fetchLeaderboard(): Promise<ScoreEntry[]> {
-  if (!canRead) return DEFAULT_BOARD;
-
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
 
-    const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
-      headers: { Authorization: `Bearer ${UPSTASH_READONLY_TOKEN}` },
+    const res = await fetch(LEADERBOARD_URL, {
       signal: controller.signal,
       cache: "no-store",
     });
@@ -58,7 +44,7 @@ export async function fetchLeaderboard(): Promise<ScoreEntry[]> {
 
     if (res.ok) {
       const data = await res.json();
-      return parseBoardResult(data.result);
+      return parseBoardResult(data.board ?? data.result ?? data);
     }
   } catch (err) {
     console.error("Erreur lors de la récupération du classement global:", err);
@@ -82,15 +68,13 @@ export async function submitScoreToLeaderboard(
   // un tableau vide effacerait le classement affiché.
   const optimisticBoard = insertScore(currentBoard, sanitizedEntry);
 
-  if (!canWrite) return optimisticBoard;
-
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4000);
 
     // Le Worker fait le get + merge + set côté serveur : le client n'envoie que
     // son entrée, jamais le tableau complet (sinon il pourrait l'écraser).
-    const res = await fetch(LEADERBOARD_WRITE_URL, {
+    const res = await fetch(LEADERBOARD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sanitizedEntry),

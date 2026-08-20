@@ -30,6 +30,7 @@ import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } fr
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
+import { handleFlappy } from './flappy'
 import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
 
 interface Env extends SyncAthenaEnv, ArtEnv {
@@ -248,7 +249,10 @@ export default {
     // la leçon du 2026-08-19, où le garde avalait POST /v1/sync-athena.
     const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
     const isArt = seg[0] === 'v1' && seg[1] === 'art'
-    if (!isSync && !isArt && request.method !== 'GET' && request.method !== 'HEAD') {
+    // /v1/flappy accepte POST (soumission de score, anonyme) : exempté du
+    // garde 405 comme les routes de synchro et d'art.
+    const isFlappy = seg[0] === 'v1' && seg[1] === 'flappy'
+    if (!isSync && !isArt && !isFlappy && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
@@ -378,6 +382,12 @@ export default {
 
       // /v1/art/* — l'illustration de la Une des unes (R2). Lecture publique,
       // écriture sous clé `sync`, publication conditionnelle. Cf. art.ts.
+      // /v1/flappy/leaderboard — classement du jeu caché (issue #499). Lecture
+      // publique cachée 60 s, soumission anonyme validée serveur. Cf. flappy.ts.
+      if (segments[0] === 'v1' && segments[1] === 'flappy' && segments[2] === 'leaderboard') {
+        return handleFlappy(request, ctx, sql)
+      }
+
       if (segments[0] === 'v1' && segments[1] === 'art') {
         return handleArt(request, env, ctx, sql, segments[2] ?? '')
       }
