@@ -8130,8 +8130,16 @@
   --ton-neutral: #6E685F;
   /* Le fond des DEUX bandeaux de la pochette, celui du haut comme celui du bas.
      Une seule déclaration : ils encadrent la même illustration et doivent se
-     répondre, et les tenir en phase à la main les avait déjà fait diverger. */
-  --bandeau: rgba(28, 25, 23, 0.42);
+     répondre, et les tenir en phase à la main les avait déjà fait diverger.
+     
+     OPAQUE, et non une encre translucide. Celle du bas reposait sur le fond uni
+     du parti, mais celle du haut passe par-dessus les formes géométriques : à
+     travers elle on voyait le disque de l'enjeu et le coin du ton, et le
+     bandeau semblait transparent alors qu'il portait la même déclaration.
+     58 % de parti et 42 % d'encre donnent exactement ce que rendait
+     `rgba(28, 25, 23, 0.42)` posé sur le parti — la bande du bas est donc
+     inchangée à l'œil, et celle du haut lui répond enfin. */
+  --bandeau: color-mix(in srgb, var(--party, #433F38) 58%, #1C1917);
   display: flex;
   flex-direction: column;
   align-items: center;
