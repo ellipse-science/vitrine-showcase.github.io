@@ -8699,12 +8699,6 @@
   opacity: 0.5;
   vector-effect: non-scaling-stroke;
 }
-/* Le sol du graphique. */
-.palmares-base {
-  stroke: var(--rule);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
 .palmares-arrivee {
   stroke: var(--cordovan);
   stroke-width: 1;

@@ -195,7 +195,7 @@ export function PartisCouvertureClient({
           ensuite, ce qui est l'ordre dans lequel on lit un classement. */}
       {!data.indisponible && !data.ranges[range].chart.tooShort && (
         <section className="partis-course partis-course--tete">
-          <p className="course-tete">Le palmarès, en minutes de Une</p>
+          <p className="course-tete">Le palmarès, en minutes passées en Une</p>
           {/* Le palmarès lit TOUJOURS l'agrégat, quelle que soit la position
               du fader : c'est une course entre partis, pas entre médias. Le
               curseur ne commande que le vumètre. */}
@@ -999,15 +999,6 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
             {chart.yLabels.map((g) => (
               <line key={g.label} className="palmares-grille" x1="0" x2={chart.width} y1={g.y} y2={g.y} />
             ))}
-            {/* Le sol. Sans lui les courbes flottaient : le zéro n'a pas de
-                graduation, c'est ce trait qui le dit. */}
-            <line
-              className="palmares-base"
-              x1="0"
-              x2={chart.width}
-              y1={chart.height}
-              y2={chart.height}
-            />
             {/* La ligne d'ARRIVÉE : le vide à sa gauche est ce qu'il reste à
                 courir. C'est elle qui fait de la mesure une course. */}
             <line
