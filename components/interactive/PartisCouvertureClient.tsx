@@ -135,6 +135,8 @@ export function PartisCouvertureClient({
   // passent en sourdine et le dernier deck reste donc vide. Ce vide est la
   // lecture juste — il dit qu'un seul parti se disputait la dernière place.
   const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
+  const mediaLabel =
+    media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
 
   if (showDoom) {
     return <DoomGame onExit={() => setShowDoom(false)} />;
@@ -236,8 +238,8 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} />
         </div>
 
         <div className="regie-centre">
@@ -252,8 +254,8 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} />
         </div>
       </div>
 
@@ -500,12 +502,21 @@ function Deck({
   row,
   rang,
   indisponible,
+  mediaLabel,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
    *  les cinq (ils coïncident, la sourdine ne retirant que la queue). */
   rang: number;
   indisponible: Indisponibilite | null;
+  /** Nom du média affiché, ou `null` sur « tous les médias ». Il s'inscrit
+   *  autour du disque et en bandeau sur la pochette : sans lui, rien sur le deck
+   *  ne dit que les chiffres portent sur UNE source.
+   *
+   *  ⚠️ Ce n'est PAS une clé de remontage — celle-ci ne porte que le parti, pour
+   *  que le changement de disque ne se rejoue que sur un vrai changement de
+   *  piste. */
+  mediaLabel: string | null;
 }) {
   const [ouverte, setOuverte] = useState(false);
 
@@ -585,6 +596,26 @@ function Deck({
           <span className="deck-jog">
             {/* Le capuchon n'est plus un aplat : il reprend la composition de la
                 pochette, découpée en rond. On voit ce qu'on va retourner. */}
+            {mediaLabel && (
+              <svg className="deck-jog-media" viewBox="0 0 100 100" aria-hidden="true">
+                <defs>
+                  {/* Un cercle de rayon 34 : à l'extérieur du capuchon (23) et
+                      à l'intérieur du plateau (50). Le tracé part de la gauche
+                      et tourne dans le sens horaire, si bien qu'un décalage
+                      d'un quart place le texte en haut, à l'endroit. */}
+                  <path
+                    id={`arc-${row.key}`}
+                    d="M 50,50 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0"
+                    fill="none"
+                  />
+                </defs>
+                <text>
+                  <textPath href={`#arc-${row.key}`} startOffset="25%" textAnchor="middle">
+                    {mediaLabel}
+                  </textPath>
+                </text>
+              </svg>
+            )}
             <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
               <clipPath id={`cap-${row.key}`}>
                 <circle cx="50" cy="50" r="50" />
@@ -612,6 +643,10 @@ function Deck({
               qui se chevauchent, en trois couleurs — le parti au fond, l'enjeu
               et le ton en formes franches. L'acronyme se pose dessus. */}
           <span className="pochette-art">
+            {/* Le média, en bandeau le long du haut. Fond d'encre et non
+                transparent : il doit rester lisible sur les cinq couleurs de
+                parti, dont l'orange de Québec solidaire. */}
+            {mediaLabel && <span className="pochette-media">{mediaLabel}</span>}
             <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {/* Un filet crème borde chaque forme. Sans lui, elles se perdent
                   quand leur couleur approche celle du parti : le rouge du PLQ

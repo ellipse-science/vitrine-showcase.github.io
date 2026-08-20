@@ -7810,6 +7810,8 @@
   .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
+  .pochette-media { font-size: 6.5px; padding: 2px 5px; letter-spacing: 0.1em; }
+  .deck-jog-media text { font-size: 5.4px; }
   .deck-piste { font-size: 8.5px; gap: 4px; }
   .deck-piste-val { font-size: 7.5px; }
   .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
@@ -8264,6 +8266,24 @@
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
+/* Le nom du média épouse la courbe du plateau, entre le capuchon et le bord.
+   Il ne paraît QUE lorsqu'une source est choisie : sur l'ensemble des médias,
+   il n'y aurait rien à nommer. */
+.deck-jog-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.deck-jog-media text {
+  fill: var(--ink-softer);
+  font-family: 'IBM Plex Mono', monospace;
+  /* En unités du viewBox : 4,6 sur 100 donne ~9 px sur un deck de 200. */
+  font-size: 4.6px;
+  letter-spacing: 0.34px;
+  text-transform: uppercase;
+}
 .deck-jog-cap {
   position: relative;
   z-index: 1;
@@ -8322,6 +8342,28 @@
   box-shadow:
     inset 0 0 0 1px rgba(243, 236, 221, 0.16),
     0 3px 12px rgba(28, 25, 23, 0.26);
+}
+
+/* Le média, en bandeau le long du haut de la pochette. Fond d'ENCRE et non
+   transparent : le nom doit rester lisible sur les cinq couleurs de parti, dont
+   l'orange de Québec solidaire où le crème seul tombe à 3,94:1. */
+.pochette-media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 3px 8px;
+  background: rgba(28, 25, 23, 0.62);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pochette-art {
