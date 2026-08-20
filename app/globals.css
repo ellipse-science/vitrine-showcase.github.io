@@ -8165,9 +8165,31 @@
 .deck-carre--pivot.retournee .deck-face--disque { transform: rotateY(-180deg); }
 .deck-carre--pivot.retournee .deck-face--pochette { transform: rotateY(0deg); }
 
+/* Le CHANGEMENT DE DISQUE : un tour complet.
+   Les deux faces tournent ensemble d'un demi-tour négatif chacune, si bien
+   qu'au milieu du parcours la pochette est de face et le disque caché : on voit
+   la pochette passer, puis le NOUVEAU disque revenir.
+   Aucun remplissage : à la fin, chaque face reprend la position que lui donne
+   son état `retournee`, et le clic reste maître. */
+@keyframes deck-tour-avant {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-360deg); }
+}
+@keyframes deck-tour-arriere {
+  from { transform: rotateY(180deg); }
+  to { transform: rotateY(-180deg); }
+}
+.deck-carre--pivot .deck-face--disque {
+  animation: deck-tour-avant 820ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.deck-carre--pivot .deck-face--pochette {
+  animation: deck-tour-arriere 820ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .deck-face { transition: none; }
-  .deck-jog-cap { animation: none; }
+  .deck-carre--pivot .deck-face--disque,
+  .deck-carre--pivot .deck-face--pochette { animation: none; }
 }
 
 /* La molette — la face avant, épurée : un plateau nu et, au centre, un
@@ -8210,19 +8232,9 @@
 
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
-/* Le changement de DISQUE, rejoué à chaque remontage du capuchon — donc à
-   chaque changement de source ou de classement. Une rotation courte et un
-   léger retrait : on voit le disque être remplacé, au lieu de constater après
-   coup qu'il l'a été. */
-@keyframes deck-changement {
-  0% { opacity: 0; transform: rotate(-38deg) scale(0.72); }
-  60% { opacity: 1; transform: rotate(6deg) scale(1.04); }
-  100% { opacity: 1; transform: rotate(0) scale(1); }
-}
 .deck-jog-cap {
   position: relative;
   z-index: 1;
-  animation: deck-changement 460ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   width: 46%;
   height: 46%;
   overflow: visible;
@@ -8530,13 +8542,19 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--col-classement);
   gap: var(--gouttiere);
-  align-items: start;
+  /* `stretch` et NON `start` : la colonne de classement est plus haute que le
+     graphique, et en alignant par le haut on laissait un vide sous la courbe
+     dans TOUTES les vues. Le graphique remplit désormais la rangée, quelle que
+     soit la hauteur de la colonne. */
+  align-items: stretch;
 }
 
 .palmares-zone {
   position: relative;
-  /* Aplati : le graphique doit se lire d'un coup d'œil, pas s'explorer. */
-  height: 104px;
+  /* Aplati : le graphique doit se lire d'un coup d'œil, pas s'explorer. La
+     hauteur suit la rangée pour ne jamais laisser de vide ; le plancher garde
+     le bloc lisible si la colonne venait à raccourcir. */
+  min-height: 104px;
   margin-left: var(--marge-y);
 }
 .palmares-svg {
@@ -8692,7 +8710,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 2px 0;
+  padding: 1px 0;
   border: 0;
   background: none;
   cursor: pointer;
@@ -8725,9 +8743,9 @@
 .palmares-gagnant {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 7px;
+  padding-bottom: 7px;
   border-bottom: 1px solid var(--rule);
 }
 /* Le disque gagnant ne porte AUCUN texte : le crème sur l'orange de Québec
@@ -8737,8 +8755,8 @@
 .palmares-gagnant-album {
   position: relative;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   background: var(--party, var(--ink-soft));
   box-shadow: 0 1px 4px rgba(28, 25, 23, 0.24);
 }
@@ -8813,7 +8831,7 @@
   .palmares-figure { padding: 10px 10px 8px; }
   .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .palmares-figure { --marge-y: 32px; }
-  .palmares-zone { height: 88px; }
+  .palmares-zone { min-height: 88px; }
   .palmares-x { margin: 4px 0 0 var(--marge-y); }
   .palmares-liste { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   .palmares-gagnant { margin-bottom: 8px; padding-bottom: 8px; }

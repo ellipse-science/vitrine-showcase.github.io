@@ -566,7 +566,13 @@ function Deck({
         ["--ton" as string]: `var(--ton-${ton})`,
       }}
     >
+      {/* La clé porte la SOURCE et le parti : changer de média remonte le carré,
+          qui rejoue alors son tour complet — la pochette passe devant, puis le
+          NOUVEAU disque revient. On voit le disque être changé, au lieu de
+          constater après coup qu'il l'a été. Le remontage referme aussi la
+          pochette ouverte, ce qui est juste : ses chiffres ont changé. */}
       <button
+        key={`${media}-${row.key}`}
         type="button"
         className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
         onClick={() => setOuverte((v) => !v)}
@@ -580,15 +586,7 @@ function Deck({
           <span className="deck-jog">
             {/* Le capuchon n'est plus un aplat : il reprend la composition de la
                 pochette, découpée en rond. On voit ce qu'on va retourner. */}
-            {/* La clé porte la SOURCE et le parti : changer de média remonte le
-                capuchon, donc rejoue son animation. On voit le disque changer
-                au lieu de le voir avoir changé. */}
-            <svg
-              key={`${media}-${row.key}`}
-              className="deck-jog-cap"
-              viewBox="0 0 100 100"
-              aria-hidden="true"
-            >
+            <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
               <clipPath id={`cap-${row.key}`}>
                 <circle cx="50" cy="50" r="50" />
               </clipPath>
