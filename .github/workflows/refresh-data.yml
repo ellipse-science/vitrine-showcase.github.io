@@ -128,12 +128,9 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        # Pillow ≥ 11.3 encode l'AVIF nativement (vérifié en 12.3) : pas de
-        # pillow-avif-plugin ici, on n'ajoute pas un paquet dont l'échec
-        # d'installation ferait tomber toute l'étape. generate_art.py tente
-        # quand même l'import du plugin, au cas où l'environnement serait plus
-        # ancien, et se rabat sur le WebP seul si l'AVIF n'est pas disponible.
-        run: pip install openai pillow python-dotenv replicate
+        # pillow : cartes de député·es (build_deputy_cards.py). openai a suivi
+        # generate_art.py hors de ce workflow (raffineur vitrine-art).
+        run: pip install pillow python-dotenv replicate
 
       # Les portraits changent quelques fois par AN (partielles), pas toutes
       # les 4h : scraper à chaque déclenchement de ce workflow ferait ~250
@@ -246,37 +243,12 @@ jobs:
             fi
           fi
 
-      # Node n'était pas installé dans ce job : il l'est maintenant pour une
-      # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
-      # au lieu de la laisser deviner par le script d'illustration (issue #259).
-      - name: Set up Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      # Écrit public/data/hero-selection.json — l'illustration s'y réfère.
-      # Non bloquant : si ça échoue, generate_art.py reprend son heuristique.
-      #
-      # On EFFACE le fichier d'abord. Il est commité à chaque rafraîchissement,
-      # donc en cas d'échec une version PÉRIMÉE traînerait sur le disque et
-      # generate_art.py illustrerait une Une passée en croyant suivre le site —
-      # précisément le bug que cette étape corrige. Absent, le repli heuristique
-      # joue ; périmé, il ne joue pas. Mieux vaut pas de fichier qu'un vieux.
-      - name: Designate the hero headline
-        continue-on-error: true
-        run: |
-          rm -f public/data/hero-selection.json
-          npm run select-hero
-
-      - name: Generate AI art (best-effort, non-blocking)
-        id: art
-        continue-on-error: true
-        run: python scripts/generate_art.py
-
+      # L'ILLUSTRATION N'EST PLUS GÉNÉRÉE ICI. Le raffineur vitrine-art
+      # (aws-refiners) lit la Une désignée sur le site déployé
+      # (data/hero-selection.json, publié par le build — même code que le
+      # rendu, issue #259), génère l'image et la dépose sur /v1/art (R2). Le
+      # build la rapatrie via scripts/fetch_art.mjs. Ce workflow n'a donc plus
+      # besoin ni de Node, ni d'OpenAI, ni de scripts/generate_art.py.
       - name: Generate ambient music (best-effort, non-blocking)
         id: music
         continue-on-error: true
@@ -388,18 +360,9 @@ jobs:
               "$HOOK"
           fi
 
-      # Art et musique : cosmétique et fréquent. Reste dans le watchdog — on ne
+      # Musique : cosmétique et fréquent. Reste dans le watchdog — on ne
       # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
-      - name: Warn Slack if art generation failed (data still published)
-        if: steps.art.outcome == 'failure'
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine art generation failed* — data was refreshed and deployed normally; only the AI image is stale.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
-
+      # (L'illustration a son propre circuit : raffineur vitrine-art -> /v1/art.)
       - name: Warn Slack if music generation failed (data still published)
         if: steps.music.outcome == 'failure'
         run: |
