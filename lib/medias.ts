@@ -84,6 +84,27 @@ export const MEDIA_SIGLES: Record<string, string> = {
   JDM: "JdM",  // Le Journal de Montréal
 };
 
+/** Forme GÉNITIVE, pour « en Une du Devoir », « en Une de La Presse ».
+ *
+ *  Elle ne se déduit pas du libellé : « de Le Devoir » et « de Le Journal de
+ *  Montréal » sont fautifs, il faut « du Devoir » et « du Journal de Montréal ».
+ *  Même raison d'être que `MEDIA_DANS`, avec une autre préposition. */
+export const MEDIA_DE: Record<string, string> = {
+  RCI: "de Radio-Canada",
+  LAP: "de La Presse",
+  LED: "du Devoir",
+  JDM: "du Journal de Montréal",
+  TVA: "de TVA Nouvelles",
+  MG: "de la Montreal Gazette",
+  CBC: "de CBC",
+  CTV: "de CTV",
+  GAM: "du Globe and Mail",
+  NP: "du National Post",
+  GN: "de Global News",
+  CNN: "de CNN",
+  FXN: "de Fox News",
+};
+
 export const MEDIA_ORDER: string[] = [
   "LED", "RCI", "LAP",
   TOUS_MEDIAS,

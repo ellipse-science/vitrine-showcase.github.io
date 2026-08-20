@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { ShareButton } from "@/components/interactive/ShareButton";
@@ -191,10 +191,13 @@ export function PartisCouvertureClient({
 
       {/* Le palmarès EN TÊTE du module : le mouvement d'abord, l'examen
           ensuite, ce qui est l'ordre dans lequel on lit un classement. */}
-      {!data.indisponible && !view.chart.tooShort && (
+      {!data.indisponible && !data.ranges[range].chart.tooShort && (
         <section className="partis-course partis-course--tete">
           <p className="course-tete">Le palmarès, en minutes de Une</p>
-          <Palmares chart={view.chart} rows={view.rows} />
+          {/* Le palmarès lit TOUJOURS l'agrégat, quelle que soit la position
+              du fader : c'est une course entre partis, pas entre médias. Le
+              curseur ne commande que le vumètre. */}
+          <Palmares chart={data.ranges[range].chart} rows={data.ranges[range].rows} />
         </section>
       )}
 
@@ -244,6 +247,7 @@ export function PartisCouvertureClient({
             onPcqTap={handlePcqTap}
             indisponible={data.indisponible}
             saillanceRang={saillanceRang}
+            media={media}
           />
         </div>
 
@@ -386,6 +390,7 @@ function Console({
   onPcqTap,
   indisponible,
   saillanceRang,
+  media,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -397,11 +402,22 @@ function Console({
   indisponible: Indisponibilite | null;
   /** Saillance de la Une, 1 → 6. Pilote le tempo, rien d'autre. */
   saillanceRang: number;
+  /** Le média affiché, ou `TOUS_MEDIAS`. Le titre le nomme. */
+  media: string;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
   // canal reste à sa place, et seul son niveau change — c'est ce qui rend la
   // comparaison entre médias lisible.
+  /* Le titre nomme la SOURCE : bouger le fader change ce qu'on mesure, et un
+     titre qui ne bouge pas laisse croire qu'on lit encore l'ensemble.
+     La forme génitive ne se déduit pas du libellé — « de Le Devoir » est
+     fautif — d'où la table `MEDIA_DE`. */
+  const titre =
+    media === TOUS_MEDIAS
+      ? "Part de temps passé en Une de l\u2019actualité"
+      : `Part de temps passé en Une ${MEDIA_DE[media] ?? `de ${media}`}`;
+
   const ordre = new Map(reference.map((r, i) => [r.key, i]));
   const tranches = rows
     .slice()
@@ -443,7 +459,7 @@ function Console({
     >
       {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
           l'instrument, il ne l'introduit pas. */}
-      <p className="console-tete">Part de temps passé en Une de l&apos;actualité</p>
+      <p className="console-tete">{titre}</p>
       <div className="console-corps">
         <ol className="console-tranches" style={{ ["--n" as string]: tranches.length }}>
           {tranches.map((row, i) => (
