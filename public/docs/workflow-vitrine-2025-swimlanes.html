@@ -499,12 +499,16 @@
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 13px;
+            /* Les noms qualifiés (vitrine_datamart.polimetre_plus_identification)
+               dépassent la largeur d'un téléphone : sans ceci, la modale déborde. */
+            overflow-wrap: anywhere;
         }
 
         .modal-content p {
             line-height: 1.6;
             color: #555;
             margin-bottom: 15px;
+            overflow-wrap: anywhere;
         }
 
         .close-modal {
@@ -548,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 19 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar; horaires et état vérifiés contre <code>refiners.ts</code>; ajout des deux fonctions secondes qui partagent l'image de leur raffineur principal, soit le rapport hebdomadaire du sonar et l'identification de <code>polimetre-plus</code>, dont la méthode servie est désormais l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 20 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar; horaires et état vérifiés contre <code>refiners.ts</code>; ajout des deux fonctions secondes qui partagent l'image de leur raffineur principal, soit le rapport hebdomadaire du sonar et l'identification de <code>polimetre-plus</code>, dont la méthode servie est désormais l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1268,7 +1272,7 @@
                 },
                 'polimetre_plus': {
                     title: 'Table: polimetre_plus',
-                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification par IA (classifieur + LLM Gemma), lue depuis la table polimetre_plus_identification ; repli regex publié comme tel (colonne identification_method) ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
+                    description: 'Promesses CAQ les plus saillantes de la semaine et leur progression, produites par polimetre-plus.R. Identification par IA (classifieur + LLM Gemma), lue depuis la table polimetre_plus_identification ; repli regex publié comme tel dans la colonne identification_method de CETTE table du datamart DEV — colonne non projetée dans le JSON servi au site, donc invisible pour le visiteur ; libellés courts et résumés de couverture générés par LLM (best-effort, NA si indisponible).',
                     columns: [
                         '📍 IDENTIFIANTS:',
                         'country_id - Pays (QC)',
@@ -1279,6 +1283,7 @@
                         'pledge_en - Libellé EN de la promesse',
                         'verdict - Verdict de réalisation (source Polimètre)',
                         'category - Catégorie de la promesse',
+                        'identification_method - Méthode ayant identifié la semaine (ia | regex) — colonne du datamart, non reprise dans le JSON servi au site',
                         '',
                         '📈 SAILLANCE + PROGRESSION:',
                         'n_mentions - Nombre d\'articles mentionnant la promesse',
@@ -1814,7 +1819,7 @@
                 },
                 'polimetre-plus': {
                     title: 'Refiner: polimetre-plus.R',
-                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification par IA : lit vitrine_datamart.polimetre_plus_identification (produite par l\'étage polimetre-plus-identification, 6x/jour par bloc de 4 h) au lieu d\'appeler le LLM ; le regex reste le repli, et la méthode retenue est publiée par ligne (identification_method) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
+                    description: 'Identifie les promesses CAQ les plus saillantes et en plus forte progression hebdomadaire dans la couverture Radar+. Identification par IA : lit vitrine_datamart.polimetre_plus_identification (produite par l\'étage polimetre-plus-identification, 6x/jour par bloc de 4 h) au lieu d\'appeler le LLM ; le regex reste le repli, et la méthode retenue est publiée par ligne dans le datamart DEV (colonne identification_method de la table polimetre_plus, absente du JSON servi au site) ; enrichissement LLM best-effort (libellés courts + résumés de couverture).',
                     details: [
                         '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - r-media-headlines + liste des promesses CAQ (mastersheet_Promesses) + regex validées (feuille publique « Validation ») + <span class="badge-dev">DEV</span>/datamarts - polimetre_plus_identification',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - Table polimetre_plus',
