@@ -537,11 +537,16 @@ function Deck({
             <span className="deck-jog-cap deck-jog-cap--vide" />
           </span>
         </div>
-        <p className="deck-vide-txt">
-          {indisponible
-            ? "Mesure suspendue"
-            : `Pas de ${rang}${rang === 1 ? "er" : "e"} parti audible`}
-        </p>
+        {/* Rien sous le deck quand la mesure est suspendue : l'avis en tête du
+            module le dit déjà, et le répéter quatre fois n'ajoutait rien — sinon
+            un texte qui débordait de son cadre. Le cas du deck VIDE, lui, garde
+            son mot : il dit pourquoi ce rang n'a personne alors que les autres
+            en ont. */}
+        {!indisponible && (
+          <p className="deck-vide-txt">
+            {`Pas de ${rang}${rang === 1 ? "er" : "e"} parti audible`}
+          </p>
+        )}
       </div>
     );
   }
