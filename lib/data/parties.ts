@@ -331,7 +331,7 @@ export type ChartView = {
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
   /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
-  raison?: "court" | "sans-detail-horaire";
+  raison?: "court" | "sans-detail-horaire" | "detail-horaire-absent";
   /** Graduations de l'axe des minutes, pour le palmarès. */
   yLabels: { label: string; y: number }[];
 };
@@ -1493,9 +1493,19 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     // la table intra-journée n'étant PAS ventilée par média.
     //
     // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
+    // `chartJour` vaut `undefined` pour une vue PAR MÉDIA (l'appelant ne le
+    // passe pas) et `null` pour l'agrégat quand la table intra-journée manque.
+    // Les deux cas ne se disent pas de la même façon : dans le premier le
+    // détail existe ailleurs, dans le second il n'existe pas encore.
     chart:
       range === "today"
-        ? chartJour ?? { ...buildChart(stats, dates, range), tooShort: true, raison: "sans-detail-horaire" as const }
+        ? chartJour ?? {
+            ...buildChart(stats, dates, range),
+            tooShort: true,
+            raison: chartJour === null
+              ? ("detail-horaire-absent" as const)
+              : ("sans-detail-horaire" as const),
+          }
         : buildChart(stats, dates, range),
   };
 }
@@ -1631,13 +1641,18 @@ export async function loadParties(
     // de casser tout le module.
     // Le croisement parti × enjeu, lui aussi FACULTATIF : la table date
     // d'aws-refiners#355 et les archives antérieures n'en ont pas.
-    const enjeuxRaw = await fs
-      .readFile(path.join(DATA_DIR, "day", "parties_issues_salient_shadow_day.json"), "utf8")
-      .catch(() => null);
-
-    const intradayRaw = await fs
-      .readFile(path.join(DATA_DIR, "day", "provincial_parties_salient_shadow_intraday.json"), "utf8")
-      .catch(() => null);
+    // ⚠️ Ces deux tables passent par `lireJeu`, comme les trois principales, et
+    // NON par un `fs.readFile` direct. C'est ce qui les fait venir de l'API.
+    // Lues sur le disque, elles étaient introuvables hors fixtures : le dossier
+    // `public/data/refined/` ne contient que ce que `fetch_data.R` y écrit, et
+    // ces deux-là n'y sont pas. En production, l'onglet « Jour » perdait donc sa
+    // courbe et les pochettes annonçaient « Aucun enjeu identifié », sans que
+    // rien ne le signale — le `.catch(() => null)` avalait l'absence.
+    const enjeuxRaw = await lireJeu("day", "parties_issues_salient_shadow_day.json").catch(() => null);
+    const intradayRaw = await lireJeu(
+      "day",
+      "provincial_parties_salient_shadow_intraday.json",
+    ).catch(() => null);
 
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;

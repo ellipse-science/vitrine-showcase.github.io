@@ -976,7 +976,9 @@ function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
       <p className="course-vide">
         {chart.raison === "sans-detail-horaire"
           ? "Le détail heure par heure n'existe que pour l'ensemble des médias. Ramenez le curseur au centre pour suivre la journée."
-          : "Une seule journée de données. Pas encore de tendance à lire."}
+          : chart.raison === "detail-horaire-absent"
+            ? "Le détail heure par heure n'est pas encore publié pour cette période."
+            : "Une seule journée de données. Pas encore de tendance à lire."}
       </p>
     );
   }
