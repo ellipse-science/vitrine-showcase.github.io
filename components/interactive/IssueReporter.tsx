@@ -50,7 +50,18 @@ async function compressToBase64(file: File): Promise<string | null> {
   })
 }
 
+// RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20, avant l'envoi aux
+// médias) : le signalement-vers-issue est un outil d'équipe, pas une porte
+// publique. L'enveloppe garde les hooks inconditionnels dans le composant
+// interne (règle des hooks) ; même signal d'environnement que app/robots.ts.
+const isProd = process.env.NEXT_PUBLIC_SITE_ENV === 'prod'
+
 export function IssueReporter() {
+  if (isProd) return null
+  return <IssueReporterInner />
+}
+
+function IssueReporterInner() {
   const [uiState, setUiState] = useState<UIState>('idle')
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const [reportCtx, setReportCtx] = useState<ReportContext>({ section: '', elementContext: '' })
