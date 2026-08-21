@@ -1,5 +1,11 @@
 [
   {
+    "pr": 547,
+    "date": "2026-08-21T18:55:10Z",
+    "note": "Un jeu caché accessible depuis le module des partis politiques est retiré du site public. Il reste disponible sur notre environnement de travail.",
+    "version": "2.26.0-beta.1"
+  },
+  {
     "pr": 550,
     "date": "2026-08-21T18:52:03Z",
     "note": "Les images partagées sur les réseaux sociaux ont été redessinées aux couleurs du site, et il est maintenant possible de partager un module tel qu'il était à une édition passée : l'image reprend alors les chiffres de ce moment-là, pas ceux du jour.",
