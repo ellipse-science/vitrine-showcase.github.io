@@ -326,14 +326,15 @@ describe("symbolPositions", () => {
   });
 });
 
-// Pré-filtre partagé par le loader du site ET par scripts/select_hero.ts (qui
-// désigne la Une à illustrer). Il était recopié trois fois dans le loader et une
+// Pré-filtre partagé par le loader du site ET par la route
+// app/data/hero-selection.json (qui publie la Une à illustrer pour le
+// raffineur vitrine-art). Il était recopié trois fois dans le loader et une
 // quatrième en Python : c'est cette duplication qui a laissé l'illustration
 // diverger du hero (#259). Une seule implémentation, donc des tests dessus.
-// API publique consommée par scripts/select_hero.ts, qui alimente l'illustration
-// (#259). Elle a remplacé un accès à `__test__` — documenté comme réservé aux
-// tests — pour qu'un renommage interne du loader ne puisse pas casser en silence
-// la synchro illustration ↔ hero (retour Copilot).
+// API publique consommée par app/data/hero-selection.json/route.ts, qui
+// alimente l'illustration (#259). Elle a remplacé un accès à `__test__` —
+// documenté comme réservé aux tests — pour qu'un renommage interne du loader
+// ne puisse pas casser en silence la synchro illustration ↔ hero.
 describe("selectHeroFromRawEvents (API de sélection du hero, #259)", () => {
   it("désigne la Une n°1 = celle qui a la plus forte saillance cumulée", () => {
     const hero = selectHeroFromRawEvents([
