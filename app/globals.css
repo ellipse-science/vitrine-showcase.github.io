@@ -7540,6 +7540,14 @@
     .ppl-promise.header div:last-child { display: none; }
     .ppl-promise,
     .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+    /* Mode « campagne » : la troisième colonne RESTE. La tendance est un
+       ornement qu'on peut retirer sur mobile ; le parti est l'information même
+       du mode — la cacher viderait la liste de son sujet. La colonne est
+       resserrée à 44px (le sigle mesure ~36px) plutôt que supprimée, et son
+       en-tête revient avec elle. */
+    .polimeter-plus--neuves .ppl-promise,
+    .polimeter-plus--neuves .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr) 44px; }
+    .polimeter-plus--neuves .ppl-promise.header div:last-child { display: block; }
     /* Les marges du bouton « Découvrir » compensaient les colonnes rang +
        tendance ; sans tendance, retrait simple. */
     .ppl-discover-wrap { margin-left: 10px; margin-right: 10px; }

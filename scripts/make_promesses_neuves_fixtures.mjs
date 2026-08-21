@@ -21,7 +21,8 @@
 //
 // Le jeu couvre à dessein les cas limites que la donnée réelle ne fournit pas :
 // les CINQ partis, un libellé très long, une promesse sans article, une à fort
-// écho, une avec un sigle de parti inconnu.
+// écho. Le cas « parti hors des cinq suivis » n'y est PAS — voir la note en fin
+// de liste.
 //
 // Usage :
 //   node scripts/make_promesses_neuves_fixtures.mjs
@@ -92,12 +93,17 @@ const PROMESSES = [
    "Le Parti Québécois rendra gratuit le transport collectif pour les personnes de 65 ans et plus dans l'ensemble des sociétés de transport du Québec.",
    "Rendre le transport gratuit à 65 ans et plus", 6, 1, []],
 
-  // Parti hors des cinq suivis : la pastille doit rester NEUTRE, jamais
-  // emprunter la couleur d'un autre parti (cf. partiKeyFromId).
-  ["PVQ",
-   "Le Parti vert du Québec instaurera une redevance kilométrique sur le transport routier de marchandises à compter de 2028.",
-   "Instaurer une redevance kilométrique sur le camionnage", 2, 2,
-   [article("RCI", "Transport de marchandises | une redevance proposée")]],
+  // PAS de ligne « parti hors des cinq suivis ». `partiKeyFromId` renvoie null
+  // pour un party_id inconnu et le module rend alors une pastille neutre
+  // (`.ppl-parti-badge--inconnu`) — mais aucune donnée ne peut produire cet état
+  // aujourd'hui : les extracteurs d'`a-qc-press-releases` couvrent exactement
+  // CAQ, PLQ, QS, PQ, PCQ (aws-infra/src/extractors/a-qc-press-releases/), et le
+  // party_id vient du communiqué, jamais des médias qui le reprennent. C'est un
+  // filet pour une désynchronisation amont/aval — un extracteur ajouté sans mise
+  // à jour de PARTIS_SUIVIS et de PARTY_COLORS, ce que le raffineur signale par
+  // un log d'alerte (runtime.R). Une fixture pour ce cas devrait inventer un
+  // parti émetteur qu'on ne collecte pas : elle ferait croire à une couverture
+  // qui n'existe pas.
 ];
 
 // Le raffineur publie DEUX fenêtres. La règle d'appartenance étant l'écho
