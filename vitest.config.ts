@@ -9,6 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    // .tsx inclus : certains modules ne se prouvent qu'au RENDU — la pastille de
+    // parti du Polimètre+ n'existe que dans le balisage, pas dans le chargeur.
+    include: ["tests/**/*.test.{ts,tsx}"],
   },
 });
