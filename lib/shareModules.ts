@@ -65,6 +65,10 @@ export type ShareModuleStat = {
   kicker?: string;
   // Lead synthétique (UneEvent.excerpt) affiché sous le titre pour ce même cas.
   excerpt?: string;
+  /** Niveau public de saillance de la Une, réservé au module 1. */
+  salienceLabel?: string;
+  /** Rang calibré 1–6, utilisé pour reprendre la couleur du badge public. */
+  salienceRank?: number;
 };
 
 export type ShareModuleContent = {
@@ -178,6 +182,8 @@ export async function getShareModuleContent(
           excerpt: top.excerpt ?? undefined,
           kicker: top.issueFr,
           color: top.issueColor,
+          salienceLabel: top.saillanceLabel,
+          salienceRank: top.saillanceRank,
         },
       };
     }
