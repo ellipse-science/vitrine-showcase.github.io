@@ -1,5 +1,11 @@
 [
   {
+    "pr": 551,
+    "date": "2026-08-21T19:34:56Z",
+    "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
+    "version": null
+  },
+  {
     "pr": 452,
     "date": "2026-08-21T19:22:40Z",
     "note": "La page Méthodologie décrit maintenant la façon dont le module des promesses repère une promesse dans un article : un modèle s'en charge, et le repérage par règles sert de solution de repli. La page précise aussi qu'une vue d'un mois peut réunir des semaines repérées par l'une ou l'autre méthode.",
