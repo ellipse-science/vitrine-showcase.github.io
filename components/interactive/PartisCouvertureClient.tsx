@@ -26,6 +26,13 @@ const SANS_ENJEU = "Aucun enjeu identifié";
  *  limite de la mesure plutôt qu'inventer un fait sur la couverture. */
 const ENJEU_NON_VENTILE = "Non ventilé par média";
 
+// Doom RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20) : l'easter egg
+// des partis reste un jeu d'équipe, pas une porte du site public. Même signal
+// d'environnement que `app/robots.ts`, `lib/data/parties.ts` et les retraits
+// de #544 — un seul signal, pas de divergence. Flappy Enjeux n'est PAS visé :
+// il reste accessible en prod, c'est le seul jeu autorisé en ligne.
+const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
 /** Article défini de chaque parti — « LA CAQ », « LE PQ », mais « Québec
@@ -109,6 +116,7 @@ export function PartisCouvertureClient({
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
+    if (isProd) return;
     const now = performance.now();
     if (now - pcqTapRef.current.lastTime < 1500) {
       pcqTapRef.current.count += 1;
@@ -146,7 +154,8 @@ export function PartisCouvertureClient({
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
 
-  if (showDoom) {
+  // La garde de PROD vient de main (#547) : l'easter egg reste sur dev.
+  if (showDoom && !isProd) {
     return <DoomGame onExit={() => setShowDoom(false)} />;
   }
 
