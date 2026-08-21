@@ -1,5 +1,11 @@
 [
   {
+    "pr": 552,
+    "date": "2026-08-21T18:44:44Z",
+    "note": "Les cartes de l’Assemblée distinguent désormais les parlementaires homonymes et conservent le portrait officiel des membres qui ont quitté leur siège pendant la législature.",
+    "version": "2.25.0-beta.2"
+  },
+  {
     "pr": 545,
     "date": "2026-08-21T18:28:57Z",
     "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
