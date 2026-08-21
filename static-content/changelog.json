@@ -1,5 +1,11 @@
 [
   {
+    "pr": 545,
+    "date": "2026-08-21T18:28:57Z",
+    "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
     "pr": 541,
     "date": "2026-08-21T15:44:25Z",
     "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
