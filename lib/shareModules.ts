@@ -3,12 +3,12 @@
 // balises Open Graph/Twitter, faute de quoi les réseaux sociaux ignorent le
 // fragment #module et affichent tous la carte globale du site (#209).
 
-import { loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
+import { listEditions, loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
 import { loadParties } from "@/lib/data/parties";
 import { loadAssemblee } from "@/lib/data/assemblee";
 import { loadPolimetre } from "@/lib/data/polimetre";
 
-export const SHARE_MODULE_SLUGS = [
+const BASE_SHARE_MODULE_SLUGS = [
   "une-des-unes",
   "deux-solitudes",
   "partis-et-couverture",
@@ -17,7 +17,20 @@ export const SHARE_MODULE_SLUGS = [
   "polimetre-plus",
 ] as const;
 
-export type ShareModuleSlug = (typeof SHARE_MODULE_SLUGS)[number];
+export type ShareModuleSlug = (typeof BASE_SHARE_MODULE_SLUGS)[number];
+
+// Les modules Partis et Assemblée sont temporairement masqués en production
+// (#544). Ne générons pas de routes de partage vers leurs ancres vides : la
+// surface partageable doit suivre le même signal que les sections elles-mêmes.
+const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = [
+  "partis-et-couverture",
+  "assemblee-nationale",
+];
+
+export const SHARE_MODULE_SLUGS: readonly ShareModuleSlug[] =
+  process.env.NEXT_PUBLIC_SITE_ENV === "prod"
+    ? BASE_SHARE_MODULE_SLUGS.filter((slug) => !PROD_HIDDEN_SHARE_MODULES.includes(slug))
+    : BASE_SHARE_MODULE_SLUGS;
 
 export function isShareModuleSlug(value: string): value is ShareModuleSlug {
   return (SHARE_MODULE_SLUGS as readonly string[]).includes(value);
@@ -39,6 +52,13 @@ export type ShareModuleStat = {
   // (couleur du parti en tête, de l'enjeu dominant...) quand elle existe, jamais
   // inventée. Absente ⇒ le rendu retombe sur le cordovan par défaut.
   color?: string;
+  // `context` COMPLÈTE grammaticalement `label` au lieu d'être une phrase
+  // autonome : l'Assemblée se lit « 23 % » + « des interventions portent
+  // sur » + « Terres publiques et agriculture (CAQ) ». Les deux morceaux
+  // doivent rester soudés dans la légende du chiffre. Sans ce drapeau,
+  // l'affiche renvoyait `context` dans le cadre du bas et publiait une
+  // légende tronquée sur la préposition (« …portent sur », puis rien).
+  contextCompletesLabel?: boolean;
   // Petite étiquette au-dessus du titre (l'enjeu CAP) — une-des-unes affiche
   // le titre en gros plutôt qu'un chiffre (c'est une manchette, pas une
   // statistique) ; les générateurs d'image branchent sur sa présence.
@@ -50,6 +70,10 @@ export type ShareModuleStat = {
 export type ShareModuleContent = {
   title: string;
   description: string;
+  // Accroche d'une ligne sous le titre de l'affiche de partage
+  // (lib/shareCardTemplate.tsx), rendue en capitales espacées. Sans verbe
+  // conjugué : c'est une étiquette de rubrique, pas une phrase.
+  subtitle: string;
   stat: ShareModuleStat;
 };
 
@@ -59,45 +83,93 @@ export type ShareModuleContent = {
 // éditorial stable du module.
 const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
   "une-des-unes": {
-    title: "Les Unes du jour",
+    title: "La Une des Unes",
     description: "Les nouvelles qui font la Une des médias québécois et canadiens en ce moment.",
+    subtitle: "Ce qui domine l'actualité",
     stat: { value: "#1", label: "à la Une des médias québécois" },
   },
   "deux-solitudes": {
     title: "Deux solitudes?",
     description: "La couverture médiatique diverge-t-elle entre le Québec et le Canada?",
+    subtitle: "Québec et Canada, deux agendas",
     stat: { value: "2", label: "régions, une seule actualité qui diverge" },
   },
   "partis-et-couverture": {
     title: "De quel parti parle-t-on dans les médias?",
     description: "Saillance et ton de la couverture médiatique de chaque parti québécois.",
+    subtitle: "Saillance et ton, parti par parti",
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
     title: "De quoi parle-t-on?",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
+    subtitle: "Les enjeux qui dominent",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
   },
   "assemblee-nationale": {
     title: "L'alignement de l'Assemblée nationale",
     description: "Répartition des enjeux, ton et richesse lexicale des débats parlementaires.",
-    stat: { value: "125", label: "député·e·s scrutés à chaque séance" },
+    subtitle: "Ce que disent les décideurs",
+    stat: { value: "116", label: "député.es scrutés à chaque séance" },
   },
   "polimetre-plus": {
     title: "Polimètre+ : promesses sous la loupe médiatique",
     description: "Les promesses électorales de la CAQ (2022), classées selon leur écho médiatique.",
+    subtitle: "Les promesses au suivi",
     stat: { value: "2022", label: "les promesses électorales de la CAQ, passées au crible" },
   },
 };
 
-export async function getShareModuleContent(slug: ShareModuleSlug): Promise<ShareModuleContent> {
+// ÉDITIONS PASSÉES (#265, sur les rails de #434). Une carte de partage doit
+// pouvoir montrer la Vitrine TELLE QU'ELLE ÉTAIT : partager le module depuis
+// /edition/2026-08-10T07/ et publier le chiffre d'aujourd'hui produirait une
+// carte qui contredit la page qu'elle annonce.
+//
+// Les deux coordonnées ne sont pas interchangeables, et c'est une propriété de
+// la DONNÉE : les modules 1, 2 et 4 sortent de l'instantané 4 h et se rejouent
+// au BLOC près (`key`) ; les modules 3, 5 et 6 sont publiés au jour ou à la
+// semaine et se rejouent à leur cadence (`navDateIso`). C'est exactement le
+// découpage qu'applique déjà app/edition/[key]/page.tsx.
+export type ShareEdition = {
+  /** Clé de bloc, aussi segment d'URL (« 2026-08-10T07 »). */
+  key: string;
+  /** Jour de publication de l'édition, pour les modules au jour/semaine. */
+  navDateIso: string;
+  /** « Édition du matin ». */
+  label: string;
+  /** « mardi 19 août 2026 ». */
+  dateLabel: string;
+};
+
+// Les éditions PARTAGEABLES sont exactement celles que le site expose déjà
+// (`listEditions`), jamais une liste parallèle : une carte pointant vers une
+// édition qu'on ne peut pas ouvrir serait un lien mort. La fenêtre est bornée
+// par l'instantané roulant, donc le nombre de cartes à générer l'est aussi.
+export async function listShareEditions(): Promise<ShareEdition[]> {
+  const editions = await listEditions();
+  return editions.map(({ key, navDateIso, label, dateLabel }) => ({ key, navDateIso, label, dateLabel }));
+}
+
+/** Pied de carte d'archive : « Édition du matin, mardi 19 août 2026 ». */
+export function shareEditionLabel(edition: ShareEdition): string {
+  return `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
+}
+
+export async function getShareModuleContent(
+  slug: ShareModuleSlug,
+  /** Absent = édition courante, exactement comme les loaders. */
+  edition?: ShareEdition,
+): Promise<ShareModuleContent> {
   const fallback = STATIC_CONTENT[slug];
+  const editionKey = edition?.key;
+  const asOfIso = edition?.navDateIso;
 
   if (slug === "une-des-unes") {
-    const top = (await loadHeadlineEvents())?.top3[0];
+    const top = (await loadHeadlineEvents(editionKey))?.top3[0];
     if (top) {
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: top.title,
         stat: {
           value: `${top.qcOutletCount}/${top.totalQcOutlets}`,
@@ -113,7 +185,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "deux-solitudes") {
-    const data = await loadHeadlineEvents();
+    const data = await loadHeadlineEvents(editionKey);
     if (data) {
       // La carte reprend le grand chiffre du module (écart à l'habituel), et
       // pas un niveau absolu dans un vocabulaire qui basculait selon la
@@ -123,6 +195,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const { convPct, habitualConvPct, relDiffPct, relLabel } = data.solitudes;
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description:
           `${relDiffPct} % ${relLabel}. Les médias québécois et canadiens consacrent ` +
           `aujourd'hui ${convPct} % de leur attention aux mêmes histoires ` +
@@ -138,7 +211,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "partis-et-couverture") {
-    const parties = await loadParties();
+    const parties = await loadParties(asOfIso);
     const leader = parties?.ranges.today.rows[0];
     // `indisponible` est décisif ICI en particulier : une carte de partage ne
     // peut pas porter le bandeau qui nuance le module, et elle parle au présent
@@ -159,6 +232,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
             : ["L'important,", "c'est qu'on en parle."];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${leader.sovPct} %`,
@@ -173,13 +247,14 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "enjeux-saillants") {
-    const tiles = (await loadTreemap())?.day.tiles;
+    const tiles = (await loadTreemap(editionKey, asOfIso))?.day.tiles;
     const top = tiles?.[0];
     const total = tiles?.reduce((sum, t) => sum + t.score, 0) ?? 0;
     if (top && total > 0) {
       const sharePct = Math.round((top.score / total) * 100);
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${sharePct} %`,
@@ -193,7 +268,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "assemblee-nationale") {
-    const row = (await loadAssemblee())?.periods.session.rows[0];
+    const row = (await loadAssemblee(asOfIso))?.periods.session.rows[0];
     const topIssue = row?.enjeuStack?.[0];
     if (row && !row.inShadow && topIssue) {
       // `title` porte le nom complet de l'enjeu (« Gouvernements et
@@ -203,11 +278,13 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const issueFullName = topIssue.title.split(" · ")[0];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${topIssue.widthPct} %`,
           label: "des interventions à l'Assemblée nationale portent sur",
           context: `${issueFullName} (${row.label})`,
+          contextCompletesLabel: true,
           color: topIssue.color,
         },
       };
@@ -216,7 +293,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
   }
 
   if (slug === "polimetre-plus") {
-    const polimetre = await loadPolimetre();
+    const polimetre = await loadPolimetre(asOfIso);
     const monthPromises = polimetre?.ranges.month;
     const verdicted = monthPromises?.filter((p) => p.verdict !== null) ?? [];
     if (verdicted.length > 0) {
@@ -229,6 +306,7 @@ export async function getShareModuleContent(slug: ShareModuleSlug): Promise<Shar
       const topPromise = polimetre?.ranges.week[0];
       return {
         title: fallback.title,
+        subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
           value: `${pct} %`,

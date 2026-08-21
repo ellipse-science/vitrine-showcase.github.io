@@ -7314,6 +7314,19 @@
   outline: none;
 }
 
+/* Le bouton vit au bord droit des en-têtes de module. À 375 px, centrer le
+   panneau sur ce bouton le poussait de 10,5 px hors écran. Sur téléphone, on
+   aligne donc son bord droit sur celui du bouton : les trois réseaux et
+   « Copier le lien » restent entièrement atteignables au toucher. Cette règle
+   suit les styles de base pour gagner la cascade (verification-responsive). */
+@media (max-width: 480px) {
+  .share-panel {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+}
+
 /* ============================================================
    SIGNALER UN PROBLÈME — bouton flottant, mobile seulement.
    Sur desktop, le clic droit (contextmenu) suffit. Sur iOS Safari,

@@ -92,12 +92,16 @@ function shareTitle(data: PartiesData): string {
 export function PartisCouvertureClient({
   data,
   saillanceRang = 0,
+  editionKey,
 }: {
   data: PartiesData;
   /** Rang de saillance de la Une du moment, 1 (très faible) → 6
    *  (exceptionnelle), 0 si la donnée manque. Ne pilote QUE le tempo des
    *  vumètres : aucune lecture n'en dépend. */
   saillanceRang?: number;
+  /** L'édition affichée, pour la carte de partage du module (venu de main
+   *  avec #partage-cartes). Absent sur l'accueil. */
+  editionKey?: string;
 }) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
@@ -166,7 +170,7 @@ export function PartisCouvertureClient({
                 </span>
               ))}
             </div>
-            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" />
+            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" editionKey={editionKey} />
           </div>
         </div>
       </div>

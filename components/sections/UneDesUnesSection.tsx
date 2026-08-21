@@ -414,7 +414,7 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
           </span>
           <span className="section-right">
             <span className="section-date">{editionLabel}</span>
-            <ShareButton title={sectionTitle} anchor="une-des-unes" />
+            <ShareButton title={sectionTitle} anchor="une-des-unes" editionKey={editionKey} />
           </span>
         </div>
 
