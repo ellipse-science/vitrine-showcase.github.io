@@ -3185,13 +3185,38 @@
     font-size: 28px;
     line-height: 1;
   }
-  .casier-bilan { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+  /* Le bilan vit dans le battant GAUCHE, qui ne fait que la moitié du casier.
+     À quatre partis le casier est assez large pour qu'un nombre à sept chiffres
+     y tienne au corps 19 px ; à cinq il tombe à 171 px, le battant à 63 px de
+     contenu, et « 6 578 506 » en réclame 83. Le nombre était tronqué.
+     Le PCQ n'apparaissant que sur la législature complète, le cas ne s'est
+     présenté qu'une fois l'historique 2022-2026 rattrapé.
+     On dimensionne donc le nombre d'après la largeur RÉELLE du bilan plutôt que
+     d'après un nombre de partis présumé : la règle tient aussi bien à trois
+     partis qu'à six, sans média-requête à rallonge. */
+  .casier-bilan {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    /* `container-type: inline-size` retire le dimensionnement par le contenu :
+       sans largeur imposée, le bilan du battant droit (« 83 DÉPUTÉ.ES »)
+       s'effondrait à zéro. On l'étire donc explicitement sur la largeur du
+       battant, qui est la mesure dont on veut dépendre de toute façon. */
+    align-self: stretch;
+    container-type: inline-size;
+  }
   .casier-bilan b {
     display: block;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 900;
-    font-size: 19px;
+    /* Mesuré : « 6 578 506 » occupe environ 4,7 fois son corps en largeur, donc
+       il tient tant que le corps reste sous ~21 % de la largeur du bilan. 20 %
+       laisse une marge, et le plancher couvre le cas le plus serré (cinq partis
+       sur un écran étroit) avant que la grille ne repasse à deux colonnes. */
+    font-size: clamp(10px, 20cqw, 19px);
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
   .casier-bilan i {
     display: block;
@@ -3698,7 +3723,10 @@
     .casier-dedans .bloc-chiffre,
     .casier-dedans .dedans-enjeu:nth-of-type(3) { display: none; }
     .dedans-vedette { font-size: 14px; }
-    .casier-bilan b { font-size: 16px; }
+    /* Plus de corps fixe ici : le nombre se dimensionne d'après la largeur du
+       bilan (voir `clamp(... 20cqw ...)`), ce qui couvre aussi la grille 2 × 2.
+       Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
+       « 6 578 506 » d'un pixel. */
     .casier-battant { padding: 9px 8px; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
