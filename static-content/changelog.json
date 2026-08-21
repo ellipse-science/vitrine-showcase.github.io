@@ -1,5 +1,35 @@
 [
   {
+    "pr": 547,
+    "date": "2026-08-21T18:55:10Z",
+    "note": "Un jeu caché accessible depuis le module des partis politiques est retiré du site public. Il reste disponible sur notre environnement de travail.",
+    "version": "2.26.0-beta.1"
+  },
+  {
+    "pr": 550,
+    "date": "2026-08-21T18:52:03Z",
+    "note": "Les images partagées sur les réseaux sociaux ont été redessinées aux couleurs du site, et il est maintenant possible de partager un module tel qu'il était à une édition passée : l'image reprend alors les chiffres de ce moment-là, pas ceux du jour.",
+    "version": "2.26.0-beta.0"
+  },
+  {
+    "pr": 552,
+    "date": "2026-08-21T18:44:44Z",
+    "note": "Les cartes de l’Assemblée distinguent désormais les parlementaires homonymes et conservent le portrait officiel des membres qui ont quitté leur siège pendant la législature.",
+    "version": "2.25.0-beta.2"
+  },
+  {
+    "pr": 545,
+    "date": "2026-08-21T18:28:57Z",
+    "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 541,
+    "date": "2026-08-21T15:44:25Z",
+    "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
+    "version": null
+  },
+  {
     "pr": 533,
     "date": "2026-08-20T18:55:01Z",
     "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",

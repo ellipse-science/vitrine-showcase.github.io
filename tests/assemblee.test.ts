@@ -1,7 +1,33 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/assemblee";
 
-const { fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle, buildPeriodView } = __test__;
+const {
+  fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
+  buildPeriodView, buildPortraitIndex, lookupPortrait,
+} = __test__;
+
+describe("appariement des portraits", () => {
+  const portraits = buildPortraitIndex([
+    { deputy_id: "17929", nom: "Éric Girard (Groulx)", circonscription: "Groulx", circonscription_slug: "groulx" },
+    { deputy_id: "17957", nom: "Éric Girard (Lac-Saint-Jean)", circonscription: "Lac-Saint-Jean", circonscription_slug: "lac-saint-jean" },
+    { deputy_id: "17897", nom: "Pierre Fitzgibbon", circonscription: "Terrebonne", circonscription_slug: "terrebonne", asset_slug: "historique/17897" },
+  ]);
+
+  it("départage les deux Éric Girard par leur identifiant ANQ", () => {
+    expect(lookupPortrait("Eric Girard", "17929", undefined, portraits)?.circonscription).toBe("Groulx");
+    expect(lookupPortrait("Eric Girard", "17957", undefined, portraits)?.circonscription).toBe("Lac-Saint-Jean");
+  });
+
+  it("utilise la circonscription quand un ancien jeu de données n'a pas encore d'identifiant", () => {
+    expect(lookupPortrait("Éric Girard (Groulx)", undefined, undefined, portraits)?.deputy_id).toBe("17929");
+    expect(lookupPortrait("Éric Girard", undefined, "lacsaintjean", portraits)?.deputy_id).toBe("17957");
+    expect(lookupPortrait("Éric Girard", undefined, undefined, portraits)).toBeUndefined();
+  });
+
+  it("retrouve un portrait historique par identifiant stable", () => {
+    expect(lookupPortrait("Pierre Fitzgibbon", "17897", undefined, portraits)?.asset_slug).toBe("historique/17897");
+  });
+});
 
 describe("fmtDateFr", () => {
   it("formate une date ISO en français", () => {

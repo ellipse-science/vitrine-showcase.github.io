@@ -134,7 +134,15 @@ function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: st
 /* Vue « promesses de 2022 » — le module historique, inchangé. `modeSwitch` est
    l'inverseur de mode injecté par la coquille : il n'apparaît que lorsqu'il y a
    un second mode à offrir (cf. PolimetrePlusClient plus bas). */
-function PolimetreView({ data, modeSwitch }: { data: PolimetreData; modeSwitch?: ReactNode }) {
+function PolimetreView({
+  data,
+  modeSwitch,
+  editionKey,
+}: {
+  data: PolimetreData;
+  modeSwitch?: ReactNode;
+  editionKey?: string;
+}) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
   const [category, setCategory] = useState<string>("all");
@@ -217,7 +225,7 @@ function PolimetreView({ data, modeSwitch }: { data: PolimetreData; modeSwitch?:
                 </span>
               ))}
             </div>
-            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" />
+            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" editionKey={editionKey} />
           </div>
         </div>
       </div>
@@ -490,9 +498,11 @@ function formatAnnonce(iso: string): string {
 function NeuvesView({
   data,
   modeSwitch,
+  editionKey,
 }: {
   data: PromessesNeuvesData;
   modeSwitch?: ReactNode;
+  editionKey?: string;
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
   const [parti, setParti] = useState<PartiKey | "all">("all");
@@ -565,7 +575,7 @@ function NeuvesView({
                 </span>
               ))}
             </div>
-            <ShareButton title="Polimètre+ : les promesses de la campagne" anchor="polimetre-plus" />
+            <ShareButton title="Polimètre+ : les promesses de la campagne" anchor="polimetre-plus" editionKey={editionKey} />
           </div>
         </div>
       </div>
@@ -745,9 +755,11 @@ function NeuvesView({
 export function PolimetrePlusClient({
   data,
   neuves,
+  editionKey,
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
+  editionKey?: string;
 }) {
   const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
   /* Défaut = le module historique, PAS le mode neuf. Un visiteur qui revient doit
@@ -757,7 +769,7 @@ export function PolimetrePlusClient({
      Basculer le défaut, le jour où la campagne le justifie, tient en une ligne. */
   const [mode, setMode] = useState<ModeKey>("polimetre");
 
-  if (!hasNeuves) return <PolimetreView data={data} />;
+  if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
   const modeSwitch = (
     <div className="legend-toggle inline ppl-mode-switch" role="group" aria-label="Source des promesses">
@@ -784,8 +796,8 @@ export function PolimetrePlusClient({
   );
 
   return mode === "neuves" ? (
-    <NeuvesView data={neuves!} modeSwitch={modeSwitch} />
+    <NeuvesView data={neuves!} modeSwitch={modeSwitch} editionKey={editionKey} />
   ) : (
-    <PolimetreView data={data} modeSwitch={modeSwitch} />
+    <PolimetreView data={data} modeSwitch={modeSwitch} editionKey={editionKey} />
   );
 }

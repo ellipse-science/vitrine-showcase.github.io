@@ -8,9 +8,9 @@ import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertur
 // app/robots.ts et lib/data/parties.ts — un seul signal, pas de divergence.
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
-export async function PartisCouvertureSection({ asOfIso }: { asOfIso?: string } = {}) {
+export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
   if (isProd) return null;
   const data = await loadParties(asOfIso);
   if (!data) return null;
-  return <PartisCouvertureClient data={data} />;
+  return <PartisCouvertureClient data={data} editionKey={editionKey} />;
 }

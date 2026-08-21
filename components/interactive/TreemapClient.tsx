@@ -620,7 +620,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
   );
 }
 
-export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
+export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; editionKey?: string }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
   const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
@@ -698,7 +698,7 @@ export function TreemapClient({ data }: { data: TreemapAllPeriods }) {
                 Ce mois
               </span>
             </div>
-            <ShareButton title="De quoi parle-t-on?" anchor="enjeux-saillants" />
+            <ShareButton title="De quoi parle-t-on?" anchor="enjeux-saillants" editionKey={editionKey} />
           </div>
         </div>
       </div>
