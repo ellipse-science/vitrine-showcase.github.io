@@ -145,11 +145,15 @@ const FORMATS: Record<ShareCardFormat, FormatSpec> = {
     titleSize: 92,
     subtitleSize: 30,
     eyebrowSize: 24,
-    figureSize: 300,
-    figureLabelSize: 36,
-    headlineSize: 72,
-    excerptSize: 32,
-    reflectionSize: 30,
+    // Le chiffre était à 300 et sa légende à 36 : le glyphe « % » de Playfair
+    // Black écrasait tout, et la légende ressemblait à une note de bas de
+    // page. Rapport resserré — le chiffre reste le héros, la légende redevient
+    // lisible d'un coup d'œil sur un écran de téléphone.
+    figureSize: 260,
+    figureLabelSize: 54,
+    headlineSize: 84,
+    excerptSize: 34,
+    reflectionSize: 32,
     footerSize: 22,
     gap: 34,
   },
@@ -165,7 +169,15 @@ export function getShareCardFormat(format: ShareCardFormat): FormatSpec {
 // « …de 50 » en fin de ligne avec « % » seul sur la suivante.
 function fmt(text: string, max?: number): string {
   const t = text.replace(/ ([%:])/g, " $1");
-  return max !== undefined && t.length > max ? `${t.slice(0, max - 1)}…` : t;
+  if (max === undefined || t.length <= max) return t;
+  // Coupe au dernier mot ENTIER : la troncature brute publiait « à l'ap… » au
+  // milieu d'un mot, ce qui se lit comme une carte cassée plutôt que comme une
+  // citation écourtée. On ne recule pas au-delà de 70 % de la longueur visée,
+  // sinon un texte sans espace rendrait la carte presque vide.
+  const cut = t.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const kept = lastSpace > max * 0.7 ? cut.slice(0, lastSpace) : cut;
+  return `${kept.replace(/[\s,;:.\u2019\'-]+$/, "")}…`;
 }
 
 // Fleur de lys — tracé repris de `public/images/fleur-de-lys.svg`, inséré en
@@ -366,6 +378,13 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
         background: PAPER,
         fontFamily: body,
         padding: f.pad,
+        // En 9:16 les quatre blocs se répartissent le vide à parts égales
+        // (trois intervalles), au lieu de laisser une seule fosse au milieu de
+        // l'affiche. En paysage, la hauteur suffit : le bloc central garde son
+        // `flex: 1` et le reste se cale naturellement. Valeur explicite des
+        // deux côtés : Satori appelle `.trim()` sur la valeur et plante sur
+        // `undefined`.
+        justifyContent: f.stacked ? "space-between" : "flex-start",
       }}
     >
       {/* Filet de cadre — le langage de l'imprimé, repris de design_language.md §3. */}
@@ -386,16 +405,26 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
         {heading}
       </div>
 
+      {/* En 9:16, le bloc central était centré dans plus de 1300 px libres : le
+          vide se répartissait en deux bandes égales, au-dessus et au-dessous du
+          chiffre, ce qui se lit comme un défaut de rendu plutôt que comme une
+          respiration. On ancre donc le bloc sous le titre et on le referme d'un
+          filet : la marge restante tombe d'un seul côté, où elle redevient une
+          marge d'affiche. Le format paysage n'a pas ce problème (630 px de
+          haut) et garde son centrage. */}
       <div
         style={{
           display: "flex",
-          flex: 1,
+          // Pas de `flex: 1` en portrait : c'est lui qui absorbait tout le vide
+          // et le concentrait autour du chiffre.
+          flex: f.stacked ? "0 0 auto" : 1,
           position: "relative",
           flexDirection: "column",
           justifyContent: "center",
         }}
       >
         {figure}
+        {f.stacked && <div style={{ display: "flex", marginTop: f.gap * 1.2, height: 3, background: RULE }} />}
       </div>
 
       {content.reflection && (
