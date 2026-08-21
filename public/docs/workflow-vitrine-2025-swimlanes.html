@@ -1283,7 +1283,7 @@
                         'pledge_en - Libellé EN de la promesse',
                         'verdict - Verdict de réalisation (source Polimètre)',
                         'category - Catégorie de la promesse',
-                        'identification_method - Méthode ayant identifié la semaine (ia | regex) — colonne du datamart, non reprise dans le JSON servi au site',
+                        'identification_method - Provenance de l\'identification, publiée par ligne : regex, ia, ou regex+ia (mode hybride, activable par PROMISE_ID_METHOD dans le payload aws-infra sans redéploiement d\'image), avec le suffixe _partiel (ia_partiel, regex+ia_partiel) quand le volet IA n\'a pas examiné tous les paragraphes retenus — colonne du datamart, non reprise dans le JSON servi au site',
                         '',
                         '📈 SAILLANCE + PROGRESSION:',
                         'n_mentions - Nombre d\'articles mentionnant la promesse',
