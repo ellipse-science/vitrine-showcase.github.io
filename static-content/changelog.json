@@ -1,5 +1,11 @@
 [
   {
+    "pr": 541,
+    "date": "2026-08-21T15:44:25Z",
+    "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
+    "version": null
+  },
+  {
     "pr": 533,
     "date": "2026-08-20T18:55:01Z",
     "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",
