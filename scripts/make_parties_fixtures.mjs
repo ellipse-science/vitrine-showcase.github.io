@@ -49,6 +49,15 @@ const TODAY = process.env.VITRINE_FIXTURES_TODAY
 
 const PARTIES = ["CAQ", "PQ", "PLQ", "QS", "PCQ"];
 
+// Minutes de Une consacrées aux partis sur une journée, tous partis confondus.
+// Ordre de grandeur : quelques articles restés une à deux heures en Une. Sert à
+// donner des `total_raw_score` réalistes — le palmarès s'exprime en minutes, et
+// des valeurs absurdes s'y verraient tout de suite.
+// Minutes de Une consacrées AUX PARTIS sur la période, tous partis confondus.
+// Ce n'est pas la durée de la journée : les partis n'occupent qu'une part des
+// Unes. La somme des cinq partis vaut ce total.
+const MINUTES_PARTIS = { day: 420, week: 2600, month: 11000 };
+
 // Panel de médias, repris des identifiants réels de radar_annotated. Chaque
 // média a un PENCHANT : un multiplicateur par parti, qui décale sa répartition
 // par rapport à la moyenne. Sans ça, un sélecteur de média n'aurait rien à
@@ -179,7 +188,10 @@ function buildRowsByMedia(dates, seed, periodLabel) {
           date_utc: date,
           date_montreal_tz: date,
           weighted_mentions: round4(sov),
-          total_raw_score: round4(sov * (periodLabel === "day" ? 70 : periodLabel === "week" ? 430 : 1800)),
+          // Les minutes en Une, cohérentes avec la part : leur somme sur les
+          // cinq partis vaut le total de la période, comme le raffineur les
+          // produit depuis qu'elles sont RÉPARTIES et non dupliquées.
+          total_raw_score: round4(sov * MINUTES_PARTIS[periodLabel] / 6),
           weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
           threshold: 0.02,
           period_start: dates[0],
@@ -214,7 +226,7 @@ function buildRows(dates, seed, periodLabel) {
         weighted_mentions: round4(sov),
         // Minutes cumulées en Une — proportionnelles à la part de voix, avec
         // un volume total plausible pour une journée de Unes québécoises.
-        total_raw_score: round4(sov * (periodLabel === "day" ? 420 : periodLabel === "week" ? 2600 : 11000)),
+        total_raw_score: round4(sov * MINUTES_PARTIS[periodLabel]),
         weighted_tone: round4(toneFor(p, rand, daysFromEnd)),
         variation_pct: round4((rand() - 0.5) * 40),
         threshold: 0.02,
@@ -237,14 +249,209 @@ const D = dailyDates(PROFILE.day);
 const W = weeklyDates(PROFILE.weeks);
 const M = monthlyDates(PROFILE.months);
 
+// Les lignes du JOUR sont nommées : la série intra-journée doit atterrir
+// exactement dessus, sinon la pochette et le palmarès annoncent deux durées
+// différentes pour le même parti (relevé d'Alexandre, PR #539).
+const lignesJour = buildRows(D, 1, "day");
+
+/** Le raffineur ne tire pas trois séries indépendantes : il filtre les mêmes
+ *  articles sur `stop_mtl >= start_date_mtl` puis somme `headline_minutes`
+ *  (radar-party-score-salient-shadow/runtime.R:269-302). Le total d'une semaine
+ *  EST donc la somme des totaux de ses jours, depuis le lundi ; celui d'un mois,
+ *  depuis le 1er.
+ *
+ *  Des fixtures qui tirent les trois tables séparément fabriquent une
+ *  divergence qui n'existe pas en production : la pochette lisait la table
+ *  semaine, le palmarès cumulait les jours, et le même parti affichait deux
+ *  durées sur le même écran (PR #539). On récrit donc les périodes à partir des
+ *  jours, partout où les 35 jours générés couvrent la fenêtre. Au-delà, la
+ *  ligne synthétique est conservée : elle ne sert qu'à peupler l'historique.
+ */
+function caleSurLesJours(lignes, borne) {
+  const parJour = {};
+  for (const r of lignesJour) (parJour[r.date_utc] ??= {})[r.party] = r.total_raw_score;
+  const couverts = new Set(Object.keys(parJour));
+
+  const parDate = {};
+  for (const r of lignes) (parDate[r.date_utc] ??= []).push(r);
+
+  for (const [date, rows] of Object.entries(parDate)) {
+    const jours = [];
+    for (let d = borne(date); d <= date; d = addDays(d, 1)) jours.push(d);
+    if (!jours.every((j) => couverts.has(j))) continue; // hors des 35 jours
+
+    const sommes = {};
+    let total = 0;
+    for (const r of rows) {
+      sommes[r.party] = jours.reduce((t, j) => t + (parJour[j]?.[r.party] ?? 0), 0);
+      total += sommes[r.party];
+    }
+    for (const r of rows) {
+      r.total_raw_score = round4(sommes[r.party]);
+      r.weighted_mentions = round4(total > 0 ? sommes[r.party] / total : 0);
+    }
+  }
+  return lignes;
+}
+
+const lundiDe = (date) => {
+  const d = new Date(`${date}T00:00:00Z`);
+  return addDays(date, -((d.getUTCDay() + 6) % 7)); // 0 = lundi
+};
+const premierDuMois = (date) => `${date.slice(0, 7)}-01`;
+
 const files = [
-  ["day", "provincial_parties_salient_shadow_day.json", buildRows(D, 1, "day")],
-  ["week", "provincial_parties_salient_shadow_week.json", buildRows(W, 2, "week")],
-  ["month", "provincial_parties_salient_shadow_month.json", buildRows(M, 3, "month")],
+  ["day", "provincial_parties_salient_shadow_day.json", lignesJour],
+  ["week", "provincial_parties_salient_shadow_week.json", caleSurLesJours(buildRows(W, 2, "week"), lundiDe)],
+  ["month", "provincial_parties_salient_shadow_month.json", caleSurLesJours(buildRows(M, 3, "month"), premierDuMois)],
   ["day", "provincial_parties_salient_shadow_by_media_day.json", buildRowsByMedia(D, 11, "day")],
   ["week", "provincial_parties_salient_shadow_by_media_week.json", buildRowsByMedia(W, 12, "week")],
   ["month", "provincial_parties_salient_shadow_by_media_month.json", buildRowsByMedia(M, 13, "month")],
 ];
+
+// ── Série INTRA-JOURNÉE ──────────────────────────────────────────────────────
+// Six blocs de 4 h par jour, comme le raffineur en publie depuis
+// aws-refiners#355. Sans elle, l'onglet « Jour » n'a qu'un point par journée et
+// ne peut pas tracer une journée.
+//
+// La PART de voix oscille au fil de la journée sans dériver — c'est une part,
+// les cinq partis somment à 1. Les MINUTES, elles, s'accumulent depuis minuit
+// comme le fait le raffineur : deux grandeurs, deux comportements.
+const BLOCS = [0, 4, 8, 12, 16, 20];
+const intraday = [];
+const randIntra = rng(97);
+
+// Le total du jour, par date et par parti, tel que la table `day` l'annonce.
+// C'est la valeur que lit la pochette : la courbe intra-journée doit finir
+// dessus, sinon le même parti affiche deux durées sur le même écran.
+const minutesDuJour = {};
+for (const r of lignesJour) {
+  (minutesDuJour[r.date_utc] ??= {})[r.party] = r.total_raw_score;
+}
+
+for (const date of D.slice(-8)) {
+  // Les minutes s'ACCUMULENT bloc après bloc, et ne peuvent donc que monter.
+  // La version précédente multipliait une part VARIABLE par la fraction de
+  // journée écoulée : le produit n'était pas monotone, et la courbe d'un parti
+  // dont la part baissait redescendait — ce qu'un cumul ne fait jamais.
+  const cumul = Object.fromEntries(PARTIES.map((p) => [p, 0]));
+  const formes = Object.fromEntries(PARTIES.map((p) => [p, []]));
+  const parts = Object.fromEntries(PARTIES.map((p) => [p, []]));
+
+  for (const h of BLOCS) {
+    const brut = {};
+    let total = 0;
+    for (const party of PARTIES) {
+      const base = sovFor(party, date, randIntra, 0);
+      // Un léger balancement propre au bloc, pour que la journée ait un relief.
+      const onde = 1 + 0.22 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party));
+      brut[party] = Math.max(0, base * onde);
+      total += brut[party];
+    }
+    for (const party of PARTIES) {
+      cumul[party] += total > 0 ? (brut[party] / total) / BLOCS.length : 0;
+      formes[party].push(cumul[party]);
+      parts[party].push(total > 0 ? brut[party] / total : 0);
+    }
+  }
+
+  // La FORME vient du balancement des blocs, l'ÉCHELLE de la table jour : on
+  // normalise le cumul à 1 puis on le multiplie par le total publié. La courbe
+  // garde son relief, reste monotone, et son dernier point vaut exactement ce
+  // qu'annonce la pochette. Les deux séries étaient tirées séparément et
+  // visaient le même volume global sans jamais coïncider par parti — 2h27
+  // contre 2h39 pour la CAQ.
+  for (const party of PARTIES) {
+    const totalJour = minutesDuJour[date]?.[party] ?? 0;
+    const fin = formes[party].at(-1) || 0;
+    BLOCS.forEach((h, i) => {
+      const fraction = fin > 0 ? formes[party][i] / fin : 0;
+      intraday.push({
+        party,
+        block_hour: h,
+        block_label: String(h).padStart(2, "0") + "h",
+        weighted_mentions: Number(parts[party][i].toFixed(6)),
+        // Minutes CUMULÉES depuis minuit, comme le raffineur : il recalcule
+        // l'accumulation de la journée à chaque passage, si bien que le dernier
+        // bloc vaut le total du jour — celui de la table `day`, pas un autre.
+        total_raw_score: round4(totalJour * fraction),
+        weighted_tone: 0,
+        date_utc: date,
+        date_montreal_tz: date,
+        computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
+        threshold: 0.02,
+      });
+    });
+  }
+}
+files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday]);
+
+// ── Croisement PARTI × ENJEU ─────────────────────────────────────────────────
+// Ce que publie aws-refiners#355 : pour chaque parti, la répartition des enjeux
+// dont on parle quand on parle de lui. Les libellés sont les 12 catégories CAP
+// canoniques, partagées avec le Digital Society Lab — à reprendre au caractère
+// près, les changer casserait la comparabilité.
+// Les CLÉS TECHNIQUES du raffineur, et non des libellés français : c'est ce que
+// publie `parties_issues_salient_shadow_day` (relevé en DEV), et c'est le site
+// qui traduit (`libelleEnjeu` dans lib/data/parties.ts). Écrire des libellés ici
+// masquerait toute la couche de traduction en développement, et un identifiant
+// non traduit ne se verrait qu'en production.
+//
+// « Aucun enjeu identifié » est en revanche déjà un libellé : c'est le raffineur
+// qui le pose, pour les phrases qui nomment un parti sans qu'aucun modèle CAP ne
+// franchisse son seuil.
+// Des têtes qui FUSIONNENT volontairement : `macroeconomics` + `labor` +
+// `foreign_trade` tombent tous dans « Économie et travail », `health` +
+// `social_welfare` dans « Santé et politiques sociales », `international_affairs`
+// + `defense` dans « Affaires internationales et défense ». Sans elles,
+// l'agrégation des 21 têtes en 12 catégories ne serait jamais éprouvée en
+// développement — chaque clé tomberait dans une catégorie distincte et le
+// regroupement passerait inaperçu jusqu'en production.
+const ENJEUX = [
+  "health", "social_welfare",
+  "macroeconomics", "labor", "foreign_trade",
+  "education",
+  "energy", "environment",
+  "governments_governance", "immigration",
+  "law_and_crime", "culture_nationalism", "transportation",
+  "international_affairs", "defense",
+  "public_lands", "agriculture",
+  "technology",
+  "rights_liberties_minorities_discrimination",
+  "Aucun enjeu identifié",
+];
+// Chaque parti a SON profil : c'est tout l'intérêt de la mesure, deux partis
+// peuvent occuper la même place et parler de choses différentes.
+const PROFILS = {
+  CAQ: [0.15, 0.06, 0.12, 0.05, 0.03, 0.09, 0.05, 0.03, 0.11, 0.04, 0.04, 0.02, 0.01, 0.02, 0.01, 0.02, 0.01, 0.02, 0.01, 0.11],
+  PQ:  [0.07, 0.03, 0.07, 0.03, 0.02, 0.08, 0.04, 0.02, 0.10, 0.09, 0.04, 0.15, 0.02, 0.02, 0.01, 0.01, 0.01, 0.01, 0.02, 0.16],
+  PLQ: [0.12, 0.05, 0.10, 0.04, 0.02, 0.11, 0.03, 0.02, 0.13, 0.07, 0.06, 0.04, 0.01, 0.03, 0.01, 0.02, 0.01, 0.02, 0.01, 0.10],
+  QS:  [0.14, 0.07, 0.08, 0.05, 0.02, 0.12, 0.11, 0.07, 0.05, 0.04, 0.02, 0.03, 0.01, 0.02, 0.01, 0.02, 0.01, 0.02, 0.02, 0.09],
+  PCQ: [0.08, 0.03, 0.12, 0.04, 0.03, 0.07, 0.03, 0.02, 0.12, 0.11, 0.10, 0.04, 0.01, 0.02, 0.01, 0.02, 0.01, 0.01, 0.01, 0.12],
+};
+const randEnj = rng(311);
+const croises = [];
+for (const date of D.slice(-8)) {
+  for (const party of PARTIES) {
+    const profil = PROFILS[party];
+    const brut = profil.map((v) => Math.max(0, v * (0.75 + 0.5 * randEnj())));
+    const total = brut.reduce((a, b) => a + b, 0);
+    ENJEUX.forEach((theme, i) => {
+      if (brut[i] / total < 0.008) return;   // le raffineur ne publie pas les couples sans détection
+      croises.push({
+        party, theme,
+        issue_share: Number((brut[i] / total).toFixed(6)),
+        total_raw_score: Number((brut[i] * 420).toFixed(2)),
+        weighted_tone: Number((randEnj() * 1.4 - 0.8).toFixed(3)),
+        sentence_weight: Number((brut[i] * 60).toFixed(2)),
+        date_utc: date, date_montreal_tz: date,
+        period_start: D[0], period_end: date,
+        computed_at: `${date}T20:31:00Z`, threshold: 0.02,
+      });
+    });
+  }
+}
+files.push(["day", "parties_issues_salient_shadow_day.json", croises]);
 
 for (const [sub, name, rows] of files) {
   const dir = path.join(OUT_DIR, sub);

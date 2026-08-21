@@ -170,6 +170,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -185,6 +186,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -200,6 +202,7 @@
         "date_utc",
         "date_montreal_tz",
         "weighted_mentions",
+        "total_raw_score",
         "weighted_tone",
         "computed_at"
       ],
@@ -451,6 +454,41 @@
       "_note_computed_at": "computed_at n'est pas projetée : elle sert au diagnostic côté Athena, jamais à l'affichage.",
       "enabled": false,
       "used_by": "lib/data/promessesNeuves.ts + components/sections/PolimetrePlusSection.tsx"
+    },
+    {
+      "name": "provincial_parties_salient_shadow_intraday",
+      "athena": "vitrine_datamart-provincial_parties_salient_shadow_intraday",
+      "out": "public/data/refined/day/provincial_parties_salient_shadow_intraday.json",
+      "cols": [
+        "party",
+        "block_hour",
+        "block_label",
+        "weighted_mentions",
+        "total_raw_score",
+        "weighted_tone",
+        "date_utc",
+        "date_montreal_tz",
+        "computed_at"
+      ],
+      "enabled": true,
+      "used_by": "components/interactive/PartisCouvertureClient.tsx"
+    },
+    {
+      "name": "parties_issues_salient_shadow_day",
+      "athena": "vitrine_datamart-parties_issues_salient_shadow_day",
+      "out": "public/data/refined/day/parties_issues_salient_shadow_day.json",
+      "cols": [
+        "party",
+        "theme",
+        "issue_share",
+        "total_raw_score",
+        "weighted_tone",
+        "date_utc",
+        "date_montreal_tz",
+        "computed_at"
+      ],
+      "enabled": true,
+      "used_by": "components/interactive/PartisCouvertureClient.tsx"
     }
   ],
   "post_process": [
