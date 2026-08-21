@@ -3334,6 +3334,15 @@
     color: var(--ink-softer);
     margin-top: 4px;
   }
+  /* Le message d'absence remplace le concept, la citation ET la glose : il
+     dispose donc de la place des trois. Au corps de la glose (7,5 px) il serait
+     illisible, or c'est une phrase qu'on demande vraiment de lire. */
+  .concept-vide {
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    line-height: 1.45;
+    margin-top: 0;
+  }
   /* Dans le tiroir, la largeur ne manque pas : la citation s'y lit en entier
      et au corps du texte courant, pas au corps réduit de la carte. */
   .tiroir-concept .concept-mot { font-size: 19px; color: var(--ink); }

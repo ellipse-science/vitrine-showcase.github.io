@@ -72,6 +72,22 @@ function conceptGlose(sujet: "deputy" | "party"): string {
     : "Mot bien plus fréquent que chez les autres élu.es.";
 }
 
+// Sans concept, le bloc disparaissait sans un mot, et l'absence se lisait comme
+// une donnée manquante. Elle est en réalité un résultat : le calcul compare le
+// vocabulaire d'une entité à celui des autres, et il arrive que rien ne ressorte
+// assez nettement. Le raffineur préfère alors ne rien retenir plutôt qu'une
+// banalité (« mieux vaut rien qu'une banalité », agora-decideurs-qc).
+//
+// Le cas s'observe sur les longues périodes : Maïté Blanchette Vézina ressort
+// avec « véhicules zéro » sur la session (4 048 mots) et sans rien sur la
+// législature (5 637 mots). Plus de texte, donc plus de vocabulaire de
+// procédure, qui finit par noyer les enjeux de fond.
+function conceptAbsent(sujet: "deputy" | "party"): string {
+  return sujet === "party"
+    ? "Aucun mot ne ressort assez nettement de ceux des autres partis sur cette période."
+    : "Aucun mot ne ressort assez nettement de ceux des autres élu.es sur cette période.";
+}
+
 // Bloc du concept distinctif, partagé par la carte de député et le tiroir de
 // parti. Tout est VISIBLE en permanence : pas de survol, pas de repli.
 //
@@ -84,11 +100,16 @@ function conceptGlose(sujet: "deputy" | "party"): string {
 // La citation fait le gros du travail d'explication : elle montre le mot en
 // situation, ce qu'aucune glose ne remplace. Elle passe donc avant la
 // mécanique du calcul dans la hiérarchie visuelle.
-function ConceptBloc({ concept, glose, citation }: {
-  concept: string;
+function ConceptBloc({ concept, glose, absence, citation }: {
+  concept?: string;
   glose: string;
+  absence: string;
   citation?: string;
 }) {
+  // L'explication de l'absence est écrite en clair, au même endroit que le
+  // concept, et non derrière un survol : voir plus haut, la carte s'imprime et
+  // le mobile ne survole pas.
+  if (!concept) return <i className="concept-glose concept-vide">{absence}</i>;
   return (
     <>
       <span className="concept-mot">{concept}</span>
@@ -263,16 +284,15 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
             </span>
           )}
 
-          {concept && (
-            <span className="carte-v-bloc bloc-concept">
-              <span className="carte-v-titre">Concept distinctif</span>
-              <ConceptBloc
-                concept={concept}
-                glose={conceptGlose("deputy")}
-                citation={deputy.signatureWordContext}
-              />
-            </span>
-          )}
+          <span className="carte-v-bloc bloc-concept">
+            <span className="carte-v-titre">Concept distinctif</span>
+            <ConceptBloc
+              concept={concept}
+              glose={conceptGlose("deputy")}
+              absence={conceptAbsent("deputy")}
+              citation={deputy.signatureWordContext}
+            />
+          </span>
 
           <span className="carte-v-pied">
             Portrait&nbsp;: Assemblée nationale du Québec
@@ -461,16 +481,15 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
           {/* Concept distinctif agrégé au niveau du parti (TF-IDF inter-partis,
               cf. AssembleeRow.signatureWord) — distinct du concept par député,
               qui compare chaque élu.e au reste de l'Assemblée. */}
-          {partyConcept && (
-            <p className="tiroir-concept">
-              <span className="tiroir-concept-titre">Concept distinctif du parti</span>
-              <ConceptBloc
-                concept={partyConcept}
-                glose={conceptGlose("party")}
-                citation={openRow.signatureWordContext}
-              />
-            </p>
-          )}
+          <p className="tiroir-concept">
+            <span className="tiroir-concept-titre">Concept distinctif du parti</span>
+            <ConceptBloc
+              concept={partyConcept}
+              glose={conceptGlose("party")}
+              absence={conceptAbsent("party")}
+              citation={openRow.signatureWordContext}
+            />
+          </p>
 
           {deputies.length > 0 ? (
             <div className="tiroir-presentoir">
