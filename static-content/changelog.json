@@ -1,5 +1,11 @@
 [
   {
+    "pr": 558,
+    "date": "2026-08-21T21:18:47Z",
+    "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
+    "version": "2.27.0-beta.1"
+  },
+  {
     "pr": 549,
     "date": "2026-08-21T20:06:25Z",
     "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",

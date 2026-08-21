@@ -41,6 +41,12 @@ export type ShareCardContent = {
   accent?: string;
   /** « Édition de 8h, mardi 19 août » — vide pour l'édition courante. */
   editionLabel?: string;
+  /** Illustration courante de la Une des Unes. Jamais fournie aux archives. */
+  imageSrc?: string;
+  /** Niveau calibré affiché comme principal crochet de partage du module 1. */
+  salienceLabel?: string;
+  /** Rang 1–6 qui détermine la couleur du badge de saillance. */
+  salienceRank?: number;
 };
 
 // Traduit le contenu d'un module (lib/shareModules.ts) vers le contrat de
@@ -81,6 +87,8 @@ export function toShareCardContent(
     reflection,
     accent: stat.color,
     editionLabel,
+    salienceLabel: stat.salienceLabel,
+    salienceRank: stat.salienceRank,
   };
 }
 
@@ -96,6 +104,8 @@ type ShareModuleContentLike = {
     color?: string;
     kicker?: string;
     excerpt?: string;
+    salienceLabel?: string;
+    salienceRank?: number;
   };
 };
 
@@ -197,6 +207,18 @@ function Fleur({ size, color }: { size: number; color: string }) {
   );
 }
 
+// Même progression visuelle que les six bandes publiques de saillance. Le
+// rang vient de la calibration : la carte ne déduit jamais un niveau depuis
+// le texte et ne peut donc pas repeindre une Une dans la mauvaise bande.
+const SALIENCE_COLORS: Record<number, { background: string; foreground: string }> = {
+  1: { background: "#E4DCC6", foreground: INK },
+  2: { background: "#DCCBA2", foreground: INK },
+  3: { background: "#D2B488", foreground: INK },
+  4: { background: "#C99A76", foreground: INK },
+  5: { background: "#BE7C6A", foreground: PAPER },
+  6: { background: "#A85A52", foreground: PAPER },
+};
+
 export function ShareCard({ content, format }: { content: ShareCardContent; format: ShareCardFormat }) {
   const f = FORMATS[format];
   const accent = content.accent ?? CORDOVAN;
@@ -208,6 +230,9 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
   // titre de la Une domine, et le ratio « X/Y médias » devient une preuve de
   // second plan. Les cinq autres modules mènent avec leur chiffre.
   const isHeadlineCard = Boolean(content.headline);
+  const showHeadlineImage = Boolean(isHeadlineCard && !f.stacked && content.imageSrc);
+  const showSalience = Boolean(isHeadlineCard && !f.stacked && content.salienceLabel);
+  const salienceColor = SALIENCE_COLORS[content.salienceRank ?? 0] ?? SALIENCE_COLORS[4];
 
   const eyebrow = (
     <div style={{ display: "flex", flexDirection: "column", gap: f.gap * 0.4 }}>
@@ -279,6 +304,25 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
           }}
         >
           {fmt(content.kicker)}
+        </div>
+      )}
+      {showSalience && (
+        <div
+          style={{
+            display: "flex",
+            alignSelf: "flex-start",
+            background: salienceColor.background,
+            color: salienceColor.foreground,
+            fontFamily: mono,
+            fontWeight: 600,
+            fontSize: 24,
+            lineHeight: 1,
+            letterSpacing: 2.8,
+            textTransform: "uppercase",
+            padding: "12px 18px",
+          }}
+        >
+          {fmt(`Saillance ${content.salienceLabel}`)}
         </div>
       )}
       <div
@@ -419,11 +463,35 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
           // et le concentrait autour du chiffre.
           flex: f.stacked ? "0 0 auto" : 1,
           position: "relative",
-          flexDirection: "column",
+          flexDirection: showHeadlineImage ? "row" : "column",
           justifyContent: "center",
+          alignItems: showHeadlineImage ? "center" : "stretch",
+          gap: showHeadlineImage ? f.gap * 1.5 : 0,
         }}
       >
         {figure}
+        {showHeadlineImage && (
+          <div
+            style={{
+              display: "flex",
+              width: 370,
+              height: 300,
+              flex: "0 0 370px",
+              overflow: "hidden",
+              border: `2px solid ${INK}`,
+              background: RULE,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={content.imageSrc}
+              alt=""
+              width="370"
+              height="300"
+              style={{ width: "370px", height: "300px", objectFit: "cover" }}
+            />
+          </div>
+        )}
         {f.stacked && <div style={{ display: "flex", marginTop: f.gap * 1.2, height: 3, background: RULE }} />}
       </div>
 
