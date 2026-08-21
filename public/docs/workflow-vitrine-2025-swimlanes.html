@@ -1512,7 +1512,7 @@
                     title: 'Tables: *_parties_salient_shadow_*',
                     description: 'Part de voix (SOV) recalculée depuis radar_annotated avec seuils par parti et reset calendrier. Anciennement *_parties_score_v2_* — renommées par aws-refiners (voir le README du raffineur).',
                     columns: [
-                        'party - Code parti (BQ, CAQ, CPC, GPC, LPC, NDP, PCQ, PLQ, PQ, QS)',
+                        'party - Code parti (BQ, CAQ, CPC, GPC, LPC, NDP, PLQ, PQ, QS) — 9 codes depuis la bascule sur les têtes binaires party_*',
                         'weighted_mentions - Part de voix (0.0 à 1.0). Somme = 100 % du jour/semaine/mois.',
                         'total_raw_score - Volume brut en minutes cumulées depuis le reset.',
                         'weighted_tone - Ton moyen numérique (-1.0 à +1.0).',
@@ -2414,7 +2414,9 @@
                         'Bloc Québécois',
                         'Parti Vert du Canada',
                         'Parti Populaire du Canada (PPC)',
-                        'Inclut noms officiels, abréviations, leaders'
+                        'Inclut noms officiels, abréviations, leaders',
+                        "⚠️ Le PPC n'a PAS de tête de classification : il figure au "
+                            + "dictionnaire mais n'est plus détecté depuis la bascule sur les têtes party_*."
                     ]
                 },
                 'parties-qc': {
@@ -2426,7 +2428,9 @@
                         'Parti Québécois (PQ)',
                         'Québec Solidaire (QS)',
                         'Parti Conservateur du Québec (PCQ)',
-                        'Inclut noms officiels, abréviations, leaders'
+                        'Inclut noms officiels, abréviations, leaders',
+                        "⚠️ Le PCQ n'a PAS de tête de classification : il figure au "
+                            + "dictionnaire mais n'est plus détecté depuis la bascule sur les têtes party_*."
                     ]
                 },
                 'sentiments': {

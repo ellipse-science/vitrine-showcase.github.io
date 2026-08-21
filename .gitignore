@@ -54,3 +54,8 @@ _worktrees/
 
 # CSV intermédiaires de scripts/load_pg.mjs
 .pgload/
+
+# Illustration de la Une des unes : rapatriée au build par scripts/fetch_art.mjs
+# (raffineur vitrine-art -> R2 -> API), plus jamais commitée.
+/public/data/generated-art/latest.*
+/public/data/hero-selection.json

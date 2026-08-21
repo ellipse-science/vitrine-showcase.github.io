@@ -24,9 +24,25 @@
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
 import { TABLES, type TableSpec } from './tables'
+import {
+  HEADLINE_KEEP_DAYS,
+  isoDaysAgo,
+  keepHeadlineRow,
+  normalizeValue,
+  polimetreCutoff,
+} from './transforms'
 
-export const HEADLINE_KEEP_DAYS = 14
-export const POLIMETRE_KEEP_DAYS = 70
+// Fenêtres de rétention et normalisation : voir ./transforms. Réexportées ici
+// pour que les importateurs existants du module ne changent pas.
+export {
+  HEADLINE_KEEP_DAYS,
+  POLIMETRE_KEEP_DAYS,
+  isoDaysAgo,
+  normalizeValue,
+  keepHeadlineRow,
+  polimetreCutoff,
+} from './transforms'
+
 // 400 lignes x 46 colonnes (la table la plus large) = 18 400 paramètres par
 // INSERT, loin de la limite Postgres de 65 535.
 const BATCH_ROWS = 400
@@ -42,36 +58,6 @@ export interface SyncAthenaEnv {
   DEPLOY_HOOK_PROD?: string
   DEPLOY_HOOK_DEV?: string
   SLACK_WEBHOOK_URL?: string
-}
-
-export function isoDaysAgo(days: number, from = new Date()): string {
-  return new Date(from.getTime() - days * 86_400_000).toISOString().slice(0, 10)
-}
-
-/** '' -> NULL : Athena publie des chaînes vides là où la donnée manque, et
- *  les colonnes numériques les refuseraient (défense commune aux trois
- *  écrivains : sync.ts, load_pg.mjs, vitrine-publish). */
-export function normalizeValue(v: string | null): string | null {
-  return v === '' ? null : v
-}
-
-/** Fenêtre headline : ancrée sur l'HORLOGE (archive publique de 14 jours).
- *  Les dates sont des chaînes ISO : l'ordre lexicographique est l'ordre
- *  chronologique, même contrat que l'API de lecture. */
-export function keepHeadlineRow(dateUtc: string | null, cutoff: string): boolean {
-  return dateUtc !== null && dateUtc.slice(0, 10) >= cutoff
-}
-
-/** Fenêtre polimetre : ancrée sur la DONNÉE (dernier snapshot), pas sur
- *  l'horloge — si le raffineur amont cessait de publier, une fenêtre horloge
- *  viderait la table ligne à ligne et le module disparaîtrait sans bruit. */
-export function polimetreCutoff(weekEndDates: (string | null)[]): string | null {
-  const valid = weekEndDates.filter(
-    (d): d is string => d !== null && /^\d{4}-\d{2}-\d{2}/.test(d),
-  )
-  if (valid.length === 0) return null
-  const max = valid.reduce((a, b) => (a > b ? a : b)).slice(0, 10)
-  return isoDaysAgo(POLIMETRE_KEEP_DAYS, new Date(`${max}T00:00:00Z`))
 }
 
 function quoteIdent(name: string): string {
@@ -147,6 +133,27 @@ async function writeTable(
   const colList = spec.cols.map(quoteIdent).join(', ')
   await pg.query('BEGIN')
   try {
+    // GARDE ZÉRO-LIGNE. Une requête Athena qui renvoie 0 ligne sur une table
+    // qui en avait est presque toujours une panne amont (partition manquante,
+    // vue vide, permission), pas une réalité éditoriale. Sans cette garde, on
+    // TRUNCATE, on committe « 0 ligne, succès », le tout-ou-rien passe, les
+    // hooks tirent et le site se reconstruit avec un module VIDE. Le risque
+    // avait été accepté en phase d'ombre (M1, trigger_deploys=false) — il ne
+    // l'était plus depuis l'armement des hooks (audit 2026-08-19). Échouer la
+    // table suffit : le tout-ou-rien retient les hooks, la transaction est
+    // annulée, et l'ancienne donnée continue d'être servie.
+    if (rows.length === 0) {
+      const prev = await pg.query(
+        `SELECT row_count FROM vitrine.sync_state WHERE table_name = $1`,
+        [spec.name],
+      )
+      const previous = Number(prev.rows[0]?.row_count ?? 0)
+      if (previous > 0) {
+        throw new Error(
+          `0 ligne reçue d'Athena alors que ${spec.name} en comptait ${previous} — table préservée`,
+        )
+      }
+    }
     await pg.query(`TRUNCATE ${table}`)
     for (let start = 0; start < rows.length; start += BATCH_ROWS) {
       const batch = rows.slice(start, start + BATCH_ROWS)

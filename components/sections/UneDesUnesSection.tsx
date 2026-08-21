@@ -187,10 +187,26 @@ const ART_FORMATS: { file: string; type: string }[] = [
 
 /** Ne retient que les formats RÉELLEMENT présents sur disque au build.
  *
- *  generate_art.py tourne en `continue-on-error` et l'encodeur AVIF est
- *  optionnel : n'importe lequel de ces fichiers peut manquer sans que ce soit
- *  une anomalie. Déclarer un <source> vers un fichier absent afficherait une
- *  image cassée au lieu de retomber sur le PNG. */
+ *  Le rapatriement (scripts/fetch_art.mjs) est best-effort et l'encodeur AVIF
+ *  du raffineur est optionnel : n'importe lequel de ces fichiers peut manquer
+ *  sans que ce soit une anomalie. Déclarer un <source> vers un fichier absent
+ *  afficherait une image cassée au lieu de retomber sur le PNG. */
+/** Métadonnées de l'illustration (latest.json), rapatriées par
+ *  scripts/fetch_art.mjs. `storyline_id`/`event_id` alimentent la garde
+ *  d'appariement ci-dessous ; un fichier absent ou illisible vaut « pas
+ *  d'illustration », jamais une erreur — la génération est best-effort. */
+type ArtMeta = { storyline_id?: string | null; event_id?: string | null };
+
+async function readArtMeta(jsonPath: string): Promise<ArtMeta | null> {
+  try {
+    const parsed: unknown = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as ArtMeta;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function detectArtSources(): Promise<ArtSource[]> {
   const found = await Promise.all(ART_FORMATS.map((f) =>
     fs.access(path.resolve(process.cwd(), "public", "data", "generated-art", f.file))
@@ -211,10 +227,9 @@ function HeroFigure({ src, sources = [], alt, variant }: {
     <figure className={`hero-figure hero-figure-inline hero-figure-${variant}`}>
       <div className="figure-frame">
         {/* Le PNG de gpt-image-1 pèse ~1,5 Mo ; l'AVIF/WebP tombe sous 200 Ko.
-            `sources` ne liste que les fichiers présents au build : si
-            generate_art.py échoue (il tourne en continue-on-error), la liste
-            est vide et <picture> se réduit au <img> PNG — jamais d'image
-            cassée. */}
+            `sources` ne liste que les fichiers présents au build : si le
+            rapatriement échoue (fetch_art.mjs est best-effort), la liste est
+            vide et <picture> se réduit au <img> PNG — jamais d'image cassée. */}
         <picture>
           {sources.map((s) => (
             <source key={s.type} srcSet={s.src} type={s.type} />
@@ -320,10 +335,10 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, editions, artExists, artSources, audioUrl] = await Promise.all([
+  const [data, editions, artMeta, artSources, audioUrl] = await Promise.all([
     loadHeadlineEvents(editionKey),
     listEditions(),
-    isArchive ? false : fs.access(artJsonPath).then(() => true).catch(() => false),
+    isArchive ? null : readArtMeta(artJsonPath),
     isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
     isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
@@ -333,10 +348,22 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
   ]);
   if (!data || data.top3.length === 0) return null;
 
-  const generatedArtUrl = artExists ? "data/generated-art/latest.png" : undefined;
   // Chaque point de trajectoire EST une édition : on lui donne son adresse.
   const hrefs = editionHrefs(editions);
   const [main, sideLeft, sideRight] = data.top3;
+
+  // GARDE D'APPARIEMENT. L'illustration n'est plus générée dans le même job
+  // que les données (raffineur vitrine-art, cycle séparé) : rien ne garantit
+  // mécaniquement qu'elle dépeint la Une de CE build. On ne l'affiche que si
+  // sa clé d'histoire correspond — sinon mise en page « sans illustration »,
+  // déjà prévue. Une image absente est un manque ; une image d'une autre Une
+  // est un mensonge. Clé = storyline d'abord : l'event_id change à chaque bloc
+  // de 4 h alors que l'illustration suit l'HISTOIRE (cf. workers/api/src/art.ts).
+  const mainKey = main.storylineId ?? main.eventId;
+  const artKey = artMeta?.storyline_id ?? artMeta?.event_id ?? null;
+  const artMatches = Boolean(artKey && mainKey && artKey === mainKey);
+  const generatedArtUrl = artMatches ? "data/generated-art/latest.png" : undefined;
+  const generatedArtSources = artMatches ? artSources : [];
 
   // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
   // critique de saillance, façon vrais sites de médias (demande Shannon, Figma).
@@ -404,7 +431,7 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
               event={main}
               secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
               generatedArtUrl={generatedArtUrl}
-              generatedArtSources={artSources}
+              generatedArtSources={generatedArtSources}
               audioUrl={audioUrl}
               hrefs={hrefs}
             />
