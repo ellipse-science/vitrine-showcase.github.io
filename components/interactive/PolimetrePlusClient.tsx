@@ -521,7 +521,7 @@ function NeuvesView({
           Même intention que pour le module des partis. */}
       {data.fictif && (
         <p className="ppl-bandeau-fictif" role="status">
-          Données de développement — ces promesses et leur écho médiatique ne
+          Données de développement. Ces promesses et leur écho médiatique ne
           reflètent pas le site.
         </p>
       )}
