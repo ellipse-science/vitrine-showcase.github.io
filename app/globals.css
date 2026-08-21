@@ -7438,6 +7438,21 @@
      teinte d'un autre parti. */
   .ppl-parti-badge--inconnu { background: none; color: var(--ink-soft); border: 1px solid var(--rule); }
 
+  /* Bandeau de développement (fixtures). Volontairement VOYANT : il n'est pas
+     là pour être discret, il est là pour qu'une capture d'écran prise pendant
+     le développement ne puisse pas passer pour le site. */
+  .ppl-bandeau-fictif {
+    margin: 0 0 18px;
+    padding: 8px 14px;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.05em;
+    border-radius: 3px;
+  }
+
   /* Inverseur de mode — au-dessus des onglets de période, dont il est la
      hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
      changent que la fenêtre. */

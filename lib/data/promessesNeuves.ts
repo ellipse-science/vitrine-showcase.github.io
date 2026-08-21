@@ -13,6 +13,9 @@
 // gouvernementales. Le module retombe alors sur son seul mode « 2022 » plutôt que
 // d'afficher un onglet vide.
 
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import { lastUpdatedLabel } from "@/lib/dates";
 import { readDatasetText } from "@/lib/data/source";
 import {
@@ -128,15 +131,50 @@ function toView(r: Row): PromesseNeuveView | null {
   };
 }
 
+// Par défaut : la donnée publiée par fetch_data.R. En développement,
+// VITRINE_NEUVES_FIXTURES pointe vers un jeu local au même schéma
+// (cf. scripts/make_promesses_neuves_fixtures.mjs).
+//
+// POURQUOI C'EST NÉCESSAIRE ICI. La table `polimetre_promesses_neuves` est
+// déclarée `enabled: false` dans scripts/tables.json — le raffineur qui
+// l'alimente n'est pas fiable et n'est pas planifié. Le JSON n'existe donc PAS
+// sur disque, `loadPromessesNeuves()` rend null, et le second mode du module est
+// tout simplement invisible en `npm run dev` : impossible d'y travailler.
+// Même motif que VITRINE_PARTIES_FIXTURES (lib/data/parties.ts), pour la même
+// raison — une donnée absente ou dégénérée rend un module intravaillable.
+// Variable absente ⇒ comportement inchangé.
+const SUR_FIXTURES = Boolean(process.env.VITRINE_NEUVES_FIXTURES);
+
+// GARDE-FOU : ces données ne doivent JAMAIS partir en production. Copié sur
+// celui de parties.ts, mêmes règles — défaut SÛR (tout ce qui n'est pas
+// explicitement « dev » compte comme production), et restreint aux builds de CI
+// pour ne pas interdire en local l'usage même auquel les fixtures servent.
+if (SUR_FIXTURES && process.env.CI && process.env.NEXT_PUBLIC_SITE_ENV !== "dev") {
+  throw new Error(
+    "VITRINE_NEUVES_FIXTURES est défini sur un build qui n'est pas le miroir dev " +
+      `(NEXT_PUBLIC_SITE_ENV=${process.env.NEXT_PUBLIC_SITE_ENV ?? "<absent>"}). ` +
+      "Les promesses de développement sont réservées au dev. " +
+      "Retirez la variable, ou posez NEXT_PUBLIC_SITE_ENV=dev si c'est bien un build dev.",
+  );
+}
+
 export async function loadPromessesNeuves(
   /** Édition passée (#434) : jour de publication de l'édition affichée. */
   asOfIso?: string,
 ): Promise<PromessesNeuvesData | null> {
   let raw: string;
   try {
-    raw = await readDatasetText(NEUVES_DATASET);
+    // SUR FIXTURES, ON NE PASSE JAMAIS PAR L'API — même raison que parties.ts :
+    // confondre les deux sources ferait apparaître de la vraie donnée sous un
+    // bandeau de développement, ou l'inverse.
+    raw = SUR_FIXTURES
+      ? await fs.readFile(
+          path.resolve(process.cwd(), process.env.VITRINE_NEUVES_FIXTURES as string),
+          "utf8",
+        )
+      : await readDatasetText(NEUVES_DATASET);
   } catch {
-    return null; // le raffineur n'a pas encore publié
+    return null; // le raffineur n'a pas encore publié (ou fixture introuvable)
   }
 
   let rows: Row[];
@@ -173,5 +211,10 @@ export async function loadPromessesNeuves(
 
   if (ranges.day.length === 0 && ranges.week.length === 0) return null;
 
-  return { windowEnd, lastUpdated: lastUpdatedLabel(windowEnd), ranges };
+  return {
+    windowEnd,
+    lastUpdated: lastUpdatedLabel(windowEnd),
+    ranges,
+    fictif: SUR_FIXTURES || undefined,
+  };
 }

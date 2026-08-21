@@ -514,6 +514,17 @@ function NeuvesView({
 
   return (
     <section className="polimeter-plus polimeter-plus--neuves" aria-label="Polimètre+ : promesses de la campagne">
+      {/* Bandeau de développement. Le module ne peut pas être travaillé sur la
+          donnée réelle — la table est désactivée et le raffineur n'est pas
+          fiable — donc on développe sur fixtures. Ce bandeau existe pour qu'une
+          capture prise en cours de route ne puisse jamais passer pour le site.
+          Même intention que pour le module des partis. */}
+      {data.fictif && (
+        <p className="ppl-bandeau-fictif" role="status">
+          Données de développement — ces promesses et leur écho médiatique ne
+          reflètent pas le site.
+        </p>
+      )}
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Polimètre+&nbsp;: les promesses de la campagne</h2>

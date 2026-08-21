@@ -162,4 +162,8 @@ export type PromessesNeuvesData = {
   windowEnd: string;
   lastUpdated: string;
   ranges: Record<NeuveRangeKey, PromesseNeuveView[]>;
+  /** Vrai quand le module est alimenté par VITRINE_NEUVES_FIXTURES. Le module
+   *  affiche alors un bandeau : aucune capture d'écran de développement ne doit
+   *  pouvoir passer pour le site. */
+  fictif?: boolean;
 };
