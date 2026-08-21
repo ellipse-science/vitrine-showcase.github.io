@@ -1,5 +1,11 @@
 [
   {
+    "pr": 549,
+    "date": "2026-08-21T20:06:25Z",
+    "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",
+    "version": null
+  },
+  {
     "pr": 551,
     "date": "2026-08-21T19:34:56Z",
     "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
