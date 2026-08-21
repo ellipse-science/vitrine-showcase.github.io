@@ -249,10 +249,61 @@ const D = dailyDates(PROFILE.day);
 const W = weeklyDates(PROFILE.weeks);
 const M = monthlyDates(PROFILE.months);
 
+// Les lignes du JOUR sont nommées : la série intra-journée doit atterrir
+// exactement dessus, sinon la pochette et le palmarès annoncent deux durées
+// différentes pour le même parti (relevé d'Alexandre, PR #539).
+const lignesJour = buildRows(D, 1, "day");
+
+/** Le raffineur ne tire pas trois séries indépendantes : il filtre les mêmes
+ *  articles sur `stop_mtl >= start_date_mtl` puis somme `headline_minutes`
+ *  (radar-party-score-salient-shadow/runtime.R:269-302). Le total d'une semaine
+ *  EST donc la somme des totaux de ses jours, depuis le lundi ; celui d'un mois,
+ *  depuis le 1er.
+ *
+ *  Des fixtures qui tirent les trois tables séparément fabriquent une
+ *  divergence qui n'existe pas en production : la pochette lisait la table
+ *  semaine, le palmarès cumulait les jours, et le même parti affichait deux
+ *  durées sur le même écran (PR #539). On récrit donc les périodes à partir des
+ *  jours, partout où les 35 jours générés couvrent la fenêtre. Au-delà, la
+ *  ligne synthétique est conservée : elle ne sert qu'à peupler l'historique.
+ */
+function caleSurLesJours(lignes, borne) {
+  const parJour = {};
+  for (const r of lignesJour) (parJour[r.date_utc] ??= {})[r.party] = r.total_raw_score;
+  const couverts = new Set(Object.keys(parJour));
+
+  const parDate = {};
+  for (const r of lignes) (parDate[r.date_utc] ??= []).push(r);
+
+  for (const [date, rows] of Object.entries(parDate)) {
+    const jours = [];
+    for (let d = borne(date); d <= date; d = addDays(d, 1)) jours.push(d);
+    if (!jours.every((j) => couverts.has(j))) continue; // hors des 35 jours
+
+    const sommes = {};
+    let total = 0;
+    for (const r of rows) {
+      sommes[r.party] = jours.reduce((t, j) => t + (parJour[j]?.[r.party] ?? 0), 0);
+      total += sommes[r.party];
+    }
+    for (const r of rows) {
+      r.total_raw_score = round4(sommes[r.party]);
+      r.weighted_mentions = round4(total > 0 ? sommes[r.party] / total : 0);
+    }
+  }
+  return lignes;
+}
+
+const lundiDe = (date) => {
+  const d = new Date(`${date}T00:00:00Z`);
+  return addDays(date, -((d.getUTCDay() + 6) % 7)); // 0 = lundi
+};
+const premierDuMois = (date) => `${date.slice(0, 7)}-01`;
+
 const files = [
-  ["day", "provincial_parties_salient_shadow_day.json", buildRows(D, 1, "day")],
-  ["week", "provincial_parties_salient_shadow_week.json", buildRows(W, 2, "week")],
-  ["month", "provincial_parties_salient_shadow_month.json", buildRows(M, 3, "month")],
+  ["day", "provincial_parties_salient_shadow_day.json", lignesJour],
+  ["week", "provincial_parties_salient_shadow_week.json", caleSurLesJours(buildRows(W, 2, "week"), lundiDe)],
+  ["month", "provincial_parties_salient_shadow_month.json", caleSurLesJours(buildRows(M, 3, "month"), premierDuMois)],
   ["day", "provincial_parties_salient_shadow_by_media_day.json", buildRowsByMedia(D, 11, "day")],
   ["week", "provincial_parties_salient_shadow_by_media_week.json", buildRowsByMedia(W, 12, "week")],
   ["month", "provincial_parties_salient_shadow_by_media_month.json", buildRowsByMedia(M, 13, "month")],
@@ -269,12 +320,24 @@ const files = [
 const BLOCS = [0, 4, 8, 12, 16, 20];
 const intraday = [];
 const randIntra = rng(97);
+
+// Le total du jour, par date et par parti, tel que la table `day` l'annonce.
+// C'est la valeur que lit la pochette : la courbe intra-journée doit finir
+// dessus, sinon le même parti affiche deux durées sur le même écran.
+const minutesDuJour = {};
+for (const r of lignesJour) {
+  (minutesDuJour[r.date_utc] ??= {})[r.party] = r.total_raw_score;
+}
+
 for (const date of D.slice(-8)) {
   // Les minutes s'ACCUMULENT bloc après bloc, et ne peuvent donc que monter.
   // La version précédente multipliait une part VARIABLE par la fraction de
   // journée écoulée : le produit n'était pas monotone, et la courbe d'un parti
   // dont la part baissait redescendait — ce qu'un cumul ne fait jamais.
   const cumul = Object.fromEntries(PARTIES.map((p) => [p, 0]));
+  const formes = Object.fromEntries(PARTIES.map((p) => [p, []]));
+  const parts = Object.fromEntries(PARTIES.map((p) => [p, []]));
+
   for (const h of BLOCS) {
     const brut = {};
     let total = 0;
@@ -285,29 +348,40 @@ for (const date of D.slice(-8)) {
       brut[party] = Math.max(0, base * onde);
       total += brut[party];
     }
-    // Le bloc apporte un sixième des minutes du jour, réparti selon les parts
-    // de CE bloc. Le cumul du dernier bloc vaut donc le total de la journée.
     for (const party of PARTIES) {
-      cumul[party] += total > 0 ? (brut[party] / total) * (MINUTES_PARTIS.day / BLOCS.length) : 0;
+      cumul[party] += total > 0 ? (brut[party] / total) / BLOCS.length : 0;
+      formes[party].push(cumul[party]);
+      parts[party].push(total > 0 ? brut[party] / total : 0);
     }
-    for (const party of PARTIES) {
+  }
+
+  // La FORME vient du balancement des blocs, l'ÉCHELLE de la table jour : on
+  // normalise le cumul à 1 puis on le multiplie par le total publié. La courbe
+  // garde son relief, reste monotone, et son dernier point vaut exactement ce
+  // qu'annonce la pochette. Les deux séries étaient tirées séparément et
+  // visaient le même volume global sans jamais coïncider par parti — 2h27
+  // contre 2h39 pour la CAQ.
+  for (const party of PARTIES) {
+    const totalJour = minutesDuJour[date]?.[party] ?? 0;
+    const fin = formes[party].at(-1) || 0;
+    BLOCS.forEach((h, i) => {
+      const fraction = fin > 0 ? formes[party][i] / fin : 0;
       intraday.push({
         party,
         block_hour: h,
         block_label: String(h).padStart(2, "0") + "h",
-        weighted_mentions: total > 0 ? Number((brut[party] / total).toFixed(6)) : 0,
+        weighted_mentions: Number(parts[party][i].toFixed(6)),
         // Minutes CUMULÉES depuis minuit, comme le raffineur : il recalcule
         // l'accumulation de la journée à chaque passage, si bien que le dernier
-        // bloc vaut le total du jour. Sans ce cumul, le palmarès plafonnait à
-        // 1 h là où la pochette du même parti annonçait 2 h 27.
-        total_raw_score: round4(cumul[party]),
+        // bloc vaut le total du jour — celui de la table `day`, pas un autre.
+        total_raw_score: round4(totalJour * fraction),
         weighted_tone: 0,
         date_utc: date,
         date_montreal_tz: date,
         computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
         threshold: 0.02,
       });
-    }
+    });
   }
 }
 files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday]);

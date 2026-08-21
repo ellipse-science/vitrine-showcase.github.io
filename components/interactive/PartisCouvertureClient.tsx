@@ -21,6 +21,10 @@ import { DoomGame } from "@/components/interactive/DoomGame";
  *  compilation. La chaîne doit rester identique ici, dans `parties.ts` et dans
  *  `radar-party-score-salient-shadow/runtime.R`. */
 const SANS_ENJEU = "Aucun enjeu identifié";
+/** Quand le fader quitte le centre, le raffineur ne croise pas parti × enjeu ×
+ *  média : il n'y a rien à afficher, mais ce n'est PAS « aucun enjeu ». Dire la
+ *  limite de la mesure plutôt qu'inventer un fait sur la couverture. */
+const ENJEU_NON_VENTILE = "Non ventilé par média";
 
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
@@ -593,7 +597,7 @@ function Deck({
   const pistes: [string, string, string?][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
     ["Part de temps", `${row.sovPct} %`],
-    ["Enjeu clé", enjeu?.label ?? SANS_ENJEU],
+    ["Enjeu clé", enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE)],
     // Le troisième champ est la forme COURTE, servie sur téléphone où la
     // pochette n'a pas la largeur du libellé entier. Les deux sont dans le DOM
     // et le CSS choisit : un lecteur d'écran entend donc toujours le libellé

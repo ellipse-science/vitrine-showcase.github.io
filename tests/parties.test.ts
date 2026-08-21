@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__, PARTY_KEYS, PARTY_COLORS } from "@/lib/data/parties";
 
-const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView, buildChart, axisTop } =
+const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView, buildChart, axisTop, lundiDeLaSemaine } =
   __test__;
 
 /** computeStats renvoie désormais { stats, dates } — les dates servent à
@@ -371,5 +371,89 @@ describe("detecterIndisponibilite", () => {
     // Sans cela, toute édition passée afficherait un bandeau de panne.
     const rows = [row("caq", "2026-06-30", 0.8)];
     expect(detecterIndisponibilite(rows, "2026-06-30", "2026-06-30")).toBeNull();
+  });
+});
+
+
+describe("une seule durée par parti — régression PR #539", () => {
+  /** Le raffineur filtre les mêmes articles sur `stop_mtl >= start_date_mtl`
+   *  puis somme `headline_minutes` : le total d'une semaine EST la somme des
+   *  totaux de ses jours depuis le LUNDI
+   *  (radar-party-score-salient-shadow/runtime.R:269-302).
+   *
+   *  L'axe du palmarès ouvrait la semaine le SAMEDI. Il cumulait donc deux
+   *  jours que la table n'agrège pas, et la pochette annonçait 14h40 quand le
+   *  palmarès finissait à 17h16 pour le même parti, sur le même écran — le
+   *  classement des deux pouvait diverger avec. Rien ne le signalait : les
+   *  deux nombres étaient justes chacun dans sa fenêtre.
+   */
+  it("lundiDeLaSemaine tombe un lundi, y compris quand on part d'un lundi", () => {
+    for (const jour of ["2026-08-17", "2026-08-18", "2026-08-21", "2026-08-23"]) {
+      const t = lundiDeLaSemaine(Date.parse(`${jour}T14:00:00Z`));
+      expect(new Date(t).getUTCDay(), `${jour} → ${new Date(t).toISOString()}`).toBe(1);
+      expect(t).toBeLessThanOrEqual(Date.parse(`${jour}T00:00:00Z`));
+    }
+  });
+
+  it("la pochette et le palmarès affichent le MÊME nombre de minutes", () => {
+    // Le SAMEDI et le DIMANCHE qui précèdent sont présents et non nuls : sans
+    // eux, ouvrir l'axe deux jours trop tôt n'ajoute rien et le test ne prouve
+    // rien. C'est précisément ce qui rendait la régression invisible.
+    const AVANT = ["2026-08-15", "2026-08-16"];
+    // Lundi 2026-08-17 au vendredi 2026-08-21, 5 jours, minutes connues.
+    const JOURS = ["2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"];
+    const MIN: Record<string, number[]> = {
+      caq: [120, 90, 140, 60, 100],
+      plq: [60, 80, 40, 70, 50],
+    };
+    const AVANT_MIN: Record<string, number[]> = { caq: [200, 180], plq: [90, 110] };
+    const mk = (party: string, date: string, minutes: number, part: number) => ({
+      party, date_utc: date, date_montreal_tz: date,
+      weighted_mentions: part, weighted_tone: 0, total_raw_score: minutes,
+    });
+
+    const jours = [
+      ...AVANT.flatMap((d, i) => {
+        const tot = AVANT_MIN.caq[i] + AVANT_MIN.plq[i];
+        return [mk("caq", d, AVANT_MIN.caq[i], AVANT_MIN.caq[i] / tot),
+                mk("plq", d, AVANT_MIN.plq[i], AVANT_MIN.plq[i] / tot)];
+      }),
+      ...JOURS.flatMap((d, i) => {
+        const tot = MIN.caq[i] + MIN.plq[i];
+        return [mk("caq", d, MIN.caq[i], MIN.caq[i] / tot), mk("plq", d, MIN.plq[i], MIN.plq[i] / tot)];
+      }),
+    ];
+    // La table semaine, telle que le raffineur la produit : la somme des jours.
+    const sCaq = MIN.caq.reduce((a, b) => a + b, 0);
+    const sPlq = MIN.plq.reduce((a, b) => a + b, 0);
+    const semaine = [
+      mk("caq", JOURS.at(-1)!, sCaq, sCaq / (sCaq + sPlq)),
+      mk("plq", JOURS.at(-1)!, sPlq, sPlq / (sCaq + sPlq)),
+    ];
+
+    const c = computeStats(jours as never, semaine as never, semaine as never)!;
+    const vue = buildRangeView(c.stats, "week", c.dates);
+
+    for (const ligne of vue.rows) {
+      const serie = vue.chart.series.find((s) => s.key === ligne.key);
+      if (!serie) continue;
+      expect(serie.lastMinutes, `${ligne.key} : pochette ${ligne.minutesUne} vs palmarès ${serie.lastMinutes}`)
+        .toBe(ligne.minutesUne);
+    }
+    expect(vue.rows[0].minutesUne).toBe(sCaq);
+  });
+
+  it("les enjeux non fournis se déclarent tels quels, au lieu de « aucun »", () => {
+    // Les vues par média ne reçoivent pas la carte des enjeux : le raffineur ne
+    // croise pas parti × enjeu × média. `enjeux: []` s'y lisait « Aucun enjeu
+    // identifié », une affirmation sur la couverture au lieu d'un aveu sur la
+    // mesure.
+    const j = [
+      { party: "caq", date_utc: "2026-08-21", date_montreal_tz: "2026-08-21", weighted_mentions: 0.6, weighted_tone: 0, total_raw_score: 100 },
+      { party: "plq", date_utc: "2026-08-21", date_montreal_tz: "2026-08-21", weighted_mentions: 0.4, weighted_tone: 0, total_raw_score: 60 },
+    ];
+    const c = computeStats(j as never, j as never, j as never)!;
+    expect(buildRangeView(c.stats, "today", c.dates).rows[0].enjeuxVentiles).toBe(false);
+    expect(buildRangeView(c.stats, "today", c.dates, null, new Map()).rows[0].enjeuxVentiles).toBe(true);
   });
 });
