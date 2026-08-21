@@ -3,8 +3,40 @@ import { __test__ } from "@/lib/data/assemblee";
 
 const {
   fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
-  buildPeriodView, buildPortraitIndex, lookupPortrait,
+  buildPeriodView, buildPortraitIndex, lookupPortrait, citationExtrait,
 } = __test__;
+
+describe("citationExtrait", () => {
+  it("ancre l'extrait sur le concept quand il se trouve après le budget", () => {
+    const contexte = "Quand je suis arrivé ici, il y a huit ans, parmi mes priorités il y avait la question de la protection des lanceurs alerte et de leur travail essentiel.";
+    const extrait = citationExtrait(contexte, "lanceurs alerte");
+
+    expect(extrait).toContain("lanceurs alerte");
+    expect(extrait).toMatch(/^… /);
+    expect(extrait!.length).toBeLessThanOrEqual(95);
+  });
+
+  it("retrouve le concept sans tenir compte des accents ni de la casse", () => {
+    const contexte = `${"Préambule politique et parlementaire. ".repeat(3)}L'ECONOMIE régionale demeure au centre de cette intervention.`;
+    const extrait = citationExtrait(contexte, "économie");
+
+    expect(extrait).toMatch(/^… /);
+    expect(extrait).toContain("ECONOMIE");
+  });
+
+  it("recentre un concept qui chevauche la limite plutôt que de le couper", () => {
+    const contexte = `${"Une introduction assez longue précède le passage central et fournit plusieurs détails. "}La participation publique éclaire ensuite la décision.`;
+    const extrait = citationExtrait(contexte, "participation publique");
+
+    expect(extrait).toContain("participation publique");
+    expect(extrait).not.toContain("parti…");
+    expect(extrait!.length).toBeLessThanOrEqual(95);
+  });
+
+  it("préserve une citation complète et son point final", () => {
+    expect(citationExtrait("Une phrase complète.", "phrase")).toBe("Une phrase complète.");
+  });
+});
 
 describe("appariement des portraits", () => {
   const portraits = buildPortraitIndex([
@@ -114,5 +146,19 @@ describe("buildPeriodView", () => {
     const qs = view.rows.find((r) => r.key === "qs")!;
     expect(qs.inShadow).toBe(true); // aucune intervention en "session"
     expect(qs.enjeuStack).toBeUndefined();
+  });
+
+  it("conserve le contexte complet du concept dans le tiroir", () => {
+    const contexte = "Une citation volontairement longue qui dépasse le budget de la carte et doit néanmoins rester entière dans le tiroir du parti afin de préserver tout son contexte parlementaire.";
+    const rows = [{
+      period_type: "session", period_start_date: "2026-01-01", period_end_date: "2026-06-10",
+      party: "caq", n_interventions: 50, word_count: 5000, lexical_richness: 0.6,
+      tone_score: 0.01, editorial_angle: "x", signature_word: "contexte",
+      signature_word_context: contexte,
+    }];
+
+    const view = buildPeriodView(rows as never, "session");
+
+    expect(view.rows.find((row) => row.key === "caq")?.signatureWordContext).toBe(contexte);
   });
 });
