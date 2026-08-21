@@ -47,9 +47,4 @@
 
 - **A PR body reads in one minute** — 3 to 5 bullets, template sections answered in one line each; measurements, tables, test output and the investigation story go in the **linked issue**, not in the PR body (issues themselves stay as detailed as needed). This is gitflow *security*, not style: on 2026-08-12 a long PR was approved with « J'approuve mais j'ai pas lu. Trop long et incompréhensible » — the only human safeguard in the chain became decorative. An AI alone never reviews a PR either. Hard rule #9; no CI check enforces it.
 
-  Three ways this rule gets missed even when you have read it:
-  - **Editing an existing body does not inherit its length.** Answering a review or resolving conflicts means rewriting the body to format, not appending to what was there. Editing a long body and adding to it is exactly how #549 grew on 2026-08-21.
-  - **No linked issue is not a licence to expand.** Some work has no issue (asked for out loud). The overflow then goes in a **PR comment**, never in the body — a comment is where a reviewer who asked for numbers looks, and it does not stand between the next reviewer and the diff.
-  - **Check it, don't estimate it.** Before `gh pr create` / `gh pr edit`, run `gh pr view <n> --json body -q .body | wc -l`. Over ~50 lines including template headings, cut before publishing.
-
 Full detail and rationale: [`AGENTS.md`](./AGENTS.md). To inspect Athena directly (read-only), see the R snippet in [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md).
