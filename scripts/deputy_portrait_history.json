@@ -1,0 +1,30 @@
+[
+  {
+    "deputy_id": "17897",
+    "profil": "https://www.assnat.qc.ca/fr/deputes/fitzgibbon-pierre-17897/index.html",
+    "nom_index": "Pierre Fitzgibbon",
+    "circonscription": "Terrebonne",
+    "parti": "Coalition avenir Québec"
+  },
+  {
+    "deputy_id": "17913",
+    "profil": "https://www.assnat.qc.ca/fr/deputes/laforest-andree-17913/index.html",
+    "nom_index": "Andrée Laforest",
+    "circonscription": "Chicoutimi",
+    "parti": "Coalition avenir Québec"
+  },
+  {
+    "deputy_id": "16777",
+    "profil": "https://www.assnat.qc.ca/fr/deputes/lefebvre-eric-16777/index.html",
+    "nom_index": "Éric Lefebvre",
+    "circonscription": "Arthabaska",
+    "parti": "Coalition avenir Québec"
+  },
+  {
+    "deputy_id": "18561",
+    "profil": "https://www.assnat.qc.ca/fr/deputes/boutin-joelle-18561/index.html",
+    "nom_index": "Joëlle Boutin",
+    "circonscription": "Jean-Talon",
+    "parti": "Coalition avenir Québec"
+  }
+]

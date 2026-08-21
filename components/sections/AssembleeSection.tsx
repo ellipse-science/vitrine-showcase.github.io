@@ -6,9 +6,9 @@ import { AssembleeClient } from "@/components/interactive/AssembleeClient";
 // dans PartisCouvertureSection.
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
-export async function AssembleeSection({ asOfIso }: { asOfIso?: string } = {}) {
+export async function AssembleeSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
   if (isProd) return null;
   const data = await loadAssemblee(asOfIso);
   if (!data) return null;
-  return <AssembleeClient data={data} />;
+  return <AssembleeClient data={data} editionKey={editionKey} />;
 }

@@ -102,6 +102,10 @@ type DeputyAgoraRow = IssueShares & {
   period_end_date: string;
   party: string;
   deputy: string;
+  /** Identifiant stable de la fiche ANQ, publié par le raffineur. */
+  deputy_id?: string | number;
+  /** Identifiant de circonscription pplmatch, utilisé comme second indice. */
+  district_id?: string;
   n_interventions: number;
   word_count: number;
   lexical_richness: number;
@@ -331,8 +335,12 @@ function citationExtrait(value?: string, budget = CITATION_BUDGET): string | und
 // ↔ « Sylvie D'Amours »).
 
 export type DeputyPortrait = {
+  deputy_id?: string | number;
   circonscription: string;
   circonscription_slug: string;
+  /** Chemin relatif sans extension. Diffère de la circonscription pour les
+   *  portraits historiques, afin qu'un successeur n'écrase pas l'image. */
+  asset_slug?: string;
   nom: string;
   /** « Indépendant », « Indépendante », ou le nom du parti, tel que l'ANQ
    *  l'inscrit dans son index. */
@@ -384,16 +392,29 @@ const PORTRAIT_ALIASES: Record<string, string> = {
 // que le raffineur ajoute déjà au nom publié quand il détecte la collision
 // (build_display_names, aws-refiners). Tant que ce suffixe n'est pas publié
 // pour un homonyme donné, le comportement reste inchangé : aucun portrait.
-function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait[]> {
+type PortraitIndex = {
+  byId: Map<string, DeputyPortrait>;
+  byName: Map<string, DeputyPortrait[]>;
+};
+
+function portraitBaseName(name: string): string {
+  return name.replace(RIDING_HINT, "").trim();
+}
+
+function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
+  const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
-    const key = tightKey(p.nom);
+    if (p.deputy_id !== undefined && p.deputy_id !== null) {
+      byId.set(String(p.deputy_id), p);
+    }
+    const key = tightKey(portraitBaseName(p.nom));
     if (!key) continue;
     const list = byKey.get(key);
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return byKey;
+  return { byId, byName: byKey };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -401,15 +422,22 @@ const RIDING_HINT = /\s*\(([^()]+)\)\s*$/;
 
 function lookupPortrait(
   deputy: string,
-  index: Map<string, DeputyPortrait[]>,
+  deputyId: string | number | undefined,
+  districtId: string | undefined,
+  index: PortraitIndex,
 ): DeputyPortrait | undefined {
+  if (deputyId !== undefined && deputyId !== null) {
+    const byId = index.byId.get(String(deputyId));
+    if (byId) return byId;
+  }
   const hint = deputy.match(RIDING_HINT);
   const baseName = hint ? deputy.slice(0, hint.index) : deputy;
   const key = tightKey(baseName);
-  const candidates = index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
+  const candidates = index.byName.get(key) ?? index.byName.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
   if (candidates.length === 1) return candidates[0];
-  if (candidates.length > 1 && hint) {
-    const ridingKey = tightKey(hint[1]);
+  const riding = hint?.[1] ?? districtId;
+  if (candidates.length > 1 && riding) {
+    const ridingKey = tightKey(riding);
     return candidates.find((c) => tightKey(c.circonscription) === ridingKey);
   }
   // Homonyme non départagé (pas d'indice de circonscription publié) : on ne
@@ -432,7 +460,7 @@ function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
-  portraits: Map<string, DeputyPortrait[]>,
+  portraits: PortraitIndex,
 ): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -446,7 +474,7 @@ function buildDeputyList(
   // été prononcée sous cette bannière pendant la période.
   const sorted = [...rows]
     .filter((r) => {
-      const p = lookupPortrait(r.deputy, portraits);
+      const p = lookupPortrait(r.deputy, r.deputy_id, r.district_id, portraits);
       return !(p && isIndependent(p));
     })
     .sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
@@ -458,11 +486,11 @@ function buildDeputyList(
 
   return sorted.map((r) => {
     const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
-    const portrait = lookupPortrait(r.deputy, portraits);
+    const portrait = lookupPortrait(r.deputy, r.deputy_id, r.district_id, portraits);
     const stack = buildEnjeuStack(r);
     const top = stack.find((s) => !s.isReste);
     return {
-      name: portrait ? portrait.nom : titleCaseName(r.deputy),
+      name: portrait ? portraitBaseName(portrait.nom) : titleCaseName(r.deputy),
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
       richnessLevel: richnessLevels[r.deputy] || 1,
@@ -472,7 +500,7 @@ function buildDeputyList(
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.jpg` : undefined,
+      portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
@@ -496,7 +524,7 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: Map<string, DeputyPortrait[]> = new Map(),
+  portraits: PortraitIndex = { byId: new Map(), byName: new Map() },
 ): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
@@ -660,4 +688,6 @@ export const __test__ = {
   buildEnjeuStack,
   buildSubtitle,
   buildPeriodView,
+  buildPortraitIndex,
+  lookupPortrait,
 };

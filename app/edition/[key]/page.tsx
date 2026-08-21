@@ -131,7 +131,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
 
       {!isProdEnv && (
         <div id="partis-et-couverture" data-section="Partis et couverture">
-          <PartisCouvertureSection asOfIso={edition.navDateIso} />
+          <PartisCouvertureSection asOfIso={edition.navDateIso} editionKey={edition.key} />
         </div>
       )}
 
@@ -141,12 +141,12 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
 
       {!isProdEnv && (
         <div id="assemblee-nationale" data-section="Assemblée nationale">
-          <AssembleeSection asOfIso={edition.navDateIso} />
+          <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
         </div>
       )}
 
       <div id="polimetre-plus" data-section="Polimètre+">
-        <PolimetrePlusSection asOfIso={edition.navDateIso} />
+        <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
 
       <nav className="archive-pager" aria-label="Naviguer entre les éditions">
