@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+// Importé depuis ./transforms, PAS depuis ./sync-athena. Ce fichier-ci est
+// compilé par le tsconfig de la RACINE, qui exclut pourtant `workers/` :
+// `exclude` ne filtre que les globs d'`include`, il n'empêche pas un fichier
+// d'entrer dans le programme quand un fichier inclus l'importe. Passer par
+// sync-athena.ts tirait donc `@neondatabase/serverless` et `aws4fetch` dans la
+// compilation racine, où ils ne sont pas installés — `npm run type-check`
+// cassait sur toutes les PR, et les déploiements avec.
 import {
   HEADLINE_KEEP_DAYS,
   isoDaysAgo,
   keepHeadlineRow,
   normalizeValue,
   polimetreCutoff,
-} from "@/workers/api/src/sync-athena";
+} from "@/workers/api/src/transforms";
 import { TABLES } from "@/workers/api/src/tables";
 
 /**
