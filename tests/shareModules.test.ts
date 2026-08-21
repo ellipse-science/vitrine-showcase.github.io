@@ -59,6 +59,16 @@ describe("getShareModuleContent — chiffre choc (stat)", () => {
     }
   });
 
+  it("une-des-unes : transmet le niveau calibré qui porte la carte de partage", async () => {
+    const { stat } = await getShareModuleContent("une-des-unes");
+
+    if (stat.kicker) {
+      expect(stat.salienceLabel).toBeTruthy();
+      expect(stat.salienceRank).toBeGreaterThanOrEqual(1);
+      expect(stat.salienceRank).toBeLessThanOrEqual(6);
+    }
+  });
+
   it("partis-et-couverture : quand un parti mène aujourd'hui, le libellé le nomme et le ton pilote la pointe éditoriale", async () => {
     const content = await getShareModuleContent("partis-et-couverture");
     if (content.stat.value.endsWith("%")) {
