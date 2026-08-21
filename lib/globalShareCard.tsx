@@ -4,7 +4,7 @@ import path from "node:path";
 import { ImageResponse } from "next/og";
 
 import { loadShareFonts } from "@/lib/shareCardFonts";
-import { CORDOVAN, INK, PAPER, RULE } from "@/lib/shareImageTokens";
+import { INK, PAPER, RULE } from "@/lib/shareImageTokens";
 
 export const GLOBAL_SHARE_SIZE = { width: 1200, height: 630 };
 
@@ -26,11 +26,13 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         position: "relative",
         overflow: "hidden",
         background: PAPER,
         color: INK,
-        padding: 58,
+        padding: "50px 70px 42px",
         fontFamily: "Source Serif 4",
       }}
     >
@@ -38,7 +40,10 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
         style={{
           display: "flex",
           position: "absolute",
-          inset: 18,
+          top: 18,
+          right: 18,
+          bottom: 18,
+          left: 18,
           border: `2px solid ${RULE}`,
         }}
       />
@@ -47,11 +52,11 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
         style={{
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
           position: "relative",
-          width: "66%",
-          paddingRight: 46,
-          borderRight: `2px solid ${RULE}`,
+          flex: 1,
+          width: "100%",
         }}
       >
         {/* Identité officielle : les deux PNG sont ceux du masthead du site. */}
@@ -59,24 +64,25 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
         <img
           src={pngDataUrl(vitrineLogo)}
           alt=""
-          width="670"
-          height="221"
-          style={{ width: "670px", height: "221px", objectFit: "contain" }}
+          width="760"
+          height="251"
+          style={{ width: "760px", height: "251px", objectFit: "contain" }}
         />
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            marginTop: -24,
-            gap: 18,
+            justifyContent: "center",
+            marginTop: -34,
+            gap: 20,
           }}
         >
           <div
             style={{
               display: "flex",
               fontFamily: "IBM Plex Mono",
-              fontSize: 14,
-              letterSpacing: 4,
+              fontSize: 15,
+              letterSpacing: 4.2,
               textTransform: "uppercase",
               whiteSpace: "nowrap",
             }}
@@ -87,9 +93,9 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
           <img
             src={pngDataUrl(cappLogo)}
             alt=""
-            width="365"
-            height="115"
-            style={{ width: "365px", height: "115px", objectFit: "contain" }}
+            width="390"
+            height="123"
+            style={{ width: "390px", height: "123px", objectFit: "contain" }}
           />
         </div>
       </div>
@@ -97,69 +103,33 @@ export async function renderGlobalShareCard(): Promise<ImageResponse> {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
           justifyContent: "space-between",
           position: "relative",
-          width: "34%",
-          paddingLeft: 46,
+          width: "100%",
+          borderTop: `2px solid ${RULE}`,
+          paddingTop: 22,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", width: 82, height: 6, background: CORDOVAN }} />
-          <div
-            style={{
-              display: "flex",
-              fontFamily: "IBM Plex Mono",
-              fontSize: 15,
-              letterSpacing: 3.8,
-              textTransform: "uppercase",
-              opacity: 0.7,
-            }}
-          >
-            Analyse en continu
-          </div>
-        </div>
-
         <div
           style={{
             display: "flex",
-            fontFamily: "Playfair Display",
-            fontWeight: 700,
-            fontSize: 34,
-            lineHeight: 1.18,
+            maxWidth: 790,
+            fontSize: 22,
+            lineHeight: 1.25,
           }}
         >
-          Une lecture scientifique de la couverture médiatique et des discours politiques au Québec.
+          Analyse scientifique de la couverture médiatique et des discours politiques au Québec.
         </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 12,
-              fontFamily: "IBM Plex Mono",
-              fontSize: 14,
-              letterSpacing: 2.4,
-              textTransform: "uppercase",
-            }}
-          >
-            <span>Médias</span>
-            <span style={{ color: CORDOVAN }}>◆</span>
-            <span>Décideurs</span>
-            <span style={{ color: CORDOVAN }}>◆</span>
-            <span>Promesses</span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontFamily: "IBM Plex Mono",
-              fontSize: 14,
-              letterSpacing: 1.5,
-            }}
-          >
-            vitrinedemocratique.com
-          </div>
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "IBM Plex Mono",
+            fontSize: 14,
+            letterSpacing: 1.5,
+          }}
+        >
+          vitrinedemocratique.com
         </div>
       </div>
     </div>,
