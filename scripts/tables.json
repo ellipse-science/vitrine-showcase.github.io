@@ -60,13 +60,15 @@
     },
     {
       "name": "agora_decideurs_qc_deputes",
-      "athena": "agora_datamart-agora_decideurs_qc_deputes",
+      "athena": "agora_datamart-agora_decideurs_qc_deputes_v2",
       "out": "public/data/agora/agora_decideurs_qc_deputes.json",
       "cols": [
         "period_type",
         "period_start_date",
         "period_end_date",
         "party",
+        "deputy_id",
+        "district_id",
         "deputy",
         "n_interventions",
         "word_count",
