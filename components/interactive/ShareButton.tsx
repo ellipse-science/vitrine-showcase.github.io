@@ -11,6 +11,12 @@ interface ShareButtonProps {
   // partager l'URL brute de la page montrerait toujours la carte globale du
   // site plutôt que celle du module (#210).
   anchor?: string
+  // Clé de l'édition affichée (« 2026-08-10T07 ») quand on est sur une page
+  // d'archive. Absente = édition courante. Elle bascule le partage vers
+  // /partage/<module>/<édition>/, qui porte la carte de CE moment : partager
+  // depuis une archive en publiant le chiffre du jour donnerait une image que
+  // la page pointée contredit (#265).
+  editionKey?: string
 }
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
@@ -51,7 +57,7 @@ async function canShareFiles(): Promise<boolean> {
 // le lien directement — les deux artefacts sont désormais distincts. Sinon,
 // navigator.share() du lien reste immédiat ; en dernier repli, le panneau
 // desktop s'ouvre.
-export function ShareButton({ title, anchor }: ShareButtonProps) {
+export function ShareButton({ title, anchor, editionKey }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const [igSupported, setIgSupported] = useState(false)
@@ -89,15 +95,19 @@ export function ShareButton({ title, anchor }: ShareButtonProps) {
   // Mini-page /partage/<anchor>/ (carte OG dédiée + redirection vers
   // #<anchor>) plutôt que l'URL à fragment, ignorée par les réseaux sociaux
   // pour l'aperçu de lien (#210).
+  // Segment d'édition optionnel : les deux familles de routes ont la même
+  // forme, seul le préfixe change.
+  const shareBase = () => `${basePath}/partage/${anchor}${editionKey ? `/${editionKey}` : ''}`
+
   const shareUrl = () => {
     if (!anchor) return window.location.href
-    return `${window.location.origin}${basePath}/partage/${anchor}/`
+    return `${window.location.origin}${shareBase()}/`
   }
 
-  const previewSrc = anchor ? `${basePath}/partage/${anchor}/opengraph-image` : undefined
+  const previewSrc = anchor ? `${shareBase()}/opengraph-image` : undefined
   // Pas de barre oblique finale : comme opengraph-image, cette route génère
   // un fichier "story" (pas un dossier avec index), même sur GitHub Pages.
-  const storyUrl = () => `${window.location.origin}${basePath}/partage/${anchor}/story`
+  const storyUrl = () => `${window.location.origin}${shareBase()}/story`
 
   const shareLinkNatively = async () => {
     try {

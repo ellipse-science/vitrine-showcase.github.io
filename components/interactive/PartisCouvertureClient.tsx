@@ -37,7 +37,7 @@ function shareTitle(data: PartiesData): string {
   return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct}\u00a0% du temps\u00a0: ${tone}`;
 }
 
-export function PartisCouvertureClient({ data }: { data: PartiesData }) {
+export function PartisCouvertureClient({ data, editionKey }: { data: PartiesData; editionKey?: string }) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   // Les deux platines : la dernière sélection à gauche, la précédente à droite.
@@ -100,7 +100,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" />
+            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" editionKey={editionKey} />
           </div>
         </div>
       </div>

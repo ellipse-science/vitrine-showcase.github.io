@@ -121,7 +121,7 @@ function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: st
   );
 }
 
-export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
+export function PolimetrePlusClient({ data, editionKey }: { data: PolimetreData; editionKey?: string }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
   const [category, setCategory] = useState<string>("all");
@@ -203,7 +203,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" />
+            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" editionKey={editionKey} />
           </div>
         </div>
       </div>

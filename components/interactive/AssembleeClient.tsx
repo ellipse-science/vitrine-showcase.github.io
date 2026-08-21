@@ -31,7 +31,7 @@ function SourceTip() {
 
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
-export function AssembleeClient({ data }: { data: AssembleeData }) {
+export function AssembleeClient({ data, editionKey }: { data: AssembleeData; editionKey?: string }) {
   const [period, setPeriod] = useState<PeriodKey>("last_pdq");
   const [playing, setPlaying] = useState(false);
   const view: PeriodView = data.periods[period];
@@ -63,7 +63,7 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" />
+            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" editionKey={editionKey} />
           </div>
         </div>
       </div>
