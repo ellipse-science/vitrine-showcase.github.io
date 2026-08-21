@@ -1115,7 +1115,7 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="agora_decideurs_qc" data-env-output="DEV">
-                    agora_decideurs_qc<br>agora_decideurs_qc_deputes
+                    agora_decideurs_qc<br>agora_decideurs_qc_deputes_v2
                     <div class="node-detail">Consommées par le module Assemblée</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
@@ -1754,7 +1754,7 @@
                     ]
                 },
                 'agora_decideurs_qc': {
-                    title: 'Tables: agora_decideurs_qc + agora_decideurs_qc_deputes',
+                    title: 'Tables: agora_decideurs_qc + agora_decideurs_qc_deputes_v2',
                     description: 'Agrégats de la parole en chambre, par parti et par député. Ce sont les deux seules tables agora_datamart consommées par la Vitrine (module Assemblée).',
                     columns: [
                         'period_type / period_start_date / period_end_date - Fenêtre agrégée',
@@ -1784,7 +1784,7 @@
                         'vitrine_datamart-headline_events_4h',
                         'vitrine_datamart-polimetre_plus',
                         'agora_datamart-agora_decideurs_qc',
-                        'agora_datamart-agora_decideurs_qc_deputes'
+                        'agora_datamart-agora_decideurs_qc_deputes_v2'
                     ],
                     details: [
                         '⛔ Désactivées dans la liste blanche (produites, jamais lues) : federal_parties_score_day, reflet_day/week/month, headline_of_headlines',
@@ -2334,7 +2334,7 @@
                     description: 'Agrège les phrases annotées en portraits de la parole en chambre, par parti et par député, et génère un angle éditorial par LLM.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts - agora_datamart.agora_decideurs_qc_phrases (+ ses propres tables annotées, en historique)',
-                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - agora_decideurs_qc, agora_decideurs_qc_deputes (+ tables annotées intermédiaires)',
+                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - agora_decideurs_qc, agora_decideurs_qc_deputes_v2 (+ identité des interventions et agrégats journaliers V2)',
                         '',
                         '⚙️ TRAITEMENT:',
                         '• Agrégation par parti ET par député (aws-refiners#259)',
@@ -2652,7 +2652,7 @@
                         '• Deux solitudes (DeuxSolitudesSection) ← headline_events_4h',
                         '• Enjeux / treemap (TreemapSection) ← issues_score_day/week/month',
                         '• Partis et couverture (PartisCouvertureSection) ← *_parties_score_* et provincial_parties_salient_shadow_*',
-                        '• Assemblée (AssembleeSection) ← agora_decideurs_qc + agora_decideurs_qc_deputes',
+                        '• Assemblée (AssembleeSection) ← agora_decideurs_qc + agora_decideurs_qc_deputes_v2',
                         '• Polimètre+ (PolimetrePlusSection) ← polimetre_plus',
                         '',
                         '🎨 Technologie: Next.js (export statique) + TypeScript, hébergé sur GitHub Pages',
