@@ -8,7 +8,7 @@ import { loadParties } from "@/lib/data/parties";
 import { loadAssemblee } from "@/lib/data/assemblee";
 import { loadPolimetre } from "@/lib/data/polimetre";
 
-export const SHARE_MODULE_SLUGS = [
+const BASE_SHARE_MODULE_SLUGS = [
   "une-des-unes",
   "deux-solitudes",
   "partis-et-couverture",
@@ -17,7 +17,20 @@ export const SHARE_MODULE_SLUGS = [
   "polimetre-plus",
 ] as const;
 
-export type ShareModuleSlug = (typeof SHARE_MODULE_SLUGS)[number];
+export type ShareModuleSlug = (typeof BASE_SHARE_MODULE_SLUGS)[number];
+
+// Les modules Partis et Assemblée sont temporairement masqués en production
+// (#544). Ne générons pas de routes de partage vers leurs ancres vides : la
+// surface partageable doit suivre le même signal que les sections elles-mêmes.
+const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = [
+  "partis-et-couverture",
+  "assemblee-nationale",
+];
+
+export const SHARE_MODULE_SLUGS: readonly ShareModuleSlug[] =
+  process.env.NEXT_PUBLIC_SITE_ENV === "prod"
+    ? BASE_SHARE_MODULE_SLUGS.filter((slug) => !PROD_HIDDEN_SHARE_MODULES.includes(slug))
+    : BASE_SHARE_MODULE_SLUGS;
 
 export function isShareModuleSlug(value: string): value is ShareModuleSlug {
   return (SHARE_MODULE_SLUGS as readonly string[]).includes(value);
@@ -97,7 +110,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     title: "L'alignement de l'Assemblée nationale",
     description: "Répartition des enjeux, ton et richesse lexicale des débats parlementaires.",
     subtitle: "Ce que disent les décideurs",
-    stat: { value: "125", label: "député.es scrutés à chaque séance" },
+    stat: { value: "116", label: "député.es scrutés à chaque séance" },
   },
   "polimetre-plus": {
     title: "Polimètre+ : promesses sous la loupe médiatique",
