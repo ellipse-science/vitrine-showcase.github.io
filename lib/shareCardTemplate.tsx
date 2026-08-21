@@ -41,6 +41,8 @@ export type ShareCardContent = {
   accent?: string;
   /** « Édition de 8h, mardi 19 août » — vide pour l'édition courante. */
   editionLabel?: string;
+  /** Illustration courante de la Une des Unes. Jamais fournie aux archives. */
+  imageSrc?: string;
 };
 
 // Traduit le contenu d'un module (lib/shareModules.ts) vers le contrat de
@@ -208,6 +210,7 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
   // titre de la Une domine, et le ratio « X/Y médias » devient une preuve de
   // second plan. Les cinq autres modules mènent avec leur chiffre.
   const isHeadlineCard = Boolean(content.headline);
+  const showHeadlineImage = Boolean(isHeadlineCard && !f.stacked && content.imageSrc);
 
   const eyebrow = (
     <div style={{ display: "flex", flexDirection: "column", gap: f.gap * 0.4 }}>
@@ -419,11 +422,35 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
           // et le concentrait autour du chiffre.
           flex: f.stacked ? "0 0 auto" : 1,
           position: "relative",
-          flexDirection: "column",
+          flexDirection: showHeadlineImage ? "row" : "column",
           justifyContent: "center",
+          alignItems: showHeadlineImage ? "center" : "stretch",
+          gap: showHeadlineImage ? f.gap * 1.5 : 0,
         }}
       >
         {figure}
+        {showHeadlineImage && (
+          <div
+            style={{
+              display: "flex",
+              width: 370,
+              height: 300,
+              flex: "0 0 370px",
+              overflow: "hidden",
+              border: `2px solid ${INK}`,
+              background: RULE,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={content.imageSrc}
+              alt=""
+              width="370"
+              height="300"
+              style={{ width: "370px", height: "300px", objectFit: "cover" }}
+            />
+          </div>
+        )}
         {f.stacked && <div style={{ display: "flex", marginTop: f.gap * 1.2, height: 3, background: RULE }} />}
       </div>
 

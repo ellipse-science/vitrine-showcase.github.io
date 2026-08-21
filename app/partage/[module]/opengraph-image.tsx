@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 import { SHARE_MODULE_SLUGS, getShareModuleContent, isShareModuleSlug } from "@/lib/shareModules";
 import { ShareCard, getShareCardFormat, toShareCardContent } from "@/lib/shareCardTemplate";
 import { loadShareFonts } from "@/lib/shareCardFonts";
+import { loadCurrentUneShareImage } from "@/lib/shareUneArt";
 
 const FORMAT = getShareCardFormat("og");
 
@@ -23,6 +24,8 @@ export default async function Image({ params }: { params: Promise<{ module: stri
     : { title: "La Vitrine démocratique", subtitle: "Six fois par jour", stat: { value: "", label: "" } };
 
   const fonts = await loadShareFonts();
+  const imageSrc = module === "une-des-unes" ? await loadCurrentUneShareImage() : undefined;
+  const card = toShareCardContent(content);
 
-  return new ImageResponse(<ShareCard content={toShareCardContent(content)} format="og" />, { ...size, fonts });
+  return new ImageResponse(<ShareCard content={{ ...card, imageSrc }} format="og" />, { ...size, fonts });
 }
