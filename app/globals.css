@@ -7212,6 +7212,144 @@
   .ppl-verdict__full { display: block; }
   .ppl-verdict__short { display: none; }
 
+  /* ============================================================ */
+  /* Polimètre+ — mode « promesses de la campagne »               */
+  /*                                                              */
+  /* Même grille, même liste : seule la PASTILLE change de sens.  */
+  /* Une promesse formulée hier n'a pas d'état de réalisation —   */
+  /* le Polimètre ne s'y prononcera que des mois plus tard — donc */
+  /* la couleur porte le PARTI qui l'a formulée à la place du     */
+  /* verdict. Toutes les règles ci-dessous sont les jumelles des  */
+  /* règles de verdict, à la variable près.                       */
+  /*                                                              */
+  /* ⚠️ TROISIÈME copie des couleurs de parti, après              */
+  /* PARTY_COLORS (lib/data/parties.ts) et .parti-name-box.*      */
+  /* (plus haut dans ce fichier). Les trois doivent rester        */
+  /* accordées : un lecteur qui passe des « Partis et couverture  */
+  /* » au Polimètre+ suit les mêmes couleurs. La sortie propre    */
+  /* serait des jetons --party-* dans :root — non faite, parce    */
+  /* que ces teintes partent aussi dans des attributs SVG         */
+  /* (stroke), où var() ne se résout pas.                         */
+  /* ============================================================ */
+  .polimeter-plus--neuves {
+    --ppl-parti-plq: #A03440;
+    --ppl-parti-caq: #2B5C7C;
+    --ppl-parti-qs:  #B85A2C;
+    --ppl-parti-pq:  #1E3A5F;
+    --ppl-parti-pcq: #5A3B6E;
+  }
+
+  /* Rang : lavis du parti + anneau plein, exactement comme les verdicts. */
+  .ppl-promise--parti-plq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-plq) 20%, transparent); border-color: var(--ppl-parti-plq); }
+  .ppl-promise--parti-caq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-caq) 20%, transparent); border-color: var(--ppl-parti-caq); }
+  .ppl-promise--parti-qs  .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-qs)  20%, transparent); border-color: var(--ppl-parti-qs); }
+  .ppl-promise--parti-pq  .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-pq)  20%, transparent); border-color: var(--ppl-parti-pq); }
+  .ppl-promise--parti-pcq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-pcq) 20%, transparent); border-color: var(--ppl-parti-pcq); }
+
+  /* Barre de gauche + lavis du libellé. */
+  .ppl-promise--parti-plq .ppl-title { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-promise--parti-caq .ppl-title { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-promise--parti-qs  .ppl-title { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-promise--parti-pq  .ppl-title { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-promise--parti-pcq .ppl-title { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  /* État ouvert : deux classes + --open, pour l'emporter sur la règle ci-dessus
+     (même raisonnement que pour les verdicts, quelques lignes plus haut). */
+  .ppl-promise--parti-plq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-promise--parti-caq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-promise--parti-qs.ppl-promise--open  .ppl-promise__head { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-promise--parti-pq.ppl-promise--open  .ppl-promise__head { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-promise--parti-pcq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  /* Filtres du rail gauche — jumeaux des .ppl-verdict--<verdict>. */
+  .ppl-verdict--parti-plq { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-verdict--parti-caq { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-verdict--parti-qs  { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-verdict--parti-pq  { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-verdict--parti-pcq { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  .ppl-verdict--parti-plq:hover, .ppl-verdict--parti-plq.active { background: color-mix(in srgb, var(--ppl-parti-plq) 25%, transparent); }
+  .ppl-verdict--parti-caq:hover, .ppl-verdict--parti-caq.active { background: color-mix(in srgb, var(--ppl-parti-caq) 25%, transparent); }
+  .ppl-verdict--parti-qs:hover,  .ppl-verdict--parti-qs.active  { background: color-mix(in srgb, var(--ppl-parti-qs)  25%, transparent); }
+  .ppl-verdict--parti-pq:hover,  .ppl-verdict--parti-pq.active  { background: color-mix(in srgb, var(--ppl-parti-pq)  25%, transparent); }
+  .ppl-verdict--parti-pcq:hover, .ppl-verdict--parti-pcq.active { background: color-mix(in srgb, var(--ppl-parti-pcq) 25%, transparent); }
+
+  /* Parti sans promesse sur la période : grisé et non cliquable, comme une
+     catégorie d'enjeu vide. Un filtre qui vide la liste sans prévenir se lit
+     comme un bogue. */
+  .ppl-verdict--empty {
+    opacity: 0.38;
+    cursor: default;
+    filter: grayscale(1);
+  }
+  .ppl-verdict--empty:hover { background: color-mix(in srgb, var(--ink-softer) 10%, transparent); color: var(--ink-soft); }
+
+  /* Badge de parti dans la colonne de droite — remplace la tendance. Sigle en
+     papier sur la couleur pleine du parti : c'est le seul endroit du module où
+     la couleur porte du texte, d'où le fond plein plutôt qu'un lavis. */
+  .ppl-parti-badge {
+    justify-self: center;
+    align-self: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    background: var(--ink-softer);
+    padding: 3px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .ppl-parti-badge--plq { background: var(--ppl-parti-plq); }
+  .ppl-parti-badge--caq { background: var(--ppl-parti-caq); }
+  .ppl-parti-badge--qs  { background: var(--ppl-parti-qs); }
+  .ppl-parti-badge--pq  { background: var(--ppl-parti-pq); }
+  .ppl-parti-badge--pcq { background: var(--ppl-parti-pcq); }
+  /* Parti hors des cinq suivis : sigle en encre sur fond neutre — jamais la
+     teinte d'un autre parti. */
+  .ppl-parti-badge--inconnu { background: none; color: var(--ink-soft); border: 1px solid var(--rule); }
+
+  /* Bandeau de développement (fixtures). Volontairement VOYANT : il n'est pas
+     là pour être discret, il est là pour qu'une capture d'écran prise pendant
+     le développement ne puisse pas passer pour le site. */
+  .ppl-bandeau-fictif {
+    margin: 0 0 18px;
+    padding: 8px 14px;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.05em;
+    border-radius: 3px;
+  }
+
+  /* Inverseur de mode — au-dessus des onglets de période, dont il est la
+     hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
+     changent que la fenêtre. */
+  .ppl-mode-switch { margin-bottom: 8px; }
+
+  /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
+     pièce justificative du mode — ce que le parti a écrit, mot pour mot. */
+  .ppl-detail__verbatim {
+    margin: 6px 0 10px;
+    padding: 8px 0 8px 14px;
+    border-left: 2px solid var(--rule);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    font-style: italic;
+  }
+
+  .ppl-detail__meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
     .ppl-rail-head::after { display: none; }
@@ -7243,6 +7381,14 @@
     .ppl-promise.header div:last-child { display: none; }
     .ppl-promise,
     .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+    /* Mode « campagne » : la troisième colonne RESTE. La tendance est un
+       ornement qu'on peut retirer sur mobile ; le parti est l'information même
+       du mode — la cacher viderait la liste de son sujet. La colonne est
+       resserrée à 44px (le sigle mesure ~36px) plutôt que supprimée, et son
+       en-tête revient avec elle. */
+    .polimeter-plus--neuves .ppl-promise,
+    .polimeter-plus--neuves .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr) 44px; }
+    .polimeter-plus--neuves .ppl-promise.header div:last-child { display: block; }
     /* Les marges du bouton « Découvrir » compensaient les colonnes rang +
        tendance ; sans tendance, retrait simple. */
     .ppl-discover-wrap { margin-left: 10px; margin-right: 10px; }
