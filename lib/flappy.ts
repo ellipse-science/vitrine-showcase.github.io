@@ -109,9 +109,15 @@ export function insertScore(board: ScoreEntry[], e: ScoreEntry): ScoreEntry[] {
   return [...board, e].sort((a, b) => b.score - a.score).slice(0, 10);
 }
 
-const BLOCK = new Set(["ASS", "FUK", "FUC", "SEX", "FAG", "CUL", "PD"]);
+const BLOCK = ["ASS", "FUK", "FUC", "SEX", "FAG", "CUL", "PD"];
 
+// Par SOUS-CHAÎNE, pas par égalité : l'égalité bloquait « ASS » mais laissait
+// passer « ASSHOLE » (7 caractères, une requête). Tant que l'écriture était
+// révoquée (#491), c'était théorique ; depuis que la soumission est rouverte à
+// tous (issue #499), ce filtre est la seule barrière d'un tableau public —
+// revue d'AdriClout sur #545. Sur-bloquer un pseudo innocent coûte « PLAYER » ;
+// laisser passer une grossièreté coûte la page d'accueil.
 export function sanitizeInitials(raw: string): string {
   const up = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
-  return BLOCK.has(up) ? "PLAYER" : up;
+  return BLOCK.some((w) => up.includes(w)) ? "PLAYER" : up;
 }
