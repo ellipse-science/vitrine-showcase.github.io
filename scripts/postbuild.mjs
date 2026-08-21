@@ -69,6 +69,13 @@ async function substituteVersion() {
 // out/data/ » et rien d'autre. Tout actif non-JSON survit par construction —
 // latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
 // d'image plus tard ne demande aucune retouche ici.
+//
+// UNE exception nommée : hero-selection.json, le verdict de Une publié par
+// app/data/hero-selection.json/route.ts. Le raffineur vitrine-art le lit sur
+// le site déployé pour savoir QUOI illustrer — et ce n'est pas une donnée
+// vendue : c'est la Une déjà affichée en page d'accueil.
+const PRUNE_KEEP = new Set(["hero-selection.json"]);
+
 async function pruneDataJson() {
   const dataDir = path.join(OUT_DIR, "data");
   let removed = 0;
@@ -82,6 +89,7 @@ async function pruneDataJson() {
   }
 
   for await (const file of filesWithSuffix(dataDir, ".json")) {
+    if (PRUNE_KEEP.has(path.basename(file))) continue;
     bytes += (await stat(file)).size;
     await rm(file);
     removed++;
@@ -89,6 +97,30 @@ async function pruneDataJson() {
 
   const mb = (bytes / 1024 / 1024).toFixed(1);
   console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
+}
+
+// Fonds Gratton RETIRÉS DE PROD (2026-08-20) : lib/shareImageBackgrounds.ts
+// vide déjà la table en prod — plus aucune carte n'y réfère — mais `output:
+// export` copierait quand même les photos dans out/images/share/, à des URL
+// devinables. On retire donc les fichiers eux-mêmes du livrable prod ; dev
+// les garde.
+async function pruneShareBackgrounds() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  const shareDir = path.join(OUT_DIR, "images", "share");
+  let entries;
+  try {
+    entries = await readdir(shareDir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  let removed = 0;
+  for (const name of entries) {
+    if (!name.startsWith("gratton-")) continue;
+    await rm(path.join(shareDir, name));
+    removed++;
+  }
+  console.log(`postbuild: ${removed} fond(s) Gratton retiré(s) du livrable prod`);
 }
 
 // Identifiant de build pour l'actualisation côté navigateur (composant
@@ -152,6 +184,7 @@ async function main() {
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
+  await pruneShareBackgrounds();
 
   // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
   // identifiant nomme le cache du service worker — la sonde ActualisationAuto

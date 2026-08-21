@@ -430,6 +430,32 @@
       "used_by": "lib/data/polimetre.ts"
     },
     {
+      "name": "polimetre_promesses_neuves",
+      "athena": "vitrine_datamart-polimetre_promesses_neuves",
+      "out": "public/data/refined/day/polimetre_promesses_neuves.json",
+      "cols": [
+        "country_id",
+        "window_key",
+        "window_end",
+        "rank_current",
+        "promesse_id",
+        "party_id",
+        "label",
+        "promesse_text",
+        "announce_date",
+        "release_url",
+        "release_title",
+        "n_mentions",
+        "salience_index",
+        "articles"
+      ],
+      "_note": "Mode « promesses de la campagne » du Polimètre+ : promesses repérées dans a-qc-press-releases (communiqués des partis) par le raffineur polimetre-promesses-neuves, puis classées par écho médiatique. Deux fenêtres par instantané (window_key = day | week) ; PAS de mois, volontairement. La pastille du module porte le PARTI (party_id) et non un verdict : une promesse tout juste formulée n'a pas d'état de réalisation.",
+      "_note_int32": "rank_current et n_mentions sont produites par dplyr::n() / row_number(), donc en ENTIERS. Le raffineur les caste en as.numeric() AVANT publication — sans quoi le writer Parquet les sérialise en INT32 alors que Glue les déclare double, et Athena refuse de lire la table pour toute requête qui les projette (HIVE_BAD_DATA). C'est exactement ce qui a gelé polimetre_plus le 2026-07-28. Ne jamais retirer ce cast.",
+      "_note_computed_at": "computed_at n'est pas projetée : elle sert au diagnostic côté Athena, jamais à l'affichage.",
+      "enabled": false,
+      "used_by": "lib/data/promessesNeuves.ts + components/sections/PolimetrePlusSection.tsx"
+    },
+    {
       "name": "provincial_parties_salient_shadow_intraday",
       "athena": "vitrine_datamart-provincial_parties_salient_shadow_intraday",
       "out": "public/data/refined/day/provincial_parties_salient_shadow_intraday.json",

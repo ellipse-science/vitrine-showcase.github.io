@@ -29,9 +29,11 @@ import { runSync } from './sync'
 import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
+import { handleArt, type ArtEnv } from './art'
+import { handleFlappy } from './flappy'
 import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
 
-interface Env extends SyncAthenaEnv {
+interface Env extends SyncAthenaEnv, ArtEnv {
   DATABASE_URL: string
   /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string
@@ -51,6 +53,11 @@ interface Env extends SyncAthenaEnv {
    *  Généré aléatoirement, posé par `wrangler secret put`, connu de
    *  personne d'autre que le Worker. */
   SYNC_INTERNAL_TOKEN?: string
+  /** Service binding vers CE Worker (wrangler.toml). Indispensable : un
+   *  fetch() du Worker vers son propre nom d'hôte ne lui revient jamais —
+   *  Cloudflare coupe la boucle — et l'orchestration échouait en silence à
+   *  chaque cycle (constaté le 2026-08-19 : six occurrences sans trace). */
+  SELF?: Fetcher
 }
 
 /** Tables exposées, et colonnes sur lesquelles un filtre est accepté.
@@ -139,29 +146,51 @@ export default {
             console.error('SYNC_INTERNAL_TOKEN absent : orchestration impossible')
             return
           }
+          // PAR LE SERVICE BINDING, jamais par fetch() global : un Worker qui
+          // fetch son propre nom d'hôte ne se rappelle pas lui-même —
+          // Cloudflare coupe la boucle — et c'est exactement pourquoi la
+          // passe autonome n'a laissé aucune trace sur six cycles le
+          // 2026-08-19 pendant que les mêmes tranches, appelées de
+          // l'extérieur, réussissaient 15/15. Le binding invoque le Worker
+          // pour de vrai, avec un budget CPU neuf par appel.
+          if (!env.SELF) {
+            await notifySlack(
+              env,
+              'sync-athena : service binding SELF absent — orchestration impossible, le site ne se rafraîchit plus.',
+            )
+            console.error('SELF absent : orchestration impossible')
+            return
+          }
           const failed: string[] = []
           let synced = 0
           let offset: number | null = 0
-          while (offset !== null) {
-            const res = await fetch(
-              `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
-              {
-                method: 'POST',
-                headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
-              },
-            )
-            if (!res.ok && res.status !== 207) {
-              failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
-              break
+          try {
+            while (offset !== null) {
+              const res = await env.SELF.fetch(
+                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+                {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
+                },
+              )
+              if (!res.ok && res.status !== 207) {
+                failed.push(`tranche offset=${offset} : HTTP ${res.status}`)
+                break
+              }
+              const body = (await res.json()) as {
+                synced: number
+                failed: string[]
+                next: number | null
+              }
+              synced += body.synced
+              failed.push(...body.failed)
+              offset = body.next
             }
-            const body = (await res.json()) as {
-              synced: number
-              failed: string[]
-              next: number | null
-            }
-            synced += body.synced
-            failed.push(...body.failed)
-            offset = body.next
+          } catch (err) {
+            // Une exception ici (réseau, boucle coupée, JSON invalide) était
+            // le SILENCE TOTAL : waitUntil l'avalait, ni Slack ni journal.
+            const message = err instanceof Error ? err.message : String(err)
+            failed.push(`orchestration : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
           if (failed.length > 0) {
@@ -215,8 +244,15 @@ export default {
       return res
     }
 
+    // /v1/art accepte PUT (téléversement du raffineur) et POST (publish) : il
+    // doit être exempté du garde 405 global, comme les routes de synchro —
+    // la leçon du 2026-08-19, où le garde avalait POST /v1/sync-athena.
     const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
-    if (!isSync && request.method !== 'GET' && request.method !== 'HEAD') {
+    const isArt = seg[0] === 'v1' && seg[1] === 'art'
+    // /v1/flappy accepte POST (soumission de score, anonyme) : exempté du
+    // garde 405 comme les routes de synchro et d'art.
+    const isFlappy = seg[0] === 'v1' && seg[1] === 'flappy'
+    if (!isSync && !isArt && !isFlappy && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
@@ -344,6 +380,18 @@ export default {
         )
       }
 
+      // /v1/art/* — l'illustration de la Une des unes (R2). Lecture publique,
+      // écriture sous clé `sync`, publication conditionnelle. Cf. art.ts.
+      // /v1/flappy/leaderboard — classement du jeu caché (issue #499). Lecture
+      // publique cachée 60 s, soumission anonyme validée serveur. Cf. flappy.ts.
+      if (segments[0] === 'v1' && segments[1] === 'flappy' && segments[2] === 'leaderboard') {
+        return handleFlappy(request, ctx, sql)
+      }
+
+      if (segments[0] === 'v1' && segments[1] === 'art') {
+        return handleArt(request, env, ctx, sql, segments[2] ?? '')
+      }
+
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
@@ -459,7 +507,7 @@ export default {
             version: 'v1',
             description:
               "Indicateurs dérivés de la couverture médiatique et des discours politiques au Québec.",
-            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}'],
+            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}', '/v1/art/latest.{png,webp,avif,json}'],
             note: "Version de lecture, sans authentification. Les clés d'API viendront avec l'offre payante.",
           },
           {},

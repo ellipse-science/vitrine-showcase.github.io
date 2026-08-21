@@ -272,6 +272,12 @@ export type RowView = {
   /** Les enjeux dont on parle à propos de ce parti, du plus au moins présent.
    *  Vide tant que la table de croisement n'est pas publiée. */
   enjeux: EnjeuView[];
+  /** La carte des enjeux a-t-elle été FOURNIE pour cette vue ? Les vues par
+   *  média ne la reçoivent pas — le raffineur ne croise pas parti × enjeu ×
+   *  média. Sans ce drapeau, `enjeux: []` se lit « aucun enjeu identifié », ce
+   *  qui est une affirmation sur la couverture au lieu d'un aveu sur la mesure
+   *  (relevé d'Alexandre, PR #539). */
+  enjeuxVentiles: boolean;
   /** Sommet atteint sur la fenêtre suivie, et le jour où il l'a été.
    *  C'est le « peak hold » de la console : le trait qui reste au niveau le
    *  plus haut atteint, longtemps après que le son soit redescendu. */
@@ -831,14 +837,32 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  *             du suivi : mieux vaut un axe plus large qu'une date inventée.
  *   Jour    → la première journée montrée.
  */
+/**
+ * Le LUNDI 00h de la semaine qui contient `t`, en UTC comme le reste du
+ * fichier. Une seule définition, partagée par la borne de l'axe et par ses
+ * repères : c'est en les calculant chacun de leur côté qu'ils avaient divergé.
+ */
+function lundiDeLaSemaine(t: number): number {
+  const d = new Date(t);
+  const recul = (d.getUTCDay() + 6) % 7; // 0 = lundi
+  const lundi = new Date(d.getTime() - recul * 86_400_000);
+  return Date.parse(`${lundi.toISOString().slice(0, 10)}T00:00:00Z`);
+}
+
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
   if (range === "week") {
-    // SAMEDI qui ouvre la semaine, à minuit — six jours avant le vendredi
-    // d'arrivée. L'axe partait de `arrivée − 7 jours − 2 h`, une borne calculée
-    // en heures qui ne tombait sur le début d'aucun jour.
-    const fin = new Date(arriveeT);
-    const samedi = new Date(fin.getTime() - 6 * 86_400_000);
-    return Date.parse(`${samedi.toISOString().slice(0, 10)}T00:00:00Z`);
+    // LUNDI 00h, la borne de la table du raffineur :
+    // `floor_date(now_mtl, "week", week_start = 1)`
+    // (radar-party-score-salient-shadow/runtime.R:271).
+    //
+    // L'axe partait du samedi et cumulait donc deux jours que la table ne
+    // compte pas : la pochette annonçait 14h40 quand le palmarès finissait à
+    // 17h16 pour la CAQ, et le classement du palmarès pouvait contredire celui
+    // des decks (relevé d'Alexandre, PR #539). Le reste du module était déjà
+    // calé sur le lundi — `arrivee()` cherche « le vendredi de la semaine en
+    // cours (lundi = 1) » et le texte sous le graphique dit « depuis lundi ».
+    // Seule cette borne-ci ne l'était pas.
+    return lundiDeLaSemaine(arriveeT);
   }
   if (range === "overall" && ELECTION_CALL_DATE) {
     return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
@@ -992,12 +1016,11 @@ function reperesAxe(
   }
 
   if (range === "week") {
-    // Du SAMEDI d'ouverture jusqu'à la veille de l'arrivée : le vendredi est
-    // porté par l'arrivée elle-même, l'écrire ici le doublerait.
-    const fin = new Date(tFin);
-    const lundi = Date.parse(
-      `${new Date(fin.getTime() - 6 * JOUR).toISOString().slice(0, 10)}T00:00:00Z`,
-    );
+    // Du LUNDI d'ouverture jusqu'à l'arrivée. La variable s'appelait déjà
+    // `lundi` mais reculait de six jours depuis le vendredi, ce qui tombait un
+    // samedi : le nom disait l'intention, le calcul disait autre chose. Les
+    // deux bornes viennent maintenant de la même fonction.
+    const lundi = lundiDeLaSemaine(tFin);
     // Du lundi JUSQU'À la ligne d'arrivée, jours à venir compris : c'est ce qui
     // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
     // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
@@ -1452,6 +1475,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       rang: idx + 1,
       minutesUne: Math.round(stat.minutes[cfg.barKey] ?? 0),
       enjeux: enjeux?.get(stat.key) ?? [],
+      enjeuxVentiles: enjeux != null,
       joursEnTete: parlants.joursEnTete,
       joursComptes: parlants.joursComptes,
       evolutionPts: parlants.evolutionPts,
@@ -1528,9 +1552,12 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
  *  faux — le bloc de 4 h est la fréquence de PUBLICATION, pas la fenêtre
  *  mesurée : à 16h, la colonne porte tout ce qui s'est dit depuis minuit.
  *
- *  La semaine repart le LUNDI, comme le note `libellePeriode`, et non le samedi
- *  qui ouvre l'axe du palmarès : celui-ci cadre la course, celle-là agrège la
- *  donnée. Les deux ne se confondent pas.
+ *  La semaine repart le LUNDI, et l'axe du palmarès aussi depuis la PR #539.
+ *  Ce commentaire a longtemps présenté l'écart comme voulu (« l'axe cadre la
+ *  course, la table agrège la donnée ») : c'était une justification après coup.
+ *  Un axe ouvert le samedi cumulait deux jours hors de la fenêtre agrégée, et
+ *  la pochette et le palmarès affichaient deux durées différentes pour le même
+ *  parti sur le même écran. Une seule borne, `lundiDeLaSemaine`, désormais.
  */
 function libelleDepuis(range: RangeKey, joursIso: string[]): string {
   if (range === "today") return "depuis minuit";
@@ -1572,6 +1599,7 @@ export const __test__ = {
   buildChart,
   axisTop,
   detecterIndisponibilite,
+  lundiDeLaSemaine,
 };
 
 // Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
