@@ -294,7 +294,11 @@ function cleanText(value?: string): string | undefined {
 // l'impression d'un bogue.
 const CITATION_BUDGET = 95;
 
-function citationExtrait(value?: string, budget = CITATION_BUDGET): string | undefined {
+function sansDiacritiques(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+}
+
+function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
   const v = cleanText(value);
   if (!v) return undefined;
   // Le raffineur laisse parfois une virgule ou une espace orpheline en fin de
@@ -308,20 +312,52 @@ function citationExtrait(value?: string, budget = CITATION_BUDGET): string | und
   if (texte.length === 0) return undefined;
   if (texte.length <= budget) return texte;
 
-  const fenetre = texte.slice(0, budget);
+  // La citation doit montrer le concept qu'elle illustre. Le raffineur peut le
+  // placer jusque vers la fin du contexte : dans ce cas, on ouvre une fenêtre
+  // autour du mot plutôt que de conserver automatiquement le début. La
+  // recherche ignore casse et accents, puis se rabat sur le premier terme des
+  // concepts composés lorsque la graphie complète n'est pas présente.
+  const texteRecherche = sansDiacritiques(texte);
+  const conceptRecherche = sansDiacritiques(cleanText(concept) ?? "");
+  const premierTerme = conceptRecherche.split(/\s+/u)[0] ?? "";
+  let conceptIndex = conceptRecherche ? texteRecherche.indexOf(conceptRecherche) : -1;
+  if (conceptIndex < 0 && premierTerme) conceptIndex = texteRecherche.indexOf(premierTerme);
+  const conceptLength = conceptIndex >= 0
+    ? (texteRecherche.startsWith(conceptRecherche, conceptIndex) ? conceptRecherche.length : premierTerme.length)
+    : 0;
+
+  let debut = 0;
+  // Recentrer aussi quand le concept commence juste avant la limite mais n'y
+  // tient pas au complet. Sans cela, « participation publique » pouvait sortir
+  // sous la forme trompeuse « parti… ».
+  if (conceptIndex >= 0 && conceptIndex + conceptLength >= budget - 1) {
+    const cible = Math.max(0, conceptIndex - Math.floor(budget / 3));
+    // Revenir au début d'un mot évite une seconde coupe, cette fois à gauche.
+    debut = texte.lastIndexOf(" ", cible) + 1;
+  }
+  const prefixe = debut > 0 ? "… " : "";
+  const reste = texte.slice(debut);
+  if (prefixe.length + reste.length <= budget) return `${prefixe}${reste}`;
+
+  const budgetCorps = budget - prefixe.length;
+  const fenetre = reste.slice(0, budgetCorps);
   // Frontières par ordre de préférence : fin de phrase, puis de proposition.
   // On n'accepte la coupe que si elle laisse un extrait substantiel (60 % du
   // budget) — sinon un point précoce réduirait la citation à trois mots.
-  const minimum = Math.floor(budget * 0.6);
+  // Si le concept se trouve dans la fenêtre, aucune frontière située avant sa
+  // fin n'est admissible : une phrase plus élégante mais hors sujet ne remplit
+  // plus la fonction de preuve de la citation.
+  const finConcept = conceptIndex >= debut ? conceptIndex - debut + conceptLength : 0;
+  const minimum = Math.max(Math.floor(budgetCorps * 0.6), finConcept);
   const phrase = Math.max(fenetre.lastIndexOf(". "), fenetre.lastIndexOf("? "), fenetre.lastIndexOf("! "));
-  if (phrase >= minimum) return texte.slice(0, phrase + 1);
+  if (phrase >= minimum) return `${prefixe}${reste.slice(0, phrase + 1)}`;
 
   const proposition = Math.max(fenetre.lastIndexOf(", "), fenetre.lastIndexOf("; "), fenetre.lastIndexOf(" : "));
-  if (proposition >= minimum) return `${texte.slice(0, proposition).trimEnd()}…`;
+  if (proposition >= minimum) return `${prefixe}${reste.slice(0, proposition).trimEnd()}…`;
 
   const mot = fenetre.lastIndexOf(" ");
-  const coupe = mot > 0 ? mot : budget;
-  return `${texte.slice(0, coupe).replace(/[\s,;:.-]+$/u, "")}…`;
+  const coupe = mot >= minimum ? mot : Math.min(budgetCorps - 1, fenetre.length);
+  return `${prefixe}${reste.slice(0, coupe).replace(/[\s,;:.-]+$/u, "")}…`;
 }
 
 // ---------------------------------------------------------------------------
@@ -496,7 +532,7 @@ function buildDeputyList(
       richnessLevel: richnessLevels[r.deputy] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
-      signatureWordContext: citationExtrait(r.signature_word_context),
+      signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
@@ -592,7 +628,9 @@ function buildPeriodView(
       interventions: Number(d.n_interventions || 0),
       toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
-      signatureWordContext: citationExtrait(d.signature_word_context),
+      // Le tiroir a la place d'afficher le contexte complet. Le budget de la
+      // carte physique ne doit pas appauvrir cette vue plus large.
+      signatureWordContext: cleanText(d.signature_word_context),
       deputies: buildDeputyList(item.key, period, deputyRows, portraits),
     };
   });
@@ -690,4 +728,5 @@ export const __test__ = {
   buildPeriodView,
   buildPortraitIndex,
   lookupPortrait,
+  citationExtrait,
 };
