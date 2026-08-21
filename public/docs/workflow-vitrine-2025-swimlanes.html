@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 20 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; couloir <code>agora-sonar</code> remplacé par celui du méta-sonar; horaires et état vérifiés contre <code>refiners.ts</code>; ajout des deux fonctions secondes qui partagent l'image de leur raffineur principal, soit le rapport hebdomadaire du sonar et l'identification de <code>polimetre-plus</code>, dont la méthode servie est désormais l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 21 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; identité stable des député.es ajoutée au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1748,7 +1748,7 @@
                     columns: [
                         'Une ligne par phrase d\'intervention parlementaire',
                         'Identifiants d\'intervention + date de séance',
-                        'Orateur et parti',
+                        'Orateur, parti, circonscription et identifiant stable de la fiche ANQ',
                         'Thèmes CAP annotés (INFER API — modèle « CAP themes »)',
                         'Sentiment annoté (INFER API — modèle « sentiment »)'
                     ],
@@ -1763,7 +1763,7 @@
                     description: 'Agrégats de la parole en chambre, par parti et par député. Ce sont les deux seules tables agora_datamart consommées par la Vitrine (module Assemblée).',
                     columns: [
                         'period_type / period_start_date / period_end_date - Fenêtre agrégée',
-                        'party - Parti (les deux tables) ; deputy - Député (table _deputes uniquement)',
+                        'party - Parti (les deux tables) ; deputy_id / district_id / deputy - Identité stable, circonscription et nom du député (table _deputes uniquement)',
                         'n_interventions - Nombre d\'interventions',
                         'word_count - Volume de parole',
                         'lexical_richness - Richesse lexicale',
@@ -2322,6 +2322,7 @@
                         '',
                         '⚙️ TRAITEMENT:',
                         '• Reprise incrémentale : cherche la prochaine date de séance non encore traitée',
+                        '• Résolution des homonymes par la circonscription de l’en-tête officiel et l’identifiant stable de la fiche ANQ',
                         '• Segmentation des interventions en phrases',
                         '• Annotation thèmes CAP (INFER API, modèle « CAP themes »)',
                         '• Annotation sentiment (INFER API, modèle « sentiment »)',
@@ -2342,6 +2343,7 @@
                         '',
                         '⚙️ TRAITEMENT:',
                         '• Agrégation par parti ET par député (aws-refiners#259)',
+                        '• Agrégation nominative par identifiant stable, sans fusionner les homonymes',
                         '• Volume de parole, richesse lexicale, ton, répartition sur les 12 enjeux CAP',
                         '• Mot signature + son contexte',
                         '• Angle éditorial généré par LLM (ellipsellm / OpenAI), table par parti uniquement',

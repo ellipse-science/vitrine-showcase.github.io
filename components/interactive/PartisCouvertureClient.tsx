@@ -7,6 +7,13 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
 
+// Doom RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20) : l'easter egg
+// des partis reste un jeu d'équipe, pas une porte du site public. Même signal
+// d'environnement que `app/robots.ts`, `lib/data/parties.ts` et les retraits
+// de #544 — un seul signal, pas de divergence. Flappy Enjeux n'est PAS visé :
+// il reste accessible en prod, c'est le seul jeu autorisé en ligne.
+const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
 /** Article défini de chaque parti — « LA CAQ », « LE PQ », mais « Québec
@@ -37,7 +44,7 @@ function shareTitle(data: PartiesData): string {
   return `Quand les médias parlent d'un parti, c'est ${leader.label} ${leader.sovPct}\u00a0% du temps\u00a0: ${tone}`;
 }
 
-export function PartisCouvertureClient({ data }: { data: PartiesData }) {
+export function PartisCouvertureClient({ data, editionKey }: { data: PartiesData; editionKey?: string }) {
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   // Les deux platines : la dernière sélection à gauche, la précédente à droite.
@@ -51,6 +58,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
+    if (isProd) return;
     const now = performance.now();
     if (now - pcqTapRef.current.lastTime < 1500) {
       pcqTapRef.current.count += 1;
@@ -76,7 +84,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
 
-  if (showDoom) {
+  if (showDoom && !isProd) {
     return <DoomGame onExit={() => setShowDoom(false)} />;
   }
 
@@ -100,7 +108,7 @@ export function PartisCouvertureClient({ data }: { data: PartiesData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" />
+            <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" editionKey={editionKey} />
           </div>
         </div>
       </div>

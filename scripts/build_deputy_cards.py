@@ -138,14 +138,17 @@ def main() -> int:
 
     written = skipped = missing = 0
     for dep in deputes:
-        slug = dep["circonscription_slug"]
-        if args.only and slug != args.only:
+        riding_slug = dep["circonscription_slug"]
+        asset_slug = dep.get("asset_slug", riding_slug)
+        if args.only and args.only not in (asset_slug, riding_slug, str(dep.get("deputy_id", ""))):
             continue
-        src_path = SRC_DIR / f"{slug}.jpg"
-        web_path = WEB_DIR / f"{slug}.jpg"
-        print_path = PRINT_DIR / f"{slug}.png"
+        src_path = SRC_DIR / f"{asset_slug}.jpg"
+        web_path = WEB_DIR / f"{asset_slug}.jpg"
+        print_path = PRINT_DIR / f"{asset_slug}.png"
+        web_path.parent.mkdir(parents=True, exist_ok=True)
+        print_path.parent.mkdir(parents=True, exist_ok=True)
         if not src_path.exists():
-            print(f"  manquant : {slug}")
+            print(f"  manquant : {asset_slug}")
             missing += 1
             continue
         if web_path.exists() and print_path.exists() and not args.force:
@@ -157,11 +160,11 @@ def main() -> int:
                                   optimize=True, progressive=True)
             print_halftone(rgb).save(print_path, format="PNG", optimize=True)
         written += 1
-        print(f"  {slug}  ecran {web_path.stat().st_size / 1024:.0f} Ko"
+        print(f"  {asset_slug}  ecran {web_path.stat().st_size / 1024:.0f} Ko"
               f"  impression {print_path.stat().st_size / 1024:.0f} Ko")
 
-    web_mb = sum(f.stat().st_size for f in WEB_DIR.glob("*.jpg")) / 1048576
-    print_mb = sum(f.stat().st_size for f in PRINT_DIR.glob("*.png")) / 1048576
+    web_mb = sum(f.stat().st_size for f in WEB_DIR.rglob("*.jpg")) / 1048576
+    print_mb = sum(f.stat().st_size for f in PRINT_DIR.rglob("*.png")) / 1048576
     print(f"\n{written} générés, {skipped} déjà là, {missing} sans source"
           f" — écran {web_mb:.1f} Mo, impression {print_mb:.1f} Mo")
     return 0
