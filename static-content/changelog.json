@@ -1,5 +1,23 @@
 [
   {
+    "pr": 555,
+    "date": "2026-08-21T23:03:09Z",
+    "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
+    "version": "2.27.0-beta.2"
+  },
+  {
+    "pr": 558,
+    "date": "2026-08-21T21:18:47Z",
+    "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
+    "version": "2.27.0-beta.1"
+  },
+  {
+    "pr": 549,
+    "date": "2026-08-21T20:06:25Z",
+    "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",
+    "version": null
+  },
+  {
     "pr": 551,
     "date": "2026-08-21T19:34:56Z",
     "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
