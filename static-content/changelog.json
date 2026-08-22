@@ -1,5 +1,11 @@
 [
   {
+    "pr": 555,
+    "date": "2026-08-21T23:03:09Z",
+    "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
+    "version": "2.27.0-beta.2"
+  },
+  {
     "pr": 558,
     "date": "2026-08-21T21:18:47Z",
     "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
