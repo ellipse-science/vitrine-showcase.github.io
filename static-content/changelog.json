@@ -1,5 +1,11 @@
 [
   {
+    "pr": 556,
+    "date": "2026-08-22T23:11:22Z",
+    "note": "- [x] Sans objet — documentation interne.",
+    "version": null
+  },
+  {
     "pr": 555,
     "date": "2026-08-21T23:03:09Z",
     "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
