@@ -1,5 +1,11 @@
 [
   {
+    "pr": 560,
+    "date": "2026-08-22T23:16:41Z",
+    "note": "Le partage d’un lien général de la Vitrine affiche maintenant une carte claire et lisible, même sur un fond sombre.",
+    "version": "2.27.0-beta.3"
+  },
+  {
     "pr": 556,
     "date": "2026-08-22T23:11:22Z",
     "note": "- [x] Sans objet — documentation interne.",
