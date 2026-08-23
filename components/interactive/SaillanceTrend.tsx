@@ -238,7 +238,7 @@ export function SaillanceTrend({ trend, editionHrefs }: {
             const href = editionHrefs?.[p.blockUtc];
             const lecture = p.isAbsent
               ? `${p.timeLabel} : Hors du radar`
-              : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`;
+              : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points sur 100${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`;
             const cible = (
               <rect
                 key={`hit${i}`}
@@ -248,7 +248,7 @@ export function SaillanceTrend({ trend, editionHrefs }: {
                 role="img"
                 aria-label={p.isAbsent
                   ? `${p.timeLabel} : Hors du radar`
-                  : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
+                  : `${p.timeLabel} : saillance ${p.level}, ${p.cumul.toFixed(1)} points sur 100${p.delta ? `, ${p.delta > 0 ? "en hausse" : "en baisse"} de ${Math.abs(p.delta)} % depuis ${p.deltaDepuis}` : ""}`}
                 onPointerEnter={() => setHover(i)}
                 onPointerLeave={() => setHover((h) => (h === i ? null : h))}
                 onFocus={() => setHover(i)}

@@ -25,6 +25,35 @@ export const SALIENCE_CUTOVER = true;
 /** Facteur d'affichage du nouvel indice. Voir la note d'échelle ci-dessus. */
 export const NEW_INDEX_SCALE = 100;
 
+// ── Les points : l'attention sur 24 h, SUR 100 (vitrine#566) ─────────────────
+//
+// Le classement, le badge, la courbe et la figure du ⓘ tournent sur le cumul
+// des six derniers blocs pondéré par récence (demi-vie HALF_LIFE_H, vitrine#274
+// puis #314). Jusqu'au 2026-08-22 ce cumul s'affichait tel quel : les six
+// poids sommant à 3,347, une histoire pouvait afficher « 207,5 pts » alors que
+// la métho disait « un indice sur 100 » — deux échelles, aucun pont entre les
+// deux, et le mot « points » n'était défini nulle part.
+//
+// Décision d'Adrien (2026-08-22, issue #566) : les poids sont NORMALISÉS pour
+// sommer à 1 sur une fenêtre pleine. Le cumul devient la MOYENNE pondérée des
+// six derniers blocs, donc vit sur la même échelle 0–100 que l'indice d'un
+// bloc. Un bloc absent compte 0 (la normalisation se fait toujours sur la
+// fenêtre PLEINE, jamais sur les blocs présents — sinon une histoire qui
+// apparaît à 68,8 dans un seul bloc afficherait 68,8 et sauterait en tête).
+// Le classement, les centiles et les bandes ne bougent pas : tout est divisé
+// par la même constante, seuils compris (voir `enPoints`).
+export const HALF_LIFE_H = 10;
+const BLOCK_H = 4;
+const WINDOW_BLOCKS = 6;
+/** Somme des six poids de récence d'une fenêtre pleine : 1 + 2^(−0,4) + … +
+ *  2^(−2) = 3,347. C'est le diviseur qui ramène le cumul sur 100. */
+export const RECENCY_WEIGHT_TOTAL = Array.from({ length: WINDOW_BLOCKS }, (_, k) =>
+  Math.pow(2, -(k * BLOCK_H) / HALF_LIFE_H)).reduce((a, b) => a + b, 0);
+/** Poids de récence NORMALISÉ d'un bloc vieux de `ageH` heures (0 = le plus
+ *  frais). Une Une d'il y a 10 h pèse moitié moins qu'une Une en cours. */
+export const recencyWeight = (ageH: number) =>
+  Math.pow(2, -ageH / HALF_LIFE_H) / RECENCY_WEIGHT_TOTAL;
+
 // ── Les grilles qui classent ─────────────────────────────────────────────────
 //
 // ⚓ CE NE SONT PAS DES GRILLES DE REPLI. Elles classent, tout le temps.
@@ -99,6 +128,20 @@ export const NEW_INDEX_SCALE = 100;
 // frontend. La reconstruction est donc la bonne.
 
 type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: number; extreme: number };
+
+/** Passe une grille mesurée en unités de CUMUL (poids sommant à 3,347) aux
+ *  points affichés (poids sommant à 1). Sans arrondi : une valeur arrondie à
+ *  une décimale déplacerait chaque frontière de ± 0,05 point, et une Une posée
+ *  pile dessus changerait de bande pour une raison de présentation. */
+export function enPoints(t: Thresholds): Thresholds {
+  return {
+    faible: t.faible / RECENCY_WEIGHT_TOTAL,
+    moyenne: t.moyenne / RECENCY_WEIGHT_TOTAL,
+    eleve: t.eleve / RECENCY_WEIGHT_TOTAL,
+    tresEleve: t.tresEleve / RECENCY_WEIGHT_TOTAL,
+    extreme: t.extreme / RECENCY_WEIGHT_TOTAL,
+  };
+}
 
 /** Grille du BADGE et du CLASSEMENT (Une des Unes) : cumul 24 h pondéré par
  *  récence, un point par storyline (son sommet cumulé), population = les Unes
@@ -177,9 +220,18 @@ type Thresholds = { faible: number; moyenne: number; eleve: number; tresEleve: n
  *
  *  NB : #224 avait posé la règle du relèvement sur la grille des PICS ; c'est la
  *  grille des CUMULS qui pilote le badge depuis vitrine#314 (27-07). Les deux
- *  ne sont pas la même distribution — d'où cette mesure dédiée. */
-export const NEW_SUM_QC_THRESHOLDS: Thresholds =
+ *  ne sont pas la même distribution — d'où cette mesure dédiée.
+ *
+ *  ⚠️ UNITÉS. Tous les chiffres de ce commentaire (44,7 · 60,6 · 123,3 · 63,2 ·
+ *  157,1…) sont en unités de CUMUL, telles que le banc les mesure — c'est la
+ *  constante ci-dessous, la source de vérité, et c'est elle que le script de
+ *  la figure (`scripts/generate_saillance_levels.py`) relit. Le SITE, lui,
+ *  affiche des points sur 100 depuis vitrine#566 : la grille exportée
+ *  `NEW_SUM_QC_THRESHOLDS` est la même divisée par RECENCY_WEIGHT_TOTAL
+ *  (33,8 → 10,1 · 41,8 → 12,5 · 59,2 → 17,7 · 96,5 → 28,8 · 157,1 → 46,9). */
+export const SUM_QC_CUMUL_MESURE: Thresholds =
   { faible: 33.8, moyenne: 41.8, eleve: 59.2, tresEleve: 96.5, extreme: 157.1 };
+export const NEW_SUM_QC_THRESHOLDS: Thresholds = enPoints(SUM_QC_CUMUL_MESURE);
 
 /** Grille du niveau PAR BLOC (lecture au survol de la trajectoire) : réplique de
  *  `calibration_metric("salience_index_qc")`, toutes les valeurs > 0. n = 403.
@@ -210,8 +262,10 @@ export const NEW_BLOCK_QC_THRESHOLDS: Thresholds =
  *  une borne Modérée à 37,2, parce que le héros de chaque édition est gardé
  *  quel que soit son nombre de médias, des deux côtés. L'asymétrie des seuils
  *  n'était pas la cause. */
-export const NEW_SUM_ROC_THRESHOLDS: Thresholds =
+export const SUM_ROC_CUMUL_MESURE: Thresholds =
   { faible: 20.0, moyenne: 30.4, eleve: 45.4, tresEleve: 85.0, extreme: 150.6 };
+/** En points sur 100 (÷ RECENCY_WEIGHT_TOTAL), comme le côté québécois. */
+export const NEW_SUM_ROC_THRESHOLDS: Thresholds = enPoints(SUM_ROC_CUMUL_MESURE);
 
 /** Repli transitoire du côté ROC (scores par bloc), utilisé seulement si la
  *  grille cumulée ROC manque. n = 381. */

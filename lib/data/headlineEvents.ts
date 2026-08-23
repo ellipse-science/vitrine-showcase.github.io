@@ -22,6 +22,9 @@ import {
 import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
+  HALF_LIFE_H,
+  RECENCY_WEIGHT_TOTAL,
+  recencyWeight,
   NEW_SUM_QC_THRESHOLDS,
   NEW_BLOCK_QC_THRESHOLDS,
   NEW_SUM_ROC_THRESHOLDS,
@@ -428,6 +431,8 @@ type Story = {
   label: string;
   // Σ de l'indice de bloc (qcScore : `score_qc`, ou `salience_index_qc` ×100
   // après le cutover) pondérée par récence (demi-vie HALF_LIFE_H) — CLASSEMENT.
+  // Poids NORMALISÉS (somme = 1 sur six blocs, vitrine#566) : c'est donc la
+  // moyenne pondérée des six derniers blocs, sur 100 — les « points » du site.
   sumQc: number;
   sumRoc: number;
   peakQc: number;          // max de l'indice de bloc, BRUT, sur la fenêtre
@@ -466,8 +471,11 @@ function parseIdList(json: string | null | undefined): string[] {
 // son sommet sur 24 h, le rang décrit ce qui domine l'attention maintenant.
 // Chiffres du banc (juin 2026) : âge moyen du pic du n°1 10,1 h → 5,5 h, churn
 // 37 % (cible < 35-40 %), convergence Deux solitudes quasi inchangée (Δp50 ≤ 1).
-const HALF_LIFE_H = 10;
+// Depuis vitrine#566 les poids sont NORMALISÉS (`recencyWeight`, somme = 1 sur
+// une fenêtre pleine) : les sommes sont des moyennes pondérées sur 100, et la
+// demi-vie (HALF_LIFE_H) vit dans salienceCutover.ts à côté des grilles.
 const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
+const ageH = (olderMs: number, newerMs: number) => (newerMs - olderMs) / 3.6e6;
 
 function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): Story[] {
   type RawArticle = { media_id: string; url: string };
@@ -487,7 +495,7 @@ function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOV
     const key = e.storyline_id ?? e.event_label ?? e.event_id;
     const bk = blockKey(e);
     // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
-    const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+    const w = recencyWeight(ageH(blockStartMs(bk), newestMs));
     const qc = qcScore(e, cutover);
     const roc = rocScore(e, cutover);
     // Listes de médias par région, publiées par le refiner (#211). Le repli qui
@@ -582,7 +590,7 @@ function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOV
         const bj = windowBlocksAsc[j];
         const qj = s.byBlock.get(bj) ?? 0;
         if (qj <= 0) continue;
-        cumul += qj * Math.pow(2, (blockStartMs(bj) - blockStartMs(b)) / 3.6e6 / HALF_LIFE_H);
+        cumul += qj * recencyWeight(ageH(blockStartMs(bj), blockStartMs(b)));
       }
       return { blockUtc: b, qc, present: qc > 0, share: tot > 0 ? (qc / tot) * 100 : 0, cumul };
     });
@@ -665,7 +673,7 @@ function usEchoes(allRaw: RawEvent[], windowBlocks: Set<string>): UsEcho[] {
     .filter((e) => e.country_id === "USA" && windowBlocks.has(blockKey(e)) && e.title)
     .map((e) => {
       const bk = blockKey(e);
-      const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+      const w = recencyWeight(ageH(blockStartMs(bk), newestMs));
       let articles: { media_id: string; url: string }[] = [];
       try {
         const parsed = JSON.parse(e.articles ?? "[]");
@@ -1008,7 +1016,13 @@ function saillanceTierFromScore(
 // Mesuré : calibrer sur toutes les storylines mettrait 93 % des cartes dans les
 // 3 bandes du haut et 0 % dans les 2 du bas — exactement le tassement de
 // l'ancien badge au pic. Sur les affichées : 43 % / 25 %.
-const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
+// Mesurée en unités de CUMUL ; divisée par RECENCY_WEIGHT_TOTAL depuis que les
+// poids sont normalisés (vitrine#566), pour que le chemin pré-bascule reste
+// cohérent avec lui-même s'il est rejoué.
+const SUM_QC_THRESHOLDS = {
+  faible: 21.4 / RECENCY_WEIGHT_TOTAL, moyenne: 31.0 / RECENCY_WEIGHT_TOTAL, eleve: 47.9 / RECENCY_WEIGHT_TOTAL,
+  tresEleve: 102.4 / RECENCY_WEIGHT_TOTAL, extreme: 192.8 / RECENCY_WEIGHT_TOTAL,
+};
 
 // PLUS D'HYSTÉRÉSIS depuis vitrine#430 (décision A4, Adrien, 2026-08-09).
 //

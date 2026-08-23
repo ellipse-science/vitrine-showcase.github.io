@@ -122,7 +122,7 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           — le repli devient une mise en page voulue au lieu d'un accident. */}
       <span className="sic-kicker">Saillance actuelle&nbsp;: {level}</span>
       {typeof peak === "number" ? (
-        <span className="sic-kicker sic-kicker-val">{peak.toFixed(1).replace(".", ",")}&nbsp;points</span>
+        <span className="sic-kicker sic-kicker-val">{peak.toFixed(1).replace(".", ",")}&nbsp;points sur 100</span>
       ) : null}
       {/* A8 (#430) — LA COMPARAISON À L'ANNÉE S'ACCROCHE TOUJOURS AU SOMMET.
           Avant, cette phrase situait la nouvelle avec sa valeur du MOMENT :
@@ -204,16 +204,21 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
         </span>
       )}
       {/* PIED — la définition, pour qui veut savoir ce qu'on mesure au juste.
-          Calquée sur la métho § 03 :
-            IndiceAbsolu(o, m, t) = TempsEnUne(o, m, t) × PondérationMédia(m)
-          Donc du TEMPS passé en Une, corrigé du rythme de renouvellement de
-          chaque média — pas un décompte de médias, et pas la position de la
-          manchette (le § 01 la mentionne, la formule du § 03 ne l'utilise pas). */}
+          Calquée sur la métho § 03 (spec v1) :
+            Indice(bloc) = (Visibilité × Intensité × Durée)^(1/3), sur 100
+          puis les POINTS = moyenne des six derniers blocs pondérée par récence
+          (vitrine#566). La deuxième phrase nomme l'unité et sa borne : un
+          nombre nu à côté d'un mot de niveau ne dit pas sur quoi il est compté,
+          et « 62,0 » ne se lit pas pareil selon qu'on le croit sur 100 ou sans
+          plafond. */}
       <span className="sic-def">
         {/* {" "} explicite : JSX avale l'espace entre </b> et le texte suivant. */}
         <b>L’indice de saillance médiatique Radar+</b>{" "}mesure l’espace qu’occupent les
         nouvelles dans l’ensemble de l’actualité, pour présenter l’information réellement
-        mise de l’avant par les médias.
+        mise de l’avant par les médias. Les points vont de 0 à 100&nbsp;: chaque tranche
+        de quatre heures est notée d’après le nombre de médias qui ont mis la nouvelle en
+        Une, le nombre d’articles et le temps passé en Une, puis les six dernières
+        tranches sont moyennées, les plus récentes comptant davantage.
       </span>
       <a className="sic-link" href={METHO_HREF}>Comment on mesure la saillance</a>
     </span>

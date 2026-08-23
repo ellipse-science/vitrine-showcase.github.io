@@ -14,7 +14,9 @@ export function SaillanceTip() {
       La saillance mesure la place qu’une nouvelle occupe à la Une des médias :
       plus elle y reste longtemps et dans plus de médias, plus elle est saillante.
       Toutes les nouvelles présentées ici ont fait la Une. L’étiquette les compare
-      entre elles, des moins aux plus saillantes du moment.
+      entre elles, des moins aux plus saillantes du moment. Les points vont de 0 à
+      100&nbsp;: c’est l’attention reçue sur les 24 dernières heures, les heures
+      récentes comptant davantage.
       <a href={METHO_HREF}>En savoir plus →</a>
       {/* Nombre de manchettes (closes #307) : une seule nouvelle à l’écran se
           lisait comme un bogue, « on comprend pas que c’est LA nouvelle du
