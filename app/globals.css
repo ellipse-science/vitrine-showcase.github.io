@@ -1855,6 +1855,9 @@
     height: 9px;
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
+  /* Le lien « En savoir plus » sur SA ligne (retour d'Adrien, #566) : en ligne,
+     JSX avalait l'espace et il se collait au dernier mot du texte. */
+  .saillance-info-bubble .tip-link { display: block; }
 
   /* Phrase ajoutée SOUS le lien de la bulle (#307). Le lien est un
      `inline-block` : sans ce bloc, la phrase se collerait à sa droite, sur la
@@ -1870,6 +1873,13 @@
   /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
      serrée dessous et en chiffres tabulaires. */
   .saillance-info-card .sic-kicker-val { margin-top: -0.15em; font-variant-numeric: tabular-nums; }
+  /* La pastille de niveau DANS la bulle : même classe de bande que le badge
+     (couleur identique), mais à la taille de la ligne qui la porte. */
+  .saillance-info-card .sic-tag { margin: 0 2px; padding: 2px 7px; font-size: 9px; letter-spacing: 0.18em; line-height: 1.3; vertical-align: baseline; }
+  /* La parenthèse qui suit la pastille (valeur, édition du sommet) reste en
+     bas de casse : en capitales espacées, « ATTEINT À L'ÉDITION DE MINUIT DU
+     MERCREDI 19 AOÛT 2026 » pesait plus lourd que l'information. */
+  .saillance-info-card .sic-note { text-transform: none; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
   .saillance-info-card .sic-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;

@@ -1837,6 +1837,10 @@ export type UneEvent = {
    *  l'instant présent — la bulle utilise alors `saillanceCentile`. */
   sommetCentile: number | null;
   sommetTier: string | null;
+  /** Classe de bande du sommet (même palette que le badge) et édition où il a
+   *  été atteint (« édition de la nuit du mercredi 19 août 2026 »). */
+  sommetCls: string | null;
+  sommetEdition: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -2258,6 +2262,23 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
     const sommetTier = sommetSum != null
       ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].label
       : null;
+    // La bande du sommet s'affiche comme le badge, avec sa couleur (demande
+    // d'Adrien, vitrine#566) : la bulle en a besoin de la classe, pas seulement
+    // du mot.
+    const sommetCls = sommetSum != null
+      ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].cls
+      : null;
+    // « édition de la nuit du mercredi 19 août 2026 » : l'édition où le sommet a
+    // été atteint, nommée EXACTEMENT comme l'archive (par son heure de
+    // publication, jamais par l'heure de début du bloc — cf. editionsOf).
+    const sommetEdition = sommetSum != null && suivi
+      ? (() => {
+        const a = blockAnchor(suivi.peakBlock);
+        if (!a) return null;
+        const dateFr = formatDateFr(a.anchorIso);
+        return `édition ${editionLabel(a.pubHour % 24)} du ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+      })()
+      : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
     const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history, suivi?.sums);
@@ -2313,6 +2334,8 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       sommetLabel,
       sommetCentile,
       sommetTier,
+      sommetCls,
+      sommetEdition,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
