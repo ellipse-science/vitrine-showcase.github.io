@@ -1888,6 +1888,19 @@
     margin-bottom: 10px;
   }
   .saillance-info-card .sic-curve { display: block; width: 100%; height: auto; margin-bottom: 10px; }
+  /* La bande où la nouvelle se trouve pulse trois fois à l'ouverture de la
+     bulle, puis reste foncée (demande d'Adrien, vitrine#566) : l'emphase
+     porte sur le CONCEPT — la nouvelle est située dans une bande —, pas sur
+     un décor. Trois battements, pas une boucle : un clignotement permanent
+     finirait par se lire comme un bogue. */
+  .saillance-info-card .sic-band-now { animation: sic-band-pulse 1.1s ease-in-out 3; }
+  @keyframes sic-band-pulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.45; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .saillance-info-card .sic-band-now { animation: none; }
+  }
   .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
   .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }
   /* Le sommet est un repère secondaire : même graisse, encre plus pâle. */

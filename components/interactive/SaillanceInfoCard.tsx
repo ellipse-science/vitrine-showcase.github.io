@@ -170,8 +170,13 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
         )}
         <g transform={`translate(0, ${TOP})`}>
           {valid && edges.slice(0, -1).map((x, i) => (
+            // La bande où la nouvelle se trouve est plus foncée, et elle PULSE
+            // trois fois à l'ouverture de la bulle (demande d'Adrien, #566) :
+            // « situer la nouvelle dans sa bande » est le concept que la figure
+            // porte, et un aplat un peu plus sombre ne le disait pas assez.
             <rect key={i} x={x.toFixed(1)} y="0" width={(edges[i + 1] - x).toFixed(1)} height={PLOT_H}
-              fill={BAND_COLORS[i]} opacity={i === rank - 1 ? 0.95 : 0.4} />
+              fill={BAND_COLORS[i]} opacity={i === rank - 1 ? 0.95 : 0.4}
+              className={i === rank - 1 ? "sic-band-now" : undefined} />
           ))}
           <polyline points={curve.join(" ")} fill="none" stroke="var(--ink)" strokeOpacity="0.55" strokeWidth="1.3" />
           {/* Le SOMMET d'abord, pour que la barre « cette Une » passe par-dessus. */}
