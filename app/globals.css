@@ -1898,8 +1898,17 @@
     0%, 100% { opacity: 0.95; }
     50% { opacity: 0.45; }
   }
+  /* Le sommet se révèle APRÈS les trois battements (3 × 1,1 s = 3,3 s) : la
+     figure raconte dans l'ordre — la bande où la nouvelle est, puis jusqu'où
+     elle est montée. Le délai est la durée totale du pulse ci-dessus : si l'un
+     change, l'autre suit. */
+  .saillance-info-card .sic-sommet { opacity: 0; animation: sic-sommet-in 0.6s ease-out 3.3s forwards; }
+  @keyframes sic-sommet-in {
+    to { opacity: 1; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .saillance-info-card .sic-band-now { animation: none; }
+    .saillance-info-card .sic-sommet { opacity: 1; animation: none; }
   }
   .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
   .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }

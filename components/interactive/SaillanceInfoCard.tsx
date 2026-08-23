@@ -162,8 +162,12 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
         aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
         {/* RANGÉE DU HAUT — le sommet, sur deux lignes centrées. */}
+        {/* Le sommet (libellé, trait, point) n'apparaît qu'APRÈS les trois
+            battements de la bande (demande d'Adrien, #566) : d'abord « où elle
+            est », ensuite « jusqu'où elle est montée ». Les deux en même temps
+            se disputaient le regard. La classe `sic-sommet` porte le fondu. */}
         {sommetX != null && (
-          <text x={xSom!.toFixed(1)} textAnchor="middle" className="sic-marker-label sic-marker-som">
+          <text x={xSom!.toFixed(1)} textAnchor="middle" className="sic-marker-label sic-marker-som sic-sommet">
             <tspan x={xSom!.toFixed(1)} y={(TOP - LIGNE - 4).toFixed(1)}>{somL1}</tspan>
             {somL2 && <tspan x={xSom!.toFixed(1)} y={(TOP - 4).toFixed(1)}>{somL2}</tspan>}
           </text>
@@ -181,12 +185,12 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           <polyline points={curve.join(" ")} fill="none" stroke="var(--ink)" strokeOpacity="0.55" strokeWidth="1.3" />
           {/* Le SOMMET d'abord, pour que la barre « cette Une » passe par-dessus. */}
           {sommetX != null && (
-            <>
+            <g className="sic-sommet">
               <line x1={sommetX.toFixed(1)} y1="0" x2={sommetX.toFixed(1)} y2={PLOT_H}
                 stroke="var(--ink-softer)" strokeWidth="1.2" strokeDasharray="2.5 2" />
               <circle cx={sommetX.toFixed(1)} cy={cy(sommet!).toFixed(1)} r="2.6"
                 fill="var(--paper)" stroke="var(--ink-softer)" strokeWidth="1.2" />
-            </>
+            </g>
           )}
           {markerX != null && (
             <>
