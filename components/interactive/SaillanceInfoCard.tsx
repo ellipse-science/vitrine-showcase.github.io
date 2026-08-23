@@ -59,16 +59,29 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
   since?: string | null;
 }) {
   const valid = thresholds.length === 5 && thresholds.every((t) => Number.isFinite(t)) && thresholds[4] > thresholds[0];
-  // Domaine log de l'axe : de 1 au double du p95, pour laisser respirer la queue.
-  const x0 = log10(1), x1 = log10((valid ? thresholds[4] : 100) * 2);
+  // Domaine log de l'axe : de la MOITIÉ du p5 au double du p95 (vitrine#566,
+  // retour d'Adrien). L'axe partait de 1 point : sur l'échelle sur 100, la
+  // plus faible Une de l'année vaut ~6 et « Très faible » commence à 10, donc
+  // la moitié gauche de la figure était un beige sans aucune histoire. Les
+  // valeurs sous la borne (rarissimes) sont rabattues au bord par `markerX`.
+  const x0 = log10(valid ? Math.max(1, thresholds[0] / 2) : 1);
+  const x1 = log10((valid ? thresholds[4] : 100) * 2);
   const px = (v: number) => ((log10(v) - x0) / (x1 - x0)) * W;
-  // Ajustement log-normal sur les seuils publiés (p50 = médiane, p95 → 1,645 σ).
+  // Ajustement log-normal À DEUX PENTES sur les seuils publiés : la médiane
+  // pour le centre, le p5 pour l'écart-type de gauche, le p95 pour celui de
+  // droite (1,645 σ de chaque côté). Une seule pente, calée sur le p95,
+  // étalait la cloche vers la gauche jusque dans le vide et mettait ~40 % de
+  // l'aire sous « Très faible », une bande qui contient 5 % des Unes. La
+  // distribution réelle est serrée à gauche et longue à droite ; la courbe
+  // passe maintenant par les cinq seuils, comme l'histogramme de la métho.
   const mu = valid ? log10(thresholds[2]) : log10(19);
-  const rawSigma = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  const rawSigmaR = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  const rawSigmaL = valid ? (mu - log10(thresholds[0])) / 1.645 : (mu - log10(5)) / 1.645;
   // Repli si les seuils sont dégénérés (ex. p50 == p95 → σ = 0) : évite une
   // division par zéro et des coordonnées NaN dans le SVG.
-  const sigma = rawSigma > 1e-3 ? rawSigma : (log10(71) - log10(19)) / 1.645;
-  const gauss = (lx: number) => Math.exp(-0.5 * Math.pow((lx - mu) / sigma, 2));
+  const sigmaR = rawSigmaR > 1e-3 ? rawSigmaR : (log10(71) - log10(19)) / 1.645;
+  const sigmaL = rawSigmaL > 1e-3 ? rawSigmaL : sigmaR;
+  const gauss = (lx: number) => Math.exp(-0.5 * Math.pow((lx - mu) / (lx < mu ? sigmaL : sigmaR), 2));
 
   // Courbe.
   const curve: string[] = [];
