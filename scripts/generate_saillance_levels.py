@@ -200,11 +200,11 @@ fig.text(0.055, 0.895,
          # NE PAS réintroduire « cloche en échelle log » : c'était vrai de la
          # distribution des PICS, pas de celle des cumuls, qui s'étale. La
          # légende doit décrire la figure qu'on regarde, pas celle d'avant.
-         "de TOUTES les Unes d'une année : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », et 60 % des histoires au centre.",
+         "de TOUTES les Unes d'une année : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », et 60 % des histoires au centre.",
          fontsize=13, color="#5B544A", ha="left", va="top")
 fig.text(0.055, 0.028,
          f"n = {n} histoires (plus hauts points 24 h par storyline QC, parmi les Unes affichées), 2025-05-17 au 2026-08-07.\n"
-         "Source : headline_events_4h rejoué localement, indice spec v1.  Seuils mesurés le 2026-08-12, en points sur 100 depuis le 2026-08-22.",
+         "Source : headline_events_4h rejoué localement, indice spec v1.  Seuils mesurés le 2026-08-12, en points sur 100 depuis le 2026-08-22.",
          fontsize=10.5, color="#8A8474", ha="left", va="bottom")
 
 plt.subplots_adjust(left=0.055, right=0.965, top=0.80, bottom=0.20)

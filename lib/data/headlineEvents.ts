@@ -22,7 +22,6 @@ import {
 import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
-  HALF_LIFE_H,
   RECENCY_WEIGHT_TOTAL,
   recencyWeight,
   NEW_SUM_QC_THRESHOLDS,
