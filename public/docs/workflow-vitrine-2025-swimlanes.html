@@ -2424,7 +2424,7 @@
                     ]
                 },
                 'vitrine-art': {
-                    title: 'vitrine-art — illustration de la Une des unes',
+                    title: 'vitrine-art — illustration de la Une des Unes',
                     description: 'Raffineur EventBridge (aws-refiners#361, aws-infra#503). Lit la Une désignée par le site, dessine l\'illustration et la publie sur l\'API ; le Worker décide des builds.',
                     details: [
                         '⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40 (heure de Montréal), ~30 min après le cron de synchro du Worker (:10), le temps que le build post-synchro soit en ligne',
@@ -2436,7 +2436,7 @@
                         '5. <code>PUT /v1/art/latest.*</code> (R2, clé portée <code>sync</code>) puis <code>POST /v1/art/publish</code> : le WORKER déclenche les Deploy Hooks si la Une illustrée a changé',
                         '',
                         '🛡️ Le site n\'affiche l\'image que si sa storyline correspond à la Une affichée (garde d\'appariement, <code>UneDesUnesSection</code>) : une image périmée est cachée, jamais montrée sous une autre manchette.',
-                        '🔑 Secrets SSM : <code>/vitrine/art/openai-api-key</code>, <code>/vitrine/art/api-key</code>. Aucune table de datamart, aucun accès Postgres ni AWS-données (exemption garde-sonar).'
+                        '🔑 Secrets SSM : deux paramètres (clé OpenAI, clé d\'API du Worker) — chemins non repris ici, cette page est servie publiquement. Aucune table de datamart, aucun accès Postgres ni AWS-données (exemption garde-sonar).'
                     ]
                 },
                 'parties-ca': {
