@@ -56,9 +56,10 @@ function SaillanceHead({ event, className, hrefs }: {
           Saillance {event.saillanceLabel}
         </span>
         <InfoTip size="sm" label="Détail du niveau de saillance">
-          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} centile={event.saillanceCentile}
+          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} cls={event.saillanceCls} centile={event.saillanceCentile}
             peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
             sommetCentile={event.sommetCentile} sommetTier={event.sommetTier}
+            sommetCls={event.sommetCls} sommetEdition={event.sommetEdition}
             thresholds={event.salThresholds}
             qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
             since={event.saillantSince} />

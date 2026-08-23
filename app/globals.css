@@ -1855,6 +1855,9 @@
     height: 9px;
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
+  /* Le lien « En savoir plus » sur SA ligne (retour d'Adrien, #566) : en ligne,
+     JSX avalait l'espace et il se collait au dernier mot du texte. */
+  .saillance-info-bubble .tip-link { display: block; }
 
   /* Phrase ajoutée SOUS le lien de la bulle (#307). Le lien est un
      `inline-block` : sans ce bloc, la phrase se collerait à sa droite, sur la
@@ -1870,6 +1873,13 @@
   /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
      serrée dessous et en chiffres tabulaires. */
   .saillance-info-card .sic-kicker-val { margin-top: -0.15em; font-variant-numeric: tabular-nums; }
+  /* La pastille de niveau DANS la bulle : même classe de bande que le badge
+     (couleur identique), mais à la taille de la ligne qui la porte. */
+  .saillance-info-card .sic-tag { margin: 0 2px; padding: 2px 7px; font-size: 9px; letter-spacing: 0.18em; line-height: 1.3; vertical-align: baseline; }
+  /* La parenthèse qui suit la pastille (valeur, édition du sommet) reste en
+     bas de casse : en capitales espacées, « ATTEINT À L'ÉDITION DE MINUIT DU
+     MERCREDI 19 AOÛT 2026 » pesait plus lourd que l'information. */
+  .saillance-info-card .sic-note { text-transform: none; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
   .saillance-info-card .sic-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
@@ -1888,6 +1898,28 @@
     margin-bottom: 10px;
   }
   .saillance-info-card .sic-curve { display: block; width: 100%; height: auto; margin-bottom: 10px; }
+  /* La bande où la nouvelle se trouve pulse trois fois à l'ouverture de la
+     bulle, puis reste foncée (demande d'Adrien, vitrine#566) : l'emphase
+     porte sur le CONCEPT — la nouvelle est située dans une bande —, pas sur
+     un décor. Trois battements, pas une boucle : un clignotement permanent
+     finirait par se lire comme un bogue. */
+  .saillance-info-card .sic-band-now { animation: sic-band-pulse 1.1s ease-in-out 3; }
+  @keyframes sic-band-pulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.45; }
+  }
+  /* Le sommet se révèle APRÈS les trois battements (3 × 1,1 s = 3,3 s) : la
+     figure raconte dans l'ordre — la bande où la nouvelle est, puis jusqu'où
+     elle est montée. Le délai est la durée totale du pulse ci-dessus : si l'un
+     change, l'autre suit. */
+  .saillance-info-card .sic-sommet { opacity: 0; animation: sic-sommet-in 0.6s ease-out 3.3s forwards; }
+  @keyframes sic-sommet-in {
+    to { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .saillance-info-card .sic-band-now { animation: none; }
+    .saillance-info-card .sic-sommet { opacity: 1; animation: none; }
+  }
   .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
   .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }
   /* Le sommet est un repère secondaire : même graisse, encre plus pâle. */
