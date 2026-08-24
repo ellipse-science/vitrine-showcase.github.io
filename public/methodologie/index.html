@@ -476,10 +476,10 @@
       <li><a href="#collecte-medias">Architecture de collecte&nbsp;: Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
       <li><a href="#une-des-unes">Module&nbsp;: L'actualité saillante du moment au Québec &amp; Deux solitudes?</a></li>
-      <li><a href="#partis-et-couverture">Module&nbsp;: De quel parti parle-t-on dans les médias?</a></li>
       <li><a href="#enjeux-saillants">Module&nbsp;: De quoi parle-t-on?</a></li>
-      <li><a href="#assemblee-nationale">Module&nbsp;: L'alignement de l'Assemblée</a></li>
+      <li><a href="#partis-et-couverture">Module&nbsp;: De quel parti parle-t-on dans les médias?</a></li>
       <li><a href="#polimetre-plus">Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</a></li>
+      <li><a href="#assemblee-nationale">Module&nbsp;: L'alignement de l'Assemblée</a></li>
       <li><a href="#fenetres-temporelles">Fenêtres temporelles</a></li>
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
@@ -647,51 +647,9 @@
     <p class="metho-body">Un radar à deux formes superposées (le Québec en bleu, le Canada en rouge) montre d'un coup d'œil qui parle de quoi&nbsp;: chaque forme dessine où sa région porte son attention. Le degré de convergence se lit dans le grand chiffre et la jauge, pas dans le recouvrement des formes (voir «&nbsp;Limites et honnêteté&nbsp;»). Autour, chaque sujet porte les logos des médias qui l'ont couvert, cliquables vers leur dernier article. Sur un écran étroit, où les titres ne tiendraient pas autour du radar, les axes sont numérotés et les sujets se lisent dans une liste sous le radar, avec les mêmes logos. Un grand pourcentage indique l'écart avec le niveau habituel de convergence, et le libellé qui l'accompagne en donne le sens et l'intensité (plus divergent ou plus convergent que d'habitude); une bulle d'information en détaille la lecture. Sur l'axe fleur-de-lys/érable, la distance entre les deux symboles encode la convergence&nbsp;: ils se rapprochent quand les deux agendas se recoupent, s'éloignent quand ils divergent. La jauge situe le moment sur l'échelle complète, de la divergence totale à la convergence totale; le survol de son marqueur donne les niveaux absolus du moment et de l'habituel.</p>
   </section>
 
-  <!-- §5 Couverture des partis -->
-  <section id="partis-et-couverture" class="metho-section">
-    <p class="metho-section-label">§ 05</p>
-    <h2>Module&nbsp;: De quel parti parle-t-on dans les médias?</h2>
-    <p class="metho-body"><em>Anciennement «&nbsp;Couverture médiatique des partis politiques&nbsp;».</em></p>
-
-    <p class="metho-avis"><strong>État actuel&nbsp;: la mesure est suspendue.</strong> Le modèle qui reconnaît les partis dans les articles ne distingue pas de façon fiable les partis québécois les uns des autres. Nous avons choisi de <strong>ne rien afficher plutôt que de publier un classement que nous ne pourrions pas défendre</strong>. Le module reste en place et signale lui-même cette suspension. Un jeu d'exemples annotés à la main est en cours de constitution pour réentraîner le modèle. La mesure ne reprendra qu'une fois cette validation faite. Voir le point&nbsp;10 du §&nbsp;10.</p>
-
-    <p class="metho-body">Ce module mesure la <strong>part de voix</strong> des partis politiques québécois (la portion du temps de une qui revient à chacun, <em>lorsque les médias parlent d'un parti</em>) ainsi que le <strong>ton</strong> de ce traitement, dans la couverture des 13 sources d'information suivies. La part de voix ne dit donc pas quelle place les partis occupent dans l'actualité en général, où elle est bien plus modeste&nbsp;: elle répartit entre eux l'attention qui leur est consacrée.</p>
-
-    <h3>Partis provinciaux suivis</h3>
-    <div class="metho-table-wrap">
-      <table class="metho-table">
-        <thead><tr><th>Parti provincial suivi</th></tr></thead>
-        <tbody>
-          <tr><td>Coalition avenir Québec (CAQ)</td></tr>
-          <tr><td>Parti québécois (PQ)</td></tr>
-          <tr><td>Parti libéral du Québec (PLQ)</td></tr>
-          <tr><td>Québec solidaire (QS)</td></tr>
-          <tr><td>Parti conservateur du Québec (PCQ)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Source des données</h3>
-    <p class="metho-body">Le système produit, pour chaque parti et chaque date, deux mesures&nbsp;: une <strong>part de voix</strong> et un <strong>ton</strong>, sur trois fenêtres (la journée, la semaine et l'ensemble de la période conservée). Les compteurs sont mis à jour six fois par jour, au fil des collectes.</p>
-
-    <h3>Algorithme</h3>
-    <ol class="metho-list">
-      <li>Les articles sont découpés en phrases. Chaque phrase passe par deux classifieurs entraînés&nbsp;: l'un estime quels partis y sont évoqués, l'autre la tonalité du passage.</li>
-      <li>Une phrase n'est retenue pour un parti que si la confiance du classifieur dépasse un seuil propre à ce parti. Ces seuils sont fixés parti par parti, de façon à écarter les mentions incertaines. Un même degré de confiance n'a pas la même valeur d'un parti à l'autre.</li>
-      <li><strong>Part de voix</strong>&nbsp;: pour chaque parti, on additionne le temps passé en une par les articles qui l'évoquent, puis on rapporte ce total à celui de l'ensemble des partis québécois. Les cinq parts se partagent donc 100&nbsp;%.</li>
-      <li><strong>Ton</strong>&nbsp;: moyenne des tonalités des articles retenus, pondérée par leur temps en une. Un article longtemps exposé pèse davantage qu'un article vite remplacé.</li>
-      <li>Les compteurs repartent de zéro à date fixe&nbsp;: chaque jour à minuit, chaque lundi et le premier de chaque mois, à l'heure de Montréal. Il ne s'agit donc pas de moyennes glissantes, mais d'accumulations depuis le début de la période en cours.</li>
-    </ol>
-
-    <h3>Affichage</h3>
-    <p class="metho-body">Chaque parti occupe une colonne dont la hauteur donne sa part de voix. Trois onglets (<em>Jour</em>, <em>Semaine</em> et <em>Tout</em>) font varier la fenêtre observée. «&nbsp;Tout&nbsp;» est la moyenne des journées disponibles. Un repère signale le niveau habituel de chaque parti, ce qui permet de voir s'il est au-dessus ou en dessous de son ordinaire, et une courbe retrace l'évolution récente.</p>
-    <p class="metho-body">Un parti dont la part de voix passe sous <strong>5&nbsp;%</strong> est mis en «&nbsp;sourdine&nbsp;»&nbsp;: sa colonne reste affichée, en gris, car un parti peu présent est une information en soi. Ce seuil d'affichage est plus exigeant que celui inscrit dans les données elles-mêmes, fixé à 2&nbsp;%&nbsp;: en deçà de 5&nbsp;%, l'écart entre deux partis repose sur trop peu d'articles pour être commenté.</p>
-    <p class="metho-body">Lorsque la répartition par média est disponible, un curseur permet de passer de l'ensemble des médias à un média en particulier. Les couleurs indiquent alors si ce média accorde à un parti plus ou moins de place que la moyenne des autres.</p>
-  </section>
-
-  <!-- §6 Enjeux (treemap) -->
+  <!-- §5 Enjeux (treemap) -->
   <section id="enjeux-saillants" class="metho-section">
-    <p class="metho-section-label">§ 06</p>
+    <p class="metho-section-label">§ 05</p>
     <h2>Module&nbsp;: De quoi parle-t-on?</h2>
     <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
 
@@ -737,14 +695,82 @@
     </ul>
   </section>
 
-  <!-- §7 Assemblée nationale -->
-  <section id="assemblee-nationale" class="metho-section">
+  <!-- §6 Couverture des partis -->
+  <section id="partis-et-couverture" class="metho-section">
+    <p class="metho-section-label">§ 06</p>
+    <h2>Module&nbsp;: De quel parti parle-t-on dans les médias?</h2>
+    <p class="metho-body"><em>Anciennement «&nbsp;Couverture médiatique des partis politiques&nbsp;».</em></p>
+
+    <p class="metho-avis"><strong>État actuel&nbsp;: la mesure est suspendue.</strong> Le modèle qui reconnaît les partis dans les articles ne distingue pas de façon fiable les partis québécois les uns des autres. Nous avons choisi de <strong>ne rien afficher plutôt que de publier un classement que nous ne pourrions pas défendre</strong>. Le module reste en place et signale lui-même cette suspension. Un jeu d'exemples annotés à la main est en cours de constitution pour réentraîner le modèle. La mesure ne reprendra qu'une fois cette validation faite. Voir le point&nbsp;10 du §&nbsp;10.</p>
+
+    <p class="metho-body">Ce module mesure la <strong>part de voix</strong> des partis politiques québécois (la portion du temps de une qui revient à chacun, <em>lorsque les médias parlent d'un parti</em>) ainsi que le <strong>ton</strong> de ce traitement, dans la couverture des 13 sources d'information suivies. La part de voix ne dit donc pas quelle place les partis occupent dans l'actualité en général, où elle est bien plus modeste&nbsp;: elle répartit entre eux l'attention qui leur est consacrée.</p>
+
+    <h3>Partis provinciaux suivis</h3>
+    <div class="metho-table-wrap">
+      <table class="metho-table">
+        <thead><tr><th>Parti provincial suivi</th></tr></thead>
+        <tbody>
+          <tr><td>Coalition avenir Québec (CAQ)</td></tr>
+          <tr><td>Parti québécois (PQ)</td></tr>
+          <tr><td>Parti libéral du Québec (PLQ)</td></tr>
+          <tr><td>Québec solidaire (QS)</td></tr>
+          <tr><td>Parti conservateur du Québec (PCQ)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le système produit, pour chaque parti et chaque date, deux mesures&nbsp;: une <strong>part de voix</strong> et un <strong>ton</strong>, sur trois fenêtres (la journée, la semaine et l'ensemble de la période conservée). Les compteurs sont mis à jour six fois par jour, au fil des collectes.</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li>Les articles sont découpés en phrases. Chaque phrase passe par deux classifieurs entraînés&nbsp;: l'un estime quels partis y sont évoqués, l'autre la tonalité du passage.</li>
+      <li>Une phrase n'est retenue pour un parti que si la confiance du classifieur dépasse un seuil propre à ce parti. Ces seuils sont fixés parti par parti, de façon à écarter les mentions incertaines. Un même degré de confiance n'a pas la même valeur d'un parti à l'autre.</li>
+      <li><strong>Part de voix</strong>&nbsp;: pour chaque parti, on additionne le temps passé en une par les articles qui l'évoquent, puis on rapporte ce total à celui de l'ensemble des partis québécois. Les cinq parts se partagent donc 100&nbsp;%.</li>
+      <li><strong>Ton</strong>&nbsp;: moyenne des tonalités des articles retenus, pondérée par leur temps en une. Un article longtemps exposé pèse davantage qu'un article vite remplacé.</li>
+      <li>Les compteurs repartent de zéro à date fixe&nbsp;: chaque jour à minuit, chaque lundi et le premier de chaque mois, à l'heure de Montréal. Il ne s'agit donc pas de moyennes glissantes, mais d'accumulations depuis le début de la période en cours.</li>
+    </ol>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Chaque parti occupe une colonne dont la hauteur donne sa part de voix. Trois onglets (<em>Jour</em>, <em>Semaine</em> et <em>Tout</em>) font varier la fenêtre observée. «&nbsp;Tout&nbsp;» est la moyenne des journées disponibles. Un repère signale le niveau habituel de chaque parti, ce qui permet de voir s'il est au-dessus ou en dessous de son ordinaire, et une courbe retrace l'évolution récente.</p>
+    <p class="metho-body">Un parti dont la part de voix passe sous <strong>5&nbsp;%</strong> est mis en «&nbsp;sourdine&nbsp;»&nbsp;: sa colonne reste affichée, en gris, car un parti peu présent est une information en soi. Ce seuil d'affichage est plus exigeant que celui inscrit dans les données elles-mêmes, fixé à 2&nbsp;%&nbsp;: en deçà de 5&nbsp;%, l'écart entre deux partis repose sur trop peu d'articles pour être commenté.</p>
+    <p class="metho-body">Lorsque la répartition par média est disponible, un curseur permet de passer de l'ensemble des médias à un média en particulier. Les couleurs indiquent alors si ce média accorde à un parti plus ou moins de place que la moyenne des autres.</p>
+  </section>
+
+  <!-- §7 Polimètre+ -->
+  <section id="polimetre-plus" class="metho-section">
     <p class="metho-section-label">§ 07</p>
+    <h2>Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</h2>
+    <p class="metho-body">Ce module suit la <strong>couverture médiatique des promesses électorales de la Coalition avenir Québec (CAQ)</strong>&nbsp;: il identifie chaque jour, sur une semaine glissante, les promesses les plus <strong>saillantes</strong> (les plus présentes dans l'actualité) et celles en plus forte <strong>progression</strong> par rapport à la semaine précédente.</p>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le module croise la couverture médiatique avec la liste officielle des promesses de la CAQ. L'appariement entre un article et une promesse est fait par <strong>un modèle</strong>&nbsp;: un classifieur détermine si un paragraphe contient une promesse, puis un modèle de langage (Gemma&nbsp;3) détermine <em>laquelle</em>, parmi la liste officielle. Les expressions régulières validées manuellement demeurent dans le pipeline comme <strong>méthode de repli</strong> et comme étalon de comparaison.</p>
+    <p class="metho-body"><strong>Réserve explicite.</strong> La concordance entre l'identification par modèle et l'identification par règles a été mesurée sur un échantillon indépendant (micro-F1 de 0,324). Ce chiffre mesure un <em>accord avec les règles</em>, pas une exactitude&nbsp;: une promesse réellement mentionnée qu'aucune règle ne couvre y compte comme une erreur du modèle. L'arbitrage humain des désaccords est en cours. La bascule a été faite pour observer le comportement du modèle en conditions réelles; le module est servi par un environnement de développement.</p>
+
+    <h3>Algorithme</h3>
+    <ol class="metho-list">
+      <li><strong>Identification (modèle)</strong>&nbsp;: le corps de chaque article est découpé en paragraphes. Un classifieur écarte d'abord les paragraphes sans promesse, puis un modèle de langage détermine, pour chacun des paragraphes retenus, laquelle des promesses de la liste officielle y est mentionnée (ou aucune). Cette étape tourne en continu, par blocs de 4&nbsp;heures, et non au moment du calcul&nbsp;: le classement hebdomadaire lit son résultat. À défaut (service indisponible, semaine pas entièrement examinée), la semaine est identifiée par les <strong>règles</strong>, soit un jeu d'expressions régulières validées, une par promesse.</li>
+      <li><strong>Indice de saillance</strong>&nbsp;: pour chaque promesse, nombre d'articles la mentionnant multiplié par le temps de présence en Une pondéré entre médias (même pondération inter-médias que l'indice de saillance décrit au § 03).</li>
+      <li><strong>Progression hebdomadaire</strong>&nbsp;: écart entre l'indice de saillance de la semaine courante et celui de la semaine précédente, permettant de repérer les promesses dont la couverture s'intensifie.</li>
+      <li>Les promesses sont classées par saillance et par progression pour la semaine se terminant à la date du traitement.</li>
+    </ol>
+
+    <h3>Enrichissement génératif (optionnel)</h3>
+    <p class="metho-body">En complément de l'identification décrite ci-dessus, et sans intervenir dans le calcul de l'indice, un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage&nbsp;: un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Cet enrichissement est optionnel&nbsp;: si le service n'est pas disponible, ces champs restent vides et le reste du module est publié normalement.</p>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Classement des promesses de la CAQ les plus saillantes de la semaine, avec l'indication de leur progression et, lorsque disponible, un libellé court et un résumé de la couverture médiatique récente.</p>
+    <p class="metho-body">Le repli sur les règles vaut pour une semaine entière, jamais pour une partie de semaine. La vue d'un mois cumulant quatre semaines, elle peut donc réunir des semaines identifiées par le modèle et des semaines identifiées par les règles&nbsp;: les deux méthodes ne repèrent pas les mêmes promesses, et les volumes ne se comparent pas d'une semaine à l'autre lorsque la méthode change.</p>
+  </section>
+
+  <!-- §8 Assemblée nationale -->
+  <section id="assemblee-nationale" class="metho-section">
+    <p class="metho-section-label">§ 08</p>
     <h2>Module&nbsp;: L'alignement de l'Assemblée</h2>
     <p class="metho-body">Ce module mesure la présence des partis politiques dans les débats de l'Assemblée nationale du Québec (ANQ) selon trois fenêtres&nbsp;: la dernière période de questions (<em>last PDQ</em>), la session en cours et la législature complète.</p>
 
     <h3>Source des données</h3>
-    <p class="metho-body">Le système traite les transcriptions officielles des débats de l'ANQ. Chaque intervention est découpée en phrases, puis chaque phrase reçoit un ou plusieurs enjeux (même taxonomie qu'au §&nbsp;06) et une valeur de ton. De là viennent, pour chaque parti et chaque période&nbsp;: le nombre d'interventions, le volume de mots prononcés, la richesse lexicale (diversité du vocabulaire), le ton moyen, la répartition par enjeu, un concept distinctif et un angle éditorial. Les mêmes mesures sont calculées par député, sauf l'angle éditorial, qui reste au niveau du parti.</p>
+    <p class="metho-body">Le système traite les transcriptions officielles des débats de l'ANQ. Chaque intervention est découpée en phrases, puis chaque phrase reçoit un ou plusieurs enjeux (même taxonomie qu'au §&nbsp;05) et une valeur de ton. De là viennent, pour chaque parti et chaque période&nbsp;: le nombre d'interventions, le volume de mots prononcés, la richesse lexicale (diversité du vocabulaire), le ton moyen, la répartition par enjeu, un concept distinctif et un angle éditorial. Les mêmes mesures sont calculées par député, sauf l'angle éditorial, qui reste au niveau du parti.</p>
     <p class="metho-body">Les segments vides ou sans aucune lettre, produits par le découpage automatique, sont écartés avant toute analyse. Les passages de pure procédure («&nbsp;je cède la parole à…&nbsp;», les préambules de motion, les formules d'ouverture de séance) sont retirés du corpus servant au concept distinctif et à l'angle éditorial&nbsp;: ils sont très caractéristiques du rôle de qui préside ou lit une motion, pas de son propos politique.</p>
     <p class="metho-body">Le nom affiché d'un député provient de l'Assemblée nationale, qui en conserve la graphie officielle, et non du référentiel d'appariement, qui stocke les noms sans accents ni traits d'union. Deux élus homonymes restent deux entrées distinctes, départagées par leur circonscription.</p>
     <p class="metho-body">Le module ne couvre que les cinq partis reconnus. Les député.es qui siègent comme indépendant.es en sont absent.es&nbsp;: leurs interventions sont écartées avant agrégation, et aucune carte ne leur est consacrée. Neuf sièges étaient dans cette situation au 5&nbsp;août 2026. Les totaux affichés par parti ne décrivent donc pas l'ensemble de la chambre.</p>
@@ -775,32 +801,6 @@
     <p class="metho-body">Chaque député ayant pris la parole a sa carte, au format d'une carte de collection (63,5 × 88,9&nbsp;mm). Le recto porte son portrait, son nom, sa circonscription, le sigle de son parti et son enjeu dominant. La retourner d'un clic révèle le verso statistique&nbsp;: volume de mots, nombre d'interventions, richesse lexicale, ton en chambre, répartition par enjeu, concept distinctif et un extrait qui l'illustre.</p>
     <p class="metho-body">Les portraits proviennent du site de l'Assemblée nationale du Québec, qui en autorise la reproduction pour un usage non commercial à condition d'en indiquer la source. Ils sont retraités en bichromie pour s'accorder à la mise en page. Ce retraitement est calculé image par image, de façon à ce que le rendu d'un visage ne dépende pas de sa carnation.</p>
     <p class="metho-body">Trois onglets permettent de basculer entre la dernière période de questions, la session en cours et la législature. Les partis sans siège à la législature courante sont affichés à part, sous l'intitulé «&nbsp;Hors chambre&nbsp;». Un jeu de billard caché propose une seconde façon d'explorer les données de parti&nbsp;: chaque parti y est une bille qu'on peut envoyer vers l'une de six poches, chacune révélant une facette différente de sa présence.</p>
-  </section>
-
-  <!-- §8 Polimètre+ -->
-  <section id="polimetre-plus" class="metho-section">
-    <p class="metho-section-label">§ 08</p>
-    <h2>Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</h2>
-    <p class="metho-body">Ce module suit la <strong>couverture médiatique des promesses électorales de la Coalition avenir Québec (CAQ)</strong>&nbsp;: il identifie chaque jour, sur une semaine glissante, les promesses les plus <strong>saillantes</strong> (les plus présentes dans l'actualité) et celles en plus forte <strong>progression</strong> par rapport à la semaine précédente.</p>
-
-    <h3>Source des données</h3>
-    <p class="metho-body">Le module croise la couverture médiatique avec la liste officielle des promesses de la CAQ. L'appariement entre un article et une promesse est fait par <strong>un modèle</strong>&nbsp;: un classifieur détermine si un paragraphe contient une promesse, puis un modèle de langage (Gemma&nbsp;3) détermine <em>laquelle</em>, parmi la liste officielle. Les expressions régulières validées manuellement demeurent dans le pipeline comme <strong>méthode de repli</strong> et comme étalon de comparaison.</p>
-    <p class="metho-body"><strong>Réserve explicite.</strong> La concordance entre l'identification par modèle et l'identification par règles a été mesurée sur un échantillon indépendant (micro-F1 de 0,324). Ce chiffre mesure un <em>accord avec les règles</em>, pas une exactitude&nbsp;: une promesse réellement mentionnée qu'aucune règle ne couvre y compte comme une erreur du modèle. L'arbitrage humain des désaccords est en cours. La bascule a été faite pour observer le comportement du modèle en conditions réelles; le module est servi par un environnement de développement.</p>
-
-    <h3>Algorithme</h3>
-    <ol class="metho-list">
-      <li><strong>Identification (modèle)</strong>&nbsp;: le corps de chaque article est découpé en paragraphes. Un classifieur écarte d'abord les paragraphes sans promesse, puis un modèle de langage détermine, pour chacun des paragraphes retenus, laquelle des promesses de la liste officielle y est mentionnée (ou aucune). Cette étape tourne en continu, par blocs de 4&nbsp;heures, et non au moment du calcul&nbsp;: le classement hebdomadaire lit son résultat. À défaut (service indisponible, semaine pas entièrement examinée), la semaine est identifiée par les <strong>règles</strong>, soit un jeu d'expressions régulières validées, une par promesse.</li>
-      <li><strong>Indice de saillance</strong>&nbsp;: pour chaque promesse, nombre d'articles la mentionnant multiplié par le temps de présence en Une pondéré entre médias (même pondération inter-médias que l'indice de saillance décrit au § 03).</li>
-      <li><strong>Progression hebdomadaire</strong>&nbsp;: écart entre l'indice de saillance de la semaine courante et celui de la semaine précédente, permettant de repérer les promesses dont la couverture s'intensifie.</li>
-      <li>Les promesses sont classées par saillance et par progression pour la semaine se terminant à la date du traitement.</li>
-    </ol>
-
-    <h3>Enrichissement génératif (optionnel)</h3>
-    <p class="metho-body">En complément de l'identification décrite ci-dessus, et sans intervenir dans le calcul de l'indice, un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage&nbsp;: un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Cet enrichissement est optionnel&nbsp;: si le service n'est pas disponible, ces champs restent vides et le reste du module est publié normalement.</p>
-
-    <h3>Affichage</h3>
-    <p class="metho-body">Classement des promesses de la CAQ les plus saillantes de la semaine, avec l'indication de leur progression et, lorsque disponible, un libellé court et un résumé de la couverture médiatique récente.</p>
-    <p class="metho-body">Le repli sur les règles vaut pour une semaine entière, jamais pour une partie de semaine. La vue d'un mois cumulant quatre semaines, elle peut donc réunir des semaines identifiées par le modèle et des semaines identifiées par les règles&nbsp;: les deux méthodes ne repèrent pas les mêmes promesses, et les volumes ne se comparent pas d'une semaine à l'autre lorsque la méthode change.</p>
   </section>
 
   <!-- §9 Fenêtres temporelles -->
