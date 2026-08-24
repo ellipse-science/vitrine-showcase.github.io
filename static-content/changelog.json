@@ -1,5 +1,11 @@
 [
   {
+    "pr": 575,
+    "date": "2026-08-24T16:49:30Z",
+    "note": "Les portraits des parlementaires s’affichent maintenant dès l’ouverture d’un casier, y compris lorsque la carte se trouve plus loin dans le présentoir.",
+    "version": "2.29.0-beta.1"
+  },
+  {
     "pr": 569,
     "date": "2026-08-24T14:42:37Z",
     "note": "Documentation interne du pipeline : l'illustration de la Une a maintenant son propre circuit, décrit dans l'horaire et le diagramme des pipelines.",
