@@ -215,7 +215,12 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
             </span>
             <span className="carte-photo">
               {deputy.portrait ? (
-                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="lazy" decoding="async" />
+                // Le présentoir défile dans un conteneur transformé en 3D.
+                // Le lazy-loading natif y laisse certaines cartes hors écran
+                // à naturalWidth=0 même après leur arrivée dans la fenêtre.
+                // Seul le parti ouvert est monté : charger ses portraits dès
+                // l'ouverture reste borné et évite les cadres blancs.
+                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="eager" decoding="async" />
               ) : (
                 <span className="carte-photo-absente" aria-hidden="true">
                   Portrait non apparié
