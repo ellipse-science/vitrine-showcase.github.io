@@ -1,5 +1,11 @@
 [
   {
+    "pr": 492,
+    "date": "2026-08-24T14:13:42Z",
+    "note": "Les modules de la page sont réordonnés du plus général au plus spécifique : on voit d'abord de quoi on parle, puis quels partis en parlent; d'abord le suivi des promesses, puis le détail de l'Assemblée nationale. La page Méthodologie suit le même ordre.",
+    "version": "2.29.0-beta.0"
+  },
+  {
     "pr": 562,
     "date": "2026-08-24T00:04:19Z",
     "note": "La documentation technique du pipeline (swimlanes) précise maintenant où partent les alertes de surveillance : celles des modules du site vont désormais à l'équipe du site. Rien ne change sur le site lui-même.",
