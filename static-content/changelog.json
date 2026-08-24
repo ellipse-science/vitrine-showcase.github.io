@@ -1,5 +1,95 @@
 [
   {
+    "pr": 562,
+    "date": "2026-08-24T00:04:19Z",
+    "note": "La documentation technique du pipeline (swimlanes) précise maintenant où partent les alertes de surveillance : celles des modules du site vont désormais à l'équipe du site. Rien ne change sur le site lui-même.",
+    "version": null
+  },
+  {
+    "pr": 567,
+    "date": "2026-08-23T16:13:09Z",
+    "note": "Les points de saillance sont maintenant sur 100 : c'est l'attention moyenne reçue sur les 24 dernières heures, expliquée dans la Méthodologie et dans la bulle d'information de chaque manchette.",
+    "version": "2.28.0-beta.0"
+  },
+  {
+    "pr": 560,
+    "date": "2026-08-22T23:16:41Z",
+    "note": "Le partage d’un lien général de la Vitrine affiche maintenant une carte claire et lisible, même sur un fond sombre.",
+    "version": "2.27.0-beta.3"
+  },
+  {
+    "pr": 556,
+    "date": "2026-08-22T23:11:22Z",
+    "note": "- [x] Sans objet — documentation interne.",
+    "version": null
+  },
+  {
+    "pr": 555,
+    "date": "2026-08-21T23:03:09Z",
+    "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
+    "version": "2.27.0-beta.2"
+  },
+  {
+    "pr": 558,
+    "date": "2026-08-21T21:18:47Z",
+    "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
+    "version": "2.27.0-beta.1"
+  },
+  {
+    "pr": 549,
+    "date": "2026-08-21T20:06:25Z",
+    "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",
+    "version": null
+  },
+  {
+    "pr": 551,
+    "date": "2026-08-21T19:34:56Z",
+    "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
+    "version": null
+  },
+  {
+    "pr": 452,
+    "date": "2026-08-21T19:22:40Z",
+    "note": "La page Méthodologie décrit maintenant la façon dont le module des promesses repère une promesse dans un article : un modèle s'en charge, et le repérage par règles sert de solution de repli. La page précise aussi qu'une vue d'un mois peut réunir des semaines repérées par l'une ou l'autre méthode.",
+    "version": null
+  },
+  {
+    "pr": 539,
+    "date": "2026-08-21T19:05:51Z",
+    "note": "Le module sur les partis politiques est refait : un palmarès montre qui accumule le plus de temps à la une, et chaque parti a désormais son disque qu'on retourne pour lire ses chiffres.",
+    "version": "2.27.0-beta.0"
+  },
+  {
+    "pr": 547,
+    "date": "2026-08-21T18:55:10Z",
+    "note": "Un jeu caché accessible depuis le module des partis politiques est retiré du site public. Il reste disponible sur notre environnement de travail.",
+    "version": "2.26.0-beta.1"
+  },
+  {
+    "pr": 550,
+    "date": "2026-08-21T18:52:03Z",
+    "note": "Les images partagées sur les réseaux sociaux ont été redessinées aux couleurs du site, et il est maintenant possible de partager un module tel qu'il était à une édition passée : l'image reprend alors les chiffres de ce moment-là, pas ceux du jour.",
+    "version": "2.26.0-beta.0"
+  },
+  {
+    "pr": 552,
+    "date": "2026-08-21T18:44:44Z",
+    "note": "Les cartes de l’Assemblée distinguent désormais les parlementaires homonymes et conservent le portrait officiel des membres qui ont quitté leur siège pendant la législature.",
+    "version": "2.25.0-beta.2"
+  },
+  {
+    "pr": 545,
+    "date": "2026-08-21T18:28:57Z",
+    "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 541,
+    "date": "2026-08-21T15:44:25Z",
+    "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
+    "version": null
+  },
+  {
     "pr": 533,
     "date": "2026-08-20T18:55:01Z",
     "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",

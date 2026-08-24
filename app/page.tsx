@@ -26,7 +26,7 @@ export default async function Home() {
       </div>
 
       <div id="une-des-unes" data-section="Une des Unes">
-        <UneDesUnesSection />
+        <UneDesUnesSection shareEditionKey={editions[0]?.key} />
       </div>
 
       <div id="deux-solitudes" data-section="Deux solitudes">

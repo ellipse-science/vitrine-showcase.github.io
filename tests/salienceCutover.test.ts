@@ -10,6 +10,11 @@ import {
   NEW_SUM_ROC_THRESHOLDS,
   NEW_BLOCK_ROC_THRESHOLDS,
   scaleThresholds,
+  SUM_QC_CUMUL_MESURE,
+  SUM_ROC_CUMUL_MESURE,
+  RECENCY_WEIGHT_TOTAL,
+  recencyWeight,
+  enPoints,
 } from "@/lib/data/salienceCutover";
 
 const { qcScore, rocScore, storiesFrom24h, rawRank } = __test__;
@@ -56,9 +61,10 @@ describe("inertie du flag éteint", () => {
   // snapshot (elles le seront dès le prochain refresh, cf. tables.json).
   it("le classement se calcule sur l'ANCIEN indice malgré la présence du nouveau", () => {
     const [story] = storiesFrom24h(ROWS as never, false);
-    // Poids de récence : bloc 16 = 1, bloc 12 (4 h plus tôt) = 2^(-4/10).
+    // Poids de récence : bloc 16 = 1, bloc 12 (4 h plus tôt) = 2^(-4/10), le
+    // tout divisé par la somme des six poids (points sur 100, vitrine#566).
     const w = Math.pow(2, -4 / 10);
-    expect(story.sumQc).toBeCloseTo(60 + 40 * w, 6);
+    expect(story.sumQc).toBeCloseTo((60 + 40 * w) / RECENCY_WEIGHT_TOTAL, 6);
     expect(story.peakQc).toBe(60);
   });
   // CANARI DE BASCULE — retourné AVEC le flag le 2026-08-12, jour J. Ce n'est
@@ -74,7 +80,7 @@ describe("bascule du flag", () => {
   it("le classement se calcule sur le NOUVEL indice, à l'échelle ×100", () => {
     const [story] = storiesFrom24h(ROWS as never, true);
     const w = Math.pow(2, -4 / 10);
-    expect(story.sumQc).toBeCloseTo(10 + 20 * w, 6);
+    expect(story.sumQc).toBeCloseTo((10 + 20 * w) / RECENCY_WEIGHT_TOTAL, 6);
     // Le sommet suit le nouvel indice : c'est le bloc de 12 h (0,2), pas celui
     // de 16 h que désignait l'ancien. Les deux indices ne classent pas pareil,
     // et c'est précisément ce que la bascule change.
@@ -108,8 +114,10 @@ describe("grilles de seuils du nouvel indice", () => {
   // moyenne géométrique non compensatoire — donc sans aucune constante à
   // maintenir. Ce test le vérifie sur les deux grandeurs, avec les maxima
   // mono-média mesurés sur la fenêtre régime-LLM.
-  const MONO_MAX_CUMUL = 44.7;   // grandeur du badge
-  const MONO_MAX_BLOC  = 27.2;   // valeur d'un bloc isolé
+  // Mesuré en unités de cumul (44,7), exprimé en points sur 100 comme la
+  // grille exportée (vitrine#566) : même conversion des deux côtés.
+  const MONO_MAX_CUMUL = 44.7 / RECENCY_WEIGHT_TOTAL;   // grandeur du badge
+  const MONO_MAX_BLOC  = 27.2;   // valeur d'un bloc isolé (échelle du bloc, inchangée)
   it("invariant : un mono-média ne franchit pas la médiane des Unes, sans règle ajoutée", () => {
     // `eleve` = p50 = la médiane : la frontière de la moitié supérieure.
     expect(MONO_MAX_CUMUL).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
@@ -148,12 +156,39 @@ describe("grilles de seuils du nouvel indice", () => {
     // 2026-08-12 au passage de la fenêtre courte (40,6) à l'année (41,8), et
     // c'est le SEUL des 290 tests qui a bougé : les autres dérivent de la
     // grille, donc une recalibration ne les rend plus faussement rouges.
-    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBe(41.8);
+    expect(SUM_QC_CUMUL_MESURE.moyenne).toBe(41.8);
     // Ce que le garde protège vraiment, au-delà du chiffre : la borne reste le
     // p20 nu, donc strictement sous la médiane, jamais poussée au-dessus du
     // maximum mono-média.
     expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
     expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(MONO_MAX_CUMUL);
+  });
+
+  // ── Les points sur 100 (vitrine#566) ──────────────────────────────────────
+  it("les six poids de récence d'une fenêtre pleine somment à 3,347, et normalisés à 1", () => {
+    expect(RECENCY_WEIGHT_TOTAL).toBeCloseTo(3.3474, 3);
+    const poids = [0, 4, 8, 12, 16, 20].map(recencyWeight);
+    expect(poids.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+    // Une Une d'il y a 10 h pèse moitié moins qu'une Une en cours.
+    expect(recencyWeight(10) / recencyWeight(0)).toBeCloseTo(0.5, 9);
+  });
+  it("les grilles du badge sont les mesures de cumul divisées par la somme des poids, sans arrondi", () => {
+    expect(NEW_SUM_QC_THRESHOLDS).toEqual(enPoints(SUM_QC_CUMUL_MESURE));
+    expect(NEW_SUM_ROC_THRESHOLDS).toEqual(enPoints(SUM_ROC_CUMUL_MESURE));
+    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeCloseTo(157.1 / 3.3474, 2);
+    // Tout vit sous 100 : c'est l'objet de la décision — une seule échelle.
+    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeLessThan(100);
+    expect(NEW_SUM_ROC_THRESHOLDS.extreme).toBeLessThan(100);
+  });
+  it("six blocs à 68,8 valent 68,8 points : la moyenne d'une fenêtre pleine est l'indice lui-même", () => {
+    const blocs = ["2026-08-08T00", "2026-08-08T04", "2026-08-08T08", "2026-08-08T12", "2026-08-08T16", "2026-08-08T20"]
+      .map((b) => ev(b, 0, 0.688));
+    const [story] = storiesFrom24h(blocs as never, true);
+    expect(story.sumQc).toBeCloseTo(68.8, 6);
+    // Un seul bloc à 68,8 ne vaut que sa part de la fenêtre : la normalisation
+    // se fait sur la fenêtre PLEINE, jamais sur les blocs présents.
+    const [seule] = storiesFrom24h([ev("2026-08-08T20", 0, 0.688)] as never, true);
+    expect(seule.sumQc).toBeCloseTo(68.8 / RECENCY_WEIGHT_TOTAL, 6);
   });
 
   it("scaleThresholds passe une grille publiée à l'échelle d'affichage", () => {

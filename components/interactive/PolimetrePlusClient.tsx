@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   CATEGORY_ORDER,
+  MODE_LABELS,
+  NEUVE_RANGE_TAB_LABELS,
+  PARTI_FULL_LABELS,
+  PARTI_LABELS,
+  PARTI_ORDER,
   RANGE_TAB_LABELS,
+  type ModeKey,
+  type NeuveRangeKey,
+  type PartiKey,
   type PolimetreData,
+  type PromesseNeuveView,
+  type PromessesNeuvesData,
   type PromiseView,
   type RangeKey,
   type VerdictSlug,
@@ -121,7 +131,18 @@ function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: st
   );
 }
 
-export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
+/* Vue « promesses de 2022 » — le module historique, inchangé. `modeSwitch` est
+   l'inverseur de mode injecté par la coquille : il n'apparaît que lorsqu'il y a
+   un second mode à offrir (cf. PolimetrePlusClient plus bas). */
+function PolimetreView({
+  data,
+  modeSwitch,
+  editionKey,
+}: {
+  data: PolimetreData;
+  modeSwitch?: ReactNode;
+  editionKey?: string;
+}) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
   const [category, setCategory] = useState<string>("all");
@@ -181,6 +202,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
           </div>
         </div>
         <div className="control-block">
+          {modeSwitch}
           <div className="control-row">
             <div className="legend-toggle inline">
               {RANGES.map((r) => (
@@ -203,7 +225,7 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" />
+            <ShareButton title="Polimètre+ : promesses sous la loupe médiatique" anchor="polimetre-plus" editionKey={editionKey} />
           </div>
         </div>
       </div>
@@ -423,5 +445,359 @@ export function PolimetrePlusClient({ data }: { data: PolimetreData }) {
       </div>
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
+  );
+}
+
+/* ========================================================================== *
+ * Vue « promesses de la campagne »
+ *
+ * Même grille, même liste dépliable, même écho médiatique — mais la liste n'est
+ * plus fermée : elle se remplit des promesses repérées dans les communiqués des
+ * partis au fur et à mesure qu'ils les formulent. D'où les deux écarts visibles :
+ *
+ *  - la pastille porte le PARTI, pas le verdict. Une promesse formulée hier n'a
+ *    pas d'état de réalisation ; le Polimètre ne se prononcera que des mois plus
+ *    tard. Ce qu'on sait d'elle le jour même, c'est qui l'a formulée.
+ *  - les onglets sont « Aujourd'hui » et « Depuis une semaine », sans « mois » :
+ *    une fenêtre d'un mois noierait la nouveauté sous l'accumulé.
+ * ========================================================================== */
+
+const NEUVE_RANGES: NeuveRangeKey[] = ["day", "week"];
+
+/** Badge de parti — sigle sur fond de la couleur du parti. Le nom complet part
+ *  en title/aria : « QS » seul ne se lit pas à voix haute, et la couleur ne dit
+ *  rien à qui ne voit pas. */
+function PartiBadge({ parti, rawLabel }: { parti: PartiKey | null; rawLabel: string }) {
+  if (!parti) {
+    // Parti hors des cinq suivis : on affiche le sigle brut, sans couleur — plutôt
+    // que d'emprunter la teinte d'un autre parti.
+    return (
+      <span className="ppl-parti-badge ppl-parti-badge--inconnu" title={rawLabel || undefined}>
+        {/* garde-redaction: ok (tiret = glyphe de donnée absente) */}
+        {rawLabel || "—"}
+      </span>
+    );
+  }
+  const full = PARTI_FULL_LABELS[parti];
+  return (
+    <span className={`ppl-parti-badge ppl-parti-badge--${parti}`} title={full} aria-label={full}>
+      {PARTI_LABELS[parti]}
+    </span>
+  );
+}
+
+/** « annoncée le 3 septembre » — repère de fraîcheur. En mode « neuves », la date
+ *  d'annonce est une donnée du module, pas une métadonnée : c'est elle qui dit
+ *  qu'on regarde une promesse neuve et non une promesse de 2022. */
+function formatAnnonce(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
+}
+
+function NeuvesView({
+  data,
+  modeSwitch,
+  editionKey,
+}: {
+  data: PromessesNeuvesData;
+  modeSwitch?: ReactNode;
+  editionKey?: string;
+}) {
+  const [range, setRange] = useState<NeuveRangeKey>("day");
+  const [parti, setParti] = useState<PartiKey | "all">("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const promesses = data.ranges[range];
+
+  // Les cinq partis sont toujours listés, mais ceux qui n'ont rien formulé sur la
+  // période sont grisés et non cliquables — comme les catégories d'enjeux du mode
+  // « 2022 ». Un filtre qui vide la liste sans prévenir se lit comme un bogue.
+  const partiItems = useMemo(() => {
+    const present = new Set(promesses.map((p) => p.parti).filter((k): k is PartiKey => !!k));
+    return PARTI_ORDER.map((k) => ({ key: k, present: present.has(k) }));
+  }, [promesses]);
+
+  const filtered = promesses
+    .filter((p) => parti === "all" || p.parti === parti)
+    .slice(0, TOP_N);
+
+  return (
+    <section className="polimeter-plus polimeter-plus--neuves" aria-label="Polimètre+ : promesses de la campagne">
+      {/* Bandeau de développement. Le module ne peut pas être travaillé sur la
+          donnée réelle — la table est désactivée et le raffineur n'est pas
+          fiable — donc on développe sur fixtures. Ce bandeau existe pour qu'une
+          capture prise en cours de route ne puisse jamais passer pour le site.
+          Même intention que pour le module des partis. */}
+      {data.fictif && (
+        <p className="ppl-bandeau-fictif" role="status">
+          Données de développement. Ces promesses et leur écho médiatique ne
+          reflètent pas le site.
+        </p>
+      )}
+      <div className="partis-title-row">
+        <div className="title-block">
+          <h2 className="partis-title">Polimètre+&nbsp;: les promesses de la campagne</h2>
+          <div className="period-subtitle">
+            Promesses repérées dans les communiqués des partis, classées selon leur écho médiatique
+            <InfoTip size="sm" label="À propos de ce mode">
+              Chaque communiqué de presse publié par un des cinq grands partis au Québec est lu
+              automatiquement pour y repérer les promesses qu&apos;il formule, au sens du
+              Polimètre&nbsp;: un engagement à une action ou à un but précis, formulé de façon
+              qu&apos;on puisse vérifier plus tard s&apos;il a été tenu. Le texte affiché est
+              celui du parti, repris mot pour mot; la pastille indique quel parti l&apos;a
+              formulée. Le classement suit la reprise de la promesse dans les Unes des médias
+              québécois.
+            </InfoTip>
+          </div>
+        </div>
+        <div className="control-block">
+          {modeSwitch}
+          <div className="control-row">
+            <div className="legend-toggle inline">
+              {NEUVE_RANGES.map((r) => (
+                <span
+                  key={r}
+                  className={r === range ? "active" : undefined}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={r === range}
+                  onClick={() => setRange(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setRange(r);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {NEUVE_RANGE_TAB_LABELS[r]}
+                </span>
+              ))}
+            </div>
+            <ShareButton title="Polimètre+ : les promesses de la campagne" anchor="polimetre-plus" editionKey={editionKey} />
+          </div>
+        </div>
+      </div>
+
+      <div className="ppl-grid">
+        {/* Rail gauche : filtres de parti — à la place des verdicts */}
+        <aside className="ppl-filters">
+          <nav className="ppl-verdicts ppl-partis" aria-label="Filtrer par parti">
+            <button
+              type="button"
+              className={`ppl-verdict${parti === "all" ? " active" : ""}`}
+              aria-pressed={parti === "all"}
+              onClick={() => setParti("all")}
+            >
+              Tous les partis
+            </button>
+            {partiItems.map(({ key, present }) => {
+              const cls = `ppl-verdict ppl-verdict--parti-${key}`;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`${cls}${parti === key ? " active" : ""}${present ? "" : " ppl-verdict--empty"}`}
+                  aria-pressed={parti === key}
+                  aria-disabled={!present}
+                  disabled={!present}
+                  title={PARTI_FULL_LABELS[key]}
+                  onClick={present ? () => setParti(key) : undefined}
+                >
+                  <span className="ppl-verdict__full">{PARTI_FULL_LABELS[key]}</span>
+                  <span className="ppl-verdict__short">{PARTI_LABELS[key]}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
+              qui décide ce qui compte comme promesse, dans les deux modes. Le
+              prompt de repérage applique son critère de testabilité — pointer
+              ailleurs laisserait croire à un standard maison. */}
+          <a
+            className="ppl-metho-rail"
+            href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
+            target="_blank"
+            rel="noopener"
+          >
+            Méthodologie du Polimètre
+          </a>
+        </aside>
+
+        {/* Rail droit : liste des promesses neuves */}
+        <div className="ppl-list">
+          <div className="ppl-promise header" aria-hidden="true">
+            <div style={{ textAlign: "center" }}>Rang</div>
+            <div style={{ textAlign: "center" }}>Promesse</div>
+            <div style={{ textAlign: "center" }}>Parti</div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <p style={{ padding: "18px 0", opacity: 0.6, fontStyle: "italic" }}>
+              {/* L'état vide dit ce qui est vrai — aucune REPRISE — et non
+                  « aucune promesse ». Des promesses ont pu être formulées sans
+                  qu'un seul média en parle : c'est précisément ce que le module
+                  donne à voir, et l'écrire autrement serait faux. */}
+              {range === "day"
+                ? "Aucune promesse de campagne n'a été reprise dans les Unes aujourd'hui."
+                : "Aucune promesse de campagne n'a été reprise dans les Unes cette semaine."}
+            </p>
+          ) : (
+            <ol className="ppl-promises">
+              {filtered.map((p, i) => {
+                const open = openId === p.promesseId;
+                const partiCls = p.parti ? ` ppl-promise--parti-${p.parti}` : "";
+                const cls = `ppl-promise${partiCls}${open ? " ppl-promise--open" : ""}`;
+                const nom = p.parti ? PARTI_FULL_LABELS[p.parti] : p.partiLabel;
+                return (
+                  <li
+                    key={p.promesseId}
+                    className={cls}
+                    /* Le nom accessible nomme d'abord la promesse, puis le parti :
+                       le parti n'est porté que par la couleur de la pastille, donc
+                       invisible sans la vue. Même raisonnement que pour le verdict
+                       dans le mode « 2022 ». */
+                    aria-label={nom ? `${p.title}, ${nom}` : p.title}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={open}
+                    onClick={() => setOpenId(open ? null : p.promesseId)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpenId(open ? null : p.promesseId);
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {open ? (
+                      <>
+                        <div className="ppl-promise__head">
+                          <span className="ppl-rank">{i + 1}</span>
+                          <PromiseTitle title={p.title} />
+                          <PartiBadge parti={p.parti} rawLabel={p.partiLabel} />
+                        </div>
+                        <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
+                          <p className="ppl-detail__eyebrow">
+                            Ce que le parti a écrit
+                            <InfoTip size="sm" label="Texte d'origine">
+                              Cette phrase est reprise mot pour mot du communiqué&nbsp;: elle
+                              n&apos;est ni résumée ni reformulée.
+                            </InfoTip>
+                          </p>
+                          <blockquote className="ppl-detail__verbatim">{p.verbatim}</blockquote>
+                          <p className="ppl-detail__meta">
+                            Annoncée le {formatAnnonce(p.announceDate)}
+                            {p.nMentions > 0 ? (
+                              <>
+                                {" · "}
+                                {p.nMentions} reprise{p.nMentions > 1 ? "s" : ""} dans les Unes
+                              </>
+                            ) : null}
+                          </p>
+                          {p.articles.length > 0 && (
+                            <p className="ppl-detail__coverage">
+                              <span className="ppl-detail__coverage-label">À lire sur</span>{" "}
+                              <span className="ppl-detail__coverage-media">
+                                {p.articles.map((article, idx) => (
+                                  <span key={`${article.media}-${article.url}`}>
+                                    <a href={article.url} target="_blank" rel="noopener">
+                                      {article.media}
+                                    </a>
+                                    {idx < p.articles.length - 1 && <span className="sep">,</span>}
+                                  </span>
+                                ))}
+                              </span>
+                            </p>
+                          )}
+                          {p.sourceUrl && (
+                            <a
+                              className="ppl-detail__link"
+                              href={p.sourceUrl}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              Lire le communiqué {nom ? `du ${nom}` : "d'origine"} →
+                            </a>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="ppl-rank">{i + 1}</span>
+                        <PromiseTitle title={p.title} />
+                        <PartiBadge parti={p.parti} rawLabel={p.partiLabel} />
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+      </div>
+      <div className="module-last-updated">{data.lastUpdated}</div>
+    </section>
+  );
+}
+
+/* ========================================================================== *
+ * Coquille — porte l'état de MODE et rend l'une des deux vues.
+ *
+ * `neuves` est optionnel et vaut null tant que le raffineur n'a rien publié (le
+ * cas hors campagne, où les communiqués sont des annonces de candidature sans
+ * promesse). L'inverseur n'apparaît alors PAS : offrir un mode qui mène à une
+ * liste vide se lit comme une panne. Le module se comporte exactement comme
+ * avant tant qu'il n'y a pas de promesse neuve à montrer.
+ * ========================================================================== */
+export function PolimetrePlusClient({
+  data,
+  neuves,
+  editionKey,
+}: {
+  data: PolimetreData;
+  neuves?: PromessesNeuvesData | null;
+  editionKey?: string;
+}) {
+  const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
+  /* Défaut = le module historique, PAS le mode neuf. Un visiteur qui revient doit
+     retrouver ce qu'il connaît ; le mode « campagne » s'offre, il ne s'impose pas.
+     L'ordre de l'inverseur suit ce défaut — un inverseur qui présente en premier
+     un mode qui n'est pas celui affiché se lit comme un état incohérent.
+     Basculer le défaut, le jour où la campagne le justifie, tient en une ligne. */
+  const [mode, setMode] = useState<ModeKey>("polimetre");
+
+  if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
+
+  const modeSwitch = (
+    <div className="legend-toggle inline ppl-mode-switch" role="group" aria-label="Source des promesses">
+      {(["polimetre", "neuves"] as ModeKey[]).map((m) => (
+        <span
+          key={m}
+          className={m === mode ? "active" : undefined}
+          role="button"
+          tabIndex={0}
+          aria-pressed={m === mode}
+          onClick={() => setMode(m)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setMode(m);
+            }
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          {MODE_LABELS[m]}
+        </span>
+      ))}
+    </div>
+  );
+
+  return mode === "neuves" ? (
+    <NeuvesView data={neuves!} modeSwitch={modeSwitch} editionKey={editionKey} />
+  ) : (
+    <PolimetreView data={data} modeSwitch={modeSwitch} editionKey={editionKey} />
   );
 }

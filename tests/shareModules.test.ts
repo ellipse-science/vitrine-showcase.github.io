@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { isShareModuleSlug, getShareModuleContent, SHARE_MODULE_SLUGS } from "@/lib/shareModules";
 
 describe("isShareModuleSlug", () => {
@@ -9,6 +9,25 @@ describe("isShareModuleSlug", () => {
   });
   it("rejette un slug inconnu", () => {
     expect(isShareModuleSlug("pas-un-module")).toBe(false);
+  });
+});
+
+describe("SHARE_MODULE_SLUGS — visibilité par environnement", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("exclut en production les modules masqués par #544", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
+    vi.resetModules();
+
+    const prodShareModules = await import("@/lib/shareModules");
+
+    expect(prodShareModules.SHARE_MODULE_SLUGS).not.toContain("partis-et-couverture");
+    expect(prodShareModules.SHARE_MODULE_SLUGS).not.toContain("assemblee-nationale");
+    expect(prodShareModules.isShareModuleSlug("partis-et-couverture")).toBe(false);
+    expect(prodShareModules.isShareModuleSlug("assemblee-nationale")).toBe(false);
   });
 });
 
@@ -37,6 +56,16 @@ describe("getShareModuleContent — chiffre choc (stat)", () => {
     const pctInDescription = content.description.match(/(\d+) %/)?.[1];
     if (pctInDescription) {
       expect(content.stat.value).toBe(`${pctInDescription} %`);
+    }
+  });
+
+  it("une-des-unes : transmet le niveau calibré qui porte la carte de partage", async () => {
+    const { stat } = await getShareModuleContent("une-des-unes");
+
+    if (stat.kicker) {
+      expect(stat.salienceLabel).toBeTruthy();
+      expect(stat.salienceRank).toBeGreaterThanOrEqual(1);
+      expect(stat.salienceRank).toBeLessThanOrEqual(6);
     }
   });
 

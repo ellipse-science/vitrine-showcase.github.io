@@ -102,6 +102,10 @@ type DeputyAgoraRow = IssueShares & {
   period_end_date: string;
   party: string;
   deputy: string;
+  /** Identifiant stable de la fiche ANQ, publié par le raffineur. */
+  deputy_id?: string | number;
+  /** Identifiant de circonscription pplmatch, utilisé comme second indice. */
+  district_id?: string;
   n_interventions: number;
   word_count: number;
   lexical_richness: number;
@@ -270,6 +274,92 @@ function cleanText(value?: string): string | undefined {
   return v === "" || v === "NA" ? undefined : v;
 }
 
+// La citation du concept distinctif était coupée DEUX fois : le raffineur
+// tronche à 220 caractères au caractère près (« …visant l'élargissement de
+// certaines »), puis le CSS clampe ce reste à 3 lignes sur écran large et à 2
+// sur mobile. Sur les 241 cartes publiées, 108 — 45 % — se terminaient ainsi au
+// milieu d'une phrase, sans même les points de suspension qui auraient signalé
+// l'extrait.
+//
+// On ne peut pas simplement tout afficher : la carte est un format physique
+// (63,5 × 88,9 mm, cf. globals.css) dont le verso porte déjà le nom, la
+// circonscription, quatre mesures, trois barres d'enjeux, le concept et sa
+// glose. Le budget tenable est celui du plus petit format, mobile : deux lignes
+// à 9 px, soit une centaine de signes.
+//
+// La citation est un EXTRAIT qui montre le concept en usage, pas l'intervention
+// complète. On coupe donc à une frontière de sens — fin de phrase si elle tombe
+// dans le budget, sinon fin de proposition, sinon dernier mot entier — et on
+// marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
+// l'impression d'un bogue.
+const CITATION_BUDGET = 95;
+
+function sansDiacritiques(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+}
+
+function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
+  const v = cleanText(value);
+  if (!v) return undefined;
+  // Le raffineur laisse parfois une virgule ou une espace orpheline en fin de
+  // troncature : on la retire avant de mesurer. On NE touche PAS au point final
+  // — une citation qui se termine normalement doit garder sa ponctuation, la
+  // retirer donnerait l'impression d'une coupe là où il n'y en a pas.
+  const texte = v.replace(/[\s,;:–—-]+$/u, "");
+  // Certaines citations ne font que deux ou trois signes : une fois la
+  // ponctuation orpheline retirée il ne reste rien à montrer, et un extrait
+  // vide vaut mieux qu'un guillemet ouvert sur du blanc.
+  if (texte.length === 0) return undefined;
+  if (texte.length <= budget) return texte;
+
+  // La citation doit montrer le concept qu'elle illustre. Le raffineur peut le
+  // placer jusque vers la fin du contexte : dans ce cas, on ouvre une fenêtre
+  // autour du mot plutôt que de conserver automatiquement le début. La
+  // recherche ignore casse et accents, puis se rabat sur le premier terme des
+  // concepts composés lorsque la graphie complète n'est pas présente.
+  const texteRecherche = sansDiacritiques(texte);
+  const conceptRecherche = sansDiacritiques(cleanText(concept) ?? "");
+  const premierTerme = conceptRecherche.split(/\s+/u)[0] ?? "";
+  let conceptIndex = conceptRecherche ? texteRecherche.indexOf(conceptRecherche) : -1;
+  if (conceptIndex < 0 && premierTerme) conceptIndex = texteRecherche.indexOf(premierTerme);
+  const conceptLength = conceptIndex >= 0
+    ? (texteRecherche.startsWith(conceptRecherche, conceptIndex) ? conceptRecherche.length : premierTerme.length)
+    : 0;
+
+  let debut = 0;
+  // Recentrer aussi quand le concept commence juste avant la limite mais n'y
+  // tient pas au complet. Sans cela, « participation publique » pouvait sortir
+  // sous la forme trompeuse « parti… ».
+  if (conceptIndex >= 0 && conceptIndex + conceptLength >= budget - 1) {
+    const cible = Math.max(0, conceptIndex - Math.floor(budget / 3));
+    // Revenir au début d'un mot évite une seconde coupe, cette fois à gauche.
+    debut = texte.lastIndexOf(" ", cible) + 1;
+  }
+  const prefixe = debut > 0 ? "… " : "";
+  const reste = texte.slice(debut);
+  if (prefixe.length + reste.length <= budget) return `${prefixe}${reste}`;
+
+  const budgetCorps = budget - prefixe.length;
+  const fenetre = reste.slice(0, budgetCorps);
+  // Frontières par ordre de préférence : fin de phrase, puis de proposition.
+  // On n'accepte la coupe que si elle laisse un extrait substantiel (60 % du
+  // budget) — sinon un point précoce réduirait la citation à trois mots.
+  // Si le concept se trouve dans la fenêtre, aucune frontière située avant sa
+  // fin n'est admissible : une phrase plus élégante mais hors sujet ne remplit
+  // plus la fonction de preuve de la citation.
+  const finConcept = conceptIndex >= debut ? conceptIndex - debut + conceptLength : 0;
+  const minimum = Math.max(Math.floor(budgetCorps * 0.6), finConcept);
+  const phrase = Math.max(fenetre.lastIndexOf(". "), fenetre.lastIndexOf("? "), fenetre.lastIndexOf("! "));
+  if (phrase >= minimum) return `${prefixe}${reste.slice(0, phrase + 1)}`;
+
+  const proposition = Math.max(fenetre.lastIndexOf(", "), fenetre.lastIndexOf("; "), fenetre.lastIndexOf(" : "));
+  if (proposition >= minimum) return `${prefixe}${reste.slice(0, proposition).trimEnd()}…`;
+
+  const mot = fenetre.lastIndexOf(" ");
+  const coupe = mot >= minimum ? mot : Math.min(budgetCorps - 1, fenetre.length);
+  return `${prefixe}${reste.slice(0, coupe).replace(/[\s,;:.-]+$/u, "")}…`;
+}
+
 // ---------------------------------------------------------------------------
 // Appariement des portraits
 // ---------------------------------------------------------------------------
@@ -281,8 +371,12 @@ function cleanText(value?: string): string | undefined {
 // ↔ « Sylvie D'Amours »).
 
 export type DeputyPortrait = {
+  deputy_id?: string | number;
   circonscription: string;
   circonscription_slug: string;
+  /** Chemin relatif sans extension. Diffère de la circonscription pour les
+   *  portraits historiques, afin qu'un successeur n'écrase pas l'image. */
+  asset_slug?: string;
   nom: string;
   /** « Indépendant », « Indépendante », ou le nom du parti, tel que l'ANQ
    *  l'inscrit dans son index. */
@@ -334,16 +428,29 @@ const PORTRAIT_ALIASES: Record<string, string> = {
 // que le raffineur ajoute déjà au nom publié quand il détecte la collision
 // (build_display_names, aws-refiners). Tant que ce suffixe n'est pas publié
 // pour un homonyme donné, le comportement reste inchangé : aucun portrait.
-function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait[]> {
+type PortraitIndex = {
+  byId: Map<string, DeputyPortrait>;
+  byName: Map<string, DeputyPortrait[]>;
+};
+
+function portraitBaseName(name: string): string {
+  return name.replace(RIDING_HINT, "").trim();
+}
+
+function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
+  const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
-    const key = tightKey(p.nom);
+    if (p.deputy_id !== undefined && p.deputy_id !== null) {
+      byId.set(String(p.deputy_id), p);
+    }
+    const key = tightKey(portraitBaseName(p.nom));
     if (!key) continue;
     const list = byKey.get(key);
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return byKey;
+  return { byId, byName: byKey };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -351,15 +458,22 @@ const RIDING_HINT = /\s*\(([^()]+)\)\s*$/;
 
 function lookupPortrait(
   deputy: string,
-  index: Map<string, DeputyPortrait[]>,
+  deputyId: string | number | undefined,
+  districtId: string | undefined,
+  index: PortraitIndex,
 ): DeputyPortrait | undefined {
+  if (deputyId !== undefined && deputyId !== null) {
+    const byId = index.byId.get(String(deputyId));
+    if (byId) return byId;
+  }
   const hint = deputy.match(RIDING_HINT);
   const baseName = hint ? deputy.slice(0, hint.index) : deputy;
   const key = tightKey(baseName);
-  const candidates = index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
+  const candidates = index.byName.get(key) ?? index.byName.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
   if (candidates.length === 1) return candidates[0];
-  if (candidates.length > 1 && hint) {
-    const ridingKey = tightKey(hint[1]);
+  const riding = hint?.[1] ?? districtId;
+  if (candidates.length > 1 && riding) {
+    const ridingKey = tightKey(riding);
     return candidates.find((c) => tightKey(c.circonscription) === ridingKey);
   }
   // Homonyme non départagé (pas d'indice de circonscription publié) : on ne
@@ -382,7 +496,7 @@ function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
-  portraits: Map<string, DeputyPortrait[]>,
+  portraits: PortraitIndex,
 ): DeputyRow[] {
   const rows = deputyRows.filter(
     (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
@@ -396,7 +510,7 @@ function buildDeputyList(
   // été prononcée sous cette bannière pendant la période.
   const sorted = [...rows]
     .filter((r) => {
-      const p = lookupPortrait(r.deputy, portraits);
+      const p = lookupPortrait(r.deputy, r.deputy_id, r.district_id, portraits);
       return !(p && isIndependent(p));
     })
     .sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
@@ -408,21 +522,21 @@ function buildDeputyList(
 
   return sorted.map((r) => {
     const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
-    const portrait = lookupPortrait(r.deputy, portraits);
+    const portrait = lookupPortrait(r.deputy, r.deputy_id, r.district_id, portraits);
     const stack = buildEnjeuStack(r);
     const top = stack.find((s) => !s.isReste);
     return {
-      name: portrait ? portrait.nom : titleCaseName(r.deputy),
+      name: portrait ? portraitBaseName(portrait.nom) : titleCaseName(r.deputy),
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
       richnessLevel: richnessLevels[r.deputy] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
-      signatureWordContext: cleanText(r.signature_word_context),
+      signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.jpg` : undefined,
+      portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
@@ -446,7 +560,7 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: Map<string, DeputyPortrait[]> = new Map(),
+  portraits: PortraitIndex = { byId: new Map(), byName: new Map() },
 ): PeriodView {
   const rows = allRows.filter((r) => r.period_type === period);
   const endDate = rows[0]?.period_end_date || "";
@@ -514,6 +628,8 @@ function buildPeriodView(
       interventions: Number(d.n_interventions || 0),
       toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
+      // Le tiroir a la place d'afficher le contexte complet. Le budget de la
+      // carte physique ne doit pas appauvrir cette vue plus large.
       signatureWordContext: cleanText(d.signature_word_context),
       deputies: buildDeputyList(item.key, period, deputyRows, portraits),
     };
@@ -610,4 +726,7 @@ export const __test__ = {
   buildEnjeuStack,
   buildSubtitle,
   buildPeriodView,
+  buildPortraitIndex,
+  lookupPortrait,
+  citationExtrait,
 };
