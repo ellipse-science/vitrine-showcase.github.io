@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ActualisationAuto from "@/components/interactive/ActualisationAuto";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
 
 // Icônes servies depuis public/ : jamais résolues automatiquement par le
@@ -21,6 +22,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(`${basePath}/`, siteOrigin),
   title: "La Vitrine démocratique",
   description: SITE_DESCRIPTION,
+  // Canonique par page, résolue contre metadataBase : l'apex fait foi. Sans
+  // elle, www, *.pages.dev et le miroir GitHub Pages servent le même contenu
+  // en 200 et se disputent le référencement au moment où les liens entrants
+  // arrivent (lancement médias).
+  alternates: { canonical: "./" },
   // Cartes de partage (Facebook/LinkedIn via Open Graph, X via Twitter card).
   // NB : les réseaux ignorent le fragment #module — tous les liens partagés
   // affichent cette carte globale. Cartes PAR module = mini-pages OG dédiées
@@ -31,20 +37,14 @@ export const metadata: Metadata = {
     title: "La Vitrine démocratique",
     description: SITE_DESCRIPTION,
     locale: "fr_CA",
-    images: [
-      {
-        url: "images/brand/logo_vitrinedemocratique_bg-none_theme-black.png",
-        width: 1788,
-        height: 591,
-        alt: "La Vitrine démocratique",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "La Vitrine démocratique",
     description: SITE_DESCRIPTION,
-    images: ["images/brand/logo_vitrinedemocratique_bg-none_theme-black.png"],
+    // Même artefact opaque que la carte Open Graph. Une route Twitter
+    // distincte doublerait le PNG sans apporter de cadrage différent.
+    images: ["opengraph-image"],
   },
   manifest: `${basePath}/manifest.json`,
   icons: {
@@ -81,7 +81,21 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegistration />
+        <ActualisationAuto />
         {children}
+        {/* Cloudflare Web Analytics — PROD seulement. Sans témoin ni profil
+            individuel : la mesure d'audience qui manquait à l'audit du
+            2026-08-19 (« l'afflux sera invisible »). Le jeton est public par
+            nature (il figure dans le HTML de toute façon) ; l'injection
+            automatique côté edge ne s'applique pas aux sites Pages, d'où la
+            balise posée ici. Même signal d'environnement que robots.ts. */}
+        {process.env.NEXT_PUBLIC_SITE_ENV === "prod" && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon='{"token": "adcd14712b6f44c1b083efde8096353b"}'
+          />
+        )}
       </body>
     </html>
   );

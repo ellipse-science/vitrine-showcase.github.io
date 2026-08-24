@@ -13,9 +13,11 @@ name: Déploiement prod (Cloudflare Pages)
 # vivent dans ce fichier, versionnées et relisibles, plutôt que dans un tableau
 # de bord où une valeur vide se confond avec une valeur absente.
 
+# BASCULE 2026-08-19 : le build prod est déclenché par Cloudflare (intégration
+# Git de Pages au push sur `prod`, Deploy Hook du Worker au cycle de données).
+# Ce workflow ne se déclenche plus qu'à la main, en secours : le laisser au
+# push déploierait DEUX FOIS chaque poussée.
 on:
-  push:
-    branches: [prod]
   workflow_dispatch:
 
 concurrency:

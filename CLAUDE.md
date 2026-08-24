@@ -26,9 +26,30 @@
 
 - **Never hand-edit `public/data/`** — it is overwritten by `scripts/fetch_data.R`.
 - **Schedule times are Montreal local**, not UTC.
-- **No AWS deployment path** in this repo — GitHub Pages only.
+- **Trois environnements, et le dev n'est plus GitHub Pages.** Production =
+  `vitrinedemocratique.com` (branche `prod`). Travail = `dev.vitrinedemocratique.com`
+  (branche `main`, derrière Cloudflare Access). GitHub Pages reste debout comme
+  filet mais ne sert plus de référence. ⚠️ Le code fusionné dans `main` n'est
+  PAS en production : `prod` n'avance que par une fusion délibérée, et cette
+  fusion exige une **vérification préalable sur dev** déclarée dans la PR de
+  promotion (« `- [x] Vérifié sur dev le … : <observé>` », check
+  `garde-promotion`, règle dure #10).
+  Détail : [`docs/reference/environnements.md`](./docs/reference/environnements.md).
+- **Les données sont lues AU BUILD**, jamais par le navigateur. Ne jamais
+  appeler `api.vitrinedemocratique.com` depuis un composant client : c'est ce
+  qui permet au site d'encaisser un afflux à coût nul.
+- **Prouver, pas décrire.** Chaque bogue sérieux de ce projet a été trouvé en
+  exécutant quelque chose, jamais en relisant. Une PR qui dit « vérifié » sans
+  chiffre ni sortie de commande n'est pas vérifiée — et dire ce qui n'a PAS été
+  vérifié est la section la plus utile.
+  Guide : [`docs/reference/travail-avec-agents.md`](./docs/reference/travail-avec-agents.md).
 - **No AI *authorship* on commits, but provenance is welcome** — never add `Co-Authored-By: Claude …` trailers or set an AI author/committer (that would credit a co-author in the Contributors graph). Documenting the tool is fine and encouraged via a provenance trailer **in French** `Assisté par : Claude Code (Opus 4.8)` (never the English `Assisted-by` default), which GitHub does not count as co-authorship. Hard rule #8; `includeCoAuthoredBy` is off in `.claude/settings.json`, and `garde-attribution` blocks authorship but lets provenance through on every PR.
 
 - **A PR body reads in one minute** — 3 to 5 bullets, template sections answered in one line each; measurements, tables, test output and the investigation story go in the **linked issue**, not in the PR body (issues themselves stay as detailed as needed). This is gitflow *security*, not style: on 2026-08-12 a long PR was approved with « J'approuve mais j'ai pas lu. Trop long et incompréhensible » — the only human safeguard in the chain became decorative. An AI alone never reviews a PR either. Hard rule #9; no CI check enforces it.
+
+  Three ways this rule gets missed even when you have read it:
+  - **Editing an existing body does not inherit its length.** Answering a review or resolving conflicts means rewriting the body to format, not appending to what was there — a body that was already too long stays too long unless you cut it.
+  - **No linked issue is not a licence to expand.** Some work has no issue (asked for out loud). The overflow then goes in a **PR comment**, never in the body — that is where a reviewer who asked for numbers looks, and it does not stand between the next reviewer and the diff.
+  - **Check it, don't estimate it.** Before `gh pr create` / `gh pr edit`, run `gh pr view <n> --json body -q .body | wc -l`. Over ~50 lines including template headings, cut before publishing.
 
 Full detail and rationale: [`AGENTS.md`](./AGENTS.md). To inspect Athena directly (read-only), see the R snippet in [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md).

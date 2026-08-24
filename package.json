@@ -1,26 +1,28 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.24.0-beta.2",
+  "version": "2.29.0-beta.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/fetch_art.mjs",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "garde-redaction": "node scripts/garde_redaction.mjs",
-    "select-hero": "npx --yes tsx@4 scripts/select_hero.ts"
+    "garde-redaction": "node scripts/garde_redaction.mjs"
   },
   "dependencies": {
-    "next": "16.3.0",
+    "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "aws4fetch": "^1.0.20",
     "typescript": "^7",
     "vitest": "^4.1.9"
   }

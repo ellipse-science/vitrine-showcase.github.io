@@ -1,5 +1,263 @@
 [
   {
+    "pr": 575,
+    "date": "2026-08-24T16:49:30Z",
+    "note": "Les portraits des parlementaires s’affichent maintenant dès l’ouverture d’un casier, y compris lorsque la carte se trouve plus loin dans le présentoir.",
+    "version": "2.29.0-beta.1"
+  },
+  {
+    "pr": 569,
+    "date": "2026-08-24T14:42:37Z",
+    "note": "Documentation interne du pipeline : l'illustration de la Une a maintenant son propre circuit, décrit dans l'horaire et le diagramme des pipelines.",
+    "version": null
+  },
+  {
+    "pr": 492,
+    "date": "2026-08-24T14:13:42Z",
+    "note": "Les modules de la page sont réordonnés du plus général au plus spécifique : on voit d'abord de quoi on parle, puis quels partis en parlent; d'abord le suivi des promesses, puis le détail de l'Assemblée nationale. La page Méthodologie suit le même ordre.",
+    "version": "2.29.0-beta.0"
+  },
+  {
+    "pr": 562,
+    "date": "2026-08-24T00:04:19Z",
+    "note": "La documentation technique du pipeline (swimlanes) précise maintenant où partent les alertes de surveillance : celles des modules du site vont désormais à l'équipe du site. Rien ne change sur le site lui-même.",
+    "version": null
+  },
+  {
+    "pr": 567,
+    "date": "2026-08-23T16:13:09Z",
+    "note": "Les points de saillance sont maintenant sur 100 : c'est l'attention moyenne reçue sur les 24 dernières heures, expliquée dans la Méthodologie et dans la bulle d'information de chaque manchette.",
+    "version": "2.28.0-beta.0"
+  },
+  {
+    "pr": 560,
+    "date": "2026-08-22T23:16:41Z",
+    "note": "Le partage d’un lien général de la Vitrine affiche maintenant une carte claire et lisible, même sur un fond sombre.",
+    "version": "2.27.0-beta.3"
+  },
+  {
+    "pr": 556,
+    "date": "2026-08-22T23:11:22Z",
+    "note": "- [x] Sans objet — documentation interne.",
+    "version": null
+  },
+  {
+    "pr": 555,
+    "date": "2026-08-21T23:03:09Z",
+    "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
+    "version": "2.27.0-beta.2"
+  },
+  {
+    "pr": 558,
+    "date": "2026-08-21T21:18:47Z",
+    "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
+    "version": "2.27.0-beta.1"
+  },
+  {
+    "pr": 549,
+    "date": "2026-08-21T20:06:25Z",
+    "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",
+    "version": null
+  },
+  {
+    "pr": 551,
+    "date": "2026-08-21T19:34:56Z",
+    "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
+    "version": null
+  },
+  {
+    "pr": 452,
+    "date": "2026-08-21T19:22:40Z",
+    "note": "La page Méthodologie décrit maintenant la façon dont le module des promesses repère une promesse dans un article : un modèle s'en charge, et le repérage par règles sert de solution de repli. La page précise aussi qu'une vue d'un mois peut réunir des semaines repérées par l'une ou l'autre méthode.",
+    "version": null
+  },
+  {
+    "pr": 539,
+    "date": "2026-08-21T19:05:51Z",
+    "note": "Le module sur les partis politiques est refait : un palmarès montre qui accumule le plus de temps à la une, et chaque parti a désormais son disque qu'on retourne pour lire ses chiffres.",
+    "version": "2.27.0-beta.0"
+  },
+  {
+    "pr": 547,
+    "date": "2026-08-21T18:55:10Z",
+    "note": "Un jeu caché accessible depuis le module des partis politiques est retiré du site public. Il reste disponible sur notre environnement de travail.",
+    "version": "2.26.0-beta.1"
+  },
+  {
+    "pr": 550,
+    "date": "2026-08-21T18:52:03Z",
+    "note": "Les images partagées sur les réseaux sociaux ont été redessinées aux couleurs du site, et il est maintenant possible de partager un module tel qu'il était à une édition passée : l'image reprend alors les chiffres de ce moment-là, pas ceux du jour.",
+    "version": "2.26.0-beta.0"
+  },
+  {
+    "pr": 552,
+    "date": "2026-08-21T18:44:44Z",
+    "note": "Les cartes de l’Assemblée distinguent désormais les parlementaires homonymes et conservent le portrait officiel des membres qui ont quitté leur siège pendant la législature.",
+    "version": "2.25.0-beta.2"
+  },
+  {
+    "pr": 545,
+    "date": "2026-08-21T18:28:57Z",
+    "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 541,
+    "date": "2026-08-21T15:44:25Z",
+    "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
+    "version": null
+  },
+  {
+    "pr": 533,
+    "date": "2026-08-20T18:55:01Z",
+    "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",
+    "version": null
+  },
+  {
+    "pr": 531,
+    "date": "2026-08-20T18:50:21Z",
+    "note": "Les partis de l'Assemblée sont maintenant présentés du plus bavard au moins bavard, et le premier est ouvert d'emblée. Le mot qui distingue chaque parti et chaque élu.e s'affiche directement, avec un extrait qui le montre en contexte.",
+    "version": null
+  },
+  {
+    "pr": 544,
+    "date": "2026-08-20T18:37:30Z",
+    "note": "Deux modules encore en rodage — la couverture des partis et l'alignement de l'Assemblée — se retirent du site public le temps de mûrir ; ils restent visibles sur notre environnement de travail. L'outil de signalement de problème devient un outil interne à l'équipe. Le site mesure désormais sa fréquentation avec Cloudflare Web Analytics, une mesure agrégée sans témoin ni pistage individuel. Les…",
+    "version": null
+  },
+  {
+    "pr": 534,
+    "date": "2026-08-20T15:47:11Z",
+    "note": "L'illustration de la une des unes est maintenant produite par un service dédié, qui la renouvelle dès que la une change plutôt qu'à heures fixes. Et si l'illustration disponible ne correspond pas à la une affichée, le site préfère ne rien montrer plutôt que d'illustrer la mauvaise nouvelle. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 540,
+    "date": "2026-08-20T13:39:07Z",
+    "note": "Dans le Polimètre+, les pastilles de rang des promesses rompues et en suspens ont maintenant le même style que les autres : une pastille pâle cerclée de la couleur du verdict.",
+    "version": "2.25.0-beta.1"
+  },
+  {
+    "pr": 536,
+    "date": "2026-08-19T20:07:15Z",
+    "note": "Des garde-fous internes empêchent désormais le site de publier un module vide quand une source de données fait défaut, les visiteurs qui reviennent obtiennent l'édition la plus récente au lieu d'une copie gardée par leur navigateur, et le site se présente mieux aux moteurs de recherche (plan du site, adresse canonique). 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 530,
+    "date": "2026-08-19T18:24:56Z",
+    "note": "Le site se met à jour par un chemin plus direct et plus fiable, indépendant des services externes qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 252,
+    "date": "2026-08-19T18:13:28Z",
+    "note": "Rien ne change sur le site public — mise à jour de documentation technique interne (référence du backend AWS).",
+    "version": null
+  },
+  {
+    "pr": 497,
+    "date": "2026-08-19T18:08:01Z",
+    "note": "Les portraits des député·es se mettent désormais à jour tout seuls, une fois par jour. Après une élection partielle, la photo du nouvel élu remplace celle de son prédécesseur sans intervention manuelle.",
+    "version": null
+  },
+  {
+    "pr": 532,
+    "date": "2026-08-19T18:01:34Z",
+    "note": "Aucun changement pour le site : correctifs internes de la chaîne de données.",
+    "version": null
+  },
+  {
+    "pr": 529,
+    "date": "2026-08-19T15:00:57Z",
+    "note": "Aucun changement pour le site : correctifs internes de l'API.",
+    "version": null
+  },
+  {
+    "pr": 528,
+    "date": "2026-08-19T14:40:16Z",
+    "note": "Aucun changement pour le site : correctif interne de l'API.",
+    "version": null
+  },
+  {
+    "pr": 527,
+    "date": "2026-08-19T14:32:35Z",
+    "note": "Le site tire maintenant ses données par un chemin plus direct et plus fiable, indépendant des services qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 526,
+    "date": "2026-08-19T13:56:57Z",
+    "note": "Aucun changement pour le site : document interne de vision.",
+    "version": null
+  },
+  {
+    "pr": 525,
+    "date": "2026-08-19T13:23:14Z",
+    "note": "Le site se met maintenant à jour de lui-même dans votre navigateur quand de nouvelles données sont publiées, sans devoir rafraîchir la page.",
+    "version": "2.25.0-beta.0"
+  },
+  {
+    "pr": 524,
+    "date": "2026-08-19T13:13:14Z",
+    "note": "Aucun changement pour le site : règle interne de qualité (tout passe par l'environnement de travail avant la production).",
+    "version": null
+  },
+  {
+    "pr": 522,
+    "date": "2026-08-18T23:41:56Z",
+    "note": "Documentation interne du pipeline mise a jour.",
+    "version": null
+  },
+  {
+    "pr": 520,
+    "date": "2026-08-18T22:13:40Z",
+    "note": "Aucun changement pour le site : document interne de conception.",
+    "version": null
+  },
+  {
+    "pr": 521,
+    "date": "2026-08-18T21:31:33Z",
+    "note": "Corrige un bug qui empêchait le module « L'alignement de l'Assemblée » de recevoir de nouvelles données depuis le 28 juillet. Aucun autre changement visible sur le site.",
+    "version": null
+  },
+  {
+    "pr": 510,
+    "date": "2026-08-18T20:42:42Z",
+    "note": "Le rafraîchissement automatique des données s'interrompt maintenant de lui-même s'il reste bloqué, au lieu d'immobiliser les mises à jour suivantes. Rien ne change dans ce que le site affiche.",
+    "version": null
+  },
+  {
+    "pr": 519,
+    "date": "2026-08-18T20:17:52Z",
+    "note": "Le diagramme public des pipelines montre maintenant deux traitements automatiques qui tournaient déjà sans y apparaître. L'un publie chaque semaine un rapport de surveillance du pipeline, l'autre repère les promesses gouvernementales. Rien ne change dans les données ni dans l'affichage du site.",
+    "version": null
+  },
+  {
+    "pr": 518,
+    "date": "2026-08-18T19:27:57Z",
+    "note": "Aucune — décision interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 517,
+    "date": "2026-08-18T19:22:39Z",
+    "note": "Aucune — documentation interne à l'offre API, non annoncée publiquement.",
+    "version": null
+  },
+  {
+    "pr": 516,
+    "date": "2026-08-18T19:16:33Z",
+    "note": "Aucune — correctif d'outillage.",
+    "version": null
+  },
+  {
+    "pr": 513,
+    "date": "2026-08-18T19:10:05Z",
+    "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
+    "version": null
+  },
+  {
     "pr": 512,
     "date": "2026-08-18T18:36:08Z",
     "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",

@@ -12,6 +12,8 @@
     --bleu: #2E4663;
     --green: #3D6B3A;
     --amber: #B88A3D;
+    /* Variante lisible en TEXTE de --amber (4,61:1 sur le papier). */
+    --amber-encre: #86642C;
     --tag-new-bg: #6B1E2A;
     --tag-new-fg: #F3ECDD;
     --tag-keep-bg: transparent;
@@ -1853,6 +1855,9 @@
     height: 9px;
   }
   .saillance-info-bubble a:hover { text-decoration: underline; }
+  /* Le lien « En savoir plus » sur SA ligne (retour d'Adrien, #566) : en ligne,
+     JSX avalait l'espace et il se collait au dernier mot du texte. */
+  .saillance-info-bubble .tip-link { display: block; }
 
   /* Phrase ajoutée SOUS le lien de la bulle (#307). Le lien est un
      `inline-block` : sans ce bloc, la phrase se collerait à sa droite, sur la
@@ -1868,6 +1873,13 @@
   /* La valeur du moment, sur sa propre ligne : même registre que le kicker,
      serrée dessous et en chiffres tabulaires. */
   .saillance-info-card .sic-kicker-val { margin-top: -0.15em; font-variant-numeric: tabular-nums; }
+  /* La pastille de niveau DANS la bulle : même classe de bande que le badge
+     (couleur identique), mais à la taille de la ligne qui la porte. */
+  .saillance-info-card .sic-tag { margin: 0 2px; padding: 2px 7px; font-size: 9px; letter-spacing: 0.18em; line-height: 1.3; vertical-align: baseline; }
+  /* La parenthèse qui suit la pastille (valeur, édition du sommet) reste en
+     bas de casse : en capitales espacées, « ATTEINT À L'ÉDITION DE MINUIT DU
+     MERCREDI 19 AOÛT 2026 » pesait plus lourd que l'information. */
+  .saillance-info-card .sic-note { text-transform: none; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
   .saillance-info-card .sic-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
@@ -1886,6 +1898,28 @@
     margin-bottom: 10px;
   }
   .saillance-info-card .sic-curve { display: block; width: 100%; height: auto; margin-bottom: 10px; }
+  /* La bande où la nouvelle se trouve pulse trois fois à l'ouverture de la
+     bulle, puis reste foncée (demande d'Adrien, vitrine#566) : l'emphase
+     porte sur le CONCEPT — la nouvelle est située dans une bande —, pas sur
+     un décor. Trois battements, pas une boucle : un clignotement permanent
+     finirait par se lire comme un bogue. */
+  .saillance-info-card .sic-band-now { animation: sic-band-pulse 1.1s ease-in-out 3; }
+  @keyframes sic-band-pulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.45; }
+  }
+  /* Le sommet se révèle APRÈS les trois battements (3 × 1,1 s = 3,3 s) : la
+     figure raconte dans l'ordre — la bande où la nouvelle est, puis jusqu'où
+     elle est montée. Le délai est la durée totale du pulse ci-dessus : si l'un
+     change, l'autre suit. */
+  .saillance-info-card .sic-sommet { opacity: 0; animation: sic-sommet-in 0.6s ease-out 3.3s forwards; }
+  @keyframes sic-sommet-in {
+    to { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .saillance-info-card .sic-band-now { animation: none; }
+    .saillance-info-card .sic-sommet { opacity: 1; animation: none; }
+  }
   .saillance-info-card .sic-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; fill: var(--ink-softer); }
   .saillance-info-card .sic-marker-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; fill: var(--ink); }
   /* Le sommet est un repère secondaire : même graisse, encre plus pâle. */
@@ -2681,7 +2715,7 @@
   .ass-card-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 26px;
+    gap: 38px;
   }
   .ass-tone {
     display: block;
@@ -3185,13 +3219,38 @@
     font-size: 28px;
     line-height: 1;
   }
-  .casier-bilan { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+  /* Le bilan vit dans le battant GAUCHE, qui ne fait que la moitié du casier.
+     À quatre partis le casier est assez large pour qu'un nombre à sept chiffres
+     y tienne au corps 19 px ; à cinq il tombe à 171 px, le battant à 63 px de
+     contenu, et « 6 578 506 » en réclame 83. Le nombre était tronqué.
+     Le PCQ n'apparaissant que sur la législature complète, le cas ne s'est
+     présenté qu'une fois l'historique 2022-2026 rattrapé.
+     On dimensionne donc le nombre d'après la largeur RÉELLE du bilan plutôt que
+     d'après un nombre de partis présumé : la règle tient aussi bien à trois
+     partis qu'à six, sans média-requête à rallonge. */
+  .casier-bilan {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    /* `container-type: inline-size` retire le dimensionnement par le contenu :
+       sans largeur imposée, le bilan du battant droit (« 83 DÉPUTÉ.ES »)
+       s'effondrait à zéro. On l'étire donc explicitement sur la largeur du
+       battant, qui est la mesure dont on veut dépendre de toute façon. */
+    align-self: stretch;
+    container-type: inline-size;
+  }
   .casier-bilan b {
     display: block;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 900;
-    font-size: 19px;
+    /* Mesuré : « 6 578 506 » occupe environ 4,7 fois son corps en largeur, donc
+       il tient tant que le corps reste sous ~21 % de la largeur du bilan. 20 %
+       laisse une marge, et le plancher couvre le cas le plus serré (cinq partis
+       sur un écran étroit) avant que la grille ne repasse à deux colonnes. */
+    font-size: clamp(10px, 20cqw, 19px);
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
   .casier-bilan i {
     display: block;
@@ -3282,6 +3341,77 @@
     margin: -4px 0 14px;
     max-width: 72ch;
   }
+  /* Concept distinctif au niveau du PARTI, dans le tiroir. Le mot passe à la
+     ligne sous son intitulé : sur une seule ligne, un mot long poussait la
+     glose hors du tiroir à 1280 px. */
+  .tiroir-concept {
+    margin: -2px 0 14px;
+    max-width: 72ch;
+  }
+  .tiroir-concept-titre {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cordovan);
+    margin-bottom: 3px;
+  }
+
+  /* Bloc du concept distinctif, partagé par la carte et le tiroir. Tout est
+     visible en permanence : pas de survol (une carte finit imprimée, et un
+     doigt sur mobile ne survole rien). La hiérarchie porte donc seule la
+     lisibilité — le mot d'abord, la citation qui le montre en situation
+     ensuite, la mécanique du calcul en dernier et en plus petit. */
+  .concept-mot {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 17px;
+    line-height: 1.05;
+    color: var(--cordovan);
+  }
+  .concept-citation {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+    font-size: 10px;
+    line-height: 1.34;
+    color: var(--ink-soft);
+    margin-top: 3px;
+  }
+  .concept-glose {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 7.5px;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    color: var(--ink-softer);
+    margin-top: 4px;
+  }
+  /* Le message d'absence remplace le concept, la citation ET la glose : il
+     dispose donc de la place des trois. Au corps de la glose (7,5 px) il serait
+     illisible, or c'est une phrase qu'on demande vraiment de lire. */
+  .concept-vide {
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    line-height: 1.45;
+    margin-top: 0;
+  }
+  /* Dans le tiroir, la largeur ne manque pas : la citation s'y lit en entier
+     et au corps du texte courant, pas au corps réduit de la carte. */
+  .tiroir-concept .concept-mot { font-size: 19px; color: var(--ink); }
+  .tiroir-concept .concept-citation {
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .tiroir-concept .concept-glose { font-size: 8.5px; }
+
   /* Le présentoir défile horizontalement : les cartes gardent leur format
      exact plutôt que de se comprimer pour tenir dans la largeur. */
   .tiroir-presentoir {
@@ -3537,36 +3667,6 @@
   }
   .carte-v-piste { display: block; height: 5px; background: var(--rule-faint); }
   .carte-v-piste > i { display: block; height: 5px; }
-  .carte-v-concept {
-    display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 17px;
-    line-height: 1;
-    color: var(--cordovan);
-  }
-  .carte-v-citation {
-    display: block;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 10px;
-    line-height: 1.34;
-    color: var(--ink-soft);
-    margin-top: 3px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-  .carte-v-glose {
-    display: block;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 9px;
-    line-height: 1.3;
-    color: var(--ink-softer);
-    margin-top: 2px;
-  }
   .carte-v-pied {
     display: block;
     margin-top: auto;
@@ -3657,7 +3757,10 @@
     .casier-dedans .bloc-chiffre,
     .casier-dedans .dedans-enjeu:nth-of-type(3) { display: none; }
     .dedans-vedette { font-size: 14px; }
-    .casier-bilan b { font-size: 16px; }
+    /* Plus de corps fixe ici : le nombre se dimensionne d'après la largeur du
+       bilan (voir `clamp(... 20cqw ...)`), ce qui couvre aussi la grille 2 × 2.
+       Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
+       « 6 578 506 » d'un pixel. */
     .casier-battant { padding: 9px 8px; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
@@ -3668,12 +3771,10 @@
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
-    /* Le verso déborde de 8 px à cette taille : on resserre les interlignes et
-       on coupe la citation à deux lignes plutôt que trois. */
+    /* Le verso déborde de 8 px à cette taille : on resserre les interlignes. */
     .carte-v-stats { padding: 5px 0; }
     .carte-v-circo { margin: 3px 0 5px; }
     .carte-v-bloc { margin-top: 6px; }
-    .carte-v-citation { font-size: 9px; -webkit-line-clamp: 2; }
     .vestiaire-tiroir { padding: 18px 12px 12px; }
   }
 
@@ -4607,18 +4708,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .tone-streak {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  .tone-streak--positive { color: #3D6B3A; }
-  .tone-streak--negative { color: #A8302C; }
-  .tone-streak--neutral  { color: var(--ink-softer); }
-  .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
+  }  .parti-row.header { border-bottom: 2px solid var(--rule-faint); padding: 6px 0 10px; align-items: flex-end; }
   .parti-row.header div {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -4630,7 +4720,7 @@
     background: var(--party);
     color: var(--paper);
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 17px;
+    font-size: 23px;
     font-weight: 700;
     letter-spacing: 1.5px;
     padding: 5px 10px;
@@ -4690,7 +4780,7 @@
 
   .parti-pct {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px; text-align: right; font-weight: 400;
+    font-size: 23px; text-align: right; font-weight: 400;
   }
   .parti-spark svg {
     display: block;
@@ -4710,222 +4800,51 @@
      et il laisse le châssis de la console ressortir à l'intérieur. */
   .pupitre {
     border: 1px solid var(--rule);
-    padding: 8px 30px 30px;
+    /* Cadre resserré : 30 px de rembourrage latéral et bas éloignaient le trait
+       d'un contenu qui a maigri (manchette plus petite, console plus courte,
+       filets internes retirés). Le cadre suit le contenu au lieu de flotter
+       autour. */
+    padding: 6px 18px 18px;
     margin-top: 26px;
   }
   /* La marque d'aide vit sur le PUPITRE, pas dans le titre : ajoutée au titre,
      elle le faisait déborder sur deux lignes. */
-  .pupitre-aide { display: flex; justify-content: flex-end; }
-  .pupitre .manchette-zone { margin-top: 10px; }
-  /* Une DÉLIMITATION LÉGÈRE entre la manchette et la table de mix : le filet
-     dit qu'on change d'objet — d'une phrase à un instrument — sans dire qu'on
-     change de module. Court et centré, pas pleine largeur : un filet qui
-     traverse tout séparerait au lieu d'articuler. */
+  .pupitre-aide { display: flex; justify-content: flex-end; }  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
+     articulé les deux, mais depuis que chaque platine porte la couleur de son
+     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas. */
   .pupitre .regie {
     margin-top: 26px;
     padding-top: 26px;
-    position: relative;
   }
-  .pupitre .regie::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    border-top: 0.5px solid var(--rule);
-  }
-
-  /* HAUTEUR RÉSERVÉE pour la manchette. Elle fait deux lignes sur « tous les
-     médias » et trois dès qu'un média est choisi (mesuré : 62 px contre 98).
-     Sans réserve, bouger le fader faisait sauter toute la console.
-     La réserve est portée par une ZONE qui enveloppe le paragraphe, jamais par
-     le paragraphe lui-même : `display: grid` sur un <p> transforme chacun de
-     ses enfants inline en cellule, et la phrase se répand alors sur une
-     colonne. La font-size sert seulement au calcul en `em`. */
-  .manchette-zone {
-    /* La marge haute appartient à la ZONE, pas au paragraphe : à l'intérieur,
-       elle s'ajoutait à la hauteur du texte et faisait déborder la réserve — le
-       décalage résiduel de 12 px venait de là. */
-    margin-top: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    min-height: calc(3 * 1.45em);
-  }
-
-  /* La manchette : ce qu'on lit AVANT tout le reste. Le plus gros corps du
-     module après son titre, centré, avec de l'air autour — c'est elle qui
-     porte la réponse, l'instrument ne fait que la prouver. */
-  .manchette {
-    max-width: 700px;
-    margin: 0 auto;
-    text-align: center;
-    /* Même famille, même interligne et même couleur que `.une-main .dek`, le
-       chapeau principal du site : Playfair Display en normale, `--ink-soft`,
-       l'accent porté par le POIDS et non par un changement de police. Plus
-       grand que le dek d'origine (19 px) parce que c'est la phrase-clé du
-       module, mais dans la même famille. */
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 24px;
-    font-weight: 400;
-    line-height: 1.45;
-    letter-spacing: -0.1px;
-    color: var(--ink-soft);
-    text-wrap: balance;
-  }
-  .manchette b { font-weight: 700; color: var(--ink); }
-  .manchette-chiffre { white-space: nowrap; }
-  /* Mêmes seuils que les segments du vumètre — au-dessus de la moyenne, puis
-     bien au-dessus. */
-  /* Le chiffre du média prend la couleur de son écart, comme les segments. */
-  .manchette-chiffre.sur      { color: var(--amber); }
-  .manchette-chiffre.sur-fort { color: var(--red); }
-  .manchette-chiffre.sous     { color: var(--green); }
-
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console
      peut donc s'élargir. */
   .regie {
     display: grid;
-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
-    align-items: start;
-    gap: 26px;
+    /* 236 px et non 200 : à 200, presque toutes les étiquettes du tableau se
+       repliaient sur deux lignes (« Part du temps », « Écart médias », « Depuis
+       7 jours »), ce qui décalait les valeurs d'une platine à l'autre et rendait
+       la comparaison pénible. */
+    grid-template-columns: minmax(0, 236px) minmax(0, 1fr) minmax(0, 236px);
+    /* Les trois colonnes s'alignent par le BAS, et non par le haut.
+       Le tableau d'une platine est plus haut que la console : aligner les bas
+       remonte donc les platines et fait descendre la console, ce que deux
+       réglages à la main (marge négative sur la platine, marge positive sur la
+       console) obtenaient auparavant à l'aveugle. La règle vaut mieux que les
+       chiffres : elle tient quand une platine gagne une ligne, par exemple
+       « Contre l'ensemble des médias » dès qu'un média est choisi, alors que
+       les valeurs fixes dérivaient à chaque changement de contenu.
+
+       `stretch` plutôt que `end` : les trois colonnes prennent la hauteur de la
+       PLUS HAUTE, et chacune pousse son contenu vers le bas (`justify-content:
+       flex-end` sur la platine). Le résultat visuel est le même, mais la hauteur
+       de la rangée ne dépend plus du contenu d'UNE colonne : retirer un parti
+       d'une platine ne fait plus s'effondrer sa colonne, donc plus sauter tout
+       le module. Même raison d'être que la hauteur réservée à la manchette. */
+    align-items: end;
+    gap: 38px;
     margin-top: 26px;
   }
-
-  .platine {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding-top: 26px;
-  }
-  .platine-cote {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.28em;
-    color: var(--ink-softer);
-    font-weight: 500;
-  }
-  /* Le plateau : des cercles concentriques à l'encre, pas un objet en volume. */
-  .platine-plateau {
-    position: relative;
-    width: 138px;
-    height: 138px;
-    border-radius: 50%;
-    border: 1px solid var(--rule);
-    background:
-      repeating-radial-gradient(circle at 50% 50%,
-        transparent 0 6px, color-mix(in srgb, var(--rule-faint) 55%, transparent) 6px 7px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .platine.vide .platine-plateau { opacity: 0.45; }
-  /* L'arc que parcourt l'aiguille — sans lui, sa position ne se rapporte à
-     rien. Deux traits aux extrémités : 0 % à gauche, 50 % à droite. */
-  .platine-plateau::before,
-  .platine-plateau::after {
-    content: '';
-    position: absolute;
-    top: 14px;
-    width: 1px;
-    height: 9px;
-    background: var(--rule);
-    transform-origin: 50% 55px;
-  }
-  .platine-plateau::before { transform: rotate(-52deg); }
-  .platine-plateau::after  { transform: rotate(52deg); }
-
-  .platine-axe {
-    position: absolute;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--ink);
-  }
-  /* L'aiguille porte la part de voix : un tour vaut 50 %, la même échelle que
-     les vumètres — les deux lectures ne peuvent donc pas se contredire. */
-  .platine-aiguille {
-    position: absolute;
-    left: 50%;
-    bottom: 50%;
-    width: 2px;
-    height: 58px;
-    margin-left: -1px;
-    transform-origin: 50% 100%;
-    background: var(--party);
-  }
-  .platine-valeur {
-    position: absolute;
-    bottom: 22px;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1;
-  }
-  .platine-valeur b { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
-
-  .platine-nom {
-    margin: 0;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink);
-  }
-  /* PROSE, donc police de lecture : le design language réserve IBM Plex Mono
-     aux étiquettes, toujours en capitales. Une phrase en monospace bas-de-casse
-     y contrevient. Même règle pour .console-vide et .course-vide. */
-  .platine-vide-txt {
-    margin: 0;
-    max-width: 140px;
-    text-align: center;
-    line-height: 1.45;
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--ink-soft);
-  }
-
-  .platine-donnees { margin: 0; width: 100%; max-width: 172px; }
-  .platine-donnees > div {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    padding: 5px 0;
-    border-bottom: 0.5px solid var(--rule-faint);
-  }
-  .platine-donnees > div:last-child { border-bottom: none; }
-  .platine-donnees dt {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-  }
-  .platine-donnees dd {
-    margin: 0;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 14px;
-    color: var(--ink);
-    white-space: nowrap;
-  }
-  .platine-donnees dd span {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-style: italic;
-    font-size: 12px;
-    color: var(--ink-softer);
-  }
-  .platine-donnees dd.haut { color: var(--red); }
-  .platine-donnees dd.bas  { color: var(--green); }
-
   /* La table de mix est un APPAREIL : elle a son châssis. Fond `--paper-deep`,
      le jeton que le design language réserve aux encadrés. Les platines, elles,
      restent dehors — ce sont des appareils distincts dans une régie. */
@@ -4936,7 +4855,20 @@
     background: var(--paper-deep);
     border: 1px solid var(--rule);
     padding: 20px 22px 24px;
-    margin-top: 4px;
+    /* Aucune marge haute : la position verticale de la console vient de
+       l'alignement par le bas de la régie. */
+    margin-top: 0;
+    /* La console ne s'ÉTIRE pas avec la rangée : elle garde sa hauteur propre,
+       fixée par la piste du vumètre, et se pose au bas de la colonne. Son cadre
+       devient donc statique, quoi qu'il arrive aux platines, et son haut se
+       trouve plus bas que le leur. */
+    align-self: end;
+    /* La piste reste à 250 px : `align-self: end` suffit à poser la console plus
+       bas que les platines, sans amputer le vumètre. Mesuré : la console tombe
+       à 359 px de haut contre 524 pour une platine, et les deux bas coïncident
+       au pixel. Raccourcir la piste en plus la ramenait à 299 px, ce qui ôtait
+       de la résolution à la seule vraie visualisation du module pour un gain de
+       mise en page déjà acquis. */
     --piste: 250px;   /* hauteur du vumètre */
     --seg-gap: 3px;
     /* Largeur d'une tranche — FIXE (voir plus bas), et calibrée pour que la
@@ -4950,6 +4882,11 @@
 
   /* La console et ses graduations, côte à côte. */
   .console-corps {
+    /* La graduation du HAUT chevauche le sommet de la piste : elle est posée en
+       `bottom` puis ramenée de la moitié de sa hauteur par `translateY(50%)`,
+       si bien qu'elle déborde d'environ 6 px au-dessus. Sans cette réserve,
+       « 100 % » se faisait couper par le bord du cadre. */
+    padding-top: 7px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -4976,18 +4913,6 @@
 
   /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
   .console-tranche { position: relative; }
-  .console-charge {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    font-weight: 500;
-    color: var(--cordovan);
-  }
-  .console-tranche.chargee .console-ruban-nom { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
   /* Le ruban d'un canal coupé perd sa couleur de parti : il n'est plus une
      identité qui joue, seulement une tranche présente. */
@@ -5002,7 +4927,12 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-softer);
-    white-space: nowrap;
+    /* Le repli est AUTORISÉ. En `nowrap`, une étiquette plus longue que la
+       tranche (44 px) déborde par-dessus ses voisines au lieu d'être contenue,
+       ce qui a cassé la colonne du PCQ le jour où « Sourdine » est devenu
+       « Trop peu présent ». La largeur de la tranche ne doit jamais dépendre de
+       la longueur d'un mot. */
+    white-space: normal;
   }
 
   /* Largeur FIXE, et non `flex: 1 1 0`. Dans un conteneur dimensionné par son
@@ -5015,7 +4945,12 @@
     width: var(--tranche);
     min-width: 0;
     display: grid;
-    grid-template-rows: var(--piste) auto auto;
+    /* La troisième rangée est de hauteur FIXE, et réservée dans TOUTES les
+       colonnes. En `auto`, seule la colonne en sourdine avait du contenu à cet
+       étage : plus haute que ses voisines et alignée par le bas, elle remontait
+       sa piste de 20 px et se retrouvait décalée. 26 px laissent la place à
+       deux lignes de 9 px, le repli restant autorisé. */
+    grid-template-rows: var(--piste) auto 26px;
     align-items: end;
     justify-items: center;
     row-gap: 9px;
@@ -5040,13 +4975,61 @@
        `--rule-faint` disparaissait presque. */
     background: color-mix(in srgb, var(--rule) 62%, transparent);
   }
-  /* La couleur dit l'ÉCART À LA MOYENNE, pas le niveau, et elle se lit DANS la
-     colonne : vert jusqu'à la moyenne du parti, ambre au-dessus, rouge bien
-     au-dessus. La frontière verte marque donc, sans repère supplémentaire,
-     l'endroit exact où ce média dépasse l'ordinaire de ce parti. */
-  .console-vumetre .seg.on.green { background: var(--green); }
-  .console-vumetre .seg.on.amber { background: var(--amber); }
-  .console-vumetre .seg.on.red   { background: var(--red); }
+  /* La couleur dit le PARTI, et rien d'autre.
+     Elle codait auparavant l'écart à la moyenne tous médias confondus (vert
+     jusqu'à la moyenne, ambre au-dessus, rouge bien au-dessus). Cet encodage
+     est abandonné : bouger le fader ne change plus que les hauteurs. */
+  .console-vumetre .seg.on { background: var(--party, var(--green)); }
+  /* La TÊTE du vumètre vacille, comme sur un appareil qui suit un signal.
+
+     Trois profondeurs : le sommet plonge le plus (0,52), le suivant à moitié
+     moins (0,74), le troisième à peine (0,89). C'est la signature d'un
+     vumètre — les diodes du haut battent, celles du bas tiennent. Les creux
+     restent volontairement peu profonds : le mouvement doit se remarquer du
+     coin de l'œil, pas attirer le regard hors de la lecture.
+
+     Les trois durées sont volontairement INCOMMENSURABLES entre elles (×1,
+     ×0,71, ×1,37) : elles ne retombent jamais en phase, et le mouvement ne se
+     laisse pas lire comme une boucle. Un délai commun aurait produit une
+     cascade régulière, donc mécanique.
+
+     `--tempo` vient de la saillance de la Une : 2 s quand l'actualité est très
+     faible, 0,7 s quand elle est exceptionnelle.
+
+     Sur l'opacité seule : animer une couleur de fond forcerait un repaint à
+     chaque image, alors que l'opacité reste sur le compositeur. */
+  .console-vumetre .seg.on.vu {
+    animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  .console-vumetre .seg.on.vu--1 {
+    animation-name: vu-bas;
+    animation-duration: calc(var(--tempo, 1.35s) * 1.37);
+  }
+  .console-vumetre .seg.on.vu--2 {
+    animation-name: vu-milieu;
+    animation-duration: calc(var(--tempo, 1.35s) * 0.71);
+  }
+  .console-vumetre .seg.on.vu--3 {
+    animation-name: vu-sommet;
+    animation-duration: var(--tempo, 1.35s);
+  }
+  /* Attaque franche, retombée lente : l'enveloppe d'un signal sonore. */
+  @keyframes vu-sommet {
+    0% { opacity: 1; }
+    18% { opacity: 0.52; }
+    100% { opacity: 1; }
+  }
+  @keyframes vu-milieu {
+    0% { opacity: 1; }
+    22% { opacity: 0.74; }
+    100% { opacity: 1; }
+  }
+  @keyframes vu-bas {
+    0% { opacity: 1; }
+    26% { opacity: 0.89; }
+    100% { opacity: 1; }
+  }
   /* Sourdine : deux segments GRIS en bas, et rien d'autre. La tranche reste
      là — un canal muet se voit, il ne disparaît pas. Gris et non vert : le vert
      appartient à l'échelle des canaux qui jouent. */
@@ -5279,82 +5262,9 @@
     color: var(--ink-softer);
     font-weight: 500;
   }
-
-  .course-figure { margin: 0; }
-  .course-cadre { position: relative; }
-  .course-svg {
-    display: block;
-    width: 100%;
-    aspect-ratio: 100 / 26;
-    height: auto;
-    overflow: visible;
-  }
-
   /* La ligne d'ARRIVÉE — cordovan, l'accent unique du site. Le vide à sa
      gauche est ce qu'il reste à courir. */
   .course-arrivee { stroke: var(--cordovan); stroke-width: 1px; stroke-dasharray: 3 3; }
-  .course-arrivee-label {
-    position: absolute;
-    z-index: 2;
-    top: 0;
-    transform: translate(-50%, -100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    padding-bottom: 7px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--cordovan);
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .course-arrivee-label b { font-weight: 500; letter-spacing: 0.1em; }
-
-  .course-point {
-    position: absolute;
-    z-index: 2;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-  .course-point.shadow { opacity: 0.45; }
-
-  .course-bout {
-    position: absolute;
-    z-index: 2;
-    transform: translate(9px, -50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .course-bout b {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .course-bout.shadow { opacity: 0.5; }
-
-  .course-x { position: relative; height: 14px; margin-top: 12px; }
-  .course-x span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-softer);
-    white-space: nowrap;
-  }
-  .course-x span:first-child { transform: none; }
-
   .course-vide {
     padding: 28px 0;
     text-align: center;
@@ -5377,36 +5287,29 @@
      ses dimensions de bureau, sans qu'on ait à rapetisser quoi que ce soit.
      Seuil mesuré, pas choisi : la console réclame 523 px et les deux platines
      en prennent 452 (2×200 + 2×26 de gouttière), soit 975 px de régie — atteints
-     vers 1133 px de fenêtre. 1160 laisse la marge. Placé AVANT le bloc ≤768
+     vers 1133 px de fenêtre. 1160 laissait la marge en théorie, mais la mesure
+     au navigateur montre un débordement résiduel de 4 px À 1161 px, soit juste
+     au-dessus du seuil : la console y réclame 4 px de plus que sa colonne. Seuil
+     porté à 1184, vérifié aux deux bords. Placé AVANT le bloc ≤768
      pour que celui-ci puisse encore surcharger. */
-  @media (max-width: 1160px) {
-    .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }
-    .platine { padding-top: 0; }
-  }
+  @media (max-width: 1184px) {
+    .regie { grid-template-columns: minmax(0, 1fr); gap: 30px; }  }
 
   @media (max-width: 768px) {
     /* Le podium se resserre : marches moins hautes, typographie réduite —
        trois colonnes doivent tenir dans ~340 px de contenu. */
     .console { --piste: 168px; --seg-gap: 2px; }
     .console-tranches { gap: 9px; }
-    .console-ruban-nom { font-size: 13px; }
-    .manchette { font-size: 19px; }
-    .manchette-zone { font-size: 19px; min-height: calc(4 * 1.45em); }
-    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
+    .console-ruban-nom { font-size: 13px; }    .console { --tranche: 58px; --gradu: 34px; --gradu-gap: 8px; }
     /* Dès le seuil mobile, « Sourdine » et son ⓘ ne tiennent plus sur une ligne
        dans une tranche de 58 px : sans repli, le canal muet s'élargit et pousse
        ses voisins. Mesuré à 767 px. */
     .console-sourdine { white-space: normal; min-width: 0; }
     .regie { grid-template-columns: 1fr; gap: 30px; }
-    .platine { padding-top: 0; }
-
     /* Sur étroit, la tendance s'allonge : cinq lignes dans 26 unités de haut
        deviennent illisibles sous ~400 px de large. */
-    .course-svg { aspect-ratio: 100 / 44; }
-    .course-bout { font-size: 9px; transform: translate(6px, -50%); }
     /* La réserve de droite ne fait que 16 % de la largeur : « CAQ 35 % » n'y
        tient pas sur un écran étroit. Le sigle suffit. */
-    .course-bout b { display: none; }
   }
 
   /* Téléphone étroit. Le bloc ≤768 ne suffit pas : ses constantes demandent
@@ -5585,7 +5488,7 @@
     padding: 22px 26px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 26px;
+    gap: 38px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.1em;
     color: var(--ink-soft);
@@ -6495,7 +6398,7 @@
   }
   .ambiance-ref-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 20px;
+    font-size: 23px;
     font-weight: 700;
     color: var(--ink);
     margin: 0;
@@ -6901,8 +6804,9 @@
 
   /* Rang dans un cercle de couleur (#268) : lavis pâle du verdict (un cran plus
      soutenu que la boîte du libellé) avec chiffre en encre noire.
-     Exception pour les deux verdicts sombres — Rompue (rouge foncé) et
-     En suspens (gris) : fond plein + chiffre en blanc papier, sinon illisible.
+     Même traitement pour les cinq verdicts (#538) : Rompue et En suspens
+     gardaient un fond plein hérité d'avant l'anneau, ce qui les faisait lire
+     comme une catégorie à part dans la colonne « Rang ».
      Gris neutre pâle pour une promesse sans verdict. */
   .ppl-rank {
     font-family: 'Playfair Display', Georgia, serif;
@@ -6929,11 +6833,8 @@
   .ppl-promise--realisee   .ppl-rank { background: color-mix(in srgb, var(--ppl-realisee)   20%, transparent); border-color: var(--ppl-realisee); }
   .ppl-promise--partielle  .ppl-rank { background: color-mix(in srgb, var(--ppl-partielle)  20%, transparent); border-color: var(--ppl-partielle); }
   .ppl-promise--en-cours   .ppl-rank { background: color-mix(in srgb, var(--ppl-en-cours)   20%, transparent); border-color: var(--ppl-en-cours); }
-  /* Les deux verdicts déjà sombres gardent leur fond plein ; l'anneau reprend
-     leur propre couleur — donc invisible, mais la géométrie reste identique
-     aux trois autres (même diamètre, même surface intérieure). */
-  .ppl-promise--en-suspens .ppl-rank { background: var(--ppl-en-suspens); color: var(--paper); border-color: var(--ppl-en-suspens); }
-  .ppl-promise--rompue     .ppl-rank { background: var(--ppl-rompue);     color: var(--paper); border-color: var(--ppl-rompue); }
+  .ppl-promise--en-suspens .ppl-rank { background: color-mix(in srgb, var(--ppl-en-suspens) 20%, transparent); border-color: var(--ppl-en-suspens); }
+  .ppl-promise--rompue     .ppl-rank { background: color-mix(in srgb, var(--ppl-rompue)     20%, transparent); border-color: var(--ppl-rompue); }
 
   .ppl-title {
     font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
@@ -7343,6 +7244,144 @@
   .ppl-verdict__full { display: block; }
   .ppl-verdict__short { display: none; }
 
+  /* ============================================================ */
+  /* Polimètre+ — mode « promesses de la campagne »               */
+  /*                                                              */
+  /* Même grille, même liste : seule la PASTILLE change de sens.  */
+  /* Une promesse formulée hier n'a pas d'état de réalisation —   */
+  /* le Polimètre ne s'y prononcera que des mois plus tard — donc */
+  /* la couleur porte le PARTI qui l'a formulée à la place du     */
+  /* verdict. Toutes les règles ci-dessous sont les jumelles des  */
+  /* règles de verdict, à la variable près.                       */
+  /*                                                              */
+  /* ⚠️ TROISIÈME copie des couleurs de parti, après              */
+  /* PARTY_COLORS (lib/data/parties.ts) et .parti-name-box.*      */
+  /* (plus haut dans ce fichier). Les trois doivent rester        */
+  /* accordées : un lecteur qui passe des « Partis et couverture  */
+  /* » au Polimètre+ suit les mêmes couleurs. La sortie propre    */
+  /* serait des jetons --party-* dans :root — non faite, parce    */
+  /* que ces teintes partent aussi dans des attributs SVG         */
+  /* (stroke), où var() ne se résout pas.                         */
+  /* ============================================================ */
+  .polimeter-plus--neuves {
+    --ppl-parti-plq: #A03440;
+    --ppl-parti-caq: #2B5C7C;
+    --ppl-parti-qs:  #B85A2C;
+    --ppl-parti-pq:  #1E3A5F;
+    --ppl-parti-pcq: #5A3B6E;
+  }
+
+  /* Rang : lavis du parti + anneau plein, exactement comme les verdicts. */
+  .ppl-promise--parti-plq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-plq) 20%, transparent); border-color: var(--ppl-parti-plq); }
+  .ppl-promise--parti-caq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-caq) 20%, transparent); border-color: var(--ppl-parti-caq); }
+  .ppl-promise--parti-qs  .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-qs)  20%, transparent); border-color: var(--ppl-parti-qs); }
+  .ppl-promise--parti-pq  .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-pq)  20%, transparent); border-color: var(--ppl-parti-pq); }
+  .ppl-promise--parti-pcq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-pcq) 20%, transparent); border-color: var(--ppl-parti-pcq); }
+
+  /* Barre de gauche + lavis du libellé. */
+  .ppl-promise--parti-plq .ppl-title { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-promise--parti-caq .ppl-title { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-promise--parti-qs  .ppl-title { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-promise--parti-pq  .ppl-title { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-promise--parti-pcq .ppl-title { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  /* État ouvert : deux classes + --open, pour l'emporter sur la règle ci-dessus
+     (même raisonnement que pour les verdicts, quelques lignes plus haut). */
+  .ppl-promise--parti-plq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-promise--parti-caq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-promise--parti-qs.ppl-promise--open  .ppl-promise__head { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-promise--parti-pq.ppl-promise--open  .ppl-promise__head { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-promise--parti-pcq.ppl-promise--open .ppl-promise__head { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  /* Filtres du rail gauche — jumeaux des .ppl-verdict--<verdict>. */
+  .ppl-verdict--parti-plq { border-left-color: var(--ppl-parti-plq); background: color-mix(in srgb, var(--ppl-parti-plq) 15%, transparent); }
+  .ppl-verdict--parti-caq { border-left-color: var(--ppl-parti-caq); background: color-mix(in srgb, var(--ppl-parti-caq) 15%, transparent); }
+  .ppl-verdict--parti-qs  { border-left-color: var(--ppl-parti-qs);  background: color-mix(in srgb, var(--ppl-parti-qs)  15%, transparent); }
+  .ppl-verdict--parti-pq  { border-left-color: var(--ppl-parti-pq);  background: color-mix(in srgb, var(--ppl-parti-pq)  15%, transparent); }
+  .ppl-verdict--parti-pcq { border-left-color: var(--ppl-parti-pcq); background: color-mix(in srgb, var(--ppl-parti-pcq) 15%, transparent); }
+
+  .ppl-verdict--parti-plq:hover, .ppl-verdict--parti-plq.active { background: color-mix(in srgb, var(--ppl-parti-plq) 25%, transparent); }
+  .ppl-verdict--parti-caq:hover, .ppl-verdict--parti-caq.active { background: color-mix(in srgb, var(--ppl-parti-caq) 25%, transparent); }
+  .ppl-verdict--parti-qs:hover,  .ppl-verdict--parti-qs.active  { background: color-mix(in srgb, var(--ppl-parti-qs)  25%, transparent); }
+  .ppl-verdict--parti-pq:hover,  .ppl-verdict--parti-pq.active  { background: color-mix(in srgb, var(--ppl-parti-pq)  25%, transparent); }
+  .ppl-verdict--parti-pcq:hover, .ppl-verdict--parti-pcq.active { background: color-mix(in srgb, var(--ppl-parti-pcq) 25%, transparent); }
+
+  /* Parti sans promesse sur la période : grisé et non cliquable, comme une
+     catégorie d'enjeu vide. Un filtre qui vide la liste sans prévenir se lit
+     comme un bogue. */
+  .ppl-verdict--empty {
+    opacity: 0.38;
+    cursor: default;
+    filter: grayscale(1);
+  }
+  .ppl-verdict--empty:hover { background: color-mix(in srgb, var(--ink-softer) 10%, transparent); color: var(--ink-soft); }
+
+  /* Badge de parti dans la colonne de droite — remplace la tendance. Sigle en
+     papier sur la couleur pleine du parti : c'est le seul endroit du module où
+     la couleur porte du texte, d'où le fond plein plutôt qu'un lavis. */
+  .ppl-parti-badge {
+    justify-self: center;
+    align-self: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    background: var(--ink-softer);
+    padding: 3px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .ppl-parti-badge--plq { background: var(--ppl-parti-plq); }
+  .ppl-parti-badge--caq { background: var(--ppl-parti-caq); }
+  .ppl-parti-badge--qs  { background: var(--ppl-parti-qs); }
+  .ppl-parti-badge--pq  { background: var(--ppl-parti-pq); }
+  .ppl-parti-badge--pcq { background: var(--ppl-parti-pcq); }
+  /* Parti hors des cinq suivis : sigle en encre sur fond neutre — jamais la
+     teinte d'un autre parti. */
+  .ppl-parti-badge--inconnu { background: none; color: var(--ink-soft); border: 1px solid var(--rule); }
+
+  /* Bandeau de développement (fixtures). Volontairement VOYANT : il n'est pas
+     là pour être discret, il est là pour qu'une capture d'écran prise pendant
+     le développement ne puisse pas passer pour le site. */
+  .ppl-bandeau-fictif {
+    margin: 0 0 18px;
+    padding: 8px 14px;
+    background: var(--cordovan);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.05em;
+    border-radius: 3px;
+  }
+
+  /* Inverseur de mode — au-dessus des onglets de période, dont il est la
+     hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
+     changent que la fenêtre. */
+  .ppl-mode-switch { margin-bottom: 8px; }
+
+  /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
+     pièce justificative du mode — ce que le parti a écrit, mot pour mot. */
+  .ppl-detail__verbatim {
+    margin: 6px 0 10px;
+    padding: 8px 0 8px 14px;
+    border-left: 2px solid var(--rule);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    font-style: italic;
+  }
+
+  .ppl-detail__meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
     .ppl-rail-head::after { display: none; }
@@ -7374,6 +7413,14 @@
     .ppl-promise.header div:last-child { display: none; }
     .ppl-promise,
     .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+    /* Mode « campagne » : la troisième colonne RESTE. La tendance est un
+       ornement qu'on peut retirer sur mobile ; le parti est l'information même
+       du mode — la cacher viderait la liste de son sujet. La colonne est
+       resserrée à 44px (le sigle mesure ~36px) plutôt que supprimée, et son
+       en-tête revient avec elle. */
+    .polimeter-plus--neuves .ppl-promise,
+    .polimeter-plus--neuves .ppl-promise__head { grid-template-columns: 34px minmax(0, 1fr) 44px; }
+    .polimeter-plus--neuves .ppl-promise.header div:last-child { display: block; }
     /* Les marges du bouton « Découvrir » compensaient les colonnes rang +
        tendance ; sans tendance, retrait simple. */
     .ppl-discover-wrap { margin-left: 10px; margin-right: 10px; }
@@ -7480,6 +7527,19 @@
   background: var(--paper-deep);
   color: var(--cordovan);
   outline: none;
+}
+
+/* Le bouton vit au bord droit des en-têtes de module. À 375 px, centrer le
+   panneau sur ce bouton le poussait de 10,5 px hors écran. Sur téléphone, on
+   aligne donc son bord droit sur celui du bouton : les trois réseaux et
+   « Copier le lien » restent entièrement atteignables au toucher. Cette règle
+   suit les styles de base pour gagner la cascade (verification-responsive). */
+@media (max-width: 480px) {
+  .share-panel {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
 }
 
 /* ============================================================
@@ -7971,34 +8031,54 @@
 }
 
 @media (max-width: 640px) {
-  .flappy-brand { font-size: 9.5px; letter-spacing: 0.14em; }
-  .flappy-target { padding: 6px 12px; }
-  .flappy-target-head { font-size: 13px; }
-  .flappy-overlay {
-    padding: 12px 10px;
-    gap: 10px;
-    justify-content: flex-start;
-  }
-  .flappy-title { font-size: 20px; padding-bottom: 4px; }
-  .flappy-hint { font-size: 12.5px; line-height: 1.4; max-width: 36ch; }
-  .flappy-score { font-size: 12px; }
-  .flappy-score b { font-size: 20px; }
-  .flappy-initials label { font-size: 10px; }
-  .flappy-initials input { width: 3.8rem; font-size: 1rem; padding: 4px; }
-  .flappy-initials button { padding: 6px 12px; font-size: 10px; }
-  .flappy-board-wrap { width: 100%; max-width: 280px; }
-  .flappy-board {
-    width: 100%;
-    font-size: 11.5px;
-    max-height: 140px;
-    overflow-y: auto;
-    border: 0.5px solid var(--rule-faint);
-    padding: 4px 8px;
-    background: var(--paper);
-  }
-  .flappy-board li { padding: 4px 0; }
-  .flappy-actions { gap: 8px; margin-top: 4px; }
-  .flappy-actions button { padding: 8px 14px; font-size: 10px; }
+  /* Le vide au-dessus des disques : `.pupitre .regie` ajoutait 26 px de marge
+     ET 26 px de rembourrage, hérités de l'époque où une manchette occupait le
+     haut du cadre. Elle n'existe plus. */
+  .pupitre { padding: 6px 8px 8px; }
+  .pupitre .regie { margin-top: 4px; padding-top: 4px; }
+  /* La rangée d'aide ne pousse plus rien : son ⓘ se pose dans le coin. */
+  .pupitre { position: relative; }
+  .pupitre-aide { position: absolute; top: 6px; right: 8px; z-index: 2; }
+  .regie { gap: 8px 10px; margin-top: 0; }
+  .regie-flanc { gap: 8px; }
+
+  /* Les decks prennent toute la place gagnée : c'est la pochette qu'on doit
+     pouvoir lire, et elle est le seul poste qu'on ne rogne pas. */
+  .deck-carre { max-width: 168px; }
+  .deck { gap: 4px; }
+  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
+  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+
+  /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
+     jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
+     tout, la raccourcir changerait la lecture. */
+  .console { --piste: 92px; --seg-gap: 1.5px; padding: 3px 10px 4px; }
+  .console-tete { margin: 0 0 7px; font-size: 8px; letter-spacing: 0.14em; }
+  .console-depuis { font-size: 7px; margin-top: 2px; }
+  .regie-centre { gap: 8px; }
+  /* L'infobulle de la sourdine part : sur un doigt elle est un piège plus
+     qu'une aide, et le mot « Sourdine » se suffit. */
+  .console-sourdine .saillance-info-tip { display: none; }
+  .console-sourdine { font-size: 8px; letter-spacing: 0.1em; }
+  /* La rangée réserve 26 px pour deux lignes plus l'infobulle. Celle-ci partie,
+     le mot tient sur une ligne et se retrouvait collé au bas d'une case trop
+     haute. Les colonnes restent alignées entre elles : la hauteur change pour
+     TOUTES, pas seulement pour celle en sourdine. */
+  .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
+
+  /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
+  .pochette-media { font-size: 6.5px; padding: 2px 5px; letter-spacing: 0.1em; }
+  .deck-jog-media text { font-size: 5.4px; }
+  .deck-piste { font-size: 8.5px; gap: 4px; }
+  .deck-piste-val { font-size: 7.5px; }
+  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
+  .pochette-sigle { font-size: 28px; }
+  .cap-sigle { font-size: 32px; }
+  /* Sélecteur DESCENDANT, pas la classe seule : la règle de base
+     `.piste-court { display: none }` est déclarée plus BAS dans le fichier, et
+     à spécificité égale c'est elle qui l'emporterait. Les deux formes se
+     masquaient alors l'une l'autre et le libellé disparaissait. */
+
 }
 
 /* DOOM PCQ Easter Egg - Knee-Deep in the Media Editorial Header */
@@ -8175,3 +8255,1004 @@
 .hero-figure picture {
   display: contents;
 }
+
+
+/* Mode d'emploi des platines. Discret mais permanent : l'information vivait
+   dans l'infobulle du module, donc invisible pour qui ne l'ouvre pas, et rien
+   n'indiquait plus que les platines sont pilotables depuis qu'elles se
+   remplissent d'elles-mêmes. */
+.regie-aide {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-softer);
+}
+.regie-aide b {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+/* Le tableau des données : plus large, plus aéré, et les valeurs alignées à
+   droite pour que l'œil descende une colonne au lieu de zigzaguer. */
+/* La précision (« sur 7 », la date du record) descend d'un cran : c'est un
+   complément, pas la valeur qu'on vient chercher. */
+
+/* Le curseur dit que la tranche se saisit. */
+.console-tranche { cursor: grab; }
+.console-tranche:active { cursor: grabbing; }
+/* Réservé aux lecteurs d'écran. Introduit pour la légende des tableaux de
+   platine : un <table> sans <caption> laisse l'utilisateur d'un lecteur d'écran
+   deviner de quel parti viennent les chiffres, alors que la couleur et le sigle
+   le disent à l'œil. La technique du rectangle de 1 px reste préférée à
+   `display: none`, qui retirerait la légende de l'arbre d'accessibilité. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@keyframes platine-demo-geste {
+  0%   { transform: translate(-70px, 10px) rotate(-6deg); opacity: 0; }
+  12%  { opacity: 1; }
+  /* L'approche ralentit avant de se poser : c'est ce ralenti qui fait lire un
+     dépôt plutôt qu'un passage. */
+  52%  { transform: translate(-8px, 2px) rotate(-2deg); opacity: 1; }
+  64%  { transform: translate(0, 0) rotate(0deg) scale(0.92); opacity: 1; }
+  78%  { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.85; }
+  92%  { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0; }
+  100% { transform: translate(-70px, 10px) rotate(-6deg); opacity: 0; }
+}
+
+@keyframes platine-demo-arrivee {
+  0%, 60% { transform: scale(0.55); opacity: 0; }
+  70%     { transform: scale(1); opacity: 0.55; }
+  88%     { transform: scale(1.35); opacity: 0; }
+  100%    { transform: scale(0.55); opacity: 0; }
+}
+
+/* Une animation en boucle est une distraction permanente pour qui a réglé son
+   système là-dessus : la consigne écrite suffit alors. */
+/* La colonne du milieu de la régie : la manchette puis la console, poussées
+   vers le bas comme les platines. La phrase se retrouve ainsi juste au-dessus
+   du cadre de l'instrument qu'elle commente, et l'espace laissé vide par une
+   console plus courte que les platines sert enfin à quelque chose. */
+.regie-centre {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  /* L'air sous la phrase : à zéro, elle se lisait comme une étiquette collée
+     sur la console plutôt que comme la phrase-clé du module. */
+  gap: 38px;
+}
+/* La console porte déjà `align-self: end` pour ne pas s'étirer dans la grille ;
+   dans ce conteneur en colonne, c'est `margin-top: 0` qui la colle à la phrase. */
+.regie-centre .console { align-self: stretch; }
+
+/* ── La course en tête du module ─────────────────────────────────────────────
+   Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
+   dans la console et les platines. */
+.partis-course--tete { margin: 0 0 22px; }
+.partis-course--tete .course-tete { margin: 0 0 10px; }@keyframes course-tete-apparait { to { opacity: 1; } }
+
+.course-valeur {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}@media (prefers-reduced-motion: reduce) {}
+
+/* Sous 620 px, le rang et l'écart sortent : quatre colonnes de texte autour
+   d'un tracé ne laissent plus rien au tracé. */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Les decks — quatre disques aux quatre coins de la régie.
+
+   Ils remplacent les deux platines : plus rien à charger ni à déposer, la
+   sourdine garantissant qu'il reste exactement quatre partis actifs. Le rang
+   fait la position, la colonne de gauche portant les rangs 1 et 3.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.regie-flanc {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  /* Les decks DÉBORDENT la console, en haut et en bas. Ce sont eux les objets ;
+     la console est l'instrument qui les mesure, et elle doit paraître logée
+     entre eux plutôt que posée à côté. La marge négative est préférée à une
+     hauteur fixe : elle tient quand un deck gagne une ligne de nom.
+
+     Le débordement doit rester DISCRET : la taille du carré est bornée pour que
+     la pile des deux decks dépasse le vumètre d'une trentaine de pixels de part
+     et d'autre, pas de deux cents. */
+  margin-bottom: -32px;
+}
+
+.deck {
+  /* La palette des tons vit ICI et non sur la pochette : `--ton` est calculée
+     sur `.deck`, et une variable ne se résout pas sur une valeur déclarée plus
+     bas dans l'arbre. Déclarée sur la face, elle sortait indéfinie et le coin
+     du ton retombait au gris pour tous les partis. */
+  --ton-positive: #3D6B3A;
+  --ton-negative: #A8302C;
+  --ton-neutral: #6E685F;
+  /* Le fond des DEUX bandeaux de la pochette, celui du haut comme celui du bas.
+     Une seule déclaration : ils encadrent la même illustration et doivent se
+     répondre, et les tenir en phase à la main les avait déjà fait diverger.
+     
+     OPAQUE, et non une encre translucide. Celle du bas reposait sur le fond uni
+     du parti, mais celle du haut passe par-dessus les formes géométriques : à
+     travers elle on voyait le disque de l'enjeu et le coin du ton, et le
+     bandeau semblait transparent alors qu'il portait la même déclaration.
+     58 % de parti et 42 % d'encre donnent exactement ce que rendait
+     `rgba(28, 25, 23, 0.42)` posé sur le parti — la bande du bas est donc
+     inchangée à l'œil, et celle du haut lui répond enfin. */
+  --bandeau: color-mix(in srgb, var(--party, #433F38) 58%, #1C1917);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Le carré : contenant du retournement, et format de la pochette. Le disque y
+   est inscrit, la pochette l'occupe en entier. */
+.deck-carre {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 1;
+}
+.deck-carre--pivot {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+.deck-carre--pivot:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 6px;
+}
+
+.deck-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.deck-face--disque { transform: rotateY(0deg); }
+.deck-face--pochette { transform: rotateY(180deg); }
+.deck-carre--pivot.retournee .deck-face--disque { transform: rotateY(-180deg); }
+.deck-carre--pivot.retournee .deck-face--pochette { transform: rotateY(0deg); }
+
+/* LE CHANGEMENT DE PISTE, en trois temps.
+   Il ne se joue QUE si le parti du deck change : la clé de remontage ne porte
+   que lui, pas la source. Bouger le fader sans changer le classement ne rejoue
+   donc rien.
+
+   1. la pochette pivote et vient de face ;
+   2. le disque en SORT — il part petit, décalé et penché, derrière elle ;
+   3. la pochette s'efface en tournant, le disque se pose sur le plateau.
+
+   Aucun remplissage sur ces images : à la fin, chaque face reprend la position
+   que lui donne son état `retournee`, et le clic reste maître. */
+/* Le pivot s'ARRÊTE sur la pochette et l'y tient (40 % → 56 %) : c'est ce temps
+   posé qui dit « voici le disque qu'on va mettre ». Un tour continu enchaînait
+   les deux demi-tours sans jamais montrer la pochette autrement qu'en passant.
+
+   Le second demi-tour se fait ensuite, mais il est INVISIBLE : le disque est
+   encore transparent et minuscule à ce moment-là. Ce qu'on perçoit, c'est la
+   pochette qui s'efface et le disque qui en sort. */
+@keyframes deck-tour-avant {
+  0% {
+    transform: rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  42% {
+    transform: rotateY(-180deg);
+    animation-timing-function: linear;
+  }
+  58% {
+    transform: rotateY(-180deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  76%, 100% { transform: rotateY(-360deg); }
+}
+@keyframes deck-tour-arriere {
+  0% {
+    transform: rotateY(180deg);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  42% {
+    transform: rotateY(0deg);
+    animation-timing-function: linear;
+  }
+  58% {
+    transform: rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  76%, 100% { transform: rotateY(-180deg); }
+}
+/* Le disque SORT de la pochette : il ne paraît qu'une fois celle-ci posée, part
+   du coin bas-gauche — là où l'on tire un vinyle de sa pochette — petit et
+   penché, puis glisse jusqu'au centre du plateau. */
+@keyframes deck-sortie {
+  0%, 56% {
+    opacity: 0;
+    transform: translate(-34%, 28%) scale(0.38) rotate(-30deg);
+    animation-timing-function: cubic-bezier(0.16, 0.72, 0.24, 1);
+  }
+  68% { opacity: 1; }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0);
+  }
+}
+.deck-carre--pivot .deck-face--disque {
+  animation: deck-tour-avant 1240ms linear;
+}
+.deck-carre--pivot .deck-face--pochette {
+  animation: deck-tour-arriere 1240ms linear;
+}
+.deck-carre--pivot .deck-face--disque .deck-jog {
+  animation: deck-sortie 1240ms linear;
+}
+/* Les trois éléments tournent ensemble : les prévenir évite que le navigateur
+   ne les repromeuve sur une couche à chaque image. */
+.deck-carre--pivot .deck-face,
+.deck-carre--pivot .deck-jog { will-change: transform, opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-face { transition: none; }
+  .deck-carre--pivot .deck-face--disque,
+  .deck-carre--pivot .deck-face--pochette,
+  .deck-carre--pivot .deck-face--disque .deck-jog { animation: none; }
+}
+
+/* La molette — la face avant, épurée : un plateau nu et, au centre, un
+   avant-goût de la pochette. Le cadran de crans qui la cernait est retiré.
+
+   Les couleurs (--party, --enjeu, --ton) sont posées sur `.deck`, pas sur une
+   face : les deux s'en servent maintenant. */
+.deck-jog {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* Même fond ET même bord que la console : les deux surfaces portaient déjà
+     `--paper-deep`, mais l'ombre portée et le filet clair de la molette la
+     faisaient lire comme une seconde teinte de crème. */
+  background: var(--paper-deep);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+/* L'aiguille : un tour par minute, comme une trotteuse. Elle ne mesure rien —
+   elle dit seulement que l'instrument tourne. Son pivot est le centre du
+   plateau : elle part du haut et sa base tombe pile au milieu. */
+.deck-jog::after {
+  content: "";
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 1.5px;
+  height: 43%;
+  margin-left: -0.75px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, var(--ink-softer), rgba(110, 104, 95, 0.15));
+  transform-origin: 50% 100%;
+  animation: deck-aiguille 60s linear infinite;
+}
+@keyframes deck-aiguille {
+  to { transform: rotate(360deg); }
+}
+
+/* Le capuchon central : la même composition que la pochette, découpée en rond.
+   Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
+/* Le nom du média épouse la courbe du disque, COLLÉ au capuchon central.
+   Il ne paraît QUE lorsqu'une source est choisie : sur l'ensemble des médias,
+   il n'y aurait rien à nommer. */
+.deck-jog-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.deck-jog-media text {
+  fill: var(--ink-softer);
+  font-family: 'IBM Plex Mono', monospace;
+  /* En unités du viewBox : 4,6 sur 100 donne ~9 px sur un deck de 200. */
+  font-size: 4.6px;
+  letter-spacing: 0.34px;
+  text-transform: uppercase;
+}
+.deck-jog-cap {
+  position: relative;
+  z-index: 1;
+  width: 46%;
+  height: 46%;
+  overflow: visible;
+  filter: drop-shadow(0 1px 3px rgba(28, 25, 23, 0.22));
+}
+.deck-jog-cap .forme-parti { fill: var(--party, var(--ink-soft)); }
+.deck-jog-cap .cap-cercle {
+  fill: none;
+  stroke: rgba(28, 25, 23, 0.2);
+  stroke-width: 1.2;
+}
+/* Les formes du capuchon ne portent PAS le filet crème de la pochette : à
+   46 % de la molette, il mangerait les aplats au lieu de les séparer. */
+.deck-jog-cap .forme-enjeu,
+.deck-jog-cap .forme-ton { stroke: none; }
+/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. */
+.cap-sigle {
+  fill: var(--paper);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  paint-order: stroke;
+  stroke: rgba(28, 25, 23, 0.34);
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+}
+.deck-jog-cap--vide {
+  display: block;
+  width: 46%;
+  height: 46%;
+  border-radius: 50%;
+  background: var(--rule);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+/* La pochette — trois couleurs, à-plats géométriques.
+   Le fond est la couleur EXACTE du parti, celle du vumètre. Une forme porte
+   l'enjeu, une autre le ton. Le pictogramme domine, l'acronyme se pose dessus.
+
+   L'acronyme tient sur la couleur brute du parti parce qu'il est du GRAND texte
+   gras : son seuil est 3:1 et non 4,5. C'est ce qui sauve l'orange de Québec
+   solidaire, à 3,94:1 — aucun texte courant ne passerait dessus, ni en crème
+   (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
+   descendent sur une bande sombre où le contraste ne dépend plus du parti. */
+.deck-face--pochette {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  color: var(--paper);
+  text-align: left;
+  background: var(--party, var(--ink-soft));
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 236, 221, 0.16),
+    0 3px 12px rgba(28, 25, 23, 0.26);
+}
+
+/* Le média, en bandeau le long du haut de la pochette. Fond d'ENCRE et non
+   transparent : le nom doit rester lisible sur les cinq couleurs de parti, dont
+   l'orange de Québec solidaire où le crème seul tombe à 3,94:1. */
+.pochette-media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 3px 8px;
+  background: var(--bandeau);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pochette-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* Les à-plats. `preserveAspectRatio: none` : ils doivent épouser le cadre, pas
+   garder leurs proportions — ce sont des masses de couleur, pas des dessins. */
+.pochette-formes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.forme-enjeu,
+.forme-ton {
+  stroke: rgba(243, 236, 221, 0.45);
+  stroke-width: 1.2;
+}
+.forme-enjeu { fill: var(--enjeu, #463E3E); }
+.forme-ton { fill: var(--ton, #6E685F); }
+/* L'acronyme, centré, par-dessus tout — le nom du groupe sur la pochette. */
+.pochette-sigle {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.3);
+}
+
+/* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
+   il ne peut pas dépendre de la couleur du parti pour être lisible. */
+.deck-pistes {
+  display: flex;
+  flex-direction: column;
+  /* Enfant de grille : sans `min-width: 0` il refuse de rétrécir sous la
+     largeur de son contenu, et c'est TOUTE la bande qui sortait du cadre — les
+     valeurs se faisaient couper au bord de la pochette, « 2h27 » compris. */
+  min-width: 0;
+  gap: 3px;
+  padding: 8px 12px 9px;
+  background: var(--bandeau);
+}
+.deck-piste {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  /* `min-width: 0` et `overflow: hidden` : sans eux, la valeur sortait du cadre
+     et se faisait couper NET par la pochette, sans points de suspension ni
+     marge. Un enfant flex refuse de rétrécir sous sa largeur de contenu tant
+     qu'on ne lève pas ce plancher. */
+  min-width: 0;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.25;
+}
+.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; white-space: nowrap; }
+/* Les deux formes du libellé cohabitent dans le DOM ; le CSS choisit laquelle
+   se voit. Le lecteur d'écran, lui, entend toujours la forme longue. */
+.piste-court { display: none; }
+/* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
+   c'est ainsi que se lit une liste de pistes. */
+.deck-piste-fil {
+  flex: 1 1 auto;
+  min-width: 6px;
+  border-bottom: 1px dotted rgba(243, 236, 221, 0.4);
+  transform: translateY(-2px);
+}
+/* La valeur tient sur UNE ligne, quitte à se couper.
+   Les libellés d'enjeux du CAP vont jusqu'à 44 caractères (« Droits, libertés,
+   minorités et discrimination ») : aucun corps lisible ne les fait tenir dans
+   une pochette de 200 px. Le texte complet reste dans le DOM — l'ellipse est
+   visuelle, un lecteur d'écran lit la chaîne entière — et l'attribut `title` le
+   donne au survol. La couleur du disque de l'illustration porte de toute façon
+   déjà l'enjeu. */
+.deck-piste-val {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.deck-nom {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.deck-rang {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  color: var(--paper);
+  font-size: 9.5px;
+  letter-spacing: 0;
+}
+
+/* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
+   deux s'étant partagé la dernière place en sourdine. */
+/* La ligne du rang d'un deck vide : même hauteur que celle d'un deck plein,
+   pastille éteinte. C'est elle qui garde la géométrie du module identique,
+   qu'il y ait de la donnée ou non. */
+.deck-nom--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
+.deck--vide .deck-jog--vide { opacity: 0.5; }
+.deck--vide .deck-jog-cap {
+  background: var(--rule);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.deck-vide-txt {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  text-align: center;
+}
+
+/* Le titre du vumètre, dans le même idiome que « La course » : mono, capitales
+   espacées, encre douce. Il remplace la phrase éditoriale qui occupait cette
+   place au-dessus de la console. */
+/* Le titre nomme la mesure ; la ligne du dessous dit depuis quand elle court.
+   Les deux vont ensemble : « part de temps » sans point de départ laisse
+   supposer une fenêtre glissante, ce que la mesure n'est pas. */
+.console-depuis {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  opacity: 0.78;
+}
+.console-tete {
+  margin: 0 0 16px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  font-weight: 500;
+}
+
+/* Mouvement décoratif : il s'arrête net pour qui demande moins d'animation.
+   Ni l'aiguille ni le clignotement ne portent d'information — les couper ne
+   retire donc rien à la lecture. */
+@media (prefers-reduced-motion: reduce) {
+  .deck-jog::after,
+  .console-vumetre .seg.on.vu { animation: none; opacity: 1; }
+}
+
+/* ── Régie sous 1184 px : les quatre decks AU-DESSUS du vumètre, en 2×2 ──────
+   La grille à trois colonnes s'effondrait en une seule, ce qui déroulait
+   deck 1, deck 3, console, deck 2, deck 4 — le classement coupé en deux par
+   l'instrument. Les deux flancs sont replacés côte à côte sur la première
+   rangée, et la console passe dessous sur toute la largeur.
+
+   Placement EXPLICITE plutôt qu'`order` : le DOM intercale la console entre les
+   deux flancs, et le placement automatique l'aurait logée dans la cellule
+   voisine du premier. Les coordonnées de grille ne laissent pas ce doute.
+
+   Ce bloc vient APRÈS ceux de 1184 et de 768 : à spécificité égale, c'est
+   l'ordre source qui tranche, et il doit gagner sur les deux (piège de cascade
+   documenté dans le skill de vérification responsive). */
+@media (max-width: 1184px) {
+  .regie {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 22px 20px;
+  }
+  .regie-flanc {
+    /* Plus de débordement au-dessus ni au-dessous : il n'y a plus de vumètre
+       à encadrer, les decks sont posés dessus. */
+    margin-bottom: 0;
+    gap: 18px;
+  }
+  /* La forme COURTE du libellé dès que les decks rétrécissent — c'est-à-dire
+     ici, où la disposition passe en 2×2 — et non seulement sur téléphone.
+     « Ton de la couverture » mangeait la place et faisait élider sa propre
+     valeur : « ↓ Défavor… ». */
+  .deck-piste-nom .piste-long { display: none; }
+  .deck-piste-nom .piste-court { display: inline; }
+
+  .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
+  .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
+  .regie-centre { grid-area: 2 / 1 / 3 / 3; }
+  .deck-carre { max-width: 168px; }
+}
+
+/* ── Téléphone : toute la table de mix sur un écran ──────────────────────────
+   Sans cela, changer de source au fader oblige à remonter pour voir les decks :
+   l'instrument et son résultat ne tiennent pas dans le même champ de vision, et
+   la manipulation perd son sens.
+
+   La place se prend sur les MARGES et sur la hauteur du vumètre, jamais sur les
+   decks : une pochette dont on ne peut plus lire les pistes ne sert plus à
+   rien. L'échelle du vumètre reste à 100 %, seule sa hauteur se comprime.
+
+   Budget sur un 375 × 667 : deux rangées de decks ≈ 350 px, vumètre ≈ 190 px,
+   fader ≈ 60 px, gouttières ≈ 40 px. Chaque valeur ci-dessous sert ce total. */
+@media (max-width: 640px) {
+  /* Marges rognées au minimum : c'est là qu'on prend la place, pas sur le
+     contenu. */
+  .pupitre { padding: 10px 8px 12px; }
+  .regie { gap: 9px 10px; margin-top: 8px; }
+  .regie-flanc { gap: 9px; }
+
+  /* Les decks restent GRANDS : la pochette doit rester lisible. */
+  .deck-carre { max-width: 146px; }
+  .deck { gap: 5px; }
+  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
+  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+
+  /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
+     jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
+     tout, la raccourcir changerait la lecture. */
+  .console { --piste: 100px; --seg-gap: 1.5px; padding: 9px 10px 11px; }
+  .console-tete { margin: 0 0 8px; font-size: 8px; letter-spacing: 0.14em; }
+  .regie-centre { gap: 10px; }
+
+  /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
+  .deck-piste { font-size: 8.5px; gap: 4px; }
+  .deck-piste-val { font-size: 7.5px; }
+  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
+  .pochette-sigle { font-size: 26px; }
+  .cap-sigle { font-size: 32px; }
+}
+/* Rien de tout cela ne porte d'information : le mouvement s'arrête net pour qui
+   demande moins d'animation, et tout reste en place. */
+/* ── Le palmarès ─────────────────────────────────────────────────────────────
+   Une course, en minutes de Une cumulées. Bloc APLATI et traits fins : c'est un
+   filet qui monte, pas un massif.
+
+   Le classement vit dans une COLONNE FIXE à droite, jamais au bout des courbes.
+   Les noms y étaient auparavant, écartés par un jeu exprimé en unités de
+   viewBox : l'écart valait 14 % de la hauteur, soit 26 px dans une zone de 190
+   mais 17 px dès qu'on l'aplatit — ils se chevauchaient par construction, et
+   aplatir ne pouvait qu'empirer. Une colonne ne dépend d'aucune hauteur. */
+
+.palmares-figure {
+  /* La colonne de classement et la réserve de l'axe des x doivent s'accorder :
+     une seule valeur, pas deux constantes à tenir en phase. */
+  --col-classement: 132px;
+  --gouttiere: 20px;
+  --marge-y: 40px;
+  margin: 0;
+  border: 1px solid var(--rule);
+  background: var(--paper-deep);
+  padding: 14px 18px 10px;
+}
+.palmares-corps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--col-classement);
+  gap: var(--gouttiere);
+  /* `stretch` et NON `start` : la colonne de classement est plus haute que le
+     graphique, et en alignant par le haut on laissait un vide sous la courbe
+     dans TOUTES les vues. Le graphique remplit désormais la rangée, quelle que
+     soit la hauteur de la colonne. */
+  align-items: stretch;
+}
+
+.palmares-zone {
+  position: relative;
+  /* Aplati : le graphique doit se lire d'un coup d'œil, pas s'explorer. La
+     hauteur suit la rangée pour ne jamais laisser de vide ; le plancher garde
+     le bloc lisible si la colonne venait à raccourcir. */
+  min-height: 104px;
+  margin-left: var(--marge-y);
+}
+.palmares-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* Seules les bandes de saisie captent le pointeur : sinon le rectangle du
+     SVG avalerait tout ce qui est posé par-dessus. */
+  pointer-events: none;
+}
+
+.palmares-grille {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.palmares-arrivee {
+  stroke: var(--cordovan);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Des traits FINS. 1000 dépasse largement la longueur d'un tracé dans un
+   viewBox de 100 × 30 : inutile de mesurer chaque chemin en JavaScript. */
+.palmares-trait {
+  fill: none;
+  stroke: var(--party, var(--ink-soft));
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--retard, 0ms);
+}
+.palmares-trait.meneur { stroke-width: 2; }
+.palmares-trait.shadow {
+  stroke: var(--ink-softer);
+  stroke-width: 1;
+  stroke-dasharray: 1000;
+  opacity: 0.5;
+}
+@keyframes palmares-tracer { to { stroke-dashoffset: 0; } }
+
+.palmares-touche {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* La pochette de tête : un carré plein, avec la tranche claire d'un disque
+   rangé de profil. */
+.palmares-pochette {
+  position: absolute;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  background: var(--party, var(--ink-soft));
+  box-shadow: 0 0 0 1.5px var(--paper-deep);
+}
+.palmares-pochette::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: rgba(243, 236, 221, 0.5);
+}
+.palmares-pochette.shadow { background: var(--ink-softer); opacity: 0.6; }
+
+.palmares-damier {
+  position: absolute;
+  top: -7px;
+  width: 12px;
+  height: 8px;
+  margin-left: -6px;
+  background-image:
+    linear-gradient(45deg, var(--cordovan) 25%, transparent 25% 75%, var(--cordovan) 75%),
+    linear-gradient(45deg, var(--cordovan) 25%, transparent 25% 75%, var(--cordovan) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+  background-color: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  opacity: 0.8;
+}
+
+.palmares-y {
+  position: absolute;
+  left: calc(var(--marge-y) * -1);
+  top: 0;
+  width: calc(var(--marge-y) - 6px);
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.palmares-y li {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+
+.palmares-x {
+  position: relative;
+  height: 14px;
+  margin: 5px calc(var(--col-classement) + var(--gouttiere)) 0 var(--marge-y);
+  padding: 0;
+  list-style: none;
+}
+.palmares-x li {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+.palmares-x-arrivee { color: var(--cordovan); font-weight: 600; }
+
+/* ── La colonne de classement ─────────────────────────────────────────────── */
+/* Le classement dans son propre encadré, à la manière du bandeau des données
+   fictives : filet cordovan et fond de papier. Il n'est pas de même nature que
+   la courbe — celle-ci raconte, celui-là arrête un résultat — et le cadre le
+   dit. */
+.palmares-classement {
+  min-width: 0;
+  border: 1px solid var(--cordovan);
+  /* `--paper`, le crème du journal, et NON `--paper-deep` qui est celui du bloc
+     du palmarès : l'encadré doit sembler posé sur la page, pas creusé dans le
+     graphique. */
+  background: var(--paper);
+  padding: 9px 10px;
+  /* Décalé vers la gauche : collé au bord du cadre, il se confondait avec lui. */
+  margin-right: 10px;
+}
+.palmares-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.palmares-nom {
+  display: grid;
+  grid-template-columns: 15px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 1px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.palmares-nom:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 1px; }
+.palmares-rang {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  color: var(--paper);
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0;
+  transition: transform 180ms ease;
+}
+.palmares-duree { color: var(--ink); font-weight: 600; }
+.palmares-nom.shadow { color: var(--ink-softer); }
+.palmares-nom.shadow .palmares-rang { background: var(--ink-softer); }
+.palmares-nom.shadow .palmares-duree { color: var(--ink-softer); font-weight: 500; }
+
+/* Le disque GAGNANT, une fois la période courue. */
+.palmares-gagnant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--rule);
+}
+/* Le disque gagnant ne porte AUCUN texte : le crème sur l'orange de Québec
+   solidaire donne 3,94:1, sous le seuil de 4,5 exigé du petit texte. Le nom vit
+   à côté, lisible et énonçable — le carré ne fait que la couleur, comme les
+   pochettes de tête. */
+.palmares-gagnant-album {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  background: var(--party, var(--ink-soft));
+  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.24);
+}
+.palmares-gagnant-album::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: rgba(243, 236, 221, 0.5);
+}
+.palmares-gagnant-nom {
+  display: block;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+/* « En tête » pendant la course, « Disque d'or » une fois l'arrivée franchie.
+   Le bloc est PERMANENT : ne le montrer qu'au terme faisait grandir la colonne
+   d'une cinquantaine de pixels d'un coup, et tout le module sautait. */
+.palmares-gagnant-etat {
+  display: block;
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.palmares-gagnant.termine .palmares-gagnant-etat { color: var(--cordovan); }
+.palmares-gagnant.termine .palmares-gagnant-album {
+  box-shadow:
+    0 0 0 2px var(--brass),
+    0 1px 4px rgba(28, 25, 23, 0.24);
+}
+.palmares-gagnant-txt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  color: var(--ink-softer);
+}
+.palmares-gagnant-txt b {
+  display: block;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+/* ── Mise en vedette ──────────────────────────────────────────────────────── */
+.palmares-figure.a-vedette .palmares-trait { opacity: 0.13; }
+.palmares-figure.a-vedette .palmares-trait.vedette { opacity: 1; stroke-width: 2.4; }
+.palmares-figure.a-vedette .palmares-pochette { opacity: 0.2; }
+.palmares-figure.a-vedette .palmares-pochette.vedette {
+  opacity: 1;
+  transform: scale(1.3);
+  z-index: 2;
+}
+.palmares-figure.a-vedette .palmares-nom { opacity: 0.4; }
+.palmares-figure.a-vedette .palmares-nom.vedette { opacity: 1; }
+.palmares-nom.vedette .palmares-rang { transform: scale(1.15); }
+.palmares-trait,
+.palmares-pochette,
+.palmares-nom { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .palmares-trait { animation: none; stroke-dashoffset: 0; }
+  .palmares-trait,
+  .palmares-pochette,
+  .palmares-nom,
+  .palmares-rang { transition: none; }
+}
+
+/* Sur téléphone, le palmarès ne montre qu'UNE chose à la fois : il n'y a pas la
+   largeur pour un graphique ET une colonne, et les empiler l'un sous l'autre
+   allongerait le module au point de sortir de l'écran — or toute la table de
+   mix doit y tenir.
+
+   Tant que la course dure, ce sont les COURBES : c'est le mouvement qui
+   intéresse. Une fois l'arrivée franchie — l'édition de 20h, celle du vendredi
+   20h, le jour du scrutin — c'est le CLASSEMENT : la course est finie, seul le
+   résultat compte. */
+@media (max-width: 640px) {
+  .palmares-figure { padding: 10px 10px 8px; --marge-y: 32px; }
+  .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .palmares-zone { min-height: 88px; }
+  .palmares-x { margin: 4px 0 0 var(--marge-y); }
+
+  .palmares-classement { display: none; }
+
+  .palmares-figure.termine .palmares-zone,
+  .palmares-figure.termine .palmares-x { display: none; }
+  .palmares-figure.termine .palmares-classement { display: block; }
+  .palmares-classement { padding: 8px 9px; }
+  .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
+  .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
+  .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
+}
+
+/* Le fader d'un module suspendu : présent, mais sans prise. Le faire
+   disparaître raccourcissait le cadre et laissait croire que l'instrument
+   n'avait pas de curseur ; le montrer éteint dit qu'il en a un, et qu'il n'a
+   rien à filtrer pour l'instant. */
+.fader--inerte { opacity: 0.45; }
+.fader--inerte .fader-input { cursor: not-allowed; }

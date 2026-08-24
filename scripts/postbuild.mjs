@@ -69,6 +69,13 @@ async function substituteVersion() {
 // out/data/ » et rien d'autre. Tout actif non-JSON survit par construction —
 // latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
 // d'image plus tard ne demande aucune retouche ici.
+//
+// UNE exception nommée : hero-selection.json, le verdict de Une publié par
+// app/data/hero-selection.json/route.ts. Le raffineur vitrine-art le lit sur
+// le site déployé pour savoir QUOI illustrer — et ce n'est pas une donnée
+// vendue : c'est la Une déjà affichée en page d'accueil.
+const PRUNE_KEEP = new Set(["hero-selection.json"]);
+
 async function pruneDataJson() {
   const dataDir = path.join(OUT_DIR, "data");
   let removed = 0;
@@ -82,6 +89,7 @@ async function pruneDataJson() {
   }
 
   for await (const file of filesWithSuffix(dataDir, ".json")) {
+    if (PRUNE_KEEP.has(path.basename(file))) continue;
     bytes += (await stat(file)).size;
     await rm(file);
     removed++;
@@ -89,6 +97,71 @@ async function pruneDataJson() {
 
   const mb = (bytes / 1024 / 1024).toFixed(1);
   console.log(`postbuild: ${removed} JSON de données retirés de out/data (${mb} Mo)`);
+}
+
+// Fonds Gratton RETIRÉS DE PROD (2026-08-20) : lib/shareImageBackgrounds.ts
+// vide déjà la table en prod — plus aucune carte n'y réfère — mais `output:
+// export` copierait quand même les photos dans out/images/share/, à des URL
+// devinables. On retire donc les fichiers eux-mêmes du livrable prod ; dev
+// les garde.
+async function pruneShareBackgrounds() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  const shareDir = path.join(OUT_DIR, "images", "share");
+  let entries;
+  try {
+    entries = await readdir(shareDir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  let removed = 0;
+  for (const name of entries) {
+    if (!name.startsWith("gratton-")) continue;
+    await rm(path.join(shareDir, name));
+    removed++;
+  }
+  console.log(`postbuild: ${removed} fond(s) Gratton retiré(s) du livrable prod`);
+}
+
+// Identifiant de build pour l'actualisation côté navigateur (composant
+// ActualisationAuto) : ~100 octets consultés par la sonde du client, servis
+// par le CDN avec Cache-Control: no-store (public/_headers). L'horodatage
+// fait partie de l'identifiant : un rebuild « données seulement » (même
+// commit, nouvelles données via Deploy Hook) change l'identifiant quand même.
+function computeBuildId() {
+  const sha = (process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA || "local").slice(0, 7);
+  const builtAt = new Date().toISOString();
+  return { id: `${sha}-${Date.parse(builtAt)}`, builtAt };
+}
+
+async function writeBuildId({ id, builtAt }) {
+  await writeFile(
+    path.join(OUT_DIR, "build-id.json"),
+    JSON.stringify({ id, builtAt }) + "\n",
+    "utf8",
+  );
+  console.log(`postbuild: build-id « ${id} » écrit`);
+}
+
+// Le cache du service worker retient du HTML aux données inlinées : sous un
+// nom constant, il survivait aux déploiements et pouvait resservir une vieille
+// édition indéfiniment (audit du 2026-08-19). Le nom porte donc l'identifiant
+// de build : l'activate du SW purge tout cache qui ne le porte pas.
+async function versionServiceWorker({ id }) {
+  const swPath = path.join(OUT_DIR, "sw.js");
+  let sw;
+  try {
+    sw = await readFile(swPath, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  if (!sw.includes("__BUILD_ID__")) {
+    console.warn("postbuild: sw.js sans jeton __BUILD_ID__ — cache non versionné");
+    return;
+  }
+  await writeFile(swPath, sw.replaceAll("__BUILD_ID__", id), "utf8");
+  console.log(`postbuild: service worker versionné (vitrine-${id})`);
 }
 
 async function main() {
@@ -111,6 +184,14 @@ async function main() {
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
+  await pruneShareBackgrounds();
+
+  // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
+  // identifiant nomme le cache du service worker — la sonde ActualisationAuto
+  // et la purge du SW parlent du même build.
+  const build = computeBuildId();
+  await writeBuildId(build);
+  await versionServiceWorker(build);
 }
 
 main().catch((err) => {

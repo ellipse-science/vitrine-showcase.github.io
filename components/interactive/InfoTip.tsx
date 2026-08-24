@@ -89,6 +89,17 @@ export function InfoTip({
     lastPtrType.current = e.pointerType;
   };
   const handleClick = (e: React.MouseEvent) => {
+    // `detail === 0` signe une activation au CLAVIER (Entrée ou Espace) : aucun
+    // événement de pointeur ne l'a précédée, donc `lastPtrType` garde sa valeur
+    // initiale « mouse » et l'ancien garde renvoyait tout de suite. La bulle
+    // était donc TOTALEMENT inopérable au clavier : le bouton prenait le focus,
+    // `aria-expanded` restait « false », et rien ne s'ouvrait jamais.
+    if (e.detail === 0) {
+      e.stopPropagation();
+      registry.forEach((fn) => fn());
+      setOpen((v) => !v);
+      return;
+    }
     if (lastPtrType.current === "mouse") return; // géré par hover
     e.stopPropagation();
     if (!open) {
@@ -111,6 +122,13 @@ export function InfoTip({
         type="button"
         className={`saillance-info-btn info-${size}`}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && open) {
+            e.stopPropagation();
+            setOpen(false);
+          }
+        }}
+        onBlur={() => setOpen(false)}
         aria-label={label}
         aria-expanded={open}
       >

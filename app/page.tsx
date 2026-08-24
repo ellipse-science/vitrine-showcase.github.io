@@ -9,6 +9,11 @@ import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { listEditions } from "@/lib/data/headlineEvents";
 
+// Modules RETIRÉS DE PROD, gardés sur dev (2026-08-20) : leurs sections se
+// gardent déjà elles-mêmes (elles rendent null en prod) — on retire AUSSI
+// l'enveloppe <div data-section> pour ne pas laisser d'ancre vide dans la page.
+const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+
 export default async function Home() {
   // Les éditions consultables du snapshot (#434) : le bandeau de l'en-tête ne
   // devine pas ce qui existe, il le reçoit.
@@ -21,28 +26,36 @@ export default async function Home() {
       </div>
 
       <div id="une-des-unes" data-section="Une des Unes">
-        <UneDesUnesSection />
+        <UneDesUnesSection shareEditionKey={editions[0]?.key} />
       </div>
 
       <div id="deux-solitudes" data-section="Deux solitudes">
         <DeuxSolitudesSection />
       </div>
 
-      <div id="partis-et-couverture" data-section="Partis et couverture">
-        <PartisCouvertureSection />
-      </div>
-
+      {/* Du plus général au plus spécifique : les enjeux dont on parle avant
+          les partis qui les portent, l'ensemble des promesses avant le détail
+          de la chambre. L'ordre d'affichage ne suit plus la numérotation des
+          modules, qui reste attachée à chaque bloc (labels de signalement). */}
       <div id="enjeux-saillants" data-section="Enjeux saillants">
         <TreemapSection />
       </div>
 
-      <div id="assemblee-nationale" data-section="Assemblée nationale">
-        <AssembleeSection />
-      </div>
+      {!isProd && (
+        <div id="partis-et-couverture" data-section="Partis et couverture">
+          <PartisCouvertureSection />
+        </div>
+      )}
 
       <div id="polimetre-plus" data-section="Polimètre+">
         <PolimetrePlusSection />
       </div>
+
+      {!isProd && (
+        <div id="assemblee-nationale" data-section="Assemblée nationale">
+          <AssembleeSection />
+        </div>
+      )}
 
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />

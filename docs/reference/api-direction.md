@@ -117,12 +117,25 @@ période de dépréciation, pas un simple commit.
   n'a plus de chemin d'écriture depuis la révocation du jeton Upstash exposé.
   C'est une répétition générale à faible enjeu de la forme Worker + base.
 
-## À trancher avant tout revenu, pas après
+## Questions juridiques — feu vert donné le 2026-08-18
 
-Trois questions juridiques, à porter au CLESSN / à l'Université Laval :
+Les trois questions ci-dessous conditionnaient toute mise en marché. **Mathieu
+Foisy a donné son accord le 2026-08-18** pour que le projet avance sur cette
+base.
 
 1. **Droits de rediffusion** des données dérivées de manchettes de presse
    moissonnées.
 2. **Conditions d'utilisation commerciale** d'OpenAI et de Replicate, qui
    couvrent l'illustration et la musique générées.
 3. **Propriété institutionnelle** des extrants.
+
+⚠️ **Ce que cette section établit, et ce qu'elle n'établit pas.** Elle
+enregistre une décision de projet, prise par la personne qui le dirige. Elle ne
+remplace pas un avis du contentieux de l'Université Laval ni un écrit du CLESSN.
+Avant de facturer un premier client — et non avant d'ouvrir l'API à un
+partenaire — il vaut la peine d'obtenir cet accord par écrit auprès de
+l'institution : c'est elle, et non le projet, qui porterait un litige sur des
+données dérivées de contenus de presse.
+
+Ce qui est noté ici suffit pour avancer ; ce qui manque se demande une fois, et
+protège durablement.

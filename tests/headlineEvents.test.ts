@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { __test__, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
+import { RECENCY_WEIGHT_TOTAL } from "@/lib/data/salienceCutover";
 
 const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline, buildIssueMedia } = __test__;
 
@@ -326,14 +327,15 @@ describe("symbolPositions", () => {
   });
 });
 
-// Pré-filtre partagé par le loader du site ET par scripts/select_hero.ts (qui
-// désigne la Une à illustrer). Il était recopié trois fois dans le loader et une
+// Pré-filtre partagé par le loader du site ET par la route
+// app/data/hero-selection.json (qui publie la Une à illustrer pour le
+// raffineur vitrine-art). Il était recopié trois fois dans le loader et une
 // quatrième en Python : c'est cette duplication qui a laissé l'illustration
 // diverger du hero (#259). Une seule implémentation, donc des tests dessus.
-// API publique consommée par scripts/select_hero.ts, qui alimente l'illustration
-// (#259). Elle a remplacé un accès à `__test__` — documenté comme réservé aux
-// tests — pour qu'un renommage interne du loader ne puisse pas casser en silence
-// la synchro illustration ↔ hero (retour Copilot).
+// API publique consommée par app/data/hero-selection.json/route.ts, qui
+// alimente l'illustration (#259). Elle a remplacé un accès à `__test__` —
+// documenté comme réservé aux tests — pour qu'un renommage interne du loader
+// ne puisse pas casser en silence la synchro illustration ↔ hero.
 describe("selectHeroFromRawEvents (API de sélection du hero, #259)", () => {
   it("désigne la Une n°1 = celle qui a la plus forte saillance cumulée", () => {
     const hero = selectHeroFromRawEvents([
@@ -502,8 +504,9 @@ describe("buildIssueMedia (actualités du treemap)", () => {
 });
 
 describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
-  // Poids de récence d'un bloc vieux de `h` heures (demi-vie 10 h, #274).
-  const w = (h: number) => Math.pow(2, -h / 10);
+  // Poids de récence d'un bloc vieux de `h` heures (demi-vie 10 h, #274),
+  // normalisé pour que six blocs somment à 1 (points sur 100, vitrine#566).
+  const w = (h: number) => Math.pow(2, -h / 10) / RECENCY_WEIGHT_TOTAL;
   it("somme la saillance d'une storyline sur plusieurs blocs, pondérée par récence", () => {
     const rows = [
       ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "16-20" }),
@@ -512,9 +515,9 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
     ];
     const st = storiesFrom24h(rows as never).sort((a: { sumQc: number }, b: { sumQc: number }) => b.sumQc - a.sumQc);
     expect(st[0].label).toBe("A");
-    expect(st[0].sumQc).toBeCloseTo(10 + 6 * w(4), 6); // bloc frais plein poids, bloc −4h atténué
+    expect(st[0].sumQc).toBeCloseTo(10 * w(0) + 6 * w(4), 6); // bloc frais plein poids, bloc −4h atténué
     expect(st[0].peakQc).toBe(10); // pic = max bloc BRUT (échelle du score de bloc, pastille)
-    expect(st[1].sumQc).toBeCloseTo(4, 6);
+    expect(st[1].sumQc).toBeCloseTo(4 * w(0), 6);
   });
   it("la récence peut inverser le classement : pic d'hier soir contre histoire en cours (#274)", () => {
     // "Vieille" domine en cumul plat (30 vs 24) mais tout son score date de
@@ -539,7 +542,7 @@ describe("storiesFrom24h (agrégation partagée des 2 modules)", () => {
       ev({ storyline_id: "sA", title: "A", score_qc: 10, time_interval_utc: "12-16" }),
     ];
     const st = storiesFrom24h(rows as never);
-    expect(st[0].sumQc).toBeCloseTo(10 + 10 * w(8), 6);
+    expect(st[0].sumQc).toBeCloseTo(10 * w(0) + 10 * w(8), 6);
   });
   it("ne garde que les 6 blocs les plus récents (24h)", () => {
     // 8 blocs : le plus ancien (00) hors fenêtre de 6
@@ -744,7 +747,8 @@ describe("badgeRanks (rejeu des éditions)", () => {
       [bloc("00", 30), bloc("04", 60), bloc("08", 90)] as never, SUM_QC_THRESHOLDS);
     const a = suivi.get("sA")!;
     expect(a.peakBlock).toBe("2026-07-13T08");
-    expect(a.peakSum).toBeGreaterThan(90); // 90 + traînée des blocs précédents
+    // 90 + traînée des blocs précédents, le tout ramené sur 100 (÷ somme des poids).
+    expect(a.peakSum).toBeGreaterThan(90 / RECENCY_WEIGHT_TOTAL);
 
     // Si le gros score est au MILIEU, le sommet reste sur ce bloc-là même si
     // des éditions plus récentes suivent — c'est ce qui permet au ⓘ de dire

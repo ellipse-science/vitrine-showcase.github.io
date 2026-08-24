@@ -10,8 +10,15 @@ name: Refresh Data
 #   Header: Authorization: token <GitHub PAT with workflow scope>
 #   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
 
+# BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
+# rafraîchissement vit dans le Worker Cloudflare (cron :10, sync-athena.ts).
+# Il reste un FILET hebdomadaire : il garde les JSON commités (source de
+# repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
+# n'a plus à l'appeler ; son compte peut être fermé.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1' # lundi 12:00 UTC, filet hebdomadaire
 
 permissions:
   contents: read
@@ -23,6 +30,11 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
+    # ~1h30 le 2026-08-18) tourne jusqu'à la limite dure de 6h de GitHub. Couplé
+    # à concurrency.cancel-in-progress: false, ce zombie met toutes les éditions
+    # suivantes EN FILE derrière lui → le site fige. 25 min ≈ 3× un run normal.
+    timeout-minutes: 25
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -63,6 +75,15 @@ jobs:
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
 
       - name: Setup R
+        # Coupable de l'incident du 2026-08-18 (gel ~1h30 au lieu de ~30s). Le
+        # timeout fait ÉCHOUER le step plutôt que de le laisser pendre : le
+        # workflow poursuit ses étapes, donc « Alert Slack on failure » sonne.
+        # C'est la raison d'être de ce garde rapproché EN PLUS du plafond global :
+        # le plafond du JOB, lui, interrompt le job en cours de route, si bien que
+        # les étapes suivantes ne s'exécutent pas du tout et que l'alerte reste
+        # muette (un job interrompu ne satisfait pas non plus failure()). Le
+        # plafond du job libère la file ; ce timeout-ci fait parler l'alerte.
+        timeout-minutes: 6
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.4'
@@ -107,12 +128,72 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        # Pillow ≥ 11.3 encode l'AVIF nativement (vérifié en 12.3) : pas de
-        # pillow-avif-plugin ici, on n'ajoute pas un paquet dont l'échec
-        # d'installation ferait tomber toute l'étape. generate_art.py tente
-        # quand même l'import du plugin, au cas où l'environnement serait plus
-        # ancien, et se rabat sur le WebP seul si l'AVIF n'est pas disponible.
-        run: pip install openai pillow python-dotenv replicate
+        # pillow : cartes de député·es (build_deputy_cards.py). openai a suivi
+        # generate_art.py hors de ce workflow (raffineur vitrine-art).
+        run: pip install pillow python-dotenv replicate
+
+      # Les portraits changent quelques fois par AN (partielles), pas toutes
+      # les 4h : scraper à chaque déclenchement de ce workflow ferait ~250
+      # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
+      # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
+      # tourne donc que sur le PREMIER des six déclenchements quotidiens
+      # (00h50 UTC, cron cron-job.org) plutôt que d'ajouter un cron natif
+      # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
+      # natif pour les données électorales plus haut, ne compte pas ici.
+      #
+      # Placé ICI, juste après le setup Python, et pas plus bas dans le job :
+      # les étapes qui suivent (Athena, art IA, musique IA) peuvent prendre
+      # plusieurs minutes chacune. Vérifier l'heure APRÈS elles risquerait de
+      # lire 01h passé minuit UTC un jour de run lent, et de sauter la
+      # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
+      # plus sans qu'aucune alerte ne le signale.
+      - name: Check daily deputy-photo window
+        id: photo_window
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Python deps for deputy portraits (numpy, Pillow already present)
+        if: steps.photo_window.outputs.run == 'true'
+        run: pip install numpy
+
+      - name: Refresh deputy portraits (best-effort, non-blocking)
+        id: deputy_photos
+        if: steps.photo_window.outputs.run == 'true'
+        continue-on-error: true
+        run: python scripts/scrape_deputy_photos.py
+
+      # --force : sans ça, build_deputy_cards.py saute toute circonscription
+      # dont la carte de sortie existe déjà — y compris après une partielle,
+      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
+      # même nom de fichier (clé = siège, pas personne). Sans --force, la
+      # carte traitée que le site affiche resterait celle de l'ANCIEN
+      # titulaire alors que la source brute est déjà à jour. Le coût — tout
+      # regénérer plutôt que le nécessaire — est négligeable ici : 125
+      # images, une fois par jour.
+      - name: Rebuild deputy cards (best-effort, non-blocking)
+        id: deputy_cards
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: python scripts/build_deputy_cards.py --force
+
+      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
+      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
+      # watchdog comme art/musique — même famille de défaillance (un
+      # supplément visuel, pas le contenu de fond que sert la Une) — et la
+      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
+      - name: Warn Slack if deputy-photo refresh failed
+        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure')
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
@@ -162,37 +243,12 @@ jobs:
             fi
           fi
 
-      # Node n'était pas installé dans ce job : il l'est maintenant pour une
-      # seule raison — faire désigner la Une n°1 par le MÊME code que le site,
-      # au lieu de la laisser deviner par le script d'illustration (issue #259).
-      - name: Set up Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      # Écrit public/data/hero-selection.json — l'illustration s'y réfère.
-      # Non bloquant : si ça échoue, generate_art.py reprend son heuristique.
-      #
-      # On EFFACE le fichier d'abord. Il est commité à chaque rafraîchissement,
-      # donc en cas d'échec une version PÉRIMÉE traînerait sur le disque et
-      # generate_art.py illustrerait une Une passée en croyant suivre le site —
-      # précisément le bug que cette étape corrige. Absent, le repli heuristique
-      # joue ; périmé, il ne joue pas. Mieux vaut pas de fichier qu'un vieux.
-      - name: Designate the hero headline
-        continue-on-error: true
-        run: |
-          rm -f public/data/hero-selection.json
-          npm run select-hero
-
-      - name: Generate AI art (best-effort, non-blocking)
-        id: art
-        continue-on-error: true
-        run: python scripts/generate_art.py
-
+      # L'ILLUSTRATION N'EST PLUS GÉNÉRÉE ICI. Le raffineur vitrine-art
+      # (aws-refiners) lit la Une désignée sur le site déployé
+      # (data/hero-selection.json, publié par le build — même code que le
+      # rendu, issue #259), génère l'image et la dépose sur /v1/art (R2). Le
+      # build la rapatrie via scripts/fetch_art.mjs. Ce workflow n'a donc plus
+      # besoin ni de Node, ni d'OpenAI, ni de scripts/generate_art.py.
       - name: Generate ambient music (best-effort, non-blocking)
         id: music
         continue-on-error: true
@@ -203,7 +259,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/ public/audio/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -265,8 +321,9 @@ jobs:
         run: |
           # Dev/prod split: code is gated behind manual main→prod merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
-          # payload (public/data + public/audio) from the just-pushed main onto
-          # prod — never code. Replacing (not merging) the paths means no conflicts.
+          # payload (public/data + public/audio + public/images/deputes) from the
+          # just-pushed main onto prod — never code. Replacing (not merging) the
+          # paths means no conflicts.
           # No-op until the prod branch exists (created during Cloudflare setup),
           # so this is safe to merge to main before prod is stood up.
           if ! git ls-remote --exit-code --heads origin prod >/dev/null 2>&1; then
@@ -278,8 +335,11 @@ jobs:
           # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
           # origin/prod may not exist. FETCH_HEAD always points at the just-fetched tip.
           git checkout -B prod FETCH_HEAD
-          git checkout main -- public/data/ public/audio/
-          git add public/data/ public/audio/
+          # public/images/deputes/ included alongside data/audio: without it, a
+          # by-election winner's portrait would land on main daily but never
+          # reach the live prod site until someone happens to merge main→prod.
+          git checkout main -- public/data/ public/audio/ public/images/deputes/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "prod data already current — nothing to sync."
           else
@@ -300,18 +360,9 @@ jobs:
               "$HOOK"
           fi
 
-      # Art et musique : cosmétique et fréquent. Reste dans le watchdog — on ne
+      # Musique : cosmétique et fréquent. Reste dans le watchdog — on ne
       # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
-      - name: Warn Slack if art generation failed (data still published)
-        if: steps.art.outcome == 'failure'
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine art generation failed* — data was refreshed and deployed normally; only the AI image is stale.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
-
+      # (L'illustration a son propre circuit : raffineur vitrine-art -> /v1/art.)
       - name: Warn Slack if music generation failed (data still published)
         if: steps.music.outcome == 'failure'
         run: |
