@@ -19,12 +19,11 @@ vi.mock("node:fs/promises", () => ({ default: { readFile: (...a: unknown[]) => r
 const { loadHeadlineEvents } = await import("@/lib/data/headlineEvents");
 const { NEW_SUM_QC_THRESHOLDS } = await import("@/lib/data/salienceCutover");
 
-// Somme des six poids de récence d'une fenêtre 24 h à demi-vie 10 h :
-// Σ 2^(−4k/10) pour k = 0..5. Sert à viser une valeur de cumul depuis une
-// valeur par bloc, sans recopier un résultat intermédiaire.
-const SOMME_POIDS = [0, 1, 2, 3, 4, 5].reduce((s, k) => s + Math.pow(2, (-4 * k) / 10), 0);
-/** Valeur par bloc qui produit le cumul 24 h visé (à l'échelle d'affichage). */
-const blocPourCumul = (cumul: number) => cumul / SOMME_POIDS / 100;
+// Depuis vitrine#566 les poids de récence somment à 1 sur une fenêtre pleine :
+// six blocs identiques donnent exactement leur valeur en points. Viser un
+// cumul, c'est donc viser la valeur par bloc elle-même (en unités brutes [0,1]).
+/** Valeur par bloc qui produit les points 24 h visés (à l'échelle d'affichage). */
+const blocPourCumul = (cumul: number) => cumul / 100;
 
 // Six blocs, une histoire québécoise portée par deux médias. Les deux colonnes
 // sont peuplées et DISCORDANTES : l'ancien indice placerait l'histoire tout en
@@ -163,17 +162,19 @@ describe("référence ancrée : la calibration glissante ne classe plus", () => 
   };
 
   it("une grille glissante publiée ne remplace PAS la grille d'année", async () => {
-    // Entre les deux mondes : « Exceptionnelle » sous la glissante (> 45),
-    // « Modérée » sous la grille ancrée (entre 41,8 et 59,2).
-    const cumulVise = 50;
+    // Entre les deux mondes, en points sur 100 (vitrine#566) : « Faible » sous
+    // la glissante (sous son p20 de 22), « Modérée » sous la grille ancrée
+    // (entre 12,5 et 17,7 points, soit 41,8 et 59,2 en unités de cumul).
+    const cumulVise = 15;
     serveAvecCalibration(dataset(blocPourCumul(cumulVise)));
     const data = await loadHeadlineEvents();
     const une = data!.top3[0];
 
     expect(une.scoreQcSum24h).toBeCloseTo(cumulVise, 1);
-    // Le p95 de la glissante (45) est bien FRANCHI par cumulVise (50) : sans
-    // le débranchement, ce test échouerait au lieu de ne rien prouver.
-    expect(cumulVise).toBeGreaterThan(glissante.metrics.salience_index_qc_sum_24h.p95 * 100);
+    // cumulVise (15) est bien SOUS le p20 de la glissante (22) : si elle
+    // classait, la Une porterait « Faible ». Sans le débranchement, ce test
+    // échouerait au lieu de ne rien prouver.
+    expect(cumulVise).toBeLessThan(glissante.metrics.salience_index_qc_sum_24h.p20 * 100);
     // Et pourtant c'est la grille d'année qui parle.
     expect(une.saillanceLabel).toBe("Modérée");
     const g = NEW_SUM_QC_THRESHOLDS;

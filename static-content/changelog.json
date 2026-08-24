@@ -1,5 +1,23 @@
 [
   {
+    "pr": 567,
+    "date": "2026-08-23T16:13:09Z",
+    "note": "Les points de saillance sont maintenant sur 100 : c'est l'attention moyenne reçue sur les 24 dernières heures, expliquée dans la Méthodologie et dans la bulle d'information de chaque manchette.",
+    "version": "2.28.0-beta.0"
+  },
+  {
+    "pr": 560,
+    "date": "2026-08-22T23:16:41Z",
+    "note": "Le partage d’un lien général de la Vitrine affiche maintenant une carte claire et lisible, même sur un fond sombre.",
+    "version": "2.27.0-beta.3"
+  },
+  {
+    "pr": 556,
+    "date": "2026-08-22T23:11:22Z",
+    "note": "- [x] Sans objet — documentation interne.",
+    "version": null
+  },
+  {
     "pr": 555,
     "date": "2026-08-21T23:03:09Z",
     "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
