@@ -1543,7 +1543,7 @@
                     details: [
                         '📋 9 tables publiées : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu)',
                         '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
-                        '🌐 Consommées par la Vitrine : <strong>uniquement les 3 provinciales</strong> (provincial_parties_salient_shadow_day/week/month → components/interactive/PartisCouvertureClient.tsx). Les 3 fédérales sont produites mais non lues.'
+                        '🌐 Consommées par la Vitrine : les <strong>5 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday et parties_issues_salient_shadow_day — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 4 fédérales (day/week/month, _intraday) sont produites mais non lues.'
                     ]
                 },
                 'parties_score_legacy': {
