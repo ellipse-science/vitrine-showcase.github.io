@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 23 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es ajoutée au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 24 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es ajoutée au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1077,8 +1077,8 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output" data-type="output" data-output="slack-sonar-pipeline">
-                    Slack: par corpus
-                    <div class="node-detail">médias → radar-plus_sonar • décideurs → agora-plus_sonar</div>
+                    Slack: vers qui répare
+                    <div class="node-detail">corpus médias → radar-plus_sonar • décideurs → agora-plus_sonar • modules du site → vitrine_sonar</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
             </div>
@@ -1827,7 +1827,8 @@
                         '• Couverture du manifest — table publiée que personne n\'a déclarée',
                         '',
                         '🔕 ANTI-BRUIT: alerte à l\'APPARITION d\'un problème et à sa résolution, jamais à chaque passe.',
-                        '📢 Slack routé par corpus: médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar'
+                        '📢 Slack routé vers qui répare: corpus médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar, modules du site (scores d\'enjeux, partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
+                        '🔎 En-tête de chaque passe: N tables surveillées · M déclarées au manifest mais non vérifiées — la dette de surveillance est dite, pas maquillée.'
                     ]
                 },
                 'polimetre-plus': {
@@ -2549,15 +2550,16 @@
             outputs: {
                 'slack-sonar-pipeline': {
                     title: 'Notifications Slack - Sonar pipeline',
-                    description: 'Alertes de santé des raffineurs, routées selon la SOURCE de la donnée concernée — pas selon son sujet.',
+                    description: 'Alertes de santé des raffineurs, routées vers ceux qui peuvent réparer : le corpus selon sa SOURCE, les modules du site vers la chaîne de la Vitrine.',
                     details: [
-                        '📢 Données de MÉDIAS → #02_radar-plus_sonar',
-                        '📢 Données de DÉCIDEURS (débats, commissions, communiqués) → #02__agora-plus_sonar',
+                        '📢 CORPUS de MÉDIAS (collecte, annotation, objets, indice, événements) → #02_radar-plus_sonar',
+                        '📢 CORPUS de DÉCIDEURS (débats, commissions, communiqués) → #02__agora-plus_sonar',
+                        '📢 MODULES du site (scores d\'enjeux, scores et ombrage de partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
                         '',
-                        '🎯 Le critère est « qui doit lire cette alerte » : celui qui peut réparer la source qui se tarit.',
-                        '📌 Cas de référence: polimetre-plus détecte des promesses DE décideurs mais les cherche dans des TEXTES DE MÉDIAS → chaîne médias.',
+                        '🎯 Le critère est « qui doit lire cette alerte » : celui qui peut réparer. Pour le corpus, c\'est son propriétaire (la source décide) ; pour un module, ce sont les gens du site.',
+                        '📌 Cas de référence: polimetre-plus lit des TEXTES DE MÉDIAS mais c\'est un MODULE du site → chaîne vitrine. Amendement du 21 août 2026 après qu\'un étage des partis a échoué cinq jours sans qu\'une alerte atteigne son équipe.',
                         '',
-                        '⛔ Les alertes de la Vitrine (site pas à jour, déploiement raté) ne passent pas par ici : elles ont leur propre chaîne.'
+                        '⛔ Les alertes de LIVRAISON de la Vitrine (site pas à jour, déploiement raté) ne passent pas par ici : elles viennent du dépôt vitrine et arrivent dans la même chaîne #02_vitrine_sonar par un autre émetteur.'
                     ]
                 },
                 'hot20-files': {

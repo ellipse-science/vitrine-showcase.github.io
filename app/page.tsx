@@ -33,14 +33,22 @@ export default async function Home() {
         <DeuxSolitudesSection />
       </div>
 
+      {/* Du plus général au plus spécifique : les enjeux dont on parle avant
+          les partis qui les portent, l'ensemble des promesses avant le détail
+          de la chambre. L'ordre d'affichage ne suit plus la numérotation des
+          modules, qui reste attachée à chaque bloc (labels de signalement). */}
+      <div id="enjeux-saillants" data-section="Enjeux saillants">
+        <TreemapSection />
+      </div>
+
       {!isProd && (
         <div id="partis-et-couverture" data-section="Partis et couverture">
           <PartisCouvertureSection />
         </div>
       )}
 
-      <div id="enjeux-saillants" data-section="Enjeux saillants">
-        <TreemapSection />
+      <div id="polimetre-plus" data-section="Polimètre+">
+        <PolimetrePlusSection />
       </div>
 
       {!isProd && (
@@ -48,10 +56,6 @@ export default async function Home() {
           <AssembleeSection />
         </div>
       )}
-
-      <div id="polimetre-plus" data-section="Polimètre+">
-        <PolimetrePlusSection />
-      </div>
 
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
