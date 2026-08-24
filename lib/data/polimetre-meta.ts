@@ -130,8 +130,9 @@ export const PARTI_FULL_LABELS: Record<PartiKey, string> = {
 };
 
 /** `party_id` de la table des communiqués (majuscules) → clé de parti. Renvoie
- *  null pour un parti hors des cinq suivis : la promesse s'affiche alors sans
- *  pastille plutôt qu'avec une couleur empruntée à un autre parti. */
+ *  null pour un parti hors des cinq suivis — et le chargeur des promesses neuves
+ *  écarte alors la ligne : la saillance mesurée est celle des communiqués des
+ *  cinq partis, pas celle d'un émetteur qu'on ne collecte pas. */
 export function partiKeyFromId(id: string | null | undefined): PartiKey | null {
   const k = (id ?? "").trim().toLowerCase();
   return (PARTI_ORDER as string[]).includes(k) ? (k as PartiKey) : null;
@@ -145,9 +146,8 @@ export type PromesseNeuveView = {
    *  C'est la pièce justificative du module : ce qui est affiché en détail est
    *  ce que le parti a écrit, pas ce qu'un modèle en a compris. */
   verbatim: string;
-  parti: PartiKey | null;
-  /** Sigle brut tel que publié, pour l'étiquette accessible même hors des cinq. */
-  partiLabel: string;
+  /** Toujours l'un des cinq partis suivis : le chargeur écarte les autres. */
+  parti: PartiKey;
   /** Date d'annonce (ISO), = date du communiqué. */
   announceDate: string;
   /** Lien vers le communiqué source. */

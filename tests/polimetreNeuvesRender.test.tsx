@@ -14,8 +14,8 @@ import type {
 // Ce qu'il verrouille :
 //   - hors campagne (aucune promesse neuve), le module est EXACTEMENT celui
 //     d'avant : pas d'inverseur, donc aucun mode qui mène à une liste vide ;
-//   - la pastille porte le parti, et un parti hors des cinq n'emprunte la
-//     couleur d'aucun autre ;
+//   - la pastille porte le parti — et il n'y a que les cinq suivis à porter, le
+//     chargeur écartant les autres (cf. tests/promessesNeuves.test.ts) ;
 //   - le mode par défaut est le module historique, et l'inverseur le présente
 //     en premier — un inverseur qui ouvre sur un mode non affiché se lit comme
 //     un état incohérent.
@@ -49,7 +49,6 @@ const neuve = (o: Partial<PromessesNeuvesData["ranges"]["day"][number]> = {}) =>
   verbatim:
     "Injecter 7 millions de dollars supplémentaires pour accélérer le traitement des dossiers;",
   parti: "qs" as const,
-  partiLabel: "QS",
   announceDate: "2026-09-03",
   sourceUrl: "https://quebecsolidaire.net/communique/plan-habitation",
   sourceTitle: "Québec solidaire lance un Plan Habitation",
