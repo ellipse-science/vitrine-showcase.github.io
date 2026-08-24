@@ -37,20 +37,14 @@ export const metadata: Metadata = {
     title: "La Vitrine démocratique",
     description: SITE_DESCRIPTION,
     locale: "fr_CA",
-    images: [
-      {
-        url: "images/brand/logo_vitrinedemocratique_bg-none_theme-black.png",
-        width: 1788,
-        height: 591,
-        alt: "La Vitrine démocratique",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "La Vitrine démocratique",
     description: SITE_DESCRIPTION,
-    images: ["images/brand/logo_vitrinedemocratique_bg-none_theme-black.png"],
+    // Même artefact opaque que la carte Open Graph. Une route Twitter
+    // distincte doublerait le PNG sans apporter de cadrage différent.
+    images: ["opengraph-image"],
   },
   manifest: `${basePath}/manifest.json`,
   icons: {

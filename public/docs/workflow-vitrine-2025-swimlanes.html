@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 21 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; identité stable des député.es ajoutée au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 24 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es ajoutée au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1077,8 +1077,8 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output" data-type="output" data-output="slack-sonar-pipeline">
-                    Slack: par corpus
-                    <div class="node-detail">médias → radar-plus_sonar • décideurs → agora-plus_sonar</div>
+                    Slack: vers qui répare
+                    <div class="node-detail">corpus médias → radar-plus_sonar • décideurs → agora-plus_sonar • modules du site → vitrine_sonar</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
             </div>
@@ -1183,15 +1183,28 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="enrichissements-vitrine">
-                    select_hero · generate_art · generate_music
-                    <div class="node-detail">Best-effort, non bloquants</div>
+                    select_hero · generate_music
+                    <div class="node-detail">Best-effort, non bloquants (l'illustration a son propre circuit, ci-contre)</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output" style="min-width: 200px;" data-type="output" data-output="frontend-vitrine">
                     Site Vitrine (Next.js statique)
-                    <div class="node-detail">ellipse.science/vitrine-showcase.github.io</div>
+                    <div class="node-detail">ellipse.science/vitrine-showcase.github.io · publie <code>data/hero-selection.json</code></div>
                     <div class="info-badge">🌐 Cliquer pour ouvrir site</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:40,04:40,08:40,12:40,16:40,20:40">
+                    vitrine-art.R
+                    <div class="node-detail">Illustration de la Une (gpt-image-1) → <code>PUT /v1/art</code> (R2) → Deploy Hooks si la Une a changé</div>
+                    <div class="node-schedule">⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output" data-type="output" data-output="api-art">
+                    api.vitrinedemocratique.com/v1/art
+                    <div class="node-detail">latest.png/webp/avif + latest.json (R2) — rapatriés AU BUILD par <code>scripts/fetch_art.mjs</code></div>
+                    <div class="info-badge">📄 Cliquer pour détails</div>
                 </div>
             </div>
             <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #E74C3C;background:rgba(231,76,60,.07);font-size:.9em;line-height:1.5">
@@ -1814,7 +1827,8 @@
                         '• Couverture du manifest — table publiée que personne n\'a déclarée',
                         '',
                         '🔕 ANTI-BRUIT: alerte à l\'APPARITION d\'un problème et à sa résolution, jamais à chaque passe.',
-                        '📢 Slack routé par corpus: médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar'
+                        '📢 Slack routé vers qui répare: corpus médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar, modules du site (scores d\'enjeux, partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
+                        '🔎 En-tête de chaque passe: N tables surveillées · M déclarées au manifest mais non vérifiées — la dette de surveillance est dite, pas maquillée.'
                     ]
                 },
                 'polimetre-plus': {
@@ -2383,12 +2397,11 @@
                         '• Désigne la Une n°1 avec le MÊME code que le site, pour que l\'illustration ne se trompe pas de manchette (aws-refiners#259)',
                         '• Le fichier est effacé avant chaque exécution : mieux vaut aucun fichier qu\'un fichier périmé',
                         '',
-                        '🖼️ <code>scripts/generate_art.py</code> → <code>public/data/generated-art/</code>',
-                        '• Illustration de la Une n°1 ; si hero-selection.json est absent, repli sur son heuristique interne',
+                        '🖼️ L\'illustration N\'EST PLUS générée ici depuis le 2026-08-20 (vitrine-showcase#534) : elle a son propre circuit, le raffineur <code>vitrine-art</code> (nœud suivant dans le couloir). Le build se contente de la rapatrier (<code>scripts/fetch_art.mjs</code>, hook <code>prebuild</code>).',
                         '',
                         '🎵 <code>scripts/generate_music.py</code> → <code>public/audio/</code>',
                         '',
-                        '📌 Les trois étapes portent <code>continue-on-error: true</code> dans refresh-data.yml — leur échec n\'empêche jamais la publication des données.'
+                        '📌 Les étapes portent <code>continue-on-error: true</code> dans refresh-data.yml — leur échec n\'empêche jamais la publication des données.'
                     ]
                 }
             },
@@ -2409,6 +2422,22 @@
                         '10. Technology',
                         '11. Governments and Governance',
                         '12. Culture and Nationalism'
+                    ]
+                },
+                'vitrine-art': {
+                    title: 'vitrine-art — illustration de la Une des Unes',
+                    description: 'Raffineur EventBridge (aws-refiners#361, aws-infra#503). Lit la Une désignée par le site, dessine l\'illustration et la publie sur l\'API ; le Worker décide des builds.',
+                    details: [
+                        '⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40 (heure de Montréal), ~30 min après le cron de synchro du Worker (:10), le temps que le build post-synchro soit en ligne',
+                        '',
+                        '1. Lit <code>vitrinedemocratique.com/data/hero-selection.json</code> (la Une n°1, désignée par le MÊME code que le rendu, issue #259)',
+                        '2. Si la storyline n\'a pas changé depuis <code>GET /v1/art/latest.json</code> : rien (ni OpenAI ni build), publication idempotente',
+                        '3. Sinon : relit l\'événement via <code>GET /v1/datasets/headline_events_4h</code> (articles → digest factuel)',
+                        '4. <code>gpt-image-1</code> + 20 images de référence de l\'artiste maison → PNG, WebP, AVIF + métadonnées (storyline_id, event_id, titre)',
+                        '5. <code>PUT /v1/art/latest.*</code> (R2, clé portée <code>sync</code>) puis <code>POST /v1/art/publish</code> : le WORKER déclenche les Deploy Hooks si la Une illustrée a changé',
+                        '',
+                        '🛡️ Le site n\'affiche l\'image que si sa storyline correspond à la Une affichée (garde d\'appariement, <code>UneDesUnesSection</code>) : une image périmée est cachée, jamais montrée sous une autre manchette.',
+                        '🔑 Secrets SSM : deux paramètres (clé OpenAI, clé d\'API du Worker) — chemins non repris ici, cette page est servie publiquement. Aucune table de datamart, aucun accès Postgres ni AWS-données (exemption garde-sonar).'
                     ]
                 },
                 'parties-ca': {
@@ -2521,15 +2550,16 @@
             outputs: {
                 'slack-sonar-pipeline': {
                     title: 'Notifications Slack - Sonar pipeline',
-                    description: 'Alertes de santé des raffineurs, routées selon la SOURCE de la donnée concernée — pas selon son sujet.',
+                    description: 'Alertes de santé des raffineurs, routées vers ceux qui peuvent réparer : le corpus selon sa SOURCE, les modules du site vers la chaîne de la Vitrine.',
                     details: [
-                        '📢 Données de MÉDIAS → #02_radar-plus_sonar',
-                        '📢 Données de DÉCIDEURS (débats, commissions, communiqués) → #02__agora-plus_sonar',
+                        '📢 CORPUS de MÉDIAS (collecte, annotation, objets, indice, événements) → #02_radar-plus_sonar',
+                        '📢 CORPUS de DÉCIDEURS (débats, commissions, communiqués) → #02__agora-plus_sonar',
+                        '📢 MODULES du site (scores d\'enjeux, scores et ombrage de partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
                         '',
-                        '🎯 Le critère est « qui doit lire cette alerte » : celui qui peut réparer la source qui se tarit.',
-                        '📌 Cas de référence: polimetre-plus détecte des promesses DE décideurs mais les cherche dans des TEXTES DE MÉDIAS → chaîne médias.',
+                        '🎯 Le critère est « qui doit lire cette alerte » : celui qui peut réparer. Pour le corpus, c\'est son propriétaire (la source décide) ; pour un module, ce sont les gens du site.',
+                        '📌 Cas de référence: polimetre-plus lit des TEXTES DE MÉDIAS mais c\'est un MODULE du site → chaîne vitrine. Amendement du 21 août 2026 après qu\'un étage des partis a échoué cinq jours sans qu\'une alerte atteigne son équipe.',
                         '',
-                        '⛔ Les alertes de la Vitrine (site pas à jour, déploiement raté) ne passent pas par ici : elles ont leur propre chaîne.'
+                        '⛔ Les alertes de LIVRAISON de la Vitrine (site pas à jour, déploiement raté) ne passent pas par ici : elles viennent du dépôt vitrine et arrivent dans la même chaîne #02_vitrine_sonar par un autre émetteur.'
                     ]
                 },
                 'hot20-files': {
@@ -2641,9 +2671,21 @@
                         '• salience_calibration.json - percentiles sur 365 jours glissants',
                         '• hero-selection.json - la Une n°1 désignée par le code du site',
                         '• meta.json - statut et compte de lignes par table (diagnostic de fraîcheur)',
-                        '• generated-art/latest.json - illustration de la Une',
+                        '• generated-art/latest.json - illustration de la Une (rapatriée au build depuis /v1/art, raffineur vitrine-art)',
                         '',
                         '🔄 Mise à jour: 6x/jour • ⛔ Jamais édités à la main'
+                    ]
+                },
+                'api-art': {
+                    title: 'API Vitrine — /v1/art (R2)',
+                    description: 'L\'illustration courante de la Une, déposée par vitrine-art et servie par le Worker api.vitrinedemocratique.com (stockage R2).',
+                    details: [
+                        '• latest.png, latest.webp, latest.avif : l\'image (1024×1024)',
+                        '• latest.json : métadonnées (generated_at, storyline_id, event_id, headline_fr, main_issue)',
+                        '• Publics en lecture ; écriture réservée à la clé de portée <code>sync</code>',
+                        '',
+                        '🔄 Rapatriés AU BUILD par <code>scripts/fetch_art.mjs</code> (hook prebuild) vers <code>public/data/generated-art/</code>, puis inlinés dans l\'export statique : le visiteur ne lit jamais l\'API.',
+                        '⚠️ Best-effort : une API muette ne casse jamais le build, le module s\'affiche sans image.'
                     ]
                 },
                 'frontend-vitrine': {

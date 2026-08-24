@@ -453,8 +453,10 @@ const RETARD_MAX_JOURS = 3;
  *  éditions archivées — le défaut est antérieur au gel du 31 juillet 2026, il
  *  ne commence pas à cette date. Le module reste affiché et dit pourquoi.
  *
- *  À repasser à `false` quand le réentraînement est validé, avec la métho §05
- *  et le §10 (Limites reconnues) mis à jour dans le même geste.
+ *  À repasser à `false` quand le réentraînement est validé, avec les sections
+ *  `#partis-et-couverture` et `#limites` (Limites reconnues) de la métho mises
+ *  à jour dans le même geste. Repérées par leur ancre, pas par leur numéro de
+ *  § : l'ordre des sections a déjà changé une fois (#492).
  *
  *  UNE SEULE DÉROGATION : les fixtures (voir `SUR_FIXTURES` plus bas). La
  *  suspension protège le PUBLIC d'une affirmation que la donnée ne soutient
