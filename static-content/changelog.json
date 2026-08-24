@@ -1,5 +1,11 @@
 [
   {
+    "pr": 562,
+    "date": "2026-08-24T00:04:19Z",
+    "note": "La documentation technique du pipeline (swimlanes) précise maintenant où partent les alertes de surveillance : celles des modules du site vont désormais à l'équipe du site. Rien ne change sur le site lui-même.",
+    "version": null
+  },
+  {
     "pr": 567,
     "date": "2026-08-23T16:13:09Z",
     "note": "Les points de saillance sont maintenant sur 100 : c'est l'attention moyenne reçue sur les 24 dernières heures, expliquée dans la Méthodologie et dans la bulle d'information de chaque manchette.",
