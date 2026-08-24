@@ -1,5 +1,11 @@
 [
   {
+    "pr": 569,
+    "date": "2026-08-24T14:42:37Z",
+    "note": "Documentation interne du pipeline : l'illustration de la Une a maintenant son propre circuit, décrit dans l'horaire et le diagramme des pipelines.",
+    "version": null
+  },
+  {
     "pr": 492,
     "date": "2026-08-24T14:13:42Z",
     "note": "Les modules de la page sont réordonnés du plus général au plus spécifique : on voit d'abord de quoi on parle, puis quels partis en parlent; d'abord le suivi des promesses, puis le détail de l'Assemblée nationale. La page Méthodologie suit le même ordre.",
