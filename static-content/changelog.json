@@ -1,5 +1,11 @@
 [
   {
+    "pr": 574,
+    "date": "2026-08-25T21:25:33Z",
+    "note": "Une promesse de campagne dont le parti n'est pas suivi n'apparaît plus dans le Polimètre+ et ne compte plus dans son classement.",
+    "version": null
+  },
+  {
     "pr": 585,
     "date": "2026-08-25T20:15:09Z",
     "note": "Section inchangée — cette PR ne change encore rien pour le visiteur.",
