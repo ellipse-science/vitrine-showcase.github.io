@@ -467,7 +467,7 @@ const RETARD_MAX_JOURS = 3;
  *  exactement le genre de manipulation qui finit par être commitée par
  *  accident. Le rendu sur fixtures porte un bandeau « DONNÉES FICTIVES »
  *  (`GabaritFictif`), pour qu'aucune capture ne puisse passer pour le site. */
-const MESURE_PROVINCIALE_SUSPENDUE = true;
+const MESURE_PROVINCIALE_SUSPENDUE = false;
 
 /** Aujourd'hui en heure de MONTRÉAL, pas en UTC (AGENTS.md règle #2).
  *  `toISOString()` bascule de jour dès 20 h heure locale : le module aurait

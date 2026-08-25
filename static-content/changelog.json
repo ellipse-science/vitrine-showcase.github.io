@@ -1,5 +1,17 @@
 [
   {
+    "pr": 542,
+    "date": "2026-08-24T19:31:13Z",
+    "note": "Le module sur les partis politiques affiche de nouveau des données : le modèle qui les reconnaît dans les articles a été réentraîné. Le Parti conservateur du Québec y fait exception et reste à zéro, faute d'exemples suffisants pour l'identifier de façon fiable.",
+    "version": "2.30.0-beta.0"
+  },
+  {
+    "pr": 514,
+    "date": "2026-08-24T19:19:16Z",
+    "note": "Rien ne change sur le site. Cette modification met à jour un schéma technique interne qui décrit quelles données produit chaque étape du traitement.",
+    "version": "2.29.0-beta.2"
+  },
+  {
     "pr": 575,
     "date": "2026-08-24T16:49:30Z",
     "note": "Les portraits des parlementaires s’affichent maintenant dès l’ouverture d’un casier, y compris lorsque la carte se trouve plus loin dans le présentoir.",
