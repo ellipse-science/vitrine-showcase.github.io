@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
+import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import type { PartyKey } from "@/lib/data/parties";
 
 // Le site est publié sous un basePath sur GitHub Pages (même logique que
@@ -116,9 +116,99 @@ function ConceptBloc({ concept, glose, absence, citation }: {
       {citation && (
         <span className="concept-citation">«&nbsp;{citation}&nbsp;»</span>
       )}
+      {!citation && (
+        <span className="concept-citation-indisponible">
+          Extrait contenant ce concept non disponible.
+        </span>
+      )}
       <i className="concept-glose">{glose}</i>
     </>
   );
+}
+
+function parcoursResume(segments: AffiliationSegment[]): string {
+  const reperes: string[] = [];
+  if (segments.length > 1 || segments.some((segment) =>
+    segment.startReason === "defection" || segment.endReason === "defection"
+  )) reperes.push("Changement d’affiliation");
+  if (segments.some((segment) => segment.startReason === "byelection")) {
+    reperes.push("Élection partielle");
+  }
+  if (segments.some((segment) => segment.endReason === "resignation")) {
+    reperes.push("Démission");
+  }
+  return reperes.join(" · ");
+}
+
+function raisonDebut(segment: AffiliationSegment, index: number): string | undefined {
+  if (segment.startReason === "byelection") return "Entrée à l’Assemblée lors d’une élection partielle";
+  if (segment.startReason === "election" && index === 0) return "Entrée à l’Assemblée lors de l’élection générale";
+  // Lors d'un changement, la fin du segment précédent porte déjà le repère.
+  if (segment.startReason === "defection" && index === 0) return "Changement d’affiliation";
+  return undefined;
+}
+
+function raisonFin(segment: AffiliationSegment): string | undefined {
+  if (segment.endReason === "defection") return "Changement d’affiliation";
+  if (segment.endReason === "resignation") return "Fin du mandat par démission";
+  if (segment.endReason === "dissolution") return "Fin de la législature";
+  return undefined;
+}
+
+function ParliamentaryHistory({ segments }: { segments: AffiliationSegment[] }) {
+  const resume = parcoursResume(segments);
+  return (
+    <details className="carte-parcours">
+      <summary aria-label={`Afficher le parcours parlementaire\u00a0: ${resume}`}>
+        <span className="carte-parcours-repere" aria-hidden="true">
+          <svg viewBox="0 0 28 28" focusable="false">
+            <circle className="carte-parcours-depart" cx="7" cy="5.8" r="1.7" />
+            <path d="M8.8 5.9C14.7 4.7 21.1 6.2 21.2 9.7C21.3 13.2 15.3 13.7 11.2 15C7.6 16.1 7.9 19 12.4 20.2L20.5 22.6" />
+            <path d="M17.8 19.8L20.8 22.8L17.2 24.6" />
+          </svg>
+        </span>
+        <span className="carte-parcours-entete">
+          <b>Parcours parlementaire</b>
+          <i>{resume}</i>
+        </span>
+        <span className="carte-parcours-chevron" aria-hidden="true" />
+      </summary>
+      <div className="carte-parcours-contenu">
+        <p>
+          Les interventions restent associées à l’affiliation détenue au moment où elles ont été prononcées.
+        </p>
+        <ol className="carte-parcours-frise">
+          {segments.map((segment, index) => {
+            const debut = raisonDebut(segment, index);
+            const fin = raisonFin(segment);
+            return (
+              <li key={`${segment.label}-${segment.startDate}-${index}`}>
+                <span className="carte-parcours-parti">{segment.label}</span>
+                <span className="carte-parcours-dates">
+                  {segment.endDate
+                    ? `Du ${fmtAffiliationDate(segment.startDate)} au ${fmtAffiliationDate(segment.endDate)}`
+                    : `Depuis le ${fmtAffiliationDate(segment.startDate)}`}
+                </span>
+                {debut && <span className="carte-parcours-evenement">{debut}</span>}
+                {fin && <span className="carte-parcours-evenement">{fin}</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </details>
+  );
+}
+
+const MOIS_COURTS = [
+  "janv.", "févr.", "mars", "avr.", "mai", "juin",
+  "juill.", "août", "sept.", "oct.", "nov.", "déc.",
+];
+
+function fmtAffiliationDate(value: string): string {
+  const [annee, mois, jour] = value.split("-").map(Number);
+  if (!annee || !mois || !jour) return value;
+  return `${jour} ${MOIS_COURTS[mois - 1]} ${annee}`;
 }
 
 function RichnessDots({ level }: { level: number }) {
@@ -190,11 +280,18 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
   const partyLabel = party.toUpperCase();
   const concept = conceptPubliable(deputy.signatureWord);
   const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 3);
+  // Le verso est un objet fermé au format 5:7. Un concept ou un extrait long
+  // peut prendre une ligne de plus lorsque les polices web ne chargent pas et
+  // que le navigateur retombe sur Georgia/monospace. On compacte alors les
+  // ESPACEMENTS des blocs fixes, jamais le texte, afin de réserver cette ligne
+  // sans dépendre des métriques de police propres à une machine.
+  const denseBack = (concept?.length ?? 0) > 22
+    || (deputy.signatureWordContext?.length ?? 0) > 76;
 
   return (
     <button
       type="button"
-      className={`carte${flipped ? " est-retournee" : ""}`}
+      className={`carte${flipped ? " est-retournee" : ""}${denseBack ? " est-dense" : ""}`}
       style={{ ["--pc" as string]: color }}
       onClick={onFlip}
       aria-pressed={flipped}
@@ -215,7 +312,12 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
             </span>
             <span className="carte-photo">
               {deputy.portrait ? (
-                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="lazy" decoding="async" />
+                // Le présentoir défile dans un conteneur transformé en 3D.
+                // Le lazy-loading natif y laisse certaines cartes hors écran
+                // à naturalWidth=0 même après leur arrivée dans la fenêtre.
+                // Seul le parti ouvert est monté : charger ses portraits dès
+                // l'ouverture reste borné et évite les cadres blancs.
+                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="eager" decoding="async" />
               ) : (
                 <span className="carte-photo-absente" aria-hidden="true">
                   Portrait non apparié
@@ -494,15 +596,23 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
           {deputies.length > 0 ? (
             <div className="tiroir-presentoir">
               {deputies.map((dep) => (
-                <DeputyCard
+                <div
+                  className="carte-colonne"
                   key={dep.name}
-                  deputy={dep}
-                  party={openRow.key}
-                  color={openRow.color}
-                  maxAbsTone={maxAbsTone}
-                  flipped={flipped === dep.name}
-                  onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
-                />
+                  style={{ ["--pc" as string]: openRow.color }}
+                >
+                  <DeputyCard
+                    deputy={dep}
+                    party={openRow.key}
+                    color={openRow.color}
+                    maxAbsTone={maxAbsTone}
+                    flipped={flipped === dep.name}
+                    onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
+                  />
+                  {dep.affiliationHistory && (
+                    <ParliamentaryHistory segments={dep.affiliationHistory} />
+                  )}
+                </div>
               ))}
             </div>
           ) : (

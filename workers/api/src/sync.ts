@@ -159,7 +159,7 @@ async function syncTable(
  *
  *  POURQUOI LES TRANCHES : sur le plan gratuit de Workers, un gestionnaire
  *  `scheduled` dispose de 30 s de CPU, mais un gestionnaire `fetch` n'en a que
- *  10 ms. Le cron passe donc les quinze tables d'un coup, tandis qu'un
+ *  10 ms. Le cron passe donc les dix-huit tables d'un coup, tandis qu'un
  *  déclenchement HTTP meurt vers la sixième. Plutôt que de faire dépendre la
  *  fraîcheur du site d'un abonnement, l'appelant HTTP demande quelques tables
  *  à la fois et rappelle jusqu'à épuisement.

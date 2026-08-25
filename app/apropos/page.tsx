@@ -28,7 +28,16 @@ export default function AproposPage() {
             présence dans les débats à l'Assemblée nationale. En mettant ces
             deux dimensions en regard, elle offre une lecture scientifique de la
             façon dont les enjeux émergent, circulent et s'imposent (ou non)
-            dans l'espace public québécois.
+            dans l'espace public québécois. Ce module est une vitrine du projet{" "}
+            <a
+              href="https://ellipse.science/agora-plus/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="apropos-link"
+            >
+              Agora+
+            </a>{" "}
+            du CAPP.
           </p>
         </div>
 

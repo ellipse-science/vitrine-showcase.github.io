@@ -1,7 +1,4 @@
-// Logique de comparaison inter-partis, partagée par la vue principale
-// (AssembleeProfiles.tsx) et l'easter egg (AssembleeBilliard.tsx) : les deux
-// doivent raconter EXACTEMENT la même chose sur un même parti/une même
-// facette, seulement avec une mise en forme différente.
+// Logique de comparaison inter-partis utilisée par les facettes du module.
 //
 // Fichier séparé de lib/data/assemblee.ts (qui lit le JSON via node:fs) :
 // ce module est importé par des Client Components, et un import de valeur
@@ -24,8 +21,7 @@ function fmtWords(n: number): string {
 }
 
 // Chaque chiffre doit rester lisible seul (l'absolu) tout en situant le
-// parti par rapport aux autres (le relatif) — retour utilisateur du
-// 2026-07-24 (jeu de billard).
+// parti par rapport aux autres (le relatif).
 function averageCompare(
   otherValues: number[],
   own: number,
