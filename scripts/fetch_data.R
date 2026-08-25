@@ -156,7 +156,7 @@ build_period_snapshot <- function(rows, party_full_names) {
   period_type  <- as.character(rows$period_type[1])
 
   period_label <- switch(period_type,
-    last_pdq    = paste0("Période de questions du ", period_end),
+    last_pdq    = paste0("Journée de débats du ", period_end),
     session     = paste0("Session ", format(as.Date(period_start), "%Y"),
                          " – ", format(as.Date(period_end), "%Y")),
     legislature = paste0("Législature ", format(as.Date(period_start), "%Y"),
