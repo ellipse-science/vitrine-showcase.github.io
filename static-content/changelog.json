@@ -1,5 +1,11 @@
 [
   {
+    "pr": 583,
+    "date": "2026-08-25T19:27:18Z",
+    "note": "Le module L'alignement de l'Assemblée affiche désormais la législature par défaut. Sous les cartes concernées, un avis date les changements d'affiliation, les élections partielles et les démissions, tandis que les citations restent lisibles et vérifiables.",
+    "version": "2.31.0-beta.0"
+  },
+  {
     "pr": 577,
     "date": "2026-08-25T18:27:01Z",
     "note": "Sur la version de travail du site, un contrôle de sélection média inerte s'affiche désormais dans le module des partis, plutôt qu'un vide. Rien ne change sur le site public : ce module n'y est pas encore visible.",
