@@ -1,5 +1,11 @@
 [
   {
+    "pr": 576,
+    "date": "2026-08-25T17:19:44Z",
+    "note": "Rien ne change sur le site. Cette modification rétablit le nom stable de sa source de données parlementaires.",
+    "version": null
+  },
+  {
     "pr": 542,
     "date": "2026-08-24T19:31:13Z",
     "note": "Le module sur les partis politiques affiche de nouveau des données : le modèle qui les reconnaît dans les articles a été réentraîné. Le Parti conservateur du Québec y fait exception et reste à zéro, faute d'exemples suffisants pour l'identifier de façon fiable.",
