@@ -10,7 +10,7 @@ import { facetResult } from "@/lib/data/assembleeInsights";
 // satellite par député, reliée au dossier par un fil pointillé et
 // dimensionnée selon sa contribution en mots au sein du parti. Cliquer une
 // fiche dévoile le ton et la richesse lexicale du député. Les phrases de
-// comparaison viennent de facetResult — même source que le jeu de billard.
+// comparaison viennent de facetResult, la source commune des facettes du module.
 
 function RichnessDots({ level }: { level: number }) {
   const dots = [];
