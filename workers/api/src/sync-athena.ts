@@ -203,21 +203,7 @@ export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<voi
   }
 }
 
-export async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
-  const hooks: [string, string | undefined][] = [
-    ['prod', env.DEPLOY_HOOK_PROD],
-    ['dev', env.DEPLOY_HOOK_DEV],
-  ]
-  for (const [name, url] of hooks) {
-    if (!url) {
-      console.warn(`hook ${name} absent : aucun build déclenché pour ${name}`)
-      continue
-    }
-    const res = await fetch(url, { method: 'POST' })
-    if (res.status >= 300) throw new Error(`Deploy hook ${name} a répondu ${res.status}`)
-    console.log(`hook ${name} déclenché`)
-  }
-}
+export { triggerDeployHooks } from './deploy-hooks'
 
 export interface SyncAthenaResult {
   synced: TableResult[]

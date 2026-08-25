@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Importé depuis ./transforms, PAS depuis ./sync-athena. Ce fichier-ci est
 // compilé par le tsconfig de la RACINE, qui exclut pourtant `workers/` :
@@ -15,6 +15,9 @@ import {
   polimetreCutoff,
 } from "@/workers/api/src/transforms";
 import { TABLES } from "@/workers/api/src/tables";
+// triggerDeployHooks vit dans son propre module, sans dépendance lourde :
+// l'importer ne tire ni Neon ni aws4fetch dans la compilation racine.
+import { triggerDeployHooks } from "@/workers/api/src/deploy-hooks";
 
 /**
  * Fonctions PURES du sync direct Athena -> Postgres (chaîne émancipée de
@@ -60,5 +63,55 @@ describe("sync-athena — transformations pures", () => {
       expect(t.cols.length).toBeGreaterThan(0);
       expect([null, "headline_events_window", "polimetre_plus_recent"]).toContain(t.filter);
     }
+  });
+});
+
+/**
+ * Deploy hooks — la panne de #570 (prod figée 21→25 août).
+ *
+ * Deux circuits déclenchent les builds à quelques minutes d'intervalle : le
+ * sync Athena (cron :10) et la publication de l'illustration de la Une
+ * (art.ts). Cloudflare répond 304 au second — « un déploiement est déjà en
+ * file » — et l'ancienne version levait dessus. Comme `prod` est appelé en
+ * premier, l'exception emportait aussi le build `dev` : plus rien ne
+ * rebâtissait le site.
+ */
+describe("triggerDeployHooks — un hook n'en bloque pas un autre", () => {
+  const env = (over: Record<string, string | undefined> = {}) =>
+    ({
+      DEPLOY_HOOK_PROD: "https://hook.test/prod",
+      DEPLOY_HOOK_DEV: "https://hook.test/dev",
+      ...over,
+    }) as unknown as Parameters<typeof triggerDeployHooks>[0];
+
+  const stubFetch = (parStatut: Record<string, number>) => {
+    const appels: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      appels.push(url);
+      return new Response(null, { status: parStatut[url] ?? 200 });
+    });
+    return appels;
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("304 sur prod n'est pas un échec, et dev est quand même appelé", async () => {
+    const appels = stubFetch({ "https://hook.test/prod": 304 });
+    await expect(triggerDeployHooks(env())).resolves.toBeUndefined();
+    expect(appels).toEqual(["https://hook.test/prod", "https://hook.test/dev"]);
+  });
+
+  it("un vrai échec sur prod laisse quand même sa chance à dev, puis le signale", async () => {
+    const appels = stubFetch({ "https://hook.test/prod": 500 });
+    await expect(triggerDeployHooks(env())).rejects.toThrow(/prod a répondu 500/);
+    expect(appels).toContain("https://hook.test/dev");
+  });
+
+  it("hook absent : les autres partent, aucune erreur", async () => {
+    const appels = stubFetch({});
+    await expect(
+      triggerDeployHooks(env({ DEPLOY_HOOK_PROD: undefined })),
+    ).resolves.toBeUndefined();
+    expect(appels).toEqual(["https://hook.test/dev"]);
   });
 });
