@@ -54,31 +54,31 @@ const article = (media, titre) => ({
 const PROMESSES = [
   ["CAQ",
    "Un gouvernement de la Coalition avenir Québec réélu portera à 2 000 $ le crédit d'impôt pour la rénovation énergétique des résidences principales, dès le budget suivant l'élection.",
-   "Porter à 2 000 $ le crédit de rénovation énergétique", 0, 14, "environment_and_energy",
+   "Porter à 2 000 $ le crédit de rénovation énergétique", 0, 14, "Environnement et énergie",
    [article("LAP", "Rénovation énergétique : la CAQ hausse son crédit d'impôt"),
     article("LED", "Le crédit de rénovation passerait à 2 000 $"),
     article("JDM", "Habitation | Un crédit bonifié promis par la CAQ")]],
 
   ["PLQ",
    "Un gouvernement libéral abolira la taxe de bienvenue pour l'achat d'une première propriété de moins de 400 000 $.",
-   "Abolir la taxe de bienvenue au premier achat", 1, 9, "economy_and_labour",
+   "Abolir la taxe de bienvenue au premier achat", 1, 9, "Économie et travail",
    [article("LED", "Première propriété : le PLQ promet d'abolir la taxe de bienvenue"),
     article("TVA", "Le PLQ vise les premiers acheteurs")]],
 
   ["QS",
    "Québec solidaire s'engage à construire 25 000 logements réellement abordables au cours du prochain mandat, dont 8 000 en milieu rural.",
-   "Construire 25 000 logements abordables", 2, 6, "culture_and_nationalism",
+   "Construire 25 000 logements abordables", 2, 6, "Culture et nationalisme",
    [article("RCI", "Logement | QS chiffre son plan à 25 000 unités")]],
 
   ["PQ",
    "Un gouvernement du Parti Québécois haussera de 15 % l'enveloppe des services de garde en milieu familial, et créera 3 000 places dès la première année.",
-   "Créer 3 000 places en milieu familial", 3, 4, "health_and_social_services",
+   "Créer 3 000 places en milieu familial", 3, 4, "Santé et politiques sociales",
    [article("JDM", "Services de garde | Le PQ promet 3 000 places"),
     article("LAP", "Garderies : une hausse de 15 % proposée")]],
 
   ["PCQ",
    "Le Parti conservateur du Québec réduira de moitié le délai moyen d'attente en chirurgie d'ici la fin du mandat, en autorisant les cliniques privées à opérer sous couverture publique.",
-   "Réduire de moitié l'attente en chirurgie", 5, 3, "health_and_social_services",
+   "Réduire de moitié l'attente en chirurgie", 5, 3, "Santé et politiques sociales",
    [article("TVA", "Le PCQ veut couper les délais en chirurgie de moitié")]],
 
   // ── Cas limites, que la donnée réelle ne fournit pas ──────────────────────
@@ -86,13 +86,13 @@ const PROMESSES = [
   // avec son dernier mot (cf. PromiseTitle).
   ["QS",
    "Québec solidaire déposera une loi-cadre sur la protection des milieux humides qui interdira toute compensation financière en remplacement d'une restauration effective du milieu détruit.",
-   "Interdire la compensation financière pour les milieux humides détruits", 4, 2, "environment_and_energy",
+   "Interdire la compensation financière pour les milieux humides détruits", 4, 2, "Environnement et énergie",
    [article("LED", "Milieux humides | QS veut interdire la compensation en argent")]],
 
   // Aucun article : le bloc « À lire sur » doit simplement disparaître.
   ["PQ",
    "Le Parti Québécois rendra gratuit le transport collectif pour les personnes de 65 ans et plus dans l'ensemble des sociétés de transport du Québec.",
-   "Rendre le transport gratuit à 65 ans et plus", 6, 1, "culture_and_nationalism", []],
+   "Rendre le transport gratuit à 65 ans et plus", 6, 1, "Culture et nationalisme", []],
 
   // Aucune catégorie d'enjeu : le raffineur publie "NA" quand aucun thème n'a
   // franchi son seuil. Cas NORMAL, pas une panne — les seuils sont calibrés sur

@@ -42,7 +42,7 @@ const ligne = (o: Partial<Record<string, unknown>> = {}) => ({
   promesse_id: "pn-aaaaaaaaaaaa",
   party_id: "QS",
   label: "Injecter 7 M$ pour accélérer le traitement des dossiers",
-  category: "health_and_social_services",
+  category: "Santé et politiques sociales",
   promesse_text:
     "Injecter 7 millions de dollars supplémentaires pour accélérer le traitement des dossiers;",
   announce_date: "2026-09-03",
@@ -107,9 +107,9 @@ describe("chargeur des promesses neuves", () => {
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-ok"]);
   });
 
-  it("rend la clé d'enjeu quand le raffineur en publie une", async () => {
+  it("rend le libellé d'enjeu quand le raffineur en publie un", async () => {
     const d = await charger([ligne()]);
-    expect(d!.ranges.day[0].enjeu).toBe("health_and_social_services");
+    expect(d!.ranges.day[0].enjeu).toBe("Santé et politiques sociales");
   });
 
   // L'enjeu est un ENRICHISSEMENT, pas une condition de publication — contrairement
@@ -123,7 +123,7 @@ describe("chargeur des promesses neuves", () => {
   });
 
   it("garde la promesse quand l'enjeu sort des douze catégories", async () => {
-    const d = await charger([ligne({ category: "hockey_et_poutine" })]);
+    const d = await charger([ligne({ category: "Hockey et poutine" })]);
     expect(d!.ranges.day).toHaveLength(1);
     expect(d!.ranges.day[0].enjeu).toBeNull();
   });

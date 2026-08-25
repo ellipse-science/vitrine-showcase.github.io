@@ -51,7 +51,7 @@ const neuve = (o: Partial<Neuve> = {}): Neuve => ({
   verbatim:
     "Injecter 7 millions de dollars supplémentaires pour accélérer le traitement des dossiers;",
   parti: "qs" as const,
-  enjeu: "health_and_social_services",
+  enjeu: "Santé et politiques sociales",
   announceDate: "2026-09-03",
   sourceUrl: "https://quebecsolidaire.net/communique/plan-habitation",
   sourceTitle: "Québec solidaire lance un Plan Habitation",

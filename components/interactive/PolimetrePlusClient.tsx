@@ -21,7 +21,7 @@ import {
 } from "@/lib/data/polimetre-meta";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { ShareButton } from "@/components/interactive/ShareButton";
-import { ISSUE_COLORS, ISSUE_LABELS_SHORT, COULEUR_ENJEU_DEFAUT } from "@/lib/enjeux";
+import { couleurEnjeu } from "@/lib/enjeux";
 
 // Number of promises shown at once — the maquette has five spots.
 const TOP_N = 5;
@@ -139,10 +139,13 @@ function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: st
  * fermeture à maintenir en parallèle, pour un composant dont l'accessibilité
  * est la partie délicate.
  *
- * Les deux modes ne filtrent PAS sur la même chose : « 2022 » filtre sur un
- * LIBELLÉ français codé à la main dans la mastersheet, la campagne sur une CLÉ
- * d'enjeu inférée. D'où le couple {value, label} plutôt qu'une liste de
- * chaînes — la valeur filtre, le libellé s'affiche. */
+ * Les deux modes filtrent sur la MÊME chose : le libellé français de l'enjeu,
+ * l'un des 12. Seule leur PROVENANCE diffère — codée à la main dans la
+ * mastersheet pour « 2022 », inférée du texte pour la campagne.
+ *
+ * Le couple {value, label} survit à cette unification : il coûte peu et laisse
+ * la porte ouverte à une source dont la valeur de filtre ne serait pas ce qu'on
+ * affiche. */
 function EnjeuDropdown({
   value,
   onChange,
@@ -555,12 +558,10 @@ function NeuvesView({
     const present = new Set(
       promesses.map((p) => p.enjeu).filter((e): e is string => !!e),
     );
-    return Object.keys(ISSUE_LABELS_SHORT)
-      .map((cle) => ({
-        value: cle,
-        label: ISSUE_LABELS_SHORT[cle],
-        present: present.has(cle),
-      }))
+    // MÊME liste que le mode « 2022 » : les 12 libellés canoniques. Une seule
+    // source d'ordre pour les deux modes, sinon ils divergeraient.
+    return CATEGORY_ORDER
+      .map((libelle) => ({ value: libelle, label: libelle, present: present.has(libelle) }))
       .sort((a, b) => a.label.localeCompare(b.label, "fr"));
   }, [promesses]);
 
@@ -760,12 +761,12 @@ function NeuvesView({
                               <span
                                 className="ppl-enjeu-puce"
                                 style={{
-                                  backgroundColor: ISSUE_COLORS[p.enjeu] ?? COULEUR_ENJEU_DEFAUT,
+                                  backgroundColor: couleurEnjeu(p.enjeu),
                                 }}
                                 aria-hidden="true"
                               />
                               <span className="ppl-enjeu-label">
-                                Enjeu probable&nbsp;: {ISSUE_LABELS_SHORT[p.enjeu]}
+                                Enjeu probable&nbsp;: {p.enjeu}
                               </span>
                               <InfoTip size="sm" label="Enjeu probable">
                                 Cet enjeu est déterminé automatiquement à partir du texte de la

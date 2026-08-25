@@ -17,7 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
-import { ISSUE_LABELS_SHORT } from "@/lib/enjeux";
+import { COULEUR_PAR_LIBELLE } from "@/lib/enjeux";
 import { readDatasetText } from "@/lib/data/source";
 import {
   partiKeyFromId,
@@ -124,12 +124,15 @@ function toView(r: Row): PromesseNeuveView | null {
   const parti = partiKeyFromId(r.party_id);
   if (!parti) return null;
 
-  // Une clé d'enjeu hors des douze s'afficherait sans libellé ni couleur. Le
-  // raffineur valide déjà la sienne ; ceci est la ceinture, comme pour le parti.
-  // La différence est le TRAITEMENT : un parti inconnu écarte la promesse (elle
-  // ne relève pas de la mesure), un enjeu inconnu lui retire seulement sa puce.
+  // Un libellé d'enjeu hors des douze s'afficherait sans couleur. Le raffineur
+  // valide déjà le sien ; ceci est la ceinture, comme pour le parti. La
+  // différence est le TRAITEMENT : un parti inconnu écarte la promesse (elle ne
+  // relève pas de la mesure), un enjeu inconnu lui retire seulement sa puce.
+  //
+  // C'est le LIBELLÉ FRANÇAIS qui est publié, comme dans le mode « 2022 » — les
+  // deux tables disent la même chose de la même façon.
   const brut = realText(r.category);
-  const enjeu = brut && brut in ISSUE_LABELS_SHORT ? brut : null;
+  const enjeu = brut && brut in COULEUR_PAR_LIBELLE ? brut : null;
 
   return {
     promesseId: r.promesse_id,
