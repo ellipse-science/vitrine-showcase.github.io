@@ -1,5 +1,11 @@
 [
   {
+    "pr": 586,
+    "date": "2026-08-25T19:54:06Z",
+    "note": "Ajout d'un lien et d'une section de présentation vers le projet Agora+ dans le pied de page et dans la section d'introduction de la page À propos.",
+    "version": "2.31.0-beta.1"
+  },
+  {
     "pr": 582,
     "date": "2026-08-25T19:41:06Z",
     "note": "Le site pouvait rester affiché sur une édition ancienne pendant des heures, même quand les nouvelles analyses étaient prêtes : deux mises à jour lancées à quelques minutes d'intervalle se gênaient l'une l'autre et la publication était abandonnée. Chacune suit désormais son cours, et la page se renouvelle comme prévu.",
