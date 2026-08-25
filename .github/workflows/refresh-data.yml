@@ -2,9 +2,11 @@ name: Refresh Data
 
 # ⚠️ CE QUI DÉCLENCHE CE WORKFLOW, ET CE QUI NE LE DÉCLENCHE PLUS.
 # Jusqu'au 2026-08-19, il était appelé 6×/jour par cron-job.org (POST sur
-# l'API de dispatch). CE N'EST PLUS LE CAS depuis la bascule décrite plus bas.
-# Il ne reste que le `schedule:` hebdomadaire ci-dessous et le déclenchement
-# à la main.
+# l'API de dispatch) — CE N'EST PLUS LE CAS, et son compte peut être fermé.
+# Ce qui le déclenche aujourd'hui, et rien d'autre : le `schedule:` ci-dessous
+# et le déclenchement à la main. Sa cadence a bougé deux fois en dix jours
+# (6×/jour → hebdomadaire le 19-08, puis 6×/jour de nouveau le 25-08) : ce bloc
+# et la ligne `cron:` doivent donc toujours bouger ensemble.
 #
 # Le commentaire qui tenait cette place décrivait encore le montage cron-job.org
 # et affirmait « no schedule: trigger ». Il était faux depuis dix jours, et il a
@@ -12,19 +14,40 @@ name: Refresh Data
 # a cherché la panne d'un déclencheur externe qui n'existait plus. Un commentaire
 # périmé sur un déclencheur coûte plus cher qu'un commentaire absent.
 
-# BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
-# rafraîchissement vit dans le Worker Cloudflare (crons :56 et :10,
-# sync-athena.ts — cf. wrangler.toml).
-# Il reste un FILET hebdomadaire : il garde les JSON commités (source de
-# repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
-# n'a plus à l'appeler ; son compte peut être fermé.
+# BASCULE 2026-08-19 : ce workflow n'était plus le chemin critique — le
+# rafraîchissement devait vivre dans le Worker Cloudflare (crons :56 et :10,
+# sync-athena.ts — cf. wrangler.toml) et le build venir du Deploy Hook ou de
+# l'intégration Git de Pages.
+#
+# REPRISE 2026-08-25 (#570) : mesuré, ce chemin ne rebâtit pas la prod. Le
+# Worker synchronise bien Athena -> Neon, mais entre le 21 et le 25 août
+# AUCUN build prod n'est parti tout seul : le site a servi des données vieilles
+# de 25 h, et il a fallu deux `workflow_dispatch` à la main pour le dégeler.
+# Tant que les questions 1-3 de #570 (Deploy Hooks, intégration Git de Pages,
+# cron-job.org) ne sont pas tranchées, ce workflow REDEVIENT le filet réel :
+# il tourne sur la grille des blocs et déclenche lui-même le déploiement.
+# Le filet ne remplace pas le Worker ; il garantit seulement qu'un site figé
+# se répare sans intervention humaine.
+#
+# SURVEILLANCE 2026-08-30 (#628) : ce filet n'est plus le seul garde-fou, et
+# surtout il n'est plus celui qui SURVEILLE. `garde-fraicheur.yml` mesure
+# toutes les heures la Une réellement servie par la prod et ouvre une issue
+# au-delà de 7 h — depuis un workflow séparé, donc elle continue de mesurer
+# même quand celui-ci ne tourne pas. C'était précisément le trou de #412 :
+# l'alarme de fraîcheur vivait ICI, en step, et s'éteignait avec la panne
+# qu'elle devait détecter. Ne pas l'y ramener.
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * 1' # lundi 12:00 UTC, filet hebdomadaire
+    # 6x/jour, 50 min après chaque publication de bloc (grille {3,7,11,15,19,23}
+    # heure de Montréal = {7,11,15,19,23,3} UTC en été). Le cron GitHub peut
+    # dériver de quelques minutes : sans importance ici, le site n'a qu'à ne
+    # jamais rester figé une journée.
+    - cron: '50 1,5,9,13,17,21 * * *'
 
 permissions:
   contents: read
+  actions: write   # déclencher deploy-prod.yml après une synchro de données (#570)
 
 concurrency:
   group: refresh-data
@@ -348,7 +371,23 @@ jobs:
           else
             git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [prod data sync]"
             git push origin prod
+            echo "prod_sync=1" >> "$GITHUB_ENV"
           fi
+
+      # Le push sur `prod` ne déclenche RIEN par lui-même (deploy-prod.yml n'a
+      # plus de `on: push`, et l'intégration Git de Pages n'a produit aucun
+      # build entre le 21 et le 25 août — c'est le trou de #570). On demande
+      # donc explicitement le build, et seulement quand des données ont
+      # réellement changé : pas de build à vide, pas de double build.
+      - name: Déclencher le build prod (si les données ont bougé)
+        if: env.prod_sync == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-prod.yml --repo "$GITHUB_REPOSITORY" --ref prod \
+            && echo "build prod demandé" \
+            || echo "::warning::le build prod n'a pas pu être déclenché — lancer deploy-prod.yml à la main"
+
 
       # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
       # alerte de sonar vitrine, pas du bruit cosmétique.
