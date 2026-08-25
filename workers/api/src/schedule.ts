@@ -40,14 +40,31 @@ export function isTargetHourInNY(now: Date): boolean {
 }
 
 /** Heures visées du sync DIRECT Athena (chaîne émancipée de GitHub), en heure
- *  de New York : minute 10 de l'heure qui SUIT la fin de cascade des
- *  raffineurs ({23,03,07,11,15,19} Montréal, dernier étage vers :57). Même
- *  double-jeu été/hiver que ci-dessus, même garde-fou. */
-export const ATHENA_TARGET_HOURS_NY = [0, 4, 8, 12, 16, 20]
+ *  de New York.
+ *
+ *  DÉCALAGE 2026-08-25 (#570) : le sync tournait à la minute :10 de l'heure
+ *  SUIVANT l'édition — 12h10 pour l'édition du midi, plus 6 à 8 min de build :
+ *  le site ne l'affichait que vers 12h18 (mesuré le 21-08, « l'édition de 16h
+ *  en ligne ~16h20-16h24 »). Il vise maintenant la minute :56 de l'heure qui
+ *  PRÉCÈDE — 11h56 pour l'édition du midi : le dernier étage de la cascade
+ *  (radar-event-salience, :51) a publié vers :53, et le build a le temps de
+ *  finir autour de l'heure pile.
+ *
+ *  Les heures visées reculent donc d'une heure — {23,3,7,11,15,19} au lieu de
+ *  {0,4,8,12,16,20} — et le cron passe de :10 à :56 dans wrangler.toml. Le
+ *  garde-fou été/hiver ne change pas de principe : c'est `Intl` qui sait si
+ *  New York est à UTC-4 ou UTC-5.
+ *
+ *  Le cron :10 est CONSERVÉ en filet : si la cascade a pris du retard et
+ *  n'avait rien publié à :56, la passe suivante rattrape 14 minutes plus tard.
+ *  C'est ce double appel qui rendait le hook 304 fatal — corrigé dans la même
+ *  série (#582), donc sans danger désormais. */
+export const ATHENA_TARGET_HOURS_NY = [23, 3, 7, 11, 15, 19]
 
-/** Heures UTC enregistrées pour le sync Athena (minute 10). Doit rester
- *  d'accord avec `crons` dans wrangler.toml. */
-export const ATHENA_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
+/** Heures UTC enregistrées pour le sync Athena. Doit rester d'accord avec
+ *  `crons` dans wrangler.toml : {23,3,7,11,15,19} à New York = ces douze
+ *  heures UTC, été et hiver confondus. */
+export const ATHENA_REGISTERED_UTC_HOURS = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23]
 
 export function isAthenaTargetHourInNY(now: Date): boolean {
   return ATHENA_TARGET_HOURS_NY.includes(hourInNY(now))

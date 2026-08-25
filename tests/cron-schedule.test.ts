@@ -55,11 +55,37 @@ describe("cron de l'API — horaire fixe à New York", () => {
   });
 });
 
-/** Même parade pour le sync DIRECT Athena (cron de la minute :10, chaîne
- *  émancipée de GitHub) : heures visées {0,4,8,12,16,20} à New York. */
+/** Même parade pour le sync DIRECT Athena (chaîne émancipée de GitHub) :
+ *  depuis #570, la passe utile est celle de la minute :56 de l'heure qui
+ *  PRÉCÈDE l'édition — heures visées {23,3,7,11,15,19} à New York, pour que le
+ *  build soit fini autour de l'heure pile plutôt que 18 minutes après. */
 function firedAthenaHoursNY(dateISO: string): number[] {
-  return ATHENA_REGISTERED_UTC_HOURS
-    .map((h) => new Date(`${dateISO}T${String(h).padStart(2, "0")}:10:00Z`))
+  // On compte les déclenchements d'une JOURNÉE DE NEW YORK, pas d'une journée
+  // UTC : depuis #570 la première passe vise 23h locales, dont l'heure UTC
+  // tombe le lendemain une partie de l'année. Compter par fenêtre UTC ferait
+  // apparaître un trou là où il n'y en a pas. On balaie donc deux journées
+  // UTC et on ne garde que ce qui tombe le jour NY demandé.
+  const jourNY = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  const veille = new Date(`${dateISO}T00:00:00Z`);
+  veille.setUTCDate(veille.getUTCDate() - 1);
+  const lendemain = new Date(`${dateISO}T00:00:00Z`);
+  lendemain.setUTCDate(lendemain.getUTCDate() + 1);
+  const jours = [veille, new Date(`${dateISO}T00:00:00Z`), lendemain].map(
+    (d) => d.toISOString().slice(0, 10),
+  );
+  return jours
+    .flatMap((j) =>
+      ATHENA_REGISTERED_UTC_HOURS.map(
+        (h) => new Date(`${j}T${String(h).padStart(2, "0")}:56:00Z`),
+      ),
+    )
+    .filter((d) => jourNY(d) === dateISO)
     .filter(isAthenaTargetHourInNY)
     .map(hourInNY)
     .sort((a, b) => a - b);
@@ -74,6 +100,14 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
 
   it("déclenche aux mêmes heures locales en heure normale (hiver)", () => {
     expect(firedAthenaHoursNY("2027-01-15")).toEqual(EXPECTED_ATHENA);
+  });
+
+  it("vise l'heure qui PRÉCÈDE chaque édition, pour finir le build à l'heure pile", () => {
+    // Les éditions tombent à {0,4,8,12,16,20} heure de Montréal. Chaque heure
+    // visée doit être l'heure d'AVANT : sync à 11h56 pour l'édition du midi.
+    const editions = [0, 4, 8, 12, 16, 20];
+    const attendu = editions.map((h) => (h + 23) % 24).sort((a, b) => a - b);
+    expect([...ATHENA_TARGET_HOURS_NY].sort((a, b) => a - b)).toEqual(attendu);
   });
 
   it("ne saute ni ne double aucune exécution les nuits de bascule", () => {
