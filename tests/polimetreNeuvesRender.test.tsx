@@ -43,12 +43,15 @@ const polimetre: PolimetreData = {
   },
 };
 
-const neuve = (o: Partial<PromessesNeuvesData["ranges"]["day"][number]> = {}) => ({
+type Neuve = PromessesNeuvesData["ranges"]["day"][number];
+
+const neuve = (o: Partial<Neuve> = {}): Neuve => ({
   promesseId: "pn-aaaaaaaaaaaa",
   title: "Injecter 7 M$ pour accélérer le traitement des dossiers",
   verbatim:
     "Injecter 7 millions de dollars supplémentaires pour accélérer le traitement des dossiers;",
   parti: "qs" as const,
+  enjeu: "health_and_social_services",
   announceDate: "2026-09-03",
   sourceUrl: "https://quebecsolidaire.net/communique/plan-habitation",
   sourceTitle: "Québec solidaire lance un Plan Habitation",

@@ -21,6 +21,7 @@ import {
 } from "@/lib/data/polimetre-meta";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { ISSUE_COLORS, ISSUE_LABELS_SHORT, COULEUR_ENJEU_DEFAUT } from "@/lib/enjeux";
 
 // Number of promises shown at once — the maquette has five spots.
 const TOP_N = 5;
@@ -677,6 +678,29 @@ function NeuvesView({
                             </InfoTip>
                           </p>
                           <blockquote className="ppl-detail__verbatim">{p.verbatim}</blockquote>
+                          {/* La catégorie d'enjeu est INFÉRÉE ici, alors que celle du mode
+                              « 2022 » est codée à la main. Le libellé le dit (« Enjeu
+                              probable ») plutôt que de laisser croire à un codage humain :
+                              une promesse sans enjeu reconnu n'affiche simplement rien. */}
+                          {p.enjeu && (
+                            <p className="ppl-detail__enjeu">
+                              <span
+                                className="ppl-enjeu-puce"
+                                style={{
+                                  backgroundColor: ISSUE_COLORS[p.enjeu] ?? COULEUR_ENJEU_DEFAUT,
+                                }}
+                                aria-hidden="true"
+                              />
+                              <span className="ppl-enjeu-label">
+                                Enjeu probable&nbsp;: {ISSUE_LABELS_SHORT[p.enjeu]}
+                              </span>
+                              <InfoTip size="sm" label="Enjeu probable">
+                                Cet enjeu est déterminé automatiquement à partir du texte de la
+                                promesse. Il n&apos;a pas été attribué par une personne,
+                                contrairement à ceux des promesses de 2022.
+                              </InfoTip>
+                            </p>
+                          )}
                           <p className="ppl-detail__meta">
                             Annoncée le {formatAnnonce(p.announceDate)}
                             {p.nMentions > 0 ? (

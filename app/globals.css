@@ -7379,6 +7379,36 @@
     margin: 0 0 10px;
   }
 
+  /* Enjeu du mode « campagne ». Même graisse et même échelle que .ppl-detail__meta
+     — c'est de la métadonnée, pas un titre. La pastille de couleur reprend
+     ISSUE_COLORS, comme les autres modules d'enjeux. */
+  .ppl-detail__enjeu {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+
+  .ppl-enjeu-puce {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* min-width:0 : sans lui, un libellé long (« Droits, libertés, minorités et
+     discrimination ») refuse de se couper et pousse la ligne hors du panneau
+     sur téléphone. */
+  .ppl-enjeu-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
     .ppl-rail-head::after { display: none; }

@@ -148,6 +148,12 @@ export type PromesseNeuveView = {
   verbatim: string;
   /** Toujours l'un des cinq partis suivis : le chargeur écarte les autres. */
   parti: PartiKey;
+  /** Clé d'enjeu (l'une des 12 d'ISSUE_COLORS), ou null quand le raffineur n'a
+   *  pas tranché. INFÉRÉE, contrairement au mode « 2022 » dont la catégorie est
+   *  codée à la main dans la mastersheet du Polimètre — d'où le libellé « enjeu
+   *  probable » à l'affichage. null est un cas NORMAL, pas une panne : la
+   *  promesse s'affiche alors sans puce d'enjeu. */
+  enjeu: string | null;
   /** Date d'annonce (ISO), = date du communiqué. */
   announceDate: string;
   /** Lien vers le communiqué source. */

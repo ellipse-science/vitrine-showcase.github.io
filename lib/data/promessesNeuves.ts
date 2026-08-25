@@ -17,6 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { lastUpdatedLabel } from "@/lib/dates";
+import { ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { readDatasetText } from "@/lib/data/source";
 import {
   partiKeyFromId,
@@ -48,6 +49,7 @@ type Row = {
   promesse_id: string;
   party_id: string;
   label: string;
+  category: string; // clé d'ISSUE_COLORS, ou "NA"
   promesse_text: string;
   announce_date: string;
   release_url: string;
@@ -122,11 +124,19 @@ function toView(r: Row): PromesseNeuveView | null {
   const parti = partiKeyFromId(r.party_id);
   if (!parti) return null;
 
+  // Une clé d'enjeu hors des douze s'afficherait sans libellé ni couleur. Le
+  // raffineur valide déjà la sienne ; ceci est la ceinture, comme pour le parti.
+  // La différence est le TRAITEMENT : un parti inconnu écarte la promesse (elle
+  // ne relève pas de la mesure), un enjeu inconnu lui retire seulement sa puce.
+  const brut = realText(r.category);
+  const enjeu = brut && brut in ISSUE_LABELS_SHORT ? brut : null;
+
   return {
     promesseId: r.promesse_id,
     title,
     verbatim,
     parti,
+    enjeu,
     announceDate: String(r.announce_date ?? ""),
     sourceUrl: (r.release_url ?? "").trim(),
     sourceTitle: cleanText(r.release_title),
