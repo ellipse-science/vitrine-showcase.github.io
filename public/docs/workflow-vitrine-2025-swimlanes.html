@@ -1541,9 +1541,9 @@
                         'threshold - Seuil d\'éclipse (0.02).'
                     ],
                     details: [
-                        '📋 9 tables publiées : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu)',
+                        '📋 15 tables publiées (aws-refiners#324) : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date)',
                         '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
-                        '🌐 Consommées par la Vitrine : les <strong>5 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday et parties_issues_salient_shadow_day — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 4 fédérales (day/week/month, _intraday) sont produites mais non lues.'
+                        '🌐 Consommées par la Vitrine : les <strong>5 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday et parties_issues_salient_shadow_day — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 4 fédérales (day/week/month, _intraday) sont produites mais non lues. Les 6 tables _by_media_ (aws-refiners#324) ne sont PAS encore dans la liste blanche : le fader du module affiche un repli inerte (vitrine#577) en attendant que le sélecteur de média soit branché sur ces tables.'
                     ]
                 },
                 'parties_score_legacy': {
