@@ -52,8 +52,8 @@ describe("sync-athena — transformations pures", () => {
     expect(polimetreCutoff([null, "n/a"])).toBeNull();
   });
 
-  it("whitelist embarquée : 15 tables, champs requis, filtres connus", () => {
-    expect(TABLES).toHaveLength(15);
+  it("whitelist embarquée : 18 tables, champs requis, filtres connus", () => {
+    expect(TABLES).toHaveLength(18);
     for (const t of TABLES) {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.athena.length).toBeGreaterThan(0);
