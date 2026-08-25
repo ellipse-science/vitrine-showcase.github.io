@@ -147,7 +147,7 @@ function EnjeuDropdown({
   value,
   onChange,
   options,
-  allLabel = "Toutes les catégories",
+  allLabel = "Tous les enjeux",
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -674,7 +674,6 @@ function NeuvesView({
             value={enjeu}
             onChange={setEnjeu}
             options={enjeuItems}
-            allLabel="Tous les enjeux"
           />
 
           {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
