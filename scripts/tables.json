@@ -60,7 +60,7 @@
     },
     {
       "name": "agora_decideurs_qc_deputes",
-      "athena": "agora_datamart-agora_decideurs_qc_deputes_v2",
+      "athena": "agora_datamart-agora_decideurs_qc_deputes",
       "out": "public/data/agora/agora_decideurs_qc_deputes.json",
       "cols": [
         "period_type",

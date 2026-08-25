@@ -277,16 +277,19 @@ export function PartisCouvertureClient({
         </div>
       </div>
 
-      {/* Le fader reste EN PLACE quand la mesure est suspendue.
-          Il ne s'affichait que si la ventilation par média était publiée — ce
-          qu'elle n'est pas en production — et le module perdait donc encore de
-          la hauteur dans l'état sans donnée.
-          Le panel de médias est une CONSTANTE, connue indépendamment de toute
-          donnée : on peut donc le montrer. Inerte, parce qu'il n'y a rien à
-          filtrer, et le dire vaut mieux que de le faire disparaître. */}
+      {/* Le fader reste EN PLACE tant que la ventilation par média n'est pas
+          publiée (aws-refiners#324) — QUE la mesure soit suspendue ou non.
+          La condition portait sur `data.indisponible` : elle affichait le
+          repli inerte pendant la suspension, puis se réduisait à `null` dès
+          que #542 a levé le drapeau, alors que la VRAIE raison de l'absence
+          — pas de ventilation par média — n'avait pas changé. Le fader
+          disparaissait donc précisément au moment où le module redevenait
+          actif. Le panel de médias est une CONSTANTE, connue indépendamment
+          de toute donnée : on peut le montrer. Inerte, parce qu'il n'y a rien
+          à filtrer, et le dire vaut mieux que de le faire disparaître. */}
       {data.medias.length > 0 ? (
         <Fader medias={data.medias} valeur={media} onChange={setMedia} />
-      ) : data.indisponible ? (
+      ) : (
         <Fader
           medias={MEDIA_ORDER.filter((id) => id !== TOUS_MEDIAS).map((id) => ({
             id,
@@ -296,7 +299,7 @@ export function PartisCouvertureClient({
           onChange={() => {}}
           inerte
         />
-      ) : null}
+      )}
       </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
