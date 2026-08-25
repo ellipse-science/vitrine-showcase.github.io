@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ATHENA_FILET_HOURS_NY,
+  ATHENA_FILET_REGISTERED_UTC_HOURS,
   ATHENA_REGISTERED_UTC_HOURS,
   ATHENA_TARGET_HOURS_NY,
   REGISTERED_UTC_HOURS,
@@ -8,6 +10,7 @@ import {
   hourInNY,
   isAthenaTargetHourInNY,
   isTargetHourInNY,
+  shouldRunAthenaSync,
 } from "@/workers/api/src/schedule";
 
 /**
@@ -100,6 +103,31 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
 
   it("déclenche aux mêmes heures locales en heure normale (hiver)", () => {
     expect(firedAthenaHoursNY("2027-01-15")).toEqual(EXPECTED_ATHENA);
+  });
+
+  it("la passe :56 déclenche le sync, la passe :10 aussi, et rien d'autre", () => {
+    // Le garde ne peut PAS se contenter de l'heure : les deux passes n'ont pas
+    // le même calage. C'est le bug que la première version de cette PR
+    // introduisait — un cron :56 qu'aucune branche ne lisait, et un filet :10
+    // que le garde rejetait. Ici on vérifie les deux passes ET leur exclusivité.
+    const aMinute = (iso: string) => new Date(iso);
+    // 11h56 à New York en été = 15h56 UTC : passe utile, heure visée 11.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:56:00Z"))).toBe(true);
+    // 12h10 à New York = 16h10 UTC : passe filet, heure visée 12.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:10:00Z"))).toBe(true);
+    // 12h56 : ni l'une ni l'autre — 12 n'est pas une heure visée de la passe :56.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:56:00Z"))).toBe(false);
+    // 11h10 : la passe filet ne vise pas 11 non plus.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:10:00Z"))).toBe(false);
+    // Une minute qui n'appartient à aucune passe ne déclenche jamais rien.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:30:00Z"))).toBe(false);
+  });
+
+  it("le filet garde le calage de l'heure DE l'édition", () => {
+    // Sinon il ne rattrape rien : il sert précisément les cycles où la cascade
+    // n'avait rien publié à :56, donc il doit repasser APRÈS l'heure d'édition.
+    expect([...ATHENA_FILET_HOURS_NY].sort((a, b) => a - b)).toEqual([0, 4, 8, 12, 16, 20]);
+    expect(ATHENA_FILET_REGISTERED_UTC_HOURS).toHaveLength(ATHENA_FILET_HOURS_NY.length * 2);
   });
 
   it("vise l'heure qui PRÉCÈDE chaque édition, pour finir le build à l'heure pile", () => {

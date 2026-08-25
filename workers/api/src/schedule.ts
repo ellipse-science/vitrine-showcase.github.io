@@ -69,3 +69,34 @@ export const ATHENA_REGISTERED_UTC_HOURS = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 2
 export function isAthenaTargetHourInNY(now: Date): boolean {
   return ATHENA_TARGET_HOURS_NY.includes(hourInNY(now))
 }
+
+/** Heures visées de la passe FILET (minute :10), en heure de New York.
+ *
+ *  Le filet garde l'ancien calage — l'heure DE l'édition — parce qu'il sert
+ *  précisément les cycles où la cascade des raffineurs n'avait rien publié à
+ *  :56 : il repasse 14 minutes plus tard, une fois l'édition en place.
+ *
+ *  Les deux passes ont donc des heures visées DIFFÉRENTES, et c'est la minute
+ *  du déclenchement qui dit laquelle appliquer (voir `scheduled()` dans
+ *  index.ts). Confondre les deux stérilise le filet : avec les heures de la
+ *  passe :56, le garde rejetterait toutes les exécutions de :10. */
+export const ATHENA_FILET_HOURS_NY = [0, 4, 8, 12, 16, 20]
+
+/** Heures UTC enregistrées pour la passe filet (minute :10). */
+export const ATHENA_FILET_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
+
+export function isAthenaFiletHourInNY(now: Date): boolean {
+  return ATHENA_FILET_HOURS_NY.includes(hourInNY(now))
+}
+
+/** Minutes auxquelles le sync Athena tourne : la passe utile et son filet. */
+export const ATHENA_SYNC_MINUTES = [56, 10] as const
+
+/** Le déclenchement courant doit-il lancer le sync Athena ? Répond en tenant
+ *  compte de la MINUTE (quelle passe) ET de l'heure locale (le bon calage). */
+export function shouldRunAthenaSync(now: Date): boolean {
+  const minute = now.getUTCMinutes()
+  if (minute === 56) return isAthenaTargetHourInNY(now)
+  if (minute === 10) return isAthenaFiletHourInNY(now)
+  return false
+}
