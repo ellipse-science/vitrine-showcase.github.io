@@ -1,5 +1,11 @@
 [
   {
+    "pr": 585,
+    "date": "2026-08-25T20:15:09Z",
+    "note": "Section inchangée — cette PR ne change encore rien pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 586,
     "date": "2026-08-25T19:54:06Z",
     "note": "Ajout d'un lien et d'une section de présentation vers le projet Agora+ dans le pied de page et dans la section d'introduction de la page À propos.",
