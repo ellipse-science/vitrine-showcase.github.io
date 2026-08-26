@@ -306,7 +306,7 @@ export default {
       // et le cron ne sert plus que de filet.
       //
       // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
-      // c'est une écriture qui remplace le contenu de dix-huit tables.
+      // c'est une écriture qui remplace le contenu de dix-neuf tables.
       if (segments[0] === 'v1' && segments[1] === 'sync') {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
