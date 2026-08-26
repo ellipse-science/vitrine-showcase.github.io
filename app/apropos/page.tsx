@@ -155,6 +155,10 @@ export default function AproposPage() {
                   <span className="apropos-member-role">Programmeur</span>
                 </li>
                 <li className="apropos-member">
+                  <span className="apropos-member-name">Patrick Poncet</span>
+                  <span className="apropos-member-role">Développeur et ingénieur de données</span>
+                </li>
+                <li className="apropos-member">
                   <span className="apropos-member-name">Marc-Antoine Martel</span>
                   <span className="apropos-member-role">Chercheur postdoctoral</span>
                 </li>
