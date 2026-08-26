@@ -1,5 +1,11 @@
 [
   {
+    "pr": 596,
+    "date": "2026-08-26T17:58:45Z",
+    "note": "Mise à jour des pages techniques qui expliquent quand et comment les données du site sont mises à jour. Elles précisent que deux traitements de la section Assemblée restent actifs seulement en environnement de développement.",
+    "version": null
+  },
+  {
     "pr": 590,
     "date": "2026-08-26T17:21:00Z",
     "note": "Rien ne change sur le site : cette mise à jour ajoute un mécanisme interne pour publier plus facilement les améliorations du service qui alimente le site en données.",
