@@ -1,0 +1,1886 @@
+[
+  {
+    "pr": 593,
+    "date": "2026-08-26T18:38:26Z",
+    "note": "Section inchangée — fichier généré, aucun changement visiteur.",
+    "version": null
+  },
+  {
+    "pr": 580,
+    "date": "2026-08-26T18:33:54Z",
+    "note": "Rien ne change sur le site. La documentation technique de nos pipelines est mise à jour pour décrire de nouvelles données qui mesurent, média par média, la place accordée à chaque parti politique.",
+    "version": null
+  },
+  {
+    "pr": 596,
+    "date": "2026-08-26T17:58:45Z",
+    "note": "Mise à jour des pages techniques qui expliquent quand et comment les données du site sont mises à jour. Elles précisent que deux traitements de la section Assemblée restent actifs seulement en environnement de développement.",
+    "version": null
+  },
+  {
+    "pr": 590,
+    "date": "2026-08-26T17:21:00Z",
+    "note": "Rien ne change sur le site : cette mise à jour ajoute un mécanisme interne pour publier plus facilement les améliorations du service qui alimente le site en données.",
+    "version": null
+  },
+  {
+    "pr": 589,
+    "date": "2026-08-26T16:58:00Z",
+    "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle décrive fidèlement la façon dont les éditions sont préparées et mises en ligne.",
+    "version": null
+  },
+  {
+    "pr": 588,
+    "date": "2026-08-26T16:14:28Z",
+    "note": "Le lien et la mention du projet Agora+ ont été repositionnés pour cibler spécifiquement le module de l'Assemblée nationale (page À propos et pied de page). Modifications : - **Page À propos** : Déplacement de la mention/lien du paragraphe d'introduction générale vers le paragraphe décrivant les débats de l'Assemblée nationale. - **Footer** : Remplacement de « Ce module est une vitrine... » par «…",
+    "version": null
+  },
+  {
+    "pr": 594,
+    "date": "2026-08-26T14:51:57Z",
+    "note": "Section inchangée — cette PR ne change rien pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 584,
+    "date": "2026-08-26T00:45:56Z",
+    "note": "Les éditions du site paraissaient une quinzaine de minutes après l'heure annoncée. La préparation de chaque édition commence maintenant plus tôt, pour qu'elle soit en ligne à l'heure dite.",
+    "version": null
+  },
+  {
+    "pr": 574,
+    "date": "2026-08-25T21:25:33Z",
+    "note": "Une promesse de campagne dont le parti n'est pas suivi n'apparaît plus dans le Polimètre+ et ne compte plus dans son classement.",
+    "version": null
+  },
+  {
+    "pr": 585,
+    "date": "2026-08-25T20:15:09Z",
+    "note": "Section inchangée — cette PR ne change encore rien pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 586,
+    "date": "2026-08-25T19:54:06Z",
+    "note": "Ajout d'un lien et d'une section de présentation vers le projet Agora+ dans le pied de page et dans la section d'introduction de la page À propos.",
+    "version": "2.31.0-beta.1"
+  },
+  {
+    "pr": 582,
+    "date": "2026-08-25T19:41:06Z",
+    "note": "Le site pouvait rester affiché sur une édition ancienne pendant des heures, même quand les nouvelles analyses étaient prêtes : deux mises à jour lancées à quelques minutes d'intervalle se gênaient l'une l'autre et la publication était abandonnée. Chacune suit désormais son cours, et la page se renouvelle comme prévu.",
+    "version": null
+  },
+  {
+    "pr": 583,
+    "date": "2026-08-25T19:27:18Z",
+    "note": "Le module L'alignement de l'Assemblée affiche désormais la législature par défaut. Sous les cartes concernées, un avis date les changements d'affiliation, les élections partielles et les démissions, tandis que les citations restent lisibles et vérifiables.",
+    "version": "2.31.0-beta.0"
+  },
+  {
+    "pr": 577,
+    "date": "2026-08-25T18:27:01Z",
+    "note": "Sur la version de travail du site, un contrôle de sélection média inerte s'affiche désormais dans le module des partis, plutôt qu'un vide. Rien ne change sur le site public : ce module n'y est pas encore visible.",
+    "version": null
+  },
+  {
+    "pr": 576,
+    "date": "2026-08-25T17:19:44Z",
+    "note": "Rien ne change sur le site. Cette modification rétablit le nom stable de sa source de données parlementaires.",
+    "version": null
+  },
+  {
+    "pr": 542,
+    "date": "2026-08-24T19:31:13Z",
+    "note": "Le module sur les partis politiques affiche de nouveau des données : le modèle qui les reconnaît dans les articles a été réentraîné. Le Parti conservateur du Québec y fait exception et reste à zéro, faute d'exemples suffisants pour l'identifier de façon fiable.",
+    "version": "2.30.0-beta.0"
+  },
+  {
+    "pr": 514,
+    "date": "2026-08-24T19:19:16Z",
+    "note": "Rien ne change sur le site. Cette modification met à jour un schéma technique interne qui décrit quelles données produit chaque étape du traitement.",
+    "version": "2.29.0-beta.2"
+  },
+  {
+    "pr": 575,
+    "date": "2026-08-24T16:49:30Z",
+    "note": "Les portraits des parlementaires s’affichent maintenant dès l’ouverture d’un casier, y compris lorsque la carte se trouve plus loin dans le présentoir.",
+    "version": "2.29.0-beta.1"
+  },
+  {
+    "pr": 569,
+    "date": "2026-08-24T14:42:37Z",
+    "note": "Documentation interne du pipeline : l'illustration de la Une a maintenant son propre circuit, décrit dans l'horaire et le diagramme des pipelines.",
+    "version": null
+  },
+  {
+    "pr": 492,
+    "date": "2026-08-24T14:13:42Z",
+    "note": "Les modules de la page sont réordonnés du plus général au plus spécifique : on voit d'abord de quoi on parle, puis quels partis en parlent; d'abord le suivi des promesses, puis le détail de l'Assemblée nationale. La page Méthodologie suit le même ordre.",
+    "version": "2.29.0-beta.0"
+  },
+  {
+    "pr": 562,
+    "date": "2026-08-24T00:04:19Z",
+    "note": "La documentation technique du pipeline (swimlanes) précise maintenant où partent les alertes de surveillance : celles des modules du site vont désormais à l'équipe du site. Rien ne change sur le site lui-même.",
+    "version": null
+  },
+  {
+    "pr": 567,
+    "date": "2026-08-23T16:13:09Z",
+    "note": "Les points de saillance sont maintenant sur 100 : c'est l'attention moyenne reçue sur les 24 dernières heures, expliquée dans la Méthodologie et dans la bulle d'information de chaque manchette.",
+    "version": "2.28.0-beta.0"
+  },
+  {
+    "pr": 560,
+    "date": "2026-08-22T23:16:41Z",
+    "note": "Le partage d’un lien général de la Vitrine affiche maintenant une carte claire et lisible, même sur un fond sombre.",
+    "version": "2.27.0-beta.3"
+  },
+  {
+    "pr": 556,
+    "date": "2026-08-22T23:11:22Z",
+    "note": "- [x] Sans objet — documentation interne.",
+    "version": null
+  },
+  {
+    "pr": 555,
+    "date": "2026-08-21T23:03:09Z",
+    "note": "Les portraits des membres de l'Assemblée sont désormais associés à la bonne personne, même lorsque plusieurs personnes portent le même nom.",
+    "version": "2.27.0-beta.2"
+  },
+  {
+    "pr": 558,
+    "date": "2026-08-21T21:18:47Z",
+    "note": "La carte de partage de la Une des Unes met maintenant son niveau de saillance au premier plan et peut reprendre son illustration courante. Les cartes des éditions précédentes demeurent textuelles.",
+    "version": "2.27.0-beta.1"
+  },
+  {
+    "pr": 549,
+    "date": "2026-08-21T20:06:25Z",
+    "note": "Le Polimètre+ pourra bientôt suivre les promesses au fur et à mesure que les partis les formulent, en plus des promesses de 2022. Rien ne change pour l'instant à l'écran.",
+    "version": null
+  },
+  {
+    "pr": 551,
+    "date": "2026-08-21T19:34:56Z",
+    "note": "Les citations qui illustrent le concept distinctif d’un parti ou d’un député se terminaient parfois au milieu d’une phrase ou avant le concept annoncé. Elles sont maintenant coupées à une frontière de sens et restent lisibles sur écran comme sur mobile.",
+    "version": null
+  },
+  {
+    "pr": 452,
+    "date": "2026-08-21T19:22:40Z",
+    "note": "La page Méthodologie décrit maintenant la façon dont le module des promesses repère une promesse dans un article : un modèle s'en charge, et le repérage par règles sert de solution de repli. La page précise aussi qu'une vue d'un mois peut réunir des semaines repérées par l'une ou l'autre méthode.",
+    "version": null
+  },
+  {
+    "pr": 539,
+    "date": "2026-08-21T19:05:51Z",
+    "note": "Le module sur les partis politiques est refait : un palmarès montre qui accumule le plus de temps à la une, et chaque parti a désormais son disque qu'on retourne pour lire ses chiffres.",
+    "version": "2.27.0-beta.0"
+  },
+  {
+    "pr": 547,
+    "date": "2026-08-21T18:55:10Z",
+    "note": "Un jeu caché accessible depuis le module des partis politiques est retiré du site public. Il reste disponible sur notre environnement de travail.",
+    "version": "2.26.0-beta.1"
+  },
+  {
+    "pr": 550,
+    "date": "2026-08-21T18:52:03Z",
+    "note": "Les images partagées sur les réseaux sociaux ont été redessinées aux couleurs du site, et il est maintenant possible de partager un module tel qu'il était à une édition passée : l'image reprend alors les chiffres de ce moment-là, pas ceux du jour.",
+    "version": "2.26.0-beta.0"
+  },
+  {
+    "pr": 552,
+    "date": "2026-08-21T18:44:44Z",
+    "note": "Les cartes de l’Assemblée distinguent désormais les parlementaires homonymes et conservent le portrait officiel des membres qui ont quitté leur siège pendant la législature.",
+    "version": "2.25.0-beta.2"
+  },
+  {
+    "pr": 545,
+    "date": "2026-08-21T18:28:57Z",
+    "note": "Le classement mondial du jeu caché refonctionne : les meilleures parties sont de nouveau enregistrées et visibles par tout le monde, en direct. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 541,
+    "date": "2026-08-21T15:44:25Z",
+    "note": "La documentation technique du pipeline précise que deux partis, le Parti conservateur du Québec et le Parti populaire du Canada, ne sont plus repérés automatiquement dans les articles.",
+    "version": null
+  },
+  {
+    "pr": 533,
+    "date": "2026-08-20T18:55:01Z",
+    "note": "Rien ne change sur le site. Cette correction rétablit les vérifications automatiques et les déploiements, interrompus depuis le 19 août.",
+    "version": null
+  },
+  {
+    "pr": 531,
+    "date": "2026-08-20T18:50:21Z",
+    "note": "Les partis de l'Assemblée sont maintenant présentés du plus bavard au moins bavard, et le premier est ouvert d'emblée. Le mot qui distingue chaque parti et chaque élu.e s'affiche directement, avec un extrait qui le montre en contexte.",
+    "version": null
+  },
+  {
+    "pr": 544,
+    "date": "2026-08-20T18:37:30Z",
+    "note": "Deux modules encore en rodage — la couverture des partis et l'alignement de l'Assemblée — se retirent du site public le temps de mûrir ; ils restent visibles sur notre environnement de travail. L'outil de signalement de problème devient un outil interne à l'équipe. Le site mesure désormais sa fréquentation avec Cloudflare Web Analytics, une mesure agrégée sans témoin ni pistage individuel. Les…",
+    "version": null
+  },
+  {
+    "pr": 534,
+    "date": "2026-08-20T15:47:11Z",
+    "note": "L'illustration de la une des unes est maintenant produite par un service dédié, qui la renouvelle dès que la une change plutôt qu'à heures fixes. Et si l'illustration disponible ne correspond pas à la une affichée, le site préfère ne rien montrer plutôt que d'illustrer la mauvaise nouvelle. 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 540,
+    "date": "2026-08-20T13:39:07Z",
+    "note": "Dans le Polimètre+, les pastilles de rang des promesses rompues et en suspens ont maintenant le même style que les autres : une pastille pâle cerclée de la couleur du verdict.",
+    "version": "2.25.0-beta.1"
+  },
+  {
+    "pr": 536,
+    "date": "2026-08-19T20:07:15Z",
+    "note": "Des garde-fous internes empêchent désormais le site de publier un module vide quand une source de données fait défaut, les visiteurs qui reviennent obtiennent l'édition la plus récente au lieu d'une copie gardée par leur navigateur, et le site se présente mieux aux moteurs de recherche (plan du site, adresse canonique). 🤖 Assisté par Claude Code (Fable 5)",
+    "version": null
+  },
+  {
+    "pr": 530,
+    "date": "2026-08-19T18:24:56Z",
+    "note": "Le site se met à jour par un chemin plus direct et plus fiable, indépendant des services externes qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 252,
+    "date": "2026-08-19T18:13:28Z",
+    "note": "Rien ne change sur le site public — mise à jour de documentation technique interne (référence du backend AWS).",
+    "version": null
+  },
+  {
+    "pr": 497,
+    "date": "2026-08-19T18:08:01Z",
+    "note": "Les portraits des député·es se mettent désormais à jour tout seuls, une fois par jour. Après une élection partielle, la photo du nouvel élu remplace celle de son prédécesseur sans intervention manuelle.",
+    "version": null
+  },
+  {
+    "pr": 532,
+    "date": "2026-08-19T18:01:34Z",
+    "note": "Aucun changement pour le site : correctifs internes de la chaîne de données.",
+    "version": null
+  },
+  {
+    "pr": 529,
+    "date": "2026-08-19T15:00:57Z",
+    "note": "Aucun changement pour le site : correctifs internes de l'API.",
+    "version": null
+  },
+  {
+    "pr": 528,
+    "date": "2026-08-19T14:40:16Z",
+    "note": "Aucun changement pour le site : correctif interne de l'API.",
+    "version": null
+  },
+  {
+    "pr": 527,
+    "date": "2026-08-19T14:32:35Z",
+    "note": "Le site tire maintenant ses données par un chemin plus direct et plus fiable, indépendant des services qui tombaient en panne.",
+    "version": null
+  },
+  {
+    "pr": 526,
+    "date": "2026-08-19T13:56:57Z",
+    "note": "Aucun changement pour le site : document interne de vision.",
+    "version": null
+  },
+  {
+    "pr": 525,
+    "date": "2026-08-19T13:23:14Z",
+    "note": "Le site se met maintenant à jour de lui-même dans votre navigateur quand de nouvelles données sont publiées, sans devoir rafraîchir la page.",
+    "version": "2.25.0-beta.0"
+  },
+  {
+    "pr": 524,
+    "date": "2026-08-19T13:13:14Z",
+    "note": "Aucun changement pour le site : règle interne de qualité (tout passe par l'environnement de travail avant la production).",
+    "version": null
+  },
+  {
+    "pr": 522,
+    "date": "2026-08-18T23:41:56Z",
+    "note": "Documentation interne du pipeline mise a jour.",
+    "version": null
+  },
+  {
+    "pr": 520,
+    "date": "2026-08-18T22:13:40Z",
+    "note": "Aucun changement pour le site : document interne de conception.",
+    "version": null
+  },
+  {
+    "pr": 521,
+    "date": "2026-08-18T21:31:33Z",
+    "note": "Corrige un bug qui empêchait le module « L'alignement de l'Assemblée » de recevoir de nouvelles données depuis le 28 juillet. Aucun autre changement visible sur le site.",
+    "version": null
+  },
+  {
+    "pr": 510,
+    "date": "2026-08-18T20:42:42Z",
+    "note": "Le rafraîchissement automatique des données s'interrompt maintenant de lui-même s'il reste bloqué, au lieu d'immobiliser les mises à jour suivantes. Rien ne change dans ce que le site affiche.",
+    "version": null
+  },
+  {
+    "pr": 519,
+    "date": "2026-08-18T20:17:52Z",
+    "note": "Le diagramme public des pipelines montre maintenant deux traitements automatiques qui tournaient déjà sans y apparaître. L'un publie chaque semaine un rapport de surveillance du pipeline, l'autre repère les promesses gouvernementales. Rien ne change dans les données ni dans l'affichage du site.",
+    "version": null
+  },
+  {
+    "pr": 518,
+    "date": "2026-08-18T19:27:57Z",
+    "note": "Aucune — décision interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 517,
+    "date": "2026-08-18T19:22:39Z",
+    "note": "Aucune — documentation interne à l'offre API, non annoncée publiquement.",
+    "version": null
+  },
+  {
+    "pr": 516,
+    "date": "2026-08-18T19:16:33Z",
+    "note": "Aucune — correctif d'outillage.",
+    "version": null
+  },
+  {
+    "pr": 513,
+    "date": "2026-08-18T19:10:05Z",
+    "note": "Aucune — documentation et infrastructure ; rien ne change pour un visiteur.",
+    "version": null
+  },
+  {
+    "pr": 512,
+    "date": "2026-08-18T18:36:08Z",
+    "note": "Aucune — infrastructure ; le site affiche les mêmes données, simplement lues ailleurs.",
+    "version": null
+  },
+  {
+    "pr": 511,
+    "date": "2026-08-18T18:03:19Z",
+    "note": "Aucune — correctif d'infrastructure ; le site retrouve simplement la fraîcheur qu'il avait.",
+    "version": "2.24.0-beta.2"
+  },
+  {
+    "pr": 508,
+    "date": "2026-08-18T17:49:30Z",
+    "note": "Aucune — l'API n'est pas encore annoncée, et rien ne change pour un visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 507,
+    "date": "2026-08-18T14:26:21Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 506,
+    "date": "2026-08-18T02:21:03Z",
+    "note": "Aucune — infrastructure, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 504,
+    "date": "2026-08-18T02:10:52Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 503,
+    "date": "2026-08-18T01:34:25Z",
+    "note": "Aucune — l'API n'est pas encore annoncée ni consommée par le site.",
+    "version": null
+  },
+  {
+    "pr": 502,
+    "date": "2026-08-18T01:29:51Z",
+    "note": "Aucune — outillage interne, sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 498,
+    "date": "2026-08-18T00:23:36Z",
+    "note": "Aucune — changement d'infrastructure sans effet visible pour le public.",
+    "version": null
+  },
+  {
+    "pr": 495,
+    "date": "2026-08-17T23:30:27Z",
+    "note": "Aucune — correctif d'infrastructure sans effet visible.",
+    "version": null
+  },
+  {
+    "pr": 493,
+    "date": "2026-08-17T23:30:17Z",
+    "note": "Aucune — changement interne sans effet visible sur le site.",
+    "version": null
+  },
+  {
+    "pr": 494,
+    "date": "2026-08-17T22:50:27Z",
+    "note": "Rien ne change sur le site. Cette modification sert au développement : elle permet de faire évoluer le module des partis sur des données fictives pendant que la mesure réelle est suspendue.",
+    "version": "2.24.0-beta.1"
+  },
+  {
+    "pr": 482,
+    "date": "2026-08-17T22:21:36Z",
+    "note": "Le module des partis cesse de publier un classement : le modèle qui repère les partis dans les articles ne distingue pas de façon fiable les partis québécois. Nous préférons ne rien afficher plutôt qu'un palmarès que nous ne pourrions pas défendre — le module reste en place et explique pourquoi. Sa refonte visuelle est livrée, prête pour la reprise de la mesure.",
+    "version": "2.24.0-beta.0"
+  },
+  {
+    "pr": 488,
+    "date": "2026-08-17T21:39:26Z",
+    "note": "Les textes du site suivent maintenant partout les mêmes règles de typographie française : espaces insécables devant les pourcentages et les deux-points, guillemets qui ne se retrouvent plus seuls en début de ligne, et heures écrites sans espace.",
+    "version": "2.23.0-beta.6"
+  },
+  {
+    "pr": 486,
+    "date": "2026-08-17T21:39:18Z",
+    "note": "Rien pour le visiteur du site — outillage de surveillance interne.",
+    "version": null
+  },
+  {
+    "pr": 491,
+    "date": "2026-08-17T21:23:45Z",
+    "note": "L'illustration de la une se charge environ quarante fois plus vite, et le site est prêt à être publié sur son propre domaine.",
+    "version": "2.23.0-beta.5"
+  },
+  {
+    "pr": 484,
+    "date": "2026-08-17T02:59:40Z",
+    "note": "Le repère « habituel » de la jauge Québec-Canada est maintenant mesuré sur une année complète d'actualité. La comparaison « plus ou moins que d'habitude » devient plus juste et ne bougera plus d'une mise à jour à l'autre.",
+    "version": "2.23.0-beta.4"
+  },
+  {
+    "pr": 487,
+    "date": "2026-08-17T02:49:55Z",
+    "note": "Rien ne change sur le site. Cette mise à jour ne touche que les consignes internes de l'équipe sur la façon de rédiger ses demandes de modification.",
+    "version": null
+  },
+  {
+    "pr": 476,
+    "date": "2026-08-14T23:16:41Z",
+    "note": "Les niveaux de saillance (« Modérée », « Élevée »…) se lisent désormais contre une référence fixe, mesurée sur une année complète, plutôt que contre une référence recalculée à chaque mise à jour. Une même valeur porte donc la même étiquette d'un jour à l'autre.",
+    "version": "2.23.0-beta.3"
+  },
+  {
+    "pr": 475,
+    "date": "2026-08-14T22:44:59Z",
+    "note": "La page Méthodologie affiche maintenant le même numéro de version que le reste du site, au lieu d'un numéro figé depuis des mois.",
+    "version": "2.23.0-beta.2"
+  },
+  {
+    "pr": 471,
+    "date": "2026-08-14T18:34:09Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique des textes du journal des mises à jour avant leur publication.",
+    "version": null
+  },
+  {
+    "pr": 451,
+    "date": "2026-08-14T17:09:55Z",
+    "note": "Aucune — page de documentation technique interne, rien de visible pour le visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 464,
+    "date": "2026-08-13T17:23:42Z",
+    "note": "_Aucune — changement interne, invisible pour le visiteur._",
+    "version": "2.23.0-beta.1"
+  },
+  {
+    "pr": 472,
+    "date": "2026-08-13T17:22:32Z",
+    "note": "Reformulation de quelques anciennes entrées de ce journal, et retrait de deux entrées devenues sans objet.",
+    "version": null
+  },
+  {
+    "pr": 466,
+    "date": "2026-08-13T17:20:00Z",
+    "note": "La page Méthodologie respecte maintenant les règles typographiques du site, et une vérification automatique s'applique désormais à toutes les pages publiques.",
+    "version": null
+  },
+  {
+    "pr": 469,
+    "date": "2026-08-13T15:34:40Z",
+    "note": "Amélioration interne de la façon dont l'équipe décrit ses changements avant de les mettre en ligne. Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 461,
+    "date": "2026-08-12T21:30:05Z",
+    "note": "Les niveaux de saillance affichés sous les manchettes reposent désormais sur une nouvelle mesure, qui tient compte à la fois du nombre de médias ayant fait de l'histoire leur Une, du nombre d'articles qu'ils y consacrent et du temps passé en Une. Une nouvelle doit exister sur ces trois plans à la fois pour monter : un seul média, aussi insistant soit-il, ne suffit plus. La page Méthodologie…",
+    "version": "2.23.0-beta.0"
+  },
+  {
+    "pr": 454,
+    "date": "2026-08-12T20:11:41Z",
+    "note": "Aucune — documentation technique interne, rien de visible pour le visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 448,
+    "date": "2026-08-11T17:26:28Z",
+    "note": "Aucune — page de documentation technique interne, rien de visible pour le visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 447,
+    "date": "2026-08-11T00:31:44Z",
+    "note": "docs(métho) : le titre du Polimètre+ suit « Une » en majuscule",
+    "version": null
+  },
+  {
+    "pr": 440,
+    "date": "2026-08-10T22:29:55Z",
+    "note": "On peut maintenant remonter dans le temps : les flèches et les icônes de l'en-tête permettent de revoir la Vitrine telle qu'elle était aux éditions précédentes.",
+    "version": "2.22.0-beta.0"
+  },
+  {
+    "pr": 387,
+    "date": "2026-08-10T21:07:47Z",
+    "note": "La jauge du ton en chambre distingue maintenant les partis les uns des autres, au lieu de les afficher tous à la même extrémité.",
+    "version": "2.21.0-beta.4"
+  },
+  {
+    "pr": 420,
+    "date": "2026-08-10T21:03:21Z",
+    "note": "docs(métho) : consigner l'exclusion des pages permanentes (§10, limite 9)",
+    "version": null
+  },
+  {
+    "pr": 442,
+    "date": "2026-08-10T20:08:10Z",
+    "note": "Le mot « Une » s'écrit désormais avec une majuscule partout sur le site, y compris dans l'expression « à la Une ».",
+    "version": "2.21.0-beta.3"
+  },
+  {
+    "pr": 441,
+    "date": "2026-08-10T20:05:18Z",
+    "note": "Aucun changement visible sur le site : ajout d'une vérification automatique de la typographie des textes publics avant chaque mise en ligne.",
+    "version": null
+  },
+  {
+    "pr": 444,
+    "date": "2026-08-10T20:03:22Z",
+    "note": "Le premier module s'intitule désormais « L'actualité saillante du moment au Québec », et son infobulle explique que le nombre de nouvelles affichées, de une à trois, dépend de l'actualité du moment.",
+    "version": "2.21.0-beta.2"
+  },
+  {
+    "pr": 414,
+    "date": "2026-08-10T20:00:30Z",
+    "note": "Sur téléphone, l'illustration de la Une principale apparaît maintenant juste sous le titre, au lieu d'être reléguée deux écrans plus bas.",
+    "version": "2.21.0-beta.1"
+  },
+  {
+    "pr": 443,
+    "date": "2026-08-10T19:55:22Z",
+    "note": "Ajustement technique de l'outillage de développement. Rien ne change sur le site pour les visiteuses et les visiteurs.",
+    "version": null
+  },
+  {
+    "pr": 418,
+    "date": "2026-08-10T15:41:24Z",
+    "note": "Aucun changement visible sur le site — réorganisation interne des alertes de surveillance.",
+    "version": null
+  },
+  {
+    "pr": 435,
+    "date": "2026-08-10T15:39:46Z",
+    "note": "feat(saillance) : A8 et B7, et la bande de trajectoire passe en pastilles",
+    "version": null
+  },
+  {
+    "pr": 436,
+    "date": "2026-08-10T15:36:46Z",
+    "note": "test(saillance) : les fixtures cessent de dépendre de l'état du flag",
+    "version": null
+  },
+  {
+    "pr": 433,
+    "date": "2026-08-09T23:32:12Z",
+    "note": "Le niveau de saillance affiché sous une manchette suit désormais directement sa valeur : dès qu'une nouvelle franchit un seuil, elle porte le palier correspondant, à la hausse comme à la baisse. Et l'infobulle donne le chiffre exact — « environ 75 % des Unes sont moins saillantes que celle-ci » — au lieu d'une estimation par palier.",
+    "version": null
+  },
+  {
+    "pr": 432,
+    "date": "2026-08-09T23:28:49Z",
+    "note": "La petite courbe sous chaque manchette montre désormais la même chose que le niveau affiché à côté d'elle : quand la courbe monte, le niveau monte. Les moments où l'histoire n'était en Une d'aucun média québécois sont indiqués par un point creux, et le point noir marque son sommet.",
+    "version": null
+  },
+  {
+    "pr": 431,
+    "date": "2026-08-09T23:23:44Z",
+    "note": "Le niveau de saillance affiché sous les manchettes reposera bientôt sur une mesure qui tient compte du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant.",
+    "version": null
+  },
+  {
+    "pr": 429,
+    "date": "2026-08-09T16:06:20Z",
+    "note": "Les niveaux de saillance affichés sous les manchettes reposeront bientôt sur une nouvelle mesure, qui tient compte à la fois du nombre de médias, du nombre d'articles et du temps passé en Une. Rien ne change pour l'instant : cette mise à jour prépare le terrain.",
+    "version": null
+  },
+  {
+    "pr": 428,
+    "date": "2026-08-09T03:22:55Z",
+    "note": "La page Méthodologie décrit maintenant correctement le découpage du temps utilisé pour mesurer la saillance : des blocs de quatre heures calés sur l'heure de Montréal, et non sur l'heure universelle.",
+    "version": null
+  },
+  {
+    "pr": 385,
+    "date": "2026-08-08T17:38:17Z",
+    "note": "Les manchettes qui font aussi la Une ailleurs le disent maintenant : une mention « Résonance canadienne » ou « Résonance américaine » sous la liste des médias québécois, avec la part d'attention que la région a accordée au sujet et les médias qui l'ont couvert, cliquables vers leurs articles.",
+    "version": "2.21.0-beta.0"
+  },
+  {
+    "pr": 417,
+    "date": "2026-08-08T17:35:53Z",
+    "note": "Aucun changement visible sur le site — regroupement interne des alertes de surveillance de la qualité des données.",
+    "version": null
+  },
+  {
+    "pr": 410,
+    "date": "2026-08-08T16:25:56Z",
+    "note": "Dans le module Deux solitudes, le niveau de saillance des sujets canadiens est maintenant mesuré avec la même règle que celui des sujets québécois : les niveaux des deux côtés du radar se comparent directement.",
+    "version": "2.20.0-beta.8"
+  },
+  {
+    "pr": 412,
+    "date": "2026-08-08T16:23:28Z",
+    "note": "Ajout d'une surveillance automatique de la fraîcheur des données de la Une — l'équipe est maintenant alertée en quelques heures si les données prennent du retard.",
+    "version": null
+  },
+  {
+    "pr": 411,
+    "date": "2026-08-08T16:20:17Z",
+    "note": "Documentation interne seulement — rien ne change pour le site.",
+    "version": null
+  },
+  {
+    "pr": 409,
+    "date": "2026-08-07T22:09:53Z",
+    "note": "Le niveau de saillance des sujets canadiens du module Deux solitudes se prépare à être mesuré avec la même règle que celui des sujets québécois.",
+    "version": "2.20.0-beta.7"
+  },
+  {
+    "pr": 405,
+    "date": "2026-08-07T21:39:06Z",
+    "note": "Dans le module Deux solitudes, le Québec (bleu) est maintenant affiché à droite et le Canada (rouge) à gauche, pour correspondre à la disposition réelle du graphique en dessous.",
+    "version": "2.20.0-beta.6"
+  },
+  {
+    "pr": 404,
+    "date": "2026-08-07T21:25:47Z",
+    "note": "L'échelle convergent/divergent du module Deux solitudes est maintenant en tons neutres, pour ne plus entrer en collision avec le code couleur Québec/Canada affiché au-dessus.",
+    "version": "2.20.0-beta.5"
+  },
+  {
+    "pr": 402,
+    "date": "2026-08-07T21:21:58Z",
+    "note": "Le radar du module Deux solitudes ne laisse plus jamais un texte ou un badge chevaucher le graphique, quel que soit le nombre de médias ayant couvert un sujet.",
+    "version": "2.20.0-beta.4"
+  },
+  {
+    "pr": 398,
+    "date": "2026-08-07T21:19:27Z",
+    "note": "Correction d'un libellé de fraîcheur des données qui pouvait afficher un jour de retard pour certains blocs horaires.",
+    "version": "2.20.0-beta.3"
+  },
+  {
+    "pr": 361,
+    "date": "2026-08-07T20:30:27Z",
+    "note": "Le lien vers le site du Polimètre, au bas du module des promesses, affiche maintenant le logo du Polimètre et un libellé plus lisible.",
+    "version": "2.20.0-beta.2"
+  },
+  {
+    "pr": 365,
+    "date": "2026-08-07T20:29:23Z",
+    "note": "fix(polimetre) : sélectionner les snapshots par date, pas par position",
+    "version": null
+  },
+  {
+    "pr": 407,
+    "date": "2026-08-07T18:56:37Z",
+    "note": "Le module Assemblée s'appelle maintenant « L'alignement de l'Assemblée ».",
+    "version": null
+  },
+  {
+    "pr": 406,
+    "date": "2026-08-07T18:41:14Z",
+    "note": "Correctif d'affichage : les portraits des député.es réapparaissent sur les cartes du module « Que dit-on à l'Assemblée? ».",
+    "version": "2.20.0-beta.1"
+  },
+  {
+    "pr": 390,
+    "date": "2026-08-07T18:30:29Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » prend la forme d'un vestiaire : un casier par parti, qu'on ouvre pour découvrir une carte par député, avec son portrait, ses chiffres et le concept qui le distingue. Le ton se lit maintenant sur une échelle graduée plutôt qu'en un seul mot.",
+    "version": "2.20.0-beta.0"
+  },
+  {
+    "pr": 382,
+    "date": "2026-08-03T20:00:53Z",
+    "note": "L'encadré qui s'affiche au survol de la jauge « Deux solitudes » indique maintenant la part d'actualité que le Québec et le Canada ont en commun, avec un repère pour savoir ce que valent les deux extrémités de l'échelle. Tout le module parle désormais de la même chose, du grand chiffre au bouton de partage. Les catégories de sujets trop longues ne se chevauchent plus autour du radar, et le point…",
+    "version": "2.19.0-beta.0"
+  },
+  {
+    "pr": 379,
+    "date": "2026-08-02T18:35:53Z",
+    "note": "Le module Deux solitudes se fait plus compact et plus parlant : son grand chiffre indique désormais si l'actualité québécoise et canadienne se rejoint plus ou moins que d'habitude, et survoler les zones du radar affiche le symbole de la région concernée.",
+    "version": "2.18.0-beta.0"
+  },
+  {
+    "pr": 380,
+    "date": "2026-08-02T18:33:19Z",
+    "note": "Le diagramme public qui explique comment les données de la Vitrine sont fabriquées a été entièrement vérifié et corrigé : il décrit maintenant la vraie chaîne de publication, les bons horaires, et deux étapes qui n'y figuraient pas.",
+    "version": null
+  },
+  {
+    "pr": 377,
+    "date": "2026-07-31T16:05:35Z",
+    "note": "Les tuiles « De quoi parle-t-on? » révèlent maintenant leur actualité principale au survol et toutes les actualités associées au clic, avec les médias propres à chaque manchette. Sur mobile, les classements de la semaine et du mois deviennent une trajectoire ciblée accompagnée d'une liste où les actualités se déplient sous chaque enjeu.",
+    "version": "2.17.0-beta.0"
+  },
+  {
+    "pr": 355,
+    "date": "2026-07-30T02:10:49Z",
+    "note": "(Section vide — configuration interne des mises à jour de dépendances, rien de visible pour le visiteur.)",
+    "version": null
+  },
+  {
+    "pr": 364,
+    "date": "2026-07-29T16:22:05Z",
+    "note": "Quand on déplie une promesse du Polimètre+, la couleur de son verdict reste maintenant visible : elle habille tout le haut de la fiche, jusqu'au résumé.",
+    "version": "2.16.0-beta.2"
+  },
+  {
+    "pr": 368,
+    "date": "2026-07-29T16:19:09Z",
+    "note": "fix(polimetre) : immuniser le fetch contre la dérive INT32, et borner .git",
+    "version": null
+  },
+  {
+    "pr": 367,
+    "date": "2026-07-28T23:34:35Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » affiche d'abord les dix députés les plus présents de chaque parti, les autres s'affichant sur demande.",
+    "version": "2.16.0-beta.1"
+  },
+  {
+    "pr": 366,
+    "date": "2026-07-28T23:10:43Z",
+    "note": "Le module « Que dit-on à l'Assemblée ? » devient un tableau d'enquête : ouvrez le dossier d'un parti pour découvrir ce qu'il dit en chambre, et les fiches de ses députés selon combien chacun a parlé.",
+    "version": "2.16.0-beta.0"
+  },
+  {
+    "pr": 362,
+    "date": "2026-07-28T19:18:05Z",
+    "note": "(Vide — correctif technique invisible pour les visiteurs jusqu'à ce qu'un module l'affiche.)",
+    "version": "2.15.0-beta.11"
+  },
+  {
+    "pr": 341,
+    "date": "2026-07-28T19:10:49Z",
+    "note": "(Section vide — changement trop mineur/interne pour le journal public.)",
+    "version": "2.15.0-beta.10"
+  },
+  {
+    "pr": 356,
+    "date": "2026-07-28T15:56:56Z",
+    "note": "Les catégories d'enjeux s'affichent désormais partout sous le même nom que dans le Polimètre : « Loi et crime » remplace « Droit et criminalité », et « Santé et politiques sociales » remplace « Santé et services sociaux ».",
+    "version": "2.15.0-beta.9"
+  },
+  {
+    "pr": 353,
+    "date": "2026-07-28T13:59:20Z",
+    "note": "Ne change aucune table, raffineur ou colonne.",
+    "version": null
+  },
+  {
+    "pr": 348,
+    "date": "2026-07-28T13:55:19Z",
+    "note": "Aucune — outillage interne, rien de visible sur le site.",
+    "version": null
+  },
+  {
+    "pr": 346,
+    "date": "2026-07-28T13:52:23Z",
+    "note": "Le niveau de saillance affiché sous chaque manchette suit maintenant fidèlement l'attention réelle des dernières 24 heures : il pouvait rester bloqué plusieurs crans trop bas, au point d'afficher un sommet plus faible que le creux qui l'a suivi. Le texte qui apparaît en survolant la courbe ne déborde plus sur la manchette voisine, et les heures de la veille ne sont plus annoncées comme celles du…",
+    "version": "2.15.0-beta.8"
+  },
+  {
+    "pr": 342,
+    "date": "2026-07-28T13:49:48Z",
+    "note": "Le module « Deux solitudes » lit désormais directement les données par région produites en amont, au lieu de les reconstituer par soustraction. Rien ne change à l'écran, mais la part canadienne ne risque plus d'englober des médias américains.",
+    "version": null
+  },
+  {
+    "pr": 340,
+    "date": "2026-07-28T13:46:52Z",
+    "note": "La bulle d'information « i » se laisse enfin survoler jusqu'au bout : le lien « En savoir plus » qu'elle contient est maintenant cliquable, alors que la bulle disparaissait dès qu'on s'en approchait.",
+    "version": "2.15.0-beta.7"
+  },
+  {
+    "pr": 336,
+    "date": "2026-07-28T13:43:30Z",
+    "note": "Les promesses du Polimètre+ affichent maintenant une petite flèche qui indique qu'on peut cliquer dessus pour lire le résumé et la couverture médiatique.",
+    "version": "2.15.0-beta.6"
+  },
+  {
+    "pr": 351,
+    "date": "2026-07-28T13:40:54Z",
+    "note": "Les articles cités sous chaque promesse affichent de nouveau le bon média avec le bon titre, au lieu d'une association approximative déduite de l'adresse du lien.",
+    "version": "2.15.0-beta.5"
+  },
+  {
+    "pr": 339,
+    "date": "2026-07-28T13:39:00Z",
+    "note": "Sur téléphone, les six histoires du radar « Deux solitudes » étaient coupées et illisibles. Elles se lisent maintenant en entier dans une liste sous le radar, dont les axes sont numérotés pour s'y retrouver.",
+    "version": "2.15.0-beta.4"
+  },
+  {
+    "pr": 344,
+    "date": "2026-07-28T13:36:26Z",
+    "note": "Sur le radar « Deux solitudes », la catégorie affichée au-dessus du titre du haut n'est plus rognée quand le titre est long.",
+    "version": "2.15.0-beta.3"
+  },
+  {
+    "pr": 338,
+    "date": "2026-07-28T13:33:52Z",
+    "note": "Quand l'envoi d'un signalement échoue, votre texte n'est plus perdu : il reste affiché, vous pouvez le copier ou nous l'envoyer par courriel en un clic, et le message explique enfin si la panne vient de chez nous ou de votre connexion.",
+    "version": "2.15.0-beta.2"
+  },
+  {
+    "pr": 343,
+    "date": "2026-07-28T13:30:51Z",
+    "note": "L'illustration de la Une crédite désormais Mathieu Fortin (Anorak Studio) à la direction artistique, plutôt que de dire qu'elle s'inspire de son style.",
+    "version": "2.15.0-beta.1"
+  },
+  {
+    "pr": 352,
+    "date": "2026-07-28T11:55:09Z",
+    "note": "feat(flappy): autoriser jusqu'à 7 caractères pour la signature dans le classement global",
+    "version": null
+  },
+  {
+    "pr": 350,
+    "date": "2026-07-28T00:49:41Z",
+    "note": "Le classement du jeu caché a été remis à zéro à la fin de sa phase d’essai.",
+    "version": null
+  },
+  {
+    "pr": 349,
+    "date": "2026-07-27T23:55:29Z",
+    "note": "feat(flappy): classement global en direct avec Upstash Redis et intégration fluide",
+    "version": null
+  },
+  {
+    "pr": 347,
+    "date": "2026-07-27T22:02:05Z",
+    "note": "feat(flappy): déverrouillage tactile mobile et refonte esthétique éditoriale de Flappy Enjeux",
+    "version": null
+  },
+  {
+    "pr": 345,
+    "date": "2026-07-27T21:43:07Z",
+    "note": "feat(enjeux): refonte du module De quoi parle-t-on (tuiles centrées, noms complets, infobulle ⓘ et palette CAPP)",
+    "version": null
+  },
+  {
+    "pr": 332,
+    "date": "2026-07-27T21:20:18Z",
+    "note": "Les signalements envoyés depuis le site sont désormais dirigés automatiquement vers la personne responsable du module concerné.",
+    "version": null
+  },
+  {
+    "pr": 334,
+    "date": "2026-07-27T20:16:59Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » présente maintenant une fiche par parti (mots prononcés, enjeux, ton, richesse lexicale) en un coup d'œil ; le jeu de billard devient un easter egg accessible via un petit bouton 🎱.",
+    "version": "2.15.0-beta.0"
+  },
+  {
+    "pr": 337,
+    "date": "2026-07-27T20:07:28Z",
+    "note": "La pastille numérotée de chaque promesse du Polimètre+ est maintenant cerclée de la couleur de son verdict, ce qui rend le classement plus lisible d'un coup d'œil.",
+    "version": "2.14.0-beta.1"
+  },
+  {
+    "pr": 314,
+    "date": "2026-07-27T18:35:17Z",
+    "note": "Le niveau de saillance affiché sous chaque manchette suit maintenant l'attention des 24 dernières heures et redescend à mesure qu'une histoire s'éteint, au lieu de rester bloqué sur le sommet atteint dans la journée. La petite courbe indique la part de l'attention médiatique captée, et une phrase résume où en est l'histoire par rapport à son sommet.",
+    "version": "2.14.0-beta.0"
+  },
+  {
+    "pr": 330,
+    "date": "2026-07-27T16:02:06Z",
+    "note": "La page Méthodologie annonçait que la saillance médiatique tenait compte de la position des manchettes sur la page frontale. Ce n'est pas le cas : elle repose sur le temps passé en Une, ajusté au rythme de chaque média. La description a été corrigée.",
+    "version": null
+  },
+  {
+    "pr": 328,
+    "date": "2026-07-27T15:30:18Z",
+    "note": "L'illustration qui accompagne la manchette principale représente désormais toujours la bonne histoire : elle est désignée par le même code que celui qui choisit la manchette, au lieu d'être devinée séparément.",
+    "version": null
+  },
+  {
+    "pr": 306,
+    "date": "2026-07-27T12:58:37Z",
+    "note": "feat(polimetre+) : afficher le libellé court et le résumé IA",
+    "version": null
+  },
+  {
+    "pr": 319,
+    "date": "2026-07-27T01:54:17Z",
+    "note": "Aucun changement visible pour les visiteurs : mise à jour des règles internes de rédaction (typographie, langage inclusif) et de la documentation d'équipe.",
+    "version": null
+  },
+  {
+    "pr": 327,
+    "date": "2026-07-24T22:09:14Z",
+    "note": "feat: easter egg Flappy Enjeux (code Konami dans « De quoi parle-t-on? »)",
+    "version": "2.13.0-beta.1"
+  },
+  {
+    "pr": 313,
+    "date": "2026-07-24T19:46:31Z",
+    "note": "Le module « Que dit-on à l'Assemblée? » se joue maintenant comme une partie de billard : visez une bille-parti vers une poche pour découvrir son profil.",
+    "version": "2.13.0-beta.0"
+  },
+  {
+    "pr": 318,
+    "date": "2026-07-24T17:07:48Z",
+    "note": "Le module des enjeux saillants est repensé : la vue du jour montre la croissance de la saillance de chaque enjeu, et deux nouvelles vues (« Cette semaine », « Ce mois ») retracent l'évolution du classement dans le temps avec, au survol, les dernières actualités liées à chaque enjeu.",
+    "version": "2.12.0-beta.0"
+  },
+  {
+    "pr": 317,
+    "date": "2026-07-24T16:44:35Z",
+    "note": "Une des Unes : la trajectoire de saillance affiche désormais l'heure de publication, cohérente avec la dernière mise à jour du module.",
+    "version": "2.11.0-beta.1"
+  },
+  {
+    "pr": 312,
+    "date": "2026-07-23T20:08:11Z",
+    "note": "Les Unes suivent maintenant fidèlement la saillance des 24 dernières heures, comme le radar « Deux solitudes » : une grande nouvelle de la nuit reste en Une le lendemain matin puis glisse tranquillement vers les manchettes secondaires, au lieu de disparaître d'un coup.",
+    "version": "2.11.0-beta.0"
+  },
+  {
+    "pr": 269,
+    "date": "2026-07-23T18:18:10Z",
+    "note": "fix(polimetre+): tendance masquée sur mobile + refonte couleur des verdicts (#267, #268)",
+    "version": null
+  },
+  {
+    "pr": 294,
+    "date": "2026-07-23T16:09:52Z",
+    "note": "docs : reconnaissance de l'apport de l'IA — provenance en français (issues + réponses de PR)",
+    "version": null
+  },
+  {
+    "pr": 300,
+    "date": "2026-07-22T20:25:29Z",
+    "note": "Métho : le regroupement des événements passe à un modèle de langue (suit aws-refiners#243)",
+    "version": null
+  },
+  {
+    "pr": 298,
+    "date": "2026-07-22T19:20:04Z",
+    "note": "Les cartes qu'on partage sur les réseaux sociaux sont maintenant plus visuelles : un chiffre clé bien en vue, et un format vertical pensé pour Instagram.",
+    "version": "2.10.0-beta.0"
+  },
+  {
+    "pr": 245,
+    "date": "2026-07-22T19:02:56Z",
+    "note": "Métho + swimlanes : documenter le module Polimètre+ (suivi des promesses CAQ)",
+    "version": null
+  },
+  {
+    "pr": 256,
+    "date": "2026-07-22T03:43:56Z",
+    "note": "docs(pipeline): synchroniser les diagrammes vivants avec la dépréciation #428",
+    "version": null
+  },
+  {
+    "pr": 285,
+    "date": "2026-07-22T03:35:27Z",
+    "note": "Reformulation d'une entrée de ce journal en langage plus simple.",
+    "version": null
+  },
+  {
+    "pr": 293,
+    "date": "2026-07-22T03:31:34Z",
+    "note": "fix(deux solitudes) : enrouler les badges de médias sur plusieurs rangées",
+    "version": null
+  },
+  {
+    "pr": 290,
+    "date": "2026-07-21T21:21:05Z",
+    "note": "docs(métho) : vérification d'appartenance des articles (§ 04, aws-refiners#236)",
+    "version": null
+  },
+  {
+    "pr": 288,
+    "date": "2026-07-21T15:05:38Z",
+    "note": "Une des Unes : plancher de récence — montrer le saillant du moment (dossier fenêtre)",
+    "version": "2.9.0-beta.0"
+  },
+  {
+    "pr": 286,
+    "date": "2026-07-21T15:03:15Z",
+    "note": "Une des Unes : trajectoire de saillance + bulle de distribution (#274, bloquée par #281)",
+    "version": "2.8.0-beta.0"
+  },
+  {
+    "pr": 287,
+    "date": "2026-07-21T14:59:13Z",
+    "note": "Saillance : recalibrer la pastille sur les pics 24 h post-fusion (closes #281)",
+    "version": "2.7.0-beta.1"
+  },
+  {
+    "pr": 283,
+    "date": "2026-07-20T18:09:01Z",
+    "note": "La Une des Unes accorde plus de poids aux dernières heures dans son classement : une histoire encore chaude passe devant une histoire qui s’essouffle.",
+    "version": "2.7.0-beta.0"
+  },
+  {
+    "pr": 284,
+    "date": "2026-07-20T18:01:03Z",
+    "note": "Un journal des mises à jour est maintenant accessible en cliquant sur le numéro de version au bas du site : chaque amélioration y est expliquée simplement, avec un lien vers le détail technique.",
+    "version": "2.6.0-beta.0"
+  },
+  {
+    "pr": 279,
+    "date": "2026-07-20T05:11:52Z",
+    "note": "La Une des Unes affiche désormais de une à trois Unes selon leur mérite réel, plutôt que trois systématiquement.",
+    "version": "2.5.0-beta.0"
+  },
+  {
+    "pr": 280,
+    "date": "2026-07-20T05:10:43Z",
+    "note": "La page Méthodologie explique comment les manchettes republiées par plusieurs médias d'un même groupe sont dédoublonnées, avec la réintégration de TVA Nouvelles.",
+    "version": "2.4.0-beta.1"
+  },
+  {
+    "pr": 270,
+    "date": "2026-07-17T00:14:59Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 255,
+    "date": "2026-07-16T01:07:52Z",
+    "note": "Nettoyage de la documentation du module Deux solitudes après la ratification de son score par événement.",
+    "version": null
+  },
+  {
+    "pr": 236,
+    "date": "2026-07-16T01:05:08Z",
+    "note": "Les commits du projet sont désormais toujours attribués aux membres de l'équipe, avec une vérification automatique à chaque contribution.",
+    "version": null
+  },
+  {
+    "pr": 244,
+    "date": "2026-07-15T22:15:15Z",
+    "note": "Chaque Une affiche l'heure de sa publication (par exemple « 20 h ») plutôt qu'une étiquette de bloc technique.",
+    "version": null
+  },
+  {
+    "pr": 251,
+    "date": "2026-07-15T21:43:19Z",
+    "note": "Refonte du module Deux solitudes : le score compare désormais les histoires couvertes de part et d'autre, sur une échelle absolue, avec une présentation graphique retravaillée.",
+    "version": null
+  },
+  {
+    "pr": 253,
+    "date": "2026-07-15T21:41:03Z",
+    "note": "Correction d'une date de livraison dans la documentation publique du pipeline.",
+    "version": null
+  },
+  {
+    "pr": 254,
+    "date": "2026-07-15T21:39:34Z",
+    "note": "Le repère « habituel » du module Deux solitudes est maintenant calculé à partir de l'historique réel des données plutôt que fixé à la main.",
+    "version": null
+  },
+  {
+    "pr": 249,
+    "date": "2026-07-15T21:33:48Z",
+    "note": "Les seuils et la jauge du module Deux solitudes s'appuient désormais sur des centiles calculés en continu à partir des données.",
+    "version": null
+  },
+  {
+    "pr": 248,
+    "date": "2026-07-15T18:27:38Z",
+    "note": "Le module Deux solitudes affiche la convergence, une jauge et les logos des médias sur une fenêtre glissante de 24 heures.",
+    "version": null
+  },
+  {
+    "pr": 243,
+    "date": "2026-07-15T18:22:00Z",
+    "note": "Les modules Une des Unes et Deux solitudes sélectionnent désormais leurs contenus sur la même fenêtre glissante de 24 heures, à partir d'une source commune.",
+    "version": "2.4.0-beta.0"
+  },
+  {
+    "pr": 242,
+    "date": "2026-07-15T18:17:09Z",
+    "note": "Ajout des pourcentages sur le graphique radar du module Deux solitudes et d'une bulle explicative à droite.",
+    "version": "2.3.0-beta.3"
+  },
+  {
+    "pr": 247,
+    "date": "2026-07-15T18:04:35Z",
+    "note": "Retrait d'une affirmation inexacte sur la période de référence de la jauge de convergence dans la page Méthodologie.",
+    "version": null
+  },
+  {
+    "pr": 241,
+    "date": "2026-07-15T17:30:19Z",
+    "note": "Vérification des sources primaires de l'horaire du pipeline et documentation des décisions qui en découlent.",
+    "version": null
+  },
+  {
+    "pr": 223,
+    "date": "2026-07-14T18:53:14Z",
+    "note": "Mise à jour du graphique des niveaux de saillance dans la page Méthodologie (nouveau libellé « Exceptionnelle »).",
+    "version": "2.3.0-beta.2"
+  },
+  {
+    "pr": 239,
+    "date": "2026-07-14T18:09:56Z",
+    "note": "Adoption de règles de rédaction communes pour tous les textes publics du site (ton, lexique, typographie).",
+    "version": "2.3.0-beta.1"
+  },
+  {
+    "pr": 240,
+    "date": "2026-07-14T18:03:17Z",
+    "note": "Le module Deux solitudes prend la forme d'un graphique radar qui compare les sujets saillants des médias québécois et canadiens.",
+    "version": "2.3.0-beta.0"
+  },
+  {
+    "pr": 238,
+    "date": "2026-07-14T17:54:17Z",
+    "note": "Reconstitution du rapport d'évaluation critique du module Deux solitudes dans la documentation interne.",
+    "version": "2.2.0-beta.2"
+  },
+  {
+    "pr": 226,
+    "date": "2026-07-14T00:19:45Z",
+    "note": "Adoption de règles d'écriture pour garder la page Méthodologie accessible au grand public.",
+    "version": null
+  },
+  {
+    "pr": 234,
+    "date": "2026-07-14T00:14:39Z",
+    "note": "Chaque modification visuelle du site passe désormais par une vérification systématique du rendu sur mobile et tablette.",
+    "version": "2.2.0-beta.1"
+  },
+  {
+    "pr": 233,
+    "date": "2026-07-13T23:56:56Z",
+    "note": "La Une des Unes évite maintenant de répéter la même histoire dans son top 3 et adapte sa mise en page de une à trois Unes.",
+    "version": "2.2.0-beta.0"
+  },
+  {
+    "pr": 229,
+    "date": "2026-07-13T01:26:07Z",
+    "note": "Simplification d'une section de la page Méthodologie pour la rendre accessible au grand public.",
+    "version": "2.1.0-beta.3"
+  },
+  {
+    "pr": 228,
+    "date": "2026-07-13T01:23:52Z",
+    "note": "Retrait du bouton « S'abonner » du pied de page, le service n'étant pas encore offert.",
+    "version": "2.1.0-beta.2"
+  },
+  {
+    "pr": 227,
+    "date": "2026-07-13T01:22:56Z",
+    "note": "Les signalements des visiteurs sont désormais dirigés automatiquement vers la bonne personne de l'équipe selon le module visé.",
+    "version": null
+  },
+  {
+    "pr": 224,
+    "date": "2026-07-12T19:42:18Z",
+    "note": "Mise à jour du décompte des colonnes dans un diagramme de la documentation publique du pipeline.",
+    "version": "2.1.0-beta.1"
+  },
+  {
+    "pr": 225,
+    "date": "2026-07-11T21:41:00Z",
+    "note": "La Une des Unes suit chaque histoire sur 24 heures à travers l'ensemble des médias, indique depuis quand elle est saillante et pointe vers l'article le plus récent.",
+    "version": "2.1.0-beta.0"
+  },
+  {
+    "pr": 222,
+    "date": "2026-07-11T15:31:07Z",
+    "note": "Nouveau guide d'accueil commun pour les personnes qui rejoignent le projet.",
+    "version": "2.0.0-beta.11"
+  },
+  {
+    "pr": 221,
+    "date": "2026-07-11T15:21:59Z",
+    "note": "Chaque contribution doit désormais déclarer son impact sur la page Méthodologie (règle d'équipe).",
+    "version": "2.0.0-beta.10"
+  },
+  {
+    "pr": 220,
+    "date": "2026-07-10T19:52:16Z",
+    "note": "Mise à jour d'un diagramme de la documentation publique du pipeline (agrégats sur 24 heures).",
+    "version": "2.0.0-beta.9"
+  },
+  {
+    "pr": 219,
+    "date": "2026-07-10T19:17:19Z",
+    "note": "Chaque contribution passe par une vérification automatique de son impact sur la page Méthodologie.",
+    "version": "2.0.0-beta.8"
+  },
+  {
+    "pr": 214,
+    "date": "2026-07-10T19:07:24Z",
+    "note": "La Une des Unes affiche un titre stable (« du moment ») et l'heure de dernière mise à jour du module dans un format compact.",
+    "version": "2.0.0-beta.7"
+  },
+  {
+    "pr": 204,
+    "date": "2026-07-10T17:32:40Z",
+    "note": "Le niveau de saillance le plus élevé s'appelle désormais « Exceptionnelle » plutôt qu'« Extrême ».",
+    "version": "2.0.0-beta.6"
+  },
+  {
+    "pr": 216,
+    "date": "2026-07-10T17:30:26Z",
+    "note": "Les diagrammes de référence du pipeline sont maintenant hébergés sur le site, avec une correction de la chaîne de traitement de la Une.",
+    "version": "2.0.0-beta.5"
+  },
+  {
+    "pr": 217,
+    "date": "2026-07-10T17:28:39Z",
+    "note": "Chaque module a sa propre carte d'aperçu lorsqu'un lien est partagé sur les réseaux sociaux.",
+    "version": null
+  },
+  {
+    "pr": 209,
+    "date": "2026-07-10T16:01:32Z",
+    "note": "Le site génère des cartes d'aperçu pour le partage sur les réseaux sociaux.",
+    "version": "2.0.0-beta.4"
+  },
+  {
+    "pr": 208,
+    "date": "2026-07-09T15:06:32Z",
+    "note": "Les six modules affichent une mention « Dernière mise à jour » uniforme, tirée directement des données.",
+    "version": "2.0.0-beta.3"
+  },
+  {
+    "pr": 207,
+    "date": "2026-07-09T14:57:47Z",
+    "note": "Le module Deux solitudes devient une section à part entière, accessible par son propre lien d'ancrage.",
+    "version": "2.0.0-beta.2"
+  },
+  {
+    "pr": 205,
+    "date": "2026-07-09T14:52:17Z",
+    "note": "Les éditions des médias affichent leur nom officiel et l'en-tête correspond à l'édition des données présentées.",
+    "version": "2.0.0-beta.1"
+  },
+  {
+    "pr": 202,
+    "date": "2026-07-09T01:28:19Z",
+    "note": "Nettoyage de la documentation d'accueil du projet.",
+    "version": null
+  },
+  {
+    "pr": 203,
+    "date": "2026-07-09T01:24:24Z",
+    "note": "Correction technique du mécanisme qui met à jour automatiquement le numéro de version du site.",
+    "version": null
+  },
+  {
+    "pr": 199,
+    "date": "2026-07-08T21:38:24Z",
+    "note": "Chaque module a maintenant son lien d'ancrage : on peut pointer directement vers une section précise du site.",
+    "version": null
+  },
+  {
+    "pr": 185,
+    "date": "2026-07-08T21:31:59Z",
+    "note": "Correction d'une erreur de chargement des données du module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 90,
+    "date": "2026-07-08T21:30:37Z",
+    "note": "Mise en place du versionnage automatique du site : le numéro affiché au pied de page se met à jour à chaque amélioration.",
+    "version": null
+  },
+  {
+    "pr": 160,
+    "date": "2026-07-08T21:14:30Z",
+    "note": "Arrivée du module Polimètre+, qui suit la réalisation des promesses électorales du gouvernement.",
+    "version": null
+  },
+  {
+    "pr": 195,
+    "date": "2026-07-08T21:09:53Z",
+    "note": "Série de petits correctifs d'affichage signalés par l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 193,
+    "date": "2026-07-08T21:05:40Z",
+    "note": "Le bouton de signalement d'un problème reste visible en tout temps.",
+    "version": null
+  },
+  {
+    "pr": 200,
+    "date": "2026-07-08T21:03:43Z",
+    "note": "Ajout d'une infobulle qui explique la notion d'ombre médiatique dans le module des partis.",
+    "version": null
+  },
+  {
+    "pr": 197,
+    "date": "2026-07-08T20:50:48Z",
+    "note": "Bouton de partage plus discret : icône seule, avec repli des réseaux sur ordinateur.",
+    "version": null
+  },
+  {
+    "pr": 198,
+    "date": "2026-07-08T20:45:01Z",
+    "note": "Titre plus court pour le module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 196,
+    "date": "2026-07-08T20:35:40Z",
+    "note": "Correction de l'icône du site qui ne s'affichait pas dans certains navigateurs.",
+    "version": null
+  },
+  {
+    "pr": 194,
+    "date": "2026-07-08T20:23:37Z",
+    "note": "Réorganisation des logos partenaires au pied de page.",
+    "version": null
+  },
+  {
+    "pr": 191,
+    "date": "2026-07-08T20:21:50Z",
+    "note": "Le module des partis affiche un message clair lorsque les données sont indisponibles.",
+    "version": null
+  },
+  {
+    "pr": 142,
+    "date": "2026-07-08T19:57:13Z",
+    "note": "Les signalements des visiteurs précisent la zone du site concernée (six modules et habillage général).",
+    "version": null
+  },
+  {
+    "pr": 192,
+    "date": "2026-07-08T19:45:12Z",
+    "note": "La page Méthodologie attribue correctement le projet au CAPP et nomme l'organisme au long au premier usage.",
+    "version": null
+  },
+  {
+    "pr": 190,
+    "date": "2026-07-08T19:28:11Z",
+    "note": "Un seul bouton de partage par module, pour une interface plus claire.",
+    "version": null
+  },
+  {
+    "pr": 189,
+    "date": "2026-07-08T19:13:59Z",
+    "note": "Les logos partenaires sont hébergés sur le site et la Chaire de recherche s'ajoute au pied de page.",
+    "version": null
+  },
+  {
+    "pr": 188,
+    "date": "2026-07-08T18:56:14Z",
+    "note": "Simplification du bouton de partage.",
+    "version": null
+  },
+  {
+    "pr": 184,
+    "date": "2026-07-08T18:14:58Z",
+    "note": "La documentation d'équipe référence la démarche d'évaluation des outils d'automatisation.",
+    "version": null
+  },
+  {
+    "pr": 182,
+    "date": "2026-07-03T00:15:08Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 163,
+    "date": "2026-06-29T19:00:46Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 174,
+    "date": "2026-06-29T18:59:12Z",
+    "note": "Ajout de garde-fous automatiques pour encadrer le travail des outils d'automatisation de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 173,
+    "date": "2026-06-29T18:57:43Z",
+    "note": "Ajout de tests automatisés sur le chargement des données, exécutés à chaque contribution.",
+    "version": null
+  },
+  {
+    "pr": 172,
+    "date": "2026-06-29T18:55:03Z",
+    "note": "Fondation de l'infrastructure d'automatisation du projet : documentation de référence, évaluations et procédures outillées.",
+    "version": null
+  },
+  {
+    "pr": 179,
+    "date": "2026-06-29T17:31:53Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 178,
+    "date": "2026-06-29T17:29:55Z",
+    "note": "Le rafraîchissement des données est plus résilient : un module en erreur ne gèle plus la mise à jour des autres.",
+    "version": null
+  },
+  {
+    "pr": 170,
+    "date": "2026-06-26T17:26:07Z",
+    "note": "Correction du formulaire de signalement pour le nouveau domaine du site.",
+    "version": null
+  },
+  {
+    "pr": 167,
+    "date": "2026-06-26T17:14:34Z",
+    "note": "Renforcement de la sécurité du formulaire de signalement.",
+    "version": null
+  },
+  {
+    "pr": 162,
+    "date": "2026-06-26T00:14:30Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 116,
+    "date": "2026-06-22T15:31:01Z",
+    "note": "Première version du module Polimètre+.",
+    "version": null
+  },
+  {
+    "pr": 151,
+    "date": "2026-06-19T00:14:34Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 146,
+    "date": "2026-06-13T15:18:09Z",
+    "note": "Améliorations d'interface : en-tête, bordures, infobulles, lecteur audio et rendu mobile.",
+    "version": null
+  },
+  {
+    "pr": 144,
+    "date": "2026-06-13T14:59:56Z",
+    "note": "Mise à jour du contenu de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 145,
+    "date": "2026-06-12T00:15:01Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 141,
+    "date": "2026-06-05T00:15:24Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 132,
+    "date": "2026-06-04T15:14:56Z",
+    "note": "Mise à jour du contenu textuel de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 131,
+    "date": "2026-06-04T05:19:51Z",
+    "note": "Corrections du rendu mobile : débordements, en-tête, bande de manchettes et ligne du temps.",
+    "version": null
+  },
+  {
+    "pr": 130,
+    "date": "2026-06-04T03:52:39Z",
+    "note": "Refonte éditoriale de la Une des Unes : mise en avant de la saillance, en-tête intégré et allure de journal.",
+    "version": null
+  },
+  {
+    "pr": 121,
+    "date": "2026-06-02T23:42:32Z",
+    "note": "La première Une affiche le premier paragraphe de la nouvelle sous son titre.",
+    "version": null
+  },
+  {
+    "pr": 92,
+    "date": "2026-05-29T00:39:12Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 114,
+    "date": "2026-05-28T21:56:00Z",
+    "note": "Séparation des environnements de développement et de production du site.",
+    "version": null
+  },
+  {
+    "pr": 110,
+    "date": "2026-05-28T18:40:52Z",
+    "note": "Le thème musical du moment est partagé automatiquement avec l'équipe à chaque rafraîchissement.",
+    "version": null
+  },
+  {
+    "pr": 105,
+    "date": "2026-05-26T18:44:18Z",
+    "note": "Ajout de la page À propos.",
+    "version": null
+  },
+  {
+    "pr": 103,
+    "date": "2026-05-26T17:45:43Z",
+    "note": "Correction de l'affichage des noms d'enjeux trop longs dans le graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 102,
+    "date": "2026-05-26T17:33:50Z",
+    "note": "Ajustement de la largeur des colonnes du graphique des enjeux pour éviter les tuiles trop étroites.",
+    "version": null
+  },
+  {
+    "pr": 101,
+    "date": "2026-05-26T17:13:35Z",
+    "note": "Amélioration de l'affichage des infobulles dans les colonnes étroites du graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 100,
+    "date": "2026-05-26T16:56:01Z",
+    "note": "Correction d'un débordement de texte dans le graphique des enjeux.",
+    "version": null
+  },
+  {
+    "pr": 98,
+    "date": "2026-05-23T16:44:34Z",
+    "note": "Ajustement technique du déploiement pour fiabiliser la publication du site.",
+    "version": null
+  },
+  {
+    "pr": 97,
+    "date": "2026-05-22T18:45:02Z",
+    "note": "Correction du rafraîchissement automatique pour inclure les fichiers audio.",
+    "version": null
+  },
+  {
+    "pr": 87,
+    "date": "2026-05-22T14:10:57Z",
+    "note": "Correction de liens erronés dans le graphique des enjeux et ajout d'une infobulle d'invitation au survol.",
+    "version": null
+  },
+  {
+    "pr": 93,
+    "date": "2026-05-22T13:51:25Z",
+    "note": "La musique d'ambiance varie désormais à chaque génération.",
+    "version": null
+  },
+  {
+    "pr": 91,
+    "date": "2026-05-22T00:27:32Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 89,
+    "date": "2026-05-21T17:30:27Z",
+    "note": "Mise à jour de la planification de sprint de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 88,
+    "date": "2026-05-21T17:26:41Z",
+    "note": "Stabilisation de la génération musicale sur une version précise du modèle.",
+    "version": null
+  },
+  {
+    "pr": 86,
+    "date": "2026-05-21T17:10:53Z",
+    "note": "Génération automatique d'une musique d'ambiance à partir de l'actualité du moment.",
+    "version": null
+  },
+  {
+    "pr": 85,
+    "date": "2026-05-21T16:53:27Z",
+    "note": "Les tuiles du graphique des enjeux sont cliquables et mènent à un article représentatif.",
+    "version": null
+  },
+  {
+    "pr": 83,
+    "date": "2026-05-21T15:53:41Z",
+    "note": "Ajout d'une infobulle sur la source et les délais du Journal des débats dans le module de l'Assemblée.",
+    "version": null
+  },
+  {
+    "pr": 84,
+    "date": "2026-05-21T15:52:16Z",
+    "note": "Ajout d'un lecteur audio d'ambiance dans la Une des Unes.",
+    "version": null
+  },
+  {
+    "pr": 80,
+    "date": "2026-05-21T15:33:43Z",
+    "note": "Ajustement de l'alignement de la fleur de lys dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 78,
+    "date": "2026-05-21T14:59:10Z",
+    "note": "Résumé de la planification de sprint de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 76,
+    "date": "2026-05-21T14:45:19Z",
+    "note": "Correction technique de l'envoi des captures d'écran lors d'un signalement.",
+    "version": null
+  },
+  {
+    "pr": 74,
+    "date": "2026-05-18T22:25:11Z",
+    "note": "Correction de l'envoi de captures d'écran dans le formulaire de signalement.",
+    "version": null
+  },
+  {
+    "pr": 72,
+    "date": "2026-05-18T22:11:17Z",
+    "note": "On peut joindre une capture d'écran à un signalement de problème.",
+    "version": null
+  },
+  {
+    "pr": 71,
+    "date": "2026-05-18T22:01:29Z",
+    "note": "Le site se met à jour automatiquement dans le navigateur, sans rechargement forcé.",
+    "version": null
+  },
+  {
+    "pr": 56,
+    "date": "2026-05-16T23:23:20Z",
+    "note": "Formulaire de signalement retravaillé : vouvoiement, nom obligatoire et meilleure priorisation des demandes.",
+    "version": null
+  },
+  {
+    "pr": 55,
+    "date": "2026-05-16T22:55:13Z",
+    "note": "Les illustrations générées représentent les personnes de façon symbolique, sans figures identifiables.",
+    "version": null
+  },
+  {
+    "pr": 54,
+    "date": "2026-05-16T22:26:22Z",
+    "note": "Les personnages des illustrations générées sont neutres et interchangeables.",
+    "version": null
+  },
+  {
+    "pr": 53,
+    "date": "2026-05-16T22:09:58Z",
+    "note": "Les illustrations générées ne tentent jamais de reproduire le visage de personnes réelles.",
+    "version": null
+  },
+  {
+    "pr": 44,
+    "date": "2026-05-16T21:46:10Z",
+    "note": "Correction du graphique des enjeux lorsque certaines métadonnées sont vides.",
+    "version": null
+  },
+  {
+    "pr": 41,
+    "date": "2026-05-16T15:33:56Z",
+    "note": "L'illustration générée illustre la manchette réellement affichée, avec un cadrage neutre.",
+    "version": null
+  },
+  {
+    "pr": 42,
+    "date": "2026-05-16T15:09:16Z",
+    "note": "On peut signaler un problème directement depuis le site, d'un clic droit.",
+    "version": null
+  },
+  {
+    "pr": 36,
+    "date": "2026-05-16T14:36:33Z",
+    "note": "Ajout d'une page d'abonnement « en construction ».",
+    "version": null
+  },
+  {
+    "pr": 39,
+    "date": "2026-05-16T01:49:53Z",
+    "note": "Les illustrations générées ne contiennent aucun texte et créditent leur auteur.",
+    "version": null
+  },
+  {
+    "pr": 38,
+    "date": "2026-05-16T01:33:24Z",
+    "note": "Simplification du pipeline : la génération d'illustrations est intégrée au rafraîchissement des données.",
+    "version": null
+  },
+  {
+    "pr": 37,
+    "date": "2026-05-16T01:12:49Z",
+    "note": "Fiabilisation du rafraîchissement automatique des données (anti-collision entre tâches).",
+    "version": null
+  },
+  {
+    "pr": 33,
+    "date": "2026-05-16T01:06:52Z",
+    "note": "Correction du mécanisme de publication automatique des données et des illustrations.",
+    "version": null
+  },
+  {
+    "pr": 32,
+    "date": "2026-05-16T00:02:51Z",
+    "note": "Le module Deux solitudes présente trois histoires avec des titres en français.",
+    "version": null
+  },
+  {
+    "pr": 31,
+    "date": "2026-05-15T20:52:03Z",
+    "note": "Nettoyage technique : retrait des dernières traces de l'ancien moteur du site.",
+    "version": null
+  },
+  {
+    "pr": 30,
+    "date": "2026-05-15T20:50:52Z",
+    "note": "Correction de la description du site affichée lors d'un partage de lien.",
+    "version": null
+  },
+  {
+    "pr": 27,
+    "date": "2026-05-15T20:49:49Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 29,
+    "date": "2026-05-15T20:47:30Z",
+    "note": "Les mises à jour de dépendances techniques sont fusionnées automatiquement après vérification.",
+    "version": null
+  },
+  {
+    "pr": 26,
+    "date": "2026-05-15T20:46:26Z",
+    "note": "Mise à jour automatique de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 28,
+    "date": "2026-05-15T20:33:17Z",
+    "note": "Restauration de contributions écrasées par erreur.",
+    "version": null
+  },
+  {
+    "pr": 25,
+    "date": "2026-05-15T19:24:57Z",
+    "note": "Regroupement des mises à jour de dépendances techniques.",
+    "version": null
+  },
+  {
+    "pr": 24,
+    "date": "2026-05-15T19:14:26Z",
+    "note": "Correction du rendu du site sous son adresse de publication.",
+    "version": null
+  },
+  {
+    "pr": 14,
+    "date": "2026-05-15T18:56:46Z",
+    "note": "Renforcement de la protection de la branche principale du site.",
+    "version": null
+  },
+  {
+    "pr": 13,
+    "date": "2026-05-15T18:06:22Z",
+    "note": "Amélioration des motifs visuels des Unes et de l'affichage de la durée en manchette.",
+    "version": null
+  },
+  {
+    "pr": 12,
+    "date": "2026-05-14T20:45:13Z",
+    "note": "Ajustement de la taille et de l'alignement de la fleur de lys dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 11,
+    "date": "2026-05-14T20:31:08Z",
+    "note": "Harmonisation de la taille des emblèmes du module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 10,
+    "date": "2026-05-14T20:14:20Z",
+    "note": "Remplacement du glyphe de la fleur de lys par une image dans le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 8,
+    "date": "2026-05-14T19:59:49Z",
+    "note": "Grand ménage du code : structure aplanie, documentation d'accueil et vérification continue.",
+    "version": null
+  },
+  {
+    "pr": 7,
+    "date": "2026-05-14T19:37:54Z",
+    "note": "Migration du site vers un cadre technique moderne (Next.js).",
+    "version": null
+  },
+  {
+    "pr": 6,
+    "date": "2026-05-14T19:35:54Z",
+    "note": "Ajout de mesures de convergence et de divergence aux données qui alimentent le module Deux solitudes.",
+    "version": null
+  },
+  {
+    "pr": 5,
+    "date": "2026-05-14T19:21:45Z",
+    "note": "Ajustements du rendu mobile des étiquettes de plusieurs modules.",
+    "version": null
+  },
+  {
+    "pr": 4,
+    "date": "2026-05-14T02:52:13Z",
+    "note": "Le module de l'Assemblée nationale est branché sur les données réelles des débats.",
+    "version": null
+  },
+  {
+    "pr": 3,
+    "date": "2026-05-14T02:30:09Z",
+    "note": "Le module Parole en Chambre offre des onglets par période (dernière séance, session, législature).",
+    "version": null
+  },
+  {
+    "pr": 2,
+    "date": "2026-05-14T02:17:39Z",
+    "note": "Mise en place du chargement des données des débats parlementaires.",
+    "version": null
+  },
+  {
+    "pr": 1,
+    "date": "2026-05-13T21:04:04Z",
+    "note": "Mise en place du pipeline de rafraîchissement automatique des données du site.",
+    "version": null
+  }
+]

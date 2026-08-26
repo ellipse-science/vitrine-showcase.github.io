@@ -10,8 +10,15 @@ name: Refresh Data
 #   Header: Authorization: token <GitHub PAT with workflow scope>
 #   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
 
+# BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
+# rafraîchissement vit dans le Worker Cloudflare (cron :10, sync-athena.ts).
+# Il reste un FILET hebdomadaire : il garde les JSON commités (source de
+# repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
+# n'a plus à l'appeler ; son compte peut être fermé.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1' # lundi 12:00 UTC, filet hebdomadaire
 
 permissions:
   contents: read
@@ -23,6 +30,11 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
+    # ~1h30 le 2026-08-18) tourne jusqu'à la limite dure de 6h de GitHub. Couplé
+    # à concurrency.cancel-in-progress: false, ce zombie met toutes les éditions
+    # suivantes EN FILE derrière lui → le site fige. 25 min ≈ 3× un run normal.
+    timeout-minutes: 25
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -32,6 +44,23 @@ jobs:
       AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
+      # ─── DEUX DESTINATIONS, SELON LA GRAVITÉ (décision Adrien 2026-08-08) ───
+      # L'architecture de surveillance est UNE CHAÎNE PAR CORPUS : les médias ont
+      # #02_radar-plus_sonar, les décideurs #02__agora-plus_sonar, et la vitrine
+      # (ce dépôt) a la sienne. Ce qui vient d'ici ne va donc PAS dans la chaîne
+      # de Radar+ — corrige le cadrage de la PR #417, qui datait du matin même.
+      #
+      # SLACK_VITRINE_SONAR_WEBHOOK_URL -> #02_vitrine_sonar : ce qui rend le site
+      #   FAUX ou VIEUX (rafraîchissement échoué, Une périmée). C'est ce qu'on lit.
+      # SLACK_WEBHOOK_URL -> #02_hydration_watchdog : les échecs COSMÉTIQUES
+      #   (image, musique), fréquents et sans conséquence sur l'exactitude. On
+      #   laisse ce bruit où il est plutôt que de le déverser dans une chaîne
+      #   qu'on veut pouvoir lire — consigne explicite d'Adrien.
+      #
+      # Tant que le secret du sonar vitrine n'existe pas, les alertes graves
+      # RETOMBENT sur SLACK_WEBHOOK_URL : on préfère une alerte au mauvais endroit
+      # à une alerte perdue. Le courriel Healthchecks reste le secours hors Slack.
+      SLACK_VITRINE_SONAR_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_MUSIC_WEBHOOK_URL:    ${{ secrets.SLACK_MUSIC_WEBHOOK_URL }}
       OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
@@ -39,20 +68,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # persist-credentials must stay true (default) so checkout's SSH
           # config survives into the "Commit updated data files" push step.
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
 
       - name: Setup R
+        # Coupable de l'incident du 2026-08-18 (gel ~1h30 au lieu de ~30s). Le
+        # timeout fait ÉCHOUER le step plutôt que de le laisser pendre : le
+        # workflow poursuit ses étapes, donc « Alert Slack on failure » sonne.
+        # C'est la raison d'être de ce garde rapproché EN PLUS du plafond global :
+        # le plafond du JOB, lui, interrompt le job en cours de route, si bien que
+        # les étapes suivantes ne s'exécutent pas du tout et que l'alerte reste
+        # muette (un job interrompu ne satisfait pas non plus failure()). Le
+        # plafond du job libère la file ; ce timeout-ci fait parler l'alerte.
+        timeout-minutes: 6
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.4'
           use-public-rspm: true
 
       - name: Cache R packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.R_LIBS_USER }}
           key: r-${{ runner.os }}-v1
@@ -65,25 +103,152 @@ jobs:
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
-            remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = TRUE)
+            # install_github touche un endpoint api.github.com soumis a la limite
+            # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
+            # surtout depuis les IP partagees des runners Actions. Cest intermittent
+            # -> retry avec backoff jusqua tomber sur une fenetre non throttlee.
+            # Pas depinglage de SHA : on veut le tube a jour (fix paws/dbplyr de Patrick).
+            for (i in 1:6) {
+              ok <- tryCatch({
+                remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = TRUE)
+                TRUE
+              }, error = function(e) {
+                message(sprintf("tube install attempt %d/6 failed: %s", i, conditionMessage(e)))
+                FALSE
+              })
+              if (ok) break
+              if (i == 6) stop("Failed to install tube after 6 attempts (GitHub secondary rate limit 429?)")
+              Sys.sleep(2^i * 5)  # backoff: 10, 20, 40, 80, 160s
+            }
           '
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install openai pillow python-dotenv replicate
+        # pillow : cartes de député·es (build_deputy_cards.py). openai a suivi
+        # generate_art.py hors de ce workflow (raffineur vitrine-art).
+        run: pip install pillow python-dotenv replicate
+
+      # Les portraits changent quelques fois par AN (partielles), pas toutes
+      # les 4h : scraper à chaque déclenchement de ce workflow ferait ~250
+      # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
+      # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
+      # tourne donc que sur le PREMIER des six déclenchements quotidiens
+      # (00h50 UTC, cron cron-job.org) plutôt que d'ajouter un cron natif
+      # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
+      # natif pour les données électorales plus haut, ne compte pas ici.
+      #
+      # Placé ICI, juste après le setup Python, et pas plus bas dans le job :
+      # les étapes qui suivent (Athena, art IA, musique IA) peuvent prendre
+      # plusieurs minutes chacune. Vérifier l'heure APRÈS elles risquerait de
+      # lire 01h passé minuit UTC un jour de run lent, et de sauter la
+      # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
+      # plus sans qu'aucune alerte ne le signale.
+      - name: Check daily deputy-photo window
+        id: photo_window
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Python deps for deputy portraits (numpy, Pillow already present)
+        if: steps.photo_window.outputs.run == 'true'
+        run: pip install numpy
+
+      - name: Refresh deputy portraits (best-effort, non-blocking)
+        id: deputy_photos
+        if: steps.photo_window.outputs.run == 'true'
+        continue-on-error: true
+        run: python scripts/scrape_deputy_photos.py
+
+      # --force : sans ça, build_deputy_cards.py saute toute circonscription
+      # dont la carte de sortie existe déjà — y compris après une partielle,
+      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
+      # même nom de fichier (clé = siège, pas personne). Sans --force, la
+      # carte traitée que le site affiche resterait celle de l'ANCIEN
+      # titulaire alors que la source brute est déjà à jour. Le coût — tout
+      # regénérer plutôt que le nécessaire — est négligeable ici : 125
+      # images, une fois par jour.
+      - name: Rebuild deputy cards (best-effort, non-blocking)
+        id: deputy_cards
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: python scripts/build_deputy_cards.py --force
+
+      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
+      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
+      # watchdog comme art/musique — même famille de défaillance (un
+      # supplément visuel, pas le contenu de fond que sert la Une) — et la
+      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
+      - name: Warn Slack if deputy-photo refresh failed
+        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure')
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
 
-      - name: Generate AI art (best-effort, non-blocking)
-        id: art
+      # Alarme de fraîcheur (réf. aws-refiners#278) : un retard CONSTANT
+      # d'environ 4h SANS aucune erreur = un stepper de la cascade AWS coincé
+      # un bloc en arrière — panne silencieuse restée invisible ~30h les
+      # 6-7 août 2026. On mesure l'âge du bloc le plus frais réellement servi
+      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; l'alerte Slack
+      # ci-dessous sonne au-delà du seuil, à chaque fetch tant que ça dure.
+      # Non bloquant : une donnée en retard doit quand même être publiée.
+      - name: Check headline freshness (silent-lag alarm)
+        id: freshness
         continue-on-error: true
-        run: python scripts/generate_art.py
+        run: python scripts/check_freshness.py
 
+      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
+      # données plus bas — la donnée (même en retard) se publie toujours.
+      - name: Alert Slack if headline data is stale
+        if: steps.freshness.outputs.stale == 'true'
+        continue-on-error: true
+        run: |
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
+          # Sonar vitrine si le secret existe, sinon repli sur l'ancien webhook :
+          # une alerte au mauvais endroit vaut mieux qu'une alerte perdue.
+          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$HOOK"
+          fi
+
+      # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
+      # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
+      # fetch, ping /fail quand la Une est périmée → courriel « DOWN » avec
+      # l'âge en corps, puis « UP » au rétablissement. Si le workflow meurt
+      # entièrement, le battement manque et Healthchecks alerte aussi —
+      # couvre le fetch mort ET le retard silencieux.
+      - name: Signal freshness to Healthchecks (email alert)
+        if: steps.freshness.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if [ -n "$HEALTHCHECKS_URL" ]; then
+            if [ "${{ steps.freshness.outputs.stale }}" = "true" ]; then
+              curl -fsS -m 10 --retry 3 --data-raw "La Une est périmée : ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep." "$HEALTHCHECKS_URL/fail"
+            else
+              curl -fsS -m 10 --retry 3 --data-raw "${{ steps.freshness.outputs.resume }}" "$HEALTHCHECKS_URL"
+            fi
+          fi
+
+      # L'ILLUSTRATION N'EST PLUS GÉNÉRÉE ICI. Le raffineur vitrine-art
+      # (aws-refiners) lit la Une désignée sur le site déployé
+      # (data/hero-selection.json, publié par le build — même code que le
+      # rendu, issue #259), génère l'image et la dépose sur /v1/art (R2). Le
+      # build la rapatrie via scripts/fetch_art.mjs. Ce workflow n'a donc plus
+      # besoin ni de Node, ni d'OpenAI, ni de scripts/generate_art.py.
       - name: Generate ambient music (best-effort, non-blocking)
         id: music
         continue-on-error: true
@@ -94,7 +259,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/ public/audio/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -108,13 +273,57 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Recharge Postgres AVANT de pousser sur `prod`.
+      #
+      # C'EST UNE QUESTION D'ORDRE, ET ELLE A DÉJÀ COÛTÉ UNE RÉGRESSION. La
+      # poussée sur `prod` déclenche le déploiement dans la minute, et ce
+      # déploiement lit l'API. Si la synchro n'avait lieu que sur son propre
+      # horaire (le cron du Worker), le build lirait l'API à un moment où elle
+      # contient encore le cycle précédent : c'est ce qui s'est produit le
+      # 2026-08-18, le site affichant des données de plusieurs heures plus
+      # anciennes que celles qui venaient d'être publiées.
+      #
+      # Séquence garantie : JSON commités sur main → Postgres rechargé →
+      # poussée sur prod → build. Le cron du Worker reste comme filet.
+      #
+      # PAR TRANCHES DE QUATRE TABLES : sur le plan gratuit de Workers, un
+      # gestionnaire `fetch` dispose de 10 ms de CPU (le cron en a 30 s). Un
+      # appel unique meurt vers la sixième table ; quatre appels passent. La
+      # boucle suit `next` jusqu'à ce qu'il soit nul.
+      #
+      # `continue-on-error` : une synchro ratée ne doit pas empêcher les données
+      # d'atteindre `prod`. Le build a sa propre garde de fraîcheur et repartira
+      # des fichiers commités plutôt que de publier du périmé.
+      - name: Recharger Postgres (API) avant la poussée prod
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+        run: |
+          set -uo pipefail
+          offset=0
+          for _ in $(seq 1 8); do
+            body=$(curl -sS --max-time 180 -X POST \
+                     -H "Authorization: Bearer $VITRINE_API_KEY" \
+                     "https://api.vitrinedemocratique.com/v1/sync?offset=$offset&limit=4") || {
+              echo "::warning::Appel de synchro échoué. Le build repartira des fichiers."
+              exit 0
+            }
+            echo "$body"
+            next=$(printf '%s' "$body" | python3 -c "import sys,json;print(json.load(sys.stdin).get('next') or '')" 2>/dev/null || echo "")
+            [ -z "$next" ] && break
+            offset=$next
+          done
+          echo "Synchro Postgres terminée."
+
       - name: Sync fresh data to prod branch
         if: steps.commit.outputs.changed == 'true'
         run: |
           # Dev/prod split: code is gated behind manual main→prod merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
-          # payload (public/data + public/audio) from the just-pushed main onto
-          # prod — never code. Replacing (not merging) the paths means no conflicts.
+          # payload (public/data + public/audio + public/images/deputes) from the
+          # just-pushed main onto prod — never code. Replacing (not merging) the
+          # paths means no conflicts.
           # No-op until the prod branch exists (created during Cloudflare setup),
           # so this is safe to merge to main before prod is stood up.
           if ! git ls-remote --exit-code --heads origin prod >/dev/null 2>&1; then
@@ -126,8 +335,11 @@ jobs:
           # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
           # origin/prod may not exist. FETCH_HEAD always points at the just-fetched tip.
           git checkout -B prod FETCH_HEAD
-          git checkout main -- public/data/ public/audio/
-          git add public/data/ public/audio/
+          # public/images/deputes/ included alongside data/audio: without it, a
+          # by-election winner's portrait would land on main daily but never
+          # reach the live prod site until someone happens to merge main→prod.
+          git checkout main -- public/data/ public/audio/ public/images/deputes/
+          git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "prod data already current — nothing to sync."
           else
@@ -135,26 +347,22 @@ jobs:
             git push origin prod
           fi
 
+      # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
+      # alerte de sonar vitrine, pas du bruit cosmétique.
       - name: Alert Slack on failure
         if: failure()
         run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
+          if [ -n "$HOOK" ]; then
             RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             curl -fsS -X POST -H 'Content-Type: application/json' \
               -d "{\"text\":\"⚠️ *Vitrine data refresh FAILED*\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
+              "$HOOK"
           fi
 
-      - name: Warn Slack if art generation failed (data still published)
-        if: steps.art.outcome == 'failure'
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine art generation failed* — data was refreshed and deployed normally; only the AI image is stale.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
-
+      # Musique : cosmétique et fréquent. Reste dans le watchdog — on ne
+      # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
+      # (L'illustration a son propre circuit : raffineur vitrine-art -> /v1/art.)
       - name: Warn Slack if music generation failed (data still published)
         if: steps.music.outcome == 'failure'
         run: |

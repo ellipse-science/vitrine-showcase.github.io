@@ -1,0 +1,134 @@
+name: Version bump + journal on PR merge
+
+# À chaque PR mergée dans main, ce workflow fait deux choses en un commit :
+#
+# 1. JOURNAL (toutes les PR) : ajoute une entrée à static-content/changelog.json
+#    (affiché sur /journal) via .github/scripts/append-changelog.mjs — note
+#    tirée de la section « Note de journal » du template de PR (fallback :
+#    titre de la PR ; PR de bot → note générique).
+#
+# 2. BUMP (PR avec label semver:* seulement) : bumpe package.json (la source
+#    de vérité affichée dans le footer via RawMaquette) :
+#   - semver:patch  → 2.0.0-beta.0 → 2.0.0-beta.1 (bêta) / 2.0.1 (hors bêta)
+#   - semver:minor  → 2.0.0-beta.0 → 2.1.0-beta.0 (bêta) / 2.1.0 (hors bêta)
+#   - semver:major  → 2.0.0-beta.0 → 3.0.0-beta.0 (bêta) / 3.0.0 (hors bêta)
+# Les commits « data: refresh … » n'ouvrent pas de PR → jamais de bump ni
+# d'entrée de journal sur le pipeline de rafraîchissement 4h.
+#
+# Pour sortir de bêta : éditer package.json à la main sur une PR normale
+# (ex. « 2.0.0-beta.5 » → « 2.0.0 »).
+#
+# POURQUOI UN DEPLOY KEY (et pas GITHUB_TOKEN) : le ruleset de `main` exige une
+# PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) n'est PAS
+# ajoutable à la bypass-list. On pousse donc le commit de bump avec la même
+# SSH deploy key que refresh-data.yml (secrets.REFRESH_DATA_DEPLOY_KEY) — les
+# Deploy keys SONT dans le bypass du ruleset (mode « always »). Bonus : un push
+# par deploy key déclenche bien deploy.yml (on:push), contrairement à un push
+# GITHUB_TOKEN — donc pas besoin de relancer deploy.yml à la main.
+
+# pull_request_target (et non pull_request) : ce job manipule une deploy key
+# sensible. pull_request_target exécute TOUJOURS la version de ce workflow
+# présente sur `main` (fiable), pas celle de la branche de la PR — un
+# contributeur ne peut donc pas altérer le workflow dans sa branche pour
+# exfiltrer la clé. C'est sûr ici parce qu'on ne checkout JAMAIS le code de la
+# PR : on checkout `main` et on ne lit que les métadonnées de l'événement
+# (labels, numéro, corps de la PR — traité comme du texte, jamais évalué,
+# jamais interpolé dans le shell).
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+
+# Sérialise les runs entre eux : deux PR mergées coup sur coup ne se marchent
+# pas dessus (le rebase ci-dessous gère en plus les commits de refresh).
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine bump type from PR labels
+        id: bump
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          if echo "$LABELS" | grep -q '"semver:major"'; then
+            echo "type=major" >> "$GITHUB_OUTPUT"
+          elif echo "$LABELS" | grep -q '"semver:minor"'; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          elif echo "$LABELS" | grep -q '"semver:patch"'; then
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Deploy key (persist-credentials par défaut = true) → le push SSH plus bas
+      # est authentifié par une clé qui bypasse le ruleset de main.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Bump version (prerelease-aware), append journal entry and push
+        env:
+          TYPE: ${{ steps.bump.outputs.type }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Pousser en SSH pour utiliser la deploy key (comme refresh-data.yml).
+          git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+
+          NEW=""
+          if [ "$TYPE" != "none" ]; then
+            CURRENT=$(node -p "require('./package.json').version")
+            if [[ "$CURRENT" == *-beta* ]]; then
+              case "$TYPE" in
+                patch) NPM_CMD="prerelease --preid=beta" ;;
+                minor) NPM_CMD="preminor --preid=beta" ;;
+                major) NPM_CMD="premajor --preid=beta" ;;
+              esac
+            else
+              NPM_CMD="$TYPE"
+            fi
+            npm version $NPM_CMD --no-git-tag-version
+            NEW=$(node -p "require('./package.json').version")
+            echo "### Version bumpée : \`$NEW\` (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Pas de label semver:* — entrée de journal seulement (PR #$PR_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Entrée du Journal des mises à jour (/journal) — toutes les PR.
+          NEW_VERSION="$NEW" node .github/scripts/append-changelog.mjs
+
+          git add package.json package-lock.json static-content/changelog.json
+          if [ -n "$NEW" ]; then
+            git commit -m "chore: bump version to $NEW (PR #$PR_NUMBER)"
+          else
+            git commit -m "chore(journal): entrée pour la PR #$PR_NUMBER"
+          fi
+
+          # main peut avancer entre le checkout et le push (commits « data:
+          # refresh … » poussés via deploy key). On rebase et on réessaie.
+          for attempt in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push réussi (tentative $attempt) — deploy.yml se déclenche sur ce push."
+              exit 0
+            fi
+            echo "Push refusé (tentative $attempt) — rebase sur main puis retry."
+            git pull --rebase origin main
+          done
+          echo "::error::Impossible de pousser le bump de version après 5 tentatives."
+          exit 1

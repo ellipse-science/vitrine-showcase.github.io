@@ -1,0 +1,299 @@
+import fs from "node:fs";
+import path from "node:path";
+import { describe, it, expect } from "vitest";
+import { __test__ } from "@/lib/data/headlineEvents";
+import {
+  SALIENCE_CUTOVER,
+  NEW_INDEX_SCALE,
+  NEW_SUM_QC_THRESHOLDS,
+  NEW_BLOCK_QC_THRESHOLDS,
+  NEW_SUM_ROC_THRESHOLDS,
+  NEW_BLOCK_ROC_THRESHOLDS,
+  scaleThresholds,
+  SUM_QC_CUMUL_MESURE,
+  SUM_ROC_CUMUL_MESURE,
+  RECENCY_WEIGHT_TOTAL,
+  recencyWeight,
+  enPoints,
+} from "@/lib/data/salienceCutover";
+
+const { qcScore, rocScore, storiesFrom24h, rawRank } = __test__;
+
+// Deux blocs consécutifs, une seule histoire, avec les DEUX indices présents et
+// volontairement DISCORDANTS : l'ancien monte, le nouveau descend. C'est ce qui
+// rend les tests d'inertie et de bascule discriminants — sur des valeurs égales,
+// ils passeraient sans rien prouver.
+const ev = (block: string, scoreQc: number, idxQc: number) => ({
+  event_id: `e-${block}`,
+  storyline_id: "s1",
+  title: "Une histoire",
+  date_utc: block.slice(0, 10),
+  time_interval_utc: `${block.slice(11)}-00`,
+  score_qc: scoreQc,
+  score_roc: 0,
+  salience_index_qc: idxQc,
+  salience_index_roc: 0,
+  media_ids_qc: '["LAP","JDM"]',
+  media_ids_roc: "[]",
+  media_ids: '["LAP","JDM"]',
+});
+const ROWS = [ev("2026-08-08T12", 40, 0.2), ev("2026-08-08T16", 60, 0.1)];
+
+describe("qcScore / rocScore — le point de bascule", () => {
+  it("flag éteint : lit l'ancien indice, tel quel", () => {
+    expect(qcScore({ score_qc: 42, salience_index_qc: 0.9 } as never, false)).toBe(42);
+    expect(rocScore({ score_roc: 7, salience_index_roc: 0.9 } as never, false)).toBe(7);
+  });
+  it("flag allumé : lit le nouvel indice, à l'échelle d'affichage (×100)", () => {
+    expect(qcScore({ score_qc: 42, salience_index_qc: 0.685 } as never, true)).toBeCloseTo(68.5, 6);
+    expect(rocScore({ score_roc: 7, salience_index_roc: 0.201 } as never, true)).toBeCloseTo(20.1, 6);
+  });
+  it("colonne du nouvel indice absente (lignes anciennes) : 0, jamais NaN", () => {
+    expect(qcScore({ score_qc: 42 } as never, true)).toBe(0);
+    expect(rocScore({ score_roc: 7 } as never, true)).toBe(0);
+    expect(qcScore({ salience_index_qc: null } as never, true)).toBe(0);
+  });
+});
+
+describe("inertie du flag éteint", () => {
+  // Le contrat de cette PR : tant que SALIENCE_CUTOVER vaut false, rien ne
+  // bouge à l'écran, MÊME si les colonnes du nouvel indice sont déjà dans le
+  // snapshot (elles le seront dès le prochain refresh, cf. tables.json).
+  it("le classement se calcule sur l'ANCIEN indice malgré la présence du nouveau", () => {
+    const [story] = storiesFrom24h(ROWS as never, false);
+    // Poids de récence : bloc 16 = 1, bloc 12 (4 h plus tôt) = 2^(-4/10), le
+    // tout divisé par la somme des six poids (points sur 100, vitrine#566).
+    const w = Math.pow(2, -4 / 10);
+    expect(story.sumQc).toBeCloseTo((60 + 40 * w) / RECENCY_WEIGHT_TOTAL, 6);
+    expect(story.peakQc).toBe(60);
+  });
+  // CANARI DE BASCULE — retourné AVEC le flag le 2026-08-12, jour J. Ce n'est
+  // pas un invariant mais un état déclaré : il a rendu la PR dormante
+  // vérifiable pendant quatre jours, et il fait apparaître le flip dans le diff
+  // des tests plutôt que dans une seule ligne perdue d'un module de constantes.
+  it("canari : la bascule est FAITE (flag allumé)", () => {
+    expect(SALIENCE_CUTOVER).toBe(true);
+  });
+});
+
+describe("bascule du flag", () => {
+  it("le classement se calcule sur le NOUVEL indice, à l'échelle ×100", () => {
+    const [story] = storiesFrom24h(ROWS as never, true);
+    const w = Math.pow(2, -4 / 10);
+    expect(story.sumQc).toBeCloseTo((10 + 20 * w) / RECENCY_WEIGHT_TOTAL, 6);
+    // Le sommet suit le nouvel indice : c'est le bloc de 12 h (0,2), pas celui
+    // de 16 h que désignait l'ancien. Les deux indices ne classent pas pareil,
+    // et c'est précisément ce que la bascule change.
+    expect(story.peakQc).toBeCloseTo(20, 6);
+  });
+});
+
+describe("grilles de seuils du nouvel indice", () => {
+  const grilles = {
+    "cumul QC": NEW_SUM_QC_THRESHOLDS,
+    "bloc QC": NEW_BLOCK_QC_THRESHOLDS,
+    "cumul ROC": NEW_SUM_ROC_THRESHOLDS,
+    "bloc ROC": NEW_BLOCK_ROC_THRESHOLDS,
+  };
+  for (const [nom, g] of Object.entries(grilles)) {
+    it(`${nom} : bornes strictement croissantes (sinon rawRank devient incohérent)`, () => {
+      const v = [g.faible, g.moyenne, g.eleve, g.tresEleve, g.extreme];
+      for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]);
+    });
+  }
+
+  // L'INVARIANT MONO-MÉDIA, réénoncé le 2026-08-09 (vitrine#430) et écrit ici
+  // en assertion plutôt qu'en commentaire.
+  //
+  // Ancien énoncé (19-07) : « un mono-média n'atteint jamais Modérée ». Il
+  // exigeait de relever une borne à la main, parce que l'ancien indice ne
+  // regardait pas la largeur de couverture.
+  //
+  // Énoncé actuel : « un mono-média ne dépasse jamais la MÉDIANE ». Il tient
+  // par la forme de l'indice — visibilité nulle ramenée au plancher ε dans une
+  // moyenne géométrique non compensatoire — donc sans aucune constante à
+  // maintenir. Ce test le vérifie sur les deux grandeurs, avec les maxima
+  // mono-média mesurés sur la fenêtre régime-LLM.
+  // Mesuré en unités de cumul (44,7), exprimé en points sur 100 comme la
+  // grille exportée (vitrine#566) : même conversion des deux côtés.
+  const MONO_MAX_CUMUL = 44.7 / RECENCY_WEIGHT_TOTAL;   // grandeur du badge
+  const MONO_MAX_BLOC  = 27.2;   // valeur d'un bloc isolé (échelle du bloc, inchangée)
+  it("invariant : un mono-média ne franchit pas la médiane des Unes, sans règle ajoutée", () => {
+    // `eleve` = p50 = la médiane : la frontière de la moitié supérieure.
+    expect(MONO_MAX_CUMUL).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
+    // Il reste sous la moitié haute — rangs 1 à 3 sur 6.
+    expect(rawRank(MONO_MAX_CUMUL, NEW_SUM_QC_THRESHOLDS)).toBeLessThanOrEqual(3);
+  });
+
+  // ⚠️ PRÉCISION QUI A FAILLI PASSER À LA TRAPPE — ce test l'a attrapée.
+  //
+  // L'invariant porte sur une POPULATION précise : les Unes. Il ne se transpose
+  // pas à la grille PAR BLOC, qui est calibrée sur TOUTES les valeurs de bloc
+  // non nulles (n = 332), y compris celles d'événements qui n'ont jamais été
+  // Une. Cette population-là a une médiane bien plus basse (21,2), et le
+  // maximum mono-média (27,2) la dépasse.
+  //
+  // Ce n'est pas une faille : la grille par bloc ne sert que de REPLI pour le
+  // survol de la trajectoire, et seulement quand l'historique du badge manque —
+  // sinon ce sont les niveaux du badge, donc du cumul, qui étiquettent les
+  // points (cf. buildSalienceTrend). Le niveau que le lecteur voit vit sur le
+  // cumul, et c'est là que l'invariant tient.
+  //
+  // Dit autrement : « un mono-média ne dépasse jamais la médiane » est vrai
+  // parmi les Unes, pas parmi tous les blocs de tous les événements. Ne pas
+  // élargir la phrase sans refaire la mesure.
+  it("la grille par bloc est une autre population — l'invariant ne s'y transpose pas", () => {
+    expect(MONO_MAX_BLOC).toBeGreaterThan(NEW_BLOCK_QC_THRESHOLDS.eleve);
+  });
+  it("la borne « Modérée » est bien le percentile brut, sans relèvement", () => {
+    // Garde-fou anti-retour : si quelqu'un remet une béquille sans passer par
+    // #430, ce test le dit. 41,8 = p20 mesuré sur l'ANNÉE (n = 1 306) ; 45,0
+    // était l'ancien relèvement, retiré le 09-08.
+    //
+    // ⚠️ Ce test est le seul endroit où une valeur de grille est écrite en dur
+    // hors du module : à mettre à jour DÉLIBÉRÉMENT à chaque recalibration —
+    // c'est précisément son rôle de faire lever la main. Il l'a fait le
+    // 2026-08-12 au passage de la fenêtre courte (40,6) à l'année (41,8), et
+    // c'est le SEUL des 290 tests qui a bougé : les autres dérivent de la
+    // grille, donc une recalibration ne les rend plus faussement rouges.
+    expect(SUM_QC_CUMUL_MESURE.moyenne).toBe(41.8);
+    // Ce que le garde protège vraiment, au-delà du chiffre : la borne reste le
+    // p20 nu, donc strictement sous la médiane, jamais poussée au-dessus du
+    // maximum mono-média.
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
+    expect(NEW_SUM_QC_THRESHOLDS.moyenne).toBeLessThan(MONO_MAX_CUMUL);
+  });
+
+  // ── Les points sur 100 (vitrine#566) ──────────────────────────────────────
+  it("les six poids de récence d'une fenêtre pleine somment à 3,347, et normalisés à 1", () => {
+    expect(RECENCY_WEIGHT_TOTAL).toBeCloseTo(3.3474, 3);
+    const poids = [0, 4, 8, 12, 16, 20].map(recencyWeight);
+    expect(poids.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+    // Une Une d'il y a 10 h pèse moitié moins qu'une Une en cours.
+    expect(recencyWeight(10) / recencyWeight(0)).toBeCloseTo(0.5, 9);
+  });
+  it("les grilles du badge sont les mesures de cumul divisées par la somme des poids, sans arrondi", () => {
+    expect(NEW_SUM_QC_THRESHOLDS).toEqual(enPoints(SUM_QC_CUMUL_MESURE));
+    expect(NEW_SUM_ROC_THRESHOLDS).toEqual(enPoints(SUM_ROC_CUMUL_MESURE));
+    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeCloseTo(157.1 / 3.3474, 2);
+    // Tout vit sous 100 : c'est l'objet de la décision — une seule échelle.
+    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeLessThan(100);
+    expect(NEW_SUM_ROC_THRESHOLDS.extreme).toBeLessThan(100);
+  });
+  it("six blocs à 68,8 valent 68,8 points : la moyenne d'une fenêtre pleine est l'indice lui-même", () => {
+    const blocs = ["2026-08-08T00", "2026-08-08T04", "2026-08-08T08", "2026-08-08T12", "2026-08-08T16", "2026-08-08T20"]
+      .map((b) => ev(b, 0, 0.688));
+    const [story] = storiesFrom24h(blocs as never, true);
+    expect(story.sumQc).toBeCloseTo(68.8, 6);
+    // Un seul bloc à 68,8 ne vaut que sa part de la fenêtre : la normalisation
+    // se fait sur la fenêtre PLEINE, jamais sur les blocs présents.
+    const [seule] = storiesFrom24h([ev("2026-08-08T20", 0, 0.688)] as never, true);
+    expect(seule.sumQc).toBeCloseTo(68.8 / RECENCY_WEIGHT_TOTAL, 6);
+  });
+
+  it("scaleThresholds passe une grille publiée à l'échelle d'affichage", () => {
+    const t = scaleThresholds({ faible: 0.198, moyenne: 0.275, eleve: 0.386, tresEleve: 0.554, extreme: 0.646 });
+    expect(t.faible).toBeCloseTo(19.8, 6);
+    expect(t.extreme).toBeCloseTo(64.6, 6);
+    expect(NEW_INDEX_SCALE).toBe(100);
+  });
+  it("scaleThresholds(null) reste null — c'est le signal « prends le repli »", () => {
+    expect(scaleThresholds(null)).toBeNull();
+  });
+});
+
+// ── Garde flag ↔ méthodologie (vitrine#271, règle « la métho n'est jamais
+// périmée ») ────────────────────────────────────────────────────────────────
+// La page Méthodologie est du HTML statique : aucun flag ne peut la conditionner
+// à l'exécution. Ce test la conditionne au BUILD, dans les DEUX sens — publier
+// le nouvel indice sans réécrire le §03 laisserait la page décrire un calcul
+// abandonné ; réécrire le §03 avant la bascule ferait décrire un calcul qui ne
+// tourne pas encore. Les deux sont la même faute, et les deux échouent ici.
+describe("garde : le flag et la page Méthodologie basculent ensemble", () => {
+  const metho = fs.readFileSync(
+    path.resolve(process.cwd(), "public", "methodologie", "index.html"), "utf8");
+  const decritAncien = metho.includes("IndiceAbsolu(o, m, t) = TempsEnUne");
+  const decritNouveau = metho.includes("moyenne géométrique");
+
+  it("la page décrit exactement l'indice qui tourne", () => {
+    if (SALIENCE_CUTOVER) {
+      expect(decritNouveau,
+        "SALIENCE_CUTOVER est allumé : installez docs/methodologie-03-spec-v1.html dans public/methodologie/index.html (§ 03).").toBe(true);
+      expect(decritAncien,
+        "Le § 03 décrit encore l'ancien indice alors que le nouveau est en ligne.").toBe(false);
+    } else {
+      expect(decritAncien,
+        "Le § 03 ne décrit plus l'ancien indice alors que c'est lui qui tourne (SALIENCE_CUTOVER est éteint).").toBe(true);
+      expect(decritNouveau,
+        "Le § 03 décrit le nouvel indice avant la bascule : la page annoncerait un calcul qui ne tourne pas.").toBe(false);
+    }
+  });
+
+  it("le § 03 de remplacement est prêt et complet", () => {
+    const remplacement = fs.readFileSync(
+      path.resolve(process.cwd(), "docs", "methodologie-03-spec-v1.html"), "utf8");
+    expect(remplacement).toContain('<section id="indice-saillance"');
+    expect(remplacement).toContain("moyenne géométrique");
+    expect(remplacement).not.toContain("IndiceAbsolu(o, m, t) = TempsEnUne");
+  });
+});
+
+// ── A7 — le VRAI centile dans l'infobulle (vitrine#430) ──────────────────────
+// Avant : six phrases fixes, une par bande, alors que les bandes couvrent
+// jusqu'à 30 points de centile. Une Une au 22e centile et une autre au 49e
+// recevaient la même. Maintenant : le centile interpolé entre les 5 percentiles
+// publiés, dans la formulation arrêtée avec Adrien.
+describe("centile réel de l'infobulle", () => {
+  const { centileFrom, hintFromCentile } = __test__ as unknown as {
+    centileFrom: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS) => number;
+    hintFromCentile: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS, pop: string) => string;
+  };
+  const T = NEW_SUM_QC_THRESHOLDS; // 32,9 / 40,6 / 60,6 / 87,8 / 147,7
+
+  it("les percentiles publiés retombent sur eux-mêmes", () => {
+    expect(centileFrom(T.faible, T)).toBe(5);
+    expect(centileFrom(T.moyenne, T)).toBe(20);
+    expect(centileFrom(T.eleve, T)).toBe(50);
+    expect(centileFrom(T.tresEleve, T)).toBe(80);
+    expect(centileFrom(T.extreme, T)).toBe(95);
+  });
+  it("interpole entre deux percentiles au lieu d'arrondir à la bande", () => {
+    // Deux valeurs de la MÊME bande « Modérée » (20 → 50) : elles doivent
+    // recevoir des centiles différents, c'est tout l'objet de la règle.
+    const bas = centileFrom(T.moyenne + 1, T);
+    const haut = centileFrom(T.eleve - 1, T);
+    expect(bas).toBeGreaterThan(20);
+    expect(haut).toBeLessThan(50);
+    expect(haut - bas).toBeGreaterThan(10);
+  });
+  it("le cadrage bascule à la médiane pour garder un chiffre parlant", () => {
+    expect(hintFromCentile(T.tresEleve, T, "québécoises"))
+      .toBe("Sur les 24 dernières heures, elle dépasse environ 80 % des Unes québécoises de l’année.");
+    expect(hintFromCentile(T.faible, T, "québécoises"))
+      .toBe("Sur les 24 dernières heures, environ 95 % des Unes québécoises de l’année sont plus saillantes.");
+  });
+  // A9 (#430) — GARDE DE COHÉRENCE. Toute phrase de distribution doit nommer ses
+  // TROIS composantes : la portée (sur quoi on situe), la population, la
+  // période. Avant, chaque module n'en nommait que deux — et pas les mêmes —,
+  // si bien que deux chiffres mesurés contre des règles différentes se lisaient
+  // comme une contradiction. Ce test tient les DEUX familles de phrases.
+  it("toute phrase de distribution nomme sa portée, sa population et sa période", () => {
+    const { HINT_BY_RANK } = __test__ as unknown as {
+      HINT_BY_RANK: Record<number, (pop: string) => string>;
+    };
+    const phrases = [
+      ...[0, T.faible, T.moyenne, T.eleve, T.tresEleve, T.extreme, T.extreme * 10]
+        .flatMap((v) => ["québécoises", "canadiennes"].map((p) => hintFromCentile(v, T, p))),
+      ...[1, 2, 3, 4, 5, 6].flatMap((r) => ["québécoises", "canadiennes"].map((p) => HINT_BY_RANK[r](p))),
+    ];
+    for (const ph of phrases) {
+      expect(ph, `portée absente : ${ph}`).toContain("24 dernières heures");
+      expect(ph, `période absente : ${ph}`).toContain("de l’année");
+      expect(ph, `population absente : ${ph}`).toMatch(/québécoises|canadiennes/);
+    }
+  });
+  it("borne à [1, 99] — « moins saillante que 100 % » serait faux, elle fait partie du lot", () => {
+    expect(hintFromCentile(T.extreme * 10, T, "p")).toContain("99 %");
+    expect(hintFromCentile(0, T, "p")).toContain("99 %");
+  });
+});

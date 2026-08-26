@@ -1,0 +1,55 @@
+# En-têtes de cache pour Cloudflare Pages (prod).
+#
+# Cloudflare lit ce fichier à la RACINE de la sortie de build. Next.js recopie
+# public/ tel quel dans out/, donc le déposer ici suffit. GitHub Pages ignore ce
+# format : le site dev garde ses en-têtes par défaut, sans effet de bord.
+#
+# Format : un motif de chemin, puis les en-têtes indentés.
+# https://developers.cloudflare.com/pages/configuration/headers/
+#
+# ⚠️ PIÈGE VÉRIFIÉ EN PROD (2026-08-17) : les règles sont CUMULATIVES, pas
+# prioritaires. Un chemin qui correspond à deux motifs reçoit les DEUX en-têtes,
+# concaténés. Une première version posait un Cache-Control sur `/*` en plus des
+# règles spécifiques, et Cloudflare renvoyait :
+#
+#   cache-control: public, max-age=31536000, immutable, public, max-age=300, must-revalidate
+#
+# — deux max-age contradictoires dans la même valeur, l'immuabilité annulée.
+# D'où la règle : **`/*` ne porte AUCUN Cache-Control.** Le HTML retombe sur le
+# défaut de Pages (revalidation navigateur, cache au bord purgé à chaque
+# déploiement), ce qui est de toute façon le bon comportement pour des pages
+# dont les données changent toutes les 4 h.
+
+# Les actifs Next.js portent un hash de contenu dans leur nom : un changement de
+# contenu change l'URL. Ils sont donc immuables au sens strict — un an de cache
+# navigateur sans revalidation, et zéro risque de servir du périmé.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# L'illustration et la musique sont ÉCRASÉES sur place toutes les 4 h, à URL
+# constante (latest.png, latest.mp3…). Impossible de les marquer immuables : il
+# faut une fenêtre courte, alignée sur le cycle de rafraîchissement, sinon un
+# visiteur garderait l'image d'hier sur la une d'aujourd'hui.
+/data/generated-art/*
+  Cache-Control: public, max-age=900, stale-while-revalidate=3600
+
+/audio/*
+  Cache-Control: public, max-age=900, stale-while-revalidate=3600
+
+# Les polices et images de marque ne changent qu'au déploiement.
+/assets/*
+  Cache-Control: public, max-age=86400
+
+# La sonde d'actualisation du navigateur (composant ActualisationAuto) : le
+# fichier fait ~100 octets et DOIT toujours refléter le dernier déploiement,
+# sinon la détection de nouvelles données ment.
+/build-id.json
+  Cache-Control: no-store
+
+# Catch-all : en-têtes de sécurité UNIQUEMENT. Pas de Cache-Control ici — voir
+# l'avertissement en tête de fichier, il contaminerait toutes les règles
+# ci-dessus par concaténation.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

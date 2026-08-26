@@ -38,16 +38,79 @@ write_json_file <- function(df, path) {
     dataframe = "rows")
 }
 
+# Athena ne garantit AUCUN ordre en l'absence d'ORDER BY : deux fetch successifs
+# renvoient les mêmes lignes dans un ordre différent. Comme le JSON est écrit sur
+# une seule ligne, chaque rafraîchissement réécrivait donc le fichier entier —
+# six fois par jour, sans delta Git exploitable. D'où un .git qui dérive.
+#
+# Le tri porte sur toutes les colonnes concaténées : déterministe sans rien
+# savoir de la table. method = "radix" pour être indépendant de la locale, sinon
+# l'ordre changerait entre une machine locale et le runner CI.
+#
+# Aucun consommateur ne peut dépendre de l'ordre d'origine, puisqu'il variait
+# déjà d'un run à l'autre — les loaders qui ont besoin d'un ordre le
+# reconstruisent (cf. arrange() dans les post-traitements).
+sort_rows_deterministically <- function(df) {
+  if (nrow(df) < 2L || ncol(df) == 0L) return(df)
+  key <- do.call(paste, c(lapply(df, as.character), sep = ""))
+  df[order(key, method = "radix"), , drop = FALSE]
+}
+
+# Fenêtre de rétention du Polimètre+, en jours (cf. filtre polimetre_plus_recent).
+POLIMETRE_KEEP_DAYS <- 70L
+
+# Profondeur de l'archive des éditions (cf. filtre headline_events_window).
+#
+# 3 jours suffisaient tant que le site ne montrait que l'édition courante et sa
+# fenêtre glissante de 24 h. Depuis vitrine#434, le bandeau d'en-tête permet de
+# remonter d'édition en édition : cette constante EST la profondeur de l'archive
+# offerte au public (moins les 5 plus anciennes éditions, dont la fenêtre 24 h
+# serait tronquée — cf. listEditions dans lib/data/headlineEvents.ts).
+#
+# COÛT AWS : NUL. fetch_table() émet `SELECT <cols> FROM <table>` sans WHERE —
+# Athena scanne déjà la table entière à chaque run, et ce filtre ne fait que
+# jeter des lignes APRÈS coup, en R. Élargir la fenêtre ne change donc rien à la
+# facture ; on cesse simplement de jeter de la donnée déjà payée.
+#
+# COÛT DÉPÔT : marginal. Git stocke chaque version du JSON en delta de la
+# précédente (~60 Ko mesurés sur 516 versions, contre 1,3 Mo de fichier brut), et
+# ce delta suit ce qui CHANGE d'un run à l'autre — un bloc ajouté, un bloc
+# retiré — pas la largeur de la fenêtre. Passer de 3 à 14 jours coûte donc ~4 Mo
+# une fois, puis rien.
+HEADLINE_KEEP_DAYS <- 14L
+
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
 apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
-  if (filter_id == "headline_events_3day") {
-    # date_utc is stored as integer days since 1970-01-01; keep last 3 days
+  if (filter_id == "headline_events_window") {
+    # date_utc is stored as integer days since 1970-01-01.
     if ("date_utc" %in% names(df)) {
-      cutoff_day <- as.integer(Sys.Date() - 3L)
+      cutoff_day <- as.integer(Sys.Date() - HEADLINE_KEEP_DAYS)
       df <- dplyr::filter(df, date_utc >= cutoff_day)
+    }
+    return(df)
+  }
+
+  if (filter_id == "polimetre_plus_recent") {
+    # Le raffineur publie un snapshot par jour et la table s'accumule sans fin,
+    # chaque ligne enrichie pesant ~1 Ko de texte IA (résumés 7 j et 30 j).
+    # lib/data/polimetre.ts n'a besoin que de 8 snapshots — 4 pour le mois
+    # courant, 4 pour le précédent, par pas de 7 jours, soit 49 jours plus la
+    # tolérance. 70 laisse de la marge pour des runs manqués.
+    #
+    # Fenêtre ancrée sur la DONNÉE (dernier snapshot), pas sur Sys.Date() : si le
+    # raffineur cessait de publier, une fenêtre calculée depuis l'horloge viderait
+    # le fichier ligne à ligne et le module finirait par disparaître du site.
+    # Ancrée sur la donnée, elle gèle — la Vitrine montre des données périmées,
+    # ce qui est visible, plutôt qu'un module absent, qui ne l'est pas.
+    if ("week_end_date" %in% names(df) && nrow(df) > 0) {
+      wed <- as.Date(df$week_end_date)
+      if (any(!is.na(wed))) {
+        cutoff <- max(wed, na.rm = TRUE) - POLIMETRE_KEEP_DAYS
+        df <- df[!is.na(wed) & wed >= cutoff, , drop = FALSE]
+      }
     }
     return(df)
   }
@@ -66,8 +129,18 @@ fetch_table <- function(conn, entry) {
   col_list <- paste(sprintf('"%s"', cols), collapse = ", ")
   sql      <- sprintf('SELECT %s FROM "%s"', col_list, entry$athena)
   df       <- as.data.frame(DBI::dbGetQuery(conn, sql))
+  # noctua (le pilote Athena) marque parfois une colonne texte d'un attribut
+  # d'encodage que R ne reconnaît pas comme UTF-8/Latin-1/bytes, même quand le
+  # contenu est du UTF-8 valide — observé sur signature_word_context et
+  # editorial_angle (agora_decideurs_qc*), qui portent des guillemets français
+  # et une densité d'accents plus élevée que les autres tables du site.
+  # jsonlite refuse alors d'écrire la colonne : « Character encoding must be
+  # UTF-8, Latin-1 or bytes ». enc2utf8() force l'attribut sans toucher aux
+  # octets, donc n'a aucun effet sur une colonne déjà correcte.
+  df[] <- lapply(df, function(col) if (is.character(col)) enc2utf8(col) else col)
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
   df       <- apply_filter(df, entry$filter)
+  df       <- sort_rows_deterministically(df)
   df
 }
 
@@ -83,7 +156,7 @@ build_period_snapshot <- function(rows, party_full_names) {
   period_type  <- as.character(rows$period_type[1])
 
   period_label <- switch(period_type,
-    last_pdq    = paste0("Période de questions du ", period_end),
+    last_pdq    = paste0("Journée de débats du ", period_end),
     session     = paste0("Session ", format(as.Date(period_start), "%Y"),
                          " – ", format(as.Date(period_end), "%Y")),
     legislature = paste0("Législature ", format(as.Date(period_start), "%Y"),
@@ -254,6 +327,374 @@ dispatch_post_process <- function(entry, table_outputs) {
   fn(source_path, entry$out)
 }
 
+# ── Calibration glissante (suivi aws-refiners#212) ────────────────────────────────────────
+# Publie les percentiles de score_qc / score_roc / interval_convergence_score sur
+# une fenêtre glissante, pour que le frontend cesse de hardcoder ses seuils
+# (SAL_QC_THRESHOLDS, CAL_CONV) et affiche un « plus/moins que d'habitude » stable
+# (demande Yannick, 2026-06-08). Interroge l'historique COMPLET de
+# headline_events_4h (pas le filtre 3 jours). Chaque métrique est requêtée
+# séparément et tolère une colonne absente (score_roc n'arrive qu'avec le refiner
+# #211) : une métrique manquante est simplement omise → repli frontend sur les
+# valeurs codées. PROVISOIRE : à terme le refiner publiera ces bornes (aws-refiners#212).
+CAL_TABLE       <- "vitrine_datamart-headline_events_4h"
+CAL_WINDOW_DAYS <- 365L
+CAL_MIN_N       <- 60L
+CAL_PROBS       <- c(p5 = 0.05, p20 = 0.20, p50 = 0.50, p80 = 0.80, p95 = 0.95)
+
+# Percentiles d'un vecteur ; NULL si trop peu de points (repli frontend).
+# keep_zero : 0 est une vraie valeur pour la convergence (bloc pleinement
+# divergent) — on la garde ; pour score_qc/roc, 0 = « pas une Une de la région »,
+# on l'exclut.
+calibration_pctiles <- function(x, keep_zero = FALSE) {
+  x <- x[is.finite(x)]
+  x <- if (keep_zero) x[x >= 0] else x[x > 0]
+  if (length(x) < CAL_MIN_N) return(NULL)
+  qs  <- as.numeric(stats::quantile(x, probs = CAL_PROBS, names = FALSE, type = 7))
+  out <- as.list(round(qs, 2)); names(out) <- names(CAL_PROBS)
+  c(list(n = length(x)), out)
+}
+
+# Requête gardée d'UNE métrique. distinct_block : dédup par bloc (la convergence
+# est une valeur par bloc, pas par événement). Colonne absente → NULL (pas d'échec).
+# `date_utc` est de type DATE dans Athena → littéral DATE 'AAAA-MM-JJ' (pas un
+# entier ; l'entier ne sert qu'au filtre côté R après fetch, cf. apply_filter).
+calibration_metric <- function(conn, col, cut_date, keep_zero = FALSE, distinct_block = FALSE) {
+  tryCatch({
+    sel <- if (distinct_block) {
+      sprintf('SELECT DISTINCT date_utc, time_interval_utc, "%s" AS v', col)
+    } else {
+      sprintf('SELECT "%s" AS v', col)
+    }
+    sql <- sprintf("%s FROM \"%s\" WHERE date_utc >= DATE '%s'", sel, CAL_TABLE, cut_date)
+    df  <- as.data.frame(DBI::dbGetQuery(conn, sql))
+    calibration_pctiles(df$v, keep_zero = keep_zero)
+  }, error = function(e) {
+    message("   (calibration: colonne « ", col, " » indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
+# La pastille de saillance étiquette le PIC 24 h d'une histoire (peakQc côté
+# frontend), pas un score de bloc — il faut donc calibrer sur la distribution des
+# PICS, un par storyline (sinon les blocs répétés d'une même histoire pèsent en
+# double). Fenêtre POST-FUSION uniquement (aws-refiners#227, 2026-07-17) : la
+# fusion a nettement remonté les scores en agrégeant la couverture des fragments,
+# donc mélanger le pré-fusion abaisserait faussement les seuils (#281). NULL si
+# trop peu de storylines → repli frontend sur les seuils codés post-fusion.
+SAL_PEAK_CAL_FROM <- "2026-07-17"  # déploiement de la fusion prominence
+
+# Plancher de calibration du NOUVEL indice (salience_index_qc/roc, spec v1).
+# Pourquoi un plancher DIFFÉRENT de celui de l'ancien : la colonne shadow n'est
+# homogène qu'à partir du déploiement de aws-refiners#287, mergée le 2026-08-08
+# à 15 h 04 et vivante dès le bloc 15-19. Avant cette frontière, la même colonne
+# porte les valeurs de l'ANCIENNE formule — calibrer sur ce mélange est
+# exactement le piège documenté sur aws-refiners#224. Le plancher fait donc de
+# l'homogénéité une propriété de la requête, et non une consigne à respecter.
+# Il disparaîtra tout seul quand le recompute AWS aura réécrit l'historique
+# sous la spec v1 : il suffira alors de le ramener à cut_date.
+SPEC_V1_CAL_FROM <- "2026-08-09"  # 1er jour ENTIER en spec v1 (bascule le 08-08 en cours de journée)
+calibration_peak <- function(conn, from) {
+  tryCatch({
+    sql <- sprintf(paste(
+      "SELECT max(score_qc_peak_24h) AS v FROM \"%s\"",
+      "WHERE date_utc >= DATE '%s' AND storyline_id IS NOT NULL GROUP BY storyline_id"),
+      CAL_TABLE, from)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+    calibration_pctiles(df$v)  # exclut les storylines jamais Une QC (pic 0)
+  }, error = function(e) {
+    message("   (calibration: score_qc_peak_24h indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
+# Convergence EVENT-level (au niveau HISTOIRE) — calibre le repère « habituel »
+# de la jauge du module Deux solitudes. Reproduit windowEventConvergence du
+# frontend (lib/data/headlineEvents.ts) : pour CHAQUE bloc « as-of » de
+# l'historique on reconstruit la fenêtre glissante de 6 blocs (24 h), on agrège la
+# saillance par histoire (storyline_id ?? event_label ?? event_id) avec la MÊME
+# pondération de récence que le frontend (demi-vie 10 h, vitrine #274), on garde les
+# histoires bilatérales (sumQc>0 ET sumRoc>0) et on prend la moyenne des deux parts
+# d'attention. La distribution de ces valeurs `as-of` = exactement les nombres que
+# la jauge aurait affichés à chaque rafraîchissement de 4 h → son p50 remplace la
+# constante de repli HABITUAL_EVENT_CONV côté frontend (calibration.metrics
+# .event_convergence.p50). Applique les mêmes filtres que le frontend (dédup event_id
+# préf-QC + exclusion USA) ; ne reproduit PAS la dédup cross-langue par titre
+# (STOPGAP aws-refiners#213) → légère SOUS-estimation résiduelle. p50 mesuré sur DEV
+# = 28 % (cf. measure_event_convergence). Colonne absente / échec → NULL (repli frontend).
+calibration_event_convergence <- function(conn, cut_date) {
+  tryCatch({
+    sql <- sprintf(paste(
+      "SELECT date_utc, time_interval_utc, storyline_id, event_label, event_id,",
+      "target_region, country_id,",
+      "title, score_qc, score_roc, score_saillance, score_us",
+      "FROM \"%s\" WHERE date_utc >= DATE '%s'"), CAL_TABLE, cut_date)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+
+    num <- function(x) suppressWarnings(as.numeric(x))
+    # Mêmes filtres que le frontend AVANT toute agrégation, pour une distribution
+    # comparable (sans eux la médiane est sur-estimée, ~39 % vs 28 %) :
+    #  (1) dédup par event_id en préférant la ligne target_region=="QC" et
+    #  (2) exclusion des Unes américaines (country_id=="USA") — comme la dédup de
+    #      loadHeadlineEvents (byId + filter country_id !== "USA") ;
+    #  (3) exclusion des lignes sans titre — comme storiesFrom24h qui saute
+    #      `if (!e.title) continue` avant d'agréger une histoire.
+    df <- df %>%
+      mutate(qc_pref = ifelse(!is.na(target_region) & target_region == "QC", 0L, 1L)) %>%
+      arrange(event_id, qc_pref) %>%
+      distinct(event_id, .keep_all = TRUE) %>%
+      filter(is.na(country_id) | country_id != "USA") %>%
+      filter(!is.na(title), title != "") %>%
+      mutate(
+        qc  = ifelse(is.na(num(score_qc)),        0, num(score_qc)),
+        sal = ifelse(is.na(num(score_saillance)), 0, num(score_saillance)),
+        us  = ifelse(is.na(num(score_us)),        0, num(score_us)),
+        # score_roc publié (refiner #211) sinon repli par soustraction, comme
+        # rocScore côté frontend : max(0, saillance - QC - US).
+        roc = ifelse(is.na(num(score_roc)), pmax(0, sal - qc - us), num(score_roc)),
+        # Zero-pad de l'heure de début du bloc pour un tri lexical correct.
+        # NB : sprintf("%02s", ...) NE zero-pad PAS en R (le flag 0 est ignoré
+        # pour %s → " 4"), ce qui casserait l'ordre des blocs. On parse l'heure en
+        # entier et on utilise %02d.
+        block = paste0(date_utc, "T",
+                       sprintf("%02d", suppressWarnings(as.integer(
+                               sub("-.*$", "",
+                                   ifelse(is.na(time_interval_utc), "", time_interval_utc)))))),
+        # Clé d'histoire = storyline_id ?? event_label ?? event_id (frontend).
+        story = dplyr::coalesce(
+          ifelse(storyline_id == "", NA, storyline_id),
+          ifelse(event_label  == "", NA, event_label),
+          event_id))
+    if (nrow(df) == 0) return(NULL)
+
+    # Pré-agrégation UNE seule fois par (block, story) : la saillance QC/ROC de
+    # chaque histoire dans chaque bloc. Le rolling 24 h se fait ensuite sur cette
+    # table réduite (au lieu de re-grouper tout `df` à chaque fenêtre → évitait
+    # un coût O(n_fenêtres × n_lignes) et un risque de timeout CI sur 365 j).
+    by_bs <- df %>% group_by(block, story) %>%
+      summarise(sumQc = sum(qc), sumRoc = sum(roc), .groups = "drop") %>%
+      filter(sumQc + sumRoc > 0)
+
+    # Convergence event-level d'UNE fenêtre : somme par histoire sur les 6 blocs,
+    # puis moyenne des deux parts d'attention bilatérales. `rowsum` (base R) est
+    # bien plus léger qu'un group_by dplyr répété ~2 000 fois.
+    # Pondération de récence (vitrine #274, banc #282) : comme storiesFrom24h,
+    # le poids d'un bloc décroît en 2^(-âge/10 h) par rapport au bloc le plus
+    # récent de la fenêtre — sans elle, le p50 publié dériverait du module.
+    HALF_LIFE_H <- 10
+    block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
+                                                  format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+    # Chaque bloc est parsé UNE seule fois : les mêmes blocs reviennent dans
+    # ~2 000 fenêtres glissantes, re-parser à chaque fenêtre coûterait cher
+    # (même souci de timeout CI que la pré-agrégation ci-dessus).
+    block_ms_tab <- vapply(unique(df$block), block_ms, numeric(1))
+    window_conv <- function(win_blocks) {
+      w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
+      if (nrow(w) == 0) return(NA_real_)
+      newest <- max(block_ms_tab[win_blocks], na.rm = TRUE)
+      wt <- 2^((block_ms_tab[w$block] - newest) / 3600 / HALF_LIFE_H)
+      qc  <- rowsum(w$sumQc  * wt, w$story)[, 1]
+      roc <- rowsum(w$sumRoc * wt, w$story)[, 1]
+      totalQc <- sum(qc); totalRoc <- sum(roc)
+      if (totalQc <= 0 || totalRoc <= 0) return(NA_real_)
+      bi <- qc > 0 & roc > 0
+      round(((sum(qc[bi]) / totalQc) + (sum(roc[bi]) / totalRoc)) / 2 * 100)
+    }
+
+    # Une lecture « as-of » par bloc : fenêtre = ce bloc + les 5 précédents (6 blocs
+    # = 24 h pleines). On ignore les fenêtres partielles du début de l'historique.
+    blocks_desc <- sort(unique(df$block), decreasing = TRUE)
+    n <- length(blocks_desc)
+    if (n < 6) return(NULL)
+    convs <- vapply(seq_len(n - 5L),
+                    function(i) window_conv(blocks_desc[i:(i + 5L)]), numeric(1))
+    # 0 est une vraie valeur (fenêtre sans histoire bilatérale) → keep_zero.
+    calibration_pctiles(convs, keep_zero = TRUE)
+  }, error = function(e) {
+    message("   (calibration: event_convergence indisponible — ", conditionMessage(e), ")")
+    NULL
+  })
+}
+
+# Saillance CUMULÉE 24 h par histoire (sumQc/sumRoc du frontend,
+# storiesFrom24h) — calibre le BADGE de la Une des Unes (vitrine#314) côté QC
+# et le niveau de bout de ligne du radar Deux solitudes des DEUX côtés
+# (vitrine#383, aws-refiners#273). Le badge décrivait le PIC 24 h
+# (score_qc_peak_24h, ci-dessus) ; il décrit maintenant l'attention cumulée
+# pondérée par récence, qui décroît d'elle-même quand une histoire s'éteint.
+# Reproduit EXACTEMENT storiesFrom24h côté frontend : mêmes filtres que
+# calibration_event_convergence (dédup event_id préf-QC — PARTAGÉE par les
+# deux côtés, comme storiesFrom24h qui ne construit qu'une liste d'histoires —,
+# exclusion USA, titre requis), fenêtre glissante de 6 blocs, pondération de
+# récence demi-vie 10 h (HALF_LIFE_H, vitrine #274). Convention de
+# calibration_peak : UN POINT PAR STORYLINE — son SOMMET cumulé sur toute la
+# fenêtre, sinon une histoire longue (beaucoup de fenêtres as-of) pèserait en
+# double dans la distribution.
+#
+# POPULATION par côté — toujours les histoires AFFICHÉES de SA région, jamais
+# le pool brut (voir la mesure 93 %/43 % plus bas) :
+#   · QC  (score_qc / media_ids_qc, min_media_secondary = 2) : la sélection de
+#     la Une des Unes, selectTopUnes — top-3 par sumQc, héros toujours gardé,
+#     secondaires ≥ 2 médias QC (seuil éditorial vitrine#279).
+#   · ROC (score_roc / media_ids_roc, min_media_secondary = 1) : le top-3
+#     canadien du radar Deux solitudes (tri par sumRoc). Le seuil « ≥ 2
+#     médias » ne s'applique PAS ici : il est propre au module 1, le radar n'a
+#     pas d'équivalent éditorial côté ROC.
+#
+# Même plancher POST-FUSION que calibration_peak (`from`, aws-refiners#227) :
+# vérifié empiriquement sur l'historique DEV, mélanger le pré-fusion tire les
+# seuils vers le bas (p50 mesuré 20,2 mélangé contre 22,1 post-fusion seul,
+# écart croissant sur les hauts percentiles, là où la fusion pèse le plus).
+#
+# Colonne/table indisponible ou trop peu de storylines → NULL. Repli frontend :
+# côté QC, SUM_QC_THRESHOLDS codés en dur ; côté ROC, le radar garde son
+# compromis temporaire au pic (buildSolitudes) tant que rien n'est publié.
+calibration_sum_24h <- function(conn, from, score_col, media_col,
+                                min_media_secondary) {
+  tryCatch({
+    sql <- sprintf(paste(
+      "SELECT date_utc, time_interval_utc, storyline_id, event_label, event_id,",
+      "target_region, country_id, title, %s, %s",
+      "FROM \"%s\" WHERE date_utc >= DATE '%s'"),
+      score_col, media_col, CAL_TABLE, from)
+    df <- as.data.frame(DBI::dbGetQuery(conn, sql))
+
+    num <- function(x) suppressWarnings(as.numeric(x))
+    # Nombre de médias distincts du côté calibré, comme `qcIds`/`canIds` côté
+    # frontend (parseIdList).
+    n_media <- function(s) {
+      if (is.na(s) || s == "") return(0L)
+      length(unique(trimws(strsplit(gsub("\\[|\\]|\"", "", s), ",")[[1]])))
+    }
+    df <- df %>%
+      mutate(qc_pref = ifelse(!is.na(target_region) & target_region == "QC", 0L, 1L)) %>%
+      arrange(event_id, qc_pref) %>%
+      distinct(event_id, .keep_all = TRUE) %>%
+      filter(is.na(country_id) | country_id != "USA") %>%
+      filter(!is.na(title), title != "") %>%
+      mutate(
+        val = ifelse(is.na(num(.data[[score_col]])), 0, num(.data[[score_col]])),
+        nmed = vapply(.data[[media_col]], n_media, integer(1)),
+        block = paste0(date_utc, "T",
+                       sprintf("%02d", suppressWarnings(as.integer(
+                               sub("-.*$", "",
+                                   ifelse(is.na(time_interval_utc), "", time_interval_utc)))))),
+        story = dplyr::coalesce(
+          ifelse(storyline_id == "", NA, storyline_id),
+          ifelse(event_label  == "", NA, event_label),
+          event_id))
+    if (nrow(df) == 0) return(NULL)
+
+    by_bs <- df %>% group_by(block, story) %>%
+      summarise(sumVal = sum(val), nmed = max(nmed), .groups = "drop") %>%
+      filter(sumVal > 0)
+
+    HALF_LIFE_H <- 10
+    block_ms <- function(b) as.numeric(as.POSIXct(paste0(b, ":00:00"),
+                                                  format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+    block_ms_tab <- vapply(unique(df$block), block_ms, numeric(1))
+
+    blocks_desc <- sort(unique(df$block), decreasing = TRUE)
+    n <- length(blocks_desc)
+    if (n < 6) return(NULL)
+
+    # Somme pondérée de CHAQUE fenêtre as-of, puis SÉLECTION comme le frontend
+    # (média>0 & cumul>0, tri décroissant, top-3, secondaires ≥
+    # min_media_secondary — voir POPULATION dans l'en-tête).
+    #
+    # Calibrer sur TOUTES les storylines au lieu des seules AFFICHÉES reproduit
+    # exactement le défaut qu'on corrige : mesuré sur l'historique DEV (côté
+    # QC), 93 % des cartes tomberaient dans les 3 bandes du haut et 0 % dans
+    # les 2 du bas — le même 93 % que l'ancien badge au pic. Le tassement ne
+    # venait donc pas du « pic » mais de la population de référence. Sur les
+    # affichées : 43 % dans les 3 bandes du haut, 25 % dans les 2 du bas.
+    all_vals <- vector("list", n - 5L)
+    for (i in seq_len(n - 5L)) {
+      win_blocks <- blocks_desc[i:(i + 5L)]
+      w <- by_bs[by_bs$block %in% win_blocks, , drop = FALSE]
+      if (nrow(w) == 0) next
+      newest <- max(block_ms_tab[win_blocks], na.rm = TRUE)
+      wt <- 2^((block_ms_tab[w$block] - newest) / 3600 / HALF_LIFE_H)
+      sums <- rowsum(w$sumVal * wt, w$story)[, 1]
+      nmed <- tapply(w$nmed, w$story, max)
+      sel <- data.frame(story = names(sums), sumVal = as.numeric(sums),
+                        nmed = as.numeric(nmed[names(sums)]),
+                        stringsAsFactors = FALSE)
+      sel <- sel[sel$sumVal > 0 & sel$nmed > 0, , drop = FALSE]
+      if (nrow(sel) == 0) next
+      sel <- head(sel[order(-sel$sumVal), , drop = FALSE], 3)
+      keep <- seq_len(nrow(sel)) == 1L | sel$nmed >= min_media_secondary
+      sel <- sel[keep, , drop = FALSE]
+      if (nrow(sel) == 0) next
+      all_vals[[i]] <- setNames(sel$sumVal, sel$story)
+    }
+    combined <- unlist(all_vals)
+    if (length(combined) == 0) return(NULL)
+    # UN POINT PAR STORYLINE : son sommet cumulé, sinon une histoire affichée sur
+    # beaucoup de fenêtres pèserait en double (convention de calibration_peak).
+    peak_by_story <- tapply(combined, names(combined), max)
+    calibration_pctiles(unname(peak_by_story))
+  }, error = function(e) {
+    message("   (calibration: cumul 24 h « ", score_col, " » indisponible — ",
+            conditionMessage(e), ")")
+    NULL
+  })
+}
+
+build_salience_calibration <- function(conn, out_path) {
+  cut_date <- format(Sys.Date() - CAL_WINDOW_DAYS, "%Y-%m-%d")
+  metrics <- list()
+  qc  <- calibration_metric(conn, "score_qc", cut_date)
+  if (!is.null(qc))  metrics$score_qc  <- c(list(region = "QC"),  qc)
+  # Pics 24 h par storyline (post-fusion) — réfèrent la pastille de saillance (#281).
+  # Plancher post-fusion, mais jamais avant le début de la fenêtre 365 j : `since`
+  # annonce la vraie borne utilisée (quand la fenêtre dépassera 2026-07-17, elle
+  # deviendra cut_date).
+  peak_from <- max(cut_date, SAL_PEAK_CAL_FROM)
+  pk  <- calibration_peak(conn, peak_from)
+  if (!is.null(pk))  metrics$score_qc_peak_24h <- c(list(region = "QC", since = peak_from), pk)
+  # Cumul 24 h pondéré — calibre le badge (vitrine#314) côté QC et le bout de
+  # ligne du radar Deux solitudes côté ROC (vitrine#383, aws-refiners#273).
+  # MÊME plancher post-fusion que le pic ci-dessus (vérifié empiriquement dans
+  # calibration_sum_24h : mélanger le pré-fusion tire les seuils vers le bas).
+  sq  <- calibration_sum_24h(conn, peak_from, "score_qc",  "media_ids_qc",
+                             min_media_secondary = 2L)
+  if (!is.null(sq))  metrics$score_qc_sum_24h  <- c(list(region = "QC",  since = peak_from), sq)
+  sr  <- calibration_sum_24h(conn, peak_from, "score_roc", "media_ids_roc",
+                             min_media_secondary = 1L)
+  if (!is.null(sr))  metrics$score_roc_sum_24h <- c(list(region = "ROC", since = peak_from), sr)
+  roc <- calibration_metric(conn, "score_roc", cut_date)
+  if (!is.null(roc)) metrics$score_roc <- c(list(region = "ROC"), roc)
+  # ── Homologues du NOUVEL indice (cutover, lib/data/salienceCutover.ts) ──────
+  # Mêmes fonctions, mêmes conventions, même population que les quatre grilles
+  # ci-dessus — seule la colonne source change. Publiées MÊME quand le flag est
+  # éteint : le frontend les ignore, mais on peut ainsi les regarder grossir
+  # avant la bascule et vérifier qu'elles rejoignent les seuils codés. Une
+  # colonne absente ou un n trop petit rend simplement NULL (repli frontend).
+  si_from <- max(cut_date, SPEC_V1_CAL_FROM)
+  siq <- calibration_metric(conn, "salience_index_qc", si_from)
+  if (!is.null(siq)) metrics$salience_index_qc <- c(list(region = "QC", since = si_from), siq)
+  sir <- calibration_metric(conn, "salience_index_roc", si_from)
+  if (!is.null(sir)) metrics$salience_index_roc <- c(list(region = "ROC", since = si_from), sir)
+  siqs <- calibration_sum_24h(conn, si_from, "salience_index_qc", "media_ids_qc",
+                              min_media_secondary = 2L)
+  if (!is.null(siqs)) metrics$salience_index_qc_sum_24h <- c(list(region = "QC", since = si_from), siqs)
+  sirs <- calibration_sum_24h(conn, si_from, "salience_index_roc", "media_ids_roc",
+                              min_media_secondary = 1L)
+  if (!is.null(sirs)) metrics$salience_index_roc_sum_24h <- c(list(region = "ROC", since = si_from), sirs)
+  cv  <- calibration_metric(conn, "interval_convergence_score", cut_date,
+                            keep_zero = TRUE, distinct_block = TRUE)
+  if (!is.null(cv))  metrics$convergence <- c(list(region = NA), cv)
+  # Convergence au niveau HISTOIRE (fenêtre glissante 24 h) — repère « habituel »
+  # de la jauge du module Deux solitudes (frontend : event_convergence.p50).
+  ev  <- calibration_event_convergence(conn, cut_date)
+  if (!is.null(ev))  metrics$event_convergence <- c(list(region = NA), ev)
+
+  payload <- list(window_days = CAL_WINDOW_DAYS, computed_utc = NOW_UTC, metrics = metrics)
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(payload, out_path, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  list(n_metrics = length(metrics), path = out_path)
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 run <- function() {
@@ -302,6 +743,26 @@ run <- function() {
       })
   }
 
+  # Calibration glissante (suivi aws-refiners#212) — nécessite `conn` (ce n'est pas un post-process
+  # sur fichier). Résiliente : un échec n'empêche pas le commit des autres données ;
+  # le frontend retombe sur ses seuils codés si le fichier manque ou est partiel.
+  # `optional = TRUE` : reste dans meta.json (page /status) mais est EXCLU du
+  # comptage ok/err qui pilote le heartbeat Healthchecks — un échec de calibration
+  # ne doit pas marquer le refresh comme partiellement en échec (le frontend
+  # retombe proprement sur ses seuils codés).
+  cal_res <- tryCatch({
+    r <- build_salience_calibration(conn, "public/data/salience_calibration.json")
+    message("[", format(Sys.time(), "%H:%M:%S"), "] Calibration: ",
+            r$n_metrics, " métrique(s) -> ", r$path)
+    list(name = "salience_calibration", status = "ok", optional = TRUE,
+         metrics = r$n_metrics, generatedAt = NOW_UTC, path = r$path)
+  }, error = function(e) {
+    message("  !! Calibration FAILED: ", conditionMessage(e))
+    list(name = "salience_calibration", status = "error", optional = TRUE,
+         error = conditionMessage(e), generatedAt = NOW_UTC)
+  })
+  results[[length(results) + 1]] <- cal_res
+
   # Always write meta.json for the /status page
   run_url <- paste0(
     Sys.getenv("GITHUB_SERVER_URL", "https://github.com"), "/",
@@ -319,9 +780,12 @@ run <- function() {
     auto_unbox = TRUE, pretty = TRUE, na = "null")
   message("[", format(Sys.time(), "%H:%M:%S"), "] Written public/data/meta.json")
 
-  ok_count  <- sum(sapply(results, function(r) identical(r$status, "ok")))
-  err_count <- length(results) - ok_count
-  message("\nDone: ", ok_count, " ok, ", err_count, " failed out of ", length(results), " tables.")
+  # Comptage sur les tables CORE seulement (les entrées `optional = TRUE`, ex.
+  # calibration glissante, sont dans meta.json mais ne pilotent pas le heartbeat).
+  core_results <- Filter(function(r) !isTRUE(r$optional), results)
+  ok_count  <- sum(sapply(core_results, function(r) identical(r$status, "ok")))
+  err_count <- length(core_results) - ok_count
+  message("\nDone: ", ok_count, " ok, ", err_count, " failed out of ", length(core_results), " core tables.")
 
   # Ping Healthchecks.io heartbeat (only on full success)
   hc_url <- Sys.getenv("HEALTHCHECKS_URL", "")
@@ -333,7 +797,13 @@ run <- function() {
     message("Skipping Healthchecks ping — ", err_count, " table(s) failed.")
   }
 
-  if (err_count > 0) quit(status = 1)
+  # Résilience : une défaillance par table (ex. une colonne whitelistée pas encore
+  # publiée par son refiner → COLUMN_NOT_FOUND) ne doit PAS bloquer le refresh de
+  # toutes les autres tables. Chaque table est déjà isolée (tryCatch ci-dessus) et
+  # les tables OK sont écrites sur disque ; on n'échoue (exit 1 → alerte Slack) que
+  # si AUCUNE n'a réussi (ex. connexion perdue). Sinon on laisse le workflow committer
+  # les données fraîches obtenues. Les erreurs par table restent visibles dans meta.json.
+  if (ok_count == 0) quit(status = 1)
 }
 
 run()

@@ -1,0 +1,88 @@
+name: Déploiement dev (Cloudflare Pages)
+
+# Publie le miroir dev sur dev.vitrinedemocratique.com, protégé par Cloudflare
+# Access.
+#
+# COEXISTE VOLONTAIREMENT avec deploy.yml (GitHub Pages). Pendant la migration,
+# les deux miroirs dev tournent en parallèle : GitHub Pages reste le chemin de
+# retour arrière si Cloudflare pose problème. On ne débranche rien tant que la
+# nouvelle chaîne n'a pas fait ses preuves.
+#
+# CONSÉQUENCE ASSUMÉE, ET TEMPORAIRE : tant que GitHub Pages sert la même chose
+# publiquement, la protection par mot de passe de dev.vitrinedemocratique.com
+# n'est pas étanche — le contenu reste lisible ailleurs. Ce n'est pas une
+# régression (c'est l'état actuel), mais ça ne devient une vraie protection
+# qu'une fois GitHub Pages débranché, à la fin de la migration.
+
+# BASCULE 2026-08-19 : le build dev est déclenché par Cloudflare (intégration
+# Git de Pages au push, Deploy Hook du Worker au cycle de données). Ce
+# workflow ne se déclenche plus qu'à la main, en secours : le laisser au push
+# déploierait DEUX FOIS chaque poussée.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev-cloudflare
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Wait for git replication
+        run: sleep 15
+
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Mêmes fausses données que le miroir GitHub Pages : les deux miroirs dev
+      # doivent montrer la même chose, sinon comparer l'un à l'autre ne veut
+      # plus rien dire. Cf. le commentaire long dans deploy.yml.
+      - name: Générer les fausses données (miroir dev)
+        run: node scripts/make_parties_fixtures.mjs
+
+      - name: Build (Next.js static export + postbuild asset copy)
+        run: npm run build
+        env:
+          VITRINE_PARTIES_FIXTURES: fixtures/parties
+          # Servi à la RACINE de son propre domaine, contrairement au miroir
+          # GitHub Pages qui vit sous un sous-chemin.
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_SITE_ENV: dev
+          NEXT_PUBLIC_SITE_ORIGIN: https://dev.vitrinedemocratique.com
+          # Les données viennent désormais de l'API, pas des JSON commités.
+          # Le site reste un export statique : la lecture a lieu AU BUILD et le
+          # résultat est inliné dans le HTML. Aucun navigateur n'appelle l'API.
+          #
+          # refresh-data.yml continue de tourner et de commiter les JSON : c'est
+          # eux que la synchro charge dans Postgres, et ils servent de repli si
+          # l'API ne répond pas. Rien n'est débranché.
+          VITRINE_DATA_SOURCE: api
+          # Les jeux sont payants : même le site s'authentifie. Cette clé porte
+          # la portée totale et aucun quota — ce n'est pas un client.
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+          NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
+
+      - name: Publier sur Cloudflare Pages (dev)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler@4 pages deploy out \
+            --project-name vitrine-democratique-dev \
+            --branch main \
+            --commit-hash "$GITHUB_SHA"

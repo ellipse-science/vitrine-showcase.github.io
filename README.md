@@ -1,8 +1,10 @@
 # La Vitrine démocratique
 
-A media-focused data showcase by [CLESSN](https://clessn.com/) (Université Laval). Tracks Quebec political coverage and parliamentary discourse, refreshed every four hours from AWS Athena.
+A media-focused data showcase by the [CAPP](https://capp-ulaval.ca/) — Centre d'analyse des politiques publiques (Université Laval). Tracks Quebec political coverage and parliamentary discourse, refreshed every four hours from AWS Athena.
 
 **Live:** https://ellipse.science/vitrine-showcase.github.io/
+
+**Nouveau dans l'équipe ?** Commence par [ONBOARDING.md](./ONBOARDING.md) — la carte des 3 repos, les règles de survie et le workflow de PR.
 
 ## Stack
 
@@ -14,9 +16,13 @@ A media-focused data showcase by [CLESSN](https://clessn.com/) (Université Lava
 
 ## Quick start
 
+Requires **Node.js 22** (pinned in `.nvmrc`).
+
 ```bash
+nvm use        # or fnm/asdf — matches .nvmrc (Node 22)
 npm install
 npm run dev    # http://localhost:3000
+npm run test   # vitest — data-loader unit tests
 ```
 
 ## Build for production
@@ -72,7 +78,7 @@ PRs trigger `.github/workflows/ci.yml` which runs the type-checker and full buil
 
 Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via `.github/workflows/refresh-data.yml` triggered externally by [cron-job.org](https://cron-job.org/). The script reads the whitelist in `scripts/tables.json` and commits JSON to `public/data/`. The build then bakes those values into the page at build time — no runtime fetch.
 
-To add a new dataset, see [CLAUDE.md § Data](./CLAUDE.md#data).
+To add a new dataset, see [docs/reference/architecture.md § Data pipeline](./docs/reference/architecture.md#data-pipeline).
 
 ## Adding a new data-bound section
 
@@ -86,7 +92,7 @@ See `lib/data/parties.ts` + `components/sections/PartisCouvertureSection.tsx` + 
 
 ## Editing static (non-data) sections
 
-The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live as raw HTML in `static-content/{top,middle,bottom}.html`. Edit them as plain HTML — they're inlined verbatim. To make a chunk interactive, JSX-convert it into a proper component (move markup into a `.tsx`, replace `class` → `className`, etc.) and remove the chunk.
+The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live as raw HTML in `static-content/{top,bottom,polimeter_plus}.html`. Edit them as plain HTML — they're inlined verbatim. To make a chunk interactive, JSX-convert it into a proper component (move markup into a `.tsx`, replace `class` → `className`, etc.) and remove the chunk.
 
 ## Further reading
 
@@ -98,4 +104,4 @@ The masthead, sub-nav, pulse-band, headlines, treemap, partners, and footer live
 
 ## License
 
-CLESSN, Université Laval. Internal project — see `app/globals.css` for licensed font notes.
+CAPP (Centre d'analyse des politiques publiques), Université Laval. Internal project — see `app/globals.css` for licensed font notes.

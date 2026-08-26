@@ -13,9 +13,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import pkg from "../../package.json";
+// Libellé de version : source unique, partagée avec scripts/postbuild.mjs, qui
+// fait la même substitution sur les pages statiques de public/ (elles ne
+// traversent pas React). Voir scripts/version.mjs.
+import { formatVersion, VERSION_PLACEHOLDER } from "../../scripts/version.mjs";
+
 const CHUNK_DIR = path.resolve(process.cwd(), "static-content");
 
-export type ChunkName = "top" | "middle" | "bottom";
+export type ChunkName = "top" | "bottom" | "polimeter_plus";
+
+export { formatVersion };
 
 export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
@@ -29,7 +37,13 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   html = html.replace(/href="apropos\/"/g, `href="${basePath}/apropos/"`);
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
+  html = html.replace(/href="journal\/"/g, `href="${basePath}/journal/"`);
   html = html.replace(/href="\.\/"/g, `href="${basePath || '/'}"`);
+  html = html.replace(/src="\/images\//g, `src="${basePath}/images/`);
+
+  // Substitue la version (source de vérité : package.json) — no-op sur les
+  // chunks qui ne contiennent pas le placeholder.
+  html = html.replaceAll(VERSION_PLACEHOLDER, formatVersion(pkg.version));
 
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }

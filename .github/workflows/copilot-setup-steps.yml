@@ -1,0 +1,61 @@
+name: "Copilot Setup Steps"
+
+# Runs before the Copilot coding agent starts working.
+# Automatically validated on push/PR touching this file.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # Must be named exactly `copilot-setup-steps` to be picked up by the agent.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # AGENTS.md hard rule #8 — Attribution humaine des commits.
+      # L'humain est auteur ; l'IA est tracée comme provenance (trailer Assisted-by:).
+      # On configure git pour que les commits du Copilot coding agent soient
+      # attribués à la personne qui a assigné la tâche, pas au bot.
+      - name: Configure git identity (human attribution)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # github.event.sender is the human who assigned the issue/task to Copilot.
+          # Fall back to github.actor if sender is not available.
+          SENDER="${{ github.event.sender.login }}"
+          if [ -z "$SENDER" ] || [ "$SENDER" = "null" ]; then
+            SENDER="${{ github.actor }}"
+          fi
+          # Exclude known bot accounts — fall back to git defaults if all actors are bots.
+          if echo "$SENDER" | grep -qiE '\[bot\]|^copilot$|^github-actions$'; then
+            echo "Actor '$SENDER' appears to be a bot — skipping git identity override."
+            exit 0
+          fi
+          SENDER_ID=$(gh api "users/$SENDER" --jq '.id' 2>/dev/null || echo "")
+          if [ -n "$SENDER_ID" ] && [ "$SENDER_ID" != "null" ]; then
+            git config --global user.name "$SENDER"
+            git config --global user.email "${SENDER_ID}+${SENDER}@users.noreply.github.com"
+            echo "Git identity: $SENDER <${SENDER_ID}+${SENDER}@users.noreply.github.com>"
+          else
+            echo "Could not resolve sender ID for '$SENDER' — skipping git identity override."
+          fi
