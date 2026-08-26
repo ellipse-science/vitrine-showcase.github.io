@@ -115,13 +115,18 @@ function toView(r: Row): PromesseNeuveView | null {
   if (!title) return null;
   const verbatim = cleanText(r.promesse_text);
   if (!verbatim) return null;
+  // Sans parti émetteur reconnu, pas de promesse. Ce que ce module mesure, c'est
+  // la saillance médiatique des promesses formulées dans les communiqués des CINQ
+  // partis suivis ; une ligne dont le `party_id` sort de ces cinq ne relève pas de
+  // cette mesure et ne doit donc ni s'afficher, ni peser dans le classement.
+  const parti = partiKeyFromId(r.party_id);
+  if (!parti) return null;
 
   return {
     promesseId: r.promesse_id,
     title,
     verbatim,
-    parti: partiKeyFromId(r.party_id),
-    partiLabel: (r.party_id ?? "").trim(),
+    parti,
     announceDate: String(r.announce_date ?? ""),
     sourceUrl: (r.release_url ?? "").trim(),
     sourceTitle: cleanText(r.release_title),

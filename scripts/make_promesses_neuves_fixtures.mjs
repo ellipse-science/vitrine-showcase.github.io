@@ -21,8 +21,8 @@
 //
 // Le jeu couvre à dessein les cas limites que la donnée réelle ne fournit pas :
 // les CINQ partis, un libellé très long, une promesse sans article, une à fort
-// écho. Le cas « parti hors des cinq suivis » n'y est PAS — voir la note en fin
-// de liste.
+// écho. Le cas « parti hors des cinq suivis » n'y est PAS, et n'a plus rien à
+// rendre : le chargeur écarte ces lignes — voir la note en fin de liste.
 //
 // Usage :
 //   node scripts/make_promesses_neuves_fixtures.mjs
@@ -93,17 +93,18 @@ const PROMESSES = [
    "Le Parti Québécois rendra gratuit le transport collectif pour les personnes de 65 ans et plus dans l'ensemble des sociétés de transport du Québec.",
    "Rendre le transport gratuit à 65 ans et plus", 6, 1, []],
 
-  // PAS de ligne « parti hors des cinq suivis ». `partiKeyFromId` renvoie null
-  // pour un party_id inconnu et le module rend alors une pastille neutre
-  // (`.ppl-parti-badge--inconnu`) — mais aucune donnée ne peut produire cet état
-  // aujourd'hui : les extracteurs d'`a-qc-press-releases` couvrent exactement
-  // CAQ, PLQ, QS, PQ, PCQ (aws-infra/src/extractors/a-qc-press-releases/), et le
-  // party_id vient du communiqué, jamais des médias qui le reprennent. C'est un
-  // filet pour une désynchronisation amont/aval — un extracteur ajouté sans mise
-  // à jour de PARTIS_SUIVIS et de PARTY_COLORS, ce que le raffineur signale par
-  // un log d'alerte (runtime.R). Une fixture pour ce cas devrait inventer un
-  // parti émetteur qu'on ne collecte pas : elle ferait croire à une couverture
-  // qui n'existe pas.
+  // PAS de ligne « parti hors des cinq suivis », et il n'y a plus rien à rendre
+  // pour ce cas : le chargeur ÉCARTE une ligne dont `partiKeyFromId` renvoie null
+  // (lib/data/promessesNeuves.ts). Ce que ce module mesure, c'est la saillance des
+  // promesses formulées dans les communiqués des cinq partis suivis ; un émetteur
+  // qu'on ne collecte pas n'entre pas dans la mesure. Le cas est de toute façon
+  // hors d'atteinte de la donnée : les extracteurs d'`a-qc-press-releases`
+  // couvrent exactement CAQ, PLQ, QS, PQ, PCQ
+  // (aws-infra/src/extractors/a-qc-press-releases/), et le party_id vient du
+  // communiqué, jamais des médias qui le reprennent. Le filet reste utile pour une
+  // désynchronisation amont/aval — un extracteur ajouté sans mise à jour de
+  // PARTIS_SUIVIS et de PARTY_COLORS, ce que le raffineur signale par un log
+  // d'alerte (runtime.R) — mais il écarte au lieu d'afficher.
 ];
 
 // Le raffineur publie DEUX fenêtres. La règle d'appartenance étant l'écho

@@ -5506,7 +5506,7 @@
     padding-top: 28px;
     border-top: 0.5px solid var(--rule);
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr;
     gap: 44px;
   }
   .footer-note h4 {
@@ -7393,9 +7393,6 @@
   .ppl-parti-badge--qs  { background: var(--ppl-parti-qs); }
   .ppl-parti-badge--pq  { background: var(--ppl-parti-pq); }
   .ppl-parti-badge--pcq { background: var(--ppl-parti-pcq); }
-  /* Parti hors des cinq suivis : sigle en encre sur fond neutre — jamais la
-     teinte d'un autre parti. */
-  .ppl-parti-badge--inconnu { background: none; color: var(--ink-soft); border: 1px solid var(--rule); }
 
   /* Bandeau de développement (fixtures). Volontairement VOYANT : il n'est pas
      là pour être discret, il est là pour qu'une capture d'écran prise pendant
