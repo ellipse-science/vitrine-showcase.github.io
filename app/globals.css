@@ -7437,31 +7437,35 @@
 
   /* Enjeu du mode « campagne ». Même graisse et même échelle que .ppl-detail__meta
      — c'est de la métadonnée, pas un titre. La pastille de couleur reprend
-     ISSUE_COLORS, comme les autres modules d'enjeux. */
+     ISSUE_COLORS, comme les autres modules d'enjeux.
+
+     UNE PHRASE, PAS UNE RANGÉE. En flex, la puce et le ⓘ sont des items à part
+     entière : à 375, « Droits, libertés, minorités et discrimination » ne tient
+     pas sur la ligne de la puce, part seul à la ligne suivante et laisse la
+     pastille orpheline au-dessus, le ⓘ sur une quatrième ligne. En flux inline,
+     la puce reste collée au premier mot et le ⓘ suit le dernier, quelle que
+     soit la largeur. */
   .ppl-detail__enjeu {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
+    line-height: 1.5;
     letter-spacing: 0.06em;
     color: var(--ink-soft);
     margin: 0 0 8px;
   }
 
   .ppl-enjeu-puce {
-    flex: 0 0 auto;
+    display: inline-block;
     width: 8px;
     height: 8px;
+    margin-right: 6px;
     border-radius: 50%;
+    vertical-align: middle;
   }
 
-  /* min-width:0 : sans lui, un libellé long (« Droits, libertés, minorités et
-     discrimination ») refuse de se couper et pousse la ligne hors du panneau
-     sur téléphone. */
+  /* overflow-wrap : le plus long des douze libellés doit pouvoir se couper
+     plutôt que pousser la ligne hors du panneau sur téléphone. */
   .ppl-enjeu-label {
-    min-width: 0;
     overflow-wrap: anywhere;
   }
 
