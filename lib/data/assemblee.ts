@@ -70,7 +70,10 @@ const MONTHS_FR = [
 export type PeriodKey = "last_pdq" | "session" | "legislature";
 
 const PERIOD_TAB_LABELS: Record<PeriodKey, string> = {
-  last_pdq: "Dernière période de questions",
+  // `last_pdq` est le nom historique du champ amont. Les lignes couvrent en
+  // réalité la dernière journée de débats publiée, pas seulement la période
+  // de questions.
+  last_pdq: "Dernière journée de débats",
   session: "Cette session",
   legislature: "Cette législature",
 };
@@ -102,12 +105,30 @@ type DeputyAgoraRow = IssueShares & {
   period_end_date: string;
   party: string;
   deputy: string;
+  /** Identifiant stable de la fiche ANQ, publié par le raffineur. */
+  deputy_id?: string | number;
+  /** Identifiant de circonscription pplmatch, utilisé comme second indice. */
+  district_id?: string;
   n_interventions: number;
   word_count: number;
   lexical_richness: number;
   tone_score: number;
   signature_word?: string;
   signature_word_context?: string;
+};
+
+// Projection datée du référentiel de mandats utilisé par pplmatchQC(). Elle est
+// publiée par le raffineur Agora : le site ne maintient aucune chronologie de
+// personnes ou de partis dans son propre code.
+type AffiliationAgoraRow = {
+  deputy_id?: string | number;
+  deputy: string;
+  district_id?: string;
+  party: string;
+  affiliation_start_date: string;
+  affiliation_end_date?: string | null;
+  start_reason?: string | null;
+  end_reason?: string | null;
 };
 
 export type EnjeuSegment = {
@@ -143,6 +164,18 @@ export type DeputyRow = {
   topIssueColor?: string;
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
+  /** Parcours parlementaire pendant la législature courante. Présent seulement
+   *  dans la vue « législature » lorsqu'un événement mérite d'être expliqué :
+   *  changement d'affiliation, élection partielle ou démission. */
+  affiliationHistory?: AffiliationSegment[];
+};
+
+export type AffiliationSegment = {
+  label: string;
+  startDate: string;
+  endDate?: string;
+  startReason?: string;
+  endReason?: string;
 };
 
 export type AssembleeRow = {
@@ -270,6 +303,142 @@ function cleanText(value?: string): string | undefined {
   return v === "" || v === "NA" ? undefined : v;
 }
 
+// La citation du concept distinctif était coupée DEUX fois : le raffineur
+// tronche à 220 caractères au caractère près (« …visant l'élargissement de
+// certaines »), puis le CSS clampe ce reste à 3 lignes sur écran large et à 2
+// sur mobile. Sur les 241 cartes publiées, 108 — 45 % — se terminaient ainsi au
+// milieu d'une phrase, sans même les points de suspension qui auraient signalé
+// l'extrait.
+//
+// On ne peut pas simplement tout afficher : la carte est un format physique
+// (63,5 × 88,9 mm, cf. globals.css) dont le verso porte déjà le nom, la
+// circonscription, quatre mesures, trois barres d'enjeux, le concept et sa
+// glose. Le budget tenable est celui du plus petit format, mobile : deux lignes
+// à 9 px, soit une centaine de signes.
+//
+// La citation est un EXTRAIT qui montre le concept en usage, pas l'intervention
+// complète. On coupe donc à une frontière de sens — fin de phrase si elle tombe
+// dans le budget, sinon fin de proposition, sinon dernier mot entier — et on
+// marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
+// l'impression d'un bogue.
+const CITATION_BUDGET = 95;
+
+function sansDiacritiques(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+}
+
+type ConceptSpan = { start: number; end: number };
+
+function tokenBase(value: string): string {
+  const normalized = sansDiacritiques(value);
+  // Le TF-IDF peut retenir le singulier alors que la citation porte le
+  // pluriel (ou l'inverse). On neutralise seulement les marques simples, sans
+  // prétendre faire de lemmatisation générale.
+  return normalized.length > 4 ? normalized.replace(/[sx]$/u, "") : normalized;
+}
+
+function findConceptSpan(text: string, concept?: string): ConceptSpan | undefined {
+  const conceptTokens = (cleanText(concept)?.match(/[\p{L}\p{N}]+/gu) ?? [])
+    .map(tokenBase)
+    .filter(Boolean);
+  if (conceptTokens.length === 0) return undefined;
+
+  const textTokens: Array<{ value: string; start: number; end: number }> = [];
+  for (const match of text.matchAll(/[\p{L}\p{N}]+/gu)) {
+    const raw = match[0];
+    const start = match.index ?? 0;
+    textTokens.push({ value: tokenBase(raw), start, end: start + raw.length });
+  }
+
+  // Les concepts à deux mots sont souvent séparés par un déterminant dans la
+  // phrase (« lanceurs d'alerte », « zone d'innovation »). Chaque mot du
+  // concept doit néanmoins être présent, dans le bon ordre et à courte
+  // distance. Se rabattre sur le premier mot seulement publiait précisément
+  // les citations hors sujet signalées par les utilisateurs.
+  for (let i = 0; i < textTokens.length; i++) {
+    if (textTokens[i].value !== conceptTokens[0]) continue;
+    let cursor = i;
+    let found = true;
+    for (let c = 1; c < conceptTokens.length; c++) {
+      let next = -1;
+      const max = Math.min(textTokens.length - 1, cursor + 8);
+      for (let t = cursor + 1; t <= max; t++) {
+        if (textTokens[t].value === conceptTokens[c]) {
+          next = t;
+          break;
+        }
+      }
+      if (next < 0) {
+        found = false;
+        break;
+      }
+      cursor = next;
+    }
+    if (found) return { start: textTokens[i].start, end: textTokens[cursor].end };
+  }
+  return undefined;
+}
+
+function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
+  const v = cleanText(value);
+  if (!v) return undefined;
+  // Le raffineur laisse parfois une virgule ou une espace orpheline en fin de
+  // troncature : on la retire avant de mesurer. On NE touche PAS au point final
+  // — une citation qui se termine normalement doit garder sa ponctuation, la
+  // retirer donnerait l'impression d'une coupe là où il n'y en a pas.
+  const texte = v.replace(/[\s,;:–—-]+$/u, "");
+  // Certaines citations ne font que deux ou trois signes : une fois la
+  // ponctuation orpheline retirée il ne reste rien à montrer, et un extrait
+  // vide vaut mieux qu'un guillemet ouvert sur du blanc.
+  if (texte.length === 0) return undefined;
+  const conceptSpan = findConceptSpan(texte, concept);
+  // Une citation est une preuve, pas un décor. Lorsque le contexte source a
+  // été tronqué avant le concept, on l'omet au lieu de publier un extrait qui
+  // ne montre pas ce qu'il prétend illustrer.
+  if (!conceptSpan) return undefined;
+  if (texte.length <= budget) return texte;
+
+  let debut = 0;
+  // Recentrer aussi quand le concept commence juste avant la limite mais n'y
+  // tient pas au complet. Sans cela, « participation publique » pouvait sortir
+  // sous la forme trompeuse « parti… ».
+  if (conceptSpan.end >= budget - 1) {
+    const cible = Math.max(0, conceptSpan.start - Math.floor(budget / 3));
+    // Revenir au début d'un mot évite une seconde coupe, cette fois à gauche.
+    debut = texte.lastIndexOf(" ", cible) + 1;
+  }
+  const prefixe = debut > 0 ? "… " : "";
+  const reste = texte.slice(debut);
+  if (prefixe.length + reste.length <= budget) return `${prefixe}${reste}`;
+
+  const budgetCorps = budget - prefixe.length;
+  const fenetre = reste.slice(0, budgetCorps);
+  // Frontières par ordre de préférence : fin de phrase, puis de proposition.
+  // On n'accepte la coupe que si elle laisse un extrait substantiel (60 % du
+  // budget) — sinon un point précoce réduirait la citation à trois mots.
+  // Si le concept se trouve dans la fenêtre, aucune frontière située avant sa
+  // fin n'est admissible : une phrase plus élégante mais hors sujet ne remplit
+  // plus la fonction de preuve de la citation.
+  const finConcept = conceptSpan.end >= debut ? conceptSpan.end - debut : 0;
+  const minimum = Math.max(Math.floor(budgetCorps * 0.6), finConcept);
+  const phrase = Math.max(fenetre.lastIndexOf(". "), fenetre.lastIndexOf("? "), fenetre.lastIndexOf("! "));
+  if (phrase >= minimum) return `${prefixe}${reste.slice(0, phrase + 1)}`;
+
+  const proposition = Math.max(fenetre.lastIndexOf(", "), fenetre.lastIndexOf("; "), fenetre.lastIndexOf(" : "));
+  if (proposition >= minimum) return `${prefixe}${reste.slice(0, proposition).trimEnd()}…`;
+
+  const mot = fenetre.lastIndexOf(" ");
+  const coupe = mot >= minimum ? mot : Math.min(budgetCorps - 1, fenetre.length);
+  return `${prefixe}${reste.slice(0, coupe).replace(/[\s,;:.-]+$/u, "")}…`;
+}
+
+function citationComplete(value?: string, concept?: string): string | undefined {
+  const v = cleanText(value);
+  if (!v) return undefined;
+  const texte = v.replace(/[\s,;:–—-]+$/u, "");
+  return texte && findConceptSpan(texte, concept) ? texte : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Appariement des portraits
 // ---------------------------------------------------------------------------
@@ -281,28 +450,17 @@ function cleanText(value?: string): string | undefined {
 // ↔ « Sylvie D'Amours »).
 
 export type DeputyPortrait = {
+  deputy_id?: string | number;
   circonscription: string;
   circonscription_slug: string;
+  /** Chemin relatif sans extension. Diffère de la circonscription pour les
+   *  portraits historiques, afin qu'un successeur n'écrase pas l'image. */
+  asset_slug?: string;
   nom: string;
   /** « Indépendant », « Indépendante », ou le nom du parti, tel que l'ANQ
    *  l'inscrit dans son index. */
   parti?: string;
 };
-
-// Un.e député.e qui siège comme indépendant.e n'apparaît pas dans le module :
-// le raffineur ne produit pas encore de catégorie pour ces sièges, et les
-// afficher sous une bannière de parti serait faux (décision d'équipe,
-// 2026-08-05).
-//
-// La liste est DÉRIVÉE de l'index de l'ANQ, jamais tenue à la main. Une liste
-// manuelle a déjà produit exactement l'erreur qu'elle prétendait éviter : un
-// nom y avait été ajouté sans vérification et un député en règle s'est
-// retrouvé retiré du module. En lisant l'index, la liste se remet à jour toute
-// seule au prochain passage du scraper, et chaque entrée est vérifiable sur la
-// page officielle.
-function isIndependent(portrait: DeputyPortrait): boolean {
-  return /^ind[ée]pendant/i.test((portrait.parti ?? "").trim());
-}
 
 function tightKey(value: string): string {
   return (value || "")
@@ -310,6 +468,87 @@ function tightKey(value: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z]/g, "");
+}
+
+type AffiliationIndex = {
+  byId: Map<string, AffiliationAgoraRow[]>;
+  byName: Map<string, AffiliationAgoraRow[]>;
+};
+
+function buildAffiliationIndex(rows: AffiliationAgoraRow[]): AffiliationIndex {
+  const byId = new Map<string, AffiliationAgoraRow[]>();
+  const byName = new Map<string, AffiliationAgoraRow[]>();
+  for (const row of rows) {
+    if (!row.deputy || !row.affiliation_start_date) continue;
+    const id = row.deputy_id === undefined || row.deputy_id === null
+      ? undefined
+      : String(row.deputy_id);
+    const name = tightKey(row.deputy);
+    if (id) byId.set(id, [...(byId.get(id) ?? []), row]);
+    if (name) byName.set(name, [...(byName.get(name) ?? []), row]);
+  }
+  // Deux personnes peuvent partager le même nom normalisé. Sans identifiant
+  // de député ou de circonscription dans un ancien agrégat, leur chronologie
+  // est indécidable : mieux vaut ne rien afficher que fusionner leurs mandats.
+  for (const [name, nameRows] of byName) {
+    const ids = new Set(
+      nameRows
+        .map((row) => row.deputy_id)
+        .filter((id): id is string | number => id !== undefined && id !== null)
+        .map(String),
+    );
+    if (ids.size > 1) byName.delete(name);
+  }
+  return { byId, byName };
+}
+
+function affiliationLabel(party: string): string {
+  const code = String(party || "").toUpperCase();
+  return code === "IND" ? "Sans affiliation à un parti" : code;
+}
+
+function affiliationHistoryFor(
+  name: string,
+  deputyId: string | number | undefined,
+  districtId: string | undefined,
+  period: PeriodKey,
+  periodStart: string,
+  asOfDate: string,
+  index: AffiliationIndex,
+): AffiliationSegment[] | undefined {
+  if (period !== "legislature") return undefined;
+  const byId = deputyId === undefined || deputyId === null
+    ? undefined
+    : index.byId.get(String(deputyId));
+  let rows = byId ?? index.byName.get(tightKey(name)) ?? [];
+  if (districtId && rows.some((row) => row.district_id)) {
+    const districtKey = tightKey(districtId);
+    rows = rows.filter((row) => tightKey(row.district_id ?? "") === districtKey);
+  }
+  const segments = rows
+    .filter((row) => row.affiliation_start_date <= asOfDate)
+    .filter((row) => !row.affiliation_end_date || row.affiliation_end_date >= periodStart)
+    .sort((a, b) => a.affiliation_start_date.localeCompare(b.affiliation_start_date))
+    .map((row) => ({
+      label: affiliationLabel(row.party),
+      startDate: row.affiliation_start_date,
+      endDate: row.affiliation_end_date && row.affiliation_end_date < asOfDate
+        ? row.affiliation_end_date
+        : undefined,
+      startReason: row.start_reason || undefined,
+      // Une raison de fin future (notamment la dissolution inscrite d'avance
+      // dans le référentiel) ne doit pas être présentée comme un fait accompli.
+      endReason: row.affiliation_end_date && row.affiliation_end_date < asOfDate
+        ? row.end_reason || undefined
+        : undefined,
+    }));
+  const hasNotableEvent = segments.some((segment) =>
+    segment.startReason === "byelection"
+    || segment.startReason === "defection"
+    || segment.endReason === "defection"
+    || segment.endReason === "resignation"
+  );
+  return segments.length > 1 || hasNotableEvent ? segments : undefined;
 }
 
 // Les six noms restants divergent réellement d'une source à l'autre. On les
@@ -334,16 +573,29 @@ const PORTRAIT_ALIASES: Record<string, string> = {
 // que le raffineur ajoute déjà au nom publié quand il détecte la collision
 // (build_display_names, aws-refiners). Tant que ce suffixe n'est pas publié
 // pour un homonyme donné, le comportement reste inchangé : aucun portrait.
-function buildPortraitIndex(portraits: DeputyPortrait[]): Map<string, DeputyPortrait[]> {
+type PortraitIndex = {
+  byId: Map<string, DeputyPortrait>;
+  byName: Map<string, DeputyPortrait[]>;
+};
+
+function portraitBaseName(name: string): string {
+  return name.replace(RIDING_HINT, "").trim();
+}
+
+function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
+  const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
-    const key = tightKey(p.nom);
+    if (p.deputy_id !== undefined && p.deputy_id !== null) {
+      byId.set(String(p.deputy_id), p);
+    }
+    const key = tightKey(portraitBaseName(p.nom));
     if (!key) continue;
     const list = byKey.get(key);
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return byKey;
+  return { byId, byName: byKey };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -351,15 +603,22 @@ const RIDING_HINT = /\s*\(([^()]+)\)\s*$/;
 
 function lookupPortrait(
   deputy: string,
-  index: Map<string, DeputyPortrait[]>,
+  deputyId: string | number | undefined,
+  districtId: string | undefined,
+  index: PortraitIndex,
 ): DeputyPortrait | undefined {
+  if (deputyId !== undefined && deputyId !== null) {
+    const byId = index.byId.get(String(deputyId));
+    if (byId) return byId;
+  }
   const hint = deputy.match(RIDING_HINT);
   const baseName = hint ? deputy.slice(0, hint.index) : deputy;
   const key = tightKey(baseName);
-  const candidates = index.get(key) ?? index.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
+  const candidates = index.byName.get(key) ?? index.byName.get(PORTRAIT_ALIASES[key] ?? "") ?? [];
   if (candidates.length === 1) return candidates[0];
-  if (candidates.length > 1 && hint) {
-    const ridingKey = tightKey(hint[1]);
+  const riding = hint?.[1] ?? districtId;
+  if (candidates.length > 1 && riding) {
+    const ridingKey = tightKey(riding);
     return candidates.find((c) => tightKey(c.circonscription) === ridingKey);
   }
   // Homonyme non départagé (pas d'indice de circonscription publié) : on ne
@@ -382,24 +641,26 @@ function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
-  portraits: Map<string, DeputyPortrait[]>,
+  portraits: PortraitIndex,
+  affiliations: AffiliationIndex,
+  periodStart: string,
+  endDate: string,
 ): DeputyRow[] {
   const rows = deputyRows.filter(
-    (r) => r.period_type === period && r.party && r.party.toLowerCase() === partyKey && r.deputy,
+    (r) => r.period_type === period
+      && r.period_end_date === endDate
+      && r.party
+      && r.party.toLowerCase() === partyKey
+      && r.deputy,
   );
   if (rows.length === 0) return [];
 
-  // Les sièges indépendants sortent des cartes nominatives. Le raffineur en
-  // écarte déjà l'essentiel en filtrant sur PARTIES_QC ; ce filtre-ci ne sert
-  // qu'aux cas que le raffineur attribuerait encore à un parti.
-  // Les agrégats de parti, eux, ne sont pas retouchés : la parole a bel et bien
-  // été prononcée sous cette bannière pendant la période.
-  const sorted = [...rows]
-    .filter((r) => {
-      const p = lookupPortrait(r.deputy, portraits);
-      return !(p && isIndependent(p));
-    })
-    .sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  // Une affiliation ACTUELLE indépendante ne doit pas effacer la parole
+  // prononcée auparavant sous la bannière du parti. Les lignes `ind` ne sont
+  // de toute façon jamais passées à cette fonction (PARTY_KEYS ne contient
+  // que les partis représentés par un casier). Filtrer ici sur l'affiliation
+  // actuelle du portrait faisait donc disparaître l'historique légitime.
+  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
   if (sorted.length === 0) return [];
 
   const mattrs: Record<string, number> = {};
@@ -408,33 +669,43 @@ function buildDeputyList(
 
   return sorted.map((r) => {
     const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
-    const portrait = lookupPortrait(r.deputy, portraits);
+    const portrait = lookupPortrait(r.deputy, r.deputy_id, r.district_id, portraits);
     const stack = buildEnjeuStack(r);
     const top = stack.find((s) => !s.isReste);
+    const name = portrait ? portraitBaseName(portrait.nom) : titleCaseName(r.deputy);
     return {
-      name: portrait ? portrait.nom : titleCaseName(r.deputy),
+      name,
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
       richnessLevel: richnessLevels[r.deputy] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
-      signatureWordContext: cleanText(r.signature_word_context),
+      signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.circonscription_slug}.jpg` : undefined,
+      portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
       topIssueColor: top?.color,
       enjeuStack: stack,
+      affiliationHistory: affiliationHistoryFor(
+        r.deputy,
+        r.deputy_id,
+        r.district_id ?? portrait?.circonscription,
+        period,
+        periodStart,
+        endDate,
+        affiliations,
+      ),
     };
   });
 }
 
 function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   if (periodType === "last_pdq") {
-    return `Période de questions du ${fmtDateFr(endDate)} · Salon bleu`;
+    return `Débats du ${fmtDateFr(endDate)} · Salon bleu`;
   }
   if (periodType === "session") {
     return `Session ${String(endDate || "").slice(0, 4)} · Salon bleu`;
@@ -446,10 +717,19 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: Map<string, DeputyPortrait[]> = new Map(),
+  portraits: PortraitIndex = { byId: new Map(), byName: new Map() },
+  affiliations: AffiliationIndex = { byId: new Map(), byName: new Map() },
 ): PeriodView {
-  const rows = allRows.filter((r) => r.period_type === period);
-  const endDate = rows[0]?.period_end_date || "";
+  const periodRows = allRows.filter((r) => r.period_type === period);
+  // Un fichier d'archive peut contenir plusieurs instantanés d'une même vue.
+  // La « dernière journée de débats » doit signifier la date maximale,
+  // indépendamment de l'ordre des lignes dans le JSON. La même sélection
+  // protège les vues session et législature contre un mélange d'instantanés.
+  const endDate = periodRows.reduce(
+    (latest, row) => row.period_end_date > latest ? row.period_end_date : latest,
+    "",
+  );
+  const rows = periodRows.filter((r) => r.period_end_date === endDate);
 
   // Ordre du banc : par VOLUME DE PAROLE (mots) décroissant.
   //
@@ -514,8 +794,19 @@ function buildPeriodView(
       interventions: Number(d.n_interventions || 0),
       toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
-      signatureWordContext: cleanText(d.signature_word_context),
-      deputies: buildDeputyList(item.key, period, deputyRows, portraits),
+      // Le tiroir a la place d'afficher le contexte complet. On conserve donc
+      // toute la citation, mais seulement si elle contient réellement le
+      // concept qu'elle doit illustrer.
+      signatureWordContext: citationComplete(d.signature_word_context, d.signature_word),
+      deputies: buildDeputyList(
+        item.key,
+        period,
+        deputyRows,
+        portraits,
+        affiliations,
+        rows[0]?.period_start_date ?? endDate,
+        endDate,
+      ),
     };
   });
 
@@ -551,6 +842,27 @@ async function loadDeputyRows(): Promise<DeputyAgoraRow[]> {
   try {
     const raw = await readDatasetText("public/data/agora/agora_decideurs_qc_deputes.json");
     const rows = JSON.parse(raw) as DeputyAgoraRow[];
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+async function loadAffiliationRows(): Promise<AffiliationAgoraRow[]> {
+  // Dimension publiée depuis les mandats datés de pplmatch. Son absence ne
+  // doit pas faire disparaître le module pendant le premier déploiement du
+  // nouveau flux : seules les chronologies sont alors omises.
+  try {
+    // Le premier aperçu local précède nécessairement la publication Athena.
+    // Cette surcharge explicite permet de vérifier la chronologie avec un
+    // fichier temporaire généré par pplmatch, sans créer ni modifier un JSON
+    // sous public/data/. Elle n'est utilisée que si la personne qui lance le
+    // serveur fournit le chemin dans son environnement.
+    const previewPath = process.env.VITRINE_ASSEMBLEE_AFFILIATIONS_PREVIEW;
+    const raw = previewPath
+      ? await fs.readFile(path.resolve(previewPath), "utf8")
+      : await readDatasetText("public/data/agora/agora_decideurs_qc_affiliations.json");
+    const rows = JSON.parse(raw) as AffiliationAgoraRow[];
     return Array.isArray(rows) ? rows : [];
   } catch {
     return [];
@@ -593,11 +905,12 @@ export async function loadAssemblee(
   if (allRows.length === 0) return null;
   const deputyRows = await loadDeputyRows();
   const portraits = buildPortraitIndex(await loadPortraits());
+  const affiliations = buildAffiliationIndex(await loadAffiliationRows());
   return {
     periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits),
-      session: buildPeriodView(allRows, "session", deputyRows, portraits),
-      legislature: buildPeriodView(allRows, "legislature", deputyRows, portraits),
+      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits, affiliations),
+      session: buildPeriodView(allRows, "session", deputyRows, portraits, affiliations),
+      legislature: buildPeriodView(allRows, "legislature", deputyRows, portraits, affiliations),
     },
   };
 }
@@ -610,4 +923,10 @@ export const __test__ = {
   buildEnjeuStack,
   buildSubtitle,
   buildPeriodView,
+  buildPortraitIndex,
+  lookupPortrait,
+  citationExtrait,
+  citationComplete,
+  buildAffiliationIndex,
+  affiliationHistoryFor,
 };

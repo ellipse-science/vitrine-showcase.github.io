@@ -37,9 +37,15 @@ const MICRO: Record<number, string> = {
 const W = 300, PLOT_H = 52, LIGNE = 10, TOP = 2 * LIGNE + 4, H = TOP + PLOT_H + 2 * LIGNE + 5;
 const log10 = (v: number) => Math.log10(Math.max(v, 1));
 
-export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLabel, sommetCentile, sommetTier, thresholds, qcOutlets, totalQcOutlets, since }: {
+export function SaillanceInfoCard({ rank, level, cls, centile, peak, sommet, sommetLabel, sommetCentile, sommetTier, sommetCls, sommetEdition, thresholds, qcOutlets, totalQcOutlets, since }: {
   rank: number;
   level: string;
+  /** Classe de bande du badge (`s-extreme`…) : le niveau s'affiche ICI comme
+   *  le badge, avec sa couleur (demande d'Adrien, vitrine#566). */
+  cls?: string | null;
+  sommetCls?: string | null;
+  /** « édition de la nuit du mercredi 19 août 2026 » — l'édition du sommet. */
+  sommetEdition?: string | null;
   /** Centile réel (#430, A7). La bulle disait un palier — « dans le cinquième le
    *  plus marquant » — pendant que l'infobulle du badge, elle, donnait déjà le
    *  vrai chiffre : deux phrases voisines qui ne disaient pas la même chose. */
@@ -59,16 +65,29 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
   since?: string | null;
 }) {
   const valid = thresholds.length === 5 && thresholds.every((t) => Number.isFinite(t)) && thresholds[4] > thresholds[0];
-  // Domaine log de l'axe : de 1 au double du p95, pour laisser respirer la queue.
-  const x0 = log10(1), x1 = log10((valid ? thresholds[4] : 100) * 2);
+  // Domaine log de l'axe : de la MOITIÉ du p5 au double du p95 (vitrine#566,
+  // retour d'Adrien). L'axe partait de 1 point : sur l'échelle sur 100, la
+  // plus faible Une de l'année vaut ~6 et « Très faible » commence à 10, donc
+  // la moitié gauche de la figure était un beige sans aucune histoire. Les
+  // valeurs sous la borne (rarissimes) sont rabattues au bord par `markerX`.
+  const x0 = log10(valid ? Math.max(1, thresholds[0] / 2) : 1);
+  const x1 = log10((valid ? thresholds[4] : 100) * 2);
   const px = (v: number) => ((log10(v) - x0) / (x1 - x0)) * W;
-  // Ajustement log-normal sur les seuils publiés (p50 = médiane, p95 → 1,645 σ).
+  // Ajustement log-normal À DEUX PENTES sur les seuils publiés : la médiane
+  // pour le centre, le p5 pour l'écart-type de gauche, le p95 pour celui de
+  // droite (1,645 σ de chaque côté). Une seule pente, calée sur le p95,
+  // étalait la cloche vers la gauche jusque dans le vide et mettait ~40 % de
+  // l'aire sous « Très faible », une bande qui contient 5 % des Unes. La
+  // distribution réelle est serrée à gauche et longue à droite ; la courbe
+  // passe maintenant par les cinq seuils, comme l'histogramme de la métho.
   const mu = valid ? log10(thresholds[2]) : log10(19);
-  const rawSigma = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  const rawSigmaR = valid ? (log10(thresholds[4]) - mu) / 1.645 : (log10(71) - mu) / 1.645;
+  const rawSigmaL = valid ? (mu - log10(thresholds[0])) / 1.645 : (mu - log10(5)) / 1.645;
   // Repli si les seuils sont dégénérés (ex. p50 == p95 → σ = 0) : évite une
   // division par zéro et des coordonnées NaN dans le SVG.
-  const sigma = rawSigma > 1e-3 ? rawSigma : (log10(71) - log10(19)) / 1.645;
-  const gauss = (lx: number) => Math.exp(-0.5 * Math.pow((lx - mu) / sigma, 2));
+  const sigmaR = rawSigmaR > 1e-3 ? rawSigmaR : (log10(71) - log10(19)) / 1.645;
+  const sigmaL = rawSigmaL > 1e-3 ? rawSigmaL : sigmaR;
+  const gauss = (lx: number) => Math.exp(-0.5 * Math.pow((lx - mu) / (lx < mu ? sigmaL : sigmaR), 2));
 
   // Courbe.
   const curve: string[] = [];
@@ -120,10 +139,19 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           points » se repliait selon la largeur, et « POINTS » se retrouvait seul
           sur la seconde ligne. La valeur passe donc systématiquement à la ligne
           — le repli devient une mise en page voulue au lieu d'un accident. */}
-      <span className="sic-kicker">Saillance actuelle&nbsp;: {level}</span>
-      {typeof peak === "number" ? (
-        <span className="sic-kicker sic-kicker-val">{peak.toFixed(1).replace(".", ",")}&nbsp;points</span>
-      ) : null}
+      {/* TROIS LIGNES, formulation d'Adrien (2026-08-22, vitrine#566) :
+            Saillance actuelle : [TAG] (39,6 points/100)
+            Sommet de cette nouvelle : [TAG] (75,6 points/100, atteint à l'édition …)
+            Cette nouvelle est plus saillante que 98 % des Unes québécoises de l'année.
+          Les niveaux s'affichent comme le badge, avec leur couleur : c'est la même
+          pastille, elle doit se lire pareil ici et sur la carte. */}
+      <span className="sic-kicker">Saillance actuelle&nbsp;: <span className={`saillance-tag sic-tag ${cls ?? ""}`}>{level}</span>
+        {typeof peak === "number" ? <> <span className="sic-note">({peak.toFixed(1).replace(".", ",")}&nbsp;points/100)</span></> : null}</span>
+      <span className="sic-kicker">Sommet de cette nouvelle&nbsp;: {
+        sommet != null && sommetTier
+          ? <><span className={`saillance-tag sic-tag ${sommetCls ?? ""}`}>{sommetTier}</span> <span className="sic-note">({sommet.toFixed(1).replace(".", ",")}&nbsp;points/100{sommetEdition ? `, atteint à l’${sommetEdition}` : ""})</span></>
+          : <span className="sic-note">maintenant</span>
+      }</span>
       {/* A8 (#430) — LA COMPARAISON À L'ANNÉE S'ACCROCHE TOUJOURS AU SOMMET.
           Avant, cette phrase situait la nouvelle avec sa valeur du MOMENT :
           une histoire retombée s'annonçait « plus saillante que 57 % des Unes »
@@ -134,41 +162,48 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
           la bulle et le palmarès se seraient contredits sur la même histoire.
           Le badge, lui, ne bouge pas — il reste une fonction pure de la valeur
           du moment (A4). Le présent n'est donc jamais nié : il est au-dessus. */}
-      <span className="sic-lede">{
-        sommet != null && typeof sommetCentile === "number" && sommetTier
-          ? `Son sommet : ${sommet.toFixed(1).replace(".", ",")} points, atteint ${sommetLabel ?? "plus tôt"}. Elle était alors ${sommetTier}, ${
-              sommetCentile >= 50
-                ? `devant environ ${sommetCentile} % des Unes québécoises de l’année.`
-                : `mais environ ${100 - sommetCentile} % des Unes québécoises de l’année restaient plus saillantes.`}`
-          : typeof centile === "number"
-            ? (centile >= 50
-                ? `C’est son sommet. Elle dépasse environ ${centile} % des Unes québécoises de l’année.`
-                : `C’est son sommet. Environ ${100 - centile} % des Unes québécoises de l’année sont plus saillantes.`)
-            : (MICRO[rank] ?? "")
-      }</span>
+      <span className="sic-lede">{(() => {
+        // Le centile du SOMMET quand il est passé, celui du moment quand la
+        // nouvelle y est encore : dans les deux cas, le rang de la nouvelle
+        // dans l'année.
+        const c = sommet != null && typeof sommetCentile === "number" ? sommetCentile : centile;
+        if (typeof c !== "number") return MICRO[rank] ?? "";
+        return c >= 50
+          ? `Cette nouvelle est plus saillante que ${c}\u00a0% des Unes québécoises de l’année.`
+          : `Environ ${100 - c}\u00a0% des Unes québécoises de l’année sont plus saillantes que cette nouvelle.`;
+      })()}</span>
       <svg className="sic-curve" viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
         aria-label={`Position de cette Une parmi les Unes de l’année : niveau ${rank} sur 6`}>
         {/* RANGÉE DU HAUT — le sommet, sur deux lignes centrées. */}
+        {/* Le sommet (libellé, trait, point) n'apparaît qu'APRÈS les trois
+            battements de la bande (demande d'Adrien, #566) : d'abord « où elle
+            est », ensuite « jusqu'où elle est montée ». Les deux en même temps
+            se disputaient le regard. La classe `sic-sommet` porte le fondu. */}
         {sommetX != null && (
-          <text x={xSom!.toFixed(1)} textAnchor="middle" className="sic-marker-label sic-marker-som">
+          <text x={xSom!.toFixed(1)} textAnchor="middle" className="sic-marker-label sic-marker-som sic-sommet">
             <tspan x={xSom!.toFixed(1)} y={(TOP - LIGNE - 4).toFixed(1)}>{somL1}</tspan>
             {somL2 && <tspan x={xSom!.toFixed(1)} y={(TOP - 4).toFixed(1)}>{somL2}</tspan>}
           </text>
         )}
         <g transform={`translate(0, ${TOP})`}>
           {valid && edges.slice(0, -1).map((x, i) => (
+            // La bande où la nouvelle se trouve est plus foncée, et elle PULSE
+            // trois fois à l'ouverture de la bulle (demande d'Adrien, #566) :
+            // « situer la nouvelle dans sa bande » est le concept que la figure
+            // porte, et un aplat un peu plus sombre ne le disait pas assez.
             <rect key={i} x={x.toFixed(1)} y="0" width={(edges[i + 1] - x).toFixed(1)} height={PLOT_H}
-              fill={BAND_COLORS[i]} opacity={i === rank - 1 ? 0.95 : 0.4} />
+              fill={BAND_COLORS[i]} opacity={i === rank - 1 ? 0.95 : 0.4}
+              className={i === rank - 1 ? "sic-band-now" : undefined} />
           ))}
           <polyline points={curve.join(" ")} fill="none" stroke="var(--ink)" strokeOpacity="0.55" strokeWidth="1.3" />
           {/* Le SOMMET d'abord, pour que la barre « cette Une » passe par-dessus. */}
           {sommetX != null && (
-            <>
+            <g className="sic-sommet">
               <line x1={sommetX.toFixed(1)} y1="0" x2={sommetX.toFixed(1)} y2={PLOT_H}
                 stroke="var(--ink-softer)" strokeWidth="1.2" strokeDasharray="2.5 2" />
               <circle cx={sommetX.toFixed(1)} cy={cy(sommet!).toFixed(1)} r="2.6"
                 fill="var(--paper)" stroke="var(--ink-softer)" strokeWidth="1.2" />
-            </>
+            </g>
           )}
           {markerX != null && (
             <>
@@ -204,16 +239,21 @@ export function SaillanceInfoCard({ rank, level, centile, peak, sommet, sommetLa
         </span>
       )}
       {/* PIED — la définition, pour qui veut savoir ce qu'on mesure au juste.
-          Calquée sur la métho § 03 :
-            IndiceAbsolu(o, m, t) = TempsEnUne(o, m, t) × PondérationMédia(m)
-          Donc du TEMPS passé en Une, corrigé du rythme de renouvellement de
-          chaque média — pas un décompte de médias, et pas la position de la
-          manchette (le § 01 la mentionne, la formule du § 03 ne l'utilise pas). */}
+          Calquée sur la métho § 03 (spec v1) :
+            Indice(bloc) = (Visibilité × Intensité × Durée)^(1/3), sur 100
+          puis les POINTS = moyenne des six derniers blocs pondérée par récence
+          (vitrine#566). La deuxième phrase nomme l'unité et sa borne : un
+          nombre nu à côté d'un mot de niveau ne dit pas sur quoi il est compté,
+          et « 62,0 » ne se lit pas pareil selon qu'on le croit sur 100 ou sans
+          plafond. */}
       <span className="sic-def">
         {/* {" "} explicite : JSX avale l'espace entre </b> et le texte suivant. */}
         <b>L’indice de saillance médiatique Radar+</b>{" "}mesure l’espace qu’occupent les
         nouvelles dans l’ensemble de l’actualité, pour présenter l’information réellement
-        mise de l’avant par les médias.
+        mise de l’avant par les médias. Les points vont de 0 à 100&nbsp;: chaque tranche
+        de quatre heures est notée d’après le nombre de médias qui ont mis la nouvelle en
+        Une, le nombre d’articles et le temps passé en Une, puis les six dernières
+        tranches sont moyennées, les plus récentes comptant davantage.
       </span>
       <a className="sic-link" href={METHO_HREF}>Comment on mesure la saillance</a>
     </span>

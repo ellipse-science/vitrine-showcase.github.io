@@ -171,6 +171,63 @@ export const TABLES: TableSpec[] = [
     "filter": null
   },
   {
+    "name": "provincial_parties_salient_shadow_by_media_day",
+    "athena": "vitrine_datamart-provincial_parties_salient_shadow_by_media_day",
+    "cols": [
+      "party",
+      "media_id",
+      "date_utc",
+      "date_montreal_tz",
+      "weighted_mentions",
+      "weighted_tone",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "provincial_parties_salient_shadow_by_media_week",
+    "athena": "vitrine_datamart-provincial_parties_salient_shadow_by_media_week",
+    "cols": [
+      "party",
+      "media_id",
+      "date_utc",
+      "date_montreal_tz",
+      "weighted_mentions",
+      "weighted_tone",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "provincial_parties_salient_shadow_by_media_month",
+    "athena": "vitrine_datamart-provincial_parties_salient_shadow_by_media_month",
+    "cols": [
+      "party",
+      "media_id",
+      "date_utc",
+      "date_montreal_tz",
+      "weighted_mentions",
+      "weighted_tone",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "provincial_parties_salient_shadow_intraday",
+    "athena": "vitrine_datamart-provincial_parties_salient_shadow_intraday",
+    "cols": [
+      "party",
+      "block_hour",
+      "block_label",
+      "weighted_mentions",
+      "weighted_tone",
+      "date_utc",
+      "date_montreal_tz",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
     "name": "issues_score_day",
     "athena": "vitrine_datamart-issues_score_day",
     "cols": [

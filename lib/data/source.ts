@@ -21,12 +21,41 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const API_BASE = process.env.VITRINE_API_BASE ?? "https://api.vitrinedemocratique.com";
-const USE_API = process.env.VITRINE_DATA_SOURCE === "api";
+
+/** Trois sources possibles, choisies par `VITRINE_DATA_SOURCE` :
+ *
+ *  - absent / autre  → les FICHIERS publiés du dépôt (défaut historique) ;
+ *  - `api`           → /v1/datasets, donc Postgres à chaque appel ;
+ *  - `snapshot`      → /v1/snapshot, donc R2, sans jamais toucher Postgres.
+ *
+ *  POURQUOI `snapshot` EXISTE (incident du 2026-08-26). Le mode `api` faisait
+ *  descendre CHAQUE build jusqu'à Postgres : la route ne peut pas être mise en
+ *  cache partagé (sa réponse dépend de la clé) et on ajoutait `no-cache`
+ *  par-dessus pour avoir le cycle courant. À ~85 builds par jour — dont deux
+ *  tiers de simples aperçus de branche — cela a épuisé les 5 Go mensuels de
+ *  transfert de Neon en huit jours, et la base a cessé de répondre.
+ *
+ *  Le mode `snapshot` lit les MÊMES lignes, déposées dans R2 par la synchro au
+ *  moment où elle les écrit dans Postgres (workers/api/src/snapshot.ts). Elles
+ *  sont converties là-bas pour être indiscernables de ce que renvoyait
+ *  /v1/datasets — mêmes nombres, mêmes nulls, mêmes chaînes.
+ *
+ *  Les deux modes cohabitent VOLONTAIREMENT : `api` reste le chemin de repli
+ *  et permet de comparer les deux sorties avant de basculer pour de bon. */
+const DATA_SOURCE = process.env.VITRINE_DATA_SOURCE ?? "";
+const USE_API = DATA_SOURCE === "api";
+const USE_SNAPSHOT = DATA_SOURCE === "snapshot";
 
 /** Clé d'API du build. Les jeux de données sont payants : même le site doit
  *  s'authentifier. Sa clé porte la portée totale et aucun quota — ce n'est pas
  *  un client, c'est le site lui-même. */
 const API_KEY = process.env.VITRINE_API_KEY ?? "";
+
+/** Jeton de lecture de l'instantané. Comparé à un secret du WORKER, jamais à
+ *  la table des clés dans Postgres — c'est ce qui rend ce chemin insensible à
+ *  une base indisponible. Par défaut la même valeur que la clé d'API, pour
+ *  qu'une bascule ne demande pas une variable de plus côté Pages. */
+const SNAPSHOT_TOKEN = process.env.VITRINE_SNAPSHOT_TOKEN ?? API_KEY;
 
 /** L'API plafonne une réponse à 5 000 lignes ; la plus grosse table en compte
  *  plus de 9 000. On pagine donc — sans quoi on perdrait des lignes en silence,
@@ -79,6 +108,88 @@ async function apiIsFresh(): Promise<boolean> {
   return freshnessChecked;
 }
 
+interface SnapshotManifest {
+  cycle: string;
+  generated_at: string;
+  tables: Record<string, { rows: number; bytes: number; key: string }>;
+}
+
+let manifestPromise: Promise<SnapshotManifest | null> | null = null;
+
+/** Le manifeste de l'instantané, lu UNE fois par build.
+ *
+ *  Il remplace l'appel à /v1/health du mode `api` — lequel interrogeait
+ *  `vitrine.sync_state`, donc Postgres. Le garder aurait laissé le build
+ *  tributaire de la santé de la base pour savoir s'il peut éviter la base :
+ *  exactement le nœud qu'on défait ici. */
+async function loadManifest(): Promise<SnapshotManifest | null> {
+  if (manifestPromise) return manifestPromise;
+  manifestPromise = (async () => {
+    if (!SNAPSHOT_TOKEN) {
+      console.warn("[source] jeton d'instantané absent. Repli sur les fichiers.");
+      return null;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/v1/snapshot/manifest.json`, {
+        headers: { authorization: `Bearer ${SNAPSHOT_TOKEN}` },
+      });
+      if (!res.ok) throw new Error(`manifeste ${res.status}`);
+      const manifest = (await res.json()) as SnapshotManifest;
+
+      // MÊME GARDE-FOU DE FRAÎCHEUR que le mode `api`, pour la même raison :
+      // un instantané figé ressemble à un instantané vivant. Le cycle est
+      // écrit en entier ou pas du tout, il suffit donc de dater le manifeste.
+      const age = Date.now() - Date.parse(manifest.generated_at);
+      if (!Number.isFinite(age) || age > MAX_STALENESS_MS) {
+        console.warn(
+          `[source] instantané périmé (cycle ${manifest.cycle}, ${Math.round(age / 60000)} min). Repli sur les fichiers.`,
+        );
+        return null;
+      }
+      console.log(
+        `[source] instantané ${manifest.cycle} : ${Object.keys(manifest.tables).length} tables`,
+      );
+      return manifest;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[source] instantané illisible (${message}). Repli sur les fichiers.`);
+      return null;
+    }
+  })();
+  return manifestPromise;
+}
+
+/** Les lignes d'une table, depuis R2. Pas de pagination : le cycle dépose la
+ *  table entière en un objet, là où l'API plafonnait à 5 000 lignes. */
+async function fetchSnapshotRows(
+  dataset: string,
+  manifest: SnapshotManifest,
+): Promise<string> {
+  const entry = manifest.tables[dataset];
+  if (!entry) throw new Error(`absente du manifeste`);
+  const url = `${API_BASE}/v1/snapshot/${manifest.cycle}/${dataset}.json`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${SNAPSHOT_TOKEN}` } });
+  if (!res.ok) throw new Error(`${res.status} sur ${url}`);
+  const text = await res.text();
+  // Le manifeste connaît le compte de lignes : on le vérifie plutôt que de
+  // faire confiance. Une table tronquée en route publierait un module amputé
+  // sans que rien ne le signale.
+  const parsed = JSON.parse(text) as unknown[];
+  if (parsed.length !== entry.rows) {
+    throw new Error(`${parsed.length} lignes reçues, ${entry.rows} annoncées`);
+  }
+  return text;
+}
+
+/** Mémoïsation PAR JEU DE DONNÉES, valable pour les deux modes distants.
+ *
+ *  POURQUOI ELLE EXISTE. `readDatasetText` est appelée par chaque loader, et
+ *  les loaders sont appelés par chaque page prérendue : un même jeu était
+ *  redemandé des dizaines de fois par build. Les journaux du 2026-08-25 en
+ *  comptent 4 260 requêtes en un jour pour une seule table. Une promesse
+ *  partagée ramène cela à un appel par build et par table. */
+const datasetCache = new Map<string, Promise<string>>();
+
 type TableSpec = { name: string; out: string; enabled: boolean };
 
 let datasetByPath: Map<string, string> | null = null;
@@ -129,7 +240,7 @@ async function fetchAllRows(dataset: string): Promise<unknown[]> {
 export async function readDatasetText(repoRelativePath: string): Promise<string> {
   const absolute = path.resolve(process.cwd(), repoRelativePath);
 
-  if (!USE_API) return fs.readFile(absolute, "utf8");
+  if (!USE_API && !USE_SNAPSHOT) return fs.readFile(absolute, "utf8");
 
   const mapping = await loadMapping();
   const dataset = mapping.get(repoRelativePath);
@@ -138,6 +249,26 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     // saillance, la sélection du hero et les métadonnées d'illustration sont
     // calculées, pas projetées depuis une table. Elles restent des fichiers.
     return fs.readFile(absolute, "utf8");
+  }
+
+  // MODE INSTANTANÉ : R2, jamais Postgres. Un manifeste absent ou périmé
+  // suffit à repartir des fichiers — on ne tente même pas les tables.
+  if (USE_SNAPSHOT) {
+    const manifest = await loadManifest();
+    if (!manifest) return fs.readFile(absolute, "utf8");
+
+    const cached = datasetCache.get(dataset);
+    if (cached) return cached;
+
+    const pending = fetchSnapshotRows(dataset, manifest).catch(async (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[source] instantané indisponible pour ${dataset} (${message}). Repli sur le fichier.`,
+      );
+      return fs.readFile(absolute, "utf8");
+    });
+    datasetCache.set(dataset, pending);
+    return pending;
   }
 
   if (!(await apiIsFresh())) return fs.readFile(absolute, "utf8");
@@ -149,15 +280,22 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     return fs.readFile(absolute, "utf8");
   }
 
-  try {
-    const rows = await fetchAllRows(dataset);
-    return JSON.stringify(rows);
-  } catch (err) {
-    // On retombe sur le fichier plutôt que de casser le build. Un site qui se
-    // construit avec des données d'il y a quatre heures vaut mieux qu'un site
-    // qui ne se construit pas — et l'écart est visible dans /v1/health.
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[source] API indisponible pour ${dataset} (${message}). Repli sur le fichier.`);
-    return fs.readFile(absolute, "utf8");
-  }
+  const cached = datasetCache.get(dataset);
+  if (cached) return cached;
+
+  const pending = (async () => {
+    try {
+      const rows = await fetchAllRows(dataset);
+      return JSON.stringify(rows);
+    } catch (err) {
+      // On retombe sur le fichier plutôt que de casser le build. Un site qui se
+      // construit avec des données d'il y a quatre heures vaut mieux qu'un site
+      // qui ne se construit pas — et l'écart est visible dans /v1/health.
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[source] API indisponible pour ${dataset} (${message}). Repli sur le fichier.`);
+      return fs.readFile(absolute, "utf8");
+    }
+  })();
+  datasetCache.set(dataset, pending);
+  return pending;
 }

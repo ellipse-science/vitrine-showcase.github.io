@@ -89,7 +89,17 @@ export default function AproposPage() {
                 lexicale des discours législatifs. Ces deux flux de données,
                 jusqu'alors distincts, peuvent désormais être mis en regard au
                 sein de la Vitrine, offrant pour la première fois une vue
-                intégrée de l'agenda public québécois.
+                intégrée de l'agenda public québécois. Ce module est une vitrine
+                du projet{" "}
+                <a
+                  href="https://ellipse.science/agora-plus/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="apropos-link"
+                >
+                  Agora+
+                </a>{" "}
+                du CAPP.
               </p>
             </section>
 

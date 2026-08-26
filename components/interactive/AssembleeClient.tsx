@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
 import { ShareButton } from "@/components/interactive/ShareButton";
-import { AssembleeBilliard } from "@/components/interactive/AssembleeBilliard";
 import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
 
 function SourceTip() {
@@ -31,9 +30,8 @@ function SourceTip() {
 
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
-export function AssembleeClient({ data }: { data: AssembleeData }) {
-  const [period, setPeriod] = useState<PeriodKey>("last_pdq");
-  const [playing, setPlaying] = useState(false);
+export function AssembleeClient({ data, editionKey }: { data: AssembleeData; editionKey?: string }) {
+  const [period, setPeriod] = useState<PeriodKey>("legislature");
   const view: PeriodView = data.periods[period];
 
   const visibleRows = view.rows.filter((r) => !r.inShadow);
@@ -63,37 +61,15 @@ export function AssembleeClient({ data }: { data: AssembleeData }) {
                 </span>
               ))}
             </div>
-            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" />
+            <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" editionKey={editionKey} />
           </div>
         </div>
       </div>
 
       <section className="assemblee">
-        {playing ? (
-          <>
-            <button type="button" className="ass-back-btn" onClick={() => setPlaying(false)}>
-              ← Retour aux dossiers
-            </button>
-            <AssembleeBilliard rows={visibleRows} shadowRows={shadowRows} />
-          </>
-        ) : (
-          <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
-        )}
+        <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
       </section>
-      <div className="module-last-updated">
-        {view.lastUpdated}
-        {!playing && (
-          <button
-            type="button"
-            className="ass-easter-btn"
-            onClick={() => setPlaying(true)}
-            aria-label="Easter egg&nbsp;: jeu de billard"
-            title="🎱"
-          >
-            🎱
-          </button>
-        )}
-      </div>
+      <div className="module-last-updated">{view.lastUpdated}</div>
     </>
   );
 }

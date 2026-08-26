@@ -10,6 +10,9 @@ import { readDatasetText } from "@/lib/data/source";
 import { cache } from "react";
 
 import { editionLabel, editionSlot } from "@/lib/editions";
+// Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
+// des partis (qui ne peut pas importer ce fichier : il tire node:fs).
+import { ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -19,6 +22,8 @@ import {
 import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
+  RECENCY_WEIGHT_TOTAL,
+  recencyWeight,
   NEW_SUM_QC_THRESHOLDS,
   NEW_BLOCK_QC_THRESHOLDS,
   NEW_SUM_ROC_THRESHOLDS,
@@ -109,35 +114,6 @@ export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
 
 type ExtractedObject = { object: string; score: number };
 
-const ISSUE_COLORS: Record<string, string> = {
-  economy_and_labour: "#94781B",
-  governments_and_governance: "#234E78",
-  health_and_social_services: "#852244",
-  environment_and_energy: "#3D6B3A",
-  rights_liberties_minorities_discrimination: "#553278",
-  culture_and_nationalism: "#384873",
-  education: "#752373",
-  international_affairs_and_defense: "#1F5E66",
-  law_and_crime: "#993322",
-  public_lands_and_agriculture: "#5E731F",
-  immigration: "#9E541B",
-  technology: "#997018",
-};
-
-const ISSUE_LABELS_SHORT: Record<string, string> = {
-  economy_and_labour: "Économie et travail",
-  governments_and_governance: "Gouvernements et gouvernance",
-  health_and_social_services: "Santé et politiques sociales",
-  environment_and_energy: "Environnement et énergie",
-  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
-  culture_and_nationalism: "Culture et nationalisme",
-  education: "Éducation",
-  international_affairs_and_defense: "Affaires internationales et défense",
-  law_and_crime: "Loi et crime",
-  public_lands_and_agriculture: "Terres publiques et agriculture",
-  immigration: "Immigration",
-  technology: "Technologie",
-};
 
 const MEDIA_NAMES: Record<string, string> = {
   LED: "Le Devoir",
@@ -454,6 +430,8 @@ type Story = {
   label: string;
   // Σ de l'indice de bloc (qcScore : `score_qc`, ou `salience_index_qc` ×100
   // après le cutover) pondérée par récence (demi-vie HALF_LIFE_H) — CLASSEMENT.
+  // Poids NORMALISÉS (somme = 1 sur six blocs, vitrine#566) : c'est donc la
+  // moyenne pondérée des six derniers blocs, sur 100 — les « points » du site.
   sumQc: number;
   sumRoc: number;
   peakQc: number;          // max de l'indice de bloc, BRUT, sur la fenêtre
@@ -492,8 +470,11 @@ function parseIdList(json: string | null | undefined): string[] {
 // son sommet sur 24 h, le rang décrit ce qui domine l'attention maintenant.
 // Chiffres du banc (juin 2026) : âge moyen du pic du n°1 10,1 h → 5,5 h, churn
 // 37 % (cible < 35-40 %), convergence Deux solitudes quasi inchangée (Δp50 ≤ 1).
-const HALF_LIFE_H = 10;
+// Depuis vitrine#566 les poids sont NORMALISÉS (`recencyWeight`, somme = 1 sur
+// une fenêtre pleine) : les sommes sont des moyennes pondérées sur 100, et la
+// demi-vie (HALF_LIFE_H) vit dans salienceCutover.ts à côté des grilles.
 const blockStartMs = (bk: string) => Date.parse(`${bk}:00:00Z`);
+const ageH = (olderMs: number, newerMs: number) => (newerMs - olderMs) / 3.6e6;
 
 function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOVER): Story[] {
   type RawArticle = { media_id: string; url: string };
@@ -513,7 +494,7 @@ function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOV
     const key = e.storyline_id ?? e.event_label ?? e.event_id;
     const bk = blockKey(e);
     // Poids de récence : 1 pour le bloc le plus frais, ~0,5 à 10 h d'âge, etc.
-    const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+    const w = recencyWeight(ageH(blockStartMs(bk), newestMs));
     const qc = qcScore(e, cutover);
     const roc = rocScore(e, cutover);
     // Listes de médias par région, publiées par le refiner (#211). Le repli qui
@@ -608,7 +589,7 @@ function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENCE_CUTOV
         const bj = windowBlocksAsc[j];
         const qj = s.byBlock.get(bj) ?? 0;
         if (qj <= 0) continue;
-        cumul += qj * Math.pow(2, (blockStartMs(bj) - blockStartMs(b)) / 3.6e6 / HALF_LIFE_H);
+        cumul += qj * recencyWeight(ageH(blockStartMs(bj), blockStartMs(b)));
       }
       return { blockUtc: b, qc, present: qc > 0, share: tot > 0 ? (qc / tot) * 100 : 0, cumul };
     });
@@ -691,7 +672,7 @@ function usEchoes(allRaw: RawEvent[], windowBlocks: Set<string>): UsEcho[] {
     .filter((e) => e.country_id === "USA" && windowBlocks.has(blockKey(e)) && e.title)
     .map((e) => {
       const bk = blockKey(e);
-      const w = Math.pow(2, (blockStartMs(bk) - newestMs) / 3.6e6 / HALF_LIFE_H);
+      const w = recencyWeight(ageH(blockStartMs(bk), newestMs));
       let articles: { media_id: string; url: string }[] = [];
       try {
         const parsed = JSON.parse(e.articles ?? "[]");
@@ -1034,7 +1015,13 @@ function saillanceTierFromScore(
 // Mesuré : calibrer sur toutes les storylines mettrait 93 % des cartes dans les
 // 3 bandes du haut et 0 % dans les 2 du bas — exactement le tassement de
 // l'ancien badge au pic. Sur les affichées : 43 % / 25 %.
-const SUM_QC_THRESHOLDS = { faible: 21.4, moyenne: 31.0, eleve: 47.9, tresEleve: 102.4, extreme: 192.8 };
+// Mesurée en unités de CUMUL ; divisée par RECENCY_WEIGHT_TOTAL depuis que les
+// poids sont normalisés (vitrine#566), pour que le chemin pré-bascule reste
+// cohérent avec lui-même s'il est rejoué.
+const SUM_QC_THRESHOLDS = {
+  faible: 21.4 / RECENCY_WEIGHT_TOTAL, moyenne: 31.0 / RECENCY_WEIGHT_TOTAL, eleve: 47.9 / RECENCY_WEIGHT_TOTAL,
+  tresEleve: 102.4 / RECENCY_WEIGHT_TOTAL, extreme: 192.8 / RECENCY_WEIGHT_TOTAL,
+};
 
 // PLUS D'HYSTÉRÉSIS depuis vitrine#430 (décision A4, Adrien, 2026-08-09).
 //
@@ -1849,6 +1836,10 @@ export type UneEvent = {
    *  l'instant présent — la bulle utilise alors `saillanceCentile`. */
   sommetCentile: number | null;
   sommetTier: string | null;
+  /** Classe de bande du sommet (même palette que le badge) et édition où il a
+   *  été atteint (« édition de la nuit du mercredi 19 août 2026 »). */
+  sommetCls: string | null;
+  sommetEdition: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
@@ -2270,6 +2261,23 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
     const sommetTier = sommetSum != null
       ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].label
       : null;
+    // La bande du sommet s'affiche comme le badge, avec sa couleur (demande
+    // d'Adrien, vitrine#566) : la bulle en a besoin de la classe, pas seulement
+    // du mot.
+    const sommetCls = sommetSum != null
+      ? TIER_BY_RANK[rawRank(sommetSum, sumThresholds)].cls
+      : null;
+    // « édition de la nuit du mercredi 19 août 2026 » : l'édition où le sommet a
+    // été atteint, nommée EXACTEMENT comme l'archive (par son heure de
+    // publication, jamais par l'heure de début du bloc — cf. editionsOf).
+    const sommetEdition = sommetSum != null && suivi
+      ? (() => {
+        const a = blockAnchor(suivi.peakBlock);
+        if (!a) return null;
+        const dateFr = formatDateFr(a.anchorIso);
+        return `édition ${editionLabel(a.pubHour % 24)} du ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+      })()
+      : null;
     // Trajectoire 24 h (#274) : la courbe trace la part d'attention et chaque
     // point porte le niveau que le BADGE affichait à cette édition-là.
     const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history, suivi?.sums);
@@ -2325,6 +2333,8 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       sommetLabel,
       sommetCentile,
       sommetTier,
+      sommetCls,
+      sommetEdition,
       nBlocks24h: e.n_blocks_24h ?? null,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit

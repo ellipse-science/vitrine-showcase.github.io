@@ -55,8 +55,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const title = `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
   const description =
     `La Vitrine démocratique telle qu'elle était à l'${edition.label.toLowerCase()} ` +
-    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, partis, ` +
-    `enjeux, Assemblée nationale et Polimètre+.`;
+    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, enjeux, ` +
+    `partis, Polimètre+ et Assemblée nationale.`;
 
   return {
     // garde-redaction: ok (séparateur d'onglet, forme commune à toutes les pages du site)
@@ -129,25 +129,26 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
         <DeuxSolitudesSection editionKey={edition.key} />
       </div>
 
-      {!isProdEnv && (
-        <div id="partis-et-couverture" data-section="Partis et couverture">
-          <PartisCouvertureSection asOfIso={edition.navDateIso} />
-        </div>
-      )}
 
       <div id="enjeux-saillants" data-section="Enjeux saillants">
         <TreemapSection editionKey={edition.key} asOfIso={edition.navDateIso} />
       </div>
 
       {!isProdEnv && (
-        <div id="assemblee-nationale" data-section="Assemblée nationale">
-          <AssembleeSection asOfIso={edition.navDateIso} />
+        <div id="partis-et-couverture" data-section="Partis et couverture">
+          <PartisCouvertureSection asOfIso={edition.navDateIso} editionKey={edition.key} />
         </div>
       )}
 
       <div id="polimetre-plus" data-section="Polimètre+">
-        <PolimetrePlusSection asOfIso={edition.navDateIso} />
+        <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
+
+      {!isProdEnv && (
+        <div id="assemblee-nationale" data-section="Assemblée nationale">
+          <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
+        </div>
+      )}
 
       <nav className="archive-pager" aria-label="Naviguer entre les éditions">
         {older

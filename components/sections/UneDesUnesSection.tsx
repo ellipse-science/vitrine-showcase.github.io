@@ -56,9 +56,10 @@ function SaillanceHead({ event, className, hrefs }: {
           Saillance {event.saillanceLabel}
         </span>
         <InfoTip size="sm" label="Détail du niveau de saillance">
-          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} centile={event.saillanceCentile}
+          <SaillanceInfoCard rank={event.saillanceRank} level={event.saillanceLabel} cls={event.saillanceCls} centile={event.saillanceCentile}
             peak={event.scoreQcSum24h} sommet={event.sommetSum} sommetLabel={event.sommetLabel}
             sommetCentile={event.sommetCentile} sommetTier={event.sommetTier}
+            sommetCls={event.sommetCls} sommetEdition={event.sommetEdition}
             thresholds={event.salThresholds}
             qcOutlets={event.qcOutletCount} totalQcOutlets={event.totalQcOutlets}
             since={event.saillantSince} />
@@ -323,7 +324,13 @@ function SideUne({ event, hrefs }: { event: UneEvent; hrefs?: Record<string, str
   );
 }
 
-export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
+export async function UneDesUnesSection({
+  editionKey,
+  shareEditionKey,
+}: {
+  editionKey?: string;
+  shareEditionKey?: string;
+} = {}) {
   // ÉDITIONS PASSÉES (#434). L'illustration et la musique ne sont PAS
   // archivées : `generated-art/latest.png` et `audio/latest.mp3` sont écrasés à
   // chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
@@ -414,7 +421,11 @@ export async function UneDesUnesSection({ editionKey }: { editionKey?: string } 
           </span>
           <span className="section-right">
             <span className="section-date">{editionLabel}</span>
-            <ShareButton title={sectionTitle} anchor="une-des-unes" />
+            <ShareButton
+              title={sectionTitle}
+              anchor="une-des-unes"
+              editionKey={editionKey ?? shareEditionKey}
+            />
           </span>
         </div>
 

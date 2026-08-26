@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_deputes" (
   "period_start_date" text,
   "period_end_date" text,
   "party" text,
+  "deputy_id" text,
+  "district_id" text,
   "deputy" text,
   "n_interventions" integer,
   "word_count" integer,
@@ -82,6 +84,8 @@ CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_start_date_idx" ON
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_end_date_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_end_date");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_party_idx" ON vitrine."agora_decideurs_qc_deputes" ("party");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_deputy_idx" ON vitrine."agora_decideurs_qc_deputes" ("deputy");
+
+-- ⚠️  agora_decideurs_qc_affiliations : public/data/agora/agora_decideurs_qc_affiliations.json absent — types non inférables, table omise.
 
 -- federal_parties_score_week  (Athena : vitrine_datamart-federal_parties_score_week)
 CREATE TABLE IF NOT EXISTS vitrine."federal_parties_score_week" (
@@ -138,6 +142,7 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_day" (
   "date_utc" text,
   "date_montreal_tz" text,
   "weighted_mentions" double precision,
+  "total_raw_score" double precision,
   "weighted_tone" double precision,
   "computed_at" text
 );
@@ -152,6 +157,7 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_week" (
   "date_utc" text,
   "date_montreal_tz" text,
   "weighted_mentions" double precision,
+  "total_raw_score" double precision,
   "weighted_tone" double precision,
   "computed_at" text
 );
@@ -166,12 +172,61 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_month" (
   "date_utc" text,
   "date_montreal_tz" text,
   "weighted_mentions" double precision,
+  "total_raw_score" double precision,
   "weighted_tone" double precision,
   "computed_at" text
 );
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_party_idx" ON vitrine."provincial_parties_salient_shadow_month" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_month" ("date_utc");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_month_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_month" ("date_montreal_tz");
+
+-- provincial_parties_salient_shadow_by_media_day  (Athena : vitrine_datamart-provincial_parties_salient_shadow_by_media_day)
+-- consommé par components/interactive/PartisCouvertureClient.tsx
+CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_day" (
+  "party" text,
+  "media_id" text,
+  "date_utc" text,
+  "date_montreal_tz" text,
+  "weighted_mentions" double precision,
+  "total_raw_score" double precision,
+  "weighted_tone" double precision,
+  "computed_at" text
+);
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("party");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("date_utc");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("date_montreal_tz");
+
+-- provincial_parties_salient_shadow_by_media_week  (Athena : vitrine_datamart-provincial_parties_salient_shadow_by_media_week)
+-- consommé par components/interactive/PartisCouvertureClient.tsx
+CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_week" (
+  "party" text,
+  "media_id" text,
+  "date_utc" text,
+  "date_montreal_tz" text,
+  "weighted_mentions" double precision,
+  "total_raw_score" double precision,
+  "weighted_tone" double precision,
+  "computed_at" text
+);
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("party");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("date_utc");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("date_montreal_tz");
+
+-- provincial_parties_salient_shadow_by_media_month  (Athena : vitrine_datamart-provincial_parties_salient_shadow_by_media_month)
+-- consommé par components/interactive/PartisCouvertureClient.tsx
+CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_month" (
+  "party" text,
+  "media_id" text,
+  "date_utc" text,
+  "date_montreal_tz" text,
+  "weighted_mentions" double precision,
+  "total_raw_score" double precision,
+  "weighted_tone" double precision,
+  "computed_at" text
+);
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("party");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("date_utc");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("date_montreal_tz");
 
 -- issues_score_day  (Athena : vitrine_datamart-issues_score_day)
 -- consommé par lib/data/headlineEvents.ts + components/sections/TreemapSection.tsx
@@ -316,6 +371,39 @@ CREATE TABLE IF NOT EXISTS vitrine."polimetre_plus" (
   "coverage_summary_month" text
 );
 
+-- provincial_parties_salient_shadow_intraday  (Athena : vitrine_datamart-provincial_parties_salient_shadow_intraday)
+-- consommé par components/interactive/PartisCouvertureClient.tsx
+CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_intraday" (
+  "party" text,
+  "block_hour" integer,
+  "block_label" text,
+  "weighted_mentions" double precision,
+  "total_raw_score" double precision,
+  "weighted_tone" double precision,
+  "date_utc" text,
+  "date_montreal_tz" text,
+  "computed_at" text
+);
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_party_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("party");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("date_utc");
+CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("date_montreal_tz");
+
+-- parties_issues_salient_shadow_day  (Athena : vitrine_datamart-parties_issues_salient_shadow_day)
+-- consommé par components/interactive/PartisCouvertureClient.tsx
+CREATE TABLE IF NOT EXISTS vitrine."parties_issues_salient_shadow_day" (
+  "party" text,
+  "theme" text,
+  "issue_share" double precision,
+  "total_raw_score" double precision,
+  "weighted_tone" double precision,
+  "date_utc" text,
+  "date_montreal_tz" text,
+  "computed_at" text
+);
+CREATE INDEX IF NOT EXISTS "parties_issues_salient_shadow_day_party_idx" ON vitrine."parties_issues_salient_shadow_day" ("party");
+CREATE INDEX IF NOT EXISTS "parties_issues_salient_shadow_day_date_utc_idx" ON vitrine."parties_issues_salient_shadow_day" ("date_utc");
+CREATE INDEX IF NOT EXISTS "parties_issues_salient_shadow_day_date_montreal_tz_idx" ON vitrine."parties_issues_salient_shadow_day" ("date_montreal_tz");
+
 -- Fraîcheur : une ligne par table, écrite en fin de synchro. C'est ce
 -- que l'API expose comme date de dernière mise à jour, et ce qui permet
 -- de détecter une synchro muette (le pire des cas : des données figées
@@ -326,3 +414,4 @@ CREATE TABLE IF NOT EXISTS vitrine.sync_state (
   "row_count"  bigint NOT NULL,
   "source"     text NOT NULL DEFAULT 'athena'
 );
+schéma généré : 20 tables, 1 omises faute de données

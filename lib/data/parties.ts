@@ -13,6 +13,7 @@
 // The week file resets every Monday; the month file resets on the 1st.
 
 import fs from "node:fs/promises";
+import { formatDuree } from "@/lib/duree";
 import path from "node:path";
 
 import { readDatasetText } from "@/lib/data/source";
@@ -23,6 +24,21 @@ import { MEDIA_LABELS } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
+
+/** Noms officiels, casse comprise, tels que le guide de rédaction les fixe.
+ *
+ *  Les sigles suffisent dans la console, où la place manque et où le contexte
+ *  lève l'ambiguïté. Une phrase destinée à être CITÉE, elle, porte le nom
+ *  complet : c'est ce qu'un journaliste recopiera dans son article, et
+ *  « Coalition avenir Québec » ne s'invente pas (minuscule à « avenir », pas de
+ *  trait d'union). */
+export const PARTY_FULL_NAMES: Record<PartyKey, string> = {
+  plq: "Parti libéral du Québec",
+  caq: "Coalition avenir Québec",
+  qs: "Québec solidaire",
+  pq: "Parti québécois",
+  pcq: "Parti conservateur du Québec",
+};
 
 export const PARTY_LABELS: Record<PartyKey, string> = {
   plq: "PLQ",
@@ -62,15 +78,33 @@ export const PARTY_COLORS: Record<PartyKey, string> = {
 };
 
 /**
- * Sourdine : sous ce seuil, un parti n'est plus considéré comme audible.
+ * Les partis en sourdine : ceux qui occupent le MOINS de place, quelle que soit
+ * leur part.
  *
- * ⚠️ 5 % est un choix d'AFFICHAGE, plus élevé que le seuil du raffineur, qui
- * reste à 2 % (ECLIPSE_THRESHOLD dans radar-party-score-salient-shadow, publié
- * dans la colonne `threshold`). Les deux divergent donc volontairement : la
- * colonne `threshold` de la donnée ne décrit PLUS ce que le site affiche.
- * À aligner si le seuil de 5 % est retenu durablement.
+ * La sourdine était un seuil (sous 5 %, un parti passait en gris). Elle est
+ * devenue un RANG : le dernier est toujours en sourdine, même à 19 %. Le module
+ * y gagne une propriété que le seuil ne donnait pas — il reste exactement quatre
+ * partis actifs, donc quatre decks, quelle que soit la journée.
+ *
+ * Égalité au plus bas : TOUS les ex æquo passent en sourdine, et les decks
+ * correspondants restent vides. Une égalité est presque toujours une égalité à
+ * zéro (un parti dont on ne parle pas du tout), et départager deux néants par
+ * ordre alphabétique donnerait un classement que la donnée ne soutient pas.
+ *
+ * Conséquence assumée du cas dégénéré : si les cinq partis sont à égalité — en
+ * pratique tous à zéro, mesure suspendue ou détection en panne — les cinq
+ * passent en sourdine et aucun deck ne se remplit. C'est le comportement voulu :
+ * l'avis d'indisponibilité prend alors toute la place, plutôt que quatre decks
+ * qui prétendraient classer du vide.
+ *
+ * L'égalité se teste sur la part BRUTE, pas sur le pourcentage affiché : deux
+ * partis à 11,6 % et 12,4 % s'affichent tous deux « 12 % » sans être à égalité.
  */
-const SHADOW_THRESHOLD = 0.05;
+export function clesEnSourdine(parts: [PartyKey, number][]): Set<PartyKey> {
+  if (parts.length === 0) return new Set();
+  const min = Math.min(...parts.map(([, v]) => v));
+  return new Set(parts.filter(([, v]) => v === min).map(([k]) => k));
+}
 const SPARK_W = 100;
 const SPARK_H = 30;
 
@@ -105,7 +139,7 @@ const RANGE_CONFIG: Record<
 const TAB_LABELS: Record<RangeKey, string> = {
   today: "Jour",
   week: "Semaine",
-  overall: "Tout",
+  overall: "Campagne",
 };
 
 export type Sov  = { today: number; week: number; month: number; year: number };
@@ -116,23 +150,51 @@ type ShadowRow = {
   date_utc: string;
   date_montreal_tz: string;
   weighted_mentions: number; // already SOV (0–1)
+  /** Minutes en Une attribuées à ce parti, cumulées depuis le reset de la
+   *  période. Depuis aws-refiners#355 elles sont RÉPARTIES entre les partis
+   *  d'un article au prorata de leurs phrases : leur somme égale donc les
+   *  minutes réelles, ce qui n'était pas le cas auparavant. */
+  total_raw_score?: number;
   weighted_tone: number;
   computed_at?: string;
   /** Présent uniquement dans les tables `*_by_media_*`. */
   media_id?: string;
 };
 
-type Entry = { mentions: number; tone: number };
+/** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
+type IntradayRow = ShadowRow & { block_hour: number; block_label: string };
+
+/** Une ligne de `parties_issues_salient_shadow_day`. */
+type IssueRow = {
+  party: string;
+  theme: string;
+  issue_share: number;
+  /** Minutes en Une attribuées à ce couple. C'est CE champ, et non la part, qui
+   *  permet de recomposer une part de voix sur une sélection d'enjeux : les
+   *  parts sont normalisées par parti, donc non additionnables entre partis. */
+  total_raw_score: number;
+  weighted_tone: number;
+  date_utc: string;
+  date_montreal_tz?: string;
+};
+
+type Entry = { mentions: number; tone: number; minutes: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
 
 type Stat = {
   key: PartyKey;
+  /** Minutes en Une, par période. Même structure que `sov`. */
+  minutes: Sov;
   sov: Sov;
   tone: Tone;
   /** `daily` couvre TOUTE la fenêtre disponible ; `week` n'en garde que les 7
    *  derniers jours. La courbe partagée veut la première, l'ancienne mini-courbe
    *  voulait la seconde. */
   history: { daily: number[]; week: number[]; weekly: number[]; month: number[]; monthly: number[] };
+  /** Le même découpage, mais en MINUTES de Une plutôt qu'en part de voix.
+   *  C'est ce que trace le palmarès : « la CAQ a occupé 2 h 15 » se cite, un
+   *  pourcentage oblige le lecteur à faire le calcul lui-même. */
+  minutesHistory: { daily: number[]; weekly: number[]; monthly: number[] };
   toneHistory: { daily: number[]; weekly: number[]; monthly: number[] };
 };
 
@@ -140,9 +202,45 @@ type Stat = {
  *  la courbe les étiquette, donc elles doivent voyager avec les valeurs. */
 type SeriesDates = { daily: string[]; weekly: string[]; monthly: string[] };
 
+/** La matrice parti × enjeu, telle que la console la consomme.
+ *
+ *  C'est ELLE qui rend les pads jouables : sélectionner des enjeux revient à
+ *  recalculer la part de voix sur les seules minutes attribuées à ces enjeux,
+ *  puis à renormaliser entre les cinq partis. Le calcul se fait côté client, à
+ *  chaque clic, sur un objet déjà en mémoire — aucune requête, aucun recalcul
+ *  de build. */
+export type EnjeuMix = {
+  /** Les enjeux réellement détectés, du plus au moins présent tous partis
+   *  confondus. L'ordre est stable d'un rendu à l'autre : une banque de pads
+   *  dont les touches changent de place à chaque mise à jour serait
+   *  injouable. */
+  enjeux: string[];
+  /** parti → enjeu → minutes attribuées et ton de ce couple. */
+  parParti: Record<string, Record<string, { score: number; tone: number }>>;
+};
+
+/** Un enjeu dont on parle à propos d'un parti. */
+export type EnjeuView = {
+  /** Libellé CAP canonique, repris au caractère près : ces douze catégories
+   *  sont partagées avec le Digital Society Lab, les changer casserait la
+   *  comparabilité entre projets. */
+  label: string;
+  /** Part de cet enjeu DANS ce parti, en % entier. Les parts d'un même parti
+   *  somment à 100. */
+  pct: number;
+  toneLabel: string;
+  toneDirection: "positive" | "negative" | "neutral";
+  /** Vrai pour le pad « Autres enjeux », qui agrège la queue de distribution.
+   *  Il se rend éteint : ce n'est pas un enjeu, c'est ce qui reste. */
+  reste?: boolean;
+};
+
 export type RowView = {
   key: PartyKey;
   label: string;
+  /** Nom officiel complet (« Coalition avenir Québec »), pour la phrase
+   *  citable du bloc journalistes. Le sigle suffit dans la console. */
+  fullLabel: string;
   inShadow: boolean;
   color: string;
   sovPct: number;
@@ -154,6 +252,32 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** Minutes en Une attribuées à ce parti sur la période, arrondies.
+   *
+   *  Publiées telles quelles pour un palmarès : « la CAQ a occupé 2 h 15 de
+   *  Une » se cite mieux qu'une part de voix, et la valeur est désormais
+   *  interprétable — depuis la répartition, la somme sur tous les partis égale
+   *  le temps réellement passé en Une, et non un multiple. */
+  minutesUne: number;
+  /** Rang sur la période, 1 = le plus présent. « 2e sur 5 » se cite ; une
+   *  part de voix seule oblige le lecteur à comparer lui-même. */
+  rang: number;
+  /** Journées où ce parti a été le plus présent, sur celles que couvre
+   *  l'onglet. Les journées sans aucune détection ne comptent pour personne. */
+  joursEnTete: number;
+  joursComptes: number;
+  /** Évolution entre le premier et le dernier jour de la fenêtre, en POINTS de
+   *  pourcentage. Jamais en pourcentage d'un pourcentage. */
+  evolutionPts: number;
+  /** Les enjeux dont on parle à propos de ce parti, du plus au moins présent.
+   *  Vide tant que la table de croisement n'est pas publiée. */
+  enjeux: EnjeuView[];
+  /** La carte des enjeux a-t-elle été FOURNIE pour cette vue ? Les vues par
+   *  média ne la reçoivent pas — le raffineur ne croise pas parti × enjeu ×
+   *  média. Sans ce drapeau, `enjeux: []` se lit « aucun enjeu identifié », ce
+   *  qui est une affirmation sur la couverture au lieu d'un aveu sur la mesure
+   *  (relevé d'Alexandre, PR #539). */
+  enjeuxVentiles: boolean;
   /** Sommet atteint sur la fenêtre suivie, et le jour où il l'a été.
    *  C'est le « peak hold » de la console : le trait qui reste au niveau le
    *  plus haut atteint, longtemps après que le son soit redescendu. */
@@ -173,11 +297,29 @@ export type ChartSeries = {
   /** Bout de ligne — position du point terminal. */
   lastX: number;
   lastY: number;
+  /** Le même tracé, mais normalisé sur la propre amplitude du parti.
+   *
+   *  L'échelle commune répond à « qui est devant », ce que le rang et le
+   *  pourcentage disent déjà mieux ; elle écrase en revanche le mouvement d'un
+   *  parti qui joue dans les basses eaux. Chaque piste porte donc sa propre
+   *  amplitude, et la comparaison des NIVEAUX se lit sur les chiffres, à côté.
+   *  Les deux lectures ne se contredisent pas : elles répondent à deux
+   *  questions différentes. */
+  polylineSolo: string;
   /** Position de l'ÉTIQUETTE : `lastY` écarté de ses voisines si nécessaire.
    *  Distinct de `lastY` pour que le point reste sur la donnée exacte même
    *  quand son étiquette a dû être déplacée. */
   labelY: number;
   lastPct: number;
+  /** Le tracé du PALMARÈS : mêmes abscisses, mais l'ordonnée porte les minutes
+   *  de Une. Les cinq partis partagent la même échelle — c'est tout l'intérêt,
+   *  on compare des durées. */
+  polylineMin: string;
+  /** Tête de courbe sur l'échelle des minutes : c'est là que se pose la
+   *  pochette miniature. L'abscisse est la même que `lastX`. */
+  lastYMin: number;
+  /** Minutes du dernier point, pour l'étiquette de bout de courbe. */
+  lastMinutes: number;
 };
 
 export type ChartView = {
@@ -194,6 +336,10 @@ export type ChartView = {
   /** Vrai quand la fenêtre ne contient qu'une seule date : une « courbe » d'un
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
+  /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
+  raison?: "court" | "sans-detail-horaire" | "detail-horaire-absent";
+  /** Graduations de l'axe des minutes, pour le palmarès. */
+  yLabels: { label: string; y: number }[];
 };
 
 export type RangeView = {
@@ -201,6 +347,11 @@ export type RangeView = {
   tabLabel: string;
   sparkHeadLabel: string;
   refLabel: string;
+  /** « du 11 au 17 août 2026 » : la fenêtre réellement couverte par la donnée,
+   *  formulée pour être recopiée telle quelle dans un article. */
+  periodeLabel: string;
+  /** Depuis quand la mesure court, pour l'écrire sous le titre du vumètre. */
+  depuisLabel: string;
   rows: RowView[];
   /** La course de CETTE période : sa fenêtre et sa ligne d'arrivée en
    *  dépendent. */
@@ -264,6 +415,10 @@ export type PartiesData = {
    *  agrégée. Et c'est volontaire — l'agrégat est pondéré par les minutes de
    *  chaque média, il n'est donc pas la moyenne des vues par média. */
   byMedia: Record<string, MediaView>;
+  /** La matrice parti × enjeu, pour la banque de pads de la console. Vide tant
+   *  que le croisement n'est pas publié : la banque disparaît alors, plutôt que
+   *  d'offrir des touches qui ne commandent rien. */
+  enjeuMix: EnjeuMix;
   /** Vrai quand la donnée vient de `fixtures/` et non de `public/data/`.
    *  Le module l'affiche en toutes lettres — cf. `.gitignore` : « aucune donnée
    *  inventée ne doit pouvoir être confondue avec la donnée réelle ». */
@@ -298,8 +453,10 @@ const RETARD_MAX_JOURS = 3;
  *  éditions archivées — le défaut est antérieur au gel du 31 juillet 2026, il
  *  ne commence pas à cette date. Le module reste affiché et dit pourquoi.
  *
- *  À repasser à `false` quand le réentraînement est validé, avec la métho §05
- *  et le §10 (Limites reconnues) mis à jour dans le même geste.
+ *  À repasser à `false` quand le réentraînement est validé, avec les sections
+ *  `#partis-et-couverture` et `#limites` (Limites reconnues) de la métho mises
+ *  à jour dans le même geste. Repérées par leur ancre, pas par leur numéro de
+ *  § : l'ordre des sections a déjà changé une fois (#492).
  *
  *  UNE SEULE DÉROGATION : les fixtures (voir `SUR_FIXTURES` plus bas). La
  *  suspension protège le PUBLIC d'une affirmation que la donnée ne soutient
@@ -310,7 +467,7 @@ const RETARD_MAX_JOURS = 3;
  *  exactement le genre de manipulation qui finit par être commitée par
  *  accident. Le rendu sur fixtures porte un bandeau « DONNÉES FICTIVES »
  *  (`GabaritFictif`), pour qu'aucune capture ne puisse passer pour le site. */
-const MESURE_PROVINCIALE_SUSPENDUE = true;
+const MESURE_PROVINCIALE_SUSPENDUE = false;
 
 /** Aujourd'hui en heure de MONTRÉAL, pas en UTC (AGENTS.md règle #2).
  *  `toISOString()` bascule de jour dès 20 h heure locale : le module aurait
@@ -448,7 +605,11 @@ function buildLookup(rows: ShadowRow[]): Lookup {
     if (vus[cle] !== undefined && vus[cle] >= quand) continue;
     vus[cle] = quand;
     if (!result[row.date_utc]) result[row.date_utc] = Object.create(null);
-    result[row.date_utc][pKey] = { mentions: row.weighted_mentions, tone: row.weighted_tone };
+    result[row.date_utc][pKey] = {
+      mentions: row.weighted_mentions,
+      tone: row.weighted_tone,
+      minutes: Number(row.total_raw_score) || 0,
+    };
   }
   return result;
 }
@@ -489,8 +650,18 @@ function computeStats(
     const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone  || 0;
     const monthTone = monthLookup[latestMonth]?.[pKey]?.tone || 0;
 
+    // Les minutes de chaque période, à côté des parts. Le `year` somme la
+    // fenêtre entière, puisqu'il n'existe pas de table annuelle.
+    const minutes: Sov = {
+      today: dayLookup[latestDay]?.[pKey]?.minutes || 0,
+      week:  weekLookup[latestWeek]?.[pKey]?.minutes || 0,
+      month: monthLookup[latestMonth]?.[pKey]?.minutes || 0,
+      year:  allDayDates.reduce((t, d) => t + (dayLookup[d]?.[pKey]?.minutes || 0), 0),
+    };
+
     return {
       key: pKey,
+      minutes,
       sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
       tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
       history: {
@@ -499,6 +670,11 @@ function computeStats(
         weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.mentions  || 0),
         month:   [],
         monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.mentions || 0),
+      },
+      minutesHistory: {
+        daily:   allDayDates.map((d)      => dayLookup[d]?.[pKey]?.minutes   || 0),
+        weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.minutes  || 0),
+        monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.minutes || 0),
       },
       toneHistory: {
         daily:   allDayDates.map((d)       => dayLookup[d]?.[pKey]?.tone   || 0),
@@ -515,7 +691,10 @@ function computeStats(
 }
 
 const CHART_W = 100;
-const CHART_H = 46;
+// 30 et non 46 : la course passe en TÊTE du module, où elle sert de repère
+// d'entrée et non de pièce à examiner. Une bande basse se lit d'un coup d'œil
+// et laisse la place à la console, qui porte le détail.
+const CHART_H = 30;
 /** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
  *  Resserrée pour que la ligne d'arrivée se rapproche du bord. */
 const CHART_PAD_R = 9;
@@ -547,6 +726,29 @@ function shortDateFr(isoDate: string): string {
 function axisTop(maxPct: number): number {
   return Math.max(20, Math.ceil(maxPct / 10) * 10);
 }
+
+/** Le sommet de l'axe des MINUTES, arrondi à un palier lisible.
+ *
+ *  Les paliers suivent l'HORLOGE et non la base dix : on lit « 2 h » et
+ *  « 30 min », jamais « 250 minutes ». Un axe qui grimpe par 100 obligerait à
+ *  convertir de tête à chaque graduation. */
+function paliersMinutes(maxMin: number): number {
+  const paliers = [15, 30, 60, 90, 120, 180, 240, 360, 480, 720, 1440];
+  return paliers.find((p) => maxMin <= p) ?? Math.ceil(maxMin / 1440) * 1440;
+}
+
+/** Les graduations de l'axe des minutes, du bas vers le haut, zéro compris.
+ *  Il l'était devenu nécessaire : le trait qui marquait le sol a été retiré pour
+ *  alléger le graphique, et plus rien ne situait le départ de l'échelle. */
+function graduationsMinutes(topMin: number): { label: string; y: number }[] {
+  return [0, 0.25, 0.5, 0.75, 1].map((f) => ({
+    // Le zéro s'écrit « 0h » et non « 0 min » : il ouvre une échelle d'heures,
+    // et `formatDuree` bascule en minutes sous l'heure.
+    label: f === 0 ? "0h" : formatDuree(topMin * f),
+    y: Number((CHART_H - f * CHART_H).toFixed(2)),
+  }));
+}
+
 
 /** Écart vertical minimal entre deux étiquettes de bout de ligne, en unités du
  *  viewBox (hauteur totale 46). En dessous, elles se chevauchent. */
@@ -621,8 +823,8 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
     vendredi.setUTCDate(j.getUTCDate() + (5 - jour));
     return {
       t: vendredi.getTime() + HEURE_ARRIVEE * 3_600_000,
-      label: "Arrivée",
-      sub: `vendredi ${HEURE_ARRIVEE} h`,
+      label: "vendredi",
+      sub: `${HEURE_ARRIVEE} h`,
     };
   }
   return { t: j.getTime() + HEURE_ARRIVEE * 3_600_000, label: "Arrivée", sub: `${HEURE_ARRIVEE} h` };
@@ -637,8 +839,33 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  *             du suivi : mieux vaut un axe plus large qu'une date inventée.
  *   Jour    → la première journée montrée.
  */
+/**
+ * Le LUNDI 00h de la semaine qui contient `t`, en UTC comme le reste du
+ * fichier. Une seule définition, partagée par la borne de l'axe et par ses
+ * repères : c'est en les calculant chacun de leur côté qu'ils avaient divergé.
+ */
+function lundiDeLaSemaine(t: number): number {
+  const d = new Date(t);
+  const recul = (d.getUTCDay() + 6) % 7; // 0 = lundi
+  const lundi = new Date(d.getTime() - recul * 86_400_000);
+  return Date.parse(`${lundi.toISOString().slice(0, 10)}T00:00:00Z`);
+}
+
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
-  if (range === "week") return arriveeT - 7 * 86_400_000 - 2 * 3_600_000;
+  if (range === "week") {
+    // LUNDI 00h, la borne de la table du raffineur :
+    // `floor_date(now_mtl, "week", week_start = 1)`
+    // (radar-party-score-salient-shadow/runtime.R:271).
+    //
+    // L'axe partait du samedi et cumulait donc deux jours que la table ne
+    // compte pas : la pochette annonçait 14h40 quand le palmarès finissait à
+    // 17h16 pour la CAQ, et le classement du palmarès pouvait contredire celui
+    // des decks (relevé d'Alexandre, PR #539). Le reste du module était déjà
+    // calé sur le lundi — `arrivee()` cherche « le vendredi de la semaine en
+    // cours (lundi = 1) » et le texte sous le graphique dit « depuis lundi ».
+    // Seule cette borne-ci ne l'était pas.
+    return lundiDeLaSemaine(arriveeT);
+  }
   if (range === "overall" && ELECTION_CALL_DATE) {
     return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
   }
@@ -660,6 +887,195 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  * LA TENDANCE, pas de lire une valeur au pixel près. Les valeurs, elles, sont
  * écrites en toutes lettres au bout de chaque ligne.
  */
+/** La course d'UNE JOURNÉE, tracée sur ses blocs de 4 h.
+ *
+ *  L'onglet « Jour » montrait en réalité les sept derniers jours : le raffineur
+ *  ne publiait qu'un relevé par journée, et une journée ne pouvait donc pas se
+ *  tracer. Depuis aws-refiners#355 il conserve ses six blocs (00h … 20h), les
+ *  mêmes que le sélecteur d'édition en tête du site.
+ *
+ *  L'axe couvre la journée ENTIÈRE, de minuit à 20h, même si la donnée s'arrête
+ *  au bloc courant : le vide à droite est ce qu'il reste à courir, exactement
+ *  comme la ligne d'arrivée des autres onglets.
+ */
+function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
+  if (rows.length === 0) return null;
+  const dernierJour = rows.map((r) => String(r.date_montreal_tz ?? r.date_utc)).sort().at(-1);
+  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc) === dernierJour);
+  const blocs = [...new Set(duJour.map((r) => Number(r.block_hour)))].sort((a, b) => a - b);
+  if (blocs.length <= 1) return null;
+
+  const plotW = CHART_W - CHART_PAD_R;
+  // 20h est le dernier bloc publié, donc la fin de l'axe : au-delà, le
+  // raffineur ne produit plus rien avant le reset de minuit.
+  const xAtH = (h: number) => (h / 20) * plotW;
+
+  // Même définition de sourdine que le vumètre : le dernier au classement, pas
+  // ceux sous un seuil. Jugée sur le dernier bloc publié, qui est l'état courant
+  // de la journée — c'est ce que le vumètre montre au même instant.
+  const valeurCourante = (key: PartyKey) =>
+    duJour
+      .filter((r) => String(r.party ?? "").toLowerCase() === key && Number(r.block_hour) === blocs.at(-1))
+      .reduce((s, r) => s + (Number(r.weighted_mentions) || 0), 0);
+  const sourdineCourse = clesEnSourdine(parts.map((k) => [k, valeurCourante(k)]));
+
+  // Les MINUTES du bloc : `total_raw_score` EST la somme des `headline_minutes`
+  // (radar-party-score-salient-shadow/runtime.R, où `total_raw_score` et
+  // `total_minutes` sont calculés à l'identique avant que le second soit jeté).
+  // Le nom trompe, la grandeur non.
+  //
+  // ⚠️ Le raffineur ACCUMULE depuis minuit à chaque passage : ces minutes sont
+  // donc un cumul de la journée, pas le temps du bloc seul. La courbe monte.
+  const minParBloc = (key: PartyKey) => {
+    const m = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [Number(r.block_hour), Number(r.total_raw_score) || 0]),
+    );
+    return blocs.map((h) => m.get(h) ?? 0);
+  };
+  const topMin = paliersMinutes(Math.max(0, ...parts.flatMap((k) => minParBloc(k))));
+  const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
+
+  const series: ChartSeries[] = parts.map((key) => {
+    const parBloc = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [Number(r.block_hour), Number(r.weighted_mentions) || 0]),
+    );
+    const hist = blocs.map((h) => parBloc.get(h) ?? 0);
+    const pts = blocs.map((h, i) => [xAtH(h), soloY(hist)[i]] as const);
+    const last = pts.at(-1)!;
+    return {
+      key,
+      label: PARTY_LABELS[key],
+      color: PARTY_COLORS[key],
+      inShadow: sourdineCourse.has(key),
+      polylineMin: minParBloc(key)
+        .map((m, i) => `${xAtH(blocs[i]).toFixed(2)},${yMin(m).toFixed(2)}`)
+        .join(" "),
+      lastYMin: Number(yMin(minParBloc(key).at(-1) ?? 0).toFixed(2)),
+      lastMinutes: Math.round(minParBloc(key).at(-1) ?? 0),
+      polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      lastX: Number(last[0].toFixed(2)),
+      lastY: Number(last[1].toFixed(2)),
+      labelY: Number(last[1].toFixed(2)),
+      lastPct: Math.round((hist.at(-1) ?? 0) * 100),
+    };
+  });
+
+  spreadLabels(series);
+
+  return {
+    series,
+    xLabels: [0, 4, 8, 12, 16, 20].map((h) => ({
+      label: `${String(h).padStart(2, "0")}h`,
+      x: Number(xAtH(h).toFixed(2)),
+    })),
+    finish: { x: Number(xAtH(20).toFixed(2)), label: "20h", sub: "fin du jour" },
+    width: CHART_W,
+    height: CHART_H,
+    tooShort: false,
+    yLabels: graduationsMinutes(topMin),
+  };
+}
+
+const JOURS_COURTS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+
+/** Les repères de l'axe horizontal, propres à chaque onglet.
+ *
+ *  - `today`   : toutes les 4 h, soit les six blocs du pipeline (00h … 20h) —
+ *                les mêmes que le sélecteur d'édition en tête du site, plutôt
+ *                qu'un second vocabulaire du temps ;
+ *  - `week`    : les SEPT jours de la semaine, y compris ceux à venir ;
+ *  - `overall` : des dates en jj/mm, réparties jusqu'au scrutin.
+ *
+ *  Dans les trois cas les repères sont posés sur des instants, jamais sur les
+ *  dates publiées : c'est ce qui laisse voir le chemin qu'il reste à parcourir.
+ */
+function reperesAxe(
+  range: RangeKey,
+  t0: number,
+  tFin: number,
+  xAt: (t: number) => number,
+  axisDates: string[],
+): { label: string; x: number }[] {
+  const JOUR = 86_400_000;
+  const out: { label: string; x: number }[] = [];
+  const pousser = (t: number, label: string) => {
+    const x = xAt(t);
+    if (x >= -1 && x <= 101) out.push({ label, x: Number(x.toFixed(2)) });
+  };
+
+  if (range === "today") {
+    // Minuit du dernier jour couvert, puis un repère toutes les 4 h.
+    const dernier = axisDates.at(-1);
+    if (!dernier) return [];
+    const minuit = Date.parse(`${dernier}T00:00:00Z`);
+    for (let h = 0; h <= 20; h += 4) pousser(minuit + h * 3_600_000, `${String(h).padStart(2, "0")}h`);
+    return out;
+  }
+
+  if (range === "week") {
+    // Du LUNDI d'ouverture jusqu'à l'arrivée. La variable s'appelait déjà
+    // `lundi` mais reculait de six jours depuis le vendredi, ce qui tombait un
+    // samedi : le nom disait l'intention, le calcul disait autre chose. Les
+    // deux bornes viennent maintenant de la même fonction.
+    const lundi = lundiDeLaSemaine(tFin);
+    // Du lundi JUSQU'À la ligne d'arrivée, jours à venir compris : c'est ce qui
+    // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
+    // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
+    // repère posé au-delà désignerait un moment qui ne sera jamais couru.
+    // Le VENDREDI reprend sa place, sinon l'écart entre jeudi et l'arrivée
+    // valait 44 h contre 24 h partout ailleurs — presque le double, ce qui se
+    // voyait comme un axe mal calé. Les sept jours sont maintenant régulièrement
+    // espacés ; l'écart plus court qui suit le vendredi est le reste de sa
+    // journée, jusqu'à l'édition de 20h.
+    //
+    // Il s'écrit en toutes lettres : c'est le jour d'arrivée, et le distinguer
+    // évite d'avoir à poser une étiquette de plus au bout de l'axe.
+    const minuitVendredi = tFin - HEURE_ARRIVEE * 3_600_000;
+    for (let t = lundi; t <= minuitVendredi + 1; t += JOUR) {
+      const j = new Date(t).getUTCDay();
+      pousser(t, j === 5 ? "vendredi" : JOURS_COURTS[j]);
+    }
+    return out;
+  }
+
+  // `overall` : jusqu'à six dates en jj/mm, du début du suivi au scrutin.
+  const REPERES = 6;
+  const pas = (tFin - t0) / (REPERES - 1);
+  for (let i = 0; i < REPERES; i += 1) {
+    const d = new Date(t0 + i * pas);
+    const jj = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    pousser(t0 + i * pas, `${jj}/${mm}`);
+  }
+  return out;
+}
+
+/** Les ordonnées d'une piste, normalisées sur la PROPRE amplitude du parti.
+ *
+ *  Une marge de 15 % en haut et en bas évite que le tracé colle aux bords : une
+ *  courbe qui touche le plafond se lit comme tronquée.
+ *
+ *  Amplitude nulle (série parfaitement plate, ou parti à zéro toute la période)
+ *  : on centre au lieu de diviser par zéro. Une ligne droite au milieu dit
+ *  exactement ce qu'il y a à dire — rien n'a bougé. */
+function soloY(hist: number[]): number[] {
+  // Les bornes RÉELLES de la série, sans ancrage à zéro : `Math.min(..., 0)`
+  // ramenait le plancher à 0, si bien qu'une série oscillant entre 33 % et 37 %
+  // s'étalait sur une plage 0–37 et restait plate. C'est tout le contraire du
+  // but : ici on veut voir le mouvement, le niveau étant dit par le chiffre.
+  const hi = Math.max(...hist);
+  const lo = Math.min(...hist);
+  const marge = CHART_H * 0.15;
+  const utile = CHART_H - 2 * marge;
+  if (hi - lo < 1e-9) return hist.map(() => CHART_H / 2);
+  return hist.map((v) => marge + (1 - (v - lo) / (hi - lo)) * utile);
+}
+
 function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartView {
   const toutes = dates.daily;
   const garde = FENETRE[range];
@@ -678,45 +1094,69 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   const n = axisDates.length;
 
   const histOf = (s: Stat) => s.history.daily.slice(decalage);
+  /** Les minutes CUMULÉES sur la fenêtre affichée.
+   *
+   *  Une courbe qui ne fait que monter, comme un compteur de course. Les
+   *  minutes du jour, elles, montaient et redescendaient au gré de l'actualité :
+   *  cinq lignes qui se croisent sans cesse ne se lisent pas, et surtout elles
+   *  ne racontent pas ce qu'on veut voir — qui prend de l'avance.
+   *
+   *  ⚠️ Le cumul se fait ICI et non sur la vue intra-journée : le raffineur
+   *  accumule DÉJÀ depuis minuit à chaque passage, donc y appliquer une somme
+   *  courante compterait deux fois. */
+  const minOf = (s: Stat) => {
+    let somme = 0;
+    return s.minutesHistory.daily.slice(decalage).map((m) => (somme += m));
+  };
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
+  // ÉCHELLE COMMUNE des minutes : c'est la comparaison des durées qui fait le
+  // palmarès. Une échelle par parti dirait la forme, pas le classement.
+  const topMin = paliersMinutes(Math.max(0, ...stats.flatMap(minOf)));
+  const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
   const span = Math.max(but.t - t0, 86_400_000);
   const xAt = (t: number) => ((t - t0) / span) * plotW;
   const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));
   const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
+
+  // Même définition de sourdine que le vumètre (voir `clesEnSourdine`).
+  const sourdineCourse = clesEnSourdine(stats.map((s) => [s.key, histOf(s).at(-1) ?? 0]));
 
   const series: ChartSeries[] = stats
     .slice()
     .sort((a, b) => histOf(b).at(-1)! - histOf(a).at(-1)!)
     .map((stat) => {
       const hist = histOf(stat);
+      const mins = minOf(stat);
       const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
+      const ptsMin = mins.map((m, i) => [xAtDate(axisDates[i] ?? ""), yMin(m)] as const);
       return {
         key: stat.key,
         label: PARTY_LABELS[stat.key],
         color: PARTY_COLORS[stat.key],
-        inShadow: (hist.at(-1) ?? 0) < SHADOW_THRESHOLD,
+        inShadow: sourdineCourse.has(stat.key),
         polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+      polylineSolo: soloY(hist)
+        .map((y, i) => `${xAtDate(axisDates[i] ?? "").toFixed(2)},${y.toFixed(2)}`)
+        .join(" "),
         lastX: Number((pts.at(-1)?.[0] ?? 0).toFixed(2)),
         lastY: Number((pts.at(-1)?.[1] ?? CHART_H).toFixed(2)),
         labelY: 0,
         lastPct: Math.round((hist.at(-1) ?? 0) * 100),
+        polylineMin: ptsMin.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
+        lastYMin: Number((ptsMin.at(-1)?.[1] ?? CHART_H).toFixed(2)),
+        lastMinutes: Math.round(mins.at(-1) ?? 0),
       };
     });
 
   spreadLabels(series);
 
-  // Deux dates seulement : le début et la fin de ce qui est mesuré. La ligne
-  // d'arrivée porte sa propre étiquette.
-  const xLabels =
-    n <= 1
-      ? [{ label: shortDateFr(axisDates[0] ?? ""), x: 0 }]
-      : [
-          { label: shortDateFr(axisDates[0]), x: 0 },
-          {
-            label: shortDateFr(axisDates[n - 1]),
-            x: Number(xAtDate(axisDates[n - 1]).toFixed(2)),
-          },
-        ];
+  // L'AXE SE CONSTRUIT SUR LE TEMPS, pas sur les dates présentes dans la donnée.
+  //
+  // C'est ce qui permet d'étiqueter des jours À VENIR : sur la semaine, l'axe
+  // court jusqu'au vendredi même si la donnée s'arrête mercredi, et le lecteur
+  // voit ce qu'il reste à courir. Une version antérieure dérivait les repères
+  // des dates publiées, donc l'axe s'arrêtait avec elles.
+  const xLabels = reperesAxe(range, t0, but.t, xAt, axisDates);
 
   return {
     series,
@@ -725,14 +1165,260 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     width: CHART_W,
     height: CHART_H,
     tooShort: n <= 1,
+    yLabels: graduationsMinutes(topMin),
+};
+}
+
+/** Les indices de `history.daily` qui tombent dans la fenêtre de l'onglet.
+ *
+ *  Même borne que `libellePeriode`, et pour la même raison : les chiffres
+ *  affichés doivent porter sur exactement la période que le module annonce. */
+function fenetreDeLOnglet(range: RangeKey, joursIso: string[]): number[] {
+  const tous = joursIso.map((_, i) => i);
+  if (joursIso.length === 0) return tous;
+  const dernier = joursIso[joursIso.length - 1];
+
+  // « Jour » compte sur les SEPT DERNIERS jours, pas sur la seule journée.
+  //
+  // Sur un seul jour, « en tête 1 jour sur 1 » et « 0 point d'évolution » ne
+  // disent rien : ce sont des cases remplies, pas des informations. La courbe
+  // de la platine trace déjà sept jours dans cet onglet ; les chiffres suivent
+  // donc la même fenêtre, et l'affichage porte son propre libellé (« sur 7 »),
+  // ce qui les garde exacts sans dépendre du titre de l'onglet.
+  if (range === "today") return tous.slice(-7);
+  if (range === "overall") return tous;
+
+  const lundis = joursIso.filter(
+    (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
+  );
+  const debut = joursIso.indexOf(lundis[lundis.length - 1] ?? joursIso[0]);
+  return tous.filter((i) => i >= debut);
+}
+
+/** Trois chiffres « qui parlent », par parti, sur la fenêtre de l'onglet.
+ *
+ *  La platine affichait des mesures exactes mais muettes : une part de voix et
+ *  un écart relatif ne disent pas au lecteur ce qui s'est PASSÉ. Un rang, un
+ *  nombre de journées en tête et une évolution en points se recopient dans une
+ *  phrase sans calcul intermédiaire.
+ *
+ *  En points de pourcentage et jamais en pourcentage d'un pourcentage :
+ *  « +12 points » est sans ambiguïté, « +34 % » ne dit pas si l'on parle de
+ *  points ou d'un rapport, et c'est exactement le genre d'ambiguïté qui finit
+ *  mal citée. */
+function chiffresParlants(
+  stat: Stat,
+  tousLesStats: Stat[],
+  fenetre: number[],
+): { joursEnTete: number; joursComptes: number; evolutionPts: number } {
+  let joursEnTete = 0;
+  for (const i of fenetre) {
+    const valeurs = tousLesStats.map((s) => s.history.daily[i] ?? 0);
+    const max = Math.max(...valeurs);
+    // Une journée sans aucune détection n'a pas de meneur : la compter en
+    // donnerait une au premier parti de la liste, par pur effet d'ordre.
+    if (max > 0 && (stat.history.daily[i] ?? 0) === max) joursEnTete += 1;
+  }
+
+  const premier = stat.history.daily[fenetre[0]] ?? 0;
+  const dernier = stat.history.daily[fenetre[fenetre.length - 1]] ?? 0;
+
+  return {
+    joursEnTete,
+    joursComptes: fenetre.length,
+    evolutionPts: Math.round((dernier - premier) * 100),
   };
 }
 
-function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): RangeView {
+/** Les enjeux du dernier jour publié, groupés par parti et triés.
+ *
+ *  On garde les CINQ premiers : au-delà, la queue est faite de parts sous 3 %
+ *  que le lecteur ne peut pas comparer utilement, et qui allongeraient la
+ *  platine sans rien apprendre. La somme des parts d'un parti vaut 100 sur la
+ *  table complète, donc le total affiché est volontairement inférieur — c'est
+ *  un « les plus présents », pas une répartition exhaustive.
+ */
+/** La matrice parti × enjeu du dernier jour publié.
+ *
+ *  On somme les MINUTES et non les parts : `issue_share` est normalisée par
+ *  parti (elle vaut 1 pour chacun), donc l'additionner entre partis n'aurait
+ *  aucun sens. Les minutes, elles, sont dans la même unité partout — c'est ce
+ *  qui permet de renormaliser après filtrage.
+ */
+/** Le libellé de l'enjeu de reste, tel que le raffineur le publie. Doit rester
+ *  identique à `SANS_ENJEU` dans `radar-party-score-salient-shadow/runtime.R` :
+ *  les deux se répondent, et une divergence ferait passer le reste pour un
+ *  treizième sujet. */
+export const SANS_ENJEU = "Aucun enjeu identifié";
+
+/** Les 21 têtes CAP fines, agrégées en 12 catégories, puis nommées.
+ *
+ *  L'AGRÉGATION N'EST PAS DE MON INVENTION : elle est reprise telle quelle de
+ *  `THEME_TO_CATEGORY`, identique dans `radar-issues-score/runtime.R` et
+ *  `agora-decideurs-qc/runtime.R`. Les recopier plutôt que d'en imaginer une
+ *  autre est ce qui garde ce module comparable aux enjeux saillants et à
+ *  l'Assemblée : trois modules qui découperaient l'actualité différemment ne se
+ *  liraient plus ensemble.
+ *
+ *  Elle tranche notamment deux cas qui n'ont pas de catégorie évidente :
+ *  `transportation` et `housing` sont rattachés à « Culture et nationalisme ».
+ *  Surprenant, mais c'est la convention en place — la changer ici la ferait
+ *  diverger des deux autres raffineurs en silence.
+ *
+ *  Les libellés viennent du dictionnaire `CAP_ISSUES` de `radar-event-salience`,
+ *  qui note : « les libellés FR sont ceux du Polimètre […] c'est la seule
+ *  orthographe publiée côté Vitrine, tous modules confondus. Ne pas les
+ *  reformuler. »
+ */
+const THEME_VERS_CATEGORIE: Record<string, string> = {
+  macroeconomics: "Économie et travail",
+  labor: "Économie et travail",
+  domestic_commerce: "Économie et travail",
+  foreign_trade: "Économie et travail",
+  rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
+  health: "Santé et politiques sociales",
+  social_welfare: "Santé et politiques sociales",
+  public_lands: "Terres publiques et agriculture",
+  agriculture: "Terres publiques et agriculture",
+  immigration: "Immigration",
+  education: "Éducation",
+  environment: "Environnement et énergie",
+  energy: "Environnement et énergie",
+  law_and_crime: "Loi et crime",
+  international_affairs: "Affaires internationales et défense",
+  defense: "Affaires internationales et défense",
+  technology: "Technologie",
+  governments_governance: "Gouvernements et gouvernance",
+  culture_nationalism: "Culture et nationalisme",
+  transportation: "Culture et nationalisme",
+  housing: "Culture et nationalisme",
+};
+
+/** La catégorie d'affichage d'une tête CAP, tolérante à une clé inconnue.
+ *
+ *  La liste des modèles est DÉCOUVERTE à l'exécution par
+ *  `radar-data-preparation` (`startsWith(id, "cap_theme_")`), jamais figée : une
+ *  tête ajoutée en amont arriverait ici sans correspondance. On la rend lisible
+ *  plutôt que d'afficher une clé brute ou, pire, de la jeter — un enjeu absent
+ *  fausserait les parts, qui doivent sommer à 1. Elle apparaîtra alors comme une
+ *  treizième catégorie, ce qui est un signal utile : il manque une entrée.
+ */
+export function libelleEnjeu(cle: string): string {
+  if (cle === SANS_ENJEU) return cle;
+  const connu = THEME_VERS_CATEGORIE[cle];
+  if (connu) return connu;
+  const brut = cle.replace(/_/g, " ").trim();
+  return brut.charAt(0).toUpperCase() + brut.slice(1);
+}
+
+function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
+  const vide: EnjeuMix = { enjeux: [], parParti: {} };
+  if (rows.length === 0) return vide;
+
+  const dernier = rows
+    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
+    .sort()
+    .at(-1);
+  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier);
+  if (duJour.length === 0) return vide;
+
+  const parParti: EnjeuMix["parParti"] = {};
+  const totalParEnjeu = new Map<string, number>();
+
+  for (const r of duJour) {
+    const key = String(r.party ?? "").toLowerCase();
+    if (!(PARTY_KEYS as readonly string[]).includes(key)) continue;
+    const theme = String(r.theme ?? "");
+    if (!theme) continue;
+    const score = Number(r.total_raw_score) || 0;
+    const nom = libelleEnjeu(theme);
+    (parParti[key] ??= {})[nom] = { score, tone: Number(r.weighted_tone) || 0 };
+    totalParEnjeu.set(nom, (totalParEnjeu.get(nom) ?? 0) + score);
+  }
+
+  // Ordre STABLE, du plus au moins présent tous partis confondus : une banque
+  // de pads dont les touches changent de place à chaque mise à jour serait
+  // injouable.
+  // L'enjeu de RESTE est forcé en dernier, quel que soit son poids : il occupe
+  // toute la largeur de la banque, donc le laisser au milieu du classement
+  // couperait la grille en deux. Et il se lit de toute façon comme un pied de
+  // liste, pas comme un sujet parmi les autres.
+  const enjeux = [...totalParEnjeu.entries()]
+    .sort((a, b) => {
+      if (a[0] === SANS_ENJEU) return 1;
+      if (b[0] === SANS_ENJEU) return -1;
+      return b[1] - a[1] || a[0].localeCompare(b[0], "fr");
+    })
+    .map(([theme]) => theme);
+
+  return { enjeux, parParti };
+}
+
+function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
+  const out = new Map<PartyKey, EnjeuView[]>();
+  if (rows.length === 0) return out;
+
+  const dernier = rows
+    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
+    .sort()
+    .at(-1);
+
+  for (const key of PARTY_KEYS) {
+    const siens = rows
+      .filter(
+        (r) =>
+          String(r.party ?? "").toLowerCase() === key &&
+          String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier,
+      )
+      .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
+      .slice(0, 5);
+
+    if (siens.length === 0) continue;
+
+    // Le reste des enjeux, en un sixième pad. Une banque de pads se remplit par
+    // bancs pairs, et surtout la queue de distribution EST une information :
+    // sans elle, cinq parts qui ne somment pas à 100 laisseraient croire à une
+    // erreur de calcul.
+    const cumul = siens.reduce((t, r) => t + Number(r.issue_share), 0);
+    const reste = Math.max(0, 1 - cumul);
+
+    out.set(
+      key,
+      [...siens.map((r) => {
+        const t = Number(r.weighted_tone) || 0;
+        const dir = t > TONE_THRESHOLD ? "positive" : t < -TONE_THRESHOLD ? "negative" : "neutral";
+        return {
+          label: libelleEnjeu(String(r.theme ?? "")),
+          pct: Math.round(Number(r.issue_share) * 100),
+          // « Favorable / défavorable », jamais « positif / négatif » : règle du
+          // guide de rédaction pour ce module.
+          toneLabel: dir === "positive" ? "Favorable" : dir === "negative" ? "Défavorable" : "Neutre",
+          toneDirection: dir as EnjeuView["toneDirection"],
+        };
+      }),
+      ...(reste > 0.01
+        ? [{
+            label: "Autres enjeux",
+            pct: Math.round(reste * 100),
+            toneLabel: "Neutre",
+            toneDirection: "neutral" as const,
+            reste: true,
+          }]
+        : []),
+      ],
+    );
+  }
+  return out;
+}
+
+function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, chartJour?: ChartView | null, enjeux?: Map<PartyKey, EnjeuView[]>): RangeView {
   const cfg = RANGE_CONFIG[range];
   const sorted = stats.slice().sort((a, b) => b.sov[cfg.barKey] - a.sov[cfg.barKey]);
+  const fenetre = fenetreDeLOnglet(range, dates.daily);
+  const sourdine = clesEnSourdine(sorted.map((s) => [s.key, s.sov[cfg.barKey]]));
 
   const rows: RowView[] = sorted.map((stat, idx) => {
+    const parlants = chiffresParlants(stat, stats, fenetre);
     const sov = stat.sov[cfg.barKey];
     const sovPct = Math.round(sov * 100);
     const barWidthPct = Math.min(100, sov * 100);
@@ -750,18 +1436,23 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     const unit = range === "week" ? "sem." : streak.count > 1 ? "jours" : "jour";
     const arrow =
       streak.direction === "positive" ? "↑" : streak.direction === "negative" ? "↓" : "—"; // garde-redaction: ok (tiret = glyphe, aucune direction)
+    // « Favorable / défavorable », jamais « positif / négatif » : règle du guide
+    // de rédaction pour CE module. Un ton « positif » se lit comme un jugement
+    // sur le parti ; « favorable » dit ce qu'on mesure vraiment, l'orientation
+    // de la couverture. La distinction compte d'autant plus qu'un journaliste
+    // peut citer ce mot tel quel.
     const dirLabel =
       streak.direction === "positive"
-        ? "Positif"
+        ? "Favorable"
         : streak.direction === "negative"
-          ? "Négatif"
+          ? "Défavorable"
           : "Neutre";
     const toneLabel =
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
     // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
-    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots positifs\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
+    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots favorables\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
 
     const rawHistory =
       range === "week" ? stat.history.weekly : stat.history.week;
@@ -781,7 +1472,16 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     return {
       key: stat.key,
       label: PARTY_LABELS[stat.key],
-      inShadow: sov < SHADOW_THRESHOLD,
+      /** Nom officiel complet, pour les textes destinés à être cités. */
+      fullLabel: PARTY_FULL_NAMES[stat.key],
+      rang: idx + 1,
+      minutesUne: Math.round(stat.minutes[cfg.barKey] ?? 0),
+      enjeux: enjeux?.get(stat.key) ?? [],
+      enjeuxVentiles: enjeux != null,
+      joursEnTete: parlants.joursEnTete,
+      joursComptes: parlants.joursComptes,
+      evolutionPts: parlants.evolutionPts,
+      inShadow: sourdine.has(stat.key),
       peakPct: Math.round((dailyHist[peakIdx] ?? 0) * 100),
       peakDate: dates.daily[peakIdx] ?? "",
       color: PARTY_COLORS[stat.key],
@@ -790,7 +1490,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
       barTitle: `${sovPct}\u00a0% du temps consacré aux partis`,
       refLeftPct: Number(refLeftPct.toFixed(1)),
       refTitle,
-      showLeaderLabel: idx === 0 && sov >= SHADOW_THRESHOLD,
+      showLeaderLabel: idx === 0 && !sourdine.has(stat.key),
       toneLabel,
       toneDirection: streak.direction,
       toneTitle,
@@ -804,9 +1504,91 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates): Ran
     tabLabel: TAB_LABELS[range],
     sparkHeadLabel: SPARK_HEAD_LABELS[range],
     refLabel: cfg.refLabel,
+    periodeLabel: libellePeriode(range, dates.daily),
+    depuisLabel: libelleDepuis(range, dates.daily),
     rows,
-    chart: buildChart(stats, dates, range),
+    // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
+    // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
+    // fine.
+    // Vue JOUR sans détail horaire : on ne trace RIEN.
+    //
+    // `buildChart` sait tracer des jours, pas des heures : son axe couvre toute
+    // la fenêtre du suivi, et les six repères horaires d'une seule journée s'y
+    // écrasaient dans les 12 % de droite (mesuré : 00h à 79,9 et 20h à 91 sur un
+    // axe de 91). C'est exactement ce qui arrivait dès qu'on bougeait le fader,
+    // la table intra-journée n'étant PAS ventilée par média.
+    //
+    // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
+    // `chartJour` vaut `undefined` pour une vue PAR MÉDIA (l'appelant ne le
+    // passe pas) et `null` pour l'agrégat quand la table intra-journée manque.
+    // Les deux cas ne se disent pas de la même façon : dans le premier le
+    // détail existe ailleurs, dans le second il n'existe pas encore.
+    chart:
+      range === "today"
+        ? chartJour ?? {
+            ...buildChart(stats, dates, range),
+            tooShort: true,
+            raison: chartJour === null
+              ? ("detail-horaire-absent" as const)
+              : ("sans-detail-horaire" as const),
+          }
+        : buildChart(stats, dates, range),
   };
+}
+
+/** La période couverte, écrite pour être RECOPIÉE dans un article.
+ *
+ *  Un chiffre de part de voix ne veut rien dire sans sa fenêtre : « la CAQ à
+ *  35 % » se cite mal, « la CAQ à 35 % du 11 au 17 août » se cite. Le libellé
+ *  est donc calculé ici, où les dates réelles de la série sont disponibles,
+ *  plutôt que reconstruit côté client à partir d'une étiquette d'onglet.
+ *
+ *  Il décrit la donnée EFFECTIVEMENT présente, pas la fenêtre théorique de
+ *  l'onglet : si le raffineur n'a publié que trois jours cette semaine, la
+ *  phrase dit ces trois jours. */
+/** Depuis quand la mesure court, en toutes lettres.
+ *
+ *  Ce n'est PAS une fenêtre glissante. Le raffineur accumule depuis un point de
+ *  départ et remet à zéro au calendrier : minuit pour la journée, le lundi pour
+ *  la semaine. Écrire « depuis les 4 dernières heures » sur la vue jour serait
+ *  faux — le bloc de 4 h est la fréquence de PUBLICATION, pas la fenêtre
+ *  mesurée : à 16h, la colonne porte tout ce qui s'est dit depuis minuit.
+ *
+ *  La semaine repart le LUNDI, et l'axe du palmarès aussi depuis la PR #539.
+ *  Ce commentaire a longtemps présenté l'écart comme voulu (« l'axe cadre la
+ *  course, la table agrège la donnée ») : c'était une justification après coup.
+ *  Un axe ouvert le samedi cumulait deux jours hors de la fenêtre agrégée, et
+ *  la pochette et le palmarès affichaient deux durées différentes pour le même
+ *  parti sur le même écran. Une seule borne, `lundiDeLaSemaine`, désormais.
+ */
+function libelleDepuis(range: RangeKey, joursIso: string[]): string {
+  if (range === "today") return "depuis minuit";
+  if (range === "week") return "depuis lundi";
+  const jours = joursIso.filter(Boolean);
+  const premier = jours[0];
+  return premier ? `depuis le ${formatDateFr(premier).toLowerCase()}` : "depuis le début du suivi";
+}
+
+function libellePeriode(range: RangeKey, joursIso: string[]): string {
+  const jours = joursIso.filter(Boolean);
+  if (jours.length === 0) return "";
+  const dernier = jours[jours.length - 1];
+
+  if (range === "today") return `le ${formatDateFr(dernier).toLowerCase()}`;
+
+  // La semaine du raffineur repart le lundi : on borne au dernier lundi présent
+  // dans la série plutôt qu'aux 7 derniers jours, sinon le libellé annoncerait
+  // une fenêtre que la donnée ne couvre pas.
+  // Le DERNIER lundi, pas le premier : la série couvre plusieurs semaines, et
+  // chercher par le début annonçait « du 20 juillet au 17 août » pour un onglet
+  // qui montre une semaine.
+  const lundis = jours.filter(
+    (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
+  );
+  const premier = range === "week" ? (lundis[lundis.length - 1] ?? jours[0]) : jours[0];
+
+  if (premier === dernier) return `le ${formatDateFr(dernier).toLowerCase()}`;
+  return `du ${formatDateFr(premier).toLowerCase()} au ${formatDateFr(dernier).toLowerCase()}`;
 }
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
@@ -819,6 +1601,7 @@ export const __test__ = {
   buildChart,
   axisTop,
   detecterIndisponibilite,
+  lundiDeLaSemaine,
 };
 
 // Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
@@ -882,6 +1665,25 @@ export async function loadParties(
       lireJeu("month", "provincial_parties_salient_shadow_month.json"),
     ]);
 
+    // La série intra-journée est FACULTATIVE : elle n'existe que depuis
+    // aws-refiners#355, et les archives antérieures n'en ont pas. Son absence
+    // fait retomber l'onglet « Jour » sur la courbe au jour le jour, plutôt que
+    // de casser tout le module.
+    // Le croisement parti × enjeu, lui aussi FACULTATIF : la table date
+    // d'aws-refiners#355 et les archives antérieures n'en ont pas.
+    // ⚠️ Ces deux tables passent par `lireJeu`, comme les trois principales, et
+    // NON par un `fs.readFile` direct. C'est ce qui les fait venir de l'API.
+    // Lues sur le disque, elles étaient introuvables hors fixtures : le dossier
+    // `public/data/refined/` ne contient que ce que `fetch_data.R` y écrit, et
+    // ces deux-là n'y sont pas. En production, l'onglet « Jour » perdait donc sa
+    // courbe et les pochettes annonçaient « Aucun enjeu identifié », sans que
+    // rien ne le signale — le `.catch(() => null)` avalait l'absence.
+    const enjeuxRaw = await lireJeu("day", "parties_issues_salient_shadow_day.json").catch(() => null);
+    const intradayRaw = await lireJeu(
+      "day",
+      "provincial_parties_salient_shadow_intraday.json",
+    ).catch(() => null);
+
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
     const dayRows   = upTo(JSON.parse(dayRaw)   as ShadowRow[]);
@@ -933,6 +1735,24 @@ export async function loadParties(
       }
     }
 
+    // Les enjeux du DERNIER jour publié, par parti. On ne moyenne pas sur la
+    // fenêtre : la question posée est « de quoi parle-t-on en ce moment », et
+    // une moyenne de trente jours lisserait précisément ce qui fait l'actualité.
+    const lignesEnjeux = enjeuxRaw
+      ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[])
+      : [];
+    const enjeuMix = buildEnjeuMix(lignesEnjeux);
+
+    const enjeuxParParti = buildEnjeux(
+      enjeuxRaw ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[]) : [],
+    );
+
+    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
+    // pas encore deux blocs — un seul point ne dessine pas une journée.
+    const chartJour = intradayRaw
+      ? buildChartIntraday(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[], [...PARTY_KEYS])
+      : null;
+
     return {
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
@@ -949,13 +1769,14 @@ export async function loadParties(
       /** Vrai quand la vue vient d'un jeu FICTIF. Voyage jusqu'au composant
        *  pour qu'il puisse le dire à l'écran : une capture d'un rendu sur
        *  fixtures ne doit jamais pouvoir passer pour le site. */
+      enjeuMix,
       surFixtures: SUR_FIXTURES,
       medias,
       byMedia,
       ranges: {
-        today: buildRangeView(stats, "today", dates),
-        week:  buildRangeView(stats, "week", dates),
-        overall: buildRangeView(stats, "overall", dates),
+        today: buildRangeView(stats, "today", dates, chartJour, enjeuxParParti),
+        week:  buildRangeView(stats, "week", dates, null, enjeuxParParti),
+        overall: buildRangeView(stats, "overall", dates, null, enjeuxParParti),
       },
     };
   } catch (err) {
