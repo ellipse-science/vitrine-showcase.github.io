@@ -467,17 +467,7 @@ const NEUVE_RANGES: NeuveRangeKey[] = ["day", "week"];
 /** Badge de parti — sigle sur fond de la couleur du parti. Le nom complet part
  *  en title/aria : « QS » seul ne se lit pas à voix haute, et la couleur ne dit
  *  rien à qui ne voit pas. */
-function PartiBadge({ parti, rawLabel }: { parti: PartiKey | null; rawLabel: string }) {
-  if (!parti) {
-    // Parti hors des cinq suivis : on affiche le sigle brut, sans couleur — plutôt
-    // que d'emprunter la teinte d'un autre parti.
-    return (
-      <span className="ppl-parti-badge ppl-parti-badge--inconnu" title={rawLabel || undefined}>
-        {/* garde-redaction: ok (tiret = glyphe de donnée absente) */}
-        {rawLabel || "—"}
-      </span>
-    );
-  }
+function PartiBadge({ parti }: { parti: PartiKey }) {
   const full = PARTI_FULL_LABELS[parti];
   return (
     <span className={`ppl-parti-badge ppl-parti-badge--${parti}`} title={full} aria-label={full}>
@@ -514,7 +504,7 @@ function NeuvesView({
   // période sont grisés et non cliquables — comme les catégories d'enjeux du mode
   // « 2022 ». Un filtre qui vide la liste sans prévenir se lit comme un bogue.
   const partiItems = useMemo(() => {
-    const present = new Set(promesses.map((p) => p.parti).filter((k): k is PartiKey => !!k));
+    const present = new Set(promesses.map((p) => p.parti));
     return PARTI_ORDER.map((k) => ({ key: k, present: present.has(k) }));
   }, [promesses]);
 
@@ -648,9 +638,8 @@ function NeuvesView({
             <ol className="ppl-promises">
               {filtered.map((p, i) => {
                 const open = openId === p.promesseId;
-                const partiCls = p.parti ? ` ppl-promise--parti-${p.parti}` : "";
-                const cls = `ppl-promise${partiCls}${open ? " ppl-promise--open" : ""}`;
-                const nom = p.parti ? PARTI_FULL_LABELS[p.parti] : p.partiLabel;
+                const cls = `ppl-promise ppl-promise--parti-${p.parti}${open ? " ppl-promise--open" : ""}`;
+                const nom = PARTI_FULL_LABELS[p.parti];
                 return (
                   <li
                     key={p.promesseId}
@@ -677,7 +666,7 @@ function NeuvesView({
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
                           <PromiseTitle title={p.title} />
-                          <PartiBadge parti={p.parti} rawLabel={p.partiLabel} />
+                          <PartiBadge parti={p.parti} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
                           <p className="ppl-detail__eyebrow">
@@ -728,7 +717,7 @@ function NeuvesView({
                       <>
                         <span className="ppl-rank">{i + 1}</span>
                         <PromiseTitle title={p.title} />
-                        <PartiBadge parti={p.parti} rawLabel={p.partiLabel} />
+                        <PartiBadge parti={p.parti} />
                       </>
                     )}
                   </li>

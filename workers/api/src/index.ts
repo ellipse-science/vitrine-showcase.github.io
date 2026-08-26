@@ -31,7 +31,7 @@ import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
 import { handleFlappy } from './flappy'
-import { isAthenaTargetHourInNY, isTargetHourInNY } from './schedule'
+import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
 
 interface Env extends SyncAthenaEnv, ArtEnv {
   DATABASE_URL: string
@@ -120,11 +120,17 @@ export default {
     // semestrielle. Six d'entre eux ressortent ici sans rien faire.
     const now = new Date(event.scheduledTime)
 
-    // Deux crons cohabitent, distingués par leur MINUTE :
-    //   :10 = sync DIRECT Athena -> Postgres (chaîne émancipée de GitHub) ;
-    //   :00 = ancien chemin JSON publiés -> Postgres (filet, phase d'ombre).
-    if (now.getUTCMinutes() === 10) {
-      if (env.SYNC_FORCE !== '1' && !isAthenaTargetHourInNY(now)) {
+    // Les crons se distinguent par leur MINUTE :
+    //   :56 = sync DIRECT Athena -> Postgres, la passe qui vise l'heure PILE
+    //         (l'édition du midi est préparée à 11h56, cf. #570) ;
+    //   :10 = la même chose, en FILET, pour les cycles où la cascade des
+    //         raffineurs n'avait encore rien publié à :56 ;
+    //   :00 = ancien chemin JSON publiés -> Postgres (retiré des crons).
+    // Les deux passes n'ont pas les mêmes heures visées — :56 tombe sur
+    // l'heure qui PRÉCÈDE l'édition, :10 sur celle de l'édition — d'où
+    // `shouldRunAthenaSync`, qui lit la minute avant de juger l'heure.
+    if ((ATHENA_SYNC_MINUTES as readonly number[]).includes(now.getUTCMinutes())) {
+      if (env.SYNC_FORCE !== '1' && !shouldRunAthenaSync(now)) {
         console.log('sync-athena : hors heure visée à New York — ignoré')
         return
       }
@@ -300,7 +306,7 @@ export default {
       // et le cron ne sert plus que de filet.
       //
       // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
-      // c'est une écriture qui remplace le contenu de quinze tables.
+      // c'est une écriture qui remplace le contenu de dix-neuf tables.
       if (segments[0] === 'v1' && segments[1] === 'sync') {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')

@@ -2527,101 +2527,6 @@
   .parti-ton-label { display: none; }
   .parti-sail-label { display: none; }
 
-  /* Mini-jeu de billard — remplace l'ancien tableau CSS Grid des partis actifs
-     (puis l'ancien nuage de points ton × richesse, peu lisible — retour
-     utilisateur du 2026-07-23). SVG fait main, même esprit que .sol-radar
-     (DeuxSolitudesRadar), mais la position des billes est pilotée image par
-     image par la boucle de physique (AssembleeBilliard.tsx) : PAS de
-     transition CSS sur .billiard-ball, elle retarderait chaque frame et
-     rendrait le mouvement visqueux. */
-  .ass-billiard-wrap { position: relative; max-width: 900px; margin: 8px auto 20px; touch-action: none; }
-  .ass-billiard { display: block; width: 100%; height: auto; overflow: visible; }
-  .billiard-table { fill: var(--paper-deep); stroke: var(--rule); stroke-width: 1; }
-  .billiard-pocket { fill: var(--ink); opacity: 0.85; }
-  .billiard-pocket-lab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    fill: var(--ink-softer);
-    text-anchor: middle;
-  }
-  .billiard-aim-line { stroke: var(--cordovan); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0.7; pointer-events: none; }
-  .billiard-ball { cursor: grab; }
-  .billiard-ball:active { cursor: grabbing; }
-  .billiard-ball:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
-  .ball-shadow { fill: var(--ink); opacity: 0.14; }
-  .ball-ring { fill: none; stroke-width: 3; }
-  .ball-bg { fill: var(--paper); }
-
-  /* Banc « hors chambre » : partis sans siège (ex. PCQ), donc sans donnée de
-     présence à jouer. Bille en pointillé et translucide (pas d'ombre : elle
-     n'est pas « sur » la table) plutôt que retirée — reste visible et
-     rattachée au même vocabulaire visuel que le jeu, sans fausse promesse
-     d'interaction — retour utilisateur du 2026-07-24. */
-  .billiard-bench-rule { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }
-  .billiard-bench-lab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    fill: var(--ink-softer);
-    text-anchor: middle;
-  }
-  .billiard-ghost-ball { opacity: 0.55; }
-  .ghost-ring { fill: none; stroke-width: 3; stroke-dasharray: 3 3; }
-  .ghost-bg { fill: var(--paper-deep); }
-  .billiard-ghost-lab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    fill: var(--ink-softer);
-    text-anchor: middle;
-  }
-
-  .billiard-popup {
-    position: absolute;
-    z-index: 60;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 320px;
-    background: var(--ink);
-    color: var(--paper);
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 22px 24px;
-    border: 1px solid var(--paper);
-  }
-  .billiard-popup .k {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--paper);
-    margin-bottom: 8px;
-  }
-  .billiard-popup .pocket-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 22px;
-    margin: 0 0 8px;
-  }
-  .billiard-popup .pocket-body { margin: 0; opacity: 0.92; }
-  .billiard-popup-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--paper);
-    opacity: 0.7;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px;
-  }
-  .billiard-popup-close:hover { opacity: 1; }
-
   /* Blocs de mesure partagés (enjeu-stack, ass-tone, ass-richness…) : le
      dossier central du tableau d'enquête (AssembleeDossiers.tsx) les
      réutilise tels quels. .ass-card / .ass-card-shadow servent à la liste
@@ -2994,32 +2899,6 @@
     color: var(--ink-softer);
     margin: 0;
   }
-  .ass-easter-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0 0 0 10px;
-    opacity: 0.45;
-    vertical-align: middle;
-    transition: opacity 0.15s ease;
-  }
-  .ass-easter-btn:hover, .ass-easter-btn:focus-visible { opacity: 1; }
-  .ass-back-btn {
-    display: block;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    padding: 0 0 12px;
-  }
-  .ass-back-btn:hover { color: var(--cordovan); }
-
   /* --- Vestiaire : banc de casiers, tiroir de cartes ---------------------- */
   /* Le banc ne bouge jamais. Ouvrir un casier écarte ses battants et déroule un
      tiroir SOUS le banc, relié au casier par une encoche. Aucun arrondi ni
@@ -3370,18 +3249,26 @@
     font-size: 17px;
     line-height: 1.05;
     color: var(--cordovan);
+    overflow-wrap: anywhere;
   }
   .concept-citation {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: block;
     font-family: 'Source Serif 4', Georgia, serif;
     font-style: italic;
     font-size: 10px;
     line-height: 1.34;
     color: var(--ink-soft);
     margin-top: 3px;
+  }
+  .concept-citation-indisponible {
+    display: block;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    font-style: normal;
+    letter-spacing: 0.04em;
+    line-height: 1.35;
+    color: var(--ink-softer);
   }
   .concept-glose {
     display: block;
@@ -3406,10 +3293,10 @@
      et au corps du texte courant, pas au corps réduit de la carte. */
   .tiroir-concept .concept-mot { font-size: 19px; color: var(--ink); }
   .tiroir-concept .concept-citation {
-    -webkit-line-clamp: 2;
     font-size: 13px;
     line-height: 1.45;
   }
+  .tiroir-concept .concept-citation-indisponible { font-size: 9px; }
   .tiroir-concept .concept-glose { font-size: 8.5px; }
 
   /* Le présentoir défile horizontalement : les cartes gardent leur format
@@ -3423,11 +3310,167 @@
   }
   .tiroir-presentoir > * { scroll-snap-align: start; }
 
+  .carte-colonne {
+    flex: 0 0 291px;
+    width: 291px;
+  }
+  /* Avis compact sous une carte : le parcours reste visible sans imposer la
+     hauteur de toute la frise. Le <details> natif conserve le clic, le clavier
+     et l'état ouvert sans ajouter de gestion React. */
+  .carte-parcours {
+    --parcours-fond: color-mix(in srgb, var(--pc) 5%, var(--paper));
+    margin-top: 8px;
+    border: 1px solid color-mix(in srgb, var(--pc) 28%, var(--rule-faint));
+    border-top: 3px solid var(--pc);
+    background: var(--parcours-fond);
+    color: var(--ink);
+    text-align: left;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--pc) 12%, transparent);
+  }
+  .carte-parcours > summary {
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr) 14px;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 7px 9px 7px 8px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .carte-parcours > summary::-webkit-details-marker { display: none; }
+  .carte-parcours > summary:hover {
+    background: color-mix(in srgb, var(--pc) 7%, transparent);
+  }
+  .carte-parcours > summary:focus-visible {
+    outline: 2px solid var(--cordovan);
+    outline-offset: 2px;
+  }
+  .carte-parcours-repere {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    color: color-mix(in srgb, var(--pc) 72%, var(--ink-soft));
+  }
+  .carte-parcours-repere svg {
+    display: block;
+    width: 27px;
+    height: 27px;
+    overflow: visible;
+  }
+  .carte-parcours-repere path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .carte-parcours-depart {
+    fill: var(--parcours-fond);
+    stroke: currentColor;
+    stroke-width: 1.1;
+    vector-effect: non-scaling-stroke;
+  }
+  .carte-parcours-entete {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+  }
+  .carte-parcours-entete b {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--cordovan);
+  }
+  .carte-parcours-entete i {
+    overflow: hidden;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 11px;
+    font-style: normal;
+    line-height: 1.2;
+    color: var(--ink-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .carte-parcours-chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid var(--pc);
+    border-bottom: 1.5px solid var(--pc);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transform-origin: center;
+    transition: transform 180ms ease;
+  }
+  .carte-parcours[open] .carte-parcours-chevron {
+    transform: rotate(225deg) translate(-1px, -1px);
+  }
+  .carte-parcours-contenu {
+    padding: 0 11px 11px 43px;
+    border-top: 1px solid color-mix(in srgb, var(--pc) 16%, var(--rule-faint));
+  }
+  .carte-parcours-contenu > p {
+    margin: 8px 0 10px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--ink-soft);
+  }
+  .carte-parcours-frise {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .carte-parcours-frise li {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: 0 0 11px 14px;
+    border-left: 1px solid color-mix(in srgb, var(--pc) 45%, var(--rule));
+  }
+  .carte-parcours-frise li:last-child { padding-bottom: 0; }
+  .carte-parcours-frise li::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: -4px;
+    width: 7px;
+    height: 7px;
+    border: 2px solid var(--parcours-fond);
+    border-radius: 50%;
+    background: var(--pc);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc) 55%, var(--ink));
+  }
+  .carte-parcours-parti {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .carte-parcours-dates,
+  .carte-parcours-evenement {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+  .carte-parcours-dates { color: var(--ink-softer); }
+  .carte-parcours-evenement {
+    width: fit-content;
+    margin-top: 2px;
+    padding: 2px 4px;
+    background: color-mix(in srgb, var(--pc) 11%, transparent);
+    color: var(--cordovan);
+  }
+
   /* --- La carte : format 63,5 × 88,9 mm, soit 5:7 ------------------------- */
   .carte {
     flex: 0 0 auto;
-    width: 264px;
-    height: 370px;
+    width: 291px;
+    height: 408px;
     padding: 0;
     background: none;
     border: none;
@@ -3679,6 +3722,18 @@
     text-align: center;
   }
 
+  /* Variante de sûreté pour les concepts/citations longs. Les corps restent
+     identiques : seuls les blancs des blocs fixes se resserrent. Ce budget de
+     quelque 30 px absorbe Georgia ou le monospace système lorsque les polices
+     web externes ne sont pas disponibles, sans rogner la citation ni le pied. */
+  .carte.est-dense .carte-verso { padding: 8px 12px; }
+  .carte.est-dense .carte-v-circo { margin: 1px 0 3px; }
+  .carte.est-dense .carte-v-stats { padding: 3px 0; }
+  .carte.est-dense .carte-v-bloc { margin-top: 4px; }
+  .carte.est-dense .carte-v-titre { margin-bottom: 3px; }
+  .carte.est-dense .carte-v-ligne { margin-bottom: 2px; }
+  .carte.est-dense .carte-v-pied { padding-top: 3px; }
+
   /* --- Échelle de ton ----------------------------------------------------- */
   .ton-echelle { display: block; }
   .ton-piste {
@@ -3767,7 +3822,8 @@
        le casier du second rang, juste en dessous — pire que pas de flèche du
        tout. L'en-tête du tiroir nomme le parti, et le casier ouvert se voit. */
     .tiroir-encoche { display: none; }
-    .carte { width: 228px; height: 319px; }
+    .carte-colonne { flex-basis: 276px; width: 276px; }
+    .carte { width: 276px; height: 386px; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
@@ -6970,8 +7026,8 @@
   .ppl-promise:focus-visible .ppl-chevron { color: var(--cordovan); }
   /* Symétrie souris / clavier : le survol donne deux signaux (chevron + barre de
      gauche), le focus n'en donnait qu'un. La bague cordovan aligne le rang sur
-     .billiard-ball et .share-btn.
-     outline-offset NÉGATIF, contrairement à ces deux-là : le rang occupe toute
+     .share-btn.
+     outline-offset NÉGATIF, contrairement à ce bouton : le rang occupe toute
      la largeur du rail et les rangs sont jointifs. Un offset positif faisait
      déborder la bague de 2 px sur le rang voisin, et son côté droit venait
      buter contre le bord du module (vérifié à 1440 : le trait était rogné).
@@ -7337,9 +7393,6 @@
   .ppl-parti-badge--qs  { background: var(--ppl-parti-qs); }
   .ppl-parti-badge--pq  { background: var(--ppl-parti-pq); }
   .ppl-parti-badge--pcq { background: var(--ppl-parti-pcq); }
-  /* Parti hors des cinq suivis : sigle en encre sur fond neutre — jamais la
-     teinte d'un autre parti. */
-  .ppl-parti-badge--inconnu { background: none; color: var(--ink-soft); border: 1px solid var(--rule); }
 
   /* Bandeau de développement (fixtures). Volontairement VOYANT : il n'est pas
      là pour être discret, il est là pour qu'une capture d'écran prise pendant
@@ -7441,6 +7494,7 @@
   color: var(--ink-softer);
   transition: color 0.12s, border-color 0.12s;
 }
+
 .share-btn:hover,
 .share-btn.copied { color: var(--cordovan); border-color: var(--cordovan); }
 .share-btn:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; border-radius: 2px; }

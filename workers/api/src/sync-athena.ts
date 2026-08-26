@@ -203,21 +203,7 @@ export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<voi
   }
 }
 
-export async function triggerDeployHooks(env: SyncAthenaEnv): Promise<void> {
-  const hooks: [string, string | undefined][] = [
-    ['prod', env.DEPLOY_HOOK_PROD],
-    ['dev', env.DEPLOY_HOOK_DEV],
-  ]
-  for (const [name, url] of hooks) {
-    if (!url) {
-      console.warn(`hook ${name} absent : aucun build déclenché pour ${name}`)
-      continue
-    }
-    const res = await fetch(url, { method: 'POST' })
-    if (res.status >= 300) throw new Error(`Deploy hook ${name} a répondu ${res.status}`)
-    console.log(`hook ${name} déclenché`)
-  }
-}
+export { triggerDeployHooks } from './deploy-hooks'
 
 export interface SyncAthenaResult {
   synced: TableResult[]
@@ -228,7 +214,7 @@ export interface SyncAthenaResult {
 
 /** Exécute la synchronisation sur une TRANCHE de la whitelist (offset/limit
  *  sur la liste des tables, comme /v1/sync). Le cron passe sans tranche :
- *  les 15 tables. Les hooks ne partent que sur une passe complète, sans
+ *  les 19 tables. Les hooks ne partent que sur une passe complète, sans
  *  échec, et si SYNC_TRIGGER_DEPLOYS vaut 'true'. */
 export async function runAthenaSync(
   env: SyncAthenaEnv,
@@ -279,7 +265,7 @@ export async function runAthenaSync(
   // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
   // La règle tout-ou-rien appartient à l'orchestrateur du cron (index.ts),
   // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
-  // survit pas aux 15 tables d'un coup (constaté le 2026-08-19 : la passe
+  // survit pas aux 19 tables d'un coup (constaté le 2026-08-19 : la passe
   // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
   return { synced, failed, total: TABLES.length, next }
 }

@@ -5,8 +5,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // fil de l'eau. Ce qui doit être prouvé ici, c'est ce que le module AFFIRME
 // visuellement et que la donnée seule ne garantit pas :
 //
-//   - la pastille porte le PARTI, donc un party_id inconnu ne doit JAMAIS
-//     emprunter la couleur d'un autre parti (il vaut mieux pas de pastille) ;
+//   - la saillance mesurée est celle des communiqués des CINQ partis suivis,
+//     donc une promesse dont le party_id sort de ces cinq est écartée — elle ne
+//     s'affiche pas et ne pèse pas dans le classement ;
 //   - le rang vient du raffineur et n'est pas recalculé ici — deux classements
 //     concurrents divergeraient en silence ;
 //   - une promesse sans libellé court est ÉCARTÉE plutôt qu'affichée sans titre ;
@@ -105,11 +106,20 @@ describe("chargeur des promesses neuves", () => {
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-ok"]);
   });
 
-  it("n'emprunte jamais la couleur d'un autre parti pour un sigle inconnu", async () => {
-    const d = await charger([ligne({ party_id: "PVQ" })]);
-    const p = d!.ranges.day[0];
-    expect(p.parti).toBeNull();       // donc aucune classe de couleur côté CSS
-    expect(p.partiLabel).toBe("PVQ"); // mais le sigle reste lisible
+  it("écarte une promesse dont le parti sort des cinq suivis", async () => {
+    // La saillance mesurée est celle des communiqués des CINQ partis suivis.
+    // Une promesse émise hors de ces cinq ne relève pas de la mesure : elle ne
+    // s'affiche pas, et surtout elle ne pèse pas dans le classement.
+    const d = await charger([
+      ligne({ promesse_id: "pn-suivi", party_id: "QS" }),
+      ligne({ promesse_id: "pn-hors", party_id: "PVQ" }),
+    ]);
+    expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-suivi"]);
+  });
+
+  it("rend null quand aucune promesse n'a de parti suivi", async () => {
+    // Le module retombe alors sur son seul mode « 2022 » — pas d'onglet vide.
+    expect(await charger([ligne({ party_id: "PVQ" })])).toBeNull();
   });
 
   it("ne lit qu'un instantané : le plus récent", async () => {
