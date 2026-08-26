@@ -1215,7 +1215,7 @@
             </div>
         </div>
 
-        <!-- PUBLICATION VITRINE : VITRINE-PUBLISH (PHASE D'OMBRE) -->
+        <!-- PUBLICATION VITRINE : CHAÎNE ÉMANCIPÉE (WORKER CLOUDFLARE) -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
@@ -1229,8 +1229,8 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner">
-                    vitrine-publish
-                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 15 tables dans Postgres à chaque passe</div>
+                    sync-athena (Worker)
+                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 15 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
                     <div class="node-schedule">⏰ 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 + filet :10 (Montréal)</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1244,8 +1244,8 @@
                     <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
                 </div>
             </div>
-            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,.07);font-size:.9em;line-height:1.5">
-                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>sync-athena (Worker)</code> écrira dans Postgres dès sa mise en service, mais ne déclenchera aucun build tant que ses sorties n'auront pas été comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
+            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #4A90E2;background:rgba(74,144,226,.07);font-size:.9em;line-height:1.5">
+                ✅ <strong>Chemin critique depuis le 19 août 2026</strong> (vitrine-showcase#530)&nbsp;: la phase d'ombre est terminée, c'est ce couloir qui déclenche les builds. <code>scripts/fetch_data.R</code> (couloir ci-dessus) n'est plus le chemin critique&nbsp;: il reste un filet qui commite les JSON de repli du build.
             </div>
         </div>
 
