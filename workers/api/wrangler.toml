@@ -6,6 +6,23 @@ workers_dev = true
 # Le pilote Neon parle HTTP, pas TCP : pas besoin de nodejs_compat ni de
 # Hyperdrive. C'est ce qui rend l'API déployable sans autre infrastructure.
 
+# JOURNAUX CONSERVÉS. Sans cette section, le Worker n'en garde AUCUN : la
+# seule façon d'observer quoi que ce soit est `wrangler tail`, qui n'écoute
+# qu'en direct. Le 2026-08-26, une panne installée depuis des SEMAINES — quatre
+# tables absentes de Postgres, donc des échecs à chaque passe, donc les Deploy
+# Hooks retenus en permanence — n'a pu être diagnostiquée qu'en attachant un
+# `tail` puis en attendant qu'un cron veuille bien se déclencher. Une panne
+# qu'on ne peut regarder qu'au moment où elle se produit est une panne qu'on ne
+# corrige pas.
+#
+# `head_sampling_rate = 1` : on garde TOUT. Le volume est de quelques dizaines
+# de requêtes par heure, pas de quoi échantillonner, et c'est précisément la
+# requête rare — la tranche de synchro qui échoue une fois sur six — qu'un
+# échantillonnage ferait disparaître.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
 [vars]
 # Durée de cache des réponses, calée sur le cycle de rafraîchissement des
 # données (4 h). C'est la pièce qui rend l'API insensible à la charge :
