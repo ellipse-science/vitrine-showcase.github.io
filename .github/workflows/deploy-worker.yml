@@ -1,0 +1,48 @@
+name: Déploiement du Worker API
+# Déploie workers/api (le Worker Cloudflare de la chaîne émancipée : sync
+# Athena -> Postgres, Deploy Hooks, API publique) avec wrangler.
+#
+# POURQUOI CE WORKFLOW EXISTE (2026-08-25, #570) : les correctifs du Worker
+# (#582 : le 304 des Deploy Hooks n'est plus fatal ; #584 : la passe :56 qui
+# vise l'heure pile) restaient sans effet tant que personne ne redéployait le
+# Worker depuis son poste. Le déploiement du SITE (Pages) et celui du WORKER
+# sont deux choses distinctes : merger sur main ne redéploie pas le Worker.
+#
+# Manuel seulement (workflow_dispatch) : un redéploiement du Worker change le
+# comportement en production (crons, API, hooks) — il se décide, il ne part
+# pas tout seul d'un merge.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer les dépendances du Worker
+        run: npm ci
+      - name: Déployer avec wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler@4 deploy
+      # Les secrets du Worker (DATABASE_URL, DEPLOY_HOOK_*, SYNC_*) vivent chez
+      # Cloudflare et SURVIVENT au déploiement : rien à re-poser ici.
+      - name: Vérifier la santé de l'API
+        run: |
+          sleep 10
+          curl -fsS https://api.vitrinedemocratique.com/v1/health >/dev/null \
+            && echo "API en ligne" \
+            || { echo "::error::/v1/health ne répond pas après déploiement"; exit 1; }
