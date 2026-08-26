@@ -85,5 +85,11 @@ service = "vitrine-api"
 # route /v1/sync) : retour arrière = remettre la ligne de cron ci-dessous.
 #   "0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"
 crons = [
+  # :56 de l'heure qui PRÉCÈDE l'édition — la passe qui vise l'heure pile.
+  # (#570 : à :10, l'édition du midi n'était en ligne que vers 12h18.)
+  "56 0,3,4,7,8,11,12,15,16,19,20,23 * * *",
+  # Filet, 14 min plus tard : rattrape les cycles où la cascade des raffineurs
+  # avait pris du retard et n'avait rien publié à :56. Sans danger depuis #582
+  # (un second appel de hook reçoit 304, qui n'est plus traité comme un échec).
   "10 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
 ]
