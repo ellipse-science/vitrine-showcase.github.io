@@ -1,5 +1,11 @@
 [
   {
+    "pr": 595,
+    "date": "2026-08-26T20:53:09Z",
+    "note": "La préparation du site puise désormais les données dans une copie déposée à chaque rafraîchissement, au lieu d'interroger la base à chaque publication. Rien ne change à l'affichage ni à la fraîcheur des données.",
+    "version": null
+  },
+  {
     "pr": 593,
     "date": "2026-08-26T18:38:26Z",
     "note": "Section inchangée — fichier généré, aucun changement visiteur.",
