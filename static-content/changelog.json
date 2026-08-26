@@ -1,5 +1,11 @@
 [
   {
+    "pr": 594,
+    "date": "2026-08-26T14:51:57Z",
+    "note": "Section inchangée — cette PR ne change rien pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 584,
     "date": "2026-08-26T00:45:56Z",
     "note": "Les éditions du site paraissaient une quinzaine de minutes après l'heure annoncée. La préparation de chaque édition commence maintenant plus tôt, pour qu'elle soit en ligne à l'heure dite.",
