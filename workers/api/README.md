@@ -22,6 +22,17 @@ URL de travail : `https://vitrine-api.vitrine-api-worker.workers.dev`
 | `GET /v1/health` | Fraîcheur par table, depuis `vitrine.sync_state` |
 | `GET /v1/datasets` | Jeux de données exposés et filtres acceptés |
 | `GET /v1/datasets/{nom}` | Les lignes |
+| `GET /v1/snapshot/manifest.json` | Cycle courant de l'instantané R2 (sous `SNAPSHOT_TOKEN`) |
+| `GET /v1/snapshot/{cycle}/{table}.json` | Les lignes du cycle, depuis R2, **sans toucher Postgres** |
+
+`/v1/snapshot` sert le BUILD DU SITE, pas les clients de l'API. La synchro y
+dépose les lignes au moment où elle les écrit dans Postgres, et le build les
+lit là. Auparavant chaque build redescendait jusqu'à Postgres par
+`/v1/datasets` : à ~85 builds par jour, cela a épuisé les 5 Go mensuels de
+transfert de Neon en huit jours et mis la base hors service (2026-08-26).
+Rien sur ce chemin ne touche Postgres — y compris la vérification du jeton,
+sans quoi une base indisponible casserait à nouveau le build. Voir
+`src/snapshot.ts`.
 
 Paramètres de `/v1/datasets/{nom}` : `from`, `to` (bornes sur la colonne de tri),
 les filtres déclarés du jeu (`party`, `deputy`, `period_type`…), `limit`

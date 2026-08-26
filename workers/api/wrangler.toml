@@ -31,6 +31,13 @@ ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv86
 
 # L'illustration de la Une des unes (routes /v1/art, src/art.ts). Le bucket
 # est créé une fois : npx wrangler r2 bucket create vitrine-art
+#
+# CE BUCKET SERT AUSSI L'INSTANTANÉ DES DONNÉES, sous le préfixe
+# `data/snapshot/` (routes /v1/snapshot, src/snapshot.ts). Un bucket dédié
+# aurait été plus propre à lire, mais il aurait fallu le créer AVANT le
+# premier `wrangler deploy` : un binding dont le bucket n'existe pas fait
+# échouer le déploiement. ART_BUCKET est déjà lié et déjà éprouvé — une
+# ligne de préfixe coûte moins qu'un déploiement raté.
 [[r2_buckets]]
 binding = "ART_BUCKET"
 bucket_name = "vitrine-art"
@@ -54,6 +61,17 @@ service = "vitrine-api"
 #   wrangler secret put DEPLOY_HOOK_PROD           (à la bascule)
 #   wrangler secret put DEPLOY_HOOK_DEV            (à la bascule)
 #   wrangler secret put SYNC_INTERNAL_TOKEN       (orchestration du cron)
+#   wrangler secret put SNAPSHOT_TOKEN            (lecture de l'instantané par le build)
+#
+# SNAPSHOT_TOKEN : jeton que le build présente pour lire /v1/snapshot. Comparé
+# ICI, dans le Worker, et jamais dans la table des clés de Postgres — c'est ce
+# qui rend le chemin du build insensible à une base indisponible, ce qui EST
+# le correctif. Poser la MÊME valeur que la variable VITRINE_API_KEY déjà
+# configurée sur les deux projets Pages : la bascule ne demande alors aucune
+# variable supplémentaire côté Pages.
+#
+# Tant que ce secret est absent, /v1/snapshot répond 503 et ne sert rien :
+# fermé par défaut, parce que les jeux de données sont le produit.
 
 # Recharge Postgres depuis les JSON publiés.
 #

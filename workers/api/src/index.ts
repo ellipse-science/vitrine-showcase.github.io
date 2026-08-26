@@ -31,9 +31,17 @@ import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
 import { handleFlappy } from './flappy'
+import {
+  cycleId,
+  handleSnapshot,
+  pruneSnapshots,
+  putManifest,
+  type SnapshotEnv,
+} from './snapshot'
+import type { SnapshotTableEntry } from './snapshot-logic'
 import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
 
-interface Env extends SyncAthenaEnv, ArtEnv {
+interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
   DATABASE_URL: string
   /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string
@@ -170,10 +178,18 @@ export default {
           const failed: string[] = []
           let synced = 0
           let offset: number | null = 0
+          // IDENTIFIANT DE CYCLE, fabriqué ICI et passé à chaque tranche. Les
+          // tranches sont des invocations séparées : elles ne peuvent pas se
+          // mettre d'accord entre elles sur un nom de dossier. C'est lui qui
+          // permet d'écrire l'instantané sous `data/snapshot/<cycle>/` et de
+          // ne le rendre visible qu'à la fin, par le manifeste.
+          const cycle = cycleId(now)
+          const snapshotTables: Record<string, SnapshotTableEntry> = {}
+          const snapshotSkipped: string[] = []
           try {
             while (offset !== null) {
               const res = await env.SELF.fetch(
-                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2&cycle=${cycle}`,
                 {
                   method: 'POST',
                   headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
@@ -186,10 +202,16 @@ export default {
               const body = (await res.json()) as {
                 synced: number
                 failed: string[]
+                snapshotSkipped?: string[]
                 next: number | null
+                tables?: { table: string; rows: number; snapshot?: SnapshotTableEntry }[]
               }
               synced += body.synced
               failed.push(...body.failed)
+              snapshotSkipped.push(...(body.snapshotSkipped ?? []))
+              for (const t of body.tables ?? []) {
+                if (t.snapshot) snapshotTables[t.table] = t.snapshot
+              }
               offset = body.next
             }
           } catch (err) {
@@ -199,6 +221,74 @@ export default {
             failed.push(`orchestration : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
+
+          // MANIFESTE AVANT LES HOOKS, et l'ordre n'est pas cosmétique : un
+          // hook déclenche un build, et ce build lit le manifeste. Publié
+          // après, le build lirait le cycle PRÉCÉDENT — la même classe
+          // d'erreur d'ordonnancement que l'incident du 2026-08-18, où la
+          // prod se reconstruisait avant que la synchro n'ait écrit.
+          //
+          // PUBLIÉ MÊME QUAND DES TABLES ONT ÉCHOUÉ, et c'est délibéré. La
+          // règle du tout ou rien protège les BUILDS : elle empêche de
+          // publier un site à moitié rafraîchi. Le manifeste, lui, ne décrit
+          // qu'une chose : ce que l'instantané CONTIENT. Une table absente en
+          // est simplement absente, et le build la lit dans son fichier
+          // publié — exactement ce qu'il faisait avant cette PR.
+          //
+          // Les avoir liés a été une vraie erreur, attrapée au premier cycle
+          // réel (2026-08-26) : quatre tables de `tables.ts` n'existent pas
+          // dans Postgres (« relation ... does not exist », DDL jamais
+          // appliquée), donc `failed.length > 0` à CHAQUE passe, donc le
+          // manifeste n'aurait jamais été publié. Un défaut préexistant et
+          // sans rapport aurait rendu l'instantané inerte pour toujours.
+          //
+          // Les hooks, eux, restent gouvernés par le tout ou rien, plus bas.
+          if (env.ART_BUCKET && Object.keys(snapshotTables).length > 0) {
+            try {
+              await putManifest(env.ART_BUCKET, {
+                cycle,
+                generated_at: new Date().toISOString(),
+                source: 'cf-athena',
+                tables: snapshotTables,
+              })
+              console.log(
+                `instantané publié : cycle ${cycle}, ${Object.keys(snapshotTables).length} tables`,
+              )
+              // Une table hors instantané n'est PAS un échec : le build la
+              // lit dans son fichier publié. Mais si personne ne le dit, la
+              // dérive s'installe et l'économie fond table par table sans
+              // que quiconque s'en aperçoive.
+              if (snapshotSkipped.length > 0) {
+                await notifySlack(
+                  env,
+                  `instantané : ${snapshotSkipped.length} table(s) hors copie (le site les lit dans les fichiers publiés) : ${snapshotSkipped.join(' ; ')}`,
+                )
+              }
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err)
+              await notifySlack(env, `sync-athena : manifeste d'instantané en échec : ${message}`)
+            }
+          }
+
+          // MÉNAGE AVANT LA GARDE D'ÉCHEC, et MUET. Avant la garde parce
+          // qu'une passe partielle écrit quand même un cycle : si le ménage
+          // vivait après le `return` ci-dessous, R2 grossirait sans fin tant
+          // qu'une seule table échoue — c'est-à-dire, aujourd'hui, toujours.
+          // Muet parce qu'un cycle non nettoyé ne coûte que quelques
+          // mégaoctets, là où une exception ici ferait passer pour ratée une
+          // passe réussie.
+          if (env.ART_BUCKET) {
+            try {
+              const deleted = await pruneSnapshots(env.ART_BUCKET)
+              if (deleted > 0) console.log(`instantané : ${deleted} objets périmés supprimés`)
+            } catch (err) {
+              console.warn('ménage des instantanés impossible :', err)
+            }
+          }
+
+          // TOUT OU RIEN, POUR LES BUILDS SEULEMENT. Une table en échec ne
+          // doit pas publier un site à moitié rafraîchi ; elle n'empêche pas
+          // pour autant l'instantané d'exister (cf. plus haut).
           if (failed.length > 0) {
             await notifySlack(
               env,
@@ -206,6 +296,7 @@ export default {
             )
             return
           }
+
           if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
             try {
               await triggerDeployHooks(env)
@@ -248,6 +339,15 @@ export default {
       const res = await handleAdmin(request, sqlAdmin, seg, env)
       res.headers.set('cache-control', 'no-store')
       return res
+    }
+
+    // /v1/snapshot — AVANT tout le reste, et surtout avant `neon(...)` : ce
+    // chemin ne doit toucher Postgres à AUCUN moment, pas même pour vérifier
+    // le jeton. C'est ce qui le rend insensible à une base indisponible —
+    // la panne du 2026-08-26, où le build ne pouvait plus lire ses données
+    // parce que la base qui les servait était hors quota. Cf. snapshot.ts.
+    if (seg[0] === 'v1' && seg[1] === 'snapshot') {
+      return handleSnapshot(request, env, seg.slice(2))
     }
 
     // /v1/art accepte PUT (téléversement du raffineur) et POST (publish) : il
@@ -370,13 +470,26 @@ export default {
           15,
         )
 
+        // Le cycle vient de l'orchestrateur (il fabrique l'identifiant et le
+        // passe à chaque tranche). Absent — reprise manuelle d'une tranche —
+        // la table est réécrite dans Postgres mais PAS déposée dans
+        // l'instantané : ce serait ajouter une table d'un cycle dans le
+        // dossier d'un autre, donc mélanger deux passes sous un même
+        // manifeste. Une reprise partielle se rattrape au cycle suivant.
+        const cycle = url.searchParams.get('cycle') ?? undefined
+
         const started = Date.now()
-        const { synced, failed, total, next } = await runAthenaSync(env, { offset, limit })
+        const { synced, failed, snapshotSkipped, total, next } = await runAthenaSync(env, {
+          offset,
+          limit,
+          cycle,
+        })
         return json(
           {
             synced: synced.length,
             tables: synced,
             failed: failed.map((f) => f.table),
+            snapshotSkipped,
             offset,
             total,
             next,
