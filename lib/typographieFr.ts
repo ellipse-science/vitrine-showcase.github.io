@@ -54,11 +54,14 @@ export function normaliserTypographie(
       //    avant l'espace est un point) échappait à la règle.
       //    `10:30` reste intact : il n'a pas d'espace avant le signe.
       .replace(
-        new RegExp(`(\\S) :(?=[${ESPACES}]|$)`, "gu"),
+        new RegExp(`(\\S)[${ESPACES}]:(?=[${ESPACES}]|$)`, "gu"),
         `$1${NB}:`,
       )
-      // 3. Insécable avant « % », après un chiffre.
-      .replace(/(\d) %/gu, `$1${NB}%`)
+      // 3. Insécable avant « % », après un chiffre. Comme pour « : », la classe
+      //    COMPLÈTE et non une espace ASCII : un modèle qui rédige en français
+      //    peut émettre l'insécable ÉTROITE (U+202F, la norme française) là où
+      //    la maison veut U+00A0.
+      .replace(new RegExp(`(\\d)[${ESPACES}]%`, "gu"), `$1${NB}%`)
       // 4. AUCUNE espace avant « ; ? ! » — pas même une insécable. C'est la
       //    norme québécoise, à l'inverse de la française.
       .replace(new RegExp(`[${ESPACES}]+([;?!])`, "gu"), "$1")
