@@ -221,23 +221,28 @@ export default {
             failed.push(`orchestration : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
-          if (failed.length > 0) {
-            await notifySlack(
-              env,
-              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
-            )
-            return
-          }
+
           // MANIFESTE AVANT LES HOOKS, et l'ordre n'est pas cosmétique : un
           // hook déclenche un build, et ce build lit le manifeste. Publié
           // après, le build lirait le cycle PRÉCÉDENT — la même classe
           // d'erreur d'ordonnancement que l'incident du 2026-08-18, où la
           // prod se reconstruisait avant que la synchro n'ait écrit.
           //
-          // Publié seulement après un `failed.length === 0` : c'est ce qui
-          // rend le cycle atomique pour le lecteur. Une passe incomplète
-          // laisse le manifeste précédent en place, le build juge
-          // l'instantané périmé et retombe sur les fichiers publiés.
+          // PUBLIÉ MÊME QUAND DES TABLES ONT ÉCHOUÉ, et c'est délibéré. La
+          // règle du tout ou rien protège les BUILDS : elle empêche de
+          // publier un site à moitié rafraîchi. Le manifeste, lui, ne décrit
+          // qu'une chose : ce que l'instantané CONTIENT. Une table absente en
+          // est simplement absente, et le build la lit dans son fichier
+          // publié — exactement ce qu'il faisait avant cette PR.
+          //
+          // Les avoir liés a été une vraie erreur, attrapée au premier cycle
+          // réel (2026-08-26) : quatre tables de `tables.ts` n'existent pas
+          // dans Postgres (« relation ... does not exist », DDL jamais
+          // appliquée), donc `failed.length > 0` à CHAQUE passe, donc le
+          // manifeste n'aurait jamais été publié. Un défaut préexistant et
+          // sans rapport aurait rendu l'instantané inerte pour toujours.
+          //
+          // Les hooks, eux, restent gouvernés par le tout ou rien, plus bas.
           if (env.ART_BUCKET && Object.keys(snapshotTables).length > 0) {
             try {
               await putManifest(env.ART_BUCKET, {
@@ -265,26 +270,39 @@ export default {
             }
           }
 
-          if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
-            try {
-              await triggerDeployHooks(env)
-            } catch (err) {
-              const message = err instanceof Error ? err.message : String(err)
-              await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
-            }
-          }
-
-          // MÉNAGE EN DERNIER, ET MUET. Il tourne après les hooks pour ne
-          // jamais retarder une édition, et son échec est avalé : un cycle
-          // non nettoyé ne coûte que quelques mégaoctets de R2, là où une
-          // exception ici — dans le même waitUntil — ferait passer pour
-          // ratée une passe réussie.
+          // MÉNAGE AVANT LA GARDE D'ÉCHEC, et MUET. Avant la garde parce
+          // qu'une passe partielle écrit quand même un cycle : si le ménage
+          // vivait après le `return` ci-dessous, R2 grossirait sans fin tant
+          // qu'une seule table échoue — c'est-à-dire, aujourd'hui, toujours.
+          // Muet parce qu'un cycle non nettoyé ne coûte que quelques
+          // mégaoctets, là où une exception ici ferait passer pour ratée une
+          // passe réussie.
           if (env.ART_BUCKET) {
             try {
               const deleted = await pruneSnapshots(env.ART_BUCKET)
               if (deleted > 0) console.log(`instantané : ${deleted} objets périmés supprimés`)
             } catch (err) {
               console.warn('ménage des instantanés impossible :', err)
+            }
+          }
+
+          // TOUT OU RIEN, POUR LES BUILDS SEULEMENT. Une table en échec ne
+          // doit pas publier un site à moitié rafraîchi ; elle n'empêche pas
+          // pour autant l'instantané d'exister (cf. plus haut).
+          if (failed.length > 0) {
+            await notifySlack(
+              env,
+              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+            )
+            return
+          }
+
+          if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
+            try {
+              await triggerDeployHooks(env)
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err)
+              await notifySlack(env, `sync-athena : données écrites mais hook en échec : ${message}`)
             }
           }
         })(),
