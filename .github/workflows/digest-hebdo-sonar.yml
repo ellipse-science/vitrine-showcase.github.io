@@ -1,0 +1,169 @@
+name: Digest hebdo — sonar vitrine
+
+# Triggered exclusively by cron-job.org (même mécanique que refresh-data.yml —
+# voir son en-tête pour le pourquoi de ce choix plutôt que le cron natif
+# GitHub Actions). Pas de schedule: ici — à ajouter côté cron-job.org après
+# le merge (étape manuelle, une fois) :
+#   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/digest-hebdo-sonar.yml/dispatches
+#   Method: POST   Body: {"ref":"main"}
+#   Header: Authorization: token <GitHub PAT avec scope workflow>
+#   Cron:   0 8 * * 2   — mardi 8h, avec le champ « Timezone » de l'entrée
+#           cron-job.org réglé sur America/Toronto. PAS en UTC : un `0 12 * * 2`
+#           fixe donne bien 8h l'été, mais 7h dès le retour à l'heure normale,
+#           alors que ce fichier et la PR promettent mardi 8h heure de Montréal
+#           toute l'année. Le fuseau se règle dans l'entrée, il n'est pas à
+#           deviner — même règle que partout ici : on écrit l'heure de Montréal.
+#
+# Mardi plutôt que dimanche (décision Adrien, 2026-08-15) : personne ne lit
+# Slack la fin de semaine, un digest du dimanche ne sert à personne avant le
+# lundi matin au plus tôt — mardi 8h laisse aussi le lundi absorber ce qui a
+# pu casser pendant le week-end avant que le digest en parle.
+#
+# Portée : LIVRAISON, pas tables de raffineurs. Règle du 2026-08-12 (voir
+# CLAUDE.md du dépôt aws-refiners) : #02_vitrine_sonar surveille si le site
+# est à jour et correctement déployé, jamais l'état d'une table de datamart —
+# ça, c'est le rôle de sonar-pipeline dans #02_radar-plus_sonar /
+# #02__agora-plus_sonar. Ce digest résume donc la semaine de refresh-data.yml
+# (succès/échecs, alertes de Une périmée), rien de plus.
+#
+# Poste TOUJOURS, même semaine parfaite : c'est la preuve de vie du digest
+# lui-même (même principe que sonar-pipeline côté aws-refiners).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    env:
+      SLACK_VITRINE_SONAR_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Résumer la semaine de refresh-data.yml
+        id: digest
+        run: |
+          set -euo pipefail
+
+          DEPUIS=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          REPO="${{ github.repository }}"
+
+          # gh run list ne filtre pas par date : on prend large (limite 200,
+          # largement au-dessus des ~42 runs/semaine attendus à 6x/jour) puis
+          # on coupe nous-mêmes sur createdAt >= DEPUIS.
+          RUNS_JSON=$(gh run list --repo "$REPO" --workflow=refresh-data.yml \
+            --json databaseId,conclusion,createdAt,url,status --limit 200)
+
+          echo "$RUNS_JSON" | jq --arg depuis "$DEPUIS" \
+            '[.[] | select(.createdAt >= $depuis)]' > runs_semaine.json
+
+          TOTAL=$(jq 'length' runs_semaine.json)
+          SUCCES=$(jq '[.[] | select(.conclusion == "success")] | length' runs_semaine.json)
+          # NON RÉUSSIS = tout run TERMINÉ dont la conclusion n'est pas "success".
+          # Ne PAS se limiter à "failure" : "cancelled", "timed_out",
+          # "action_required", "startup_failure", "stale" et "neutral" sont aussi
+          # des rafraîchissements qui n'ont pas livré. Les ignorer faisait
+          # annoncer « semaine propre » une semaine où des runs avaient manqué —
+          # exactement l'inverse de ce que ce digest est censé prouver.
+          ECHECS=$(jq '[.[] | select(.status == "completed" and .conclusion != "success")]' runs_semaine.json)
+          N_ECHECS=$(echo "$ECHECS" | jq 'length')
+          EN_COURS=$(jq '[.[] | select(.status != "completed")] | length' runs_semaine.json)
+
+          # Garde de cohérence : les trois compteurs doivent épuiser le total.
+          # S'ils ne le font pas, c'est qu'une catégorie nous échappe — on le
+          # DIT plutôt que de laisser le digest arrondir en silence.
+          RESTE=$((TOTAL - SUCCES - N_ECHECS - EN_COURS))
+          if [ "$RESTE" -ne 0 ]; then
+            echo "::warning::Digest incohérent : $RESTE run(s) sur $TOTAL ne tombent dans aucune catégorie." >&2
+          fi
+
+          {
+            echo "total=$TOTAL"
+            echo "succes=$SUCCES"
+            echo "n_echecs=$N_ECHECS"
+            echo "en_cours=$EN_COURS"
+          } >> "$GITHUB_OUTPUT"
+
+          # Liens des runs non réussis (plafond 5 dans le message, comme
+          # sonar-pipeline). La conclusion est affichée : « cancelled » et
+          # « failure » ne se diagnostiquent pas pareil.
+          LIENS_ECHECS=$(echo "$ECHECS" | jq -r '.[:5][] | "• <" + .url + "|run " + (.databaseId | tostring) + "> — " + (.conclusion // "sans conclusion")')
+          {
+            echo 'liens_echecs<<EOF_EEEE'
+            echo "$LIENS_ECHECS"
+            echo 'EOF_EEEE'
+          } >> "$GITHUB_OUTPUT"
+
+          # Combien de ces runs ont déclenché l'alerte de Une périmée : on
+          # regarde, pour chaque run, si l'étape "Alert Slack if headline
+          # data is stale" s'est réellement exécutée (pas skipped/absente).
+          # Coût : 1 appel API par run de la semaine (~42), acceptable ici.
+          N_PERIMEE=0
+          for id in $(jq -r '.[].databaseId' runs_semaine.json); do
+            EXECUTEE=$(gh api "repos/$REPO/actions/runs/$id/jobs" --jq \
+              '[.jobs[].steps[]? | select(.name == "Alert Slack if headline data is stale" and .conclusion != "skipped" and .conclusion != null)] | length')
+            if [ "$EXECUTEE" -gt 0 ]; then
+              N_PERIMEE=$((N_PERIMEE + 1))
+            fi
+          done
+          echo "n_perimee=$N_PERIMEE" >> "$GITHUB_OUTPUT"
+
+      - name: Poster le digest sur Slack
+        run: |
+          set -euo pipefail
+
+          TOTAL="${{ steps.digest.outputs.total }}"
+          SUCCES="${{ steps.digest.outputs.succes }}"
+          N_ECHECS="${{ steps.digest.outputs.n_echecs }}"
+          EN_COURS="${{ steps.digest.outputs.en_cours }}"
+          N_PERIMEE="${{ steps.digest.outputs.n_perimee }}"
+
+          if [ "$N_ECHECS" -eq 0 ] && [ "$N_PERIMEE" -eq 0 ]; then
+            ETAT="✅ *Semaine propre* — $SUCCES/$TOTAL rafraîchissements réussis, aucune alerte de Une périmée."
+          else
+            ETAT="⚠️ *$N_ECHECS rafraîchissement(s) non réussi(s), $N_PERIMEE run(s) avec Une périmée* sur $TOTAL cette semaine."
+          fi
+
+          BLOCS=$(jq -n \
+            --arg etat "$ETAT" \
+            --arg date "$(date -u +%Y-%m-%d)" \
+            --arg total "$TOTAL" --arg succes "$SUCCES" --arg echecs "$N_ECHECS" \
+            --arg en_cours "$EN_COURS" --arg perimee "$N_PERIMEE" \
+            --arg liens "${{ steps.digest.outputs.liens_echecs }}" \
+            '{
+              blocks: (
+                [
+                  {type: "header", text: {type: "plain_text", text: "📬 Digest hebdo — vitrine", emoji: true}},
+                  {type: "context", elements: [{type: "mrkdwn", text: ("Semaine se terminant le " + $date + " — livraison du site (refresh-data.yml)")}]},
+                  {type: "divider"},
+                  {type: "section", text: {type: "mrkdwn", text: $etat}},
+                  {type: "section", text: {type: "mrkdwn", text: ("Rafraîchissements : *" + $succes + "/" + $total + "* réussis" + (if ($en_cours | tonumber) > 0 then " (" + $en_cours + " en cours au moment du digest)" else "" end))}}
+                ]
+                + (if ($echecs | tonumber) > 0 and ($liens | length) > 0 then
+                    [{type: "section", text: {type: "mrkdwn", text: (
+                      "*Runs non réussis"
+                      + (if ($echecs | tonumber) > 5
+                         then " (5 affichés sur " + $echecs + ")"
+                         else "" end)
+                      + " :*\n" + $liens)}}]
+                  else [] end)
+              )
+            }')
+
+          if [ -n "$SLACK_VITRINE_SONAR_WEBHOOK_URL" ]; then
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "$BLOCS" "$SLACK_VITRINE_SONAR_WEBHOOK_URL"
+          else
+            echo "SLACK_VITRINE_SONAR_WEBHOOK_URL absent — digest calculé mais non posté." >&2
+            exit 1
+          fi
+        env:
+          SLACK_VITRINE_SONAR_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}

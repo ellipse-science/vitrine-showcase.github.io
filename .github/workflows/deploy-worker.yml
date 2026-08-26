@@ -1,0 +1,67 @@
+name: Déploiement du Worker API
+# Déploie workers/api (le Worker Cloudflare de la chaîne émancipée : sync
+# Athena -> Postgres, Deploy Hooks, API publique) avec wrangler.
+#
+# POURQUOI CE WORKFLOW EXISTE (2026-08-25, #570) : les correctifs du Worker
+# (#582 : le 304 des Deploy Hooks n'est plus fatal ; #584 : la passe :56 qui
+# vise l'heure pile) restaient sans effet tant que personne ne redéployait le
+# Worker depuis son poste. Le déploiement du SITE (Pages) et celui du WORKER
+# sont deux choses distinctes : merger sur main ne redéploie pas le Worker.
+#
+# Manuel seulement (workflow_dispatch) : un redéploiement du Worker change le
+# comportement en production (crons, API, hooks) — il se décide, il ne part
+# pas tout seul d'un merge.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          # Le cache vise le lockfile du Worker, pas celui de la racine : c'est
+          # `workers/api` qu'on installe ici.
+          cache: npm
+          cache-dependency-path: workers/api/package-lock.json
+      - name: Installer les dépendances du Worker
+        run: npm ci
+      - name: Déployer avec wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # `wrangler.toml` ne porte AUCUN `account_id` : sans cette variable,
+          # wrangler échoue en « missing account id » dès que le jeton voit plus
+          # d'un compte. Les deux autres déploiements Cloudflare du dépôt
+          # (deploy-prod, deploy-dev-cloudflare) le passent de la même façon.
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler@4 deploy
+      # Les secrets du Worker (DATABASE_URL, DEPLOY_HOOK_*, SYNC_*) vivent chez
+      # Cloudflare et SURVIVENT au déploiement : rien à re-poser ici.
+      - name: Vérifier la santé de l'API
+        # La propagation d'un déploiement Workers (routes, domaine, cache)
+        # dépasse souvent 10 s. Une tentative unique ferait échouer le run sur
+        # un déploiement RÉUSSI, et ce workflow servirait alors à semer le
+        # doute plutôt qu'à le lever : on retente pendant une minute.
+        run: |
+          for essai in 1 2 3 4 5 6; do
+            if curl -fsS https://api.vitrinedemocratique.com/v1/health >/dev/null; then
+              echo "API en ligne (tentative $essai)"
+              exit 0
+            fi
+            echo "tentative $essai : pas de réponse, nouvel essai dans 10 s"
+            sleep 10
+          done
+          echo "::error::/v1/health ne répond pas 60 s après le déploiement"
+          exit 1

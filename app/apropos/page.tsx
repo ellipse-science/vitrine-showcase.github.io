@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
+  // garde-redaction: ok (séparateur <title>, exception PR #246)
   title: "À propos — La Vitrine démocratique",
 };
 
 export default function AproposPage() {
   return (
     <div className="page">
-      <RawMaquette chunk="top" />
+      <div data-section="En-tête">
+        <RawMaquette chunk="top" />
+      </div>
 
-      <main className="apropos-container">
+      <main className="apropos-container" data-section="À propos">
 
 
         <div className="apropos-header">
@@ -19,7 +23,7 @@ export default function AproposPage() {
             La Vitrine démocratique est un observatoire numérique de l'espace
             public québécois, développé par le Centre d'analyse des politiques
             publiques (CAPP) de l'Université Laval. Elle mesure en continu deux
-            dimensions fondamentales de la vie démocratique : la visibilité des
+            dimensions fondamentales de la vie démocratique&nbsp;: la visibilité des
             enjeux dans les grands médias québécois et canadiens, et leur
             présence dans les débats à l'Assemblée nationale. En mettant ces
             deux dimensions en regard, elle offre une lecture scientifique de la
@@ -33,7 +37,7 @@ export default function AproposPage() {
         <div className="apropos-grid">
           <div className="apropos-main-col">
             <section>
-              <h2 className="apropos-section-title">Pourquoi ce projet ?</h2>
+              <h2 className="apropos-section-title">Pourquoi ce projet?</h2>
               <p className="apropos-text">
                 Dans un contexte de fragmentation médiatique, de multiplication
                 des sources d'information et d'accélération des cycles
@@ -54,7 +58,7 @@ export default function AproposPage() {
             </section>
 
             <section>
-              <h2 className="apropos-section-title">Que faisons-nous ?</h2>
+              <h2 className="apropos-section-title">Que faisons-nous?</h2>
               <p className="apropos-text">
                 Nos sociétés font face à une multitude de problèmes complexes
                 qui ne peuvent tous être traités simultanément. L'agenda public
@@ -62,17 +66,17 @@ export default function AproposPage() {
                 médias et des décideurs politiques à un moment donné, et désigne
                 ainsi les enjeux priorisés dans le débat public. Ce concept
                 s'inscrit plus globalement dans la tradition de la théorie de
-                l'agenda-setting (McCombs & Shaw, 1972 ; Iyengar & Kinder, 1987)
+                l'agenda-setting (McCombs & Shaw, 1972; Iyengar & Kinder, 1987)
                 selon laquelle les médias et les élus se co-influencent
                 mutuellement dans la construction de l'agenda public.
               </p>
               <p className="apropos-text">
                 Depuis septembre 2019, le système Radar+ capte automatiquement
                 les grands titres de treize médias québécois et canadiens.
-                Ces données alimentent des indices de saillance médiatique — un
+                Ces données alimentent des indices de saillance médiatique (un
                 concept provenant de la littérature scientifique désignant
                 l'importance relative accordée par les médias aux différents
-                sujets et enjeux présents dans l'espace médiatique — calculés
+                sujets et enjeux présents dans l'espace médiatique), calculés
                 toutes les quatre heures.
               </p>
               <p className="apropos-text">
@@ -85,15 +89,25 @@ export default function AproposPage() {
                 lexicale des discours législatifs. Ces deux flux de données,
                 jusqu'alors distincts, peuvent désormais être mis en regard au
                 sein de la Vitrine, offrant pour la première fois une vue
-                intégrée de l'agenda public québécois.
+                intégrée de l'agenda public québécois. Ce module est une vitrine
+                du projet{" "}
+                <a
+                  href="https://ellipse.science/agora-plus/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="apropos-link"
+                >
+                  Agora+
+                </a>{" "}
+                du CAPP.
               </p>
             </section>
 
             <section>
-              <h2 className="apropos-section-title">Pour qui ?</h2>
+              <h2 className="apropos-section-title">Pour qui?</h2>
               <p className="apropos-text">
                 La Vitrine démocratique s'adresse à toute personne souhaitant
-                mieux comprendre l'agenda public québécois :
+                mieux comprendre l'agenda public québécois&nbsp;:
               </p>
               <ul className="apropos-list">
                 <li className="apropos-list-item">
@@ -118,18 +132,18 @@ export default function AproposPage() {
 
           <div className="apropos-side-col">
             <section>
-              <h2 className="apropos-section-title">Qui sommes-nous ?</h2>
+              <h2 className="apropos-section-title">Qui sommes-nous?</h2>
               <p
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
-                La Vitrine est portée par le CAPP (Centre d'analyse des politiques
-                publiques) de l'Université Laval, en collaboration avec la
+                La Vitrine est portée par le Centre d'analyse des politiques
+                publiques (CAPP) de l'Université Laval, en collaboration avec la
                 CLESSN (Chaire de leadership en enseignement des sciences sociales
                 numériques). Le projet réunit des chercheuses et chercheurs en science
                 politique, des développeuses et développeurs de systèmes de données et des
                 spécialistes en intelligence artificielle autour d'un objectif
-                commun : rendre l'observation de la démocratie québécoise plus
+                commun&nbsp;: rendre l'observation de la démocratie québécoise plus
                 rigoureuse, plus transparente et plus ouverte à l'ensemble de la
                 société.
               </p>
@@ -231,7 +245,7 @@ export default function AproposPage() {
                 className="apropos-text"
                 style={{ fontSize: "15px", lineHeight: "1.5", marginTop: "16px" }}
               >
-                Pour toute question ou collaboration :
+                Pour toute question ou collaboration&nbsp;:
                 <br />
                 <a href="mailto:capp@ulaval.ca" className="apropos-link">
                   capp@ulaval.ca
@@ -242,7 +256,11 @@ export default function AproposPage() {
         </div>
       </main>
 
-      <RawMaquette chunk="bottom" />
+      <div data-section="Pied de page">
+        <RawMaquette chunk="bottom" />
+      </div>
+
+      <IssueReporter />
     </div>
   );
 }
