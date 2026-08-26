@@ -1,8 +1,9 @@
 # Design : langue du repérage de promesses (Polimètre+ mode « campagne »)
 
 **Date :** 2026-08-24
-**Statut :** DÉCIDÉ — français seulement. Aucune implémentation requise (la
-décision consacre le comportement actuel et ferme la question).
+**Statut :** DÉCIDÉ — français seulement. Aucune implémentation requise : la
+décision consacre le comportement du raffineur tel qu'il est écrit dans
+aws-refiners#371 (**non fusionnée au 2026-08-25**) et ferme la question.
 **Portée :** raffineur `polimetre-promesses-neuves` (aws-refiners), et tout
 classifieur de repérage de promesses qui viendra le remplacer.
 
@@ -18,15 +19,20 @@ lisent la *Montreal Gazette*, et un corpus bilingue serait plus complet.
 ## Décision
 
 **Français seulement**, pour le repérage comme pour l'appariement médiatique.
-La limite est documentée dans la méthodologie. L'extension à l'anglais reste
-ouverte, mais devient un chantier à part entière (voir « Ce qu'il faudrait
-pour ouvrir l'anglais »).
+La limite **reste à documenter** dans la méthodologie : le mode « campagne »
+n'est pas public (`polimetre_promesses_neuves` est `enabled: false`), et la page
+ne décrit donc pas encore le module. Suivi dans vitrine#571, qui liste ce qu'il
+faudra y écrire à l'activation. L'extension à l'anglais reste ouverte, mais
+devient un chantier à part entière (voir « Ce qu'il faudrait pour ouvrir
+l'anglais »).
 
 ## Pourquoi — le fait qui tranche
 
 Le garde-fou d'attribution du raffineur
-(`refiners/polimetre-promesses-neuves/runtime.R`, `attribution_valide`) suit
-une règle volontairement conservatrice :
+(`refiners/polimetre-promesses-neuves/runtime.R`, `attribution_valide`,
+introduit par aws-refiners#371 — **non fusionnée au 2026-08-25**, donc à
+réauditer si la revue de cette PR le fait bouger) suit une règle volontairement
+conservatrice :
 
 - aucun parti nommé dans le texte → **on garde** ;
 - le parti de la promesse est nommé → on garde ;
@@ -122,5 +128,6 @@ translingue, pas un corpus plus grand.
   question ouverte.
 - **Validation F1** (classifieur et LLM génératif) : jeu d'évaluation
   francophone, à geler **avant** l'entraînement.
-- **Méthodologie** : la section du Polimètre+ doit qualifier la saillance du
-  mode « campagne » comme mesurée sur la couverture francophone.
+- **Méthodologie** : la section du Polimètre+ devra qualifier la saillance du
+  mode « campagne » comme mesurée sur la couverture francophone — à écrire à
+  l'activation, avec le reste de la description du mode (vitrine#571).
