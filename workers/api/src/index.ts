@@ -185,6 +185,7 @@ export default {
           // ne le rendre visible qu'à la fin, par le manifeste.
           const cycle = cycleId(now)
           const snapshotTables: Record<string, SnapshotTableEntry> = {}
+          const snapshotSkipped: string[] = []
           try {
             while (offset !== null) {
               const res = await env.SELF.fetch(
@@ -201,11 +202,13 @@ export default {
               const body = (await res.json()) as {
                 synced: number
                 failed: string[]
+                snapshotSkipped?: string[]
                 next: number | null
                 tables?: { table: string; rows: number; snapshot?: SnapshotTableEntry }[]
               }
               synced += body.synced
               failed.push(...body.failed)
+              snapshotSkipped.push(...(body.snapshotSkipped ?? []))
               for (const t of body.tables ?? []) {
                 if (t.snapshot) snapshotTables[t.table] = t.snapshot
               }
@@ -246,6 +249,16 @@ export default {
               console.log(
                 `instantané publié : cycle ${cycle}, ${Object.keys(snapshotTables).length} tables`,
               )
+              // Une table hors instantané n'est PAS un échec : le build la
+              // lit dans son fichier publié. Mais si personne ne le dit, la
+              // dérive s'installe et l'économie fond table par table sans
+              // que quiconque s'en aperçoive.
+              if (snapshotSkipped.length > 0) {
+                await notifySlack(
+                  env,
+                  `instantané : ${snapshotSkipped.length} table(s) hors copie (le site les lit dans les fichiers publiés) : ${snapshotSkipped.join(' ; ')}`,
+                )
+              }
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err)
               await notifySlack(env, `sync-athena : manifeste d'instantané en échec : ${message}`)
@@ -448,12 +461,17 @@ export default {
         const cycle = url.searchParams.get('cycle') ?? undefined
 
         const started = Date.now()
-        const { synced, failed, total, next } = await runAthenaSync(env, { offset, limit, cycle })
+        const { synced, failed, snapshotSkipped, total, next } = await runAthenaSync(env, {
+          offset,
+          limit,
+          cycle,
+        })
         return json(
           {
             synced: synced.length,
             tables: synced,
             failed: failed.map((f) => f.table),
+            snapshotSkipped,
             offset,
             total,
             next,

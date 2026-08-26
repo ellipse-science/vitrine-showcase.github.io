@@ -215,6 +215,9 @@ export { triggerDeployHooks } from './deploy-hooks'
 export interface SyncAthenaResult {
   synced: TableResult[]
   failed: FailedTable[]
+  /** Tables synchronisées mais laissées hors de l'instantané, avec la raison.
+   *  Distinct de `failed` À DESSEIN : la synchro a réussi. */
+  snapshotSkipped: string[]
   total: number
   next: number | null
 }
@@ -253,6 +256,10 @@ export async function runAthenaSync(
 
   const synced: TableResult[] = []
   const failed: FailedTable[] = []
+  /** Tables écrites dans Postgres mais PAS dans l'instantané. Jamais un
+   *  échec de synchro (cf. le side-car plus bas) : une information, qui
+   *  remonte jusqu'à Slack pour que la dérive ne s'installe pas en silence. */
+  const snapshotSkipped: string[] = []
   try {
     for (const spec of specs) {
       try {
@@ -269,18 +276,29 @@ export async function runAthenaSync(
         // Une conversion qui échoue (colonne numérique polluée en amont)
         // lève et fait ÉCHOUER la table — donc retient les hooks et
         // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
+        // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
+        // synchro. Postgres a déjà commité à ce stade, et un échec ici
+        // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
+        // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
+        // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
+        // l'inverse du bon compromis.
+        //
+        // Une table qui n'entre pas dans l'instantané en est simplement
+        // ABSENTE, donc absente du manifeste, donc lue par le build dans son
+        // fichier publié : le comportement d'avant cette PR. On perd
+        // l'économie sur cette table, jamais la justesse ni l'édition.
         let snapshot: SnapshotTableEntry | undefined
         if (cycle && env.ART_BUCKET) {
-          if (hasColumnTypes(spec.name)) {
+          try {
+            if (!hasColumnTypes(spec.name)) {
+              throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
+            }
             const objects = rowsToObjects(spec.name, spec.cols, rows)
             snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
-          } else {
-            // Types inconnus : on ne met PAS cette table en instantané. Elle
-            // reste lue dans son fichier publié par le build, exactement
-            // comme avant. Bruyant dans le journal, silencieux pour le site.
-            console.warn(
-              `${spec.name} : hors instantané (types de colonnes inconnus — régénérer column-types.ts)`,
-            )
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            console.warn(`${spec.name} : hors instantané (${message})`)
+            snapshotSkipped.push(`${spec.name} : ${message}`)
           }
         }
 
@@ -304,5 +322,5 @@ export async function runAthenaSync(
   // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
   // survit pas aux 18 tables d'un coup (constaté le 2026-08-19 : la passe
   // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
-  return { synced, failed, total: TABLES.length, next }
+  return { synced, failed, snapshotSkipped, total: TABLES.length, next }
 }
