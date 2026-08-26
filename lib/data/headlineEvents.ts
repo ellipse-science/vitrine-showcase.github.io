@@ -7,6 +7,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readDatasetText } from "@/lib/data/source";
+import { normaliserTypographie } from "@/lib/typographieFr";
 import { cache } from "react";
 
 import { editionLabel, editionSlot } from "@/lib/editions";
@@ -103,6 +104,24 @@ export type RawEvent = {
 // (issue #259). Cette fonction était recopiée trois fois dans ce fichier et une
 // quatrième en Python — c'est cette duplication qui a laissé les sélecteurs
 // diverger.
+/** Lit le snapshot et applique la typographie québécoise à ce que NOUS avons
+ *  écrit (`title`, `text`) — le LLM ne pose pas d'insécable, et rien en aval ne
+ *  le faisait : la Une du 25 août 2026 affichait un « seul en fin de ligne.
+ *
+ *  ⚠️ `articles` n'est PAS touché : ce sont les titres des médias, des
+ *  citations dont la typographie appartient à leur auteur.
+ *
+ *  Passe par ICI toute lecture de `headline-events.json` : c'est le seul point
+ *  où la correction s'applique aux 19 163 lignes déjà publiées, que le
+ *  correctif amont (aws-refiners) ne réécrira pas rétroactivement. */
+export function parseEvents(json: string): RawEvent[] {
+  return (JSON.parse(json) as RawEvent[]).map((e) => ({
+    ...e,
+    title: normaliserTypographie(e.title),
+    text: normaliserTypographie(e.text),
+  }));
+}
+
 export function uniqueQcEvents(all: RawEvent[]): RawEvent[] {
   const byId = new Map<string, RawEvent>();
   for (const e of all) {
@@ -2033,7 +2052,7 @@ export const listEditions = cache(async (): Promise<EditionRef[]> => {
     return [];
   }
 
-  const rows = uniqueQcEvents(JSON.parse(raw) as RawEvent[]);
+  const rows = uniqueQcEvents(parseEvents(raw));
   const all = Array.from(new Set(rows.map(blockKey))).sort().reverse();
 
   // FENÊTRE COMPLÈTE EXIGÉE. Tout ce que le module affiche — classement, badge,
@@ -2097,7 +2116,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
     return null;
   }
 
-  const all = eventsUpTo(JSON.parse(raw) as RawEvent[], editionKey);
+  const all = eventsUpTo(parseEvents(raw), editionKey);
   const unique = uniqueQcEvents(all);
 
   if (unique.length === 0) return null;
@@ -2473,7 +2492,7 @@ async function loadFallbackIssueContent(editionKey?: string): Promise<Map<string
   const map = new Map<string, FallbackEntry>();
   let rawEvents: string;
   try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return map; }
-  const allRaw = eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey);
+  const allRaw = eventsUpTo(parseEvents(rawEvents), editionKey);
 
   const unique = uniqueQcEvents(allRaw);
 
@@ -2590,7 +2609,7 @@ function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
 async function loadArticlesByIssue(editionKey?: string): Promise<Map<string, IssueMedia>> {
   let rawEvents: string;
   try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return new Map(); }
-  return buildIssueMedia(eventsUpTo(JSON.parse(rawEvents) as RawEvent[], editionKey));
+  return buildIssueMedia(eventsUpTo(parseEvents(rawEvents), editionKey));
 }
 
 export async function loadTreemap(
