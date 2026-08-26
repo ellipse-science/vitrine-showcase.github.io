@@ -147,7 +147,7 @@ async function loadManifest(): Promise<SnapshotManifest | null> {
         return null;
       }
       console.log(
-        `[source] instantané ${manifest.cycle} — ${Object.keys(manifest.tables).length} tables`,
+        `[source] instantané ${manifest.cycle} : ${Object.keys(manifest.tables).length} tables`,
       );
       return manifest;
     } catch (err) {
