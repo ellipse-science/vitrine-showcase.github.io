@@ -1,5 +1,11 @@
 [
   {
+    "pr": 580,
+    "date": "2026-08-26T18:33:54Z",
+    "note": "Rien ne change sur le site. La documentation technique de nos pipelines est mise à jour pour décrire de nouvelles données qui mesurent, média par média, la place accordée à chaque parti politique.",
+    "version": null
+  },
+  {
     "pr": 596,
     "date": "2026-08-26T17:58:45Z",
     "note": "Mise à jour des pages techniques qui expliquent quand et comment les données du site sont mises à jour. Elles précisent que deux traitements de la section Assemblée restent actifs seulement en environnement de développement.",
