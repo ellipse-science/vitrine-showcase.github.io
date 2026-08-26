@@ -19,10 +19,21 @@
 //    Postgres ne voit donc qu'une poignée de requêtes par fenêtre quel que
 //    soit le trafic : l'API monte en charge comme un CDN.
 //
-// PAS ENCORE FAIT, ASSUMÉ : ni authentification, ni quotas, ni facturation.
-// Cette version est en lecture seule et publique. Les clés d'API viendront
-// quand il y aura des clients — cf. § « Ce qu'il reste à faire » du document
-// de direction.
+// API PRIVÉE depuis le 2026-08-26. Elle était en lecture publique le temps de
+// la construire ; personne d'autre que nous ne l'utilise, et une API ouverte
+// qu'on n'a pas voulu ouvrir est une surface offerte pour rien. Toute route
+// de données exige désormais une clé : /v1/health, /v1/datasets et /v1/art
+// comme les autres.
+//
+// UNE SEULE EXCEPTION, ET ELLE EST STRUCTURELLE : /v1/flappy/leaderboard. Le
+// NAVIGATEUR du visiteur l'appelle à l'exécution (lib/flappyLeaderboard.ts),
+// donc toute clé qu'on y mettrait serait publique par construction — c'est
+// exactement l'erreur du jeton Upstash embarqué dans le bundle, corrigée par
+// l'issue #499. La route reste donc anonyme, mais bornée : score plafonné,
+// initiales assainies, validation côté serveur, et un TRUNCATE suffit à tout
+// remettre à zéro.
+//
+// La racine « / » reste sans clé mais n'énumère plus rien.
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
@@ -514,6 +525,9 @@ export default {
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
+        const auth = await authenticate(sql, request, null)
+        if (!auth.ok) return problem(auth.status, auth.error)
+
         const rows = await sql`
           SELECT table_name, synced_at, row_count, source
           FROM vitrine.sync_state ORDER BY table_name`
@@ -521,26 +535,25 @@ export default {
           (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
           null,
         )
-        return cachePublic(
-          json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300),
-        )
+        // PAS de cache partagé : la réponse est sous clé, et `caches.default`
+        // est commun à tous les appelants — cf. le commentaire de cachePublic.
+        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows })
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.
       // `!segments[2]` est indispensable : sans lui cette route intercepte
       // aussi /v1/datasets/{nom} et renvoie l'index à la place des lignes.
       if (segments[0] === 'v1' && segments[1] === 'datasets' && !segments[2]) {
-        return cachePublic(json(
-          {
-            datasets: Object.entries(DATASETS).map(([name, spec]) => ({
-              name,
-              filters: spec.filters,
-              path: `/v1/datasets/${name}`,
-            })),
-          },
-          {},
-          ttl,
-        ))
+        const auth = await authenticate(sql, request, null)
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        return json({
+          datasets: Object.entries(DATASETS).map(([name, spec]) => ({
+            name,
+            filters: spec.filters,
+            path: `/v1/datasets/${name}`,
+          })),
+        })
       }
 
       // GET /v1/datasets/:name?from=&to=&party=&limit=&offset=
@@ -618,23 +631,30 @@ export default {
         return response
       }
 
-      // Racine : de quoi comprendre l'API sans documentation externe.
+      // Racine : reste SANS clé, mais ne dit plus rien d'exploitable.
+      //
+      // Elle listait les routes et annonçait « sans authentification » : une
+      // carte du trésor pour qui tombe sur le domaine. On garde une réponse
+      // lisible plutôt qu'un 401 sec — quelqu'un qui ouvre l'adresse dans un
+      // navigateur doit comprendre qu'il n'y a rien à voir — mais elle
+      // n'énumère plus rien. Aucun appel à Postgres non plus : inutile de
+      // faire travailler la base pour une carte de visite.
       if (segments.length === 0) {
         return cachePublic(json(
           {
             name: 'API Vitrine démocratique',
             version: 'v1',
-            description:
-              "Indicateurs dérivés de la couverture médiatique et des discours politiques au Québec.",
-            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}', '/v1/art/latest.{png,webp,avif,json}'],
-            note: "Version de lecture, sans authentification. Les clés d'API viendront avec l'offre payante.",
+            access: 'privée',
+            note: "Accès réservé. Toutes les routes de données exigent une clé d'API.",
+            contact: 'https://vitrinedemocratique.com',
           },
           {},
           ttl,
         ))
       }
 
-      return problem(404, 'Route inconnue.', { endpoints: ['/v1/health', '/v1/datasets'] })
+      // On n'énumère plus les routes ici non plus, pour la même raison.
+      return problem(404, 'Route inconnue.')
     } catch (err) {
       // On ne renvoie jamais le message d'erreur brut : il peut contenir la
       // chaîne de connexion ou des noms internes.
