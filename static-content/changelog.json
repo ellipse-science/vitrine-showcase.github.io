@@ -1,5 +1,11 @@
 [
   {
+    "pr": 590,
+    "date": "2026-08-26T17:21:00Z",
+    "note": "Rien ne change sur le site : cette mise à jour ajoute un mécanisme interne pour publier plus facilement les améliorations du service qui alimente le site en données.",
+    "version": null
+  },
+  {
     "pr": 589,
     "date": "2026-08-26T16:58:00Z",
     "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle décrive fidèlement la façon dont les éditions sont préparées et mises en ligne.",
