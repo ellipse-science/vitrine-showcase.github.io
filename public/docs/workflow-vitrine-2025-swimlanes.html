@@ -1160,7 +1160,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📤 Publication Vitrine (Athena → JSON statiques → GitHub Pages)</span>
-                <span class="frequency">6x/jour: 20:00, 00:00, 04:00, 08:00, 12:00, 16:00 (heure du Québec) — workflow <code>refresh-data.yml</code>, déclenché par cron-job.org (hors dépôt)</span>
+                <span class="frequency">Filet de secours — workflow <code>refresh-data.yml</code>, lancé à la main ou par son cron GitHub&nbsp;; commite les JSON de repli du build. Le chemin critique est la chaîne émancipée (couloir Worker ci-dessous) depuis le 19 août 2026</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
@@ -1215,12 +1215,12 @@
             </div>
         </div>
 
-        <!-- PUBLICATION VITRINE : VITRINE-PUBLISH (PHASE D'OMBRE) -->
+        <!-- PUBLICATION VITRINE : CHAÎNE ÉMANCIPÉE (WORKER CLOUDFLARE) -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
-                <span>📤 Publication Vitrine, chaîne vitrine-publish (Athena → Postgres → builds Cloudflare) 🚧 EN COURS (phase d'ombre)</span>
-                <span class="frequency">6x/jour&nbsp;: 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (heure de Montréal), raffineur du dépôt aws-refiners, PR à venir</span>
+                <span>📤 Publication Vitrine, chaîne émancipée (Worker Cloudflare&nbsp;: Athena → Postgres → builds) ✅ LIVRÉ (25 août 2026)</span>
+                <span class="frequency">6x/jour à :56 de l'heure précédant la publication&nbsp;: 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 (heure de Montréal), plus une passe filet à :10 de l'heure de publication — Worker du dépôt vitrine-showcase (<code>workers/api</code>), vitrine-showcase#584</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
@@ -1229,23 +1229,23 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner">
-                    vitrine-publish
-                    <div class="node-detail">🚧 EN COURS (phase d'ombre)&nbsp;: écrira dans Postgres dès sa mise en service</div>
-                    <div class="node-schedule">⏰ 00:10, 04:10, 08:10, 12:10, 16:10, 20:10 (Montréal)</div>
+                    sync-athena (Worker)
+                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 15 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
+                    <div class="node-schedule">⏰ 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 + filet :10 (Montréal)</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output">
                     Postgres (Neon, API)
-                    <div class="node-detail">sync_state, source « aws-refiner »</div>
+                    <div class="node-detail">sync_state, source « cf-athena »</div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-output">
                     Deploy Hooks Cloudflare (prod + dev)
-                    <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi ; en phase d'ombre, payload <code>trigger_deploys=false</code>, donc aucun build n'est déclenché</div>
+                    <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
                 </div>
             </div>
-            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,.07);font-size:.9em;line-height:1.5">
-                🚧 <strong>EN COURS (phase d'ombre)</strong>&nbsp;: <code>vitrine-publish</code> écrira dans Postgres dès sa mise en service, mais ne déclenchera aucun build tant que ses sorties n'auront pas été comparées à la chaîne <code>fetch_data.R</code> ci-dessus, qui reste pour l'instant le chemin critique.
+            <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #4A90E2;background:rgba(74,144,226,.07);font-size:.9em;line-height:1.5">
+                ✅ <strong>Chemin critique depuis le 19 août 2026</strong> (vitrine-showcase#530)&nbsp;: la phase d'ombre est terminée, c'est ce couloir qui déclenche les builds. <code>scripts/fetch_data.R</code> (couloir ci-dessus) n'est plus le chemin critique&nbsp;: il reste un filet qui commite les JSON de repli du build.
             </div>
         </div>
 
@@ -2375,7 +2375,7 @@
                 },
                 'fetch-data': {
                     title: 'Publication: scripts/fetch_data.R (dépôt vitrine)',
-                    description: 'La chaîne de publication réelle du site. Ce n\'est PAS un raffineur AWS : c\'est un script R exécuté par GitHub Actions (workflow refresh-data.yml) dans le dépôt de la Vitrine.',
+                    description: 'Le FILET de la publication (plus le chemin critique depuis le 19 août 2026 — la chaîne émancipée du Worker a pris le relais). Script R exécuté par GitHub Actions (workflow refresh-data.yml) dans le dépôt de la Vitrine, qui garde frais les JSON de repli du build.',
                     details: [
                         '📥 SOURCE: <span class="badge-dev">DEV</span>/datamarts via <strong>Athena</strong> (lecture seule)',
                         '📤 OUTPUT: fichiers JSON dans <code>public/data/</code>, commités sur la branche <code>main</code>',
@@ -2387,7 +2387,7 @@
                         '• Calcule <code>salience_calibration.json</code> : percentiles p5/p20/p50/p80/p95 de score_qc, score_roc et interval_convergence_score sur 365 jours glissants',
                         '• Écrit <code>meta.json</code> : statut et compte de lignes par table (diagnostic de fraîcheur)',
                         '',
-                        '⏰ HORAIRE: 6x/jour — 20:00, 00:00, 04:00, 08:00, 12:00, 16:00 (heure du Québec). Le workflow n\'a que <code>workflow_dispatch</code> : le déclenchement vient de cron-job.org, hors dépôt.',
+                        '⏰ HORAIRE: filet — <code>workflow_dispatch</code> à la main, plus un cron GitHub de secours. cron-job.org n\'appelle plus ce workflow depuis la bascule du 19 août 2026.',
                         '',
                         '🚀 Après le commit : le workflow <code>deploy.yml</code> reconstruit le site Next.js et le publie sur GitHub Pages ; les données fraîches sont aussi synchronisées vers la branche <code>prod</code>.',
                         '',
