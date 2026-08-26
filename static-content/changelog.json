@@ -1,5 +1,17 @@
 [
   {
+    "pr": 588,
+    "date": "2026-08-26T16:14:28Z",
+    "note": "Le lien et la mention du projet Agora+ ont été repositionnés pour cibler spécifiquement le module de l'Assemblée nationale (page À propos et pied de page). Modifications : - **Page À propos** : Déplacement de la mention/lien du paragraphe d'introduction générale vers le paragraphe décrivant les débats de l'Assemblée nationale. - **Footer** : Remplacement de « Ce module est une vitrine... » par «…",
+    "version": null
+  },
+  {
+    "pr": 594,
+    "date": "2026-08-26T14:51:57Z",
+    "note": "Section inchangée — cette PR ne change rien pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 584,
     "date": "2026-08-26T00:45:56Z",
     "note": "Les éditions du site paraissaient une quinzaine de minutes après l'heure annoncée. La préparation de chaque édition commence maintenant plus tôt, pour qu'elle soit en ligne à l'heure dite.",

@@ -28,16 +28,7 @@ export default function AproposPage() {
             présence dans les débats à l'Assemblée nationale. En mettant ces
             deux dimensions en regard, elle offre une lecture scientifique de la
             façon dont les enjeux émergent, circulent et s'imposent (ou non)
-            dans l'espace public québécois. Ce module est une vitrine du projet{" "}
-            <a
-              href="https://ellipse.science/agora-plus/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="apropos-link"
-            >
-              Agora+
-            </a>{" "}
-            du CAPP.
+            dans l'espace public québécois.
           </p>
         </div>
 
@@ -98,7 +89,17 @@ export default function AproposPage() {
                 lexicale des discours législatifs. Ces deux flux de données,
                 jusqu'alors distincts, peuvent désormais être mis en regard au
                 sein de la Vitrine, offrant pour la première fois une vue
-                intégrée de l'agenda public québécois.
+                intégrée de l'agenda public québécois. Ce module est une vitrine
+                du projet{" "}
+                <a
+                  href="https://ellipse.science/agora-plus/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="apropos-link"
+                >
+                  Agora+
+                </a>{" "}
+                du CAPP.
               </p>
             </section>
 
