@@ -19,6 +19,13 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const API_BASE = process.env.VITRINE_API_BASE ?? "https://api.vitrinedemocratique.com";
+
+/** Clé du build. `/v1/art` exige une clé depuis la fermeture de l'API
+ *  (2026-08-26) : seuls le build et les raffineurs appellent cette route, le
+ *  visiteur ne voit que l'image inlinée dans l'export statique. Sans clé, le
+ *  rapatriement échoue proprement et le module s'affiche sans illustration —
+ *  le même repli que pour une API muette. */
+const API_KEY = process.env.VITRINE_API_KEY ?? "";
 const OUT_DIR = path.resolve(import.meta.dirname, "..", "public", "data", "generated-art");
 
 // latest.json en PREMIER : c'est lui qui porte l'event_id de la garde
@@ -31,7 +38,12 @@ async function fetchOne(file) {
   try {
     // `no-cache` : le build veut l'image du cycle courant, pas la copie du
     // cache edge — même sémantique que le rapatriement des données.
-    const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
+    const res = await fetch(url, {
+      headers: {
+        "cache-control": "no-cache",
+        ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
+      },
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const bytes = Buffer.from(await res.arrayBuffer());
     if (bytes.length === 0) throw new Error("réponse vide");
