@@ -18,16 +18,24 @@ describe("SHARE_MODULE_SLUGS — visibilité par environnement", () => {
     vi.resetModules();
   });
 
-  it("exclut en production les modules masqués par #544", async () => {
+  it("exclut en production le module Partis, toujours masqué par #544", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
     vi.resetModules();
 
     const prodShareModules = await import("@/lib/shareModules");
 
     expect(prodShareModules.SHARE_MODULE_SLUGS).not.toContain("partis-et-couverture");
-    expect(prodShareModules.SHARE_MODULE_SLUGS).not.toContain("assemblee-nationale");
     expect(prodShareModules.isShareModuleSlug("partis-et-couverture")).toBe(false);
-    expect(prodShareModules.isShareModuleSlug("assemblee-nationale")).toBe(false);
+  });
+
+  it("inclut en production l'Assemblée, sortie du rodage le 2026-08-27", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
+    vi.resetModules();
+
+    const prodShareModules = await import("@/lib/shareModules");
+
+    expect(prodShareModules.SHARE_MODULE_SLUGS).toContain("assemblee-nationale");
+    expect(prodShareModules.isShareModuleSlug("assemblee-nationale")).toBe(true);
   });
 });
 
