@@ -82,8 +82,12 @@ let freshnessChecked: boolean | null = null;
 async function apiIsFresh(): Promise<boolean> {
   if (freshnessChecked !== null) return freshnessChecked;
   try {
+    // `/v1/health` exige une clé depuis la fermeture de l'API (2026-08-26).
     const res = await fetch(`${API_BASE}/v1/health`, {
-      headers: { "cache-control": "no-cache" },
+      headers: {
+        "cache-control": "no-cache",
+        ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
+      },
     });
     if (!res.ok) throw new Error(`santé ${res.status}`);
     const body = (await res.json()) as { sync_state?: { synced_at: string }[] };
