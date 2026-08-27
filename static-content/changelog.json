@@ -1,5 +1,11 @@
 [
   {
+    "pr": 605,
+    "date": "2026-08-27T19:45:52Z",
+    "note": "Quand le classement des partis n'a pas encore assez de données pour être affiché, le site explique désormais pourquoi au lieu de laisser un vide. Le sélecteur de source ne propose plus que les six médias québécois suivis.",
+    "version": null
+  },
+  {
     "pr": 606,
     "date": "2026-08-27T19:33:50Z",
     "note": "Le site affichait parfois une édition plus ancienne que la dernière disponible après une mise en ligne. Il utilise désormais les données les plus récentes dans tous les cas.",
