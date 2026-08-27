@@ -19,13 +19,12 @@ const BASE_SHARE_MODULE_SLUGS = [
 
 export type ShareModuleSlug = (typeof BASE_SHARE_MODULE_SLUGS)[number];
 
-// Les modules Partis et Assemblée sont temporairement masqués en production
-// (#544). Ne générons pas de routes de partage vers leurs ancres vides : la
-// surface partageable doit suivre le même signal que les sections elles-mêmes.
-const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = [
-  "partis-et-couverture",
-  "assemblee-nationale",
-];
+// Le module Partis reste temporairement masqué en production (#544).
+// L'Assemblée en est sortie le 2026-08-27 : identités stables, cache de
+// performance et parcours des député·es validés (voir AssembleeSection.tsx).
+// Ne générons pas de route de partage vers une ancre vide : la surface
+// partageable doit suivre le même signal que la section elle-même.
+const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = ["partis-et-couverture"];
 
 export const SHARE_MODULE_SLUGS: readonly ShareModuleSlug[] =
   process.env.NEXT_PUBLIC_SITE_ENV === "prod"
