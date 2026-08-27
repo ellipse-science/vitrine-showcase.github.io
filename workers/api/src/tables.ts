@@ -84,6 +84,21 @@ export const TABLES: TableSpec[] = [
     "filter": null
   },
   {
+    "name": "agora_decideurs_qc_affiliations",
+    "athena": "agora_datamart-agora_decideurs_qc_affiliations",
+    "cols": [
+      "deputy_id",
+      "deputy",
+      "district_id",
+      "party",
+      "affiliation_start_date",
+      "affiliation_end_date",
+      "start_reason",
+      "end_reason"
+    ],
+    "filter": null
+  },
+  {
     "name": "federal_parties_score_week",
     "athena": "vitrine_datamart-federal_parties_score_week",
     "cols": [
