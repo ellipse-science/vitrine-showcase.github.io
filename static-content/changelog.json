@@ -1,5 +1,11 @@
 [
   {
+    "pr": 600,
+    "date": "2026-08-27T00:20:33Z",
+    "note": "Des vérifications supplémentaires sont ajoutées en coulisses pour détecter plus tôt les pannes de mise à jour des données.",
+    "version": null
+  },
+  {
     "pr": 599,
     "date": "2026-08-26T23:46:01Z",
     "note": "L'accès aux données brutes du site est désormais réservé : seules les pages publiques restent ouvertes à tous.",
