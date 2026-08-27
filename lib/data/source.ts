@@ -68,13 +68,31 @@ const PAGE_SIZE = 5000;
  *  POURQUOI CE GARDE-FOU EXISTE. Le 2026-08-18, la prod a servi des données de
  *  plusieurs heures plus anciennes que celles qui venaient d'être publiées : le
  *  déploiement se déclenche à la poussée sur `prod`, mais la synchro Postgres
- *  tournait sur son propre horaire. refresh-data déclenche désormais la synchro
- *  avant de pousser, ce qui règle l'ordre — ce contrôle est la seconde ligne,
- *  pour que la même panne ne puisse pas repasser inaperçue.
+ *  tournait sur son propre horaire. Le garde-fou reste la seconde ligne, pour
+ *  que la même panne ne puisse pas repasser inaperçue.
  *
- *  Les fichiers, eux, sont frais par construction : ils viennent d'être
- *  commités par le job qui déclenche le build. En cas de doute, ils gagnent. */
-const MAX_STALENESS_MS = 45 * 60 * 1000;
+ *  POURQUOI 45 MIN ÉTAIT FAUX (corrigé le 2026-08-27). Le seuil supposait que
+ *  « les fichiers sont frais par construction : ils viennent d'être commités
+ *  par le job qui déclenche le build ». C'était vrai quand refresh-data
+ *  publiait les JSON six fois par jour PUIS déclenchait le build. Depuis la
+ *  bascule du 2026-08-19, refresh-data n'est plus qu'un FILET HEBDOMADAIRE
+ *  (lundi 12:00 UTC) : les builds sont déclenchés par la synchro du Worker ou
+ *  par un déploiement de code, et les fichiers commités sont alors la source
+ *  la PLUS VIEILLE, pas la plus fraîche.
+ *
+ *  Conséquence mesurée le 2026-08-27 à 18h58 UTC : l'instantané (167 min,
+ *  rejeté) portait le bloc `2026-08-27 11-15` ; les fichiers, retenus,
+ *  s'arrêtaient au bloc `07-11`. Le garde-fou jetait la source récente pour
+ *  une plus ancienne, et TOUT déploiement tombant entre deux synchros faisait
+ *  RECULER l'édition affichée — y compris les promotions de code (#601, #603).
+ *
+ *  LE SEUIL DOIT DONC MESURER « LA CHAÎNE EST MORTE », PAS « ON EST ENTRE
+ *  DEUX SYNCHROS ». La synchro tourne six fois par jour (~4 h d'écart au
+ *  pire) : un instantané sain dépasse structurellement 45 min. Six heures
+ *  laissent une marge d'une synchro entière ratée avant de retomber sur les
+ *  fichiers — qui restent le dernier recours, mais ne gagnent plus par
+ *  défaut. */
+const MAX_STALENESS_MS = 6 * 60 * 60 * 1000;
 
 let freshnessChecked: boolean | null = null;
 
