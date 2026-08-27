@@ -85,7 +85,20 @@ CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_end_date_idx" ON v
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_party_idx" ON vitrine."agora_decideurs_qc_deputes" ("party");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_deputy_idx" ON vitrine."agora_decideurs_qc_deputes" ("deputy");
 
--- ⚠️  agora_decideurs_qc_affiliations : public/data/agora/agora_decideurs_qc_affiliations.json absent — types non inférables, table omise.
+-- agora_decideurs_qc_affiliations  (Athena : agora_datamart-agora_decideurs_qc_affiliations)
+-- consommé par lib/data/assemblee.ts + components/interactive/AssembleeVestiaire.tsx
+CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_affiliations" (
+  "deputy_id" text,
+  "deputy" text,
+  "district_id" text,
+  "party" text,
+  "affiliation_start_date" text,
+  "affiliation_end_date" text,
+  "start_reason" text,
+  "end_reason" text
+);
+CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_deputy_idx" ON vitrine."agora_decideurs_qc_affiliations" ("deputy");
+CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_party_idx" ON vitrine."agora_decideurs_qc_affiliations" ("party");
 
 -- federal_parties_score_week  (Athena : vitrine_datamart-federal_parties_score_week)
 CREATE TABLE IF NOT EXISTS vitrine."federal_parties_score_week" (
@@ -414,4 +427,3 @@ CREATE TABLE IF NOT EXISTS vitrine.sync_state (
   "row_count"  bigint NOT NULL,
   "source"     text NOT NULL DEFAULT 'athena'
 );
-schéma généré : 20 tables, 1 omises faute de données
