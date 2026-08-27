@@ -98,6 +98,11 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
   provincial_parties_salient_shadow_month: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
   agora_decideurs_qc: { filters: ['party', 'period_type'], order: 'period_start_date' },
   agora_decideurs_qc_deputes: { filters: ['party', 'deputy', 'period_type'], order: 'period_start_date' },
+  // Dimension, pas une série temporelle : une ligne par intervalle
+  // d'affiliation. Triée par date de DÉBUT d'intervalle, ce qui donne le
+  // parcours d'un·e député·e dans l'ordre chronologique tel que le rend
+  // ParliamentaryHistory (components/interactive/AssembleeVestiaire.tsx).
+  agora_decideurs_qc_affiliations: { filters: ['party', 'deputy_id', 'district_id'], order: 'affiliation_start_date' },
   polimetre_plus: { filters: [], order: '' },
   headline_events_4h: { filters: [], order: '' },
 }
