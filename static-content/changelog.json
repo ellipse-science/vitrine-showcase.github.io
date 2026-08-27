@@ -1,5 +1,17 @@
 [
   {
+    "pr": 606,
+    "date": "2026-08-27T19:33:50Z",
+    "note": "Le site affichait parfois une édition plus ancienne que la dernière disponible après une mise en ligne. Il utilise désormais les données les plus récentes dans tous les cas.",
+    "version": "2.31.0-beta.3"
+  },
+  {
+    "pr": 604,
+    "date": "2026-08-27T19:31:20Z",
+    "note": "Le module « parcours des députés » ne s'affichait pas malgré un composant et une entrée `tables.json` en place : la liste blanche du Worker, qui a remplacé la lecture de `tables.json` le 2026-08-19, n'avait jamais été mise à jour.",
+    "version": null
+  },
+  {
     "pr": 602,
     "date": "2026-08-27T11:18:02Z",
     "note": "Le module « De quoi parle-t-on ? » affichait des variations de 0,0 % sur toutes les catégories quand les données venaient d'être republiées sans changement. Il compare désormais à la dernière mesure réellement différente.",
