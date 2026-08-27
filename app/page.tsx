@@ -9,9 +9,12 @@ import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { listEditions } from "@/lib/data/headlineEvents";
 
-// Modules RETIRÉS DE PROD, gardés sur dev (2026-08-20) : leurs sections se
-// gardent déjà elles-mêmes (elles rendent null en prod) — on retire AUSSI
-// l'enveloppe <div data-section> pour ne pas laisser d'ancre vide dans la page.
+// Module RETIRÉ DE PROD, gardé sur dev (2026-08-20) : sa section se garde
+// déjà elle-même (elle rend null en prod) — on retire AUSSI l'enveloppe
+// <div data-section> pour ne pas laisser d'ancre vide dans la page.
+// L'Assemblée a quitté ce régime le 2026-08-27 : identités stables validées,
+// cache de performance validé sur Lambda réelle, parcours des député·es
+// vérifié sur dev (Christian Dubé, CAQ → IND).
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 export default async function Home() {
@@ -51,11 +54,9 @@ export default async function Home() {
         <PolimetrePlusSection />
       </div>
 
-      {!isProd && (
-        <div id="assemblee-nationale" data-section="Assemblée nationale">
-          <AssembleeSection />
-        </div>
-      )}
+      <div id="assemblee-nationale" data-section="Assemblée nationale">
+        <AssembleeSection />
+      </div>
 
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
