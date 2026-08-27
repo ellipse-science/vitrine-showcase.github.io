@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { ShareButton } from "@/components/interactive/ShareButton";
@@ -209,8 +209,17 @@ export function PartisCouvertureClient({
       {data.indisponible && <AvisIndisponible info={data.indisponible} />}
 
       {/* Le palmarès EN TÊTE du module : le mouvement d'abord, l'examen
-          ensuite, ce qui est l'ordre dans lequel on lit un classement. */}
-      {!data.indisponible && !data.ranges[range].chart.tooShort && (
+          ensuite, ce qui est l'ordre dans lequel on lit un classement.
+
+          La condition ne teste PLUS `chart.tooShort` : `Palmares` le teste déjà
+          et rend une phrase qui dit pourquoi il n'y a pas de courbe. Testé aux
+          deux étages, c'est le parent qui gagnait — la section disparaissait
+          sans un mot et les trois messages de l'enfant étaient du code mort.
+          Le cas n'a rien d'exceptionnel : le raffineur remet ses blocs de 4 h à
+          zéro à minuit, donc chaque matin, jusqu'au deuxième bloc publié,
+          l'onglet « Jour » n'a qu'un point et rien à tracer. Un trou muet s'y
+          lit comme une panne du site. */}
+      {!data.indisponible && (
         <section className="partis-course partis-course--tete">
           <p className="course-tete">Le palmarès, en minutes passées en Une</p>
           {/* Le palmarès lit TOUJOURS l'agrégat, quelle que soit la position
@@ -291,7 +300,7 @@ export function PartisCouvertureClient({
         <Fader medias={data.medias} valeur={media} onChange={setMedia} />
       ) : (
         <Fader
-          medias={MEDIA_ORDER.filter((id) => id !== TOUS_MEDIAS).map((id) => ({
+          medias={MEDIA_PANEL_QC.map((id) => ({
             id,
             label: MEDIA_LABELS[id] ?? id,
           }))}
@@ -991,14 +1000,17 @@ function Fader({
  * SVG deviendrait un rectangle.
  */
 function Palmares({ chart, rows }: { chart: ChartView; rows: RowView[] }) {
+  // Un troisième message invitait à « ramener le curseur au centre », pour le
+  // cas où le détail horaire n'existe que sur l'agrégat. Il ne pouvait pas
+  // s'afficher — le palmarès reçoit TOUJOURS l'agrégat, jamais une vue par
+  // média — et il aurait été trompeur s'il l'avait pu, le fader ne commandant
+  // pas ce graphique.
   if (chart.tooShort) {
     return (
       <p className="course-vide">
-        {chart.raison === "sans-detail-horaire"
-          ? "Le détail heure par heure n'existe que pour l'ensemble des médias. Ramenez le curseur au centre pour suivre la journée."
-          : chart.raison === "detail-horaire-absent"
-            ? "Le détail heure par heure n'est pas encore publié pour cette période."
-            : "Une seule journée de données. Pas encore de tendance à lire."}
+        {chart.raison === "detail-horaire-absent"
+          ? "Le détail heure par heure n'est pas encore publié pour cette période."
+          : "Une seule journée de données. Pas encore de tendance à lire."}
       </p>
     );
   }
