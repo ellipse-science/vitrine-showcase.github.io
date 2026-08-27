@@ -1,5 +1,11 @@
 [
   {
+    "pr": 602,
+    "date": "2026-08-27T11:18:02Z",
+    "note": "Le module « De quoi parle-t-on ? » affichait des variations de 0,0 % sur toutes les catégories quand les données venaient d'être republiées sans changement. Il compare désormais à la dernière mesure réellement différente.",
+    "version": "2.31.0-beta.2"
+  },
+  {
     "pr": 600,
     "date": "2026-08-27T00:20:33Z",
     "note": "Des vérifications supplémentaires sont ajoutées en coulisses pour détecter plus tôt les pannes de mise à jour des données.",
