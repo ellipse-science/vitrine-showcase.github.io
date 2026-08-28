@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
+import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
 import { couleurEnjeu } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
@@ -113,6 +113,10 @@ export function PartisCouvertureClient({
   const [range, setRange] = useState<RangeKey>("today");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   const [showDoom, setShowDoom] = useState(false);
+  /** La pochette SORTIE du bac, ou `null` quand le bac est refermé. L'état vit
+   *  ici et non dans le bac : c'est un clic sur un DECK qui la sort, et les
+   *  deux composants sont frères. */
+  const [pochette, setPochette] = useState<PartyKey | null>(null);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
@@ -264,8 +268,10 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={setPochette} selectionne={pochette === decks[0]?.key} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={setPochette} selectionne={pochette === decks[2]?.key} />
         </div>
 
         <div className="regie-centre">
@@ -281,8 +287,10 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={setPochette} selectionne={pochette === decks[1]?.key} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={setPochette} selectionne={pochette === decks[3]?.key} />
         </div>
       </div>
 
@@ -310,6 +318,21 @@ export function PartisCouvertureClient({
         />
       )}
       </div>
+
+      {/* LE BAC, sous la console. Il montre les CINQ pochettes, y compris celles
+          des partis en sourdine, qui n'ont pas de deck et n'avaient donc aucune
+          pochette auparavant. Masqué quand la mesure est indisponible : des
+          pochettes à zéro affirmeraient un classement que la donnée ne soutient
+          pas, exactement comme les decks. */}
+      {!data.indisponible && (
+        <BacAVinyles
+          rows={view.rows}
+          mediaLabel={mediaLabel}
+          ouverte={pochette}
+          onOuvrir={setPochette}
+          onFermer={() => setPochette(null)}
+        />
+      )}
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
@@ -550,11 +573,221 @@ function Console({
   );
 }
 
+/**
+ * L'ILLUSTRATION d'une pochette, seule pièce partagée entre le bac et la
+ * pochette ouverte.
+ *
+ * EMPLACEMENT DE L'IMAGE GÉNÉRÉE. `row.illustration` est l'URL d'une image
+ * produite en amont, sur le modèle exact de celle de la Une des Unes : un
+ * raffineur l'engendre, la dépose sur R2, et le build la rapatrie dans
+ * `public/data/generated-art/` (cf. `scripts/fetch_art.mjs`). Tant qu'elle
+ * n'existe pas, on rend la composition géométrique d'origine.
+ *
+ * Le repli n'est PAS un pis-aller : il porte déjà les trois grandeurs du parti
+ * (sa couleur, l'enjeu de tête, le ton) et reste lisible. Une pochette qui
+ * disparaîtrait faute d'image serait pire qu'une pochette dessinée.
+ */
+function PochetteArt({
+  row,
+  mediaLabel,
+  grande,
+}: {
+  row: RowView;
+  mediaLabel: string | null;
+  /** Vrai dans la pochette ouverte, où l'illustration occupe un volet entier. */
+  grande?: boolean;
+}) {
+  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+  return (
+    <span
+      className={`pochette-art${grande ? " pochette-art--grande" : ""}`}
+      style={{
+        ["--party" as string]: row.color,
+        ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
+        ["--ton" as string]: `var(--ton-${row.toneDirection})`,
+      }}
+    >
+      {/* Le média, en bandeau le long du haut. Fond d'encre et non transparent :
+          il doit rester lisible sur les cinq couleurs de parti, dont l'orange de
+          Québec solidaire. */}
+      {mediaLabel && <span className="pochette-media">{mediaLabel}</span>}
+      {row.illustration ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="pochette-image" src={row.illustration} alt="" aria-hidden="true" />
+      ) : (
+        <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {/* Un filet crème borde chaque forme. Sans lui, elles se perdent quand
+              leur couleur approche celle du parti : le rouge du PLQ contre le
+              rouge du ton défavorable, le bleu du PQ contre celui de « Culture
+              et nationalisme ». */}
+          <circle className="forme-enjeu" cx="80" cy="18" r="44" vectorEffect="non-scaling-stroke" />
+          <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" vectorEffect="non-scaling-stroke" />
+        </svg>
+      )}
+      <b className="pochette-sigle">{row.label}</b>
+    </span>
+  );
+}
+
+/**
+ * LA JAUGE DE TON, reprise du module de l'Assemblée nationale.
+ *
+ * Même objet visuel que le « Ton en chambre » (`.ass-tone`) : une barre en
+ * dégradé, défavorable à gauche, favorable à droite, et un repère qui s'y
+ * déplace. Deux modules qui mesurent un ton doivent le montrer de la même
+ * façon, sinon le lecteur croit lire deux grandeurs différentes.
+ */
+function JaugeTon({ pct, title }: { pct: number; title?: string }) {
+  return (
+    <span className="pochette-ton" title={title}>
+      <span className="pochette-ton-repere" style={{ left: `${pct}%` }} />
+    </span>
+  );
+}
+
+/**
+ * LE BAC À VINYLES : toutes les pochettes, rangées par temps d'écoute.
+ *
+ * Pourquoi un bac plutôt que le dos des decks. La pochette vivait au verso du
+ * disque : il fallait retourner chaque deck l'un après l'autre pour comparer
+ * quoi que ce soit, et les partis en sourdine n'avaient pas de deck du tout,
+ * donc pas de pochette. Le bac les montre TOUS, côte à côte, dans l'ordre du
+ * temps d'écoute.
+ *
+ * Le classement est celui des MINUTES, pas de la part de voix : c'est la
+ * grandeur que le module publie et celle qui se cite.
+ *
+ * Au survol, les pochettes s'écartent comme on feuillette un bac de disquaire.
+ * C'est du CSS seul : aucun état, donc rien à désynchroniser.
+ */
+function BacAVinyles({
+  rows,
+  mediaLabel,
+  ouverte,
+  onOuvrir,
+  onFermer,
+}: {
+  rows: RowView[];
+  mediaLabel: string | null;
+  ouverte: PartyKey | null;
+  onOuvrir: (key: PartyKey) => void;
+  onFermer: () => void;
+}) {
+  // Le tri se fait sur les MINUTES. À égalité (deux partis à zéro, cas
+  // ordinaire quand la mesure ne détecte rien), on départage par le sigle pour
+  // que l'ordre ne saute pas d'un rendu à l'autre.
+  const triees = rows
+    .slice()
+    .sort((a, b) => b.minutesUne - a.minutesUne || a.label.localeCompare(b.label, "fr"));
+  const choisie = triees.find((r) => r.key === ouverte) ?? null;
+
+  return (
+    <section className="bac" aria-label="Bac à vinyles">
+      <p className="bac-tete">
+        Le bac, par temps d’écoute
+        <span className="bac-aide">cliquez une pochette pour l’ouvrir</span>
+      </p>
+
+      <ol className="bac-rangee">
+        {triees.map((row, i) => (
+          <li
+            className={`bac-case${row.key === ouverte ? " sortie" : ""}${row.inShadow ? " shadow" : ""}`}
+            key={row.key}
+            style={{ ["--i" as string]: i, ["--party" as string]: row.color }}
+          >
+            <button
+              type="button"
+              className="bac-pochette"
+              onClick={() => (row.key === ouverte ? onFermer() : onOuvrir(row.key))}
+              aria-expanded={row.key === ouverte}
+              title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
+            >
+              <PochetteArt row={row} mediaLabel={mediaLabel} />
+              {/* La TRANCHE, comme au dos d’un disque rangé : c’est elle qu’on
+                  lit quand les pochettes sont serrées les unes contre les
+                  autres. */}
+              <span className="bac-tranche">
+                <b>{row.label}</b>
+                <span>{formatDuree(row.minutesUne)}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      {choisie && <PochetteOuverte row={choisie} mediaLabel={mediaLabel} onFermer={onFermer} />}
+    </section>
+  );
+}
+
+/**
+ * LA POCHETTE OUVERTE, en double volet.
+ *
+ * À gauche l’illustration, à droite les quatre grandeurs que le module publie :
+ * temps en Une, part de temps, enjeu du parti, et le ton sur sa jauge. Ce sont
+ * exactement les chiffres qui vivaient au dos du deck, mais lisibles : le verso
+ * d’un disque de 4 cm ne pouvait porter ni libellé entier ni jauge.
+ */
+function PochetteOuverte({
+  row,
+  mediaLabel,
+  onFermer,
+}: {
+  row: RowView;
+  mediaLabel: string | null;
+  onFermer: () => void;
+}) {
+  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+
+  return (
+    <div className="gatefold" role="group" aria-label={`Pochette de ${row.fullLabel}`}>
+      <div className="gatefold-volet gatefold-volet--art">
+        <PochetteArt row={row} mediaLabel={mediaLabel} grande />
+      </div>
+
+      <div className="gatefold-volet gatefold-volet--info" style={{ ["--party" as string]: row.color }}>
+        <p className="gatefold-nom">
+          <span className="gatefold-rang">{row.rang}</span>
+          {row.fullLabel}
+        </p>
+
+        <dl className="gatefold-pistes">
+          <div>
+            <dt>Temps en Une</dt>
+            <dd className="gatefold-chiffre">{formatDuree(row.minutesUne)}</dd>
+          </div>
+          <div>
+            <dt>Part de temps</dt>
+            <dd className="gatefold-chiffre">{row.sovPct}\u00a0%</dd>
+          </div>
+          <div>
+            <dt>Enjeu du parti</dt>
+            <dd>{enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE)}</dd>
+          </div>
+          <div className="gatefold-ton">
+            <dt>Ton de la couverture</dt>
+            <dd>
+              <JaugeTon pct={row.tonePct} title={row.toneTitle} />
+              <span className="gatefold-ton-mot">{row.toneLabel}</span>
+            </dd>
+          </div>
+        </dl>
+
+        <button type="button" className="gatefold-fermer" onClick={onFermer}>
+          Refermer la pochette
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Deck({
   row,
   rang,
   indisponible,
   mediaLabel,
+  onSelect,
+  selectionne,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
@@ -569,8 +802,13 @@ function Deck({
    *  que le changement de disque ne se rejoue que sur un vrai changement de
    *  piste. */
   mediaLabel: string | null;
+  /** Sélectionner ce parti : sa pochette vient au premier plan du bac, en
+   *  dessous. Le deck ne se retourne plus — cf. le commentaire du bac. */
+  onSelect?: (key: PartyKey) => void;
+  /** Vrai quand c'est CE parti dont la pochette est sortie du bac. Le deck le
+   *  montre, sans quoi rien ne relierait le clic à ce qui bouge plus bas. */
+  selectionne?: boolean;
 }) {
-  const [ouverte, setOuverte] = useState(false);
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
    *  ce rang, deux partis s'étant partagé la dernière place en sourdine. */
@@ -610,14 +848,15 @@ function Deck({
   const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
   const ton = row.toneDirection;
 
-  /* Le survol du disque annonce ce qu'on va LIRE, pas seulement le geste :
-     « retourner » ne disait pas qu'il y a des chiffres derrière. */
-  const annonceDisque = ouverte
-    ? `Refermer la pochette de ${row.fullLabel} et revenir au disque`
+  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ. Le deck ne
+     se retourne plus : il sort une pochette du bac, plus bas. Sans le dire, le
+     clic paraîtrait sans effet — ce qui bouge n'est pas sous le doigt. */
+  const annonceDisque = selectionne
+    ? `${row.fullLabel} : sa pochette est déjà sortie du bac, plus bas`
     : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-      `Retournez le disque pour voir combien de temps ce parti a occupé la Une, ` +
-      `quelle part de la couverture il représente, et l'enjeu dont on parle le plus ` +
-      `à son sujet.`;
+      `Sortir sa pochette du bac, plus bas, pour voir combien de temps ce parti a ` +
+      `occupé la Une, quelle part de la couverture il représente, l'enjeu dont on ` +
+      `parle le plus à son sujet et le ton de cette couverture.`;
 
   const pistes: [string, string, string?][] = [
     ["Temps en Une", formatDuree(row.minutesUne)],
@@ -650,9 +889,9 @@ function Deck({
       <button
         key={row.key}
         type="button"
-        className={`deck-carre deck-carre--pivot${ouverte ? " retournee" : ""}`}
-        onClick={() => setOuverte((v) => !v)}
-        aria-expanded={ouverte}
+        className={`deck-carre${selectionne ? " deck-carre--choisi" : ""}`}
+        onClick={() => onSelect?.(row.key)}
+        aria-pressed={selectionne}
         aria-label={annonceDisque}
         title={annonceDisque}
       >
@@ -700,55 +939,6 @@ function Deck({
           </span>
         </span>
 
-        {/* Face arrière — la pochette. Le fond porte le ton, le pictogramme
-            l'enjeu de tête, et les trois pistes les chiffres à citer.
-            `aria-hidden` suit le retournement : les deux faces coexistent dans
-            le DOM, et sans cela un lecteur d'écran lirait celle qu'on ne voit
-            pas. */}
-        <span className="deck-face deck-face--pochette" aria-hidden={!ouverte}>
-          {/* L'illustration, à la manière des Unes : des à-plats géométriques
-              qui se chevauchent, en trois couleurs — le parti au fond, l'enjeu
-              et le ton en formes franches. L'acronyme se pose dessus. */}
-          <span className="pochette-art">
-            {/* Le média, en bandeau le long du haut. Fond d'encre et non
-                transparent : il doit rester lisible sur les cinq couleurs de
-                parti, dont l'orange de Québec solidaire. */}
-            {mediaLabel && <span className="pochette-media">{mediaLabel}</span>}
-            <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              {/* Un filet crème borde chaque forme. Sans lui, elles se perdent
-                  quand leur couleur approche celle du parti : le rouge du PLQ
-                  contre le rouge du ton défavorable, le bleu du PQ contre celui
-                  de « Culture et nationalisme ». `non-scaling-stroke` garde le
-                  filet d'épaisseur constante malgré le cadre déformé. */}
-              <circle className="forme-enjeu" cx="80" cy="18" r="44" vectorEffect="non-scaling-stroke" />
-              <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" vectorEffect="non-scaling-stroke" />
-            </svg>
-            <b className="pochette-sigle">{row.label}</b>
-          </span>
-
-          <span className="deck-pistes">
-            {pistes.map(([nom, valeur, court]) => (
-              <span className="deck-piste" key={nom}>
-                <span className="deck-piste-nom">
-                  {court ? (
-                    <>
-                      <span className="piste-long">{nom}</span>
-                      <span className="piste-court" aria-hidden="true">{court}</span>
-                    </>
-                  ) : (
-                    nom
-                  )}
-                </span>
-                {/* Les pointillés vivent ENTRE le titre et la valeur, comme au
-                    dos d'un disque, et non sous le titre. */}
-                <i className="deck-piste-fil" aria-hidden="true" />
-                <span className="deck-piste-val" title={valeur}>
-                  {valeur}
-                </span>
-              </span>
-            ))}
-          </span>
-        </span>
       </button>
 
       <p className="deck-nom">

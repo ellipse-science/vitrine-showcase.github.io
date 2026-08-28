@@ -8805,6 +8805,234 @@
   text-align: right;
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   LE BAC À VINYLES
+
+   Les pochettes ne vivent plus au dos des decks. Elles sont toutes ici, rangées
+   par temps d'écoute, y compris celles des partis en sourdine qui n'ont pas de
+   deck et n'avaient donc aucune pochette auparavant.
+
+   Au survol, la rangée s'écarte comme un bac de disquaire qu'on feuillette.
+   C'est du CSS seul : aucun état à tenir, donc rien à désynchroniser.
+   ─────────────────────────────────────────────────────────────────────────── */
+.bac {
+  margin: 22px 0 0;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--rule);
+  background: var(--paper-deep);
+}
+.bac-tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.bac-aide {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-softer);
+  text-transform: none;
+}
+
+/* La rangée. Les pochettes se CHEVAUCHENT au repos — c'est ce qui fait un bac
+   et non une grille — et s'écartent quand on le survole. */
+.bac-rangee {
+  display: flex;
+  align-items: flex-end;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.bac-case {
+  flex: 0 0 auto;
+  /* Le chevauchement : chaque pochette mord sur la précédente. */
+  margin-left: -38px;
+  transition: margin-left 180ms ease, transform 180ms ease;
+}
+.bac-case:first-child { margin-left: 0; }
+/* Au survol du BAC (pas de la pochette), tout s'écarte : on voit la rangée
+   entière avant de choisir. */
+.bac-rangee:hover .bac-case,
+.bac-rangee:focus-within .bac-case { margin-left: 6px; }
+.bac-rangee:hover .bac-case:first-child,
+.bac-rangee:focus-within .bac-case:first-child { margin-left: 0; }
+/* La pochette survolée sort du bac, comme une carte qu'on tire. */
+.bac-case:hover, .bac-case:focus-within { transform: translateY(-8px); }
+.bac-case.sortie { transform: translateY(-12px); }
+
+.bac-pochette {
+  display: block;
+  width: 132px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  background: none;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(28, 25, 23, 0.18);
+}
+.bac-case.sortie .bac-pochette { box-shadow: 5px 5px 0 var(--party, var(--ink-soft)); }
+/* En sourdine : présente, mais en retrait. Le parti dont on parle le moins a
+   sa pochette comme les autres, elle est simplement éteinte. */
+.bac-case.shadow .bac-pochette { opacity: 0.55; filter: saturate(0.5); }
+
+/* La TRANCHE, sous l'illustration : c'est elle qu'on lit quand les pochettes
+   sont serrées. Elle porte le sigle et la durée, jamais un pourcentage — le bac
+   est classé par temps d'écoute. */
+.bac-tranche {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 7px 6px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+.bac-tranche b { font-size: 11px; letter-spacing: 0.12em; }
+
+/* L'illustration remplit sa case, qu'elle soit une image générée ou la
+   composition géométrique de repli. */
+.pochette-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pochette-art--grande { aspect-ratio: 1 / 1; width: 100%; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LA POCHETTE OUVERTE, en double volet.
+   ─────────────────────────────────────────────────────────────────────────── */
+.gatefold {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 0;
+  margin-top: 18px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 6px 6px 0 rgba(28, 25, 23, 0.16);
+}
+.gatefold-volet { min-width: 0; }
+.gatefold-volet--art { border-right: 1px solid var(--ink); }
+.gatefold-volet--info {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 16px;
+}
+.gatefold-nom {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--party, var(--ink));
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.gatefold-rang {
+  flex: none;
+  min-width: 22px;
+  padding: 2px 0;
+  background: var(--party, var(--ink-soft));
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-align: center;
+}
+
+.gatefold-pistes { margin: 0; display: flex; flex-direction: column; gap: 11px; }
+.gatefold-pistes > div { min-width: 0; }
+.gatefold-pistes dt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.gatefold-pistes dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.gatefold-chiffre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+/* La jauge de ton, reprise du module de l'Assemblée (`.ass-tone`) : mêmes
+   couleurs, même repère. Deux modules qui mesurent un ton doivent le montrer de
+   la même façon. */
+.pochette-ton {
+  display: block;
+  height: 14px;
+  margin-top: 4px;
+  background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
+  position: relative;
+  border: 0.5px solid var(--rule);
+}
+.pochette-ton-repere {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  background: var(--ink);
+}
+.gatefold-ton-mot {
+  display: block;
+  margin-top: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.gatefold-fermer {
+  margin-top: auto;
+  padding-top: 14px;
+  align-self: flex-start;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  text-decoration: underline;
+}
+.gatefold-fermer:hover { color: var(--ink); }
+
+/* Le deck ne se retourne plus : il DÉSIGNE une pochette dans le bac. On le
+   montre, sinon rien ne relierait le clic à ce qui bouge plus bas. */
+.deck-carre--choisi { outline: 2px solid var(--party, var(--ink)); outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  /* Sur téléphone, la double pochette s'empile : deux volets côte à côte dans
+     375 px ne laisseraient ni à l'illustration ni aux chiffres de quoi se
+     lire. */
+  .gatefold { grid-template-columns: minmax(0, 1fr); }
+  .gatefold-volet--art { border-right: none; border-bottom: 1px solid var(--ink); }
+  .bac { padding: 12px 12px 14px; }
+  .bac-pochette { width: 108px; }
+  /* Les pochettes ne se chevauchent plus : au doigt, on ne « feuillette » pas,
+     on fait défiler. */
+  .bac-case, .bac-rangee:hover .bac-case { margin-left: 8px; }
+  .bac-case:first-child { margin-left: 0; }
+}
+
 .deck-nom {
   display: flex;
   align-items: center;

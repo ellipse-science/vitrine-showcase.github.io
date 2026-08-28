@@ -298,6 +298,29 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** URL de l'illustration générée pour cette pochette, quand elle existe.
+   *
+   *  MÊME CHAÎNE que l'illustration de la Une des Unes : un raffineur
+   *  l'engendre, la dépose sur R2, et le build la rapatrie dans
+   *  `public/data/generated-art/` (cf. `scripts/fetch_art.mjs`). Le site ne
+   *  l'appelle jamais à l'exécution.
+   *
+   *  Absente tant que ce raffineur n'existe pas : la pochette retombe alors sur
+   *  sa composition géométrique, qui porte déjà la couleur du parti, l'enjeu de
+   *  tête et le ton. Le repli est visible et assumé, jamais un carré vide. */
+  illustration?: string;
+  /** Position du ton sur une jauge de 0 à 100, pour le repère de la pochette
+   *  ouverte : 0 = défavorable, 50 = neutre, 100 = favorable.
+   *
+   *  MÊME OBJET VISUEL que le « Ton en chambre » du module de l'Assemblée
+   *  (`.ass-tone`) : une barre en dégradé et un repère qui s'y déplace. Deux
+   *  modules qui mesurent un ton doivent le montrer de la même façon, sinon le
+   *  lecteur croit lire deux grandeurs différentes.
+   *
+   *  L'échelle va de -1 à +1 et se borne : la proportion nette de mots
+   *  favorables ne sort pas de cet intervalle, et une valeur aberrante doit
+   *  buter contre le bord plutôt que sortir de la barre. */
+  tonePct: number;
   /** Minutes en Une attribuées à ce parti sur la période, arrondies.
    *
    *  Publiées telles quelles pour un palmarès : « la CAQ a occupé 2 h 15 de
@@ -1491,6 +1514,8 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
     // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
     const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots favorables\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
+    // Le ton report\u00e9 sur une jauge de 0 \u00e0 100, born\u00e9 : -1 \u2192 0, 0 \u2192 50, +1 \u2192 100.
+    const tonePct = Math.round(Math.min(1, Math.max(-1, unclamped)) * 50 + 50);
 
     const rawHistory =
       range === "week" ? stat.history.weekly : stat.history.week;
@@ -1532,6 +1557,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       toneLabel,
       toneDirection: streak.direction,
       toneTitle,
+      tonePct,
       sparkPolyline: polyline,
       sparkCircles: circles,
     };
