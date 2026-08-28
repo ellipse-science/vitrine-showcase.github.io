@@ -1,5 +1,11 @@
 [
   {
+    "pr": 613,
+    "date": "2026-08-28T14:54:30Z",
+    "note": "Le classement des partis affiche de nouveau le temps passé en Une lorsqu'on regarde l'ensemble des médias, et non plus seulement média par média. Sur téléphone, ce temps reste visible toute la journée.",
+    "version": null
+  },
+  {
     "pr": 592,
     "date": "2026-08-28T01:58:06Z",
     "note": "Les titres et les résumés du site respectent maintenant les règles d'espacement du français québécois. Concrètement, un guillemet ou un signe de pourcentage ne se retrouve plus tout seul au bout d'une ligne.",
