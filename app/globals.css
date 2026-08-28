@@ -8778,14 +8778,30 @@
    dit « rangé », pas la matière.
    ─────────────────────────────────────────────────────────────────────────── */
 .bac-boite {
+  /* Le format des disques, posé une seule fois : le côté d'une pochette et
+     l'épaisseur d'une tranche. Tout le reste (baie, couverture dépliée, place
+     de la légende) s'y accroche, si bien que le bloc mobile plus bas n'a que
+     ces deux nombres à changer. */
+  --pochette-cote: 168px;
+  --tranche: 12px;
   /* Trois côtés et un fond, OUVERTE par le haut : les pochettes en dépassent,
      comme dans une boîte trop pleine. */
   border: 1px solid var(--ink);
   border-top: none;
   background: var(--paper-deep);
-  padding: 26px 16px 16px;
-  margin-top: 20px;
-  /* La boîte épouse son contenu plutôt que de s'étirer sur toute la page. */
+  /* Hauteur de la CAISSE, plus courte que les disques : ils en dépassent par le
+     haut d'un bon quart, exactement comme dans un bac de disquaire. C'est ce
+     dépassement, plus que le cadre, qui donne l'échelle. La marge du haut lui
+     réserve la place, sinon le paquet remonterait sur le filet du titre. */
+  height: calc(var(--pochette-cote) * 0.74);
+  box-sizing: content-box;
+  padding: 0 20px 0;
+  margin-top: calc(var(--pochette-cote) * 0.36);
+  /* La boîte épouse son contenu, mais son contenu réserve une baie (cf.
+     `.bac-rangee`) : cinq tranches minces à gauche, puis la place exacte où la
+     couverture se dépliera. Deux essais écartés le 2026-08-28 : au plus juste
+     elle faisait 90 px, un code-barres perdu au bord d'une page de 1200 ; sur
+     toute la largeur elle était vide à 95 %, et rien ne disait pourquoi. */
   width: fit-content;
   max-width: 100%;
   /* `visible` et non `auto` : la couverture dépliée DÉBORDE de la boîte, comme
@@ -8795,73 +8811,97 @@
 }
 .bac-rangee {
   display: flex;
-  align-items: flex-start;
+  /* Les disques REPOSENT sur le fond de la caisse : ils sont alignés par le
+     bas, et c'est par le haut qu'ils dépassent. */
+  align-items: flex-end;
+  height: 100%;
   margin: 0;
-  padding: 0;
   list-style: none;
+  /* LA BAIE. La largeur d'une couverture, laissée libre à droite du paquet :
+     c'est là que la pochette se déplie au survol, sans jamais sortir de la
+     boîte. Le vide n'est donc pas du remplissage, c'est la place du disque
+     qu'on tire. */
+  padding-right: var(--pochette-cote);
+  padding-left: 0;
 }
 
-/* AU REPOS : QUE DES TRANCHES. La couverture n'est pas « recouverte par la
-   voisine » — elle est simplement absente tant qu'on ne la demande pas. C'est
-   la seule façon que TOUTES les pochettes soient à égalité : avec un simple
-   chevauchement, la première n'ayant personne devant elle montrait toujours sa
-   couverture entière. */
+/* AU REPOS : QUE DES TRANCHES, ET UNE TRANCHE DE 33 TOURS EST TRÈS MINCE.
+
+   Une pochette de 12 pouces fait 31 cm de côté pour 3 à 5 mm d'épaisseur, soit
+   environ 1 %. La version précédente lui en donnait 23 % : c'était un dos de
+   livre, pas un disque.
+
+   CONSÉQUENCE ASSUMÉE : à cette finesse, aucune tranche ne peut porter de
+   texte. C'est d'ailleurs le cas dans un vrai bac — on ne lit pas les tranches,
+   on feuillette. L'identification passe donc par la COULEUR, que le module
+   enseigne déjà partout ailleurs : le vumètre, les decks et le palmarès
+   emploient les mêmes cinq teintes. Le sigle et la durée restent dans le DOM
+   pour les lecteurs d'écran, et reviennent à l'écran dès qu'on déplie. */
 .bac-case {
   flex: 0 0 auto;
   position: relative;
-  width: 30px;
-  height: 132px;
+  width: var(--tranche);
+  height: var(--pochette-cote);
   z-index: calc(50 - var(--i, 0));
 }
-/* AU SURVOL : la pochette se découvre, par-dessus les tranches suivantes.
-   Rien ne se déplace, donc aucun voisin ne saute sous le curseur. */
 .bac-case:hover, .bac-case:focus-within, .bac-case.sortie { z-index: 100; }
 
 .bac-pochette {
   display: block;
   position: relative;
-  width: 30px;
-  height: 132px;
+  width: var(--tranche);
+  height: var(--pochette-cote);
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
 }
 
-/* LA TRANCHE : les 30 px toujours là. Le texte y court à la verticale, de bas
-   en haut, comme sur le dos d'un disque rangé debout. */
-.bac-legende {
+/* LA TRANCHE. Le carton vu par la tranche : la couleur du parti, assombrie, et
+   un liseré clair sur l'arête — c'est ce filet qui fait lire une épaisseur
+   plutôt qu'un trait. */
+.bac-tranche-carton {
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 0;
-  writing-mode: vertical-rl;
-  background: color-mix(in srgb, var(--party, #6E685F) 74%, var(--ink));
-  outline: 1px solid var(--ink);
+  /* Bords en PIXELS, pas en pourcentages : l'ombre du pli et le liseré de
+     l'arête gardent la même finesse quelle que soit l'épaisseur, si bien que la
+     tranche épaissie du mobile reste une tranche et ne devient pas une rayure. */
+  background: linear-gradient(90deg,
+    rgba(0, 0, 0, 0.34) 0 2px,
+    color-mix(in srgb, var(--party, #6E685F) 76%, var(--ink)) 2px calc(100% - 2px),
+    rgba(243, 236, 221, 0.42) calc(100% - 2px) 100%);
+  outline: 1px solid rgba(28, 25, 23, 0.5);
   outline-offset: -1px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: rgba(243, 236, 221, 0.8);
+  /* LE PAQUET PENCHE. Un bac à moitié plein ne tient jamais ses disques droits :
+     ils s'appuient sur la paroi de gauche. Quatre degrés suffisent — sur 132 px
+     de haut, le sommet se décale de 9 px, soit presque une tranche. C'est ce
+     détail-là, plus que l'épaisseur, qui fait reconnaître un bac au premier
+     coup d'œil. */
+  transform: skewX(-4deg);
+  transform-origin: bottom;
+  transition: transform 160ms ease;
 }
-.bac-legende b { font-size: 11px; letter-spacing: 0.2em; color: var(--paper); }
-.bac-case.shadow .bac-legende { filter: grayscale(0.8); }
+.bac-case.shadow .bac-tranche-carton { filter: grayscale(0.85); }
+/* Survolée, la tranche se REDRESSE et s'éclaircit : le geste de tirer un disque
+   du bac avant de le regarder. Sans ça, rien ne dit laquelle on tient. */
+.bac-case:hover .bac-tranche-carton,
+.bac-case:focus-within .bac-tranche-carton,
+.bac-case.sortie .bac-tranche-carton {
+  transform: skewX(0deg);
+  outline-color: var(--ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bac-tranche-carton { transition: none; }
+}
 
-/* LA COUVERTURE : cachée au repos, elle se déplie À DROITE de sa tranche. À
-   droite et non à gauche, sinon la première déborderait hors de la boîte. */
+/* LA COUVERTURE : cachée au repos, dépliée à droite de sa tranche. */
 .bac-pochette .pochette-art {
   position: absolute;
-  left: 30px;
+  left: var(--tranche);
   top: 0;
-  width: 132px;
-  height: 132px;
+  width: var(--pochette-cote);
+  height: var(--pochette-cote);
   overflow: hidden;
   outline: 1px solid var(--ink);
   outline-offset: -1px;
@@ -8875,6 +8915,39 @@
 .bac-case.sortie .bac-pochette .pochette-art { opacity: 1; visibility: visible; }
 .bac-case.shadow .bac-pochette .pochette-art { filter: grayscale(0.8); }
 .bac-pochette .pochette-sigle { display: none; }
+
+/* LA LÉGENDE revient AVEC la couverture, posée dessus. Au repos elle n'est plus
+   qu'un texte pour lecteurs d'écran. */
+.bac-legende {
+  position: absolute;
+  left: calc(var(--tranche) + 10px);
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(243, 236, 221, 0.8);
+}
+.bac-case:hover .bac-legende,
+.bac-case:focus-within .bac-legende,
+.bac-case.sortie .bac-legende { opacity: 1; visibility: visible; }
+.bac-legende b {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+}
 
 /* LA POCHETTE : une composition typographique, pas un pictogramme. Un aplat, un
    socle plus sombre, un seul accent, beaucoup de vide. Le vide est ce qui
@@ -8909,12 +8982,17 @@
 .gatefold-volet--art .pochette-sigle {
   position: absolute;
   left: 14px;
-  bottom: 12px;
+  /* Au-dessus du filet de ton, pas dessus : à 12 px le bas des lettres tombait
+     dans la bande et se perdait. */
+  bottom: 20px;
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 40px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  text-shadow: none;
+  /* En crème, comme sur la petite pochette du bac : le socle est sombre, un
+     sigle à l'encre s'y effaçait. */
+  color: var(--paper);
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.35);
 }
 .gatefold-volet--info {
   display: flex;
@@ -9027,11 +9105,19 @@
   .gatefold { grid-template-columns: minmax(0, 1fr); max-width: none; }
   .gatefold-volet--art { border-right: none; border-bottom: 0.5px solid var(--rule); }
   .gatefold-pistes { grid-template-columns: 1fr; }
-  /* Au doigt, on serre un peu moins : la boîte défile horizontalement. */
-  .bac-boite { padding: 20px 12px 12px; }
-  .bac-pochette .pochette-art { width: 112px; height: 112px; }
-  .bac-case, .bac-pochette { height: 112px; }
-  .bac-boite { padding: 20px 12px 12px; }
+  /* Deux nombres suffisent : tranches, couverture, baie et légende s'y
+     accrochent tous. Au doigt, une tranche de 12 px serait trop fine à viser —
+     on l'épaissit jusqu'à une cible tactile décente, la fidélité cédant à
+     l'usage. La pochette rétrécit pour que paquet + baie tiennent dans 375 px
+     sans débordement horizontal. */
+  .bac-boite {
+    --pochette-cote: 124px;
+    --tranche: 22px;
+    /* Seules les MARGES LATÉRALES changent : le haut et le bas restent à zéro,
+       sinon les disques ne reposeraient plus sur le fond de la caisse. */
+    padding-left: 12px;
+    padding-right: 12px;
+  }
 }
 
 .deck-nom {

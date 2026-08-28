@@ -718,6 +718,8 @@ function BacAVinyles({
                 aria-expanded={row.key === ouverte}
                 title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
               >
+                {/* La tranche du carton, seule chose visible au repos. */}
+                <span className="bac-tranche-carton" aria-hidden="true" />
                 <PochetteArt row={row} mediaLabel={mediaLabel} />
                 {/* La légende POSÉE SUR la pochette, dans la bande toujours
                     visible malgré le chevauchement. Sous la pochette, elle se
