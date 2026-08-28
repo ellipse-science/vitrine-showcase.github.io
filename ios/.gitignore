@@ -1,0 +1,11 @@
+# Artefact de génération : reconstruit par `xcodegen generate`, jamais versionné.
+# C'est tout l'intérêt de décrire le projet dans project.yml.
+Vitrine.xcodeproj/
+Vitrine.xcworkspace/
+
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+.DS_Store
