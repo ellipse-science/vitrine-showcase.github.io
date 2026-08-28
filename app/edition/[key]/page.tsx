@@ -144,11 +144,9 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
         <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
 
-      {!isProdEnv && (
-        <div id="assemblee-nationale" data-section="Assemblée nationale">
-          <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
-        </div>
-      )}
+      <div id="assemblee-nationale" data-section="Assemblée nationale">
+        <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
+      </div>
 
       <nav className="archive-pager" aria-label="Naviguer entre les éditions">
         {older

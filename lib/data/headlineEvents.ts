@@ -2450,6 +2450,65 @@ async function loadIssueScores(
   } catch { return null; }
 }
 
+/** Agrège les scores des douze enjeux pour un tag donné. */
+function aggregateForTag(
+  rows: Array<Record<string, unknown>>,
+  tag: string,
+): Record<string, number> {
+  const tagRows = rows.filter((r) => (r.tag as string) === tag);
+  return ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
+    acc[key] = tagRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
+    return acc;
+  }, {});
+}
+
+/** Repère de comparaison pour la croissance de saillance : la publication
+ *  précédente dont les scores DIFFÈRENT vraiment de ceux du bloc courant.
+ *
+ *  POURQUOI SAUTER DES TAGS. Le raffineur republie parfois un bloc déjà publié
+ *  sous un nouveau tag sans que les scores bougent : il repasse pour régénérer
+ *  les libellés d'`issues_meta`, qui sortent d'un LLM et changent de
+ *  formulation à chaque appel, alors que les articles sous-jacents n'ont pas
+ *  avancé. Les deux tags portent alors la MÊME période (date_utc,
+ *  date_montreal_tz, pass) et exactement les mêmes scores.
+ *
+ *  Comparer l'un à l'autre revient à comparer une mesure à elle-même : la
+ *  croissance vaut 0 sur les douze enjeux à la fois et le module affiche
+ *  « 0,0 % » partout, sans une seule flèche — ce qui se lit comme une panne
+ *  plutôt que comme une mesure. Vu en production le 2026-08-26 : les tags
+ *  « 2026-08-26 11:37 » et « 2026-08-26 07:36 » ne différaient que par
+ *  `issues_meta`, au caractère près sur les 12 colonnes de score.
+ *
+ *  Ce n'est PAS un élargissement de la fenêtre de comparaison : sur les 20
+ *  derniers tags publiés, 18 fois sur 19 le tag immédiatement précédent diffère
+ *  déjà et la boucle s'arrête au premier tour. Elle ne saute que la
+ *  republication.
+ *
+ *  `found: false` (aucun repère distinct) signifie qu'il n'y a RIEN à comparer.
+ *  L'appelant doit alors afficher une absence, pas un zéro. */
+export function previousDistinctAggregate(
+  rows: Array<Record<string, unknown>>,
+  latestTag: string,
+  currentAggregate: Record<string, number>,
+): { aggregate: Record<string, number>; found: boolean } {
+  if (!latestTag) return { aggregate: {}, found: false };
+
+  const sameScores = (a: Record<string, number>, b: Record<string, number>) =>
+    ISSUE_KEYS.every((key) => (a[key] ?? 0) === (b[key] ?? 0));
+
+  const earlierTags = Array.from(new Set(rows.map((r) => (r.tag as string) ?? "")))
+    .filter((t) => t.length > 0 && t < latestTag)
+    .sort((a, b) => b.localeCompare(a));
+
+  for (const tag of earlierTags) {
+    const candidate = aggregateForTag(rows, tag);
+    if (!sameScores(currentAggregate, candidate)) {
+      return { aggregate: candidate, found: true };
+    }
+  }
+  return { aggregate: {}, found: false };
+}
+
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
   if (rows.length === 0) return null;
   return rows.slice().sort((a, b) => {
@@ -2645,14 +2704,9 @@ export async function loadTreemap(
     }, {});
 
     // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
-    const prevRows = latestTag ? rows.filter((r) => (r.tag as string) !== latestTag) : [];
-    const prevLatest = prevRows.length > 0 ? latestIssueRow(prevRows) : null;
-    const prevTag = prevLatest ? ((prevLatest.tag as string) ?? "") : "";
-    const prevPeriodRows = prevTag ? prevRows.filter((r) => (r.tag as string) === prevTag) : [];
-    const prevAggregated = ISSUE_KEYS.reduce<Record<string, number>>((acc, key) => {
-      acc[key] = prevPeriodRows.reduce((s, r) => s + ((r[key] as number) ?? 0), 0);
-      return acc;
-    }, {});
+    // Les republications sont sautées : voir previousDistinctAggregate.
+    const { aggregate: prevAggregated, found: prevFound } =
+      previousDistinctAggregate(rows, latestTag, aggregated);
 
     const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
@@ -2678,8 +2732,8 @@ export async function loadTreemap(
         articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [] }];
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
-      const velocity = score > prevScore ? 1 : score < prevScore ? -1 : 0;
-      const growth = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
+      const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
+      const growth = prevFound && prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
       return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles };
     });
 

@@ -1,5 +1,77 @@
 [
   {
+    "pr": 608,
+    "date": "2026-08-27T20:52:29Z",
+    "note": "Le module « L'alignement de l'Assemblée nationale » sort du rodage et devient visible en production. Les visiteurs y retrouvent la répartition des enjeux, le ton et le parcours parlementaire de chaque député·e.",
+    "version": null
+  },
+  {
+    "pr": 605,
+    "date": "2026-08-27T19:45:52Z",
+    "note": "Quand le classement des partis n'a pas encore assez de données pour être affiché, le site explique désormais pourquoi au lieu de laisser un vide. Le sélecteur de source ne propose plus que les six médias québécois suivis.",
+    "version": null
+  },
+  {
+    "pr": 606,
+    "date": "2026-08-27T19:33:50Z",
+    "note": "Le site affichait parfois une édition plus ancienne que la dernière disponible après une mise en ligne. Il utilise désormais les données les plus récentes dans tous les cas.",
+    "version": "2.31.0-beta.3"
+  },
+  {
+    "pr": 604,
+    "date": "2026-08-27T19:31:20Z",
+    "note": "Le module « parcours des députés » ne s'affichait pas malgré un composant et une entrée `tables.json` en place : la liste blanche du Worker, qui a remplacé la lecture de `tables.json` le 2026-08-19, n'avait jamais été mise à jour.",
+    "version": null
+  },
+  {
+    "pr": 602,
+    "date": "2026-08-27T11:18:02Z",
+    "note": "Le module « De quoi parle-t-on ? » affichait des variations de 0,0 % sur toutes les catégories quand les données venaient d'être republiées sans changement. Il compare désormais à la dernière mesure réellement différente.",
+    "version": "2.31.0-beta.2"
+  },
+  {
+    "pr": 600,
+    "date": "2026-08-27T00:20:33Z",
+    "note": "Des vérifications supplémentaires sont ajoutées en coulisses pour détecter plus tôt les pannes de mise à jour des données.",
+    "version": null
+  },
+  {
+    "pr": 599,
+    "date": "2026-08-26T23:46:01Z",
+    "note": "L'accès aux données brutes du site est désormais réservé : seules les pages publiques restent ouvertes à tous.",
+    "version": null
+  },
+  {
+    "pr": 595,
+    "date": "2026-08-26T20:53:09Z",
+    "note": "La préparation du site puise désormais les données dans une copie déposée à chaque rafraîchissement, au lieu d'interroger la base à chaque publication. Rien ne change à l'affichage ni à la fraîcheur des données.",
+    "version": null
+  },
+  {
+    "pr": 593,
+    "date": "2026-08-26T18:38:26Z",
+    "note": "Section inchangée — fichier généré, aucun changement visiteur.",
+    "version": null
+  },
+  {
+    "pr": 580,
+    "date": "2026-08-26T18:33:54Z",
+    "note": "Rien ne change sur le site. La documentation technique de nos pipelines est mise à jour pour décrire de nouvelles données qui mesurent, média par média, la place accordée à chaque parti politique.",
+    "version": null
+  },
+  {
+    "pr": 596,
+    "date": "2026-08-26T17:58:45Z",
+    "note": "Mise à jour des pages techniques qui expliquent quand et comment les données du site sont mises à jour. Elles précisent que deux traitements de la section Assemblée restent actifs seulement en environnement de développement.",
+    "version": null
+  },
+  {
+    "pr": 590,
+    "date": "2026-08-26T17:21:00Z",
+    "note": "Rien ne change sur le site : cette mise à jour ajoute un mécanisme interne pour publier plus facilement les améliorations du service qui alimente le site en données.",
+    "version": null
+  },
+  {
     "pr": 589,
     "date": "2026-08-26T16:58:00Z",
     "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle décrive fidèlement la façon dont les éditions sont préparées et mises en ligne.",

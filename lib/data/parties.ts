@@ -20,7 +20,7 @@ import { readDatasetText } from "@/lib/data/source";
 
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
-import { MEDIA_LABELS } from "@/lib/medias";
+import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -337,7 +337,7 @@ export type ChartView = {
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
   /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
-  raison?: "court" | "sans-detail-horaire" | "detail-horaire-absent";
+  raison?: "court" | "detail-horaire-absent";
   /** Graduations de l'axe des minutes, pour le palmarès. */
   yLabels: { label: string; y: number }[];
 };
@@ -1507,30 +1507,27 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     periodeLabel: libellePeriode(range, dates.daily),
     depuisLabel: libelleDepuis(range, dates.daily),
     rows,
-    // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
-    // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
-    // fine.
     // Vue JOUR sans détail horaire : on ne trace RIEN.
     //
     // `buildChart` sait tracer des jours, pas des heures : son axe couvre toute
     // la fenêtre du suivi, et les six repères horaires d'une seule journée s'y
     // écrasaient dans les 12 % de droite (mesuré : 00h à 79,9 et 20h à 91 sur un
-    // axe de 91). C'est exactement ce qui arrivait dès qu'on bougeait le fader,
-    // la table intra-journée n'étant PAS ventilée par média.
+    // axe de 91). Un axe faux est pire qu'un axe absent : il se lit comme une
+    // mesure.
     //
-    // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
-    // `chartJour` vaut `undefined` pour une vue PAR MÉDIA (l'appelant ne le
-    // passe pas) et `null` pour l'agrégat quand la table intra-journée manque.
-    // Les deux cas ne se disent pas de la même façon : dans le premier le
-    // détail existe ailleurs, dans le second il n'existe pas encore.
+    // UNE SEULE raison publiée pour les deux chemins qui mènent ici :
+    // `chartJour` à `null` (agrégat, table intra-journée manquante ou réduite à
+    // un bloc) et à `undefined` (vue PAR MÉDIA, l'appelant ne le passe pas).
+    // Ils portaient deux raisons distinctes, dont `sans-detail-horaire` pour la
+    // seconde — que rien ne pouvait afficher : le palmarès lit TOUJOURS
+    // l'agrégat, donc une vue par média n'atteint aucun rendu. Distinguer deux
+    // cas dont un seul se voit, c'est se donner une garantie qu'on n'a pas.
     chart:
       range === "today"
         ? chartJour ?? {
             ...buildChart(stats, dates, range),
             tooShort: true,
-            raison: chartJour === null
-              ? ("detail-horaire-absent" as const)
-              : ("sans-detail-horaire" as const),
+            raison: "detail-horaire-absent" as const,
           }
         : buildChart(stats, dates, range),
   };
@@ -1718,7 +1715,17 @@ export async function loadParties(
     const byMedia: Record<string, MediaView> = {};
 
     if (mDay && mWeek && mMonth) {
-      const ids = [...new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x))].sort();
+      // C'EST LE PANEL QUI DÉCIDE, pas la donnée. La table publie tout le
+      // corpus — CBC, CNN, Fox News, sans colonne de pays pour les écarter —
+      // alors que le module porte sur des partis PROVINCIAUX. On part donc des
+      // six médias québécois et on ne garde que ceux qui ont une ligne, plutôt
+      // que de prendre tous les `media_id` rencontrés (cf. `MEDIA_PANEL_QC`).
+      //
+      // L'ordre est celui du panel, et non alphabétique : c'est celui des crans
+      // du fader, et le `sort()` d'avant ne servait qu'à rendre la sortie
+      // déterministe — le panel l'est déjà.
+      const publies = new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x));
+      const ids = MEDIA_PANEL_QC.filter((id) => publies.has(id));
       for (const id of ids) {
         const parMedia = (rows: ShadowRow[] | null) =>
           upTo((rows ?? []).filter((r) => r.media_id === id));

@@ -552,8 +552,8 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 25 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
-        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong>, le seul en service.</p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 26 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> restent DEV-only (actifs en DEV, inactifs en PROD).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
              Deux lectures du même système. «&nbsp;Par module&nbsp;» répond à «&nbsp;d'où vient ce
@@ -1164,7 +1164,7 @@
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
-                    15 tables du datamart
+                    21 tables du datamart
                     <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes</div>
                     <div class="info-badge">📋 Cliquer pour liste complète</div>
                 </div>
@@ -1224,13 +1224,13 @@
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
-                    15 tables du datamart
+                    21 tables du datamart
                     <div class="node-detail">Mêmes tables et filtres de rétention que <code>scripts/tables.json</code></div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner">
                     sync-athena (Worker)
-                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 15 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
+                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 19 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
                     <div class="node-schedule">⏰ 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 + filet :10 (Montréal)</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1241,7 +1241,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-output">
                     Deploy Hooks Cloudflare (prod + dev)
-                    <div class="node-detail">Déclenchés seulement quand les 15 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
+                    <div class="node-detail">Déclenchés seulement quand les 21 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
                 </div>
             </div>
             <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #4A90E2;background:rgba(74,144,226,.07);font-size:.9em;line-height:1.5">
@@ -1541,9 +1541,9 @@
                         'threshold - Seuil d\'éclipse (0.02).'
                     ],
                     details: [
-                        '📋 9 tables publiées : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu)',
+                        '📋 15 tables publiées (aws-refiners#324) : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date)',
                         '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
-                        '🌐 Consommées par la Vitrine : les <strong>5 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday et parties_issues_salient_shadow_day — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 4 fédérales (day/week/month, _intraday) sont produites mais non lues.'
+                        '🌐 Consommées par la Vitrine : les <strong>8 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday, parties_issues_salient_shadow_day et _by_media_day/week/month (branchées par vitrine#585, panel québécois appliqué par aws-refiners#407) — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 7 fédérales (day/week/month, _intraday, _by_media_day/week/month) sont produites mais non lues.'
                     ]
                 },
                 'parties_score_legacy': {
@@ -1793,7 +1793,7 @@
                     ]
                 },
                 'all-final-tables': {
-                    title: 'Entrée : les 15 tables que la Vitrine consomme',
+                    title: 'Entrée : les 21 tables que la Vitrine consomme',
                     description: 'Liste blanche tenue dans scripts/tables.json (dépôt vitrine). Elle fixe les tables ET les colonnes projetées : ce qui n\'y est pas n\'est jamais lu. Audit du 2026-08-02.',
                     columns: [
                         'vitrine_datamart-issues_score_day / _week / _month',
@@ -2381,7 +2381,8 @@
                         '📤 OUTPUT: fichiers JSON dans <code>public/data/</code>, commités sur la branche <code>main</code>',
                         '',
                         '⚙️ TRAITEMENT:',
-                        '• Liste blanche <code>scripts/tables.json</code> : 15 tables activées, chacune avec ses colonnes',
+                        '• Liste blanche <code>scripts/tables.json</code> : 21 tables activées, chacune avec ses colonnes',
+                        '• Le Worker (<code>workers/api/src/tables.ts</code>) garde une copie manuelle PARTIELLE de cette liste (19 tables) : un écart avec les 21 ci-dessus est attendu, pas une dérive à corriger — manquent encore agora_decideurs_qc_affiliations et parties_issues_salient_shadow_day, jamais répercutées côté Worker (voir vitrine#585)',
                         '• Projection colonne par colonne AVANT écriture (protège des dérives de type Parquet/Glue)',
                         '• Filtres spécifiques par table (ex. fenêtre 14 jours pour headline_events_4h, qui alimente aussi la navigation dans les éditions passées)',
                         '• Calcule <code>salience_calibration.json</code> : percentiles p5/p20/p50/p80/p95 de score_qc, score_roc et interval_convergence_score sur 365 jours glissants',
