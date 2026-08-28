@@ -8788,7 +8788,10 @@
   /* La boîte épouse son contenu plutôt que de s'étirer sur toute la page. */
   width: fit-content;
   max-width: 100%;
-  overflow-x: auto;
+  /* `visible` et non `auto` : la couverture dépliée DÉBORDE de la boîte, comme
+     un disque qu'on tire du bac. Avec `overflow-x: auto` elle se faisait
+     couper net au bord. */
+  overflow: visible;
 }
 .bac-rangee {
   display: flex;
@@ -8797,83 +8800,81 @@
   padding: 0;
   list-style: none;
 }
+
+/* AU REPOS : QUE DES TRANCHES. La couverture n'est pas « recouverte par la
+   voisine » — elle est simplement absente tant qu'on ne la demande pas. C'est
+   la seule façon que TOUTES les pochettes soient à égalité : avec un simple
+   chevauchement, la première n'ayant personne devant elle montrait toujours sa
+   couverture entière. */
 .bac-case {
   flex: 0 0 auto;
-  /* Elles se serrent, comme des disques rangés — mais la bande visible reste
-     assez large pour porter le sigle et la durée. */
-  margin-left: -46px;
-  transition: transform 180ms ease;
   position: relative;
+  width: 30px;
+  height: 132px;
   z-index: calc(50 - var(--i, 0));
 }
-.bac-case:first-child { margin-left: 0; }
-/* Sortir une pochette de la boîte : elle monte. Rien d'autre ne bouge. */
-.bac-case:hover, .bac-case:focus-within { transform: translateY(-10px); z-index: 100; }
-.bac-case.sortie { transform: translateY(-16px); z-index: 100; }
+/* AU SURVOL : la pochette se découvre, par-dessus les tranches suivantes.
+   Rien ne se déplace, donc aucun voisin ne saute sous le curseur. */
+.bac-case:hover, .bac-case:focus-within, .bac-case.sortie { z-index: 100; }
 
 .bac-pochette {
   display: block;
-  width: 132px;
+  position: relative;
+  width: 30px;
+  height: 132px;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
-  text-align: left;
-  position: relative;
 }
-.bac-pochette .pochette-art {
-  display: block;
-  position: relative;
-  width: 132px;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  /* LE BORD DU CARTON, à gauche : c'est lui qui sépare une pochette de sa
-     voisine. Sans lui, cinq pochettes serrées se lisaient comme une seule bande
-     de couleur — et deux partis de même famille, les bleus de la CAQ et du PQ,
-     se confondaient franchement. */
-  border-left: 2px solid var(--paper-deep);
-  outline: 1px solid var(--ink);
-  outline-offset: -1px;
-}
-.bac-case:first-child .bac-pochette .pochette-art { border-left: none; }
-.bac-case.shadow .bac-pochette .pochette-art { filter: grayscale(0.8); }
 
-/* Le sigle du composant partagé est masqué DANS LA BOÎTE : la légende
-   ci-dessous le porte déjà. Sans cette règle il s'affichait en double, et le
-   second, trop grand, débordait sur la pochette voisine. */
-.bac-pochette .pochette-sigle { display: none; }
-
-/* La légende tient dans la BANDE VISIBLE, celle que la pochette suivante ne
-   recouvre pas : 132 px de pochette moins 46 px de chevauchement, soit 86.
-   Étalée sur toute la largeur, sa moitié droite passait sous la voisine et la
-   durée se faisait couper. */
+/* LA TRANCHE : les 30 px toujours là. Le texte y court à la verticale, de bas
+   en haut, comme sur le dos d'un disque rangé debout. */
 .bac-legende {
   position: absolute;
-  /* À DROITE, et non à gauche. Les pochettes de devant recouvrent le côté
-     GAUCHE des suivantes : c'est leur bande droite qui reste visible. Posée à
-     gauche, la légende disparaissait sous la voisine — seule la première
-     s'affichait. */
-  right: 10px;
-  bottom: 10px;
-  width: 66px;
+  inset: 0;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 0;
+  writing-mode: vertical-rl;
+  background: color-mix(in srgb, var(--party, #6E685F) 74%, var(--ink));
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 8.5px;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(243, 236, 221, 0.78);
+  white-space: nowrap;
+  color: rgba(243, 236, 221, 0.8);
 }
-.bac-legende b {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 23px;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 1;
-  color: var(--paper);
+.bac-legende b { font-size: 11px; letter-spacing: 0.2em; color: var(--paper); }
+.bac-case.shadow .bac-legende { filter: grayscale(0.8); }
+
+/* LA COUVERTURE : cachée au repos, elle se déplie À DROITE de sa tranche. À
+   droite et non à gauche, sinon la première déborderait hors de la boîte. */
+.bac-pochette .pochette-art {
+  position: absolute;
+  left: 30px;
+  top: 0;
+  width: 132px;
+  height: 132px;
+  overflow: hidden;
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease;
+  pointer-events: none;
 }
+.bac-case:hover .bac-pochette .pochette-art,
+.bac-case:focus-within .bac-pochette .pochette-art,
+.bac-case.sortie .bac-pochette .pochette-art { opacity: 1; visibility: visible; }
+.bac-case.shadow .bac-pochette .pochette-art { filter: grayscale(0.8); }
+.bac-pochette .pochette-sigle { display: none; }
 
 /* LA POCHETTE : une composition typographique, pas un pictogramme. Un aplat, un
    socle plus sombre, un seul accent, beaucoup de vide. Le vide est ce qui
@@ -9028,9 +9029,9 @@
   .gatefold-pistes { grid-template-columns: 1fr; }
   /* Au doigt, on serre un peu moins : la boîte défile horizontalement. */
   .bac-boite { padding: 20px 12px 12px; }
-  .bac-pochette, .bac-pochette .pochette-art { width: 112px; }
-  .bac-case { margin-left: -38px; }
-  .bac-case:first-child { margin-left: 0; }
+  .bac-pochette .pochette-art { width: 112px; height: 112px; }
+  .bac-case, .bac-pochette { height: 112px; }
+  .bac-boite { padding: 20px 12px 12px; }
 }
 
 .deck-nom {
