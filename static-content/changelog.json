@@ -1,5 +1,11 @@
 [
   {
+    "pr": 592,
+    "date": "2026-08-28T01:58:06Z",
+    "note": "Les titres et les résumés du site respectent maintenant les règles d'espacement du français québécois. Concrètement, un guillemet ou un signe de pourcentage ne se retrouve plus tout seul au bout d'une ligne.",
+    "version": null
+  },
+  {
     "pr": 608,
     "date": "2026-08-27T20:52:29Z",
     "note": "Le module « L'alignement de l'Assemblée nationale » sort du rodage et devient visible en production. Les visiteurs y retrouvent la répartition des enjeux, le ton et le parcours parlementaire de chaque député·e.",
