@@ -176,7 +176,53 @@ type IssueRow = {
   weighted_tone: number;
   date_utc: string;
   date_montreal_tz?: string;
+  /** Instant UTC exact du calcul. C'est LUI qui donne la date de Montréal —
+   *  voir `dateMontreal()`. */
+  computed_at?: string;
 };
+
+/**
+ * La date de MONTRÉAL d'un relevé, déduite de `computed_at`.
+ *
+ * ⚠️ NE PAS se fier à `date_montreal_tz` : la colonne porte ce nom mais contient
+ * la date UTC. Le raffineur écrit `as.Date(now_mtl)`, or `as.Date()` sur un
+ * horodatage R IGNORE son fuseau et retombe sur UTC. Vérifié :
+ *
+ *   as.Date(ymd_hms("2026-08-27 23:31:12", tz = "America/Montreal"))
+ *     → 2026-08-28        (et non le 27)
+ *
+ * Tout relevé calculé entre 20 h et minuit heure de Montréal est donc classé au
+ * LENDEMAIN — un bloc de 4 h sur six, systématiquement. Constaté dans Athena le
+ * 2026-08-28 : le bloc « 20h » calculé à 03h31 UTC, soit 23h31 à Montréal le 27,
+ * portait `date_montreal_tz = 2026-08-28`. La courbe du jour mélangeait alors la
+ * soirée de la veille et le matin courant, avec le point de 20h posé à l'extrême
+ * droite de l'axe alors qu'il PRÉCÈDE celui de 4h.
+ *
+ * On corrige ICI et non dans le raffineur (décision du 2026-08-28) : la colonne
+ * reste telle quelle en base, le site recalcule depuis `computed_at`, qui est un
+ * instant UTC exact. Même fuseau que `aujourdhuiMontreal()`, pour que les deux
+ * ne puissent pas diverger.
+ *
+ * Repli sur les colonnes publiées quand `computed_at` manque — une archive
+ * antérieure à son introduction, par exemple. Le repli est alors décalé comme
+ * avant, ce qui reste préférable à une date vide.
+ */
+function dateMontreal(row: {
+  computed_at?: string;
+  date_montreal_tz?: string;
+  date_utc?: string;
+}): string {
+  const quand = row.computed_at ? Date.parse(row.computed_at) : NaN;
+  if (!Number.isNaN(quand)) {
+    return new Intl.DateTimeFormat("fr-CA", {
+      timeZone: "America/Toronto",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(quand));
+  }
+  return String(row.date_montreal_tz ?? row.date_utc ?? "");
+}
 
 type Entry = { mentions: number; tone: number; minutes: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
@@ -900,8 +946,8 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  */
 function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
   if (rows.length === 0) return null;
-  const dernierJour = rows.map((r) => String(r.date_montreal_tz ?? r.date_utc)).sort().at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc) === dernierJour);
+  const dernierJour = rows.map(dateMontreal).sort().at(-1);
+  const duJour = rows.filter((r) => dateMontreal(r) === dernierJour);
   const blocs = [...new Set(duJour.map((r) => Number(r.block_hour)))].sort((a, b) => a - b);
   if (blocs.length <= 1) return null;
 
@@ -1315,11 +1361,8 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   const vide: EnjeuMix = { enjeux: [], parParti: {} };
   if (rows.length === 0) return vide;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
+  const duJour = rows.filter((r) => dateMontreal(r) === dernier);
   if (duJour.length === 0) return vide;
 
   const parParti: EnjeuMix["parParti"] = {};
@@ -1358,17 +1401,12 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
 
   for (const key of PARTY_KEYS) {
     const siens = rows
       .filter(
-        (r) =>
-          String(r.party ?? "").toLowerCase() === key &&
-          String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier,
+        (r) => String(r.party ?? "").toLowerCase() === key && dateMontreal(r) === dernier,
       )
       .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
       .slice(0, 5);
@@ -1596,6 +1634,8 @@ export const __test__ = {
   samplePoints,
   buildRangeView,
   buildChart,
+  buildChartIntraday,
+  dateMontreal,
   axisTop,
   detecterIndisponibilite,
   lundiDeLaSemaine,
