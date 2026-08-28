@@ -537,11 +537,8 @@
     <p class="metho-body">En parallèle des captures de pages frontales, le système extrait le contenu textuel (titre, corps, auteur·e, source) des articles publiés par ces mêmes médias. Ces articles alimentent les modules de couverture par enjeux et par partis politiques.</p>
 
     <h3>Extraction des entités nommées</h3>
-    <p class="metho-body">Les objets présents dans les manchettes (personnes, enjeux, institutions, lieux) sont identifiés par deux modèles d'intelligence artificielle&nbsp;:</p>
-    <ul class="metho-list">
-      <li><strong>GLiNER</strong>&nbsp;: modèle de reconnaissance d'entités nommées (NER) appliqué directement au texte des manchettes.</li>
-      <li><strong>Gemma 3</strong>&nbsp;: grand modèle de langage (LLM) utilisé pour normaliser les entités en français et en anglais (ex.&nbsp;: «&nbsp;Trudeau&nbsp;» et «&nbsp;Justin Trudeau&nbsp;» renvoient au même objet).</li>
-    </ul>
+    <p class="metho-body">Les objets présents dans les manchettes (personnes, enjeux, institutions, lieux) sont identifiés par un grand modèle de langage, <strong>GPT-4o</strong>, appliqué au texte des manchettes. C'est cette extraction qui alimente l'indice de saillance publié sur ce site.</p>
+    <p class="metho-body">Une seconde chaîne est en développement pour la remplacer, fondée sur des modèles ouverts que nous hébergeons nous-mêmes&nbsp;: <strong>GLiNER</strong> pour la reconnaissance d'entités nommées, et <strong>Gemma&nbsp;3</strong> pour normaliser les entités en français et en anglais (ex.&nbsp;: «&nbsp;Trudeau&nbsp;» et «&nbsp;Justin Trudeau&nbsp;» renvoient au même objet). Elle est évaluée, mais <strong>elle n'est pas en service</strong>&nbsp;: aucune donnée publiée ici n'en provient. <em>(État vérifié le 27 août 2026.)</em></p>
     <p class="metho-body">La performance des modèles est évaluée régulièrement par comparaison à environ 1 500 phrases annotées manuellement.</p>
   </section>
 
@@ -836,7 +833,7 @@
     <p class="metho-body">Les pages d'accueil ne constituent qu'une fraction de la production journalistique. Certains sujets font l'objet d'une couverture approfondie sans jamais atteindre la une. L'indice mesure la <em>visibilité frontale</em>, pas l'ensemble de la couverture.</p>
 
     <h3>3 · Imperfections des modèles d'IA</h3>
-    <p class="metho-body">GLiNER et Gemma 3 peuvent produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
+    <p class="metho-body">Le modèle d'extraction peut produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
 
     <h3>4 · Limites des dictionnaires de sentiment</h3>
     <p class="metho-body">L'approche par dictionnaire ne capte pas l'ironie, le sarcasme ou les nuances contextuelles. La valence d'un mot peut varier fortement selon la phrase qui l'entoure.</p>
