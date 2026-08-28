@@ -41,9 +41,15 @@ export function formatDateFr(dateStr: string): string {
  * qui ont une granularité horaire (headline_events_4h → Une, Deux solitudes) :
  * 16 → « , 16h » ; 24 → « , minuit ». Heure compacte « 4h » (pas « 4 h ») :
  * l'indicateur est rendu en mono-majuscules et l'espace donnait « 4 H », jugé
- * laid — format 24 h, pas de am/pm. Les tables journalières/hebdo (partis,
- * enjeux, assemblée, polimètre) n'affichent que la date — l'heure n'existe pas
- * dans leur donnée.
+ * laid — format 24 h, pas de am/pm.
+ *
+ * Le module des PARTIS le fournit aussi depuis 2026-08-28, non pas depuis une
+ * borne de bloc mais depuis `computed_at`, converti en heure de Montréal : il
+ * est republié six fois par jour, et une date nue laissait croire à une mise à
+ * jour quotidienne alors que le chiffre affiché peut avoir quatre heures.
+ *
+ * Les autres tables journalières/hebdo (enjeux, assemblée, polimètre)
+ * n'affichent toujours que la date.
  */
 export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null): string {
   const parsed = parseIsoDate(dateStr);

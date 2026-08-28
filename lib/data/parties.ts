@@ -1719,6 +1719,42 @@ export async function loadParties(
 
     const lastDate = dayRows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), "");
 
+    /** L'HEURE de la dernière mise à jour, en heure de Montréal.
+     *
+     *  Le module publiait sa date sans heure, sur la foi du commentaire de
+     *  `lastUpdatedLabel` : « les tables journalières (partis, enjeux, assemblée,
+     *  polimètre) n'affichent que la date, l'heure n'existe pas dans leur
+     *  donnée ». C'était vrai des trois autres ; ça ne l'est plus ici. Ce module
+     *  est republié SIX FOIS PAR JOUR, et `computed_at` porte l'instant exact de
+     *  chaque passage. Une date nue laissait donc croire à une mise à jour
+     *  quotidienne, alors que le chiffre affiché peut avoir quatre heures.
+     *
+     *  L'heure vient de `computed_at`, un instant UTC, converti en heure de
+     *  Montréal — jamais de `date_montreal_tz`, qui malgré son nom porte la date
+     *  UTC (`as.Date()` en R ignore le fuseau de l'objet). Même fuseau que
+     *  `aujourdhuiMontreal()`, pour qu'ils ne puissent pas diverger.
+     *
+     *  `null` si aucune ligne ne porte d'horodatage exploitable : `lastUpdatedLabel`
+     *  retombe alors sur la date seule, le comportement d'avant. */
+    const derniereHeure = ((): number | null => {
+      const instants = dayRows
+        .map((r) => (r.computed_at ? Date.parse(r.computed_at) : NaN))
+        .filter((t) => !Number.isNaN(t));
+      if (instants.length === 0) return null;
+      // ⚠️ On EXTRAIT les chiffres du rendu. En `fr-CA`, `Intl` renvoie « 15 h »
+      // et non « 15 » : `Number("15 h")` vaut NaN, et l'heure retombait donc
+      // silencieusement à `null` — le libellé restait sans heure sans que rien
+      // ne le signale. Le repli muet est précisément le mode de panne que ce
+      // module s'emploie à éliminer partout ailleurs.
+      const rendu = new Intl.DateTimeFormat("fr-CA", {
+        timeZone: "America/Toronto",
+        hour: "2-digit",
+        hour12: false,
+      }).format(new Date(Math.max(...instants)));
+      const n = Number(rendu.replace(/\D/g, ""));
+      return Number.isNaN(n) ? null : n;
+    })();
+
     // Une vue par média, construite avec exactement le même code que la vue
     // agrégée — seules les lignes d'entrée changent.
     const medias: MediaOption[] = [];
@@ -1772,7 +1808,7 @@ export async function loadParties(
 
     return {
       lastDate,
-      lastUpdated: lastUpdatedLabel(lastDate),
+      lastUpdated: lastUpdatedLabel(lastDate, derniereHeure),
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.
