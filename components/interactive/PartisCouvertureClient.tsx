@@ -890,17 +890,6 @@ function Deck({
       `occupé la Une, quelle part de la couverture il représente, l'enjeu dont on ` +
       `parle le plus à son sujet et le ton de cette couverture.`;
 
-  const pistes: [string, string, string?][] = [
-    ["Temps en Une", formatDuree(row.minutesUne)],
-    ["Part de temps", `${row.sovPct} %`],
-    ["Enjeu clé", enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE)],
-    // Le troisième champ est la forme COURTE, servie sur téléphone où la
-    // pochette n'a pas la largeur du libellé entier. Les deux sont dans le DOM
-    // et le CSS choisit : un lecteur d'écran entend donc toujours le libellé
-    // complet, quelle que soit la taille de l'écran.
-    ["Ton de la couverture", row.toneLabel, "Ton"],
-  ];
-
   return (
     <div
       className="deck"

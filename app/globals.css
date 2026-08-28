@@ -8123,15 +8123,8 @@
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
   .pochette-media { font-size: 6.5px; padding: 2px 5px; letter-spacing: 0.1em; }
   .deck-jog-media text { font-size: 5.4px; }
-  .deck-piste { font-size: 8.5px; gap: 4px; }
-  .deck-piste-val { font-size: 7.5px; }
-  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
   .pochette-sigle { font-size: 28px; }
   .cap-sigle { font-size: 32px; }
-  /* Sélecteur DESCENDANT, pas la classe seule : la règle de base
-     `.piste-court { display: none }` est déclarée plus BAS dans le fichier, et
-     à spécificité égale c'est elle qui l'emporterait. Les deux formes se
-     masquaient alors l'une l'autre et le libellé disparaissait. */
 
 }
 
@@ -8465,18 +8458,6 @@
   max-width: 200px;
   aspect-ratio: 1;
 }
-.deck-carre--pivot {
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  perspective: 1000px;
-  transform-style: preserve-3d;
-}
-.deck-carre--pivot:focus-visible {
-  outline: 2px solid var(--cordovan);
-  outline-offset: 6px;
-}
 
 .deck-face {
   position: absolute;
@@ -8486,9 +8467,6 @@
   transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .deck-face--disque { transform: rotateY(0deg); }
-.deck-face--pochette { transform: rotateY(180deg); }
-.deck-carre--pivot.retournee .deck-face--disque { transform: rotateY(-180deg); }
-.deck-carre--pivot.retournee .deck-face--pochette { transform: rotateY(0deg); }
 
 /* LE CHANGEMENT DE PISTE, en trois temps.
    Il ne se joue QUE si le parti du deck change : la clé de remontage ne porte
@@ -8553,25 +8531,25 @@
     transform: translate(0, 0) scale(1) rotate(0);
   }
 }
-.deck-carre--pivot .deck-face--disque {
+/* Rebranchée sur `.deck-carre` : le deck ne se retourne plus, mais le disque
+   doit toujours tourner quand un parti change de place au classement. En
+   retirant `--pivot` du bouton, cette animation avait été désactivée en
+   silence — le genre de perte qu'aucun test ne rattrape. */
+.deck-carre .deck-face--disque {
   animation: deck-tour-avant 1240ms linear;
 }
-.deck-carre--pivot .deck-face--pochette {
-  animation: deck-tour-arriere 1240ms linear;
-}
-.deck-carre--pivot .deck-face--disque .deck-jog {
+.deck-carre .deck-face--disque .deck-jog {
   animation: deck-sortie 1240ms linear;
 }
 /* Les trois éléments tournent ensemble : les prévenir évite que le navigateur
    ne les repromeuve sur une couche à chaque image. */
-.deck-carre--pivot .deck-face,
-.deck-carre--pivot .deck-jog { will-change: transform, opacity; }
+.deck-carre .deck-face,
+.deck-carre .deck-jog { will-change: transform, opacity; }
 
 @media (prefers-reduced-motion: reduce) {
   .deck-face { transition: none; }
-  .deck-carre--pivot .deck-face--disque,
-  .deck-carre--pivot .deck-face--pochette,
-  .deck-carre--pivot .deck-face--disque .deck-jog { animation: none; }
+  .deck-carre .deck-face--disque,
+  .deck-carre .deck-face--disque .deck-jog { animation: none; }
 }
 
 /* La molette — la face avant, épurée : un plateau nu et, au centre, un
@@ -8680,17 +8658,6 @@
    solidaire, à 3,94:1 — aucun texte courant ne passerait dessus, ni en crème
    (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
    descendent sur une bande sombre où le contraste ne dépend plus du parti. */
-.deck-face--pochette {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  overflow: hidden;
-  color: var(--paper);
-  text-align: left;
-  background: var(--party, var(--ink-soft));
-  box-shadow:
-    inset 0 0 0 1px rgba(243, 236, 221, 0.16),
-    0 3px 12px rgba(28, 25, 23, 0.26);
-}
 
 /* Le média, en bandeau le long du haut de la pochette. Fond d'ENCRE et non
    transparent : le nom doit rester lisible sur les cinq couleurs de parti, dont
@@ -8749,42 +8716,8 @@
 
 /* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
    il ne peut pas dépendre de la couleur du parti pour être lisible. */
-.deck-pistes {
-  display: flex;
-  flex-direction: column;
-  /* Enfant de grille : sans `min-width: 0` il refuse de rétrécir sous la
-     largeur de son contenu, et c'est TOUTE la bande qui sortait du cadre — les
-     valeurs se faisaient couper au bord de la pochette, « 2h27 » compris. */
-  min-width: 0;
-  gap: 3px;
-  padding: 8px 12px 9px;
-  background: var(--bandeau);
-}
-.deck-piste {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  /* `min-width: 0` et `overflow: hidden` : sans eux, la valeur sortait du cadre
-     et se faisait couper NET par la pochette, sans points de suspension ni
-     marge. Un enfant flex refuse de rétrécir sous sa largeur de contenu tant
-     qu'on ne lève pas ce plancher. */
-  min-width: 0;
-  overflow: hidden;
-  font-size: 10px;
-  line-height: 1.25;
-}
-.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; white-space: nowrap; }
-/* Les deux formes du libellé cohabitent dans le DOM ; le CSS choisit laquelle
-   se voit. Le lecteur d'écran, lui, entend toujours la forme longue. */
-.piste-court { display: none; }
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
-.deck-piste-fil {
-  flex: 1 1 auto;
-  min-width: 6px;
-  border-bottom: 1px dotted rgba(243, 236, 221, 0.4);
-  transform: translateY(-2px);
-}
 /* La valeur tient sur UNE ligne, quitte à se couper.
    Les libellés d'enjeux du CAP vont jusqu'à 44 caractères (« Droits, libertés,
    minorités et discrimination ») : aucun corps lisible ne les fait tenir dans
@@ -8792,18 +8725,6 @@
    visuelle, un lecteur d'écran lit la chaîne entière — et l'attribut `title` le
    donne au survol. La couleur du disque de l'illustration porte de toute façon
    déjà l'enjeu. */
-.deck-piste-val {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 600;
-  line-height: 1.3;
-  text-align: right;
-}
 
 /* ───────────────────────────────────────────────────────────────────────────
    LE BAC À VINYLES
@@ -8965,6 +8886,20 @@
   overflow: hidden;
 }
 .bac-pochette .pochette-sigle { display: none; }
+
+/* L'ILLUSTRATION GÉNÉRÉE, quand elle existe. Ces deux règles manquaient : le
+   composant rendait `.pochette-image` et `.pochette-art--grande` sans qu'aucun
+   style ne les accompagne. Tant que `row.illustration` est vide on ne voyait
+   rien, mais le jour où la chaîne de génération sera branchée, l'image serait
+   arrivée sans dimension et aurait fait éclater la mise en page. */
+.pochette-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* La pochette ouverte : l'illustration occupe tout le volet, en carré. */
+.pochette-art--grande { width: 100%; }
 
 /* LA TRANCHE du carton, le long du bord droit : c'est elle qu'on lit quand les
    disques sont serrés. Une vraie tranche de pochette, pas une étiquette. */
@@ -9188,15 +9123,6 @@
   background: var(--rule);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
-.deck-vide-txt {
-  margin: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-  text-align: center;
-}
 
 /* Le titre du vumètre, dans le même idiome que « La course » : mono, capitales
    espacées, encre douce. Il remplace la phrase éditoriale qui occupait cette
@@ -9257,13 +9183,6 @@
     margin-bottom: 0;
     gap: 18px;
   }
-  /* La forme COURTE du libellé dès que les decks rétrécissent — c'est-à-dire
-     ici, où la disposition passe en 2×2 — et non seulement sur téléphone.
-     « Ton de la couverture » mangeait la place et faisait élider sa propre
-     valeur : « ↓ Défavor… ». */
-  .deck-piste-nom .piste-long { display: none; }
-  .deck-piste-nom .piste-court { display: inline; }
-
   .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
   .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
   .regie-centre { grid-area: 2 / 1 / 3 / 3; }
@@ -9302,9 +9221,6 @@
   .regie-centre { gap: 10px; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
-  .deck-piste { font-size: 8.5px; gap: 4px; }
-  .deck-piste-val { font-size: 7.5px; }
-  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
   .pochette-sigle { font-size: 26px; }
   .cap-sigle { font-size: 32px; }
 }
