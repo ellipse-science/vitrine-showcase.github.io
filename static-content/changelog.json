@@ -1,5 +1,11 @@
 [
   {
+    "pr": 615,
+    "date": "2026-08-28T16:10:21Z",
+    "note": "Correction d'un contrôle automatique interne : il signalait à tort un échec après chaque mise à jour du service de données, alors que celle-ci s'était bien déroulée.",
+    "version": null
+  },
+  {
     "pr": 616,
     "date": "2026-08-28T16:02:06Z",
     "note": "Le graphique horaire du classement des partis ne mélange plus la soirée de la veille avec la journée en cours. Il n'apparaît désormais qu'une fois la journée assez avancée pour être tracée.",
