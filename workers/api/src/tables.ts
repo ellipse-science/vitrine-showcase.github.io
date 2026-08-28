@@ -154,6 +154,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -167,6 +168,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -180,6 +182,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -194,6 +197,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -208,6 +212,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -222,7 +227,23 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "parties_issues_salient_shadow_day",
+    "athena": "vitrine_datamart-parties_issues_salient_shadow_day",
+    "cols": [
+      "party",
+      "theme",
+      "issue_share",
+      "total_raw_score",
+      "weighted_tone",
+      "date_utc",
+      "date_montreal_tz",
       "computed_at"
     ],
     "filter": null
@@ -235,6 +256,7 @@ export const TABLES: TableSpec[] = [
       "block_hour",
       "block_label",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "date_utc",
       "date_montreal_tz",
