@@ -8808,168 +8808,249 @@
 /* ───────────────────────────────────────────────────────────────────────────
    LE BAC À VINYLES
 
-   Les pochettes ne vivent plus au dos des decks. Elles sont toutes ici, rangées
-   par temps d'écoute, y compris celles des partis en sourdine qui n'ont pas de
-   deck et n'avaient donc aucune pochette auparavant.
+   Les pochettes ne vivent plus au dos des decks : elles sont toutes ici,
+   rangées par temps d'écoute, y compris celles des partis en sourdine qui n'ont
+   pas de deck.
 
-   Au survol, la rangée s'écarte comme un bac de disquaire qu'on feuillette.
-   C'est du CSS seul : aucun état à tenir, donc rien à désynchroniser.
+   CONFORME À design_language.md, après un premier jet qui ne l'était pas :
+   aucune ombre portée (« le journal n'a pas d'ombre portée »), aucun angle
+   arrondi, filets de 0,5 px en `--rule` pour les encadrés discrets, Playfair
+   Display pour les grands chiffres, IBM Plex Mono en majuscules pour les
+   étiquettes.
    ─────────────────────────────────────────────────────────────────────────── */
 .bac {
-  margin: 22px 0 0;
-  padding: 16px 18px 18px;
-  border: 1px solid var(--rule);
-  background: var(--paper-deep);
+  margin: 26px 0 0;
+  padding: 0;
+  border-top: 2px solid var(--ink);
 }
 .bac-tete {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 0 14px;
+  margin: 0;
+  padding: 9px 0 12px;
+  border-bottom: 0.5px solid var(--rule);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--cordovan);
 }
 .bac-aide {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--ink-softer);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 11.5px;
+  font-style: italic;
+  letter-spacing: 0;
   text-transform: none;
+  color: var(--ink-soft);
 }
 
-/* La rangée. Les pochettes se CHEVAUCHENT au repos — c'est ce qui fait un bac
-   et non une grille — et s'écartent quand on le survole. */
+/* LA RANGÉE, comme un vrai bac : on ne voit que les LANGUETTES, les couvertures
+   se cachent les unes sous les autres. Écarter une pochette la découvre.
+
+   Le premier jet montrait toutes les couvertures côte à côte avec un léger
+   chevauchement : ce n'était pas un bac, c'était une étagère, et les tranches
+   se faisaient couper. */
 .bac-rangee {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   margin: 0;
-  padding: 0 0 4px;
+  /* La marge de droite laisse la place à la DERNIÈRE pochette de s'ouvrir sans
+     déborder de la rangée. */
+  padding: 18px 168px 6px 0;
   list-style: none;
   overflow-x: auto;
   overflow-y: hidden;
 }
 .bac-case {
   flex: 0 0 auto;
-  /* Le chevauchement : chaque pochette mord sur la précédente. */
-  margin-left: -38px;
-  transition: margin-left 180ms ease, transform 180ms ease;
+  /* Recouvre toute la couverture : seule la languette dépasse. */
+  margin-left: -128px;
+  transition: margin-left 220ms ease;
+  /* L'ORDRE DE SUPERPOSITION est inversé par rapport au DOM : la première
+     pochette (la plus écoutée) passe DEVANT, comme le disque de façade d'un
+     bac. Sans ça, la dernière recouvrait les autres — et comme celle en
+     sourdine est à demi transparente, tout le bac virait au mauve. */
+  position: relative;
+  z-index: calc(50 - var(--i, 0));
 }
 .bac-case:first-child { margin-left: 0; }
-/* Au survol du BAC (pas de la pochette), tout s'écarte : on voit la rangée
-   entière avant de choisir. */
-.bac-rangee:hover .bac-case,
-.bac-rangee:focus-within .bac-case { margin-left: 6px; }
-.bac-rangee:hover .bac-case:first-child,
-.bac-rangee:focus-within .bac-case:first-child { margin-left: 0; }
-/* La pochette survolée sort du bac, comme une carte qu'on tire. */
-.bac-case:hover, .bac-case:focus-within { transform: translateY(-8px); }
-.bac-case.sortie { transform: translateY(-12px); }
+
+/* DÉCOUVRIR une pochette : on repousse celles qui SUIVENT, exactement comme on
+   écarte les disques d'un bac pour regarder celui du dessous. Pas de
+   transformation sur la pochette elle-même : c'est l'espace autour d'elle qui
+   s'ouvre. */
+/* DÉGAGER une pochette : elle GLISSE hors de la pile, vers la droite. Les
+   pochettes de devant la recouvrent (voir le z-index) ; c'est en la sortant
+   qu'on découvre sa couverture, exactement comme on tire un disque d'un bac.
+   Les suivantes suivent le mouvement. */
+.bac-case:hover,
+.bac-case:focus-within,
+.bac-case.sortie { margin-left: 6px; }
 
 .bac-pochette {
-  display: block;
-  width: 132px;
-  padding: 0;
-  border: 1px solid var(--ink);
-  background: none;
-  cursor: pointer;
-  box-shadow: 3px 3px 0 rgba(28, 25, 23, 0.18);
-}
-.bac-case.sortie .bac-pochette { box-shadow: 5px 5px 0 var(--party, var(--ink-soft)); }
-/* En sourdine : présente, mais en retrait. Le parti dont on parle le moins a
-   sa pochette comme les autres, elle est simplement éteinte. */
-.bac-case.shadow .bac-pochette { opacity: 0.55; filter: saturate(0.5); }
-
-/* La TRANCHE, sous l'illustration : c'est elle qu'on lit quand les pochettes
-   sont serrées. Elle porte le sigle et la durée, jamais un pourcentage — le bac
-   est classé par temps d'écoute. */
-.bac-tranche {
   display: flex;
-  align-items: baseline;
+  align-items: stretch;
+  padding: 0;
+  border: 0.5px solid var(--rule);
+  background: var(--paper);
+  cursor: pointer;
+}
+.bac-case.sortie .bac-pochette,
+.bac-case:hover .bac-pochette { border-color: var(--ink); }
+/* En sourdine : dégrisée, mais OPAQUE. Avec `opacity`, la pile se voyait au
+   travers et le bac virait au mauve. */
+.bac-case.shadow .bac-pochette { filter: grayscale(0.75) contrast(0.85); }
+
+/* LA LANGUETTE : la tranche du disque. Texte à la verticale, de bas en haut,
+   comme sur un vinyle rangé debout. */
+.bac-languette {
+  flex: 0 0 34px;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 5px 7px 6px;
-  background: var(--ink);
+  gap: 10px;
+  padding: 10px 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  background: var(--party, var(--ink));
   color: var(--paper);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
-.bac-tranche b { font-size: 11px; letter-spacing: 0.12em; }
+.bac-languette b { font-size: 11px; letter-spacing: 0.2em; }
 
-/* L'illustration remplit sa case, qu'elle soit une image générée ou la
-   composition géométrique de repli. */
-.pochette-image {
+/* LA COUVERTURE, cachée sous la pochette suivante au repos. */
+.bac-couv { flex: 0 0 128px; }
+
+/* L'illustration : un CARRÉ, comme une pochette. */
+.bac-pochette .pochette-art {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: relative;
+  width: 128px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
 }
-.pochette-art--grande { aspect-ratio: 1 / 1; width: 100%; }
+.bac-pochette .pochette-sigle { display: none; }
+
+/* LES FORMES DE LA POCHETTE. Sans ces règles, le remplissage SVG par défaut est
+   NOIR : les couvertures sortaient en aplats noirs. */
+.pochette-formes .forme-parti { fill: var(--party, var(--ink-soft)); stroke: none; }
+/* LE DISQUE se détache TOUJOURS du fond : sa couleur est celle du parti
+   assombrie, jamais celle de l'enjeu. Avec l'enjeu, le disque disparaissait
+   quand les deux teintes se ressemblaient — bleu sur bleu pour la CAQ. */
+.pochette-formes .forme-disque > circle {
+  fill: color-mix(in srgb, var(--party, #6E685F) 55%, var(--ink));
+  stroke: none;
+}
+/* Les sillons : des filets crème. C'est ce qui fait lire un disque plutôt qu'un
+   rond de couleur, donc ils doivent se voir. */
+.pochette-formes .sillon { stroke: rgba(243, 236, 221, 0.5); stroke-width: 1; }
+/* L'étiquette centrale porte l'ENJEU : petite surface, donc n'importe quelle
+   teinte y reste lisible, et c'est le point que l'œil cherche sur un disque. */
+.pochette-formes .etiquette { fill: var(--enjeu, #463E3E); stroke: rgba(243, 236, 221, 0.6); stroke-width: 1; }
+/* Le bandeau du ton, en pied de pochette. */
+.pochette-formes .forme-ton { fill: var(--ton, #6E685F); stroke: none; }
+/* Le filet intérieur, comme la bordure imprimée d'une vraie pochette. */
+.pochette-formes .pochette-filet { stroke: rgba(243, 236, 221, 0.35); stroke-width: 0.8; }
+
+.pochette-image { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 /* ───────────────────────────────────────────────────────────────────────────
    LA POCHETTE OUVERTE, en double volet.
    ─────────────────────────────────────────────────────────────────────────── */
 .gatefold {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 0;
-  margin-top: 18px;
-  border: 1px solid var(--ink);
+  /* L'illustration reste CARRÉE et bornée : à 100 % d'un volet large, elle
+     donnait un cercle bleu de 900 px sans rapport avec le reste de la page. */
+  grid-template-columns: 260px minmax(0, 1fr);
+  max-width: 720px;
+  margin: 18px 0 4px;
+  border: 0.5px solid var(--rule);
   background: var(--paper);
-  box-shadow: 6px 6px 0 rgba(28, 25, 23, 0.16);
 }
 .gatefold-volet { min-width: 0; }
-.gatefold-volet--art { border-right: 1px solid var(--ink); }
+.gatefold-volet--art { border-right: 0.5px solid var(--rule); }
+.gatefold-volet--art .pochette-art {
+  display: block;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.gatefold-volet--art .pochette-sigle {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-shadow: none;
+}
 .gatefold-volet--info {
   display: flex;
   flex-direction: column;
-  padding: 16px 18px 16px;
+  padding: 16px 18px 15px;
 }
 .gatefold-nom {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 9px;
   margin: 0 0 14px;
-  padding-bottom: 10px;
+  padding-bottom: 9px;
   border-bottom: 2px solid var(--party, var(--ink));
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 19px;
-  line-height: 1.15;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
   color: var(--ink);
 }
 .gatefold-rang {
   flex: none;
-  min-width: 22px;
-  padding: 2px 0;
+  min-width: 20px;
+  padding: 1px 0;
   background: var(--party, var(--ink-soft));
   color: var(--paper);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   text-align: center;
 }
 
-.gatefold-pistes { margin: 0; display: flex; flex-direction: column; gap: 11px; }
+.gatefold-pistes { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 13px 18px; }
 .gatefold-pistes > div { min-width: 0; }
+/* Le ton prend la largeur : sa jauge ne se lit pas dans une demi-colonne. */
+.gatefold-ton { grid-column: 1 / -1; }
 .gatefold-pistes dt {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.13em;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-softer);
 }
 .gatefold-pistes dd {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
+  font-family: 'Source Serif 4', Georgia, serif;
   font-size: 14px;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--ink);
 }
+/* Grand chiffre, à la charte : Playfair 900, cordovan, tracking serré. */
 .gatefold-chiffre {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 21px;
-  font-weight: 600;
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -1.1px;
+  line-height: 1;
+  color: var(--cordovan);
 }
 
 /* La jauge de ton, reprise du module de l'Assemblée (`.ass-tone`) : mêmes
@@ -8978,7 +9059,7 @@
 .pochette-ton {
   display: block;
   height: 14px;
-  margin-top: 4px;
+  margin-top: 5px;
   background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
   position: relative;
   border: 0.5px solid var(--rule);
@@ -8992,45 +9073,43 @@
 }
 .gatefold-ton-mot {
   display: block;
-  margin-top: 5px;
+  margin-top: 6px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
 .gatefold-fermer {
   margin-top: auto;
-  padding-top: 14px;
+  padding: 14px 0 0;
   align-self: flex-start;
   border: none;
   background: none;
   cursor: pointer;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-softer);
-  text-decoration: underline;
 }
-.gatefold-fermer:hover { color: var(--ink); }
+.gatefold-fermer:hover { color: var(--cordovan); }
 
-/* Le deck ne se retourne plus : il DÉSIGNE une pochette dans le bac. On le
-   montre, sinon rien ne relierait le clic à ce qui bouge plus bas. */
-.deck-carre--choisi { outline: 2px solid var(--party, var(--ink)); outline-offset: 3px; }
+/* Le deck ne se retourne plus : il DÉSIGNE une pochette dans le bac. */
+.deck-carre--choisi { outline: 1px solid var(--party, var(--ink)); outline-offset: 3px; }
 
 @media (max-width: 640px) {
-  /* Sur téléphone, la double pochette s'empile : deux volets côte à côte dans
-     375 px ne laisseraient ni à l'illustration ni aux chiffres de quoi se
-     lire. */
-  .gatefold { grid-template-columns: minmax(0, 1fr); }
-  .gatefold-volet--art { border-right: none; border-bottom: 1px solid var(--ink); }
-  .bac { padding: 12px 12px 14px; }
-  .bac-pochette { width: 108px; }
-  /* Les pochettes ne se chevauchent plus : au doigt, on ne « feuillette » pas,
-     on fait défiler. */
-  .bac-case, .bac-rangee:hover .bac-case { margin-left: 8px; }
+  .gatefold { grid-template-columns: minmax(0, 1fr); max-width: none; }
+  .gatefold-volet--art { border-right: none; border-bottom: 0.5px solid var(--rule); }
+  .gatefold-pistes { grid-template-columns: 1fr; }
+  /* La couverture rétrécit ; la languette garde sa largeur, sinon le texte
+     vertical ne tient plus. L'empilement suit la nouvelle couverture. */
+  .bac-couv, .bac-pochette .pochette-art { flex-basis: 104px; width: 104px; }
+  .bac-case { margin-left: -104px; }
   .bac-case:first-child { margin-left: 0; }
+  .bac-rangee { padding-right: 144px; }
 }
 
 .deck-nom {

@@ -615,13 +615,28 @@ function PochetteArt({
         // eslint-disable-next-line @next/next/no-img-element
         <img className="pochette-image" src={row.illustration} alt="" aria-hidden="true" />
       ) : (
-        <svg className="pochette-formes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          {/* Un filet crème borde chaque forme. Sans lui, elles se perdent quand
-              leur couleur approche celle du parti : le rouge du PLQ contre le
-              rouge du ton défavorable, le bleu du PQ contre celui de « Culture
-              et nationalisme ». */}
-          <circle className="forme-enjeu" cx="80" cy="18" r="44" vectorEffect="non-scaling-stroke" />
-          <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" vectorEffect="non-scaling-stroke" />
+        <svg className="pochette-formes" viewBox="0 0 100 100" aria-hidden="true">
+          {/* UNE POCHETTE DE DISQUE, pas une composition abstraite.
+              Le premier jet posait un cercle et un triangle sur un aplat : à la
+              taille d'un deck ça passait, agrandi ça ne ressemblait à rien.
+
+              Ici la lecture est immédiate : le fond porte le PARTI, le disque
+              qui sort de la pochette porte l'ENJEU, et le bandeau du bas porte
+              le TON. Les sillons concentriques font le reste. */}
+          <rect className="forme-parti" x="0" y="0" width="100" height="100" />
+          {/* Le disque, décentré, à demi sorti par le haut. */}
+          <g className="forme-disque">
+            <circle cx="66" cy="34" r="30" />
+            {[24, 18, 12].map((r) => (
+              <circle key={r} className="sillon" cx="66" cy="34" r={r} fill="none" />
+            ))}
+            <circle className="etiquette" cx="66" cy="34" r="7.5" />
+          </g>
+          {/* Le bandeau du ton, en pied de pochette : une bande franche, comme
+              la tranche colorée d'une collection. */}
+          <rect className="forme-ton" x="0" y="82" width="100" height="18" />
+          {/* Le filet crème qui borde la pochette, à l'intérieur du cadre. */}
+          <rect className="pochette-filet" x="1.5" y="1.5" width="97" height="97" fill="none" />
         </svg>
       )}
       <b className="pochette-sigle">{row.label}</b>
@@ -702,11 +717,15 @@ function BacAVinyles({
               aria-expanded={row.key === ouverte}
               title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
             >
-              <PochetteArt row={row} mediaLabel={mediaLabel} />
-              {/* La TRANCHE, comme au dos d’un disque rangé : c’est elle qu’on
-                  lit quand les pochettes sont serrées les unes contre les
-                  autres. */}
-              <span className="bac-tranche">
+              {/* LA LANGUETTE, seule partie visible au repos : c’est la tranche
+                  du disque rangé dans le bac. Elle porte le sigle et la durée,
+                  à la verticale, comme le dos d’un vinyle sur une étagère.
+                  Écarter la pochette (survol, clavier, sélection) découvre la
+                  couverture qui se cache dessous. */}
+              <span className="bac-couv">
+                <PochetteArt row={row} mediaLabel={mediaLabel} />
+              </span>
+              <span className="bac-languette">
                 <b>{row.label}</b>
                 <span>{formatDuree(row.minutesUne)}</span>
               </span>
@@ -758,7 +777,7 @@ function PochetteOuverte({
           </div>
           <div>
             <dt>Part de temps</dt>
-            <dd className="gatefold-chiffre">{row.sovPct}\u00a0%</dd>
+            <dd className="gatefold-chiffre">{row.sovPct} %</dd>
           </div>
           <div>
             <dt>Enjeu du parti</dt>
