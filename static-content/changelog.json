@@ -1,5 +1,11 @@
 [
   {
+    "pr": 616,
+    "date": "2026-08-28T16:02:06Z",
+    "note": "Le graphique horaire du classement des partis ne mélange plus la soirée de la veille avec la journée en cours. Il n'apparaît désormais qu'une fois la journée assez avancée pour être tracée.",
+    "version": null
+  },
+  {
     "pr": 613,
     "date": "2026-08-28T14:54:30Z",
     "note": "Le classement des partis affiche de nouveau le temps passé en Une lorsqu'on regarde l'ensemble des médias, et non plus seulement média par média. Sur téléphone, ce temps reste visible toute la journée.",
