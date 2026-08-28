@@ -16,9 +16,15 @@ enum Vitrine {
 
     /// Une navigation reste dans l'application si elle vise le site lui-même.
     /// Tout le reste part vers Safari.
+    ///
+    /// Liste explicite plutôt qu'un `hasSuffix(".vitrinedemocratique.com")` :
+    /// ce raccourci classerait `api.vitrinedemocratique.com` comme interne et
+    /// autoriserait la vue web à y naviguer, en contradiction avec la règle
+    /// « jamais l'API » que cette application respecte par ailleurs. Il
+    /// laisserait aussi passer `dev.`, qui est derrière Cloudflare Access.
     static func estInterne(_ url: URL) -> Bool {
         guard let hote = url.host?.lowercased() else { return false }
-        return hote == "vitrinedemocratique.com" || hote.hasSuffix(".vitrinedemocratique.com")
+        return hote == "vitrinedemocratique.com" || hote == "www.vitrinedemocratique.com"
     }
 }
 

@@ -36,9 +36,16 @@ struct FournisseurUne: TimelineProvider {
     }
 
     private func charger() async -> EntreeUne {
-        async let une = try? Lecteur.lire(UneCourante.self, depuis: Vitrine.uneCourante)
-        async let build = try? Lecteur.lire(IdentifiantBuild.self, depuis: Vitrine.identifiantBuild)
-        return EntreeUne(date: Date(), une: await une, publieeLe: await build?.builtAt)
+        // Les deux lectures partent ensemble. Le `try?` est posé au moment du
+        // `await`, pas sur la liaison `async let` : Swift accepte mal la
+        // seconde forme selon les versions, et ce code n'a jamais été compilé.
+        async let une = Lecteur.lire(UneCourante.self, depuis: Vitrine.uneCourante)
+        async let build = Lecteur.lire(IdentifiantBuild.self, depuis: Vitrine.identifiantBuild)
+        return EntreeUne(
+            date: Date(),
+            une: try? await une,
+            publieeLe: (try? await build)?.builtAt
+        )
     }
 }
 
