@@ -9293,12 +9293,26 @@
   .palmares-zone { min-height: 88px; }
   .palmares-x { margin: 4px 0 0 var(--marge-y); }
 
-  .palmares-classement { display: none; }
+  /* EN COURS DE COURSE, la colonne se réduit au bloc de tête — elle n'est plus
+     masquée en entier.
+     `display: none` sur toute la colonne retirait les durées de l'écran, et
+     elles ne vivent QUE là : on obtenait un « palmarès, en minutes passées en
+     Une » sans une seule minute affichée, tant que la journée n'était pas
+     terminée. Or c'est précisément le chiffre qui se cite — « la CAQ a occupé
+     2 h 15 » — et le pourcentage ne le remplace pas.
+     La liste des cinq, elle, reste masquée : c'est elle qui ne tient pas dans
+     la largeur. Une seule durée, celle du meneur, suffit à ne pas mentir. */
+  .palmares-classement { display: block; padding: 8px 9px; }
+  .palmares-figure:not(.termine) .palmares-liste { display: none; }
+  /* Sans liste en dessous, le filet de séparation ne sépare plus rien. */
+  .palmares-figure:not(.termine) .palmares-gagnant {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
 
   .palmares-figure.termine .palmares-zone,
   .palmares-figure.termine .palmares-x { display: none; }
-  .palmares-figure.termine .palmares-classement { display: block; }
-  .palmares-classement { padding: 8px 9px; }
   .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
   .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
   .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
