@@ -1690,17 +1690,27 @@ export async function loadParties(
     // Ventilation par média — facultative : le fader ne s'affiche que si les
     // tables `*_by_media_*` sont publiées. Un `null` ici n'est pas une erreur,
     // c'est l'état d'avant aws-refiners#… (la PR qui les crée).
-    const lireMedia = async (p: string) => {
-      try {
-        return JSON.parse(await fs.readFile(p, "utf8")) as ShadowRow[];
-      } catch {
-        return null;
-      }
-    };
+    //
+    // ⚠️ PASSE PAR `lireJeu`, comme les cinq autres tables, et NON par un
+    // `fs.readFile` direct. C'est la même correction que celle déjà appliquée
+    // aux tables des enjeux et de l'intra-journée (voir plus haut), et elle
+    // avait été oubliée ici.
+    //
+    // Ce que le `fs.readFile` produisait : sur dev, `VITRINE_DATA_SOURCE=api`,
+    // donc l'agrégat venait de l'API tandis que la ventilation par média lisait
+    // les JSON du disque. UN SEUL ÉCRAN, DEUX SOURCES. Et comme l'API ne servait
+    // pas `total_raw_score`, la position « tous les médias » affichait 0 minute
+    // sur les pochettes et dans le palmarès, pendant que chaque position par
+    // média affichait la bonne durée — lue ailleurs. Le repli était muet :
+    // `Number(undefined) || 0` ne lève rien.
+    const lireMedia = (periode: "day" | "week" | "month") =>
+      lireJeu(periode, `provincial_parties_salient_shadow_by_media_${periode}.json`)
+        .then((txt) => JSON.parse(txt) as ShadowRow[])
+        .catch(() => null);
     const [mDay, mWeek, mMonth] = await Promise.all([
-      lireMedia(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_by_media_day.json")),
-      lireMedia(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_by_media_week.json")),
-      lireMedia(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_by_media_month.json")),
+      lireMedia("day"),
+      lireMedia("week"),
+      lireMedia("month"),
     ]);
 
     const computed = computeStats(dayRows, weekRows, monthRows);
