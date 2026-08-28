@@ -616,27 +616,32 @@ function PochetteArt({
         <img className="pochette-image" src={row.illustration} alt="" aria-hidden="true" />
       ) : (
         <svg className="pochette-formes" viewBox="0 0 100 100" aria-hidden="true">
-          {/* UNE POCHETTE DE DISQUE, pas une composition abstraite.
-              Le premier jet posait un cercle et un triangle sur un aplat : à la
-              taille d'un deck ça passait, agrandi ça ne ressemblait à rien.
-
-              Ici la lecture est immédiate : le fond porte le PARTI, le disque
-              qui sort de la pochette porte l'ENJEU, et le bandeau du bas porte
-              le TON. Les sillons concentriques font le reste. */}
-          <rect className="forme-parti" x="0" y="0" width="100" height="100" />
-          {/* Le disque, décentré, à demi sorti par le haut. */}
-          <g className="forme-disque">
-            <circle cx="66" cy="34" r="30" />
-            {[24, 18, 12].map((r) => (
-              <circle key={r} className="sillon" cx="66" cy="34" r={r} fill="none" />
+          {/* UNE POCHETTE DE 33 TOURS. Le disque dépasse par la droite, comme
+              quand on le sort à demi de sa pochette : c'est ce détail, plus que
+              le carré coloré, qui fait reconnaître l'objet immédiatement. */}
+          <defs>
+            <linearGradient id={`grd-${row.key}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
+              <stop offset="55%" stopColor="rgba(255,255,255,0)" />
+              <stop offset="100%" stopColor="rgba(0,0,0,0.22)" />
+            </linearGradient>
+          </defs>
+          {/* Le disque, derrière la pochette, dépassant à droite. */}
+          <g className="disque">
+            <circle cx="88" cy="50" r="33" />
+            {[27, 22, 17, 12].map((r) => (
+              <circle key={r} className="sillon" cx="88" cy="50" r={r} fill="none" />
             ))}
-            <circle className="etiquette" cx="66" cy="34" r="7.5" />
+            <circle className="etiquette" cx="88" cy="50" r="8" />
+            <circle className="trou" cx="88" cy="50" r="1.6" />
           </g>
-          {/* Le bandeau du ton, en pied de pochette : une bande franche, comme
-              la tranche colorée d'une collection. */}
-          <rect className="forme-ton" x="0" y="82" width="100" height="18" />
-          {/* Le filet crème qui borde la pochette, à l'intérieur du cadre. */}
-          <rect className="pochette-filet" x="1.5" y="1.5" width="97" height="97" fill="none" />
+          {/* La pochette par-dessus, qui recouvre les trois quarts du disque. */}
+          <rect className="carton" x="0" y="0" width="78" height="100" />
+          <rect className="carton-lumiere" x="0" y="0" width="78" height="100" fill={`url(#grd-${row.key})`} />
+          {/* L'ouverture, à droite : le liseré crème par où sort le disque. */}
+          <rect className="ouverture" x="75.5" y="0" width="2.5" height="100" />
+          {/* Le bandeau du ton, en pied, comme la bande d'un label. */}
+          <rect className="bandeau-ton" x="0" y="86" width="78" height="14" />
         </svg>
       )}
       <b className="pochette-sigle">{row.label}</b>
@@ -703,7 +708,12 @@ function BacAVinyles({
         <span className="bac-aide">cliquez une pochette pour l’ouvrir</span>
       </p>
 
-      <ol className="bac-rangee">
+      {/* LA BOÎTE À LAIT. Les parois et le fond sont dessinés autour des
+          disques : sans contenant, une rangée de pochettes reste une rangée de
+          vignettes. C'est le cadre qui fait comprendre l'objet d'un coup d'œil. */}
+      <div className="boite">
+        <div className="boite-paroi boite-paroi--g" aria-hidden="true" />
+        <ol className="bac-rangee">
         {triees.map((row, i) => (
           <li
             className={`bac-case${row.key === ouverte ? " sortie" : ""}${row.inShadow ? " shadow" : ""}`}
@@ -732,7 +742,10 @@ function BacAVinyles({
             </button>
           </li>
         ))}
-      </ol>
+        </ol>
+        <div className="boite-paroi boite-paroi--d" aria-hidden="true" />
+        <div className="boite-fond" aria-hidden="true" />
+      </div>
 
       {choisie && <PochetteOuverte row={choisie} mediaLabel={mediaLabel} onFermer={onFermer} />}
     </section>
