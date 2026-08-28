@@ -8768,115 +8768,37 @@
   color: var(--ink-soft);
 }
 
-/* LA BOÎTE À LAIT.
+/* LES POCHETTES, à plat.
 
-   ÉCART ASSUMÉ À design_language.md (autorisé explicitement le 2026-08-28) :
-   dégradés, ombres et perspective sont ici nécessaires. La charte proscrit
-   l'ombre portée pour les éléments ÉDITORIAUX — encadrés, cartes, tags — parce
-   qu'un journal imprimé n'en a pas. Mais on ne dessine pas un journal ici : on
-   dessine un OBJET, une caisse de disques, et un objet sans volume ne se
-   reconnaît pas. Le reste du module continue de suivre la charte.
+   UNE CAISSE EN VOLUME A ÉTÉ ESSAYÉE ET ABANDONNÉE (2026-08-28). Dessiner un
+   objet en plastique au dégradé, en perspective, dans une page de journal en
+   papier crème, ne donne pas un objet : ça donne du clipart, et ça jure avec
+   tout ce qui l'entoure. Le chevauchement rendait de surcroît les titres
+   illisibles.
 
-   Les proportions viennent d'une vraie boîte à lait : parois épaisses, fond
-   visible, disques debout qui dépassent du bord haut. */
-.boite {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  /* La caisse ÉPOUSE son contenu. En pleine largeur elle s'étirait sur toute la
-     page alors que cinq disques n'en occupent qu'un tiers : on voyait un long
-     bac vide, ce qui est exactement l'inverse de l'effet cherché. */
-  width: fit-content;
-  max-width: 100%;
-  margin: 4px 0 0;
-  /* Les pochettes dépassent par le haut, comme dans une caisse trop pleine. */
-  padding-top: 30px;
-}
-.boite-paroi {
-  flex: 0 0 15px;
-  align-self: flex-end;
-  height: 126px;
-  /* Le claustra : les ajours d'une vraie boîte à lait. */
-  background:
-    repeating-linear-gradient(180deg,
-      rgba(0, 0, 0, 0.34) 0 4px,
-      rgba(0, 0, 0, 0) 4px 26px),
-    linear-gradient(180deg, #8A2A36 0%, #5E1A24 100%);
-  border: 1px solid rgba(28, 25, 23, 0.5);
-}
-.boite-paroi--g { border-right: none; }
-.boite-paroi--d { border-left: none; }
-/* Le fond de la caisse, sous les disques. */
-.boite-fond {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 17px;
-  background:
-    repeating-linear-gradient(90deg,
-      rgba(0, 0, 0, 0.32) 0 5px,
-      rgba(0, 0, 0, 0) 5px 30px),
-    linear-gradient(180deg, #7C2430 0%, #4E141D 100%);
-  border: 1px solid rgba(28, 25, 23, 0.5);
-}
-
-/* LA RANGÉE : les disques debout dans la caisse, légèrement inclinés vers
-   l'arrière. On ne voit que la tranche de chacun ; celui qu'on tire vers soi
-   découvre sa pochette. */
+   Une rangée à plat montre les CINQ pochettes d'un coup, dans l'ordre du temps
+   d'écoute, sans rien cacher. C'est plus lisible ET plus fidèle à la page.
+   Le jour où de vraies illustrations générées rempliront ces carrés, la
+   question du contenant pourra se reposer — un bac n'est beau que par ses
+   pochettes. */
 .bac-rangee {
-  flex: 1 1 auto;
   display: flex;
-  align-items: flex-end;
-  min-width: 0;
+  flex-wrap: wrap;
+  gap: 18px;
   margin: 0;
-  /* Plus de réserve : soulever un disque ne déplace plus ses voisins. */
-  padding: 0 8px 17px 6px;
+  padding: 18px 0 4px;
   list-style: none;
-  overflow-x: auto;
-  overflow-y: hidden;
-  perspective: 1200px;
 }
-.bac-case {
-  flex: 0 0 auto;
-  position: relative;
-  margin-left: -128px;
-  z-index: calc(50 - var(--i, 0));
-  transform-style: preserve-3d;
-  transition: margin-left 240ms ease, transform 240ms ease;
-}
-.bac-case:first-child { margin-left: 0; }
-/* SOULEVER le disque hors de la caisse : c'est le vrai geste, et il ne pousse
-   pas les voisins. La version précédente les écartait sur 134 px, ce qui
-   obligeait à réserver autant de vide à droite — d'où une caisse à moitié
-   vide. Ici le disque monte, se redresse, et rien d'autre ne bouge. */
-.bac-case:hover,
-.bac-case:focus-within,
-.bac-case.sortie { z-index: 100; }
-.bac-case:hover .bac-pochette,
-.bac-case:focus-within .bac-pochette,
-.bac-case.sortie .bac-pochette { transform: rotateY(0deg) translateY(-34px); }
+.bac-case { flex: 0 0 auto; }
 
 .bac-pochette {
-  display: flex;
-  align-items: stretch;
+  display: block;
+  width: 128px;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
-  /* L'inclinaison : les disques ne sont jamais parfaitement d'aplomb dans une
-     caisse. C'est ce léger dévers qui donne le volume. */
-  transform: rotateY(-16deg);
-  transform-origin: right center;
-  transition: transform 240ms ease;
-}
-.bac-case.shadow .bac-pochette { filter: grayscale(0.8) brightness(0.92); }
-
-/* LA COUVERTURE : le carton de la pochette, avec son épaisseur. */
-.bac-couv {
-  flex: 0 0 128px;
-  position: relative;
-  box-shadow: 2px 3px 7px rgba(28, 25, 23, 0.45);
+  text-align: left;
 }
 .bac-pochette .pochette-art {
   display: block;
@@ -8884,58 +8806,44 @@
   width: 128px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  border: 0.5px solid var(--rule);
 }
+.bac-case.sortie .bac-pochette .pochette-art { border-color: var(--ink); }
+.bac-pochette:hover .pochette-art { border-color: var(--ink); }
+/* En sourdine : présente, en retrait. Elle reste OPAQUE. */
+.bac-case.shadow .bac-pochette .pochette-art { filter: grayscale(0.8); }
 .bac-pochette .pochette-sigle { display: none; }
 
-/* L'ILLUSTRATION GÉNÉRÉE, quand elle existe. Ces deux règles manquaient : le
-   composant rendait `.pochette-image` et `.pochette-art--grande` sans qu'aucun
-   style ne les accompagne. Tant que `row.illustration` est vide on ne voyait
-   rien, mais le jour où la chaîne de génération sera branchée, l'image serait
-   arrivée sans dimension et aurait fait éclater la mise en page. */
-.pochette-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-/* La pochette ouverte : l'illustration occupe tout le volet, en carré. */
-.pochette-art--grande { width: 100%; }
-
-/* LA TRANCHE du carton, le long du bord droit : c'est elle qu'on lit quand les
-   disques sont serrés. Une vraie tranche de pochette, pas une étiquette. */
-.bac-languette {
-  flex: 0 0 26px;
+/* La légende, sous la pochette : sigle à gauche, durée à droite, séparés par le
+   filet de la charte. C'est ce qui remplace la tranche du bac. */
+.bac-legende {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  padding: 9px 0;
-  writing-mode: vertical-rl;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, var(--party, var(--ink)) 42%);
-  color: rgba(255, 255, 255, 0.94);
+  margin-top: 7px;
+  padding-top: 5px;
+  border-top: 2px solid var(--party, var(--ink));
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35);
+  color: var(--ink-softer);
 }
-.bac-languette b { font-size: 10px; letter-spacing: 0.2em; }
+.bac-legende b { font-size: 11px; color: var(--ink); }
+.bac-case.sortie .bac-legende { color: var(--cordovan); }
 
-/* LES FORMES DE LA POCHETTE. Sans ces règles, le remplissage SVG par défaut est
-   NOIR. */
+/* LES FORMES DE LA POCHETTE : un 33 tours qui sort de son carton. À plat, sans
+   ombre ni dégradé — le journal n'en a pas. */
 .pochette-formes .carton { fill: var(--party, var(--ink-soft)); }
-.pochette-formes .carton-lumiere { pointer-events: none; }
-/* Le disque : noir de vinyle, jamais la couleur du parti. C'est ce qui le rend
-   reconnaissable au premier coup d'œil. */
+.pochette-formes .carton-lumiere { display: none; }
 .pochette-formes .disque > circle { fill: #17151A; }
-.pochette-formes .sillon { stroke: rgba(255, 255, 255, 0.13); stroke-width: 0.6; }
+.pochette-formes .sillon { stroke: rgba(255, 255, 255, 0.16); stroke-width: 0.7; }
 /* L'étiquette centrale porte l'ENJEU : petite surface, donc toute teinte y
    reste lisible, et c'est le point que l'œil cherche sur un disque. */
 .pochette-formes .etiquette { fill: var(--enjeu, #463E3E); }
 .pochette-formes .trou { fill: var(--paper); }
-/* L'ouverture par où sort le disque. */
 .pochette-formes .ouverture { fill: rgba(243, 236, 221, 0.5); }
 .pochette-formes .bandeau-ton { fill: var(--ton, #6E685F); }
 
@@ -9081,12 +8989,10 @@
   .gatefold { grid-template-columns: minmax(0, 1fr); max-width: none; }
   .gatefold-volet--art { border-right: none; border-bottom: 0.5px solid var(--rule); }
   .gatefold-pistes { grid-template-columns: 1fr; }
-  /* La couverture rétrécit ; la languette garde sa largeur, sinon le texte
-     vertical ne tient plus. L'empilement suit la nouvelle couverture. */
-  .bac-couv, .bac-pochette .pochette-art { flex-basis: 104px; width: 104px; }
-  .bac-case { margin-left: -104px; }
-  .bac-case:first-child { margin-left: 0; }
-  .bac-rangee { padding-right: 144px; }
+  /* Deux pochettes par ligne au doigt, plutôt qu'une rangée à faire défiler. */
+  .bac-pochette, .bac-pochette .pochette-art { width: 100%; }
+  .bac-case { flex: 1 1 calc(50% - 9px); min-width: 0; }
+  .bac-rangee { gap: 14px; }
 }
 
 .deck-nom {

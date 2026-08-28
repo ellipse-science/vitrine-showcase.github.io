@@ -727,15 +727,10 @@ function BacAVinyles({
               aria-expanded={row.key === ouverte}
               title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
             >
-              {/* LA LANGUETTE, seule partie visible au repos : c’est la tranche
-                  du disque rangé dans le bac. Elle porte le sigle et la durée,
-                  à la verticale, comme le dos d’un vinyle sur une étagère.
-                  Écarter la pochette (survol, clavier, sélection) découvre la
-                  couverture qui se cache dessous. */}
-              <span className="bac-couv">
-                <PochetteArt row={row} mediaLabel={mediaLabel} />
-              </span>
-              <span className="bac-languette">
+              <PochetteArt row={row} mediaLabel={mediaLabel} />
+              {/* La légende SOUS la pochette, comme l'étiquette d'un bac de
+                  disquaire : le sigle et la durée, rien d'autre. */}
+              <span className="bac-legende">
                 <b>{row.label}</b>
                 <span>{formatDuree(row.minutesUne)}</span>
               </span>
