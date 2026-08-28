@@ -616,32 +616,21 @@ function PochetteArt({
         <img className="pochette-image" src={row.illustration} alt="" aria-hidden="true" />
       ) : (
         <svg className="pochette-formes" viewBox="0 0 100 100" aria-hidden="true">
-          {/* UNE POCHETTE DE 33 TOURS. Le disque dépasse par la droite, comme
-              quand on le sort à demi de sa pochette : c'est ce détail, plus que
-              le carré coloré, qui fait reconnaître l'objet immédiatement. */}
-          <defs>
-            <linearGradient id={`grd-${row.key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
-              <stop offset="55%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="100%" stopColor="rgba(0,0,0,0.22)" />
-            </linearGradient>
-          </defs>
-          {/* Le disque, derrière la pochette, dépassant à droite. */}
-          <g className="disque">
-            <circle cx="88" cy="50" r="33" />
-            {[27, 22, 17, 12].map((r) => (
-              <circle key={r} className="sillon" cx="88" cy="50" r={r} fill="none" />
-            ))}
-            <circle className="etiquette" cx="88" cy="50" r="8" />
-            <circle className="trou" cx="88" cy="50" r="1.6" />
-          </g>
-          {/* La pochette par-dessus, qui recouvre les trois quarts du disque. */}
-          <rect className="carton" x="0" y="0" width="78" height="100" />
-          <rect className="carton-lumiere" x="0" y="0" width="78" height="100" fill={`url(#grd-${row.key})`} />
-          {/* L'ouverture, à droite : le liseré crème par où sort le disque. */}
-          <rect className="ouverture" x="75.5" y="0" width="2.5" height="100" />
-          {/* Le bandeau du ton, en pied, comme la bande d'un label. */}
-          <rect className="bandeau-ton" x="0" y="86" width="78" height="14" />
+          {/* LA POCHETTE SEULE. Le disque n'en sort plus : une pochette d'album
+              se regarde de face, entière, et c'est la COMPOSITION qui doit
+              porter. Composition typographique, à la manière des pochettes de
+              jazz : un aplat, une bande franche, beaucoup de vide, et le nom en
+              gros. Le vide est ce qui manquait le plus aux essais précédents. */}
+          {/* Le fond, à la couleur du parti. */}
+          <rect className="fond" x="0" y="0" width="100" height="100" />
+          {/* La bande basse, dans un ton plus sombre du même parti : elle assied
+              la composition et donne un socle au nom. */}
+          <rect className="socle" x="0" y="58" width="100" height="42" />
+          {/* Le carré de l'enjeu, en haut à droite. Petite surface, donc toute
+              teinte y reste lisible, et c'est le seul accent de la pochette. */}
+          <rect className="pastille-enjeu" x="70" y="12" width="18" height="18" />
+          {/* Le filet du ton, tout en bas, sur toute la largeur. */}
+          <rect className="filet-ton" x="0" y="95" width="100" height="5" />
         </svg>
       )}
       <b className="pochette-sigle">{row.label}</b>
@@ -708,38 +697,39 @@ function BacAVinyles({
         <span className="bac-aide">cliquez une pochette pour l’ouvrir</span>
       </p>
 
-      {/* LA BOÎTE À LAIT. Les parois et le fond sont dessinés autour des
-          disques : sans contenant, une rangée de pochettes reste une rangée de
-          vignettes. C'est le cadre qui fait comprendre l'objet d'un coup d'œil. */}
-      <div className="boite">
-        <div className="boite-paroi boite-paroi--g" aria-hidden="true" />
+      {/* LA BOÎTE. Plate, dessinée au filet : trois côtés et un fond, ouverte
+          par le haut, comme une caisse vue de face. La version en volume — parois
+          en dégradé, perspective, ombres — a été essayée et abandonnée le
+          2026-08-28 : elle donnait du clipart et jurait avec la page. Ici c'est
+          le CADRE qui dit « rangées dans une boîte », pas l'imitation du
+          plastique. */}
+      <div className="bac-boite">
         <ol className="bac-rangee">
-        {triees.map((row, i) => (
-          <li
-            className={`bac-case${row.key === ouverte ? " sortie" : ""}${row.inShadow ? " shadow" : ""}`}
-            key={row.key}
-            style={{ ["--i" as string]: i, ["--party" as string]: row.color }}
-          >
-            <button
-              type="button"
-              className="bac-pochette"
-              onClick={() => (row.key === ouverte ? onFermer() : onOuvrir(row.key))}
-              aria-expanded={row.key === ouverte}
-              title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
+          {triees.map((row, i) => (
+            <li
+              className={`bac-case${row.key === ouverte ? " sortie" : ""}${row.inShadow ? " shadow" : ""}`}
+              key={row.key}
+              style={{ ["--i" as string]: i, ["--party" as string]: row.color }}
             >
-              <PochetteArt row={row} mediaLabel={mediaLabel} />
-              {/* La légende SOUS la pochette, comme l'étiquette d'un bac de
-                  disquaire : le sigle et la durée, rien d'autre. */}
-              <span className="bac-legende">
-                <b>{row.label}</b>
-                <span>{formatDuree(row.minutesUne)}</span>
-              </span>
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                className="bac-pochette"
+                onClick={() => (row.key === ouverte ? onFermer() : onOuvrir(row.key))}
+                aria-expanded={row.key === ouverte}
+                title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
+              >
+                <PochetteArt row={row} mediaLabel={mediaLabel} />
+                {/* La légende POSÉE SUR la pochette, dans la bande toujours
+                    visible malgré le chevauchement. Sous la pochette, elle se
+                    serait désalignée dès qu'une voisine la recouvre. */}
+                <span className="bac-legende">
+                  <b>{row.label}</b>
+                  <span>{formatDuree(row.minutesUne)}</span>
+                </span>
+              </button>
+            </li>
+          ))}
         </ol>
-        <div className="boite-paroi boite-paroi--d" aria-hidden="true" />
-        <div className="boite-fond" aria-hidden="true" />
       </div>
 
       {choisie && <PochetteOuverte row={choisie} mediaLabel={mediaLabel} onFermer={onFermer} />}

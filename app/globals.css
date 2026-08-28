@@ -8768,84 +8768,121 @@
   color: var(--ink-soft);
 }
 
-/* LES POCHETTES, à plat.
+/* LES POCHETTES, RANGÉES DANS UNE BOÎTE.
 
-   UNE CAISSE EN VOLUME A ÉTÉ ESSAYÉE ET ABANDONNÉE (2026-08-28). Dessiner un
-   objet en plastique au dégradé, en perspective, dans une page de journal en
-   papier crème, ne donne pas un objet : ça donne du clipart, et ça jure avec
-   tout ce qui l'entoure. Le chevauchement rendait de surcroît les titres
-   illisibles.
-
-   Une rangée à plat montre les CINQ pochettes d'un coup, dans l'ordre du temps
-   d'écoute, sans rien cacher. C'est plus lisible ET plus fidèle à la page.
-   Le jour où de vraies illustrations générées rempliront ces carrés, la
-   question du contenant pourra se reposer — un bac n'est beau que par ses
-   pochettes. */
+   HISTORIQUE, pour qu'on ne le refasse pas : une caisse EN VOLUME — parois en
+   dégradé, perspective, ombres portées — a été essayée le 2026-08-28 et
+   abandonnée. Dans une page de journal en papier crème, l'imitation du
+   plastique donne du clipart, et le chevauchement rendait les titres
+   illisibles. Ici la boîte est PLATE, dessinée au filet : c'est le cadre qui
+   dit « rangé », pas la matière.
+   ─────────────────────────────────────────────────────────────────────────── */
+.bac-boite {
+  /* Trois côtés et un fond, OUVERTE par le haut : les pochettes en dépassent,
+     comme dans une boîte trop pleine. */
+  border: 1px solid var(--ink);
+  border-top: none;
+  background: var(--paper-deep);
+  padding: 26px 16px 16px;
+  margin-top: 20px;
+  /* La boîte épouse son contenu plutôt que de s'étirer sur toute la page. */
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
 .bac-rangee {
   display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
+  align-items: flex-start;
   margin: 0;
-  padding: 18px 0 4px;
+  padding: 0;
   list-style: none;
 }
-.bac-case { flex: 0 0 auto; }
+.bac-case {
+  flex: 0 0 auto;
+  /* Elles se serrent, comme des disques rangés — mais la bande visible reste
+     assez large pour porter le sigle et la durée. */
+  margin-left: -46px;
+  transition: transform 180ms ease;
+  position: relative;
+  z-index: calc(50 - var(--i, 0));
+}
+.bac-case:first-child { margin-left: 0; }
+/* Sortir une pochette de la boîte : elle monte. Rien d'autre ne bouge. */
+.bac-case:hover, .bac-case:focus-within { transform: translateY(-10px); z-index: 100; }
+.bac-case.sortie { transform: translateY(-16px); z-index: 100; }
 
 .bac-pochette {
   display: block;
-  width: 128px;
+  width: 132px;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
+  position: relative;
 }
 .bac-pochette .pochette-art {
   display: block;
   position: relative;
-  width: 128px;
+  width: 132px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border: 0.5px solid var(--rule);
+  /* LE BORD DU CARTON, à gauche : c'est lui qui sépare une pochette de sa
+     voisine. Sans lui, cinq pochettes serrées se lisaient comme une seule bande
+     de couleur — et deux partis de même famille, les bleus de la CAQ et du PQ,
+     se confondaient franchement. */
+  border-left: 2px solid var(--paper-deep);
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
 }
-.bac-case.sortie .bac-pochette .pochette-art { border-color: var(--ink); }
-.bac-pochette:hover .pochette-art { border-color: var(--ink); }
-/* En sourdine : présente, en retrait. Elle reste OPAQUE. */
+.bac-case:first-child .bac-pochette .pochette-art { border-left: none; }
 .bac-case.shadow .bac-pochette .pochette-art { filter: grayscale(0.8); }
+
+/* Le sigle du composant partagé est masqué DANS LA BOÎTE : la légende
+   ci-dessous le porte déjà. Sans cette règle il s'affichait en double, et le
+   second, trop grand, débordait sur la pochette voisine. */
 .bac-pochette .pochette-sigle { display: none; }
 
-/* La légende, sous la pochette : sigle à gauche, durée à droite, séparés par le
-   filet de la charte. C'est ce qui remplace la tranche du bac. */
+/* La légende tient dans la BANDE VISIBLE, celle que la pochette suivante ne
+   recouvre pas : 132 px de pochette moins 46 px de chevauchement, soit 86.
+   Étalée sur toute la largeur, sa moitié droite passait sous la voisine et la
+   durée se faisait couper. */
 .bac-legende {
+  position: absolute;
+  /* À DROITE, et non à gauche. Les pochettes de devant recouvrent le côté
+     GAUCHE des suivantes : c'est leur bande droite qui reste visible. Posée à
+     gauche, la légende disparaissait sous la voisine — seule la première
+     s'affichait. */
+  right: 10px;
+  bottom: 10px;
+  width: 66px;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 7px;
-  padding-top: 5px;
-  border-top: 2px solid var(--party, var(--ink));
+  flex-direction: column;
+  gap: 1px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-softer);
+  color: rgba(243, 236, 221, 0.78);
 }
-.bac-legende b { font-size: 11px; color: var(--ink); }
-.bac-case.sortie .bac-legende { color: var(--cordovan); }
+.bac-legende b {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+}
 
-/* LES FORMES DE LA POCHETTE : un 33 tours qui sort de son carton. À plat, sans
-   ombre ni dégradé — le journal n'en a pas. */
-.pochette-formes .carton { fill: var(--party, var(--ink-soft)); }
-.pochette-formes .carton-lumiere { display: none; }
-.pochette-formes .disque > circle { fill: #17151A; }
-.pochette-formes .sillon { stroke: rgba(255, 255, 255, 0.16); stroke-width: 0.7; }
-/* L'étiquette centrale porte l'ENJEU : petite surface, donc toute teinte y
-   reste lisible, et c'est le point que l'œil cherche sur un disque. */
-.pochette-formes .etiquette { fill: var(--enjeu, #463E3E); }
-.pochette-formes .trou { fill: var(--paper); }
-.pochette-formes .ouverture { fill: rgba(243, 236, 221, 0.5); }
-.pochette-formes .bandeau-ton { fill: var(--ton, #6E685F); }
+/* LA POCHETTE : une composition typographique, pas un pictogramme. Un aplat, un
+   socle plus sombre, un seul accent, beaucoup de vide. Le vide est ce qui
+   manquait le plus aux essais précédents. */
+.pochette-formes .fond { fill: var(--party, var(--ink-soft)); }
+.pochette-formes .socle { fill: color-mix(in srgb, var(--party, #6E685F) 62%, var(--ink)); }
+/* Le seul accent de la pochette : l'enjeu. */
+.pochette-formes .pastille-enjeu { fill: var(--enjeu, #463E3E); }
+.pochette-formes .filet-ton { fill: var(--ton, #6E685F); }
 
 /* ───────────────────────────────────────────────────────────────────────────
    LA POCHETTE OUVERTE, en double volet.
@@ -8989,10 +9026,11 @@
   .gatefold { grid-template-columns: minmax(0, 1fr); max-width: none; }
   .gatefold-volet--art { border-right: none; border-bottom: 0.5px solid var(--rule); }
   .gatefold-pistes { grid-template-columns: 1fr; }
-  /* Deux pochettes par ligne au doigt, plutôt qu'une rangée à faire défiler. */
-  .bac-pochette, .bac-pochette .pochette-art { width: 100%; }
-  .bac-case { flex: 1 1 calc(50% - 9px); min-width: 0; }
-  .bac-rangee { gap: 14px; }
+  /* Au doigt, on serre un peu moins : la boîte défile horizontalement. */
+  .bac-boite { padding: 20px 12px 12px; }
+  .bac-pochette, .bac-pochette .pochette-art { width: 112px; }
+  .bac-case { margin-left: -38px; }
+  .bac-case:first-child { margin-left: 0; }
 }
 
 .deck-nom {
