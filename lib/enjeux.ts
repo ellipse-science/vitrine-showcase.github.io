@@ -52,6 +52,16 @@ export const COULEUR_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
   Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, ISSUE_COLORS[cle]]),
 );
 
+/** L'index inverse des CLÉS : du libellé français vers la clé technique.
+ *
+ *  Le Polimètre+ ne connaît ses enjeux que par leur libellé complet
+ *  (`CATEGORY_ORDER` de polimetre-meta.ts, les douze mêmes chaînes au caractère
+ *  près), alors que le symbole d'enjeu est rangé par clé. Sans cet index, le
+ *  module 6 devrait recopier la correspondance et la laisser dériver. */
+export const CLE_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
+  Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, cle]),
+);
+
 /** Couleur de repli, pour un enjeu inconnu ou pour « aucun enjeu identifié ».
  *  C'est celle qu'employait déjà headlineEvents.ts. */
 export const COULEUR_ENJEU_DEFAUT = "#463E3E";

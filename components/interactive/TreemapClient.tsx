@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
@@ -72,6 +73,12 @@ function GrowthTile({
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
+  // Une tuile TRÈS PLATE ne peut pas porter le symbole ET la part : mesuré sur
+  // la tuile Santé (24 px de haut pour 38 px de contenu), le symbole poussait
+  // le chiffre hors du cadre. Or c'est la part qui est le nombre principal.
+  // 6,5 % des 680 px du treemap ≈ 44 px, la hauteur en dessous de laquelle les
+  // deux ne tiennent plus. Même unité abstraite que les seuils d'aire au-dessus.
+  const plat = tile.rect.h < 6.5;
   const needsTip = size === "small" || isTiny;
   const mainArticle = tile.articles[0];
   const mediaLabel = mainArticle?.outlets.map((outlet) => outlet.name).join(" · ") ?? "";
@@ -101,7 +108,11 @@ function GrowthTile({
   // (l'aria-label, lui, énonce toujours les deux).
   const inner = isTiny ? (
     <div className="gt-compact">
-      <span className="gt-title">{tile.issueFr}</span>
+      {/* Le nom y était rogné jusqu'à ne plus désigner personne (« ducation »
+          sur la tuile Éducation, mesuré le 29-08). Le symbole, lui, reste
+          entier : à cette taille, c'est LUI l'étiquette. Le nom complet se lit
+          au survol et dans la tuile dépliée, et l'aria-label le dit toujours. */}
+      {!plat && <SymboleEnjeu cle={tile.issueKey} className="gt-symbole-seul" />}
       <span className="gt-figures">
         {shareSpan}
         <span className="gt-pct gt-pct-arrow" aria-hidden="true">
@@ -117,7 +128,10 @@ function GrowthTile({
         {growthSpan}
       </div>
       <div className="gt-body">
-        <div className="gt-title">{tile.issueFr}</div>
+        <div className="gt-title">
+          <SymboleEnjeu cle={tile.issueKey} />
+          <span>{tile.issueFr}</span>
+        </div>
         {mainArticle && !needsTip && (
           <div className="gt-preview">
             <span className="gt-preview-head">{mainArticle.title}</span>
@@ -186,7 +200,7 @@ function GrowthTile({
             <div className="gt-expanded-header">
               <div>
                 <span className="gt-expanded-kicker">Enjeu saillant</span>
-                <h3>{tile.issueFr}</h3>
+                <h3><SymboleEnjeu cle={tile.issueKey} />{tile.issueFr}</h3>
                 <span className="gt-expanded-count">
                   {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
                 </span>
@@ -250,7 +264,10 @@ function GrowthTip({ tile }: { tile: LayoutNode }) {
 
   return (
     <div className="gt-tip" style={style}>
-      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
+      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>
+        <SymboleEnjeu cle={tile.issueKey} />
+        {tile.issueFr}
+      </div>
       <dl className="gt-tip-figures">
         <dt>Part de l&apos;attention</dt>
         <dd>{formatPct(tile.share)}</dd>
@@ -780,7 +797,10 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
               const barInner = (
                 <>
                   <div className="tm-bar-meta">
-                    <span className="tm-bar-name">{tile.issueFr}</span>
+                    <span className="tm-bar-name">
+                      <SymboleEnjeu cle={tile.issueKey} />
+                      {tile.issueFr}
+                    </span>
                     {tile.topObject && <span className="tm-bar-enjeu">{tile.topObject}</span>}
                     <span className="tm-bar-part">{formatPct(tile.share)}</span>
                   </div>
