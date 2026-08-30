@@ -476,7 +476,7 @@
       <li><a href="#collecte-medias">Architecture de collecte&nbsp;: Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
       <li><a href="#une-des-unes">Module&nbsp;: L'actualité saillante du moment au Québec &amp; Deux solitudes?</a></li>
-      <li><a href="#enjeux-saillants">Module&nbsp;: De quoi parle-t-on?</a></li>
+      <li><a href="#enjeux-saillants">Module&nbsp;: Les 12 enjeux de la campagne</a></li>
       <li><a href="#partis-et-couverture">Module&nbsp;: De quel parti parle-t-on dans les médias?</a></li>
       <li><a href="#polimetre-plus">Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</a></li>
       <li><a href="#assemblee-nationale">Module&nbsp;: L'alignement de l'Assemblée</a></li>
@@ -577,12 +577,12 @@
       <table class="metho-table">
         <thead><tr><th>Niveau</th><th>Position (percentile des points d'attention 24h)</th><th>Part des Unes</th><th>À partir de (points, Unes québécoises)</th></tr></thead>
         <tbody>
-          <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5 %</td><td>moins de 10,1</td></tr>
-          <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15 %</td><td>10,1</td></tr>
-          <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30 %</td><td>12,5</td></tr>
-          <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30 %</td><td>17,7</td></tr>
-          <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15 %</td><td>28,8</td></tr>
-          <tr><td>Exceptionnelle</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5 %</td><td>46,9</td></tr>
+          <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5&nbsp;%</td><td>moins de 10,1</td></tr>
+          <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15&nbsp;%</td><td>10,1</td></tr>
+          <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30&nbsp;%</td><td>12,5</td></tr>
+          <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30&nbsp;%</td><td>17,7</td></tr>
+          <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15&nbsp;%</td><td>28,8</td></tr>
+          <tr><td>Exceptionnelle</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5&nbsp;%</td><td>46,9</td></tr>
         </tbody>
       </table>
     </div>
@@ -647,7 +647,8 @@
   <!-- §5 Enjeux (treemap) -->
   <section id="enjeux-saillants" class="metho-section">
     <p class="metho-section-label">§ 05</p>
-    <h2>Module&nbsp;: De quoi parle-t-on?</h2>
+    <h2>Module&nbsp;: Les 12 enjeux de la campagne</h2>
+    <p class="metho-body"><em>Anciennement «&nbsp;De quoi parle-t-on?&nbsp;».</em></p>
     <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
 
     <h3>Enjeux couverts</h3>
@@ -679,16 +680,21 @@
       <li>Le système analyse le contenu textuel des articles de chaque bloc de quatre heures et calcule un score de saillance pour chacun des 12 enjeux.</li>
       <li>Pour la période choisie, les scores du traitement le plus récent sont additionnés pour chaque enjeu.</li>
       <li>Les scores cumulés déterminent la surface de chaque tuile (plus un enjeu est saillant, plus sa tuile est grande) ainsi que le classement des enjeux, du plus au moins saillant.</li>
-      <li>Pour la vue du jour, on calcule aussi la <strong>variation de saillance</strong> de chaque enjeu par rapport au traitement précédent, exprimée en pourcentage (hausse ou baisse).</li>
+      <li>La <strong>part de l'attention</strong> de chaque enjeu est son score cumulé divisé par la somme des scores des douze, en pourcentage. Les douze parts totalisent donc 100&nbsp;% (à l'arrondi près, chaque part étant affichée à une décimale)&nbsp;: c'est une répartition de l'attention entre les enjeux, pas une mesure absolue de couverture.</li>
+      <li>Pour la vue du jour, on calcule aussi la <strong>variation de saillance</strong> de chaque enjeu par rapport au traitement précédent, exprimée en pourcentage (hausse ou baisse). Le module est republié <strong>six fois par jour</strong>&nbsp;: l'heure du traitement auquel la variation se compare est affichée avec elle, et l'heure de la dernière mise à jour figure au bas du module. Ce sont les heures des <strong>éditions</strong> (0h, 4h, 8h, 12h, 16h, 20h), en heure de Montréal&nbsp;: un bloc de données est servi une heure après sa fin, comme partout ailleurs sur le site.</li>
       <li>Pour les vues hebdomadaire et mensuelle, le classement des enjeux est conservé à chaque traitement, ce qui permet d'en retracer l'évolution dans le temps.</li>
       <li>Pour chaque enjeu, les actualités récentes sont regroupées. Chaque actualité conserve la liste précise des médias québécois qui la couvrent, plutôt qu'une liste générale calculée pour l'ensemble de l'enjeu.</li>
     </ol>
 
+    <h3>Le symbole de chaque enjeu</h3>
+    <p class="metho-body">Chacun des douze enjeux porte un symbole qui lui est propre, en plus de sa couleur. Un enjeu donné garde son symbole et sa couleur partout où il apparaît&nbsp;: sur la rubrique de l'actualité saillante, sur les rubriques du radar des Deux solitudes, sur les tuiles de ce module et à côté des promesses du Polimètre+. Un même enjeu se reconnaît donc d'un module à l'autre sans avoir à relire son nom.</p>
+    <p class="metho-body">Le symbole n'est pas un ornement&nbsp;: il reste lisible là où le nom ne l'est plus. Sur les plus petites tuiles, le nom de l'enjeu était rogné jusqu'à ne plus désigner personne; c'est désormais le symbole seul qui l'identifie, le nom complet restant accessible au survol et dans la tuile dépliée. Sur les tuiles les plus plates, où le symbole et le pourcentage ne tiennent pas ensemble, c'est le pourcentage qui est conservé.</p>
+
     <h3>Affichage</h3>
     <p class="metho-body">Trois vues, une par fenêtre temporelle, sélectionnables par onglet.</p>
     <ul class="metho-list">
-      <li><strong>Aujourd'hui</strong>&nbsp;: une grille de tuiles colorées (une couleur par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
-      <li><strong>Cette semaine</strong> et <strong>Ce mois</strong>&nbsp;: un graphique retrace l'<strong>évolution du classement</strong> des douze enjeux jour après jour (les sept derniers jours, ou le mois en cours). Sur ordinateur, toutes les trajectoires sont présentées ensemble. Sur mobile, une trajectoire est mise en évidence à la fois; une liste classée permet de choisir l'enjeu suivi, tandis que les onze autres restent visibles en arrière-plan. En sélectionnant un enjeu, on affiche ses actualités récentes, avec un lien vers l'article sur le site du média.</li>
+      <li><strong>Jour</strong>&nbsp;: une grille de tuiles colorées (une couleur et un symbole par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu, sa <strong>part de l'attention médiatique</strong> (le nombre principal, qui chiffre ce que la surface montre) et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur les tuiles trop petites pour porter les deux nombres, la variation se réduit à sa flèche&nbsp;: le chiffre exact se lit au survol et dans la tuile dépliée. Sur téléphone, la grille devient une liste de barres proportionnelles portant la même part. Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
+      <li><strong>Semaine</strong> et <strong>Campagne</strong>&nbsp;: un graphique retrace l'<strong>évolution du classement</strong> des douze enjeux jour après jour. L'onglet «&nbsp;Campagne&nbsp;» porte le nom que les autres modules donnent à leur vue la plus large; ici, cette vue couvre les <strong>29 à 31 derniers jours glissants</strong>, la plus longue fenêtre dont ce module dispose. Elle ne s'aligne donc pas exactement sur les dates de la campagne électorale. Sur ordinateur, toutes les trajectoires sont présentées ensemble. Sur mobile, une trajectoire est mise en évidence à la fois; une liste classée permet de choisir l'enjeu suivi, tandis que les onze autres restent visibles en arrière-plan. En sélectionnant un enjeu, on affiche ses actualités récentes, avec un lien vers l'article sur le site du média.</li>
     </ul>
   </section>
 
@@ -811,9 +817,9 @@
       <table class="metho-table">
         <thead><tr><th>Fenêtre</th><th>Portée</th><th>Fréquence de mise à jour</th></tr></thead>
         <tbody>
-          <tr><td><strong>Aujourd'hui</strong></td><td>Blocs de 4h du jour courant</td><td>6 fois par jour (00h, 04h, 08h, 12h, 16h, 20h, heure de Montréal)</td></tr>
-          <tr><td><strong>Cette semaine</strong></td><td>7 derniers jours glissants</td><td>1 fois par jour (19h35, heure de Montréal)</td></tr>
-          <tr><td><strong>Ce mois</strong></td><td>29 à 31 derniers jours glissants</td><td>1 fois par jour (19h39, heure de Montréal)</td></tr>
+          <tr><td><strong>Jour</strong></td><td>Blocs de 4h du jour courant</td><td>6 fois par jour (00h, 04h, 08h, 12h, 16h, 20h, heure de Montréal)</td></tr>
+          <tr><td><strong>Semaine</strong></td><td>7 derniers jours glissants</td><td>1 fois par jour (19h35, heure de Montréal)</td></tr>
+          <tr><td><strong>Campagne</strong></td><td>29 à 31 derniers jours glissants</td><td>1 fois par jour (19h39, heure de Montréal)</td></tr>
         </tbody>
       </table>
     </div>

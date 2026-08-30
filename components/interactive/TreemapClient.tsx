@@ -4,11 +4,12 @@ import React, { useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
-// --- Treemap de croissance (vue Aujourd'hui) : partition + tuiles Proto A avec % de croissance ---
+// --- Treemap de croissance (onglet « Jour ») : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
 interface LayoutNode extends TreemapIssueTile { rect: Rect; }
 
@@ -42,20 +43,31 @@ function computeTreemapLayout(tiles: TreemapIssueTile[]): LayoutNode[] {
   return nodes;
 }
 
-// « +7,8 % » / « −22,0 % » — virgule décimale, un chiffre, espace insécable avant le %.
+// « 14,2 % » : virgule décimale, un chiffre, espace insécable avant le %.
+// Part et variation se lisent côte à côte sur une même tuile : elles doivent
+// se composer pareil, d'où une seule primitive.
+function formatPct(value: number): string {
+  return `${value.toFixed(1).replace(".", ",")} %`;
+}
+
+// « +7,8 % » / « −22,0 % » : le signe porte le sens de la variation, ce qui
+// interdit de le réutiliser dans une phrase qui dit déjà « en baisse de ».
 function formatGrowth(growth: number): string {
   const sign = growth > 0 ? "+" : growth < 0 ? "−" : "";
-  return `${sign}${Math.abs(growth).toFixed(1).replace(".", ",")} %`;
+  return `${sign}${formatPct(Math.abs(growth))}`;
 }
 
 function GrowthTile({
   tile,
+  depuis,
   expanded,
   muted,
   onExpand,
   onPreview,
 }: {
   tile: LayoutNode;
+  /** À quoi la variation se compare (« 15h », « hier 23h ») ; commun aux 12. */
+  depuis: string | null;
   expanded: boolean;
   muted: boolean;
   onExpand: (issueKey: string | null) => void;
@@ -64,9 +76,19 @@ function GrowthTile({
   const area = tile.rect.w * tile.rect.h;
   const size = area < 150 ? "tiny" : area < 450 ? "small" : area < 1100 ? "medium" : "large";
   const isTiny = size === "tiny";
+  // Une tuile TRÈS PLATE ne peut pas porter le symbole ET la part : mesuré sur
+  // la tuile Santé (24 px de haut pour 38 px de contenu), le symbole poussait
+  // le chiffre hors du cadre. Or c'est la part qui est le nombre principal.
+  // 6,5 % des 680 px du treemap ≈ 44 px, la hauteur en dessous de laquelle les
+  // deux ne tiennent plus. Même unité abstraite que les seuils d'aire au-dessus.
+  const plat = tile.rect.h < 6.5;
   const needsTip = size === "small" || isTiny;
   const mainArticle = tile.articles[0];
   const mediaLabel = mainArticle?.outlets.map((outlet) => outlet.name).join(" · ") ?? "";
+
+  // « depuis 15h » ne tient que sur une grande tuile ; ailleurs il se lit au
+  // survol et dans la tuile dépliée. Même arbitrage que le libellé de la part.
+  const depuisSpan = depuis ? <span className="gt-depuis">depuis {depuis}</span> : null;
 
   const growthSpan = (
     <span className="gt-pct">
@@ -76,18 +98,50 @@ function GrowthTile({
     </span>
   );
 
+  // La surface de la tuile porte déjà la part, mais elle ne se lit pas au
+  // chiffre près : deux tuiles voisines se comparent mal à l'oeil. Le libellé
+  // n'accompagne que les grandes tuiles, assez pour dire une fois ce qu'est ce
+  // nombre; les autres se lisent par analogie.
+  const shareSpan = (
+    <span className="gt-share">
+      <span className="gt-share-num">{formatPct(tile.share)}</span>
+      <span className="gt-share-kicker">Part de l&apos;attention</span>
+    </span>
+  );
+
+  // Sur une tuile minuscule, les deux nombres se chevauchaient et se coupaient
+  // au bord. La part reste chiffrée, la variation se réduit à sa flèche : le
+  // sens survit, le chiffre exact se lit au survol et dans le panneau déplié
+  // (l'aria-label, lui, énonce toujours les deux).
   const inner = isTiny ? (
     <div className="gt-compact">
-      <span className="gt-title">{tile.issueFr}</span>
-      {growthSpan}
+      {/* Le nom y était rogné jusqu'à ne plus désigner personne (« ducation »
+          sur la tuile Éducation, mesuré le 29-08). Le symbole, lui, reste
+          entier : à cette taille, c'est LUI l'étiquette. Le nom complet se lit
+          au survol et dans la tuile dépliée, et l'aria-label le dit toujours. */}
+      {!plat && <SymboleEnjeu cle={tile.issueKey} className="gt-symbole-seul" />}
+      <span className="gt-figures">
+        {shareSpan}
+        <span className="gt-pct gt-pct-arrow" aria-hidden="true">
+          {tile.velocity === 1 && <span className="gt-up">▲</span>}
+          {tile.velocity === -1 && <span className="gt-down">▼</span>}
+        </span>
+      </span>
     </div>
   ) : (
     <>
       <div className="gt-head">
-        {growthSpan}
+        {shareSpan}
+        <span className="gt-variation">
+          {growthSpan}
+          {depuisSpan}
+        </span>
       </div>
       <div className="gt-body">
-        <div className="gt-title">{tile.issueFr}</div>
+        <div className="gt-title">
+          <SymboleEnjeu cle={tile.issueKey} />
+          <span>{tile.issueFr}</span>
+        </div>
         {mainArticle && !needsTip && (
           <div className="gt-preview">
             <span className="gt-preview-head">{mainArticle.title}</span>
@@ -97,6 +151,14 @@ function GrowthTile({
       </div>
     </>
   );
+
+  // Un lecteur d'écran ne voit ni la flèche ni la couleur : la variation doit
+  // se dire en toutes lettres, sinon une hausse et une baisse s'annoncent pareil.
+  const growthAria = tile.growth === null
+    ? "variation non calculable"
+    : tile.growth === 0
+      ? "saillance stable depuis le traitement précédent"
+      : `${tile.growth > 0 ? "en hausse de" : "en baisse de"} ${formatPct(Math.abs(tile.growth))} depuis ${depuis ?? "le traitement précédent"}`;
 
   const containerStyle: React.CSSProperties = expanded
     ? { left: "0%", top: "0%", width: "100%", height: "100%" }
@@ -113,7 +175,7 @@ function GrowthTile({
       style={containerStyle}
       tabIndex={muted ? -1 : 0}
       aria-expanded={expanded}
-      aria-label={`${tile.issueFr} : cliquer pour afficher toutes les actualités associées`}
+      aria-label={`${tile.issueFr}\u00a0: ${formatPct(tile.share)} de l'attention médiatique, ${growthAria}. Cliquer pour afficher toutes les actualités associées`}
       onClick={(event) => {
         if (!expanded && !(event.target as HTMLElement).closest("a, button")) {
           onPreview(null);
@@ -148,7 +210,7 @@ function GrowthTile({
             <div className="gt-expanded-header">
               <div>
                 <span className="gt-expanded-kicker">Enjeu saillant</span>
-                <h3>{tile.issueFr}</h3>
+                <h3><SymboleEnjeu cle={tile.issueKey} />{tile.issueFr}</h3>
                 <span className="gt-expanded-count">
                   {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
                 </span>
@@ -157,8 +219,12 @@ function GrowthTile({
                 <button type="button" className="gt-expanded-close" onClick={() => onExpand(null)}>
                   Fermer <span aria-hidden="true">×</span>
                 </button>
+                <span className="gt-expanded-share">{formatPct(tile.share)}</span>
+                <span className="gt-expanded-label">Part de l&apos;attention médiatique</span>
                 {growthSpan}
-                <span>Variation depuis le traitement précédent</span>
+                <span className="gt-expanded-label">
+                  {depuis ? `Variation depuis ${depuis}` : "Variation depuis le traitement précédent"}
+                </span>
               </div>
             </div>
 
@@ -196,7 +262,7 @@ function GrowthTile({
   );
 }
 
-function GrowthTip({ tile }: { tile: LayoutNode }) {
+function GrowthTip({ tile, depuis }: { tile: LayoutNode; depuis: string | null }) {
   const article = tile.articles[0];
   if (!article) return null;
   const cx = tile.rect.x + tile.rect.w / 2;
@@ -210,7 +276,20 @@ function GrowthTip({ tile }: { tile: LayoutNode }) {
 
   return (
     <div className="gt-tip" style={style}>
-      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>{tile.issueFr}</div>
+      <div className="gt-tip-name" style={{ "--c": tile.color } as React.CSSProperties}>
+        <SymboleEnjeu cle={tile.issueKey} />
+        {tile.issueFr}
+      </div>
+      <dl className="gt-tip-figures">
+        <dt>Part de l&apos;attention</dt>
+        <dd>{formatPct(tile.share)}</dd>
+        <dt>{depuis ? `Variation depuis ${depuis}` : "Variation"}</dt>
+        <dd>
+          {tile.velocity === 1 && <span className="gt-up">▲</span>}
+          {tile.velocity === -1 && <span className="gt-down">▼</span>}
+          {tile.growth === null ? (tile.velocity === 1 ? "nouv." : "n.d.") : formatGrowth(tile.growth)}
+        </dd>
+      </dl>
       <div className="gt-tip-head">{article.title}</div>
       {mediaLabel && <div className="gt-tip-media">{mediaLabel}</div>}
       <div className="gt-tip-action">Cliquer pour tout voir</div>
@@ -427,7 +506,7 @@ function IssuesRankMobile({
 /**
  * Graphique de rang (« bump chart ») : trajectoire du classement des 12 enjeux dans le temps,
  * avec panneau « À la une » qui liste les actualités de l'enjeu sélectionné (clic) ou survolé.
- * Affiché pour les vues « Cette semaine » (7 derniers jours) et « Ce mois » (mois courant).
+ * Affiché pour les vues « Semaine » (7 derniers jours) et « Campagne » (mois courant).
  */
 function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: RankPeriod }) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
@@ -664,11 +743,11 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title" onClick={handleTitleTap} style={{ cursor: "pointer" }}>
-            De quoi parle-t-on?{" "}
+            Les 12 enjeux de la campagne{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
-              • <b>Aujourd’hui</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour et le pourcentage indique sa croissance par rapport au traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Cette semaine &amp; Ce mois</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              • <b>Jour</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Semaine &amp; Campagne</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -681,24 +760,24 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
                 onClick={() => selectPeriod("day")}
                 style={{ cursor: "pointer" }}
               >
-                Aujourd&apos;hui
+                Jour
               </span>
               <span
                 className={period === "week" ? "active" : undefined}
                 onClick={() => selectPeriod("week")}
                 style={{ cursor: "pointer" }}
               >
-                Cette semaine
+                Semaine
               </span>
               <span
                 className={period === "month" ? "active" : undefined}
                 onClick={() => selectPeriod("month")}
                 style={{ cursor: "pointer" }}
               >
-                Ce mois
+                Campagne
               </span>
             </div>
-            <ShareButton title="De quoi parle-t-on?" anchor="enjeux-saillants" editionKey={editionKey} />
+            <ShareButton title="Les 12 enjeux de la campagne" anchor="enjeux-saillants" editionKey={editionKey} />
           </div>
         </div>
       </div>
@@ -710,27 +789,33 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
               <GrowthTile
                 key={tile.issueKey}
                 tile={tile}
+                depuis={current.growthSince}
                 expanded={expandedIssue === tile.issueKey}
                 muted={expandedIssue !== null && expandedIssue !== tile.issueKey}
                 onExpand={expandIssue}
                 onPreview={setTipTile}
               />
             ))}
-            {tipTile && expandedIssue === null && <GrowthTip tile={tipTile} />}
+            {tipTile && expandedIssue === null && <GrowthTip tile={tipTile} depuis={current.growthSince} />}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">
             <div className="tm-bar-legend">
               <span>Couleur = enjeu</span>
               <span>Largeur = score</span>
+              <span>% = part de l&apos;attention</span>
             </div>
             {tiles.map((tile) => {
               const barStyle = { "--c": tile.color, "--w": `${tile.relScore}%` } as React.CSSProperties;
               const barInner = (
                 <>
                   <div className="tm-bar-meta">
-                    <span className="tm-bar-name">{tile.issueFr}</span>
+                    <span className="tm-bar-name">
+                      <SymboleEnjeu cle={tile.issueKey} />
+                      {tile.issueFr}
+                    </span>
                     {tile.topObject && <span className="tm-bar-enjeu">{tile.topObject}</span>}
+                    <span className="tm-bar-part">{formatPct(tile.share)}</span>
                   </div>
                   <div className="tm-bar-track">
                     <div className="tm-bar-fill" />

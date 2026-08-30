@@ -13,7 +13,8 @@ import { cache } from "react";
 import { editionLabel, editionSlot } from "@/lib/editions";
 // Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
-import { ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
+import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
+import { heurePublicationMontreal } from "@/lib/dates";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -931,6 +932,7 @@ function buildSolitudes(
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
+      issueKey: a.rep.main_issue && ISSUE_COLORS[a.rep.main_issue] ? a.rep.main_issue : null,
       salienceLabel: tier?.label ?? null,
       salienceCls: tier?.cls ?? null,
       salienceHint: tier?.hint ?? null,
@@ -1815,6 +1817,12 @@ export type UneEvent = {
   excerpt: string | null;
   issueFr: string;
   issueColor: string;
+  /** La clé technique CAP de l'enjeu (`governments_and_governance`), conservée
+   *  pour que la Une puisse porter le symbole d'enjeu et se raccorder au module
+   *  des 12 enjeux. Elle était lue puis jetée ici : seuls `issueFr` et
+   *  `issueColor` en sortaient, et aucune jointure n'était possible autrement
+   *  qu'en recomparant des libellés français. `null` si l'enjeu est inconnu. */
+  issueKey: string | null;
   /** Rang de saillance 1–6 (Très faible→1 … Exceptionnelle→6) — pilote la taille du titre. */
   saillanceRank: number;
   saillanceLabel: string;
@@ -1883,6 +1891,9 @@ export type SolitudeAxis = {
   /** Étiquette « rubrique » au-dessus du titre : catégorie d'enjeu (FR, toujours
    *  exacte). null si l'enjeu est inconnu. */
   eyebrow: string | null;
+  /** La clé technique CAP du même enjeu, pour en tirer le symbole. Le libellé
+   *  seul ne suffisait pas : il aurait fallu recomparer des chaînes françaises. */
+  issueKey: string | null;
   /** Valeur radiale de dessin (0-100) : part de l'attention 24h de la région
    *  rapportée au sujet le plus couvert de cette région (le plus gros sujet du
    *  jour touche le bord). Rend les deux formes comparables malgré l'écart
@@ -1964,6 +1975,8 @@ export type TreemapIssueTile = {
   color: string;
   score: number;
   relScore: number;
+  /** Part de l'enjeu dans la saillance totale des 12 enjeux de la période, en %. Les 12 parts somment à 100. */
+  share: number;
   topObject: string;
   context: string;
   url: string | null;
@@ -1985,7 +1998,14 @@ export type TreemapHistoryPoint = { date: string; ranks: Record<string, number> 
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
   dateLabel: string;
-  /** « Dernière mise à jour : mercredi 8 juillet 2026 » — table journalière, pas d'heure. */
+  /** À quoi la variation des tuiles se compare, dit en clair : « ce matin »,
+   *  « hier soir »… `null` quand aucune publication antérieure ne diffère.
+   *  Commun aux 12 tuiles : c'est le même traitement précédent pour toutes. */
+  growthSince: string | null;
+  /** « Dernière mise à jour : jeudi 27 août 2026, 15h » — l'heure vient du `tag`
+   *  de la passe, converti depuis l'UTC. La table a une fenêtre journalière mais
+   *  une cadence de SIX passes par jour : c'est la confusion entre les deux qui
+   *  a longtemps privé ce module de son heure. */
   lastUpdated: string;
   /** Classement des 12 enjeux dans le temps (un point par tag), pour le graphique de rang. */
   history: TreemapHistoryPoint[];
@@ -2333,7 +2353,8 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       // aws-refiners#258 (« Droit et criminalité »…) : sans cette priorité, une
       // même catégorie s'affiche sous deux noms selon l'âge de l'événement.
       issueFr: ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? e.main_issue_text_fr ?? "Actualité",
-      issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
+      issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? COULEUR_ENJEU_DEFAUT,
+      issueKey: e.main_issue && ISSUE_COLORS[e.main_issue] ? e.main_issue : null,
       saillanceRank,
       saillanceLabel,
       saillanceCls,
@@ -2435,9 +2456,15 @@ const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
 async function loadIssueScores(
   period: "day" | "week" | "month",
   /** Édition passée (#434) : ne garder que les lignes déjà publiées ce jour-là.
-   *  Précision au JOUR — ces tables sont publiées une fois par jour/semaine/mois,
-   *  pas six fois par jour ; l'archive d'un module lent ne peut donc pas être
-   *  plus fine que sa cadence. */
+   *  Précision au JOUR, parce que `date_utc` est tout ce que le filtre peut
+   *  comparer ici.
+   *
+   *  ⚠️ Ce commentaire affirmait que « ces tables sont publiées une fois par
+   *  jour, pas six fois par jour ». C'est FAUX, et mesuré : `issues_score_day`
+   *  porte six `tag` par jour (03:36, 07:36, 11:36, 15:36, 19:37, 23:36 UTC).
+   *  C'est la FENÊTRE qui est journalière, pas la cadence de publication. La
+   *  confusion a coûté l'heure de mise à jour du module, restée invisible
+   *  jusqu'au 2026-08-30 alors que la donnée la portait depuis toujours. */
   asOfIso?: string,
 ): Promise<Array<Record<string, unknown>> | null> {
   const filePath = path.resolve(process.cwd(), "public", "data", "refined", period, `issues_score_${period}.json`);
@@ -2490,8 +2517,8 @@ export function previousDistinctAggregate(
   rows: Array<Record<string, unknown>>,
   latestTag: string,
   currentAggregate: Record<string, number>,
-): { aggregate: Record<string, number>; found: boolean } {
-  if (!latestTag) return { aggregate: {}, found: false };
+): { aggregate: Record<string, number>; found: boolean; tag: string | null } {
+  if (!latestTag) return { aggregate: {}, found: false, tag: null };
 
   const sameScores = (a: Record<string, number>, b: Record<string, number>) =>
     ISSUE_KEYS.every((key) => (a[key] ?? 0) === (b[key] ?? 0));
@@ -2503,10 +2530,13 @@ export function previousDistinctAggregate(
   for (const tag of earlierTags) {
     const candidate = aggregateForTag(rows, tag);
     if (!sameScores(currentAggregate, candidate)) {
-      return { aggregate: candidate, found: true };
+      // Le TAG est rendu avec l'agrégat : sans lui, l'affichage ne peut pas
+      // dire à quoi la variation se compare, et « depuis le traitement
+      // précédent » reste une formule que le lecteur ne peut pas situer.
+      return { aggregate: candidate, found: true, tag };
     }
   }
-  return { aggregate: {}, found: false };
+  return { aggregate: {}, found: false, tag: null };
 }
 
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
@@ -2691,10 +2721,33 @@ export async function loadTreemap(
     if (!latest) return null;
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
-    const lastUpdated = lastUpdatedLabel(dateStr);
+    const latestTag = (latest.tag as string) ?? "";
+    // L'heure de la passe. Le `tag` porte l'instant en UTC ; la date ET l'heure
+    // affichées sortent donc du MÊME instant converti, jamais l'une de
+    // `date_utc` et l'autre d'une conversion (elles divergeraient d'un jour
+    // pour toute passe entre 00h et 04h UTC). Sans tag exploitable, on retombe
+    // sur la date seule, le comportement d'avant.
+    const passe = heurePublicationMontreal(latestTag);
+    // Le moment d'une passe ANTÉRIEURE, dit comme la Une des Unes le dit :
+    // une heure, jamais un moment vague (« depuis 16h » et non « depuis cet
+    // après-midi » — arbitrage d'Adrien, cf. `momentLabel`).
+    const momentDeLaPasse = (tag: string | null): string | null => {
+      const m = tag ? heurePublicationMontreal(tag) : null;
+      if (!m || !passe) return null;
+      const jours = (isoDay(passe.date) ?? 0) - (isoDay(m.date) ?? 0);
+      const dateFr = formatDateFr(m.date);
+      const dayWord = jours <= 0
+        ? "aujourd’hui"
+        : jours === 1
+          ? "hier"
+          : `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+      return momentLabel(dayWord, m.heure, false);
+    };
+    const lastUpdated = passe
+      ? lastUpdatedLabel(passe.date, passe.heure)
+      : lastUpdatedLabel(dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
-    const latestTag = (latest.tag as string) ?? "";
     const periodRows = latestTag
       ? rows.filter((r) => (r.tag as string) === latestTag)
       : [latest];
@@ -2705,11 +2758,16 @@ export async function loadTreemap(
 
     // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
     // Les republications sont sautées : voir previousDistinctAggregate.
-    const { aggregate: prevAggregated, found: prevFound } =
+    const { aggregate: prevAggregated, found: prevFound, tag: prevTag } =
       previousDistinctAggregate(rows, latestTag, aggregated);
+    const growthSince = prevFound ? momentDeLaPasse(prevTag) : null;
 
     const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
+    // Part de l'attention : la surface d'une tuile est déjà proportionnelle au
+    // score, mais rien ne la CHIFFRAIT. Le total est celui des 12 enjeux de la
+    // période affichée, pas un total absolu : les parts somment donc à 100.
+    const totalScore = scored.reduce((sum, entry) => sum + entry.score, 0);
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
       let topObject = ""; let context = "";
       const metaEntry = meta?.[issueKey];
@@ -2734,7 +2792,7 @@ export async function loadTreemap(
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevFound && prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
@@ -2759,7 +2817,7 @@ export async function loadTreemap(
         return { date, ranks };
       });
 
-    return { tiles, dateLabel, lastUpdated, history };
+    return { tiles, dateLabel, growthSince, lastUpdated, history };
   }
 
   const day = buildPeriodData(dayRows);

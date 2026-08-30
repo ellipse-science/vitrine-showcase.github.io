@@ -1,5 +1,71 @@
 [
   {
+    "pr": 627,
+    "date": "2026-08-30T22:04:26Z",
+    "note": "Les onglets du module des enjeux s'appellent désormais « Jour », « Semaine » et « Campagne », comme ceux du module des partis juste en dessous.",
+    "version": "2.34.0-beta.2"
+  },
+  {
+    "pr": 626,
+    "date": "2026-08-30T21:58:30Z",
+    "note": "Les heures affichées par le module des enjeux sont celles des éditions du site (0h, 4h, 8h, 12h, 16h, 20h), et non l'heure interne de traitement.",
+    "version": "2.34.0-beta.1"
+  },
+  {
+    "pr": 625,
+    "date": "2026-08-30T21:31:57Z",
+    "note": "Le module des enjeux affiche désormais l'heure de sa dernière mise à jour, et chaque variation dit depuis quelle heure elle se compare. Le module est mis à jour six fois par jour.",
+    "version": "2.34.0-beta.0"
+  },
+  {
+    "pr": 621,
+    "date": "2026-08-30T18:41:04Z",
+    "note": "Corrections typographiques dans plusieurs modules : les espaces insécables manquantes devant « % » et « : » ont été rétablies, notamment dans les infobulles, les cartes de partage et le tableau des niveaux de la page Méthodologie.",
+    "version": "2.33.0-beta.2"
+  },
+  {
+    "pr": 624,
+    "date": "2026-08-30T18:34:43Z",
+    "note": "Le symbole de l'enjeu Immigration devient une valise : la flèche précédente était trop fine pour rester lisible sur les petites tuiles.",
+    "version": "2.33.0-beta.1"
+  },
+  {
+    "pr": 623,
+    "date": "2026-08-30T18:16:21Z",
+    "note": "Chacun des douze enjeux a désormais son propre symbole, le même partout sur le site : sur la Une du moment, sur le radar des deux solitudes, sur les tuiles des enjeux et à côté des promesses du Polimètre+.",
+    "version": "2.33.0-beta.0"
+  },
+  {
+    "pr": 622,
+    "date": "2026-08-30T17:17:06Z",
+    "note": "Aucune : le schéma de travail des swimlanes n'est pas une surface visiteur.",
+    "version": null
+  },
+  {
+    "pr": 620,
+    "date": "2026-08-30T17:09:56Z",
+    "note": "Le module des enjeux s'appelle désormais « Les 12 enjeux de la campagne » et chaque bloc affiche sa part de l'attention médiatique, en plus de sa hausse ou de sa baisse.",
+    "version": "2.32.0-beta.0"
+  },
+  {
+    "pr": 615,
+    "date": "2026-08-28T16:10:21Z",
+    "note": "Correction d'un contrôle automatique interne : il signalait à tort un échec après chaque mise à jour du service de données, alors que celle-ci s'était bien déroulée.",
+    "version": null
+  },
+  {
+    "pr": 616,
+    "date": "2026-08-28T16:02:06Z",
+    "note": "Le graphique horaire du classement des partis ne mélange plus la soirée de la veille avec la journée en cours. Il n'apparaît désormais qu'une fois la journée assez avancée pour être tracée.",
+    "version": null
+  },
+  {
+    "pr": 613,
+    "date": "2026-08-28T14:54:30Z",
+    "note": "Le classement des partis affiche de nouveau le temps passé en Une lorsqu'on regarde l'ensemble des médias, et non plus seulement média par média. Sur téléphone, ce temps reste visible toute la journée.",
+    "version": null
+  },
+  {
     "pr": 592,
     "date": "2026-08-28T01:58:06Z",
     "note": "Les titres et les résumés du site respectent maintenant les règles d'espacement du français québécois. Concrètement, un guillemet ou un signe de pourcentage ne se retrouve plus tout seul au bout d'une ligne.",
