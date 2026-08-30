@@ -4555,7 +4555,17 @@
   }
   /* Le libellé n'a la place de se déployer que sur les grandes tuiles ; ailleurs
      il tronquerait, et un libellé tronqué explique moins bien que rien. */
+  /* Les deux libellés du bandeau (« part de l'attention » à gauche, « depuis »
+     à droite) demandent ensemble ~250px : sous cette largeur ils se rentraient
+     dedans (« PART DE L'ATTENTIODEPUIS 11H », vu à 901px). La condition porte
+     sur la largeur RÉELLE de la tuile, pas sur celle de la fenêtre : une même
+     tuile est large à 1440 et étroite à 901, et les seuils d'aire du composant
+     sont en POURCENTAGE, donc insensibles à la fenêtre.
+     `container-type: inline-size` est sans effet de bord ici : la largeur de la
+     tuile vient déjà de son conteneur positionné, jamais de son contenu. */
+  .treemap-growth .gt-tile { container-type: inline-size; }
   .treemap-growth .gt-share-kicker { display: none; }
+  @container (min-width: 250px) {
   .treemap-growth .gt-large .gt-share-kicker {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
@@ -4566,6 +4576,7 @@
     color: #F3ECDD;
     opacity: 0.62;
     white-space: nowrap;
+  }
   }
   /* `.gt-pct` se cale en haut partout ailleurs ; ici les deux nombres sont de
      corps différents et doivent partager leur ligne de base. */
@@ -4578,6 +4589,31 @@
     gap: 5px;
     max-width: 100%;
     overflow: hidden;
+  }
+  /* La variation et son « depuis » forment un bloc aligné à droite. Le
+     « depuis » ne s'affiche que sur les grandes tuiles : ailleurs il tiendrait
+     au prix du nom de l'enjeu, et il se lit déjà au survol. */
+  .treemap-growth .gt-variation {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    min-width: 0;
+  }
+  .treemap-growth .gt-depuis { display: none; }
+  @container (min-width: 250px) {
+  .treemap-growth .gt-large .gt-depuis,
+  .treemap-growth .gt-medium .gt-depuis {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.58;
+    white-space: nowrap;
+  }
   }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
