@@ -78,8 +78,13 @@ if (!results.some(Boolean)) {
       téléchargerait des centaines de mégaoctets un an plus tard.
    2. UN SEUL FORMAT POUR L'ARCHIVE. Le jour courant reçoit ses quatre fichiers
       (métadonnées + trois formats, comme la Une) ; les jours passés n'ont que
-      le WebP, avec repli PNG. Quatre formats × 150 pochettes feraient 600
-      requêtes et ~120 Mo par build pour des images qu'on ne voit qu'au survol.
+      le WebP, avec repli PNG.
+
+      CHIFFRES MESURÉS sur cinq pochettes réellement engendrées le 2026-08-30 :
+      1802 Ko le PNG, 106 Ko le WebP, 60 Ko l'AVIF. Quatre formats sur 30 jours
+      feraient donc 600 requêtes et 288 Mo par build, pour des images qu'on ne
+      voit qu'au survol. Tel qu'implanté : 25 Mo. (Une estimation antérieure
+      disait 120 Mo — elle sous-évaluait le poids du PNG.)
    ─────────────────────────────────────────────────────────────────────────── */
 
 const POCHETTES_DIR = path.join(OUT_DIR, "partis");

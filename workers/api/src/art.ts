@@ -195,7 +195,8 @@ export async function handleArt(
     // La discothèque conserve la version de FIN DE JOURNÉE de chaque pochette.
     // Comme le chemin ne porte pas le bloc, les six passages d'une journée
     // écrivent la même clé et seul le dernier survit — c'est voulu, et c'est ce
-    // qui borne le stockage à ~3,4 Go par an. Mais rien n'empêchait un cycle en
+    // qui borne le stockage à ~3,4 Go par an (mesuré : 1,92 Mo par pochette,
+    // tous formats, sur cinq images réelles du 2026-08-30). Mais rien n'empêchait un cycle en
     // retard (pipeline qui traîne, rejeu manuel, `force`) de rouvrir une
     // journée déjà rangée et d'en remplacer l'image des semaines plus tard.
     // L'archive doit être un fonds, pas un tableau blanc.

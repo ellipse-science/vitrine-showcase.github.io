@@ -8917,15 +8917,28 @@
 .bac-pochette .pochette-sigle { display: none; }
 
 /* LA LÉGENDE revient AVEC la couverture, posée dessus. Au repos elle n'est plus
-   qu'un texte pour lecteurs d'écran. */
+   qu'un texte pour lecteurs d'écran.
+
+   SUR UN VOILE D'ENCRE, et c'est indispensable. Tant que les pochettes étaient
+   des aplats dessinés, elles portaient un socle sombre et la légende s'y lisait
+   toute seule. Le premier essai avec une VRAIE illustration engendrée (le
+   2026-08-30, CAQ sur « Gouvernements et gouvernance ») l'a démentie : l'image
+   est claire et chargée en bas, et « CAQ 17H55 » y devenait illisible. Le prompt
+   demande pourtant de dégager le bas de l'image — le modèle n'en a rien fait, et
+   on ne peut pas fonder la lisibilité sur une consigne qu'un modèle suit ou non.
+   Même traitement que `.disco-legende`, pour que les deux bacs se lisent pareil. */
 .bac-legende {
   position: absolute;
-  left: calc(var(--tranche) + 10px);
-  bottom: 10px;
+  left: var(--tranche);
+  width: var(--pochette-cote);
+  bottom: 0;
   z-index: 3;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 9px 7px;
+  background: rgba(28, 25, 23, 0.72);
+  box-sizing: border-box;
   opacity: 0;
   visibility: hidden;
   transition: opacity 160ms ease;
@@ -8935,7 +8948,7 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(243, 236, 221, 0.8);
+  color: rgba(243, 236, 221, 0.85);
 }
 .bac-case:hover .bac-legende,
 .bac-case:focus-within .bac-legende,
@@ -9164,8 +9177,26 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
 }
+/* LE VOILE DU VOLET OUVERT, sous le sigle. Même constat que pour la légende du
+   bac : l'illustration engendrée peut être claire et chargée exactement là où le
+   sigle se pose. Un dégradé plutôt qu'une bande franche — le volet est grand, une
+   barre pleine s'y verrait comme un bandeau collé. `z-index` explicite : un
+   pseudo-élément se peint APRÈS le contenu, il masquerait sinon le sigle qu'il
+   est censé porter. */
+.gatefold-volet--art .pochette-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.55) 100%);
+  pointer-events: none;
+}
 .gatefold-volet--art .pochette-sigle {
   position: absolute;
+  z-index: 2;
   left: 14px;
   /* Au-dessus du filet de ton, pas dessus : à 12 px le bas des lettres tombait
      dans la bande et se perdait. */
