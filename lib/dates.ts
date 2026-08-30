@@ -46,24 +46,35 @@ export function momentMontreal(instantUtc: string | null | undefined): { date: s
   if (!brut) return null;
   // « 2026-08-27 19:37 » n'est pas de l'ISO : sans le `T` ni le `Z`, JS le lit
   // comme une heure LOCALE de la machine de build, qui n'est pas Montréal en CI.
-  const iso = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(brut)
-    ? `${brut.slice(0, 10)}T${brut.slice(11, 16)}:00Z`
-    : brut;
+  //
+  // ⚠️ La réécriture ne vaut QUE pour cette forme sans fuseau. Un premier jet
+  // testait le seul PRÉFIXE `YYYY-MM-DD HH:MM` : il réécrivait donc aussi
+  // « 2026-08-27T23:31:44-04:00 » en « …T23:31:00Z », jetant l'offset et
+  // déplaçant l'instant de quatre heures. `Date.parse` sait déjà lire un ISO
+  // complet, avec `Z` comme avec un décalage : on le lui laisse.
+  const sansFuseau = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(brut);
+  const iso = sansFuseau ? `${brut.slice(0, 10)}T${brut.slice(11, 16)}:00Z` : brut;
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return null;
   const d = new Date(t);
+  // `America/Montreal` et `hourCycle: "h23"` : les mêmes que le formateur de
+  // `headlineEvents.ts`, le voisin immédiat de ce helper. Le dépôt est partagé
+  // entre les deux identifiants (Toronto dans `parties.ts` et `EditionNav`,
+  // Montréal ici et dans le journal) — ils désignent la même zone, mais autant
+  // que la date et l'heure d'un même module sortent du même moule. `h23` plutôt
+  // que `hour12: false` : certaines versions d'ICU rendent « 24 » à minuit.
   const parties = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "America/Montreal",
     year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", hour12: false,
+    hour: "2-digit", hourCycle: "h23",
   }).formatToParts(d);
   const champ = (type: string) => parties.find((p) => p.type === type)?.value ?? "";
   const heure = Number(champ("hour").replace(/\D/g, ""));
   const date = `${champ("year")}-${champ("month")}-${champ("day")}`;
   if (Number.isNaN(heure) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  // `hour12: false` rend « 24 » à minuit dans certaines versions d'ICU ;
-  // `lastUpdatedLabel` sait le lire (« minuit »), mais la DATE, elle, serait
-  // celle du jour qui commence. On normalise pour que les deux se tiennent.
+  // Ceinture et bretelles : `h23` borne déjà à 00-23, mais un « 24 » venu d'une
+  // ICU récalcitrante donnerait une heure du jour SUIVANT collée à la date du
+  // jour courant. Le modulo garantit que les deux se tiennent.
   return { date, heure: heure % 24 };
 }
 

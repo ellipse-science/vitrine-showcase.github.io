@@ -39,3 +39,23 @@ describe("momentMontreal", () => {
     expect(momentMontreal("pas une date")).toBeNull();
   });
 });
+
+// Relevé par Copilot sur la PR #625 : un premier jet testait le seul PRÉFIXE
+// « YYYY-MM-DD HH:MM » et réécrivait donc aussi les instants ISO complets,
+// jetant leur décalage. Un `computed_at` avec offset se retrouvait quatre
+// heures plus loin — précisément le chemin par lequel #617 doit passer.
+describe("momentMontreal — instants qui portent déjà leur fuseau", () => {
+  it("respecte un décalage explicite au lieu de le jeter", () => {
+    // 23h31 heure de Montréal, écrit avec son offset : c'est déjà l'heure locale.
+    expect(momentMontreal("2026-08-27T23:31:44-04:00")).toEqual({ date: "2026-08-27", heure: 23 });
+  });
+
+  it("le même instant écrit en Z donne le même résultat", () => {
+    // 2026-08-28T03:31:44Z EST 2026-08-27T23:31:44-04:00.
+    expect(momentMontreal("2026-08-28T03:31:44Z")).toEqual({ date: "2026-08-27", heure: 23 });
+  });
+
+  it("accepte la forme sans fuseau avec secondes", () => {
+    expect(momentMontreal("2026-08-27 19:37:12")).toEqual({ date: "2026-08-27", heure: 15 });
+  });
+});
