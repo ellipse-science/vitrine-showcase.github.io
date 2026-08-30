@@ -80,7 +80,11 @@ const REGLES = [
   },
   {
     code: "insecable-deux-points",
-    motif: new RegExp(`\\p{L}[\\u0020]:(?=[${ESPACES}]|$)`, "u"),
+    // `MASQUE` au même titre que la règle du pourcent : `${label} : …` est
+    // du texte affiché dont le mot qui précède le deux-points vient de
+    // l'interpolation. À n'accepter qu'une lettre, la règle le laissait
+    // passer alors même que le span, lui, était bien retenu.
+    motif: new RegExp(`[\\p{L}${MASQUE}][\\u0020]:(?=[${ESPACES}]|$)`, "u"),
     quoi: "espace ordinaire avant « : »",
     exemple: "une insécable — `&nbsp;` en HTML/JSX, `\\u00a0` dans une chaîne.",
   },
@@ -148,6 +152,32 @@ const PROJETS = [
 ];
 const PROJET_ITALIQUE = new RegExp(`<(em|i)\\b[^>]*>[^<]*(?:${PROJETS.join("|")})[^<]*</\\1>`, "giu");
 
+// Second signal de « ceci est du texte affiché », à côté de « lettre espace
+// lettre » (voir `spansDeTexte`). Un littéral gabarit peut n'avoir AUCUNE lettre
+// hors de son interpolation : dans `${value.toFixed(1)} %`, tout ce qui se lit
+// vient du code et le seul caractère après l'espace est le signe lui-même. Ces
+// spans-là n'étaient pas jugés « prose », donc aucune règle ne les lisait — et
+// c'est ainsi qu'une espace ordinaire est entrée dans `formatPct` du treemap le
+// 2026-08-30 sans que le CI bronche. Une espace coincée entre du contenu et un
+// signe français EST la configuration que les règles d'insécable surveillent :
+// il n'y a pas de raison de la déclarer illisible.
+//
+// Jugé sur le texte MASQUÉ, pour que le caractère de remplissage compte comme
+// du contenu. Et sur TOUTES les espaces, pas seulement l'ordinaire : sinon un
+// span ne serait « du texte » que le jour où il devient fautif, et corriger la
+// faute le ferait ressortir de la portée de la garde.
+const SIGNE_FRANCAIS = new RegExp(`[\\p{L}\\d${MASQUE}][${ESPACES}][%:;?!»]`, "u");
+
+// Le repérage des nœuds JSX est grossier (voir `spansDeTexte`) : son `>` est
+// parfois un opérateur de comparaison ou la flèche d'une lambda, et le « nœud
+// de texte » est alors la queue d'un ternaire — `{tile.articles.length > 0 ? (`
+// devient le span « 0 ? ( ». Tant qu'`estProse` exigeait une lettre APRÈS une
+// espace, ces fragments tombaient d'eux-mêmes ; le signal ci-dessus, lui, voit
+// une espace devant un `?` et les prendrait pour du texte. D'où ce filtre, qui
+// ne vaut QUE pour cette passe : dans un littéral de chaîne, « Vraiment ? » a
+// exactement la même forme et c'est de la prose, pas un ternaire.
+const TERNAIRE_JSX = /(?:^|[\s(])[\w.$]+\s\?\s*(?:\(|$)/u;
+
 // ── Extraction du texte que nous écrivons ────────────────────────────────────
 
 /** Retire les commentaires. Ce qui est dans un commentaire n'est pas affiché,
@@ -198,10 +228,16 @@ function spansDeTexte(src, estHtml, estJsx) {
   const spans = [];
   const pousse = (texte, index) => {
     if (!texte) return;
-    // Du vrai texte, pas un identifiant : au moins une lettre et une espace, ou
-    // un caractère typographique français. Écarte `className`, les chemins
-    // d'import, les clés d'objet et les noms de classes CSS.
-    const estProse = /[\p{L}].*[ ].*[\p{L}]/u.test(texte) || /[«»—]/u.test(texte);
+    // Du vrai texte, pas un identifiant : au moins une lettre et une espace, un
+    // caractère typographique français, ou une espace devant un signe français
+    // (voir `SIGNE_FRANCAIS`, le cas où tout le texte lisible tient dans une
+    // interpolation). Écarte `className`, les chemins d'import, les clés
+    // d'objet et les noms de classes CSS.
+    const prose = masqueInterpolations(texte);
+    const estProse =
+      /[\p{L}].*[ ].*[\p{L}]/u.test(texte) ||
+      /[«»—]/u.test(texte) ||
+      SIGNE_FRANCAIS.test(prose);
     // L'appariement des accents graves est naïf : un littéral gabarit contenant
     // du code apparie parfois deux backticks qui n'ont rien à voir, et le span
     // avale des dizaines de lignes de JavaScript. Ces spans-là ne sont pas du
@@ -215,7 +251,6 @@ function spansDeTexte(src, estHtml, estJsx) {
     // Les deux derniers motifs servent la règle « espace avant ; ? ! » : un
     // ternaire `x ? "a" : b` a une espace avant son `?`, et aucune des règles
     // précédentes ne s'y accrochait. Sans eux, la garde dénonce du code.
-    const prose = masqueInterpolations(texte);
     const estCode =
       /\)\s*[;,]|=>|\]\s*[);]|\bif\s*\(|\breturn\b|\b(const|let|function)\s/u.test(prose) ||
       /&&|\|\||\?\?|===|!==/u.test(prose) ||
@@ -239,7 +274,12 @@ function spansDeTexte(src, estHtml, estJsx) {
   // positifs (comparaisons `a > b < c`) ne ressemblent pas à de la prose.
   // Réservé aux `.tsx` : un `.ts` n'a pas de JSX, donc ce motif n'y récolte
   // QUE des comparaisons — d'où cinq ternaires dénoncés comme fautifs.
-  if (estJsx) for (const m of src.matchAll(/>([^<>{}]+)</g)) pousse(m[1], m.index + 1);
+  if (estJsx) {
+    for (const m of src.matchAll(/>([^<>{}]+)</g)) {
+      if (TERNAIRE_JSX.test(m[1])) continue;
+      pousse(m[1], m.index + 1);
+    }
+  }
   return spans;
 }
 
