@@ -1,5 +1,11 @@
 [
   {
+    "pr": 622,
+    "date": "2026-08-30T17:17:06Z",
+    "note": "Aucune : le schéma de travail des swimlanes n'est pas une surface visiteur.",
+    "version": null
+  },
+  {
     "pr": 620,
     "date": "2026-08-30T17:09:56Z",
     "note": "Le module des enjeux s'appelle désormais « Les 12 enjeux de la campagne » et chaque bloc affiche sa part de l'attention médiatique, en plus de sa hausse ou de sa baisse.",
