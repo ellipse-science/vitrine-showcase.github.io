@@ -1,5 +1,11 @@
 [
   {
+    "pr": 631,
+    "date": "2026-08-30T23:12:23Z",
+    "note": "Correction d'un défaut d'affichage qui laissait apparaître des noms d'enjeux coupés sur certaines tailles d'écran.",
+    "version": "2.34.0-beta.4"
+  },
+  {
     "pr": 630,
     "date": "2026-08-30T22:55:31Z",
     "note": "Sur les tuiles trop petites pour l'afficher en entier, le nom de l'enjeu cède la place à son symbole plutôt que d'apparaître coupé.",
