@@ -78,6 +78,35 @@ export function momentMontreal(instantUtc: string | null | undefined): { date: s
   return { date, heure: heure % 24 };
 }
 
+/** L'heure PUBLIQUE d'une passe de raffineur, à partir de son instant.
+ *
+ *  ⚠️ LA RÈGLE, et l'erreur qu'elle corrige (2026-08-30). Un module publié six
+ *  fois par jour n'affiche PAS l'heure à laquelle son raffineur a tourné : il
+ *  affiche l'heure de l'ÉDITION, prise sur la grille {0, 4, 8, 12, 16, 20} que
+ *  le bandeau du site montre déjà. Une passe qui tourne à 15h37 traite le bloc
+ *  qui s'est terminé à 15h, et ce bloc est servi à 16h : c'est « 16h » qu'il
+ *  faut écrire, jamais « 15h ». Même règle que `publicationHourFromInterval`
+ *  (heure = fin du bloc + 1 h, réforme #195 et correctif #317), appliquée ici à
+ *  un instant plutôt qu'à un intervalle.
+ *
+ *  Le premier jet affichait l'heure brute de la passe. Rien ne l'a signalé,
+ *  parce que les tables de libellés (`MOMENT_AUJ`) ont un repli `${h}h` pour
+ *  les heures hors grille : le module annonçait « 15h » et « depuis 11h » au
+ *  lieu de « 16h » et « depuis 12h », sans qu'aucun test ne tombe. La grille
+ *  elle-même était l'indice : une heure de publication n'est JAMAIS hors d'elle.
+ *
+ *  Rend 24 (et non 0) pour minuit, comme `publicationHourFromInterval` : c'est
+ *  ce que `lastUpdatedLabel` attend pour écrire « minuit ».
+ *  Rend `null` si l'instant n'est pas exploitable.
+ */
+export function heurePublicationMontreal(instantUtc: string | null | undefined): { date: string; heure: number } | null {
+  const m = momentMontreal(instantUtc);
+  if (!m) return null;
+  // Bloc de 4 h contenant la passe → sa fin → +1 h. 15h37 tombe dans le bloc
+  // 12-16, servi à 16h. 23h36 tombe dans 20-24, servi à minuit (24, pas 0).
+  return { date: m.date, heure: (Math.floor(m.heure / 4) + 1) * 4 };
+}
+
 /** ISO « 2026-07-08 » → « Mercredi 8 juillet 2026 ». Retourne l'entrée telle
  *  quelle si elle n'est pas une date ISO valide (validation stricte, cf.
  *  parseIsoDate — pas de normalisation JS silencieuse). */
