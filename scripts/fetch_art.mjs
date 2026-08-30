@@ -63,3 +63,117 @@ const results = await Promise.all(FILES.map(fetchOne));
 if (!results.some(Boolean)) {
   console.warn("[fetch_art] aucune illustration rapatriée — le module s'affichera sans image");
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LES POCHETTES DES PARTIS — bac du jour et discothèque.
+
+   Même circuit que l'illustration de la Une : un raffineur les engendre, le
+   build les rapatrie, le visiteur ne lit que des fichiers plats.
+
+   DEUX ARBITRAGES DE POIDS, parce que l'archive grossit de cinq pochettes par
+   jour et qu'un build de Cloudflare Pages repart d'une copie neuve :
+
+   1. HORIZON DE 30 JOURS (arbitrage du 2026-08-30). Au-delà, les pochettes
+      restent dans R2 mais ne sont plus servies. Sans borne, chaque build
+      téléchargerait des centaines de mégaoctets un an plus tard.
+   2. UN SEUL FORMAT POUR L'ARCHIVE. Le jour courant reçoit ses quatre fichiers
+      (métadonnées + trois formats, comme la Une) ; les jours passés n'ont que
+      le WebP, avec repli PNG. Quatre formats × 150 pochettes feraient 600
+      requêtes et ~120 Mo par build pour des images qu'on ne voit qu'au survol.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+const POCHETTES_DIR = path.join(OUT_DIR, "partis");
+const HORIZON_JOURS = 30;
+
+/** Un fichier de pochette. Rend le nom écrit, ou null. Même politique que
+ *  `fetchOne` : un échec retire le fichier local plutôt que de laisser un
+ *  reliquat périmé, qu'une garde d'appariement devrait ensuite rattraper. */
+async function fetchPochette(jour, parti, ext) {
+  const rel = `partis/${jour}/${parti}.${ext}`;
+  const target = path.join(OUT_DIR, "partis", jour, `${parti}.${ext}`);
+  try {
+    const res = await fetch(`${API_BASE}/v1/art/${rel}`, {
+      headers: {
+        "cache-control": "no-cache",
+        ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length === 0) throw new Error("réponse vide");
+    if (ext === "json") JSON.parse(bytes.toString("utf8"));
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, bytes);
+    return rel;
+  } catch {
+    await rm(target, { force: true });
+    return null;
+  }
+}
+
+async function fetchPochettes() {
+  // Sans index, il n'y a rien à rapatrier — le circuit n'existe pas encore, ou
+  // l'API est muette. Les deux cas se soldent par un bac vide, pas par un
+  // build cassé.
+  let index = null;
+  try {
+    const res = await fetch(`${API_BASE}/v1/art/partis/index.json?jours=${HORIZON_JOURS}`, {
+      headers: {
+        "cache-control": "no-cache",
+        ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    index = await res.json();
+  } catch (err) {
+    console.warn(`[fetch_art] index des pochettes indisponible (${err.message}) — bacs vides`);
+    await rm(POCHETTES_DIR, { recursive: true, force: true });
+    return;
+  }
+
+  const jours = Object.entries(index?.jours ?? {});
+  if (jours.length === 0) {
+    console.warn("[fetch_art] aucune pochette publiée — bacs vides");
+    await rm(POCHETTES_DIR, { recursive: true, force: true });
+    return;
+  }
+
+  // On repart d'un dossier propre : une pochette sortie de l'horizon doit
+  // disparaître du livrable, pas y survivre parce qu'elle y était hier.
+  await rm(POCHETTES_DIR, { recursive: true, force: true });
+
+  // Le jour le plus récent EST le bac du jour ; les autres, la discothèque.
+  const jourCourant = jours.map(([j]) => j).sort().at(-1);
+
+  const taches = [];
+  for (const [jour, partis] of jours) {
+    for (const parti of partis) taches.push({ jour, parti });
+  }
+
+  let ecrits = 0;
+  for (const { jour, parti } of taches) {
+    if (jour === jourCourant) {
+      // Le jour courant : les quatre fichiers, chaque format best-effort comme
+      // pour la Une.
+      const rs = await Promise.all(
+        ["json", "png", "webp", "avif"].map((ext) => fetchPochette(jour, parti, ext)),
+      );
+      ecrits += rs.filter(Boolean).length;
+      continue;
+    }
+    // L'archive : les métadonnées, puis LE PREMIER format qui répond. WebP
+    // d'abord (le plus léger), PNG en repli — le raffineur écrit les formats
+    // web en best-effort, l'un des deux peut manquer.
+    const meta = await fetchPochette(jour, parti, "json");
+    if (meta) ecrits += 1;
+    for (const ext of ["webp", "png"]) {
+      if (await fetchPochette(jour, parti, ext)) {
+        ecrits += 1;
+        break;
+      }
+    }
+  }
+  console.log(`[fetch_art] pochettes : ${ecrits} fichiers sur ${jours.length} jour(s), bac du jour ${jourCourant}`);
+}
+
+await fetchPochettes();

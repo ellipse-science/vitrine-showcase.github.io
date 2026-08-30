@@ -52,6 +52,44 @@ export const COULEUR_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
   Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, ISSUE_COLORS[cle]]),
 );
 
+/** L'index inverse : du libellé français vers la clé technique.
+ *
+ *  Sert au CIRCUIT DES POCHETTES. Le raffineur choisit ses images de référence
+ *  par préfixe de nom de fichier (`governments_and_governance_generic1.jpg`), et
+ *  ces préfixes sont EXACTEMENT les clés ci-dessus. Écrire une table de
+ *  correspondance à la main aurait été un doublon de plus à faire dériver.
+ *
+ *  À savoir si les références évoluent : le dossier `references/` du raffineur
+ *  connaît `health_and_social_services`, plus ancien que le libellé français
+ *  « Santé et politiques sociales ». C'est la clé qui fait foi des deux côtés. */
+export const CLE_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
+  Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, cle]),
+);
+
+/** La CLÉ D'APPARIEMENT d'une pochette engendrée : parti, enjeu distinctif,
+ *  sens du ton.
+ *
+ *  Le site n'affiche une pochette que si sa signature correspond à ce qu'il rend
+ *  au même instant — l'équivalent, pour les partis, de la garde de storyline de
+ *  la Une des Unes. Calculée ICI et nulle part ailleurs : elle est écrite par le
+ *  contrat d'illustration (côté serveur) et vérifiée par le bac (côté client),
+ *  et deux formules qui divergeraient d'un caractère feraient disparaître toutes
+ *  les pochettes sans un mot.
+ *
+ *  ⚠️ LE TEMPS EN UNE N'Y ENTRE PAS. La chaîne est décalée d'un cycle par
+ *  construction (le raffineur lit le build courant, le build suivant rapatrie),
+ *  et les minutes montent à chaque bloc : les y mettre ne ferait jamais
+ *  correspondre aucune pochette. L'image dit l'enjeu et le ton ; la durée est
+ *  écrite à côté, en toutes lettres. */
+export function signaturePochette(
+  partiKey: string,
+  enjeuLibelle: string | null | undefined,
+  tonDirection: string,
+): string {
+  const cle = enjeuLibelle ? (CLE_PAR_LIBELLE[enjeuLibelle] ?? "sans-enjeu") : "sans-enjeu";
+  return [partiKey, cle, tonDirection].join("|");
+}
+
 /** Couleur de repli, pour un enjeu inconnu ou pour « aucun enjeu identifié ».
  *  C'est celle qu'employait déjà headlineEvents.ts. */
 export const COULEUR_ENJEU_DEFAUT = "#463E3E";

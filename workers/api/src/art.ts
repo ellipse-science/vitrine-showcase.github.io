@@ -22,10 +22,19 @@
 
 import type { NeonQueryFunction } from '@neondatabase/serverless'
 import { authenticate } from './auth'
-import { ART_CACHE_CONTROL, ART_FILES, MAX_UPLOAD_BYTES, heroKey, publishDecision } from './art-logic'
+import {
+  ART_CACHE_CONTROL,
+  ART_FILES,
+  MAX_UPLOAD_BYTES,
+  POCHETTES_HORIZON_JOURS,
+  borneIndex,
+  heroKey,
+  parsePochette,
+  publishDecision,
+} from './art-logic'
 import { notifySlack, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
 
-export { ART_FILES, MAX_UPLOAD_BYTES, heroKey, publishDecision } from './art-logic'
+export { ART_FILES, MAX_UPLOAD_BYTES, heroKey, parsePochette, publishDecision } from './art-logic'
 
 export interface ArtEnv extends SyncAthenaEnv {
   ART_BUCKET?: R2Bucket
@@ -98,7 +107,59 @@ export async function handleArt(
     return json({ published: true, hero_key: key, reason: decision.reason })
   }
 
-  const contentType = ART_FILES[file]
+  // GET /v1/art/partis/index.json — ce que la discothèque contient.
+  //
+  // L'index est CALCULÉ en listant le bucket, jamais tenu à la main : un
+  // manifeste écrit par le raffineur finirait par décrire une archive qui
+  // n'existe plus (image perdue, jour purgé), et le build téléchargerait des
+  // 404. Le listage est borné par `startAfter` — voir `borneIndex`.
+  if (file === 'partis/index.json') {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return json({ error: 'Méthodes admises : GET, HEAD.' }, 405)
+    }
+    const auth = await authenticate(sql, request, null)
+    if (!auth.ok) return json({ error: auth.error }, auth.status)
+
+    const url = new URL(request.url)
+    const demande = Number(url.searchParams.get('jours'))
+    const horizon = Number.isFinite(demande) && demande > 0 && demande <= 365
+      ? Math.floor(demande)
+      : POCHETTES_HORIZON_JOURS
+    const depuis = borneIndex(new Date(), horizon)
+
+    const jours: Record<string, string[]> = {}
+    let cursor: string | undefined
+    do {
+      const page = await env.ART_BUCKET.list({
+        prefix: OBJECT_PREFIX + 'partis/',
+        startAfter: OBJECT_PREFIX + 'partis/' + depuis,
+        cursor,
+      })
+      for (const obj of page.objects) {
+        const ref = parsePochette(obj.key.slice(OBJECT_PREFIX.length))
+        // On indexe sur le JSON de métadonnées : c'est lui qui atteste qu'une
+        // pochette est complète, les formats d'image étant best-effort.
+        if (!ref || ref.ext !== 'json') continue
+        ;(jours[ref.jour] ??= []).push(ref.parti)
+      }
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+
+    return json({
+      horizon_jours: horizon,
+      depuis,
+      jours: Object.fromEntries(
+        Object.entries(jours)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([jour, partis]) => [jour, partis.sort()]),
+      ),
+    })
+  }
+
+  // Les pochettes des partis : chemin validé par expression régulière fermée,
+  // même politique de cache et de portée que les fichiers de la Une.
+  const pochette = parsePochette(file)
+  const contentType = pochette?.contentType ?? ART_FILES[file]
   if (!contentType) {
     return json({ error: `Fichier inconnu : ${file || '(vide)'}.`, files: Object.keys(ART_FILES) }, 404)
   }

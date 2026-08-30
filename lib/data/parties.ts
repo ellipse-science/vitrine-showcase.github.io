@@ -298,17 +298,6 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
-  /** URL de l'illustration générée pour cette pochette, quand elle existe.
-   *
-   *  MÊME CHAÎNE que l'illustration de la Une des Unes : un raffineur
-   *  l'engendre, la dépose sur R2, et le build la rapatrie dans
-   *  `public/data/generated-art/` (cf. `scripts/fetch_art.mjs`). Le site ne
-   *  l'appelle jamais à l'exécution.
-   *
-   *  Absente tant que ce raffineur n'existe pas : la pochette retombe alors sur
-   *  sa composition géométrique, qui porte déjà la couleur du parti, l'enjeu de
-   *  tête et le ton. Le repli est visible et assumé, jamais un carré vide. */
-  illustration?: string;
   /** Position du ton sur une jauge de 0 à 100, pour le repère de la pochette
    *  ouverte : 0 = défavorable, 50 = neutre, 100 = favorable.
    *
@@ -468,6 +457,22 @@ export type Indisponibilite = {
   joursDeRetard: number;
 };
 
+/** Le dernier bloc de 4 h publié pour la journée la plus récente.
+ *
+ *  Sert au CONTRAT D'ILLUSTRATION (`data/partis-selection.json`) : le raffineur
+ *  des pochettes a besoin de savoir quelle édition il illustre, pour ranger
+ *  l'image sous le bon jour et pour savoir quand la journée est close. `null`
+ *  quand la table intra-journée n'est pas publiée — le contrat le dit alors,
+ *  plutôt que d'inventer un bloc. */
+export type BlocCourant = {
+  /** Jour de Montréal du bloc, « 2026-08-30 ». */
+  date: string;
+  /** Heure de FIN du bloc (0, 4, 8, 12, 16, 20). */
+  hour: number;
+  /** Intervalle brut publié par le raffineur, « 16-20 ». */
+  label: string | null;
+};
+
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
   /** Non nul quand le module ne peut rien affirmer — voir `Indisponibilite`.
@@ -492,6 +497,8 @@ export type PartiesData = {
    *  Le module l'affiche en toutes lettres — cf. `.gitignore` : « aucune donnée
    *  inventée ne doit pouvoir être confondue avec la donnée réelle ». */
   surFixtures: boolean;
+  /** Dernier bloc de 4 h publié, ou `null` sans table intra-journée. */
+  blocCourant: BlocCourant | null;
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
@@ -967,6 +974,25 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  *  au bloc courant : le vide à droite est ce qu'il reste à courir, exactement
  *  comme la ligne d'arrivée des autres onglets.
  */
+/** Le dernier bloc publié de la journée la plus récente.
+ *
+ *  On date les lignes avec `dateMontreal`, comme partout ailleurs dans ce
+ *  fichier : `date_montreal_tz` porte en réalité la date UTC (le raffineur
+ *  fait `as.Date()` sur un POSIXct, ce qui ignore le fuseau), si bien qu'un
+ *  relevé de 21 h à Montréal est classé au lendemain. Se fier à la colonne
+ *  ferait illustrer la mauvaise journée un soir sur deux. */
+function dernierBloc(rows: IntradayRow[] | null): BlocCourant | null {
+  if (!rows || rows.length === 0) return null;
+  const date = rows.map(dateMontreal).sort().at(-1);
+  if (!date) return null;
+  const duJour = rows.filter((r) => dateMontreal(r) === date);
+  const heures = duJour.map((r) => Number(r.block_hour)).filter((h) => Number.isFinite(h));
+  if (heures.length === 0) return null;
+  const hour = Math.max(...heures);
+  const label = duJour.find((r) => Number(r.block_hour) === hour)?.block_label ?? null;
+  return { date, hour, label: label ? String(label) : null };
+}
+
 function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
   if (rows.length === 0) return null;
   const dernierJour = rows.map(dateMontreal).sort().at(-1);
@@ -1830,13 +1856,20 @@ export async function loadParties(
       enjeuxRaw ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[]) : [],
     );
 
-    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
-    // pas encore deux blocs — un seul point ne dessine pas une journée.
-    const chartJour = intradayRaw
-      ? buildChartIntraday(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[], [...PARTY_KEYS])
+    // Une seule lecture de la table intra-journée, pour deux usages : la course
+    // de la journée et le bloc courant. Elle était parsée à l'endroit même où
+    // on s'en servait ; deux `JSON.parse` du même texte auraient fini par
+    // diverger sur le filtre `upTo`.
+    const intradayRows = intradayRaw
+      ? (upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
       : null;
 
+    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
+    // pas encore deux blocs — un seul point ne dessine pas une journée.
+    const chartJour = intradayRows ? buildChartIntraday(intradayRows, [...PARTY_KEYS]) : null;
+
     return {
+      blocCourant: dernierBloc(intradayRows),
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci

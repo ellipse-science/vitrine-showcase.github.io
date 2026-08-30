@@ -36,6 +36,9 @@ function donneesUnSeulJour(): PartiesData {
   const { stats, dates } = calcule;
 
   return {
+    // Sans table intra-journée, il n'y a pas de bloc courant — c'est le même
+    // état que le `null` passé plus bas à `buildRangeView`.
+    blocCourant: null,
     // `null` en quatrième argument = l'agrégat sans table intra-journée, le
     // chemin qui produit `detail-horaire-absent`.
     ranges: {
