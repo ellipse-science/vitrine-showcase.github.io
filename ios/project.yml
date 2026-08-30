@@ -25,6 +25,19 @@ settings:
     TARGETED_DEVICE_FAMILY: "1" # iPhone. L'iPad l'exécute en mode compatibilité.
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
+# Schéma déclaré explicitement : `xcodebuild -scheme` en intégration continue
+# ne peut pas compter sur les schémas qu'Xcode fabrique tout seul à l'ouverture
+# du projet, puisque personne n'ouvre Xcode sur le coureur.
+schemes:
+  Vitrine:
+    build:
+      targets:
+        Vitrine: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
 targets:
   Vitrine:
     type: application
