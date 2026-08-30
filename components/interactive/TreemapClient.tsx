@@ -9,7 +9,7 @@ import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treema
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
-// --- Treemap de croissance (vue Aujourd'hui) : partition + tuiles Proto A avec % de croissance ---
+// --- Treemap de croissance (onglet « Jour ») : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
 interface LayoutNode extends TreemapIssueTile { rect: Rect; }
 
@@ -506,7 +506,7 @@ function IssuesRankMobile({
 /**
  * Graphique de rang (« bump chart ») : trajectoire du classement des 12 enjeux dans le temps,
  * avec panneau « À la une » qui liste les actualités de l'enjeu sélectionné (clic) ou survolé.
- * Affiché pour les vues « Cette semaine » (7 derniers jours) et « Ce mois » (mois courant).
+ * Affiché pour les vues « Semaine » (7 derniers jours) et « Campagne » (mois courant).
  */
 function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: RankPeriod }) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
@@ -746,8 +746,8 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
             Les 12 enjeux de la campagne{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
-              • <b>Aujourd’hui</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Cette semaine &amp; Ce mois</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              • <b>Jour</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Semaine &amp; Campagne</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -760,21 +760,21 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
                 onClick={() => selectPeriod("day")}
                 style={{ cursor: "pointer" }}
               >
-                Aujourd&apos;hui
+                Jour
               </span>
               <span
                 className={period === "week" ? "active" : undefined}
                 onClick={() => selectPeriod("week")}
                 style={{ cursor: "pointer" }}
               >
-                Cette semaine
+                Semaine
               </span>
               <span
                 className={period === "month" ? "active" : undefined}
                 onClick={() => selectPeriod("month")}
                 style={{ cursor: "pointer" }}
               >
-                Ce mois
+                Campagne
               </span>
             </div>
             <ShareButton title="Les 12 enjeux de la campagne" anchor="enjeux-saillants" editionKey={editionKey} />
