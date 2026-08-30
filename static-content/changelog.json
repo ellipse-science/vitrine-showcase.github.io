@@ -1,5 +1,11 @@
 [
   {
+    "pr": 629,
+    "date": "2026-08-30T23:31:38Z",
+    "note": "Le site publie désormais une page de confidentialité, qui explique ce qui est recueilli lors d'une visite et ce qui ne l'est pas.",
+    "version": null
+  },
+  {
     "pr": 631,
     "date": "2026-08-30T23:12:23Z",
     "note": "Correction d'un défaut d'affichage qui laissait apparaître des noms d'enjeux coupés sur certaines tailles d'écran.",
