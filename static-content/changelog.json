@@ -1,5 +1,11 @@
 [
   {
+    "pr": 624,
+    "date": "2026-08-30T18:34:43Z",
+    "note": "Le symbole de l'enjeu Immigration devient une valise : la flèche précédente était trop fine pour rester lisible sur les petites tuiles.",
+    "version": "2.33.0-beta.1"
+  },
+  {
     "pr": 623,
     "date": "2026-08-30T18:16:21Z",
     "note": "Chacun des douze enjeux a désormais son propre symbole, le même partout sur le site : sur la Une du moment, sur le radar des deux solitudes, sur les tuiles des enjeux et à côté des promesses du Polimètre+.",
