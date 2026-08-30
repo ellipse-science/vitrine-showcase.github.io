@@ -4,8 +4,9 @@ import { CLES_AVEC_SYMBOLE } from "@/components/interactive/SymboleEnjeu";
 import { CLE_PAR_LIBELLE, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { CATEGORY_ORDER } from "@/lib/data/polimetre-meta";
 
-// Le symbole d'enjeu (issue #425) est le SEUL élément partagé par les quatre
-// modules. Un enjeu sans symbole ne se voit pas : il ne casse rien, il disparaît
+// Le symbole d'enjeu (issue #425) rejoint la couleur et le libellé parmi ce que
+// les quatre modules partagent. Il est le seul des trois à ne rien rendre du
+// tout quand il manque : un enjeu sans symbole ne casse rien, il disparaît
 // simplement de la Une, du radar, d'une tuile et d'une promesse à la fois.
 describe("symboles d'enjeu", () => {
   it("les douze enjeux ont chacun le leur, et il n'y en a pas de treizième", () => {
