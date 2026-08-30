@@ -4407,8 +4407,9 @@
   .treemap-growth .gt-container-expanded .gt-collapsed { opacity: 0; pointer-events: none; }
   .treemap-growth .gt-head {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
     width: 100%;
     position: relative;
     z-index: 3;
@@ -4491,6 +4492,48 @@
     flex-shrink: 0;
     align-self: flex-start;
   }
+  /* La part de l'attention est le nombre PRINCIPAL de la tuile : c'est lui qui
+     chiffre ce que la surface montre. La variation reste, en retrait. */
+  .treemap-growth .gt-share {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .treemap-growth .gt-share-num {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: #F3ECDD;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* Le libellé n'a la place de se déployer que sur les grandes tuiles ; ailleurs
+     il tronquerait, et un libellé tronqué explique moins bien que rien. */
+  .treemap-growth .gt-share-kicker { display: none; }
+  .treemap-growth .gt-large .gt-share-kicker {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.62;
+    white-space: nowrap;
+  }
+  /* `.gt-pct` se cale en haut partout ailleurs ; ici les deux nombres sont de
+     corps différents et doivent partager leur ligne de base. */
+  .treemap-growth .gt-head .gt-pct,
+  .treemap-growth .gt-figures .gt-pct { align-self: baseline; }
+  .treemap-growth .gt-figures {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 5px;
+    max-width: 100%;
+    overflow: hidden;
+  }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-compact {
@@ -4511,16 +4554,23 @@
   .treemap-growth .gt-large { padding: 16px 18px; }
   .treemap-growth .gt-large .gt-title { font-size: 32px; }
   .treemap-growth .gt-large .gt-preview-head { font-size: 19px; }
-  .treemap-growth .gt-large .gt-pct { font-size: 28px; }
+  .treemap-growth .gt-large .gt-share-num { font-size: 34px; }
+  .treemap-growth .gt-large .gt-pct { font-size: 19px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
   .treemap-growth .gt-medium .gt-title { font-size: 23px; }
   .treemap-growth .gt-medium .gt-preview-head { font-size: 14.5px; }
-  .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
+  .treemap-growth .gt-medium .gt-share-num { font-size: 26px; }
+  .treemap-growth .gt-medium .gt-pct { font-size: 15px; }
   .treemap-growth .gt-small { padding: 10px 11px; }
   .treemap-growth .gt-small .gt-title { font-size: 15px; }
-  .treemap-growth .gt-small .gt-pct { font-size: 16px; }
+  .treemap-growth .gt-small .gt-share-num { font-size: 18px; }
+  .treemap-growth .gt-small .gt-pct { font-size: 12px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
-  .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-share-num { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-pct { font-size: 12px; }
+  /* Réduite à sa flèche, la variation n'a plus de marge à droite du glyphe. */
+  .treemap-growth .gt-pct-arrow .gt-up,
+  .treemap-growth .gt-pct-arrow .gt-down { margin-right: 0; }
   .treemap-growth .gt-tip {
     z-index: 40;
     pointer-events: none;
@@ -4547,6 +4597,21 @@
     font-weight: 700;
     line-height: 1.15;
   }
+  .treemap-growth .gt-tip-figures {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    margin: 0 0 9px;
+    padding-bottom: 9px;
+    border-bottom: 0.5px solid rgba(243, 236, 221, 0.22);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+  .treemap-growth .gt-tip-figures dt { opacity: 0.6; }
+  .treemap-growth .gt-tip-figures dd { margin: 0; text-align: right; white-space: nowrap; }
   .treemap-growth .gt-tip-head {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 13px;
@@ -4590,7 +4655,7 @@
   }
   .treemap-growth .gt-expanded-kicker,
   .treemap-growth .gt-expanded-count,
-  .treemap-growth .gt-expanded-growth > span:last-child {
+  .treemap-growth .gt-expanded-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
     text-transform: uppercase;
@@ -4611,10 +4676,14 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
+    gap: 3px;
     max-width: 210px;
     text-align: right;
   }
+  /* Le bouton Fermer et le second couple nombre/libellé gardent leur respiration ;
+     un libellé, lui, se colle au nombre qu'il légende. */
+  .treemap-growth .gt-expanded-growth .gt-expanded-close { margin-bottom: 7px; }
+  .treemap-growth .gt-expanded-growth .gt-expanded-label + .gt-pct { margin-top: 13px; }
   .treemap-growth .gt-expanded-close {
     display: inline-flex;
     align-items: center;
@@ -4634,7 +4703,14 @@
   .treemap-growth .gt-expanded-close span { font-size: 17px; line-height: 0.7; }
   .treemap-growth .gt-expanded-close:hover,
   .treemap-growth .gt-expanded-close:focus-visible { border-bottom-color: #F3ECDD; outline: none; }
-  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 32px; }
+  .treemap-growth .gt-expanded-share {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 42px;
+    line-height: 1;
+    color: #F3ECDD;
+  }
+  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 26px; }
   .treemap-growth .gt-expanded-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5575,6 +5651,8 @@
 
   .tm-bar-legend {
     display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
     justify-content: space-between;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
@@ -5617,6 +5695,15 @@
     text-transform: uppercase;
     color: var(--c);
     line-height: 1;
+  }
+  .tm-bar-part {
+    margin-left: auto;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1;
+    white-space: nowrap;
   }
   .tm-bar-track {
     width: 100%;

@@ -106,7 +106,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
-    title: "De quoi parle-t-on?",
+    title: "Les 12 enjeux de la campagne",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
     subtitle: "Les enjeux qui dominent",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
@@ -256,9 +256,10 @@ export async function getShareModuleContent(
   if (slug === "enjeux-saillants") {
     const tiles = (await loadTreemap(editionKey, asOfIso))?.day.tiles;
     const top = tiles?.[0];
-    const total = tiles?.reduce((sum, t) => sum + t.score, 0) ?? 0;
-    if (top && total > 0) {
-      const sharePct = Math.round((top.score / total) * 100);
+    // `share` est calculé par le chargeur : la carte de partage et la tuile
+    // doivent annoncer le même nombre, pas deux divisions parallèles.
+    if (top && top.share > 0) {
+      const sharePct = Math.round(top.share);
       return {
         title: fallback.title,
         subtitle: fallback.subtitle,

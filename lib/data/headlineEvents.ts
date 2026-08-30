@@ -1964,6 +1964,8 @@ export type TreemapIssueTile = {
   color: string;
   score: number;
   relScore: number;
+  /** Part de l'enjeu dans la saillance totale des 12 enjeux de la période, en %. Les 12 parts somment à 100. */
+  share: number;
   topObject: string;
   context: string;
   url: string | null;
@@ -2710,6 +2712,10 @@ export async function loadTreemap(
 
     const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
+    // Part de l'attention : la surface d'une tuile est déjà proportionnelle au
+    // score, mais rien ne la CHIFFRAIT. Le total est celui des 12 enjeux de la
+    // période affichée, pas un total absolu : les parts somment donc à 100.
+    const totalScore = scored.reduce((sum, entry) => sum + entry.score, 0);
     const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
       let topObject = ""; let context = "";
       const metaEntry = meta?.[issueKey];
@@ -2734,7 +2740,7 @@ export async function loadTreemap(
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevFound && prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), topObject, context, url, velocity, growth, articles };
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).

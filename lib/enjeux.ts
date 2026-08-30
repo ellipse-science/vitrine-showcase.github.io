@@ -5,7 +5,7 @@
 // dans le paquet du navigateur. Même raison d'être que lib/medias.ts.
 //
 // C'est la SOURCE DE VÉRITÉ des couleurs d'enjeu : `lib/data/headlineEvents.ts`
-// (module « De quoi parle-t-on ? ») et le module des partis lisent toutes deux
+// (module « Les 12 enjeux de la campagne ») et le module des partis lisent toutes deux
 // d'ici. Elles étaient déclarées dans headlineEvents.ts, hors de portée du
 // navigateur ; les recopier ailleurs aurait garanti la dérive.
 
