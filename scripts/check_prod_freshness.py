@@ -40,14 +40,20 @@ outputs.
 import datetime
 import json
 import os
-import sys
-import urllib.error
 import urllib.request
 
 # Une seule définition de « fin d'un bloc », partagée avec l'alarme #412 —
 # y compris son bord legacy « 20-24 ». Deux copies divergeraient un jour.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from check_freshness import fin_bloc_utc  # noqa: E402
+#
+# Deux chemins d'import plutôt qu'une mutation de `sys.path` : ce fichier est
+# lancé tantôt comme script (`python scripts/check_prod_freshness.py` — c'est
+# alors `scripts/` qui est en tête du chemin, d'où l'import court), tantôt
+# importé par les tests (`scripts.check_prod_freshness`, la racine du dépôt
+# étant sur le chemin via tests/conftest.py, d'où l'import long).
+try:
+    from scripts.check_freshness import fin_bloc_utc
+except ImportError:
+    from check_freshness import fin_bloc_utc
 
 BASE = os.environ.get("VITRINE_BASE_URL", "https://vitrinedemocratique.com")
 URL_UNE = f"{BASE}/data/hero-selection.json"
