@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import type { SolitudeData } from "@/lib/data/headlineEvents";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
+import { ISSUE_COLORS } from "@/lib/enjeux";
 
 // Radar « Deux solitudes » : axes = événements saillants du bloc, deux
 // polygones QC (bleu) / CAN (rouge). Composant CLIENT car l'infobulle des
@@ -426,7 +428,16 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // reste un « sur-titre » et ne concurrence pas le titre.
             const EYE_LINE_H = 13;
             const eyeLines = a.eyebrow ? wrapLabel(a.eyebrow.toUpperCase(), EYEBROW_MAX_CHARS) : [];
-            const eyeH = a.eyebrow ? EYE_GAP + (eyeLines.length - 1) * EYE_LINE_H : 0;
+            // Le symbole d'enjeu (#425) se pose AU-DESSUS de la rubrique, jamais
+            // à sa gauche : la largeur du bloc est calibrée au pixel près
+            // (EYEBROW_MAX_CHARS × EYEBROW_PX_PER_CHAR ≤ AXIS_BLOCK_MAX_PX, test
+            // `radarAxisLabels`), et l'élargir couperait les rubriques une ligne
+            // plus tôt. En hauteur, il suffit de gonfler `eyeH` : `top`,
+            // `title1Y` et `blockH` en dépendent déjà, et la troncature des
+            // rangées de médias absorbe le surplus sur les deux axes serrés.
+            const SYMB = 15;
+            const symbH = a.issueKey ? SYMB + 4 : 0;
+            const eyeH = a.eyebrow ? EYE_GAP + symbH + (eyeLines.length - 1) * EYE_LINE_H : symbH;
             // Rien ne doit jamais chevaucher le disque du radar (#394, extension
             // demandée par Adrien : « on veut plus jamais que ça arrive nulle
             // part » — #394 ne couvrait que les labels % vs le point de l'axe 0).
@@ -508,11 +519,19 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // si labelR ou R bougent, l'écart se recalcule à la lecture.
             const rawTop = sinA < -0.35 ? ly - blockH : sinA > 0.35 ? ly : ly - blockH / 2;
             const top = Math.max(2, Math.min(rawTop, H - blockH - 2));
-            const eyebrowY = top + 11;
+            const eyebrowY = top + 11 + symbH;
             const title1Y = top + eyeH + 14;                 // 1re ligne de titre
             const rowY = title1Y + (lines.length - 1) * LINE_H + TB_GAP;
             return (
               <g key={`lab-${i}`}>
+                {a.issueKey && (
+                  <SymboleEnjeu
+                    cle={a.issueKey}
+                    className="radar-symbole"
+                    svg={{ x: lx - SYMB / 2, y: top + 2, taille: SYMB }}
+                    style={{ color: ISSUE_COLORS[a.issueKey] }}
+                  />
+                )}
                 {eyeLines.map((ey, k) => (
                   <text
                     key={`eye-${k}`}
@@ -596,7 +615,12 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             <li key={`lg-${i}`} className={`side-${a.side}`}>
               <span className="lg-num" aria-hidden>{i + 1}</span>
               <div className="lg-body">
-                {a.eyebrow && <p className="lg-eyebrow">{a.eyebrow.toUpperCase()}</p>}
+                {a.eyebrow && (
+                  <p className="lg-eyebrow">
+                    <SymboleEnjeu cle={a.issueKey} style={a.issueKey ? { color: ISSUE_COLORS[a.issueKey] } : undefined} />
+                    {a.eyebrow.toUpperCase()}
+                  </p>
+                )}
                 <p className="lg-title">{a.label}</p>
                 <p className="lg-shares">
                   {/* Sur écran étroit il n'y a ni ligne de rappel ni survol :

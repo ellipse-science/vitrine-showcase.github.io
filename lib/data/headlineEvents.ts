@@ -13,7 +13,7 @@ import { cache } from "react";
 import { editionLabel, editionSlot } from "@/lib/editions";
 // Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
-import { ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
+import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -931,6 +931,7 @@ function buildSolitudes(
     return {
       label: a.label,
       eyebrow: ISSUE_LABELS_SHORT[a.rep.main_issue ?? ""] ?? null,
+      issueKey: a.rep.main_issue && ISSUE_COLORS[a.rep.main_issue] ? a.rep.main_issue : null,
       salienceLabel: tier?.label ?? null,
       salienceCls: tier?.cls ?? null,
       salienceHint: tier?.hint ?? null,
@@ -1815,6 +1816,12 @@ export type UneEvent = {
   excerpt: string | null;
   issueFr: string;
   issueColor: string;
+  /** La clé technique CAP de l'enjeu (`governments_and_governance`), conservée
+   *  pour que la Une puisse porter le symbole d'enjeu et se raccorder au module
+   *  des 12 enjeux. Elle était lue puis jetée ici : seuls `issueFr` et
+   *  `issueColor` en sortaient, et aucune jointure n'était possible autrement
+   *  qu'en recomparant des libellés français. `null` si l'enjeu est inconnu. */
+  issueKey: string | null;
   /** Rang de saillance 1–6 (Très faible→1 … Exceptionnelle→6) — pilote la taille du titre. */
   saillanceRank: number;
   saillanceLabel: string;
@@ -1883,6 +1890,9 @@ export type SolitudeAxis = {
   /** Étiquette « rubrique » au-dessus du titre : catégorie d'enjeu (FR, toujours
    *  exacte). null si l'enjeu est inconnu. */
   eyebrow: string | null;
+  /** La clé technique CAP du même enjeu, pour en tirer le symbole. Le libellé
+   *  seul ne suffisait pas : il aurait fallu recomparer des chaînes françaises. */
+  issueKey: string | null;
   /** Valeur radiale de dessin (0-100) : part de l'attention 24h de la région
    *  rapportée au sujet le plus couvert de cette région (le plus gros sujet du
    *  jour touche le bord). Rend les deux formes comparables malgré l'écart
@@ -2335,7 +2345,8 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       // aws-refiners#258 (« Droit et criminalité »…) : sans cette priorité, une
       // même catégorie s'affiche sous deux noms selon l'âge de l'événement.
       issueFr: ISSUE_LABELS_SHORT[e.main_issue ?? ""] ?? e.main_issue_text_fr ?? "Actualité",
-      issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? "#463E3E",
+      issueColor: ISSUE_COLORS[e.main_issue ?? ""] ?? COULEUR_ENJEU_DEFAUT,
+      issueKey: e.main_issue && ISSUE_COLORS[e.main_issue] ? e.main_issue : null,
       saillanceRank,
       saillanceLabel,
       saillanceCls,

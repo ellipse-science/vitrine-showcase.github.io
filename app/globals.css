@@ -1202,6 +1202,32 @@
   }
 
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
+  /* ============================================================
+     SYMBOLE D'ENJEU (issue #425) — le même glyphe dans les 4 modules.
+     Il prend la couleur du TEXTE qui l'entoure (`currentColor`) : chaque
+     module décide donc s'il porte la couleur de l'enjeu ou l'encre de sa
+     surface, sans qu'aucune couleur soit recopiée ici.
+     ============================================================ */
+  .symbole-enjeu {
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.22em;
+  }
+
+  /* Module 1 — la rubrique de la Une. Le texte garde son encre douce et le
+     filet sa couleur d'enjeu ; le glyphe reprend cette couleur. Sur le
+     traitement « breaking » (fond encre), l'aplat foncé d'un enjeu comme
+     Gouvernements (#234E78) ne passerait pas : on l'éclaircit vers le papier
+     plutôt que d'entretenir une seconde palette. */
+  .une-enjeu .symbole-enjeu {
+    color: var(--c);
+    margin-right: 7px;
+  }
+  .unes-jour.breaking .une-enjeu .symbole-enjeu {
+    color: color-mix(in srgb, var(--c) 42%, #F3ECDD);
+  }
+
   .une-enjeu {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
@@ -2259,6 +2285,11 @@
   .solitudes .radar-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; fill: var(--red); fill-opacity: 0.82; }
   .solitudes .radar-eyebrow.side-qc  { fill: var(--bleu); }
   .solitudes .radar-eyebrow.side-can { fill: var(--red); }
+  /* Le texte de la rubrique garde sa couleur de RÉGION (bleu Québec, rouge
+     Canada) : elle dit qui mène l'axe, une information que le symbole ne
+     remplace pas. Le glyphe, lui, porte la couleur de l'enjeu. */
+  .solitudes .radar-symbole { opacity: 0.9; }
+  .radar-legend .lg-eyebrow .symbole-enjeu { margin-right: 6px; }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; fill: var(--ink-soft); }
   .solitudes .radar-lab.strong { font-weight: 600; fill: var(--ink); }
   .solitudes .radar-lab.side-qc  { fill: var(--ink-soft); }
@@ -4423,13 +4454,27 @@
     align-items: center;
     justify-content: center;
   }
+  /* Sur une tuile, le fond EST la couleur de l'enjeu : le glyphe prend donc
+     l'encre de la tuile, pas la couleur (qui serait invisible sur elle-même). */
+  .treemap-growth .gt-title .symbole-enjeu {
+    width: 1em;
+    height: 1em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+  }
+  .treemap-growth .gt-symbole-seul { width: 20px; height: 20px; opacity: 0.92; }
+  .treemap-growth .gt-tip-name .symbole-enjeu { margin-right: 6px; }
+  .treemap-growth .gt-expanded-header h3 .symbole-enjeu { margin-right: 10px; opacity: 0.85; }
+  .treemap-mobile .tm-bar-name .symbole-enjeu { color: var(--c); margin-right: 6px; }
   /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
   .treemap-growth .gt-title {
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     text-align: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
@@ -5696,6 +5741,12 @@
     color: var(--c);
     line-height: 1;
   }
+  /* Module 6 — le symbole à côté de la promesse et dans le menu des
+     catégories : c'est la demande d'origine de l'issue #425. */
+  .ppl-symbole { color: var(--ink-soft); opacity: 0.75; }
+  .ppl-title .ppl-symbole { margin-right: 7px; vertical-align: -0.18em; }
+  .ppl-cat-option .ppl-symbole { margin-right: 8px; }
+
   .tm-bar-part {
     margin-left: auto;
     font-family: 'Playfair Display', Georgia, serif;
