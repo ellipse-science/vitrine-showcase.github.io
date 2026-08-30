@@ -14,7 +14,7 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 // Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
-import { momentMontreal } from "@/lib/dates";
+import { heurePublicationMontreal } from "@/lib/dates";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -2727,12 +2727,12 @@ export async function loadTreemap(
     // `date_utc` et l'autre d'une conversion (elles divergeraient d'un jour
     // pour toute passe entre 00h et 04h UTC). Sans tag exploitable, on retombe
     // sur la date seule, le comportement d'avant.
-    const passe = momentMontreal(latestTag);
+    const passe = heurePublicationMontreal(latestTag);
     // Le moment d'une passe ANTÉRIEURE, dit comme la Une des Unes le dit :
     // une heure, jamais un moment vague (« depuis 16h » et non « depuis cet
     // après-midi » — arbitrage d'Adrien, cf. `momentLabel`).
     const momentDeLaPasse = (tag: string | null): string | null => {
-      const m = tag ? momentMontreal(tag) : null;
+      const m = tag ? heurePublicationMontreal(tag) : null;
       if (!m || !passe) return null;
       const jours = (isoDay(passe.date) ?? 0) - (isoDay(m.date) ?? 0);
       const dateFr = formatDateFr(m.date);
