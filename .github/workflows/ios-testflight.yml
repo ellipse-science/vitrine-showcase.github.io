@@ -1,0 +1,143 @@
+# Envoi de l'application vers TestFlight, depuis un coureur macOS.
+#
+# POURQUOI : permet d'installer l'application sur un iPhone SANS posséder de
+# Mac. Tout ce que la personne qui publie a à faire se fait dans le navigateur
+# (App Store Connect), jamais dans Xcode.
+#
+# ⚠️ CE WORKFLOW N'A JAMAIS ÉTÉ EXÉCUTÉ DE BOUT EN BOUT. Il ne peut pas l'être
+# sans les secrets ci-dessous, qui n'existent que dans le compte développeur.
+# La compilation, elle, est vérifiée par le workflow `ios.yml`.
+#
+# ─── Ce qu'il faut préparer une seule fois, dans le navigateur ───
+#
+#  1. App Store Connect > Certificats, identifiants et profils > Identifiants :
+#     enregistrer `science.ellipse.vitrine` ET `science.ellipse.vitrine.widget`.
+#  2. App Store Connect > Apps > « + » : créer la fiche de l'application sur
+#     l'identifiant `science.ellipse.vitrine`.
+#     ⚠️ Le NOM DU DÉVELOPPEUR affiché se fige à cette étape et ne se modifie
+#     plus jamais. Sur un compte individuel, ce sera le nom légal du titulaire.
+#     Sur un compte d'organisation, un nom commercial déposé est possible.
+#  3. App Store Connect > Utilisateurs et accès > Intégrations > Clés App Store
+#     Connect : générer une clé de rôle « App Manager ». Noter l'ID de la clé
+#     et l'Issuer ID, télécharger le fichier `.p8` (téléchargeable UNE fois).
+#  4. Déposer dans les secrets du dépôt (Settings > Secrets and variables >
+#     Actions) :
+#       ASC_KEY_ID       — l'ID de la clé
+#       ASC_ISSUER_ID    — l'Issuer ID
+#       ASC_PRIVATE_KEY  — le CONTENU du fichier .p8, en entier
+#       APPLE_TEAM_ID    — l'identifiant d'équipe (Membership details)
+name: ios-testflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Note pour les testeurs"
+        required: false
+        default: "Compilation automatique"
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    name: envoi TestFlight
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Vérifier que les secrets sont là
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          manquants=""
+          [ -n "$ASC_KEY_ID" ]      || manquants="$manquants ASC_KEY_ID"
+          [ -n "$ASC_ISSUER_ID" ]   || manquants="$manquants ASC_ISSUER_ID"
+          [ -n "$ASC_PRIVATE_KEY" ] || manquants="$manquants ASC_PRIVATE_KEY"
+          [ -n "$APPLE_TEAM_ID" ]   || manquants="$manquants APPLE_TEAM_ID"
+          if [ -n "$manquants" ]; then
+            echo "Secrets manquants :$manquants"
+            echo "Voir l'en-tête de .github/workflows/ios-testflight.yml"
+            exit 1
+          fi
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Générer le projet
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Déposer la clé App Store Connect
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey.p8
+          chmod 600 ~/private_keys/AuthKey.p8
+
+      # Numéro de build unique et croissant : App Store Connect refuse deux
+      # envois portant le même. `run_number` ne recule jamais.
+      - name: Archiver
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Vitrine.xcodeproj \
+            -scheme Vitrine \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            | tail -60
+
+      - name: Préparer les options d'export
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Exporter et téléverser
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tail -40
+
+      - name: Effacer la clé
+        if: always()
+        run: rm -f ~/private_keys/AuthKey.p8
