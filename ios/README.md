@@ -3,10 +3,10 @@
 Coquille native pour `vitrinedemocratique.com`. C'est l'équivalent de la version
 « Sur l'écran d'accueil » de Safari, avec ce que le web ne peut pas faire sur iOS.
 
-> ⚠️ **Ce code n'a jamais été compilé.** Il a été écrit sous Linux, sans Xcode,
-> sans simulateur et sans appareil. Voir [« Ce qui n'a pas été vérifié »](#ce-qui-na-pas-été-vérifié)
-> avant d'y accorder la moindre confiance. La première compilation demandera
-> probablement quelques retouches.
+> **Ça compile, ça n'a jamais tourné.** Le workflow [`ios.yml`](../.github/workflows/ios.yml)
+> construit les deux cibles sur un coureur macOS (Xcode 16.4) à chaque
+> changement sous `ios/`. Mais **personne n'a encore exécuté l'application** :
+> ni simulateur, ni appareil. Voir [« Ce qui n'a pas été vérifié »](#ce-qui-na-pas-été-vérifié).
 
 ## Ce que ça fait
 
@@ -25,7 +25,13 @@ sous afflux vaut pour l'application comme pour la page.
 
 ## Construire
 
-Il faut un Mac avec Xcode 15 ou plus récent (cible : iOS 17).
+**Sans Mac** : le workflow `ios.yml` compile à chaque changement sous `ios/`, et
+`ios-testflight.yml` (déclenchement manuel) envoie une version installable sur
+un iPhone via TestFlight. Le dépôt est public, donc les coureurs macOS sont
+gratuits. La marche à suivre est en en-tête de ce second fichier.
+
+**Avec un Mac**, pour itérer plus vite qu'un aller-retour d'intégration
+continue : Xcode 15 ou plus récent (cible : iOS 17).
 
 ```sh
 brew install xcodegen
@@ -94,20 +100,23 @@ terrier à lapin qui n'apporte rien ici.
 Écrit sous Linux. En toute honnêteté, et selon la règle « prouver, pas
 décrire » du projet :
 
-- **Jamais compilé.** Pas de `swiftc`, pas de `xcodebuild`. Les erreurs de
-  syntaxe ou de typage n'ont pas pu être écartées.
 - **Jamais exécuté.** Ni simulateur, ni appareil. Rien de ce qui est décrit
-  plus haut n'a été observé.
-- **`xcodegen generate` n'a jamais tourné** sur ce `project.yml`.
+  plus haut n'a été OBSERVÉ : que le code compile ne dit pas qu'un lien
+  sortant ouvre bien une feuille Safari, ni que la tuile s'affiche.
+  C'est le principal reste à faire.
 - **Aucun envoi à App Store Connect**, donc aucune validation des exigences de
   l'icône, des visuels ou des métadonnées.
+- **`ios-testflight.yml` n'a jamais tourné de bout en bout**, faute de secrets.
+  Le premier envoi lui servira de test.
 - **L'icône est un agrandissement** de 512 vers 1024 px : les traits fins du
   monogramme sont interpolés. Exporter un 1024 natif avant toute publication.
 - **La règle 4.2 est une appréciation, pas un fait** : personne n'a soumis cette
   application à un examen.
 
-Ce qui a été vérifié, en revanche : les deux adresses lues renvoient bien un 200
-avec la charge attendue (`hero-selection.json`, 329 octets ; `build-id.json`),
-et les clés d'enjeux de `Shared/Enjeux.swift` sont recopiées de `lib/enjeux.ts`,
-irrégularités comprises (`health_and_social_services`,
+Ce qui a été vérifié, en revanche : **la compilation passe** (Xcode 16.4,
+`** BUILD SUCCEEDED **`, les deux cibles, l'extension embarquée dans
+`Vitrine.app/PlugIns/VitrineWidgetExtension.appex`) ; les deux adresses lues
+renvoient un 200 avec la charge attendue (`hero-selection.json`, 329 octets ;
+`build-id.json`) ; et les clés d'enjeux de `Shared/Enjeux.swift` sont recopiées
+de `lib/enjeux.ts`, irrégularités comprises (`health_and_social_services`,
 `international_affairs_and_defense`).
