@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   // garde-redaction: ok (séparateur <title>, exception PR #246)
   title: "Confidentialité — La Vitrine démocratique",
   description:
-    "Ce que La Vitrine démocratique recueille, ce qu'elle ne recueille pas, et ce qui arrive à un signalement.",
+    "Ce que La Vitrine démocratique recueille, ce qu'elle ne recueille pas, et à qui écrire.",
 };
 
 export default function ConfidentialitePage() {
@@ -21,10 +21,9 @@ export default function ConfidentialitePage() {
           <h1 className="apropos-title">Confidentialité</h1>
           <p className="apropos-lead dek-with-cap">
             La Vitrine démocratique se consulte sans compte et sans témoin de
-            connexion. Le site ne cherche pas à savoir qui vous êtes. Cette page
-            décrit ce qui se passe quand même, parce qu'afficher une page web
-            n'est jamais tout à fait sans trace, et ce qu'il advient d'un
-            signalement si vous en envoyez un.
+            connexion. Le site ne vous demande rien et ne cherche pas à savoir
+            qui vous êtes. Cette page décrit ce qui se passe quand même, parce
+            qu'afficher une page web n'est jamais tout à fait sans trace.
           </p>
         </div>
 
@@ -39,6 +38,12 @@ export default function ConfidentialitePage() {
                 témoin de connexion n'est déposé. Aucune publicité, aucun
                 traceur publicitaire, aucune revente de données. Aucun profil
                 vous suivant d'un site à l'autre.
+              </p>
+              <p className="apropos-text">
+                Le site ne comporte aucun formulaire&nbsp;: il n'y a rien à y
+                remplir, donc rien que vous puissiez nous transmettre sans le
+                vouloir. Pour nous écrire, il faut passer par le courriel, ce
+                qui reste votre décision.
               </p>
               <p className="apropos-text">
                 Rien n'est conservé dans votre navigateur, sauf une copie locale
@@ -75,47 +80,19 @@ export default function ConfidentialitePage() {
             </section>
 
             <section>
-              <h2 className="apropos-section-title">
-                Si vous signalez un problème
-              </h2>
-              <p className="apropos-text">
-                Le formulaire «&nbsp;Signaler un problème&nbsp;» est le seul
-                endroit où le site recueille ce que vous écrivez. Il transmet le
-                nom que vous inscrivez (vous pouvez le laisser vide), votre
-                description, la section concernée, et l'image que vous joignez
-                le cas échéant.
-              </p>
-              <p
-                className="apropos-text"
-                style={{
-                  borderLeft: "2px solid var(--cordovan)",
-                  paddingLeft: "14px",
-                }}
-              >
-                <strong>
-                  Un signalement devient public. Écrivez-le en le sachant.
-                </strong>{" "}
-                Il est publié comme fiche de suivi dans notre dépôt de code
-                ouvert, sur GitHub&nbsp;: le nom et la description y sont
-                visibles de tous. Une image jointe est déposée dans ce même
-                dépôt public. La description passe aussi par un service
-                d'intelligence artificielle (OpenAI) qui la met en forme.
-                N'y inscrivez donc aucun renseignement personnel ou
-                confidentiel, ni le vôtre, ni celui d'autrui.
-              </p>
-            </section>
-
-            <section>
               <h2 className="apropos-section-title">Durées de conservation</h2>
-              <p className="apropos-text">
-                Les signalements demeurent tant que le dépôt public existe. Un
-                dépôt de code garde son historique&nbsp;: une image déposée peut
-                y subsister même après la fermeture de la fiche.
-              </p>
               <p className="apropos-text">
                 Les mesures d'audience sont agrégées et conservées par
                 Cloudflare selon ses propres délais. Elles ne permettent pas de
                 remonter à une personne.
+              </p>
+              <p className="apropos-text">
+                Le site a comporté, jusqu'au 20 août 2026, un formulaire de
+                signalement dont les envois étaient publiés dans notre dépôt de
+                code ouvert. Il a été retiré des pages publiques et ne sert plus
+                qu'à l'équipe. Les signalements transmis avant cette date restent
+                visibles dans ce dépôt; écrivez-nous pour en faire retirer
+                un.
               </p>
             </section>
 
@@ -135,13 +112,13 @@ export default function ConfidentialitePage() {
               <p className="apropos-text">
                 La Loi&nbsp;25 vous donne un droit d'accès et de rectification
                 sur les renseignements personnels vous concernant, et le droit
-                d'en demander le retrait. En pratique, la seule chose que nous
-                puissions détenir sur vous est un signalement que vous nous avez
-                envoyé.
+                d'en demander le retrait. En pratique, la consultation du site ne
+                nous apprend rien qui permette de vous identifier, et nous ne
+                détenons donc rien à vous montrer.
               </p>
               <p className="apropos-text">
-                Pour consulter, corriger ou faire retirer un signalement, ou
-                pour toute question sur cette page, écrivez à{" "}
+                Pour toute question sur cette page, ou pour faire retirer un
+                signalement transmis avant le 20 août 2026, écrivez à{" "}
                 <a href="mailto:capp@ulaval.ca" className="apropos-link">
                   capp@ulaval.ca
                 </a>
@@ -170,6 +147,38 @@ export default function ConfidentialitePage() {
                 style={{ fontSize: "15px", lineHeight: "1.5" }}
               >
                 Dernière mise à jour&nbsp;: 30 août 2026.
+              </p>
+            </section>
+          </div>
+
+          <div className="apropos-side-col">
+            <section>
+              <h2 className="apropos-section-title">L'essentiel</h2>
+              <p
+                className="apropos-text"
+                style={{ fontSize: "15px", lineHeight: "1.5" }}
+              >
+                Pas de compte, pas de témoin de connexion, pas de publicité, pas
+                de profil publicitaire, pas de formulaire. Nous comptons les
+                pages lues, jamais les personnes qui les lisent.
+              </p>
+              <p
+                className="apropos-text"
+                style={{ fontSize: "15px", lineHeight: "1.5", marginTop: "16px" }}
+              >
+                Deux services extérieurs voient passer votre adresse IP du seul
+                fait que la page s'affiche&nbsp;: Cloudflare, qui héberge le
+                site, et Google, qui fournit les polices de caractères.
+              </p>
+              <p
+                className="apropos-text"
+                style={{ fontSize: "15px", lineHeight: "1.5", marginTop: "16px" }}
+              >
+                Une question?
+                <br />
+                <a href="mailto:capp@ulaval.ca" className="apropos-link">
+                  capp@ulaval.ca
+                </a>
               </p>
             </section>
           </div>
