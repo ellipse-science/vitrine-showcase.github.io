@@ -1,5 +1,11 @@
 [
   {
+    "pr": 620,
+    "date": "2026-08-30T17:09:56Z",
+    "note": "Le module des enjeux s'appelle désormais « Les 12 enjeux de la campagne » et chaque bloc affiche sa part de l'attention médiatique, en plus de sa hausse ou de sa baisse.",
+    "version": "2.32.0-beta.0"
+  },
+  {
     "pr": 615,
     "date": "2026-08-28T16:10:21Z",
     "note": "Correction d'un contrôle automatique interne : il signalait à tort un échec après chaque mise à jour du service de données, alors que celle-ci s'était bien déroulée.",
