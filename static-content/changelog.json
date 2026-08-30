@@ -1,5 +1,11 @@
 [
   {
+    "pr": 614,
+    "date": "2026-08-30T23:31:56Z",
+    "note": "Aucune. Cette PR ne change rien au site : elle ajoute le code source d'une application mobile, qui n'est ni compilée ni publiée.",
+    "version": null
+  },
+  {
     "pr": 629,
     "date": "2026-08-30T23:31:38Z",
     "note": "Le site publie désormais une page de confidentialité, qui explique ce qui est recueilli lors d'une visite et ce qui ne l'est pas.",
