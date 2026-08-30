@@ -151,7 +151,7 @@ function GrowthTile({
       style={containerStyle}
       tabIndex={muted ? -1 : 0}
       aria-expanded={expanded}
-      aria-label={`${tile.issueFr} : ${formatPct(tile.share)} de l'attention médiatique, ${growthAria}. Cliquer pour afficher toutes les actualités associées`}
+      aria-label={`${tile.issueFr}\u00a0: ${formatPct(tile.share)} de l'attention médiatique, ${growthAria}. Cliquer pour afficher toutes les actualités associées`}
       onClick={(event) => {
         if (!expanded && !(event.target as HTMLElement).closest("a, button")) {
           onPreview(null);
