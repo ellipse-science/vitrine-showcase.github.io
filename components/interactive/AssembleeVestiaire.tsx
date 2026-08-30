@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import type { PartyKey } from "@/lib/data/parties";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
 // Le site est publié sous un basePath sur GitHub Pages (même logique que
 // app/layout.tsx, SaillanceTip.tsx, TreemapClient.tsx…) : un chemin
@@ -375,7 +376,15 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
               <span className="carte-v-enjeux">
                 {enjeux.map((seg) => (
                   <span key={seg.label} className="carte-v-ligne" title={seg.title}>
-                    <i className="carte-v-lbl">{seg.label}</i>
+                    {/* Le libellé est ABRÉGÉ ici (« Gouv. », « Aff. int. ») :
+                        le symbole lève l'abréviation, et c'est le même que sur
+                        les autres modules. Il vit DANS le libellé, jamais à
+                        côté : la rangée est une grille à colonnes fixes, et un
+                        enfant de plus décalerait la barre et le pourcentage. */}
+                    <i className="carte-v-lbl">
+                      <SymboleEnjeu cle={seg.cle} className="assemblee-symbole" />
+                      {seg.label}
+                    </i>
                     <i className="carte-v-pct">{seg.widthPct}&nbsp;%</i>
                     <i className="carte-v-piste">
                       <i style={{ width: `${seg.widthPct}%`, background: seg.color }} />
@@ -448,7 +457,10 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
               <span className="dedans-titre">Sujets abordés</span>
               {row.enjeuStack.filter((s) => !s.isReste).slice(0, 3).map((seg) => (
                 <span key={seg.label} className="dedans-enjeu" title={seg.title}>
-                  <i className="dedans-lbl">{seg.label}</i>
+                  <i className="dedans-lbl">
+                    <SymboleEnjeu cle={seg.cle} className="assemblee-symbole" />
+                    {seg.label}
+                  </i>
                   <i className="dedans-piste">
                     <i style={{ width: `${seg.widthPct}%`, background: seg.color }} />
                   </i>

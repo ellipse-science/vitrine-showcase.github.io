@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CLES_AVEC_SYMBOLE } from "@/components/interactive/SymboleEnjeu";
 import { CLE_PAR_LIBELLE, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { CATEGORY_ORDER } from "@/lib/data/polimetre-meta";
+import { ISSUE_META } from "@/lib/data/assemblee";
 
 // Le symbole d'enjeu (issue #425) rejoint la couleur et le libellé parmi ce que
 // les quatre modules partagent. Il est le seul des trois à ne rien rendre du
@@ -19,6 +20,18 @@ describe("symboles d'enjeu", () => {
   it("les catégories du Polimètre+ se résolvent toutes en une clé d'enjeu", () => {
     const orphelines = CATEGORY_ORDER.filter((libelle) => !CLE_PAR_LIBELLE[libelle]);
     expect(orphelines).toEqual([]);
+  });
+
+  // Le module de l'Assemblée tient sa propre table des 12 enjeux (libellés
+  // ABRÉGÉS, propres à sa barre empilée). Ses clés doivent rester celles du CAP,
+  // sinon la couleur sort `undefined` et le symbole disparaît en silence.
+  it("les enjeux de l'Assemblée portent les clés du CAP, couleur et symbole compris", () => {
+    expect(ISSUE_META).toHaveLength(12);
+    for (const meta of ISSUE_META) {
+      expect(ISSUE_COLORS[meta.key], `couleur absente pour ${meta.key}`).toBeDefined();
+      expect(CLES_AVEC_SYMBOLE, `symbole absent pour ${meta.key}`).toContain(meta.key);
+      expect(meta.color).toBe(ISSUE_COLORS[meta.key]);
+    }
   });
 
   it("l'index libellé vers clé est l'inverse exact de ISSUE_LABELS_SHORT", () => {
