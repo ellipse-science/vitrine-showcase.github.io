@@ -5,6 +5,7 @@ import {
   MAX_UPLOAD_BYTES,
   PARTY_SLUGS,
   borneIndex,
+  borneJoursPosterieurs,
   heroKey,
   parsePochette,
   publishDecision,
@@ -116,5 +117,36 @@ describe("parsePochette", () => {
     // l'archive à chaque appel.
     expect(borneIndex(new Date("2026-08-30T12:00:00Z"), 30)).toBe("2026-07-31");
     expect(borneIndex(new Date("2026-01-05T00:00:00Z"), 30)).toBe("2025-12-06");
+  });
+});
+
+/* Le GEL DES JOURNÉES CLOSES repose entièrement sur l'ordre des octets : la
+   borne doit sauter par-dessus toutes les clés du jour et s'arrêter avant la
+   première du lendemain. Un « / » (0x2F) et un « 0 » (0x30) séparent les deux
+   cas, ce qui est trop subtil pour être tenu pour acquis. */
+describe("borneJoursPosterieurs", () => {
+  const jour = "2026-08-30";
+  const borne = borneJoursPosterieurs(jour);
+
+  it("ignore les clés du jour lui-même", () => {
+    for (const cle of [
+      `partis/${jour}/caq.png`,
+      `partis/${jour}/qs.json`,
+      `partis/${jour}/pcq.avif`,
+    ]) {
+      expect(cle > borne, cle).toBe(false);
+    }
+  });
+
+  it("ignore les jours antérieurs", () => {
+    for (const cle of ["partis/2026-08-29/caq.png", "partis/2026-07-31/caq.png", "partis/2025-12-31/caq.png"]) {
+      expect(cle > borne, cle).toBe(false);
+    }
+  });
+
+  it("voit les jours postérieurs, y compris par-dessus un mois ou une année", () => {
+    for (const cle of ["partis/2026-08-31/caq.png", "partis/2026-09-01/caq.png", "partis/2027-01-01/caq.png"]) {
+      expect(cle > borne, cle).toBe(true);
+    }
   });
 });

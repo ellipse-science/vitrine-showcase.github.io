@@ -877,9 +877,13 @@ function BacDiscotheque({ jours }: { jours: JourArchive[] }) {
     <section className="disco" aria-label="Discothèque">
       <p className="bac-tete">
         La discothèque, jour par jour
-        <span className="bac-aide">
-          {jours.length === 1 ? "1 journée archivée" : `${jours.length} journées archivées`}
-        </span>
+        {/* Le bac ne montre qu'un mois glissant : le lien mène au fonds entier.
+            `basePath` explicite, comme partout ailleurs dans ce dossier — un
+            href absolu casserait sur un déploiement sous sous-chemin. */}
+        <a className="bac-aide bac-lien" href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/discotheque/`}>
+          {jours.length === 1 ? "1 journée archivée" : `${jours.length} journées archivées`} — voir tout le
+          fonds
+        </a>
       </p>
 
       {/* UNE SEULE CAISSE, longue, où les jours se suivent — le croquis du

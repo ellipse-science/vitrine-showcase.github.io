@@ -146,6 +146,8 @@ const reelles = await signaturesDuJour();
 await rm(RACINE, { recursive: true, force: true });
 
 let ecrits = 0;
+/** jour -> entrées du registre, au format court de `generate_partis.py`. */
+const inventaire = {};
 for (let n = JOURS - 1; n >= 0; n--) {
   const jour = jourIso(n);
   const dossier = path.join(RACINE, jour);
@@ -198,9 +200,45 @@ for (let n = JOURS - 1; n >= 0; n--) {
         2,
       ),
     );
+    (inventaire[jour] ??= []).push({
+      p: p.key,
+      r: i + 1,
+      m: minutes,
+      t: `${heures}h${String(minutes % 60).padStart(2, "0")}`,
+      pc: Math.max(1, Math.round((minutes / 2800) * 100)),
+      e: ENJEUX[(n + i) % ENJEUX.length],
+      to: ton.mot,
+      tp: ton.pct,
+    });
     ecrits += 2;
   }
 }
 
+// L'INVENTAIRE, tel que `scripts/fetch_art.mjs` l'écrirait : la liste de tout le
+// fonds (ce que le listage R2 atteste) et le registre (les chiffres). Sans lui,
+// la page /discotheque n'a rien à parcourir.
+//
+// On laisse VOLONTAIREMENT les deux jours les plus anciens hors du registre :
+// c'est le cas d'un registre en retard sur le listage, et la page doit le
+// montrer — la pochette apparaît, marquée « chiffres non inscrits », plutôt que
+// de disparaître.
+const registre = {};
+for (const [jour, entrees] of Object.entries(inventaire)) registre[jour] = entrees;
+const plusAnciens = Object.keys(registre).sort().slice(0, 2);
+for (const jour of plusAnciens) delete registre[jour];
+
+await writeFile(
+  path.join(RACINE, "inventaire.json"),
+  JSON.stringify({
+    jours: Object.fromEntries(
+      Object.entries(inventaire).map(([jour, e]) => [jour, e.map((x) => x.p).sort()]),
+    ),
+    registre,
+  }),
+);
+
 console.log(`[fixtures] ${ecrits} fichiers écrits — ${JOURS} jour(s) × ${PARTIS.length} partis dans ${RACINE}`);
+console.log(
+  `[fixtures] inventaire.json : ${Object.keys(inventaire).length} jours, dont ${plusAnciens.length} sans chiffres (registre en retard, cas voulu)`,
+);
 console.log("[fixtures] ⚠️ images FAUSSES : elles éprouvent la mise en page, pas le rendu des illustrations.");

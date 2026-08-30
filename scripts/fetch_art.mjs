@@ -111,25 +111,43 @@ async function fetchPochette(jour, parti, ext) {
   }
 }
 
-async function fetchPochettes() {
-  // Sans index, il n'y a rien à rapatrier — le circuit n'existe pas encore, ou
-  // l'API est muette. Les deux cas se soldent par un bac vide, pas par un
-  // build cassé.
-  let index = null;
+/** Un JSON de l'API, ou null. Les échecs sont normaux ici (circuit pas encore
+ *  déployé, API muette, clé absente) et ne doivent jamais casser un build. */
+async function fetchJson(chemin, quoi) {
   try {
-    const res = await fetch(`${API_BASE}/v1/art/partis/index.json?jours=${HORIZON_JOURS}`, {
+    const res = await fetch(`${API_BASE}/v1/art/${chemin}`, {
       headers: {
         "cache-control": "no-cache",
         ...(API_KEY ? { authorization: `Bearer ${API_KEY}` } : {}),
       },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    index = await res.json();
+    return await res.json();
   } catch (err) {
-    console.warn(`[fetch_art] index des pochettes indisponible (${err.message}) — bacs vides`);
+    console.warn(`[fetch_art] ${quoi} indisponible (${err.message})`);
+    return null;
+  }
+}
+
+async function fetchPochettes() {
+  // DEUX INVENTAIRES, ET C'EST VOULU.
+  //
+  // `jours=0` liste TOUT le fonds : ce qui existe vraiment dans R2, jusqu'à la
+  // première pochette jamais rangée. C'est la SOURCE DE VÉRITÉ, et c'est ce que
+  // la page du fonds parcourt. Une requête, quelle que soit la taille du fonds.
+  //
+  // Le registre (`partis/fonds.json`) porte les CHIFFRES de ces pochettes —
+  // temps en Une, enjeu, ton — que la page affiche sans avoir à rapatrier cinq
+  // fichiers de métadonnées par journée archivée (1825 requêtes par build au
+  // bout d'un an). C'est un index dérivé, écrit par le raffineur : il peut être
+  // en retard sur le listage, jamais l'inverse. La page réconcilie les deux.
+  const index = await fetchJson("partis/index.json?jours=0", "inventaire des pochettes");
+  if (!index) {
     await rm(POCHETTES_DIR, { recursive: true, force: true });
+    console.warn("[fetch_art] bacs vides");
     return;
   }
+  const registre = await fetchJson("partis/fonds.json", "registre du fonds");
 
   const jours = Object.entries(index?.jours ?? {});
   if (jours.length === 0) {
@@ -141,12 +159,33 @@ async function fetchPochettes() {
   // On repart d'un dossier propre : une pochette sortie de l'horizon doit
   // disparaître du livrable, pas y survivre parce qu'elle y était hier.
   await rm(POCHETTES_DIR, { recursive: true, force: true });
+  await mkdir(POCHETTES_DIR, { recursive: true });
+
+  // L'INVENTAIRE, écrit sur le disque du build : la liste de TOUT le fonds, plus
+  // les chiffres que le registre en connaît. C'est ce que lit la page du fonds
+  // (lib/data/pochettes.ts), et il tient en quelques dizaines de kilo-octets là
+  // où les images font des mégaoctets.
+  await writeFile(
+    path.join(POCHETTES_DIR, "inventaire.json"),
+    JSON.stringify({ jours: index.jours ?? {}, registre: registre?.jours ?? null }),
+  );
 
   // Le jour le plus récent EST le bac du jour ; les autres, la discothèque.
   const jourCourant = jours.map(([j]) => j).sort().at(-1);
 
+  // L'HORIZON D'IMAGES est plus court que l'inventaire : on ne rapatrie les
+  // fichiers que des 30 derniers jours (cf. l'en-tête). Le reste est inventorié,
+  // pas servi.
+  const horizon = new Date(Date.now() - HORIZON_JOURS * 86400000).toISOString().slice(0, 10);
+  const aRapatrier = jours.filter(([jour]) => jour >= horizon);
+  if (aRapatrier.length < jours.length) {
+    console.log(
+      `[fetch_art] fonds : ${jours.length} jour(s) inventoriés, ${aRapatrier.length} servi(s) (horizon ${HORIZON_JOURS} j)`,
+    );
+  }
+
   const taches = [];
-  for (const [jour, partis] of jours) {
+  for (const [jour, partis] of aRapatrier) {
     for (const parti of partis) taches.push({ jour, parti });
   }
 

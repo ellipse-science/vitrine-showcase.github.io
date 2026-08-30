@@ -72,16 +72,46 @@ export type JourArchive = {
   pochettes: Pochette[];
 };
 
+/** Une pochette du FONDS que le build ne sert pas : elle existe dans R2, hors de
+ *  l'horizon d'images, et on n'en connaît que ce que le registre en dit. */
+export type PochetteArchivee = {
+  parti: PartyKey;
+  sigle: string;
+  couleur: string;
+  rang: number;
+  minutesUne: number;
+  tempsLabel: string;
+  partPct: number;
+  enjeu: string | null;
+  ton: string;
+  tonPct: number;
+  /** Faux quand le registre ignore cette pochette : le listage R2 atteste
+   *  qu'elle existe, mais ses chiffres manquent. On l'affiche quand même. */
+  chiffres: boolean;
+};
+
+export type JourFonds = {
+  jour: string;
+  jourLabel: string;
+  pochettes: PochetteArchivee[];
+  /** Vrai quand les images de cette journée sont dans le livrable (horizon de
+   *  30 jours). Faux : conservée dans R2, pas servie. */
+  servi: boolean;
+};
+
 export type Discotheque = {
   /** Le jour du bac courant, ou `null` si aucune pochette n'a été rapatriée. */
   jourCourant: string | null;
   /** Les pochettes du jour courant, du plus au moins présent. */
   duJour: Pochette[];
-  /** Les jours précédents, du plus récent au plus ancien. */
+  /** Les jours précédents SERVIS, du plus récent au plus ancien. */
   archives: JourArchive[];
+  /** TOUT le fonds, servi ou non, du plus récent au plus ancien. Alimente la
+   *  page du fonds ; vide quand l'inventaire n'a pas été rapatrié. */
+  fonds: JourFonds[];
 };
 
-const VIDE: Discotheque = { jourCourant: null, duJour: [], archives: [] };
+const VIDE: Discotheque = { jourCourant: null, duJour: [], archives: [], fonds: [] };
 
 const estPartyKey = (v: unknown): v is PartyKey =>
   typeof v === "string" && (PARTY_KEYS as readonly string[]).includes(v);
@@ -193,6 +223,7 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
   if (nonVides.length === 0) return VIDE;
 
   const courant = nonVides[nonVides.length - 1];
+  const servis = new Set(nonVides.map((j) => j.jour));
   return {
     jourCourant: courant.jour,
     duJour: courant.pochettes,
@@ -200,5 +231,75 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
       .slice(0, -1)
       .reverse()
       .map((j) => ({ jour: j.jour, jourLabel: formatJour(j.jour), pochettes: j.pochettes })),
+    fonds: await lireFonds(formatJour, servis),
   };
+}
+
+/** Une entrée du registre, aux noms courts : ils se répètent une fois par
+ *  pochette et par jour, indéfiniment (cf. `generate_partis.py`). */
+type EntreeRegistre = {
+  p?: unknown; r?: unknown; m?: unknown; t?: unknown;
+  pc?: unknown; e?: unknown; to?: unknown; tp?: unknown;
+};
+
+/**
+ * TOUT LE FONDS : ce que le listage R2 atteste, enrichi des chiffres du registre.
+ *
+ * DEUX SOURCES, ET UNE SEULE FAIT FOI. `jours` vient du listage du bucket : c'est
+ * ce qui EXISTE. `registre` est un index dérivé écrit par le raffineur : il porte
+ * les chiffres, et il peut être en retard (cycle interrompu). On part donc
+ * TOUJOURS du listage, et une journée que le registre ignore s'affiche quand même,
+ * marquée comme telle. L'inverse — se fier au registre — ferait disparaître de la
+ * page des pochettes bel et bien conservées.
+ */
+async function lireFonds(
+  formatJour: (iso: string) => string,
+  servis: Set<string>,
+): Promise<JourFonds[]> {
+  let inv: { jours?: Record<string, string[]>; registre?: Record<string, EntreeRegistre[]> | null };
+  try {
+    inv = JSON.parse(await fs.readFile(path.join(RACINE, "inventaire.json"), "utf8"));
+  } catch {
+    return [];
+  }
+  const jours = inv?.jours;
+  if (!jours || typeof jours !== "object") return [];
+  const registre = inv?.registre ?? null;
+
+  const nombre = (v: unknown, defaut = 0) => (typeof v === "number" && Number.isFinite(v) ? v : defaut);
+  const texte = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+
+  return Object.entries(jours)
+    .filter(([jour]) => JOUR_RE.test(jour))
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([jour, partis]) => {
+      const chiffresDuJour = new Map<string, EntreeRegistre>(
+        (registre?.[jour] ?? [])
+          .filter((e) => typeof e?.p === "string")
+          .map((e) => [String(e.p), e]),
+      );
+      const pochettes = (Array.isArray(partis) ? partis : [])
+        .filter(estPartyKey)
+        .map((parti): PochetteArchivee => {
+          const e = chiffresDuJour.get(parti);
+          return {
+            parti,
+            sigle: parti.toUpperCase(),
+            couleur: PARTY_COLORS[parti],
+            rang: nombre(e?.r, 0),
+            minutesUne: nombre(e?.m),
+            tempsLabel: texte(e?.t) ?? "",
+            partPct: nombre(e?.pc),
+            enjeu: texte(e?.e),
+            ton: texte(e?.to) ?? "",
+            tonPct: nombre(e?.tp, 50),
+            chiffres: e !== undefined,
+          };
+        })
+        // Par temps d'écoute quand on le connaît, par sigle sinon : l'ordre ne
+        // doit pas sauter d'un build à l'autre.
+        .sort((a, b) => b.minutesUne - a.minutesUne || a.sigle.localeCompare(b.sigle, "fr"));
+      return { jour, jourLabel: formatJour(jour), pochettes, servi: servis.has(jour) };
+    })
+    .filter((j) => j.pochettes.length > 0);
 }

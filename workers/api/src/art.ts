@@ -27,7 +27,9 @@ import {
   ART_FILES,
   MAX_UPLOAD_BYTES,
   POCHETTES_HORIZON_JOURS,
+  POCHETTES_REGISTRE,
   borneIndex,
+  borneJoursPosterieurs,
   heroKey,
   parsePochette,
   publishDecision,
@@ -122,17 +124,22 @@ export async function handleArt(
 
     const url = new URL(request.url)
     const demande = Number(url.searchParams.get('jours'))
-    const horizon = Number.isFinite(demande) && demande > 0 && demande <= 365
+    // `jours=0` = TOUT LE FONDS, sans borne. Le listage parcourt alors l'archive
+    // entière (une page R2 par millier d'objets, soit deux appels par année
+    // conservée) : réservé à l'inventaire, appelé une fois par build, jamais au
+    // rythme du bac.
+    const tout = demande === 0
+    const horizon = Number.isFinite(demande) && demande > 0 && demande <= 3650
       ? Math.floor(demande)
       : POCHETTES_HORIZON_JOURS
-    const depuis = borneIndex(new Date(), horizon)
+    const depuis = tout ? null : borneIndex(new Date(), horizon)
 
     const jours: Record<string, string[]> = {}
     let cursor: string | undefined
     do {
       const page = await env.ART_BUCKET.list({
         prefix: OBJECT_PREFIX + 'partis/',
-        startAfter: OBJECT_PREFIX + 'partis/' + depuis,
+        ...(depuis ? { startAfter: OBJECT_PREFIX + 'partis/' + depuis } : {}),
         cursor,
       })
       for (const obj of page.objects) {
@@ -146,7 +153,7 @@ export async function handleArt(
     } while (cursor)
 
     return json({
-      horizon_jours: horizon,
+      horizon_jours: tout ? null : horizon,
       depuis,
       jours: Object.fromEntries(
         Object.entries(jours)
@@ -157,9 +164,14 @@ export async function handleArt(
   }
 
   // Les pochettes des partis : chemin validé par expression régulière fermée,
-  // même politique de cache et de portée que les fichiers de la Une.
+  // même politique de cache et de portée que les fichiers de la Une. Le registre
+  // du fonds (`partis/fonds.json`) n'est pas une pochette : il échappe donc au
+  // gel des journées closes, et c'est voulu — il est réécrit à chaque cycle.
   const pochette = parsePochette(file)
-  const contentType = pochette?.contentType ?? ART_FILES[file]
+  const contentType =
+    pochette?.contentType ??
+    (file === POCHETTES_REGISTRE ? 'application/json; charset=utf-8' : undefined) ??
+    ART_FILES[file]
   if (!contentType) {
     return json({ error: `Fichier inconnu : ${file || '(vide)'}.`, files: Object.keys(ART_FILES) }, 404)
   }
@@ -177,6 +189,38 @@ export async function handleArt(
         declared ? 413 : 411,
       )
     }
+
+    // UNE JOURNÉE CLOSE NE SE RÉÉCRIT PLUS.
+    //
+    // La discothèque conserve la version de FIN DE JOURNÉE de chaque pochette.
+    // Comme le chemin ne porte pas le bloc, les six passages d'une journée
+    // écrivent la même clé et seul le dernier survit — c'est voulu, et c'est ce
+    // qui borne le stockage à ~3,4 Go par an. Mais rien n'empêchait un cycle en
+    // retard (pipeline qui traîne, rejeu manuel, `force`) de rouvrir une
+    // journée déjà rangée et d'en remplacer l'image des semaines plus tard.
+    // L'archive doit être un fonds, pas un tableau blanc.
+    //
+    // « Close » veut dire DÉPASSÉE PAR UNE JOURNÉE PLUS RÉCENTE, et non « avant
+    // aujourd'hui » : à 00h45 heure de Montréal, le dernier bloc publié est
+    // encore celui de 20h de la veille, et une règle fondée sur l'horloge
+    // refuserait le cycle toutes les nuits. Cf. `borneJoursPosterieurs`.
+    if (pochette) {
+      const posterieurs = await env.ART_BUCKET.list({
+        prefix: OBJECT_PREFIX + 'partis/',
+        startAfter: OBJECT_PREFIX + borneJoursPosterieurs(pochette.jour),
+        limit: 1,
+      })
+      if (posterieurs.objects.length > 0) {
+        return json(
+          {
+            error: `Journée close : ${pochette.jour} est dépassée par une journée plus récente, sa pochette ne se réécrit plus.`,
+            plus_recent: posterieurs.objects[0].key.slice(OBJECT_PREFIX.length),
+          },
+          409,
+        )
+      }
+    }
+
     await env.ART_BUCKET.put(OBJECT_PREFIX + file, request.body, {
       httpMetadata: { contentType },
     })

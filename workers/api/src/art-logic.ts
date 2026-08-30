@@ -129,3 +129,39 @@ export function borneIndex(aujourdhui: Date, horizonJours: number): string {
  *  (arbitrage du 2026-08-30). Les pochettes plus anciennes restent dans R2 —
  *  elles ne sont simplement plus rapatriées par le build. */
 export const POCHETTES_HORIZON_JOURS = 30
+
+/** LE REGISTRE DU FONDS : les chiffres de toutes les pochettes jamais rangées,
+ *  en un seul objet.
+ *
+ *  POURQUOI IL EXISTE. La page du fonds veut montrer, pour chaque journée
+ *  archivée, ce que la pochette disait — temps en Une, enjeu, ton. Ces chiffres
+ *  vivent dans le fichier de métadonnées de chaque pochette, soit cinq fichiers
+ *  par jour : les rapatrier tous ferait 1825 requêtes par build au bout d'un an,
+ *  9125 au bout de cinq. Le registre les rassemble et se lit en UNE requête,
+ *  pour ~160 Ko par année conservée.
+ *
+ *  CE N'EST PAS LA SOURCE DE VÉRITÉ. C'est un index DÉRIVÉ, écrit par le
+ *  raffineur ; ce qui existe vraiment est ce que le listage R2 rapporte
+ *  (`partis/index.json`). Un cycle interrompu peut laisser le registre en
+ *  retard d'une journée. La page réconcilie les deux et montre les journées que
+ *  le listage connaît mais que le registre ignore — sans leurs chiffres, plutôt
+ *  que de les cacher. */
+export const POCHETTES_REGISTRE = 'partis/fonds.json'
+
+/** La borne de listage qui saute par-dessus TOUTES les clés d'un jour donné,
+ *  pour ne voir que les jours strictement postérieurs.
+ *
+ *  L'astuce tient à l'ordre des octets : les clés d'un jour sont
+ *  `partis/2026-08-30/…`, et « / » vaut 0x2F quand « 0 » vaut 0x30. Passer
+ *  `partis/2026-08-300` en `startAfter` place donc le curseur APRÈS la dernière
+ *  clé du 30 août et AVANT la première du 31 (« 2026-08-300 » < « 2026-08-31/ »).
+ *  Un seul objet suffit à répondre : il existe un jour plus récent, ou non.
+ *
+ *  POURQUOI PAS UNE COMPARAISON À LA DATE DU JOUR. Parce qu'à 00h45 heure de
+ *  Montréal, le dernier bloc publié est encore celui de 20h de la VEILLE : le
+ *  raffineur écrirait légitimement dans un jour « passé », et une règle fondée
+ *  sur l'horloge le refuserait toutes les nuits. « Close » ne veut pas dire
+ *  « hier », ça veut dire « dépassée par une journée plus récente ». */
+export function borneJoursPosterieurs(jour: string): string {
+  return `partis/${jour}0`
+}

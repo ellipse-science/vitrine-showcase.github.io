@@ -9817,3 +9817,140 @@
    rien à filtrer pour l'instant. */
 .fader--inerte { opacity: 0.45; }
 .fader--inerte .fader-input { cursor: not-allowed; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   PAGE DU FONDS (/discotheque) — tout ce que la discothèque a jamais rangé.
+
+   Le module n'en montre qu'un mois glissant, en pochettes. Ici c'est un
+   INVENTAIRE : une ligne par journée, cinq entrées par ligne, lisible de haut
+   en bas. Pas de couvertures — au bout d'un an il y en aurait 1825, et une
+   grille d'images ne se parcourt pas, elle se subit. La couleur du parti tient
+   dans un filet vertical, comme la tranche d'un disque dans un bac.
+   ─────────────────────────────────────────────────────────────────────────── */
+.fonds-container {
+  margin: 48px 0;
+  border-top: 0.5px solid var(--rule);
+  padding-top: 48px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  color: var(--ink);
+}
+.fonds-header { margin-bottom: 28px; }
+.fonds-title {
+  margin: 0 0 24px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 54px;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.fonds-lead {
+  margin: 0;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.fonds-compte,
+.fonds-vide {
+  margin: 0 0 30px;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.fonds-jours {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fonds-jour {
+  padding: 0 0 18px;
+  margin-bottom: 18px;
+  border-bottom: 0.5px solid var(--rule);
+}
+.fonds-date {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+/* Ce qui n'est plus servi le dit, plutôt que de laisser croire à une perte. */
+.fonds-hors {
+  letter-spacing: 0.14em;
+  color: var(--ink-softer);
+}
+
+.fonds-pochettes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Le filet de couleur À GAUCHE : c'est la tranche du disque, le seul repère de
+   parti sur une page sans images. */
+.fonds-pochette {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 10px;
+  border-left: 3px solid var(--party, var(--rule));
+  min-width: 0;
+}
+.fonds-sigle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+}
+.fonds-temps {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fonds-enjeu {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+.fonds-ton,
+.fonds-sans-chiffres {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+}
+
+@media (max-width: 900px) {
+  .fonds-pochettes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fonds-title { font-size: 38px; }
+  .fonds-lead { font-size: 16px; }
+}
+@media (max-width: 480px) {
+  .fonds-pochettes { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Le lien vers le fonds, dans l'entête de la discothèque. Il reprend l'italique
+   de `.bac-aide` et ne s'en distingue que par le soulignement : c'est une
+   indication de plus, pas un bouton. */
+.bac-lien {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 0.5px;
+}
+.bac-lien:hover { color: var(--cordovan); }
