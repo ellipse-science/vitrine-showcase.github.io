@@ -50,7 +50,7 @@ describe("facetResult / words", () => {
 
 describe("facetResult / issue", () => {
   it("signale les autres partis qui partagent le même enjeu dominant", () => {
-    const topSeg = { color: "#111", widthPct: 40, label: "Écon.", title: "Économie" };
+    const topSeg = { color: "#111", widthPct: 40, label: "Écon.", title: "Économie", cle: "economy_and_labour" };
     const caq = row({ key: "caq", enjeuStack: [topSeg] });
     const plq = row({ key: "plq", enjeuStack: [{ ...topSeg }] });
     const result = facetResult(caq, "issue", [caq, plq]);

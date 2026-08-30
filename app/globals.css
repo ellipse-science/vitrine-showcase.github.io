@@ -3715,9 +3715,20 @@
     margin-bottom: 4px;
   }
   .carte-v-enjeux { display: block; }
+  /* Module 5 — le symbole d'enjeu (#425) prend la couleur de l'encre douce du
+     libellé qu'il précède, sur ces deux surfaces de papier. La colonne du
+     libellé gagne les 13px qu'il occupe, pris sur la piste : sans ça,
+     « Aff. int. » se coupait. */
+  .assemblee-symbole {
+    width: 11px;
+    height: 11px;
+    margin-right: 4px;
+    vertical-align: -0.16em;
+    opacity: 0.75;
+  }
   .carte-v-ligne {
     display: grid;
-    grid-template-columns: 62px 38px 1fr;
+    grid-template-columns: 77px 38px 1fr;
     align-items: center;
     gap: 5px;
     margin-bottom: 3px;

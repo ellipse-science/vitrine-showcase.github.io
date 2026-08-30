@@ -37,11 +37,16 @@ const GLYPHES: Record<string, React.ReactNode> = {
       <path d="M3.4 19.4h17.2" />
     </>
   ),
-  // Trois barres croissantes sur une ligne de base.
+  // Une pile de pièces. La première version dessinait trois barres croissantes :
+  // elles disaient « graphique » plutôt qu'« économie », et répétaient le geste
+  // de la flèche de variation posée juste à côté sur la tuile (retour d'Adrien,
+  // 30-08). La pile a une silhouette pleine, lisible à 13px, et ne se confond
+  // ni avec la valise d'Immigration ni avec la balance de Loi et crime.
   economy_and_labour: (
     <>
-      <path d="M4 19.4h16" />
-      <path d="M6.6 19.4v-5.2M11.4 19.4V9.6M16.2 19.4V5.2" />
+      <ellipse cx="12" cy="7" rx="7.4" ry="2.8" />
+      <path d="M4.6 7v4.4c0 1.55 3.31 2.8 7.4 2.8s7.4-1.25 7.4-2.8V7" />
+      <path d="M4.6 11.4v4.4c0 1.55 3.31 2.8 7.4 2.8s7.4-1.25 7.4-2.8v-4.4" />
     </>
   ),
   // Un épi.
