@@ -1,5 +1,11 @@
 [
   {
+    "pr": 626,
+    "date": "2026-08-30T21:58:30Z",
+    "note": "Les heures affichées par le module des enjeux sont celles des éditions du site (0h, 4h, 8h, 12h, 16h, 20h), et non l'heure interne de traitement.",
+    "version": "2.34.0-beta.1"
+  },
+  {
     "pr": 625,
     "date": "2026-08-30T21:31:57Z",
     "note": "Le module des enjeux affiche désormais l'heure de sa dernière mise à jour, et chaque variation dit depuis quelle heure elle se compare. Le module est mis à jour six fois par jour.",
