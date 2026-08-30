@@ -109,7 +109,7 @@ export function EditionNav({ editions, currentKey }: {
       if (target) {
         el.href = editionHref(target.key, target.key === editions[0]?.key);
         el.hidden = false;
-        el.title = `${verb} : ${target.label.toLowerCase()} du ${target.dateLabel.toLowerCase()}`;
+        el.title = `${verb} : ${target.label.toLowerCase()} du ${target.dateLabel.toLowerCase()}`;
         el.removeAttribute("aria-disabled");
       } else {
         // Bord de l'archive : la flèche RESTE en place, désactivée. La faire

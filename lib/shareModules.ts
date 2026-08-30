@@ -242,7 +242,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${leader.sovPct} %`,
+          value: `${leader.sovPct} %`,
           label: `${leader.label} domine la couverture médiatique aujourd'hui`,
           context,
           contextHighlight,
@@ -265,7 +265,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${sharePct} %`,
+          value: `${sharePct} %`,
           label: "de l'attention médiatique aujourd'hui",
           context: top.topObject ? `${top.issueFr} · ${top.topObject}` : top.issueFr,
           color: top.color,
@@ -289,7 +289,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${topIssue.widthPct} %`,
+          value: `${topIssue.widthPct} %`,
           label: "des interventions à l'Assemblée nationale portent sur",
           context: `${issueFullName} (${row.label})`,
           contextCompletesLabel: true,
@@ -317,7 +317,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${pct} %`,
+          value: `${pct} %`,
           label: "des promesses de la CAQ tenues, en tout ou en partie",
           context: topPromise?.title,
         },

@@ -106,7 +106,7 @@ function ResonanceTag({ label, region, echo }: {
   return (
     <span className="resonance-item">
       <span className="resonance-tag">{label}</span>
-      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
+      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
         <span className="resonance-card">
           {/* La fenêtre était TUE (demande d'Adrien, 2026-08-09) : « 61 % de
               l'attention des Unes canadiennes-anglaises » se lisait comme un

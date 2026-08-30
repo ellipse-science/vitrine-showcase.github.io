@@ -169,6 +169,7 @@ async function loadManifest(): Promise<SnapshotManifest | null> {
         return null;
       }
       console.log(
+        // garde-redaction: ok (journal de build, pas une surface éditoriale)
         `[source] instantané ${manifest.cycle} : ${Object.keys(manifest.tables).length} tables`,
       );
       return manifest;
