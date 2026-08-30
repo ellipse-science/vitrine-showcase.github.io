@@ -59,12 +59,15 @@ function formatGrowth(growth: number): string {
 
 function GrowthTile({
   tile,
+  depuis,
   expanded,
   muted,
   onExpand,
   onPreview,
 }: {
   tile: LayoutNode;
+  /** À quoi la variation se compare (« 15h », « hier 23h ») ; commun aux 12. */
+  depuis: string | null;
   expanded: boolean;
   muted: boolean;
   onExpand: (issueKey: string | null) => void;
@@ -82,6 +85,10 @@ function GrowthTile({
   const needsTip = size === "small" || isTiny;
   const mainArticle = tile.articles[0];
   const mediaLabel = mainArticle?.outlets.map((outlet) => outlet.name).join(" · ") ?? "";
+
+  // « depuis 15h » ne tient que sur une grande tuile ; ailleurs il se lit au
+  // survol et dans la tuile dépliée. Même arbitrage que le libellé de la part.
+  const depuisSpan = depuis ? <span className="gt-depuis">depuis {depuis}</span> : null;
 
   const growthSpan = (
     <span className="gt-pct">
@@ -125,7 +132,10 @@ function GrowthTile({
     <>
       <div className="gt-head">
         {shareSpan}
-        {growthSpan}
+        <span className="gt-variation">
+          {growthSpan}
+          {depuisSpan}
+        </span>
       </div>
       <div className="gt-body">
         <div className="gt-title">
@@ -148,7 +158,7 @@ function GrowthTile({
     ? "variation non calculable"
     : tile.growth === 0
       ? "saillance stable depuis le traitement précédent"
-      : `${tile.growth > 0 ? "en hausse de" : "en baisse de"} ${formatPct(Math.abs(tile.growth))} depuis le traitement précédent`;
+      : `${tile.growth > 0 ? "en hausse de" : "en baisse de"} ${formatPct(Math.abs(tile.growth))} depuis ${depuis ?? "le traitement précédent"}`;
 
   const containerStyle: React.CSSProperties = expanded
     ? { left: "0%", top: "0%", width: "100%", height: "100%" }
@@ -212,7 +222,9 @@ function GrowthTile({
                 <span className="gt-expanded-share">{formatPct(tile.share)}</span>
                 <span className="gt-expanded-label">Part de l&apos;attention médiatique</span>
                 {growthSpan}
-                <span className="gt-expanded-label">Variation depuis le traitement précédent</span>
+                <span className="gt-expanded-label">
+                  {depuis ? `Variation depuis ${depuis}` : "Variation depuis le traitement précédent"}
+                </span>
               </div>
             </div>
 
@@ -250,7 +262,7 @@ function GrowthTile({
   );
 }
 
-function GrowthTip({ tile }: { tile: LayoutNode }) {
+function GrowthTip({ tile, depuis }: { tile: LayoutNode; depuis: string | null }) {
   const article = tile.articles[0];
   if (!article) return null;
   const cx = tile.rect.x + tile.rect.w / 2;
@@ -271,7 +283,7 @@ function GrowthTip({ tile }: { tile: LayoutNode }) {
       <dl className="gt-tip-figures">
         <dt>Part de l&apos;attention</dt>
         <dd>{formatPct(tile.share)}</dd>
-        <dt>Variation</dt>
+        <dt>{depuis ? `Variation depuis ${depuis}` : "Variation"}</dt>
         <dd>
           {tile.velocity === 1 && <span className="gt-up">▲</span>}
           {tile.velocity === -1 && <span className="gt-down">▼</span>}
@@ -777,13 +789,14 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
               <GrowthTile
                 key={tile.issueKey}
                 tile={tile}
+                depuis={current.growthSince}
                 expanded={expandedIssue === tile.issueKey}
                 muted={expandedIssue !== null && expandedIssue !== tile.issueKey}
                 onExpand={expandIssue}
                 onPreview={setTipTile}
               />
             ))}
-            {tipTile && expandedIssue === null && <GrowthTip tile={tipTile} />}
+            {tipTile && expandedIssue === null && <GrowthTip tile={tipTile} depuis={current.growthSince} />}
           </div>
 
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">

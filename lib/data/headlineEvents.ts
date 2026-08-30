@@ -14,6 +14,7 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 // Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
+import { momentMontreal } from "@/lib/dates";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -1997,7 +1998,14 @@ export type TreemapHistoryPoint = { date: string; ranks: Record<string, number> 
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
   dateLabel: string;
-  /** « Dernière mise à jour : mercredi 8 juillet 2026 » — table journalière, pas d'heure. */
+  /** À quoi la variation des tuiles se compare, dit en clair : « ce matin »,
+   *  « hier soir »… `null` quand aucune publication antérieure ne diffère.
+   *  Commun aux 12 tuiles : c'est le même traitement précédent pour toutes. */
+  growthSince: string | null;
+  /** « Dernière mise à jour : jeudi 27 août 2026, 15h » — l'heure vient du `tag`
+   *  de la passe, converti depuis l'UTC. La table a une fenêtre journalière mais
+   *  une cadence de SIX passes par jour : c'est la confusion entre les deux qui
+   *  a longtemps privé ce module de son heure. */
   lastUpdated: string;
   /** Classement des 12 enjeux dans le temps (un point par tag), pour le graphique de rang. */
   history: TreemapHistoryPoint[];
@@ -2448,9 +2456,15 @@ const PASS_ORDER: Record<string, number> = { am: 0, noon: 1, pm: 2 };
 async function loadIssueScores(
   period: "day" | "week" | "month",
   /** Édition passée (#434) : ne garder que les lignes déjà publiées ce jour-là.
-   *  Précision au JOUR — ces tables sont publiées une fois par jour/semaine/mois,
-   *  pas six fois par jour ; l'archive d'un module lent ne peut donc pas être
-   *  plus fine que sa cadence. */
+   *  Précision au JOUR, parce que `date_utc` est tout ce que le filtre peut
+   *  comparer ici.
+   *
+   *  ⚠️ Ce commentaire affirmait que « ces tables sont publiées une fois par
+   *  jour, pas six fois par jour ». C'est FAUX, et mesuré : `issues_score_day`
+   *  porte six `tag` par jour (03:36, 07:36, 11:36, 15:36, 19:37, 23:36 UTC).
+   *  C'est la FENÊTRE qui est journalière, pas la cadence de publication. La
+   *  confusion a coûté l'heure de mise à jour du module, restée invisible
+   *  jusqu'au 2026-08-30 alors que la donnée la portait depuis toujours. */
   asOfIso?: string,
 ): Promise<Array<Record<string, unknown>> | null> {
   const filePath = path.resolve(process.cwd(), "public", "data", "refined", period, `issues_score_${period}.json`);
@@ -2503,8 +2517,8 @@ export function previousDistinctAggregate(
   rows: Array<Record<string, unknown>>,
   latestTag: string,
   currentAggregate: Record<string, number>,
-): { aggregate: Record<string, number>; found: boolean } {
-  if (!latestTag) return { aggregate: {}, found: false };
+): { aggregate: Record<string, number>; found: boolean; tag: string | null } {
+  if (!latestTag) return { aggregate: {}, found: false, tag: null };
 
   const sameScores = (a: Record<string, number>, b: Record<string, number>) =>
     ISSUE_KEYS.every((key) => (a[key] ?? 0) === (b[key] ?? 0));
@@ -2516,10 +2530,13 @@ export function previousDistinctAggregate(
   for (const tag of earlierTags) {
     const candidate = aggregateForTag(rows, tag);
     if (!sameScores(currentAggregate, candidate)) {
-      return { aggregate: candidate, found: true };
+      // Le TAG est rendu avec l'agrégat : sans lui, l'affichage ne peut pas
+      // dire à quoi la variation se compare, et « depuis le traitement
+      // précédent » reste une formule que le lecteur ne peut pas situer.
+      return { aggregate: candidate, found: true, tag };
     }
   }
-  return { aggregate: {}, found: false };
+  return { aggregate: {}, found: false, tag: null };
 }
 
 function latestIssueRow(rows: Array<Record<string, unknown>>): Record<string, unknown> | null {
@@ -2704,10 +2721,33 @@ export async function loadTreemap(
     if (!latest) return null;
     const dateStr = (latest.date_montreal_tz as string) ?? (latest.date_utc as string) ?? "";
     const dateLabel = formatDateFr(dateStr);
-    const lastUpdated = lastUpdatedLabel(dateStr);
+    const latestTag = (latest.tag as string) ?? "";
+    // L'heure de la passe. Le `tag` porte l'instant en UTC ; la date ET l'heure
+    // affichées sortent donc du MÊME instant converti, jamais l'une de
+    // `date_utc` et l'autre d'une conversion (elles divergeraient d'un jour
+    // pour toute passe entre 00h et 04h UTC). Sans tag exploitable, on retombe
+    // sur la date seule, le comportement d'avant.
+    const passe = momentMontreal(latestTag);
+    // Le moment d'une passe ANTÉRIEURE, dit comme la Une des Unes le dit :
+    // une heure, jamais un moment vague (« depuis 16h » et non « depuis cet
+    // après-midi » — arbitrage d'Adrien, cf. `momentLabel`).
+    const momentDeLaPasse = (tag: string | null): string | null => {
+      const m = tag ? momentMontreal(tag) : null;
+      if (!m || !passe) return null;
+      const jours = (isoDay(passe.date) ?? 0) - (isoDay(m.date) ?? 0);
+      const dateFr = formatDateFr(m.date);
+      const dayWord = jours <= 0
+        ? "aujourd’hui"
+        : jours === 1
+          ? "hier"
+          : `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+      return momentLabel(dayWord, m.heure, false);
+    };
+    const lastUpdated = passe
+      ? lastUpdatedLabel(passe.date, passe.heure)
+      : lastUpdatedLabel(dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
-    const latestTag = (latest.tag as string) ?? "";
     const periodRows = latestTag
       ? rows.filter((r) => (r.tag as string) === latestTag)
       : [latest];
@@ -2718,8 +2758,9 @@ export async function loadTreemap(
 
     // Bloc (tag) précédent, pour la croissance de saillance (vue Aujourd'hui).
     // Les republications sont sautées : voir previousDistinctAggregate.
-    const { aggregate: prevAggregated, found: prevFound } =
+    const { aggregate: prevAggregated, found: prevFound, tag: prevTag } =
       previousDistinctAggregate(rows, latestTag, aggregated);
+    const growthSince = prevFound ? momentDeLaPasse(prevTag) : null;
 
     const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: aggregated[issueKey] ?? 0 })).sort((a, b) => b.score - a.score);
     const maxScore = scored[0]?.score || 1;
@@ -2776,7 +2817,7 @@ export async function loadTreemap(
         return { date, ranks };
       });
 
-    return { tiles, dateLabel, lastUpdated, history };
+    return { tiles, dateLabel, growthSince, lastUpdated, history };
   }
 
   const day = buildPeriodData(dayRows);
