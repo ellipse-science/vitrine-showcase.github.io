@@ -5651,6 +5651,8 @@
 
   .tm-bar-legend {
     display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
     justify-content: space-between;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;

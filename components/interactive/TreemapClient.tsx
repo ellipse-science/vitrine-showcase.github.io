@@ -772,6 +772,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
           <div className="treemap-mobile" aria-label="Sujets du jour par enjeu et saillance">
             <div className="tm-bar-legend">
               <span>Couleur = enjeu</span>
+              <span>Largeur = score</span>
               <span>% = part de l&apos;attention</span>
             </div>
             {tiles.map((tile) => {
