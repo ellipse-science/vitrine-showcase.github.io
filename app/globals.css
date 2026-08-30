@@ -8971,6 +8971,31 @@
 .pochette-formes .pastille-enjeu { fill: var(--enjeu, #463E3E); }
 .pochette-formes .filet-ton { fill: var(--ton, #6E685F); }
 
+/* LES DEUX BACS, CÔTE À CÔTE.
+
+   Celui du jour garde sa largeur propre (cinq tranches plus la baie où une
+   pochette se déplie) ; la discothèque prend tout le reste et défile. Ils sont
+   alignés PAR LE BAS : leurs caisses n'ont pas la même hauteur, et ce sont les
+   fonds de caisse qui doivent se répondre, comme deux bacs posés sur la même
+   table.
+
+   `min-width: 0` sur la discothèque : sans lui, un enfant qui défile refuse de
+   rétrécir sous sa largeur intrinsèque (1300 px pour cent cinquante tranches)
+   et pousse la page en débordement horizontal. C'est le piège classique de
+   flexbox, et il ne se voit qu'une fois le fonds rempli. */
+.bacs {
+  display: flex;
+  align-items: flex-end;
+  gap: 26px;
+  margin: 26px 0 0;
+}
+.bacs .bac,
+.bacs .disco {
+  margin-top: 0;
+}
+.bacs .bac { flex: 0 0 auto; }
+.bacs .disco { flex: 1 1 auto; min-width: 0; }
+
 /* ───────────────────────────────────────────────────────────────────────────
    LA DISCOTHÈQUE : un vinyle par parti et par jour, qui s'accumulent.
 
@@ -9012,36 +9037,44 @@
      la baie interne, qui garde la couverture dépliée DANS la boîte. */
   overflow-x: auto;
   overflow-y: hidden;
+  /* CONTEXTE D'EMPILEMENT PROPRE. Les tranches se chevauchent dans un ordre
+     voulu (cf. `.disco-case`), ce qui demande des `z-index` élevés ; sans
+     isolation, ils entreraient en concurrence avec toute la page et une
+     pochette survolée pourrait passer devant l'entête du site. */
+  isolation: isolate;
 }
+/* UNE SEULE PILE, SANS INTERSTICE. Les pochettes sont rangées par temps
+   d'écoute, tous jours confondus : un écart entre les journées redécouperait ce
+   classement et le contredirait. Elles se touchent donc, comme dans un bac
+   qu'on a rangé d'une traite.
+
+   Le rembourrage latéral vaut une demi-couverture : c'est ce qui permet à la
+   PREMIÈRE et à la DERNIÈRE pochette de se centrer au survol sans buter contre
+   la paroi. */
 .disco-rangee {
   display: flex;
   align-items: flex-end;
-  gap: 14px;
-  /* De quoi laisser la couverture de la PREMIÈRE et de la DERNIÈRE colonne se
-     centrer sans buter contre la paroi. */
-  padding: 0 calc(var(--disco-cote) / 2);
+  padding: 14px calc(var(--disco-cote) / 2) 0;
   margin: 0;
   list-style: none;
 }
-.disco-jour {
-  flex: 0 0 auto;
-  padding-top: 14px;
-}
-.disco-pile {
-  display: flex;
-  align-items: flex-end;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+/* L'ORDRE D'EMPILEMENT, décroissant : le paquet penche vers la gauche, donc
+   chaque carte doit passer DEVANT sa voisine de droite, comme dans une main de
+   cartes qu'on étale.
+
+   ⚠️ LA BASE EST GRANDE, ET C'EST TOUT LE POINT. Elle valait 50, hérité du bac
+   du jour qui n'a que cinq pochettes : au-delà de la 51e tranche, le calcul
+   passait NÉGATIF, et un `z-index` négatif place l'élément derrière le fond de
+   son parent. Sur 145 pochettes, 94 disparaissaient purement et simplement
+   derrière la caisse. Le défaut ne pouvait pas se voir sur cinq. */
 .disco-case {
   flex: 0 0 auto;
   position: relative;
   width: var(--disco-tranche);
   height: var(--disco-cote);
-  z-index: calc(50 - var(--i, 0));
+  z-index: calc(2000 - var(--i, 0));
 }
-.disco-case:hover, .disco-case:focus-within, .disco-case.sortie { z-index: 100; }
+.disco-case:hover, .disco-case:focus-within, .disco-case.sortie { z-index: 2001; }
 .disco-pochette {
   display: block;
   position: relative;
@@ -9095,6 +9128,9 @@
   display: flex;
   align-items: baseline;
   gap: 7px;
+  /* La date est poussée au bout du bandeau : sigle et durée à gauche, pressage
+     à droite. */
+  justify-content: flex-start;
   padding: 5px 8px 6px;
   background: rgba(28, 25, 23, 0.72);
   font-family: 'IBM Plex Mono', monospace;
@@ -9113,24 +9149,30 @@
   color: var(--paper);
 }
 
-/* L'ÉTIQUETTE DU JOUR, sous sa colonne : le carton glissé entre deux
-   séparateurs dans un bac de disquaire. */
-.disco-date {
-  margin: 7px 0 9px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
+/* LA DATE, SUR LE VINYLE. Elle vivait sous la colonne du jour ; la pile n'a plus
+   de colonnes, alors elle est montée sur la couverture. Poussée au bout du
+   bandeau, dans l'encre la plus discrète, en petites capitales espacées : c'est
+   une mention de pressage au dos d'une pochette, pas un titre. */
+.disco-pressage {
+  margin-left: auto;
+  font-size: 7.5px;
+  letter-spacing: 0.18em;
   white-space: nowrap;
-  color: var(--ink-softer);
+  color: rgba(243, 236, 221, 0.55);
+}
+
+/* Sous 900 px, les deux bacs ne tiennent plus l'un à côté de l'autre : la
+   discothèque tomberait à quelques dizaines de pixels de large. Ils s'empilent,
+   le bac du jour d'abord. */
+@media (max-width: 900px) {
+  .bacs { flex-direction: column; align-items: stretch; gap: 8px; }
+  .bacs .disco { margin-top: 18px; }
 }
 
 @media (max-width: 640px) {
   /* Au doigt, la tranche s'épaissit — même arbitrage que le bac du jour, la
      fidélité cédant à l'usage — et la couverture rétrécit pour tenir dans
-     l'écran une fois centrée sur sa colonne. */
+     l'écran une fois centrée sur sa tranche. */
   .disco-boite {
     --disco-cote: 108px;
     --disco-tranche: 16px;

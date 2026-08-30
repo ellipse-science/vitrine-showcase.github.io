@@ -63,14 +63,25 @@ export type Pochette = {
   /** Heure de fin du bloc illustré. `20` pour une pochette d'archive, qui est
    *  par définition la version de fin de journée. */
   blocHour: number | null;
+  /** « Mercredi 12 août 2026 », formaté côté serveur. La date voyage avec la
+   *  pochette parce que la discothèque ne les groupe plus par journée : elles
+   *  sont rangées par temps d'écoute, tous jours confondus, et chacune doit donc
+   *  dire d'où elle vient. */
+  jourLabel: string;
+  /** « 12 août », pour la légende posée sur la couverture. */
+  jourCourt: string;
 };
 
-export type JourArchive = {
-  jour: string;
-  /** « Mercredi 12 août 2026 », déjà formaté côté serveur. */
-  jourLabel: string;
-  pochettes: Pochette[];
-};
+/** Le format court d'une date, pour la légende d'une pochette. La discothèque
+ *  n'a pas la place d'un libellé complet sur une couverture de 132 px. */
+const MOIS_COURTS = [
+  "janv.", "févr.", "mars", "avril", "mai", "juin",
+  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+];
+function jourCourt(iso: string): string {
+  const [, m, d] = iso.split("-");
+  return `${Number(d)} ${MOIS_COURTS[Number(m) - 1] ?? ""}`.trim();
+}
 
 /** Une pochette du FONDS que le build ne sert pas : elle existe dans R2, hors de
  *  l'horizon d'images, et on n'en connaît que ce que le registre en dit. */
@@ -104,14 +115,17 @@ export type Discotheque = {
   jourCourant: string | null;
   /** Les pochettes du jour courant, du plus au moins présent. */
   duJour: Pochette[];
-  /** Les jours précédents SERVIS, du plus récent au plus ancien. */
-  archives: JourArchive[];
+  /** LA PILE DE LA DISCOTHÈQUE : toutes les pochettes archivées et servies,
+   *  rangées par TEMPS D'ÉCOUTE, de la plus à la moins présente, tous jours
+   *  confondus. Elles ne sont plus groupées par journée — c'est le classement
+   *  qui fait le rangement, et chaque pochette porte sa date. */
+  pile: Pochette[];
   /** TOUT le fonds, servi ou non, du plus récent au plus ancien. Alimente la
    *  page du fonds ; vide quand l'inventaire n'a pas été rapatrié. */
   fonds: JourFonds[];
 };
 
-const VIDE: Discotheque = { jourCourant: null, duJour: [], archives: [], fonds: [] };
+const VIDE: Discotheque = { jourCourant: null, duJour: [], pile: [], fonds: [] };
 
 const estPartyKey = (v: unknown): v is PartyKey =>
   typeof v === "string" && (PARTY_KEYS as readonly string[]).includes(v);
@@ -119,7 +133,11 @@ const estPartyKey = (v: unknown): v is PartyKey =>
 /** Lit un fichier de métadonnées, ou `null` s'il est absent, illisible ou
  *  incomplet. On ne rattrape rien : une pochette dont on ne sait pas quel parti
  *  elle illustre n'a pas sa place dans un bac trié par temps d'écoute. */
-async function lirePochette(jour: string, fichier: string): Promise<Pochette | null> {
+async function lirePochette(
+  jour: string,
+  fichier: string,
+  formatJour: (iso: string) => string,
+): Promise<Pochette | null> {
   const parti = fichier.replace(/\.json$/, "");
   if (!estPartyKey(parti)) return null;
   let meta: Record<string, unknown>;
@@ -174,6 +192,8 @@ async function lirePochette(jour: string, fichier: string): Promise<Pochette | n
       typeof meta.bloc === "object" && meta.bloc !== null
         ? nombre((meta.bloc as Record<string, unknown>).hour, 0) || null
         : null,
+    jourLabel: formatJour(jour),
+    jourCourt: jourCourt(jour),
   };
 }
 
@@ -207,7 +227,7 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
       } catch {
         return { jour, pochettes: [] as Pochette[] };
       }
-      const lues = await Promise.all(fichiers.map((f) => lirePochette(jour, f)));
+      const lues = await Promise.all(fichiers.map((f) => lirePochette(jour, f, formatJour)));
       const pochettes = lues
         .filter((p): p is Pochette => p !== null)
         // TRI PAR TEMPS D'ÉCOUTE, comme le bac du module. À égalité — deux
@@ -227,10 +247,19 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
   return {
     jourCourant: courant.jour,
     duJour: courant.pochettes,
-    archives: nonVides
+    // LA PILE : toutes les journées passées à plat, rangées par temps d'écoute.
+    // À égalité — deux pochettes à zéro minute, cas ordinaire — la plus récente
+    // passe devant, et le sigle départage ensuite : l'ordre ne doit pas sauter
+    // d'un build à l'autre.
+    pile: nonVides
       .slice(0, -1)
-      .reverse()
-      .map((j) => ({ jour: j.jour, jourLabel: formatJour(j.jour), pochettes: j.pochettes })),
+      .flatMap((j) => j.pochettes)
+      .sort(
+        (a, b) =>
+          b.minutesUne - a.minutesUne ||
+          b.jour.localeCompare(a.jour) ||
+          a.sigle.localeCompare(b.sigle, "fr"),
+      ),
     fonds: await lireFonds(formatJour, servis),
   };
 }

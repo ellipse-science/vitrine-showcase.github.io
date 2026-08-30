@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
-import type { Discotheque, JourArchive, Pochette } from "@/lib/data/pochettes";
+import type { Discotheque, Pochette } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
 import { couleurEnjeu, signaturePochette } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
@@ -124,6 +124,10 @@ export function PartisCouvertureClient({
    *  ici et non dans le bac : c'est un clic sur un DECK qui la sort, et les
    *  deux composants sont frères. */
   const [pochette, setPochette] = useState<PartyKey | null>(null);
+  /** La pochette d'ARCHIVE ouverte, « jour/parti » : deux pochettes du même
+   *  parti à deux jours différents doivent pouvoir se distinguer. Les deux états
+   *  s'excluent — voir le montage des deux bacs plus bas. */
+  const [archive, setArchive] = useState<string | null>(null);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
@@ -164,6 +168,14 @@ export function PartisCouvertureClient({
   const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
+
+  // Les deux pochettes ouvertes possibles, résolues ICI : leurs volets se
+  // rendent sous les deux bacs, pas dedans (un volet double fait 720 px, la
+  // colonne de gauche en fait 330).
+  const choisieDuJour = rangerParTemps(view.rows).find((r) => r.key === pochette) ?? null;
+  const engendreeDuJour = (row: RowView) => pochetteAppariee(row, discotheque?.duJour ?? []);
+  const choisieArchive =
+    discotheque?.pile.find((p) => `${p.jour}/${p.parti}` === archive) ?? null;
 
   // La garde de PROD vient de main (#547) : l'easter egg reste sur dev.
   if (showDoom && !isProd) {
@@ -326,30 +338,81 @@ export function PartisCouvertureClient({
       )}
       </div>
 
-      {/* LE BAC, sous la console. Il montre les CINQ pochettes, y compris celles
-          des partis en sourdine, qui n'ont pas de deck et n'avaient donc aucune
-          pochette auparavant. Masqué quand la mesure est indisponible : des
-          pochettes à zéro affirmeraient un classement que la donnée ne soutient
-          pas, exactement comme les decks. */}
-      {!data.indisponible && (
-        <BacAVinyles
-          rows={view.rows}
+      {/* LES DEUX BACS, CÔTE À CÔTE. À gauche celui du jour, cinq pochettes et la
+          baie où l'une se déplie ; à droite la discothèque, qui défile. Ils sont
+          frères et non superposés parce qu'ils disent la même chose à deux
+          vitesses : ce qui se passe, et ce qui s'est passé.
+
+          LES POCHETTES OUVERTES SONT RENDUES DESSOUS, pas dans leur bac. Un
+          volet double fait 720 px : dans la colonne de gauche, large de 330,
+          il aurait été écrasé. Les deux états vivent donc ICI, et ouvrir l'un
+          referme l'autre — deux pochettes ouvertes en même temps sous deux bacs
+          voisins n'auraient rien voulu dire. */}
+      <div className="bacs">
+        {!data.indisponible && (
+          <BacAVinyles
+            rows={view.rows}
+            mediaLabel={mediaLabel}
+            duJour={discotheque?.duJour ?? []}
+            ouverte={pochette}
+            onOuvrir={(k) => {
+              setPochette(k);
+              setArchive(null);
+            }}
+          />
+        )}
+
+        {/* La discothèque survit à `data.indisponible`, et c'est voulu : ce que
+            ces pochettes montrent était vrai le jour où elles ont été
+            engendrées, qu'on sache mesurer aujourd'hui ou non. */}
+        {(discotheque?.pile.length ?? 0) > 0 && (
+          <BacDiscotheque
+            pile={discotheque!.pile}
+            ouverte={archive}
+            onOuvrir={(id) => {
+              setArchive(id);
+              setPochette(null);
+            }}
+          />
+        )}
+      </div>
+
+      {choisieDuJour && (
+        <PochetteOuverte
+          row={choisieDuJour}
           mediaLabel={mediaLabel}
-          duJour={discotheque?.duJour ?? []}
-          ouverte={pochette}
-          onOuvrir={setPochette}
+          pochette={engendreeDuJour(choisieDuJour)}
           onFermer={() => setPochette(null)}
         />
       )}
 
-      {/* LA DISCOTHÈQUE — les jours précédents, figés dans leur version de 20h.
-          Elle ne s'affiche que lorsqu'elle contient quelque chose : un bac vide
-          annoncerait un fonds qui n'existe pas encore. Elle survit en revanche à
-          `data.indisponible`, et c'est voulu — ce que ces pochettes montrent
-          était vrai le jour où elles ont été engendrées, qu'on sache mesurer
-          aujourd'hui ou non. */}
-      {(discotheque?.archives.length ?? 0) > 0 && (
-        <BacDiscotheque jours={discotheque!.archives} />
+      {choisieArchive && (
+        <div className="gatefold" role="group" aria-label={`Pochette de ${choisieArchive.nom}`}>
+          <div className="gatefold-volet gatefold-volet--art">
+            <span className="pochette-art">
+              <picture>
+                {choisieArchive.sources.map((f) => (
+                  <source key={f.type} srcSet={f.src} type={f.type} />
+                ))}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="pochette-image" src={choisieArchive.src} alt="" aria-hidden="true" />
+              </picture>
+              <b className="pochette-sigle">{choisieArchive.sigle}</b>
+            </span>
+          </div>
+          <GatefoldInfos
+            couleur={choisieArchive.couleur}
+            nom={choisieArchive.nom}
+            rang={choisieArchive.rang}
+            temps={choisieArchive.tempsLabel}
+            partPct={choisieArchive.partPct}
+            enjeu={choisieArchive.enjeu ?? SANS_ENJEU}
+            tonMot={choisieArchive.ton}
+            tonPct={choisieArchive.tonPct}
+            legende={choisieArchive.jourLabel}
+            onFermer={() => setArchive(null)}
+          />
+        </div>
       )}
 
       <div className="module-last-updated">{data.lastUpdated}</div>
@@ -700,50 +763,59 @@ function JaugeTon({ pct, title }: { pct: number; title?: string }) {
  * Au survol, les pochettes s'écartent comme on feuillette un bac de disquaire.
  * C'est du CSS seul : aucun état, donc rien à désynchroniser.
  */
+/** Le rangement du bac du jour : par MINUTES, du plus au moins présent. À
+ *  égalité (deux partis à zéro, cas ordinaire quand la mesure ne détecte rien),
+ *  le sigle départage, pour que l'ordre ne saute pas d'un rendu à l'autre. */
+function rangerParTemps(rows: RowView[]): RowView[] {
+  return rows
+    .slice()
+    .sort((a, b) => b.minutesUne - a.minutesUne || a.label.localeCompare(b.label, "fr"));
+}
+
+/**
+ * L'APPARIEMENT d'une pochette engendrée à la ligne qu'elle illustre.
+ *
+ * Une pochette n'est montrée que si sa signature correspond à ce que le module
+ * affiche À CET INSTANT : même parti, même enjeu distinctif, même sens du ton.
+ * La chaîne est décalée d'un cycle par construction (le raffineur lit le build
+ * courant, le build suivant rapatrie) ; sans cette garde, un changement d'enjeu
+ * ferait illustrer la CAQ « santé » sous un module qui annonce « immigration ».
+ * Le repli géométrique est préférable à une image qui ment.
+ *
+ * ⚠️ N'apparie QUE la position « tous les médias ». Les pochettes sont
+ * engendrées sur l'agrégat (cf. le contrat d'illustration) ; sur une position du
+ * fader, l'enjeu et le ton sont ceux d'un seul média, et la signature ne
+ * correspondra pas d'elle-même. C'est le comportement voulu.
+ *
+ * Vit au niveau du module, et non dans le bac, parce que la pochette OUVERTE se
+ * rend maintenant en dehors de lui — sous les deux bacs, en pleine largeur.
+ */
+function pochetteAppariee(row: RowView, duJour: Pochette[]): Pochette | null {
+  const attendue = signaturePochette(
+    row.key,
+    row.enjeux.find((e) => !e.reste && e.label !== SANS_ENJEU)?.label,
+    row.toneDirection,
+  );
+  return duJour.find((p) => p.parti === row.key && p.signature === attendue) ?? null;
+}
+
 function BacAVinyles({
   rows,
   mediaLabel,
   duJour,
   ouverte,
   onOuvrir,
-  onFermer,
 }: {
   rows: RowView[];
   mediaLabel: string | null;
-  /** Les pochettes engendrées du jour courant. Appariées ici, par signature. */
+  /** Les pochettes engendrées du jour courant. Appariées par signature. */
   duJour: Pochette[];
   ouverte: PartyKey | null;
-  onOuvrir: (key: PartyKey) => void;
-  onFermer: () => void;
+  /** `null` referme : le bac ne connaît qu'un geste, basculer. */
+  onOuvrir: (key: PartyKey | null) => void;
 }) {
-  // Le tri se fait sur les MINUTES. À égalité (deux partis à zéro, cas
-  // ordinaire quand la mesure ne détecte rien), on départage par le sigle pour
-  // que l'ordre ne saute pas d'un rendu à l'autre.
-  const triees = rows
-    .slice()
-    .sort((a, b) => b.minutesUne - a.minutesUne || a.label.localeCompare(b.label, "fr"));
-  const choisie = triees.find((r) => r.key === ouverte) ?? null;
-
-  // L'APPARIEMENT. Une pochette engendrée n'est montrée que si sa signature
-  // correspond à ce que le module affiche À CET INSTANT — même parti, même
-  // enjeu distinctif, même sens du ton. La chaîne est décalée d'un cycle par
-  // construction (le raffineur lit le build courant, le build suivant
-  // rapatrie) : sans cette garde, un changement d'enjeu ferait illustrer la
-  // CAQ « santé » sous un module qui annonce « immigration ». Le repli
-  // géométrique est alors préférable à une image qui ment.
-  //
-  // ⚠️ On n'apparie QUE la position « tous les médias ». Les pochettes sont
-  // engendrées sur l'agrégat (cf. le contrat d'illustration) ; sur une position
-  // du fader, l'enjeu et le ton sont ceux d'un seul média, et la signature ne
-  // correspondra pas d'elle-même. C'est le comportement voulu.
-  const engendree = (row: RowView) => {
-    const attendue = signaturePochette(
-      row.key,
-      row.enjeux.find((e) => !e.reste && e.label !== SANS_ENJEU)?.label,
-      row.toneDirection,
-    );
-    return duJour.find((p) => p.parti === row.key && p.signature === attendue) ?? null;
-  };
+  const triees = rangerParTemps(rows);
+  const engendree = (row: RowView) => pochetteAppariee(row, duJour);
 
   return (
     <section className="bac" aria-label="Bac à vinyles">
@@ -769,7 +841,7 @@ function BacAVinyles({
               <button
                 type="button"
                 className="bac-pochette"
-                onClick={() => (row.key === ouverte ? onFermer() : onOuvrir(row.key))}
+                onClick={() => onOuvrir(row.key === ouverte ? null : row.key)}
                 aria-expanded={row.key === ouverte}
                 title={`${row.fullLabel}\u00a0: ${formatDuree(row.minutesUne)} en Une. Ouvrir la pochette.`}
               >
@@ -789,14 +861,6 @@ function BacAVinyles({
         </ol>
       </div>
 
-      {choisie && (
-        <PochetteOuverte
-          row={choisie}
-          mediaLabel={mediaLabel}
-          pochette={engendree(choisie)}
-          onFermer={onFermer}
-        />
-      )}
     </section>
   );
 }
@@ -865,118 +929,84 @@ function PochetteOuverte({
  * par jour, cinq tranches par colonne, la couleur pour seul repère. On survole
  * pour voir, on clique pour ouvrir.
  */
-function BacDiscotheque({ jours }: { jours: JourArchive[] }) {
-  /** La pochette ouverte, identifiée par jour + parti : deux pochettes du même
-   *  parti à deux jours différents doivent pouvoir se distinguer. */
-  const [ouverte, setOuverte] = useState<string | null>(null);
-  const idDe = (p: Pochette) => `${p.jour}/${p.parti}`;
-  const choisie = jours.flatMap((j) => j.pochettes).find((p) => idDe(p) === ouverte) ?? null;
-  const jourDeLaChoisie = choisie ? jours.find((j) => j.jour === choisie.jour) ?? null : null;
+function BacDiscotheque({
+  pile,
+  ouverte,
+  onOuvrir,
+}: {
+  pile: Pochette[];
+  ouverte: string | null;
+  onOuvrir: (id: string | null) => void;
+}) {
+  const jours = new Set(pile.map((p) => p.jour)).size;
 
   return (
     <section className="disco" aria-label="Discothèque">
       <p className="bac-tete">
-        La discothèque, jour par jour
+        La discothèque
         {/* Le bac ne montre qu'un mois glissant : le lien mène au fonds entier.
             `basePath` explicite, comme partout ailleurs dans ce dossier — un
             href absolu casserait sur un déploiement sous sous-chemin. */}
         <a className="bac-aide bac-lien" href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/discotheque/`}>
-          {jours.length === 1 ? "1 journée archivée" : `${jours.length} journées archivées`} — voir tout le
-          fonds
+          {jours === 1 ? "1 journée" : `${jours} journées`} : voir tout le fonds
         </a>
       </p>
 
-      {/* UNE SEULE CAISSE, longue, où les jours se suivent — le croquis du
-          2026-08-30. Elle défile horizontalement quand le fonds dépasse la
-          largeur : c'est le geste qu'on a devant un vrai bac, et c'est le seul
-          endroit du site où un défilement latéral est voulu. */}
+      {/* UNE SEULE PILE, SERRÉE, sans séparation entre les journées. Le
+          rangement n'est plus chronologique mais par TEMPS D'ÉCOUTE, de la
+          pochette la plus présente à la moins présente, tous jours confondus :
+          des colonnes par jour auraient contredit ce classement en le
+          redécoupant. Chaque pochette porte donc sa propre date, sur sa
+          couverture. La caisse défile horizontalement — le geste qu'on a devant
+          un vrai bac, et le seul endroit du site où c'est voulu. */}
       <div className="disco-boite">
         <ol className="disco-rangee">
-          {jours.map((jour) => (
-            <li className="disco-jour" key={jour.jour}>
-              <ol className="disco-pile">
-                {jour.pochettes.map((p, i) => (
-                  <li
-                    className={`disco-case${idDe(p) === ouverte ? " sortie" : ""}`}
-                    key={p.parti}
-                    style={{ ["--i" as string]: i, ["--party" as string]: p.couleur }}
-                  >
-                    <button
-                      type="button"
-                      className="disco-pochette"
-                      onClick={() => setOuverte(idDe(p) === ouverte ? null : idDe(p))}
-                      aria-expanded={idDe(p) === ouverte}
-                      title={`${p.nom}, ${jour.jourLabel}\u00a0: ${p.tempsLabel} en Une. Ouvrir la pochette.`}
-                    >
-                      <span className="bac-tranche-carton" aria-hidden="true" />
-                      {/* La couverture, révélée au survol comme dans le bac du
-                          jour. `loading="lazy"` : cent cinquante images ne se
-                          chargent pas toutes pour un bac qu'on ne survolera
-                          peut-être jamais. */}
-                      <span className="disco-couverture">
-                        <picture>
-                          {p.sources.map((f) => (
-                            <source key={f.type} srcSet={f.src} type={f.type} />
-                          ))}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.src} alt="" aria-hidden="true" loading="lazy" />
-                        </picture>
-                        <span className="disco-legende">
-                          <b>{p.sigle}</b>
-                          <span>{p.tempsLabel}</span>
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-              {/* L'étiquette du jour, sous sa colonne : c'est le carton glissé
-                  entre deux séparateurs dans un bac de disquaire. */}
-              <p className="disco-date">{etiquetteJour(jour.jour)}</p>
-            </li>
-          ))}
+          {pile.map((p, i) => {
+            const id = `${p.jour}/${p.parti}`;
+            return (
+              <li
+                className={`disco-case${id === ouverte ? " sortie" : ""}`}
+                key={id}
+                style={{ ["--i" as string]: i, ["--party" as string]: p.couleur }}
+              >
+                <button
+                  type="button"
+                  className="disco-pochette"
+                  onClick={() => onOuvrir(id === ouverte ? null : id)}
+                  aria-expanded={id === ouverte}
+                  title={`${p.nom}, ${p.jourLabel}\u00a0: ${p.tempsLabel} en Une. Ouvrir la pochette.`}
+                >
+                  <span className="bac-tranche-carton" aria-hidden="true" />
+                  {/* La couverture, révélée au survol. `loading="lazy"` : cent
+                      cinquante images ne se chargent pas toutes pour un bac
+                      qu'on ne survolera peut-être jamais. */}
+                  <span className="disco-couverture">
+                    <picture>
+                      {p.sources.map((f) => (
+                        <source key={f.type} srcSet={f.src} type={f.type} />
+                      ))}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.src} alt="" aria-hidden="true" loading="lazy" />
+                    </picture>
+                    <span className="disco-legende">
+                      <b>{p.sigle}</b>
+                      <span>{p.tempsLabel}</span>
+                      {/* LA DATE SUR LE VINYLE. Poussée à droite du bandeau,
+                          dans l'encre la plus discrète : c'est une mention de
+                          pressage, pas un titre. Sans elle, une pile rangée par
+                          temps d'écoute ne dirait plus de quel jour vient ce
+                          qu'on regarde. */}
+                      <span className="disco-pressage">{p.jourCourt}</span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       </div>
-
-      {choisie && (
-        <div className="gatefold" role="group" aria-label={`Pochette de ${choisie.nom}`}>
-          <div className="gatefold-volet gatefold-volet--art">
-            <span className="pochette-art">
-              <picture>
-                {choisie.sources.map((f) => (
-                  <source key={f.type} srcSet={f.src} type={f.type} />
-                ))}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="pochette-image" src={choisie.src} alt="" aria-hidden="true" />
-              </picture>
-              <b className="pochette-sigle">{choisie.sigle}</b>
-            </span>
-          </div>
-          <GatefoldInfos
-            couleur={choisie.couleur}
-            nom={choisie.nom}
-            rang={choisie.rang}
-            temps={choisie.tempsLabel}
-            partPct={choisie.partPct}
-            enjeu={choisie.enjeu ?? SANS_ENJEU}
-            tonMot={choisie.ton}
-            tonPct={choisie.tonPct}
-            legende={jourDeLaChoisie?.jourLabel}
-            onFermer={() => setOuverte(null)}
-          />
-        </div>
-      )}
     </section>
   );
-}
-
-/** « 12 août » sous une colonne du bac. Le mois n'est répété que lorsqu'il
- *  change, sur une étiquette de quelques pixels de large ; ici on garde la
- *  forme courte complète, plus sûre à lire qu'un numéro seul. */
-function etiquetteJour(iso: string): string {
-  const [, m, d] = iso.split("-");
-  const MOIS = ["janv.", "févr.", "mars", "avril", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-  return `${Number(d)} ${MOIS[Number(m) - 1] ?? ""}`.trim();
 }
 
 /**
