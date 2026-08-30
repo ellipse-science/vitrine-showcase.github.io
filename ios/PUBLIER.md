@@ -27,7 +27,7 @@ tranché la question du compte de l'Université Laval.
 
 ---
 
-## 1. Fusionner la PR #614
+## 1. Fusionner la PR #614 dans `main`
 
 Sans cette étape, rien ne fonctionne : GitHub ne rend un workflow
 `workflow_dispatch` déclenchable **que s'il existe sur la branche par défaut**.
@@ -52,6 +52,13 @@ tuile est un paquet distinct de l'application.
 
 Aucune capacité à cocher : l'application ne demande ni notifications, ni
 groupes d'applications, ni rien d'autre.
+
+> **Ne PAS créer de certificat.** La section *Certificates* de cette page se
+> laisse vide. Le workflow passe `-allowProvisioningUpdates` avec la clé d'API :
+> Xcode fabrique lui-même le certificat de distribution et les profils sur le
+> coureur. En fabriquer un à la main réclamerait une demande de signature (CSR)
+> produite par Trousseau d'accès, donc un Mac — exactement ce qu'on évite ici.
+> Dans cette page, **seule la section *Identifiers* nous concerne**.
 
 ## 3. Créer la fiche de l'application
 
