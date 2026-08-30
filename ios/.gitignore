@@ -9,3 +9,6 @@ DerivedData/
 build/
 *.xcuserstate
 .DS_Store
+
+# Captures generees par preparer-captures.py : artefacts de soumission.
+captures-appstore/

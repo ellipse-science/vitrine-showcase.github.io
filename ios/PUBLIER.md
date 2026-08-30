@@ -1,91 +1,112 @@
-# Mettre l'application sur un iPhone, sans posséder de Mac
+# Publier l'application sur l'App Store, sans posséder de Mac
 
-Marche à suivre complète, de zéro à l'application installée. Tout se fait dans
-un navigateur : aucun Xcode, aucun Mac.
+De zéro jusqu'à l'application et sa tuile disponibles publiquement. Tout se fait
+dans un navigateur et sur un iPhone : aucun Xcode, aucun Mac.
 
-Compter environ 45 min la première fois, dont une bonne part d'attente.
+Le parcours a **quatre parties**, à faire dans l'ordre :
 
-> **Vocabulaire.** *TestFlight* = la distribution de test d'Apple, séparée de
-> l'App Store public. C'est là qu'on va. Rien de ce qui suit ne rend
-> l'application visible au public.
+| | | Durée |
+|---|---|---|
+| **A** | [Ce qui bloque encore](#a--ce-qui-bloque-encore) | à régler avant tout |
+| **B** | [Réglages, une seule fois](#b--réglages-une-seule-fois) | ~45 min |
+| **C** | [Première version sur votre iPhone](#c--première-version-sur-votre-iphone-testflight) | ~1 h dont l'attente |
+| **D** | [Soumettre à l'App Store](#d--soumettre-à-lapp-store) | ~2 h + 24-48 h d'examen |
 
----
-
-## Avant de commencer
-
-- [ ] Un compte Apple Developer actif (99 $ US par an, payé)
-- [ ] Un iPhone
-- [ ] Les droits d'administration sur le dépôt GitHub
-
-⚠️ **Un point sans retour dans la suite.** L'étape 3 fige le **nom du
-développeur** affiché sur l'App Store. Sur un compte **individuel**, ce sera le
-nom légal du titulaire, et il ne se modifie **jamais** ensuite. Pour un usage
-TestFlight seulement, c'est sans conséquence : rien n'est public, et un
-transfert vers un compte d'organisation reste simple tant qu'aucune fiche
-publique n'existe. Mais **ne pas soumettre à l'examen public** avant d'avoir
-tranché la question du compte de l'Université Laval.
+> **La tuile n'a aucune démarche propre.** Elle voyage à l'intérieur du paquet de
+> l'application. Rien à enregistrer, rien à soumettre séparément : elle sera là
+> quand l'application y sera.
 
 ---
 
-## 1. Fusionner la PR #614 dans `main`
+## A — Ce qui bloque encore
 
-Sans cette étape, rien ne fonctionne : GitHub ne rend un workflow
-`workflow_dispatch` déclenchable **que s'il existe sur la branche par défaut**.
-Tant que `ios-testflight.yml` ne vit que sur la branche de la PR, il n'apparaît
-même pas dans l'onglet Actions.
+Trois points à trancher avant de commencer. Aucun n'est technique.
+
+### A.1 Il n'existe pas de politique de confidentialité 🔴
+
+**C'est le seul blocage dur.** Apple exige une adresse web pointant vers une
+politique de confidentialité pour toute application publiée. Vérification faite
+le 2026-08-30 : il n'y en a nulle part sur `vitrinedemocratique.com` — ni dans
+`public/`, ni dans les routes de `app/`, ni dans la page « À propos ».
+
+Il faut donc en publier une avant de soumettre. Le contenu est court, parce que
+la réalité est simple : l'application ne collecte rien par elle-même, et le site
+charge Cloudflare Web Analytics, une mesure d'audience sans témoin ni profil
+individuel. C'est un texte public engageant le CAPP : à faire relire par Adrien
+et, au besoin, par l'Université Laval.
+
+*TestFlight n'en a pas besoin.* Les parties B et C peuvent commencer tout de suite.
+
+### A.2 Personne n'a jamais exécuté cette application 🟠
+
+Le code compile (vérifié à chaque PR par le workflow `ios.yml`), ce qui ne dit
+rien de son comportement. La partie C existe pour ça, et **elle n'est pas
+facultative** : soumettre à l'App Store une application que personne n'a ouverte
+est le meilleur moyen de récolter un refus sur un défaut qu'une minute d'usage
+aurait montré.
+
+### A.3 Le nom du développeur se fige, définitivement 🟠
+
+À l'étape B.3, Apple fige le nom affiché sous le titre de l'application. Le
+compte étant **individuel**, ce sera **Laurence-Olivier M. Foisy**. Ce nom ne se
+modifie **jamais** ensuite ; seul un transfert complet vers un compte
+d'organisation le change.
+
+Pour TestFlight, aucune importance : rien n'est public. Pour une diffusion
+publique, c'est le moment de décider si la Vitrine doit paraître sous un nom
+personnel ou sous celui de l'Université Laval. Un transfert reste possible plus
+tard, mais il est bien plus simple tant qu'aucune fiche publique n'existe.
+
+---
+
+## B — Réglages, une seule fois
+
+### B.1 Fusionner la PR #614 dans `main`
+
+GitHub ne rend un workflow `workflow_dispatch` déclenchable **que s'il existe sur
+la branche par défaut**. Tant que `ios-testflight.yml` ne vit que sur la branche
+de la PR, il n'apparaît pas dans l'onglet Actions.
 
 - [ ] Fusionner [la PR #614](https://github.com/ellipse-science/vitrine-showcase.github.io/pull/614) dans `main`
 
 Fusionner dans `main` ne met rien en production : `prod` n'avance que par une
-promotion délibérée. Et l'application n'a de toute façon aucun effet sur le site.
+promotion délibérée, et l'application n'a de toute façon aucun effet sur le site.
 
-## 2. Enregistrer les deux identifiants
+### B.2 Enregistrer les deux identifiants
 
-Sur [developer.apple.com](https://developer.apple.com/account) →
+[developer.apple.com](https://developer.apple.com/account) →
 *Certificates, Identifiers & Profiles* → **Identifiers** → **+** → *App IDs* → *App*
-
-Il en faut **deux**. Oublier le second fait échouer l'archivage, parce que la
-tuile est un paquet distinct de l'application.
 
 - [ ] `science.ellipse.vitrine` — description : « Vitrine democratique »
 - [ ] `science.ellipse.vitrine.widget` — description : « Vitrine tuile »
 
-Aucune capacité à cocher : l'application ne demande ni notifications, ni
-groupes d'applications, ni rien d'autre.
+Il en faut **deux**. Oublier celui de la tuile fait échouer l'archivage, avec un
+message qui ne désigne pas la cause. Aucune capacité à cocher.
 
-> **Ne PAS créer de certificat.** La section *Certificates* de cette page se
-> laisse vide. Le workflow passe `-allowProvisioningUpdates` avec la clé d'API :
-> Xcode fabrique lui-même le certificat de distribution et les profils sur le
-> coureur. En fabriquer un à la main réclamerait une demande de signature (CSR)
-> produite par Trousseau d'accès, donc un Mac — exactement ce qu'on évite ici.
-> Dans cette page, **seule la section *Identifiers* nous concerne**.
+> **Ne PAS créer de certificat.** La section *Certificates* se laisse vide. Le
+> workflow passe `-allowProvisioningUpdates` avec la clé d'API : Xcode fabrique
+> lui-même le certificat et les profils sur le coureur. En créer un à la main
+> réclamerait une demande de signature (CSR) produite par Trousseau d'accès,
+> donc un Mac — exactement ce qu'on évite. **Seule la section *Identifiers* nous
+> concerne.**
 
-## 3. Créer la fiche de l'application
+### B.3 Créer la fiche de l'application
 
-Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps** → **+** → *New App*
+[appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps** → **+** → *New App*
 
 - [ ] Plateforme : **iOS**
-- [ ] Nom : `La Vitrine démocratique` (doit être unique sur tout l'App Store ; si
-      refusé, essayer `Vitrine démocratique`)
+- [ ] Nom : `La Vitrine démocratique` (23 caractères ; la limite est 30, et le nom
+      doit être unique sur tout l'App Store. Si refusé : `Vitrine démocratique`)
 - [ ] Langue principale : **French (Canada)**
 - [ ] Identifiant : `science.ellipse.vitrine`
 - [ ] SKU : `vitrine-democratique` (référence interne, sans importance)
 - [ ] Accès : *Full Access*
 
-⚠️ C'est ici que le nom du développeur se fige. Relire l'avertissement plus haut.
+⚠️ C'est ici que le nom du développeur se fige. Relire A.3.
 
-> **Confidentialité — à remplir honnêtement au moment de la soumission.**
-> Le questionnaire de confidentialité d'App Store Connect (l'« étiquette
-> nutritionnelle ») porte sur TOUT ce qui se passe dans l'application, y compris
-> dans la vue web. Or la page charge **Cloudflare Web Analytics** en production.
-> C'est une mesure d'audience sans témoin ni profil individuel, mais elle existe :
-> il faut y répondre en la regardant, pas en supposant que « l'application ne
-> collecte rien » parce que le code Swift, lui, ne collecte rien.
-> Le questionnaire ne se pose que pour une diffusion publique, pas pour TestFlight.
+### B.4 Fabriquer une clé d'API
 
-## 4. Fabriquer une clé d'API
-
-Sur App Store Connect → **Users and Access** → onglet **Integrations** →
+App Store Connect → **Users and Access** → onglet **Integrations** →
 *App Store Connect API* → **Team Keys** → **+**
 
 - [ ] Nom : `GitHub Actions`
@@ -95,94 +116,200 @@ Sur App Store Connect → **Users and Access** → onglet **Integrations** →
 > 🔴 Le `.p8` ne se télécharge **qu'une seule fois**. Perdu, il faut refaire une
 > clé. Le mettre à l'abri tout de suite.
 
-Noter au passage, sur la même page :
+Noter sur la même page :
 
-- [ ] **Key ID** — 10 caractères, dans la ligne de la clé
-- [ ] **Issuer ID** — un UUID, affiché en haut de la section
+- [ ] **Key ID** — 10 caractères, sur la ligne de la clé
+- [ ] **Issuer ID** — un UUID, en haut de la section
 
-## 5. Relever l'identifiant d'équipe
+### B.5 Relever l'identifiant d'équipe
 
-Sur [developer.apple.com/account](https://developer.apple.com/account) →
-**Membership details**
+[developer.apple.com/account](https://developer.apple.com/account) →
+**Membership details** → **Team ID**, 10 caractères. Il s'affiche aussi sous
+votre nom, en haut à droite de la page *Certificates, Identifiers & Profiles*.
 
-- [ ] **Team ID** — 10 caractères
-
-## 6. Déposer les quatre secrets
+### B.6 Déposer les quatre secrets
 
 Dépôt GitHub → **Settings** → *Secrets and variables* → **Actions** →
 *New repository secret*. Les noms doivent être **exacts**.
 
 | Nom | Contenu |
 |---|---|
-| `ASC_KEY_ID` | le Key ID de l'étape 4 |
-| `ASC_ISSUER_ID` | l'Issuer ID de l'étape 4 |
-| `ASC_PRIVATE_KEY` | le **contenu entier** du fichier `.p8`, lignes `-----BEGIN PRIVATE KEY-----` et `-----END PRIVATE KEY-----` comprises |
-| `APPLE_TEAM_ID` | le Team ID de l'étape 5 |
+| `ASC_KEY_ID` | le Key ID (B.4) |
+| `ASC_ISSUER_ID` | l'Issuer ID (B.4) |
+| `ASC_PRIVATE_KEY` | le **contenu entier** du `.p8`, lignes `-----BEGIN/END PRIVATE KEY-----` comprises |
+| `APPLE_TEAM_ID` | le Team ID (B.5) |
 
-Pour `ASC_PRIVATE_KEY` : ouvrir le `.p8` dans un éditeur de texte, tout
-sélectionner, tout coller. Ne pas retirer les sauts de ligne.
+Pour la clé privée : ouvrir le `.p8` dans un éditeur de texte, tout sélectionner,
+tout coller. Ne pas retirer les sauts de ligne.
 
-- [ ] Les quatre secrets sont déposés
+---
 
-## 7. Lancer l'envoi
+## C — Première version sur votre iPhone (TestFlight)
+
+### C.1 Lancer l'envoi
 
 Dépôt GitHub → onglet **Actions** → workflow **ios-testflight** →
-**Run workflow** → branche `main` → **Run workflow**
+**Run workflow** → branche `main` → **Run workflow**. Compter 10 à 20 min.
 
-- [ ] Le workflow est lancé
+La première étape vérifie les quatre secrets et s'arrête net avec un message
+clair s'il en manque un, plutôt que d'échouer au milieu d'une archive.
 
-Il archive, signe et téléverse. Compter 10 à 20 min. La toute première étape
-vérifie les quatre secrets et s'arrête net avec un message clair s'il en manque
-un, plutôt que d'échouer au milieu d'une archive.
+> Ce workflow **n'a jamais tourné de bout en bout** : il ne pouvait pas, faute de
+> secrets. La signature est la partie la plus capricieuse de l'intégration
+> continue iOS. Prévoir un ou deux essais. Le tableau de la
+> [section Dépannage](#dépannage) couvre les erreurs les plus probables.
 
-## 8. Installer sur l'iPhone
+### C.2 Installer
 
-Après le succès du workflow, la version doit être **traitée** par Apple
-(« Processing »), ce qui prend encore 5 à 30 min.
+Apple doit d'abord *traiter* la version : 5 à 30 min de plus.
 
 - [ ] App Store Connect → l'application → onglet **TestFlight** : la version
-      apparaît et passe de *Processing* à *Ready to Test*
-- [ ] **Internal Testing** → ajouter un groupe, s'y ajouter soi-même
+      passe de *Processing* à *Ready to Test*
+- [ ] **Internal Testing** → créer un groupe, s'y ajouter
       (les testeurs internes évitent l'examen bêta d'Apple ; les externes non)
 - [ ] Sur l'iPhone : installer **TestFlight** depuis l'App Store, ouvrir
       l'invitation reçue par courriel, installer
 
----
+### C.3 Vérifier pour de vrai
 
-## Ce qu'il faut vraiment vérifier une fois installée
-
-C'est le cœur de l'affaire : **personne n'a jamais exécuté cette
-application**. Le code compile, ce qui ne dit rien de son comportement.
+C'est le cœur de l'affaire. **Personne n'a jamais exécuté cette application.**
 
 1. [ ] Le site s'affiche plein cadre, sans barre de navigateur
-2. [ ] **Toucher un lien sortant** (Polimètre, ou une Une qui renvoie vers un
+2. [ ] ⭐ **Toucher un lien sortant** (Polimètre, ou une Une qui renvoie vers un
        média) : une feuille Safari doit s'ouvrir par-dessus.
-       ⭐ **Le point le plus important.** En cas de bogue, ces liens ne font
-       rien du tout, sans message d'erreur.
+       **Le point le plus important.** En cas de bogue, ces liens ne font rien
+       du tout, sans message d'erreur.
 3. [ ] Tirer vers le bas recharge la page
-4. [ ] Mode avion, puis relancer : l'écran « Hors ligne » natif apparaît, et
+4. [ ] Mode avion puis relancer : l'écran « Hors ligne » natif apparaît, et
        « Réessayer » fonctionne une fois le réseau revenu
-5. [ ] Ajouter la tuile à l'écran d'accueil : elle affiche le titre de la Une
-       du moment. Comparer avec vitrinedemocratique.com, ce doit être le même.
+5. [ ] Ajouter la tuile à l'écran d'accueil (appui long sur le fond d'écran →
+       **+** → chercher « Vitrine ») : elle affiche le titre de la Une du moment.
+       Comparer avec vitrinedemocratique.com, ce doit être le même.
 6. [ ] Mettre en arrière-plan, revenir après une nouvelle parution : la page se
-       recharge d'elle-même, sans bandeau
+       recharge d'elle-même
 
-Noter ce qui cloche et ouvrir une issue par problème.
+Ouvrir une issue par problème. **Ne pas passer à la partie D tant que le point 2
+n'est pas vérifié.**
 
 ---
 
-## Si ça échoue
+## D — Soumettre à l'App Store
 
-Le workflow `ios-testflight.yml` **n'a jamais tourné de bout en bout** : il ne
-pouvait pas, faute de secrets. Le premier envoi lui sert de test, et la
-signature est la partie la plus capricieuse de l'intégration continue iOS.
+Prérequis : A.1 réglé (politique de confidentialité en ligne) et C.3 concluant.
+
+### D.1 Préparer les captures d'écran
+
+Apple ne demande plus qu'**une** famille de tailles pour l'iPhone : la classe
+**6,9 pouces**. Les listes des appareils plus petits en sont dérivées
+automatiquement. L'application ne visant que l'iPhone, **aucune capture d'iPad
+n'est requise**.
+
+Dimensions acceptées : **1320×2868**, 1290×2796 ou 1260×2736. App Store Connect
+**refuse le téléversement** si une image tombe à côté, au pixel près.
+
+- [ ] Prendre 3 à 5 captures depuis l'application installée (bouton latéral +
+      volume haut). Suggestion : la Une, le treemap des enjeux, l'Assemblée,
+      la tuile sur l'écran d'accueil
+- [ ] Les transférer sur l'ordinateur
+- [ ] Les mettre aux bonnes dimensions :
+
+```sh
+python3 ios/preparer-captures.py ~/captures/*.png
+```
+
+Le script écrit dans `ios/captures-appstore/`, en 1320×2868 exactement. Un iPhone
+ordinaire ne produit pas ces dimensions : seuls les Pro Max et l'Air le font.
+
+- [ ] Téléverser dans App Store Connect → l'application → *Aperçus et captures d'écran*
+
+⚠️ Les captures doivent montrer l'**application réelle**. Pas de maquette, pas de
+photo d'une page web dans Safari.
+
+### D.2 Remplir la fiche
+
+App Store Connect → l'application → onglet **Distribution**.
+
+- [ ] **Sous-titre** (30 car. max) — p. ex. « L'actualité politique, mesurée »
+- [ ] **Description** — ce que fait la Vitrine, en langage grand public.
+      Les règles de `.claude/skills/redaction-editoriale` s'appliquent :
+      pas de tiret cadratin, pas de superlatif non calibré, « médias canadiens »
+      et jamais « ROC ». Mentionner la tuile d'écran d'accueil
+- [ ] **Mots-clés** (100 car., séparés par des virgules, sans espaces) —
+      p. ex. `politique,Québec,médias,actualité,démocratie,élections,science`
+- [ ] **Catégorie principale** : *News*. Secondaire : *Reference*
+- [ ] **URL de soutien** — `https://vitrinedemocratique.com/apropos/`
+- [ ] **URL marketing** (facultative) — `https://vitrinedemocratique.com`
+- [ ] **Droits d'auteur** — `2026 CAPP, Université Laval`
+
+### D.3 Confidentialité et classement
+
+- [ ] **Politique de confidentialité (URL)** — celle publiée en A.1. Obligatoire
+- [ ] **App Privacy** → questionnaire des données collectées.
+      ⚠️ Il porte sur **tout ce qui se passe dans l'application, y compris la vue
+      web**. Le code Swift ne collecte rien, mais la page charge **Cloudflare Web
+      Analytics**. Répondre en regardant ce que fait réellement le site, pas en
+      supposant que « l'application ne collecte rien »
+- [ ] **Classement par âge** → questionnaire. L'application affiche de
+      l'actualité politique sans la filtrer : la question sur les thèmes
+      « matures ou suggestifs » se répond honnêtement, ce qui donne en général
+      **12+** pour une application de nouvelles
+- [ ] **Conformité à l'exportation** — déjà réglée dans le code
+      (`ITSAppUsesNonExemptEncryption = false`), aucune question ne devrait
+      apparaître
+
+### D.4 Notes pour l'examen
+
+Champ *App Review Information*. C'est ici qu'on désamorce la règle **4.2
+« Minimum Functionality »**, qui fait refuser les applications se contentant
+d'afficher un site web. C'est le risque principal de cette soumission.
+
+- [ ] Aucun compte de démonstration nécessaire : tout est public. Le dire
+- [ ] Coordonnées : nom, courriel, téléphone
+- [ ] Expliquer ce que l'application apporte au-delà du site, en anglais et
+      en termes concrets. Par exemple :
+
+> This app is published by the Center for Public Policy Analysis (CAPP) at
+> Université Laval, a public research group. Beyond displaying our site, it
+> provides: a native home screen widget showing the current lead story
+> (WidgetKit, not available to web apps on iOS); offline reading of the last
+> loaded edition; native handling of outbound links via SFSafariViewController;
+> and background detection of new editions, which are published every four hours.
+
+### D.5 Envoyer
+
+- [ ] Rattacher la version téléversée en partie C (section *Build*)
+- [ ] **Add for Review** → **Submit to App Review**
+- [ ] Diffusion : *Automatically release* ou *Manually release*. **Manuelle**
+      est plus sage pour une première : l'application n'apparaît qu'à votre
+      signal, une fois l'approbation reçue
+
+L'examen prend en général 24 à 48 h. Un refus n'est pas une fin : Apple explique
+son motif dans *Resolution Center*, on corrige et on renvoie. Un refus 4.2 se
+conteste, arguments à l'appui — la partie D.4 est votre argumentaire.
+
+---
+
+## Publier une mise à jour, ensuite
+
+1. Fusionner les changements dans `main`
+2. Lancer **ios-testflight** (le numéro de build s'incrémente tout seul)
+3. App Store Connect → **+ Version** → numéro (p. ex. `1.0.1`), nouveautés
+4. Rattacher la version, soumettre
+
+Le numéro de version se règle dans `MARKETING_VERSION`, `ios/project.yml`.
+
+---
+
+## Dépannage
 
 | Message | Cause probable |
 |---|---|
-| `No profiles for 'science.ellipse.vitrine' were found` | Identifiant non enregistré (étape 2), ou `APPLE_TEAM_ID` erroné |
-| Échec sur le paquet de la tuile | L'identifiant `…​.widget` a été oublié à l'étape 2 |
-| `The bundle version must be higher than…` | Relancer : le numéro de build suit `run_number` et augmente seul |
+| `No profiles for 'science.ellipse.vitrine' were found` | Identifiant non enregistré (B.2), ou `APPLE_TEAM_ID` erroné |
+| Échec sur le paquet de la tuile | L'identifiant `…​.widget` a été oublié en B.2 |
+| `The bundle version must be higher than…` | Relancer : le numéro suit `run_number` et augmente seul |
 | `Authentication failed` / clé refusée | `ASC_PRIVATE_KEY` tronquée, ou rôle inférieur à *App Manager* |
+| Capture refusée au téléversement | Dimensions hors de la liste. Repasser par `preparer-captures.py` |
+| Refus 4.2 « Minimum Functionality » | Étoffer D.4. En dernier recours, des notifications à chaque parution sont l'argument le plus solide (chantier à part : APNs + un émetteur côté serveur) |
 
-Le journal complet est dans l'onglet Actions. Les étapes utilisent `tail`, donc
-la fin du journal contient l'erreur.
+Le journal complet est dans l'onglet Actions. Les étapes se terminent par
+`tail`, donc la fin du journal contient l'erreur.
