@@ -1,5 +1,11 @@
 [
   {
+    "pr": 625,
+    "date": "2026-08-30T21:31:57Z",
+    "note": "Le module des enjeux affiche désormais l'heure de sa dernière mise à jour, et chaque variation dit depuis quelle heure elle se compare. Le module est mis à jour six fois par jour.",
+    "version": "2.34.0-beta.0"
+  },
+  {
     "pr": 621,
     "date": "2026-08-30T18:41:04Z",
     "note": "Corrections typographiques dans plusieurs modules : les espaces insécables manquantes devant « % » et « : » ont été rétablies, notamment dans les infobulles, les cartes de partage et le tableau des niveaux de la page Méthodologie.",
