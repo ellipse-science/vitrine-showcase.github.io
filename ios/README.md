@@ -28,7 +28,7 @@ sous afflux vaut pour l'application comme pour la page.
 **Sans Mac** : le workflow `ios.yml` compile à chaque changement sous `ios/`, et
 `ios-testflight.yml` (déclenchement manuel) envoie une version installable sur
 un iPhone via TestFlight. Le dépôt est public, donc les coureurs macOS sont
-gratuits. La marche à suivre est en en-tête de ce second fichier.
+gratuits. 👉 **Marche à suivre complète : [`PUBLIER.md`](./PUBLIER.md).**
 
 **Avec un Mac**, pour itérer plus vite qu'un aller-retour d'intégration
 continue : Xcode 15 ou plus récent (cible : iOS 17).
