@@ -476,7 +476,7 @@
       <li><a href="#collecte-medias">Architecture de collecte&nbsp;: Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
       <li><a href="#une-des-unes">Module&nbsp;: L'actualité saillante du moment au Québec &amp; Deux solitudes?</a></li>
-      <li><a href="#enjeux-saillants">Module&nbsp;: De quoi parle-t-on?</a></li>
+      <li><a href="#enjeux-saillants">Module&nbsp;: Les 12 enjeux de la campagne</a></li>
       <li><a href="#partis-et-couverture">Module&nbsp;: De quel parti parle-t-on dans les médias?</a></li>
       <li><a href="#polimetre-plus">Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</a></li>
       <li><a href="#assemblee-nationale">Module&nbsp;: L'alignement de l'Assemblée</a></li>
@@ -650,7 +650,8 @@
   <!-- §5 Enjeux (treemap) -->
   <section id="enjeux-saillants" class="metho-section">
     <p class="metho-section-label">§ 05</p>
-    <h2>Module&nbsp;: De quoi parle-t-on?</h2>
+    <h2>Module&nbsp;: Les 12 enjeux de la campagne</h2>
+    <p class="metho-body"><em>Anciennement «&nbsp;De quoi parle-t-on?&nbsp;».</em></p>
     <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
 
     <h3>Enjeux couverts</h3>
@@ -682,6 +683,7 @@
       <li>Le système analyse le contenu textuel des articles de chaque bloc de quatre heures et calcule un score de saillance pour chacun des 12 enjeux.</li>
       <li>Pour la période choisie, les scores du traitement le plus récent sont additionnés pour chaque enjeu.</li>
       <li>Les scores cumulés déterminent la surface de chaque tuile (plus un enjeu est saillant, plus sa tuile est grande) ainsi que le classement des enjeux, du plus au moins saillant.</li>
+      <li>La <strong>part de l'attention</strong> de chaque enjeu est son score cumulé divisé par la somme des scores des douze, en pourcentage. Les douze parts totalisent donc 100&nbsp;% (à l'arrondi près, chaque part étant affichée à une décimale)&nbsp;: c'est une répartition de l'attention entre les enjeux, pas une mesure absolue de couverture.</li>
       <li>Pour la vue du jour, on calcule aussi la <strong>variation de saillance</strong> de chaque enjeu par rapport au traitement précédent, exprimée en pourcentage (hausse ou baisse).</li>
       <li>Pour les vues hebdomadaire et mensuelle, le classement des enjeux est conservé à chaque traitement, ce qui permet d'en retracer l'évolution dans le temps.</li>
       <li>Pour chaque enjeu, les actualités récentes sont regroupées. Chaque actualité conserve la liste précise des médias québécois qui la couvrent, plutôt qu'une liste générale calculée pour l'ensemble de l'enjeu.</li>
@@ -690,7 +692,7 @@
     <h3>Affichage</h3>
     <p class="metho-body">Trois vues, une par fenêtre temporelle, sélectionnables par onglet.</p>
     <ul class="metho-list">
-      <li><strong>Aujourd'hui</strong>&nbsp;: une grille de tuiles colorées (une couleur par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
+      <li><strong>Aujourd'hui</strong>&nbsp;: une grille de tuiles colorées (une couleur par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu, sa <strong>part de l'attention médiatique</strong> (le nombre principal, qui chiffre ce que la surface montre) et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur les tuiles trop petites pour porter les deux nombres, la variation se réduit à sa flèche&nbsp;: le chiffre exact se lit au survol et dans la tuile dépliée. Sur téléphone, la grille devient une liste de barres proportionnelles portant la même part. Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
       <li><strong>Cette semaine</strong> et <strong>Ce mois</strong>&nbsp;: un graphique retrace l'<strong>évolution du classement</strong> des douze enjeux jour après jour (les sept derniers jours, ou le mois en cours). Sur ordinateur, toutes les trajectoires sont présentées ensemble. Sur mobile, une trajectoire est mise en évidence à la fois; une liste classée permet de choisir l'enjeu suivi, tandis que les onze autres restent visibles en arrière-plan. En sélectionnant un enjeu, on affiche ses actualités récentes, avec un lien vers l'article sur le site du média.</li>
     </ul>
   </section>
