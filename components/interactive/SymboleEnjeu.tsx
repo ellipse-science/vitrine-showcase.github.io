@@ -106,12 +106,16 @@ const GLYPHES: Record<string, React.ReactNode> = {
       <path d="M6.8 12.8v4.1c0 1.4 2.3 2.5 5.2 2.5s5.2-1.1 5.2-2.5v-4.1" />
     </>
   ),
-  // Une flèche qui traverse une frontière pointillée.
+  // Une valise. La première version dessinait une flèche traversant une
+  // frontière pointillée : Jules ne la lisait pas (« c'est le seul que je
+  // trouve pas clair », fil #02___vitrine du 30-08), et il avait raison — trois
+  // traits fins qui se croisent deviennent une tache à 13 px. La valise tient
+  // en deux formes fermées, qui restent lisibles à toutes les tailles.
   immigration: (
     <>
-      <path d="M12 3.2v17.6" strokeDasharray="2.6 2.8" />
-      <path d="M3.6 12h13.8" />
-      <path d="m13.8 8.2 3.8 3.8-3.8 3.8" />
+      <rect x="3.4" y="7.8" width="17.2" height="11.8" rx="1.6" />
+      <path d="M9 7.8V6.2c0-.9.7-1.6 1.6-1.6h2.8c.9 0 1.6.7 1.6 1.6v1.6" />
+      <path d="M8.4 7.8v11.8M15.6 7.8v11.8" />
     </>
   ),
 };
