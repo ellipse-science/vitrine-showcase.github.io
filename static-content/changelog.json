@@ -1,5 +1,11 @@
 [
   {
+    "pr": 612,
+    "date": "2026-08-30T22:39:32Z",
+    "note": "La page de méthodologie nommait les mauvais modèles d'intelligence artificielle pour l'extraction des entités dans les manchettes. Elle décrit maintenant celui réellement utilisé, et présente comme à venir celui qui n'est pas encore en service.",
+    "version": null
+  },
+  {
     "pr": 627,
     "date": "2026-08-30T22:04:26Z",
     "note": "Les onglets du module des enjeux s'appellent désormais « Jour », « Semaine » et « Campagne », comme ceux du module des partis juste en dessous.",
