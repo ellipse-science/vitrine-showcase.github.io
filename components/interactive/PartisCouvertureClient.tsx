@@ -540,7 +540,7 @@ function Console({
               key={v}
               style={{ ["--n" as string]: (v / METER_FULL_SCALE) * METER_SEGMENTS }}
             >
-              {v === 20 ? <b>{v} %</b> : `${v} %`}
+              {v === 20 ? <b>{v} %</b> : `${v} %`}
             </li>
           ))}
         </ul>

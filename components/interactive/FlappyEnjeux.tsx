@@ -232,7 +232,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         />
         {scoop && (
           <div className="flappy-scoop" key={scoop.head + score}>
-            <span className="flappy-scoop-stamp">SCOOP !</span>
+            <span className="flappy-scoop-stamp">SCOOP!</span>
             <span className="flappy-scoop-issue">{scoop.label}</span>
           </div>
         )}
@@ -246,7 +246,7 @@ export function FlappyEnjeux({ tiles, onExit }: { tiles: TreemapIssueTile[]; onE
         {phase === "over" && (
           <div className="flappy-overlay">
             <p className="flappy-title">Édition bouclée</p>
-            <p className="flappy-score">Score : <b>{finalScore}</b></p>
+            <p className="flappy-score">Score&nbsp;: <b>{finalScore}</b></p>
             {qualifies && !saved && (
               <div className="flappy-initials">
                 <label htmlFor="fi">Signe l&apos;édition</label>
