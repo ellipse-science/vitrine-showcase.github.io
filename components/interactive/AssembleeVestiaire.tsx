@@ -426,7 +426,7 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       aria-label={
         open
           ? `Refermer le casier ${row.label}`
-          : `Ouvrir le casier ${row.label} : ${nb} député.es, `
+          : `Ouvrir le casier ${row.label} : ${nb} député.es, `
             + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
       }
     >
