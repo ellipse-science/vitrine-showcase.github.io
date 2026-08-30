@@ -95,6 +95,13 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
     // faisait ça avec deux effets d'état qui se répondaient — il cachait des
     // noms qui tenaient, parce que la mesure tombait parfois sur une boîte déjà
     // privée de son nom. Ici la lecture est synchrone et sans aller-retour.
+    // ⚠️ On RESTAURE nous-mêmes la classe après la lecture. Un premier jet
+    // comptait sur React pour la remettre au rendu suivant : quand `tient`
+    // valait déjà `false`, `setTient(false)` ne changeait rien, React ne
+    // re-rendait pas, et la classe restait retirée. Le nom réapparaissait donc
+    // rogné — exactement le défaut que ce crochet doit empêcher, et il est
+    // parti en dev avant d'être vu (« ouvernements et gouvernanc », 30-08).
+    const etaitCache = el.classList.contains("gt-title-sans-nom");
     el.classList.remove("gt-title-sans-nom");
     // ⚠️ Ne PAS se fier à `scrollHeight` : la boîte est un flex en colonne
     // centré, et un contenu trop haut y déborde des DEUX côtés. Le débordement
@@ -111,6 +118,7 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
     const deborde =
       besoin > el.clientHeight + 1 ||
       (nom !== null && nom.scrollWidth > el.clientWidth + 1);
+    if (etaitCache) el.classList.add("gt-title-sans-nom");
     setTient(!deborde);
   }, [taille, cle, ref]);
 
