@@ -96,8 +96,8 @@ export async function GET() {
          *  jamais. Ce que l'image représente, c'est l'enjeu et le ton ; la durée
          *  est écrite par le site, en toutes lettres, à côté.
          *
-         *  Elle ne sert PAS à décider de régénérer : arbitrage du 2026-08-30,
-         *  une image à chaque bloc, même sans changement. */
+         *  Elle ne sert PAS à décider de régénérer : c'est `cloture` qui commande
+         *  ça, un album par jour au bloc de 20h. */
         signature: signaturePochette(row.key, enjeu?.label, row.toneDirection),
       };
     });
@@ -109,9 +109,13 @@ export async function GET() {
       // doit alors s'abstenir : sans bloc, il ne saurait pas sous quel jour
       // ranger l'image ni quand la journée est close.
       bloc: data.blocCourant,
-      /** La journée est CLOSE au bloc de 20h : c'est cette version-là qui part
-       *  à la discothèque (arbitrage du 2026-08-30). Les blocs de nuit
-       *  continuent d'alimenter le bac du jour sans plus toucher à l'archive. */
+      /** LA SORTIE DE L'ALBUM. Vrai au bloc de 20h, quand la journée est close.
+       *
+       *  C'est ce drapeau qui commande la génération : le raffineur tourne à
+       *  chaque bloc de 4 h et n'engendre RIEN tant qu'il est faux (arbitrage de
+       *  l'équipe, 2026-08-30). Cinq images par jour au lieu de trente, et une
+       *  pochette qui ne saute plus d'un bloc à l'autre sous les yeux du
+       *  lecteur — seuls les CHIFFRES du bac continuent de s'actualiser. */
       cloture: data.blocCourant?.hour === 20,
       partis,
     });
