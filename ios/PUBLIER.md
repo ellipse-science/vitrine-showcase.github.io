@@ -74,6 +74,15 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps** 
 
 ⚠️ C'est ici que le nom du développeur se fige. Relire l'avertissement plus haut.
 
+> **Confidentialité — à remplir honnêtement au moment de la soumission.**
+> Le questionnaire de confidentialité d'App Store Connect (l'« étiquette
+> nutritionnelle ») porte sur TOUT ce qui se passe dans l'application, y compris
+> dans la vue web. Or la page charge **Cloudflare Web Analytics** en production.
+> C'est une mesure d'audience sans témoin ni profil individuel, mais elle existe :
+> il faut y répondre en la regardant, pas en supposant que « l'application ne
+> collecte rien » parce que le code Swift, lui, ne collecte rien.
+> Le questionnaire ne se pose que pour une diffusion publique, pas pour TestFlight.
+
 ## 4. Fabriquer une clé d'API
 
 Sur App Store Connect → **Users and Access** → onglet **Integrations** →
