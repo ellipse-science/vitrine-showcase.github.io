@@ -4463,6 +4463,18 @@
     margin-bottom: 2px;
   }
   .treemap-growth .gt-symbole-seul { width: 20px; height: 20px; opacity: 0.92; }
+  /* Le nom ne tenait pas : le symbole devient la seule étiquette, et prend la
+     place que le nom occupait. Il ne grossit pas au-delà de la tuile — 22 % de
+     la plus petite dimension, borné, sinon il déborderait sur une tuile plate. */
+  .treemap-growth .gt-title-sans-nom .gt-title-nom { display: none; }
+  .treemap-growth .gt-title-sans-nom .symbole-enjeu {
+    margin-bottom: 0;
+    opacity: 0.92;
+  }
+  .treemap-growth .gt-large.gt-title-sans-nom .symbole-enjeu,
+  .treemap-growth .gt-large .gt-title-sans-nom .symbole-enjeu { width: 34px; height: 34px; }
+  .treemap-growth .gt-medium .gt-title-sans-nom .symbole-enjeu { width: 26px; height: 26px; }
+  .treemap-growth .gt-small .gt-title-sans-nom .symbole-enjeu { width: 20px; height: 20px; }
   .treemap-growth .gt-tip-name .symbole-enjeu { margin-right: 6px; }
   .treemap-growth .gt-expanded-header h3 .symbole-enjeu { margin-right: 10px; opacity: 0.85; }
   .treemap-mobile .tm-bar-name .symbole-enjeu { color: var(--c); margin-right: 6px; }

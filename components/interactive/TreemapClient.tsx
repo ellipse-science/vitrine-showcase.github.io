@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@/lib/data/headlineEvents";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -57,6 +57,66 @@ function formatGrowth(growth: number): string {
   return `${sign}${formatPct(Math.abs(growth))}`;
 }
 
+/** Le nom d'un enjeu ne doit JAMAIS s'afficher rogné. S'il ne tient pas dans la
+ *  tuile, on n'y montre que le symbole (règle d'Adrien, 30-08 : « quand ça
+ *  rentre pas, on voit juste le symbole »). Le nom complet reste au survol,
+ *  dans la tuile dépliée et dans l'aria-label.
+ *
+ *  Pourquoi mesurer plutôt que de régler ça en CSS : « est-ce que ça rentre ? »
+ *  dépend de la LONGUEUR du nom autant que de la taille de la tuile.
+ *  « Immigration » tient là où « Droits, libertés, minorités et discrimination »
+ *  déborde de deux lignes. Ni une requête de conteneur ni un seuil d'aire ne
+ *  peuvent répondre à ça — seule la boîte rendue le sait.
+ *
+ *  ⚠️ LE PIÈGE, et comment il est évité : cacher le nom libère la place, donc
+ *  il « rentre » de nouveau, donc on le remontre, donc il déborde… Le cycle est
+ *  brisé en ne mesurant JAMAIS un nom déjà caché : à chaque changement de
+ *  taille on le remet, on mesure, puis on tranche une fois. */
+function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
+  const [tient, setTient] = useState(true);
+  const [taille, setTaille] = useState("");
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect();
+      setTaille(`${Math.round(r.width)}x${Math.round(r.height)}`);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // On mesure TOUJOURS la mise en page AVEC le nom : la classe est retirée le
+    // temps de la lecture, puis React la remet s'il le faut. Un premier jet
+    // faisait ça avec deux effets d'état qui se répondaient — il cachait des
+    // noms qui tenaient, parce que la mesure tombait parfois sur une boîte déjà
+    // privée de son nom. Ici la lecture est synchrone et sans aller-retour.
+    el.classList.remove("gt-title-sans-nom");
+    // ⚠️ Ne PAS se fier à `scrollHeight` : la boîte est un flex en colonne
+    // centré, et un contenu trop haut y déborde des DEUX côtés. Le débordement
+    // vers le haut n'entre pas dans `scrollHeight`, qui reste alors égal à
+    // `clientHeight` — le nom était rogné et la mesure disait que tout allait
+    // bien (constaté sur « Environnement et énergie » et « Droits, libertés… »).
+    // On additionne donc la hauteur des enfants, ce que le centrage ne cache pas.
+    const enfants = [...el.children] as HTMLElement[];
+    const gap = parseFloat(getComputedStyle(el).rowGap) || 0;
+    const besoin =
+      enfants.reduce((somme, enfant) => somme + enfant.offsetHeight, 0) +
+      gap * Math.max(0, enfants.length - 1);
+    const nom = el.querySelector<HTMLElement>(".gt-title-nom");
+    const deborde =
+      besoin > el.clientHeight + 1 ||
+      (nom !== null && nom.scrollWidth > el.clientWidth + 1);
+    setTient(!deborde);
+  }, [taille, cle, ref]);
+
+  return tient;
+}
+
 function GrowthTile({
   tile,
   depuis,
@@ -83,6 +143,8 @@ function GrowthTile({
   // deux ne tiennent plus. Même unité abstraite que les seuils d'aire au-dessus.
   const plat = tile.rect.h < 6.5;
   const needsTip = size === "small" || isTiny;
+  const titreRef = useRef<HTMLDivElement>(null);
+  const nomTient = useNomTient(titreRef, tile.issueKey);
   const mainArticle = tile.articles[0];
   const mediaLabel = mainArticle?.outlets.map((outlet) => outlet.name).join(" · ") ?? "";
 
@@ -138,9 +200,9 @@ function GrowthTile({
         </span>
       </div>
       <div className="gt-body">
-        <div className="gt-title">
+        <div className={`gt-title${nomTient ? "" : " gt-title-sans-nom"}`} ref={titreRef}>
           <SymboleEnjeu cle={tile.issueKey} />
-          <span>{tile.issueFr}</span>
+          <span className="gt-title-nom">{tile.issueFr}</span>
         </div>
         {mainArticle && !needsTip && (
           <div className="gt-preview">
