@@ -4863,6 +4863,25 @@
     transition: opacity 0.15s ease;
   }
   .treemap-growth a.gt-expanded-title:hover { opacity: 0.72; }
+  /* Le sommet de saillance : quand la nouvelle a compté le plus. Discret,
+     dans la langue mono des métadonnées, sous le titre et avant les médias. */
+  .treemap-growth .gt-expanded-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #F3ECDD;
+    opacity: 0.5;
+    margin-top: 5px;
+  }
+  .fil-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 3px; }
+  .fil-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .treemap-growth .gt-expanded-outlets {
     grid-column: 2;
     display: flex;

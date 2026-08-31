@@ -335,6 +335,9 @@ function GrowthTile({
                     ) : (
                       <div className="gt-expanded-title">{article.title}</div>
                     )}
+                    {article.sommet && (
+                      <div className="gt-expanded-sommet">Sommet {article.sommet.libelle}</div>
+                    )}
                     {article.outlets.length > 0 && (
                       <div className="gt-expanded-outlets" aria-label="Médias associés à cette actualité">
                         {article.outlets.map((outlet) => outlet.url ? (
@@ -490,7 +493,7 @@ function IssuesRankMobile({
   const focusArticles = selected.articles.length > 0
     ? selected.articles.slice(0, 5)
     : selected.context
-      ? [{ title: selected.context, url: selected.url, outlets: [] }]
+      ? [{ title: selected.context, url: selected.url, outlets: [], sommet: null }]
       : [];
   const orderedLines = [...tiles].sort(
     (a, b) => (a.issueKey === selected.issueKey ? 1 : 0) - (b.issueKey === selected.issueKey ? 1 : 0),
@@ -668,7 +671,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
     tiles.find((t) => t.issueKey === hoveredLine) ??
     tiles[0];
   const focusArticles = focus
-    ? (focus.articles.length > 0 ? focus.articles.slice(0, 5) : (focus.context ? [{ title: focus.context, url: focus.url, outlets: [] }] : []))
+    ? (focus.articles.length > 0 ? focus.articles.slice(0, 5) : (focus.context ? [{ title: focus.context, url: focus.url, outlets: [], sommet: null }] : []))
     : [];
 
   return (
@@ -787,11 +790,15 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
                 a.url ? (
                   <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="fil-article">
                     <span className="fil-titre">{a.title}</span>
-                    {domainOf(a.url) && <span className="fil-source">{domainOf(a.url)} ↗</span>}
+                    <span className="fil-meta">
+                      {a.sommet && <span className="fil-sommet">Sommet {a.sommet.libelle}</span>}
+                      {domainOf(a.url) && <span className="fil-source">{domainOf(a.url)} ↗</span>}
+                    </span>
                   </a>
                 ) : (
                   <div key={i} className="fil-article">
                     <span className="fil-titre">{a.title}</span>
+                    {a.sommet && <span className="fil-meta"><span className="fil-sommet">Sommet {a.sommet.libelle}</span></span>}
                   </div>
                 )
               )
