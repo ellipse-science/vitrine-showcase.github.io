@@ -16,6 +16,10 @@
 	<string>fr_CA</string>
 	<key>CFBundleDisplayName</key>
 	<string>La Une des Unes</string>
+	<!-- Obligatoire dans une extension : App Store Connect refuse le paquet
+	     sans elle (« A value for the key 'CFBundleName' … is required »). -->
+	<key>CFBundleName</key>
+	<string>VitrineWidget</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>

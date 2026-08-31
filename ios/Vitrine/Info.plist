@@ -38,9 +38,14 @@
 		<key>UIColorName</key>
 		<string>LaunchBackground</string>
 	</dict>
+	<!-- Les QUATRE orientations, y compris tête en bas. App Store Connect
+	     refuse le paquet sans elle (« you need to include all of the …
+	     orientations to support iPad multitasking »), et ce refus tombe
+	     à la validation du téléversement, pas à la compilation. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

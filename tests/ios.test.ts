@@ -139,6 +139,43 @@ describe("les Info.plist portent les clés du gabarit d'Xcode", () => {
     // finiraient par diverger de `project.yml` sans que rien ne le signale.
     expect(xml).toContain("<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>");
   });
+
+  it.each(plists)("$chemin nomme le paquet", ({ chemin, xml }) => {
+    // App Store Connect refuse une extension sans CFBundleName, et le dit
+    // seulement après le téléversement.
+    expect(xml, `${chemin} sans CFBundleName`).toContain("<key>CFBundleName</key>");
+  });
+
+  it("l'application déclare les quatre orientations", () => {
+    // Trois sur quatre suffisent à compiler, à signer et à archiver ; c'est la
+    // validation du téléversement qui refuse, en exigeant « all of the
+    // orientations to support iPad multitasking ».
+    const app = plists.find((p) => p.chemin.startsWith("Vitrine/"))!.xml;
+    for (const sens of [
+      "UIInterfaceOrientationPortrait",
+      "UIInterfaceOrientationPortraitUpsideDown",
+      "UIInterfaceOrientationLandscapeLeft",
+      "UIInterfaceOrientationLandscapeRight",
+    ]) {
+      expect(app, `orientation absente : ${sens}`).toContain(`<string>${sens}</string>`);
+    }
+  });
+});
+
+describe("les workflows iOS utilisent un SDK accepté par Apple", () => {
+  // « All iOS and iPadOS apps must be built with the iOS 26 SDK or later. »
+  // L'image du coureur porte le SDK : la choisir trop ancienne fait échouer
+  // la validation APRÈS le téléversement.
+  const workflows = ["ios.yml", "ios-testflight.yml"].map((nom) => ({
+    nom,
+    yml: readFileSync(join(RACINE_IOS, "..", ".github", "workflows", nom), "utf8"),
+  }));
+
+  it.each(workflows)("$nom tourne sur une image assez récente", ({ nom, yml }) => {
+    const image = yml.match(/runs-on:\s*macos-(\d+)/);
+    expect(image, `${nom} : aucune image macOS déclarée`).not.toBeNull();
+    expect(Number(image![1]), `${nom} : image macOS trop ancienne`).toBeGreaterThanOrEqual(26);
+  });
 });
 
 describe("Shared/Enjeux.swift recopie fidèlement lib/enjeux.ts", () => {
