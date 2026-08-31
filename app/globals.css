@@ -1220,9 +1220,15 @@
      traitement « breaking » (fond encre), l'aplat foncé d'un enjeu comme
      Gouvernements (#234E78) ne passerait pas : on l'éclaircit vers le papier
      plutôt que d'entretenir une seconde palette. */
+  /* 1,6em plutôt que le 1,15em par défaut : à côté d'un libellé mono de 10px
+     en capitales espacées, le glyphe paraissait timide (retour d'Adrien, 30-08).
+     Il porte l'identité de l'enjeu, il doit se voir avant le texte. */
   .une-enjeu .symbole-enjeu {
     color: var(--c);
-    margin-right: 7px;
+    width: 1.6em;
+    height: 1.6em;
+    vertical-align: -0.42em;
+    margin-right: 8px;
   }
   .unes-jour.breaking .une-enjeu .symbole-enjeu {
     color: color-mix(in srgb, var(--c) 42%, #F3ECDD);
@@ -2289,7 +2295,7 @@
      Canada) : elle dit qui mène l'axe, une information que le symbole ne
      remplace pas. Le glyphe, lui, porte la couleur de l'enjeu. */
   .solitudes .radar-symbole { opacity: 0.9; }
-  .radar-legend .lg-eyebrow .symbole-enjeu { margin-right: 6px; }
+  .radar-legend .lg-eyebrow .symbole-enjeu { width: 1.6em; height: 1.6em; vertical-align: -0.42em; margin-right: 7px; }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; fill: var(--ink-soft); }
   .solitudes .radar-lab.strong { font-weight: 600; fill: var(--ink); }
   .solitudes .radar-lab.side-qc  { fill: var(--ink-soft); }

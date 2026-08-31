@@ -37,16 +37,15 @@ const GLYPHES: Record<string, React.ReactNode> = {
       <path d="M3.4 19.4h17.2" />
     </>
   ),
-  // Une pile de pièces. La première version dessinait trois barres croissantes :
-  // elles disaient « graphique » plutôt qu'« économie », et répétaient le geste
-  // de la flèche de variation posée juste à côté sur la tuile (retour d'Adrien,
-  // 30-08). La pile a une silhouette pleine, lisible à 13px, et ne se confond
-  // ni avec la valise d'Immigration ni avec la balance de Loi et crime.
+  // Un dollar. Deux essais l'ont précédé : trois barres croissantes, qui
+  // disaient « graphique » plutôt qu'« économie », puis une pile de pièces,
+  // écartée par Adrien (30-08). Le signe est le plus direct des trois, et il
+  // reste le seul glyphe de la série tracé comme un caractère — c'est
+  // justement ce qui le rend immédiat.
   economy_and_labour: (
     <>
-      <ellipse cx="12" cy="7" rx="7.4" ry="2.8" />
-      <path d="M4.6 7v4.4c0 1.55 3.31 2.8 7.4 2.8s7.4-1.25 7.4-2.8V7" />
-      <path d="M4.6 11.4v4.4c0 1.55 3.31 2.8 7.4 2.8s7.4-1.25 7.4-2.8v-4.4" />
+      <path d="M12 3.6v16.8" />
+      <path d="M16.4 7.6c0-1.9-2-3.1-4.4-3.1S7.6 5.7 7.6 7.7c0 4.5 8.8 2.3 8.8 6.8 0 2-2 3.2-4.4 3.2s-4.4-1.2-4.4-3.2" />
     </>
   ),
   // Un épi.
