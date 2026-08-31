@@ -42,7 +42,7 @@ permissions:
 jobs:
   testflight:
     name: envoi TestFlight
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
 
     steps:
@@ -103,6 +103,23 @@ jobs:
             echo
             echo "Un secret est mal formé. Le recopier depuis App Store Connect"
             echo "SANS saut de ligne ni espace au début ou à la fin."
+            exit 1
+          fi
+
+      # Apple refuse tout paquet construit avec un SDK trop ancien, et ce refus
+      # tombe APRÈS le téléversement, soit trois minutes d'archivage plus tard.
+      # Vécu le 2026-08-31 avec Xcode 16.4 : « All iOS and iPadOS apps must be
+      # built with the iOS 26 SDK or later ». On le constate ici, en 2 secondes.
+      - name: Vérifier la version d'Xcode
+        run: |
+          xcodebuild -version
+          majeure=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          echo "Xcode majeur détecté : $majeure"
+          if [ "$majeure" -lt 26 ]; then
+            echo
+            echo "Xcode $majeure est trop ancien : App Store Connect exige le SDK iOS 26"
+            echo "ou plus récent, fourni par Xcode 26+. Choisir une image de coureur"
+            echo "qui l'embarque (macos-26) ou sélectionner un Xcode plus récent."
             exit 1
           fi
 
