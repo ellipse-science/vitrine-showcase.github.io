@@ -1,5 +1,11 @@
 [
   {
+    "pr": 578,
+    "date": "2026-08-31T13:56:04Z",
+    "note": "Rien ne change sur le site. Cette modification consigne une décision de méthode pour les travaux à venir.",
+    "version": null
+  },
+  {
     "pr": 651,
     "date": "2026-08-31T13:19:12Z",
     "note": "Aucune. Cette PR ne touche qu'une note interne ; rien ne change sur le site.",
