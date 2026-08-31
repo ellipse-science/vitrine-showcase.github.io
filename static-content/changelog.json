@@ -1,5 +1,11 @@
 [
   {
+    "pr": 628,
+    "date": "2026-08-31T00:04:12Z",
+    "note": "Le site surveille désormais lui-même la fraîcheur de ses données : si la page d'accueil se met à afficher une Une périmée, l'équipe est prévenue dans l'heure au lieu de l'apprendre par hasard.",
+    "version": null
+  },
+  {
     "pr": 632,
     "date": "2026-08-30T23:47:01Z",
     "note": "Le module de l'Assemblée affiche désormais les mêmes symboles d'enjeux que le reste du site, et le symbole de l'économie devient une pile de pièces.",
