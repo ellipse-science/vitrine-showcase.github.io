@@ -1,0 +1,88 @@
+# Compilation et tests de l'application Android.
+#
+# Contrairement à iOS, tout ceci tourne sur un coureur Ubuntu ordinaire :
+# gratuit, rapide, et le SDK Android y est préinstallé. Les tests unitaires
+# s'exécutent donc VRAIMENT à chaque PR, là où le code Swift ne peut être que
+# compilé.
+name: android
+
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: compilation et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Le dépôt ne versionne pas gradle-wrapper.jar : un binaire qu'on ne peut
+      # ni relire ni reconstruire n'a pas sa place dans un dépôt public. Gradle
+      # vient donc de l'action, à version épinglée.
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Tests unitaires
+        working-directory: android
+        run: gradle testDebugUnitTest --no-daemon
+
+      - name: Analyse (lint)
+        working-directory: android
+        run: gradle lintDebug --no-daemon
+
+      - name: Construire le paquet de publication
+        working-directory: android
+        run: gradle bundleRelease assembleDebug --no-daemon
+
+      # « Vert » doit vouloir dire « un paquet est sorti ». Une tâche Gradle
+      # peut réussir en ayant produit moins qu'on ne croit.
+      - name: Vérifier que les artefacts existent
+        working-directory: android
+        run: |
+          aab=app/build/outputs/bundle/release/app-release.aab
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          echec=0
+          for f in "$aab" "$apk"; do
+            if [ -s "$f" ]; then
+              echo "  OK  $f ($(du -h "$f" | cut -f1))"
+            else
+              echo "  NON $f absent ou vide"
+              echec=1
+            fi
+          done
+          exit $echec
+
+      - name: Conserver le paquet
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitrine-android
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vitrine</string>
+    <string name="hors_ligne_titre">Hors ligne</string>
+    <string name="hors_ligne_texte">La Vitrine démocratique a besoin d\'une connexion pour charger l\'édition en cours.</string>
+    <string name="reessayer">Réessayer</string>
+    <string name="widget_titre">La Une des Unes</string>
+    <string name="widget_description">Le sujet en tête des Unes québécoises, mis à jour à chaque bloc.</string>
+    <string name="widget_indisponible">Édition indisponible</string>
+</resources>
