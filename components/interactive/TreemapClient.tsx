@@ -824,6 +824,9 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
   // permet de suivre la même lecture d'une fenêtre à l'autre.
   const [mode, setMode] = useState<"repartition" | "evolution">("repartition");
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
+  // La zone des tuiles : tout ce qui est DEDANS ne referme pas l'enjeu ouvert,
+  // tout ce qui est dehors le referme (voir l'effet plus bas).
+  const zoneTuiles = useRef<HTMLDivElement | null>(null);
   const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const [secret, setSecret] = useState(false);
   // Flappy vit dans la vue d'ÉVOLUTION du mois : le code force donc les deux.
@@ -848,6 +851,24 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
       }, 1000);
     }
   };
+
+  // Cliquer à côté referme l'enjeu déplié, exactement comme le bouton « Fermer ».
+  // C'est le geste attendu de tout panneau qui recouvre son module (demande
+  // d'Adrien, 31-08) : sans lui, la seule sortie est une cible de 60 px dans un
+  // coin. `pointerdown` plutôt que `click` pour que la fermeture parte au
+  // moment du doigt, avant que le navigateur ait décidé s'il s'agit d'un clic.
+  // L'écouteur n'existe QUE pendant qu'un enjeu est ouvert : rien ne tourne en
+  // permanence, et il se retire de lui-même à la fermeture comme au démontage.
+  useEffect(() => {
+    if (expandedIssue === null) return;
+    const fermerSiDehors = (evenement: PointerEvent) => {
+      const cible = evenement.target;
+      if (cible instanceof Node && zoneTuiles.current?.contains(cible)) return;
+      setExpandedIssue(null);
+    };
+    document.addEventListener("pointerdown", fermerSiDehors);
+    return () => document.removeEventListener("pointerdown", fermerSiDehors);
+  }, [expandedIssue]);
 
   const current = data[period];
   const tiles = current.tiles;
@@ -926,7 +947,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
 
       {mode === "repartition" ? (
         <>
-          <div className="treemap-growth">
+          <div className="treemap-growth" ref={zoneTuiles}>
             {layout.map((tile) => (
               <GrowthTile
                 key={tile.issueKey}
