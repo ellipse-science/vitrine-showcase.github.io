@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const title = `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
   const description =
     `La Vitrine démocratique telle qu'elle était à l'${edition.label.toLowerCase()} ` +
-    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, enjeux, ` +
+    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, enjeux, ` +
     `partis, Polimètre+ et Assemblée nationale.`;
 
   return {
@@ -144,11 +144,9 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
         <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
 
-      {!isProdEnv && (
-        <div id="assemblee-nationale" data-section="Assemblée nationale">
-          <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
-        </div>
-      )}
+      <div id="assemblee-nationale" data-section="Assemblée nationale">
+        <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
+      </div>
 
       <nav className="archive-pager" aria-label="Naviguer entre les éditions">
         {older

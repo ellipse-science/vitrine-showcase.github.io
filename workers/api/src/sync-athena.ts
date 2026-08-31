@@ -23,6 +23,8 @@
 // à 'true' (phase d'ombre = false : on écrit Postgres, aucun build déclenché).
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
+import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
+import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
 import {
   HEADLINE_KEEP_DAYS,
@@ -47,7 +49,7 @@ export {
 // INSERT, loin de la limite Postgres de 65 535.
 const BATCH_ROWS = 400
 
-export interface SyncAthenaEnv {
+export interface SyncAthenaEnv extends SnapshotEnv {
   DATABASE_URL: string
   AWS_ACCESS_KEY_ID_DEV?: string
   AWS_SECRET_ACCESS_KEY_DEV?: string
@@ -67,6 +69,11 @@ function quoteIdent(name: string): string {
 interface TableResult {
   table: string
   rows: number
+  /** Entrée de manifeste produite par le dépôt R2 de cette table. Absente
+   *  quand la passe tourne sans cycle (appel manuel de reprise) ou sans
+   *  bucket lié : l'instantané est alors simplement pas alimenté, et le
+   *  build continue de lire les fichiers publiés. */
+  snapshot?: SnapshotTableEntry
 }
 
 interface FailedTable {
@@ -208,17 +215,20 @@ export { triggerDeployHooks } from './deploy-hooks'
 export interface SyncAthenaResult {
   synced: TableResult[]
   failed: FailedTable[]
+  /** Tables synchronisées mais laissées hors de l'instantané, avec la raison.
+   *  Distinct de `failed` À DESSEIN : la synchro a réussi. */
+  snapshotSkipped: string[]
   total: number
   next: number | null
 }
 
 /** Exécute la synchronisation sur une TRANCHE de la whitelist (offset/limit
  *  sur la liste des tables, comme /v1/sync). Le cron passe sans tranche :
- *  les 18 tables. Les hooks ne partent que sur une passe complète, sans
+ *  les 19 tables. Les hooks ne partent que sur une passe complète, sans
  *  échec, et si SYNC_TRIGGER_DEPLOYS vaut 'true'. */
 export async function runAthenaSync(
   env: SyncAthenaEnv,
-  slice: { offset?: number; limit?: number } = {},
+  slice: { offset?: number; limit?: number; cycle?: string } = {},
 ): Promise<SyncAthenaResult> {
   if (!env.AWS_ACCESS_KEY_ID_DEV || !env.AWS_SECRET_ACCESS_KEY_DEV) {
     throw new Error(
@@ -227,6 +237,7 @@ export async function runAthenaSync(
   }
   const offset = slice.offset ?? 0
   const limit = slice.limit ?? TABLES.length
+  const cycle = slice.cycle
   const specs = TABLES.slice(offset, offset + limit)
   const next = offset + limit < TABLES.length ? offset + limit : null
 
@@ -245,13 +256,57 @@ export async function runAthenaSync(
 
   const synced: TableResult[] = []
   const failed: FailedTable[] = []
+  /** Tables écrites dans Postgres mais PAS dans l'instantané. Jamais un
+   *  échec de synchro (cf. le side-car plus bas) : une information, qui
+   *  remonte jusqu'à Slack pour que la dérive ne s'installe pas en silence. */
+  const snapshotSkipped: string[] = []
   try {
     for (const spec of specs) {
       try {
         const rows = await fetchTableRows(athena, spec)
         const n = await writeTable(pg, spec, rows)
-        console.log(`${spec.name} : ${n} lignes (cf-athena)`)
-        synced.push({ table: spec.name, rows: n })
+
+        // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en
+        // mémoire : c'est précisément ce que le build allait sinon
+        // redemander à Postgres, table par table, à chaque build (incident
+        // du 2026-08-26, cf. l'en-tête de snapshot.ts). Le dépôt vient
+        // APRÈS le COMMIT, jamais avant : une table n'entre dans
+        // l'instantané que si elle est entrée dans la base.
+        //
+        // Une conversion qui échoue (colonne numérique polluée en amont)
+        // lève et fait ÉCHOUER la table — donc retient les hooks et
+        // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
+        // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
+        // synchro. Postgres a déjà commité à ce stade, et un échec ici
+        // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
+        // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
+        // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
+        // l'inverse du bon compromis.
+        //
+        // Une table qui n'entre pas dans l'instantané en est simplement
+        // ABSENTE, donc absente du manifeste, donc lue par le build dans son
+        // fichier publié : le comportement d'avant cette PR. On perd
+        // l'économie sur cette table, jamais la justesse ni l'édition.
+        let snapshot: SnapshotTableEntry | undefined
+        if (cycle && env.ART_BUCKET) {
+          try {
+            if (!hasColumnTypes(spec.name)) {
+              throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
+            }
+            const objects = rowsToObjects(spec.name, spec.cols, rows)
+            snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            console.warn(`${spec.name} : hors instantané (${message})`)
+            snapshotSkipped.push(`${spec.name} : ${message}`)
+          }
+        }
+
+        console.log(
+          `${spec.name} : ${n} lignes (cf-athena)` +
+            (snapshot ? `, instantané ${Math.round(snapshot.bytes / 1024)} Ko` : ''),
+        )
+        synced.push({ table: spec.name, rows: n, snapshot })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         console.error(`${spec.name} en échec :`, message)
@@ -265,7 +320,7 @@ export async function runAthenaSync(
   // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
   // La règle tout-ou-rien appartient à l'orchestrateur du cron (index.ts),
   // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
-  // survit pas aux 18 tables d'un coup (constaté le 2026-08-19 : la passe
+  // survit pas aux 19 tables d'un coup (constaté le 2026-08-19 : la passe
   // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
-  return { synced, failed, total: TABLES.length, next }
+  return { synced, failed, snapshotSkipped, total: TABLES.length, next }
 }

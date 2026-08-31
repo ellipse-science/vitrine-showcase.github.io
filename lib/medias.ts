@@ -110,3 +110,30 @@ export const MEDIA_ORDER: string[] = [
   TOUS_MEDIAS,
   "MG", "TVA", "JDM",
 ];
+
+/**
+ * Le PANEL québécois — les six seuls médias qu'un module sur les partis
+ * PROVINCIAUX a le droit de proposer.
+ *
+ * Il est DÉRIVÉ de `MEDIA_ORDER`, et non recopié : les crans du fader et les
+ * positions réellement chargées sont ainsi la même liste par construction. Une
+ * septième entrée ajoutée à l'ordre ci-dessus arrivera donc aussi dans le
+ * chargeur, sans qu'on ait à y penser.
+ *
+ * Pourquoi un filtre est nécessaire : la table `*_by_media_*` publie TOUT le
+ * corpus, Canada et États-Unis compris (CBC, CNN, Fox News, The Globe and
+ * Mail…), et elle ne porte aucune colonne de pays sur laquelle trancher. Sans
+ * ce filtre, le fader offrait quinze positions au lieu de sept — « tous » n'y
+ * était plus au centre, neuf crans s'affichaient sous leur identifiant technique
+ * faute de sigle, et douze d'entre eux ne donnaient qu'une console entièrement
+ * vide. Vide dont l'infobulle disait « aucun parti à ce rang SUR CETTE
+ * PÉRIODE » : une affirmation sur la couverture, là où la vérité est que Fox
+ * News ne couvre pas la politique québécoise. Le module a une règle sur ce
+ * point — ne jamais imputer aux médias un silence qui est le nôtre.
+ *
+ * Filtrer le panel ne désaccorde PAS la position « tous les médias », qui lit la
+ * table agrégée : mesuré le 2026-08-27, la somme des six égale exactement
+ * l'agrégat (CAQ 103,1 · PQ 182,4 · QS 66,0 · PLQ 59,2 · PCQ 0,0) et les neuf
+ * autres portent zéro sur toute la fenêtre publiée.
+ */
+export const MEDIA_PANEL_QC: string[] = MEDIA_ORDER.filter((id) => id !== TOUS_MEDIAS);

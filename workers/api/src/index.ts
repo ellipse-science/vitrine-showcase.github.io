@@ -19,10 +19,21 @@
 //    Postgres ne voit donc qu'une poignée de requêtes par fenêtre quel que
 //    soit le trafic : l'API monte en charge comme un CDN.
 //
-// PAS ENCORE FAIT, ASSUMÉ : ni authentification, ni quotas, ni facturation.
-// Cette version est en lecture seule et publique. Les clés d'API viendront
-// quand il y aura des clients — cf. § « Ce qu'il reste à faire » du document
-// de direction.
+// API PRIVÉE depuis le 2026-08-26. Elle était en lecture publique le temps de
+// la construire ; personne d'autre que nous ne l'utilise, et une API ouverte
+// qu'on n'a pas voulu ouvrir est une surface offerte pour rien. Toute route
+// de données exige désormais une clé : /v1/health, /v1/datasets et /v1/art
+// comme les autres.
+//
+// UNE SEULE EXCEPTION, ET ELLE EST STRUCTURELLE : /v1/flappy/leaderboard. Le
+// NAVIGATEUR du visiteur l'appelle à l'exécution (lib/flappyLeaderboard.ts),
+// donc toute clé qu'on y mettrait serait publique par construction — c'est
+// exactement l'erreur du jeton Upstash embarqué dans le bundle, corrigée par
+// l'issue #499. La route reste donc anonyme, mais bornée : score plafonné,
+// initiales assainies, validation côté serveur, et un TRUNCATE suffit à tout
+// remettre à zéro.
+//
+// La racine « / » reste sans clé mais n'énumère plus rien.
 
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
@@ -31,9 +42,17 @@ import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
 import { handleFlappy } from './flappy'
+import {
+  cycleId,
+  handleSnapshot,
+  pruneSnapshots,
+  putManifest,
+  type SnapshotEnv,
+} from './snapshot'
+import type { SnapshotTableEntry } from './snapshot-logic'
 import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
 
-interface Env extends SyncAthenaEnv, ArtEnv {
+interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
   DATABASE_URL: string
   /** Domaine de l'organisation Zero Trust, p. ex. capp-vitrine.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string
@@ -79,6 +98,11 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
   provincial_parties_salient_shadow_month: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
   agora_decideurs_qc: { filters: ['party', 'period_type'], order: 'period_start_date' },
   agora_decideurs_qc_deputes: { filters: ['party', 'deputy', 'period_type'], order: 'period_start_date' },
+  // Dimension, pas une série temporelle : une ligne par intervalle
+  // d'affiliation. Triée par date de DÉBUT d'intervalle, ce qui donne le
+  // parcours d'un·e député·e dans l'ordre chronologique tel que le rend
+  // ParliamentaryHistory (components/interactive/AssembleeVestiaire.tsx).
+  agora_decideurs_qc_affiliations: { filters: ['party', 'deputy_id', 'district_id'], order: 'affiliation_start_date' },
   polimetre_plus: { filters: [], order: '' },
   headline_events_4h: { filters: [], order: '' },
 }
@@ -170,10 +194,18 @@ export default {
           const failed: string[] = []
           let synced = 0
           let offset: number | null = 0
+          // IDENTIFIANT DE CYCLE, fabriqué ICI et passé à chaque tranche. Les
+          // tranches sont des invocations séparées : elles ne peuvent pas se
+          // mettre d'accord entre elles sur un nom de dossier. C'est lui qui
+          // permet d'écrire l'instantané sous `data/snapshot/<cycle>/` et de
+          // ne le rendre visible qu'à la fin, par le manifeste.
+          const cycle = cycleId(now)
+          const snapshotTables: Record<string, SnapshotTableEntry> = {}
+          const snapshotSkipped: string[] = []
           try {
             while (offset !== null) {
               const res = await env.SELF.fetch(
-                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2`,
+                `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2&cycle=${cycle}`,
                 {
                   method: 'POST',
                   headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
@@ -186,10 +218,16 @@ export default {
               const body = (await res.json()) as {
                 synced: number
                 failed: string[]
+                snapshotSkipped?: string[]
                 next: number | null
+                tables?: { table: string; rows: number; snapshot?: SnapshotTableEntry }[]
               }
               synced += body.synced
               failed.push(...body.failed)
+              snapshotSkipped.push(...(body.snapshotSkipped ?? []))
+              for (const t of body.tables ?? []) {
+                if (t.snapshot) snapshotTables[t.table] = t.snapshot
+              }
               offset = body.next
             }
           } catch (err) {
@@ -199,6 +237,74 @@ export default {
             failed.push(`orchestration : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
+
+          // MANIFESTE AVANT LES HOOKS, et l'ordre n'est pas cosmétique : un
+          // hook déclenche un build, et ce build lit le manifeste. Publié
+          // après, le build lirait le cycle PRÉCÉDENT — la même classe
+          // d'erreur d'ordonnancement que l'incident du 2026-08-18, où la
+          // prod se reconstruisait avant que la synchro n'ait écrit.
+          //
+          // PUBLIÉ MÊME QUAND DES TABLES ONT ÉCHOUÉ, et c'est délibéré. La
+          // règle du tout ou rien protège les BUILDS : elle empêche de
+          // publier un site à moitié rafraîchi. Le manifeste, lui, ne décrit
+          // qu'une chose : ce que l'instantané CONTIENT. Une table absente en
+          // est simplement absente, et le build la lit dans son fichier
+          // publié — exactement ce qu'il faisait avant cette PR.
+          //
+          // Les avoir liés a été une vraie erreur, attrapée au premier cycle
+          // réel (2026-08-26) : quatre tables de `tables.ts` n'existent pas
+          // dans Postgres (« relation ... does not exist », DDL jamais
+          // appliquée), donc `failed.length > 0` à CHAQUE passe, donc le
+          // manifeste n'aurait jamais été publié. Un défaut préexistant et
+          // sans rapport aurait rendu l'instantané inerte pour toujours.
+          //
+          // Les hooks, eux, restent gouvernés par le tout ou rien, plus bas.
+          if (env.ART_BUCKET && Object.keys(snapshotTables).length > 0) {
+            try {
+              await putManifest(env.ART_BUCKET, {
+                cycle,
+                generated_at: new Date().toISOString(),
+                source: 'cf-athena',
+                tables: snapshotTables,
+              })
+              console.log(
+                `instantané publié : cycle ${cycle}, ${Object.keys(snapshotTables).length} tables`,
+              )
+              // Une table hors instantané n'est PAS un échec : le build la
+              // lit dans son fichier publié. Mais si personne ne le dit, la
+              // dérive s'installe et l'économie fond table par table sans
+              // que quiconque s'en aperçoive.
+              if (snapshotSkipped.length > 0) {
+                await notifySlack(
+                  env,
+                  `instantané : ${snapshotSkipped.length} table(s) hors copie (le site les lit dans les fichiers publiés) : ${snapshotSkipped.join(' ; ')}`,
+                )
+              }
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err)
+              await notifySlack(env, `sync-athena : manifeste d'instantané en échec : ${message}`)
+            }
+          }
+
+          // MÉNAGE AVANT LA GARDE D'ÉCHEC, et MUET. Avant la garde parce
+          // qu'une passe partielle écrit quand même un cycle : si le ménage
+          // vivait après le `return` ci-dessous, R2 grossirait sans fin tant
+          // qu'une seule table échoue — c'est-à-dire, aujourd'hui, toujours.
+          // Muet parce qu'un cycle non nettoyé ne coûte que quelques
+          // mégaoctets, là où une exception ici ferait passer pour ratée une
+          // passe réussie.
+          if (env.ART_BUCKET) {
+            try {
+              const deleted = await pruneSnapshots(env.ART_BUCKET)
+              if (deleted > 0) console.log(`instantané : ${deleted} objets périmés supprimés`)
+            } catch (err) {
+              console.warn('ménage des instantanés impossible :', err)
+            }
+          }
+
+          // TOUT OU RIEN, POUR LES BUILDS SEULEMENT. Une table en échec ne
+          // doit pas publier un site à moitié rafraîchi ; elle n'empêche pas
+          // pour autant l'instantané d'exister (cf. plus haut).
           if (failed.length > 0) {
             await notifySlack(
               env,
@@ -206,6 +312,7 @@ export default {
             )
             return
           }
+
           if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
             try {
               await triggerDeployHooks(env)
@@ -248,6 +355,15 @@ export default {
       const res = await handleAdmin(request, sqlAdmin, seg, env)
       res.headers.set('cache-control', 'no-store')
       return res
+    }
+
+    // /v1/snapshot — AVANT tout le reste, et surtout avant `neon(...)` : ce
+    // chemin ne doit toucher Postgres à AUCUN moment, pas même pour vérifier
+    // le jeton. C'est ce qui le rend insensible à une base indisponible —
+    // la panne du 2026-08-26, où le build ne pouvait plus lire ses données
+    // parce que la base qui les servait était hors quota. Cf. snapshot.ts.
+    if (seg[0] === 'v1' && seg[1] === 'snapshot') {
+      return handleSnapshot(request, env, seg.slice(2))
     }
 
     // /v1/art accepte PUT (téléversement du raffineur) et POST (publish) : il
@@ -306,7 +422,7 @@ export default {
       // et le cron ne sert plus que de filet.
       //
       // Réservée aux clés portant la portée `sync` : ce n'est pas une lecture,
-      // c'est une écriture qui remplace le contenu de dix-huit tables.
+      // c'est une écriture qui remplace le contenu de dix-neuf tables.
       if (segments[0] === 'v1' && segments[1] === 'sync') {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
@@ -370,13 +486,26 @@ export default {
           15,
         )
 
+        // Le cycle vient de l'orchestrateur (il fabrique l'identifiant et le
+        // passe à chaque tranche). Absent — reprise manuelle d'une tranche —
+        // la table est réécrite dans Postgres mais PAS déposée dans
+        // l'instantané : ce serait ajouter une table d'un cycle dans le
+        // dossier d'un autre, donc mélanger deux passes sous un même
+        // manifeste. Une reprise partielle se rattrape au cycle suivant.
+        const cycle = url.searchParams.get('cycle') ?? undefined
+
         const started = Date.now()
-        const { synced, failed, total, next } = await runAthenaSync(env, { offset, limit })
+        const { synced, failed, snapshotSkipped, total, next } = await runAthenaSync(env, {
+          offset,
+          limit,
+          cycle,
+        })
         return json(
           {
             synced: synced.length,
             tables: synced,
             failed: failed.map((f) => f.table),
+            snapshotSkipped,
             offset,
             total,
             next,
@@ -401,6 +530,9 @@ export default {
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une
       // synchro muette : des données figées qui ont l'air vivantes.
       if (segments[0] === 'v1' && segments[1] === 'health') {
+        const auth = await authenticate(sql, request, null)
+        if (!auth.ok) return problem(auth.status, auth.error)
+
         const rows = await sql`
           SELECT table_name, synced_at, row_count, source
           FROM vitrine.sync_state ORDER BY table_name`
@@ -408,26 +540,25 @@ export default {
           (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
           null,
         )
-        return cachePublic(
-          json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows }, {}, 300),
-        )
+        // PAS de cache partagé : la réponse est sous clé, et `caches.default`
+        // est commun à tous les appelants — cf. le commentaire de cachePublic.
+        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows })
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.
       // `!segments[2]` est indispensable : sans lui cette route intercepte
       // aussi /v1/datasets/{nom} et renvoie l'index à la place des lignes.
       if (segments[0] === 'v1' && segments[1] === 'datasets' && !segments[2]) {
-        return cachePublic(json(
-          {
-            datasets: Object.entries(DATASETS).map(([name, spec]) => ({
-              name,
-              filters: spec.filters,
-              path: `/v1/datasets/${name}`,
-            })),
-          },
-          {},
-          ttl,
-        ))
+        const auth = await authenticate(sql, request, null)
+        if (!auth.ok) return problem(auth.status, auth.error)
+
+        return json({
+          datasets: Object.entries(DATASETS).map(([name, spec]) => ({
+            name,
+            filters: spec.filters,
+            path: `/v1/datasets/${name}`,
+          })),
+        })
       }
 
       // GET /v1/datasets/:name?from=&to=&party=&limit=&offset=
@@ -505,23 +636,30 @@ export default {
         return response
       }
 
-      // Racine : de quoi comprendre l'API sans documentation externe.
+      // Racine : reste SANS clé, mais ne dit plus rien d'exploitable.
+      //
+      // Elle listait les routes et annonçait « sans authentification » : une
+      // carte du trésor pour qui tombe sur le domaine. On garde une réponse
+      // lisible plutôt qu'un 401 sec — quelqu'un qui ouvre l'adresse dans un
+      // navigateur doit comprendre qu'il n'y a rien à voir — mais elle
+      // n'énumère plus rien. Aucun appel à Postgres non plus : inutile de
+      // faire travailler la base pour une carte de visite.
       if (segments.length === 0) {
         return cachePublic(json(
           {
             name: 'API Vitrine démocratique',
             version: 'v1',
-            description:
-              "Indicateurs dérivés de la couverture médiatique et des discours politiques au Québec.",
-            endpoints: ['/v1/health', '/v1/datasets', '/v1/datasets/{nom}', '/v1/art/latest.{png,webp,avif,json}'],
-            note: "Version de lecture, sans authentification. Les clés d'API viendront avec l'offre payante.",
+            access: 'privée',
+            note: "Accès réservé. Toutes les routes de données exigent une clé d'API.",
+            contact: 'https://vitrinedemocratique.com',
           },
           {},
           ttl,
         ))
       }
 
-      return problem(404, 'Route inconnue.', { endpoints: ['/v1/health', '/v1/datasets'] })
+      // On n'énumère plus les routes ici non plus, pour la même raison.
+      return problem(404, 'Route inconnue.')
     } catch (err) {
       // On ne renvoie jamais le message d'erreur brut : il peut contenir la
       // chaîne de connexion ou des noms internes.

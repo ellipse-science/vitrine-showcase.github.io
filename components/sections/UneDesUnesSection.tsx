@@ -7,6 +7,7 @@ import { editionHrefs } from "@/lib/editionLinks";
 import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 import { SaillanceTrend } from "@/components/interactive/SaillanceTrend";
 import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
@@ -35,6 +36,7 @@ function SaillanceHead({ event, className, hrefs }: {
   return (
     <div className={className}>
       <span className="une-enjeu" style={{ "--c": event.issueColor } as React.CSSProperties}>
+        <SymboleEnjeu cle={event.issueKey} />
         {event.issueFr}
       </span>
       {/* UN SEUL badge : la saillance cumulée sur 24 h pondérée par récence — la
@@ -104,7 +106,7 @@ function ResonanceTag({ label, region, echo }: {
   return (
     <span className="resonance-item">
       <span className="resonance-tag">{label}</span>
-      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
+      <InfoTip size="sm" label={`${label} : détail de la couverture`}>
         <span className="resonance-card">
           {/* La fenêtre était TUE (demande d'Adrien, 2026-08-09) : « 61 % de
               l'attention des Unes canadiennes-anglaises » se lisait comme un

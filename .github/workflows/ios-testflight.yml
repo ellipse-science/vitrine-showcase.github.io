@@ -1,0 +1,217 @@
+# Envoi de l'application vers TestFlight, depuis un coureur macOS.
+#
+# POURQUOI : permet d'installer l'application sur un iPhone SANS posséder de
+# Mac. Tout ce que la personne qui publie a à faire se fait dans le navigateur
+# (App Store Connect), jamais dans Xcode.
+#
+# ⚠️ CE WORKFLOW N'A JAMAIS ÉTÉ EXÉCUTÉ DE BOUT EN BOUT. Il ne peut pas l'être
+# sans les secrets ci-dessous, qui n'existent que dans le compte développeur.
+# La compilation, elle, est vérifiée par le workflow `ios.yml`.
+#
+# ─── Ce qu'il faut préparer une seule fois, dans le navigateur ───
+#
+#  1. App Store Connect > Certificats, identifiants et profils > Identifiants :
+#     enregistrer `science.ellipse.vitrine` ET `science.ellipse.vitrine.widget`.
+#  2. App Store Connect > Apps > « + » : créer la fiche de l'application sur
+#     l'identifiant `science.ellipse.vitrine`.
+#     ⚠️ Le NOM DU DÉVELOPPEUR affiché se fige à cette étape et ne se modifie
+#     plus jamais. Sur un compte individuel, ce sera le nom légal du titulaire.
+#     Sur un compte d'organisation, un nom commercial déposé est possible.
+#  3. App Store Connect > Utilisateurs et accès > Intégrations > Clés App Store
+#     Connect : générer une clé de rôle « App Manager ». Noter l'ID de la clé
+#     et l'Issuer ID, télécharger le fichier `.p8` (téléchargeable UNE fois).
+#  4. Déposer dans les secrets du dépôt (Settings > Secrets and variables >
+#     Actions) :
+#       ASC_KEY_ID       — l'ID de la clé
+#       ASC_ISSUER_ID    — l'Issuer ID
+#       ASC_PRIVATE_KEY  — le CONTENU du fichier .p8, en entier
+#       APPLE_TEAM_ID    — l'identifiant d'équipe (Membership details)
+name: ios-testflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Note pour les testeurs"
+        required: false
+        default: "Compilation automatique"
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    name: envoi TestFlight
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Présence ET FORME. Coller un secret dans l'interface de GitHub y laisse
+      # très facilement un saut de ligne final. Xcode envoie alors « ABC123\n »
+      # à Apple, qui répond 401, et l'échec ne se voit qu'au bout de dix minutes
+      # d'archivage, sous la forme trompeuse « No profiles were found ».
+      # Vécu le 2026-08-30. On contrôle donc la forme AVANT de compiler.
+      - name: Vérifier les secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          manquants=""
+          [ -n "$ASC_KEY_ID" ]      || manquants="$manquants ASC_KEY_ID"
+          [ -n "$ASC_ISSUER_ID" ]   || manquants="$manquants ASC_ISSUER_ID"
+          [ -n "$ASC_PRIVATE_KEY" ] || manquants="$manquants ASC_PRIVATE_KEY"
+          [ -n "$APPLE_TEAM_ID" ]   || manquants="$manquants APPLE_TEAM_ID"
+          if [ -n "$manquants" ]; then
+            echo "Secrets manquants :$manquants"
+            echo "Voir l'en-tête de .github/workflows/ios-testflight.yml"
+            exit 1
+          fi
+
+          # Les valeurs nettoyées ne sont jamais affichées. GitHub masque
+          # chaque ligne d'un secret multiligne, donc la version sans saut de
+          # ligne reste masquée là où xcodebuild réimprime sa commande.
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
+
+          echec=0
+          verifier () { # nom, valeur, motif, description
+            if printf '%s' "$2" | grep -qE "^$3$"; then
+              echo "  OK  $1 (${#2} caractères)"
+            else
+              echo "  NON $1 : ${#2} caractères, attendu $4"
+              echec=1
+            fi
+          }
+          verifier ASC_KEY_ID     "$cle" '[A-Z0-9]{10}' "10 caractères alphanumériques majuscules"
+          verifier ASC_ISSUER_ID  "$iss" '[0-9a-fA-F-]{36}' "un UUID de 36 caractères"
+          verifier APPLE_TEAM_ID  "$eqp" '[A-Z0-9]{10}' "10 caractères alphanumériques majuscules"
+
+          if printf '%s' "$ASC_PRIVATE_KEY" | grep -q 'BEGIN PRIVATE KEY'; then
+            echo "  OK  ASC_PRIVATE_KEY (en-tête PEM présent)"
+          else
+            echo "  NON ASC_PRIVATE_KEY : en-tête -----BEGIN PRIVATE KEY----- absent."
+            echo "      Coller le CONTENU du fichier .p8, pas son nom ni son chemin."
+            echec=1
+          fi
+
+          if [ "$echec" -ne 0 ]; then
+            echo
+            echo "Un secret est mal formé. Le recopier depuis App Store Connect"
+            echo "SANS saut de ligne ni espace au début ou à la fin."
+            exit 1
+          fi
+
+      # Apple refuse tout paquet construit avec un SDK trop ancien, et ce refus
+      # tombe APRÈS le téléversement, soit trois minutes d'archivage plus tard.
+      # Vécu le 2026-08-31 avec Xcode 16.4 : « All iOS and iPadOS apps must be
+      # built with the iOS 26 SDK or later ». On le constate ici, en 2 secondes.
+      - name: Vérifier la version d'Xcode
+        run: |
+          xcodebuild -version
+          majeure=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          echo "Xcode majeur détecté : $majeure"
+          if [ "$majeure" -lt 26 ]; then
+            echo
+            echo "Xcode $majeure est trop ancien : App Store Connect exige le SDK iOS 26"
+            echo "ou plus récent, fourni par Xcode 26+. Choisir une image de coureur"
+            echo "qui l'embarque (macos-26) ou sélectionner un Xcode plus récent."
+            exit 1
+          fi
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Générer le projet
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Déposer la clé App Store Connect
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          # Exactement un saut de ligne final : un PEM en réclame un, et le
+          # champ de GitHub peut en avoir laissé zéro comme trois.
+          printf '%s\n' "$(printf '%s' "$ASC_PRIVATE_KEY")" > ~/private_keys/AuthKey.p8
+          chmod 600 ~/private_keys/AuthKey.p8
+          # Contrôle sans jamais afficher la clé.
+          openssl pkey -in ~/private_keys/AuthKey.p8 -noout \
+            && echo "clé privée lisible par OpenSSL" \
+            || { echo "clé privée ILLISIBLE : contenu du .p8 tronqué ou altéré"; exit 1; }
+
+      # Numéro de build unique et croissant : App Store Connect refuse deux
+      # envois portant le même. `run_number` ne recule jamais.
+      - name: Archiver
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -o pipefail
+          # Voir l'étape de vérification : un saut de ligne collé par mégarde
+          # dans un secret suffit à faire répondre 401 à Apple.
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
+          xcodebuild archive \
+            -project Vitrine.xcodeproj \
+            -scheme Vitrine \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$cle" \
+            -authenticationKeyIssuerID "$iss" \
+            DEVELOPMENT_TEAM="$eqp" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            | tail -60
+
+      - name: Préparer les options d'export
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Un saut de ligne à l'intérieur d'un <string> produirait un plist
+          # valide mais un identifiant d'équipe faux.
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$eqp</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          plutil -lint "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Exporter et téléverser
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$cle" \
+            -authenticationKeyIssuerID "$iss" \
+            | tail -40
+
+      - name: Effacer la clé
+        if: always()
+        run: rm -f ~/private_keys/AuthKey.p8

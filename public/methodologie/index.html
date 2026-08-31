@@ -476,7 +476,7 @@
       <li><a href="#collecte-medias">Architecture de collecte&nbsp;: Médias</a></li>
       <li><a href="#indice-saillance">L'indice de saillance</a></li>
       <li><a href="#une-des-unes">Module&nbsp;: L'actualité saillante du moment au Québec &amp; Deux solitudes?</a></li>
-      <li><a href="#enjeux-saillants">Module&nbsp;: De quoi parle-t-on?</a></li>
+      <li><a href="#enjeux-saillants">Module&nbsp;: Les 12 enjeux de la campagne</a></li>
       <li><a href="#partis-et-couverture">Module&nbsp;: De quel parti parle-t-on dans les médias?</a></li>
       <li><a href="#polimetre-plus">Module&nbsp;: Polimètre+&nbsp;: promesses électorales à la Une</a></li>
       <li><a href="#assemblee-nationale">Module&nbsp;: L'alignement de l'Assemblée</a></li>
@@ -537,11 +537,8 @@
     <p class="metho-body">En parallèle des captures de pages frontales, le système extrait le contenu textuel (titre, corps, auteur·e, source) des articles publiés par ces mêmes médias. Ces articles alimentent les modules de couverture par enjeux et par partis politiques.</p>
 
     <h3>Extraction des entités nommées</h3>
-    <p class="metho-body">Les objets présents dans les manchettes (personnes, enjeux, institutions, lieux) sont identifiés par deux modèles d'intelligence artificielle&nbsp;:</p>
-    <ul class="metho-list">
-      <li><strong>GLiNER</strong>&nbsp;: modèle de reconnaissance d'entités nommées (NER) appliqué directement au texte des manchettes.</li>
-      <li><strong>Gemma 3</strong>&nbsp;: grand modèle de langage (LLM) utilisé pour normaliser les entités en français et en anglais (ex.&nbsp;: «&nbsp;Trudeau&nbsp;» et «&nbsp;Justin Trudeau&nbsp;» renvoient au même objet).</li>
-    </ul>
+    <p class="metho-body">Les objets présents dans les manchettes (personnes, enjeux, institutions, lieux) sont identifiés par un grand modèle de langage, <strong>GPT-4o</strong>, appliqué au texte des manchettes. C'est cette extraction qui alimente l'indice de saillance publié sur ce site.</p>
+    <p class="metho-body">Une seconde chaîne est en développement pour la remplacer, fondée sur des modèles ouverts que nous hébergeons nous-mêmes&nbsp;: <strong>GLiNER</strong> pour la reconnaissance d'entités nommées, et <strong>Gemma&nbsp;3</strong> pour normaliser les entités en français et en anglais (ex.&nbsp;: «&nbsp;Trudeau&nbsp;» et «&nbsp;Justin Trudeau&nbsp;» renvoient au même objet). Elle est évaluée, mais <strong>elle n'est pas en service</strong>&nbsp;: aucune donnée publiée ici n'en provient. <em>(État vérifié le 27 août 2026.)</em></p>
     <p class="metho-body">La performance des modèles est évaluée régulièrement par comparaison à environ 1 500 phrases annotées manuellement.</p>
   </section>
 
@@ -580,12 +577,12 @@
       <table class="metho-table">
         <thead><tr><th>Niveau</th><th>Position (percentile des points d'attention 24h)</th><th>Part des Unes</th><th>À partir de (points, Unes québécoises)</th></tr></thead>
         <tbody>
-          <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5 %</td><td>moins de 10,1</td></tr>
-          <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15 %</td><td>10,1</td></tr>
-          <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30 %</td><td>12,5</td></tr>
-          <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30 %</td><td>17,7</td></tr>
-          <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15 %</td><td>28,8</td></tr>
-          <tr><td>Exceptionnelle</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5 %</td><td>46,9</td></tr>
+          <tr><td>Très faible</td><td>sous le 5<sup>e</sup> percentile</td><td>5&nbsp;%</td><td>moins de 10,1</td></tr>
+          <tr><td>Faible</td><td>du 5<sup>e</sup> au 20<sup>e</sup> percentile</td><td>15&nbsp;%</td><td>10,1</td></tr>
+          <tr><td>Modérée</td><td>du 20<sup>e</sup> au 50<sup>e</sup> percentile</td><td>30&nbsp;%</td><td>12,5</td></tr>
+          <tr><td>Élevée</td><td>du 50<sup>e</sup> au 80<sup>e</sup> percentile</td><td>30&nbsp;%</td><td>17,7</td></tr>
+          <tr><td>Très élevée</td><td>du 80<sup>e</sup> au 95<sup>e</sup> percentile</td><td>15&nbsp;%</td><td>28,8</td></tr>
+          <tr><td>Exceptionnelle</td><td>au-dessus du 95<sup>e</sup> percentile</td><td>5&nbsp;%</td><td>46,9</td></tr>
         </tbody>
       </table>
     </div>
@@ -650,7 +647,8 @@
   <!-- §5 Enjeux (treemap) -->
   <section id="enjeux-saillants" class="metho-section">
     <p class="metho-section-label">§ 05</p>
-    <h2>Module&nbsp;: De quoi parle-t-on?</h2>
+    <h2>Module&nbsp;: Les 12 enjeux de la campagne</h2>
+    <p class="metho-body"><em>Anciennement «&nbsp;De quoi parle-t-on?&nbsp;».</em></p>
     <p class="metho-body">Ce module représente la distribution de la couverture médiatique par grand enjeu de société sur la période sélectionnée (aujourd'hui · cette semaine · ce mois).</p>
 
     <h3>Enjeux couverts</h3>
@@ -682,16 +680,22 @@
       <li>Le système analyse le contenu textuel des articles de chaque bloc de quatre heures et calcule un score de saillance pour chacun des 12 enjeux.</li>
       <li>Pour la période choisie, les scores du traitement le plus récent sont additionnés pour chaque enjeu.</li>
       <li>Les scores cumulés déterminent la surface de chaque tuile (plus un enjeu est saillant, plus sa tuile est grande) ainsi que le classement des enjeux, du plus au moins saillant.</li>
-      <li>Pour la vue du jour, on calcule aussi la <strong>variation de saillance</strong> de chaque enjeu par rapport au traitement précédent, exprimée en pourcentage (hausse ou baisse).</li>
+      <li>La <strong>part de l'attention</strong> de chaque enjeu est son score cumulé divisé par la somme des scores des douze, en pourcentage. Les douze parts totalisent donc 100&nbsp;% (à l'arrondi près, chaque part étant affichée à une décimale)&nbsp;: c'est une répartition de l'attention entre les enjeux, pas une mesure absolue de couverture.</li>
+      <li>Pour la vue du jour, on calcule aussi la <strong>variation de saillance</strong> de chaque enjeu par rapport au traitement précédent, exprimée en pourcentage (hausse ou baisse). Le module est republié <strong>six fois par jour</strong>&nbsp;: l'heure du traitement auquel la variation se compare est affichée avec elle, et l'heure de la dernière mise à jour figure au bas du module. Ce sont les heures des <strong>éditions</strong> (0h, 4h, 8h, 12h, 16h, 20h), en heure de Montréal&nbsp;: un bloc de données est servi une heure après sa fin, comme partout ailleurs sur le site.</li>
       <li>Pour les vues hebdomadaire et mensuelle, le classement des enjeux est conservé à chaque traitement, ce qui permet d'en retracer l'évolution dans le temps.</li>
-      <li>Pour chaque enjeu, les actualités récentes sont regroupées. Chaque actualité conserve la liste précise des médias québécois qui la couvrent, plutôt qu'une liste générale calculée pour l'ensemble de l'enjeu.</li>
+      <li>Pour chaque enjeu, les actualités sont regroupées et <strong>bornées à la fenêtre choisie</strong>&nbsp;: la liste du jour ne montre que les nouvelles de la journée, celle de la semaine remonte au vendredi 20h, celle de la campagne au déclenchement du scrutin. Chaque actualité conserve la liste précise des médias québécois qui la couvrent, plutôt qu'une liste générale calculée pour l'ensemble de l'enjeu.</li>
+      <li>Chaque actualité porte son <strong>sommet de saillance</strong>&nbsp;: le bloc de quatre heures où elle a le plus compté, calculé sur toutes ses occurrences et non sur un relevé isolé. Les actualités sont classées de la plus récemment culminante à la plus ancienne.</li>
     </ol>
 
+    <h3>Le symbole de chaque enjeu</h3>
+    <p class="metho-body">Chacun des douze enjeux porte un symbole qui lui est propre, en plus de sa couleur. Un enjeu donné garde son symbole et sa couleur partout où il apparaît&nbsp;: sur la rubrique de l'actualité saillante, sur les rubriques du radar des Deux solitudes, sur les tuiles de ce module, à côté des promesses du Polimètre+ et sur les sujets abordés à l'Assemblée. Un même enjeu se reconnaît donc d'un module à l'autre sans avoir à relire son nom.</p>
+    <p class="metho-body">Le symbole n'est pas un ornement&nbsp;: il reste lisible là où le nom ne l'est plus. Sur les plus petites tuiles, le nom de l'enjeu était rogné jusqu'à ne plus désigner personne; c'est désormais le symbole seul qui l'identifie, le nom complet restant accessible au survol et dans la tuile dépliée. Sur les tuiles les plus plates, où le symbole et le pourcentage ne tiennent pas ensemble, c'est le pourcentage qui est conservé.</p>
+
     <h3>Affichage</h3>
-    <p class="metho-body">Trois vues, une par fenêtre temporelle, sélectionnables par onglet.</p>
+    <p class="metho-body">Deux réglages indépendants&nbsp;: la <strong>fenêtre temporelle</strong> (Jour, Semaine, Campagne) et la <strong>représentation</strong> (Répartition ou Évolution). Les six combinaisons existent. Auparavant, la répartition n'était offerte que pour le jour et l'évolution que pour la semaine et la campagne, ce qui interdisait de comparer une même fenêtre des deux façons.</p>
     <ul class="metho-list">
-      <li><strong>Aujourd'hui</strong>&nbsp;: une grille de tuiles colorées (une couleur par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
-      <li><strong>Cette semaine</strong> et <strong>Ce mois</strong>&nbsp;: un graphique retrace l'<strong>évolution du classement</strong> des douze enjeux jour après jour (les sept derniers jours, ou le mois en cours). Sur ordinateur, toutes les trajectoires sont présentées ensemble. Sur mobile, une trajectoire est mise en évidence à la fois; une liste classée permet de choisir l'enjeu suivi, tandis que les onze autres restent visibles en arrière-plan. En sélectionnant un enjeu, on affiche ses actualités récentes, avec un lien vers l'article sur le site du média.</li>
+      <li><strong>Répartition</strong>&nbsp;: une grille de tuiles colorées (une couleur et un symbole par enjeu) dont la surface est proportionnelle à la saillance. Chaque tuile affiche le nom de l'enjeu, sa <strong>part de l'attention médiatique</strong> (le nombre principal, qui chiffre ce que la surface montre) et la <strong>variation de sa saillance par rapport au traitement précédent</strong> (une hausse ou une baisse, en pourcentage). Sur les tuiles trop petites pour porter les deux nombres, la variation se réduit à sa flèche&nbsp;: le chiffre exact se lit au survol et dans la tuile dépliée. Sur téléphone, la grille devient une liste de barres proportionnelles portant la même part. Sur ordinateur, le survol révèle l'actualité principale de l'enjeu et les médias qui la couvrent. Un clic agrandit ensuite la tuile à toute la visualisation et affiche toutes les actualités récentes associées, avec les médias propres à chacune. Cette variation indique si un enjeu gagne ou perd en importance d'une mise à jour à l'autre; elle ne compare pas une journée à la précédente.</li>
+      <li><strong>Évolution</strong>&nbsp;: un graphique retrace l'<strong>évolution du classement</strong> des douze enjeux. Pour la semaine et la campagne, un point par jour; pour le jour, un point par publication, l'axe portant alors les heures des éditions plutôt que des dates. Les fenêtres suivent désormais le calendrier électoral et non un défilement&nbsp;: la <strong>semaine</strong> va du vendredi 20h au vendredi 20h (heure de Montréal), et la <strong>campagne</strong> part du déclenchement du scrutin, le 27 août 2026. Sur ordinateur, toutes les trajectoires sont présentées ensemble. Sur mobile, une trajectoire est mise en évidence à la fois; une liste classée permet de choisir l'enjeu suivi, tandis que les onze autres restent visibles en arrière-plan. En sélectionnant un enjeu, on affiche ses actualités récentes, avec un lien vers l'article sur le site du média.</li>
     </ul>
   </section>
 
@@ -814,9 +818,9 @@
       <table class="metho-table">
         <thead><tr><th>Fenêtre</th><th>Portée</th><th>Fréquence de mise à jour</th></tr></thead>
         <tbody>
-          <tr><td><strong>Aujourd'hui</strong></td><td>Blocs de 4h du jour courant</td><td>6 fois par jour (00h, 04h, 08h, 12h, 16h, 20h, heure de Montréal)</td></tr>
-          <tr><td><strong>Cette semaine</strong></td><td>7 derniers jours glissants</td><td>1 fois par jour (19h35, heure de Montréal)</td></tr>
-          <tr><td><strong>Ce mois</strong></td><td>29 à 31 derniers jours glissants</td><td>1 fois par jour (19h39, heure de Montréal)</td></tr>
+          <tr><td><strong>Jour</strong></td><td>Blocs de 4h du jour courant</td><td>6 fois par jour (00h, 04h, 08h, 12h, 16h, 20h, heure de Montréal)</td></tr>
+          <tr><td><strong>Semaine</strong></td><td>Du vendredi 20h au vendredi 20h, heure de Montréal</td><td>1 fois par jour (19h35, heure de Montréal)</td></tr>
+          <tr><td><strong>Campagne</strong></td><td>Depuis le déclenchement du scrutin, le 27 août 2026</td><td>1 fois par jour (19h39, heure de Montréal)</td></tr>
         </tbody>
       </table>
     </div>
@@ -836,7 +840,7 @@
     <p class="metho-body">Les pages d'accueil ne constituent qu'une fraction de la production journalistique. Certains sujets font l'objet d'une couverture approfondie sans jamais atteindre la une. L'indice mesure la <em>visibilité frontale</em>, pas l'ensemble de la couverture.</p>
 
     <h3>3 · Imperfections des modèles d'IA</h3>
-    <p class="metho-body">GLiNER et Gemma 3 peuvent produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
+    <p class="metho-body">Le modèle d'extraction peut produire des erreurs sur les homonymes, les entités émergentes et les personnalités peu connues. Des validations humaines régulières réduisent ces erreurs, sans les éliminer.</p>
 
     <h3>4 · Limites des dictionnaires de sentiment</h3>
     <p class="metho-body">L'approche par dictionnaire ne capte pas l'ironie, le sarcasme ou les nuances contextuelles. La valence d'un mot peut varier fortement selon la phrase qui l'entoure.</p>
