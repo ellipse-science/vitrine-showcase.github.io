@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 
 import { SHARE_MODULE_SLUGS, getShareModuleContent, isShareModuleSlug } from "@/lib/shareModules";
 
-// basePath multi-hôte — même logique que next.config.ts / app/layout.tsx :
-//   - GitHub Pages : NEXT_PUBLIC_BASE_PATH=/vitrine-showcase.github.io
-//   - Cloudflare Pages / dev : ""
+// basePath — même logique que next.config.ts / app/layout.tsx : les hôtes
+// servent tous à la racine (repli ""), et un éventuel sous-chemin se pose par
+// NEXT_PUBLIC_BASE_PATH.
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function generateStaticParams() {

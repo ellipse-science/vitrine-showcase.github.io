@@ -13,10 +13,11 @@ import type { MetadataRoute } from "next";
 // Access empêche déjà tout robot d'y accéder.
 //
 // Signal : NEXT_PUBLIC_SITE_ENV, et non plus « basePath vide ». Ce dernier
-// distinguait les deux tant que le dev vivait sous un sous-chemin GitHub Pages ;
-// à la racine de son propre domaine, le dev a un basePath vide lui aussi. Le
-// même signal pilote le garde-fou des fausses données dans lib/data/parties.ts —
-// un seul signal, pour qu'ils ne puissent pas diverger.
+// distinguait les deux du temps où le dev vivait sous le sous-chemin du miroir
+// GitHub Pages, débranché depuis le 2026-08-30 (#638) ; à la racine de son
+// propre domaine, le dev a un basePath vide lui aussi. Le même signal pilote le
+// garde-fou des fausses données dans lib/data/parties.ts — un seul signal, pour
+// qu'ils ne puissent pas diverger.
 const isDevMirror = process.env.NEXT_PUBLIC_SITE_ENV === "dev";
 
 export const dynamic = "force-static";

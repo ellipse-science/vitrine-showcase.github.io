@@ -4,14 +4,20 @@ import ActualisationAuto from "@/components/interactive/ActualisationAuto";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
 
 // Icônes servies depuis public/ : jamais résolues automatiquement par le
-// navigateur (requête implicite sur /favicon.ico à la racine du domaine),
-// car le site est publié sous un basePath sur GitHub Pages.
+// navigateur (requête implicite sur /favicon.ico à la racine du domaine). Le
+// préfixe reste appliqué pour qu'un hôte servant sous un sous-chemin reste
+// possible ; aujourd'hui les hôtes servent tous à la racine, donc il est vide.
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-// Origin par hôte — même logique multi-hôte que next.config.ts (basePath) :
-//   - GitHub Pages (défaut) : https://ellipse.science + basePath /vitrine-showcase.github.io
-//   - Cloudflare Pages      : NEXT_PUBLIC_SITE_ORIGIN=https://vitrinedemocratique.com + basePath ""
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://ellipse.science";
+// Origine par hôte, posée par le workflow qui déploie :
+//   - prod : NEXT_PUBLIC_SITE_ORIGIN=https://vitrinedemocratique.com
+//   - dev  : NEXT_PUBLIC_SITE_ORIGIN=https://dev.vitrinedemocratique.com
+// Le repli est le domaine de production — même valeur que app/robots.ts et
+// app/sitemap.ts, pour qu'ils ne puissent pas diverger. Il visait
+// ellipse.science jusqu'au débranchement du miroir GitHub Pages le 2026-08-30
+// (#638) : un build sans la variable annonçait alors des canoniques et des
+// cartes de partage sur un hôte qui répond 404.
+const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
 
 const SITE_DESCRIPTION =
   "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.";
@@ -23,9 +29,8 @@ export const metadata: Metadata = {
   title: "La Vitrine démocratique",
   description: SITE_DESCRIPTION,
   // Canonique par page, résolue contre metadataBase : l'apex fait foi. Sans
-  // elle, www, *.pages.dev et le miroir GitHub Pages servent le même contenu
-  // en 200 et se disputent le référencement au moment où les liens entrants
-  // arrivent (lancement médias).
+  // elle, www et *.pages.dev servent le même contenu en 200 et se disputent le
+  // référencement au moment où les liens entrants arrivent (lancement médias).
   alternates: { canonical: "./" },
   // Cartes de partage (Facebook/LinkedIn via Open Graph, X via Twitter card).
   // NB : les réseaux ignorent le fragment #module — tous les liens partagés
