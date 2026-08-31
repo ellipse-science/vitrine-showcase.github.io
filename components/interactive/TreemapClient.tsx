@@ -387,7 +387,7 @@ function GrowthTile({
                 ))}
               </div>
             ) : (
-              <p className="gt-expanded-empty">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+              <p className="gt-expanded-empty">Aucune actualité québécoise sur cette période pour cet enjeu.</p>
             )}
           </div>
         )}
@@ -851,7 +851,14 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 }
 
 export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; editionKey?: string }) {
-  const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  // CAMPAGNE par défaut (demande d'Adrien, 31-08), et non le jour. Deux
+  // raisons, dans cet ordre : la fenêtre de campagne porte assez d'actualités
+  // pour que chaque enjeu ait quelque chose à montrer — la vue du jour laisse 5
+  // enjeux sur 12 muets aux petites heures, ce qui donne un module à moitié
+  // vide au premier regard ; et sa variation se lit sur la veille plutôt que
+  // sur le traitement précédent, un écart plus parlant qu'un saut de quatre
+  // heures. Le lecteur peut toujours redescendre au jour d'un clic.
+  const [period, setPeriod] = useState<"day" | "week" | "month">("month");
   // Deux contrôles INDÉPENDANTS depuis le 30-08 : la période et la
   // représentation. Chacune des trois périodes se regarde des deux façons —
   // avant, la répartition n'existait que pour le jour et l'évolution que pour

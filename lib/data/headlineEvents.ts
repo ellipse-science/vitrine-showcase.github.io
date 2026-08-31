@@ -2877,11 +2877,27 @@ export async function loadTreemap(
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      let articles = articlesByIssue.get(issueKey)?.articles ?? [];
-      if (articles.length === 0 && context) {
-        const fallbackOutlet = outletFromUrl(url);
-        // Repli : l'accroche d'`issues_meta`, qui n'a pas d'horodatage propre.
-        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [], sommet: null }];
+      const articles = articlesByIssue.get(issueKey)?.articles ?? [];
+      // ⛔ PLUS DE REPLI. Quand un enjeu n'a aucune actualité québécoise sur la
+      // période, la tuile se TAIT — elle n'emprunte plus l'accroche
+      // d'`issues_meta` pour avoir quelque chose à montrer.
+      //
+      // Ce repli fabriquait une fausse actualité : un titre en gras, une flèche
+      // de lien, la même mise en page qu'une vraie, mais sans horodatage, donc
+      // sans sommet ni saillance. Mesuré le 31-08, vue JOUR : 5 enjeux sur 12 en
+      // repli, et le contenu ne relevait PAS de l'enjeu où il était rangé —
+      // « Santé Québec gaspille 500 M$ » servait à la fois d'accroche à
+      // Économie et à Technologie. Rien à l'écran ne permettait au lecteur de
+      // distinguer cette ligne d'une vraie actualité.
+      //
+      // `topObject`, `context` et `url` sont neutralisés avec elle : ils
+      // alimentent le survol de la tuile ET la liste mobile, qui auraient sinon
+      // continué d'afficher l'accroche empruntée après le retrait de la fausse
+      // actualité. Un seul état, cohérent partout : cet enjeu n'a rien à dire.
+      if (articles.length === 0) {
+        topObject = "";
+        context = "";
+        url = null;
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
