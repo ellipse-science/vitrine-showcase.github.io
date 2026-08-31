@@ -2741,11 +2741,26 @@ function buildIssueMedia(
         .filter((id) => idSet.has(id))
         .map((id) => ({ name: MEDIA_NAMES[id] ?? id, url: urlByMedia.get(id) ?? null }));
 
-      const url = e.representative_url ?? outlets.find((outlet) => outlet.url)?.url ?? null;
       if (outlets.length === 0) {
-        const fallbackOutlet = outletFromUrl(url);
+        const fallbackOutlet = outletFromUrl(e.representative_url ?? null);
         if (fallbackOutlet) outlets = [fallbackOutlet];
       }
+      // ⛔ AUCUN média québécois n'a couvert cette histoire : elle n'a rien à
+      // faire dans un module qui mesure l'attention des médias QUÉBÉCOIS.
+      // `uniqueQcEvents` ne retire que les événements américains, donc 28 % des
+      // 431 événements chargés le 31-08 (121, tous `target_region = ROC`)
+      // arrivaient ici sans une seule couverture québécoise. À l'écran : une
+      // tuile sans logo dont le titre menait au Globe and Mail, au National
+      // Post ou à CBC. Module 1 filtre déjà ainsi (`qcMedia.size > 0`) ; c'est
+      // le treemap qui manquait la règle.
+      if (outlets.length === 0) continue;
+      // Le lien suit le MÉDIA AFFICHÉ, pas `representative_url`. Cette dernière
+      // désigne l'article représentatif de l'événement toutes régions
+      // confondues : 90 des 310 histoires couvertes au Québec pointaient donc
+      // ailleurs. La pire montrait cinq logos québécois (JdM, LP, LED, MG, RC)
+      // et menait à cbc.ca. Mesuré le 31-08 : les 310 ont toutes une URL
+      // québécoise disponible, le repli ne coûte donc aucun lien.
+      const url = outlets.find((outlet) => outlet.url)?.url ?? e.representative_url ?? null;
       const sommet = sommetDeSaillance(occurrences.get(e.event_id) ?? [e], refDayIso ?? null);
       if (depuis && (!sommet || sommet.cle.slice(0, 10) < depuis)) continue;
       list.push({ title, url, outlets, sommet });
