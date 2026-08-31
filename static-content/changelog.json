@@ -1,5 +1,11 @@
 [
   {
+    "pr": 635,
+    "date": "2026-08-31T00:21:55Z",
+    "note": "Sur les tuiles trop petites pour l'afficher en entier, le nom de l'enjeu cède désormais réellement la place à son symbole, au lieu d'apparaître coupé.",
+    "version": "2.35.0-beta.1"
+  },
+  {
     "pr": 634,
     "date": "2026-08-31T00:17:23Z",
     "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
