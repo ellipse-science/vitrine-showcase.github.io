@@ -1,5 +1,11 @@
 [
   {
+    "pr": 653,
+    "date": "2026-08-31T20:32:05Z",
+    "note": "Sur le module des 12 enjeux, les actualités listées sous chaque enjeu sont désormais uniquement celles couvertes par des médias québécois, et leurs liens mènent bien à l'article du média affiché. Des nouvelles traitées seulement au Canada anglais s'y glissaient, sans logo et vers des sites hors Québec.",
+    "version": null
+  },
+  {
     "pr": 652,
     "date": "2026-08-31T20:17:22Z",
     "note": "Sur le module des 12 enjeux, quand vous ouvrez un enjeu pour lire ses actualités, vous pouvez maintenant le refermer en cliquant simplement à côté, plutôt qu'en visant le petit bouton « Fermer ».",
