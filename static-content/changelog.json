@@ -1,5 +1,11 @@
 [
   {
+    "pr": 660,
+    "date": "2026-08-31T21:58:08Z",
+    "note": "Les douze enjeux restent tous visibles dans la grille, même ceux dont l'actualité est nulle sur la période : chacun dispose d'une taille minimale plutôt que de se réduire à un trait.",
+    "version": null
+  },
+  {
     "pr": 659,
     "date": "2026-08-31T21:51:04Z",
     "note": "Un enjeu sans actualité québécoise sur la période le dit maintenant en toutes lettres, au lieu d'afficher un titre emprunté à un autre sujet. Et le module s'ouvre sur la vue Campagne, celle où le plus grand nombre d'enjeux ont quelque chose à montrer.",
