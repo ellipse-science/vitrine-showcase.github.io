@@ -51,6 +51,32 @@ jobs:
         working-directory: android
         run: gradle testDebugUnitTest --no-daemon
 
+      # « BUILD SUCCESSFUL » ne dit PAS que des tests ont tourné : une suite
+      # vide réussit tout aussi bien. On lit donc le compte réel, et on refuse
+      # un passage à zéro test.
+      - name: Compter les tests réellement exécutés
+        working-directory: android
+        run: |
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          fichiers = glob.glob("app/build/test-results/**/TEST-*.xml", recursive=True)
+          total = echecs = erreurs = ignores = 0
+          for f in fichiers:
+              r = ET.parse(f).getroot()
+              total += int(r.get("tests", 0))
+              echecs += int(r.get("failures", 0))
+              erreurs += int(r.get("errors", 0))
+              ignores += int(r.get("skipped", 0))
+          print(f"fichiers de résultats : {len(fichiers)}")
+          print(f"tests exécutés        : {total}")
+          print(f"échecs / erreurs      : {echecs} / {erreurs}")
+          print(f"ignorés               : {ignores}")
+          if total == 0:
+              sys.exit("aucun test n'a tourné : la suite est vide ou n'a pas été trouvée")
+          if echecs or erreurs:
+              sys.exit("des tests ont échoué")
+          PY
+
       - name: Analyse (lint)
         working-directory: android
         run: gradle lintDebug --no-daemon
