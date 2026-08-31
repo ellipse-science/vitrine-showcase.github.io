@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
 
-const point = (date: string, rank: number) => ({
+const point = (date: string, rank: number, heure = "12:00") => ({
   date,
   ranks: { economy_and_labour: rank },
+  tag: `${date} ${heure}`,
 });
 
 describe("rankPointsForPeriod", () => {
@@ -57,5 +58,38 @@ describe("rankMovement", () => {
   it("exprime un recul comme un delta négatif", () => {
     expect(rankMovement([point("2026-07-01", 2), point("2026-07-07", 6)], "economy_and_labour"))
       .toEqual({ startRank: 2, endRank: 6, delta: -4 });
+  });
+});
+
+// La frise s'ouvre à la période JOUR (30-08) : les deux visualisations doivent
+// exister pour chacune des trois périodes, pas une par période.
+describe("rankPointsForPeriod — période jour", () => {
+  it("ne garde que les passes de la journée en cours", () => {
+    const history = [
+      point("2026-08-29", 3, "15:36"),
+      point("2026-08-29", 2, "19:37"),
+      point("2026-08-30", 4, "03:36"),
+      point("2026-08-30", 1, "07:36"),
+      point("2026-08-30", 2, "11:36"),
+    ];
+
+    expect(rankPointsForPeriod(history, "day").map((p) => p.tag)).toEqual([
+      "2026-08-30 03:36",
+      "2026-08-30 07:36",
+      "2026-08-30 11:36",
+    ]);
+  });
+
+  it("élargit aux six dernières passes quand la journée n'en a qu'une", () => {
+    // Une seule passe ne trace aucune trajectoire : mieux vaut déborder sur la
+    // veille que d'afficher une frise vide au premier bloc du matin.
+    const history = [
+      ...Array.from({ length: 8 }, (_, i) => point("2026-08-29", i + 1, `0${i}:00`)),
+      point("2026-08-30", 1, "03:36"),
+    ];
+
+    const points = rankPointsForPeriod(history, "day");
+    expect(points).toHaveLength(6);
+    expect(points.at(-1)?.date).toBe("2026-08-30");
   });
 });

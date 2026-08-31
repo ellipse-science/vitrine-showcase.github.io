@@ -5760,6 +5760,14 @@
      ============================================================ */
   .treemap-mobile { display: none; }
 
+  /* Deux groupes d'onglets côte à côte (période, puis représentation) : le
+     second est légèrement en retrait pour qu'on lise « quelle fenêtre » avant
+     « quelle vue », et qu'ils ne se confondent pas en une seule barre de six. */
+  .control-row .mode-toggle { margin-left: 10px; }
+  @media (max-width: 900px) {
+    .control-row .mode-toggle { margin-left: 0; }
+  }
+
   .tm-bar-legend {
     display: flex;
     flex-wrap: wrap;

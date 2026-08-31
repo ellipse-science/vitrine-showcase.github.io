@@ -6,6 +6,7 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
+import { heurePublicationMontreal } from "@/lib/dates";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
@@ -397,6 +398,16 @@ function fmtDate(d: string): string {
   if (p.length < 3) return d;
   return `${parseInt(p[2], 10)} ${MOIS[parseInt(p[1], 10) - 1] ?? ""}`;
 }
+
+/** L'étiquette d'un point de la frise. À la période JOUR, tous les points
+ *  partagent la même date et seule l'HEURE les distingue : la date n'y
+ *  apprendrait rien et se répéterait six fois. Ailleurs, c'est la date. */
+function libelleAxe(pt: TreemapHistoryPoint, period: RankPeriod): string {
+  if (period !== "day") return fmtDate(pt.date);
+  const m = heurePublicationMontreal(pt.tag);
+  if (!m) return fmtDate(pt.date);
+  return m.heure >= 24 ? "minuit" : `${m.heure}h`;
+}
 function domainOf(u: string | null): string {
   if (!u) return "";
   try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; }
@@ -532,8 +543,8 @@ function IssuesRankMobile({
         <text x={plotRight} y={selectedPoints.at(-1)!.y + 4} textAnchor="middle" className="irm-current-rank">
           {movement.endRank}
         </text>
-        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{fmtDate(points[0].date)}</text>
-        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{fmtDate(points.at(-1)!.date)}</text>
+        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{libelleAxe(points[0], period)}</text>
+        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{libelleAxe(points.at(-1)!, period)}</text>
       </svg>
 
       <div className="irm-selector" aria-label="Choisir un enjeu à suivre">
@@ -660,7 +671,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
   return (
     <div className="spaghetti-container" style={containerStyle}>
       <div style={{ marginBottom: "18px", fontFamily: "Source Serif 4, serif", fontStyle: "italic", fontSize: "14.5px", color: "var(--ink-soft)", lineHeight: 1.5, maxWidth: "74ch" }}>
-        Évolution du rang de saillance des douze enjeux, jour après jour. Le rang 1 est l&apos;enjeu le plus saillant; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
+        Évolution du rang de saillance des douze enjeux, {period === "day" ? "publication après publication" : "jour après jour"}. Le rang 1 est l&apos;enjeu le plus saillant; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
       </div>
 
       <div style={{ overflowX: "auto", overflowY: "hidden" }}>
@@ -679,7 +690,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
               <line x1={x} y1={plotBottom + 10} x2={x} y2={plotBottom + (showLabel ? 17 : 13)} stroke="var(--rule)" strokeWidth="0.75" />
               {showLabel && (
                 <text x={x} y={plotBottom + 38} textAnchor="middle" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: "14px", letterSpacing: "0.02em", fill: "var(--ink-softer)" }}>
-                  {fmtDate(pt.date)}
+                  {libelleAxe(pt, period)}
                 </text>
               )}
             </g>
@@ -795,10 +806,18 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 
 export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; editionKey?: string }) {
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  // Deux contrôles INDÉPENDANTS depuis le 30-08 : la période et la
+  // représentation. Chacune des trois périodes se regarde des deux façons —
+  // avant, la répartition n'existait que pour le jour et l'évolution que pour
+  // la semaine et la campagne, et on ne pouvait pas comparer autrement.
+  // Le mode ne se réinitialise PAS en changeant de période : c'est ce qui
+  // permet de suivre la même lecture d'une fenêtre à l'autre.
+  const [mode, setMode] = useState<"repartition" | "evolution">("repartition");
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
   const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const [secret, setSecret] = useState(false);
-  useKonamiCode(() => { setTipTile(null); setExpandedIssue(null); setPeriod("month"); setSecret(true); });
+  // Flappy vit dans la vue d'ÉVOLUTION du mois : le code force donc les deux.
+  useKonamiCode(() => { setTipTile(null); setExpandedIssue(null); setPeriod("month"); setMode("evolution"); setSecret(true); });
 
   // Déverrouillage mobile / tactile : 3 clics/taps rapides sur le titre du module
   const tapCount = useRef(0);
@@ -811,6 +830,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
       setTipTile(null);
       setExpandedIssue(null);
       setPeriod("month");
+      setMode("evolution");
       setSecret(true);
     } else {
       tapTimer.current = window.setTimeout(() => {
@@ -840,8 +860,8 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
             Les 12 enjeux de la campagne{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
-              • <b>Jour</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Semaine &amp; Campagne</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              • <b>Répartition</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Évolution</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux, jour après jour pour la semaine et la campagne, publication après publication pour le jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -871,12 +891,30 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
                 Campagne
               </span>
             </div>
+            <div className="legend-toggle inline mode-toggle">
+              <span
+                className={mode === "repartition" ? "active" : undefined}
+                onClick={() => { setTipTile(null); setExpandedIssue(null); setMode("repartition"); }}
+                style={{ cursor: "pointer" }}
+                title="La part de chaque enjeu, en tuiles proportionnelles"
+              >
+                Répartition
+              </span>
+              <span
+                className={mode === "evolution" ? "active" : undefined}
+                onClick={() => { setTipTile(null); setExpandedIssue(null); setMode("evolution"); }}
+                style={{ cursor: "pointer" }}
+                title="L'évolution du rang des douze enjeux"
+              >
+                Évolution
+              </span>
+            </div>
             <ShareButton title="Les 12 enjeux de la campagne" anchor="enjeux-saillants" editionKey={editionKey} />
           </div>
         </div>
       </div>
 
-      {period === "day" ? (
+      {mode === "repartition" ? (
         <>
           <div className="treemap-growth">
             {layout.map((tile) => (
