@@ -22,6 +22,7 @@ import {
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { couleurEnjeu } from "@/lib/enjeux";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
 // Number of promises shown at once — the maquette has five spots.
 const TOP_N = 5;
@@ -103,11 +104,15 @@ function PolimetreMark() {
    probable à 375 px, où la colonne du titre est la plus étroite. Au pire le
    chevron descend maintenant AVEC son mot. Rendu identique dans les deux états
    du rang (fermé et ouvert), d'où le composant plutôt que deux blocs jumeaux. */
-function PromiseTitle({ title }: { title: string }) {
+function PromiseTitle({ title, categorie }: { title: string; categorie?: string | null }) {
   const words = title.split(" ");
   const last = words.pop() ?? "";
   return (
     <span className="ppl-title">
+      {/* Le symbole vit DANS la cellule du titre, jamais à côté : `.ppl-promise`
+          est une grille à trois colonnes (rang, titre, tendance) et un quatrième
+          enfant décalerait le titre et la tendance d'une colonne chacun. */}
+      <SymboleEnjeu libelle={categorie} className="ppl-symbole" />
       <span className="ppl-title__text">
         {words.length > 0 ? `${words.join(" ")} ` : null}
         <span className="ppl-title__last">
@@ -241,6 +246,7 @@ function EnjeuDropdown({
                     : undefined
                 }
               >
+                <SymboleEnjeu libelle={label} className="ppl-symbole" />
                 {label}
                 {present ? "" : " (aucune donnée)"}
               </li>
@@ -424,7 +430,11 @@ function PolimetreView({
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <PromiseTitle title={p.title} />
+                          {/* Issue #425 : le même symbole d'enjeu qu'ailleurs sur
+                              le site, à côté de la promesse. Le Polimètre+ ne
+                              connaît ses enjeux que par leur libellé complet,
+                              d'où la résolution par libellé. */}
+                          <PromiseTitle title={p.title} categorie={p.category} />
                           <TrendBadge trend={p.trend} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -463,7 +473,7 @@ function PolimetreView({
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <PromiseTitle title={p.title} />
+                        <PromiseTitle title={p.title} categorie={p.category} />
                         <TrendBadge trend={p.trend} />
                       </>
                     )}

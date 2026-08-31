@@ -19,13 +19,14 @@ const BASE_SHARE_MODULE_SLUGS = [
 
 export type ShareModuleSlug = (typeof BASE_SHARE_MODULE_SLUGS)[number];
 
-// Les modules Partis et Assemblée sont temporairement masqués en production
-// (#544). Ne générons pas de routes de partage vers leurs ancres vides : la
-// surface partageable doit suivre le même signal que les sections elles-mêmes.
-const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = [
-  "partis-et-couverture",
-  "assemblee-nationale",
-];
+// Le module Partis reste temporairement masqué en production (#544).
+// L'Assemblée en est sortie le 2026-08-27 (#608) : identités stables
+// (pplmatch#5, aws-refiners#395/#397), cache de performance validé sur
+// Lambda réelle (aws-refiners#412) et parcours des député·es publié
+// (aws-refiners#414, vitrine#604).
+// Ne générons pas de route de partage vers une ancre vide : la surface
+// partageable doit suivre le même signal que la section elle-même.
+const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = ["partis-et-couverture"];
 
 export const SHARE_MODULE_SLUGS: readonly ShareModuleSlug[] =
   process.env.NEXT_PUBLIC_SITE_ENV === "prod"
@@ -105,7 +106,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
-    title: "De quoi parle-t-on?",
+    title: "Les 12 enjeux de la campagne",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
     subtitle: "Les enjeux qui dominent",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
@@ -241,7 +242,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${leader.sovPct} %`,
+          value: `${leader.sovPct} %`,
           label: `${leader.label} domine la couverture médiatique aujourd'hui`,
           context,
           contextHighlight,
@@ -255,15 +256,16 @@ export async function getShareModuleContent(
   if (slug === "enjeux-saillants") {
     const tiles = (await loadTreemap(editionKey, asOfIso))?.day.tiles;
     const top = tiles?.[0];
-    const total = tiles?.reduce((sum, t) => sum + t.score, 0) ?? 0;
-    if (top && total > 0) {
-      const sharePct = Math.round((top.score / total) * 100);
+    // `share` est calculé par le chargeur : la carte de partage et la tuile
+    // doivent annoncer le même nombre, pas deux divisions parallèles.
+    if (top && top.share > 0) {
+      const sharePct = Math.round(top.share);
       return {
         title: fallback.title,
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${sharePct} %`,
+          value: `${sharePct} %`,
           label: "de l'attention médiatique aujourd'hui",
           context: top.topObject ? `${top.issueFr} · ${top.topObject}` : top.issueFr,
           color: top.color,
@@ -287,7 +289,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${topIssue.widthPct} %`,
+          value: `${topIssue.widthPct} %`,
           label: "des interventions à l'Assemblée nationale portent sur",
           context: `${issueFullName} (${row.label})`,
           contextCompletesLabel: true,
@@ -315,7 +317,7 @@ export async function getShareModuleContent(
         subtitle: fallback.subtitle,
         description: fallback.description,
         stat: {
-          value: `${pct} %`,
+          value: `${pct} %`,
           label: "des promesses de la CAQ tenues, en tout ou en partie",
           context: topPromise?.title,
         },

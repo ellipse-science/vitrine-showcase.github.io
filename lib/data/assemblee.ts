@@ -11,6 +11,7 @@ import path from "node:path";
 import { readDatasetText } from "@/lib/data/source";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
+import { ISSUE_COLORS } from "@/lib/enjeux";
 
 // Le ton mesuré est resserré autour de zéro : sur la table réelle, les partis
 // s'étalent de -0,30 à +0,18. Avec un facteur 10, tout ce qui dépasse ±0,1
@@ -47,19 +48,25 @@ export type IssueMeta = {
   title: string;
 };
 
+// ⚠️ Les couleurs ne sont plus écrites ici : elles viennent de `lib/enjeux.ts`,
+// la source unique. Elles y étaient recopiées à la main — identiques au hex
+// près quand on les a comparées le 30-08, mais rien ne garantissait qu'elles le
+// restent. C'est la dérive que l'en-tête de `lib/enjeux.ts` dit vouloir
+// empêcher. Les libellés ABRÉGÉS, eux, restent propres à ce module : « Gouv. »,
+// « Aff. int. » n'existent que pour sa barre empilée.
 export const ISSUE_META: IssueMeta[] = [
-  { key: "economy_and_labour", color: "#94781B", label: "Économie", title: "Économie et travail" },
-  { key: "governments_and_governance", color: "#234E78", label: "Gouv.", title: "Gouvernements et gouvernance" },
-  { key: "health_and_social_services", color: "#852244", label: "Santé", title: "Santé et politiques sociales" },
-  { key: "environment_and_energy", color: "#3D6B3A", label: "Environ.", title: "Environnement et énergie" },
-  { key: "rights_liberties_minorities_discrimination", color: "#553278", label: "Droits", title: "Droits, libertés, minorités et discrimination" },
-  { key: "culture_and_nationalism", color: "#384873", label: "Culture", title: "Culture et nationalisme" },
-  { key: "education", color: "#752373", label: "Éduc.", title: "Éducation" },
-  { key: "international_affairs_and_defense", color: "#1F5E66", label: "Aff. int.", title: "Affaires internationales et défense" },
-  { key: "law_and_crime", color: "#993322", label: "Loi", title: "Loi et crime" },
-  { key: "public_lands_and_agriculture", color: "#5E731F", label: "Terres", title: "Terres publiques et agriculture" },
-  { key: "immigration", color: "#9E541B", label: "Immig.", title: "Immigration" },
-  { key: "technology", color: "#997018", label: "Tech.", title: "Technologie" },
+  { key: "economy_and_labour", color: ISSUE_COLORS["economy_and_labour"], label: "Économie", title: "Économie et travail" },
+  { key: "governments_and_governance", color: ISSUE_COLORS["governments_and_governance"], label: "Gouv.", title: "Gouvernements et gouvernance" },
+  { key: "health_and_social_services", color: ISSUE_COLORS["health_and_social_services"], label: "Santé", title: "Santé et politiques sociales" },
+  { key: "environment_and_energy", color: ISSUE_COLORS["environment_and_energy"], label: "Environ.", title: "Environnement et énergie" },
+  { key: "rights_liberties_minorities_discrimination", color: ISSUE_COLORS["rights_liberties_minorities_discrimination"], label: "Droits", title: "Droits, libertés, minorités et discrimination" },
+  { key: "culture_and_nationalism", color: ISSUE_COLORS["culture_and_nationalism"], label: "Culture", title: "Culture et nationalisme" },
+  { key: "education", color: ISSUE_COLORS["education"], label: "Éduc.", title: "Éducation" },
+  { key: "international_affairs_and_defense", color: ISSUE_COLORS["international_affairs_and_defense"], label: "Aff. int.", title: "Affaires internationales et défense" },
+  { key: "law_and_crime", color: ISSUE_COLORS["law_and_crime"], label: "Loi", title: "Loi et crime" },
+  { key: "public_lands_and_agriculture", color: ISSUE_COLORS["public_lands_and_agriculture"], label: "Terres", title: "Terres publiques et agriculture" },
+  { key: "immigration", color: ISSUE_COLORS["immigration"], label: "Immig.", title: "Immigration" },
+  { key: "technology", color: ISSUE_COLORS["technology"], label: "Tech.", title: "Technologie" },
 ];
 
 const MONTHS_FR = [
@@ -136,6 +143,10 @@ export type EnjeuSegment = {
   widthPct: number;
   label: string;
   title: string;
+  /** La clé CAP de l'enjeu, pour en tirer le symbole partagé avec les autres
+   *  modules (issue #425). `null` sur le segment « Autres enjeux », qui n'en
+   *  désigne aucun en particulier. */
+  cle: string | null;
   isReste?: boolean;
 };
 
@@ -161,6 +172,8 @@ export type DeputyRow = {
   toneScore: number;
   /** Enjeu dominant : tient lieu de « position » sur la carte. */
   topIssueLabel?: string;
+  /** La clé CAP de l'enjeu dominant, pour en tirer le symbole sur la carte. */
+  topIssueKey?: string;
   topIssueColor?: string;
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
@@ -277,6 +290,7 @@ function buildEnjeuStack(row: IssueShares): EnjeuSegment[] {
       color: seg.meta.color,
       widthPct: pct,
       label: seg.meta.label,
+      cle: seg.meta.key,
       title: `${seg.meta.title} · ${pct} %`,
     };
   });
@@ -288,6 +302,7 @@ function buildEnjeuStack(row: IssueShares): EnjeuSegment[] {
       color: "",
       widthPct: pct,
       label: "Reste",
+      cle: null,
       title: `Autres enjeux · ${pct} %`,
       isReste: true,
     });
@@ -688,6 +703,7 @@ function buildDeputyList(
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
+      topIssueKey: top?.cle ?? undefined,
       topIssueColor: top?.color,
       enjeuStack: stack,
       affiliationHistory: affiliationHistoryFor(

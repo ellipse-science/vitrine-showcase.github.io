@@ -84,6 +84,21 @@ export const TABLES: TableSpec[] = [
     "filter": null
   },
   {
+    "name": "agora_decideurs_qc_affiliations",
+    "athena": "agora_datamart-agora_decideurs_qc_affiliations",
+    "cols": [
+      "deputy_id",
+      "deputy",
+      "district_id",
+      "party",
+      "affiliation_start_date",
+      "affiliation_end_date",
+      "start_reason",
+      "end_reason"
+    ],
+    "filter": null
+  },
+  {
     "name": "federal_parties_score_week",
     "athena": "vitrine_datamart-federal_parties_score_week",
     "cols": [
@@ -139,6 +154,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -152,6 +168,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -165,6 +182,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -179,6 +197,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -193,6 +212,7 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
       "computed_at"
     ],
@@ -207,7 +227,39 @@ export const TABLES: TableSpec[] = [
       "date_utc",
       "date_montreal_tz",
       "weighted_mentions",
+      "total_raw_score",
       "weighted_tone",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "parties_issues_salient_shadow_day",
+    "athena": "vitrine_datamart-parties_issues_salient_shadow_day",
+    "cols": [
+      "party",
+      "theme",
+      "issue_share",
+      "total_raw_score",
+      "weighted_tone",
+      "date_utc",
+      "date_montreal_tz",
+      "computed_at"
+    ],
+    "filter": null
+  },
+  {
+    "name": "provincial_parties_salient_shadow_intraday",
+    "athena": "vitrine_datamart-provincial_parties_salient_shadow_intraday",
+    "cols": [
+      "party",
+      "block_hour",
+      "block_label",
+      "weighted_mentions",
+      "total_raw_score",
+      "weighted_tone",
+      "date_utc",
+      "date_montreal_tz",
       "computed_at"
     ],
     "filter": null

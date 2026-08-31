@@ -3,22 +3,34 @@ name: Déploiement dev (Cloudflare Pages)
 # Publie le miroir dev sur dev.vitrinedemocratique.com, protégé par Cloudflare
 # Access.
 #
-# COEXISTE VOLONTAIREMENT avec deploy.yml (GitHub Pages). Pendant la migration,
-# les deux miroirs dev tournent en parallèle : GitHub Pages reste le chemin de
-# retour arrière si Cloudflare pose problème. On ne débranche rien tant que la
-# nouvelle chaîne n'a pas fait ses preuves.
+# DEPUIS LE 2026-08-30, ce workflow est le SEUL chemin de déploiement de dev
+# côté GitHub Actions : `deploy.yml` et le miroir GitHub Pages ont été
+# débranchés. Trois raisons, dans l'ordre où elles ont mordu :
+#   - le miroir n'était pas un double fidèle (autre build, et il lisait les
+#     JSON commités quand dev lit l'API) ;
+#   - il induisait en erreur : le 30-08, un correctif a été déclaré « en dev »
+#     cinq fois sur sa foi, alors que Cloudflare avait cessé de bâtir ;
+#   - il perçait Cloudflare Access, en servant publiquement le même contenu.
 #
-# CONSÉQUENCE ASSUMÉE, ET TEMPORAIRE : tant que GitHub Pages sert la même chose
-# publiquement, la protection par mot de passe de dev.vitrinedemocratique.com
-# n'est pas étanche — le contenu reste lisible ailleurs. Ce n'est pas une
-# régression (c'est l'état actuel), mais ça ne devient une vraie protection
-# qu'une fois GitHub Pages débranché, à la fin de la migration.
-
 # BASCULE 2026-08-19 : le build dev est déclenché par Cloudflare (intégration
 # Git de Pages au push, Deploy Hook du Worker au cycle de données). Ce
 # workflow ne se déclenche plus qu'à la main, en secours : le laisser au push
 # déploierait DEUX FOIS chaque poussée.
+# REPRISE DU DÉCLENCHEMENT AU PUSH, 2026-08-30. L'intégration Git de Cloudflare
+# a cessé de bâtir après le commit 94326406 (20h14) : aucun check sur les
+# commits suivants, et dev servait un build vieux de plusieurs heures pendant
+# qu'on croyait le contraire. Le même soir, le miroir GitHub Pages — l'autre
+# chemin — a été débranché. Dev se retrouvait donc sans AUCUN déploiement
+# automatique, ce qui n'est pas tenable pendant une campagne.
+#
+# ⚠️ CONSÉQUENCE ASSUMÉE : si l'intégration Git de Cloudflare se remet à
+# fonctionner, chaque poussée déploiera DEUX FOIS. C'est du gaspillage, pas une
+# panne — les deux chemins publient le même `out/`. Quand l'intégration sera
+# confirmée saine (un check `Cloudflare Pages` vert sur plusieurs commits
+# d'affilée), retirer le `push:` ci-dessous et revenir au dispatch seul.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
