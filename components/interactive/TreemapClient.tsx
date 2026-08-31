@@ -5,7 +5,7 @@ import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
-import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
+import { jourMontreal, rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
 import { heurePublicationMontreal } from "@/lib/dates";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
@@ -403,7 +403,10 @@ function fmtDate(d: string): string {
  *  partagent la même date et seule l'HEURE les distingue : la date n'y
  *  apprendrait rien et se répéterait six fois. Ailleurs, c'est la date. */
 function libelleAxe(pt: TreemapHistoryPoint, period: RankPeriod): string {
-  if (period !== "day") return fmtDate(pt.date);
+  // `jourMontreal` et non `pt.date` : sur les tables hebdo et mensuelle, `date`
+  // est une date arbitraire prise DANS la fenêtre du tag, pas le jour de la
+  // passe. L'axe portait donc des étiquettes décalées.
+  if (period !== "day") return fmtDate(jourMontreal(pt));
   const m = heurePublicationMontreal(pt.tag);
   if (!m) return fmtDate(pt.date);
   return m.heure >= 24 ? "minuit" : `${m.heure}h`;
