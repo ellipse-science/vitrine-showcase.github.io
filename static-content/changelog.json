@@ -1,5 +1,11 @@
 [
   {
+    "pr": 636,
+    "date": "2026-08-31T00:34:08Z",
+    "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 581,
     "date": "2026-08-31T00:33:53Z",
     "note": "Une sécurité supplémentaire vérifie six fois par jour que le site affiche bien les analyses les plus récentes, et relance la publication si elles manquent.",
