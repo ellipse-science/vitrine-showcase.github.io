@@ -1,5 +1,11 @@
 [
   {
+    "pr": 650,
+    "date": "2026-08-31T12:40:03Z",
+    "note": "Aucune. Cette PR ajoute le code d'une application Android qui n'est ni compilée pour publication ni distribuée ; rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 648,
     "date": "2026-08-31T04:17:10Z",
     "note": "Chaque enjeu porte un symbole qui le suit d'un module à l'autre. Celui de l'économie devient un signe de dollar, plus direct que la pile de pièces qu'il remplace, et le symbole apparaît maintenant aussi sur les cartes de député de l'Assemblée. Partout, il est un peu plus gros, pour se reconnaître d'un coup d'œil.",
