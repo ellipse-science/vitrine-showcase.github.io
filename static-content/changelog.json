@@ -1,5 +1,11 @@
 [
   {
+    "pr": 634,
+    "date": "2026-08-31T00:17:23Z",
+    "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 633,
     "date": "2026-08-31T00:08:55Z",
     "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
