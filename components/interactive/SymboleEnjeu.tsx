@@ -48,13 +48,30 @@ const GLYPHES: Record<string, React.ReactNode> = {
       <path d="M16.4 7.6c0-1.9-2-3.1-4.4-3.1S7.6 5.7 7.6 7.7c0 4.5 8.8 2.3 8.8 6.8 0 2-2 3.2-4.4 3.2s-4.4-1.2-4.4-3.2" />
     </>
   ),
-  // Un épi.
+  // Un tracteur. L'épi qui tenait cette place a été cédé à Environnement : les
+  // deux étaient des végétaux verts voisins dans la planche, indistinguables en
+  // petit (retour d'Adrien, 31-08). Changer de REGISTRE lève la confusion mieux
+  // que redessiner.
+  //
+  // Quatre détails portent chacun une part du sens, et aucun n'est décoratif :
+  // la CHEMINÉE (sans elle, la silhouette est un camion), le MOYEU de la grande
+  // roue (sans lui, elle se lit comme un anneau), le PARE-BRISE incliné (il
+  // sépare cabine et capot en remplaçant un trait plutôt qu'en ajoutant un), et
+  // le GARDE-BOUE — le geste le plus agricole du dessin, celui qu'aucune
+  // camionnette n'a.
+  //
+  // ⚠️ Le bord avant du capot s'arrête à y = 16,1, pas à un chiffre rond : c'est
+  // l'ordonnée où la roue avant (centre 17,6 ; 18,2, rayon 2,4) coupe x = 18,8.
+  // La première version descendait à 17,0 et laissait un moignon visible DANS la
+  // roue. Si ce tracé bouge, recalculer — ne pas estimer à l'œil.
   public_lands_and_agriculture: (
     <>
-      <path d="M12 20V9.8" />
-      <path d="M12 9.8c0-3 1.6-5 4.2-5.6.5 3-.9 5.2-4.2 5.6Z" />
-      <path d="M12 13.4c-3.3-.4-4.7-2.6-4.2-5.6C10.4 8.4 12 10.4 12 13.4Z" />
-      <path d="M5.4 20h13.2" />
+      <path d="M4.4 13.8V7h5.8l1.6 6.8h7v2.3" />
+      <path d="M3.2 15.4A4.6 4.6 0 0 1 12 15.4" />
+      <circle cx="7.6" cy="17" r="3.8" />
+      <circle cx="7.6" cy="17" r="1.3" />
+      <circle cx="17.6" cy="18.2" r="2.4" />
+      <path d="M13 13.6V6" />
     </>
   ),
   // Un drapeau sur sa hampe.
@@ -80,19 +97,32 @@ const GLYPHES: Record<string, React.ReactNode> = {
       <path d="M10.4 4.6v3.4M13.6 4.6v3.4M10.4 16v3.4M13.6 16v3.4M4.6 10.4H8M4.6 13.6H8M16 10.4h3.4M16 13.6h3.4" />
     </>
   ),
-  // Une feuille et sa nervure.
+  // L'épi, repris de Terres publiques quand celui-ci est passé au tracteur.
+  // Deux feuilles ont été dessinées puis écartées avant ça — l'une symétrique et
+  // posée droite, qui lisait bouclier, l'autre inclinée. Toutes deux
+  // contournaient une contrainte : ne pas ressembler à l'épi voisin. La
+  // contrainte a disparu avec le tracteur, et l'épi était le meilleur dessin des
+  // trois depuis le début (idée d'Adrien, 31-08).
   environment_and_energy: (
     <>
-      <path d="M12 20.2c-4-1.9-6.2-4.8-6.2-8.1C5.8 8.4 8.6 5 12 3.4c3.4 1.6 6.2 5 6.2 8.7 0 3.3-2.2 6.2-6.2 8.1Z" />
-      <path d="M12 20.2V9.6" />
-      <path d="m12 13.4 2.9-2.6M12 15.8l-2.9-2.6" />
+      <path d="M12 20V9.8" />
+      <path d="M12 9.8c0-3 1.6-5 4.2-5.6.5 3-.9 5.2-4.2 5.6Z" />
+      <path d="M12 13.4c-3.3-.4-4.7-2.6-4.2-5.6C10.4 8.4 12 10.4 12 13.4Z" />
+      <path d="M5.4 20h13.2" />
     </>
   ),
   // Un tracé de pouls.
+  // Une croix. Le tracé de pouls qu'elle remplace demandait sept changements de
+  // direction dans 24 unités : à 13 px, il ne se lisait plus comme un pouls mais
+  // comme du bruit. « Une simple croix serait plus clair » (Yannick, 31-08) — et
+  // c'est le seul symbole de santé que personne n'a besoin d'apprendre.
+  //
+  // Contour et non silhouette pleine : la série entière est d'un seul trait, et
+  // Adrien a tranché en faveur du contour (31-08). En contrepartie assumée, son
+  // intérieur se resserre sous 20 px.
   health_and_social_services: (
     <>
-      <path d="M3.4 12h3.3l1.9-4.2 2.8 8.6 2.1-4.4h1.6" />
-      <circle cx="18" cy="12" r="2.6" />
+      <path d="M8.5 4h7v4.5H20v7h-4.5V20h-7v-4.5H4v-7h4.5Z" />
     </>
   ),
   // Une balance.
