@@ -48,7 +48,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Vérifier que les secrets sont là
+      # Présence ET FORME. Coller un secret dans l'interface de GitHub y laisse
+      # très facilement un saut de ligne final. Xcode envoie alors « ABC123\n »
+      # à Apple, qui répond 401, et l'échec ne se voit qu'au bout de dix minutes
+      # d'archivage, sous la forme trompeuse « No profiles were found ».
+      # Vécu le 2026-08-30. On contrôle donc la forme AVANT de compiler.
+      - name: Vérifier les secrets
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -66,6 +71,41 @@ jobs:
             exit 1
           fi
 
+          # Les valeurs nettoyées ne sont jamais affichées. GitHub masque
+          # chaque ligne d'un secret multiligne, donc la version sans saut de
+          # ligne reste masquée là où xcodebuild réimprime sa commande.
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
+
+          echec=0
+          verifier () { # nom, valeur, motif, description
+            if printf '%s' "$2" | grep -qE "^$3$"; then
+              echo "  OK  $1 (${#2} caractères)"
+            else
+              echo "  NON $1 : ${#2} caractères, attendu $4"
+              echec=1
+            fi
+          }
+          verifier ASC_KEY_ID     "$cle" '[A-Z0-9]{10}' "10 caractères alphanumériques majuscules"
+          verifier ASC_ISSUER_ID  "$iss" '[0-9a-fA-F-]{36}' "un UUID de 36 caractères"
+          verifier APPLE_TEAM_ID  "$eqp" '[A-Z0-9]{10}' "10 caractères alphanumériques majuscules"
+
+          if printf '%s' "$ASC_PRIVATE_KEY" | grep -q 'BEGIN PRIVATE KEY'; then
+            echo "  OK  ASC_PRIVATE_KEY (en-tête PEM présent)"
+          else
+            echo "  NON ASC_PRIVATE_KEY : en-tête -----BEGIN PRIVATE KEY----- absent."
+            echo "      Coller le CONTENU du fichier .p8, pas son nom ni son chemin."
+            echec=1
+          fi
+
+          if [ "$echec" -ne 0 ]; then
+            echo
+            echo "Un secret est mal formé. Le recopier depuis App Store Connect"
+            echo "SANS saut de ligne ni espace au début ou à la fin."
+            exit 1
+          fi
+
       - name: Installer XcodeGen
         run: brew install xcodegen
 
@@ -78,8 +118,14 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           mkdir -p ~/private_keys
-          printf '%s' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey.p8
+          # Exactement un saut de ligne final : un PEM en réclame un, et le
+          # champ de GitHub peut en avoir laissé zéro comme trois.
+          printf '%s\n' "$(printf '%s' "$ASC_PRIVATE_KEY")" > ~/private_keys/AuthKey.p8
           chmod 600 ~/private_keys/AuthKey.p8
+          # Contrôle sans jamais afficher la clé.
+          openssl pkey -in ~/private_keys/AuthKey.p8 -noout \
+            && echo "clé privée lisible par OpenSSL" \
+            || { echo "clé privée ILLISIBLE : contenu du .p8 tronqué ou altéré"; exit 1; }
 
       # Numéro de build unique et croissant : App Store Connect refuse deux
       # envois portant le même. `run_number` ne recule jamais.
@@ -91,6 +137,11 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -o pipefail
+          # Voir l'étape de vérification : un saut de ligne collé par mégarde
+          # dans un secret suffit à faire répondre 401 à Apple.
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
           xcodebuild archive \
             -project Vitrine.xcodeproj \
             -scheme Vitrine \
@@ -98,9 +149,9 @@ jobs:
             -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            -authenticationKeyID "$cle" \
+            -authenticationKeyIssuerID "$iss" \
+            DEVELOPMENT_TEAM="$eqp" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             | tail -60
 
@@ -108,6 +159,9 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # Un saut de ligne à l'intérieur d'un <string> produirait un plist
+          # valide mais un identifiant d'équipe faux.
+          eqp=$(printf '%s' "$APPLE_TEAM_ID" | tr -d '[:space:]')
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -115,12 +169,13 @@ jobs:
           <dict>
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
-            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>teamID</key><string>$eqp</string>
             <key>signingStyle</key><string>automatic</string>
             <key>uploadSymbols</key><true/>
           </dict>
           </plist>
           PLIST
+          plutil -lint "$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Exporter et téléverser
         env:
@@ -128,14 +183,16 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
+          cle=$(printf '%s' "$ASC_KEY_ID"    | tr -d '[:space:]')
+          iss=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Vitrine.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            -authenticationKeyID "$cle" \
+            -authenticationKeyIssuerID "$iss" \
             | tail -40
 
       - name: Effacer la clé
