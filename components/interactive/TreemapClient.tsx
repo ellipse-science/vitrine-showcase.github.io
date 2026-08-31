@@ -12,24 +12,49 @@ import { FlappyEnjeux } from "./FlappyEnjeux";
 
 // --- Treemap de croissance (onglet « Jour ») : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
-interface LayoutNode extends TreemapIssueTile { rect: Rect; }
+interface LayoutNode extends TreemapIssueTile {
+  rect: Rect;
+  /** Poids de MISE EN PAGE (part d'aire), plancher compris. Jamais affiché :
+   *  le nombre public d'une tuile reste `share`. Voir PLANCHER_AIRE. */
+  poids: number;
+}
 
 // Partition récursive (« slice-and-dice » équilibré) : rectangles proportionnels au score.
+// Part d'aire GARANTIE à chaque enjeu, quelle que soit sa saillance : les douze
+// doivent rester visibles et cliquables, même à 0 % (demande d'Adrien, 31-08).
+// Sans plancher, un enjeu sans actualité se réduit à un filet illisible et le
+// module cesse de montrer les DOUZE enjeux, ce qui est pourtant son titre.
+//
+// 2 % de l'aire pour chacun, soit 24 % réservés ; les 76 % restants se
+// répartissent au prorata de la saillance. Le prix est explicite et assumé :
+// la surface n'est plus STRICTEMENT proportionnelle. Elle reste monotone (un
+// enjeu plus saillant a toujours une plus grande tuile) et le chiffre affiché
+// sur chaque tuile, lui, reste la part exacte. La page Méthodologie le dit.
+const PLANCHER_AIRE = 0.02;
+
 function computeTreemapLayout(tiles: TreemapIssueTile[]): LayoutNode[] {
-  const nodes: LayoutNode[] = tiles.map((t) => ({ ...t, rect: { x: 0, y: 0, w: 0, h: 0 } }));
+  const totalScore = tiles.reduce((sum, t) => sum + Math.max(t.score, 0), 0);
+  const reste = Math.max(0, 1 - PLANCHER_AIRE * tiles.length);
+  // `poids` ne sert QU'À la mise en page. Ne jamais l'afficher ni le comparer :
+  // le nombre public d'une tuile est `share`, la vraie part de l'attention.
+  const nodes: LayoutNode[] = tiles.map((t) => ({
+    ...t,
+    poids: PLANCHER_AIRE + (totalScore > 0 ? reste * (Math.max(t.score, 0) / totalScore) : reste / tiles.length),
+    rect: { x: 0, y: 0, w: 0, h: 0 },
+  }));
   function partition(slice: LayoutNode[], rect: Rect) {
     if (slice.length === 0) return;
     if (slice.length === 1) { slice[0].rect = rect; return; }
-    const total = slice.reduce((s, t) => s + Math.max(t.score, 0.001), 0);
+    const total = slice.reduce((s, t) => s + t.poids, 0);
     let leftSum = 0, splitIdx = 1, minDiff = Infinity;
     for (let i = 0; i < slice.length - 1; i++) {
-      leftSum += Math.max(slice[i].score, 0.001);
+      leftSum += slice[i].poids;
       const diff = Math.abs(leftSum - total / 2);
       if (diff < minDiff) { minDiff = diff; splitIdx = i + 1; }
     }
     const leftSlice = slice.slice(0, splitIdx);
     const rightSlice = slice.slice(splitIdx);
-    const ratio = leftSlice.reduce((s, t) => s + Math.max(t.score, 0.001), 0) / total;
+    const ratio = leftSlice.reduce((s, t) => s + t.poids, 0) / total;
     if (rect.w > rect.h) {
       const wLeft = rect.w * ratio;
       partition(leftSlice, { x: rect.x, y: rect.y, w: wLeft, h: rect.h });
