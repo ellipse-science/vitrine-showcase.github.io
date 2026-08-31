@@ -14,7 +14,9 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 // Source de vérité des couleurs et libellés d'enjeux, partagée avec le module
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
-import { heurePublicationMontreal } from "@/lib/dates";
+import { heurePublicationMontreal, momentMontreal } from "@/lib/dates";
+import { ELECTION_CALL_DATE } from "@/lib/election";
+import { debutDeLaSemaine } from "@/lib/treemapRank";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -1984,11 +1986,17 @@ export type TreemapIssueTile = {
   velocity: number;
   /** Croissance relative de la saillance vs le bloc précédent, en % ; null si score précédent nul (enjeu nouveau). */
   growth: number | null;
-  /** Actualités récentes liées à l'enjeu, avec les médias propres à chaque actualité. */
+  /** Actualités liées à l'enjeu DANS LA FENÊTRE de la période, avec les médias
+   *  propres à chacune. Triées par sommet de saillance décroissant : la plus
+   *  récemment culminante en tête. */
   articles: {
     title: string;
     url: string | null;
     outlets: { name: string; url: string | null }[];
+    /** Le moment où la nouvelle a CULMINÉ en saillance dans la fenêtre.
+     *  `cle` est comparable lexicographiquement (« 2026-08-30T16 »), `libelle`
+     *  se lit (« 16h cet après-midi »). `null` si l'horodatage est inexploitable. */
+    sommet: { cle: string; libelle: string } | null;
   }[];
 };
 
@@ -2646,9 +2654,50 @@ function outletFromUrl(url: string | null): { name: string; url: string } | null
   return null;
 }
 
-function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
+/** Le sommet de saillance d'un événement : le bloc où il a culminé.
+ *
+ *  ⚠️ Ne PAS lire le score de la ligne rendue par `uniqueQcEvents` : celle-ci
+ *  garde une ligne ARBITRAIRE par `event_id` (la dernière rencontrée), donc un
+ *  instantané pris à un bloc quelconque. C'est pourtant ce score qui classait la
+ *  liste d'actualités jusqu'au 30-08 : deux nouvelles pouvaient s'échanger leur
+ *  rang sans raison éditoriale. Le sommet se calcule sur TOUTES les occurrences. */
+function sommetDeSaillance(occurrences: RawEvent[], refDayIso: string | null) {
+  let pic: RawEvent | null = null;
+  for (const e of occurrences) {
+    if (!pic || (e.score_qc ?? 0) > (pic.score_qc ?? 0)) pic = e;
+  }
+  if (!pic) return null;
+  const interval = pic.time_interval_montreal_tz ?? pic.time_interval_utc ?? null;
+  const dateBase = pic.date_montreal_tz ?? pic.date_utc ?? "";
+  const heure = publicationHourFromInterval(interval);
+  const dateIso = interval ? publicationDateFromInterval(dateBase, interval) : dateBase;
+  if (!dateIso || heure == null) return null;
+  const cle = `${dateIso}T${String(heure).padStart(2, "0")}`;
+  const jours = refDayIso ? (isoDay(refDayIso) ?? 0) - (isoDay(dateIso) ?? 0) : 99;
+  const dateFr = formatDateFr(dateIso);
+  const dayWord = jours <= 0 ? "aujourd’hui" : jours === 1 ? "hier"
+    : `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
+  const libelle = momentLabel(dayWord, heure) ?? `${heure % 24}h`;
+  return { cle, libelle };
+}
+
+function buildIssueMedia(
+  allRaw: RawEvent[],
+  /** Ne garder que les événements dont le sommet tombe à cette date ou après.
+   *  C'est ce qui rend la liste DYNAMIQUE : elle suivait auparavant tout le
+   *  corpus chargé, identique pour les trois périodes. */
+  depuis?: string | null,
+  refDayIso?: string | null,
+): Map<string, IssueMedia> {
   const map = new Map<string, IssueMedia>();
   const unique = uniqueQcEvents(allRaw);
+  // Toutes les occurrences de chaque événement, pour en tirer le vrai sommet.
+  const occurrences = new Map<string, RawEvent[]>();
+  for (const e of allRaw) {
+    if (e.country_id === "USA") continue;
+    if (!occurrences.has(e.event_id)) occurrences.set(e.event_id, []);
+    occurrences.get(e.event_id)!.push(e);
+  }
   const byIssue = new Map<string, RawEvent[]>();
   for (const e of unique) {
     const key = e.main_issue ?? "";
@@ -2658,6 +2707,9 @@ function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
   }
 
   for (const [issueKey, events] of byIssue) {
+    // On garde le tri par saillance pour la SÉLECTION (quelles nouvelles sont
+    // retenues), et on trie par DATE à la fin pour l'AFFICHAGE : la liste se lit
+    // de la plus récemment culminante à la plus ancienne (demande d'Adrien).
     const sorted = [...events].sort((a, b) => (b.score_qc ?? 0) - (a.score_qc ?? 0));
     const seen = new Set<string>();
     const list: TreemapIssueTile["articles"] = [];
@@ -2694,17 +2746,23 @@ function buildIssueMedia(allRaw: RawEvent[]): Map<string, IssueMedia> {
         const fallbackOutlet = outletFromUrl(url);
         if (fallbackOutlet) outlets = [fallbackOutlet];
       }
-      list.push({ title, url, outlets });
+      const sommet = sommetDeSaillance(occurrences.get(e.event_id) ?? [e], refDayIso ?? null);
+      if (depuis && (!sommet || sommet.cle.slice(0, 10) < depuis)) continue;
+      list.push({ title, url, outlets, sommet });
     }
+    // Tri final par DATE : la plus récemment culminante en tête. Les nouvelles
+    // sans horodatage exploitable ferment la marche plutôt que de s'intercaler.
+    list.sort((a, b) => (b.sommet?.cle ?? "").localeCompare(a.sommet?.cle ?? ""));
     map.set(issueKey, { articles: list });
   }
   return map;
 }
 
-async function loadArticlesByIssue(editionKey?: string): Promise<Map<string, IssueMedia>> {
+/** Les événements bruts, lus une seule fois pour les trois périodes. */
+async function loadRawEvents(editionKey?: string): Promise<RawEvent[]> {
   let rawEvents: string;
-  try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return new Map(); }
-  return buildIssueMedia(eventsUpTo(parseEvents(rawEvents), editionKey));
+  try { rawEvents = await readDatasetText("public/data/headline-events.json"); } catch { return []; }
+  return eventsUpTo(parseEvents(rawEvents), editionKey);
 }
 
 export async function loadTreemap(
@@ -2713,15 +2771,20 @@ export async function loadTreemap(
   /** Jour de publication de cette édition, pour les tables jour/semaine/mois. */
   asOfIso?: string,
 ): Promise<TreemapAllPeriods | null> {
-  const [dayRows, weekRows, monthRows, fallbackContent, articlesByIssue] = await Promise.all([
+  const [dayRows, weekRows, monthRows, fallbackContent, rawEvents] = await Promise.all([
     loadIssueScores("day", asOfIso),
     loadIssueScores("week", asOfIso),
     loadIssueScores("month", asOfIso),
     loadFallbackIssueContent(editionKey),
-    loadArticlesByIssue(editionKey),
+    loadRawEvents(editionKey),
   ]);
 
-  function buildPeriodData(rows: Array<Record<string, unknown>> | null): TreemapPeriodData | null {
+  function buildPeriodData(
+    rows: Array<Record<string, unknown>> | null,
+    /** Début de la fenêtre d'actualités de CETTE période (ISO). `null` = tout le
+     *  corpus, le comportement d'avant le 30-08. */
+    depuisArticles: string | null,
+  ): TreemapPeriodData | null {
     if (!rows) return null;
     const latest = latestIssueRow(rows);
     if (!latest) return null;
@@ -2752,6 +2815,7 @@ export async function loadTreemap(
     const lastUpdated = passe
       ? lastUpdatedLabel(passe.date, passe.heure)
       : lastUpdatedLabel(dateStr);
+    const articlesByIssue = buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
     const periodRows = latestTag
@@ -2793,7 +2857,8 @@ export async function loadTreemap(
       let articles = articlesByIssue.get(issueKey)?.articles ?? [];
       if (articles.length === 0 && context) {
         const fallbackOutlet = outletFromUrl(url);
-        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [] }];
+        // Repli : l'accroche d'`issues_meta`, qui n'a pas d'horodatage propre.
+        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [], sommet: null }];
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
@@ -2826,9 +2891,19 @@ export async function loadTreemap(
     return { tiles, dateLabel, growthSince, lastUpdated, history };
   }
 
-  const day = buildPeriodData(dayRows);
+  // Chaque période borne SA liste d'actualités. Le jour s'arrête à la journée
+  // en cours, la semaine au vendredi 20h, la campagne au déclenchement du
+  // scrutin : les mêmes fenêtres que les frises, pour que la liste sous le
+  // graphique parle de ce que le graphique montre.
+  const jourDuJour = momentMontreal((latestIssueRow(dayRows ?? [])?.tag as string) ?? "")?.date ?? null;
+  const day = buildPeriodData(dayRows, jourDuJour);
   if (!day) return null;
-  return { day, week: buildPeriodData(weekRows) ?? day, month: buildPeriodData(monthRows) ?? day };
+  const debutSemaine = debutDeLaSemaine(day.history)?.slice(0, 10) ?? null;
+  return {
+    day,
+    week: buildPeriodData(weekRows, debutSemaine) ?? day,
+    month: buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day,
+  };
 }
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
