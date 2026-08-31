@@ -39,11 +39,23 @@ name: Refresh Data
 on:
   workflow_dispatch:
   schedule:
-    # 6x/jour, 50 min après chaque publication de bloc (grille {3,7,11,15,19,23}
-    # heure de Montréal = {7,11,15,19,23,3} UTC en été). Le cron GitHub peut
-    # dériver de quelques minutes : sans importance ici, le site n'a qu'à ne
-    # jamais rester figé une journée.
-    - cron: '50 1,5,9,13,17,21 * * *'
+    # 6x/jour, 50 min après chaque publication de bloc. Les blocs de Montréal
+    # se terminent à {3,7,11,15,19,23} et sont publiés une heure plus tard
+    # (règle « fin + 1 »), soit des éditions à {4,8,12,16,20,0} heure de
+    # Montréal = {0,4,8,12,16,20} UTC L'ÉTÉ. D'où la grille ci-dessous.
+    #
+    # ⚠️ C'est la grille d'ÉTÉ, et elle ne suit pas l'heure avancée — le cron
+    # GitHub ignore les fuseaux. L'hiver, les publications glissent d'une heure
+    # (UTC-5) et ce filet tirera 50 min AVANT elles plutôt qu'après. Sans
+    # conséquence pour un filet : la passe suivante ramasse le bloc manqué, et
+    # la garde-fraîcheur horaire (#628) le dirait si ce n'était pas le cas.
+    # Le Worker, lui, enregistre les DEUX jeux et filtre dans le code
+    # (isTargetHourInNY, cf. wrangler.toml) — un cron GitHub ne sait pas faire ça.
+    #
+    # 🔗 La première des six passes tombe à 00:50 UTC, et c'est de ça que dépend
+    # la garde du scrape des portraits de députés plus bas (`date -u +%H = 00`).
+    # Toucher à cette ligne sans regarder celle-là éteindrait ce scrape en silence.
+    - cron: '50 0,4,8,12,16,20 * * *'
 
 permissions:
   contents: read
@@ -163,7 +175,8 @@ jobs:
       # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
       # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
       # tourne donc que sur le PREMIER des six déclenchements quotidiens
-      # (00h50 UTC, cron cron-job.org) plutôt que d'ajouter un cron natif
+      # (00h50 UTC — la première entrée du `schedule:` en tête de fichier ;
+      # c'était cron-job.org avant le 19-08) plutôt que d'ajouter un cron natif
       # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
       # natif pour les données électorales plus haut, ne compte pas ici.
       #
