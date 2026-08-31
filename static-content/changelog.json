@@ -1,5 +1,11 @@
 [
   {
+    "pr": 581,
+    "date": "2026-08-31T00:33:53Z",
+    "note": "Une sécurité supplémentaire vérifie six fois par jour que le site affiche bien les analyses les plus récentes, et relance la publication si elles manquent.",
+    "version": null
+  },
+  {
     "pr": 635,
     "date": "2026-08-31T00:21:55Z",
     "note": "Sur les tuiles trop petites pour l'afficher en entier, le nom de l'enjeu cède désormais réellement la place à son symbole, au lieu d'apparaître coupé.",
