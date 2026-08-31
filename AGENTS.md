@@ -52,10 +52,12 @@ En cas de doute sur l'hébergement, c'est ce document qui fait foi.
   cessé de bâtir, et le site d'Adrien servait un vieux build. Ensuite il
   perçait Cloudflare Access : tant qu'un miroir public servait le même
   contenu, le mot de passe de `dev.vitrinedemocratique.com` ne protégeait rien.
-- **Push to `main`** → Cloudflare Pages bâtit `dev.vitrinedemocratique.com` par
-  son intégration Git. ⚠️ Cette intégration **s'arrête sans prévenir** (gel du
-  30-08, 20h14). Avant d'affirmer que quoi que ce soit est en dev, vérifier
-  qu'elle a bâti la tête de `main` :
+- **Push to `main`** → `deploy-dev-cloudflare.yml` bâtit et publie
+  `dev.vitrinedemocratique.com`. L'intégration Git de Cloudflare reste branchée
+  en parallèle : quand elle fonctionne, la poussée déploie deux fois, ce qui est
+  assumé (même `out/`, cf. l'en-tête du workflow). Elle **s'arrête sans
+  prévenir** — gel du 30-08 à 20h14, découvert parce que dev servait un vieux
+  build. Pour savoir laquelle des deux voies a publié, ou si rien n'a publié :
   `gh api repos/ellipse-science/vitrine-showcase.github.io/commits/$(git rev-parse origin/main)/check-runs --jq '[.check_runs[]|select(.name|test("Cloudflare";"i"))|.conclusion]'`
   Vide = le site ne l'a pas. Remède : `gh workflow run deploy-dev-cloudflare.yml --ref main`.
 - **`prod` n'avance que de deux façons** : les données automatiquement toutes

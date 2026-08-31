@@ -55,8 +55,10 @@ Cloudflare**.
 ## Comment le code circule
 
 ```
-   PR ──→ main ──→ intégration Git de Cloudflare ──→ dev.vitrinedemocratique.com
-                     (secours : deploy-dev-cloudflare.yml, en dispatch)
+   PR ──→ main ──→ deploy-dev-cloudflare.yml ──→ dev.vitrinedemocratique.com
+                   (au push depuis le 30-08 ; l'intégration Git de Cloudflare
+                    reste branchée, d'où un double déploiement quand elle
+                    fonctionne — assumé, cf. l'en-tête du workflow)
 
    main ──(fusion délibérée)──→ prod ──→ deploy-prod ──→ vitrinedemocratique.com
 ```
