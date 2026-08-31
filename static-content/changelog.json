@@ -1,5 +1,11 @@
 [
   {
+    "pr": 647,
+    "date": "2026-08-31T03:30:03Z",
+    "note": "Sous chaque enjeu, les actualités affichées correspondent désormais à la période choisie, portent l'heure à laquelle elles ont le plus compté, et sont classées de la plus récente à la plus ancienne.",
+    "version": "2.38.0-beta.0"
+  },
+  {
     "pr": 643,
     "date": "2026-08-31T03:11:41Z",
     "note": "La semaine du module des enjeux va désormais du vendredi 20h au vendredi 20h, et la vue « Campagne » part du déclenchement du scrutin, le 27 août 2026.",
