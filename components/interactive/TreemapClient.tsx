@@ -109,15 +109,39 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
     // `clientHeight` — le nom était rogné et la mesure disait que tout allait
     // bien (constaté sur « Environnement et énergie » et « Droits, libertés… »).
     // On additionne donc la hauteur des enfants, ce que le centrage ne cache pas.
-    const enfants = [...el.children] as HTMLElement[];
-    const gap = parseFloat(getComputedStyle(el).rowGap) || 0;
-    const besoin =
-      enfants.reduce((somme, enfant) => somme + enfant.offsetHeight, 0) +
-      gap * Math.max(0, enfants.length - 1);
+    // ⛔ MESURER L'ÉTENDUE RÉELLE DU TEXTE, avec un `Range`, et rien d'autre.
+    //
+    // Trois métriques ont échoué avant celle-ci, chacune pour une raison
+    // différente, et toutes les trois annonçaient « ça rentre » pendant que le
+    // lecteur voyait un nom écrasé :
+    //   1. la BOÎTE du nom contre celle de la tuile — le nom est un élément
+    //      flex, il rétrécissait, sa boîte tenait toujours (d'où `flex-shrink: 0`) ;
+    //   2. `offsetHeight` des enfants — cette propriété N'EXISTE PAS sur un
+    //      élément SVG, et le symbole en est un : la somme valait `NaN`, et
+    //      `NaN > x` est toujours faux ;
+    //   3. `scrollWidth` / `scrollHeight` — ils ne comptent QUE le débordement
+    //      vers la droite et vers le bas. Le nom est centré : quand il est trop
+    //      large, il déborde des DEUX côtés, et `scrollWidth` renvoie 0. Mesuré
+    //      sur « Gouvernements et gouvernance » : 14px perdus à gauche, 14 à
+    //      droite, `scrollWidth - clientWidth = 0`.
+    //
+    // Un `Range` sur le contenu rend l'union des lignes de texte réellement
+    // peintes, débordements compris, dans les quatre directions. C'est la seule
+    // mesure qui s'accorde avec la capture d'écran.
+    const boite = el.getBoundingClientRect();
     const nom = el.querySelector<HTMLElement>(".gt-title-nom");
-    const deborde =
-      besoin > el.clientHeight + 1 ||
-      (nom !== null && nom.scrollWidth > el.clientWidth + 1);
+    let deborde = false;
+    if (nom) {
+      const portee = document.createRange();
+      portee.selectNodeContents(nom);
+      const texte = portee.getBoundingClientRect();
+      // 1px de tolérance : les bords tombent souvent sur des demi-pixels.
+      deborde =
+        texte.left < boite.left - 1 ||
+        texte.right > boite.right + 1 ||
+        texte.top < boite.top - 1 ||
+        texte.bottom > boite.bottom + 1;
+    }
     if (etaitCache) el.classList.add("gt-title-sans-nom");
     setTient(!deborde);
   }, [taille, cle, ref]);
