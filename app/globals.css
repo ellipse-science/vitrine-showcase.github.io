@@ -8100,8 +8100,7 @@
      pouvoir lire, et elle est le seul poste qu'on ne rogne pas. */
   .deck-carre { max-width: 168px; }
   .deck { gap: 4px; }
-  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
-  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+  .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
@@ -8121,7 +8120,6 @@
   .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
-  .pochette-media { font-size: 6.5px; padding: 2px 5px; letter-spacing: 0.1em; }
   .deck-jog-media text { font-size: 5.4px; }
   .pochette-sigle { font-size: 28px; }
   .cap-sigle { font-size: 32px; }
@@ -8385,8 +8383,12 @@
 /* ── La course en tête du module ─────────────────────────────────────────────
    Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
    dans la console et les platines. */
-.partis-course--tete { margin: 0 0 22px; }
-.partis-course--tete .course-tete { margin: 0 0 10px; }@keyframes course-tete-apparait { to { opacity: 1; } }
+/* DE L'AIR AU-DESSUS. Le palmarès ouvre le module et venait buter sur le titre :
+   dix pixels entre son intitulé et le cadre, aucun au-dessus de l'intitulé. Le
+   bloc a besoin de respirer avant de commencer, d'autant que la première ligne
+   de rang court tout en haut du cadre. */
+.partis-course--tete { margin: 26px 0 24px; }
+.partis-course--tete .course-tete { margin: 0 0 14px; }@keyframes course-tete-apparait { to { opacity: 1; } }
 
 .course-valeur {
   font-family: 'Playfair Display', Georgia, serif;
@@ -8415,7 +8417,8 @@
   /* Les decks DÉBORDENT la console, en haut et en bas. Ce sont eux les objets ;
      la console est l'instrument qui les mesure, et elle doit paraître logée
      entre eux plutôt que posée à côté. La marge négative est préférée à une
-     hauteur fixe : elle tient quand un deck gagne une ligne de nom.
+     hauteur fixe : elle tient quelle que soit la taille du carré, qui suit la
+     largeur disponible et n'est donc jamais connue d'avance.
 
      Le débordement doit rester DISCRET : la taille du carré est bornée pour que
      la pile des deux decks dépasse le vumètre d'une trentaine de pixels de part
@@ -8431,18 +8434,6 @@
   --ton-positive: #3D6B3A;
   --ton-negative: #A8302C;
   --ton-neutral: #6E685F;
-  /* Le fond des DEUX bandeaux de la pochette, celui du haut comme celui du bas.
-     Une seule déclaration : ils encadrent la même illustration et doivent se
-     répondre, et les tenir en phase à la main les avait déjà fait diverger.
-     
-     OPAQUE, et non une encre translucide. Celle du bas reposait sur le fond uni
-     du parti, mais celle du haut passe par-dessus les formes géométriques : à
-     travers elle on voyait le disque de l'enjeu et le coin du ton, et le
-     bandeau semblait transparent alors qu'il portait la même déclaration.
-     58 % de parti et 42 % d'encre donnent exactement ce que rendait
-     `rgba(28, 25, 23, 0.42)` posé sur le parti — la bande du bas est donc
-     inchangée à l'œil, et celle du haut lui répond enfin. */
-  --bandeau: color-mix(in srgb, var(--party, #433F38) 58%, #1C1917);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8450,13 +8441,36 @@
   min-width: 0;
 }
 
-/* Le carré : contenant du retournement, et format de la pochette. Le disque y
-   est inscrit, la pochette l'occupe en entier. */
+/* Le carré : format de la pochette, et cadre du disque. Le disque y est
+   inscrit, la pochette l'occupe en entier.
+
+   ⚠️ C'EST UN `<button>`, ET IL DOIT ÊTRE DÉSHABILLÉ. Cette remise à zéro
+   vivait sur `.deck-carre--pivot` du temps où le deck se retournait ; le
+   modificateur est tombé avec le retournement et elle est partie avec lui. Le
+   navigateur redessinait alors son bouton par défaut — fond, bordure et anneau
+   de focus — en carré derrière le disque rond. Ne pas la retirer à nouveau :
+   sans elle le cadre revient. */
 .deck-carre {
   position: relative;
   width: 100%;
   max-width: 200px;
   aspect-ratio: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+/* L'anneau du navigateur parti, il faut en redonner un : au clavier, rien
+   d'autre ne dirait sur quel deck on se trouve. Posé LOIN du disque, pour ne pas
+   se lire comme une bague du vinyle. */
+.deck-carre:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 6px;
 }
 
 .deck-face {
@@ -8564,11 +8578,28 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* Même fond ET même bord que la console : les deux surfaces portaient déjà
-     `--paper-deep`, mais l'ombre portée et le filet clair de la molette la
-     faisaient lire comme une seconde teinte de crème. */
-  background: var(--paper-deep);
-  box-shadow: inset 0 0 0 1px var(--rule);
+  /* LE VINYLE, NOIR. Le plateau reprenait le crème de la console : il se lisait
+     comme un cadran d'instrument, pas comme un disque. Deux couches ici, et
+     l'ordre compte — les sillons passent PAR-DESSUS la matière.
+
+     1. LES SILLONS. Un dégradé radial qui se répète tous les 3 px : un cheveu
+        clair, puis du vide. Ils ne mesurent rien, ils donnent la matière.
+     2. LA MATIÈRE. Le centre du dégradé est décalé en haut à gauche (32 % / 26 %)
+        et non au milieu : c'est ce hors-centre qui fait la lumière rasante d'un
+        disque posé à plat, un reflet d'un côté et le noir profond de l'autre.
+
+     Le filet clair est remplacé par un bord sombre plus une ombre portée : sur
+     du noir, un liseré crème redessinerait exactement le cerceau qu'on vient
+     d'enlever. */
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(243, 236, 221, 0.05) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px),
+    radial-gradient(circle at 32% 26%,
+      #3A3733 0%, #1A1816 46%, #0B0A0A 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 1px 5px rgba(28, 25, 23, 0.3);
 }
 /* L'aiguille : un tour par minute, comme une trotteuse. Elle ne mesure rien —
    elle dit seulement que l'instrument tourne. Son pivot est le centre du
@@ -8582,7 +8613,9 @@
   height: 43%;
   margin-left: -0.75px;
   border-radius: 1px;
-  background: linear-gradient(to bottom, var(--ink-softer), rgba(110, 104, 95, 0.15));
+  /* CRÈME, et non plus l'encre : sur le disque noir, une aiguille foncée ne se
+     voyait plus du tout. */
+  background: linear-gradient(to bottom, rgba(243, 236, 221, 0.6), rgba(243, 236, 221, 0.08));
   transform-origin: 50% 100%;
   animation: deck-aiguille 60s linear infinite;
 }
@@ -8603,7 +8636,9 @@
   pointer-events: none;
 }
 .deck-jog-media text {
-  fill: var(--ink-softer);
+  /* Crème sourd : le nom est GRAVÉ dans le vinyle, il ne doit pas crier plus
+     fort que le sigle du capuchon. */
+  fill: rgba(243, 236, 221, 0.6);
   font-family: 'IBM Plex Mono', monospace;
   /* En unités du viewBox : 4,6 sur 100 donne ~9 px sur un deck de 200. */
   font-size: 4.6px;
@@ -8659,27 +8694,16 @@
    (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
    descendent sur une bande sombre où le contraste ne dépend plus du parti. */
 
-/* Le média, en bandeau le long du haut de la pochette. Fond d'ENCRE et non
-   transparent : le nom doit rester lisible sur les cinq couleurs de parti, dont
-   l'orange de Québec solidaire où le crème seul tombe à 3,94:1. */
-.pochette-media {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: 3px 8px;
-  background: var(--bandeau);
-  color: var(--paper);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* Le bandeau du MÉDIA a été retiré des pochettes le 2026-08-30 : une pochette
+   est un objet pressé un jour donné, elle n'a pas à changer quand on pousse le
+   fader. Le nom du média reste gravé autour du capuchon du deck — c'est
+   l'instrument, lui, qui doit répondre à la source. La date a pris sa place,
+   dans la légende du bac (`.disco-pressage`).
+
+   Il était de toute façon rompu ici : son fond était `var(--bandeau)`, déclarée
+   sur `.deck` seulement, et les bacs ne descendent pas de `.deck` — dans un bac
+   la bande n'avait donc aucun fond et le crème se posait à nu sur
+   l'illustration. */
 
 .pochette-art {
   position: relative;
@@ -8947,6 +8971,11 @@
   z-index: 3;
   display: flex;
   align-items: baseline;
+  /* LA DATE PASSE À LA LIGNE PLUTÔT QUE DE DÉBORDER. Sigle, durée et pressage
+     tiennent sur les 150 px utiles d'une couverture de bureau, mais plus sur les
+     106 px de la version au doigt. Sans `wrap`, la date sortait du bandeau ;
+     avec, elle prend une seconde ligne et le bandeau grandit vers le haut. */
+  flex-wrap: wrap;
   gap: 8px;
   padding: 6px 9px 7px;
   background: rgba(28, 25, 23, 0.72);
@@ -9087,6 +9116,9 @@
   z-index: calc(2000 - var(--i, 0));
 }
 .disco-case:hover, .disco-case:focus-within, .disco-case.sortie { z-index: 2001; }
+.disco-case:hover .bac-tranche-carton,
+.disco-case:focus-within .bac-tranche-carton,
+.disco-case.sortie .bac-tranche-carton { filter: brightness(1.14); }
 .disco-pochette {
   display: block;
   position: relative;
@@ -9116,9 +9148,6 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 160ms ease;
-.disco-case:hover .bac-tranche-carton,
-.disco-case:focus-within .bac-tranche-carton,
-.disco-case.sortie .bac-tranche-carton { filter: brightness(1.14); }
   pointer-events: none;
 }
 .disco-couverture picture,
@@ -9167,8 +9196,14 @@
 /* LA DATE, SUR LE VINYLE. Elle vivait sous la colonne du jour ; la pile n'a plus
    de colonnes, alors elle est montée sur la couverture. Poussée au bout du
    bandeau, dans l'encre la plus discrète, en petites capitales espacées : c'est
-   une mention de pressage au dos d'une pochette, pas un titre. */
-.disco-pressage {
+   une mention de pressage au dos d'une pochette, pas un titre.
+
+   UNE SEULE RÈGLE POUR LES DEUX BACS. Le bac du jour porte la même mention
+   depuis que le bandeau du média a quitté les pochettes. Une règle jumelle
+   aurait dérivé au premier ajustement — c'est déjà ce qui était arrivé aux deux
+   légendes avant qu'on les aligne. */
+.disco-pressage,
+.bac-pressage {
   margin-left: auto;
   font-size: 7.5px;
   letter-spacing: 0.18em;
@@ -9405,35 +9440,45 @@
   }
 }
 
-.deck-nom {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
+/* LE RANG, POSÉ SUR LE DISQUE, en haut à gauche.
+   
+   Il vivait sous le vinyle, dans une ligne qui portait aussi le sigle du parti.
+   Cette ligne est retirée : le sigle est déjà gravé au centre du capuchon, et
+   l'`aria-label` du bouton nomme le parti et sa place — la ligne répétait deux
+   fois ce qui était dit ailleurs.
+   
+   AU COIN DU CARRÉ, DONC HORS DU VINYLE. Le disque est un cercle INSCRIT dans
+   le carré : son bord touche le milieu de chaque côté, et les quatre coins lui
+   échappent. `top: 0; left: 0` pose donc la pastille sur le papier, à une
+   dizaine de pixels du noir — la vignette au coin d'une pochette, pas une
+   pastille collée sur le disque.
+   
+   Elle garde la couleur du parti : la ligne partie, c'est la seule couleur
+   d'identité qui reste en dehors du capuchon. */
 .deck-rang {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
   display: grid;
   place-items: center;
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--party, var(--ink-soft));
   color: var(--paper);
-  font-size: 9.5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 /* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
    deux s'étant partagé la dernière place en sourdine. */
-/* La ligne du rang d'un deck vide : même hauteur que celle d'un deck plein,
-   pastille éteinte. C'est elle qui garde la géométrie du module identique,
-   qu'il y ait de la donnée ou non. */
-.deck-nom--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
+/* La pastille d'un deck vide : même place, même taille, éteinte. La position
+   est écrite, pas la mesure — elle dit qu'il y a bien quatre places et que
+   celle-ci attend. */
+.deck--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
 .deck--vide .deck-jog--vide { opacity: 0.5; }
 .deck--vide .deck-jog-cap {
   background: var(--rule);
@@ -9526,8 +9571,7 @@
   /* Les decks restent GRANDS : la pochette doit rester lisible. */
   .deck-carre { max-width: 146px; }
   .deck { gap: 5px; }
-  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
-  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+  .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
@@ -9553,34 +9597,61 @@
    aplatir ne pouvait qu'empirer. Une colonne ne dépend d'aucune hauteur. */
 
 .palmares-figure {
-  /* La colonne de classement et la réserve de l'axe des x doivent s'accorder :
-     une seule valeur, pas deux constantes à tenir en phase. */
-  --col-classement: 132px;
-  --gouttiere: 20px;
-  --marge-y: 40px;
+  /* ZÉRO. L'axe des rangs a été retiré le 2026-08-30 : le rang est écrit dans
+     l'étiquette de bout de ligne, à l'endroit même où l'œil arrive, et la
+     graduation de gauche n'avait plus rien à graduer. La gouttière qu'elle
+     occupait est rendue au tracé, qui part maintenant du bord du cadre. */
+  --marge-y: 0px;
+  /* LA RÉSERVE DE DROITE. Chaque ligne porte son nom et sa durée à son
+     extrémité — « PLQ 1h00 » fait une soixantaine de pixels. Sans réserve, le
+     bout d'une course TERMINÉE (la ligne d'arrivée est à 91 % du tracé) verrait
+     son étiquette sortir du cadre. On rétrécit donc le tracé plutôt que de
+     laisser déborder le texte. */
+  --marge-fin: 96px;
+  /* TOUTE LA LARGEUR DU MODULE.
+     
+     Le cadre a été borné à 720 px le temps où il portait cinq courbes de durées
+     écrasées dans une bande de 52 px — à 24:1, rien ne s'y lisait. La course aux
+     rangs n'a pas ce défaut : ses cinq rangées sont des rubans horizontaux, et
+     la largeur les sert au lieu de les écraser. Plus elle est grande, plus les
+     croisements s'espacent et se lisent. */
   margin: 0;
   border: 1px solid var(--rule);
   background: var(--paper-deep);
-  padding: 14px 18px 10px;
+  /* PLUS EN HAUT QU'EN BAS, et c'est voulu. Le bas porte déjà l'axe des heures,
+     qui fait sa propre marge visuelle ; le haut n'a rien, et la première ligne
+     de rang — avec son étiquette centrée dessus, donc débordant de cinq pixels
+     vers le haut — arrivait à une vingtaine de pixels du bord. Ça se voyait
+     comme un cadre trop serré. */
+  padding: 22px 20px 12px;
 }
+/* Il n'y a plus qu'une chose dedans. La grille à deux colonnes — le graphique et
+   l'encadré du classement — a été retirée le 2026-08-30 avec l'encadré. */
 .palmares-corps {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--col-classement);
-  gap: var(--gouttiere);
-  /* `stretch` et NON `start` : la colonne de classement est plus haute que le
-     graphique, et en alignant par le haut on laissait un vide sous la courbe
-     dans TOUTES les vues. Le graphique remplit désormais la rangée, quelle que
-     soit la hauteur de la colonne. */
-  align-items: stretch;
+  display: block;
 }
 
 .palmares-zone {
   position: relative;
-  /* Aplati : le graphique doit se lire d'un coup d'œil, pas s'explorer. La
-     hauteur suit la rangée pour ne jamais laisser de vide ; le plancher garde
-     le bloc lisible si la colonne venait à raccourcir. */
-  min-height: 104px;
+  /* APLATI, ET DEUX FOIS PLUS QU'AVANT. Le graphique doit se lire d'un coup
+     d'œil, pas s'explorer.
+
+     Cette valeur ne fixait qu'un PLANCHER tant que la colonne de classement
+     existait : la rangée s'étirait à la hauteur de la colonne, plus haute, et
+     c'est elle qui commandait vraiment. La colonne partie, plus rien n'étire —
+     ce nombre est maintenant la hauteur du graphique, tout court.
+
+     72 ET NON 52. Le graphique mesurait environ 145 px tant que la colonne
+     l'étirait ; sa moitié fait 72. Halver la valeur DÉCLARÉE (104 → 52) avait
+     donc coupé bien plus que de moitié, et c'est ce qui donnait la bande
+     illisible du 2026-08-30.
+
+     84 DEPUIS LA COURSE AUX RANGS : il faut loger cinq rangées distinctes, et
+     non plus une bande continue. 84 px font des rangées de 17, de quoi poser un
+     texte de 9 sans qu'il touche ses voisines. */
+  min-height: 84px;
   margin-left: var(--marge-y);
+  margin-right: var(--marge-fin);
 }
 .palmares-svg {
   position: absolute;
@@ -9593,13 +9664,35 @@
   pointer-events: none;
 }
 
-.palmares-grille {
-  stroke: var(--rule);
-  stroke-width: 1;
-  stroke-dasharray: 2 4;
-  opacity: 0.5;
+/* LE PROLONGEMENT JUSQU'À L'ARRIVÉE — ce qui remplit le vide.
+   
+   Entre le dernier relevé et la ligne d'arrivée, le cadre était blanc, et ce
+   blanc ne disait rien. Une piste hachurée et défilante y a été essayée le
+   2026-08-30 puis retirée le jour même : le mouvement attirait l'œil hors des
+   lignes, qui sont le sujet. Ce qui remplit le vide est maintenant la LIGNE
+   ELLE-MÊME, qui tient son rang jusqu'au bout.
+   
+   TIRETÉ, et il doit le rester. Le palier de gauche décrit du passé non
+   observé ; celui-ci décrit de l'AVENIR. Un trait plein affirmerait que le
+   classement tiendra jusqu'à l'arrivée — c'est le tireté, et lui seul, qui
+   sépare un prolongement d'une prédiction. */
+.palmares-attente {
+  fill: none;
+  stroke: var(--party, var(--ink-soft));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 1.4 3;
+  opacity: 0.42;
   vector-effect: non-scaling-stroke;
 }
+.palmares-attente.shadow { stroke: var(--ink-softer); opacity: 0.3; }
+
+/* `.palmares-grille` — les cinq pointillés horizontaux — a été retirée le
+   2026-08-30 avec le composant qui les dessinait. Ne pas la rétablir : sur un
+   graphique haut de 52 px, cinq hachures pèsent plus que les courbes.
+
+   Le pointillé qui RESTE est vertical, et ce n'est pas une graduation : c'est la
+   ligne d'arrivée, et son tireté la distingue justement d'un tracé de donnée. */
 .palmares-arrivee {
   stroke: var(--cordovan);
   stroke-width: 1;
@@ -9613,7 +9706,9 @@
 .palmares-trait {
   fill: none;
   stroke: var(--party, var(--ink-soft));
-  stroke-width: 1.4;
+  /* Plus épais qu'au temps des courbes de durées : une ligne de rang est un
+     ruban qu'on suit du regard à travers les croisements, pas un tracé fin. */
+  stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
@@ -9622,7 +9717,30 @@
   animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   animation-delay: var(--retard, 0ms);
 }
-.palmares-trait.meneur { stroke-width: 2; }
+.palmares-trait.meneur { stroke-width: 2.6; }
+
+/* LE HALO — la seule chose qui rend un croisement lisible.
+   
+   Deux lignes qui se coupent sans lui forment un X ambigu : on ne sait plus
+   laquelle passe devant, et c'est précisément l'information que la course aux
+   rangs est censée donner. Un liseré de papier, deux fois plus large que le
+   trait, creuse la ligne du dessous. L'ordre de dessin décide du reste — le
+   meneur est tracé en dernier, donc il passe au-dessus de tous.
+   
+   Il suit le même dévoilement que son trait : sans l'animation, les cinq halos
+   apparaîtraient d'un coup et effaceraient les traits en cours de tracé. */
+.palmares-halo {
+  fill: none;
+  stroke: var(--paper-deep);
+  stroke-width: 5.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--retard, 0ms);
+}
 .palmares-trait.shadow {
   stroke: var(--ink-softer);
   stroke-width: 1;
@@ -9643,23 +9761,9 @@
 
 /* La pochette de tête : un carré plein, avec la tranche claire d'un disque
    rangé de profil. */
-.palmares-pochette {
-  position: absolute;
-  z-index: 1;
-  width: 9px;
-  height: 9px;
-  margin: -4.5px 0 0 -4.5px;
-  background: var(--party, var(--ink-soft));
-  box-shadow: 0 0 0 1.5px var(--paper-deep);
-}
-.palmares-pochette::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: rgba(243, 236, 221, 0.5);
-}
-.palmares-pochette.shadow { background: var(--ink-softer); opacity: 0.6; }
+/* Les marqueurs carrés de bout de courbe ont été retirés le 2026-08-30 avec la
+   course aux rangs : l'étiquette est désormais AU bout de la ligne, sa puce fait
+   le point, et un carré de plus n'aurait fait qu'épaissir le nœud. */
 
 .palmares-damier {
   position: absolute;
@@ -9675,39 +9779,39 @@
   background-color: var(--paper);
   box-shadow: 0 0 0 1px var(--rule);
   opacity: 0.8;
+  /* IL NE BOUGE PAS. Un flottement de drapeau a été essayé le 2026-08-30 et
+     retiré le jour même : dans un cadre où l'information est portée par cinq
+     lignes fines, tout mouvement périphérique gagne la compétition du regard.
+     Le damier est un repère, pas une animation. */
 }
 
-.palmares-y {
-  position: absolute;
-  left: calc(var(--marge-y) * -1);
-  top: 0;
-  width: calc(var(--marge-y) - 6px);
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.palmares-y li {
-  position: absolute;
-  right: 0;
-  transform: translateY(-50%);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-  white-space: nowrap;
-}
+/* `.palmares-y` — la colonne de graduations à gauche — a été retirée le
+   2026-08-30. Elle a porté des durées, puis des rangs ; les deux ont fini par
+   faire double emploi avec l'étiquette de bout de ligne, qui dit la place ET la
+   durée là où le regard va de toute façon. Ne pas la rétablir : c'est la seule
+   chose qui empêchait le tracé d'occuper toute la largeur. */
 
 .palmares-x {
   position: relative;
   height: 14px;
-  margin: 5px calc(var(--col-classement) + var(--gouttiere)) 0 var(--marge-y);
+  /* La même réserve à droite que la zone, et rien à gauche : sans ça les
+     repères d'heures ne seraient plus sous les abscisses qu'ils nomment. */
+  margin: 5px var(--marge-fin) 0 var(--marge-y);
+  /* Le premier repère est centré sur l'abscisse zéro, donc à cheval sur le bord
+     du tracé. Il déborde dans le rembourrage du cadre, qui est plus large que sa
+     moitié — mais on l'ancre par la gauche pour n'en rien perdre. */
+  padding-left: 0;
   padding: 0;
   list-style: none;
 }
 .palmares-x li {
   position: absolute;
   transform: translateX(-50%);
+  /* Le repère de l'origine ne peut pas se centrer : la moitié gauche sortirait
+     du cadre. Il s'aligne par son bord. */
+}
+.palmares-x li:first-child { transform: none; }
+.palmares-x li {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 8.5px;
   letter-spacing: 0.08em;
@@ -9716,45 +9820,51 @@
 }
 .palmares-x-arrivee { color: var(--cordovan); font-weight: 600; }
 
-/* ── La colonne de classement ─────────────────────────────────────────────── */
-/* Le classement dans son propre encadré, à la manière du bandeau des données
-   fictives : filet cordovan et fond de papier. Il n'est pas de même nature que
-   la courbe — celle-ci raconte, celui-là arrête un résultat — et le cadre le
-   dit. */
-.palmares-classement {
-  min-width: 0;
-  border: 1px solid var(--cordovan);
-  /* `--paper`, le crème du journal, et NON `--paper-deep` qui est celui du bloc
-     du palmarès : l'encadré doit sembler posé sur la page, pas creusé dans le
-     graphique. */
-  background: var(--paper);
-  padding: 9px 10px;
-  /* Décalé vers la gauche : collé au bord du cadre, il se confondait avec lui. */
-  margin-right: 10px;
-}
-.palmares-liste {
-  margin: 0;
+/* ── L'étiquetage direct ──────────────────────────────────────────────────
+   Le nom ET la durée au bout de la ligne, sur la rangée du rang final. Il
+   remplace la ligne de légende posée sous l'axe le 2026-08-30 et retirée le jour
+   même : une bande de service sous un graphique oblige l'œil à un aller-retour
+   que l'étiquetage direct supprime.
+
+   AUCUN ARRANGEMENT N'EST NÉCESSAIRE depuis la course aux rangs. Les rangs sont
+   une permutation : à l'arrivée, une place par parti, donc une étiquette par
+   rangée. L'écarteur qu'exigeaient les courbes de durées a été supprimé avec
+   elles. */
+.palmares-etiquette {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  /* Posée à DROITE du bout de ligne et centrée sur sa rangée. La réserve
+     `--marge-fin` garantit la place, même pour une course terminée. */
+  margin-left: 9px;
+  transform: translateY(-50%);
   padding: 0;
-  list-style: none;
-}
-.palmares-nom {
-  display: grid;
-  grid-template-columns: 15px 1fr auto;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 1px 0;
   border: 0;
   background: none;
   cursor: pointer;
-  text-align: left;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  white-space: nowrap;
 }
-.palmares-nom:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 1px; }
+.palmares-etiquette:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+/* LA PASTILLE DU RANG, à la place de la puce de couleur.
+   
+   La puce ne disait que l'identité, déjà portée par le sigle juste à côté ; le
+   chiffre dit la PLACE. C'est lui qui remplace l'axe des rangs retiré à gauche :
+   la même information, posée là où le regard arrive plutôt qu'au bout d'une
+   rangée qu'il faut suivre à l'horizontale.
+   
+   Elle porte la couleur PURE du parti : un aplat de quinze pixels n'a pas de
+   seuil de contraste à tenir, contrairement au texte à côté — et le crème sur
+   le parti est du texte GRAS et court, dont le seuil est 3:1. */
 .palmares-rang {
+  align-self: center;
+  flex: none;
   display: grid;
   place-items: center;
   width: 15px;
@@ -9764,139 +9874,71 @@
   color: var(--paper);
   font-style: normal;
   font-size: 8.5px;
+  font-weight: 700;
   letter-spacing: 0;
-  transition: transform 180ms ease;
+  box-shadow: 0 0 0 2px var(--paper-deep);
 }
-.palmares-duree { color: var(--ink); font-weight: 600; }
-.palmares-nom.shadow { color: var(--ink-softer); }
-.palmares-nom.shadow .palmares-rang { background: var(--ink-softer); }
-.palmares-nom.shadow .palmares-duree { color: var(--ink-softer); font-weight: 500; }
-
-/* Le disque GAGNANT, une fois la période courue. */
-.palmares-gagnant {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-  padding-bottom: 7px;
-  border-bottom: 1px solid var(--rule);
-}
-/* Le disque gagnant ne porte AUCUN texte : le crème sur l'orange de Québec
-   solidaire donne 3,94:1, sous le seuil de 4,5 exigé du petit texte. Le nom vit
-   à côté, lisible et énonçable — le carré ne fait que la couleur, comme les
-   pochettes de tête. */
-.palmares-gagnant-album {
-  position: relative;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  background: var(--party, var(--ink-soft));
-  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.24);
-}
-.palmares-gagnant-album::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: rgba(243, 236, 221, 0.5);
-}
-.palmares-gagnant-nom {
-  display: block;
+/* LE SIGLE, DANS LA COULEUR DU PARTI FONCÉE DE 28 % VERS L'ENCRE.
+   
+   La couleur brute ne passe pas : l'orange de Québec solidaire donne 3,94:1 sur
+   le papier, sous le seuil de 4,5 exigé du petit texte. Foncée, elle monte à
+   5,5:1 et reste parfaitement reconnaissable. Le trait de la ligne, lui, garde
+   la teinte pure : c'est un grand aplat linéaire, son seuil est 3:1. */
+.palmares-etiquette-sigle {
   font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
+  color: color-mix(in srgb, var(--party, var(--ink-soft)) 72%, var(--ink));
 }
-/* « En tête » pendant la course, « Disque d'or » une fois l'arrivée franchie.
-   Le bloc est PERMANENT : ne le montrer qu'au terme faisait grandir la colonne
-   d'une cinquantaine de pixels d'un coup, et tout le module sautait. */
-.palmares-gagnant-etat {
-  display: block;
-  font-size: 7.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-}
-.palmares-gagnant.termine .palmares-gagnant-etat { color: var(--cordovan); }
-.palmares-gagnant.termine .palmares-gagnant-album {
-  box-shadow:
-    0 0 0 2px var(--brass),
-    0 1px 4px rgba(28, 25, 23, 0.24);
-}
-.palmares-gagnant-txt {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  line-height: 1.35;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-}
-.palmares-gagnant-txt b {
-  display: block;
-  font-size: 12px;
+/* LA DURÉE, EN ENCRE. Le rang dit qui mène, jamais DE COMBIEN : premier de dix
+   minutes ou de six heures, c'est le même trait. C'est ce chiffre-ci qui se
+   cite, et il ne doit donc pas être une nuance de la couleur du parti. */
+.palmares-etiquette-duree {
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--ink);
 }
+.palmares-etiquette.shadow .palmares-etiquette-sigle,
+.palmares-etiquette.shadow .palmares-etiquette-duree { color: var(--ink-softer); font-weight: 500; }
+.palmares-etiquette.shadow .palmares-rang { background: var(--ink-softer); opacity: 0.75; }
 
 /* ── Mise en vedette ──────────────────────────────────────────────────────── */
 .palmares-figure.a-vedette .palmares-trait { opacity: 0.13; }
 .palmares-figure.a-vedette .palmares-trait.vedette { opacity: 1; stroke-width: 2.4; }
-.palmares-figure.a-vedette .palmares-pochette { opacity: 0.2; }
-.palmares-figure.a-vedette .palmares-pochette.vedette {
-  opacity: 1;
-  transform: scale(1.3);
-  z-index: 2;
-}
-.palmares-figure.a-vedette .palmares-nom { opacity: 0.4; }
-.palmares-figure.a-vedette .palmares-nom.vedette { opacity: 1; }
-.palmares-nom.vedette .palmares-rang { transform: scale(1.15); }
+/* Le halo suit son trait : sans ça, les liserés de papier des lignes éteintes
+   resteraient pleins et continueraient de couper celle qu'on met en vedette. */
+.palmares-figure.a-vedette .palmares-halo { opacity: 0.13; }
+.palmares-figure.a-vedette .palmares-etiquette { opacity: 0.28; }
+.palmares-figure.a-vedette .palmares-etiquette.vedette { opacity: 1; }
 .palmares-trait,
-.palmares-pochette,
-.palmares-nom { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
+.palmares-halo,
+.palmares-etiquette { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
 
 @media (prefers-reduced-motion: reduce) {
-  .palmares-trait { animation: none; stroke-dashoffset: 0; }
   .palmares-trait,
-  .palmares-pochette,
-  .palmares-nom,
-  .palmares-rang { transition: none; }
+  .palmares-halo { animation: none; stroke-dashoffset: 0; }
+
+  .palmares-trait,
+  .palmares-halo,
+  .palmares-etiquette { transition: none; }
 }
 
-/* Sur téléphone, le palmarès ne montre qu'UNE chose à la fois : il n'y a pas la
-   largeur pour un graphique ET une colonne, et les empiler l'un sous l'autre
-   allongerait le module au point de sortir de l'écran — or toute la table de
-   mix doit y tenir.
-
-   Tant que la course dure, ce sont les COURBES : c'est le mouvement qui
-   intéresse. Une fois l'arrivée franchie — l'édition de 20h, celle du vendredi
-   20h, le jour du scrutin — c'est le CLASSEMENT : la course est finie, seul le
-   résultat compte. */
+/* Sur téléphone, il ne reste que le graphique — l'encadré du classement, qui
+   lui disputait la largeur et le remplaçait une fois l'arrivée franchie, a été
+   retiré le 2026-08-30. La règle qui masquait la zone au terme de la course est
+   partie avec lui : sans elle, un palmarès terminé n'affichait plus rien. */
 @media (max-width: 640px) {
-  .palmares-figure { padding: 10px 10px 8px; --marge-y: 32px; }
-  .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .palmares-zone { min-height: 88px; }
-  .palmares-x { margin: 4px 0 0 var(--marge-y); }
-
-  /* EN COURS DE COURSE, la colonne se réduit au bloc de tête — elle n'est plus
-     masquée en entier.
-     `display: none` sur toute la colonne retirait les durées de l'écran, et
-     elles ne vivent QUE là : on obtenait un « palmarès, en minutes passées en
-     Une » sans une seule minute affichée, tant que la journée n'était pas
-     terminée. Or c'est précisément le chiffre qui se cite — « la CAQ a occupé
-     2 h 15 » — et le pourcentage ne le remplace pas.
-     La liste des cinq, elle, reste masquée : c'est elle qui ne tient pas dans
-     la largeur. Une seule durée, celle du meneur, suffit à ne pas mentir. */
-  .palmares-classement { display: block; padding: 8px 9px; }
-  .palmares-figure:not(.termine) .palmares-liste { display: none; }
-  /* Sans liste en dessous, le filet de séparation ne sépare plus rien. */
-  .palmares-figure:not(.termine) .palmares-gagnant {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-
-  .palmares-figure.termine .palmares-zone,
-  .palmares-figure.termine .palmares-x { display: none; }
-  .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
-  .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
-  .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
+  /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
+     et la largeur de l'écran fait déjà une proportion tenable. La réserve de
+     droite se resserre avec les étiquettes. */
+  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 74px; }
+  /* Cinq rangées restent cinq rangées : c'est le seul poste qu'on ne comprime
+     pas, sous 70 px elles se touchent. */
+  .palmares-zone { min-height: 74px; }
+  .palmares-x { margin: 4px var(--marge-fin) 0 var(--marge-y); }
+  .palmares-etiquette { margin-left: 6px; gap: 4px; font-size: 8px; letter-spacing: 0.08em; }
+  .palmares-rang { width: 13px; height: 13px; font-size: 7.5px; }
+  .palmares-trait { stroke-width: 1.7; }
+  .palmares-trait.meneur { stroke-width: 2.2; }
+  .palmares-halo { stroke-width: 4.6; }
 }
 
 /* Le fader d'un module suspendu : présent, mais sans prise. Le faire

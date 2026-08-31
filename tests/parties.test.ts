@@ -1,8 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { __test__, PARTY_KEYS, PARTY_COLORS } from "@/lib/data/parties";
 
-const { buildLookup, computeStats, sparkPoints, samplePoints, buildRangeView, buildChart, axisTop, lundiDeLaSemaine } =
-  __test__;
+const {
+  buildLookup,
+  computeStats,
+  sparkPoints,
+  samplePoints,
+  buildRangeView,
+  buildChart,
+  buildChartIntraday,
+  axisTop,
+  samediDOuverture,
+} = __test__;
 
 /** computeStats renvoie désormais { stats, dates } — les dates servent à
  *  étiqueter l'axe horizontal de la course. */
@@ -220,17 +229,124 @@ describe("buildChart — la course", () => {
     expect(chart.xLabels.at(-1)!.x).toBeGreaterThan(chart.xLabels[0].x);
   });
 
-  it("étiquette la semaine en jours, y compris ceux à venir", () => {
+  it("étiquette la semaine en SEPT jours, fin de semaine comprise", () => {
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
     const chart = buildChart(stats, dates, "week");
-    // Trois jours de données, mais l'axe montre la semaine entière jusqu'à son
-    // arrivée : c'est ce qui laisse voir le chemin restant.
-    expect(chart.xLabels.length).toBeGreaterThan(3);
-    for (const l of chart.xLabels) {
-      // « vendredi » en toutes lettres : c'est le jour d'ARRIVÉE, et le
-      // distinguer évite de poser une étiquette de plus au bout de l'axe.
-      expect(["lun.", "mar.", "mer.", "jeu.", "sam.", "dim.", "vendredi"]).toContain(l.label);
+
+    // LA RÉGRESSION QUE CE TEST VERROUILLE. La semaine allait du lundi au
+    // vendredi et n'en montrait donc que cinq : les repères s'arrêtent à
+    // l'arrivée, et samedi comme dimanche tombaient au-delà. En OUVRANT la
+    // semaine le samedi, la fin de semaine passe avant l'arrivée et les sept
+    // jours tiennent — sans que le vendredi 20h bouge.
+    expect(chart.xLabels.map((l) => l.label)).toEqual([
+      "sam.", "dim.", "lun.", "mar.", "mer.", "jeu.", "vendredi",
+    ]);
+
+    // Les six premiers écarts valent 24 h ; l'axe est donc régulier, et ce qui
+    // reste entre dimanche 00h et l'arrivée est le reste de la journée.
+    // Tolérance d'un centième : les abscisses sont arrondies à deux décimales
+    // avant d'être publiées, et l'écart hérite donc de cet arrondi.
+    const ecarts = chart.xLabels.slice(1).map((l, i) => l.x - chart.xLabels[i].x);
+    for (const e of ecarts) expect(Math.abs(e - ecarts[0])).toBeLessThanOrEqual(0.02);
+
+    // LE VENDREDI TOMBE SUR LA LIGNE D'ARRIVÉE, et non vingt heures avant elle.
+    // Les repères étaient posés au minuit de chaque journée alors que l'arrivée
+    // est à 20 h : l'axe se lisait comme mal calé, et le dernier intervalle
+    // valait 44 h contre 24 h partout ailleurs. Repères et arrivée sont
+    // maintenant sur les mêmes éditions de 20 h.
+    expect(chart.xLabels.at(-1)!.label).toBe("vendredi");
+    expect(chart.xLabels.at(-1)!.x).toBeCloseTo(chart.finish.x, 6);
+  });
+
+  it("la ligne d'arrivée touche le bord DROIT, sur les trois vues", () => {
+    // `CHART_PAD_R` réservait 9 % au-delà de l'arrivée pour loger les étiquettes
+    // de bout de ligne. Elles vivent maintenant dans `--marge-fin`, hors de la
+    // zone de tracé : la réserve faisait double emploi, et le vide qu'elle
+    // laissait après l'arrivée se lisait comme du chemin restant à courir alors
+    // que la course y était finie.
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    for (const vue of ["today", "week", "overall"] as const) {
+      const chart = buildChart(stats, dates, vue);
+      expect(chart.finish.x, vue).toBeCloseTo(chart.width, 6);
     }
+  });
+});
+
+describe("les graduations des trois vues", () => {
+  /** Une ligne intra-journée, telle que le raffineur la publie. */
+  const bloc = (party: string, h: number, minutes: number) => ({
+    party,
+    date_utc: "2026-08-27",
+    date_montreal_tz: "2026-08-27",
+    weighted_mentions: minutes / 1000,
+    total_raw_score: minutes,
+    weighted_tone: 0,
+    computed_at: "2026-08-27T19:32:58Z",
+    block_hour: h,
+    block_label: `${h}h`,
+  });
+
+  it("Jour : six repères de quatre heures, de minuit à l'arrivée", () => {
+    const rows = [7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    expect(chart.xLabels.map((l) => l.label)).toEqual(["00h", "04h", "08h", "12h", "16h", "20h"]);
+    expect(chart.finish.label).toBe("20h");
+  });
+
+  it("Jour : un bloc bâtard REMONTE sur sa graduation", () => {
+    // C'est la triche assumée de `surLaGraduation`. Un passage qui couvre 7h à
+    // 11h publie `block_hour: 11` ; posé à sa valeur brute, le point tomberait
+    // entre le repère de 08h et celui de 12h, et se lirait comme un axe mal
+    // calé. On le remonte à 12h — vers le haut, jamais vers le bas : redescendre
+    // à 08h daterait la mesure d'avant les trois heures qu'elle couvre.
+    const rows = [7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    const graduations = new Set(chart.xLabels.map((l) => l.x));
+
+    // TOUT point tracé tombe sur un repère de l'axe, sans exception.
+    for (const serie of chart.series) {
+      const xs = serie.polylineMin.split(" ").map((p) => Number(p.split(",")[0]));
+      expect(xs.length).toBe(2);
+      for (const x of xs) expect(graduations).toContain(x);
+    }
+    // 7h → 08h et 11h → 12h : les deux repères visés, et pas d'autres.
+    const x08 = chart.xLabels.find((l) => l.label === "08h")!.x;
+    const x12 = chart.xLabels.find((l) => l.label === "12h")!.x;
+    const xs = chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0]));
+    expect(xs).toEqual([x08, x12]);
+  });
+
+  it("Jour : deux blocs bâtards sur la même graduation gardent le PLUS RÉCENT", () => {
+    // 9h et 11h remontent tous deux à 12h. La mesure cumulant depuis minuit,
+    // c'est celle de 11h qui est complète — donc la plus grande.
+    const rows = [
+      ...PARTY_KEYS.map((p) => bloc(p.toUpperCase(), 3, 100)),
+      ...PARTY_KEYS.map((p) => bloc(p.toUpperCase(), 11, 900)),
+      ...PARTY_KEYS.map((p) => bloc(p.toUpperCase(), 9, 400)),
+    ];
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    // Deux points seulement : 3h → 04h, et 9h comme 11h → 12h.
+    const xs = chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0]));
+    expect(xs.length).toBe(2);
+    expect(chart.series[0].lastMinutes).toBe(900);
+  });
+
+  it("Période : des repères réguliers, tous distincts", () => {
+    const vals: Record<string, number> = { caq: 0.4, pq: 0.3, qs: 0.15, plq: 0.1, pcq: 0.05 };
+    const jours = ["2026-08-25", "2026-08-26", "2026-08-27"];
+    const quotidien = () => jours.flatMap((d) => PARTY_KEYS.map((k) => row(k, d, vals[k])));
+    const { stats, dates } = statsOf(quotidien(), quotidien(), quotidien());
+    const chart = buildChart(stats, dates, "overall");
+    const xs = chart.xLabels.map((l) => l.x);
+    // Strictement croissants, donc jamais deux repères l'un sur l'autre.
+    for (let i = 1; i < xs.length; i++) expect(xs[i]).toBeGreaterThan(xs[i - 1]);
+    // Et aucun libellé répété : sur une fenêtre courte, six repères pourraient
+    // retomber deux fois sur la même journée.
+    expect(new Set(chart.xLabels.map((l) => l.label)).size).toBe(chart.xLabels.length);
   });
 });
 
@@ -375,27 +491,38 @@ describe("detecterIndisponibilite", () => {
 });
 
 
-describe("une seule durée par parti — régression PR #539", () => {
-  /** Le raffineur filtre les mêmes articles sur `stop_mtl >= start_date_mtl`
-   *  puis somme `headline_minutes` : le total d'une semaine EST la somme des
-   *  totaux de ses jours depuis le LUNDI
-   *  (radar-party-score-salient-shadow/runtime.R:269-302).
+describe("la semaine du palmarès — samedi → vendredi", () => {
+  /** ⚠️ CE BLOC A CHANGÉ DE SENS LE 2026-08-30, ET IL FAUT LE SAVOIR.
    *
-   *  L'axe du palmarès ouvrait la semaine le SAMEDI. Il cumulait donc deux
-   *  jours que la table n'agrège pas, et la pochette annonçait 14h40 quand le
-   *  palmarès finissait à 17h16 pour le même parti, sur le même écran — le
-   *  classement des deux pouvait diverger avec. Rien ne le signalait : les
-   *  deux nombres étaient justes chacun dans sa fenêtre.
+   *  Il verrouillait la correction de la PR #539 : l'axe du palmarès ouvrait la
+   *  semaine le SAMEDI, il cumulait donc deux jours que la table hebdomadaire du
+   *  raffineur n'agrège pas — elle part du LUNDI
+   *  (`week_start = 1`, radar-party-score-salient-shadow/runtime.R:269-302) — et
+   *  la pochette annonçait 14h40 quand le palmarès finissait à 17h16 pour le
+   *  même parti, sur le même écran.
+   *
+   *  L'ouverture au samedi a été REDEMANDÉE, pour que la fin de semaine
+   *  apparaisse sur un axe dont l'arrivée reste le vendredi 20h. La divergence
+   *  serait revenue avec elle — le palmarès cumulant samedi et dimanche, la
+   *  pochette non.
+   *
+   *  ELLE N'A PLUS DE SURFACE OÙ SE VOIR. Le palmarès classe désormais sur les
+   *  minutes DU JOUR et non sur leur cumul (cf. `minOf`), parce qu'un cumul
+   *  verrouille l'ordre et qu'un graphique de rangs sans croisement ne montre
+   *  rien. Il ne publie donc plus aucun total de période : sa dernière valeur
+   *  est celle du dernier jour publié, et il n'y a plus deux totaux de semaine
+   *  à confronter sur un même écran. Le choix de la borne d'ouverture est
+   *  redevenu une question d'AXE, sans conséquence sur un chiffre.
    */
-  it("lundiDeLaSemaine tombe un lundi, y compris quand on part d'un lundi", () => {
-    for (const jour of ["2026-08-17", "2026-08-18", "2026-08-21", "2026-08-23"]) {
-      const t = lundiDeLaSemaine(Date.parse(`${jour}T14:00:00Z`));
-      expect(new Date(t).getUTCDay(), `${jour} → ${new Date(t).toISOString()}`).toBe(1);
+  it("samediDOuverture tombe un samedi, y compris quand on part d'un samedi", () => {
+    for (const jour of ["2026-08-15", "2026-08-17", "2026-08-21", "2026-08-22"]) {
+      const t = samediDOuverture(Date.parse(`${jour}T14:00:00Z`));
+      expect(new Date(t).getUTCDay(), `${jour} → ${new Date(t).toISOString()}`).toBe(6);
       expect(t).toBeLessThanOrEqual(Date.parse(`${jour}T00:00:00Z`));
     }
   });
 
-  it("la pochette et le palmarès affichent le MÊME nombre de minutes", () => {
+  it("le palmarès ne publie AUCUN total de période, donc ne peut plus contredire la pochette", () => {
     // Le SAMEDI et le DIMANCHE qui précèdent sont présents et non nuls : sans
     // eux, ouvrir l'axe deux jours trop tôt n'ajoute rien et le test ne prouve
     // rien. C'est précisément ce qui rendait la régression invisible.
@@ -434,13 +561,48 @@ describe("une seule durée par parti — régression PR #539", () => {
     const c = computeStats(jours as never, semaine as never, semaine as never)!;
     const vue = buildRangeView(c.stats, "week", c.dates);
 
-    for (const ligne of vue.rows) {
-      const serie = vue.chart.series.find((s) => s.key === ligne.key);
-      if (!serie) continue;
-      expect(serie.lastMinutes, `${ligne.key} : pochette ${ligne.minutesUne} vs palmarès ${serie.lastMinutes}`)
-        .toBe(ligne.minutesUne);
-    }
+    // LA POCHETTE lit la table hebdomadaire du raffineur, qui part du lundi.
     expect(vue.rows[0].minutesUne).toBe(sCaq);
+
+    // LE PALMARÈS affiche la valeur du DERNIER JOUR, pas un total. Les deux
+    // nombres ne sont donc plus la même grandeur, et l'un ne peut plus démentir
+    // l'autre — quelle que soit la borne d'ouverture de l'axe.
+    for (const cle of ["caq", "plq"] as const) {
+      const serie = vue.chart.series.find((s) => s.key === cle)!;
+      expect(serie.lastMinutes, `${cle} : dernier jour`).toBe(MIN[cle].at(-1));
+    }
+
+    // Et le libellé dit ce que ce nombre couvre, sans quoi il se lirait comme
+    // un total de semaine.
+    expect(vue.chart.mesureLabel).toMatch(/^le \d/);
+  });
+
+  it("le classement de la semaine bouge d'un jour à l'autre", () => {
+    // La raison d'être du changement : un cumul VERROUILLE l'ordre, et un
+    // graphique de rangs sans croisement ne montre rien. Ici la CAQ mène les
+    // deux premiers jours, le PLQ le troisième — le classement doit suivre.
+    const JOURS = ["2026-08-24", "2026-08-25", "2026-08-26"];
+    const MINUTES: Record<string, number[]> = { caq: [200, 200, 10], plq: [50, 50, 400] };
+    const mk = (party: string, date: string, minutes: number, part: number) => ({
+      party, date_utc: date, date_montreal_tz: date,
+      weighted_mentions: part, weighted_tone: 0, total_raw_score: minutes,
+    });
+    const jours = JOURS.flatMap((d, i) => {
+      const tot = MINUTES.caq[i] + MINUTES.plq[i];
+      return [mk("caq", d, MINUTES.caq[i], MINUTES.caq[i] / tot),
+              mk("plq", d, MINUTES.plq[i], MINUTES.plq[i] / tot)];
+    });
+
+    const c = computeStats(jours as never, jours as never, jours as never)!;
+    const chart = buildChart(c.stats, c.dates, "overall");
+    const yDe = (cle: string) =>
+      chart.series.find((s) => s.key === cle)!.polylineMin.split(" ").map((p) => Number(p.split(",")[1]));
+
+    const caq = yDe("caq");
+    const plq = yDe("plq");
+    // `y` est l'ordonnée SVG, donc INVERSE de la durée : plus petit = devant.
+    expect(caq.at(-3)!).toBeLessThan(plq.at(-3)!);
+    expect(caq.at(-1)!).toBeGreaterThan(plq.at(-1)!);
   });
 
   it("les enjeux non fournis se déclarent tels quels, au lieu de « aucun »", () => {
