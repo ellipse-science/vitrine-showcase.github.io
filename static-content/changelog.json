@@ -1,5 +1,11 @@
 [
   {
+    "pr": 652,
+    "date": "2026-08-31T20:17:22Z",
+    "note": "Sur le module des 12 enjeux, quand vous ouvrez un enjeu pour lire ses actualités, vous pouvez maintenant le refermer en cliquant simplement à côté, plutôt qu'en visant le petit bouton « Fermer ».",
+    "version": null
+  },
+  {
     "pr": 579,
     "date": "2026-08-31T14:07:31Z",
     "note": "Les promesses de la campagne affichent désormais leur thème — santé, environnement, économie — à côté du texte du parti.",
