@@ -2,6 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Ces quatre clés viennent du gabarit d'Xcode. Écrire un Info.plist à la
+	     main ne les fournit PAS, et Xcode ne les injecte pas non plus quand on
+	     lui passe un INFOPLIST_FILE explicite. Sans CFBundleIdentifier, la
+	     compilation et la signature réussissent, puis l'archivage échoue sur
+	     « Archive Missing Bundle Identifier » (vécu le 2026-08-31). -->
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>fr_CA</string>
 	<key>CFBundleDisplayName</key>

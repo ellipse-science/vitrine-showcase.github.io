@@ -107,6 +107,40 @@ describe("l'application iOS ne montre que la production", () => {
   });
 });
 
+describe("les Info.plist portent les clés du gabarit d'Xcode", () => {
+  // Un Info.plist écrit à la main ne reçoit PAS ces clés automatiquement, même
+  // avec un INFOPLIST_FILE explicite. Sans CFBundleIdentifier, tout compile et
+  // se signe correctement, puis l'archivage échoue sur « Archive Missing Bundle
+  // Identifier » — dix minutes plus tard, et sans nommer la clé manquante.
+  const REQUISES = [
+    "CFBundleIdentifier",
+    "CFBundleExecutable",
+    "CFBundlePackageType",
+    "CFBundleInfoDictionaryVersion",
+    "CFBundleShortVersionString",
+    "CFBundleVersion",
+  ];
+
+  const plists = [
+    "Vitrine/Info.plist",
+    "VitrineWidget/Info.plist",
+  ].map((chemin) => ({
+    chemin,
+    xml: readFileSync(join(RACINE_IOS, chemin), "utf8"),
+  }));
+
+  it.each(plists)("$chemin déclare toutes les clés requises", ({ chemin, xml }) => {
+    const manquantes = REQUISES.filter((cle) => !xml.includes(`<key>${cle}</key>`));
+    expect(manquantes, `${chemin} : clés absentes`).toEqual([]);
+  });
+
+  it.each(plists)("$chemin dérive son identifiant du réglage de cible", ({ xml }) => {
+    // En dur, l'identifiant de l'extension et celui de l'application
+    // finiraient par diverger de `project.yml` sans que rien ne le signale.
+    expect(xml).toContain("<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>");
+  });
+});
+
 describe("Shared/Enjeux.swift recopie fidèlement lib/enjeux.ts", () => {
   const enjeux = SOURCES.find((f) => f.chemin.endsWith("Enjeux.swift"));
 
