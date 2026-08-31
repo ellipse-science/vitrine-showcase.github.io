@@ -4833,7 +4833,7 @@
      composant (⌈n/2⌉) ; le repli à 3 ne sert que si l'attribut manque. */
   .treemap-growth .gt-expanded-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--colonnes, 2), minmax(0, 1fr));
     grid-template-rows: repeat(var(--lignes, 3), auto);
     grid-auto-flow: column;
     align-content: start;

@@ -330,12 +330,24 @@ function GrowthTile({
                   `grid-auto-flow: column`, une colonne se remplit avant de passer
                   à la suivante. Une grille multi-colonnes CSS (`columns: 2`)
                   équilibrerait par HAUTEUR et pourrait mettre 4 titres d'un côté
-                  et 2 de l'autre — ici le partage est exact par construction. */}
+                  et 2 de l'autre ; ici le partage est exact par construction.
+
+                  ⚠️ SOUS QUATRE ACTUALITÉS, UNE SEULE COLONNE. Deux colonnes
+                  n'existent que pour éviter une liste trop longue à parcourir.
+                  À deux actualités, ⌈2/2⌉ donnait UNE rangée, donc les deux
+                  côte à côte, ce qui ne se lit plus comme un classement (retour
+                  d'Adrien, 31-08). En dessous du seuil il n'y a rien à
+                  raccourcir : elles s'empilent. */}
             {tile.articles.length > 0 ? (
               <div
                 className="gt-expanded-list"
                 role="list"
-                style={{ "--lignes": Math.ceil(tile.articles.length / 2) } as React.CSSProperties}
+                style={{
+                  "--colonnes": tile.articles.length <= 3 ? 1 : 2,
+                  "--lignes": tile.articles.length <= 3
+                    ? tile.articles.length
+                    : Math.ceil(tile.articles.length / 2),
+                } as React.CSSProperties}
               >
                 {tile.articles.map((article, index) => (
                   <article className="gt-expanded-story" role="listitem" key={`${article.title}-${index}`}>
