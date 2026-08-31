@@ -151,31 +151,97 @@ async function pruneAudio() {
   console.log(`postbuild: ${removed} fichier(s) audio retiré(s) du livrable prod (${mb} Mo)`);
 }
 
-// CONTRÔLE, pas nettoyage : si une page prod porte encore le lecteur, retirer
-// les fichiers ne ferait que remplacer un son par un 404 silencieux. On arrête
-// le build.
+// DOOM RETIRÉ DE PROD (#470, #547) : le déclencheur est gardé sur dev depuis
+// #547, mais les FICHIERS partaient quand même — `output: export` recopie tout
+// public/. Sur un site dont la crédibilité tient à l'apolitisme, un fichier de
+// niveaux qui porte le nom d'un chef de parti restait téléchargeable à
+// /mods/duhaime.wad, et `robots.txt` prod dit `Allow: /`. Dev les garde.
+const DOOM_DIRS_PROD = [["mods"], ["images", "doom"]];
+
+async function pruneDoomAssets() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  let removed = 0;
+  for (const segments of DOOM_DIRS_PROD) {
+    const dir = path.join(OUT_DIR, ...segments);
+    try {
+      for await (const file of filesWithSuffix(dir, "")) {
+        void file;
+        removed++;
+      }
+    } catch (err) {
+      if (err.code === "ENOENT") continue;
+      throw err;
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+  console.log(`postbuild: ${removed} fichier(s) DOOM retiré(s) du livrable prod`);
+}
+
+// CONTRÔLE, pas nettoyage : si une page prod porte encore le lecteur ou le
+// jeu, retirer les fichiers ne ferait que remplacer un son par un 404
+// silencieux. On arrête le build.
 //
 // Ce contrôle vit ICI et non dans `deploy-prod.yml` (qui en a déjà de
 // semblables) parce que ce workflow ne déclenche plus la vraie prod depuis la
 // bascule du 2026-08-19 : c'est Cloudflare qui bâtit. postbuild, lui, tourne
 // dans TOUS les builds — un garde-fou placé dans le workflow de secours ne
 // garderait plus rien.
-async function assertNoAudioLeft() {
+//
+// Les marqueurs sont choisis pour être INAMBIGUS — « duhaime » seul est
+// inutilisable : le chef du PCQ figure légitimement dans les données de presse
+// du site, jusque dans les titres du Polimètre+.
+//
+// LA PORTÉE DIFFÈRE PAR MARQUEUR, et c'est un constat mesuré, pas une
+// prudence. Build prod du 2026-08-31 :
+//   - `webprboom` / `doom-seamless-wrap` : ABSENTS des chunks .js — l'arbre est
+//     bien secoué, le composant DOOM ne part pas. On peut donc l'exiger.
+//   - « Ambiance du moment » : PRÉSENT dans deux chunks .js malgré la garde.
+//     `AudioPlayer` est importé statiquement par un composant serveur ; Next
+//     enregistre la référence client même quand le JSX n'est jamais rendu.
+//     C'est du code mort — aucune page ne l'affiche, aucun fichier audio n'est
+//     servi — mais l'exiger en .js ferait échouer tous les builds prod.
+// D'où : le lecteur est interdit à l'ÉCRAN (HTML), DOOM est interdit partout.
+const MARQUEURS_INTERDITS_PROD = [
+  { texte: "Ambiance du moment", quoi: "le lecteur d'ambiance", suffixes: [".html"] },
+  { texte: "doom-seamless-wrap", quoi: "le composant DOOM", suffixes: [".html", ".js"] },
+  { texte: "webprboom", quoi: "l'iframe DOOM", suffixes: [".html", ".js"] },
+];
+
+async function assertProdPerimeter() {
   if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
-  const offenders = [];
-  for await (const file of htmlFiles(OUT_DIR)) {
-    if ((await readFile(file, "utf8")).includes("Ambiance du moment")) {
-      offenders.push(path.relative(OUT_DIR, file));
+
+  const fautifs = [];
+  for (const suffixe of [".html", ".js"]) {
+    const attendus = MARQUEURS_INTERDITS_PROD.filter((m) => m.suffixes.includes(suffixe));
+    for await (const file of filesWithSuffix(OUT_DIR, suffixe)) {
+      const contenu = await readFile(file, "utf8");
+      for (const { texte, quoi } of attendus) {
+        if (contenu.includes(texte)) {
+          fautifs.push(`${quoi} → ${path.relative(OUT_DIR, file)}`);
+        }
+      }
     }
   }
-  if (offenders.length > 0) {
+
+  // Ceinture et bretelles : la purge a-t-elle bien eu lieu ? Un `readdir` qui
+  // réussit là où on attend ENOENT veut dire qu'un dossier a échappé au tri.
+  for (const segments of [["audio"], ...DOOM_DIRS_PROD]) {
+    try {
+      await readdir(path.join(OUT_DIR, ...segments));
+      fautifs.push(`dossier non purgé → ${segments.join("/")}/`);
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;
+    }
+  }
+
+  if (fautifs.length > 0) {
     console.error(
-      `postbuild: le lecteur d'ambiance figure encore dans ${offenders.length} page(s) prod ` +
-      `(${offenders.slice(0, 3).join(", ")}…) — build interrompu.`,
+      `postbuild: ${fautifs.length} fuite(s) hors périmètre prod — build interrompu.\n  ` +
+      fautifs.slice(0, 8).join("\n  "),
     );
     process.exit(1);
   }
-  console.log("postbuild: aucune page prod ne porte le lecteur d'ambiance ✓");
+  console.log("postbuild: périmètre prod respecté (ni ambiance, ni DOOM) ✓");
 }
 
 // Identifiant de build pour l'actualisation côté navigateur (composant
@@ -241,7 +307,8 @@ async function main() {
   await pruneDataJson();
   await pruneShareBackgrounds();
   await pruneAudio();
-  await assertNoAudioLeft();
+  await pruneDoomAssets();
+  await assertProdPerimeter();
 
   // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
   // identifiant nomme le cache du service worker — la sonde ActualisationAuto

@@ -1170,6 +1170,15 @@
       grid-column: 2;
       grid-row: 2;
     }
+    /* SANS le bloc Ambiance, la rangée 1 de la colonne de droite n'a plus
+       d'occupant : sa hauteur `auto` tombe à 0, mais le `row-gap` de 18 px de
+       .une-main-grid, lui, reste — et l'illustration descend de 18 px sous le
+       haut du titre. Deux cas, pas un : les éditions passées (#434, jamais de
+       musique archivée) et, depuis 2026-08-31, toute la prod. On rend alors
+       les deux rangées à l'illustration. */
+    .une-main-grid.has-art:not(:has(.hero-audio-overlay)) .hero-figure-inline {
+      grid-row: 1 / span 2;
+    }
     .hero-figure-inline {
       display: flex;
       flex-direction: column;
