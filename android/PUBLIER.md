@@ -1,5 +1,31 @@
 # Publier l'application Android sur le Play Store
 
+> ## 🛑 PLAN ABANDONNÉ le 2026-08-31
+>
+> **La publication sur le Play Store a été écartée. Rien de ce qui suit n'est
+> en cours.** Aucun compte n'a été créé, aucun frais engagé, aucune personne
+> sollicitée pour tester.
+>
+> Pourquoi : un compte de développeur **personnel** ne peut demander l'accès à
+> la production qu'après un test fermé réunissant **12 personnes pendant 14
+> jours d'affilée**, sur des appareils Android réels. Le compte
+> d'organisation, qui en dispense, exige une autorité de signature de
+> l'Université Laval que le processus institutionnel ne permet pas d'obtenir
+> dans un délai utile.
+>
+> **Le code reste en place et fonctionne** : `android.yml` le compile, ses 11
+> tests unitaires s'exécutent, et un paquet `.aab` valide en sort. Il ne coûte
+> rien à conserver et n'attend qu'une décision.
+>
+> Ce qui le relancerait, sans rien réécrire :
+> - un compte d'organisation de l'Université Laval, qui supprime la règle des
+>   14 jours ;
+> - ou une douzaine de personnes disposant d'un téléphone Android.
+>
+> L'application iOS n'est pas concernée : elle est soumise et suit son cours.
+
+---
+
 De zéro jusqu'à l'application disponible publiquement. Tout se fait dans un
 navigateur et sur un téléphone : aucun Android Studio requis, la compilation
 vit dans `.github/workflows/android.yml`.
