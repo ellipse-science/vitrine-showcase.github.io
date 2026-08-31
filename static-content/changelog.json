@@ -1,5 +1,11 @@
 [
   {
+    "pr": 579,
+    "date": "2026-08-31T14:07:31Z",
+    "note": "Les promesses de la campagne affichent désormais leur thème — santé, environnement, économie — à côté du texte du parti.",
+    "version": "2.39.0-beta.0"
+  },
+  {
     "pr": 578,
     "date": "2026-08-31T13:56:04Z",
     "note": "Rien ne change sur le site. Cette modification consigne une décision de méthode pour les travaux à venir.",
