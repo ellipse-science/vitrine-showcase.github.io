@@ -4828,9 +4828,14 @@
     color: #F3ECDD;
   }
   .treemap-growth .gt-expanded-growth .gt-pct { font-size: 26px; }
+  /* `grid-auto-flow: column` + un nombre de rangées FIXE = remplissage par
+     colonne : 1-2-3 à gauche, 4-5-6 à droite. `--lignes` est posé par le
+     composant (⌈n/2⌉) ; le repli à 3 ne sert que si l'attribut manque. */
   .treemap-growth .gt-expanded-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--lignes, 3), auto);
+    grid-auto-flow: column;
     align-content: start;
     column-gap: 38px;
     overflow-y: auto;
@@ -4848,14 +4853,18 @@
     padding: 19px 0 17px;
     border-bottom: 1px solid rgba(243, 236, 221, 0.24);
   }
+  /* 17px plutôt que 10 : le rang EST une information — c'est le classement de
+     l'actualité dans son enjeu — et il se lisait comme une décoration (retour
+     d'Adrien, 31-08). Chiffres tabulaires pour que les colonnes s'alignent. */
   .treemap-growth .gt-expanded-index {
     grid-column: 1;
     grid-row: 1 / 3;
-    padding-top: 3px;
+    padding-top: 1px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    opacity: 0.56;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    opacity: 0.42;
   }
   .treemap-growth .gt-expanded-title {
     grid-column: 2;
@@ -4909,9 +4918,29 @@
     font-size: 19px;
     font-style: italic;
   }
+  /* La saillance atteinte AU SOMMET, posée sur la même ligne que l'heure du
+     sommet : les deux décrivent le même instant. Séparée par un filet plutôt
+     que par un point, pour qu'on ne lise pas « 16h Saillance ». */
+  .treemap-growth .gt-expanded-saillance {
+    margin-left: 9px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(243, 236, 221, 0.3);
+  }
+  .treemap-growth .gt-expanded-saillance b {
+    font-weight: 500;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
   @media (max-width: 900px) {
     .treemap-growth .gt-expanded-panel { padding: 28px 30px 24px; }
-    .treemap-growth .gt-expanded-list { grid-template-columns: 1fr; }
+    /* Une seule colonne : le remplissage par colonne n'a plus de sens, on
+       revient au flux normal pour garder l'ordre 1, 2, 3… */
+    .treemap-growth .gt-expanded-list {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-flow: row;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .treemap-growth .gt-container { transition-duration: 0.01ms; }

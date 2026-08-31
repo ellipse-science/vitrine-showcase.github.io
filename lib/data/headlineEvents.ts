@@ -1996,7 +1996,7 @@ export type TreemapIssueTile = {
     /** Le moment où la nouvelle a CULMINÉ en saillance dans la fenêtre.
      *  `cle` est comparable lexicographiquement (« 2026-08-30T16 »), `libelle`
      *  se lit (« 16h cet après-midi »). `null` si l'horodatage est inexploitable. */
-    sommet: { cle: string; libelle: string } | null;
+    sommet: { cle: string; libelle: string; score: number; saillance: string } | null;
   }[];
 };
 
@@ -2678,7 +2678,15 @@ function sommetDeSaillance(occurrences: RawEvent[], refDayIso: string | null) {
   const dayWord = jours <= 0 ? "aujourd’hui" : jours === 1 ? "hier"
     : `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
   const libelle = momentLabel(dayWord, heure) ?? `${heure % 24}h`;
-  return { cle, libelle };
+  // Le score du PIC et la bande où il tombe. `saillanceTierFromScore` lit par
+  // défaut `SAL_QC_THRESHOLDS`, la grille ANCRÉE du pic (#477) — la même que
+  // celle du module 1 : les deux modules nomment donc le même niveau pareil.
+  // ⚠️ C'est un score de BLOC, pas le cumul 24 h sur 100 du badge de la Une
+  // (#566). Deux échelles, deux grilles (#224) — d'où « au sommet » à l'écran
+  // plutôt qu'un « pts » nu, qui inviterait à additionner les deux.
+  const score = pic.score_qc ?? 0;
+  const { label: saillance } = saillanceTierFromScore(score);
+  return { cle, libelle, score, saillance };
 }
 
 function buildIssueMedia(
