@@ -6,6 +6,7 @@ import type { Discotheque, Pochette } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
 import { couleurEnjeu, signaturePochette } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
+import { formatEcartTon, phraseEcartTon } from "@/lib/ton";
 import { cheminDeRang, depuisLOrigine, hauteurDuRang, rangsParInstant } from "@/lib/rangs";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
@@ -36,6 +37,36 @@ const ENJEU_NON_VENTILE = "Non ventilé par média";
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 const RANGES: RangeKey[] = ["today", "week", "overall"];
+
+/** CE QUE LE PALMARÈS CLASSE.
+ *
+ *  Deux courses sur le même graphique, et le lecteur bascule de l'une à
+ *  l'autre : le disque le plus ÉCOUTÉ — le temps passé en Une — et le plus
+ *  APPRÉCIÉ — le ton de ce qui s'y dit. Ce sont deux questions différentes, et
+ *  leurs classements n'ont aucune raison de coïncider : un parti peut occuper
+ *  toute la Une et n'y récolter que du défavorable. C'est même l'écart entre les
+ *  deux qui est intéressant.
+ *
+ *  Les deux pistes voyagent dans la même donnée (cf. `polylineTon` dans
+ *  `lib/data/parties.ts`), donc la bascule est instantanée : rien à recharger. */
+type ModePalmares = "ecoute" | "apprecie";
+
+const MODES: { cle: ModePalmares; onglet: string; titre: string; infobulle: string }[] = [
+  {
+    cle: "ecoute",
+    onglet: "Écouté",
+    titre: "le disque le plus écouté",
+    infobulle: "Classer les partis par temps passé en Une",
+  },
+  {
+    cle: "apprecie",
+    onglet: "Apprécié",
+    titre: "le disque le plus apprécié",
+    infobulle:
+      "Classer les partis selon que la couverture est plus positive " +
+      "ou plus négative que celle des autres",
+  },
+];
 
 /** Le PAS du palmarès, par onglet — ce que vaut un cran de son axe.
  *
@@ -131,6 +162,7 @@ export function PartisCouvertureClient({
   editionKey?: string;
 }) {
   const [range, setRange] = useState<RangeKey>("today");
+  const [modePalmares, setModePalmares] = useState<ModePalmares>("ecoute");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   const [showDoom, setShowDoom] = useState(false);
   /** La pochette SORTIE du bac, ou `null` quand le bac est refermé. L'état vit
@@ -275,12 +307,38 @@ export function PartisCouvertureClient({
               Le PAS suit l'onglet : les blocs de 4 h sur « Jour », les journées
               sur les deux autres. */}
           <p className="course-tete">
-            Le palmarès&nbsp;: le disque le plus écouté, {PAS_DU_PALMARES[range]}
+            Le palmarès&nbsp;: {MODES.find((m) => m.cle === modePalmares)!.titre},{" "}
+            {PAS_DU_PALMARES[range]}
           </p>
+
+          {/* LA BASCULE ENTRE LES DEUX COURSES.
+              
+              De vrais `<button>` et non les `<span>` cliquables de la rangée
+              d'onglets au-dessus : ceux-là ne se tabulent pas et ne s'annoncent
+              pas, et il n'y a aucune raison de reproduire ce défaut dans du
+              code neuf. `aria-pressed` dit lequel est en cours.
+              
+              Les libellés sont courts — le titre juste au-dessus porte déjà la
+              phrase entière, et la répéter dans les boutons ferait lire deux
+              fois la même chose. */}
+          <div className="course-modes" role="group" aria-label="Ce que classe le palmarès">
+            {MODES.map((m) => (
+              <button
+                key={m.cle}
+                type="button"
+                className={m.cle === modePalmares ? "actif" : undefined}
+                aria-pressed={m.cle === modePalmares}
+                onClick={() => setModePalmares(m.cle)}
+                title={m.infobulle}
+              >
+                {m.onglet}
+              </button>
+            ))}
+          </div>
           {/* Le palmarès lit TOUJOURS l'agrégat, quelle que soit la position
               du fader : c'est une course entre partis, pas entre médias. Le
               curseur ne commande que le vumètre. */}
-          <Palmares chart={data.ranges[range].chart} />
+          <Palmares chart={data.ranges[range].chart} mode={modePalmares} />
         </section>
       )}
 
@@ -1528,7 +1586,7 @@ function Fader({
  * pourcentage, et non des formes SVG : sous un étirement non uniforme, un carré
  * SVG deviendrait un rectangle, et un texte SVG serait déformé.
  */
-function Palmares({ chart }: { chart: ChartView }) {
+function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   // Un troisième message invitait à « ramener le curseur au centre », pour le
   // cas où le détail horaire n'existe que sur l'agrégat. Il ne pouvait pas
   // s'afficher — le palmarès reçoit TOUJOURS l'agrégat, jamais une vue par
@@ -1544,8 +1602,26 @@ function Palmares({ chart }: { chart: ChartView }) {
     );
   }
 
-  // De haut en bas : le plus de minutes en premier, comme un classement.
-  const series = chart.series.slice().sort((a, b) => b.lastMinutes - a.lastMinutes);
+  /* CE QU'ON CLASSE, selon la course choisie. Une seule ligne décide, et tout
+     le reste — l'ordre de dessin, les rangs, la valeur écrite au bout — en
+     découle. Les deux pistes partagent les mêmes abscisses, si bien que basculer
+     ne déplace aucun point sur l'axe du temps : seules les hauteurs changent. */
+  const apprecie = mode === "apprecie";
+  const pisteDe = (s: ChartView["series"][number]) => (apprecie ? s.polylineTon : s.polylineMin);
+  /** ⚠️ UN PARTI SANS TON EST RENVOYÉ EN QUEUE, jamais au milieu.
+   *
+   *  `lastEcartTon` vaut `null` quand aucun article n'a parlé du parti : il n'a
+   *  pas un ton neutre, il n'a pas de ton. Le trier comme un zéro le plaçait au
+   *  milieu du peloton, au-dessus de partis réellement malmenés. `-Infinity` ne
+   *  sert QU'À ce tri, et ne s'écrit jamais : l'étiquette lit `lastEcartTon` et
+   *  affiche « n. d. ». */
+  const valeurDe = (s: ChartView["series"][number]) =>
+    apprecie ? (s.lastEcartTon ?? Number.NEGATIVE_INFINITY) : s.lastMinutes;
+  const ecriteDe = (s: ChartView["series"][number]) =>
+    apprecie ? formatEcartTon(s.lastEcartTon) : formatDuree(s.lastMinutes);
+
+  // De haut en bas : le meilleur en premier, comme un classement.
+  const series = chart.series.slice().sort((a, b) => valeurDe(b) - valeurDe(a));
 
   /* LA COURSE AUX RANGS. On ne trace plus des durées mais des PLACES : à chaque
      bloc, qui est premier, deuxième, troisième. `lib/rangs.ts` dit pourquoi la
@@ -1556,7 +1632,7 @@ function Palmares({ chart }: { chart: ChartView }) {
      qu'on vise — et les deux suivent exactement le même chemin, sinon on
      cliquerait à côté de ce qu'on montre. */
   const nRangs = series.length;
-  const rangs = rangsParInstant(series.map((s) => ({ cle: s.key, points: s.polylineMin })));
+  const rangs = rangsParInstant(series.map((s) => ({ cle: s.key, points: pisteDe(s) })));
   const chemins = new Map(
     series.map((s) => [
       s.key,
@@ -1744,13 +1820,15 @@ function Palmares({ chart }: { chart: ChartView }) {
                 onClick={() => setIsole((k) => (k === s.key ? null : s.key))}
                 aria-pressed={isole === s.key}
                 title={
-                  // `mesureLabel` dit CE QUE COUVRE la durée, et il change d'un
+                  // `mesureLabel` dit CE QUE COUVRE la valeur, et il change d'un
                   // onglet à l'autre : « depuis minuit » sur Jour, où le
                   // raffineur cumule, la date du dernier jour sur les deux
-                  // autres, où le classement se fait sur les minutes de CE
-                  // jour-là. Sans lui, le même nombre voudrait dire deux choses.
+                  // autres, où le classement se fait sur ce jour-là. Sans lui,
+                  // le même nombre voudrait dire deux choses.
                   `${s.label}, ${rangFin}${rangFin === 1 ? "er" : "e"} : ` +
-                  `${formatDuree(s.lastMinutes)} de Une ${chart.mesureLabel}. ` +
+                  (apprecie
+                    ? `${phraseEcartTon(s.lastEcartTon)}, ${chart.mesureLabel}. `
+                    : `${ecriteDe(s)} de Une ${chart.mesureLabel}. `) +
                   `Cliquez pour ne garder que cette ligne.`
                 }
               >
@@ -1761,7 +1839,7 @@ function Palmares({ chart }: { chart: ChartView }) {
                     gauche : la graduation n'a plus rien à graduer. */}
                 <i className="palmares-rang" aria-hidden="true">{rangFin}</i>
                 <span className="palmares-etiquette-sigle">{s.label}</span>
-                <b className="palmares-etiquette-duree">{formatDuree(s.lastMinutes)}</b>
+                <b className="palmares-etiquette-duree">{ecriteDe(s)}</b>
               </button>
             );
           })}

@@ -8383,6 +8383,43 @@
 /* ── La course en tête du module ─────────────────────────────────────────────
    Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
    dans la console et les platines. */
+/* LA BASCULE ENTRE LES DEUX COURSES — écouté / apprécié.
+   
+   Même idiome visuel que la rangée d'onglets du module (`.legend-toggle.inline`)
+   : un cadre au filet, deux cases séparées d'un trait, l'active en négatif. Le
+   lecteur reconnaît le geste sans avoir à l'apprendre.
+   
+   Ce sont de VRAIS boutons, eux — `.legend-toggle` emploie des `<span>`
+   cliquables, qui ne se tabulent pas et ne s'annoncent pas. On ne reproduit pas
+   ce défaut dans du code neuf, d'où la remise à zéro explicite ci-dessous.
+   
+   Centrée sous le titre, qui l'est déjà : la bascule appartient au palmarès, pas
+   à la page. */
+.course-modes {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+.course-modes button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  padding: 4px 12px;
+  border: 0.5px solid var(--rule);
+  border-right: none;
+  background: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.course-modes button:last-child { border-right: 0.5px solid var(--rule); }
+.course-modes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.course-modes button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
 /* DE L'AIR AU-DESSUS. Le palmarès ouvre le module et venait buter sur le titre :
    dix pixels entre son intitulé et le cadre, aucun au-dessus de l'intitulé. Le
    bloc a besoin de respirer avant de commencer, d'autant que la première ligne
@@ -9606,8 +9643,12 @@
      extrémité — « PLQ 1h00 » fait une soixantaine de pixels. Sans réserve, le
      bout d'une course TERMINÉE (la ligne d'arrivée est à 91 % du tracé) verrait
      son étiquette sortir du cadre. On rétrécit donc le tracé plutôt que de
-     laisser déborder le texte. */
-  --marge-fin: 96px;
+     laisser déborder le texte.
+     
+     DIMENSIONNÉE SUR LE PIRE CAS des deux courses : « ⑤ PLQ −100 pts » à
+     l'appréciation, « ⑤ PLQ 58 min » à l'écoute. Une réserve calée sur les
+     seules durées aurait laissé l'autre déborder dès qu'on bascule. */
+  --marge-fin: 116px;
   /* TOUTE LA LARGEUR DU MODULE.
      
      Le cadre a été borné à 720 px le temps où il portait cinq courbes de durées
@@ -9888,9 +9929,13 @@
   font-weight: 600;
   color: color-mix(in srgb, var(--party, var(--ink-soft)) 72%, var(--ink));
 }
-/* LA DURÉE, EN ENCRE. Le rang dit qui mène, jamais DE COMBIEN : premier de dix
-   minutes ou de six heures, c'est le même trait. C'est ce chiffre-ci qui se
-   cite, et il ne doit donc pas être une nuance de la couleur du parti. */
+/* LA VALEUR, EN ENCRE. Le rang dit qui mène, jamais DE COMBIEN : premier de dix
+   minutes ou de six heures, c'est le même trait. C'est cette valeur-ci qui se
+   cite, et elle ne doit donc pas être une nuance de la couleur du parti.
+   
+   Elle porte une durée sur la course à l'écoute (« 1h42 ») et un mot sur celle
+   à l'appréciation (« en bien ») : le nom de classe est resté celui de la
+   première, mais le traitement vaut pour les deux. */
 .palmares-etiquette-duree {
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -9929,7 +9974,7 @@
   /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
      et la largeur de l'écran fait déjà une proportion tenable. La réserve de
      droite se resserre avec les étiquettes. */
-  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 74px; }
+  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 92px; }
   /* Cinq rangées restent cinq rangées : c'est le seul poste qu'on ne comprime
      pas, sous 70 px elles se touchent. */
   .palmares-zone { min-height: 74px; }

@@ -378,6 +378,41 @@ export type ChartSeries = {
   lastYMin: number;
   /** Minutes du dernier point, pour l'étiquette de bout de courbe. */
   lastMinutes: number;
+  /** LE SECOND TRACÉ DU PALMARÈS : mêmes abscisses, mais l'ordonnée porte le
+   *  TON — la proportion nette de mots favorables, dans [-1, 1].
+   *
+   *  Le palmarès sait classer deux choses, et le lecteur bascule de l'une à
+   *  l'autre : le disque le plus ÉCOUTÉ (les minutes) et le plus APPRÉCIÉ (le
+   *  ton). Les deux pistes voyagent ensemble parce que la bascule est
+   *  instantanée, côté client : aller chercher la seconde au moment du clic
+   *  aurait demandé une requête pour une donnée déjà calculée.
+   *
+   *  ⚠️ L'ordonnée est INVERSÉE comme partout en SVG : un ton favorable donne un
+   *  `y` PETIT, donc un bon rang. Sans ça le classement se lirait à l'envers. */
+  polylineTon: string;
+  /** L'ÉCART DU DERNIER POINT AU TON MOYEN DES AUTRES PARTIS, au même instant.
+   *
+   *  Et non le ton brut. Un ton absolu — « +24,3 % de mots favorables en net » —
+   *  ne dit rien à un lecteur qui n'a aucun repère pour le juger. Un écart en
+   *  fournit un : « couverture 42 points plus négative que celle des autres
+   *  partis » se lit sans rien connaître d'avance.
+   *
+   *  DES AUTRES, ET NON DES CINQ. Un parti comparé à une moyenne qui le contient
+   *  se compare en partie à lui-même, et l'écart s'en trouve tassé d'autant.
+   *  « Plus négative que les autres » exclut le parti de sa propre référence,
+   *  ce que la phrase affichée annonce d'ailleurs mot pour mot.
+   *
+   *  Le CLASSEMENT n'en est pas changé. Retrancher aux uns la moyenne des autres
+   *  est une transformation CROISSANTE du ton — le calcul se ramène à
+   *  `ton × n/(n-1)` moins une constante commune — donc l'ordre est identique à
+   *  celui du ton brut, et c'est pourquoi `polylineTon` reste tracée dessus.
+   *
+   *  `null` QUAND IL N'Y A RIEN À MESURER. Un parti dont on n'a pas parlé n'a
+   *  pas un ton neutre : il n'a PAS DE TON. Le raffineur écrit pourtant zéro
+   *  (`replace_na(weighted_tone = 0)`), valeur indistinguable d'une couverture
+   *  parfaitement équilibrée, et le module le classait donc au milieu du
+   *  peloton, au-dessus de partis réellement malmenés. */
+  lastEcartTon: number | null;
 };
 
 export type ChartView = {
@@ -1110,6 +1145,31 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
   const topMin = paliersMinutes(Math.max(0, ...parts.flatMap((k) => minParBloc(k))));
   const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
 
+  /** Le TON de chaque bloc — la seconde piste du palmarès, celle du disque le
+   *  plus APPRÉCIÉ. Contrairement aux minutes, le ton ne s'accumule pas : c'est
+   *  l'état du vocabulaire au moment du relevé, et il monte comme il descend. */
+  const tonParBloc = (key: PartyKey) => {
+    const m = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [heureBloc(r), Number(r.weighted_tone) || 0]),
+    );
+    return blocs.map((h) => m.get(h) ?? 0);
+  };
+  const yTon = (t: number) => CHART_H - ((Math.min(1, Math.max(-1, t)) + 1) / 2) * CHART_H;
+  /** Même règle que la vue par journées : zéro minute en Une, aucun ton. Ici les
+   *  minutes CUMULENT depuis minuit, donc un parti peut n'apparaître qu'à partir
+   *  du bloc où on a commencé à en parler, et sa ligne démarre là. */
+  const mesure = (key: PartyKey, i: number) => (minParBloc(key)[i] ?? 0) > 0;
+
+  const derBloc = blocs.length - 1;
+  const tonsFinaux = parts
+    .filter((k) => mesure(k, derBloc))
+    .map((k) => tonParBloc(k).at(-1) ?? 0);
+  const sommeTons = tonsFinaux.reduce((a, b) => a + b, 0);
+  const ecartAuxAutres = (ton: number): number | null =>
+    tonsFinaux.length > 1 ? ton - (sommeTons - ton) / (tonsFinaux.length - 1) : null;
+
   const series: ChartSeries[] = parts.map((key) => {
     const parBloc = new Map(
       duJour
@@ -1129,6 +1189,15 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
         .join(" "),
       lastYMin: Number(yMin(minParBloc(key).at(-1) ?? 0).toFixed(2)),
       lastMinutes: Math.round(minParBloc(key).at(-1) ?? 0),
+      polylineTon: tonParBloc(key)
+        .map((t, i) => (mesure(key, i) ? `${xAtH(blocs[i]).toFixed(2)},${yTon(t).toFixed(2)}` : ""))
+        .filter(Boolean)
+        .join(" "),
+      lastEcartTon: (() => {
+        if (!mesure(key, derBloc)) return null;
+        const e = ecartAuxAutres(tonParBloc(key).at(-1) ?? 0);
+        return e === null ? null : Number(e.toFixed(4));
+      })(),
       polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       lastX: Number(last[0].toFixed(2)),
@@ -1294,11 +1363,39 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
    *  la table hebdomadaire du raffineur — la divergence qu'ouvrait l'axe du
    *  samedi (cf. `libelleDepuis`) n'a plus de surface où se voir. */
   const minOf = (s: Stat) => s.minutesHistory.daily.slice(decalage);
+  /** Le TON, jour par jour. Même fenêtre, mêmes abscisses que les minutes : les
+   *  deux pistes se superposent exactement, et basculer de l'une à l'autre ne
+   *  déplace aucun point sur l'axe du temps. */
+  const tonOf = (s: Stat) => s.toneHistory.daily.slice(decalage);
+  /** UN TON N'EXISTE QUE LÀ OÙ IL Y A EU DE LA COUVERTURE.
+   *
+   *  Le raffineur écrit `weighted_tone = 0` pour un parti dont aucun article ne
+   *  parle, et ce zéro est indistinguable d'une couverture parfaitement
+   *  équilibrée. Un parti silencieux se retrouvait donc classé au MILIEU du
+   *  peloton, au-dessus de partis réellement malmenés, et sa valeur tirait en
+   *  plus la référence des autres vers le neutre.
+   *
+   *  Les minutes tranchent : zéro minute en Une, aucune phrase à classer, donc
+   *  aucun ton. C'est un signal déjà publié, exact, et qui ne demande rien au
+   *  raffineur. */
+  const mesure = (s: Stat, i: number) => (minOf(s)[i] ?? 0) > 0;
+
+  /** L'écart au ton moyen des AUTRES partis MESURÉS, au dernier instant. Un
+   *  parti sans couverture ne compte donc ni comme sujet ni comme repère. */
+  const dernier = axisDates.length - 1;
+  const tonsFinaux = stats.filter((st) => mesure(st, dernier)).map((st) => tonOf(st).at(-1) ?? 0);
+  const sommeTons = tonsFinaux.reduce((a, b) => a + b, 0);
+  const ecartAuxAutres = (ton: number): number | null =>
+    tonsFinaux.length > 1 ? ton - (sommeTons - ton) / (tonsFinaux.length - 1) : null;
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
   // ÉCHELLE COMMUNE des minutes : c'est la comparaison des durées qui fait le
   // palmarès. Une échelle par parti dirait la forme, pas le classement.
   const topMin = paliersMinutes(Math.max(0, ...stats.flatMap(minOf)));
   const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
+  /** Le ton, de -1 à +1, reporté sur la hauteur. Borné : la mesure peut sortir
+   *  de l'intervalle sur de très petits volumes, et un point hors cadre se
+   *  lirait comme une erreur de tracé plutôt que comme une valeur extrême. */
+  const yTon = (t: number) => CHART_H - ((Math.min(1, Math.max(-1, t)) + 1) / 2) * CHART_H;
   const span = Math.max(but.t - t0, 86_400_000);
   const xAt = (t: number) => ((t - t0) / span) * plotW;
   const xAtDate = (iso: string) => xAt(instantDe(iso));
@@ -1313,6 +1410,7 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     .map((stat) => {
       const hist = histOf(stat);
       const mins = minOf(stat);
+      const tons = tonOf(stat);
       const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
       const ptsMin = mins.map((m, i) => [xAtDate(axisDates[i] ?? ""), yMin(m)] as const);
       return {
@@ -1335,6 +1433,19 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         // seule que l'étiquette puisse afficher à côté de son rang sans le
         // contredire.
         lastMinutes: Math.round(mins.at(-1) ?? 0),
+        // Seuls les instants MESURÉS sont tracés : ailleurs, la ligne n'a pas
+        // de place à occuper, et lui en donner une inventerait un classement.
+        polylineTon: tons
+          .map((t, i) =>
+            mesure(stat, i) ? `${xAtDate(axisDates[i] ?? "").toFixed(2)},${yTon(t).toFixed(2)}` : "",
+          )
+          .filter(Boolean)
+          .join(" "),
+        lastEcartTon: (() => {
+          if (!mesure(stat, dernier)) return null;
+          const e = ecartAuxAutres(tons.at(-1) ?? 0);
+          return e === null ? null : Number(e.toFixed(4));
+        })(),
       };
     });
 
@@ -1634,8 +1745,31 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
+    /* ⚠️ CETTE PHRASE A DIT FAUX jusqu'au 2026-08-31, et il faut savoir pourquoi
+       pour ne pas y revenir.
+       
+       Elle annonçait « Proportion nette de mots favorables : +24,30 % ». AUCUN
+       MOT N'EST COMPTÉ NULLE PART. Ce que le raffineur produit
+       (radar-party-score-salient-shadow/runtime.R:142) est tout autre chose :
+       chaque PHRASE qui nomme le parti est classée favorable, défavorable ou
+       neutre par le modèle, et vaut alors `+confiance`, `-confiance` ou zéro.
+       Ces valeurs sont moyennées sur les phrases du parti, puis sur les
+       articles, pondérées par leurs MINUTES EN UNE.
+       
+       L'écart n'était pas cosmétique : une « proportion de mots » se vérifie en
+       comptant des mots, et un journaliste citant le chiffre aurait décrit une
+       méthode qui n'existe pas. Le pourcentage aggravait le tout, la mesure
+       n'étant une part de rien.
+       
+       La formulation dit maintenant les trois choses qui la définissent : ce
+       qu'on classe (des phrases), ce qui les pondère (la confiance, puis le
+       temps en Une), et sur quelle échelle on lit le résultat. */
     // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
-    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots favorables\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
+    const toneValeur = `${unclamped >= 0 ? "+" : "\u2212"}${Math.abs(unclamped).toFixed(2).replace(".", ",")}`;
+    const toneTitle =
+      `Ton\u00a0: ${toneLabel}. Orientation moyenne des phrases qui nomment le parti, ` +
+      `pondérée par la confiance du classement puis par le temps passé en Une\u00a0: ` +
+      `${toneValeur} sur une échelle de \u22121 (défavorable) à +1 (favorable).`;
     // Le ton report\u00e9 sur une jauge de 0 \u00e0 100, born\u00e9 : -1 \u2192 0, 0 \u2192 50, +1 \u2192 100.
     const tonePct = Math.round(Math.min(1, Math.max(-1, unclamped)) * 50 + 50);
 

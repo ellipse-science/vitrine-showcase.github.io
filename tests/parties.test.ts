@@ -272,6 +272,122 @@ describe("buildChart — la course", () => {
   });
 });
 
+describe("la seconde course — le disque le plus APPRÉCIÉ", () => {
+  const JOURS = ["2026-08-24", "2026-08-25", "2026-08-26"];
+  const mk = (party: string, date: string, minutes: number, part: number, ton: number) => ({
+    party, date_utc: date, date_montreal_tz: date,
+    weighted_mentions: part, weighted_tone: ton, total_raw_score: minutes,
+  });
+
+  /** La CAQ occupe le plus de Une et y récolte le pire ton ; le PLQ l'inverse.
+   *  Les trois autres partis n'ont AUCUNE ligne : ils n'ont donc pas de ton, et
+   *  c'est tout l'objet de la moitié des tests ci-dessous. */
+  function jeu() {
+    return JOURS.flatMap((d) => [
+      mk("caq", d, 300, 0.75, -0.40),
+      mk("plq", d, 100, 0.25, 0.35),
+    ]);
+  }
+
+  it("la piste du TON suit les abscisses des minutes, là où il y en a", () => {
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const chart = buildChart(stats, dates, "overall");
+    for (const cle of ["caq", "plq"] as const) {
+      const s = chart.series.find((x) => x.key === cle)!;
+      const xMin = s.polylineMin.split(" ").map((p) => p.split(",")[0]);
+      const xTon = s.polylineTon.split(" ").map((p) => p.split(",")[0]);
+      // Basculer d'une course à l'autre ne déplace aucun point sur l'axe du
+      // temps : seules les hauteurs changent.
+      expect(xTon).toEqual(xMin);
+    }
+  });
+
+  it("un TON FAVORABLE donne un bon rang — l'ordonnée est inversée", () => {
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const chart = buildChart(stats, dates, "overall");
+    const derY = (cle: string, piste: "polylineMin" | "polylineTon") =>
+      Number(chart.series.find((s) => s.key === cle)![piste].split(" ").at(-1)!.split(",")[1]);
+
+    // La CAQ mène la course À L'ÉCOUTE (y plus petit)…
+    expect(derY("caq", "polylineMin")).toBeLessThan(derY("plq", "polylineMin"));
+    // … et la perd à L'APPRÉCIATION. Les deux classements sont inversés, ce que
+    // le graphique ne pourrait pas montrer avec une seule piste.
+    expect(derY("caq", "polylineTon")).toBeGreaterThan(derY("plq", "polylineTon"));
+  });
+
+  it("publie un ÉCART AUX AUTRES PARTIS, jamais un score absolu", () => {
+    // « +35 % de mots favorables » ne dit rien à un lecteur sans repère.
+    // L'écart en fournit un, et la référence EXCLUT le parti lui-même : comparé
+    // à une moyenne qui le contient, il se comparerait en partie à lui-même.
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const chart = buildChart(stats, dates, "overall");
+    // Deux partis mesurés : chacun a l'autre pour seule référence.
+    expect(chart.series.find((s) => s.key === "plq")!.lastEcartTon).toBeCloseTo(0.35 - -0.4, 3);
+    expect(chart.series.find((s) => s.key === "caq")!.lastEcartTon).toBeCloseTo(-0.4 - 0.35, 3);
+  });
+
+  it("un parti dont on n'a PAS parlé n'a pas de ton, et pas un ton neutre", () => {
+    // LE DÉFAUT CORRIGÉ. Le raffineur écrit `weighted_tone = 0` pour un parti
+    // sans article, valeur indistinguable d'une couverture équilibrée : le
+    // module le classait au MILIEU du peloton, au-dessus de partis réellement
+    // malmenés. Les minutes tranchent — zéro minute, aucune phrase à classer.
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const chart = buildChart(stats, dates, "overall");
+    for (const cle of PARTY_KEYS.filter((k) => k !== "caq" && k !== "plq")) {
+      const s = chart.series.find((x) => x.key === cle)!;
+      expect(s.lastEcartTon, `${cle} : sans couverture`).toBeNull();
+      // Et rien n'est tracé : lui donner une place inventerait un classement.
+      expect(s.polylineTon).toBe("");
+    }
+  });
+
+  it("un parti sans couverture ne sert pas non plus de RÉFÉRENCE", () => {
+    // Son zéro tirerait la moyenne des autres vers le neutre, et tasserait
+    // l'écart de tout le monde.
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const chart = buildChart(stats, dates, "overall");
+    // Si les trois silencieux comptaient, la référence du PLQ vaudrait
+    // (-0,4 + 0 + 0 + 0) / 4 et l'écart serait bien plus petit.
+    const siLesMuetsComptaient = 0.35 - (-0.4 + 0 + 0 + 0) / 4;
+    expect(chart.series.find((s) => s.key === "plq")!.lastEcartTon).not.toBeCloseTo(
+      siLesMuetsComptaient,
+      3,
+    );
+  });
+
+  it("un ton hors de [-1, 1] est BORNÉ plutôt que tracé hors cadre", () => {
+    // Sur de très petits volumes la mesure peut sortir de l'intervalle. Un point
+    // hors du cadre se lirait comme une erreur de tracé, pas comme un extrême.
+    const fous = JOURS.flatMap((d) => [mk("caq", d, 300, 0.75, 4), mk("plq", d, 100, 0.25, -9)]);
+    const { stats, dates } = statsOf(fous, fous, fous);
+    const chart = buildChart(stats, dates, "overall");
+    for (const s of chart.series.filter((x) => x.polylineTon !== "")) {
+      for (const point of s.polylineTon.split(" ")) {
+        const y = Number(point.split(",")[1]);
+        expect(y).toBeGreaterThanOrEqual(0);
+        expect(y).toBeLessThanOrEqual(chart.height);
+      }
+    }
+  });
+
+  it("l'infobulle du ton ne prétend PLUS compter des mots", () => {
+    // Elle a annoncé « Proportion nette de mots favorables » jusqu'au
+    // 2026-08-31. Aucun mot n'est compté nulle part : le raffineur classe des
+    // PHRASES et pondère par la confiance puis par les minutes en Une. Un
+    // journaliste citant l'ancienne phrase aurait décrit une méthode qui
+    // n'existe pas.
+    const { stats, dates } = statsOf(jeu(), jeu(), jeu());
+    const vue = buildRangeView(stats, "overall", dates);
+    const titre = vue.rows[0].toneTitle;
+    expect(titre).not.toContain("mots favorables");
+    expect(titre).not.toContain("Proportion nette");
+    expect(titre).toContain("phrases qui nomment le parti");
+    expect(titre).toContain("temps passé en Une");
+    // Et l'échelle est dite, sans quoi le nombre reste illisible.
+    expect(titre).toMatch(/échelle de .1 .défavorable. à \+1 .favorable./);
+  });
+});
+
 describe("les graduations des trois vues", () => {
   /** Une ligne intra-journée, telle que le raffineur la publie. */
   const bloc = (party: string, h: number, minutes: number) => ({

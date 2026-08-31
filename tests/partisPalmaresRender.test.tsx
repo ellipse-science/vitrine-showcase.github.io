@@ -355,3 +355,26 @@ describe("le prolongement jusqu'à l'arrivée", () => {
     for (const d of traits) expect(d.trim().endsWith(" 100 " + d.trim().split(" ").at(-1))).toBe(true);
   });
 });
+
+describe("la bascule entre les deux courses", () => {
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={donneesAvecCourbe()} />);
+
+  it("offre deux boutons, dont un seul enfoncé", () => {
+    const boutons = [...html.matchAll(/<button[^>]*aria-pressed="(true|false)"[^>]*>(Écouté|Apprécié)</g)];
+    expect(boutons.length).toBe(2);
+    expect(boutons.filter((b) => b[1] === "true").length).toBe(1);
+  });
+
+  it("de VRAIS boutons — la rangée d'onglets du module, elle, est en <span>", () => {
+    // Des `<span>` cliquables ne se tabulent pas et ne s'annoncent pas. On ne
+    // reproduit pas ce défaut dans du code neuf.
+    const bloc = html.split('class="course-modes"')[1]?.split("</div>")[0] ?? "";
+    expect(bloc).toContain("<button");
+    expect(bloc).not.toContain("<span");
+  });
+
+  it("le titre annonce la course en cours", () => {
+    expect(html).toContain("le disque le plus écouté");
+    expect(html).not.toContain("le disque le plus apprécié");
+  });
+});

@@ -447,7 +447,19 @@ for (const date of D.slice(-8)) {
         // l'accumulation de la journée à chaque passage, si bien que le dernier
         // bloc vaut le total du jour — celui de la table `day`, pas un autre.
         total_raw_score: round4(totalJour * fraction),
-        weighted_tone: 0,
+        // LE TON DU BLOC, et non plus zéro.
+        //
+        // Il valait zéro pour tout le monde, ce qui rendait la seconde course du
+        // palmarès — le disque le plus APPRÉCIÉ — parfaitement illisible : cinq
+        // partis ex æquo, donc classés par ordre alphabétique, cinq lignes
+        // parallèles. Le ton du jour, balancé au fil des blocs : il monte et
+        // descend, contrairement aux minutes qui ne font que s'accumuler.
+        weighted_tone: round4(
+          Math.max(-1, Math.min(1,
+            toneFor(party, randIntra, 0)
+              + 0.3 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party) * 1.7),
+          )),
+        ),
         date_utc: date,
         date_montreal_tz: date,
         computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
