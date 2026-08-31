@@ -4477,6 +4477,13 @@
   /* Le nom ne tenait pas : le symbole devient la seule étiquette, et prend la
      place que le nom occupait. Il ne grossit pas au-delà de la tuile — 22 % de
      la plus petite dimension, borné, sinon il déborderait sur une tuile plate. */
+  /* ⛔ LA CAUSE des noms écrasés, trouvée le 30-08 après trois mesures fausses :
+     le nom est un élément flex, donc il RÉTRÉCIT par défaut. Sa boîte tenait
+     toujours dans la tuile — c'est le texte qui était coupé À L'INTÉRIEUR, par
+     l'`overflow: hidden` du parent. Toute mesure portant sur la boîte concluait
+     « ça rentre » pendant que le lecteur voyait « Droits, libertés, minorités
+     et ». Sans rétrécissement, la boîte déborde pour de vrai. */
+  .treemap-growth .gt-title-nom { flex-shrink: 0; }
   .treemap-growth .gt-title-sans-nom .gt-title-nom { display: none; }
   .treemap-growth .gt-title-sans-nom .symbole-enjeu {
     margin-bottom: 0;
