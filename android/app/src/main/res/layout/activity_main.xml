@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fond"
+    android:fitsSystemWindows="true">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/tirer_pour_actualiser"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <WebView
+            android:id="@+id/vue_web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Écran hors ligne natif : le service worker du site sert sa copie quand
+         il en a une, mais un tout premier lancement sans réseau n'afficherait
+         qu'une page blanche. -->
+    <LinearLayout
+        android:id="@+id/hors_ligne"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/fond"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/hors_ligne_titre"
+            android:textColor="@color/encre"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="@string/hors_ligne_texte"
+            android:textColor="@color/encre_secondaire"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/reessayer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/reessayer" />
+
+    </LinearLayout>
+
+</FrameLayout>
