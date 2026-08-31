@@ -1,5 +1,11 @@
 [
   {
+    "pr": 657,
+    "date": "2026-08-31T21:33:23Z",
+    "note": "Quand un enjeu ne compte que deux ou trois actualités, elles s'empilent désormais l'une sous l'autre plutôt que de s'étaler côte à côte.",
+    "version": null
+  },
+  {
     "pr": 656,
     "date": "2026-08-31T21:11:54Z",
     "note": "Quand vous ouvrez un enjeu, ses actualités se lisent maintenant en colonnes — 1, 2, 3 à gauche puis 4, 5, 6 à droite — avec un numéro de rang plus lisible et, pour chacune, le niveau de saillance atteint à son sommet.",
