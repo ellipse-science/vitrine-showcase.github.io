@@ -1,5 +1,11 @@
 [
   {
+    "pr": 651,
+    "date": "2026-08-31T13:19:12Z",
+    "note": "Aucune. Cette PR ne touche qu'une note interne ; rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 650,
     "date": "2026-08-31T12:40:03Z",
     "note": "Aucune. Cette PR ajoute le code d'une application Android qui n'est ni compilée pour publication ni distribuée ; rien ne change sur le site.",
