@@ -1,17 +1,20 @@
 name: Refresh Data
 
-# Triggered exclusively by cron-job.org via the GitHub REST API.
-# No schedule: trigger — GitHub Actions native cron is unreliable for
-# election-scale data freshness. Use cron-job.org → workflow_dispatch instead.
+# ⚠️ CE QUI DÉCLENCHE CE WORKFLOW, ET CE QUI NE LE DÉCLENCHE PLUS.
+# Jusqu'au 2026-08-19, il était appelé 6×/jour par cron-job.org (POST sur
+# l'API de dispatch). CE N'EST PLUS LE CAS depuis la bascule décrite plus bas.
+# Il ne reste que le `schedule:` hebdomadaire ci-dessous et le déclenchement
+# à la main.
 #
-# cron-job.org setup (post-merge, one-time):
-#   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/refresh-data.yml/dispatches
-#   Method: POST   Body: {"ref":"main"}
-#   Header: Authorization: token <GitHub PAT with workflow scope>
-#   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
+# Le commentaire qui tenait cette place décrivait encore le montage cron-job.org
+# et affirmait « no schedule: trigger ». Il était faux depuis dix jours, et il a
+# servi de point de départ à une enquête sur un gel de la prod (2026-08-30) : on
+# a cherché la panne d'un déclencheur externe qui n'existait plus. Un commentaire
+# périmé sur un déclencheur coûte plus cher qu'un commentaire absent.
 
 # BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
-# rafraîchissement vit dans le Worker Cloudflare (cron :10, sync-athena.ts).
+# rafraîchissement vit dans le Worker Cloudflare (crons :56 et :10,
+# sync-athena.ts — cf. wrangler.toml).
 # Il reste un FILET hebdomadaire : il garde les JSON commités (source de
 # repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
 # n'a plus à l'appeler ; son compte peut être fermé.

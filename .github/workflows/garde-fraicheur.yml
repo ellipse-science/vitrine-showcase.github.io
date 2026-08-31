@@ -1,0 +1,187 @@
+name: Garde fraîcheur (sonde externe)
+
+# POURQUOI CE WORKFLOW EXISTE. La fraîcheur du site repose, depuis la bascule
+# d'émancipation du 2026-08-19, sur des déclencheurs HORS GitHub : le cron du
+# Worker Cloudflare, les Deploy Hooks, l'intégration Git de Cloudflare Pages.
+# Aucun d'eux n'était surveillé. Deux gels en dix jours — 21→23 août
+# (vitrine#570) et 28→30 août 2026 — ont servi des données de plusieurs jours
+# sans qu'aucune alarme ne sonne, jusqu'à ce qu'un humain trouve la date vieille
+# à l'écran.
+#
+# L'alarme de fraîcheur existante (vitrine#412) n'a pas sonné pour une raison
+# structurelle, pas par réglage : c'est un STEP de `refresh-data.yml`. Elle ne
+# mesure rien quand le workflow ne tourne pas — elle est PASSAGÈRE du véhicule
+# qu'elle surveille. Ce workflow-ci a son propre horaire, chez un autre
+# fournisseur que tout ce qu'il regarde.
+#
+# LIMITE ASSUMÉE, écrite plutôt que tue : le cron GitHub n'est pas fiable à la
+# minute — c'est même pourquoi la chaîne de données ne s'en sert pas. Pour un
+# contrôle HORAIRE, ça suffit largement : une heure sautée retarde la détection
+# d'une heure, elle ne l'annule pas. Et rien ne surveille cette garde-ci : on
+# s'arrête là plutôt que de reculer la régression d'un cran.
+
+on:
+  schedule:
+    # :17 et pas :00 — l'heure pile est la tranche la plus encombrée du cron
+    # GitHub, donc la plus souvent retardée ou sautée.
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: garde-fraicheur
+  cancel-in-progress: false
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LABEL: garde-fraicheur
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      # Le script sort TOUJOURS 0 : une prod injoignable est une panne à
+      # signaler, pas un step en échec qu'on regarderait passer.
+      - name: Mesurer la fraîcheur de la prod
+        id: sonde
+        run: python scripts/check_prod_freshness.py
+
+      # `gh issue create --label` échoue si le label n'existe pas. On le pose
+      # ici plutôt que par un geste manuel post-merge, qui finit par être oublié.
+      - name: S'assurer que le label existe
+        run: |
+          gh label create "$LABEL" \
+            --description "Ouverte automatiquement par la sonde de fraîcheur externe" \
+            --color B60205 2>/dev/null || true
+
+      - name: Retrouver l'alerte déjà ouverte
+        id: existante
+        run: |
+          numero=$(gh issue list --label "$LABEL" --state open \
+            --limit 1 --json number --jq '.[0].number // ""')
+          echo "numero=$numero" >> "$GITHUB_OUTPUT"
+
+      # ─── LA PROD EST PÉRIMÉE ───────────────────────────────────────────────
+      # Une SEULE issue à la fois, et aucun commentaire de relance : c'est une
+      # issue ouverte, elle reste visible dans la liste sans qu'on la répète.
+      # Un rappel horaire ferait exactement ce qu'on cherche à éviter — du bruit
+      # qu'on apprend à ne plus lire.
+      - name: Ouvrir l'alerte
+        if: steps.sonde.outputs.stale == 'true' && steps.existante.outputs.numero == ''
+        env:
+          RESUME: ${{ steps.sonde.outputs.resume }}
+          DIAGNOSTIC: ${{ steps.sonde.outputs.diagnostic }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Corps écrit dans un FICHIER, jamais dans `--body "$(cat <<EOF …)"` :
+          # à l'intérieur d'une substitution de commande, bash traite les
+          # apostrophes du texte français comme des guillemets. Le corps rédigé
+          # ici en perdait une parenthèse et laissait fuir son « EOF » — bug
+          # observé au banc d'essai avant merge, pas en production.
+          cat > /tmp/alerte.md <<EOF
+          Ouverte automatiquement par la sonde de fraîcheur externe
+          (\`.github/workflows/garde-fraicheur.yml\`).
+
+          ## Mesure
+
+          $RESUME
+
+          Relevée sur le site DÉPLOYÉ, de l'extérieur : \`/data/hero-selection.json\`
+          (le verdict de Une affiché en page d'accueil) et \`/build-id.json\`.
+          Ce n'est pas l'état interne d'un maillon — c'est ce que voit un visiteur.
+
+          ## Diagnostic automatique
+
+          $DIAGNOSTIC
+
+          ## Remède manuel, si rien ne repart seul
+
+          \`gh workflow run refresh-data.yml --ref main\`, puis
+          \`gh workflow run deploy-prod.yml --ref prod\`.
+
+          ## Contexte
+
+          Deux gels de plusieurs jours en dix jours : vitrine#570 (21→23 août) et
+          28→30 août 2026. Cette issue se ferme toute seule dès que la fraîcheur
+          revient — la fermeture porte la durée mesurée du gel.
+
+          Run : $RUN_URL
+          EOF
+
+          # Date de MONTRÉAL dans le titre : c'est de la communication, pas une
+          # clé technique. Elle distingue deux incidents dans la liste d'issues,
+          # là où un titre fixe les rendrait indiscernables une fois refermés.
+          jour=$(TZ='America/Montreal' date +'%Y-%m-%d')
+          gh issue create \
+            --title "La prod sert des données périmées ($jour)" \
+            --label "$LABEL" \
+            --body-file /tmp/alerte.md
+
+      # ─── RETOUR À LA NORMALE ───────────────────────────────────────────────
+      - name: Fermer l'alerte
+        if: steps.sonde.outputs.stale == 'false' && steps.existante.outputs.numero != ''
+        env:
+          NUMERO: ${{ steps.existante.outputs.numero }}
+          RESUME: ${{ steps.sonde.outputs.resume }}
+        run: |
+          ouverte=$(gh issue view "$NUMERO" --json createdAt --jq .createdAt)
+          duree=$(python3 -c 'import datetime,sys; t=datetime.datetime.fromisoformat(sys.argv[1].replace("Z","+00:00")); print(f"{(datetime.datetime.now(datetime.timezone.utc)-t).total_seconds()/3600:.1f}")' "$ouverte")
+          gh issue close "$NUMERO" --comment \
+            "Fraîcheur revenue après ${duree} h. $RESUME"
+
+      # ─── ALERTE SLACK, SUR LES TRANSITIONS SEULEMENT ───────────────────────
+      # Même aiguillage que refresh-data.yml : le sonar vitrine est la chaîne
+      # qu'on lit ; à défaut de son secret, on retombe sur le webhook de
+      # surveillance plutôt que de perdre l'alerte.
+      - name: Prévenir Slack
+        if: >-
+          (steps.sonde.outputs.stale == 'true' && steps.existante.outputs.numero == '')
+          || (steps.sonde.outputs.stale == 'false' && steps.existante.outputs.numero != '')
+        env:
+          HOOK: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL || secrets.SLACK_WEBHOOK_URL }}
+          STALE: ${{ steps.sonde.outputs.stale }}
+          RESUME: ${{ steps.sonde.outputs.resume }}
+          DIAGNOSTIC: ${{ steps.sonde.outputs.diagnostic }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$HOOK" ] || { echo "Aucun webhook configuré — rien à envoyer."; exit 0; }
+          if [ "$STALE" = "true" ]; then
+            texte="🔴 *Vitrine : la prod sert des données périmées* — ${RESUME}
+          Diagnostic : ${DIAGNOSTIC}"
+          else
+            texte="🟢 *Vitrine : fraîcheur revenue* — ${RESUME}"
+          fi
+          # `jq -n --arg` échappe le texte : un tiret cadratin ou un guillemet
+          # dans la mesure ne peut pas casser le JSON envoyé à Slack.
+          jq -n --arg t "${texte}
+          Run : ${RUN_URL}" '{text: $t}' \
+            | curl -fsS -m 10 -X POST -H 'Content-type: application/json' -d @- "$HOOK" \
+            || echo "Envoi Slack échoué — non bloquant."
+
+      # Une garde qui tombe en panne sans le dire reproduit le trou qu'elle
+      # bouche. Un échec de step (réseau, quota, `gh` cassé) doit donc sortir
+      # par Slack. Ce step-ci, lui, avale ses propres erreurs (`|| true`) :
+      # c'est le dernier maillon, et rien derrière lui ne pourrait le signaler.
+      - name: Signaler une panne de la garde elle-même
+        if: failure()
+        env:
+          HOOK: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL || secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$HOOK" ] || exit 0
+          jq -n --arg t "🟠 *Vitrine : la garde de fraîcheur a échoué* — plus personne ne surveille la fraîcheur de la prod tant que ce run n'est pas réparé.
+          Run : ${RUN_URL}" '{text: $t}' \
+            | curl -fsS -m 10 -X POST -H 'Content-type: application/json' -d @- "$HOOK" || true
