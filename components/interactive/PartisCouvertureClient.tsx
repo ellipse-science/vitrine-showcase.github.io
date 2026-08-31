@@ -51,7 +51,13 @@ const RANGES: RangeKey[] = ["today", "week", "overall"];
  *  `lib/data/parties.ts`), donc la bascule est instantanée : rien à recharger. */
 type ModePalmares = "ecoute" | "apprecie";
 
-const MODES: { cle: ModePalmares; onglet: string; titre: string; infobulle: string }[] = [
+type Mode = { cle: ModePalmares; onglet: string; titre: string; infobulle: string };
+
+/** ⚠️ EXACTEMENT DEUX, et le type l'impose. Les touches encadrent le titre, une
+ *  à gauche et une à droite : un troisième mode n'aurait pas de côté où aller,
+ *  et se serait ajouté en silence sans jamais s'afficher. Le tuple fait échouer
+ *  la compilation plutôt que le rendu. */
+const MODES: readonly [Mode, Mode] = [
   {
     cle: "ecoute",
     onglet: "Écouté",
@@ -67,6 +73,39 @@ const MODES: { cle: ModePalmares; onglet: string; titre: string; infobulle: stri
       "ou plus négative que celle des autres",
   },
 ];
+
+/** LA VITESSE DU PLATEAU, par onglet.
+ *
+ *  Un tourne-disque n'a qu'un sélecteur à trois positions, et ce sont les
+ *  vitesses : le module en a trois aussi. Le rapport tombe juste sans rien
+ *  forcer — PLUS LE DISQUE TOURNE LENTEMENT, PLUS IL JOUE LONGTEMPS. Le 78
+ *  tours, court et rapide, pour la journée ; le 33, le « long play », pour toute
+ *  la campagne.
+ *
+ *  La mention reste SECONDAIRE, en petit et après le mot. Remplacer « Jour » par
+ *  « 78 T » aurait été une devinette : la métaphore doit habiller la lecture,
+ *  jamais s'y substituer. Elle est `aria-hidden` pour la même raison — un
+ *  lecteur d'écran doit entendre « Jour », pas « Jour 78 T ». */
+const TOURS: Record<RangeKey, string> = { today: "78", week: "45", overall: "33" };
+
+/** Ce que chaque vitesse couvre, en toutes lettres, puis le clin d'œil. */
+const VITESSE_INFOBULLE: Record<RangeKey, string> = {
+  today:
+    "La journée en cours, depuis minuit. Le 78 tours\u00a0: celui qui tourne le plus " +
+    "vite et joue le moins longtemps.",
+  week: "La semaine en cours, du samedi au vendredi 20\u00a0h. Le 45 tours.",
+  overall:
+    "Depuis le début du suivi jusqu'au scrutin. Le 33 tours, le «\u00a0long play\u00a0».",
+};
+
+/** Le titre du palmarès, pour un mode et un onglet donnés.
+ *
+ *  Une seule fonction, parce que le titre est écrit DEUX fois : une fois pour de
+ *  bon, et une fois en gabarit invisible qui réserve la place. Deux formules
+ *  auraient dérivé au premier ajustement de libellé, et le gabarit aurait cessé
+ *  de mesurer ce qu'il est censé mesurer, en silence. */
+const titrePalmares = (mode: ModePalmares, range: RangeKey) =>
+  `Le palmarès\u00a0: ${MODES.find((m) => m.cle === mode)!.titre}, ${PAS_DU_PALMARES[range]}`;
 
 /** Le PAS du palmarès, par onglet — ce que vaut un cran de son axe.
  *
@@ -222,6 +261,22 @@ export function PartisCouvertureClient({
   const choisieArchive =
     discotheque?.pile.find((p) => `${p.jour}/${p.parti}` === archive) ?? null;
 
+  /** LE PLUS LONG DES TITRES POSSIBLES — le gabarit qui fige la largeur.
+   *
+   *  LE DÉFAUT QU'IL CORRIGE. Le titre change avec la voie choisie, et la
+   *  colonne centrale se redimensionnait avec lui : « écouté » fait six lettres,
+   *  « apprécié » huit, et le titre est en chasse fixe. Chaque touche sautait
+   *  donc d'environ huit pixels VERS L'EXTÉRIEUR au moment même où on la
+   *  cliquait. Une commande qui se dérobe sous le doigt se lit comme un défaut,
+   *  et elle empêche de cliquer deux fois de suite au même endroit.
+   *
+   *  Calculé sur les libellés eux-mêmes, et non codé en dur : ajouter une voie
+   *  ou changer un mot déplace le gabarit tout seul. La chasse fixe fait que le
+   *  plus long en caractères est aussi le plus large en pixels. */
+  const gabaritTitre = MODES.flatMap((m) => RANGES.map((r) => titrePalmares(m.cle, r))).reduce(
+    (long, t) => (t.length > long.length ? t : long),
+  );
+
   // La garde de PROD vient de main (#547) : l'easter egg reste sur dev.
   if (showDoom && !isProd) {
     return <DoomGame onExit={() => setShowDoom(false)} />;
@@ -235,18 +290,8 @@ export function PartisCouvertureClient({
         </div>
         <div className="control-block">
           <div className="control-row">
-            <div className="legend-toggle inline">
-              {RANGES.map((r) => (
-                <span
-                  key={r}
-                  className={r === range ? "active" : undefined}
-                  onClick={() => setRange(r)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {data.ranges[r].tabLabel}
-                </span>
-              ))}
-            </div>
+            {/* LES DEUX RÉGLAGES SONT DES KNOBS, au-dessus du graphique du
+                palmarès. Il ne reste ici que le bouton de partage. */}
             <ShareButton title={shareTitle(data)} anchor="partis-et-couverture" editionKey={editionKey} />
           </div>
         </div>
@@ -307,34 +352,45 @@ export function PartisCouvertureClient({
               Le PAS suit l'onglet : les blocs de 4 h sur « Jour », les journées
               sur les deux autres. */}
           <p className="course-tete">
-            Le palmarès&nbsp;: {MODES.find((m) => m.cle === modePalmares)!.titre},{" "}
-            {PAS_DU_PALMARES[range]}
+            {/* Le gabarit occupe la place sans se voir : c'est LUI qui fixe la
+                largeur, donc le titre ne se recentre pas à chaque bascule.
+                `aria-hidden`, sans quoi il serait lu deux fois. */}
+            <span className="course-tete-gabarit" aria-hidden="true">{gabaritTitre}</span>
+            <span>{titrePalmares(modePalmares, range)}</span>
           </p>
 
-          {/* LA BASCULE ENTRE LES DEUX COURSES.
+          {/* LES DEUX KNOBS, AU-DESSUS DU GRAPHIQUE.
               
-              De vrais `<button>` et non les `<span>` cliquables de la rangée
-              d'onglets au-dessus : ceux-là ne se tabulent pas et ne s'annoncent
-              pas, et il n'y a aucune raison de reproduire ce défaut dans du
-              code neuf. `aria-pressed` dit lequel est en cours.
+              Ils choisissent ce que le palmarès montre : la MESURE (le temps
+              d'écoute ou le ton) et la PÉRIODE. Posés là, ils se lisent comme le
+              panneau de commande de l'afficheur qui est juste dessous — ce
+              qu'ils sont. Les onglets qu'ils remplacent vivaient dans l'en-tête
+              de section, loin de ce qu'ils commandaient, et un onglet ne se
+              tourne pas.
               
-              Les libellés sont courts — le titre juste au-dessus porte déjà la
-              phrase entière, et la répéter dans les boutons ferait lire deux
-              fois la même chose. */}
-          <div className="course-modes" role="group" aria-label="Ce que classe le palmarès">
-            {MODES.map((m) => (
-              <button
-                key={m.cle}
-                type="button"
-                className={m.cle === modePalmares ? "actif" : undefined}
-                aria-pressed={m.cle === modePalmares}
-                onClick={() => setModePalmares(m.cle)}
-                title={m.infobulle}
-              >
-                {m.onglet}
-              </button>
-            ))}
+              La période commande en réalité TOUT le module, pas seulement le
+              palmarès. Elle est ici quand même : c'est le seul endroit où les
+              deux réglages se voient ensemble, et les séparer obligerait à
+              chercher l'un après avoir trouvé l'autre. */}
+          <div className="palmares-commandes">
+            <Knob
+              voie="Mesure"
+              positions={MODES.map((m) => ({ cle: m.cle, mot: m.onglet, detail: m.infobulle }))}
+              valeur={modePalmares}
+              onChange={(c) => setModePalmares(c as ModePalmares)}
+            />
+            <Knob
+              voie="Vitesse"
+              positions={RANGES.map((r) => ({
+                cle: r,
+                mot: `${data.ranges[r].tabLabel} ${TOURS[r]}\u00a0T`,
+                detail: VITESSE_INFOBULLE[r],
+              }))}
+              valeur={range}
+              onChange={(c) => setRange(c as RangeKey)}
+            />
           </div>
+
           {/* Le palmarès lit TOUJOURS l'agrégat, quelle que soit la position
               du fader : c'est une course entre partis, pas entre médias. Le
               curseur ne commande que le vumètre. */}
@@ -1555,6 +1611,94 @@ function Fader({
   );
 }
 
+
+/** L'ANGLE d'un cran, en degrés. Le cadran balaie 120°, de -60 à +60 : c'est la
+ *  course d'un commutateur à crans, pas d'un potentiomètre. Un cran unique
+ *  pointerait droit devant. */
+const angleDuCran = (i: number, total: number) => (total > 1 ? -60 + (i * 120) / (total - 1) : 0);
+
+/**
+ * UN KNOB — un commutateur rotatif à crans.
+ *
+ * POURQUOI PAS DES ONGLETS. Le module est un pupitre : ses commandes se
+ * poussent, se pressent et se tournent. Deux réglages y choisissent ce que le
+ * palmarès montre — la mesure et la période — et un commutateur rotatif est
+ * l'objet qui fait ça sur une console. L'aiguille dit la position choisie sans
+ * un mot, et les crans montrent qu'il y en a d'autres.
+ *
+ * L'INTERACTION. Un clic avance d'un cran et revient au premier après le
+ * dernier, comme un commutateur qu'on tourne toujours dans le même sens. Les
+ * FLÈCHES vont dans les deux sens, ce qu'un bouton seul ne permet pas : sans
+ * elles, revenir d'un cran demanderait de faire tout le tour.
+ *
+ * CE QU'IL ANNONCE. Le cadran est un vrai `<button>` dont le nom accessible
+ * porte la voie ET sa position — « Mesure : Écouté » — parce qu'un bouton nommé
+ * « Mesure » seul ne dirait pas où il en est. L'aiguille, les crans et le mot
+ * affiché sont `aria-hidden` : ils redisent en image ce que le nom énonce.
+ */
+function Knob({
+  voie,
+  positions,
+  valeur,
+  onChange,
+}: {
+  /** Le nom de la commande, sous le cadran — comme « Source » sous le fader. */
+  voie: string;
+  /** `detail` est facultatif : c'est la phrase qui dit ce que la position
+   *  couvre. Elle apparaît dans l'infobulle du cadran, pour la position en
+   *  cours — sans quoi « Campagne » n'annoncerait pas jusqu'où elle va. */
+  positions: readonly { cle: string; mot: string; detail?: string }[];
+  valeur: string;
+  onChange: (cle: string) => void;
+}) {
+  const n = positions.length;
+  // `Math.max(0, …)` : une valeur inconnue pointe le premier cran plutôt que de
+  // faire disparaître l'aiguille sur un index -1.
+  const i = Math.max(0, positions.findIndex((p) => p.cle === valeur));
+  const bouger = (pas: number) => onChange(positions[(i + pas + n) % n].cle);
+
+  return (
+    <div className="knob">
+      <button
+        type="button"
+        className="knob-cadran"
+        aria-label={`${voie}\u00a0: ${positions[i].mot}. Tourner pour changer.`}
+        title={
+          `${voie}\u00a0: ${positions[i].mot}.` +
+          `${positions[i].detail ? ` ${positions[i].detail}` : ""}` +
+          ` Tourner pour changer\u00a0: ${positions.map((p) => p.mot).join(", ")}.`
+        }
+        onClick={() => bouger(1)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            e.preventDefault();
+            bouger(-1);
+          } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            bouger(1);
+          }
+        }}
+      >
+        <span className="knob-crans" aria-hidden="true">
+          {positions.map((p, k) => (
+            <i
+              key={p.cle}
+              className={k === i ? "actif" : undefined}
+              style={{ ["--a" as string]: `${angleDuCran(k, n)}deg` }}
+            />
+          ))}
+        </span>
+        <span
+          className="knob-aiguille"
+          style={{ ["--a" as string]: `${angleDuCran(i, n)}deg` }}
+          aria-hidden="true"
+        />
+      </button>
+      <span className="knob-valeur" aria-hidden="true">{positions[i].mot}</span>
+      <span className="fader-label">{voie}</span>
+    </div>
+  );
+}
 
 /**
  * Le palmarès — la course aux RANGS, les cinq partis sur un seul graphique.

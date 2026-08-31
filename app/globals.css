@@ -8383,42 +8383,135 @@
 /* ── La course en tête du module ─────────────────────────────────────────────
    Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
    dans la console et les platines. */
-/* LA BASCULE ENTRE LES DEUX COURSES — écouté / apprécié.
+/* LA BASCULE ENTRE LES DEUX COURSES — un sélecteur de table de mix.
    
-   Même idiome visuel que la rangée d'onglets du module (`.legend-toggle.inline`)
-   : un cadre au filet, deux cases séparées d'un trait, l'active en négatif. Le
-   lecteur reconnaît le geste sans avoir à l'apprendre.
+   Le module est un pupitre d'un bout à l'autre : platines, vumètre à segments,
+   fader de source, bac à disques. Un commutateur générique y aurait fait tache,
+   et c'est ce qu'était le premier jet — le cadre à deux cases de la rangée
+   d'onglets, réemployé tel quel.
    
-   Ce sont de VRAIS boutons, eux — `.legend-toggle` emploie des `<span>`
-   cliquables, qui ne se tabulent pas et ne s'annoncent pas. On ne reproduit pas
-   ce défaut dans du code neuf, d'où la remise à zéro explicite ci-dessous.
+   TROIS EMPRUNTS, ET AUCUN N'EST DÉCORATIF.
    
-   Centrée sous le titre, qui l'est déjà : la bascule appartient au palmarès, pas
-   à la page. */
-.course-modes {
+   1. LA PLAQUE reprend la matière de la console : papier creusé, filet d'encre.
+      Les deux objets commandent le même graphique, ils doivent se ressembler.
+   2. LA DIODE est un segment de vumètre. La console dit que « c'est ce contraste
+      plein/vide qui fait lire l'échelle » ; ici c'est lui qui dit quelle voie
+      est en service, sans avoir à colorer quoi que ce soit.
+   3. L'ÉTIQUETTE DE VOIE répond au « Source » posé sous le fader. Sur une table
+      de mix, un commutateur porte le nom de ce qu'il commute.
+   
+   La voie active est ENFONCÉE, pas surlignée : fond de papier clair et ombre
+   interne, le geste d'un bouton qu'on presse sur un panneau. Un aplat d'encre
+   en négatif — l'idiome de `.legend-toggle` — aurait crié plus fort que le
+   graphique qu'il commande. */
+/* LES DEUX KNOBS, au-dessus du graphique du palmarès.
+   
+   Le module est un pupitre : ses commandes se poussent, se pressent et se
+   tournent. Deux réglages choisissent ce que le palmarès montre — la mesure et
+   la période — et un commutateur rotatif est l'objet qui fait ça sur une
+   console. Ils ont été, tour à tour, une rangée d'onglets dans l'en-tête, des
+   touches encadrant le titre, puis une plaque dans le pupitre ; aucune de ces
+   formes ne se TOURNAIT, et c'est ce que le geste demandait.
+   
+   Posés au-dessus du cadre, ils se lisent comme le panneau de commande de
+   l'afficheur qui est juste dessous. */
+.palmares-commandes {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  margin: 0 0 14px;
+  align-items: flex-start;
+  gap: 12px 46px;
+  margin: 0 0 18px;
 }
-.course-modes button {
+.knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+/* LE CADRAN. Même matière que la console — papier creusé, filet d'encre — plus
+   une lèvre claire en haut qui lui donne son galbe : c'est ce reflet qui fait
+   lire un bouton qu'on saisit, et non un disque imprimé. */
+.knob-cadran {
   -webkit-appearance: none;
   appearance: none;
+  position: relative;
+  width: 46px;
+  height: 46px;
   margin: 0;
-  padding: 4px 12px;
-  border: 0.5px solid var(--rule);
-  border-right: none;
-  background: none;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--paper-deep);
+  box-shadow: inset 0 1px 0 var(--paper), 0 1px 2px rgba(28, 25, 23, 0.14);
   cursor: pointer;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ink-soft);
 }
-.course-modes button:last-child { border-right: 0.5px solid var(--rule); }
-.course-modes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
-.course-modes button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.knob-cadran:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+/* LES CRANS. Un trait par position, posé sur le rayon de son angle. Ils montrent
+   qu'il y a d'AUTRES positions — sans eux, l'aiguille pointerait dans le vide et
+   rien ne dirait que le bouton tourne. Le cran choisi s'allonge et s'encre. */
+.knob-crans i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 5px;
+  margin: -2.5px 0 0 -0.5px;
+  background: var(--rule);
+  transform: rotate(var(--a, 0deg)) translateY(-20px);
+}
+.knob-crans i.actif { height: 7px; background: var(--ink); }
+
+/* L'AIGUILLE. Son pivot est le CENTRE du cadran, d'où `transform-origin` au bas
+   d'un trait qui monte : elle tourne autour du moyeu, comme une vraie. */
+.knob-aiguille {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 15px;
+  margin: -15px 0 0 -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform-origin: 50% 100%;
+  transform: rotate(var(--a, 0deg));
+  transition: transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* Le mouvement de l'aiguille EST l'information — elle dit la position choisie.
+   On ne la fige donc pas, on la rend instantanée. */
+@media (prefers-reduced-motion: reduce) {
+  .knob-aiguille { transition: none; }
+}
+
+/* La position en toutes lettres, sous le cadran. L'aiguille dit OÙ l'on est,
+   le mot dit QUOI : un angle seul se devine, il ne se lit pas. */
+.knob-valeur {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* Le nom de la commande reprend `.fader-label`, le « Source » du fader : les
+   trois réglages du module se nomment de la même façon. */
+.knob .fader-label { margin-top: 0; }
+
+/* LE TITRE SUR SON GABARIT. Les deux textes occupent la MÊME cellule : le
+   gabarit, invisible, y est toujours le plus large, donc c'est lui qui fixe la
+   largeur du bloc. Le titre du moment se centre dessus.
+   
+   Il a d'abord servi à empêcher deux touches, qui encadraient le titre, de
+   sauter à chaque bascule. Ces touches sont devenues des knobs posés dessous, et
+   il garde une utilité plus modeste : sans lui, le titre lui-même se RECENTRE à
+   chaque changement de mesure, « écouté » et « apprécié » n'ayant pas la même
+   longueur. */
+.partis-course--tete .course-tete { display: grid; }
+.partis-course--tete .course-tete > * { grid-area: 1 / 1; }
+.course-tete-gabarit { visibility: hidden; }
 
 /* DE L'AIR AU-DESSUS. Le palmarès ouvre le module et venait buter sur le titre :
    dix pixels entre son intitulé et le cadre, aucun au-dessus de l'intitulé. Le

@@ -356,25 +356,79 @@ describe("le prolongement jusqu'à l'arrivée", () => {
   });
 });
 
-describe("la bascule entre les deux courses", () => {
+describe("les deux knobs du palmarès", () => {
   const html = renderToStaticMarkup(<PartisCouvertureClient data={donneesAvecCourbe()} />);
+  const panneau = html.split('class="palmares-commandes"')[1]?.split("<figure")[0] ?? "";
 
-  it("offre deux boutons, dont un seul enfoncé", () => {
-    const boutons = [...html.matchAll(/<button[^>]*aria-pressed="(true|false)"[^>]*>(Écouté|Apprécié)</g)];
-    expect(boutons.length).toBe(2);
-    expect(boutons.filter((b) => b[1] === "true").length).toBe(1);
+  /** Les deux cadrans, dans l'ordre du panneau. */
+  const cadrans = [...panneau.matchAll(/<button[^>]*class="knob-cadran"[^>]*aria-label="([^"]*)"/g)]
+    .map((m) => m[1]);
+
+  it("deux knobs, au-dessus du graphique", () => {
+    // Ils choisissent ce que le palmarès montre : ils appartiennent donc au
+    // cadre qui est juste dessous, et non à l'en-tête de section.
+    expect(cadrans.length).toBe(2);
+    expect(html.indexOf('class="palmares-commandes"')).toBeLessThan(html.indexOf("<figure"));
   });
 
-  it("de VRAIS boutons — la rangée d'onglets du module, elle, est en <span>", () => {
-    // Des `<span>` cliquables ne se tabulent pas et ne s'annoncent pas. On ne
-    // reproduit pas ce défaut dans du code neuf.
-    const bloc = html.split('class="course-modes"')[1]?.split("</div>")[0] ?? "";
-    expect(bloc).toContain("<button");
-    expect(bloc).not.toContain("<span");
+  it("chaque cadran annonce SA VOIE ET SA POSITION", () => {
+    // Un bouton nommé « Mesure » seul ne dirait pas où il en est. C'est le nom
+    // accessible qui porte l'information ; l'aiguille la redit en image.
+    expect(cadrans[0]).toContain("Mesure");
+    expect(cadrans[0]).toContain("Écouté");
+    expect(cadrans[1]).toContain("Vitesse");
+    expect(cadrans[1]).toContain("Jour");
+    for (const nom of cadrans) expect(nom).toContain("Tourner pour changer");
   });
 
-  it("le titre annonce la course en cours", () => {
-    expect(html).toContain("le disque le plus écouté");
-    expect(html).not.toContain("le disque le plus apprécié");
+  it("deux crans pour la mesure, trois pour la vitesse", () => {
+    // Les crans montrent qu'il y a d'AUTRES positions : sans eux, l'aiguille
+    // pointerait dans le vide et rien ne dirait que le bouton tourne.
+    const parKnob = panneau.split('class="knob-cadran"').slice(1);
+    expect(parKnob.length).toBe(2);
+    expect([...parKnob[0].matchAll(/<i[^>]*--a:/g)].length).toBe(2);
+    expect([...parKnob[1].matchAll(/<i[^>]*--a:/g)].length).toBe(3);
+    // Un seul cran allumé par cadran.
+    for (const k of parKnob) expect([...k.matchAll(/class="actif"/g)].length).toBe(1);
+  });
+
+  it("l'aiguille POINTE le cran choisi, au degré près", () => {
+    // Le cadran balaie 120°, de -60 à +60. Position 0 sur 2 crans = -60° ;
+    // position 0 sur 3 crans = -60° aussi. Une aiguille désalignée de son cran
+    // ferait mentir la seule information que le knob donne sans mot.
+    const aiguilles = [...panneau.matchAll(/class="knob-aiguille"[^>]*--a:(-?[\d.]+)deg/g)]
+      .map((m) => Number(m[1]));
+    expect(aiguilles.length).toBe(2);
+    for (const a of aiguilles) expect(a).toBe(-60);
+  });
+
+  it("la position s'écrit AUSSI en toutes lettres", () => {
+    // Un angle seul se devine, il ne se lit pas.
+    expect(panneau).toContain('class="knob-valeur"');
+    expect(panneau).toContain("Écouté");
+    expect(panneau).toContain("Jour");
+  });
+
+  it("chaque knob se nomme comme le fader se nomme", () => {
+    // « Mesure » et « Vitesse » reprennent `.fader-label`, le « Source » du
+    // fader : les trois réglages du module se nomment de la même façon.
+    const etiquettes = [...panneau.matchAll(/class="fader-label">([^<]+)/g)].map((m) => m[1]);
+    expect(etiquettes).toEqual(["Mesure", "Vitesse"]);
+  });
+
+  it("l'en-tête ne porte plus d'onglets de période", () => {
+    // Ils y vivaient loin de ce qu'ils commandaient, et un onglet ne se tourne
+    // pas. C'étaient en plus des `<span>` cliquables, hors d'atteinte du clavier.
+    const entete = html.split('class="control-row"')[1]?.split("</div></div>")[0] ?? "";
+    expect(entete).not.toContain("legend-toggle");
+    expect(entete).not.toContain("cursor:pointer");
+  });
+
+  it("le titre VISIBLE annonce la course en cours", () => {
+    // Sur le markup entier, « apprécié » apparaît aussi — dans le gabarit
+    // invisible qui empêche le titre de se recentrer à chaque bascule.
+    const visible = html.match(/course-tete-gabarit"[^>]*>[^<]+<\/span><span>([^<]+)</);
+    expect(visible![1]).toContain("le disque le plus écouté");
+    expect(visible![1]).not.toContain("apprécié");
   });
 });
