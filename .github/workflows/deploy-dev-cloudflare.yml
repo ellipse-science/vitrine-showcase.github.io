@@ -16,7 +16,21 @@ name: Déploiement dev (Cloudflare Pages)
 # Git de Pages au push, Deploy Hook du Worker au cycle de données). Ce
 # workflow ne se déclenche plus qu'à la main, en secours : le laisser au push
 # déploierait DEUX FOIS chaque poussée.
+# REPRISE DU DÉCLENCHEMENT AU PUSH, 2026-08-30. L'intégration Git de Cloudflare
+# a cessé de bâtir après le commit 94326406 (20h14) : aucun check sur les
+# commits suivants, et dev servait un build vieux de plusieurs heures pendant
+# qu'on croyait le contraire. Le même soir, le miroir GitHub Pages — l'autre
+# chemin — a été débranché. Dev se retrouvait donc sans AUCUN déploiement
+# automatique, ce qui n'est pas tenable pendant une campagne.
+#
+# ⚠️ CONSÉQUENCE ASSUMÉE : si l'intégration Git de Cloudflare se remet à
+# fonctionner, chaque poussée déploiera DEUX FOIS. C'est du gaspillage, pas une
+# panne — les deux chemins publient le même `out/`. Quand l'intégration sera
+# confirmée saine (un check `Cloudflare Pages` vert sur plusieurs commits
+# d'affilée), retirer le `push:` ci-dessous et revenir au dispatch seul.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
