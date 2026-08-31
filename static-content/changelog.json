@@ -1,5 +1,11 @@
 [
   {
+    "pr": 642,
+    "date": "2026-08-31T01:35:44Z",
+    "note": "Chacune des trois périodes du module des enjeux peut désormais s'afficher de deux façons : la répartition en tuiles, ou l'évolution des rangs. Pour la journée, l'évolution se lit d'une publication à l'autre.",
+    "version": "2.36.0-beta.0"
+  },
+  {
     "pr": 639,
     "date": "2026-08-31T01:06:05Z",
     "note": "Aucune : le site public ne change pas.",
