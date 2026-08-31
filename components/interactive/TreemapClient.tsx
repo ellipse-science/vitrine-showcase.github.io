@@ -323,8 +323,20 @@ function GrowthTile({
               </div>
             </div>
 
+              {/* Lecture en COLONNES : 1-2-3 à gauche, 4-5-6 à droite (demande
+                  d'Adrien, 31-08). La grille remplissait par RANGÉES (1-2 / 3-4),
+                  ce qui casse l'ordre du classement dès qu'on lit de haut en bas.
+                  `--lignes` fixe le nombre de rangées à ⌈n/2⌉ : avec
+                  `grid-auto-flow: column`, une colonne se remplit avant de passer
+                  à la suivante. Une grille multi-colonnes CSS (`columns: 2`)
+                  équilibrerait par HAUTEUR et pourrait mettre 4 titres d'un côté
+                  et 2 de l'autre — ici le partage est exact par construction. */}
             {tile.articles.length > 0 ? (
-              <div className="gt-expanded-list" role="list">
+              <div
+                className="gt-expanded-list"
+                role="list"
+                style={{ "--lignes": Math.ceil(tile.articles.length / 2) } as React.CSSProperties}
+              >
                 {tile.articles.map((article, index) => (
                   <article className="gt-expanded-story" role="listitem" key={`${article.title}-${index}`}>
                     <span className="gt-expanded-index">{String(index + 1).padStart(2, "0")}</span>
@@ -336,7 +348,19 @@ function GrowthTile({
                       <div className="gt-expanded-title">{article.title}</div>
                     )}
                     {article.sommet && (
-                      <div className="gt-expanded-sommet">Sommet {article.sommet.libelle}</div>
+                      <div className="gt-expanded-sommet">
+                        Sommet {article.sommet.libelle}
+                        {/* « Saillance élevée », pas « Élevée » seul : posée à
+                            côté de « Sommet à 16h », l'étiquette nue se lirait
+                            comme un qualificatif de l'heure. La table des bandes
+                            porte le libellé capitalisé (« Élevée ») — on le
+                            décapitalise ici, la mise en capitales est faite par
+                            le CSS de la ligne. */}
+                        <span className="gt-expanded-saillance">
+                          Saillance {article.sommet.saillance.toLocaleLowerCase("fr")}
+                          <b>{article.sommet.score.toFixed(1).replace(".", ",")}</b>
+                        </span>
+                      </div>
                     )}
                     {article.outlets.length > 0 && (
                       <div className="gt-expanded-outlets" aria-label="Médias associés à cette actualité">

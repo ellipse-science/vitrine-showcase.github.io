@@ -123,6 +123,61 @@ async function pruneShareBackgrounds() {
   console.log(`postbuild: ${removed} fond(s) Gratton retiré(s) du livrable prod`);
 }
 
+// AMBIANCE MUSICALE RETIRÉE DE PROD (2026-08-31) : UneDesUnesSection ne rend
+// plus le lecteur en prod — plus aucune page n'y réfère — mais `output: export`
+// copierait quand même public/audio/ dans out/audio/, à des URL devinables
+// (~4,5 Mo de mp3 + wav servis pour personne). Même geste que les fonds
+// Gratton ci-dessus : la garde de rendu retire l'affichage, celle-ci retire
+// les fichiers. Dev les garde.
+//
+// À noter : `pruneDataJson` ne couvre PAS ce cas — sa liste noire ne vise que
+// `out/data/`, et out/audio/latest.json vit ailleurs.
+async function pruneAudio() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  const audioDir = path.join(OUT_DIR, "audio");
+  let bytes = 0;
+  let removed = 0;
+  try {
+    for await (const file of filesWithSuffix(audioDir, "")) {
+      bytes += (await stat(file)).size;
+      removed++;
+    }
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  await rm(audioDir, { recursive: true, force: true });
+  const mb = (bytes / 1024 / 1024).toFixed(1);
+  console.log(`postbuild: ${removed} fichier(s) audio retiré(s) du livrable prod (${mb} Mo)`);
+}
+
+// CONTRÔLE, pas nettoyage : si une page prod porte encore le lecteur, retirer
+// les fichiers ne ferait que remplacer un son par un 404 silencieux. On arrête
+// le build.
+//
+// Ce contrôle vit ICI et non dans `deploy-prod.yml` (qui en a déjà de
+// semblables) parce que ce workflow ne déclenche plus la vraie prod depuis la
+// bascule du 2026-08-19 : c'est Cloudflare qui bâtit. postbuild, lui, tourne
+// dans TOUS les builds — un garde-fou placé dans le workflow de secours ne
+// garderait plus rien.
+async function assertNoAudioLeft() {
+  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
+  const offenders = [];
+  for await (const file of htmlFiles(OUT_DIR)) {
+    if ((await readFile(file, "utf8")).includes("Ambiance du moment")) {
+      offenders.push(path.relative(OUT_DIR, file));
+    }
+  }
+  if (offenders.length > 0) {
+    console.error(
+      `postbuild: le lecteur d'ambiance figure encore dans ${offenders.length} page(s) prod ` +
+      `(${offenders.slice(0, 3).join(", ")}…) — build interrompu.`,
+    );
+    process.exit(1);
+  }
+  console.log("postbuild: aucune page prod ne porte le lecteur d'ambiance ✓");
+}
+
 // Identifiant de build pour l'actualisation côté navigateur (composant
 // ActualisationAuto) : ~100 octets consultés par la sonde du client, servis
 // par le CDN avec Cache-Control: no-store (public/_headers). L'horodatage
@@ -185,6 +240,8 @@ async function main() {
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
   await pruneShareBackgrounds();
+  await pruneAudio();
+  await assertNoAudioLeft();
 
   // Hors de out/data/ : survit à pruneDataJson par construction. Le MÊME
   // identifiant nomme le cache du service worker — la sonde ActualisationAuto
