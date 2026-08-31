@@ -1993,7 +1993,13 @@ export type TreemapIssueTile = {
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
-export type TreemapHistoryPoint = { date: string; ranks: Record<string, number> };
+export type TreemapHistoryPoint = {
+  date: string;
+  ranks: Record<string, number>;
+  /** Le tag de la passe (UTC). Sert d'axe des X à la frise du JOUR, où tous les
+   *  points partagent la même date et où seule l'heure les distingue. */
+  tag: string;
+};
 
 export type TreemapPeriodData = {
   tiles: TreemapIssueTile[];
@@ -2814,7 +2820,7 @@ export async function loadTreemap(
         })).sort((a, b) => b.score - a.score);
         const ranks: Record<string, number> = {};
         ranked.forEach((e, i) => { ranks[e.key] = i + 1; });
-        return { date, ranks };
+        return { date, ranks, tag };
       });
 
     return { tiles, dateLabel, growthSince, lastUpdated, history };
