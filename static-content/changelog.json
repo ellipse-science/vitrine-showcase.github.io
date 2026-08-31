@@ -1,5 +1,11 @@
 [
   {
+    "pr": 661,
+    "date": "2026-08-31T23:57:24Z",
+    "note": "Rien de visible ne change pour l'instant. Cette mise à jour prépare l'affichage, sous chaque enjeu, des articles qui composent réellement son pourcentage.",
+    "version": null
+  },
+  {
     "pr": 660,
     "date": "2026-08-31T21:58:08Z",
     "note": "Les douze enjeux restent tous visibles dans la grille, même ceux dont l'actualité est nulle sur la période : chacun dispose d'une taille minimale plutôt que de se réduire à un trait.",
