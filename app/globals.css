@@ -8857,22 +8857,32 @@
   cursor: pointer;
 }
 
-/* LA TRANCHE. Le carton vu par la tranche : la couleur du parti, assombrie, et
-   un liseré clair sur l'arête — c'est ce filet qui fait lire une épaisseur
-   plutôt qu'un trait. */
+/* LA TRANCHE DU CARTON.
+
+   CE QUI NE MARCHAIT PAS. La première version empilait, sur neuf pixels : un
+   contour d'un pixel, une ombre de deux, la couleur, un liseré crème de deux,
+   puis le contour de la carte suivante. Entre deux couleurs, on comptait donc
+   QUATRE traits, et sur cent quarante-cinq tranches les séparations pesaient
+   autant que les couleurs. Le paquet ne ressemblait plus à des cartons mais à
+   un ruban tissé, et la couleur des partis, assombrie à 76 %, tournait à la
+   boue.
+
+   CE QU'ON GARDE. Une seule fente d'ombre entre deux cartons, large d'un pixel,
+   et rien d'autre. La couleur occupe tout le reste, à peine posée sur un dégradé
+   vertical — plus claire en haut où la lumière tombe, plus dense au fond de la
+   caisse. C'est ce que montre un vrai bac vu de face : des tranches de couleur
+   séparées par un cheveu d'ombre. */
 .bac-tranche-carton {
   position: absolute;
   inset: 0;
   z-index: 2;
-  /* Bords en PIXELS, pas en pourcentages : l'ombre du pli et le liseré de
-     l'arête gardent la même finesse quelle que soit l'épaisseur, si bien que la
-     tranche épaissie du mobile reste une tranche et ne devient pas une rayure. */
-  background: linear-gradient(90deg,
-    rgba(0, 0, 0, 0.34) 0 2px,
-    color-mix(in srgb, var(--party, #6E685F) 76%, var(--ink)) 2px calc(100% - 2px),
-    rgba(243, 236, 221, 0.42) calc(100% - 2px) 100%);
-  outline: 1px solid rgba(28, 25, 23, 0.5);
-  outline-offset: -1px;
+  background:
+    linear-gradient(90deg,
+      transparent 0 calc(100% - 1px),
+      rgba(28, 25, 23, 0.5) calc(100% - 1px) 100%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--party, #6E685F) 94%, var(--paper)) 0%,
+      color-mix(in srgb, var(--party, #6E685F) 86%, var(--ink)) 100%);
   /* LE PAQUET PENCHE. Un bac à moitié plein ne tient jamais ses disques droits :
      ils s'appuient sur la paroi de gauche. Quatre degrés suffisent — sur 132 px
      de haut, le sommet se décale de 9 px, soit presque une tranche. C'est ce
@@ -8880,16 +8890,18 @@
      coup d'œil. */
   transform: skewX(-4deg);
   transform-origin: bottom;
-  transition: transform 160ms ease;
+  transition: transform 160ms ease, filter 160ms ease;
 }
 .bac-case.shadow .bac-tranche-carton { filter: grayscale(0.85); }
 /* Survolée, la tranche se REDRESSE et s'éclaircit : le geste de tirer un disque
-   du bac avant de le regarder. Sans ça, rien ne dit laquelle on tient. */
+   du bac avant de le regarder. Sans ça, rien ne dit laquelle on tient. Il n'y a
+   plus de contour à changer de couleur, alors c'est la carte elle-même qui
+   s'éclaire. */
 .bac-case:hover .bac-tranche-carton,
 .bac-case:focus-within .bac-tranche-carton,
 .bac-case.sortie .bac-tranche-carton {
   transform: skewX(0deg);
-  outline-color: var(--ink);
+  filter: brightness(1.14);
 }
 @media (prefers-reduced-motion: reduce) {
   .bac-tranche-carton { transition: none; }
@@ -9104,6 +9116,9 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 160ms ease;
+.disco-case:hover .bac-tranche-carton,
+.disco-case:focus-within .bac-tranche-carton,
+.disco-case.sortie .bac-tranche-carton { filter: brightness(1.14); }
   pointer-events: none;
 }
 .disco-couverture picture,
