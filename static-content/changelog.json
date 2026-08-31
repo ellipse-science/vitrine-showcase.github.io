@@ -1,5 +1,11 @@
 [
   {
+    "pr": 654,
+    "date": "2026-08-31T20:50:21Z",
+    "note": "Trois enjeux changent de symbole : la santé prend une croix, les terres publiques un tracteur, et l'environnement récupère l'épi. Les deux végétaux verts qui se ressemblaient de trop près sont maintenant distincts d'un coup d'œil.",
+    "version": null
+  },
+  {
     "pr": 653,
     "date": "2026-08-31T20:32:05Z",
     "note": "Sur le module des 12 enjeux, les actualités listées sous chaque enjeu sont désormais uniquement celles couvertes par des médias québécois, et leurs liens mènent bien à l'article du média affiché. Des nouvelles traitées seulement au Canada anglais s'y glissaient, sans logo et vers des sites hors Québec.",
