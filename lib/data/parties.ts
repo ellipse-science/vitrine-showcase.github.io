@@ -1938,11 +1938,17 @@ export const __test__ = {
   samediDOuverture,
 };
 
-// Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
-// VITRINE_PARTIES_FIXTURES pointe vers un jeu FICTIF au même schéma
-// (cf. scripts/make_parties_fixtures.mjs) — la donnée réelle est aujourd'hui
-// dégénérée (un seul parti détecté, cf. aws-refiners#223/#248), donc impossible
-// d'y juger un changement visuel. Variable absente ⇒ comportement inchangé.
+// Par défaut : la donnée réelle publiée par fetch_data.R. En développement
+// LOCAL, VITRINE_PARTIES_FIXTURES pointe vers un jeu FICTIF au même schéma
+// (cf. scripts/make_parties_fixtures.mjs) — utile pour juger un changement
+// visuel sans dépendre de ce que les raffineurs ont produit à l'instant.
+//
+// ⚠️ N'EST PLUS FORCÉE SUR LE MIROIR DEV depuis le 2026-09-01 : elle l'était
+// tant que le modèle des partis restait dégénéré (un seul parti détecté,
+// aws-refiners#223/#248) et pour garder dev identique au miroir GitHub
+// Pages — débranché depuis. Le modèle a été réentraîné (§06 de la
+// méthodologie) ; dev lit maintenant l'API comme le reste du build. Variable
+// absente ⇒ comportement inchangé.
 const SUR_FIXTURES = Boolean(process.env.VITRINE_PARTIES_FIXTURES);
 
 // GARDE-FOU : des fausses données ne doivent JAMAIS partir en production.

@@ -59,16 +59,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Mêmes fausses données que le miroir GitHub Pages : les deux miroirs dev
-      # doivent montrer la même chose, sinon comparer l'un à l'autre ne veut
-      # plus rien dire. Cf. le commentaire long dans deploy.yml.
-      - name: Générer les fausses données (miroir dev)
-        run: node scripts/make_parties_fixtures.mjs
-
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
         env:
-          VITRINE_PARTIES_FIXTURES: fixtures/parties
+          # PAS DE `VITRINE_PARTIES_FIXTURES` ici depuis le 2026-09-01 : la
+          # forcer datait du moment où le modèle des partis était dégénéré
+          # (aws-refiners#223/#248, un seul parti détecté), et servait aussi à
+          # garder le miroir dev identique au miroir GitHub Pages — débranché
+          # depuis. Le modèle a été réentraîné (§06 de la méthodologie), donc
+          # dev lit maintenant l'API comme le reste du build, sans fausses
+          # données forcées dessus. Le module reste `isProd → null` : rien de
+          # tout ça n'atteint la production tant qu'il est retiré.
           # Servi à la RACINE de son propre domaine, contrairement au miroir
           # GitHub Pages qui vit sous un sous-chemin.
           NEXT_PUBLIC_BASE_PATH: ""
