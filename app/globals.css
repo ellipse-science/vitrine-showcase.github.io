@@ -9108,22 +9108,33 @@
   color: var(--paper);
   white-space: nowrap;
 }
+/* LA MENTION — collée au bas de la pochette, pas centrée en groupe avec le
+   disque, depuis le 2026-09-01. D'abord sur le panneau seul (« plus
+   subtile ») ; étendu au disque compact du palmarès le même jour (« même
+   chose... pour que la pastille puisse être centrée ») — les DEUX cartes
+   partagent le même traitement, il n'y a plus de raison de les distinguer.
+   Sortie du flux (`position: absolute`) : le disque n'a donc plus à lui
+   laisser de place, il se centre dans la carte ENTIÈRE — et la mention
+   devient une simple légende au bas, comme le sigle sur le voile d'une
+   vraie pochette (`.pochette-sigle`), pas un second sujet à égalité avec
+   le disque. `flex-wrap`, en ligne plutôt qu'empilée : sur une ligne pour
+   les deux mentions du panneau, sur deux pour les trois du disque compact
+   (qui ajoute le meneur, `mention`). */
 .trophee-etiquette-mention {
-  /* `align-self: end` sous l'ancienne grille (n'avait d'effet que si une
-     rangée `auto` dépassait le contenu, jamais le cas ici) ; sous la colonne
-     flex du parent, ce serait sa position sur l'axe TRANSVERSAL — donc son
-     alignement HORIZONTAL — et non plus verticale : retiré le 2026-09-01. */
-  flex: none;
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2em;
-  padding-top: 8%;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3em 0.35em;
   text-align: center;
 }
 .trophee-etiquette-mention b {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: clamp(7px, 6.5cqw, 9.5px);
+  font-size: clamp(6.5px, 5.5cqw, 8px);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -9131,34 +9142,8 @@
 }
 .trophee-etiquette-mention span {
   font-family: 'Source Serif 4', Georgia, serif;
-  font-size: clamp(7px, 6cqw, 10px);
-  color: var(--ink-soft);
-}
-/* LA MENTION DU PANNEAU — collée au bas de la pochette, pas centrée en
-   groupe avec le disque, depuis le 2026-09-01 (« plus subtile »). Sortie du
-   flux (`position: absolute`) : le disque n'a donc plus à lui laisser de
-   place, il se centre dans la carte ENTIÈRE — et la mention devient une
-   simple légende au bas, comme le sigle sur le voile d'une vraie pochette
-   (`.pochette-sigle`), pas un second sujet à égalité avec le disque. Sur une
-   seule ligne plutôt qu'empilée : moins de poids que la mise en page à deux
-   lignes du disque compact du palmarès, qui garde son traitement d'origine
-   (`.trophee-disque .trophee-etiquette-mention` ci-dessus, non touchée). */
-.trophee-panel .trophee-etiquette-mention {
-  position: absolute;
-  left: 6%;
-  right: 6%;
-  bottom: 6%;
-  flex-direction: row;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.35em;
-  padding-top: 0;
-}
-.trophee-panel .trophee-etiquette-mention b {
-  font-size: clamp(6.5px, 5.5cqw, 8px);
-}
-.trophee-panel .trophee-etiquette-mention span {
   font-size: clamp(6.5px, 5cqw, 8px);
+  color: var(--ink-soft);
 }
 
 /* LE LIEN VERS LA DISCOTHÈQUE — un court libellé, au-dessus du disque depuis
