@@ -34,8 +34,14 @@ describe("part de l'attention (module « Les 12 enjeux de la campagne »)", () =
 
   // La carte de partage divisait de son côté, en parallèle du chargeur. Deux
   // divisions, deux occasions de diverger : elle lit maintenant `share`.
+  //
+  // ⚠️ SANS `editionKey`, `getShareModuleContent` prend l'enjeu de tête de la
+  // CAMPAGNE (`data.month`), pas celui du jour (`lib/shareModules.ts` : « le
+  // module s'ouvre sur la vue Campagne depuis le 31-08 »). Comparer contre
+  // `.day.tiles[0]` compare deux périodes différentes, pas deux calculs du
+  // même nombre — ce que ce test veut prouver.
   it("annonce sur la carte de partage la part de la tuile de tête", async () => {
-    const top = (await loadTreemap())!.day.tiles[0];
+    const top = (await loadTreemap())!.month.tiles[0];
     const carte = await getShareModuleContent("enjeux-saillants");
 
     expect(carte.title).toBe("Les 12 enjeux de la campagne");
