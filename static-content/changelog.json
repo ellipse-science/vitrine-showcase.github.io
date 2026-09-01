@@ -1,5 +1,11 @@
 [
   {
+    "pr": 670,
+    "date": "2026-09-01T21:19:22Z",
+    "note": "Dans le module Partis et couverture, cliquer sur un disque de la table de mixage vous mène maintenant vers l'article qui en parle le plus, quand on en connaît un. Plusieurs retouches visuelles aussi : les disques et leurs pastilles sont mieux centrés, et le cadre du disque d'or est plus net. Assisté par : Claude Code (Sonnet 5)",
+    "version": null
+  },
+  {
     "pr": 667,
     "date": "2026-09-01T18:42:19Z",
     "note": "Rien ne change sur le site.",
