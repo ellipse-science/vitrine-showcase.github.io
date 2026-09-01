@@ -13,6 +13,20 @@ import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { HeadlineLink } from "@/components/interactive/HeadlineLink";
 
+// AMBIANCE MUSICALE RETIRÉE DE PROD, gardée sur dev (2026-08-31) — même régime
+// que les partis, le signalement et Doom (#544, #547), et même signal
+// d'environnement que `app/robots.ts` : un seul signal, pas de divergence.
+//
+// Deux raisons, pas une. D'abord le périmètre : la musique n'a jamais été
+// arbitrée pour le site public. Ensuite le fond : la légende affirme que
+// « l'humeur musicale est modulée en fonction de la une du jour », alors que
+// `public/audio/latest.mp3` n'a pas bougé depuis le 2026-06-16 — l'étape
+// `Generate ambient music` de refresh-data.yml est `continue-on-error` et
+// échoue en silence. La prod servait donc une composition de juin en la
+// présentant comme celle du jour. On ne publie pas une légende qui affirme un
+// faux ; le retour en prod passera par une génération qui fonctionne.
+const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+
 // Titre cliquable d'une Une : ouvre un article au hasard parmi les médias QC
 // qui la couvrent (chance égale). Repli sur l'article représentatif si besoin.
 // Rendu en texte simple si aucun lien connu.
@@ -340,6 +354,10 @@ export async function UneDesUnesSection({
   // d'avant-hier — une illustration qui affirme un faux. Une édition passée
   // s'affiche donc sans image ni musique, et la mise en page « no-art » du
   // module (déjà prévue pour les blocs sans illustration) s'en charge.
+  //
+  // La musique tombe pour une SECONDE raison, indépendante de celle-ci : elle
+  // est retirée de prod (voir `isProd` en tête de fichier). Les deux gardes
+  // sont volontairement séparées — lever l'une ne lève pas l'autre.
   const isArchive = Boolean(editionKey);
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
@@ -349,7 +367,7 @@ export async function UneDesUnesSection({
     listEditions(),
     isArchive ? null : readArtMeta(artJsonPath),
     isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
-    isArchive ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
+    isArchive || isProd ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
         .then(() => "audio/latest.wav")
