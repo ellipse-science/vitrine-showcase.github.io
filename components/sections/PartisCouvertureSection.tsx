@@ -1,5 +1,5 @@
 import { loadParties } from "@/lib/data/parties";
-import { loadPochettes } from "@/lib/data/pochettes";
+import { groupeParAlbums, groupeParDiscographie, loadPochettes } from "@/lib/data/pochettes";
 import { formatDateFr } from "@/lib/dates";
 import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
@@ -48,6 +48,15 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
   // l'affichage.
   const discotheque = await loadPochettes(formatDateFr);
 
+  // LE DISQUE D'OR DU PALMARÈS lit les MÊMES groupages que la page
+  // `/discotheque` (`lib/data/pochettes.ts`), sur le même `fonds` — aucune
+  // pochette n'est relue ni reclassée pour l'un ou pour l'autre. `groupeParEditions`
+  // n'est pas nécessaire ici : la vue « Jour » du trophée lit `view.rows` et
+  // `discotheque.duJour`, pas les éditions (qui groupent par JOURNÉE, pas par
+  // parti — voir `lib/data/pochettes.ts`).
+  const albums = groupeParAlbums(discotheque.fonds, formatDateFr);
+  const discographies = groupeParDiscographie(discotheque.fonds);
+
   // `editionKey` vient de main (cartes de partage par édition, #partage-cartes),
   // `saillanceRang` de cette branche. Les deux cohabitent : l'un identifie la
   // page, l'autre donne le tempo des vumètres.
@@ -55,6 +64,8 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
     <PartisCouvertureClient
       data={data}
       discotheque={discotheque}
+      albums={albums}
+      discographies={discographies}
       saillanceRang={saillanceRang}
       editionKey={editionKey}
     />
