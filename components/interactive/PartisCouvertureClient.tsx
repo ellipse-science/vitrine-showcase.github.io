@@ -1138,14 +1138,16 @@ function Deck({
               <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
             </g>
             <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            {/* LE TROU DU SPINDLE, à la couleur du parti — pas crème comme
-                celui du disque d'or (`.trophee-etiquette-disque::before`) :
-                le capuchon mélange déjà trois couleurs (parti, enjeu, ton),
-                et un trou neutre s'y perdrait. Posé au-dessus du sigle, les
-                deux formant un groupe centré ensemble plutôt que le trou seul
-                au centre géométrique — même correction que sur le disque d'or,
-                où le trou seul au centre lisait comme mal centré une fois le
-                sigle plaqué tout en bas. */}
+            {/* LE TROU DU SPINDLE — crème, comme celui du disque d'or
+                (`.trophee-etiquette-disque::before`), depuis le 2026-09-01.
+                Il était d'abord à la couleur du parti : le pari qu'un trou
+                neutre « se perdrait » dans le mélange à trois couleurs du
+                capuchon (parti, enjeu, ton) a fait l'inverse — signalé
+                « pastilles qui doivent être pleines » : posé sur `.forme-
+                parti` (même couleur que lui), l'anneau crème de 2 px ne
+                suffisait pas à le distinguer, et un plein disque se lisait
+                comme un simple cercle creux. Voir `.cap-pastille` dans
+                globals.css. */}
             <circle className="cap-pastille" cx="50" cy="33" r="8" />
             <text className="cap-sigle" x="50" y="63" textAnchor="middle" dominantBaseline="central">
               {row.label}

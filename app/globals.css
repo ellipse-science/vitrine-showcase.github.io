@@ -9685,12 +9685,18 @@
    46 % de la molette, il mangerait les aplats au lieu de les séparer. */
 .deck-jog-cap .forme-enjeu,
 .deck-jog-cap .forme-ton { stroke: none; }
-/* Le trou du spindle du capuchon, à la couleur du parti. Un anneau clair le
-   sépare de ce qu'il y a derrière — sans lui il se fondrait dans l'aplat du
-   parti (même couleur) chaque fois qu'il tombe sur `.forme-parti` plutôt que
-   sur l'enjeu ou le ton. */
+/* LE TROU DU SPINDLE DU CAPUCHON — crème, comme celui du disque d'or, depuis
+   le 2026-09-01. Il était d'abord à la couleur du parti (`fill:
+   var(--party)`) : le pari (ce commentaire, plus haut) était qu'un trou
+   neutre « se perdrait » dans le mélange à trois couleurs du capuchon.
+   L'inverse s'est produit — signalé « pastilles qui doivent être pleines » :
+   quand le trou tombe sur `.forme-parti` (même couleur), l'anneau crème de
+   2 px ne suffit pas à le distinguer de ce qu'il y a derrière, et le disque
+   plein se lit comme un simple cercle creux. Vérifié sur le rendu réel :
+   le crème, lui, contraste avec LES TROIS couleurs du capuchon (parti, enjeu,
+   ton — jamais crème elles-mêmes), donc jamais avec l'inquiétude d'origine. */
 .cap-pastille {
-  fill: var(--party, var(--ink-soft));
+  fill: var(--paper-deep);
   stroke: var(--paper);
   stroke-width: 2;
 }
