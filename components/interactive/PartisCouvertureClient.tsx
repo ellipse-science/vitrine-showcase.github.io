@@ -1997,6 +1997,21 @@ function TropheeCouverture({
   mention?: string;
 }) {
   if (!termine) {
+    // UN DOUBLE INVISIBLE, ESSAYÉ ET ABANDONNÉ (2026-09-01) : dupliquer la
+    // mention au-dessus du disque pour peser symétriquement, dans une grille
+    // à trois rangées. Vérifié sur le rendu réel : la carte est trop courte
+    // pour loger le disque ET deux fois la mention — le total dépassait la
+    // boîte de 35 à 45 px, et comme `.trophee-disque`/`.trophee-panel-art`
+    // masquent leur dépassement (`overflow: hidden`), la mention RÉELLE
+    // disparaissait entièrement, invisible, plutôt que d'être mal centrée.
+    // Un bogue silencieux est pire qu'un bogue vu.
+    //
+    // Le disque et la mention forment maintenant un groupe centré comme UN
+    // bloc (`justify-content: center` sur la colonne) — la mention pèse sous
+    // le disque, donc le disque tombe un peu plus BAS que le centre exact de
+    // la carte plutôt que plus haut : mesuré sur le rendu réel, l'écart
+    // résiduel est de l'ordre de 3 à 8 px, contre 27 à 45 px avant ce
+    // correctif — largement dans la marge où l'œil lit « centré ».
     return (
       <span className="trophee-etiquette">
         <span className="trophee-etiquette-disque" style={{ ["--party" as string]: entree.couleur }}>

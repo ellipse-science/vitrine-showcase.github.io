@@ -9015,28 +9015,41 @@
    variable selon la largeur d'écran) — les tailles suivent la largeur RÉELLE
    de la boîte (`cqw`) plutôt que de deviner un contexte à l'avance.
 
-   DEUX RANGÉES, PAS UN GROUPE CENTRÉ. La première fois, le cercle et la
-   mention étaient centrés ENSEMBLE comme un seul bloc : la mention, posée
-   sous lui, tirait le cercle vers le haut du disque plutôt que de le laisser
-   au milieu. Une grille à deux rangées sépare les deux : la première (`1fr`)
-   prend toute la place qui reste et centre le cercle EN SON MILIEU À ELLE —
-   qui est, la mention étant courte, presque le milieu du disque entier — la
-   seconde (`auto`) loge la mention tout en bas, à sa propre hauteur. Aucun
-   fond posé ici : sur le grand disque du palmarès, il vient du bouton
-   `.trophee-disque` ; dans le panneau, de `.flip-face` — c'est LA POCHETTE
-   ENTIÈRE qui doit tourner au clic, pas seulement ce qu'il y a dessus. */
+   UN GROUPE CENTRÉ, PAS UNE GRILLE À DEUX RANGÉES. Une grille `1fr auto`
+   centre le cercle dans ce qui RESTE une fois la mention retirée d'en bas —
+   pas dans la carte entière : mesuré sur le rendu réel, le disque avait deux
+   à trois fois plus d'espace SOUS lui qu'AU-DESSUS (« le SINGLE EN
+   PRODUCTION lève le cercle »). Un double invisible de la mention, posé
+   au-dessus du disque pour peser l'autre côté à égalité, a été essayé et
+   abandonné le même jour : la carte est trop courte pour loger le disque ET
+   deux fois la mention, le total dépassait la boîte de 35 à 45 px, et comme
+   cette boîte masque son dépassement (`overflow: hidden`, sur
+   `.trophee-disque` et `.trophee-panel-art`), la mention RÉELLE disparaissait
+   entièrement plutôt que d'être mal centrée — un bogue silencieux, pire que
+   celui qu'il devait corriger.
+
+   Le disque et la mention forment donc un groupe (`justify-content: center`
+   sur la colonne), comme à la toute première version de cette étiquette —
+   mais cette fois le disque (plus grand que la mention) tombe un peu plus
+   BAS que le centre exact plutôt que plus haut, un écart bien plus discret :
+   mesuré sur le rendu réel, 3 à 8 px selon la taille de la carte, contre 27
+   à 45 px avant ce correctif. Aucun fond posé ici : sur le grand disque du
+   palmarès, il vient du bouton `.trophee-disque` ; dans le panneau, de
+   `.flip-face` — c'est LA POCHETTE ENTIÈRE qui doit tourner au clic, pas
+   seulement ce qu'il y a dessus. */
 .trophee-etiquette {
   container-type: inline-size;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   padding: 8% 6%;
   box-sizing: border-box;
 }
 .trophee-etiquette-disque {
-  align-self: center;
+  flex: none;
   position: relative;
   /* 62 → 70 % le 2026-09-07 : le cercle se perdait dans trop de papier crème
      autour de lui, surtout dans les coins du carré — un disque doit avoir de
@@ -9086,7 +9099,11 @@
   color: var(--paper);
 }
 .trophee-etiquette-mention {
-  align-self: end;
+  /* `align-self: end` sous l'ancienne grille (n'avait d'effet que si une
+     rangée `auto` dépassait le contenu, jamais le cas ici) ; sous la colonne
+     flex du parent, ce serait sa position sur l'axe TRANSVERSAL — donc son
+     alignement HORIZONTAL — et non plus verticale : retiré le 2026-09-01. */
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;

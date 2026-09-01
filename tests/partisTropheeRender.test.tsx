@@ -130,6 +130,16 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     expect(html).toMatch(new RegExp(`class="trophee-etiquette-sigle">${meneur.label}<`));
   });
 
+  it("ne montre qu'UNE mention, pas de double caché — le double a été essayé et abandonné le 2026-09-01", () => {
+    // Un double invisible au-dessus du disque, pour peser symétriquement,
+    // faisait déborder la carte (`overflow: hidden`) et effaçait la VRAIE
+    // mention entièrement. Un seul `<span class="trophee-etiquette-mention">`
+    // doit rester dans le HTML.
+    const mentions = html.match(/class="trophee-etiquette-mention"/g);
+    expect(mentions?.length).toBe(1);
+    expect(html).not.toContain("trophee-etiquette-mention--fantome");
+  });
+
   it("annonce une date de sortie — la même ligne d'arrivée que le graphique juste à côté", () => {
     // Publié jusqu'à midi (blocs [0,4,8,12]), l'arrivée du jour est à 20 h —
     // `chart.finish.label` pour la vue Jour (`buildChartIntraday`).
