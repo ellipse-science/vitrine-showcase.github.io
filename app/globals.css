@@ -9423,13 +9423,22 @@
 /* Le carré : format de la pochette, et cadre du disque. Le disque y est
    inscrit, la pochette l'occupe en entier.
 
-   ⚠️ C'EST UN `<button>`, ET IL DOIT ÊTRE DÉSHABILLÉ. Cette remise à zéro
-   vivait sur `.deck-carre--pivot` du temps où le deck se retournait ; le
-   modificateur est tombé avec le retournement et elle est partie avec lui. Le
-   navigateur redessinait alors son bouton par défaut — fond, bordure et anneau
-   de focus — en carré derrière le disque rond. Ne pas la retirer à nouveau :
-   sans elle le cadre revient. */
+   ⚠️ C'EST UN `<button>` OU UN `<a>` SELON LE PARTI (aws-refiners#447 : un
+   deck qui mène à un article est un lien, celui qui retombe sur le panneau
+   du disque d'or reste un bouton — voir `Deck`), ET IL DOIT ÊTRE DÉSHABILLÉ
+   DANS LES DEUX CAS. Cette remise à zéro vivait sur `.deck-carre--pivot` du
+   temps où le deck se retournait ; le modificateur est tombé avec le
+   retournement et elle est partie avec lui. Le navigateur redessinait alors
+   son bouton par défaut — fond, bordure et anneau de focus — en carré
+   derrière le disque rond. Ne pas la retirer à nouveau : sans elle le cadre
+   revient.
+
+   `display: block` n'est PAS accessoire : un `<a>` est `inline` par défaut,
+   qui ignore `width`/`aspect-ratio` — exactement le bogue qui a un jour vidé
+   `.flip-carte` de son contenu. Un `<button>` n'en a pas besoin (il est déjà
+   `inline-block`), mais la règle ne lui nuit pas. */
 .deck-carre {
+  display: block;
   position: relative;
   width: 100%;
   max-width: 200px;
@@ -9442,6 +9451,7 @@
   background: none;
   color: inherit;
   font: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 /* L'anneau du navigateur parti, il faut en redonner un : au clavier, rien

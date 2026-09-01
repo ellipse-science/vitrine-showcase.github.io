@@ -240,6 +240,7 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
+        "representative_url",
         "computed_at"
       ],
       "enabled": true,
@@ -257,6 +258,7 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
+        "representative_url",
         "computed_at"
       ],
       "enabled": true,
@@ -274,6 +276,7 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
+        "representative_url",
         "computed_at"
       ],
       "enabled": true,

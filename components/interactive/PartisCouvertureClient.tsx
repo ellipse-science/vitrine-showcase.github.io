@@ -41,6 +41,23 @@ const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 const RANGES: RangeKey[] = ["today", "week", "overall"];
 
+/** UN CHOIX DÉTERMINISTE, PAS UN VRAI HASARD.
+ *
+ *  `Math.random()` dans le rendu d'un composant client donnerait une valeur
+ *  différente au serveur (l'export statique) et au navigateur (l'hydratation)
+ *  — exactement le mésappariement qu'un `useSearchParams()` sur du
+ *  `force-static` a déjà coûté sur cette branche. Une fonction de `cle` reste
+ *  stable d'un rendu à l'autre, et varie déjà assez d'un jour à l'autre :
+ *  c'est la LISTE des médias disponibles qui change avec la donnée, pas ce
+ *  hachage. Sert à choisir « un média au hasard, parmi ceux qui ont un
+ *  article pour ce parti » (le deck sur « Tous les médias », voir
+ *  `lienArticle`). */
+function choisirParmi(cle: string, n: number): number {
+  let h = 0;
+  for (let i = 0; i < cle.length; i++) h = (h * 31 + cle.charCodeAt(i)) >>> 0;
+  return h % n;
+}
+
 /** CE QUE LE PALMARÈS CLASSE.
  *
  *  Deux courses sur le même graphique, et le lecteur bascule de l'une à
@@ -352,6 +369,25 @@ export function PartisCouvertureClient({
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
 
+  /** L'ARTICLE VERS LEQUEL UN DECK MÈNE (aws-refiners#447), pour CE parti à LA
+   *  POSITION COURANTE du fader.
+   *
+   *  Sur un média précis, `view` EST déjà la vue de ce média : la ligne du
+   *  parti porte directement l'URL qui le concerne (`representativeUrl`,
+   *  posée par `lib/data/parties.ts`).
+   *
+   *  Sur « Tous les médias », l'agrégat n'a pas d'URL propre — il n'existe
+   *  qu'une URL PAR média. On en choisit une parmi les médias qui en ont une
+   *  pour ce parti, jamais un article qui ne le mentionne pas. */
+  const lienArticle = (row: RowView): string | null => {
+    if (media !== TOUS_MEDIAS) return row.representativeUrl ?? null;
+    const disponibles = data.medias
+      .map((m) => data.byMedia[m.id]?.ranges[range].rows.find((r) => r.key === row.key)?.representativeUrl)
+      .filter((u): u is string => !!u);
+    if (disponibles.length === 0) return null;
+    return disponibles[choisirParmi(row.key, disponibles.length)];
+  };
+
   /** LE CLASSEMENT DU TROPHÉE, jusqu'à cinq entrées, pour la vitesse choisie
    *  ET LA MESURE CHOISIE — le disque d'or suit le knob Mesure, exactement
    *  comme le graphique juste à côté : en Apprécié, il couronne le ton, pas
@@ -524,7 +560,8 @@ export function PartisCouvertureClient({
               que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
               affichée sans valeur. À égalité au plus bas, les deux y passent.
               <br />
-              <br />• <b>Cliquez un disque</b> pour voir sa pochette, dans le disque d&apos;or.
+              <br />• <b>Cliquez un disque</b> pour lire l&apos;article qui en parle le plus,
+              ou voir sa pochette dans le disque d&apos;or quand aucun article n&apos;est connu.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -541,8 +578,10 @@ export function PartisCouvertureClient({
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
           <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            articleUrl={decks[0] && lienArticle(decks[0])}
             onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[0]?.key} />
           <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            articleUrl={decks[2] && lienArticle(decks[2])}
             onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[2]?.key} />
         </div>
 
@@ -560,8 +599,10 @@ export function PartisCouvertureClient({
 
         <div className="regie-flanc regie-flanc--droite">
           <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            articleUrl={decks[1] && lienArticle(decks[1])}
             onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[1]?.key} />
           <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            articleUrl={decks[3] && lienArticle(decks[3])}
             onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[3]?.key} />
         </div>
       </div>
@@ -1005,6 +1046,7 @@ function Deck({
   rang,
   indisponible,
   mediaLabel,
+  articleUrl,
   onSelect,
   selectionne,
 }: {
@@ -1021,12 +1063,19 @@ function Deck({
    *  que le changement de disque ne se rejoue que sur un vrai changement de
    *  piste. */
   mediaLabel: string | null;
-  /** Sélectionner ce parti : sa pochette s'ouvre plus bas, déjà retournée,
-   *  dans le panneau du disque d'or (`ouvrirPochetteDuParti`). */
+  /** L'article vers lequel le deck mène (aws-refiners#447), déjà résolu par
+   *  l'appelant — média courant si le fader en désigne un, sinon un média
+   *  choisi parmi ceux qui en ont un pour ce parti (voir `lienArticle`).
+   *  `null`/absent : aucun article connu, le deck retombe sur son ancien
+   *  geste (`onSelect`). */
+  articleUrl?: string | null;
+  /** Repli quand `articleUrl` est absent : sélectionner ce parti pour que sa
+   *  pochette s'ouvre plus bas, déjà retournée, dans le panneau du disque
+   *  d'or (`ouvrirPochetteDuParti`). */
   onSelect?: (key: PartyKey) => void;
-  /** Vrai quand c'est CE parti dont la carte est ouverte dans le panneau. Le
-   *  deck le montre, sans quoi rien ne relierait le clic à ce qui bouge plus
-   *  bas. */
+  /** Vrai quand c'est CE parti dont la carte est ouverte dans le panneau —
+   *  ne s'applique qu'au repli ci-dessus, un deck qui mène à un article n'a
+   *  pas d'état « choisi ». */
   selectionne?: boolean;
 }) {
 
@@ -1066,19 +1115,83 @@ function Deck({
   const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
   const ton = row.toneDirection;
 
-  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ. Le deck
-     n'ouvre plus rien SUR PLACE depuis le 2026-09-01 : il pointe vers LA
-     MÊME pochette que le disque d'or publie, plus bas, déjà retournée sur
-     son endos. Sans le dire, le clic paraîtrait sans effet — ce qui bouge
-     n'est pas sous le doigt.
-     « Plus bas » depuis le 2026-09-01 : la table de mix (ce deck) est
-     passée AVANT le palmarès et son disque d'or dans l'ordre de la page. */
-  const annonceDisque = selectionne
-    ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
-    : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-      `Voir sa pochette, plus bas, dans le disque d'or, pour combien de temps ce ` +
-      `parti a occupé la Une, quelle part de la couverture il représente, l'enjeu ` +
-      `dont on parle le plus à son sujet et le ton de cette couverture.`;
+  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ.
+     `articleUrl` change la nature du geste : un lien qui QUITTE le site
+     pour l'article qui parle le plus de ce parti, plutôt que le repli —
+     ouvrir sa pochette, plus bas, déjà retournée, dans le disque d'or (la
+     table de mix est passée AVANT lui dans l'ordre de la page depuis le
+     2026-09-01). Sans le dire, le clic paraîtrait sans effet, ou son effet
+     réel — quitter le site — surprendrait. */
+  const annonceDisque = articleUrl
+    ? `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
+      `Lire l'article qui en parle le plus, dans un nouvel onglet.`
+    : selectionne
+      ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
+      : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
+        `Voir sa pochette, plus bas, dans le disque d'or, pour combien de temps ce ` +
+        `parti a occupé la Une, quelle part de la couverture il représente, l'enjeu ` +
+        `dont on parle le plus à son sujet et le ton de cette couverture.`;
+
+  {/* Face avant — le vinyle. Il n'est plus seulement décoratif depuis que
+      la ligne de nom est partie : le sigle gravé sur son capuchon est
+      désormais le seul endroit où le parti s'écrit en toutes lettres, et
+      la pastille du rang est posée dans son coin haut-gauche.
+      Partagé entre les deux gestes possibles (lien vers un article, ou
+      bouton de repli) : même disque, la différence est dans ce qui
+      l'entoure, pas dans ce qu'il montre. */}
+  const visuel = (
+    <>
+      <span className="deck-face deck-face--disque" aria-hidden="true">
+        <span className="deck-jog">
+          {/* Le capuchon n'est plus un aplat : il reprend la composition de la
+              pochette, découpée en rond. On voit ce qu'on va retourner. */}
+          {mediaLabel && (
+            <svg className="deck-jog-media" viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                {/* Un cercle de rayon 25,5, soit deux unités et demie au-delà
+                    du capuchon (23) : le nom lui est collé, et non posé au
+                    milieu du plateau. Le tracé part de la gauche et tourne
+                    dans le sens horaire, si bien qu'un décalage d'un quart
+                    place le texte en haut, à l'endroit. */}
+                <path
+                  id={`arc-${row.key}`}
+                  d="M 50,50 m -25.5,0 a 25.5,25.5 0 1,1 51,0 a 25.5,25.5 0 1,1 -51,0"
+                  fill="none"
+                />
+              </defs>
+              <text>
+                <textPath href={`#arc-${row.key}`} startOffset="25%" textAnchor="middle">
+                  {mediaLabel}
+                </textPath>
+              </text>
+            </svg>
+          )}
+          <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
+            <clipPath id={`cap-${row.key}`}>
+              <circle cx="50" cy="50" r="50" />
+            </clipPath>
+            <g clipPath={`url(#cap-${row.key})`}>
+              <rect className="forme-parti" x="0" y="0" width="100" height="100" />
+              <circle className="forme-enjeu" cx="80" cy="18" r="44" />
+              <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
+            </g>
+            <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
+            <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
+              {row.label}
+            </text>
+          </svg>
+        </span>
+      </span>
+
+      {/* LE RANG, dans le coin du vinyle. Il vit DANS le lien ou le bouton,
+          seul élément à position relative du deck : posé plus haut dans
+          l'arbre, il se serait calé sur `.deck` et non sur le carré, donc à
+          côté du disque plutôt que dessus. L'`aria-label` du conteneur
+          l'emporte de toute façon sur ce contenu, qui n'est donc jamais
+          annoncé deux fois. */}
+      <span className="deck-rang">{rang}</span>
+    </>
+  );
 
   return (
     <div
@@ -1095,68 +1208,31 @@ function Deck({
           compris quand la piste restait la même. Ici le carré ne se remonte que
           si le parti change vraiment — et c'est ce remontage qui rejouerait la
           sortie de pochette si elle était ouverte. */}
-      <button
-        key={row.key}
-        type="button"
-        className={`deck-carre${selectionne ? " deck-carre--choisi" : ""}`}
-        onClick={() => onSelect?.(row.key)}
-        aria-pressed={selectionne}
-        aria-label={annonceDisque}
-        title={annonceDisque}
-      >
-        {/* Face avant — le vinyle. Il n'est plus seulement décoratif depuis que
-            la ligne de nom est partie : le sigle gravé sur son capuchon est
-            désormais le seul endroit où le parti s'écrit en toutes lettres, et
-            la pastille du rang est posée dans son coin haut-gauche. */}
-        <span className="deck-face deck-face--disque" aria-hidden="true">
-          <span className="deck-jog">
-            {/* Le capuchon n'est plus un aplat : il reprend la composition de la
-                pochette, découpée en rond. On voit ce qu'on va retourner. */}
-            {mediaLabel && (
-              <svg className="deck-jog-media" viewBox="0 0 100 100" aria-hidden="true">
-                <defs>
-                  {/* Un cercle de rayon 25,5, soit deux unités et demie au-delà
-                      du capuchon (23) : le nom lui est collé, et non posé au
-                      milieu du plateau. Le tracé part de la gauche et tourne
-                      dans le sens horaire, si bien qu'un décalage d'un quart
-                      place le texte en haut, à l'endroit. */}
-                  <path
-                    id={`arc-${row.key}`}
-                    d="M 50,50 m -25.5,0 a 25.5,25.5 0 1,1 51,0 a 25.5,25.5 0 1,1 -51,0"
-                    fill="none"
-                  />
-                </defs>
-                <text>
-                  <textPath href={`#arc-${row.key}`} startOffset="25%" textAnchor="middle">
-                    {mediaLabel}
-                  </textPath>
-                </text>
-              </svg>
-            )}
-            <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
-              <clipPath id={`cap-${row.key}`}>
-                <circle cx="50" cy="50" r="50" />
-              </clipPath>
-              <g clipPath={`url(#cap-${row.key})`}>
-                <rect className="forme-parti" x="0" y="0" width="100" height="100" />
-                <circle className="forme-enjeu" cx="80" cy="18" r="44" />
-                <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
-              </g>
-              <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-              <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
-                {row.label}
-              </text>
-            </svg>
-          </span>
-        </span>
-
-        {/* LE RANG, dans le coin du vinyle. Il vit DANS le bouton, seul élément
-            à position relative du deck : posé plus haut dans l'arbre, il se
-            serait calé sur `.deck` et non sur le carré, donc à côté du disque
-            plutôt que dessus. L'`aria-label` du bouton l'emporte de toute façon
-            sur ce contenu, qui n'est donc jamais annoncé deux fois. */}
-        <span className="deck-rang">{rang}</span>
-      </button>
+      {articleUrl ? (
+        <a
+          key={row.key}
+          className="deck-carre"
+          href={articleUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={annonceDisque}
+          title={annonceDisque}
+        >
+          {visuel}
+        </a>
+      ) : (
+        <button
+          key={row.key}
+          type="button"
+          className={`deck-carre${selectionne ? " deck-carre--choisi" : ""}`}
+          onClick={() => onSelect?.(row.key)}
+          aria-pressed={selectionne}
+          aria-label={annonceDisque}
+          title={annonceDisque}
+        >
+          {visuel}
+        </button>
+      )}
     </div>
   );
 }

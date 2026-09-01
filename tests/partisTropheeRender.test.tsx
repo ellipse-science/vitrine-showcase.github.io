@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
-import type { PartiesData } from "@/lib/data/parties";
+import type { PartiesData, RowView } from "@/lib/data/parties";
 import type { Pochette } from "@/lib/data/pochettes";
 import { signaturePochette } from "@/lib/enjeux";
 
@@ -342,5 +342,61 @@ describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-
     expect(html).not.toContain('class="gatefold"');
     expect(html).not.toContain("gatefold-nom");
     expect(html).not.toContain("gatefold-fermer");
+  });
+});
+
+describe("les decks — mènent vers l'article représentatif quand il existe (aws-refiners#447)", () => {
+  // Sur « Tous les médias » (la position par défaut du fader), un deck n'a
+  // pas d'URL propre : `lienArticle` en choisit une parmi les médias qui en
+  // ont une pour ce parti (voir le commentaire de `lienArticle`,
+  // PartisCouvertureClient.tsx). Ce fixture donne DEUX médias au premier
+  // parti du classement, et AUCUN au second — pour prouver les deux issues,
+  // pas seulement la présente.
+  const base = donnees([0, 4, 8, 12, 16, 20]);
+  const visibles = base.ranges.today.rows.filter((r) => !r.inShadow);
+  const avecArticle = visibles[0];
+  const sansArticle = visibles[1];
+
+  const URL_LED = "https://ledevoir.example/article-a";
+  const URL_RCI = "https://rci.example/article-b";
+  const avecUrl = (rows: RowView[], url: string): RowView[] =>
+    rows.map((r) => (r.key === avecArticle.key ? { ...r, representativeUrl: url } : r));
+
+  const data: PartiesData = {
+    ...base,
+    medias: [
+      { id: "led", label: "Le Devoir" },
+      { id: "rci", label: "Radio-Canada" },
+    ],
+    byMedia: {
+      led: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_LED) } } },
+      rci: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_RCI) } } },
+    },
+  };
+
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
+
+  it("le deck du parti qui a un article devient un VRAI lien externe", () => {
+    const liens = [...html.matchAll(/<a class="deck-carre" href="([^"]*)"[^>]*>/g)];
+    expect(liens.length).toBe(1);
+    expect([URL_LED, URL_RCI]).toContain(liens[0][1]);
+  });
+
+  it("le lien s'ouvre dans un nouvel onglet, comme tout lien externe du site", () => {
+    expect(html).toMatch(/<a class="deck-carre" href="[^"]*" target="_blank" rel="noopener noreferrer"/);
+  });
+
+  it("l'annonce dit qu'on quitte le site pour un article, pas qu'on ouvre une pochette", () => {
+    expect(html).toContain("Lire l&#x27;article qui en parle le plus, dans un nouvel onglet.");
+  });
+
+  it("le deck d'un parti SANS article, lui, reste un bouton vers le disque d'or", () => {
+    const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"[^>]*aria-label="([^"]*)"/g)];
+    expect(boutons.some((b) => b[1].startsWith(sansArticle.fullLabel))).toBe(true);
+  });
+
+  it("trois decks sur quatre restent des boutons — un seul a un article", () => {
+    const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"/g)];
+    expect(boutons.length).toBe(3);
   });
 });
