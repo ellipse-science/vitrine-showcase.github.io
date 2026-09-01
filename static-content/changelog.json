@@ -1,5 +1,11 @@
 [
   {
+    "pr": 618,
+    "date": "2026-09-01T18:16:29Z",
+    "note": "Les pochettes des partis sont maintenant réunies dans un bac, classées par temps passé à la une. On peut les feuilleter et en ouvrir une pour voir le détail : temps, part, enjeu et ton de la couverture.",
+    "version": null
+  },
+  {
     "pr": 619,
     "date": "2026-09-01T18:16:27Z",
     "note": "Le module « De quel parti parle-t-on dans les médias? » troque ses colonnes contre un vrai palmarès en course, avec un disque d'or qui mène à la pochette de chaque parti.",
