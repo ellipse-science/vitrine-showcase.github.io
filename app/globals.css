@@ -8929,8 +8929,13 @@
    course courue. Il a remplacé le nom du trophée en toutes lettres
    (« Le single d'or »), retiré du dessous du disque à cette date : c'est
    maintenant LUI qui dit de quel palier il s'agit, en permanence, pas
-   seulement au moment où il est décerné. Un double filet plutôt qu'une ombre
-   portée (« le journal n'a pas d'ombre portée »).
+   seulement au moment où il est décerné.
+
+   UNE LIGNE PLEINE, PAS UN DOUBLE FILET — signalé « pas beau » le 2026-09-01 :
+   le double filet (un contour laiton posé à 2 px du bord, plus un liseré
+   laiton à 1 px À L'INTÉRIEUR du bord noir) lisait comme trois lignes
+   concurrentes plutôt qu'un cadre net. Un seul trait, épais, à la couleur du
+   palier.
 
    `--palier`, POSÉE EN LIGNE PAR `PalmaresTrophee` (`PALIER_COULEUR`), PAS UN
    SEUL LAITON POUR LES TROIS : or pour un jour, argent du platine pour une
@@ -8942,10 +8947,7 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   padding: 0;
-  border: 1px solid var(--ink);
-  outline: 3px solid var(--palier, var(--brass));
-  outline-offset: 2px;
-  box-shadow: inset 0 0 0 1px var(--palier, var(--brass));
+  border: 3px solid var(--palier, var(--brass));
   background: var(--paper-deep);
   cursor: pointer;
   overflow: hidden;
