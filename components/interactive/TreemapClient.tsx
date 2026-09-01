@@ -12,24 +12,49 @@ import { FlappyEnjeux } from "./FlappyEnjeux";
 
 // --- Treemap de croissance (onglet « Jour ») : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
-interface LayoutNode extends TreemapIssueTile { rect: Rect; }
+interface LayoutNode extends TreemapIssueTile {
+  rect: Rect;
+  /** Poids de MISE EN PAGE (part d'aire), plancher compris. Jamais affiché :
+   *  le nombre public d'une tuile reste `share`. Voir PLANCHER_AIRE. */
+  poids: number;
+}
 
 // Partition récursive (« slice-and-dice » équilibré) : rectangles proportionnels au score.
+// Part d'aire GARANTIE à chaque enjeu, quelle que soit sa saillance : les douze
+// doivent rester visibles et cliquables, même à 0 % (demande d'Adrien, 31-08).
+// Sans plancher, un enjeu sans actualité se réduit à un filet illisible et le
+// module cesse de montrer les DOUZE enjeux, ce qui est pourtant son titre.
+//
+// 2 % de l'aire pour chacun, soit 24 % réservés ; les 76 % restants se
+// répartissent au prorata de la saillance. Le prix est explicite et assumé :
+// la surface n'est plus STRICTEMENT proportionnelle. Elle reste monotone (un
+// enjeu plus saillant a toujours une plus grande tuile) et le chiffre affiché
+// sur chaque tuile, lui, reste la part exacte. La page Méthodologie le dit.
+const PLANCHER_AIRE = 0.02;
+
 function computeTreemapLayout(tiles: TreemapIssueTile[]): LayoutNode[] {
-  const nodes: LayoutNode[] = tiles.map((t) => ({ ...t, rect: { x: 0, y: 0, w: 0, h: 0 } }));
+  const totalScore = tiles.reduce((sum, t) => sum + Math.max(t.score, 0), 0);
+  const reste = Math.max(0, 1 - PLANCHER_AIRE * tiles.length);
+  // `poids` ne sert QU'À la mise en page. Ne jamais l'afficher ni le comparer :
+  // le nombre public d'une tuile est `share`, la vraie part de l'attention.
+  const nodes: LayoutNode[] = tiles.map((t) => ({
+    ...t,
+    poids: PLANCHER_AIRE + (totalScore > 0 ? reste * (Math.max(t.score, 0) / totalScore) : reste / tiles.length),
+    rect: { x: 0, y: 0, w: 0, h: 0 },
+  }));
   function partition(slice: LayoutNode[], rect: Rect) {
     if (slice.length === 0) return;
     if (slice.length === 1) { slice[0].rect = rect; return; }
-    const total = slice.reduce((s, t) => s + Math.max(t.score, 0.001), 0);
+    const total = slice.reduce((s, t) => s + t.poids, 0);
     let leftSum = 0, splitIdx = 1, minDiff = Infinity;
     for (let i = 0; i < slice.length - 1; i++) {
-      leftSum += Math.max(slice[i].score, 0.001);
+      leftSum += slice[i].poids;
       const diff = Math.abs(leftSum - total / 2);
       if (diff < minDiff) { minDiff = diff; splitIdx = i + 1; }
     }
     const leftSlice = slice.slice(0, splitIdx);
     const rightSlice = slice.slice(splitIdx);
-    const ratio = leftSlice.reduce((s, t) => s + Math.max(t.score, 0.001), 0) / total;
+    const ratio = leftSlice.reduce((s, t) => s + t.poids, 0) / total;
     if (rect.w > rect.h) {
       const wLeft = rect.w * ratio;
       partition(leftSlice, { x: rect.x, y: rect.y, w: wLeft, h: rect.h });
@@ -85,7 +110,18 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       setTaille(`${Math.round(r.width)}x${Math.round(r.height)}`);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    // Re-mesurer quand les POLICES arrivent. La première mesure peut tomber
+    // avant Playfair : le nom, rendu dans la police de repli, est plus large,
+    // on le cache — puis plus rien ne redéclenche la mesure, car la tuile n'a
+    // pas changé de taille. Résultat vu le 31-08 : « Terres publiques et
+    // agriculture » absent d'une tuile de 498x194. Le chargement des polices
+    // est le quatrième déclencheur qui manquait, après les trois pièges déjà
+    // documentés plus bas.
+    let vivant = true;
+    document.fonts?.ready?.then(() => {
+      if (vivant) setTaille((t) => (t.endsWith("·p") ? t : `${t}·p`));
+    });
+    return () => { vivant = false; ro.disconnect(); };
   }, [ref]);
 
   useLayoutEffect(() => {
@@ -136,12 +172,27 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       const portee = document.createRange();
       portee.selectNodeContents(nom);
       const texte = portee.getBoundingClientRect();
-      // 1px de tolérance : les bords tombent souvent sur des demi-pixels.
+      // Un rectangle NUL veut dire « pas mesurable » (élément non peint), pas
+      // « ça déborde » : ses zéros sont toujours hors de la boîte, et conclure
+      // au débordement cacherait le nom pour toujours. Dans le doute, on
+      // laisse l'état tel quel.
+      if (texte.width === 0 && texte.height === 0) {
+        if (etaitCache) el.classList.add("gt-title-sans-nom");
+        return;
+      }
+      // Tolérances ASYMÉTRIQUES, et c'est voulu.
+      // - Horizontal : 1 px. Un nom trop large wrappe ou se tronque — illisible
+      //   tout de suite, on passe au symbole.
+      // - Vertical : 5 px, un quart de ligne. Mesuré le 31-08 : « Culture et
+      //   nationalisme » débordait de 4 px sur une tuile de 620 px de large, et
+      //   la mesure binaire supprimait le nom entier pour des descendantes à
+      //   peine rognées. Un vrai écrasement (le nom qui wrappe) déborde de
+      //   20 px et plus : le seuil de 5 px ne le laisse pas passer.
       deborde =
         texte.left < boite.left - 1 ||
         texte.right > boite.right + 1 ||
-        texte.top < boite.top - 1 ||
-        texte.bottom > boite.bottom + 1;
+        texte.top < boite.top - 5 ||
+        texte.bottom > boite.bottom + 5;
     }
     if (etaitCache) el.classList.add("gt-title-sans-nom");
     setTient(!deborde);
@@ -307,7 +358,7 @@ function GrowthTile({
                 <span className="gt-expanded-kicker">Enjeu saillant</span>
                 <h3><SymboleEnjeu cle={tile.issueKey} />{tile.issueFr}</h3>
                 <span className="gt-expanded-count">
-                  {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
+                  {tile.articlesTotal.toLocaleString("fr-CA")} article{tile.articlesTotal > 1 ? "s" : ""} sur cette période
                 </span>
               </div>
               <div className="gt-expanded-growth">
@@ -330,12 +381,30 @@ function GrowthTile({
                   `grid-auto-flow: column`, une colonne se remplit avant de passer
                   à la suivante. Une grille multi-colonnes CSS (`columns: 2`)
                   équilibrerait par HAUTEUR et pourrait mettre 4 titres d'un côté
-                  et 2 de l'autre — ici le partage est exact par construction. */}
+                  et 2 de l'autre ; ici le partage est exact par construction.
+
+                  ⚠️ SOUS QUATRE ACTUALITÉS, UNE SEULE COLONNE. Deux colonnes
+                  n'existent que pour éviter une liste trop longue à parcourir.
+                  À deux actualités, ⌈2/2⌉ donnait UNE rangée, donc les deux
+                  côte à côte, ce qui ne se lit plus comme un classement (retour
+                  d'Adrien, 31-08). En dessous du seuil il n'y a rien à
+                  raccourcir : elles s'empilent. */}
             {tile.articles.length > 0 ? (
+              <>
+              <p className="gt-expanded-avis">
+                Les 6 articles qui abordent le plus cet enjeu, selon le calcul de nos
+                modèles locaux d&apos;intelligence artificielle entraînés et validés à
+                l&apos;Université&nbsp;Laval.
+              </p>
               <div
                 className="gt-expanded-list"
                 role="list"
-                style={{ "--lignes": Math.ceil(tile.articles.length / 2) } as React.CSSProperties}
+                style={{
+                  "--colonnes": tile.articles.length <= 3 ? 1 : 2,
+                  "--lignes": tile.articles.length <= 3
+                    ? tile.articles.length
+                    : Math.ceil(tile.articles.length / 2),
+                } as React.CSSProperties}
               >
                 {tile.articles.map((article, index) => (
                   <article className="gt-expanded-story" role="listitem" key={`${article.title}-${index}`}>
@@ -346,6 +415,12 @@ function GrowthTile({
                       </a>
                     ) : (
                       <div className="gt-expanded-title">{article.title}</div>
+                    )}
+                    {article.part > 0 && (
+                      <div className="gt-expanded-sommet">
+                        <span className="gt-expanded-part">{formatPct(article.part)}</span>
+                        de cet enjeu
+                      </div>
                     )}
                     {article.sommet && (
                       <div className="gt-expanded-sommet">
@@ -374,8 +449,9 @@ function GrowthTile({
                   </article>
                 ))}
               </div>
+              </>
             ) : (
-              <p className="gt-expanded-empty">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+              <p className="gt-expanded-empty">Aucune actualité québécoise sur cette période pour cet enjeu.</p>
             )}
           </div>
         )}
@@ -839,7 +915,14 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 }
 
 export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; editionKey?: string }) {
-  const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  // CAMPAGNE par défaut (demande d'Adrien, 31-08), et non le jour. Deux
+  // raisons, dans cet ordre : la fenêtre de campagne porte assez d'actualités
+  // pour que chaque enjeu ait quelque chose à montrer — la vue du jour laisse 5
+  // enjeux sur 12 muets aux petites heures, ce qui donne un module à moitié
+  // vide au premier regard ; et sa variation se lit sur la veille plutôt que
+  // sur le traitement précédent, un écart plus parlant qu'un saut de quatre
+  // heures. Le lecteur peut toujours redescendre au jour d'un clic.
+  const [period, setPeriod] = useState<"day" | "week" | "month">("month");
   // Deux contrôles INDÉPENDANTS depuis le 30-08 : la période et la
   // représentation. Chacune des trois périodes se regarde des deux façons —
   // avant, la répartition n'existait que pour le jour et l'évolution que pour

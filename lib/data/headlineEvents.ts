@@ -1997,7 +1997,15 @@ export type TreemapIssueTile = {
      *  `cle` est comparable lexicographiquement (« 2026-08-30T16 »), `libelle`
      *  se lit (« 16h cet après-midi »). `null` si l'horodatage est inexploitable. */
     sommet: { cle: string; libelle: string; score: number; saillance: string } | null;
+    /** Part de CET article dans le score de l'enjeu, en %. C'est le lien direct
+     *  entre la liste et le grand nombre de la tuile : les parts d'un enjeu
+     *  somment à 100 sur l'ensemble de ses articles (pas sur les 6 affichés). */
+    part: number;
   }[];
+  /** Combien d'articles portent cet enjeu sur la fenêtre, AVANT la coupe à six.
+   *  La tuile annonce ce total et non la longueur de la liste : dire « 6 »
+   *  quand il y en a 1 214 laisserait croire que l'enjeu tient à six textes. */
+  articlesTotal: number;
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -2771,12 +2779,69 @@ function buildIssueMedia(
       const url = outlets.find((outlet) => outlet.url)?.url ?? e.representative_url ?? null;
       const sommet = sommetDeSaillance(occurrences.get(e.event_id) ?? [e], refDayIso ?? null);
       if (depuis && (!sommet || sommet.cle.slice(0, 10) < depuis)) continue;
-      list.push({ title, url, outlets, sommet });
+      // `part` = 0 sur le chemin de repli : il n'a pas la contribution par
+      // article, qui n'existe que dans la table des articles. Le rendu ne
+      // l'affiche donc pas, plutôt que d'inventer un 0 % trompeur.
+      list.push({ title, url, outlets, sommet, part: 0 });
     }
     // Tri final par DATE : la plus récemment culminante en tête. Les nouvelles
     // sans horodatage exploitable ferment la marche plutôt que de s'intercaler.
     list.sort((a, b) => (b.sommet?.cle ?? "").localeCompare(a.sommet?.cle ?? ""));
     map.set(issueKey, { articles: list });
+  }
+  return map;
+}
+
+/** Un article québécois et ses 12 comptes de phrases, tels que publiés par
+ *  `scripts/fetch_data.R` (filtre `radar_annotated_issues`). C'est la MÊME
+ *  matière que celle dont le raffineur tire le pourcentage de chaque enjeu. */
+type ArticleEnjeu = { title: string; url: string | null; media_id: string; jour: string } & Record<string, number | string | null>;
+
+async function loadIssueArticles(): Promise<ArticleEnjeu[]> {
+  let txt: string;
+  try { txt = await readDatasetText("public/data/refined/issues_articles.json"); } catch { return []; }
+  try {
+    const parsed = JSON.parse(txt);
+    return Array.isArray(parsed) ? parsed as ArticleEnjeu[] : [];
+  } catch { return []; }
+}
+
+/** Les 6 articles qui portent le plus un enjeu sur la fenêtre demandée.
+ *
+ *  Le classement est la CONTRIBUTION de l'article au score de l'enjeu : son
+ *  nombre de phrases sur le total de l'enjeu. Un article peut donc figurer sous
+ *  plusieurs enjeux avec des poids différents — c'est exact, un texte parle de
+ *  plusieurs choses, et c'est précisément ce que mesure le pourcentage.
+ *
+ *  ⚠️ La part est calculée sur TOUS les articles de la fenêtre, pas sur les six
+ *  retenus : « 9,5 % » veut dire « cet article fait 9,5 % de l'enjeu », pas
+ *  « 9,5 % de ce qui est affiché ». Normaliser sur les six ferait un nombre qui
+ *  ne se raccroche à rien. */
+function topArticlesParEnjeu(
+  articles: ArticleEnjeu[],
+  depuis: string | null,
+  combien = 6,
+): Map<string, { articles: TreemapIssueTile["articles"]; total: number }> {
+  const fenetre = depuis ? articles.filter((a) => (a.jour ?? "") >= depuis) : articles;
+  const map = new Map<string, { articles: TreemapIssueTile["articles"]; total: number }>();
+  for (const issueKey of ISSUE_KEYS) {
+    let total = 0;
+    for (const a of fenetre) total += Number(a[issueKey] ?? 0);
+    if (total <= 0) { map.set(issueKey, { articles: [], total: 0 }); continue; }
+    const top = fenetre
+      .filter((a) => Number(a[issueKey] ?? 0) > 0)
+      .sort((x, y) => Number(y[issueKey] ?? 0) - Number(x[issueKey] ?? 0))
+      .slice(0, combien)
+      .map((a) => ({
+        title: (a.title ?? "").trim(),
+        url: a.url && String(a.url).length > 0 ? String(a.url) : null,
+        outlets: [{ name: MEDIA_NAMES[a.media_id] ?? a.media_id, url: a.url ? String(a.url) : null }],
+        sommet: null,
+        part: (Number(a[issueKey] ?? 0) / total) * 100,
+      }))
+      .filter((a) => a.title.length > 0);
+    const porteurs = fenetre.filter((a) => Number(a[issueKey] ?? 0) > 0).length;
+    map.set(issueKey, { articles: top, total: porteurs });
   }
   return map;
 }
@@ -2794,13 +2859,21 @@ export async function loadTreemap(
   /** Jour de publication de cette édition, pour les tables jour/semaine/mois. */
   asOfIso?: string,
 ): Promise<TreemapAllPeriods | null> {
-  const [dayRows, weekRows, monthRows, fallbackContent, rawEvents] = await Promise.all([
+  const [dayRows, weekRows, monthRows, fallbackContent, rawEvents, articlesEnjeux] = await Promise.all([
     loadIssueScores("day", asOfIso),
     loadIssueScores("week", asOfIso),
     loadIssueScores("month", asOfIso),
     loadFallbackIssueContent(editionKey),
     loadRawEvents(editionKey),
+    loadIssueArticles(),
   ]);
+  // Une édition d'ARCHIVE ne doit pas voir les articles parus après elle : la
+  // fenêtre de 46 jours du fichier contient aussi le futur de ce jour-là, et
+  // sans cette coupe, la carte de partage et les listes d'une édition rejouée
+  // porteraient des articles que l'édition ne pouvait pas connaître.
+  const articlesEnjeuxBornes = asOfIso
+    ? articlesEnjeux.filter((a) => (a.jour ?? "") <= asOfIso)
+    : articlesEnjeux;
 
   function buildPeriodData(
     rows: Array<Record<string, unknown>> | null,
@@ -2838,7 +2911,21 @@ export async function loadTreemap(
     const lastUpdated = passe
       ? lastUpdatedLabel(passe.date, passe.heure)
       : lastUpdatedLabel(dateStr);
-    const articlesByIssue = buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
+    // La liste vient désormais des ARTICLES qui font le score, pas des
+    // événements constitués. Deux tables différentes racontaient la même chose
+    // à deux échelles : le pourcentage comptait toute la couverture, la liste
+    // ne montrait que les histoires assez saillantes pour être nommées. D'où
+    // des enjeux lourds sans rien à montrer — Terres publiques, 13,9 % de
+    // l'attention et zéro événement, pour 1 068 articles (mesuré le 31-08).
+    // Désormais le nombre et la liste sortent de la même matière.
+    //
+    // Repli sur les événements si le fichier d'articles manque : mieux vaut
+    // l'ancienne liste qu'une tuile muette.
+    const parArticles = topArticlesParEnjeu(articlesEnjeuxBornes, depuisArticles);
+    const articlesByIssue: Map<string, { articles: TreemapIssueTile["articles"]; total?: number }> =
+      articlesEnjeuxBornes.length > 0
+        ? parArticles
+        : buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
     const periodRows = latestTag
@@ -2877,16 +2964,33 @@ export async function loadTreemap(
         context = fb?.context ?? "Aucune actualité saillante sur cette période.";
         url = fb?.url ?? null;
       }
-      let articles = articlesByIssue.get(issueKey)?.articles ?? [];
-      if (articles.length === 0 && context) {
-        const fallbackOutlet = outletFromUrl(url);
-        // Repli : l'accroche d'`issues_meta`, qui n'a pas d'horodatage propre.
-        articles = [{ title: context, url, outlets: fallbackOutlet ? [fallbackOutlet] : [], sommet: null }];
+      const articles = articlesByIssue.get(issueKey)?.articles ?? [];
+      // ⛔ PLUS DE REPLI. Quand un enjeu n'a aucune actualité québécoise sur la
+      // période, la tuile se TAIT — elle n'emprunte plus l'accroche
+      // d'`issues_meta` pour avoir quelque chose à montrer.
+      //
+      // Ce repli fabriquait une fausse actualité : un titre en gras, une flèche
+      // de lien, la même mise en page qu'une vraie, mais sans horodatage, donc
+      // sans sommet ni saillance. Mesuré le 31-08, vue JOUR : 5 enjeux sur 12 en
+      // repli, et le contenu ne relevait PAS de l'enjeu où il était rangé —
+      // « Santé Québec gaspille 500 M$ » servait à la fois d'accroche à
+      // Économie et à Technologie. Rien à l'écran ne permettait au lecteur de
+      // distinguer cette ligne d'une vraie actualité.
+      //
+      // `topObject`, `context` et `url` sont neutralisés avec elle : ils
+      // alimentent le survol de la tuile ET la liste mobile, qui auraient sinon
+      // continué d'afficher l'accroche empruntée après le retrait de la fausse
+      // actualité. Un seul état, cohérent partout : cet enjeu n'a rien à dire.
+      if (articles.length === 0) {
+        topObject = "";
+        context = "";
+        url = null;
       }
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevFound && prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
+      const articlesTotal = articlesByIssue.get(issueKey)?.total ?? articles.length;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, articlesTotal, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
@@ -2922,10 +3026,103 @@ export async function loadTreemap(
   const day = buildPeriodData(dayRows, jourDuJour);
   if (!day) return null;
   const debutSemaine = debutDeLaSemaine(day.history)?.slice(0, 10) ?? null;
+
+  // SEMAINE et CAMPAGNE se calculent ICI, depuis les articles, sur la vraie
+  // fenêtre de chaque vue. Les tables issues_score_week/month publiées par le
+  // raffineur sont identiques à la table du jour (mesuré le 31-08 : mêmes
+  // valeurs, mêmes 2 lignes, au dernier tag des trois) — les brancher revenait
+  // à montrer trois fois la même chose. La matière des articles est celle-là
+  // même dont le raffineur tire ses scores (reproduction validée à 0,00 point
+  // d'écart), donc la somme sur une autre fenêtre est le MÊME calcul, borné
+  // autrement. Le jour, lui, reste sur sa table : elle est correcte, et porte
+  // la cadence 4 h (variation d'une passe à l'autre) que les articles, agrégés
+  // au jour, n'ont pas.
+  const week = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutSemaine, day)
+    ?? buildPeriodData(weekRows, debutSemaine) ?? day;
+  const month = buildPeriodeDepuisArticles(articlesEnjeuxBornes, ELECTION_CALL_DATE, day)
+    ?? buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day;
+  return { day, week, month };
+}
+
+/** Une période bâtie en sommant les articles depuis `depuis` (inclus).
+ *
+ *  - la PART est la somme des comptes de phrases de la fenêtre, normalisée ;
+ *  - la VARIATION compare la part d'aujourd'hui à celle qu'avait l'enjeu dans
+ *    la même fenêtre ARRÊTÉE À HIER : « depuis hier », au sens propre. Sur une
+ *    fenêtre cumulative, comparer les sommes brutes ne dirait rien (tout
+ *    monte) ; comparer les parts dit si l'enjeu gagne ou perd du terrain ;
+ *  - l'HISTORIQUE porte un point par jour (le rang du jour), là où le jour en
+ *    porte un par passe de 4 h ;
+ *  - l'entête (date, heure) est repris de la vue du jour : c'est la même
+ *    édition qui gouverne les trois vues. */
+function buildPeriodeDepuisArticles(
+  articles: ArticleEnjeu[],
+  depuis: string | null,
+  day: TreemapPeriodData,
+): TreemapPeriodData | null {
+  if (articles.length === 0 || !depuis) return null;
+  const fenetre = articles.filter((a) => (a.jour ?? "") >= depuis);
+  if (fenetre.length === 0) return null;
+  const jours = [...new Set(fenetre.map((a) => a.jour))].sort();
+  const dernierJour = jours[jours.length - 1];
+
+  const sommes = (sel: ArticleEnjeu[]) => {
+    const s: Record<string, number> = {};
+    for (const k of ISSUE_KEYS) s[k] = 0;
+    for (const a of sel) for (const k of ISSUE_KEYS) s[k] += Number(a[k] ?? 0);
+    return s;
+  };
+  const parts = (s: Record<string, number>) => {
+    const tot = ISSUE_KEYS.reduce((x, k) => x + s[k], 0);
+    const p: Record<string, number> = {};
+    for (const k of ISSUE_KEYS) p[k] = tot > 0 ? (s[k] / tot) * 100 : 0;
+    return p;
+  };
+  const agg = sommes(fenetre);
+  const part = parts(agg);
+  const veille = fenetre.filter((a) => (a.jour ?? "") < dernierJour);
+  const partVeille = veille.length > 0 ? parts(sommes(veille)) : null;
+
+  const topParEnjeu = topArticlesParEnjeu(articles, depuis);
+  const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: agg[issueKey] }))
+    .sort((a, b) => b.score - a.score);
+  const maxScore = scored[0]?.score || 1;
+  const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
+    const entree = topParEnjeu.get(issueKey);
+    const pv = partVeille?.[issueKey] ?? 0;
+    const growth = partVeille && pv > 0 ? ((part[issueKey] - pv) / pv) * 100 : null;
+    return {
+      issueKey,
+      issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey,
+      color: ISSUE_COLORS[issueKey] ?? "#463E3E",
+      score,
+      relScore: Math.round((score / maxScore) * 100),
+      share: part[issueKey],
+      topObject: "",
+      context: "",
+      url: null,
+      velocity: growth == null ? 0 : growth > 0 ? 1 : growth < 0 ? -1 : 0,
+      growth,
+      articles: entree?.articles ?? [],
+      articlesTotal: entree?.total ?? 0,
+    };
+  });
+
+  const history: TreemapHistoryPoint[] = jours.map((jour) => {
+    const duJour = sommes(fenetre.filter((a) => a.jour === jour));
+    const ranked = ISSUE_KEYS.map((key) => ({ key, score: duJour[key] }))
+      .sort((a, b) => b.score - a.score);
+    const ranks: Record<string, number> = {};
+    ranked.forEach((e, i) => { ranks[e.key] = i + 1; });
+    return { date: jour ?? "", ranks, tag: jour ?? "" };
+  });
+
   return {
-    day,
-    week: buildPeriodData(weekRows, debutSemaine) ?? day,
-    month: buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day,
+    tiles,
+    dateLabel: day.dateLabel,
+    growthSince: partVeille ? "hier" : null,
+    lastUpdated: day.lastUpdated,
+    history,
   };
 }
 

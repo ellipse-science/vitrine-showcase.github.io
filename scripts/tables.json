@@ -561,6 +561,24 @@
       ],
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
+    },
+    {
+      "name": "radar_annotated",
+      "athena": "vitrine_datamart-radar_annotated",
+      "out": "public/data/refined/issues_articles.json",
+      "cols": [
+        "title",
+        "url",
+        "media_id",
+        "country_id",
+        "headline_stop_utc",
+        "sentence_analysis"
+      ],
+      "_note": "Les articles qui FONT le pourcentage de chaque enjeu du module 4. sentence_analysis est projeté puis JETÉ par le filtre, qui n'écrit que les 12 comptes par article : ~14 Mo de brut deviennent quelques dizaines de Ko.",
+      "_note_date": "date_montreal_tz volontairement ABSENT des cols : remplie sur 206 lignes sur 33 377 (0,6 %, mesuré le 31-08). Le filtre dérive le jour de headline_stop_utc, comme le raffineur.",
+      "filter": "radar_annotated_issues",
+      "enabled": true,
+      "used_by": "lib/data/headlineEvents.ts (liste d'articles du module 4)"
     }
   ],
   "post_process": [
