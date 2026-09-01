@@ -1,5 +1,11 @@
 [
   {
+    "pr": 664,
+    "date": "2026-09-01T01:57:11Z",
+    "note": "La carte qui s'affiche quand vous partagez le module des 12 enjeux montre maintenant l'enjeu qui domine la campagne, son poids exact et le titre de l'article qui le porte, au lieu d'un texte fixe.",
+    "version": null
+  },
+  {
     "pr": 663,
     "date": "2026-09-01T01:11:17Z",
     "note": "Les vues Jour, Semaine et Campagne du module des 12 enjeux montrent désormais des répartitions réellement différentes, calculées sur leur propre fenêtre. Et les noms d'enjeux ne disparaissent plus des grandes tuiles.",
