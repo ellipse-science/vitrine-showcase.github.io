@@ -5778,6 +5778,25 @@
     transition: opacity 0.25s ease, filter 0.25s ease;
   }
   .partner-logo--clessn { height: 58px; }
+  /* Page Partenaires : grands logos, nom sous chacun */
+  .partners-grid--grand { grid-template-columns: repeat(3, 1fr); gap: 40px 48px; margin-top: 8px; }
+  .partner-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; text-decoration: none; color: inherit; }
+  .partner-logo--grand { height: 84px; max-width: 240px; opacity: 0.85; }
+  .partner-logo--grand.partner-logo--clessn { height: 110px; }
+  .partner-carte:hover .partner-logo--grand { opacity: 1; filter: grayscale(0) contrast(1); }
+  .partner-nom { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; line-height: 1.35; color: var(--ink-soft); max-width: 240px; }
+  /* Page Équipe */
+  .equipe-groupe { margin-top: 28px; }
+  .equipe-grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 32px; }
+  .equipe-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .equipe-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; filter: grayscale(1) contrast(0.95); }
+  .equipe-photo--initiales { display: inline-flex; align-items: center; justify-content: center; background: var(--rule); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 22px; letter-spacing: 0.08em; }
+  .equipe-nom { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; color: var(--ink); }
+  .equipe-titre { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cordovan); }
+  .equipe-detail { font-family: 'Source Serif 4', Georgia, serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
+  .apropos-fil { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cordovan); margin: 0 0 10px; }
+  .metho-btn-lien { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; border: 0.5px solid var(--ink); color: var(--ink); text-decoration: none; }
+  .metho-btn-lien:hover { background: var(--ink); color: var(--paper, #f4efe6); }
   .partner-logo:hover {
     opacity: 1;
     filter: grayscale(0) contrast(1);
@@ -6359,6 +6378,11 @@
     .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
     .partner-logo--clessn { height: 42px; }
+    .partners-grid--grand { grid-template-columns: repeat(2, 1fr); gap: 28px 24px; }
+    .equipe-grille { grid-template-columns: repeat(2, 1fr); gap: 22px 16px; }
+    .equipe-photo { width: 72px; height: 72px; }
+    .partner-logo--grand { height: 56px; max-width: 150px; }
+    .partner-logo--grand.partner-logo--clessn { height: 72px; }
 
     /* ── Footer ── */
     .footer-note {
