@@ -20,7 +20,7 @@ import { readDatasetText } from "@/lib/data/source";
 
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
-import { MEDIA_LABELS } from "@/lib/medias";
+import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -176,7 +176,53 @@ type IssueRow = {
   weighted_tone: number;
   date_utc: string;
   date_montreal_tz?: string;
+  /** Instant UTC exact du calcul. C'est LUI qui donne la date de Montréal —
+   *  voir `dateMontreal()`. */
+  computed_at?: string;
 };
+
+/**
+ * La date de MONTRÉAL d'un relevé, déduite de `computed_at`.
+ *
+ * ⚠️ NE PAS se fier à `date_montreal_tz` : la colonne porte ce nom mais contient
+ * la date UTC. Le raffineur écrit `as.Date(now_mtl)`, or `as.Date()` sur un
+ * horodatage R IGNORE son fuseau et retombe sur UTC. Vérifié :
+ *
+ *   as.Date(ymd_hms("2026-08-27 23:31:12", tz = "America/Montreal"))
+ *     → 2026-08-28        (et non le 27)
+ *
+ * Tout relevé calculé entre 20 h et minuit heure de Montréal est donc classé au
+ * LENDEMAIN — un bloc de 4 h sur six, systématiquement. Constaté dans Athena le
+ * 2026-08-28 : le bloc « 20h » calculé à 03h31 UTC, soit 23h31 à Montréal le 27,
+ * portait `date_montreal_tz = 2026-08-28`. La courbe du jour mélangeait alors la
+ * soirée de la veille et le matin courant, avec le point de 20h posé à l'extrême
+ * droite de l'axe alors qu'il PRÉCÈDE celui de 4h.
+ *
+ * On corrige ICI et non dans le raffineur (décision du 2026-08-28) : la colonne
+ * reste telle quelle en base, le site recalcule depuis `computed_at`, qui est un
+ * instant UTC exact. Même fuseau que `aujourdhuiMontreal()`, pour que les deux
+ * ne puissent pas diverger.
+ *
+ * Repli sur les colonnes publiées quand `computed_at` manque — une archive
+ * antérieure à son introduction, par exemple. Le repli est alors décalé comme
+ * avant, ce qui reste préférable à une date vide.
+ */
+function dateMontreal(row: {
+  computed_at?: string;
+  date_montreal_tz?: string;
+  date_utc?: string;
+}): string {
+  const quand = row.computed_at ? Date.parse(row.computed_at) : NaN;
+  if (!Number.isNaN(quand)) {
+    return new Intl.DateTimeFormat("fr-CA", {
+      timeZone: "America/Toronto",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(quand));
+  }
+  return String(row.date_montreal_tz ?? row.date_utc ?? "");
+}
 
 type Entry = { mentions: number; tone: number; minutes: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
@@ -337,7 +383,7 @@ export type ChartView = {
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
   /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
-  raison?: "court" | "sans-detail-horaire" | "detail-horaire-absent";
+  raison?: "court" | "detail-horaire-absent";
   /** Graduations de l'axe des minutes, pour le palmarès. */
   yLabels: { label: string; y: number }[];
 };
@@ -900,8 +946,8 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  */
 function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
   if (rows.length === 0) return null;
-  const dernierJour = rows.map((r) => String(r.date_montreal_tz ?? r.date_utc)).sort().at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc) === dernierJour);
+  const dernierJour = rows.map(dateMontreal).sort().at(-1);
+  const duJour = rows.filter((r) => dateMontreal(r) === dernierJour);
   const blocs = [...new Set(duJour.map((r) => Number(r.block_hour)))].sort((a, b) => a - b);
   if (blocs.length <= 1) return null;
 
@@ -1315,11 +1361,8 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   const vide: EnjeuMix = { enjeux: [], parParti: {} };
   if (rows.length === 0) return vide;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
+  const duJour = rows.filter((r) => dateMontreal(r) === dernier);
   if (duJour.length === 0) return vide;
 
   const parParti: EnjeuMix["parParti"] = {};
@@ -1358,17 +1401,12 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
 
   for (const key of PARTY_KEYS) {
     const siens = rows
       .filter(
-        (r) =>
-          String(r.party ?? "").toLowerCase() === key &&
-          String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier,
+        (r) => String(r.party ?? "").toLowerCase() === key && dateMontreal(r) === dernier,
       )
       .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
       .slice(0, 5);
@@ -1507,30 +1545,27 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     periodeLabel: libellePeriode(range, dates.daily),
     depuisLabel: libelleDepuis(range, dates.daily),
     rows,
-    // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
-    // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
-    // fine.
     // Vue JOUR sans détail horaire : on ne trace RIEN.
     //
     // `buildChart` sait tracer des jours, pas des heures : son axe couvre toute
     // la fenêtre du suivi, et les six repères horaires d'une seule journée s'y
     // écrasaient dans les 12 % de droite (mesuré : 00h à 79,9 et 20h à 91 sur un
-    // axe de 91). C'est exactement ce qui arrivait dès qu'on bougeait le fader,
-    // la table intra-journée n'étant PAS ventilée par média.
+    // axe de 91). Un axe faux est pire qu'un axe absent : il se lit comme une
+    // mesure.
     //
-    // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
-    // `chartJour` vaut `undefined` pour une vue PAR MÉDIA (l'appelant ne le
-    // passe pas) et `null` pour l'agrégat quand la table intra-journée manque.
-    // Les deux cas ne se disent pas de la même façon : dans le premier le
-    // détail existe ailleurs, dans le second il n'existe pas encore.
+    // UNE SEULE raison publiée pour les deux chemins qui mènent ici :
+    // `chartJour` à `null` (agrégat, table intra-journée manquante ou réduite à
+    // un bloc) et à `undefined` (vue PAR MÉDIA, l'appelant ne le passe pas).
+    // Ils portaient deux raisons distinctes, dont `sans-detail-horaire` pour la
+    // seconde — que rien ne pouvait afficher : le palmarès lit TOUJOURS
+    // l'agrégat, donc une vue par média n'atteint aucun rendu. Distinguer deux
+    // cas dont un seul se voit, c'est se donner une garantie qu'on n'a pas.
     chart:
       range === "today"
         ? chartJour ?? {
             ...buildChart(stats, dates, range),
             tooShort: true,
-            raison: chartJour === null
-              ? ("detail-horaire-absent" as const)
-              : ("sans-detail-horaire" as const),
+            raison: "detail-horaire-absent" as const,
           }
         : buildChart(stats, dates, range),
   };
@@ -1599,6 +1634,8 @@ export const __test__ = {
   samplePoints,
   buildRangeView,
   buildChart,
+  buildChartIntraday,
+  dateMontreal,
   axisTop,
   detecterIndisponibilite,
   lundiDeLaSemaine,
@@ -1693,17 +1730,27 @@ export async function loadParties(
     // Ventilation par média — facultative : le fader ne s'affiche que si les
     // tables `*_by_media_*` sont publiées. Un `null` ici n'est pas une erreur,
     // c'est l'état d'avant aws-refiners#… (la PR qui les crée).
-    const lireMedia = async (p: string) => {
-      try {
-        return JSON.parse(await fs.readFile(p, "utf8")) as ShadowRow[];
-      } catch {
-        return null;
-      }
-    };
+    //
+    // ⚠️ PASSE PAR `lireJeu`, comme les cinq autres tables, et NON par un
+    // `fs.readFile` direct. C'est la même correction que celle déjà appliquée
+    // aux tables des enjeux et de l'intra-journée (voir plus haut), et elle
+    // avait été oubliée ici.
+    //
+    // Ce que le `fs.readFile` produisait : sur dev, `VITRINE_DATA_SOURCE=api`,
+    // donc l'agrégat venait de l'API tandis que la ventilation par média lisait
+    // les JSON du disque. UN SEUL ÉCRAN, DEUX SOURCES. Et comme l'API ne servait
+    // pas `total_raw_score`, la position « tous les médias » affichait 0 minute
+    // sur les pochettes et dans le palmarès, pendant que chaque position par
+    // média affichait la bonne durée — lue ailleurs. Le repli était muet :
+    // `Number(undefined) || 0` ne lève rien.
+    const lireMedia = (periode: "day" | "week" | "month") =>
+      lireJeu(periode, `provincial_parties_salient_shadow_by_media_${periode}.json`)
+        .then((txt) => JSON.parse(txt) as ShadowRow[])
+        .catch(() => null);
     const [mDay, mWeek, mMonth] = await Promise.all([
-      lireMedia(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_by_media_day.json")),
-      lireMedia(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_by_media_week.json")),
-      lireMedia(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_by_media_month.json")),
+      lireMedia("day"),
+      lireMedia("week"),
+      lireMedia("month"),
     ]);
 
     const computed = computeStats(dayRows, weekRows, monthRows);
@@ -1718,7 +1765,17 @@ export async function loadParties(
     const byMedia: Record<string, MediaView> = {};
 
     if (mDay && mWeek && mMonth) {
-      const ids = [...new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x))].sort();
+      // C'EST LE PANEL QUI DÉCIDE, pas la donnée. La table publie tout le
+      // corpus — CBC, CNN, Fox News, sans colonne de pays pour les écarter —
+      // alors que le module porte sur des partis PROVINCIAUX. On part donc des
+      // six médias québécois et on ne garde que ceux qui ont une ligne, plutôt
+      // que de prendre tous les `media_id` rencontrés (cf. `MEDIA_PANEL_QC`).
+      //
+      // L'ordre est celui du panel, et non alphabétique : c'est celui des crans
+      // du fader, et le `sort()` d'avant ne servait qu'à rendre la sortie
+      // déterministe — le panel l'est déjà.
+      const publies = new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x));
+      const ids = MEDIA_PANEL_QC.filter((id) => publies.has(id));
       for (const id of ids) {
         const parMedia = (rows: ShadowRow[] | null) =>
           upTo((rows ?? []).filter((r) => r.media_id === id));

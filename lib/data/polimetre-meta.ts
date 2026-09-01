@@ -148,6 +148,15 @@ export type PromesseNeuveView = {
   verbatim: string;
   /** Toujours l'un des cinq partis suivis : le chargeur écarte les autres. */
   parti: PartiKey;
+  /** Libellé français de l'enjeu (l'un des 12), ou null quand le raffineur n'a
+   *  pas tranché. MÊME forme que `category` du mode « 2022 » : les 12 catégories
+   *  et leur écriture sont identiques dans les deux modes.
+   *
+   *  Ce qui diffère est la PROVENANCE : ici l'enjeu est inféré du texte de la
+   *  promesse, là-bas il est codé à la main dans la mastersheet — d'où le
+   *  libellé « enjeu probable » à l'affichage. null est un cas NORMAL, pas une
+   *  panne : la promesse s'affiche alors sans puce d'enjeu. */
+  enjeu: string | null;
   /** Date d'annonce (ISO), = date du communiqué. */
   announceDate: string;
   /** Lien vers le communiqué source. */

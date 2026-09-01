@@ -158,7 +158,7 @@ export function ShareButton({ title, anchor, editionKey }: ShareButtonProps) {
         onClick={handleClick}
         aria-label={`Partager : ${title}`}
         aria-expanded={panelOpen}
-        title={copied ? 'Copié !' : 'Partager'}
+        title={copied ? 'Copié!' : 'Partager'}
       >
         {copied ? (
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">

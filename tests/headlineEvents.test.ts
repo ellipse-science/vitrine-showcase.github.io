@@ -480,6 +480,11 @@ describe("buildIssueMedia (actualités du treemap)", () => {
   });
 
   it("déduplique une storyline sans limiter le nombre d'actualités", () => {
+    // `media_ids` porte un média québécois : sans lui, l'actualité est écartée
+    // (voir le test « écarte une actualité… » plus bas). L'ancienne fixture
+    // déclarait « région QC » avec zéro média — un état qui n'existe pas dans
+    // la donnée réelle, où les 121 événements sans média QC du 31-08 étaient
+    // TOUS `target_region = ROC`.
     const rows = Array.from({ length: 7 }, (_, index) => ev({
       event_id: `event-${index}`,
       target_region: "QC",
@@ -487,6 +492,7 @@ describe("buildIssueMedia (actualités du treemap)", () => {
       storyline_id: `story-${index}`,
       title: `Actualité ${index}`,
       score_qc: 20 - index,
+      media_ids: '["LED"]',
     }));
     rows.push(ev({
       event_id: "event-duplicate",
@@ -495,11 +501,54 @@ describe("buildIssueMedia (actualités du treemap)", () => {
       storyline_id: "story-0",
       title: "Ancienne formulation",
       score_qc: 1,
+      media_ids: '["LED"]',
     }));
 
     const articles = buildIssueMedia(rows as never).get("technology")!.articles;
     expect(articles).toHaveLength(7);
     expect(articles.some((article) => article.title === "Ancienne formulation")).toBe(false);
+  });
+
+  // ── La règle québécoise, verrouillée par deux tests ────────────────────────
+  // Le 31-08, 121 des 431 événements chargés (28 %) n'avaient AUCUN média
+  // québécois : ils s'affichaient sans logo, avec un titre menant au Globe and
+  // Mail ou à CBC, dans un module qui mesure l'attention des médias québécois.
+  it("écarte une actualité qu'aucun média québécois n'a couverte", () => {
+    const rows = [
+      ev({
+        event_id: "roc-only", target_region: "ROC", main_issue: "economy_and_labour",
+        title: "Histoire couverte seulement au Canada anglais", score_qc: 40,
+        media_ids: '["GAM"]',
+        representative_url: "https://www.theglobeandmail.com/business/article-tool-die",
+      }),
+      ev({
+        event_id: "avec-qc", target_region: "QC", main_issue: "economy_and_labour",
+        storyline_id: "s-qc", title: "Histoire couverte au Québec", score_qc: 10,
+        media_ids: '["LED"]',
+        articles: '[{"media_id":"LED","url":"https://ledevoir.com/quebec"}]',
+      }),
+    ];
+    const articles = buildIssueMedia(rows as never).get("economy_and_labour")!.articles;
+    expect(articles.map((article) => article.title)).toEqual(["Histoire couverte au Québec"]);
+  });
+
+  // Second défaut du même écran : 90 des 310 histoires BIEN couvertes au Québec
+  // menaient quand même ailleurs, parce que le lien suivait `representative_url`
+  // — l'article représentatif toutes régions confondues. La pire portait cinq
+  // logos québécois et menait à cbc.ca.
+  it("fait pointer le lien vers le média québécois affiché, pas vers representative_url", () => {
+    const rows = [
+      ev({
+        event_id: "lien", target_region: "QC", main_issue: "health_and_social_services",
+        storyline_id: "s-lien", title: "Entente historique", score_qc: 30,
+        media_ids: '["LED"]',
+        articles: '[{"media_id":"LED","url":"https://ledevoir.com/entente"}]',
+        representative_url: "https://www.cbc.ca/news/entente",
+      }),
+    ];
+    const [article] = buildIssueMedia(rows as never).get("health_and_social_services")!.articles;
+    expect(article.url).toBe("https://ledevoir.com/entente");
+    expect(article.outlets).toEqual([{ name: "Le Devoir", url: "https://ledevoir.com/entente" }]);
   });
 });
 

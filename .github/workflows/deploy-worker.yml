@@ -54,9 +54,23 @@ jobs:
         # dépasse souvent 10 s. Une tentative unique ferait échouer le run sur
         # un déploiement RÉUSSI, et ce workflow servirait alors à semer le
         # doute plutôt qu'à le lever : on retente pendant une minute.
+        #
+        # LA CLÉ EST OBLIGATOIRE DEPUIS #599 (« fermer l'API, sauf le classement
+        # Flappy »). Sans elle, `/v1/health` répond 401 — « Clé d'API manquante »
+        # — et le contrôle échouait donc à CHAQUE déploiement, y compris ceux qui
+        # avaient parfaitement abouti. C'est très exactement le travers que le
+        # commentaire ci-dessus cherchait à éviter : un garde-fou qui sème le
+        # doute au lieu de le lever finit par être ignoré, puis retiré.
+        #
+        # On garde une vraie requête authentifiée plutôt que d'accepter le 401
+        # comme preuve de vie : un 401 prouve que le Worker répond, pas que la
+        # base derrière lui est joignable — ce que `/v1/health` existe pour dire.
+        env:
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
         run: |
           for essai in 1 2 3 4 5 6; do
-            if curl -fsS https://api.vitrinedemocratique.com/v1/health >/dev/null; then
+            if curl -fsS -H "Authorization: Bearer $VITRINE_API_KEY" \
+                 https://api.vitrinedemocratique.com/v1/health >/dev/null; then
               echo "API en ligne (tentative $essai)"
               exit 0
             fi

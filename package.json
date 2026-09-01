@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.31.0-beta.2",
+  "version": "2.39.0-beta.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,7 +13,7 @@
     "garde-redaction": "node scripts/garde_redaction.mjs"
   },
   "dependencies": {
-    "next": "16.3.1",
+    "next": "16.3.2",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -24,6 +24,6 @@
     "@types/react-dom": "^19",
     "aws4fetch": "^1.0.20",
     "typescript": "^7",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.11"
   }
 }
