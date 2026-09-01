@@ -49,7 +49,10 @@ describe("part de l'attention (module « Les 12 enjeux de la campagne »)", () =
     // pendant que Math.round donnait 20 — le test cassait dès que la part
     // finissait par ,5 ou plus (#666). On compare la valeur affichée, à une
     // décimale, exactement comme la carte la formate.
-    const attendue = `${top.share.toFixed(1).replace(".", ",")} %`;
-    expect(carte.stat!.value).toBe(attendue);
+    // La carte sépare le nombre du « % » par une espace insécable (norme
+    // québécoise) : on compare le NOMBRE affiché, au même arrondi à une
+    // décimale, sans dépendre du type d'espace (« 19,9 % » ≠ « 19,9\u00a0% »).
+    const nombreAffiche = carte.stat!.value.match(/^(\d+,\d)\s*%$/)?.[1];
+    expect(nombreAffiche).toBe(top.share.toFixed(1).replace(".", ","));
   });
 });
