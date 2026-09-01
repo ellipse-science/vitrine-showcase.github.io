@@ -1,5 +1,11 @@
 [
   {
+    "pr": 663,
+    "date": "2026-09-01T01:11:17Z",
+    "note": "Les vues Jour, Semaine et Campagne du module des 12 enjeux montrent désormais des répartitions réellement différentes, calculées sur leur propre fenêtre. Et les noms d'enjeux ne disparaissent plus des grandes tuiles.",
+    "version": null
+  },
+  {
     "pr": 662,
     "date": "2026-09-01T00:19:26Z",
     "note": "Sous chaque enjeu, vous voyez maintenant les six articles qui en parlent le plus, avec leur média et leur poids dans l'enjeu. Ce sont les articles qui composent réellement le pourcentage affiché, et non plus une sélection venue d'un autre calcul.",
