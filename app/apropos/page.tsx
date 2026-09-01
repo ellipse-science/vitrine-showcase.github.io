@@ -149,6 +149,32 @@ export default function AproposPage() {
               </p>
             </section>
 
+            <section className="partners-section" aria-labelledby="partenaires-titre">
+              <h3 id="partenaires-titre">Partenaires</h3>
+              <p>
+                Les modèles d&apos;intelligence artificielle de la Vitrine sont entraînés
+                et validés avec LLM Tool&nbsp;; l&apos;infrastructure de données est
+                hébergée sur Amazon Web Services.
+              </p>
+              <div className="partners-grid">
+                <a href="https://capp-ulaval.ca/" target="_blank" rel="noopener noreferrer">
+                  <img className="partner-logo" src="/images/brand/logo_capp_1row_bg-none_theme-black.png" alt="Centre d'analyse des politiques publiques, Université Laval" />
+                </a>
+                <a href="https://www.clessn.com/" target="_blank" rel="noopener noreferrer">
+                  <img className="partner-logo partner-logo--clessn" src="/images/partners/CLESSN-nobg.png" alt="CLESSN, Chaire de leadership en enseignement des sciences sociales numériques" />
+                </a>
+                <a href="https://www.ulaval.ca/" target="_blank" rel="noopener noreferrer">
+                  <img className="partner-logo" src="/images/partners/ULaval.png" alt="Université Laval" />
+                </a>
+                <a href="https://github.com/antoinelemor/LLM_Tool" target="_blank" rel="noopener noreferrer">
+                  <img className="partner-logo" src="/images/partners/llm-tool.png" alt="LLM Tool" />
+                </a>
+                <a href="https://aws.amazon.com/" target="_blank" rel="noopener noreferrer">
+                  <img className="partner-logo" src="/images/partners/aws.svg" alt="Amazon Web Services" />
+                </a>
+              </div>
+            </section>
+
             <section>
               <h2 className="apropos-section-title">Transparence et accès</h2>
               <p
