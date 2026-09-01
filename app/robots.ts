@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin, basePath } from "@/lib/site";
 
 // robots.txt généré au build, et non servi depuis public/ — parce qu'il doit
 // DIFFÉRER selon l'environnement.
@@ -26,9 +27,6 @@ export default function robots(): MetadataRoute.Robots {
   if (isDevMirror) {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
-
-  const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   return {
     rules: { userAgent: "*", allow: "/" },
     sitemap: `${siteOrigin}${basePath}/sitemap.xml`,

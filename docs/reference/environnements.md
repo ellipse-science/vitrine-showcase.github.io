@@ -146,7 +146,7 @@ Chacun a coûté du temps ; ils sont listés pour qu'ils ne le coûtent qu'une f
 | Piège | Ce qui se passe | Ce qu'il faut faire |
 |---|---|---|
 | **`main` ≠ prod** | La prod tourne sur du vieux code, données fraîches | Fusionner `main → prod` |
-| **`NEXT_PUBLIC_BASE_PATH` absente** | Tous les actifs en 404 sur la prod | La poser **vide**, pas l'omettre (`??` ne se déclenche que sur `undefined`) |
+| **`NEXT_PUBLIC_BASE_PATH`** | Absente ou vide, le site se sert à la racine : c'est le cas normal sur Cloudflare Pages, prod et dev | Ne la poser que pour un hôte qui servirait le site sous un sous-chemin |
 | **`NEXT_PUBLIC_SITE_ORIGIN` oubliée** | URL canoniques et cartes de partage pointent vers le dev | La poser sur chaque environnement |
 | **Branches `aws-infra`** | PR fermée sans explication | Préfixe **`feature/`**, jamais `feat/` |
 | **`aws-infra` cible `main`** | Déploiement direct en **production** | Cibler **`develop`** |

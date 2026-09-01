@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ActualisationAuto from "@/components/interactive/ActualisationAuto";
 import ServiceWorkerRegistration from "@/components/interactive/ServiceWorkerRegistration";
+import { siteOrigin, basePath } from "@/lib/site";
 
 // Icônes servies depuis public/ : jamais résolues automatiquement par le
 // navigateur (requête implicite sur /favicon.ico à la racine du domaine). Le
 // préfixe reste appliqué pour qu'un hôte servant sous un sous-chemin reste
 // possible ; aujourd'hui les hôtes servent tous à la racine, donc il est vide.
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 // Origine par hôte, posée par le workflow qui déploie :
 //   - prod : NEXT_PUBLIC_SITE_ORIGIN=https://vitrinedemocratique.com
@@ -17,7 +17,6 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 // ellipse.science jusqu'au débranchement du miroir GitHub Pages le 2026-08-30
 // (#638) : un build sans la variable annonçait alors des canoniques et des
 // cartes de partage sur un hôte qui répond 404.
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
 
 const SITE_DESCRIPTION =
   "Analyse scientifique en continu de la couverture médiatique et des discours politiques au Québec, par le Centre d'analyse des politiques publiques (CAPP) de l'Université Laval.";
