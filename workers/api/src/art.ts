@@ -22,10 +22,21 @@
 
 import type { NeonQueryFunction } from '@neondatabase/serverless'
 import { authenticate } from './auth'
-import { ART_CACHE_CONTROL, ART_FILES, MAX_UPLOAD_BYTES, heroKey, publishDecision } from './art-logic'
+import {
+  ART_CACHE_CONTROL,
+  ART_FILES,
+  MAX_UPLOAD_BYTES,
+  POCHETTES_HORIZON_JOURS,
+  POCHETTES_REGISTRE,
+  borneIndex,
+  borneJoursPosterieurs,
+  heroKey,
+  parsePochette,
+  publishDecision,
+} from './art-logic'
 import { notifySlack, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
 
-export { ART_FILES, MAX_UPLOAD_BYTES, heroKey, publishDecision } from './art-logic'
+export { ART_FILES, MAX_UPLOAD_BYTES, heroKey, parsePochette, publishDecision } from './art-logic'
 
 export interface ArtEnv extends SyncAthenaEnv {
   ART_BUCKET?: R2Bucket
@@ -98,7 +109,69 @@ export async function handleArt(
     return json({ published: true, hero_key: key, reason: decision.reason })
   }
 
-  const contentType = ART_FILES[file]
+  // GET /v1/art/partis/index.json — ce que la discothèque contient.
+  //
+  // L'index est CALCULÉ en listant le bucket, jamais tenu à la main : un
+  // manifeste écrit par le raffineur finirait par décrire une archive qui
+  // n'existe plus (image perdue, jour purgé), et le build téléchargerait des
+  // 404. Le listage est borné par `startAfter` — voir `borneIndex`.
+  if (file === 'partis/index.json') {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return json({ error: 'Méthodes admises : GET, HEAD.' }, 405)
+    }
+    const auth = await authenticate(sql, request, null)
+    if (!auth.ok) return json({ error: auth.error }, auth.status)
+
+    const url = new URL(request.url)
+    const demande = Number(url.searchParams.get('jours'))
+    // `jours=0` = TOUT LE FONDS, sans borne. Le listage parcourt alors l'archive
+    // entière (une page R2 par millier d'objets, soit deux appels par année
+    // conservée) : réservé à l'inventaire, appelé une fois par build, jamais au
+    // rythme du bac.
+    const tout = demande === 0
+    const horizon = Number.isFinite(demande) && demande > 0 && demande <= 3650
+      ? Math.floor(demande)
+      : POCHETTES_HORIZON_JOURS
+    const depuis = tout ? null : borneIndex(new Date(), horizon)
+
+    const jours: Record<string, string[]> = {}
+    let cursor: string | undefined
+    do {
+      const page = await env.ART_BUCKET.list({
+        prefix: OBJECT_PREFIX + 'partis/',
+        ...(depuis ? { startAfter: OBJECT_PREFIX + 'partis/' + depuis } : {}),
+        cursor,
+      })
+      for (const obj of page.objects) {
+        const ref = parsePochette(obj.key.slice(OBJECT_PREFIX.length))
+        // On indexe sur le JSON de métadonnées : c'est lui qui atteste qu'une
+        // pochette est complète, les formats d'image étant best-effort.
+        if (!ref || ref.ext !== 'json') continue
+        ;(jours[ref.jour] ??= []).push(ref.parti)
+      }
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+
+    return json({
+      horizon_jours: tout ? null : horizon,
+      depuis,
+      jours: Object.fromEntries(
+        Object.entries(jours)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([jour, partis]) => [jour, partis.sort()]),
+      ),
+    })
+  }
+
+  // Les pochettes des partis : chemin validé par expression régulière fermée,
+  // même politique de cache et de portée que les fichiers de la Une. Le registre
+  // du fonds (`partis/fonds.json`) n'est pas une pochette : il échappe donc au
+  // gel des journées closes, et c'est voulu — il est réécrit à chaque cycle.
+  const pochette = parsePochette(file)
+  const contentType =
+    pochette?.contentType ??
+    (file === POCHETTES_REGISTRE ? 'application/json; charset=utf-8' : undefined) ??
+    ART_FILES[file]
   if (!contentType) {
     return json({ error: `Fichier inconnu : ${file || '(vide)'}.`, files: Object.keys(ART_FILES) }, 404)
   }
@@ -116,6 +189,39 @@ export async function handleArt(
         declared ? 413 : 411,
       )
     }
+
+    // UNE JOURNÉE CLOSE NE SE RÉÉCRIT PLUS.
+    //
+    // La discothèque conserve la version de FIN DE JOURNÉE de chaque pochette.
+    // Comme le chemin ne porte pas le bloc, les six passages d'une journée
+    // écrivent la même clé et seul le dernier survit — c'est voulu, et c'est ce
+    // qui borne le stockage à ~3,4 Go par an (mesuré : 1,92 Mo par pochette,
+    // tous formats, sur cinq images réelles du 2026-08-30). Mais rien n'empêchait un cycle en
+    // retard (pipeline qui traîne, rejeu manuel, `force`) de rouvrir une
+    // journée déjà rangée et d'en remplacer l'image des semaines plus tard.
+    // L'archive doit être un fonds, pas un tableau blanc.
+    //
+    // « Close » veut dire DÉPASSÉE PAR UNE JOURNÉE PLUS RÉCENTE, et non « avant
+    // aujourd'hui » : à 00h45 heure de Montréal, le dernier bloc publié est
+    // encore celui de 20h de la veille, et une règle fondée sur l'horloge
+    // refuserait le cycle toutes les nuits. Cf. `borneJoursPosterieurs`.
+    if (pochette) {
+      const posterieurs = await env.ART_BUCKET.list({
+        prefix: OBJECT_PREFIX + 'partis/',
+        startAfter: OBJECT_PREFIX + borneJoursPosterieurs(pochette.jour),
+        limit: 1,
+      })
+      if (posterieurs.objects.length > 0) {
+        return json(
+          {
+            error: `Journée close : ${pochette.jour} est dépassée par une journée plus récente, sa pochette ne se réécrit plus.`,
+            plus_recent: posterieurs.objects[0].key.slice(OBJECT_PREFIX.length),
+          },
+          409,
+        )
+      }
+    }
+
     await env.ART_BUCKET.put(OBJECT_PREFIX + file, request.body, {
       httpMetadata: { contentType },
     })
