@@ -1136,17 +1136,12 @@ function Deck({
               <rect className="forme-parti" x="0" y="0" width="100" height="100" />
             </g>
             <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            {/* LE TROU DU SPINDLE — crème, comme celui du disque d'or
-                (`.trophee-etiquette-disque::before`), depuis le 2026-09-01.
-                Il était d'abord à la couleur du parti : sur l'aplat uni
-                d'aujourd'hui il se fondrait plus encore qu'avant — mais
-                même du temps du capuchon à trois couleurs, l'anneau crème
-                de 2 px ne suffisait déjà pas à le distinguer une fois posé
-                sur `.forme-parti` (même couleur que lui), et un plein
-                disque se lisait comme un simple cercle creux. Voir
-                `.cap-pastille` dans globals.css. */}
-            <circle className="cap-pastille" cx="50" cy="33" r="8" />
-            <text className="cap-sigle" x="50" y="63" textAnchor="middle" dominantBaseline="central">
+            {/* Retiré le 2026-09-01 (« enlève le trou au centre de cette
+                pastille ») : le trou du spindle qui vivait ici, au-dessus du
+                sigle. Le sigle revient donc au centre géométrique du
+                capuchon (`y="50"`, comme avant son ajout) — même traitement
+                que `.trophee-repli`, le sigle seul sur l'aplat du parti. */}
+            <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
               {row.label}
             </text>
           </svg>

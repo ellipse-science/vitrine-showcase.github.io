@@ -9687,22 +9687,10 @@
   stroke: rgba(28, 25, 23, 0.2);
   stroke-width: 1.2;
 }
-/* LE TROU DU SPINDLE DU CAPUCHON — crème, comme celui du disque d'or, depuis
-   le 2026-09-01. Il était d'abord à la couleur du parti (`fill:
-   var(--party)`) : sur l'aplat uni d'aujourd'hui il se fondrait plus encore
-   qu'avant — mais même du temps du capuchon à trois couleurs (parti, enjeu,
-   ton), l'anneau crème de 2 px ne suffisait déjà pas à le distinguer une
-   fois posé sur `.forme-parti` (même couleur que lui), et le disque plein se
-   lisait comme un simple cercle creux. Vérifié sur le rendu réel : le crème
-   contraste avec CHACUNE des couleurs de parti possibles (aucune n'est
-   elle-même crème), là où une pastille à la couleur du parti ne peut, par
-   définition, jamais contraster avec l'aplat du parti qui la porte. */
-.cap-pastille {
-  fill: var(--paper-deep);
-  stroke: var(--paper);
-  stroke-width: 2;
-}
-/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. */
+/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. Plus de
+   trou du spindle au-dessus depuis le 2026-09-01 (« enlève le trou au
+   centre de cette pastille ») — voir `y="50"` sur `.cap-sigle` dans
+   `PartisCouvertureClient.tsx`, qui revient donc au centre géométrique. */
 .cap-sigle {
   fill: var(--paper);
   font-family: Georgia, 'Times New Roman', serif;
