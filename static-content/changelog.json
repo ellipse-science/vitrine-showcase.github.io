@@ -1,5 +1,11 @@
 [
   {
+    "pr": 658,
+    "date": "2026-09-01T02:05:46Z",
+    "note": "L'œuf de Pâques DOOM et ses fichiers ne sont plus servis sur le site public. L'illustration de la Une s'aligne désormais avec le haut du titre.",
+    "version": "2.39.0-beta.1"
+  },
+  {
     "pr": 664,
     "date": "2026-09-01T01:57:11Z",
     "note": "La carte qui s'affiche quand vous partagez le module des 12 enjeux montre maintenant l'enjeu qui domine la campagne, son poids exact et le titre de l'article qui le porte, au lieu d'un texte fixe.",
