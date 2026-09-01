@@ -332,7 +332,7 @@ function GrowthTile({
                 <span className="gt-expanded-kicker">Enjeu saillant</span>
                 <h3><SymboleEnjeu cle={tile.issueKey} />{tile.issueFr}</h3>
                 <span className="gt-expanded-count">
-                  {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
+                  {tile.articlesTotal.toLocaleString("fr-CA")} article{tile.articlesTotal > 1 ? "s" : ""} sur cette période
                 </span>
               </div>
               <div className="gt-expanded-growth">
@@ -364,6 +364,12 @@ function GrowthTile({
                   d'Adrien, 31-08). En dessous du seuil il n'y a rien à
                   raccourcir : elles s'empilent. */}
             {tile.articles.length > 0 ? (
+              <>
+              <p className="gt-expanded-avis">
+                Les 6 articles qui abordent le plus cet enjeu, selon le calcul de nos
+                modèles locaux d&apos;intelligence artificielle entraînés et validés à
+                l&apos;Université&nbsp;Laval.
+              </p>
               <div
                 className="gt-expanded-list"
                 role="list"
@@ -383,6 +389,12 @@ function GrowthTile({
                       </a>
                     ) : (
                       <div className="gt-expanded-title">{article.title}</div>
+                    )}
+                    {article.part > 0 && (
+                      <div className="gt-expanded-sommet">
+                        <span className="gt-expanded-part">{formatPct(article.part)}</span>
+                        de cet enjeu
+                      </div>
                     )}
                     {article.sommet && (
                       <div className="gt-expanded-sommet">
@@ -411,6 +423,7 @@ function GrowthTile({
                   </article>
                 ))}
               </div>
+              </>
             ) : (
               <p className="gt-expanded-empty">Aucune actualité québécoise sur cette période pour cet enjeu.</p>
             )}

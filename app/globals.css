@@ -4918,6 +4918,26 @@
     font-size: 19px;
     font-style: italic;
   }
+  /* L'avertissement d'Adrien, en tête de liste : il dit d'où vient le
+     classement. Sans lui, un article qui « parle à peine » d'un enjeu et qui
+     figure quand même dans sa liste passe pour une erreur. */
+  .treemap-growth .gt-expanded-avis {
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.45;
+    opacity: 0.72;
+    margin: 10px 0 0;
+    max-width: 96ch;
+  }
+  /* La part de l'article dans son enjeu : le seul chiffre qui raccroche la
+     liste au grand nombre de la tuile. */
+  .treemap-growth .gt-expanded-part {
+    font-weight: 500;
+    margin-right: 5px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
+  }
+
   /* La saillance atteinte AU SOMMET, posée sur la même ligne que l'heure du
      sommet : les deux décrivent le même instant. Séparée par un filet plutôt
      que par un point, pour qu'on ne lise pas « 16h Saillance ». */

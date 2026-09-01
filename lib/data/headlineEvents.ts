@@ -1997,7 +1997,15 @@ export type TreemapIssueTile = {
      *  `cle` est comparable lexicographiquement (« 2026-08-30T16 »), `libelle`
      *  se lit (« 16h cet après-midi »). `null` si l'horodatage est inexploitable. */
     sommet: { cle: string; libelle: string; score: number; saillance: string } | null;
+    /** Part de CET article dans le score de l'enjeu, en %. C'est le lien direct
+     *  entre la liste et le grand nombre de la tuile : les parts d'un enjeu
+     *  somment à 100 sur l'ensemble de ses articles (pas sur les 6 affichés). */
+    part: number;
   }[];
+  /** Combien d'articles portent cet enjeu sur la fenêtre, AVANT la coupe à six.
+   *  La tuile annonce ce total et non la longueur de la liste : dire « 6 »
+   *  quand il y en a 1 214 laisserait croire que l'enjeu tient à six textes. */
+  articlesTotal: number;
 };
 
 /** Un point d'historique : le rang (1 = plus saillant) de chaque enjeu à une date. */
@@ -2771,12 +2779,69 @@ function buildIssueMedia(
       const url = outlets.find((outlet) => outlet.url)?.url ?? e.representative_url ?? null;
       const sommet = sommetDeSaillance(occurrences.get(e.event_id) ?? [e], refDayIso ?? null);
       if (depuis && (!sommet || sommet.cle.slice(0, 10) < depuis)) continue;
-      list.push({ title, url, outlets, sommet });
+      // `part` = 0 sur le chemin de repli : il n'a pas la contribution par
+      // article, qui n'existe que dans la table des articles. Le rendu ne
+      // l'affiche donc pas, plutôt que d'inventer un 0 % trompeur.
+      list.push({ title, url, outlets, sommet, part: 0 });
     }
     // Tri final par DATE : la plus récemment culminante en tête. Les nouvelles
     // sans horodatage exploitable ferment la marche plutôt que de s'intercaler.
     list.sort((a, b) => (b.sommet?.cle ?? "").localeCompare(a.sommet?.cle ?? ""));
     map.set(issueKey, { articles: list });
+  }
+  return map;
+}
+
+/** Un article québécois et ses 12 comptes de phrases, tels que publiés par
+ *  `scripts/fetch_data.R` (filtre `radar_annotated_issues`). C'est la MÊME
+ *  matière que celle dont le raffineur tire le pourcentage de chaque enjeu. */
+type ArticleEnjeu = { title: string; url: string | null; media_id: string; jour: string } & Record<string, number | string | null>;
+
+async function loadIssueArticles(): Promise<ArticleEnjeu[]> {
+  let txt: string;
+  try { txt = await readDatasetText("public/data/refined/issues_articles.json"); } catch { return []; }
+  try {
+    const parsed = JSON.parse(txt);
+    return Array.isArray(parsed) ? parsed as ArticleEnjeu[] : [];
+  } catch { return []; }
+}
+
+/** Les 6 articles qui portent le plus un enjeu sur la fenêtre demandée.
+ *
+ *  Le classement est la CONTRIBUTION de l'article au score de l'enjeu : son
+ *  nombre de phrases sur le total de l'enjeu. Un article peut donc figurer sous
+ *  plusieurs enjeux avec des poids différents — c'est exact, un texte parle de
+ *  plusieurs choses, et c'est précisément ce que mesure le pourcentage.
+ *
+ *  ⚠️ La part est calculée sur TOUS les articles de la fenêtre, pas sur les six
+ *  retenus : « 9,5 % » veut dire « cet article fait 9,5 % de l'enjeu », pas
+ *  « 9,5 % de ce qui est affiché ». Normaliser sur les six ferait un nombre qui
+ *  ne se raccroche à rien. */
+function topArticlesParEnjeu(
+  articles: ArticleEnjeu[],
+  depuis: string | null,
+  combien = 6,
+): Map<string, { articles: TreemapIssueTile["articles"]; total: number }> {
+  const fenetre = depuis ? articles.filter((a) => (a.jour ?? "") >= depuis) : articles;
+  const map = new Map<string, { articles: TreemapIssueTile["articles"]; total: number }>();
+  for (const issueKey of ISSUE_KEYS) {
+    let total = 0;
+    for (const a of fenetre) total += Number(a[issueKey] ?? 0);
+    if (total <= 0) { map.set(issueKey, { articles: [], total: 0 }); continue; }
+    const top = fenetre
+      .filter((a) => Number(a[issueKey] ?? 0) > 0)
+      .sort((x, y) => Number(y[issueKey] ?? 0) - Number(x[issueKey] ?? 0))
+      .slice(0, combien)
+      .map((a) => ({
+        title: (a.title ?? "").trim(),
+        url: a.url && String(a.url).length > 0 ? String(a.url) : null,
+        outlets: [{ name: MEDIA_NAMES[a.media_id] ?? a.media_id, url: a.url ? String(a.url) : null }],
+        sommet: null,
+        part: (Number(a[issueKey] ?? 0) / total) * 100,
+      }))
+      .filter((a) => a.title.length > 0);
+    const porteurs = fenetre.filter((a) => Number(a[issueKey] ?? 0) > 0).length;
+    map.set(issueKey, { articles: top, total: porteurs });
   }
   return map;
 }
@@ -2794,12 +2859,13 @@ export async function loadTreemap(
   /** Jour de publication de cette édition, pour les tables jour/semaine/mois. */
   asOfIso?: string,
 ): Promise<TreemapAllPeriods | null> {
-  const [dayRows, weekRows, monthRows, fallbackContent, rawEvents] = await Promise.all([
+  const [dayRows, weekRows, monthRows, fallbackContent, rawEvents, articlesEnjeux] = await Promise.all([
     loadIssueScores("day", asOfIso),
     loadIssueScores("week", asOfIso),
     loadIssueScores("month", asOfIso),
     loadFallbackIssueContent(editionKey),
     loadRawEvents(editionKey),
+    loadIssueArticles(),
   ]);
 
   function buildPeriodData(
@@ -2838,7 +2904,21 @@ export async function loadTreemap(
     const lastUpdated = passe
       ? lastUpdatedLabel(passe.date, passe.heure)
       : lastUpdatedLabel(dateStr);
-    const articlesByIssue = buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
+    // La liste vient désormais des ARTICLES qui font le score, pas des
+    // événements constitués. Deux tables différentes racontaient la même chose
+    // à deux échelles : le pourcentage comptait toute la couverture, la liste
+    // ne montrait que les histoires assez saillantes pour être nommées. D'où
+    // des enjeux lourds sans rien à montrer — Terres publiques, 13,9 % de
+    // l'attention et zéro événement, pour 1 068 articles (mesuré le 31-08).
+    // Désormais le nombre et la liste sortent de la même matière.
+    //
+    // Repli sur les événements si le fichier d'articles manque : mieux vaut
+    // l'ancienne liste qu'une tuile muette.
+    const parArticles = topArticlesParEnjeu(articlesEnjeux, depuisArticles);
+    const articlesByIssue: Map<string, { articles: TreemapIssueTile["articles"]; total?: number }> =
+      articlesEnjeux.length > 0
+        ? parArticles
+        : buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
 
     const periodRows = latestTag
@@ -2902,7 +2982,8 @@ export async function loadTreemap(
       const prevScore = prevAggregated[issueKey] ?? 0;
       const velocity = !prevFound ? 0 : score > prevScore ? 1 : score < prevScore ? -1 : 0;
       const growth = prevFound && prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : null;
-      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
+      const articlesTotal = articlesByIssue.get(issueKey)?.total ?? articles.length;
+      return { issueKey, issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey, articlesTotal, color: ISSUE_COLORS[issueKey] ?? "#463E3E", score, relScore: Math.round((score / maxScore) * 100), share: totalScore > 0 ? (score / totalScore) * 100 : 0, topObject, context, url, velocity, growth, articles };
     });
 
     // Historique du rang de chaque enjeu, un point par tag (pour le graphique de rang).
