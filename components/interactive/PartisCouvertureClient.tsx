@@ -313,21 +313,6 @@ export function PartisCouvertureClient({
    *  le panneau se rend en PLEINE LARGEUR, sous toute la rangée, pas dans la
    *  seule colonne étroite du disque. */
   const [trophéeOuvert, setTrophéeOuvert] = useState(false);
-  /** LA CARTE DU PANNEAU DÉJÀ RETOURNÉE À L'OUVERTURE, ou `null` quand aucune
-   *  ne l'est. C'est un clic sur un DECK qui la choisit (voir `Deck` /
-   *  `ouvrirPochetteDuParti`) : le deck mène vers LA MÊME pochette que le
-   *  disque d'or, déjà tournée sur son endos plutôt qu'à retourner soi-même.
-   *  Remise à `null` dès que le panneau se ferme ou se rouvre autrement — sans
-   *  quoi un deck cliqué une fois laisserait sa carte pré-tournée à chaque
-   *  réouverture manuelle du disque, sans rapport avec ce second clic. */
-  const [carteOuverte, setCarteOuverte] = useState<PartyKey | null>(null);
-  /** Le clic sur un deck : ouvre le panneau ET pré-tourne la carte de ce
-   *  parti, exactement comme le ferait un clic sur le disque d'or suivi d'un
-   *  clic sur sa carte — en un seul geste. */
-  const ouvrirPochetteDuParti = (cle: PartyKey) => {
-    setCarteOuverte(cle);
-    setTrophéeOuvert(true);
-  };
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
@@ -561,7 +546,7 @@ export function PartisCouvertureClient({
               affichée sans valeur. À égalité au plus bas, les deux y passent.
               <br />
               <br />• <b>Cliquez un disque</b> pour lire l&apos;article qui en parle le plus,
-              ou voir sa pochette dans le disque d&apos;or quand aucun article n&apos;est connu.
+              quand on en connaît un.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -578,11 +563,9 @@ export function PartisCouvertureClient({
       <div className="regie">
         <div className="regie-flanc regie-flanc--gauche">
           <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[0] && lienArticle(decks[0])}
-            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[0]?.key} />
+            articleUrl={decks[0] && lienArticle(decks[0])} />
           <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[2] && lienArticle(decks[2])}
-            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[2]?.key} />
+            articleUrl={decks[2] && lienArticle(decks[2])} />
         </div>
 
         <div className="regie-centre">
@@ -599,11 +582,9 @@ export function PartisCouvertureClient({
 
         <div className="regie-flanc regie-flanc--droite">
           <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[1] && lienArticle(decks[1])}
-            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[1]?.key} />
+            articleUrl={decks[1] && lienArticle(decks[1])} />
           <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[3] && lienArticle(decks[3])}
-            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[3]?.key} />
+            articleUrl={decks[3] && lienArticle(decks[3])} />
         </div>
       </div>
 
@@ -732,14 +713,7 @@ export function PartisCouvertureClient({
                 gagnant={gagnantTrophee}
                 sortie={sortieTrophee}
                 ouvert={trophéeOuvert}
-                onToggle={() => {
-                  // Un clic direct sur le disque n'a pas de parti précis en
-                  // tête : la carte qu'un DECK aurait pré-tournée n'a plus
-                  // sa place, sans quoi elle resterait tournée sans rapport
-                  // avec ce second geste.
-                  setCarteOuverte(null);
-                  setTrophéeOuvert((v) => !v);
-                }}
+                onToggle={() => setTrophéeOuvert((v) => !v)}
               />
             )}
           </div>
@@ -755,11 +729,7 @@ export function PartisCouvertureClient({
               termine={chartTermine(data.ranges[range].chart)}
               entrees={entreesTrophee}
               sortie={sortieTrophee}
-              carteOuverte={carteOuverte}
-              onFermer={() => {
-                setTrophéeOuvert(false);
-                setCarteOuverte(null);
-              }}
+              onFermer={() => setTrophéeOuvert(false)}
             />
           )}
         </section>
@@ -768,11 +738,16 @@ export function PartisCouvertureClient({
       {/* LE BAC DU JOUR ET LA DISCOTHÈQUE ONT QUITTÉ LE BAS DU PUPITRE le
           2026-09-01 : l'accès aux pochettes se fait désormais par le DISQUE
           D'OR, à côté du palmarès (voir `PalmaresTrophee`) — un seul disque à
-          la fois plutôt qu'un bac entier. Le clic sur un DECK reste le
-          chemin le plus direct vers UN parti choisi, mais mène maintenant à
-          la MÊME pochette que le disque d'or, déjà retournée, plutôt que
-          d'en ouvrir une autre en place ici (voir `Deck` /
-          `ouvrirPochetteDuParti`). */}
+          la fois plutôt qu'un bac entier.
+
+          LE CLIC SUR UN DECK NE MÈNE PLUS NULLE PART depuis le 2026-09-01 :
+          il menait au panneau du disque d'or, une carte déjà retournée, mais
+          ce panneau n'a rien à montrer tant que la course n'est pas courue
+          (« disque en production » pour les cinq, sans rapport avec le
+          parti cliqué) — un geste qui ne menait donc jamais où il le
+          promettait. Le deck attend `articleUrl` (aws-refiners#447, voir
+          `Deck`) : place gardée pour un vrai lien, pas de geste de repli
+          entre-temps. */}
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
@@ -1047,8 +1022,6 @@ function Deck({
   indisponible,
   mediaLabel,
   articleUrl,
-  onSelect,
-  selectionne,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
@@ -1066,17 +1039,12 @@ function Deck({
   /** L'article vers lequel le deck mène (aws-refiners#447), déjà résolu par
    *  l'appelant — média courant si le fader en désigne un, sinon un média
    *  choisi parmi ceux qui en ont un pour ce parti (voir `lienArticle`).
-   *  `null`/absent : aucun article connu, le deck retombe sur son ancien
-   *  geste (`onSelect`). */
+   *
+   *  ⚠️ `null`/absent : PAS de repli vers le panneau du disque d'or (retiré
+   *  le 2026-09-01, cf. `PartisCouvertureClient`, section « LE BAC DU
+   *  JOUR… ») — le deck reste inerte, place gardée pour le jour où l'article
+   *  existe vraiment. */
   articleUrl?: string | null;
-  /** Repli quand `articleUrl` est absent : sélectionner ce parti pour que sa
-   *  pochette s'ouvre plus bas, déjà retournée, dans le panneau du disque
-   *  d'or (`ouvrirPochetteDuParti`). */
-  onSelect?: (key: PartyKey) => void;
-  /** Vrai quand c'est CE parti dont la carte est ouverte dans le panneau —
-   *  ne s'applique qu'au repli ci-dessus, un deck qui mène à un article n'a
-   *  pas d'état « choisi ». */
-  selectionne?: boolean;
 }) {
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
@@ -1115,22 +1083,16 @@ function Deck({
   const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
   const ton = row.toneDirection;
 
-  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ.
-     `articleUrl` change la nature du geste : un lien qui QUITTE le site
-     pour l'article qui parle le plus de ce parti, plutôt que le repli —
-     ouvrir sa pochette, plus bas, déjà retournée, dans le disque d'or (la
-     table de mix est passée AVANT lui dans l'ordre de la page depuis le
-     2026-09-01). Sans le dire, le clic paraîtrait sans effet, ou son effet
-     réel — quitter le site — surprendrait. */
+  /* Le survol du disque annonce ce que le clic FAIT — quand il fait
+     quelque chose. `articleUrl` seul déclenche un vrai geste : un lien qui
+     QUITTE le site pour l'article qui parle le plus de ce parti. Sans lui,
+     le deck n'a RIEN à annoncer depuis le 2026-09-01 (voir la section
+     « LE BAC DU JOUR… » plus haut dans le fichier) : plus de repli vers un
+     panneau qui ne menait nulle part avant la fin de la course. */
   const annonceDisque = articleUrl
     ? `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
       `Lire l'article qui en parle le plus, dans un nouvel onglet.`
-    : selectionne
-      ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
-      : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-        `Voir sa pochette, plus bas, dans le disque d'or, pour combien de temps ce ` +
-        `parti a occupé la Une, quelle part de la couverture il représente, l'enjeu ` +
-        `dont on parle le plus à son sujet et le ton de cette couverture.`;
+    : undefined;
 
   {/* Face avant — le vinyle. Il n'est plus seulement décoratif depuis que
       la ligne de nom est partie : le sigle gravé sur son capuchon est
@@ -1176,7 +1138,16 @@ function Deck({
               <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
             </g>
             <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
+            {/* LE TROU DU SPINDLE, à la couleur du parti — pas crème comme
+                celui du disque d'or (`.trophee-etiquette-disque::before`) :
+                le capuchon mélange déjà trois couleurs (parti, enjeu, ton),
+                et un trou neutre s'y perdrait. Posé au-dessus du sigle, les
+                deux formant un groupe centré ensemble plutôt que le trou seul
+                au centre géométrique — même correction que sur le disque d'or,
+                où le trou seul au centre lisait comme mal centré une fois le
+                sigle plaqué tout en bas. */}
+            <circle className="cap-pastille" cx="50" cy="33" r="8" />
+            <text className="cap-sigle" x="50" y="63" textAnchor="middle" dominantBaseline="central">
               {row.label}
             </text>
           </svg>
@@ -1202,12 +1173,9 @@ function Deck({
         ["--ton" as string]: `var(--ton-${ton})`,
       }}
     >
-      {/* La clé ne porte QUE le parti, et non la source.
-          Changer de média ne change pas forcément qui occupe ce deck : keyer sur
-          la source rejouait le changement de disque à chaque coup de fader, y
-          compris quand la piste restait la même. Ici le carré ne se remonte que
-          si le parti change vraiment — et c'est ce remontage qui rejouerait la
-          sortie de pochette si elle était ouverte. */}
+      {/* La clé ne porte QUE le parti, et non la source : changer de média ne
+          change pas forcément qui occupe ce deck, keyer sur la source
+          rejouait le changement de disque à chaque coup de fader. */}
       {articleUrl ? (
         <a
           key={row.key}
@@ -1221,17 +1189,13 @@ function Deck({
           {visuel}
         </a>
       ) : (
-        <button
-          key={row.key}
-          type="button"
-          className={`deck-carre${selectionne ? " deck-carre--choisi" : ""}`}
-          onClick={() => onSelect?.(row.key)}
-          aria-pressed={selectionne}
-          aria-label={annonceDisque}
-          title={annonceDisque}
-        >
+        // INERTE, sans `aria-label` ni `title` : rien à annoncer tant qu'il
+        // n'y a pas d'article (voir `annonceDisque`), et un `<div>` plutôt
+        // qu'un `<button>` pour ne pas laisser croire au clavier ou au
+        // survol qu'un clic ferait quelque chose.
+        <div key={row.key} className="deck-carre deck-carre--inerte">
           {visuel}
-        </button>
+        </div>
       )}
     </div>
   );
@@ -2136,7 +2100,6 @@ function TropheePanel({
   termine,
   entrees,
   sortie,
-  carteOuverte,
   onFermer,
 }: {
   range: RangeKey;
@@ -2144,10 +2107,6 @@ function TropheePanel({
   termine: boolean;
   entrees: EntreeTrophee[];
   sortie: string;
-  /** Le parti dont la carte doit s'ouvrir DÉJÀ RETOURNÉE — voir
-   *  `ouvrirPochetteDuParti` chez l'appelant. `null` : les cinq s'ouvrent
-   *  fermées, le geste par défaut. */
-  carteOuverte: PartyKey | null;
   onFermer: () => void;
 }) {
   return (
@@ -2163,16 +2122,14 @@ function TropheePanel({
       </div>
 
       <ol className="trophee-panel-grille">
-        {entrees.map((e, i) => (
+        {entrees.map((e) => (
           <CarteTrophee
             key={e.cle}
-            rang={i + 1}
             entree={e}
             apprecie={apprecie}
             termine={termine}
             range={range}
             sortie={sortie}
-            ouvertParDefaut={e.cle === carteOuverte}
           />
         ))}
       </ol>
@@ -2197,26 +2154,19 @@ function TropheePanel({
  * images à charger.
  */
 function CarteTrophee({
-  rang,
   entree,
   apprecie,
   termine,
   range,
   sortie,
-  ouvertParDefaut,
 }: {
-  rang: number;
   entree: EntreeTrophee;
   apprecie: boolean;
   termine: boolean;
   range: RangeKey;
   sortie: string;
-  /** Ouvre la carte dès le premier rendu : le cas d'un clic sur le DECK de ce
-   *  parti, plus bas — voir `ouvrirPochetteDuParti` chez l'appelant. Absent
-   *  partout ailleurs, une carte du panneau reste fermée par défaut. */
-  ouvertParDefaut?: boolean;
 }) {
-  const [ouverte, setOuverte] = useState(Boolean(ouvertParDefaut));
+  const [ouverte, setOuverte] = useState(false);
   const chiffre = chiffreTrophee(entree, apprecie);
 
   return (
@@ -2252,9 +2202,11 @@ function CarteTrophee({
             sigle est déjà gravé sur la pochette elle-même
             (`.pochette-sigle`/`.trophee-etiquette-sigle`), et le nom complet
             reste accessible — `aria-label` du bouton, ci-dessus — sans qu'il
-            faille le répéter à l'écran pour tout le monde. Le rang, lui, n'y
-            est pas déjà : il reste seul, en badge. */}
-        <i className="trophee-panel-rang" aria-hidden="true">{rang}</i>
+            faille le répéter à l'écran pour tout le monde. Le RANG, lui, a
+            quitté la carte le 2026-09-01 : `<ol>` porte déjà l'ordre, et un
+            chiffre en plus sous cinq pochettes déjà numérotées par leur
+            position ajoutait un badge de plus à lire, sans rien dire que la
+            grille ne dise déjà. */}
       </button>
     </li>
   );

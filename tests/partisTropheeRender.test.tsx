@@ -300,20 +300,27 @@ describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse"
   });
 });
 
-describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-09-01", () => {
-  // RÉGRESSION du 2026-09-01 : un clic sur un deck ouvrait sa pochette EN
-  // PLACE, sous le pupitre (`PochetteOuverte`/`GatefoldInfos`, tous deux
-  // retirés). Le deck reste un bouton à état local, mais commande maintenant
-  // le panneau du disque d'or, plus bas (la table de mix est passée AVANT le
-  // palmarès dans l'ordre de la page, le même jour) plutôt qu'un volet local
-  // — le rendu statique ne peut donc prouver que l'état FERMÉ par défaut,
-  // comme pour le reste des composants à état de ce fichier.
+describe("les decks — inertes tant qu'aucun article n'est connu, depuis le 2026-09-01", () => {
+  // RÉGRESSION du 2026-09-01 : un clic sur un deck menait au panneau du
+  // disque d'or, une carte déjà retournée — mais ce panneau n'a rien à
+  // montrer tant que la course n'est pas courue (« disque en production »
+  // pour les cinq, sans rapport avec le parti cliqué). Sans `articleUrl`, le
+  // deck n'a donc plus rien à faire au clic : ni bouton, ni lien, un `<div>`
+  // inerte qui garde la place pour le jour où l'article existe vraiment.
   const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
-  const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"[^>]*>/g)];
+  const inertes = [...html.matchAll(/<div[^>]*class="deck-carre deck-carre--inerte"[^>]*>/g)];
 
-  it("quatre decks, quatre VRAIS boutons — pas de lien de deck", () => {
-    expect(boutons.length).toBe(4);
+  it("quatre decks, quatre VRAIS <div> inertes — ni bouton, ni lien", () => {
+    expect(inertes.length).toBe(4);
     expect(html).not.toMatch(/<a[^>]*class="deck-carre"/);
+    expect(html).not.toMatch(/<button[^>]*class="deck-carre"/);
+  });
+
+  it("aucun `aria-label`, aucun `title` — rien à annoncer tant qu'il n'y a rien à faire", () => {
+    for (const [balise] of inertes) {
+      expect(balise).not.toContain("aria-label");
+      expect(balise).not.toContain("title=");
+    }
   });
 
   it("la table de mix (le pupitre) précède le palmarès dans la page", () => {
@@ -326,22 +333,11 @@ describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-
     expect(iPalmares).toBeGreaterThan(iPupitre);
   });
 
-  it("aucun n'est sélectionné par défaut — le panneau est fermé", () => {
-    for (const b of boutons) {
-      expect(b[0]).toContain('aria-pressed="false"');
-      expect(b[0]).not.toContain("deck-carre--choisi");
-    }
-  });
-
-  it("l'annonce dit où mène le clic — le disque d'or, plus bas", () => {
-    expect(html).toMatch(/Voir sa pochette, plus bas, dans le disque d&#x27;or/);
-    expect(html).not.toContain("Ouvrir sa pochette, plus bas");
-  });
-
   it("aucune pochette ne s'ouvre plus EN PLACE, sous le pupitre", () => {
     expect(html).not.toContain('class="gatefold"');
     expect(html).not.toContain("gatefold-nom");
     expect(html).not.toContain("gatefold-fermer");
+    expect(html).not.toContain("deck-carre--choisi");
   });
 });
 
@@ -390,13 +386,16 @@ describe("les decks — mènent vers l'article représentatif quand il existe (a
     expect(html).toContain("Lire l&#x27;article qui en parle le plus, dans un nouvel onglet.");
   });
 
-  it("le deck d'un parti SANS article, lui, reste un bouton vers le disque d'or", () => {
-    const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"[^>]*aria-label="([^"]*)"/g)];
-    expect(boutons.some((b) => b[1].startsWith(sansArticle.fullLabel))).toBe(true);
+  it("le deck d'un parti SANS article, lui, reste un <div> inerte", () => {
+    // `sansArticle` n'a plus de nom dans le DOM (aucun `aria-label` sur
+    // l'inerte) : on vérifie sa PRÉSENCE par son sigle, gravé sur le disque
+    // lui-même (`.cap-sigle`), pas par une annonce qui n'existe plus.
+    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">([\s\S]*?)<\/div>\s*<\/div>/g)];
+    expect(inertes.some(([, contenu]) => contenu.includes(`>${sansArticle.label}<`))).toBe(true);
   });
 
-  it("trois decks sur quatre restent des boutons — un seul a un article", () => {
-    const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"/g)];
-    expect(boutons.length).toBe(3);
+  it("trois decks sur quatre restent inertes — un seul a un article", () => {
+    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">/g)];
+    expect(inertes.length).toBe(3);
   });
 });
