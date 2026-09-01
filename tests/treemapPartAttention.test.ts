@@ -48,8 +48,8 @@ describe("part de l'attention (module « Les 12 enjeux de la campagne »)", () =
     // La carte affiche une décimale (« 19,6 % ») : parseInt la tronquait à 19
     // pendant que Math.round donnait 20 — le test cassait dès que la part
     // finissait par ,5 ou plus (#666). On compare la valeur affichée, à une
-    // décimale près, à la part calculée.
-    const affichee = parseFloat(carte.stat!.value.replace(",", "."));
-    expect(affichee).toBeCloseTo(top.share, 1);
+    // décimale, exactement comme la carte la formate.
+    const attendue = `${top.share.toFixed(1).replace(".", ",")} %`;
+    expect(carte.stat!.value).toBe(attendue);
   });
 });
