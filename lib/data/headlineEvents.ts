@@ -2867,6 +2867,13 @@ export async function loadTreemap(
     loadRawEvents(editionKey),
     loadIssueArticles(),
   ]);
+  // Une édition d'ARCHIVE ne doit pas voir les articles parus après elle : la
+  // fenêtre de 46 jours du fichier contient aussi le futur de ce jour-là, et
+  // sans cette coupe, la carte de partage et les listes d'une édition rejouée
+  // porteraient des articles que l'édition ne pouvait pas connaître.
+  const articlesEnjeuxBornes = asOfIso
+    ? articlesEnjeux.filter((a) => (a.jour ?? "") <= asOfIso)
+    : articlesEnjeux;
 
   function buildPeriodData(
     rows: Array<Record<string, unknown>> | null,
@@ -2914,9 +2921,9 @@ export async function loadTreemap(
     //
     // Repli sur les événements si le fichier d'articles manque : mieux vaut
     // l'ancienne liste qu'une tuile muette.
-    const parArticles = topArticlesParEnjeu(articlesEnjeux, depuisArticles);
+    const parArticles = topArticlesParEnjeu(articlesEnjeuxBornes, depuisArticles);
     const articlesByIssue: Map<string, { articles: TreemapIssueTile["articles"]; total?: number }> =
-      articlesEnjeux.length > 0
+      articlesEnjeuxBornes.length > 0
         ? parArticles
         : buildIssueMedia(rawEvents, depuisArticles, passe?.date ?? dateStr);
     const meta = parseIssuesMeta(latest.issues_meta);
@@ -3030,9 +3037,9 @@ export async function loadTreemap(
   // autrement. Le jour, lui, reste sur sa table : elle est correcte, et porte
   // la cadence 4 h (variation d'une passe à l'autre) que les articles, agrégés
   // au jour, n'ont pas.
-  const week = buildPeriodeDepuisArticles(articlesEnjeux, debutSemaine, day)
+  const week = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutSemaine, day)
     ?? buildPeriodData(weekRows, debutSemaine) ?? day;
-  const month = buildPeriodeDepuisArticles(articlesEnjeux, ELECTION_CALL_DATE, day)
+  const month = buildPeriodeDepuisArticles(articlesEnjeuxBornes, ELECTION_CALL_DATE, day)
     ?? buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day;
   return { day, week, month };
 }
