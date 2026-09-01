@@ -559,6 +559,22 @@
   }
   .mode-pill.off { background: transparent; border: 0.8px solid var(--ink-softer); }
   .sub-nav .links { display: flex; gap: 22px; }
+  /* Menus déroulants de la barre : Méthodologie → Nos modèles, À propos → Équipe, Partenaires */
+  .sub-nav .nav-item { position: relative; display: inline-block; }
+  .sub-nav .nav-menu {
+    display: none; position: absolute; top: 100%; left: 0; z-index: 30;
+    min-width: 190px; margin-top: 6px; padding: 8px 0;
+    background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  .sub-nav .nav-item:hover .nav-menu,
+  .sub-nav .nav-item:focus-within .nav-menu { display: block; }
+  .sub-nav .nav-menu a {
+    display: block; padding: 7px 14px; white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+  }
+  .sub-nav .nav-menu a:hover { color: var(--cordovan); background: rgba(0,0,0,0.03); }
 
   /* Sous-header hero — RESTYLE, repris de #section-headline-of-headlines-sticky-bar */
   .hero-subbar {
@@ -6380,6 +6396,8 @@
     .partner-logo--clessn { height: 42px; }
     .partners-grid--grand { grid-template-columns: repeat(2, 1fr); gap: 28px 24px; }
     .equipe-grille { grid-template-columns: repeat(2, 1fr); gap: 22px 16px; }
+    /* Sans survol sur mobile : les sous-pages restent atteignables depuis leur page parente */
+    .sub-nav .nav-menu { display: none !important; }
     .equipe-photo { width: 72px; height: 72px; }
     .partner-logo--grand { height: 56px; max-width: 150px; }
     .partner-logo--grand.partner-logo--clessn { height: 72px; }

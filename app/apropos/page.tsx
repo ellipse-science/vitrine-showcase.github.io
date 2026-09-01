@@ -19,7 +19,6 @@ export default function AproposPage() {
 
         <div className="apropos-header">
           <h1 className="apropos-title">À propos</h1>
-          <p className="apropos-fil">Sous-pages&nbsp;: <a href="/apropos/equipe/" className="apropos-link">Équipe</a> · <a href="/apropos/partenaires/" className="apropos-link">Partenaires</a></p>
           <p className="apropos-lead dek-with-cap">
             La Vitrine démocratique est un observatoire numérique de l'espace
             public québécois, développé par le Centre d'analyse des politiques
