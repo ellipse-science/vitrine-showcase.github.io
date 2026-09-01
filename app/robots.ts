@@ -19,12 +19,12 @@ import { siteOrigin, basePath } from "@/lib/site";
 // propre domaine, le dev a un basePath vide lui aussi. Le même signal pilote le
 // garde-fou des fausses données dans lib/data/parties.ts — un seul signal, pour
 // qu'ils ne puissent pas diverger.
-const isDevMirror = process.env.NEXT_PUBLIC_SITE_ENV === "dev";
+const isDevEnv = process.env.NEXT_PUBLIC_SITE_ENV === "dev";
 
 export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
-  if (isDevMirror) {
+  if (isDevEnv) {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
   return {
