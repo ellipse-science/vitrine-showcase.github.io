@@ -45,6 +45,11 @@ describe("part de l'attention (module « Les 12 enjeux de la campagne »)", () =
     const carte = await getShareModuleContent("enjeux-saillants");
 
     expect(carte.title).toBe("Les 12 enjeux de la campagne");
-    expect(parseInt(carte.stat!.value, 10)).toBe(Math.round(top.share));
+    // La carte affiche une décimale (« 19,6 % ») : parseInt la tronquait à 19
+    // pendant que Math.round donnait 20 — le test cassait dès que la part
+    // finissait par ,5 ou plus (#666). On compare la valeur affichée, à une
+    // décimale près, à la part calculée.
+    const affichee = parseFloat(carte.stat!.value.replace(",", "."));
+    expect(affichee).toBeCloseTo(top.share, 1);
   });
 });
