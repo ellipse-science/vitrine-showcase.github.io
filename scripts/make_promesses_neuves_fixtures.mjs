@@ -49,35 +49,36 @@ const article = (media, titre) => ({
   url: `https://example.invalid/${media.toLowerCase()}/${encodeURIComponent(titre.slice(0, 40))}`,
 });
 
-// [parti, verbatim, libellé court, jours écoulés depuis l'annonce, mentions, articles]
+// [parti, verbatim, libellé court, jours écoulés depuis l'annonce, mentions,
+//  catégorie d'enjeu (clé d'ISSUE_COLORS, ou "NA"), articles]
 const PROMESSES = [
   ["CAQ",
    "Un gouvernement de la Coalition avenir Québec réélu portera à 2 000 $ le crédit d'impôt pour la rénovation énergétique des résidences principales, dès le budget suivant l'élection.",
-   "Porter à 2 000 $ le crédit de rénovation énergétique", 0, 14,
+   "Porter à 2 000 $ le crédit de rénovation énergétique", 0, 14, "Environnement et énergie",
    [article("LAP", "Rénovation énergétique : la CAQ hausse son crédit d'impôt"),
     article("LED", "Le crédit de rénovation passerait à 2 000 $"),
     article("JDM", "Habitation | Un crédit bonifié promis par la CAQ")]],
 
   ["PLQ",
    "Un gouvernement libéral abolira la taxe de bienvenue pour l'achat d'une première propriété de moins de 400 000 $.",
-   "Abolir la taxe de bienvenue au premier achat", 1, 9,
+   "Abolir la taxe de bienvenue au premier achat", 1, 9, "Économie et travail",
    [article("LED", "Première propriété : le PLQ promet d'abolir la taxe de bienvenue"),
     article("TVA", "Le PLQ vise les premiers acheteurs")]],
 
   ["QS",
    "Québec solidaire s'engage à construire 25 000 logements réellement abordables au cours du prochain mandat, dont 8 000 en milieu rural.",
-   "Construire 25 000 logements abordables", 2, 6,
+   "Construire 25 000 logements abordables", 2, 6, "Culture et nationalisme",
    [article("RCI", "Logement | QS chiffre son plan à 25 000 unités")]],
 
   ["PQ",
    "Un gouvernement du Parti Québécois haussera de 15 % l'enveloppe des services de garde en milieu familial, et créera 3 000 places dès la première année.",
-   "Créer 3 000 places en milieu familial", 3, 4,
+   "Créer 3 000 places en milieu familial", 3, 4, "Santé et politiques sociales",
    [article("JDM", "Services de garde | Le PQ promet 3 000 places"),
     article("LAP", "Garderies : une hausse de 15 % proposée")]],
 
   ["PCQ",
    "Le Parti conservateur du Québec réduira de moitié le délai moyen d'attente en chirurgie d'ici la fin du mandat, en autorisant les cliniques privées à opérer sous couverture publique.",
-   "Réduire de moitié l'attente en chirurgie", 5, 3,
+   "Réduire de moitié l'attente en chirurgie", 5, 3, "Santé et politiques sociales",
    [article("TVA", "Le PCQ veut couper les délais en chirurgie de moitié")]],
 
   // ── Cas limites, que la donnée réelle ne fournit pas ──────────────────────
@@ -85,13 +86,21 @@ const PROMESSES = [
   // avec son dernier mot (cf. PromiseTitle).
   ["QS",
    "Québec solidaire déposera une loi-cadre sur la protection des milieux humides qui interdira toute compensation financière en remplacement d'une restauration effective du milieu détruit.",
-   "Interdire la compensation financière pour les milieux humides détruits", 4, 2,
+   "Interdire la compensation financière pour les milieux humides détruits", 4, 2, "Environnement et énergie",
    [article("LED", "Milieux humides | QS veut interdire la compensation en argent")]],
 
   // Aucun article : le bloc « À lire sur » doit simplement disparaître.
   ["PQ",
    "Le Parti Québécois rendra gratuit le transport collectif pour les personnes de 65 ans et plus dans l'ensemble des sociétés de transport du Québec.",
-   "Rendre le transport gratuit à 65 ans et plus", 6, 1, []],
+   "Rendre le transport gratuit à 65 ans et plus", 6, 1, "Culture et nationalisme", []],
+
+  // Aucune catégorie d'enjeu : le raffineur publie "NA" quand aucun thème n'a
+  // franchi son seuil. Cas NORMAL, pas une panne — les seuils sont calibrés sur
+  // de la presse, pas sur du communiqué. La promesse reste affichée, sans puce.
+  ["CAQ",
+   "Le gouvernement de la Coalition Avenir Québec maintiendra le cap sur les engagements pris devant la population au cours du présent mandat.",
+   "Maintenir le cap sur les engagements pris", 7, 2, "NA",
+   [article("JDM", "Legault dit maintenir le cap")]],
 
   // PAS de ligne « parti hors des cinq suivis », et il n'y a plus rien à rendre
   // pour ce cas : le chargeur ÉCARTE une ligne dont `partiKeyFromId` renvoie null
@@ -112,7 +121,7 @@ const PROMESSES = [
 // fixture le reproduit, sinon on ne pourrait pas éprouver ce comportement.
 function lignes(windowKey, garder) {
   return PROMESSES.filter(garder)
-    .map(([parti, verbatim, label, age, mentions, articles], i) => ({
+    .map(([parti, verbatim, label, age, mentions, categorie, articles], i) => ({
       country_id: "QC",
       window_key: windowKey,
       window_end: ANCRE,
@@ -120,6 +129,7 @@ function lignes(windowKey, garder) {
       promesse_id: `pn-fixture-${windowKey}-${String(i).padStart(2, "0")}`,
       party_id: parti,
       label,
+      category: categorie,
       promesse_text: verbatim,
       announce_date: jours(age),
       release_url: `https://example.invalid/communique/${parti.toLowerCase()}-${i}`,

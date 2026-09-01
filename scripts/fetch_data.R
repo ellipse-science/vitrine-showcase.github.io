@@ -79,6 +79,39 @@ POLIMETRE_KEEP_DAYS <- 70L
 # une fois, puis rien.
 HEADLINE_KEEP_DAYS <- 14L
 
+# Profondeur des articles servant au détail par enjeu du module 4
+# (cf. filtre radar_annotated_issues). Doit couvrir toute la campagne, dont la
+# vue « Campagne » remonte au déclenchement du scrutin : 45 jours tiennent
+# jusqu'au vote du 5 octobre 2026 avec de la marge.
+ISSUES_ARTICLES_KEEP_DAYS <- 45L
+
+# Thèmes CAP -> les 12 enjeux affichés.
+#
+# ⚠️ COPIE FIDÈLE de THEME_TO_CATEGORY dans
+# aws-refiners/refiners/radar-issues-score/runtime.R. Les deux DOIVENT rester
+# identiques : le POURCENTAGE d'un enjeu vient du raffineur, la LISTE D'ARTICLES
+# qui l'explique vient d'ici. Une divergence ferait mentir l'une ou l'autre sans
+# que rien ne le signale. Le test `enjeuxArticles` fige la table côté site.
+#
+# Cette duplication est un pis-aller assumé : la bonne réponse est que le
+# raffineur publie lui-même son `df_issues` (une ligne par article, url, titre,
+# 12 comptes), qu'il calcule déjà et jette. Tant qu'il ne le fait pas, on refait
+# ici exactement son calcul — vérifié le 31-08 : 0,00 point d'écart sur les 12.
+ISSUES_THEME_TO_CATEGORY <- list(
+  economy_and_labour                         = c("macroeconomics", "labor", "domestic_commerce", "foreign_trade"),
+  rights_liberties_minorities_discrimination = c("rights_liberties_minorities_discrimination"),
+  health_and_social_services                 = c("health", "social_welfare"),
+  public_lands_and_agriculture               = c("public_lands", "agriculture"),
+  immigration                                = c("immigration"),
+  education                                  = c("education"),
+  environment_and_energy                     = c("environment", "energy"),
+  law_and_crime                              = c("law_and_crime"),
+  international_affairs_and_defense          = c("international_affairs", "defense"),
+  technology                                 = c("technology"),
+  governments_and_governance                 = c("governments_governance"),
+  culture_and_nationalism                    = c("culture_nationalism", "transportation", "housing")
+)
+
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
 apply_filter <- function(df, filter_id) {
@@ -113,6 +146,68 @@ apply_filter <- function(df, filter_id) {
       }
     }
     return(df)
+  }
+
+  if (filter_id == "radar_annotated_issues") {
+    # Les articles qui font le pourcentage de chaque enjeu du module 4.
+    #
+    # POURQUOI ON CALCULE ICI PLUTÔT QUE D'EXPÉDIER LA DONNÉE BRUTE.
+    # `sentence_analysis` pèse ~1 Mo par jour d'articles québécois ; sur la
+    # fenêtre de campagne, ~14 Mo, pour une donnée qu'on jette aussitôt les
+    # comptes faits. Le résultat, lui, tient dans quelques dizaines de Ko.
+    #
+    # ⚠️ `date_montreal_tz` est INUTILISABLE : mesurée le 31-08, elle est
+    # remplie sur 206 lignes sur 33 377 (0,6 %). Le raffineur ne s'y fie pas
+    # non plus et dérive la date de `headline_stop_utc`, remplie à 100 %. On
+    # fait pareil. Ne pas « simplifier » en revenant à la colonne nommée.
+    if (!all(c("country_id", "sentence_analysis", "headline_stop_utc") %in% names(df))) return(df)
+    df <- dplyr::filter(df, country_id == "QC")
+    if (nrow(df) == 0) return(df)
+
+    jour <- as.Date(substr(df$headline_stop_utc, 1, 10))
+    # Fenêtre ancrée sur la DONNÉE et non sur l'horloge, même raison que le
+    # filtre du Polimètre+ : si le raffineur cessait de publier, une fenêtre
+    # horlogère viderait le fichier ligne à ligne et le module perdrait ses
+    # articles en silence. Ancrée sur la donnée, elle gèle — c'est visible.
+    if (all(is.na(jour))) return(df[0, , drop = FALSE])
+    df <- df[!is.na(jour) & jour >= (max(jour, na.rm = TRUE) - ISSUES_ARTICLES_KEEP_DAYS), , drop = FALSE]
+    jour <- jour[!is.na(jour) & jour >= (max(jour, na.rm = TRUE) - ISSUES_ARTICLES_KEEP_DAYS)]
+    if (nrow(df) == 0) return(df)
+
+    compter <- function(json_txt) {
+      if (is.na(json_txt) || !nzchar(trimws(json_txt)) || json_txt == "[]") {
+        return(setNames(as.list(rep(0L, length(ISSUES_THEME_TO_CATEGORY))), names(ISSUES_THEME_TO_CATEGORY)))
+      }
+      phrases <- tryCatch(jsonlite::fromJSON(json_txt, simplifyVector = FALSE), error = function(e) list())
+      themes <- unlist(lapply(phrases, function(p) {
+        th <- p$themes
+        if (is.null(th)) character(0) else as.character(th)
+      }))
+      lapply(ISSUES_THEME_TO_CATEGORY, function(bruts) as.integer(sum(themes %in% bruts)))
+    }
+    comptes <- do.call(rbind, lapply(df$sentence_analysis, function(x) as.data.frame(compter(x))))
+
+    out <- cbind(
+      data.frame(
+        title = df$title, url = df$url, media_id = df$media_id,
+        jour = as.character(jour), stringsAsFactors = FALSE
+      ),
+      comptes
+    )
+    # Une Une est captée toutes les 10 min : le même article revient. Le
+    # raffineur compte TOUTES les captures (une histoire qui reste en Une pèse
+    # plus lourd), donc on somme au lieu de dédoublonner — sinon la liste
+    # cesserait d'expliquer le pourcentage qu'elle accompagne.
+    cles <- ifelse(is.na(out$url) | out$url == "", out$title, out$url)
+    enjeux <- names(ISSUES_THEME_TO_CATEGORY)
+    agrege <- stats::aggregate(out[, enjeux], by = list(cle = cles), FUN = sum)
+    premier <- out[!duplicated(cles), c("title", "url", "media_id", "jour")]
+    premier$cle <- cles[!duplicated(cles)]
+    out <- merge(premier, agrege, by = "cle")
+    out$cle <- NULL
+    out <- out[rowSums(out[, enjeux]) > 0, , drop = FALSE]
+    message("  -> radar_annotated_issues: ", nrow(out), " article(s) québécois retenus")
+    return(out)
   }
 
   message("  !! Unknown filter id: ", filter_id, " — passing through")

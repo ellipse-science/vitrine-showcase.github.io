@@ -21,6 +21,7 @@ import {
 } from "@/lib/data/polimetre-meta";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { ShareButton } from "@/components/interactive/ShareButton";
+import { couleurEnjeu } from "@/lib/enjeux";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
 // Number of promises shown at once — the maquette has five spots.
@@ -136,9 +137,130 @@ function VerdictTag({ verdict, label }: { verdict: VerdictSlug | null; label: st
   );
 }
 
-/* Vue « promesses de 2022 » — le module historique, inchangé. `modeSwitch` est
-   l'inverseur de mode injecté par la coquille : il n'apparaît que lorsqu'il y a
-   un second mode à offrir (cf. PolimetrePlusClient plus bas). */
+/* Filtre déroulant d'enjeu — partagé par les DEUX modes du Polimètre+.
+ *
+ * Extrait du mode « 2022 » le jour où le mode « campagne » en a eu besoin. Le
+ * dupliquer aurait laissé deux comportements clavier et deux gestions de
+ * fermeture à maintenir en parallèle, pour un composant dont l'accessibilité
+ * est la partie délicate.
+ *
+ * Les deux modes filtrent sur la MÊME chose : le libellé français de l'enjeu,
+ * l'un des 12. Seule leur PROVENANCE diffère — codée à la main dans la
+ * mastersheet pour « 2022 », inférée du texte pour la campagne.
+ *
+ * Le couple {value, label} survit à cette unification : il coûte peu et laisse
+ * la porte ouverte à une source dont la valeur de filtre ne serait pas ce qu'on
+ * affiche. */
+function EnjeuDropdown({
+  value,
+  onChange,
+  options,
+  allLabel = "Tous les enjeux",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; present: boolean }[];
+  allLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Fermeture au clic extérieur ou à Échap.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const courant = options.find((o) => o.value === value);
+
+  return (
+    <div className="ppl-cat-dropdown" ref={ref}>
+      <button
+        type="button"
+        className="ppl-issue-select ppl-cat-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Catégories d'enjeux"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {value === "all" ? allLabel : (courant?.label ?? value)}
+      </button>
+      {open && (
+        <ul className="ppl-cat-menu" role="listbox" aria-label="Catégories d'enjeux">
+          <li
+            role="option"
+            tabIndex={0}
+            aria-selected={value === "all"}
+            className={`ppl-cat-option${value === "all" ? " active" : ""}`}
+            onClick={() => {
+              onChange("all");
+              setOpen(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onChange("all");
+                setOpen(false);
+              }
+            }}
+          >
+            {allLabel}
+          </li>
+          {options.map(({ value: v, label, present }) => {
+            const active = value === v;
+            const cls = `ppl-cat-option${present ? "" : " ppl-cat-option--empty"}${active ? " active" : ""}`;
+            const choose = () => {
+              onChange(v);
+              setOpen(false);
+            };
+            return (
+              <li
+                key={v}
+                role="option"
+                // Les options sans donnée restent hors de l'ordre de tabulation :
+                // le clavier ne doit jamais s'arrêter sur un élément inerte.
+                tabIndex={present ? 0 : -1}
+                aria-selected={active}
+                aria-disabled={!present}
+                className={cls}
+                onClick={present ? choose : undefined}
+                onKeyDown={
+                  present
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          choose();
+                        }
+                      }
+                    : undefined
+                }
+              >
+                <SymboleEnjeu libelle={label} className="ppl-symbole" />
+                {label}
+                {present ? "" : " (aucune donnée)"}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* Vue « promesses de 2022 » — le module historique. `modeSwitch` est l'inverseur
+   de mode injecté par la coquille : il n'apparaît que lorsqu'il y a un second
+   mode à offrir (cf. PolimetrePlusClient plus bas). */
 function PolimetreView({
   data,
   modeSwitch,
@@ -151,26 +273,7 @@ function PolimetreView({
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
   const [category, setCategory] = useState<string>("all");
-  const [catOpen, setCatOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const catRef = useRef<HTMLDivElement>(null);
-
-  // Close the category dropdown on outside click or Escape.
-  useEffect(() => {
-    if (!catOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCatOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [catOpen]);
 
   const promises = data.ranges[range];
 
@@ -264,76 +367,15 @@ function PolimetreView({
           </nav>
 
           <div className="ppl-rail-head">Catégorie d&apos;enjeu</div>
-          <div className="ppl-cat-dropdown" ref={catRef}>
-            <button
-              type="button"
-              className="ppl-issue-select ppl-cat-trigger"
-              aria-haspopup="listbox"
-              aria-expanded={catOpen}
-              aria-label="Catégories d'enjeux"
-              onClick={() => setCatOpen((o) => !o)}
-            >
-              {category === "all" ? "Toutes les catégories" : category}
-            </button>
-            {catOpen && (
-              <ul className="ppl-cat-menu" role="listbox" aria-label="Catégories d'enjeux">
-                <li
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={category === "all"}
-                  className={`ppl-cat-option${category === "all" ? " active" : ""}`}
-                  onClick={() => {
-                    setCategory("all");
-                    setCatOpen(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setCategory("all");
-                      setCatOpen(false);
-                    }
-                  }}
-                >
-                  Toutes les catégories
-                </li>
-                {categoryItems.map(({ name, present }) => {
-                  const active = category === name;
-                  const cls = `ppl-cat-option${present ? "" : " ppl-cat-option--empty"}${active ? " active" : ""}`;
-                  const choose = () => {
-                    setCategory(name);
-                    setCatOpen(false);
-                  };
-                  return (
-                    <li
-                      key={name}
-                      role="option"
-                      // Disabled (no-data) options stay out of the tab order so
-                      // keyboard users never land on a non-interactive item.
-                      tabIndex={present ? 0 : -1}
-                      aria-selected={active}
-                      aria-disabled={!present}
-                      className={cls}
-                      onClick={present ? choose : undefined}
-                      onKeyDown={
-                        present
-                          ? (e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                choose();
-                              }
-                            }
-                          : undefined
-                      }
-                    >
-                      <SymboleEnjeu libelle={name} className="ppl-symbole" />
-                      {name}
-                      {present ? "" : " (aucune donnée)"}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          <EnjeuDropdown
+            value={category}
+            onChange={setCategory}
+            options={categoryItems.map(({ name, present }) => ({
+              value: name,
+              label: name,
+              present,
+            }))}
+          />
           <a
             className="ppl-metho-rail"
             href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
@@ -506,6 +548,7 @@ function NeuvesView({
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
   const [parti, setParti] = useState<PartiKey | "all">("all");
+  const [enjeu, setEnjeu] = useState<string>("all");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const promesses = data.ranges[range];
@@ -518,8 +561,23 @@ function NeuvesView({
     return PARTI_ORDER.map((k) => ({ key: k, present: present.has(k) }));
   }, [promesses]);
 
+  // Les douze catégories sont toujours listées, dans l'ordre alphabétique
+  // français, celles sans promesse sur la période étant grisées — même règle que
+  // les partis juste au-dessus, et que le filtre du mode « 2022 ».
+  const enjeuItems = useMemo(() => {
+    const present = new Set(
+      promesses.map((p) => p.enjeu).filter((e): e is string => !!e),
+    );
+    // MÊME liste que le mode « 2022 » : les 12 libellés canoniques. Une seule
+    // source d'ordre pour les deux modes, sinon ils divergeraient.
+    return CATEGORY_ORDER
+      .map((libelle) => ({ value: libelle, label: libelle, present: present.has(libelle) }))
+      .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  }, [promesses]);
+
   const filtered = promesses
     .filter((p) => parti === "all" || p.parti === parti)
+    .filter((p) => enjeu === "all" || p.enjeu === enjeu)
     .slice(0, TOP_N);
 
   return (
@@ -612,6 +670,23 @@ function NeuvesView({
             })}
           </nav>
 
+          {/* Même filtre que le mode « 2022 », même composant. La différence est
+              la NATURE de la catégorie, pas le filtre : ici elle est inférée du
+              texte de la promesse, là-bas codée à la main — d'où l'infobulle. */}
+          <div className="ppl-rail-head">
+            Enjeu probable
+            <InfoTip size="sm" label="Enjeu probable">
+              Ces enjeux sont déterminés automatiquement à partir du texte de chaque
+              promesse. Ils n&apos;ont pas été attribués par une personne, contrairement
+              à ceux des promesses de 2022.
+            </InfoTip>
+          </div>
+          <EnjeuDropdown
+            value={enjeu}
+            onChange={setEnjeu}
+            options={enjeuItems}
+          />
+
           {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
               qui décide ce qui compte comme promesse, dans les deux modes. Le
               prompt de repérage applique son critère de testabilité — pointer
@@ -687,6 +762,29 @@ function NeuvesView({
                             </InfoTip>
                           </p>
                           <blockquote className="ppl-detail__verbatim">{p.verbatim}</blockquote>
+                          {/* La catégorie d'enjeu est INFÉRÉE ici, alors que celle du mode
+                              « 2022 » est codée à la main. Le libellé le dit (« Enjeu
+                              probable ») plutôt que de laisser croire à un codage humain :
+                              une promesse sans enjeu reconnu n'affiche simplement rien. */}
+                          {p.enjeu && (
+                            <p className="ppl-detail__enjeu">
+                              <span
+                                className="ppl-enjeu-puce"
+                                style={{
+                                  backgroundColor: couleurEnjeu(p.enjeu),
+                                }}
+                                aria-hidden="true"
+                              />
+                              <span className="ppl-enjeu-label">
+                                Enjeu probable&nbsp;: {p.enjeu}
+                              </span>
+                              <InfoTip size="sm" label="Enjeu probable">
+                                Cet enjeu est déterminé automatiquement à partir du texte de la
+                                promesse. Il n&apos;a pas été attribué par une personne,
+                                contrairement à ceux des promesses de 2022.
+                              </InfoTip>
+                            </p>
+                          )}
                           <p className="ppl-detail__meta">
                             Annoncée le {formatAnnonce(p.announceDate)}
                             {p.nMentions > 0 ? (
@@ -755,18 +853,25 @@ export function PolimetrePlusClient({
   data,
   neuves,
   editionKey,
+  defaultMode = "polimetre",
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
   editionKey?: string;
+  /* Mode affiché au premier rendu. Existe pour DEUX raisons :
+     1. le mode « campagne » est autrement inatteignable sans clic, donc
+        intestable — c'est ce trou qui a laissé passer un rail sans son filtre
+        d'enjeu jusqu'en revue;
+     2. c'est la « une ligne » annoncée ci-dessous pour basculer le défaut le
+        jour où la campagne le justifie. */
+  defaultMode?: ModeKey;
 }) {
   const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
   /* Défaut = le module historique, PAS le mode neuf. Un visiteur qui revient doit
      retrouver ce qu'il connaît ; le mode « campagne » s'offre, il ne s'impose pas.
      L'ordre de l'inverseur suit ce défaut — un inverseur qui présente en premier
-     un mode qui n'est pas celui affiché se lit comme un état incohérent.
-     Basculer le défaut, le jour où la campagne le justifie, tient en une ligne. */
-  const [mode, setMode] = useState<ModeKey>("polimetre");
+     un mode qui n'est pas celui affiché se lit comme un état incohérent. */
+  const [mode, setMode] = useState<ModeKey>(defaultMode);
 
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 

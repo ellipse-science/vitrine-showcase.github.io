@@ -326,7 +326,10 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
               )}
             </span>
             {deputy.topIssueLabel && (
-              <span className="carte-position">{deputy.topIssueLabel}</span>
+              <span className="carte-position">
+                <SymboleEnjeu cle={deputy.topIssueKey} className="assemblee-symbole" />
+                {deputy.topIssueLabel}
+              </span>
             )}
             <span className="carte-plaque">
               <span className="carte-nom">{deputy.name}</span>

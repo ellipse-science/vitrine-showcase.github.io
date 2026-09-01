@@ -2394,7 +2394,7 @@
   '',
   '👁️ CE WORKFLOW NE SE SURVEILLE PLUS LUI-MÊME (vitrine#628) : l\'alarme de fraîcheur vivait ICI, en step. Elle ne mesurait donc rien quand le workflow ne tournait pas, et elle est restée muette pendant deux gels de plusieurs jours (21-23 et 28-30 août 2026). La garde <code>garde-fraicheur.yml</code> tourne maintenant <strong>toutes les heures</strong>, depuis un workflow séparé : elle lit sur la prod déployée <code>/data/hero-selection.json</code> (le bloc affiché) et <code>/build-id.json</code> (l\'âge du build), et ouvre une issue au-delà de 7h.',
                         '',
-                        '🚀 Après le commit : le workflow <code>deploy.yml</code> reconstruit le site Next.js et le publie sur GitHub Pages ; les données fraîches sont aussi synchronisées vers la branche <code>prod</code>.',
+                        '🚀 Après le commit : Cloudflare Pages reconstruit <code>dev.vitrinedemocratique.com</code> par son intégration Git ; les données fraîches sont aussi synchronisées vers la branche <code>prod</code>. Le miroir GitHub Pages et son workflow <code>deploy.yml</code> ont été débranchés le 30 août 2026.',
                         '',
                         '⛔ NE JAMAIS éditer <code>public/data/</code> à la main — le prochain rafraîchissement écrase tout.'
                     ]

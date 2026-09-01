@@ -435,7 +435,7 @@ export function DeuxSolitudesRadar({ solitudes: s }: { solitudes: SolitudeData }
             // plus tôt. En hauteur, il suffit de gonfler `eyeH` : `top`,
             // `title1Y` et `blockH` en dépendent déjà, et la troncature des
             // rangées de médias absorbe le surplus sur les deux axes serrés.
-            const SYMB = 15;
+            const SYMB = 20;   // 15 auparavant : trop discret face au titre d'axe (retour d'Adrien, 30-08)
             const symbH = a.issueKey ? SYMB + 4 : 0;
             const eyeH = a.eyebrow ? EYE_GAP + symbH + (eyeLines.length - 1) * EYE_LINE_H : symbH;
             // Rien ne doit jamais chevaucher le disque du radar (#394, extension

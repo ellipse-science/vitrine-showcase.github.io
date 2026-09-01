@@ -172,6 +172,8 @@ export type DeputyRow = {
   toneScore: number;
   /** Enjeu dominant : tient lieu de « position » sur la carte. */
   topIssueLabel?: string;
+  /** La clé CAP de l'enjeu dominant, pour en tirer le symbole sur la carte. */
+  topIssueKey?: string;
   topIssueColor?: string;
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
@@ -701,6 +703,7 @@ function buildDeputyList(
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
+      topIssueKey: top?.cle ?? undefined,
       topIssueColor: top?.color,
       enjeuStack: stack,
       affiliationHistory: affiliationHistoryFor(
