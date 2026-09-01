@@ -1,5 +1,11 @@
 [
   {
+    "pr": 662,
+    "date": "2026-09-01T00:19:26Z",
+    "note": "Sous chaque enjeu, vous voyez maintenant les six articles qui en parlent le plus, avec leur média et leur poids dans l'enjeu. Ce sont les articles qui composent réellement le pourcentage affiché, et non plus une sélection venue d'un autre calcul.",
+    "version": null
+  },
+  {
     "pr": 661,
     "date": "2026-08-31T23:57:24Z",
     "note": "Rien de visible ne change pour l'instant. Cette mise à jour prépare l'affichage, sous chaque enjeu, des articles qui composent réellement son pourcentage.",
