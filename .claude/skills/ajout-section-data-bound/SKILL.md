@@ -15,5 +15,5 @@ Exemple canonique à cloner : `lib/data/parties.ts` + `components/sections/Parti
 5. **Câble** dans `app/page.tsx`, dans un wrapper `data-section="…"`.
 
 ## Pièges à ne pas rater
-- **Ordre table ↔ build (sinon le build casse).** Les loaders font `fs.readFile` sans try/catch : si le JSON n'existe pas au build, `npm run build` (et la CI/`deploy.yml`) échoue. L'activation de la table + le 1er refresh (JSON committé) doivent atterrir **avant ou avec** le code UI sur `main`. Sinon, durcis le loader pour renvoyer `null` sur `ENOENT` afin que la section se masque tant qu'il n'y a pas de donnée.
+- **Ordre table ↔ build (sinon le build casse).** Les loaders font `fs.readFile` sans try/catch : si le JSON n'existe pas au build, `npm run build` (et la CI/`deploy.yml`) échoue. L'activation de la table + le 1er refresh (JSON committé) doivent atterrir **avant ou avec** le code UI sur `develop`. Sinon, durcis le loader pour renvoyer `null` sur `ENOENT` afin que la section se masque tant qu'il n'y a pas de donnée.
 - **Label de module/signalement.** Une nouvelle section = un nouveau module : choisis un nom `data-section` cohérent et, si le triage par clic droit s'applique, un label GitHub assorti (cf. `AGENTS.md` § « Module naming + signalement labels »).

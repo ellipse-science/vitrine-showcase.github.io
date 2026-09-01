@@ -1,6 +1,6 @@
 # Garde-fou : rien n'atteint la production sans passage vérifié sur dev.
 #
-# Toute PR visant la branche `prod` (promotion de code) doit déclarer dans son
+# Toute PR visant la branche `main` (promotion de code) doit déclarer dans son
 # corps CE QUI a été vérifié sur l'environnement de travail : une ligne
 #   - [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé, en faits>
 # « Prouver, pas décrire » : la ligne doit nommer ce qui a été regardé (module,
@@ -14,7 +14,7 @@ name: garde-promotion
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    branches: [prod]
+    branches: [main]
 
 permissions:
   pull-requests: read

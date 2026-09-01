@@ -70,9 +70,9 @@ llm_context/                  Long-form architecture / design references
 
 ## Deployment
 
-Push to `main` → `.github/workflows/deploy.yml` runs `npm ci && npm run build` and publishes `out/` to GitHub Pages. Deploy is typically live within ~2 minutes of merge.
+Push to `develop` → `.github/workflows/deploy.yml` runs `npm ci && npm run build` and publishes `out/` to GitHub Pages. Deploy is typically live within ~2 minutes of merge.
 
-PRs trigger `.github/workflows/ci.yml` which runs the type-checker and full build — no flaky regressions reach `main`.
+PRs trigger `.github/workflows/ci.yml` which runs the type-checker and full build — no flaky regressions reach `develop`.
 
 ## Data pipeline
 
