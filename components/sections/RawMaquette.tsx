@@ -35,6 +35,8 @@ export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
   // Replace links with basePath prefix
   html = html.replace(/href="methodologie\/"/g, `href="${basePath}/methodologie/"`);
   html = html.replace(/href="apropos\/"/g, `href="${basePath}/apropos/"`);
+  html = html.replace(/href="apropos\/(equipe|partenaires)\/"/g, `href="${basePath}/apropos/$1/"`);
+  html = html.replace(/href="methodologie\/modeles\/"/g, `href="${basePath}/methodologie/modeles/"`);
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="journal\/"/g, `href="${basePath}/journal/"`);

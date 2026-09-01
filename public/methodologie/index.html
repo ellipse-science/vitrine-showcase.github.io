@@ -116,6 +116,11 @@
     gap: 30px;
   }
   .sub-nav .links { display: flex; gap: 22px; }
+  .sub-nav .nav-item { position: relative; display: inline-block; }
+  .sub-nav .nav-menu { display: none; position: absolute; top: 100%; left: 0; z-index: 30; min-width: 190px; margin-top: 6px; padding: 8px 0; background: var(--paper, #f4efe6); border: 0.5px solid var(--rule); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+  .sub-nav .nav-item:hover .nav-menu, .sub-nav .nav-item:focus-within .nav-menu { display: block; }
+  .sub-nav .nav-menu a { display: block; padding: 7px 14px; white-space: nowrap; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+  .sub-nav .nav-menu a:hover { color: var(--cordovan); }
   .sub-nav .links a.active { color: var(--cordovan); }
 
   /* Page header */
@@ -463,8 +468,14 @@
 
   <nav class="sub-nav">
     <div class="links">
-      <a href="./" class="active">Méthodologie</a>
-      <a href="../#propos">À propos</a>
+      <div class="nav-item">
+        <a href="./" class="active">Méthodologie</a>
+        <div class="nav-menu" role="menu"><a href="/methodologie/modeles/" role="menuitem">Nos modèles d'IA</a></div>
+      </div>
+      <div class="nav-item">
+        <a href="/apropos/">À propos</a>
+        <div class="nav-menu" role="menu"><a href="/apropos/equipe/" role="menuitem">Équipe</a><a href="/apropos/partenaires/" role="menuitem">Partenaires</a></div>
+      </div>
     </div>
   </nav>
 
