@@ -524,7 +524,13 @@ export default {
       }
 
       if (segments[0] === 'v1' && segments[1] === 'art') {
-        return handleArt(request, env, ctx, sql, segments[2] ?? '')
+        // LA QUEUE ENTIÈRE, pas seulement `segments[2]` : les pochettes des
+        // partis vivent sous `partis/<jour>/<parti>.<ext>`, un chemin à trois
+        // segments. Tronqué, il arrivait à handleArt comme « partis » tout
+        // court, donc 404. La validation reste stricte côté art.ts : la liste
+        // blanche des noms figés d'un côté, une expression régulière fermée
+        // pour les pochettes de l'autre.
+        return handleArt(request, env, ctx, sql, segments.slice(2).join('/'))
       }
 
       // GET /v1/health — fraîcheur par table. C'est ce qui rend détectable une

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { ART_FILES, MAX_UPLOAD_BYTES, heroKey, publishDecision } from "@/workers/api/src/art-logic";
+import {
+  ART_FILES,
+  MAX_UPLOAD_BYTES,
+  PARTY_SLUGS,
+  borneIndex,
+  borneJoursPosterieurs,
+  heroKey,
+  parsePochette,
+  publishDecision,
+} from "@/workers/api/src/art-logic";
 
 /**
  * La décision de publication est LE garde-fou économique du circuit
@@ -61,5 +70,83 @@ describe("liste blanche des fichiers d'art", () => {
 
   it("borne le téléversement au-dessus du PNG de gpt-image-1 (~1,5 Mo)", () => {
     expect(MAX_UPLOAD_BYTES).toBeGreaterThan(2 * 1024 * 1024);
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LES POCHETTES DES PARTIS — validation du chemin.
+
+   C'est le seul contrôle entre le réseau et le bucket : `parsePochette` dit
+   oui ou non, et un « oui » trop large ferait de /v1/art un dépôt de fichiers
+   arbitraires. On éprouve donc autant les refus que les acceptations.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("parsePochette", () => {
+  it("accepte les quatre formats publiés, pour chaque parti", () => {
+    for (const parti of PARTY_SLUGS) {
+      for (const ext of ["png", "webp", "avif", "json"]) {
+        const ref = parsePochette(`partis/2026-08-30/${parti}.${ext}`);
+        expect(ref).not.toBeNull();
+        expect(ref).toMatchObject({ jour: "2026-08-30", parti, ext });
+      }
+    }
+  });
+
+  it("refuse ce qui n'est pas exactement la forme attendue", () => {
+    const refuses = [
+      "partis/2026-08-30/npd.png",           // parti hors liste
+      "partis/2026-08-30/caq.gif",           // format non publié
+      "partis/2026-8-30/caq.png",            // date non ISO
+      "partis/2026-13-45/caq.png",           // date syntaxique mais inexistante
+      "partis/2026-02-30/caq.png",           // 30 février
+      "partis/../latest.png",                // remontée de chemin
+      "partis/2026-08-30/caq.png/../../x",   // remontée déguisée
+      "partis/2026-08-30/CAQ.png",           // casse
+      "partis/2026-08-30/caq.png ",          // espace final
+      "partis/2026-08-30//caq.png",          // segment vide
+      "latest.png",                          // fichier de la Une, autre liste
+      "",
+    ];
+    for (const chemin of refuses) {
+      expect(parsePochette(chemin), chemin).toBeNull();
+    }
+  });
+
+  it("borne l'index sur un horizon, pour que le listage ne grossisse pas", () => {
+    // Le 30 août moins 30 jours tombe le 31 juillet : c'est cette borne que le
+    // listage R2 passe en `startAfter`, ce qui évite de parcourir toute
+    // l'archive à chaque appel.
+    expect(borneIndex(new Date("2026-08-30T12:00:00Z"), 30)).toBe("2026-07-31");
+    expect(borneIndex(new Date("2026-01-05T00:00:00Z"), 30)).toBe("2025-12-06");
+  });
+});
+
+/* Le GEL DES JOURNÉES CLOSES repose entièrement sur l'ordre des octets : la
+   borne doit sauter par-dessus toutes les clés du jour et s'arrêter avant la
+   première du lendemain. Un « / » (0x2F) et un « 0 » (0x30) séparent les deux
+   cas, ce qui est trop subtil pour être tenu pour acquis. */
+describe("borneJoursPosterieurs", () => {
+  const jour = "2026-08-30";
+  const borne = borneJoursPosterieurs(jour);
+
+  it("ignore les clés du jour lui-même", () => {
+    for (const cle of [
+      `partis/${jour}/caq.png`,
+      `partis/${jour}/qs.json`,
+      `partis/${jour}/pcq.avif`,
+    ]) {
+      expect(cle > borne, cle).toBe(false);
+    }
+  });
+
+  it("ignore les jours antérieurs", () => {
+    for (const cle of ["partis/2026-08-29/caq.png", "partis/2026-07-31/caq.png", "partis/2025-12-31/caq.png"]) {
+      expect(cle > borne, cle).toBe(false);
+    }
+  });
+
+  it("voit les jours postérieurs, y compris par-dessus un mois ou une année", () => {
+    for (const cle of ["partis/2026-08-31/caq.png", "partis/2026-09-01/caq.png", "partis/2027-01-01/caq.png"]) {
+      expect(cle > borne, cle).toBe(true);
+    }
   });
 });

@@ -152,6 +152,23 @@ function sovFor(party, date, rand, daysFromEnd) {
   let v = BASE_SOV[party] * (0.82 + 0.36 * rand());
   if (party === "CAQ" && daysFromEnd <= 8) v *= 1 + 0.55 * (1 - daysFromEnd / 8);
   if (party === "PCQ" && daysFromEnd <= 5) v *= 0.12;
+
+  // LA FIN DE SEMAINE SE JOUE AUTREMENT — et il le faut.
+  //
+  // L'onglet Semaine couvre samedi → vendredi et classe sur les minutes DU
+  // JOUR. Avec la seule poussée de la CAQ ci-dessus, elle mène ses sept jours
+  // d'affilée : sept lignes parallèles, aucun croisement, et le graphique de
+  // rangs ne montre rien sur cet onglet-là.
+  //
+  // Caler l'écart sur le JOUR DE LA SEMAINE et non sur `daysFromEnd` : le
+  // scénario tient alors quel que soit le jour où l'on regarde, au lieu de
+  // dépendre de la date de génération.
+  const jourSemaine = new Date(`${date}T12:00:00Z`).getUTCDay();
+  if (jourSemaine === 6 || jourSemaine === 0) {
+    if (party === "PQ") v *= 1.75;
+    if (party === "CAQ") v *= 0.7;
+    if (party === "QS") v *= 1.3;
+  }
   return v;
 }
 
@@ -318,8 +335,59 @@ const files = [
 // les cinq partis somment à 1. Les MINUTES, elles, s'accumulent depuis minuit
 // comme le fait le raffineur : deux grandeurs, deux comportements.
 const BLOCS = [0, 4, 8, 12, 16, 20];
+
+// LE PROFIL DE JOURNÉE d'un parti : QUAND il occupe la Une, pas combien.
+//
+// Sans lui, la forme cumulée des cinq partis était la MÊME et seule l'échelle
+// changeait : le classement de 04h était déjà celui de 20h. Sur le palmarès —
+// devenu une course aux RANGS, dont les croisements sont tout le propos — ça
+// donnait cinq lignes rigoureusement parallèles, soit le pire jeu d'essai
+// possible pour la visualisation qu'il s'agit de juger.
+//
+// Un fil d'actualité ne se distribue pas également sur une journée : un parti
+// perce au matin et s'essouffle, un autre ne sort qu'au bulletin du soir. Ces
+// poids-là, un par bloc, produisent de vrais doublements.
+//
+// ⚠️ LE PROFIL NE CHANGE QUE LA RÉPARTITION. Le total du jour reste celui de la
+// table `day` — la normalisation par `fin`, plus bas, s'en charge — donc le
+// dernier point du palmarès continue de valoir exactement ce qu'annonce la
+// pochette. C'est l'invariant de la PR #539, et il tient.
+const PROFIL_JOURNEE = {
+  PQ:  [1.9, 2.0, 1.6, 0.9, 0.5, 0.4], // très présent au matin, s'essouffle
+  CAQ: [0.3, 0.4, 0.6, 1.0, 1.8, 2.2], // ne perce qu'en fin de journée
+  QS:  [0.4, 0.7, 1.9, 2.0, 0.8, 0.5], // une poussée en milieu de journée
+  PLQ: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], // régulier, il sert de repère
+  PCQ: [1.0, 0.9, 1.1, 1.0, 0.9, 1.1], // rien de saillant
+};
+
 const intraday = [];
 const randIntra = rng(97);
+
+// LA JOURNÉE COURANTE EST PARTIELLE, comme en production.
+//
+// Le raffineur ne publie un bloc qu'une fois l'heure passée : à 13 h, la journée
+// s'arrête au bloc de 12 h et il reste huit heures à courir. Les fixtures, elles,
+// livraient les six blocs jusqu'à 20 h dès le matin — la course était donc courue
+// avant d'avoir commencé, et la piste restante, qui existe précisément pour dire
+// « ce n'est pas fini », ne se dessinait jamais.
+//
+// Deux blocs au minimum : `buildChartIntraday` refuse d'en tracer un seul, et
+// avant 04 h la journée n'en compterait qu'un.
+// ⚠️ `formatToParts` et non `format` : en fr-CA, `format` rend « 13 h », que
+// `Number()` lit NaN — toute comparaison devenait fausse et la journée retombait
+// silencieusement sur son repli de deux blocs.
+const HEURE_MTL = Number(
+  new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "America/Toronto", hour: "2-digit", hour12: false,
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === "hour")?.value ?? "0",
+);
+const blocsPublies = (date) => {
+  if (date !== TODAY) return BLOCS;
+  const passes = BLOCS.filter((h) => h <= HEURE_MTL);
+  return passes.length >= 2 ? passes : BLOCS.slice(0, 2);
+};
 
 // Le total du jour, par date et par parti, tel que la table `day` l'annonce.
 // C'est la valeur que lit la pochette : la courbe intra-journée doit finir
@@ -338,14 +406,15 @@ for (const date of D.slice(-8)) {
   const formes = Object.fromEntries(PARTIES.map((p) => [p, []]));
   const parts = Object.fromEntries(PARTIES.map((p) => [p, []]));
 
-  for (const h of BLOCS) {
+  BLOCS.forEach((h, iBloc) => {
     const brut = {};
     let total = 0;
     for (const party of PARTIES) {
       const base = sovFor(party, date, randIntra, 0);
-      // Un léger balancement propre au bloc, pour que la journée ait un relief.
-      const onde = 1 + 0.22 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party));
-      brut[party] = Math.max(0, base * onde);
+      // Le relief de la journée. Un léger balancement sinusoïdal ne suffisait
+      // pas : à 22 % d'amplitude sur le DÉBIT, il ne déplaçait jamais assez de
+      // minutes pour renverser un cumul.
+      brut[party] = Math.max(0, base * PROFIL_JOURNEE[party][iBloc]);
       total += brut[party];
     }
     for (const party of PARTIES) {
@@ -353,7 +422,7 @@ for (const date of D.slice(-8)) {
       formes[party].push(cumul[party]);
       parts[party].push(total > 0 ? brut[party] / total : 0);
     }
-  }
+  });
 
   // La FORME vient du balancement des blocs, l'ÉCHELLE de la table jour : on
   // normalise le cumul à 1 puis on le multiplie par le total publié. La courbe
@@ -361,11 +430,14 @@ for (const date of D.slice(-8)) {
   // qu'annonce la pochette. Les deux séries étaient tirées séparément et
   // visaient le même volume global sans jamais coïncider par parti — 2h27
   // contre 2h39 pour la CAQ.
+  const publies = blocsPublies(date);
   for (const party of PARTIES) {
     const totalJour = minutesDuJour[date]?.[party] ?? 0;
     const fin = formes[party].at(-1) || 0;
-    BLOCS.forEach((h, i) => {
+    let dernierPublie = 0;
+    publies.forEach((h, i) => {
       const fraction = fin > 0 ? formes[party][i] / fin : 0;
+      dernierPublie = round4(totalJour * fraction);
       intraday.push({
         party,
         block_hour: h,
@@ -375,13 +447,35 @@ for (const date of D.slice(-8)) {
         // l'accumulation de la journée à chaque passage, si bien que le dernier
         // bloc vaut le total du jour — celui de la table `day`, pas un autre.
         total_raw_score: round4(totalJour * fraction),
-        weighted_tone: 0,
+        // LE TON DU BLOC, et non plus zéro.
+        //
+        // Il valait zéro pour tout le monde, ce qui rendait la seconde course du
+        // palmarès — le disque le plus APPRÉCIÉ — parfaitement illisible : cinq
+        // partis ex æquo, donc classés par ordre alphabétique, cinq lignes
+        // parallèles. Le ton du jour, balancé au fil des blocs : il monte et
+        // descend, contrairement aux minutes qui ne font que s'accumuler.
+        weighted_tone: round4(
+          Math.max(-1, Math.min(1,
+            toneFor(party, randIntra, 0)
+              + 0.3 * Math.sin((h / 24) * Math.PI * 2 + PARTIES.indexOf(party) * 1.7),
+          )),
+        ),
         date_utc: date,
         date_montreal_tz: date,
         computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
         threshold: 0.02,
       });
     });
+
+    // LA TABLE `day` SUIT LA TRONCATURE. Sans ça, la pochette annoncerait le
+    // total d'une journée entière quand le dernier bloc publié n'en couvre que
+    // la moitié : deux durées pour le même parti sur le même écran, soit
+    // exactement ce que la PR #539 avait corrigé.
+    if (date === TODAY && publies.length < BLOCS.length) {
+      for (const r of lignesJour) {
+        if (r.date_utc === date && r.party === party) r.total_raw_score = dernierPublie;
+      }
+    }
   }
 }
 files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday]);
