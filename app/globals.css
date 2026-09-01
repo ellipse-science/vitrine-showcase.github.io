@@ -8896,21 +8896,21 @@
    suivantes) ; un second lien mène vers `/discotheque` pour qui veut tout le
    fonds. Voir `PalmaresTrophee` (composant).
    ─────────────────────────────────────────────────────────────────────────── */
-/* LA COLONNE ENTIÈRE : le disque, sa légende (une seule ligne, toujours — voir
-   `PalmaresTrophee`), le lien vers la discothèque. Centrée VERTICALEMENT dans
-   la rangée du palmarès (`align-items: stretch` sur `.palmares-rangee` étire
-   cette boîte à 186 px, la hauteur des knobs et du graphique ; `justify-content:
-   center` centre son contenu, plus court, dedans) plutôt que collée en haut —
-   un disque plaqué au sommet et un vide en dessous se lirait comme une erreur
-   de mise en page, pas comme un choix. */
-/* 112 px, PAS 148 : le disque et sa légende doivent tenir, empilés, dans les
-   139 px du graphique (`.palmares-figure`) — voir `.palmares-rangee`. Le
-   compte, la légende retirée le 2026-09-07 : 122 (disque, carré) + 6
-   (intervalle) + ~14 (flèche vers la discothèque) ≈ 142, tout juste sous
-   139 + le débord tolérable de la flèche (`.trophee-voir-tout` a sa propre
-   cible de clic plus large que son texte). Le disque grandit donc de 112 à
-   122 pour combler l'espace que la légende laissait vide, et se rapprocher
-   de la hauteur du graphique juste à côté sans la dépasser. */
+/* LA COLONNE ENTIÈRE : le lien vers la discothèque, le disque, sa légende
+   (une seule ligne, toujours — voir `PalmaresTrophee`). Centrée
+   VERTICALEMENT dans la rangée du palmarès (`align-items: stretch` sur
+   `.palmares-rangee` étire cette boîte à 186 px, la hauteur des knobs et du
+   graphique ; `justify-content: center` centre son contenu, plus court,
+   dedans) plutôt que collée en haut — un disque plaqué au sommet et un vide
+   en dessous se lirait comme une erreur de mise en page, pas comme un
+   choix. */
+/* LE LIEN VIT AU-DESSUS DU DISQUE depuis le 2026-09-01 (avant, une flèche
+   seule, « → », vivait en dessous — elle ne disait rien qu'on lise sans
+   deviner, et un lien vers une discothèque encore en production se lit
+   mieux comme une invite qu'on croise EN PREMIER). 122 px de disque + un
+   court libellé au-dessus tiennent dans les 186 px stretchés de la rangée
+   sans s'approcher du bord ; rester proche des 139 px du graphique juste à
+   côté (`.palmares-figure`) reste le but, pas une contrainte dure. */
 .trophee {
   display: flex;
   flex-direction: column;
@@ -9108,23 +9108,28 @@
   color: var(--ink-soft);
 }
 
-/* LE LIEN VERS LA DISCOTHÈQUE — une flèche, seule, sous le disque. Portait
-   aussi le nom du trophée (« Le single d'or ») jusqu'au 2026-09-07 : ce nom
-   s'écrit maintenant dans l'encadré du disque (`--palier`, voir
-   `.trophee-disque`) plutôt qu'en toutes lettres à côté — un encadré or,
-   platine ou diamant plutôt qu'une description. Il ne reste donc plus que ce
-   second accès, distinct du disque, vers l'historique complet.
+/* LE LIEN VERS LA DISCOTHÈQUE — un court libellé, au-dessus du disque depuis
+   le 2026-09-01 (une flèche seule, « → », vivait en dessous : elle ne disait
+   rien qu'on lise sans deviner, et une invite qu'on lit AVANT le disque se
+   comprend mieux qu'une sortie qu'on découvre après). Portait aussi le nom du
+   trophée (« Le single d'or ») jusqu'au 2026-09-07 : ce nom s'écrit
+   maintenant dans l'encadré du disque (`--palier`, voir `.trophee-disque`)
+   plutôt qu'en toutes lettres à côté. Il ne reste donc plus que ce second
+   accès, distinct du disque, vers l'historique complet.
 
-   `line-height: 1` et une cible plus large que son seul glyphe (`padding`) :
-   un caractère seul, aussi net soit-il, est une cible au clic frustrante
-   sans un peu de marge autour. `aria-label`/`title` portent le texte complet
-   — « → » seul ne dit rien à un lecteur d'écran. */
+   MÊME REGISTRE que les libellés des knobs (`.fader-label` dans `.knob`) :
+   petit, en capitales, espacé — le lien se lit comme une commande du pupitre,
+   pas comme une phrase éditoriale. */
 .trophee-voir-tout {
-  padding: 2px 3px;
-  margin: -2px -3px;
-  line-height: 1;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
   color: var(--cordovan);
   text-decoration: none;
 }

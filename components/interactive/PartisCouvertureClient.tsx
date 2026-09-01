@@ -1926,6 +1926,21 @@ function PalmaresTrophee({
 
   return (
     <div className="trophee">
+      {/* AU-DESSUS DU DISQUE, PAS EN DESSOUS — la flèche seule (« → »)
+          qui vivait sous le disque ne disait rien qu'on lise sans deviner.
+          Un lien vers une discothèque dont les pochettes sont ENCORE EN
+          PRODUCTION (rien n'est couronné avant la fin de la course) se lit
+          mieux comme une invite qu'on croise EN PREMIER, avant le disque
+          lui-même. */}
+      <a
+        className="trophee-voir-tout"
+        href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/discotheque/`}
+        aria-label={"Toute la discoth\u00e8que, pochettes en production"}
+        title={"Toute la discoth\u00e8que, pochettes en production"}
+      >
+        Toute la discothèque
+      </a>
+
       <button
         type="button"
         className="trophee-disque"
@@ -1944,15 +1959,6 @@ function PalmaresTrophee({
           mention={!termine ? `En t\u00eate\u00a0: ${gagnant.sigle}` : undefined}
         />
       </button>
-
-      <a
-        className="trophee-voir-tout"
-        href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/discotheque/`}
-        aria-label={"Voir toute la discoth\u00e8que"}
-        title={"Voir toute la discoth\u00e8que"}
-      >
-        →
-      </a>
     </div>
   );
 }

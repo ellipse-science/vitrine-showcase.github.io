@@ -159,15 +159,20 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     expect(html).toContain('style="--palier:var(--brass)"');
   });
 
-  it("un second lien, distinct du disque, mène vers /discotheque — une flèche, pas une phrase", () => {
-    // « Voir toute la discothèque » en toutes lettres ajoutait souvent plus de
-    // hauteur que le disque lui-même ; le texte complet survit dans
-    // `aria-label`/`title`, pas dans le lien visible.
+  it("un second lien, distinct du disque, mène vers /discotheque — AU-DESSUS du disque depuis le 2026-09-01", () => {
+    // La flèche seule (« → »), sous le disque, ne disait rien qu'on lise sans
+    // deviner. Un vrai libellé, au-dessus, la remplace.
     const lien = html.match(/<a class="trophee-voir-tout"[^>]*>([^<]*)<\/a>/);
     expect(lien).not.toBeNull();
-    expect(lien![1]).toBe("→");
+    expect(lien![1]).toBe("Toute la discothèque");
     expect(html).toMatch(/class="trophee-voir-tout"[^>]*href="[^"]*\/discotheque\/"/);
-    expect(html).toMatch(/class="trophee-voir-tout"[^>]*aria-label="Voir toute la discothèque"/);
+    expect(html).toMatch(/class="trophee-voir-tout"[^>]*aria-label="Toute la discothèque, pochettes en production"/);
+    // Le lien précède le disque dans le DOM (flex-direction: column, donc dans
+    // l'ordre visuel) : c'est la première chose qu'on croise, pas la dernière.
+    const iLien = html.indexOf('class="trophee-voir-tout"');
+    const iDisque = html.indexOf('class="trophee-disque"');
+    expect(iLien).toBeGreaterThan(-1);
+    expect(iDisque).toBeGreaterThan(iLien);
   });
 });
 
