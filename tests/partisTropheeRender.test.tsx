@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
-import type { PartiesData } from "@/lib/data/parties";
+import type { PartiesData, RowView } from "@/lib/data/parties";
 import type { Pochette } from "@/lib/data/pochettes";
 import { signaturePochette } from "@/lib/enjeux";
 
@@ -130,6 +130,16 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     expect(html).toMatch(new RegExp(`class="trophee-etiquette-sigle">${meneur.label}<`));
   });
 
+  it("ne montre qu'UNE mention, pas de double caché — le double a été essayé et abandonné le 2026-09-01", () => {
+    // Un double invisible au-dessus du disque, pour peser symétriquement,
+    // faisait déborder la carte (`overflow: hidden`) et effaçait la VRAIE
+    // mention entièrement. Un seul `<span class="trophee-etiquette-mention">`
+    // doit rester dans le HTML.
+    const mentions = html.match(/class="trophee-etiquette-mention"/g);
+    expect(mentions?.length).toBe(1);
+    expect(html).not.toContain("trophee-etiquette-mention--fantome");
+  });
+
   it("annonce une date de sortie — la même ligne d'arrivée que le graphique juste à côté", () => {
     // Publié jusqu'à midi (blocs [0,4,8,12]), l'arrivée du jour est à 20 h —
     // `chart.finish.label` pour la vue Jour (`buildChartIntraday`).
@@ -159,15 +169,20 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     expect(html).toContain('style="--palier:var(--brass)"');
   });
 
-  it("un second lien, distinct du disque, mène vers /discotheque — une flèche, pas une phrase", () => {
-    // « Voir toute la discothèque » en toutes lettres ajoutait souvent plus de
-    // hauteur que le disque lui-même ; le texte complet survit dans
-    // `aria-label`/`title`, pas dans le lien visible.
+  it("un second lien, distinct du disque, mène vers /discotheque — AU-DESSUS du disque depuis le 2026-09-01", () => {
+    // La flèche seule (« → »), sous le disque, ne disait rien qu'on lise sans
+    // deviner. Un vrai libellé, au-dessus, la remplace.
     const lien = html.match(/<a class="trophee-voir-tout"[^>]*>([^<]*)<\/a>/);
     expect(lien).not.toBeNull();
-    expect(lien![1]).toBe("→");
+    expect(lien![1]).toBe("Toute la discothèque");
     expect(html).toMatch(/class="trophee-voir-tout"[^>]*href="[^"]*\/discotheque\/"/);
-    expect(html).toMatch(/class="trophee-voir-tout"[^>]*aria-label="Voir toute la discothèque"/);
+    expect(html).toMatch(/class="trophee-voir-tout"[^>]*aria-label="Toute la discothèque, pochettes en production"/);
+    // Le lien précède le disque dans le DOM (flex-direction: column, donc dans
+    // l'ordre visuel) : c'est la première chose qu'on croise, pas la dernière.
+    const iLien = html.indexOf('class="trophee-voir-tout"');
+    const iDisque = html.indexOf('class="trophee-disque"');
+    expect(iLien).toBeGreaterThan(-1);
+    expect(iDisque).toBeGreaterThan(iLien);
   });
 });
 
@@ -300,20 +315,27 @@ describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse"
   });
 });
 
-describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-09-01", () => {
-  // RÉGRESSION du 2026-09-01 : un clic sur un deck ouvrait sa pochette EN
-  // PLACE, sous le pupitre (`PochetteOuverte`/`GatefoldInfos`, tous deux
-  // retirés). Le deck reste un bouton à état local, mais commande maintenant
-  // le panneau du disque d'or, plus bas (la table de mix est passée AVANT le
-  // palmarès dans l'ordre de la page, le même jour) plutôt qu'un volet local
-  // — le rendu statique ne peut donc prouver que l'état FERMÉ par défaut,
-  // comme pour le reste des composants à état de ce fichier.
+describe("les decks — inertes tant qu'aucun article n'est connu, depuis le 2026-09-01", () => {
+  // RÉGRESSION du 2026-09-01 : un clic sur un deck menait au panneau du
+  // disque d'or, une carte déjà retournée — mais ce panneau n'a rien à
+  // montrer tant que la course n'est pas courue (« disque en production »
+  // pour les cinq, sans rapport avec le parti cliqué). Sans `articleUrl`, le
+  // deck n'a donc plus rien à faire au clic : ni bouton, ni lien, un `<div>`
+  // inerte qui garde la place pour le jour où l'article existe vraiment.
   const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
-  const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"[^>]*>/g)];
+  const inertes = [...html.matchAll(/<div[^>]*class="deck-carre deck-carre--inerte"[^>]*>/g)];
 
-  it("quatre decks, quatre VRAIS boutons — pas de lien de deck", () => {
-    expect(boutons.length).toBe(4);
+  it("quatre decks, quatre VRAIS <div> inertes — ni bouton, ni lien", () => {
+    expect(inertes.length).toBe(4);
     expect(html).not.toMatch(/<a[^>]*class="deck-carre"/);
+    expect(html).not.toMatch(/<button[^>]*class="deck-carre"/);
+  });
+
+  it("aucun `aria-label`, aucun `title` — rien à annoncer tant qu'il n'y a rien à faire", () => {
+    for (const [balise] of inertes) {
+      expect(balise).not.toContain("aria-label");
+      expect(balise).not.toContain("title=");
+    }
   });
 
   it("la table de mix (le pupitre) précède le palmarès dans la page", () => {
@@ -326,21 +348,69 @@ describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-
     expect(iPalmares).toBeGreaterThan(iPupitre);
   });
 
-  it("aucun n'est sélectionné par défaut — le panneau est fermé", () => {
-    for (const b of boutons) {
-      expect(b[0]).toContain('aria-pressed="false"');
-      expect(b[0]).not.toContain("deck-carre--choisi");
-    }
-  });
-
-  it("l'annonce dit où mène le clic — le disque d'or, plus bas", () => {
-    expect(html).toMatch(/Voir sa pochette, plus bas, dans le disque d&#x27;or/);
-    expect(html).not.toContain("Ouvrir sa pochette, plus bas");
-  });
-
   it("aucune pochette ne s'ouvre plus EN PLACE, sous le pupitre", () => {
     expect(html).not.toContain('class="gatefold"');
     expect(html).not.toContain("gatefold-nom");
     expect(html).not.toContain("gatefold-fermer");
+    expect(html).not.toContain("deck-carre--choisi");
+  });
+});
+
+describe("les decks — mènent vers l'article représentatif quand il existe (aws-refiners#447)", () => {
+  // Sur « Tous les médias » (la position par défaut du fader), un deck n'a
+  // pas d'URL propre : `lienArticle` en choisit une parmi les médias qui en
+  // ont une pour ce parti (voir le commentaire de `lienArticle`,
+  // PartisCouvertureClient.tsx). Ce fixture donne DEUX médias au premier
+  // parti du classement, et AUCUN au second — pour prouver les deux issues,
+  // pas seulement la présente.
+  const base = donnees([0, 4, 8, 12, 16, 20]);
+  const visibles = base.ranges.today.rows.filter((r) => !r.inShadow);
+  const avecArticle = visibles[0];
+  const sansArticle = visibles[1];
+
+  const URL_LED = "https://ledevoir.example/article-a";
+  const URL_RCI = "https://rci.example/article-b";
+  const avecUrl = (rows: RowView[], url: string): RowView[] =>
+    rows.map((r) => (r.key === avecArticle.key ? { ...r, representativeUrl: url } : r));
+
+  const data: PartiesData = {
+    ...base,
+    medias: [
+      { id: "led", label: "Le Devoir" },
+      { id: "rci", label: "Radio-Canada" },
+    ],
+    byMedia: {
+      led: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_LED) } } },
+      rci: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_RCI) } } },
+    },
+  };
+
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
+
+  it("le deck du parti qui a un article devient un VRAI lien externe", () => {
+    const liens = [...html.matchAll(/<a class="deck-carre" href="([^"]*)"[^>]*>/g)];
+    expect(liens.length).toBe(1);
+    expect([URL_LED, URL_RCI]).toContain(liens[0][1]);
+  });
+
+  it("le lien s'ouvre dans un nouvel onglet, comme tout lien externe du site", () => {
+    expect(html).toMatch(/<a class="deck-carre" href="[^"]*" target="_blank" rel="noopener noreferrer"/);
+  });
+
+  it("l'annonce dit qu'on quitte le site pour un article, pas qu'on ouvre une pochette", () => {
+    expect(html).toContain("Lire l&#x27;article qui en parle le plus, dans un nouvel onglet.");
+  });
+
+  it("le deck d'un parti SANS article, lui, reste un <div> inerte", () => {
+    // `sansArticle` n'a plus de nom dans le DOM (aucun `aria-label` sur
+    // l'inerte) : on vérifie sa PRÉSENCE par son sigle, gravé sur le disque
+    // lui-même (`.cap-sigle`), pas par une annonce qui n'existe plus.
+    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">([\s\S]*?)<\/div>\s*<\/div>/g)];
+    expect(inertes.some(([, contenu]) => contenu.includes(`>${sansArticle.label}<`))).toBe(true);
+  });
+
+  it("trois decks sur quatre restent inertes — un seul a un article", () => {
+    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">/g)];
+    expect(inertes.length).toBe(3);
   });
 });
