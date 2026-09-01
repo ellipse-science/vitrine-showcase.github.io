@@ -1941,13 +1941,7 @@ function PalmaresTrophee({
         aria-label={detail + invite}
         title={detail + invite}
       >
-        <TropheeCouverture
-          entree={gagnant}
-          termine={termine}
-          range={range}
-          sortie={sortie}
-          mention={!termine ? `En t\u00eate\u00a0: ${gagnant.sigle}` : undefined}
-        />
+        <TropheeCouverture entree={gagnant} termine={termine} range={range} sortie={sortie} />
       </button>
     </div>
   );
@@ -1975,43 +1969,33 @@ function TropheeCouverture({
   termine,
   range,
   sortie,
-  mention,
 }: {
   entree: EntreeTrophee;
   termine: boolean;
   range: RangeKey;
   sortie: string;
-  /** Le sous-texte affiché sous « en production » — le disque du palmarès dit
-   *  qui mène (`En tête : X`) ; une carte du panneau ne le répète pas, son
-   *  rang est déjà son propre badge. */
-  mention?: string;
 }) {
   if (!termine) {
-    // UN DOUBLE INVISIBLE, ESSAYÉ ET ABANDONNÉ (2026-09-01) : dupliquer la
-    // mention au-dessus du disque pour peser symétriquement, dans une grille
-    // à trois rangées. Vérifié sur le rendu réel : la carte est trop courte
-    // pour loger le disque ET deux fois la mention — le total dépassait la
-    // boîte de 35 à 45 px, et comme `.trophee-disque`/`.trophee-panel-art`
-    // masquent leur dépassement (`overflow: hidden`), la mention RÉELLE
-    // disparaissait entièrement, invisible, plutôt que d'être mal centrée.
-    // Un bogue silencieux est pire qu'un bogue vu.
-    //
-    // Le disque et la mention forment maintenant un groupe centré comme UN
-    // bloc (`justify-content: center` sur la colonne) — la mention pèse sous
-    // le disque, donc le disque tombe un peu plus BAS que le centre exact de
-    // la carte plutôt que plus haut : mesuré sur le rendu réel, l'écart
-    // résiduel est de l'ordre de 3 à 8 px, contre 27 à 45 px avant ce
-    // correctif — largement dans la marge où l'œil lit « centré ».
+    // LE TITRE EN HAUT, LA DATE EN BAS — depuis le 2026-09-01 (« met single
+    // en production en haut et laisse sortie prévue en bas »). Les deux
+    // essais précédents empilaient tout d'UN SEUL côté du disque (groupe
+    // centré, puis bloc collé en bas) : sur le disque compact du palmarès,
+    // qui portait aussi le meneur (« En tête : X », retiré ici — le panneau
+    // ne le répétait déjà pas, son rang est son propre badge), le bloc du
+    // bas devenait trop grand pour la place restée sous le disque centré, et
+    // touchait au cercle. Répartir titre et date sur les DEUX bords opposés
+    // de la carte règle ça sans rien retirer de plus : chacun a toute la
+    // largeur de la carte pour lui, et le disque, seul élément dans le flux,
+    // se centre dans ce qui reste entre les deux — toujours par
+    // `position: absolute` sur le titre et la date, jamais en concurrence
+    // avec le disque pour la même moitié de boîte.
     return (
       <span className="trophee-etiquette">
+        <b className="trophee-etiquette-titre">{PRODUCTION_TROPHEE[range]}</b>
         <span className="trophee-etiquette-disque" style={{ ["--party" as string]: entree.couleur }}>
           <b className="trophee-etiquette-sigle">{entree.sigle}</b>
         </span>
-        <span className="trophee-etiquette-mention">
-          <b>{PRODUCTION_TROPHEE[range]}</b>
-          <span>{sortie}</span>
-          {mention && <span>{mention}</span>}
-        </span>
+        <span className="trophee-etiquette-mention">{sortie}</span>
       </span>
     );
   }
