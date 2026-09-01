@@ -1538,7 +1538,8 @@
                         'date_utc / date_montreal_tz - Horodatages de fin de calcul.',
                         'period_start / period_end - Fenêtre exacte de l\'accumulation.',
                         'computed_at - Horodatage UTC du calcul (sert à dédupliquer).',
-                        'threshold - Seuil d\'éclipse (0.02).'
+                        'threshold - Seuil d\'éclipse (0.02).',
+                        'representative_url - URL de l\'article ayant le plus contribué au score du parti sur ce média (aws-refiners#447) — colonne des SEULES tables _by_media_ ; permet au deck de la Vitrine de lier vers un article plutôt que de rester inerte.'
                     ],
                     details: [
                         '📋 15 tables publiées (aws-refiners#324) : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date)',

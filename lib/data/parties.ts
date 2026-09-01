@@ -160,6 +160,11 @@ type ShadowRow = {
   computed_at?: string;
   /** Présent uniquement dans les tables `*_by_media_*`. */
   media_id?: string;
+  /** Présent uniquement dans les tables `*_by_media_*` (aws-refiners#447) :
+   *  l'URL de l'article qui pèse le plus dans le score de ce parti sur CE
+   *  média. `null`/absent quand aucun article du groupe n'en a — jamais une
+   *  chaîne vide, qui se lirait comme un lien valide. */
+  representative_url?: string | null;
 };
 
 /** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
@@ -344,6 +349,13 @@ export type RowView = {
   peakDate: string;
   sparkPolyline: string;
   sparkCircles: { cx: number; cy: number; r: number }[];
+  /** L'article qui pèse le plus dans le score de ce parti — voir
+   *  `dernieresUrlsParParti`. Présent SEULEMENT sur les vues par média
+   *  (`byMedia`, aws-refiners#447) : l'agrégat « tous les médias » n'a pas
+   *  d'URL propre, il en existe une par média. `undefined` sur l'agrégat,
+   *  `null` sur un média sans article connu — deux absences différentes que
+   *  `Deck` distingue (voir `PartisCouvertureClient.tsx`). */
+  representativeUrl?: string | null;
 };
 
 /** Une ligne de la course, déjà projetée en coordonnées du viewBox. */
@@ -702,6 +714,31 @@ function lastDatesPerMonth(dates: string[]): string[] {
   const last = new Map<string, string>();
   for (const d of dates) last.set(d.slice(0, 7), d);
   return [...last.values()].sort();
+}
+
+/**
+ * L'URL représentative la plus RÉCENTE par parti, dans des lignes déjà
+ * filtrées sur UN SEUL média.
+ *
+ * `representative_url` n'est PAS une série — contrairement à `weighted_tone`
+ * ou `total_raw_score`, elle ne s'accumule pas sur la fenêtre glissante :
+ * chaque relevé republie sa propre valeur, la plus à jour l'emportant tout
+ * simplement sur les précédentes. Même départage que `buildLookup`,
+ * `computed_at`, pour la même raison : plusieurs relevés par jour sont
+ * publiés depuis que le raffineur tourne six fois par jour.
+ */
+function dernieresUrlsParParti(rows: ShadowRow[]): Map<string, string | null> {
+  const vus = new Map<string, string>();
+  const urls = new Map<string, string | null>();
+  for (const row of rows) {
+    const pKey = row.party.toLowerCase();
+    const quand = row.computed_at ?? "";
+    const vu = vus.get(pKey);
+    if (vu !== undefined && vu >= quand) continue;
+    vus.set(pKey, quand);
+    urls.set(pKey, row.representative_url ?? null);
+  }
+  return urls;
 }
 
 // Builds a date → party → entry lookup. First occurrence wins for duplicate
@@ -2085,11 +2122,18 @@ export async function loadParties(
         const c = computeStats(parMedia(mDay), parMedia(mWeek), parMedia(mMonth));
         if (!c) continue;
         medias.push({ id, label: MEDIA_LABELS[id] ?? id });
+        // `representative_url` n'est pas un champ du pipeline stats/history
+        // (`computeStats`/`buildRangeView` ne connaissent que des séries) :
+        // elle se pose à part, à même les lignes déjà filtrées sur CE média.
+        const avecUrl = (vue: RangeView, urls: Map<string, string | null>): RangeView => ({
+          ...vue,
+          rows: vue.rows.map((row) => ({ ...row, representativeUrl: urls.get(row.key) ?? null })),
+        });
         byMedia[id] = {
           ranges: {
-            today: buildRangeView(c.stats, "today", c.dates),
-            week: buildRangeView(c.stats, "week", c.dates),
-            overall: buildRangeView(c.stats, "overall", c.dates),
+            today: avecUrl(buildRangeView(c.stats, "today", c.dates), dernieresUrlsParParti(parMedia(mDay))),
+            week: avecUrl(buildRangeView(c.stats, "week", c.dates), dernieresUrlsParParti(parMedia(mWeek))),
+            overall: avecUrl(buildRangeView(c.stats, "overall", c.dates), dernieresUrlsParParti(parMedia(mMonth))),
           },
         };
       }
