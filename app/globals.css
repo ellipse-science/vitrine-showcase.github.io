@@ -9062,28 +9062,30 @@
   /* Un anneau clair près du bord, comme le vernis imprimé d'une vraie
      étiquette — sans lui, le cercle se lisait comme une simple pastille. */
   box-shadow: inset 0 0 0 clamp(1px, 3cqw, 3px) rgba(255, 255, 255, 0.22);
-  /* ⚠️ LE TROU DU SPINDLE, GÉOMÉTRIQUEMENT AU CENTRE, LIT COMME TROP HAUT
-     (signalé deux fois). Vérifié en mesurant le rendu réel : `top: 50%` sur
-     le `::before` tombe bien à 50,0 % exact de la boîte — ce n'est PAS un
-     bogue de calcul. Le sigle, lui, restait plaqué tout en bas
-     (`align-items: flex-end`) : la moitié haute du disque ne portait que le
-     trou, la moitié basse tout le texte, et c'est CETTE asymétrie qui se lit
-     comme un trou mal centré, pas sa position au pixel près. Le trou et le
-     sigle sont maintenant un seul groupe (`flex-direction: column`), centré
-     comme un bloc — le trou n'est plus au centre géométrique du disque, mais
-     c'est le disque ENTIER, trou et sigle ensemble, qui l'est. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8%;
+  /* ⚠️ DEUX CORRECTIFS D'AFFILÉE ONT RATÉ CE TROU (signalé trois fois).
+     D'abord `top: 50%` sur le `::before` seul — vérifié géométriquement
+     exact, mais le sigle restait plaqué tout en bas : la moitié haute du
+     disque ne portait que le trou, la moitié basse tout le texte, et cette
+     asymétrie se lisait comme un trou mal centré. Puis un groupe
+     (`flex-direction: column`) centrant trou + sigle ENSEMBLE comme un seul
+     bloc — mesuré sur le rendu réel : ça surcorrige, le trou (minuscule)
+     se retrouve tiré ~18 px au-DESSUS du centre exact du disque compact,
+     puisque le sigle (bien plus grand que le trou) pèse tout le bas du
+     groupe. Aucun des deux ne marche : le premier laissait le trou seul en
+     haut, le second le poussait plus haut encore.
+     Les deux éléments sont maintenant DÉCOUPLÉS : le trou reste au centre
+     géométrique exact (`top/left: 50%`, comme le tout premier essai — ce
+     n'était pas lui le problème), le sigle est positionné indépendamment
+     près du bas, avec de l'air sous lui (`bottom: 16 %`, pas plaqué contre
+     le bord comme avant) — les deux ne se disputent plus la même moitié de
+     boîte. */
 }
 .trophee-etiquette-disque::before {
-  /* Le trou du spindle — plus un élément de flux qu'une position absolue,
-     depuis qu'il forme un groupe avec le sigle plutôt que de viser le centre
-     du disque tout seul. */
   content: "";
-  flex: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 11%;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
@@ -9091,12 +9093,17 @@
   box-shadow: 0 0 0 1px rgba(28, 25, 23, 0.18);
 }
 .trophee-etiquette-sigle {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  transform: translateX(-50%);
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
   font-size: clamp(9px, 19cqw, 26px);
   letter-spacing: -0.01em;
   line-height: 1;
   color: var(--paper);
+  white-space: nowrap;
 }
 .trophee-etiquette-mention {
   /* `align-self: end` sous l'ancienne grille (n'avait d'effet que si une
