@@ -59,3 +59,10 @@ _worktrees/
 # (raffineur vitrine-art -> R2 -> API), plus jamais commitée.
 /public/data/generated-art/latest.*
 /public/data/hero-selection.json
+
+# Pochettes des partis (bac du jour + discothèque) : même circuit, rapatriées au
+# build par scripts/fetch_art.mjs. Le dossier peut aussi contenir les fausses
+# pochettes de scripts/make_pochettes_fixtures.mjs — raison de plus pour qu'il
+# ne parte jamais dans un commit.
+/public/data/generated-art/partis/
+/public/data/partis-selection.json

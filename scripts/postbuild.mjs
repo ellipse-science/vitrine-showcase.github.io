@@ -70,11 +70,14 @@ async function substituteVersion() {
 // latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
 // d'image plus tard ne demande aucune retouche ici.
 //
-// UNE exception nommée : hero-selection.json, le verdict de Une publié par
-// app/data/hero-selection.json/route.ts. Le raffineur vitrine-art le lit sur
-// le site déployé pour savoir QUOI illustrer — et ce n'est pas une donnée
-// vendue : c'est la Une déjà affichée en page d'accueil.
-const PRUNE_KEEP = new Set(["hero-selection.json"]);
+// DEUX exceptions nommées, sur le même principe : les verdicts que les
+// raffineurs d'illustration lisent sur le site déployé pour savoir QUOI
+// illustrer, plutôt que de les recalculer chacun de leur côté.
+//   - hero-selection.json  → la Une (app/data/hero-selection.json/route.ts)
+//   - partis-selection.json → les cinq pochettes du bac du jour
+// Ni l'un ni l'autre n'est une donnée vendue : les deux ne portent que ce qui
+// est déjà affiché à l'écran.
+const PRUNE_KEEP = new Set(["hero-selection.json", "partis-selection.json"]);
 
 async function pruneDataJson() {
   const dataDir = path.join(OUT_DIR, "data");
