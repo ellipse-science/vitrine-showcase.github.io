@@ -1,5 +1,11 @@
 [
   {
+    "pr": 675,
+    "date": "2026-09-01T22:45:23Z",
+    "note": "Aucune.",
+    "version": null
+  },
+  {
     "pr": 597,
     "date": "2026-09-01T22:25:47Z",
     "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle nomme correctement le modèle qui rédige les titres de la Une, changé aujourd'hui.",
