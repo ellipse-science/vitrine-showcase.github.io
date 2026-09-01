@@ -9039,6 +9039,7 @@
    seulement ce qu'il y a dessus. */
 .trophee-etiquette {
   container-type: inline-size;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9130,6 +9131,32 @@
   font-family: 'Source Serif 4', Georgia, serif;
   font-size: clamp(7px, 6cqw, 10px);
   color: var(--ink-soft);
+}
+/* LA MENTION DU PANNEAU — collée au bas de la pochette, pas centrée en
+   groupe avec le disque, depuis le 2026-09-01 (« plus subtile »). Sortie du
+   flux (`position: absolute`) : le disque n'a donc plus à lui laisser de
+   place, il se centre dans la carte ENTIÈRE — et la mention devient une
+   simple légende au bas, comme le sigle sur le voile d'une vraie pochette
+   (`.pochette-sigle`), pas un second sujet à égalité avec le disque. Sur une
+   seule ligne plutôt qu'empilée : moins de poids que la mise en page à deux
+   lignes du disque compact du palmarès, qui garde son traitement d'origine
+   (`.trophee-disque .trophee-etiquette-mention` ci-dessus, non touchée). */
+.trophee-panel .trophee-etiquette-mention {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35em;
+  padding-top: 0;
+}
+.trophee-panel .trophee-etiquette-mention b {
+  font-size: clamp(6.5px, 5.5cqw, 8px);
+}
+.trophee-panel .trophee-etiquette-mention span {
+  font-size: clamp(6.5px, 5cqw, 8px);
 }
 
 /* LE LIEN VERS LA DISCOTHÈQUE — un court libellé, au-dessus du disque depuis
