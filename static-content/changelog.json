@@ -1,5 +1,11 @@
 [
   {
+    "pr": 619,
+    "date": "2026-09-01T18:16:27Z",
+    "note": "Le module « De quel parti parle-t-on dans les médias? » troque ses colonnes contre un vrai palmarès en course, avec un disque d'or qui mène à la pochette de chaque parti.",
+    "version": "2.40.0-beta.0"
+  },
+  {
     "pr": 658,
     "date": "2026-09-01T02:05:46Z",
     "note": "L'œuf de Pâques DOOM et ses fichiers ne sont plus servis sur le site public. L'illustration de la Une s'aligne désormais avec le haut du titre.",
