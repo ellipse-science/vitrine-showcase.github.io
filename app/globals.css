@@ -8828,7 +8828,7 @@
    est un objet pressé un jour donné, elle n'a pas à changer quand on pousse le
    fader. Le nom du média reste gravé autour du capuchon du deck — c'est
    l'instrument, lui, qui doit répondre à la source. La date a pris sa place,
-   dans la légende du bac (`.disco-pressage`).
+   dans la légende du bac (`.bac-pressage`).
 
    Il était de toute façon rompu ici : son fond était `var(--bandeau)`, déclarée
    sur `.deck` seulement, et les bacs ne descendent pas de `.deck` — dans un bac
@@ -9092,7 +9092,9 @@
    est claire et chargée en bas, et « CAQ 17H55 » y devenait illisible. Le prompt
    demande pourtant de dégager le bas de l'image — le modèle n'en a rien fait, et
    on ne peut pas fonder la lisibilité sur une consigne qu'un modèle suit ou non.
-   Même traitement que `.disco-legende`, pour que les deux bacs se lisent pareil. */
+   La discothèque avait la même règle (`.disco-legende`) tant qu'elle montrait
+   une couverture au survol ; elle a été retirée le 2026-08-31 quand ce bac est
+   devenu un mur de tuiles au sigle, sans légende posée sur une image. */
 .bac-legende {
   position: absolute;
   left: var(--tranche);
@@ -9154,9 +9156,22 @@
    rétrécir sous sa largeur intrinsèque (1300 px pour cent cinquante tranches)
    et pousse la page en débordement horizontal. C'est le piège classique de
    flexbox, et il ne se voit qu'une fois le fonds rempli. */
+/* LES DEUX BACS EMPILÉS, jamais côte à côte.
+
+   Ils l'étaient tant que la discothèque tenait sur une seule ligne — le bac du
+   jour à gauche, à largeur fixe, elle remplissant le reste. Elle est passée par
+   une caisse qui défilait puis par une grille qui pouvait faire plusieurs
+   centaines de pixels de haut, et les deux formes ont montré la même chose :
+   `align-items: flex-end` côte à côte suppose que les deux bacs font à peu
+   près la même hauteur, ce qui n'a plus jamais été garanti depuis. Sa carte
+   d'aujourd'hui — un seul disque en vitrine — est redevenue courte, mais
+   revenir à une rangée pour ce seul motif recréerait la même fragilité au
+   prochain remaniement. Empilés en colonne, chacun garde sa propre largeur et
+   son propre filet de tête, quelle que soit sa hauteur, comme deux rayons du
+   même magasin plutôt que deux colonnes forcées à s'accorder. */
 .bacs {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   gap: 26px;
   margin: 26px 0 0;
 }
@@ -9164,30 +9179,23 @@
 .bacs .disco {
   margin-top: 0;
 }
-.bacs .bac { flex: 0 0 auto; }
-.bacs .disco { flex: 1 1 auto; min-width: 0; }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   LA DISCOTHÈQUE : un vinyle par parti et par jour, qui s'accumulent.
+   LA DISCOTHÈQUE : le vinyle le plus écouté, en vitrine.
 
-   La forme vient du croquis du 2026-08-30 : une caisse LONGUE, remplie de
-   tranches, où chaque colonne est une journée. Elle défile latéralement — le
-   seul endroit du site où c'est voulu, parce que c'est exactement le geste
-   qu'on a devant un bac de disquaire.
+   ⚠️ DEUX FORMES ESSAYÉES ET ÉCARTÉES, jusqu'au 2026-08-31 : une caisse à
+   tranches qui défilait (150 lames de 9 px, sept écrans de défilement au
+   doigt), puis un mur de tuiles de couleur avec un sigle (tout tenait à
+   l'écran, mais chaque disque restait un petit carré anonyme). Les deux
+   tentaient de FAIRE TENIR cent cinquante pochettes dans ce module, qui n'a la
+   place ni de les montrer ni de les nommer correctement — c'est la vraie
+   raison pour laquelle les deux ont fini par paraître pauvres malgré leurs
+   efforts.
 
-   POURQUOI DES TRANCHES ET PAS DES COUVERTURES. Trente jours font cent
-   cinquante pochettes. En couvertures, c'est un mur d'images où l'on ne trouve
-   rien ; par la tranche, ça se lit comme un vrai fonds, une colonne par jour et
-   la couleur pour seul repère. Même parti pris, et mêmes proportions, que le
-   bac du jour plus haut.
-
-   LA COUVERTURE SE POSE SUR LE PAQUET, centrée sur sa tranche, plutôt que de
-   sortir par le côté comme dans le bac du jour : la caisse est ici un conteneur
-   qui défile, et une couverture qui sortirait par la droite se ferait couper net
-   au bord du défilement. Elle recouvre donc ses voisines — le geste de sortir un
-   disque et de le tenir devant les autres. Une baie réservée AU-DESSUS des
-   tranches a été essayée d'abord : la caisse se retrouvait vide aux trois quarts
-   au repos, pour une couverture qu'on n'y voit qu'au survol.
+   LA CARTE MONTRE UN SEUL DISQUE — le plus écouté — avec sa vraie illustration,
+   son nom en toutes lettres, sa durée et sa date. Toute la carte est un LIEN
+   vers `/discotheque` : c'est cette page, pas ce module, qui a la place pour
+   cent cinquante disques, en vraies pochettes, cinq par ligne.
    ─────────────────────────────────────────────────────────────────────────── */
 .disco {
   margin: 26px 0 0;
@@ -9195,168 +9203,147 @@
   border-top: 2px solid var(--ink);
 }
 
-.disco-boite {
-  --disco-cote: 132px;   /* le côté d'une couverture, et la hauteur des tranches */
-  --disco-tranche: 9px;  /* plus mince encore que le bac du jour : il y en a 150 */
-  border: 1px solid var(--ink);
-  border-top: none;
-  background: var(--paper-deep);
-  margin-top: 20px;
-  padding: 0 12px;
-  /* Le défilement latéral vit ICI. `overflow-y: visible` serait ignoré dès que
-     l'axe X est `auto` (le navigateur promeut alors les deux en `auto`) : d'où
-     la baie interne, qui garde la couverture dépliée DANS la boîte. */
-  overflow-x: auto;
-  overflow-y: hidden;
-  /* CONTEXTE D'EMPILEMENT PROPRE. Les tranches se chevauchent dans un ordre
-     voulu (cf. `.disco-case`), ce qui demande des `z-index` élevés ; sans
-     isolation, ils entreraient en concurrence avec toute la page et une
-     pochette survolée pourrait passer devant l'entête du site. */
-  isolation: isolate;
-}
-/* UNE SEULE PILE, SANS INTERSTICE. Les pochettes sont rangées par temps
-   d'écoute, tous jours confondus : un écart entre les journées redécouperait ce
-   classement et le contredirait. Elles se touchent donc, comme dans un bac
-   qu'on a rangé d'une traite.
-
-   Le rembourrage latéral vaut une demi-couverture : c'est ce qui permet à la
-   PREMIÈRE et à la DERNIÈRE pochette de se centrer au survol sans buter contre
-   la paroi. */
-.disco-rangee {
+/* LA CARTE ELLE-MÊME est le lien : pas de bouton posé dessus, toute sa surface
+   se clique. `--party` porte la couleur du disque vedette jusqu'au filet
+   d'accent et jusqu'au dégradé sous l'illustration. */
+.disco-vedette {
   display: flex;
-  align-items: flex-end;
-  padding: 14px calc(var(--disco-cote) / 2) 0;
-  margin: 0;
-  list-style: none;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 20px;
+  border: 1px solid var(--ink);
+  /* Le filet de couleur EN HAUT, comme la tranche d'un disque qu'on aurait
+     posé à plat sur l'étagère — même principe que le filet des plaques de
+     `/discotheque` (`.fonds-plaque`). */
+  border-top: 3px solid var(--party, var(--ink));
+  background: var(--paper-deep);
+  color: inherit;
+  text-decoration: none;
+  transition: background 160ms ease, box-shadow 160ms ease;
 }
-/* L'ORDRE D'EMPILEMENT, décroissant : le paquet penche vers la gauche, donc
-   chaque carte doit passer DEVANT sa voisine de droite, comme dans une main de
-   cartes qu'on étale.
+.disco-vedette:hover,
+.disco-vedette:focus-visible {
+  background: var(--paper);
+}
+.disco-vedette:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .disco-vedette { transition: none; }
+}
 
-   ⚠️ LA BASE EST GRANDE, ET C'EST TOUT LE POINT. Elle valait 50, hérité du bac
-   du jour qui n'a que cinq pochettes : au-delà de la 51e tranche, le calcul
-   passait NÉGATIF, et un `z-index` négatif place l'élément derrière le fond de
-   son parent. Sur 145 pochettes, 94 disparaissaient purement et simplement
-   derrière la caisse. Le défaut ne pouvait pas se voir sur cinq. */
-.disco-case {
-  flex: 0 0 auto;
-  position: relative;
-  width: var(--disco-tranche);
-  height: var(--disco-cote);
-  z-index: calc(2000 - var(--i, 0));
+/* L'ILLUSTRATION, au même gabarit que celle du bac du jour et de l'ancien
+   volet d'archive — même classes `.pochette-art`/`.pochette-image`/
+   `.pochette-sigle`, réutilisées telles quelles plutôt que réinventées. 140 px :
+   plus petite que les 168 du bac du jour, pour qu'une vitrine à un seul disque
+   ne pèse pas plus lourd que le rayon de cinq juste au-dessus. */
+.disco-vedette-art {
+  flex: none;
+  width: 140px;
+  border-right: 0.5px solid var(--rule);
 }
-.disco-case:hover, .disco-case:focus-within, .disco-case.sortie { z-index: 2001; }
-.disco-case:hover .bac-tranche-carton,
-.disco-case:focus-within .bac-tranche-carton,
-.disco-case.sortie .bac-tranche-carton { filter: brightness(1.14); }
-.disco-pochette {
+.disco-vedette-art .pochette-art {
   display: block;
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
 }
-
-/* LA COUVERTURE, posée sur le paquet, centrée sur sa tranche.
-
-   `z-index: 3` : au-dessus de `.bac-tranche-carton`, qui est à 2. Sans ça la
-   tranche de la pochette survolée se dessinait PAR-DESSUS SA PROPRE COUVERTURE
-   — un trait vertical en travers de l'image, qui coupait la légende en deux. */
-.disco-couverture {
+/* Le voile sous le sigle, même traitement que `.gatefold-volet--art` : une
+   illustration engendrée peut être claire jusqu'en bas, et un sigle sans fond
+   s'y efface. */
+.disco-vedette-art .pochette-art::after {
+  content: "";
   position: absolute;
-  z-index: 3;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: var(--disco-cote);
-  height: var(--disco-cote);
-  outline: 1px solid var(--ink);
-  outline-offset: -1px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 160ms ease;
-  pointer-events: none;
-}
-.disco-couverture picture,
-.disco-couverture img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.disco-case:hover .disco-couverture,
-.disco-case:focus-within .disco-couverture,
-.disco-case.sortie .disco-couverture { opacity: 1; visibility: visible; }
-
-/* Le sigle et la durée, posés sur la couverture. Sur un voile d'encre et non
-   sur une ombre portée, proscrite par le langage visuel : sans fond, ils
-   deviennent illisibles dès que l'image est claire. */
-.disco-legende {
-  position: absolute;
+  z-index: 1;
   left: 0;
   right: 0;
   bottom: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  /* La date est poussée au bout du bandeau : sigle et durée à gauche, pressage
-     à droite. */
-  justify-content: flex-start;
-  padding: 5px 8px 6px;
-  background: rgba(28, 25, 23, 0.72);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(243, 236, 221, 0.85);
+  height: 46%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.6) 100%);
+  pointer-events: none;
 }
-.disco-legende b {
+.disco-vedette-art .pochette-sigle {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  bottom: 10px;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.01em;
   line-height: 1;
   color: var(--paper);
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.35);
 }
 
-/* LA DATE, SUR LE VINYLE. Elle vivait sous la colonne du jour ; la pile n'a plus
-   de colonnes, alors elle est montée sur la couverture. Poussée au bout du
-   bandeau, dans l'encre la plus discrète, en petites capitales espacées : c'est
-   une mention de pressage au dos d'une pochette, pas un titre.
+.disco-vedette-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px 18px;
+}
+.disco-vedette-etat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+.disco-vedette-nom {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.disco-vedette-detail {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+/* LE LIEN, dit en toutes lettres plutôt que réduit à une flèche : c'est la
+   seule sortie de ce module vers `/discotheque`, elle doit se voir. */
+.disco-vedette-cta {
+  margin-top: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--cordovan);
+}
+.disco-vedette-cta::after {
+  content: "→";
+  margin-left: 5px;
+}
+.disco-vedette-compte {
+  margin-left: 6px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-softer);
+}
 
-   UNE SEULE RÈGLE POUR LES DEUX BACS. Le bac du jour porte la même mention
-   depuis que le bandeau du média a quitté les pochettes. Une règle jumelle
-   aurait dérivé au premier ajustement — c'est déjà ce qui était arrivé aux deux
-   légendes avant qu'on les aligne. */
-.disco-pressage,
+@media (max-width: 480px) {
+  /* La carte se plie plutôt que de comprimer l'illustration : sous 480 px, une
+     colonne de 140 px de bord à bord se lit mieux qu'une rangée écrasée. */
+  .disco-vedette { flex-direction: column; }
+  .disco-vedette-art { width: 100%; border-right: none; border-bottom: 0.5px solid var(--rule); }
+}
+
+/* Toujours utile hors de la discothèque : la date sur la pochette du jour
+   (`.bac-legende .bac-pressage`). */
 .bac-pressage {
   margin-left: auto;
   font-size: 7.5px;
   letter-spacing: 0.18em;
   white-space: nowrap;
   color: rgba(243, 236, 221, 0.55);
-}
-
-/* Sous 900 px, les deux bacs ne tiennent plus l'un à côté de l'autre : la
-   discothèque tomberait à quelques dizaines de pixels de large. Ils s'empilent,
-   le bac du jour d'abord. */
-@media (max-width: 900px) {
-  .bacs { flex-direction: column; align-items: stretch; gap: 8px; }
-  .bacs .disco { margin-top: 18px; }
-}
-
-@media (max-width: 640px) {
-  /* Au doigt, la tranche s'épaissit — même arbitrage que le bac du jour, la
-     fidélité cédant à l'usage — et la couverture rétrécit pour tenir dans
-     l'écran une fois centrée sur sa tranche. */
-  .disco-boite {
-    --disco-cote: 108px;
-    --disco-tranche: 16px;
-  }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -10089,12 +10076,25 @@
 /* ───────────────────────────────────────────────────────────────────────────
    PAGE DU FONDS (/discotheque) — tout ce que la discothèque a jamais rangé.
 
-   Le module n'en montre qu'un mois glissant, en pochettes. Ici c'est un
-   INVENTAIRE : une ligne par journée, cinq entrées par ligne, lisible de haut
-   en bas. Pas de couvertures — au bout d'un an il y en aurait 1825, et une
-   grille d'images ne se parcourt pas, elle se subit. La couleur du parti tient
-   dans un filet vertical, comme la tranche d'un disque dans un bac.
-   ─────────────────────────────────────────────────────────────────────────── */
+   Le module n'en montre qu'un mois glissant, et un seul disque (le plus
+   écouté). Ici c'est l'INVENTAIRE COMPLET, et il s'est rangé trois façons
+   depuis sa création :
+     1. une ligne par JOURNÉE, texte seul — le premier jet, jusqu'au 2026-08-31 ;
+     2. une ligne par journée, avec de vraies couvertures — le même jour, une
+        fois la crainte d'un « mur de 1825 images » démentie : ce n'est pas le
+        nombre total qui pose problème, c'est de les poser toutes sur un même
+        plan, et grouper par journée l'évitait déjà ;
+     3. PAR ARTISTE — depuis le 2026-09-01. Chaque parti a ses ALBUMS
+        hebdomadaires (sept singles au plus, samedi à vendredi, comme le
+        palmarès) et sa DISCOGRAPHIE de campagne (tous ses singles). Une
+        pochette n'est plus un point sur un calendrier, c'est un morceau dans le
+        catalogue d'un artiste — ce que la métaphore du magasin de disques
+        annonçait depuis le début sans jamais le tenir jusque-là.
+
+   LA VRAIE ILLUSTRATION QUAND ELLE EST CONFIRMÉE (`lireFonds`, dans
+   `lib/data/pochettes.ts`, ne l'écrit jamais sans avoir vérifié le fichier) ; à
+   défaut, un aplat de la couleur du parti — un trou dans une discographie doit
+   se voir, pas se confondre avec un vide de mise en page. */
 .fonds-container {
   margin: 48px 0;
   border-top: 0.5px solid var(--rule);
@@ -10129,87 +10129,295 @@
   color: var(--ink-soft);
 }
 
-.fonds-jours {
+/* LE SÉLECTEUR DE VUE — Semaine (albums) / Campagne (discographies). Même
+   matière et même geste que les knobs du palmarès juste au-dessus dans le
+   module : une plaque, une diode qui s'allume sur la voie choisie. Rectangulaire
+   plutôt que rotative — deux positions seulement, pas trois, et un knob à deux
+   crans n'aurait rien gagné à tourner. */
+.fonds-vue {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  margin-bottom: 22px;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+}
+.fonds-vue-bouton {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 6px 13px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-softer);
+}
+.fonds-vue-bouton:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.fonds-vue-diode {
+  width: 4px;
+  height: 12px;
+  background: color-mix(in srgb, var(--rule) 62%, transparent);
+}
+.fonds-vue-bouton[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 2px 3px rgba(28, 25, 23, 0.16);
+}
+.fonds-vue-bouton[aria-pressed="true"] .fonds-vue-diode { background: var(--ink); }
+
+.fonds-vide {
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* ─── LES PLAQUES — un album ou une discographie, la même forme pour les deux.
+
+   UN MUR DE COUVERTURES au repos : chaque plaque fermée n'est qu'une pochette
+   et son étiquette, rangées en grille comme un vrai bac qu'on parcourt du
+   regard. `display: contents` sur le `<li>` : la liste garde son sens sémantique
+   (une liste de plaques) sans imposer de boîte qui empêcherait `.fonds-plaque`
+   d'être elle-même la cellule de la grille — c'est elle, et non son `<li>`, qui
+   porte `.ouverte`.
+
+   UNE PLAQUE OUVERTE PREND TOUTE LA LARGEUR (`grid-column: 1 / -1`) : sa
+   tracklist a besoin de place pour respirer, ce qu'une colonne de 170 px ne
+   permet pas. Les plaques suivantes refluent simplement à la ligne d'après —
+   aucun JavaScript de réagencement, la grille s'en charge seule. ─── */
+.fonds-albums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-items: start;
+  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.fonds-jour {
-  padding: 0 0 18px;
-  margin-bottom: 18px;
-  border-bottom: 0.5px solid var(--rule);
+.fonds-albums > li { display: contents; }
+
+.fonds-plaque {
+  border: 1px solid var(--ink);
+  /* Le filet de couleur EN HAUT, même geste que la carte vedette du module
+     (`.disco-vedette`) : une pochette posée à plat porte sa tranche dessus. */
+  border-top: 3px solid var(--party, var(--ink));
+  background: var(--paper-deep);
 }
-.fonds-date {
+.fonds-plaque.ouverte { grid-column: 1 / -1; }
+
+/* LE DÉCLENCHEUR — toute la surface visible d'une plaque fermée. Colonne
+   (couverture au-dessus du texte) au repos, comme un disque debout dans un bac ;
+   rangée (couverture à côté du texte) une fois ouverte, où la couverture cède la
+   place à la tracklist. */
+.fonds-plaque-declencheur {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 0 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--cordovan);
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
 }
-/* Ce qui n'est plus servi le dit, plutôt que de laisser croire à une perte. */
-.fonds-hors {
-  letter-spacing: 0.14em;
+.fonds-plaque.ouverte .fonds-plaque-declencheur {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+}
+.fonds-plaque-declencheur:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+
+.fonds-plaque-couverture {
+  display: block;
+  width: 100%;
+}
+.fonds-plaque.ouverte .fonds-plaque-couverture {
+  flex: none;
+  width: 64px;
+}
+.fonds-plaque-couverture .pochette-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.fonds-plaque-couverture .pochette-sigle {
+  position: absolute;
+  z-index: 2;
+  left: 8px;
+  bottom: 8px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.35);
+}
+/* Le voile sous le sigle : une illustration engendrée peut être claire jusqu'en
+   bas, et un sigle sans fond s'y efface. */
+.fonds-plaque-couverture .pochette-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.55) 100%);
+  pointer-events: none;
+}
+.fonds-plaque.ouverte .fonds-plaque-couverture .pochette-sigle { display: none; }
+
+.fonds-plaque-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 10px 12px 12px;
+}
+.fonds-plaque.ouverte .fonds-plaque-tete { padding: 0; flex: 1 1 auto; }
+.fonds-plaque-tete b {
+  width: 100%;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.fonds-plaque.ouverte .fonds-plaque-tete b { width: auto; font-size: 19px; }
+.fonds-plaque-sous {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+/* LE TEMPS TOTAL : c'est le chiffre qui classe les plaques entre elles (l'album
+   ou la discographie le plus écouté vient en premier), il mérite la même place
+   que dans le palmarès. Poussé à droite SEULEMENT une fois ouverte — fermée, la
+   plaque est trop étroite pour que « poussé à droite » veuille dire autre chose
+   que « collé au bord ». */
+.fonds-plaque-total {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fonds-plaque.ouverte .fonds-plaque-total { margin-left: auto; font-size: 12px; }
+
+/* LA TRACKLIST — n'existe dans le DOM que plaque ouverte (voir
+   `DiscothequeClient.tsx`). `flex-wrap` la range en plusieurs lignes dans sa
+   plaque plutôt que d'imposer une largeur qui l'écraserait : un album en fait
+   sept au plus, une discographie de campagne peut en aligner des dizaines. */
+.fonds-pistes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-top: 0.5px solid var(--rule);
+  list-style: none;
+}
+.fonds-piste {
+  position: relative;
+  width: 58px;
+}
+.fonds-piste .pochette-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
+}
+/* LE RANG DE LA PISTE — une vraie tracklist se numérote. Posé en médaillon sur
+   le coin de la pochette plutôt qu'à côté : à 58 px de large, il n'y a pas la
+   place pour un numéro ET une image côte à côte. */
+.fonds-piste-rang {
+  position: absolute;
+  z-index: 2;
+  top: -5px;
+  left: -5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-style: normal;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--paper-deep);
+}
+.fonds-piste-legende {
+  display: block;
+  margin-top: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+}
+.fonds-piste-legende b {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+.fonds-piste-legende span {
   color: var(--ink-softer);
 }
 
-.fonds-pochettes {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* LE REPLI, sans image confirmée — même aplat pour la couverture d'une plaque
+   et pour une piste de la tracklist, chacune à sa propre taille. Un trou dans
+   la discographie reste visible comme tel, pas comme une case vide qu'on
+   pourrait confondre avec une erreur de mise en page. */
+.fonds-repli {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--party, var(--rule));
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
 }
-/* Le filet de couleur À GAUCHE : c'est la tranche du disque, le seul repère de
-   parti sur une page sans images. */
-.fonds-pochette {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-left: 10px;
-  border-left: 3px solid var(--party, var(--rule));
-  min-width: 0;
-}
-.fonds-sigle {
+/* Sur une COUVERTURE seulement : le sigle en texte, seul repère qui resterait
+   sinon pour parcourir un mur de plaques fermées sans image confirmée. Même
+   position que `.pochette-sigle`, pour que l'œil ne perçoive pas de différence
+   entre une vraie illustration et son repli. */
+.fonds-repli-sigle {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 900;
+  letter-spacing: -0.01em;
   line-height: 1;
-  color: var(--ink);
-}
-.fonds-temps {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.fonds-enjeu {
-  font-size: 13px;
-  line-height: 1.3;
-  color: var(--ink-soft);
-}
-.fonds-ton,
-.fonds-sans-chiffres {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
+  color: var(--paper);
+  text-shadow: 0 1px 2px rgba(28, 25, 23, 0.3);
 }
 
 @media (max-width: 900px) {
-  .fonds-pochettes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fonds-title { font-size: 38px; }
   .fonds-lead { font-size: 16px; }
 }
 @media (max-width: 480px) {
-  .fonds-pochettes { grid-template-columns: minmax(0, 1fr); }
+  .fonds-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fonds-piste { width: 48px; }
 }
 
 /* Le lien vers le fonds, dans l'entête de la discothèque. Il reprend l'italique

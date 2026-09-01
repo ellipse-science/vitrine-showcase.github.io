@@ -19,7 +19,8 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PARTY_COLORS, PARTY_KEYS, type PartyKey } from "./parties";
+import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS, type PartyKey } from "./parties";
+import { samediDeLaSemaine, vendrediDeLaSemaine } from "@/lib/semaine";
 
 const RACINE = path.join(process.cwd(), "public", "data", "generated-art", "partis");
 
@@ -83,8 +84,18 @@ function jourCourt(iso: string): string {
   return `${Number(d)} ${MOIS_COURTS[Number(m) - 1] ?? ""}`.trim();
 }
 
-/** Une pochette du FONDS que le build ne sert pas : elle existe dans R2, hors de
- *  l'horizon d'images, et on n'en connaît que ce que le registre en dit. */
+/** Une pochette du FONDS, telle que la page `/discotheque` la montre.
+ *
+ *  Deux régimes selon l'horizon d'images (30 jours) :
+ *  - HORS HORIZON : `src` est `undefined`. Le listage R2 atteste que la
+ *    pochette existe, mais son fichier n'a pas été rapatrié pour ce build —
+ *    il n'y a rien à afficher, texte seul.
+ *  - DANS L'HORIZON : `src` est présent SEULEMENT si `lirePochette` a
+ *    confirmé le fichier par un accès disque réel (voir `loadPochettes`, la
+ *    carte `validees`). Le jour est « servi » (`JourFonds.servi`) sans
+ *    garantir que CHAQUE parti l'est : un fichier de métadonnées peut exister
+ *    sans que son image ait suivi. N'inventer une URL pour aucun des deux cas
+ *    évite d'afficher une image cassée. */
 export type PochetteArchivee = {
   parti: PartyKey;
   sigle: string;
@@ -99,6 +110,11 @@ export type PochetteArchivee = {
   /** Faux quand le registre ignore cette pochette : le listage R2 atteste
    *  qu'elle existe, mais ses chiffres manquent. On l'affiche quand même. */
   chiffres: boolean;
+  /** Le PNG, uniquement quand `lirePochette` en a confirmé l'existence. */
+  src?: string;
+  /** Les formats modernes confirmés, pour `<picture>`. Vide si `src` l'est
+   *  aussi, ou si aucun format moderne n'a été rapatrié pour ce jour-là. */
+  sources?: PochetteSource[];
 };
 
 export type JourFonds = {
@@ -244,6 +260,15 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
 
   const courant = nonVides[nonVides.length - 1];
   const servis = new Set(nonVides.map((j) => j.jour));
+  // LES POCHETTES VALIDÉES, par jour puis par parti — pas seulement les jours
+  // non vides : un jour où un seul parti a une image reste une entrée utile
+  // pour `lireFonds`, même s'il ne contribue rien à `pile`/`duJour`.
+  // `lirePochette` a déjà vérifié le fichier par un accès disque réel ; c'est
+  // cette vérification, et elle seule, qui autorise `lireFonds` à écrire une
+  // URL d'image dans le fonds sans jamais en inventer une.
+  const validees = new Map<string, Map<PartyKey, Pochette>>(
+    parJour.map((j) => [j.jour, new Map(j.pochettes.map((p) => [p.parti, p]))]),
+  );
   return {
     jourCourant: courant.jour,
     duJour: courant.pochettes,
@@ -260,7 +285,7 @@ export async function loadPochettes(formatJour: (iso: string) => string): Promis
           b.jour.localeCompare(a.jour) ||
           a.sigle.localeCompare(b.sigle, "fr"),
       ),
-    fonds: await lireFonds(formatJour, servis),
+    fonds: await lireFonds(formatJour, servis, validees),
   };
 }
 
@@ -272,18 +297,22 @@ type EntreeRegistre = {
 };
 
 /**
- * TOUT LE FONDS : ce que le listage R2 atteste, enrichi des chiffres du registre.
+ * TOUT LE FONDS : ce que le listage R2 atteste, enrichi des chiffres du registre
+ * ET, quand elles sont confirmées, des images.
  *
- * DEUX SOURCES, ET UNE SEULE FAIT FOI. `jours` vient du listage du bucket : c'est
- * ce qui EXISTE. `registre` est un index dérivé écrit par le raffineur : il porte
- * les chiffres, et il peut être en retard (cycle interrompu). On part donc
- * TOUJOURS du listage, et une journée que le registre ignore s'affiche quand même,
- * marquée comme telle. L'inverse — se fier au registre — ferait disparaître de la
- * page des pochettes bel et bien conservées.
+ * TROIS SOURCES, ET UNE SEULE FAIT FOI POUR CHACUNE. `jours` vient du listage du
+ * bucket : c'est ce qui EXISTE, et une journée que les deux autres sources
+ * ignorent s'affiche quand même, marquée comme telle — se fier au registre ou
+ * aux images seules ferait disparaître des pochettes bel et bien conservées.
+ * `registre` porte les CHIFFRES, et peut être en retard (cycle interrompu).
+ * `validees` porte les IMAGES, déjà vérifiées par un accès disque réel dans
+ * `lirePochette` : `lireFonds` ne fait que les recopier quand elles existent,
+ * jamais n'en devine une URL.
  */
 async function lireFonds(
   formatJour: (iso: string) => string,
   servis: Set<string>,
+  validees: Map<string, Map<PartyKey, Pochette>>,
 ): Promise<JourFonds[]> {
   let inv: { jours?: Record<string, string[]>; registre?: Record<string, EntreeRegistre[]> | null };
   try {
@@ -307,10 +336,12 @@ async function lireFonds(
           .filter((e) => typeof e?.p === "string")
           .map((e) => [String(e.p), e]),
       );
+      const valideesDuJour = validees.get(jour);
       const pochettes = (Array.isArray(partis) ? partis : [])
         .filter(estPartyKey)
         .map((parti): PochetteArchivee => {
           const e = chiffresDuJour.get(parti);
+          const v = valideesDuJour?.get(parti);
           return {
             parti,
             sigle: parti.toUpperCase(),
@@ -323,6 +354,8 @@ async function lireFonds(
             ton: texte(e?.to) ?? "",
             tonPct: nombre(e?.tp, 50),
             chiffres: e !== undefined,
+            src: v?.src,
+            sources: v?.sources,
           };
         })
         // Par temps d'écoute quand on le connaît, par sigle sinon : l'ordre ne
@@ -331,4 +364,175 @@ async function lireFonds(
       return { jour, jourLabel: formatJour(jour), pochettes, servi: servis.has(jour) };
     })
     .filter((j) => j.pochettes.length > 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DEUX AUTRES FAÇONS DE LIRE LE MÊME FONDS : par album et par discographie.
+//
+// `fonds` range les pochettes par JOURNÉE — cinq par jour, un par parti. Ce
+// qui suit les regroupe autrement, par ARTISTE (le parti), sans retoucher aux
+// données elles-mêmes : chaque single garde son jour, son parti, ses chiffres.
+//
+// Ce sont des fonctions PURES sur `fonds` déjà chargé, pas de nouvel accès
+// disque : elles peuvent donc s'éprouver sans dépendre du système de fichiers,
+// contrairement à `loadPochettes`.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Un single : une pochette archivée, sa date attachée. `fonds` la porte déjà
+ *  au niveau du jour (`JourFonds.jour`) ; ici elle voyage avec le single
+ *  lui-même, puisqu'un album ou une discographie n'a plus de jour commun. */
+export type Single = PochetteArchivee & { jour: string; jourLabel: string; jourCourt: string };
+
+/** L'ALBUM DE LA SEMAINE d'un parti : ses singles du samedi au vendredi,
+ *  jusqu'à sept. Une semaine en cours en compte moins — un album à quatre
+ *  titres est la vérité tant que la semaine n'est pas finie, pas un trou à
+ *  combler. */
+export type Album = {
+  parti: PartyKey;
+  sigle: string;
+  nom: string;
+  couleur: string;
+  /** Le samedi d'ouverture, en ISO — clé stable pour React. */
+  semaineDebut: string;
+  /** « du 22 août 2026 au 28 août 2026 », sans le nom du jour en tête : deux
+   *  noms de jour dans le même intitulé auraient surchargé l'étiquette. */
+  semaineLabel: string;
+  totalMinutes: number;
+  /** CLASSÉS EN ORDRE D'ÉCOUTE — la piste la plus écoutée en tête, comme
+   *  partout ailleurs sur le site. Pas un ordre chronologique de parution : ce
+   *  n'est pas ainsi qu'on lit ce module. */
+  pistes: Single[];
+};
+
+/** LA DISCOGRAPHIE d'un parti : tous ses singles connus, toutes journées et
+ *  semaines confondues. */
+export type Discographie = {
+  parti: PartyKey;
+  sigle: string;
+  nom: string;
+  couleur: string;
+  totalMinutes: number;
+  pistes: Single[];
+};
+
+/** Les singles d'UNE journée, `PochetteArchivee` complétée de sa date — la
+ *  brique commune aux trois groupages : `toutesLesSingles` l'aplatit sur tout
+ *  le fonds, `groupeParEditions` la garde journée par journée. */
+function singlesDuJour(j: JourFonds): Single[] {
+  return j.pochettes.map((p) => ({ ...p, jour: j.jour, jourLabel: j.jourLabel, jourCourt: jourCourt(j.jour) }));
+}
+
+function toutesLesSingles(fonds: JourFonds[]): Single[] {
+  return fonds.flatMap(singlesDuJour);
+}
+
+/** Le libellé d'une date sans son nom de jour : `formatJour` rend « Samedi 22
+ *  août 2026 », et une étiquette de semaine n'a pas besoin de DEUX noms de
+ *  jour pour dire « du … au … ». */
+const sansNomDeJour = (label: string) => label.replace(/^\S+\s+/, "");
+
+/**
+ * LES ALBUMS DE LA SEMAINE — un par (parti, semaine), au plus sept titres.
+ *
+ * LA SEMAINE EST CELLE DU PALMARÈS, SAMEDI → VENDREDI (`lib/semaine.ts`) : les
+ * deux doivent compter la même chose, sinon « sept singles » ne voudrait pas
+ * dire la même semaine selon qu'on la regarde ici ou dans le palmarès.
+ */
+export function groupeParAlbums(fonds: JourFonds[], formatJour: (iso: string) => string): Album[] {
+  const parCle = new Map<string, Single[]>();
+  for (const single of toutesLesSingles(fonds)) {
+    const cle = `${samediDeLaSemaine(single.jour)}/${single.parti}`;
+    const groupe = parCle.get(cle) ?? [];
+    groupe.push(single);
+    parCle.set(cle, groupe);
+  }
+
+  const albums = [...parCle.values()].map((pistes): Album => {
+    const semaineDebut = samediDeLaSemaine(pistes[0].jour);
+    const semaineFin = vendrediDeLaSemaine(semaineDebut);
+    return {
+      parti: pistes[0].parti,
+      sigle: pistes[0].sigle,
+      nom: PARTY_LABELS[pistes[0].parti],
+      couleur: pistes[0].couleur,
+      semaineDebut,
+      semaineLabel: `du ${sansNomDeJour(formatJour(semaineDebut))} au ${sansNomDeJour(formatJour(semaineFin))}`,
+      totalMinutes: pistes.reduce((s, p) => s + p.minutesUne, 0),
+      pistes: pistes.slice().sort((a, b) => b.minutesUne - a.minutesUne || a.jour.localeCompare(b.jour)),
+    };
+  });
+
+  // LA SEMAINE LA PLUS RÉCENTE D'ABORD — comme `fonds`, qui range déjà ses
+  // journées ainsi — et dans chaque semaine, l'album le plus écouté en tête.
+  return albums.sort(
+    (a, b) => b.semaineDebut.localeCompare(a.semaineDebut) || b.totalMinutes - a.totalMinutes,
+  );
+}
+
+/**
+ * LES DISCOGRAPHIES DE LA CAMPAGNE — une par parti, tous ses singles connus.
+ */
+export function groupeParDiscographie(fonds: JourFonds[]): Discographie[] {
+  const parParti = new Map<PartyKey, Single[]>();
+  for (const single of toutesLesSingles(fonds)) {
+    const groupe = parParti.get(single.parti) ?? [];
+    groupe.push(single);
+    parParti.set(single.parti, groupe);
+  }
+
+  const discographies = [...parParti.values()].map((pistes): Discographie => ({
+    parti: pistes[0].parti,
+    sigle: pistes[0].sigle,
+    nom: PARTY_LABELS[pistes[0].parti],
+    couleur: pistes[0].couleur,
+    totalMinutes: pistes.reduce((s, p) => s + p.minutesUne, 0),
+    pistes: pistes.slice().sort((a, b) => b.minutesUne - a.minutesUne || b.jour.localeCompare(a.jour)),
+  }));
+
+  // LE PARTI LE PLUS ÉCOUTÉ DE TOUTE LA CAMPAGNE EN TÊTE — même principe que
+  // les albums, à l'échelle de la campagne entière.
+  return discographies.sort((a, b) => b.totalMinutes - a.totalMinutes);
+}
+
+/** UNE ÉDITION : les singles des cinq partis d'une même journée — une
+ *  compilation, pas un album. C'est la seule des trois vues qui ne groupe PAS
+ *  par artiste : le point commun de ses pistes est la date, pas le parti, et
+ *  c'est pourquoi `DiscothequeClient` leur fait porter leur sigle plutôt que
+ *  leur date dans la tracklist. */
+export type Edition = {
+  jour: string;
+  /** « Édition du 27 août 2026 » — le mot que ce module emploie déjà partout
+   *  ailleurs pour un relevé daté (cf. le palmarès, « l'édition de 20 h »). */
+  titre: string;
+  /** La couleur du single en tête — celui qui prête sa pochette à la vitrine
+   *  fermée, faute d'un artiste unique à toute l'édition. */
+  couleur: string;
+  totalMinutes: number;
+  /** CLASSÉES EN ORDRE D'ÉCOUTE, comme les deux autres vues. */
+  pistes: Single[];
+};
+
+/**
+ * LES ÉDITIONS — une par journée, la plus récente d'abord.
+ *
+ * NI L'ORDRE DES ÉDITIONS NI CELUI DE LEURS PISTES NE DÉPENDENT DE `fonds` EN
+ * ENTRÉE : cette fonction trie les deux elle-même, comme `groupeParAlbums` et
+ * `groupeParDiscographie` trient les leurs. `lireFonds` les range déjà ainsi
+ * aujourd'hui, mais en dépendre silencieusement ferait de cette fonction un
+ * simple passe-plat qui casserait sans bruit si `lireFonds` changeait un jour.
+ */
+export function groupeParEditions(fonds: JourFonds[], formatJour: (iso: string) => string): Edition[] {
+  const editions = fonds
+    .filter((j) => j.pochettes.length > 0)
+    .map((j): Edition => {
+      const pistes = singlesDuJour(j).sort((a, b) => b.minutesUne - a.minutesUne || a.sigle.localeCompare(b.sigle, "fr"));
+      return {
+        jour: j.jour,
+        titre: `Édition du ${sansNomDeJour(formatJour(j.jour))}`,
+        couleur: pistes[0].couleur,
+        totalMinutes: pistes.reduce((s, p) => s + p.minutesUne, 0),
+        pistes,
+      };
+    });
+  return editions.sort((a, b) => b.jour.localeCompare(a.jour));
 }

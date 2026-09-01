@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RawMaquette } from "@/components/sections/RawMaquette";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
-import { loadPochettes } from "@/lib/data/pochettes";
-import { SANS_ENJEU } from "@/lib/data/parties";
+import { DiscothequeClient } from "@/components/interactive/DiscothequeClient";
+import { groupeParAlbums, groupeParDiscographie, groupeParEditions, loadPochettes } from "@/lib/data/pochettes";
 import { formatDateFr } from "@/lib/dates";
-import { formatDuree } from "@/lib/duree";
 
 export const metadata: Metadata = {
   // garde-redaction: ok (séparateur <title>, exception PR #246)
@@ -22,17 +21,28 @@ export const dynamic = "force-static";
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 /**
- * LE FONDS : tout ce que la discothèque a jamais rangé.
+ * LE FONDS : tout ce que la discothèque a jamais rangé — lu deux façons.
  *
- * Le module, lui, n'en montre qu'un mois glissant — c'est ce que le build
- * rapatrie en images. Cette page-ci parcourt l'INVENTAIRE COMPLET, qui vient du
+ * Le module, lui, n'en montre qu'un mois glissant, et un seul disque à la fois
+ * (le plus écouté). Cette page-ci parcourt l'INVENTAIRE COMPLET, qui vient du
  * listage du bucket : ce qui existe vraiment, jusqu'à la première pochette
  * engendrée. Les journées hors de l'horizon gardent leurs chiffres (le registre
  * les porte) mais pas leurs images.
  *
+ * TROIS VUES, LA MÊME TRIADE QUE LE PALMARÈS (Jour / Semaine / Campagne),
+ * depuis le 2026-09-01 : chaque single (une pochette, un jour, un parti)
+ * rejoint l'ÉDITION de sa journée (les cinq partis, une compilation plutôt
+ * qu'un album), l'ALBUM de sa semaine (samedi à vendredi, jusqu'à sept titres —
+ * même semaine que le palmarès, `lib/semaine.ts`), ou la DISCOGRAPHIE de la
+ * campagne entière. Les trois groupages viennent de la MÊME donnée
+ * (`groupeParEditions`/`groupeParAlbums`/`groupeParDiscographie`, dans
+ * `lib/data/pochettes.ts`) ; aucune pochette n'est relue ni recalculée pour
+ * l'un ou pour l'autre.
+ *
  * Aucune reconstitution : ce qui est écrit ici a été calculé le jour même et
  * figé avec la pochette. Une journée où le raffineur n'a pas tourné manque, et
- * c'est la vérité — pas un trou à combler.
+ * c'est la vérité — pas un trou à combler. Une semaine en cours forme donc un
+ * album à moins de sept titres, ce qui est exact plutôt qu'incomplet.
  */
 export default async function DiscothequePage() {
   if (isProd) notFound();
@@ -40,6 +50,9 @@ export default async function DiscothequePage() {
   const { fonds } = await loadPochettes(formatDateFr);
   const total = fonds.reduce((n, j) => n + j.pochettes.length, 0);
   const servis = fonds.filter((j) => j.servi).length;
+  const editions = groupeParEditions(fonds, formatDateFr);
+  const albums = groupeParAlbums(fonds, formatDateFr);
+  const discographies = groupeParDiscographie(fonds);
 
   return (
     <div className="page">
@@ -71,48 +84,7 @@ export default async function DiscothequePage() {
               sont plus servies par le site.
             </p>
 
-            <ol className="fonds-jours">
-              {fonds.map((jour) => (
-                <li className="fonds-jour" key={jour.jour}>
-                  <p className="fonds-date">
-                    {jour.jourLabel}
-                    {!jour.servi && <span className="fonds-hors">conservée, non servie</span>}
-                  </p>
-                  <ol className="fonds-pochettes">
-                    {jour.pochettes.map((p) => (
-                      <li
-                        className="fonds-pochette"
-                        key={p.parti}
-                        style={{ ["--party" as string]: p.couleur }}
-                      >
-                        <span className="fonds-sigle">{p.sigle}</span>
-                        {p.chiffres ? (
-                          <>
-                            <span className="fonds-temps">
-                              {p.tempsLabel || formatDuree(p.minutesUne)}
-                            </span>
-                            {/* Un enjeu absent est une AFFIRMATION sur la
-                                mesure de ce jour-là (aucun modèle CAP n'a
-                                franchi son seuil), pas une donnée manquante :
-                                on le dit avec les mots du module plutôt qu'avec
-                                un tiret. Le ton, lui, est toujours écrit quand
-                                les chiffres existent ; sans lui, on n'affiche
-                                rien. */}
-                            <span className="fonds-enjeu">{p.enjeu ?? SANS_ENJEU}</span>
-                            {p.ton && <span className="fonds-ton">{p.ton}</span>}
-                          </>
-                        ) : (
-                          /* Le listage atteste que la pochette existe, le
-                             registre l'ignore encore. On la montre sans ses
-                             chiffres plutôt que de la cacher. */
-                          <span className="fonds-sans-chiffres">chiffres non inscrits</span>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </li>
-              ))}
-            </ol>
+            <DiscothequeClient editions={editions} albums={albums} discographies={discographies} />
           </>
         )}
       </main>

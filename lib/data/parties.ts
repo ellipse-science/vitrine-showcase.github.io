@@ -21,6 +21,7 @@ import { readDatasetText } from "@/lib/data/source";
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
+import { samediDeLaSemaine } from "@/lib/semaine";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -990,13 +991,17 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  *
  *  La semaine de ce module va du samedi au vendredi : l'arrivée est le vendredi
  *  20 h, et les deux jours de fin de semaine qui la précèdent en font partie
- *  plutôt que d'en être exclus. Le décalage est donc calé sur samedi (jour 6 au
- *  sens de `getUTCDay`) et non sur lundi. */
+ *  plutôt que d'en être exclus.
+ *
+ *  LA FORMULE VIT DANS `lib/semaine.ts`, PARTAGÉE avec la discothèque : ses
+ *  albums hebdomadaires doivent compter EXACTEMENT la même semaine que ce
+ *  palmarès, sans quoi « sept singles » ne voudrait pas dire la même chose aux
+ *  deux endroits. Ce wrapper ne fait que convertir entre l'ISO du module
+ *  partagé et les timestamps en millisecondes qu'emploie le reste de ce
+ *  fichier. */
 function samediDOuverture(t: number): number {
-  const d = new Date(t);
-  const recul = (d.getUTCDay() + 1) % 7; // 0 = samedi
-  const samedi = new Date(d.getTime() - recul * 86_400_000);
-  return Date.parse(`${samedi.toISOString().slice(0, 10)}T00:00:00Z`);
+  const jourIso = new Date(t).toISOString().slice(0, 10);
+  return Date.parse(`${samediDeLaSemaine(jourIso)}T00:00:00Z`);
 }
 
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
