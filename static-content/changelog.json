@@ -1,5 +1,11 @@
 [
   {
+    "pr": 678,
+    "date": "2026-09-01T23:16:09Z",
+    "note": "L'équipe, les partenaires et nos modèles d'IA ont chacun leur page.",
+    "version": "2.42.0-beta.0"
+  },
+  {
     "pr": 675,
     "date": "2026-09-01T22:45:23Z",
     "note": "Aucune.",
