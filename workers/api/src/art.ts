@@ -126,25 +126,34 @@ export async function handleArt(
     return json({ error: 'Méthodes admises : GET, HEAD, PUT.' }, 405)
   }
 
-  // GET /v1/art/latest.* — lecture publique. L'image n'est pas une donnée
-  // vendue : c'est la couverture du site, et le build doit pouvoir la
-  // rapatrier sans clé.
+  // GET /v1/art/latest.* — DÉSORMAIS SOUS CLÉ (2026-08-26).
+  //
+  // La lecture était publique parce que « l'image n'est pas une donnée
+  // vendue » et que le build devait pouvoir la rapatrier sans clé. L'API est
+  // maintenant privée : seuls le build et les raffineurs l'appellent, et tous
+  // deux ont déjà une clé. Le visiteur, lui, ne voit jamais cette route — il
+  // lit l'image inlinée dans l'export statique (cf. scripts/fetch_art.mjs).
+  const auth = await authenticate(sql, request, null)
+  if (!auth.ok) return json({ error: auth.error }, auth.status)
+
   const obj = await env.ART_BUCKET.get(OBJECT_PREFIX + file)
   if (!obj) {
     return json({ error: `${file} n'existe pas encore.` }, 404)
   }
   const headers = new Headers({
     'content-type': contentType,
-    'cache-control': ART_CACHE_CONTROL,
+    // `private` : la réponse dépend de la clé, elle ne doit être partagée par
+    // aucun cache intermédiaire.
+    'cache-control': 'private, no-store',
     'access-control-allow-origin': '*',
     etag: obj.httpEtag,
   })
-  const response = new Response(request.method === 'HEAD' ? null : obj.body, { headers })
 
-  // Sans ce put, le match du cache edge en tête de fetch() ne trouverait
-  // jamais rien : c'est lui qui évite de relire R2 à chaque visite.
-  if (request.method === 'GET') {
-    ctx.waitUntil(caches.default.put(request, response.clone()))
-  }
-  return response
+  // PLUS DE `caches.default.put` ICI, ET C'EST LE POINT IMPORTANT. Le
+  // `cache.match` en tête de fetch() s'exécute AVANT tout contrôle de clé :
+  // une réponse sous clé déposée dans le cache partagé serait resservie à
+  // n'importe quel appelant anonyme, ce qui annulerait l'authentification
+  // qu'on vient d'ajouter. On relit R2 à chaque appel — quelques centaines de
+  // fois par jour, pour des builds, ce qui ne coûte rien.
+  return new Response(request.method === 'HEAD' ? null : obj.body, { headers })
 }

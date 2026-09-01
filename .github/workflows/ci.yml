@@ -36,6 +36,14 @@ jobs:
       - name: Type-check
         run: npm run type-check
 
+      # AVANT les tests, parce que cette dérive-là ne casse aucun test : elle
+      # casse la PRODUCTION, en silence et pendant des semaines. Une table
+      # déclarée dans tables.ts mais absente du schéma fait échouer la synchro
+      # à chaque passe, ce qui retient les Deploy Hooks (règle du tout ou
+      # rien) et fige le site. Constaté le 2026-08-26 sur quatre tables.
+      - name: Cohérence du schéma (tables.ts vs sql/schema.sql)
+        run: node scripts/check_schema_drift.mjs
+
       - name: Test
         run: npm test
 

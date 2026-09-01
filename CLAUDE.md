@@ -26,14 +26,19 @@
 
 - **Never hand-edit `public/data/`** — it is overwritten by `scripts/fetch_data.R`.
 - **Schedule times are Montreal local**, not UTC.
-- **Trois environnements, et le dev n'est plus GitHub Pages.** Production =
-  `vitrinedemocratique.com` (branche `prod`). Travail = `dev.vitrinedemocratique.com`
-  (branche `main`, derrière Cloudflare Access). GitHub Pages reste debout comme
-  filet mais ne sert plus de référence. ⚠️ Le code fusionné dans `main` n'est
-  PAS en production : `prod` n'avance que par une fusion délibérée, et cette
-  fusion exige une **vérification préalable sur dev** déclarée dans la PR de
-  promotion (« `- [x] Vérifié sur dev le … : <observé>` », check
-  `garde-promotion`, règle dure #10).
+- **Deux environnements, et un seul miroir dev.** Production =
+  `vitrinedemocratique.com` (branche `prod`). Travail =
+  `dev.vitrinedemocratique.com` (branche `main`, derrière Cloudflare Access).
+  L'ancien miroir GitHub Pages est **débranché depuis le 2026-08-30** : ne le
+  cherche plus, ne t'y réfère plus.
+  ⚠️ **Avant d'affirmer que quelque chose est « en dev »**, vérifie que
+  l'intégration Git de Cloudflare a bâti la tête de `main` — elle s'arrête sans
+  prévenir (gel du 30-08) :
+  `gh api repos/ellipse-science/vitrine-showcase.github.io/commits/$(git rev-parse origin/main)/check-runs --jq '[.check_runs[]|select(.name|test("Cloudflare";"i"))|.conclusion]'`
+  Vide = le site ne l'a pas. Remède : `gh workflow run deploy-dev-cloudflare.yml --ref main`.
+  ⚠️ Le code fusionné dans `main` n'est PAS en production : `prod` n'avance que
+  par une fusion délibérée, qui exige une vérification préalable sur dev
+  déclarée dans la PR (check `garde-promotion`, règle dure #10).
   Détail : [`docs/reference/environnements.md`](./docs/reference/environnements.md).
 - **Les données sont lues AU BUILD**, jamais par le navigateur. Ne jamais
   appeler `api.vitrinedemocratique.com` depuis un composant client : c'est ce

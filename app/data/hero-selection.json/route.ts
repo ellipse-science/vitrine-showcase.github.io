@@ -14,7 +14,7 @@
 // page d'accueil n'est pas une donnée vendue).
 
 import { readDatasetText } from "@/lib/data/source";
-import { selectHeroFromRawEvents, type RawEvent } from "@/lib/data/headlineEvents";
+import { selectHeroFromRawEvents, parseEvents } from "@/lib/data/headlineEvents";
 
 export const dynamic = "force-static";
 
@@ -23,7 +23,7 @@ export async function GET() {
   // illustrer, et le raffineur sait quoi faire d'un null — rien.
   try {
     const raw = await readDatasetText("public/data/headline-events.json");
-    const selection = selectHeroFromRawEvents(JSON.parse(raw) as RawEvent[]);
+    const selection = selectHeroFromRawEvents(parseEvents(raw));
     return Response.json(selection);
   } catch {
     return Response.json(null);

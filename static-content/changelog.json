@@ -1,5 +1,353 @@
 [
   {
+    "pr": 658,
+    "date": "2026-09-01T02:05:46Z",
+    "note": "L'œuf de Pâques DOOM et ses fichiers ne sont plus servis sur le site public. L'illustration de la Une s'aligne désormais avec le haut du titre.",
+    "version": "2.39.0-beta.1"
+  },
+  {
+    "pr": 664,
+    "date": "2026-09-01T01:57:11Z",
+    "note": "La carte qui s'affiche quand vous partagez le module des 12 enjeux montre maintenant l'enjeu qui domine la campagne, son poids exact et le titre de l'article qui le porte, au lieu d'un texte fixe.",
+    "version": null
+  },
+  {
+    "pr": 663,
+    "date": "2026-09-01T01:11:17Z",
+    "note": "Les vues Jour, Semaine et Campagne du module des 12 enjeux montrent désormais des répartitions réellement différentes, calculées sur leur propre fenêtre. Et les noms d'enjeux ne disparaissent plus des grandes tuiles.",
+    "version": null
+  },
+  {
+    "pr": 662,
+    "date": "2026-09-01T00:19:26Z",
+    "note": "Sous chaque enjeu, vous voyez maintenant les six articles qui en parlent le plus, avec leur média et leur poids dans l'enjeu. Ce sont les articles qui composent réellement le pourcentage affiché, et non plus une sélection venue d'un autre calcul.",
+    "version": null
+  },
+  {
+    "pr": 661,
+    "date": "2026-08-31T23:57:24Z",
+    "note": "Rien de visible ne change pour l'instant. Cette mise à jour prépare l'affichage, sous chaque enjeu, des articles qui composent réellement son pourcentage.",
+    "version": null
+  },
+  {
+    "pr": 660,
+    "date": "2026-08-31T21:58:08Z",
+    "note": "Les douze enjeux restent tous visibles dans la grille, même ceux dont l'actualité est nulle sur la période : chacun dispose d'une taille minimale plutôt que de se réduire à un trait.",
+    "version": null
+  },
+  {
+    "pr": 659,
+    "date": "2026-08-31T21:51:04Z",
+    "note": "Un enjeu sans actualité québécoise sur la période le dit maintenant en toutes lettres, au lieu d'afficher un titre emprunté à un autre sujet. Et le module s'ouvre sur la vue Campagne, celle où le plus grand nombre d'enjeux ont quelque chose à montrer.",
+    "version": null
+  },
+  {
+    "pr": 657,
+    "date": "2026-08-31T21:33:23Z",
+    "note": "Quand un enjeu ne compte que deux ou trois actualités, elles s'empilent désormais l'une sous l'autre plutôt que de s'étaler côte à côte.",
+    "version": null
+  },
+  {
+    "pr": 656,
+    "date": "2026-08-31T21:11:54Z",
+    "note": "Quand vous ouvrez un enjeu, ses actualités se lisent maintenant en colonnes — 1, 2, 3 à gauche puis 4, 5, 6 à droite — avec un numéro de rang plus lisible et, pour chacune, le niveau de saillance atteint à son sommet.",
+    "version": null
+  },
+  {
+    "pr": 654,
+    "date": "2026-08-31T20:50:21Z",
+    "note": "Trois enjeux changent de symbole : la santé prend une croix, les terres publiques un tracteur, et l'environnement récupère l'épi. Les deux végétaux verts qui se ressemblaient de trop près sont maintenant distincts d'un coup d'œil.",
+    "version": null
+  },
+  {
+    "pr": 653,
+    "date": "2026-08-31T20:32:05Z",
+    "note": "Sur le module des 12 enjeux, les actualités listées sous chaque enjeu sont désormais uniquement celles couvertes par des médias québécois, et leurs liens mènent bien à l'article du média affiché. Des nouvelles traitées seulement au Canada anglais s'y glissaient, sans logo et vers des sites hors Québec.",
+    "version": null
+  },
+  {
+    "pr": 652,
+    "date": "2026-08-31T20:17:22Z",
+    "note": "Sur le module des 12 enjeux, quand vous ouvrez un enjeu pour lire ses actualités, vous pouvez maintenant le refermer en cliquant simplement à côté, plutôt qu'en visant le petit bouton « Fermer ».",
+    "version": null
+  },
+  {
+    "pr": 579,
+    "date": "2026-08-31T14:07:31Z",
+    "note": "Les promesses de la campagne affichent désormais leur thème — santé, environnement, économie — à côté du texte du parti.",
+    "version": "2.39.0-beta.0"
+  },
+  {
+    "pr": 578,
+    "date": "2026-08-31T13:56:04Z",
+    "note": "Rien ne change sur le site. Cette modification consigne une décision de méthode pour les travaux à venir.",
+    "version": null
+  },
+  {
+    "pr": 651,
+    "date": "2026-08-31T13:19:12Z",
+    "note": "Aucune. Cette PR ne touche qu'une note interne ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 650,
+    "date": "2026-08-31T12:40:03Z",
+    "note": "Aucune. Cette PR ajoute le code d'une application Android qui n'est ni compilée pour publication ni distribuée ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 648,
+    "date": "2026-08-31T04:17:10Z",
+    "note": "Chaque enjeu porte un symbole qui le suit d'un module à l'autre. Celui de l'économie devient un signe de dollar, plus direct que la pile de pièces qu'il remplace, et le symbole apparaît maintenant aussi sur les cartes de député de l'Assemblée. Partout, il est un peu plus gros, pour se reconnaître d'un coup d'œil.",
+    "version": null
+  },
+  {
+    "pr": 647,
+    "date": "2026-08-31T03:30:03Z",
+    "note": "Sous chaque enjeu, les actualités affichées correspondent désormais à la période choisie, portent l'heure à laquelle elles ont le plus compté, et sont classées de la plus récente à la plus ancienne.",
+    "version": "2.38.0-beta.0"
+  },
+  {
+    "pr": 643,
+    "date": "2026-08-31T03:11:41Z",
+    "note": "La semaine du module des enjeux va désormais du vendredi 20h au vendredi 20h, et la vue « Campagne » part du déclenchement du scrutin, le 27 août 2026.",
+    "version": "2.37.0-beta.0"
+  },
+  {
+    "pr": 642,
+    "date": "2026-08-31T01:35:44Z",
+    "note": "Chacune des trois périodes du module des enjeux peut désormais s'afficher de deux façons : la répartition en tuiles, ou l'évolution des rangs. Pour la journée, l'évolution se lit d'une publication à l'autre.",
+    "version": "2.36.0-beta.0"
+  },
+  {
+    "pr": 639,
+    "date": "2026-08-31T01:06:05Z",
+    "note": "Aucune : le site public ne change pas.",
+    "version": null
+  },
+  {
+    "pr": 638,
+    "date": "2026-08-31T00:55:47Z",
+    "note": "Aucune : le site public ne change pas, seul un miroir interne est retiré.",
+    "version": null
+  },
+  {
+    "pr": 636,
+    "date": "2026-08-31T00:34:08Z",
+    "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 581,
+    "date": "2026-08-31T00:33:53Z",
+    "note": "Une sécurité supplémentaire vérifie six fois par jour que le site affiche bien les analyses les plus récentes, et relance la publication si elles manquent.",
+    "version": null
+  },
+  {
+    "pr": 635,
+    "date": "2026-08-31T00:21:55Z",
+    "note": "Sur les tuiles trop petites pour l'afficher en entier, le nom de l'enjeu cède désormais réellement la place à son symbole, au lieu d'apparaître coupé.",
+    "version": "2.35.0-beta.1"
+  },
+  {
+    "pr": 634,
+    "date": "2026-08-31T00:17:23Z",
+    "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 633,
+    "date": "2026-08-31T00:08:55Z",
+    "note": "Aucune. Ce correctif ne touche qu'un outil interne servant à publier l'application mobile ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 628,
+    "date": "2026-08-31T00:04:12Z",
+    "note": "Le site surveille désormais lui-même la fraîcheur de ses données : si la page d'accueil se met à afficher une Une périmée, l'équipe est prévenue dans l'heure au lieu de l'apprendre par hasard.",
+    "version": null
+  },
+  {
+    "pr": 632,
+    "date": "2026-08-30T23:47:01Z",
+    "note": "Le module de l'Assemblée affiche désormais les mêmes symboles d'enjeux que le reste du site, et le symbole de l'économie devient une pile de pièces.",
+    "version": "2.35.0-beta.0"
+  },
+  {
+    "pr": 614,
+    "date": "2026-08-30T23:31:56Z",
+    "note": "Aucune. Cette PR ne change rien au site : elle ajoute le code source d'une application mobile, qui n'est ni compilée ni publiée.",
+    "version": null
+  },
+  {
+    "pr": 629,
+    "date": "2026-08-30T23:31:38Z",
+    "note": "Le site publie désormais une page de confidentialité, qui explique ce qui est recueilli lors d'une visite et ce qui ne l'est pas.",
+    "version": null
+  },
+  {
+    "pr": 631,
+    "date": "2026-08-30T23:12:23Z",
+    "note": "Correction d'un défaut d'affichage qui laissait apparaître des noms d'enjeux coupés sur certaines tailles d'écran.",
+    "version": "2.34.0-beta.4"
+  },
+  {
+    "pr": 630,
+    "date": "2026-08-30T22:55:31Z",
+    "note": "Sur les tuiles trop petites pour l'afficher en entier, le nom de l'enjeu cède la place à son symbole plutôt que d'apparaître coupé.",
+    "version": "2.34.0-beta.3"
+  },
+  {
+    "pr": 612,
+    "date": "2026-08-30T22:39:32Z",
+    "note": "La page de méthodologie nommait les mauvais modèles d'intelligence artificielle pour l'extraction des entités dans les manchettes. Elle décrit maintenant celui réellement utilisé, et présente comme à venir celui qui n'est pas encore en service.",
+    "version": null
+  },
+  {
+    "pr": 627,
+    "date": "2026-08-30T22:04:26Z",
+    "note": "Les onglets du module des enjeux s'appellent désormais « Jour », « Semaine » et « Campagne », comme ceux du module des partis juste en dessous.",
+    "version": "2.34.0-beta.2"
+  },
+  {
+    "pr": 626,
+    "date": "2026-08-30T21:58:30Z",
+    "note": "Les heures affichées par le module des enjeux sont celles des éditions du site (0h, 4h, 8h, 12h, 16h, 20h), et non l'heure interne de traitement.",
+    "version": "2.34.0-beta.1"
+  },
+  {
+    "pr": 625,
+    "date": "2026-08-30T21:31:57Z",
+    "note": "Le module des enjeux affiche désormais l'heure de sa dernière mise à jour, et chaque variation dit depuis quelle heure elle se compare. Le module est mis à jour six fois par jour.",
+    "version": "2.34.0-beta.0"
+  },
+  {
+    "pr": 621,
+    "date": "2026-08-30T18:41:04Z",
+    "note": "Corrections typographiques dans plusieurs modules : les espaces insécables manquantes devant « % » et « : » ont été rétablies, notamment dans les infobulles, les cartes de partage et le tableau des niveaux de la page Méthodologie.",
+    "version": "2.33.0-beta.2"
+  },
+  {
+    "pr": 624,
+    "date": "2026-08-30T18:34:43Z",
+    "note": "Le symbole de l'enjeu Immigration devient une valise : la flèche précédente était trop fine pour rester lisible sur les petites tuiles.",
+    "version": "2.33.0-beta.1"
+  },
+  {
+    "pr": 623,
+    "date": "2026-08-30T18:16:21Z",
+    "note": "Chacun des douze enjeux a désormais son propre symbole, le même partout sur le site : sur la Une du moment, sur le radar des deux solitudes, sur les tuiles des enjeux et à côté des promesses du Polimètre+.",
+    "version": "2.33.0-beta.0"
+  },
+  {
+    "pr": 622,
+    "date": "2026-08-30T17:17:06Z",
+    "note": "Aucune : le schéma de travail des swimlanes n'est pas une surface visiteur.",
+    "version": null
+  },
+  {
+    "pr": 620,
+    "date": "2026-08-30T17:09:56Z",
+    "note": "Le module des enjeux s'appelle désormais « Les 12 enjeux de la campagne » et chaque bloc affiche sa part de l'attention médiatique, en plus de sa hausse ou de sa baisse.",
+    "version": "2.32.0-beta.0"
+  },
+  {
+    "pr": 615,
+    "date": "2026-08-28T16:10:21Z",
+    "note": "Correction d'un contrôle automatique interne : il signalait à tort un échec après chaque mise à jour du service de données, alors que celle-ci s'était bien déroulée.",
+    "version": null
+  },
+  {
+    "pr": 616,
+    "date": "2026-08-28T16:02:06Z",
+    "note": "Le graphique horaire du classement des partis ne mélange plus la soirée de la veille avec la journée en cours. Il n'apparaît désormais qu'une fois la journée assez avancée pour être tracée.",
+    "version": null
+  },
+  {
+    "pr": 613,
+    "date": "2026-08-28T14:54:30Z",
+    "note": "Le classement des partis affiche de nouveau le temps passé en Une lorsqu'on regarde l'ensemble des médias, et non plus seulement média par média. Sur téléphone, ce temps reste visible toute la journée.",
+    "version": null
+  },
+  {
+    "pr": 592,
+    "date": "2026-08-28T01:58:06Z",
+    "note": "Les titres et les résumés du site respectent maintenant les règles d'espacement du français québécois. Concrètement, un guillemet ou un signe de pourcentage ne se retrouve plus tout seul au bout d'une ligne.",
+    "version": null
+  },
+  {
+    "pr": 608,
+    "date": "2026-08-27T20:52:29Z",
+    "note": "Le module « L'alignement de l'Assemblée nationale » sort du rodage et devient visible en production. Les visiteurs y retrouvent la répartition des enjeux, le ton et le parcours parlementaire de chaque député·e.",
+    "version": null
+  },
+  {
+    "pr": 605,
+    "date": "2026-08-27T19:45:52Z",
+    "note": "Quand le classement des partis n'a pas encore assez de données pour être affiché, le site explique désormais pourquoi au lieu de laisser un vide. Le sélecteur de source ne propose plus que les six médias québécois suivis.",
+    "version": null
+  },
+  {
+    "pr": 606,
+    "date": "2026-08-27T19:33:50Z",
+    "note": "Le site affichait parfois une édition plus ancienne que la dernière disponible après une mise en ligne. Il utilise désormais les données les plus récentes dans tous les cas.",
+    "version": "2.31.0-beta.3"
+  },
+  {
+    "pr": 604,
+    "date": "2026-08-27T19:31:20Z",
+    "note": "Le module « parcours des députés » ne s'affichait pas malgré un composant et une entrée `tables.json` en place : la liste blanche du Worker, qui a remplacé la lecture de `tables.json` le 2026-08-19, n'avait jamais été mise à jour.",
+    "version": null
+  },
+  {
+    "pr": 602,
+    "date": "2026-08-27T11:18:02Z",
+    "note": "Le module « De quoi parle-t-on ? » affichait des variations de 0,0 % sur toutes les catégories quand les données venaient d'être republiées sans changement. Il compare désormais à la dernière mesure réellement différente.",
+    "version": "2.31.0-beta.2"
+  },
+  {
+    "pr": 600,
+    "date": "2026-08-27T00:20:33Z",
+    "note": "Des vérifications supplémentaires sont ajoutées en coulisses pour détecter plus tôt les pannes de mise à jour des données.",
+    "version": null
+  },
+  {
+    "pr": 599,
+    "date": "2026-08-26T23:46:01Z",
+    "note": "L'accès aux données brutes du site est désormais réservé : seules les pages publiques restent ouvertes à tous.",
+    "version": null
+  },
+  {
+    "pr": 595,
+    "date": "2026-08-26T20:53:09Z",
+    "note": "La préparation du site puise désormais les données dans une copie déposée à chaque rafraîchissement, au lieu d'interroger la base à chaque publication. Rien ne change à l'affichage ni à la fraîcheur des données.",
+    "version": null
+  },
+  {
+    "pr": 593,
+    "date": "2026-08-26T18:38:26Z",
+    "note": "Section inchangée — fichier généré, aucun changement visiteur.",
+    "version": null
+  },
+  {
+    "pr": 580,
+    "date": "2026-08-26T18:33:54Z",
+    "note": "Rien ne change sur le site. La documentation technique de nos pipelines est mise à jour pour décrire de nouvelles données qui mesurent, média par média, la place accordée à chaque parti politique.",
+    "version": null
+  },
+  {
+    "pr": 596,
+    "date": "2026-08-26T17:58:45Z",
+    "note": "Mise à jour des pages techniques qui expliquent quand et comment les données du site sont mises à jour. Elles précisent que deux traitements de la section Assemblée restent actifs seulement en environnement de développement.",
+    "version": null
+  },
+  {
+    "pr": 590,
+    "date": "2026-08-26T17:21:00Z",
+    "note": "Rien ne change sur le site : cette mise à jour ajoute un mécanisme interne pour publier plus facilement les améliorations du service qui alimente le site en données.",
+    "version": null
+  },
+  {
     "pr": 589,
     "date": "2026-08-26T16:58:00Z",
     "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle décrive fidèlement la façon dont les éditions sont préparées et mises en ligne.",

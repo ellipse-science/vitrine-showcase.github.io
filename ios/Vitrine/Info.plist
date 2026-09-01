@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Ces quatre clés viennent du gabarit d'Xcode. Écrire un Info.plist à la
+	     main ne les fournit PAS, et Xcode ne les injecte pas non plus quand on
+	     lui passe un INFOPLIST_FILE explicite. Sans CFBundleIdentifier, la
+	     compilation et la signature réussissent, puis l'archivage échoue sur
+	     « Archive Missing Bundle Identifier » (vécu le 2026-08-31). -->
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>fr_CA</string>
+	<key>CFBundleDisplayName</key>
+	<string>Vitrine</string>
+	<key>CFBundleName</key>
+	<string>Vitrine</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>fr_CA</string>
+	</array>
+	<!-- Évite la question de conformité à l'exportation à chaque envoi TestFlight.
+	     L'application n'utilise que HTTPS, ce qui est exempté. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+	<!-- Les QUATRE orientations, y compris tête en bas. App Store Connect
+	     refuse le paquet sans elle (« you need to include all of the …
+	     orientations to support iPad multitasking »), et ce refus tombe
+	     à la validation du téléversement, pas à la compilation. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+</dict>
+</plist>

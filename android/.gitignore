@@ -1,0 +1,16 @@
+# Sorties de compilation
+build/
+app/build/
+.gradle/
+local.properties
+
+# Trousseaux de signature : JAMAIS versionnés. Voir android/PUBLIER.md.
+*.jks
+*.keystore
+keystore.properties
+
+# Artefacts de fiche du magasin
+play-icone-512.png
+captures-play/
+
+.DS_Store

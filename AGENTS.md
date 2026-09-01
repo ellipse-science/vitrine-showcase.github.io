@@ -4,7 +4,7 @@ Universal, tool-agnostic rules for any agent or contributor touching this repo. 
 
 ## What this repo is
 
-Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by the CAPP — Centre d'analyse des politiques publiques (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted free on **GitHub Pages**. No AWS infrastructure in this repo.
+Self-contained repository for **La Vitrine démocratique** — a media-focused data showcase by the CAPP — Centre d'analyse des politiques publiques (Université Laval). A single-page editorial dashboard (Playfair Display / Source Serif / IBM Plex Mono, paper/ink palette), rendered from a designer's maquette and hydrated at **build time** from JSON snapshots committed to the repo by an external R script. Hosted on **Cloudflare Pages**. No AWS infrastructure in this repo.
 
 ## Stack
 
@@ -42,12 +42,24 @@ En cas de doute sur l'hébergement, c'est ce document qui fait foi.
 | `vitrinedemocratique.com` | **production**, publique | `prod` |
 | `dev.vitrinedemocratique.com` | **miroir de travail** (Cloudflare Access) | `main` |
 | `api.vitrinedemocratique.com` | API de lecture (clé requise) | Worker |
-| `ellipse.science/vitrine-showcase.github.io` | ancien miroir, **filet seulement** | `main` |
 
-- **On travaille sur `dev.vitrinedemocratique.com`.** GitHub Pages tourne
-  encore comme chemin de retour arrière, mais ne sert plus de référence : une
-  capture ou une recette qui en vient décrit un site que personne ne surveille.
-- **Push to `main`** → déploie les DEUX miroirs dev (Cloudflare et Pages).
+
+- **On travaille sur `dev.vitrinedemocratique.com`, et il n'y a plus d'autre
+  miroir.** L'ancien miroir GitHub Pages a été **débranché le 2026-08-30** :
+  le workflow qui l'alimentait est supprimé et le site est désactivé. Deux
+  raisons. D'abord il entretenait la confusion — le 30-08, un correctif a été
+  déclaré « en dev » cinq fois sur la foi de Pages alors que Cloudflare avait
+  cessé de bâtir, et le site d'Adrien servait un vieux build. Ensuite il
+  perçait Cloudflare Access : tant qu'un miroir public servait le même
+  contenu, le mot de passe de `dev.vitrinedemocratique.com` ne protégeait rien.
+- **Push to `main`** → `deploy-dev-cloudflare.yml` bâtit et publie
+  `dev.vitrinedemocratique.com`. L'intégration Git de Cloudflare reste branchée
+  en parallèle : quand elle fonctionne, la poussée déploie deux fois, ce qui est
+  assumé (même `out/`, cf. l'en-tête du workflow). Elle **s'arrête sans
+  prévenir** — gel du 30-08 à 20h14, découvert parce que dev servait un vieux
+  build. Pour savoir laquelle des deux voies a publié, ou si rien n'a publié :
+  `gh api repos/ellipse-science/vitrine-showcase.github.io/commits/$(git rev-parse origin/main)/check-runs --jq '[.check_runs[]|select(.name|test("Cloudflare";"i"))|.conclusion]'`
+  Vide = le site ne l'a pas. Remède : `gh workflow run deploy-dev-cloudflare.yml --ref main`.
 - **`prod` n'avance que de deux façons** : les données automatiquement toutes
   les 4 h, et le code **uniquement par une fusion délibérée `main → prod`**.
   ⚠️ Un correctif fusionné dans `main` **n'est pas en production**. Vérifier :
@@ -94,7 +106,7 @@ En cas d'hésitation entre deux niveaux, prends le plus bas.
 
 1. **Never edit JSON under `public/data/` by hand.** It is refreshed by `scripts/fetch_data.R` from Athena; hand edits get overwritten. To add data, edit `scripts/tables.json` (see [procedures](./docs/reference/procedures.md)).
 2. **Schedule times are Montreal local (EDT/EST), not UTC** — everywhere schedules appear (here and in `aws-infra`).
-3. **No AWS deployment path in this repo.** Do not add `aws-actions/configure-aws-credentials`, S3/CloudFront secrets, or any workflow that pushes `out/` to S3 or invalidates a CloudFront distribution. AWS credentials in this repo are **read-only data fetching** (`refresh-data.yml`) only. The site is on GitHub Pages; Cloudflare Pages is a separate, deferred decision ([`docs/cloudflare-pages-migration.md`](./docs/cloudflare-pages-migration.md)).
+3. **No AWS deployment path in this repo.** Do not add `aws-actions/configure-aws-credentials`, S3/CloudFront secrets, or any workflow that pushes `out/` to S3 or invalidates a CloudFront distribution. AWS credentials in this repo are **read-only data fetching** (`refresh-data.yml`) only. The site is on Cloudflare Pages (migration terminée, GitHub Pages débranché le 2026-08-30).
 4. **Never commit credentials.** Secrets live in environment variables / GitHub Actions secrets, never in source.
 5. **FAIT vs VISION — jamais d'intention au présent de l'indicatif.** Toute doc (md, HTML, Notion) qui décrit le système doit distinguer explicitement ce qui **EST implémenté** (vérifié dans le code, avec date d'audit) de ce qui est **PLANIFIÉ** (vision/spec, avec marqueur d'état : VISION / EN COURS / LIVRÉ). Ne jamais écrire « le raffineur utilise X » tant que X n'est pas dans le code. Une intention documentée au présent devient un « fait » pour le prochain agent IA — c'est ce qui a causé les faux diagnostics de juillet 2026 (réforme des horaires lue comme complète, GLiNER décrit comme livré). Corollaire : la source de vérité du pipeline = **le code des 3 repos** (`vitrine` + `aws-refiners` + `aws-infra`) ; toute doc rédigée à partir d'un seul repo est suspecte et doit être auditée contre les deux autres avant d'être crue.
 
@@ -113,7 +125,7 @@ En cas d'hésitation entre deux niveaux, prends le plus bas.
 
 9. **Un corps de PR se lit en une minute — le détail va dans l'issue liée.** Une PR tient dans un écran : 3 à 5 puces qui disent ce qui change et pourquoi, puis les sections du gabarit ([`.github/pull_request_template.md`](./.github/pull_request_template.md)) répondues en une ligne chacune. Les mesures, les tableaux, les sorties de tests et le récit de l'enquête vont dans **l'issue liée**, pas dans le corps de la PR; les issues, elles, restent aussi détaillées qu'il le faut (« garde les issues pour les machines, rends les PR plus digestes »). **Ce n'est pas une règle de style mais de sécurité du gitflow** : un corps de PR indigeste désarme le seul garde-fou humain de la chaîne. Le 2026-08-12, une PR longue a été approuvée avec le commentaire « J'approuve mais j'ai pas lu. Trop long et incompréhensible » — l'approbation qui la débloquait était devenue décorative. Corollaire : **une IA seule ne review pas une PR**, une approbation Copilot ne remplace jamais un œil humain. Demande de Patrick Poncet (2026-08-12), gabarit posé par [#469](https://github.com/ellipse-science/vitrine-showcase.github.io/pull/469) et propagé à `aws-refiners` et `aws-infra`. **Aucun check CI ne vérifie cette règle** : elle tient à la discipline de qui rédige, humain comme agent.
 
-10. **Aucune fonctionnalité en production sans passage vérifié sur dev.** La production (`vitrinedemocratique.com`, branche `prod`) n'avance en code que par une fusion délibérée `main → prod`; cette règle ajoute la condition d'entrée : la fonctionnalité doit avoir été **observée en marche** sur `dev.vitrinedemocratique.com` (même build que la prod, mêmes données lues de l'API) avant la promotion. La PR de promotion doit contenir la ligne « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` » : des faits (« le module X s'affiche avec les données du cycle courant », « aucune 404 d'actif », « les onglets répondent »), pas le mot « vérifié » tout seul. C'est « prouver, pas décrire » appliqué au gitflow. **Vérifié mécaniquement** par le check `garde-promotion` sur toute PR visant `prod`. Précisions : les poussées de données automatiques (`[prod data sync]`) passent par la clé de déploiement, pas par PR, et ne sont pas concernées; un agent sans accès Cloudflare Access vérifie sur le **miroir GitHub Pages** (même contenu que dev, parité documentée dans [`environnements.md`](./docs/reference/environnements.md)) et le dit explicitement dans la ligne. Pourquoi : le piège documenté est la prod qui tourne sur du vieux code; le piège symétrique est de promouvoir du code que personne n'a regardé tourner, avec l'attention médiatique dessus. Demande du 2026-08-19.
+10. **Aucune fonctionnalité en production sans passage vérifié sur dev.** La production (`vitrinedemocratique.com`, branche `prod`) n'avance en code que par une fusion délibérée `main → prod`; cette règle ajoute la condition d'entrée : la fonctionnalité doit avoir été **observée en marche** sur `dev.vitrinedemocratique.com` (même build que la prod, mêmes données lues de l'API) avant la promotion. La PR de promotion doit contenir la ligne « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` » : des faits (« le module X s'affiche avec les données du cycle courant », « aucune 404 d'actif », « les onglets répondent »), pas le mot « vérifié » tout seul. C'est « prouver, pas décrire » appliqué au gitflow. **Vérifié mécaniquement** par le check `garde-promotion` sur toute PR visant `prod`. Précisions : les poussées de données automatiques (`[prod data sync]`) passent par la clé de déploiement, pas par PR, et ne sont pas concernées; ⚠️ l'échappatoire « vérifier sur le miroir GitHub Pages » **n'existe plus** depuis son débranchement du 2026-08-30, et elle reposait sur une parité jamais garantie (autre build, autre source de données). À trancher : l'observation revient à un humain, ou un agent accède à dev autrement. D'ici là, un agent qui remplit cette ligne dit ce qu'il a vérifié (build, déploiement Cloudflare confirmé) et ce qu'il n'a PAS pu voir. Pourquoi : le piège documenté est la prod qui tourne sur du vieux code; le piège symétrique est de promouvoir du code que personne n'a regardé tourner, avec l'attention médiatique dessus. Demande du 2026-08-19.
 
 ## Module naming + signalement labels (triage)
 

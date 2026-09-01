@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reprises du site : papier crème et encre presque noire. -->
+    <color name="fond">#FAF4E8</color>
+    <color name="encre">#1A1A1A</color>
+    <color name="encre_secondaire">#6B6259</color>
+    <color name="cordovan">#234E78</color>
+</resources>
