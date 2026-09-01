@@ -153,7 +153,7 @@ export default function AproposPage() {
               <h3 id="partenaires-titre">Partenaires</h3>
               <p>
                 Les modèles d&apos;intelligence artificielle de la Vitrine sont entraînés
-                et validés avec LLM Tool&nbsp;; l&apos;infrastructure de données est
+                et validés avec LLM Tool; l&apos;infrastructure de données est
                 hébergée sur Amazon Web Services.
               </p>
               <div className="partners-grid">
