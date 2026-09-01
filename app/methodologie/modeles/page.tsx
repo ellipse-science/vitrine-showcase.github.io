@@ -53,7 +53,7 @@ export default function ModelesPage() {
               <p className="apropos-text">
                 <strong>Une science évolutive.</strong> Les modèles ne sont pas parfaits,
                 et nous le disons. Ils sont réentraînés, revalidés et remplacés à mesure
-                que les annotations humaines s'accumulent&nbsp;; chaque changement est
+                que les annotations humaines s'accumulent; chaque changement est
                 daté dans la méthodologie.
               </p>
             </section>
@@ -85,7 +85,7 @@ export default function ModelesPage() {
               <p className="apropos-text">
                 <strong>Et pour la Une des Unes.</strong> Le regroupement des Unes en
                 histoires et leurs titres sont produits par un grand modèle de langue
-                (Claude Sonnet 5), choisi après un banc comparatif&nbsp;; ce choix et ses
+                (Claude Sonnet 5), choisi après un banc comparatif; ce choix et ses
                 mesures sont décrits au §&nbsp;04 de la méthodologie.
               </p>
             </section>
@@ -93,7 +93,7 @@ export default function ModelesPage() {
             <section>
               <h2 className="apropos-section-title">Ce que valent les modèles</h2>
               <ul className="apropos-list">
-                <li className="apropos-list-item"><strong>Thèmes</strong>&nbsp;: F1 moyen de la classe positive de 0,656 sur les 21 têtes&nbsp;; 13 dépassent 0,65. Les têtes suivent le consensus humain&nbsp;: plus les annotateurs s'accordent sur une phrase, plus les modèles aussi.</li>
+                <li className="apropos-list-item"><strong>Thèmes</strong>&nbsp;: F1 moyen de la classe positive de 0,656 sur les 21 têtes; 13 dépassent 0,65. Les têtes suivent le consensus humain&nbsp;: plus les annotateurs s'accordent sur une phrase, plus les modèles aussi.</li>
                 <li className="apropos-list-item"><strong>Partis</strong>&nbsp;: de 0,934 à 0,994 pour les quatre partis fédéraux disposant d'assez de cas de référence (BQ, PCC, PLC, NPD).</li>
                 <li className="apropos-list-item"><strong>Sentiment</strong>&nbsp;: 0,653, contre un accord entre annotateurs humains de 0,669, soit 98&nbsp;% du plafond humain.</li>
               </ul>
@@ -104,7 +104,7 @@ export default function ModelesPage() {
               <ul className="apropos-list">
                 <li className="apropos-list-item">Deux têtes thématiques restent peu sûres, <code>domestic_commerce</code> et <code>public_lands</code>&nbsp;: leurs chiffres sont des ordres de grandeur.</li>
                 <li className="apropos-list-item">Les cinq partis provinciaux (CAQ, PLQ, PQ, QS, PVQ) comptent trop peu de cas de référence pour être validés, et le Parti conservateur du Québec n'a pas de modèle&nbsp;: sa colonne à zéro dit notre incapacité à le mesurer, pas son absence des médias.</li>
-                <li className="apropos-list-item">L'extraction des objets saillants (les personnes, lieux et enjeux qui font une Une) est encore en cours de validation contre des annotations humaines&nbsp;; la méthodologie dit quel extracteur est en service à chaque période.</li>
+                <li className="apropos-list-item">L'extraction des objets saillants (les personnes, lieux et enjeux qui font une Une) est encore en cours de validation contre des annotations humaines; la méthodologie dit quel extracteur est en service à chaque période.</li>
                 <li className="apropos-list-item">Une part de l'écart à la perfection ne tient pas aux modèles mais à l'ambiguïté des catégories elles-mêmes&nbsp;: l'accord entre humains sur les thèmes est de 0,726.</li>
               </ul>
             </section>

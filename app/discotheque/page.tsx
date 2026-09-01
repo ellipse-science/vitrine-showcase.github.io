@@ -81,7 +81,7 @@ export default async function DiscothequePage() {
               {fonds.length === 1 ? "1 journée" : `${fonds.length} journées`} conservées,{" "}
               {total === 1 ? "1 pochette" : `${total} pochettes`}. Les{" "}
               {servis === 1 ? "images de la dernière journée sont" : `images des ${servis} dernières journées sont`}{" "}
-              affichées&nbsp;; au-delà, les pochettes restent conservées mais ne
+              affichées; au-delà, les pochettes restent conservées mais ne
               sont plus servies par le site.
             </p>
 
