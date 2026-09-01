@@ -1,5 +1,11 @@
 [
   {
+    "pr": 667,
+    "date": "2026-09-01T18:42:19Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 618,
     "date": "2026-09-01T18:16:29Z",
     "note": "Les pochettes des partis sont maintenant réunies dans un bac, classées par temps passé à la une. On peut les feuilleter et en ouvrir une pour voir le détail : temps, part, enjeu et ton de la couverture.",
