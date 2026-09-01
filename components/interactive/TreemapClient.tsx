@@ -110,7 +110,18 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       setTaille(`${Math.round(r.width)}x${Math.round(r.height)}`);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    // Re-mesurer quand les POLICES arrivent. La première mesure peut tomber
+    // avant Playfair : le nom, rendu dans la police de repli, est plus large,
+    // on le cache — puis plus rien ne redéclenche la mesure, car la tuile n'a
+    // pas changé de taille. Résultat vu le 31-08 : « Terres publiques et
+    // agriculture » absent d'une tuile de 498x194. Le chargement des polices
+    // est le quatrième déclencheur qui manquait, après les trois pièges déjà
+    // documentés plus bas.
+    let vivant = true;
+    document.fonts?.ready?.then(() => {
+      if (vivant) setTaille((t) => (t.endsWith("·p") ? t : `${t}·p`));
+    });
+    return () => { vivant = false; ro.disconnect(); };
   }, [ref]);
 
   useLayoutEffect(() => {
@@ -161,12 +172,27 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       const portee = document.createRange();
       portee.selectNodeContents(nom);
       const texte = portee.getBoundingClientRect();
-      // 1px de tolérance : les bords tombent souvent sur des demi-pixels.
+      // Un rectangle NUL veut dire « pas mesurable » (élément non peint), pas
+      // « ça déborde » : ses zéros sont toujours hors de la boîte, et conclure
+      // au débordement cacherait le nom pour toujours. Dans le doute, on
+      // laisse l'état tel quel.
+      if (texte.width === 0 && texte.height === 0) {
+        if (etaitCache) el.classList.add("gt-title-sans-nom");
+        return;
+      }
+      // Tolérances ASYMÉTRIQUES, et c'est voulu.
+      // - Horizontal : 1 px. Un nom trop large wrappe ou se tronque — illisible
+      //   tout de suite, on passe au symbole.
+      // - Vertical : 5 px, un quart de ligne. Mesuré le 31-08 : « Culture et
+      //   nationalisme » débordait de 4 px sur une tuile de 620 px de large, et
+      //   la mesure binaire supprimait le nom entier pour des descendantes à
+      //   peine rognées. Un vrai écrasement (le nom qui wrappe) déborde de
+      //   20 px et plus : le seuil de 5 px ne le laisse pas passer.
       deborde =
         texte.left < boite.left - 1 ||
         texte.right > boite.right + 1 ||
-        texte.top < boite.top - 1 ||
-        texte.bottom > boite.bottom + 1;
+        texte.top < boite.top - 5 ||
+        texte.bottom > boite.bottom + 5;
     }
     if (etaitCache) el.classList.add("gt-title-sans-nom");
     setTient(!deborde);
