@@ -1,5 +1,11 @@
 [
   {
+    "pr": 679,
+    "date": "2026-09-01T23:40:28Z",
+    "note": "Les sous-pages se trouvent depuis la barre de navigation.",
+    "version": "2.43.0-beta.0"
+  },
+  {
     "pr": 678,
     "date": "2026-09-01T23:16:09Z",
     "note": "L'équipe, les partenaires et nos modèles d'IA ont chacun leur page.",
