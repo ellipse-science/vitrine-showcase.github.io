@@ -70,7 +70,8 @@ function donnees(blocs: number[]): PartiesData {
 
 /** Le parti qui MÈNE la vue Jour de `donnees(...)`, dans l'ordre où le disque
  *  d'or le classe (temps en Une décroissant). Calculé sur les VRAIES lignes
- *  plutôt que deviné, pour ne pas dupliquer `rangerParTemps`. */
+ *  plutôt que deviné, pour rester fidèle au tri réel plutôt qu'à une
+ *  hypothèse sur les fixtures. */
 function meneurDuJour(data: PartiesData) {
   return data.ranges.today.rows
     .slice()
@@ -109,8 +110,13 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
   const meneur = meneurDuJour(data);
   const trophee = html.split('class="trophee"')[1]?.split("</div>\n\n")[0] ?? html;
 
-  it("se nomme « Le single d'or », le nom de la vue Jour", () => {
-    expect(html).toContain("Le single d");
+  it("se nomme « Le single d'or » — dans l'aria-label, plus à l'écran depuis le 2026-09-07", () => {
+    // Le nom en toutes lettres sous le disque (`.trophee-legende`) a été
+    // retiré à cette date : c'est l'encadré (`--palier`, éprouvé plus bas)
+    // qui dit maintenant de quel palier il s'agit, en permanence. Le nom
+    // complet du trophée reste lisible au clic comme au survol.
+    expect(html).not.toContain('class="trophee-legende"');
+    expect(html).toMatch(/aria-label="Le single d&#x27;or/);
   });
 
   it("dit « en production » plutôt que d'afficher une image qui pourrait mentir", () => {
@@ -118,22 +124,50 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     expect(html).not.toContain('class="trophee-disque termine"');
   });
 
+  it("montre l'étiquette de disque vierge — le sigle sur un cercle, pas le hachurage retiré", () => {
+    expect(html).toContain('class="trophee-etiquette"');
+    expect(html).toContain('class="trophee-etiquette-disque"');
+    expect(html).toMatch(new RegExp(`class="trophee-etiquette-sigle">${meneur.label}<`));
+  });
+
+  it("annonce une date de sortie — la même ligne d'arrivée que le graphique juste à côté", () => {
+    // Publié jusqu'à midi (blocs [0,4,8,12]), l'arrivée du jour est à 20 h —
+    // `chart.finish.label` pour la vue Jour (`buildChartIntraday`).
+    expect(html).toContain("Sortie prévue à 20h");
+  });
+
   it("nomme quand même le meneur du moment, en texte", () => {
     expect(trophee).toContain(`>${meneur.label}<`);
   });
 
-  it("n'écrit ni le nom complet ni la durée du meneur dans la légende — la course n'est pas finie", () => {
-    const legende = html.split('class="trophee-legende"')[1]?.split("</p>")[0] ?? "";
-    expect(legende).not.toContain(meneur.fullLabel);
+  it("le nom du trophée est dans l'aria-label, jamais écrit sous le disque", () => {
+    expect(html).toMatch(/aria-label="Le single d&#x27;or\. Single en production\./);
   });
 
-  it("le classement reste FERMÉ par défaut", () => {
-    expect(html).toMatch(/class="trophee-disque[^"]*" aria-expanded="false"/);
-    expect(html).not.toContain('class="trophee-classement"');
+  it("le panneau reste FERMÉ par défaut — pas de rendu tant qu'on n'a pas cliqué", () => {
+    // Le panneau (`TropheePanel`) se rend en pleine largeur SOUS toute la
+    // rangée du palmarès, pas dans la colonne du disque : le rendu statique
+    // ne peut pas simuler le clic qui l'ouvre, donc son contenu (les cinq
+    // cartes, chacune avec ses quatre grandeurs) reste NON éprouvé ici — seul
+    // son absence par défaut l'est.
+    expect(html).toMatch(/aria-expanded="false"[^>]*aria-controls="trophee-panel"/);
+    expect(html).not.toContain('id="trophee-panel"');
+    expect(html).not.toContain('class="trophee-panel"');
   });
 
-  it("un second lien, distinct du disque, mène vers /discotheque", () => {
+  it("l'encadré prend la couleur du palier du jour — l'or", () => {
+    expect(html).toContain('style="--palier:var(--brass)"');
+  });
+
+  it("un second lien, distinct du disque, mène vers /discotheque — une flèche, pas une phrase", () => {
+    // « Voir toute la discothèque » en toutes lettres ajoutait souvent plus de
+    // hauteur que le disque lui-même ; le texte complet survit dans
+    // `aria-label`/`title`, pas dans le lien visible.
+    const lien = html.match(/<a class="trophee-voir-tout"[^>]*>([^<]*)<\/a>/);
+    expect(lien).not.toBeNull();
+    expect(lien![1]).toBe("→");
     expect(html).toMatch(/class="trophee-voir-tout"[^>]*href="[^"]*\/discotheque\/"/);
+    expect(html).toMatch(/class="trophee-voir-tout"[^>]*aria-label="Voir toute la discothèque"/);
   });
 });
 
@@ -142,8 +176,13 @@ describe("le disque d'or — couronné, sans image confirmée", () => {
   const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
   const meneur = meneurDuJour(data);
 
-  it("prend son encadré en or une fois la course courue", () => {
-    expect(html).toMatch(/class="trophee-disque termine"/);
+  it("garde son encadré en or — présent tout le temps depuis le 2026-09-07, pas seulement une fois couronné", () => {
+    // `.termine` ne distingue plus le style du disque : l'encadré (`--palier`)
+    // est désormais TOUJOURS là, que la course soit courue ou non (voir
+    // l'autre fixture, plus haut, où il est déjà présent en production).
+    expect(html).toMatch(/class="trophee-disque"/);
+    expect(html).not.toContain('class="trophee-disque termine"');
+    expect(html).toContain('style="--palier:var(--brass)"');
   });
 
   it("garde le sigle en texte sur l'aplat du parti plutôt que d'inventer une image", () => {
@@ -152,9 +191,22 @@ describe("le disque d'or — couronné, sans image confirmée", () => {
     expect(html).not.toContain("<picture");
   });
 
-  it("écrit le nom complet et la durée du gagnant dans la légende", () => {
-    const legende = html.split('class="trophee-legende"')[1]?.split("</p>")[0] ?? "";
-    expect(legende).toContain(meneur.fullLabel);
+  it("l'étiquette de disque vierge a disparu — la course est courue", () => {
+    expect(html).not.toContain('class="trophee-etiquette"');
+    expect(html).not.toContain("Sortie prévue");
+  });
+
+  it("aucune légende écrite sous le disque", () => {
+    // Retirée le 2026-09-07 : l'encadré (`--palier`, éprouvé plus haut) dit
+    // maintenant de quel palier il s'agit, en permanence — plus besoin de
+    // l'écrire aussi en toutes lettres à côté. Le nom complet du gagnant, lui,
+    // reste lisible dans `aria-label`/`title` — voir le test suivant.
+    expect(html).not.toContain('class="trophee-legende"');
+  });
+
+  it("le nom complet et la durée restent lisibles au clic comme au survol", () => {
+    expect(html).toMatch(new RegExp(`aria-label="[^"]*${meneur.fullLabel}[^"]*"`));
+    expect(html).toMatch(new RegExp(`title="[^"]*${meneur.fullLabel}[^"]*"`));
   });
 });
 
@@ -182,6 +234,11 @@ describe("le disque d'or — mise en page à côté du palmarès", () => {
   const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
 
   it("les knobs, le graphique puis le disque, dans cet ordre, sous UNE même rangée", () => {
+    // Le graphique GARDE sa hauteur (139 px) ; ce sont les knobs et le disque
+    // qui s'y tassent (voir le commentaire de `.palmares-rangee`) — le rendu
+    // statique ne calcule aucune mise en page, il ne peut donc prouver que
+    // l'ORDRE des enfants dans le DOM, pas leur position réelle une fois la
+    // CSS appliquée.
     const rangee = html.split('class="palmares-rangee"')[1] ?? "";
     const iKnobs = rangee.indexOf('class="palmares-commandes"');
     const iFigure = rangee.indexOf("<figure");
@@ -191,9 +248,99 @@ describe("le disque d'or — mise en page à côté du palmarès", () => {
     expect(iTrophee).toBeGreaterThan(iFigure);
   });
 
+  it("le disque et son lien vers la discothèque restent une seule boîte (`.trophee`)", () => {
+    // La légende (le nom du trophée en toutes lettres) a quitté cette boîte
+    // le 2026-09-07 — l'encadré du disque dit maintenant le palier à sa
+    // place. Il ne reste que le disque et la flèche vers `/discotheque`.
+    expect(html).toContain('class="trophee"');
+    expect(html).not.toContain('class="trophee-sous"');
+    expect(html).not.toContain('class="trophee-legende"');
+  });
+
   it("le bac du jour et l'ancienne vitrine de la discothèque ont disparu du module", () => {
     expect(html).not.toContain('class="bacs"');
     expect(html).not.toContain('class="bac"');
     expect(html).not.toContain('class="disco-vedette"');
+  });
+});
+
+describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse", () => {
+  // RÉGRESSION du 2026-09-03 : le mot affiché sous chaque cadran change de
+  // longueur selon la position (« Jour » contre « Campagne 33 T », « Écouté »
+  // contre « Apprécié »). Sans gabarit, la colonne des knobs changeait donc de
+  // largeur d'une position à l'autre, et poussait le graphique du palmarès à
+  // côté d'elle. Le rendu statique ne montre qu'UNE position à la fois ; ces
+  // tests prouvent donc que le GABARIT (toutes les positions, superposées et
+  // invisibles) est bien présent, pas que le graphique reste immobile — ça,
+  // seul un navigateur peut le montrer.
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
+  const panneau = html.split('class="palmares-commandes"')[1]?.split("<figure")[0] ?? "";
+  const boites = panneau.split('class="knob-valeur-boite"').slice(1);
+
+  it("un gabarit par knob, superposé au mot affiché", () => {
+    expect(boites.length).toBe(2);
+  });
+
+  it("le gabarit du knob Mesure porte les DEUX positions possibles", () => {
+    const gabarits = [...boites[0].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    expect(gabarits).toEqual(["Écouté", "Apprécié"]);
+  });
+
+  it("le gabarit du knob Vitesse porte les TROIS positions possibles", () => {
+    const gabarits = [...boites[1].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    expect(gabarits).toEqual(["Jour 78 T", "Semaine 45 T", "Campagne 33 T"]);
+  });
+
+  it("chaque gabarit partage la MÊME cellule que le mot visible — `grid-area`, pas un flux normal", () => {
+    // C'est cette superposition qui fait que la boîte prend la largeur du
+    // gabarit le plus large plutôt que celle du seul mot affiché.
+    for (const boite of boites) {
+      expect(boite).toContain('class="knob-valeur"');
+    }
+  });
+});
+
+describe("les decks — mènent vers la pochette du disque d'or, depuis le 2026-09-01", () => {
+  // RÉGRESSION du 2026-09-01 : un clic sur un deck ouvrait sa pochette EN
+  // PLACE, sous le pupitre (`PochetteOuverte`/`GatefoldInfos`, tous deux
+  // retirés). Le deck reste un bouton à état local, mais commande maintenant
+  // le panneau du disque d'or, plus bas (la table de mix est passée AVANT le
+  // palmarès dans l'ordre de la page, le même jour) plutôt qu'un volet local
+  // — le rendu statique ne peut donc prouver que l'état FERMÉ par défaut,
+  // comme pour le reste des composants à état de ce fichier.
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
+  const boutons = [...html.matchAll(/<button[^>]*class="deck-carre"[^>]*>/g)];
+
+  it("quatre decks, quatre VRAIS boutons — pas de lien de deck", () => {
+    expect(boutons.length).toBe(4);
+    expect(html).not.toMatch(/<a[^>]*class="deck-carre"/);
+  });
+
+  it("la table de mix (le pupitre) précède le palmarès dans la page", () => {
+    // RÉGRESSION du 2026-09-01 : le palmarès (et son disque d'or) vivait EN
+    // TÊTE du module ; il suit maintenant le pupitre (decks + console +
+    // fader), l'inverse de l'ordre précédent.
+    const iPupitre = html.indexOf('class="pupitre"');
+    const iPalmares = html.indexOf('class="partis-course partis-course--tete"');
+    expect(iPupitre).toBeGreaterThan(-1);
+    expect(iPalmares).toBeGreaterThan(iPupitre);
+  });
+
+  it("aucun n'est sélectionné par défaut — le panneau est fermé", () => {
+    for (const b of boutons) {
+      expect(b[0]).toContain('aria-pressed="false"');
+      expect(b[0]).not.toContain("deck-carre--choisi");
+    }
+  });
+
+  it("l'annonce dit où mène le clic — le disque d'or, plus bas", () => {
+    expect(html).toMatch(/Voir sa pochette, plus bas, dans le disque d&#x27;or/);
+    expect(html).not.toContain("Ouvrir sa pochette, plus bas");
+  });
+
+  it("aucune pochette ne s'ouvre plus EN PLACE, sous le pupitre", () => {
+    expect(html).not.toContain('class="gatefold"');
+    expect(html).not.toContain("gatefold-nom");
+    expect(html).not.toContain("gatefold-fermer");
   });
 });

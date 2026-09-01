@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { RawMaquette } from "@/components/sections/RawMaquette";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { DiscothequeClient } from "@/components/interactive/DiscothequeClient";
-import { groupeParAlbums, groupeParDiscographie, groupeParEditions, loadPochettes } from "@/lib/data/pochettes";
+import { groupeParAlbums, groupeParDiscographie, singlesParEcoute, loadPochettes } from "@/lib/data/pochettes";
 import { formatDateFr } from "@/lib/dates";
 
 export const metadata: Metadata = {
@@ -29,15 +29,16 @@ const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
  * engendrée. Les journées hors de l'horizon gardent leurs chiffres (le registre
  * les porte) mais pas leurs images.
  *
- * TROIS VUES, LA MÊME TRIADE QUE LE PALMARÈS (Jour / Semaine / Campagne),
- * depuis le 2026-09-01 : chaque single (une pochette, un jour, un parti)
- * rejoint l'ÉDITION de sa journée (les cinq partis, une compilation plutôt
- * qu'un album), l'ALBUM de sa semaine (samedi à vendredi, jusqu'à sept titres —
- * même semaine que le palmarès, `lib/semaine.ts`), ou la DISCOGRAPHIE de la
- * campagne entière. Les trois groupages viennent de la MÊME donnée
- * (`groupeParEditions`/`groupeParAlbums`/`groupeParDiscographie`, dans
+ * TROIS VUES, LA MÊME TRIADE QUE LE PALMARÈS (Jour / Semaine / Campagne).
+ * Jour ne groupe RIEN — depuis le 2026-09-05, chaque single (une pochette, un
+ * jour, un parti) s'affiche seul, tous classés en ordre d'écoute plutôt que
+ * compilés par journée : c'est la vue la plus fine du fonds. L'ALBUM de sa
+ * semaine (samedi à vendredi, jusqu'à sept titres — même semaine que le
+ * palmarès, `lib/semaine.ts`) et la DISCOGRAPHIE de la campagne entière, eux,
+ * groupent PAR PARTI. Les trois lectures viennent de la MÊME donnée
+ * (`singlesParEcoute`/`groupeParAlbums`/`groupeParDiscographie`, dans
  * `lib/data/pochettes.ts`) ; aucune pochette n'est relue ni recalculée pour
- * l'un ou pour l'autre.
+ * l'une ou pour l'autre.
  *
  * Aucune reconstitution : ce qui est écrit ici a été calculé le jour même et
  * figé avec la pochette. Une journée où le raffineur n'a pas tourné manque, et
@@ -50,7 +51,7 @@ export default async function DiscothequePage() {
   const { fonds } = await loadPochettes(formatDateFr);
   const total = fonds.reduce((n, j) => n + j.pochettes.length, 0);
   const servis = fonds.filter((j) => j.servi).length;
-  const editions = groupeParEditions(fonds, formatDateFr);
+  const singles = singlesParEcoute(fonds);
   const albums = groupeParAlbums(fonds, formatDateFr);
   const discographies = groupeParDiscographie(fonds);
 
@@ -84,7 +85,7 @@ export default async function DiscothequePage() {
               sont plus servies par le site.
             </p>
 
-            <DiscothequeClient editions={editions} albums={albums} discographies={discographies} />
+            <DiscothequeClient singles={singles} albums={albums} discographies={discographies} />
           </>
         )}
       </main>

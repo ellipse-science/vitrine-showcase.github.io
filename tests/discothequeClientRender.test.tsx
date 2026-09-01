@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { DiscothequeClient } from "@/components/interactive/DiscothequeClient";
-import type { Album, Discographie, Edition, Single } from "@/lib/data/pochettes";
+import type { Album, Discographie, Single } from "@/lib/data/pochettes";
 
 // Le rendu statique ne peut pas simuler un clic (pas de useState piloté de
 // l'extérieur) : ces tests prouvent donc l'état FERMÉ par défaut — la
-// couverture, jamais la tracklist — exactement comme les tests du palmarès ne
+// couverture, jamais l'endos — exactement comme les tests du palmarès ne
 // prouvent que l'état initial des knobs. La logique de groupage elle-même
-// (quelles pistes vont dans quel album, quelle édition) est déjà éprouvée dans
-// `tests/pochettesGroupes.test.ts`.
+// (quelles pistes vont dans quel album, quelle discographie, l'ordre
+// d'écoute des singles) est déjà éprouvée dans `tests/pochettesGroupes.test.ts`.
 
 function single(over: Partial<Single> & { jour: string }): Single {
   return {
@@ -29,6 +29,14 @@ function single(over: Partial<Single> & { jour: string }): Single {
     ...over,
   };
 }
+
+// DEUX SINGLES DU MÊME JOUR, DEUX PARTIS DIFFÉRENTS — la vue Jour ne les
+// compile plus dans une édition commune depuis le 2026-09-05 : chacun doit
+// rester sa PROPRE carte, indépendante.
+const SINGLES: Single[] = [
+  single({ jour: "2026-08-24", parti: "caq", sigle: "CAQ", minutesUne: 100, jourLabel: "Lundi 24 août 2026" }),
+  single({ jour: "2026-08-24", parti: "pq", sigle: "PQ", couleur: "#1E3A5F", minutesUne: 50, jourLabel: "Lundi 24 août 2026" }),
+];
 
 // `pistes[0]` (2026-08-24, 100 min, en tête puisque la plus écoutée) n'a
 // délibérément PAS de `src` : c'est elle qui devient la COUVERTURE de la
@@ -62,24 +70,9 @@ const DISCOGRAPHIES: Discographie[] = [
   },
 ];
 
-// UNE ÉDITION : plusieurs PARTIS le même jour, contrairement à un album ou une
-// discographie qui ne portent qu'un seul artiste.
-const EDITIONS: Edition[] = [
-  {
-    jour: "2026-08-24",
-    titre: "Édition du 24 août 2026",
-    couleur: "#2B5C7C",
-    totalMinutes: 150,
-    pistes: [
-      single({ jour: "2026-08-24", parti: "caq", sigle: "CAQ", minutesUne: 100 }),
-      single({ jour: "2026-08-24", parti: "pq", sigle: "PQ", couleur: "#1E3A5F", minutesUne: 50 }),
-    ],
-  },
-];
-
-describe("DiscothequeClient — la plaque FERMÉE par défaut", () => {
+describe("DiscothequeClient — la carte FERMÉE par défaut", () => {
   const html = renderToStaticMarkup(
-    <DiscothequeClient editions={EDITIONS} albums={ALBUMS} discographies={DISCOGRAPHIES} />,
+    <DiscothequeClient singles={SINGLES} albums={ALBUMS} discographies={DISCOGRAPHIES} />,
   );
 
   it("s'ouvre sur la vue JOUR, pas semaine ni campagne", () => {
@@ -90,37 +83,52 @@ describe("DiscothequeClient — la plaque FERMÉE par défaut", () => {
     expect(boutons.find((b) => b[2] === "Campagne")![1]).toBe("false");
   });
 
-  it("montre les éditions, pas les albums ni les discographies", () => {
-    expect(html).toContain("Édition du 24 août 2026");
+  it("montre les singles, pas les albums ni les discographies", () => {
+    expect(html).toContain("Lundi 24 août 2026");
     expect(html).not.toContain(": Album");
     expect(html).not.toContain(": Discographie");
   });
 
-  it("une édition garde ses PLUSIEURS partis, contrairement à un album", () => {
-    // Fermée, seule la vedette (CAQ, la plus écoutée) est visible ; PQ
-    // n'apparaît qu'une fois la plaque ouverte, dans la tracklist — non testé
-    // ici (rendu statique), mais le sous-titre doit déjà compter les deux.
-    expect(html).toContain("2 partis");
+  it("DEUX cartes indépendantes pour deux partis du même jour — plus de compilation par édition", () => {
+    expect([...html.matchAll(/class="fonds-plaque"/g)].length).toBe(2);
+    expect(html).toContain(">CAQ<");
+    expect(html).toContain(">PQ<");
   });
 
-  it("ne rend AUCUNE tracklist tant qu'on n'a pas cliqué", () => {
-    // Ni les pistes, ni leurs images : une discographie peut compter des
-    // dizaines de titres, les charger pour une plaque qu'on n'ouvre jamais
-    // serait le même gaspillage que l'ancienne grille de tuiles du module.
-    expect(html).not.toContain("fonds-pistes");
-    expect(html).not.toContain("fonds-piste-rang");
+  it("la pochette d'un single PIVOTE (flip), elle ne se déplie pas en rangée comme une plaque", () => {
+    // `CartePlaque` (album, discographie) passe en rangée une fois ouverte
+    // (`.fonds-plaque.ouverte`) : la couverture rétrécit, la tracklist
+    // s'étale à côté. Un single n'a rien à lister ; sa carte ne prend donc
+    // jamais la classe `ouverte` — seule sa pochette, dans `.flip-carte`,
+    // tourne pour montrer son endos.
+    expect(html).not.toContain('class="fonds-plaque ouverte"');
+    expect([...html.matchAll(/class="flip-carte"/g)].length).toBe(2);
+    expect([...html.matchAll(/class="flip-face flip-face--recto"/g)].length).toBe(2);
+    expect([...html.matchAll(/class="flip-face flip-face--verso"/g)].length).toBe(2);
+  });
+
+  it("la grille de la vue Jour est marquée « cinq de large »", () => {
+    expect(html).toContain('class="fonds-albums fonds-albums--singles"');
+  });
+
+  it("la pochette montre son RECTO, pas son endos, tant qu'on n'a pas cliqué", () => {
+    // L'endos existe TOUJOURS dans le DOM depuis le 2026-09-06 (le flip anime
+    // les deux faces à la fois — voir `.flip-carte` dans `globals.css`) ; ce
+    // qui change au clic, c'est la classe `retournee`, pas la présence de
+    // l'endos. Le rendu statique ne peut pas simuler le clic : ce test prouve
+    // donc l'absence de `retournee` par défaut, pas l'absence de contenu.
+    expect(html).toContain("fonds-piste-detail");
+    expect(html).not.toContain("retournee");
   });
 
   it("la couverture SANS image confirmée garde son sigle en texte", () => {
-    // Sans lui, parcourir un mur de plaques fermées ne laisserait plus aucun
-    // repère que la couleur.
     expect(html).toContain('class="fonds-repli fonds-repli--couverture"');
     expect(html).toContain('<b class="fonds-repli-sigle">CAQ</b>');
   });
 
   it("le déclencheur annonce l'état et l'action au lecteur d'écran", () => {
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toMatch(/aria-label="[^"]*Voir la liste des titres\.[^"]*"/);
+    expect(html).toMatch(/aria-label="[^"]*Voir le détail au dos de la pochette\.[^"]*"/);
   });
 
   it("les trois boutons de la bascule sont de VRAIS boutons", () => {
@@ -130,23 +138,12 @@ describe("DiscothequeClient — la plaque FERMÉE par défaut", () => {
 });
 
 describe("DiscothequeClient — la couverture quand une image existe", () => {
-  it("charge la VRAIE illustration du single le plus écouté, pas un repli", () => {
-    // La vue par défaut est Jour : c'est via une édition qu'on éprouve la
-    // couverture avec image, `CartePlaque`/`Pochette` étant les MÊMES
-    // composants partagés par les trois vues (voir `DiscothequeClient.tsx`) —
-    // les éprouver une fois suffit, la logique de groupage elle-même est
-    // couverte séparément par `tests/pochettesGroupes.test.ts`.
-    const editionAvecImage: Edition[] = [
-      {
-        jour: "2026-08-24",
-        titre: "Édition du 24 août 2026",
-        couleur: "#2B5C7C",
-        totalMinutes: 100,
-        pistes: [single({ jour: "2026-08-24", minutesUne: 100, src: "/pochettes/vedette.png" })],
-      },
+  it("charge la VRAIE illustration du single, pas un repli", () => {
+    const singleAvecImage: Single[] = [
+      single({ jour: "2026-08-24", minutesUne: 100, src: "/pochettes/vedette.png" }),
     ];
     const html = renderToStaticMarkup(
-      <DiscothequeClient editions={editionAvecImage} albums={[]} discographies={[]} />,
+      <DiscothequeClient singles={singleAvecImage} albums={[]} discographies={[]} />,
     );
     expect(html).toContain("<picture");
     expect(html).toContain("/pochettes/vedette.png");
@@ -157,8 +154,8 @@ describe("DiscothequeClient — la couverture quand une image existe", () => {
 describe("DiscothequeClient — sections vides", () => {
   it("le dit en toutes lettres plutôt que de laisser un trou muet", () => {
     const html = renderToStaticMarkup(
-      <DiscothequeClient editions={[]} albums={[]} discographies={[]} />,
+      <DiscothequeClient singles={[]} albums={[]} discographies={[]} />,
     );
-    expect(html).toContain("Aucune édition");
+    expect(html).toContain("Aucun single");
   });
 });

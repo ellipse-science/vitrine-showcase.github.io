@@ -416,8 +416,9 @@ export type Discographie = {
 };
 
 /** Les singles d'UNE journée, `PochetteArchivee` complétée de sa date — la
- *  brique commune aux trois groupages : `toutesLesSingles` l'aplatit sur tout
- *  le fonds, `groupeParEditions` la garde journée par journée. */
+ *  brique commune aux trois lectures du fonds : `groupeParAlbums`/
+ *  `groupeParDiscographie` les regroupent par parti, `toutesLesSingles` (via
+ *  `singlesParEcoute`) les aplatit tous ensemble, sans aucun groupe. */
 function singlesDuJour(j: JourFonds): Single[] {
   return j.pochettes.map((p) => ({ ...p, jour: j.jour, jourLabel: j.jourLabel, jourCourt: jourCourt(j.jour) }));
 }
@@ -494,45 +495,24 @@ export function groupeParDiscographie(fonds: JourFonds[]): Discographie[] {
   return discographies.sort((a, b) => b.totalMinutes - a.totalMinutes);
 }
 
-/** UNE ÉDITION : les singles des cinq partis d'une même journée — une
- *  compilation, pas un album. C'est la seule des trois vues qui ne groupe PAS
- *  par artiste : le point commun de ses pistes est la date, pas le parti, et
- *  c'est pourquoi `DiscothequeClient` leur fait porter leur sigle plutôt que
- *  leur date dans la tracklist. */
-export type Edition = {
-  jour: string;
-  /** « Édition du 27 août 2026 » — le mot que ce module emploie déjà partout
-   *  ailleurs pour un relevé daté (cf. le palmarès, « l'édition de 20 h »). */
-  titre: string;
-  /** La couleur du single en tête — celui qui prête sa pochette à la vitrine
-   *  fermée, faute d'un artiste unique à toute l'édition. */
-  couleur: string;
-  totalMinutes: number;
-  /** CLASSÉES EN ORDRE D'ÉCOUTE, comme les deux autres vues. */
-  pistes: Single[];
-};
-
 /**
- * LES ÉDITIONS — une par journée, la plus récente d'abord.
+ * LES SINGLES, TOUS CONFONDUS — un mur d'un seul disque à la fois, classé en
+ * ORDRE D'ÉCOUTE plutôt que groupé par jour ou par parti.
  *
- * NI L'ORDRE DES ÉDITIONS NI CELUI DE LEURS PISTES NE DÉPENDENT DE `fonds` EN
- * ENTRÉE : cette fonction trie les deux elle-même, comme `groupeParAlbums` et
- * `groupeParDiscographie` trient les leurs. `lireFonds` les range déjà ainsi
- * aujourd'hui, mais en dépendre silencieusement ferait de cette fonction un
- * simple passe-plat qui casserait sans bruit si `lireFonds` changeait un jour.
+ * ⚠️ AUCUN GROUPEMENT, ET C'EST LE POINT DE LA VUE JOUR. Les singles vivaient
+ * avant regroupés par ÉDITION (les cinq partis d'une même journée, compilés
+ * dans une plaque commune) — retiré le 2026-09-05 : une compilation cachait
+ * qui, ce jour-là, avait vraiment le plus tenu la Une, et obligeait à ouvrir
+ * la plaque du jour pour voir un seul parti. Semaine et campagne groupent
+ * PAR PARTI (un album, une discographie) ; le jour, lui, ne groupe plus DU
+ * TOUT — c'est la vue la plus fine, celle qui montre l'unité elle-même,
+ * plutôt qu'une agrégation de plus.
+ *
+ * NI L'ORDRE NE DÉPEND DE `fonds` EN ENTRÉE : cette fonction trie elle-même,
+ * comme `groupeParAlbums` et `groupeParDiscographie` trient les leurs.
  */
-export function groupeParEditions(fonds: JourFonds[], formatJour: (iso: string) => string): Edition[] {
-  const editions = fonds
-    .filter((j) => j.pochettes.length > 0)
-    .map((j): Edition => {
-      const pistes = singlesDuJour(j).sort((a, b) => b.minutesUne - a.minutesUne || a.sigle.localeCompare(b.sigle, "fr"));
-      return {
-        jour: j.jour,
-        titre: `Édition du ${sansNomDeJour(formatJour(j.jour))}`,
-        couleur: pistes[0].couleur,
-        totalMinutes: pistes.reduce((s, p) => s + p.minutesUne, 0),
-        pistes,
-      };
-    });
-  return editions.sort((a, b) => b.jour.localeCompare(a.jour));
+export function singlesParEcoute(fonds: JourFonds[]): Single[] {
+  return toutesLesSingles(fonds).sort(
+    (a, b) => b.minutesUne - a.minutesUne || b.jour.localeCompare(a.jour) || a.sigle.localeCompare(b.sigle, "fr"),
+  );
 }

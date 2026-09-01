@@ -50,10 +50,12 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
 
   // LE DISQUE D'OR DU PALMARÈS lit les MÊMES groupages que la page
   // `/discotheque` (`lib/data/pochettes.ts`), sur le même `fonds` — aucune
-  // pochette n'est relue ni reclassée pour l'un ou pour l'autre. `groupeParEditions`
-  // n'est pas nécessaire ici : la vue « Jour » du trophée lit `view.rows` et
-  // `discotheque.duJour`, pas les éditions (qui groupent par JOURNÉE, pas par
-  // parti — voir `lib/data/pochettes.ts`).
+  // pochette n'est relue ni reclassée pour l'un ou pour l'autre. `singlesParEcoute`
+  // n'est pas nécessaire ici : le classement du trophée (les cinq entrées, sur
+  // les trois vitesses) vient de `data.ranges[range].rows` — l'agrégat du
+  // palmarès lui-même, jamais du fonds de pochettes — qui ne sert plus qu'à
+  // fournir une COUVERTURE, en bonus, via `discotheque.duJour`/`albums`/
+  // `discographies`.
   const albums = groupeParAlbums(discotheque.fonds, formatDateFr);
   const discographies = groupeParDiscographie(discotheque.fonds);
 

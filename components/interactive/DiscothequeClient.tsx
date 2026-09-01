@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { formatDuree } from "@/lib/duree";
-import type { Album, Discographie, Edition, Single } from "@/lib/data/pochettes";
+import type { Album, Discographie, Single } from "@/lib/data/pochettes";
+import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Tracklist";
 
 type Vue = "jour" | "semaine" | "campagne";
 
@@ -15,7 +16,7 @@ const VUES: readonly { cle: Vue; mot: string; infobulle: string }[] = [
   {
     cle: "jour",
     mot: "Jour",
-    infobulle: "Une édition par journée\u00a0: les singles des cinq partis, une compilation plutôt qu'un album.",
+    infobulle: "Chaque single, seul\u00a0: tous les partis et toutes les journées, classés en ordre d'écoute.",
   },
   { cle: "semaine", mot: "Semaine", infobulle: "Un album par parti et par semaine, sept singles au plus." },
   {
@@ -26,10 +27,10 @@ const VUES: readonly { cle: Vue; mot: string; infobulle: string }[] = [
 ];
 
 /**
- * LE FONDS, EN TROIS LECTURES : par édition (jour), par album (semaine) ou par
- * discographie (campagne). Les trois viennent de la MÊME donnée — `fonds`,
- * chargée une fois côté serveur et regroupée trois façons par
- * `groupeParEditions`/`groupeParAlbums`/`groupeParDiscographie`
+ * LE FONDS, EN TROIS LECTURES : chaque single seul (jour), par album (semaine)
+ * ou par discographie (campagne). Les trois viennent de la MÊME donnée —
+ * `fonds`, chargée une fois côté serveur et regroupée trois façons par
+ * `singlesParEcoute`/`groupeParAlbums`/`groupeParDiscographie`
  * (`lib/data/pochettes.ts`) — cette bascule ne fait que choisir laquelle
  * montrer.
  *
@@ -38,11 +39,11 @@ const VUES: readonly { cle: Vue; mot: string; infobulle: string }[] = [
  * ce composant-ci ne reçoit que des données déjà prêtes.
  */
 export function DiscothequeClient({
-  editions,
+  singles,
   albums,
   discographies,
 }: {
-  editions: Edition[];
+  singles: Single[];
   albums: Album[];
   discographies: Discographie[];
 }) {
@@ -70,24 +71,13 @@ export function DiscothequeClient({
       </div>
 
       {vue === "jour" ? (
-        editions.length === 0 ? (
-          <p className="fonds-vide">Aucune édition pour l&apos;instant.</p>
+        singles.length === 0 ? (
+          <p className="fonds-vide">Aucun single pour l&apos;instant.</p>
         ) : (
-          <ol className="fonds-albums">
-            {editions.map((edition) => (
-              <li key={edition.jour}>
-                <CartePlaque
-                  titre={edition.titre}
-                  sousTitre={
-                    edition.pistes.length === 1 ? "1 parti" : `${edition.pistes.length} partis`
-                  }
-                  couleur={edition.couleur}
-                  totalMinutes={edition.totalMinutes}
-                  pistes={edition.pistes}
-                  // Le point commun d'une édition est la DATE — déjà dans le
-                  // titre — pas le parti : chaque piste porte donc son sigle.
-                  legendePiste="parti"
-                />
+          <ol className="fonds-albums fonds-albums--singles">
+            {singles.map((single) => (
+              <li key={`${single.jour}/${single.parti}`}>
+                <CarteSingle single={single} />
               </li>
             ))}
           </ol>
@@ -105,7 +95,6 @@ export function DiscothequeClient({
                   couleur={album.couleur}
                   totalMinutes={album.totalMinutes}
                   pistes={album.pistes}
-                  legendePiste="date"
                 />
               </li>
             ))}
@@ -125,7 +114,6 @@ export function DiscothequeClient({
                 couleur={disco.couleur}
                 totalMinutes={disco.totalMinutes}
                 pistes={disco.pistes}
-                legendePiste="date"
               />
             </li>
           ))}
@@ -193,21 +181,18 @@ function CartePlaque({
   couleur,
   totalMinutes,
   pistes,
-  legendePiste,
 }: {
   titre: string;
   sousTitre: string;
   couleur: string;
   totalMinutes: number;
+  /** Les pistes d'UN album ou d'UNE discographie : toujours le même parti
+   *  (déjà nommé dans l'en-tête), la seconde ligne de chacune montre donc la
+   *  DATE — ce qui varie d'une piste à l'autre. L'ÉDITION (les cinq partis
+   *  d'une même journée, sa seconde ligne au sigle plutôt qu'à la date) a
+   *  quitté la vue Jour le 2026-09-05 ; `CartePlaque` n'a donc plus qu'un
+   *  seul type de tracklist à savoir dessiner. */
   pistes: Single[];
-  /** CE QUE MONTRE LA SECONDE LIGNE de chaque piste, sous sa durée. Le point
-   *  commun des pistes d'UN album ou d'UNE discographie est le PARTI (déjà nommé
-   *  dans l'en-tête) : leur seconde ligne montre donc la DATE, ce qui varie
-   *  d'une piste à l'autre. Le point commun des pistes d'UNE ÉDITION est au
-   *  contraire la DATE (déjà dans le titre « Édition du … ») : leur seconde
-   *  ligne montre le PARTI. Deux vues, deux réponses à la même question — quelle
-   *  est l'information que le titre ne donne pas déjà. */
-  legendePiste: "date" | "parti";
 }) {
   const [ouverte, setOuverte] = useState(false);
   const vedette = pistes[0];
@@ -240,19 +225,91 @@ function CartePlaque({
       {ouverte && (
         <ol className="fonds-pistes">
           {pistes.map((single, i) => (
-            // `jour` seul ne suffit pas comme clé : les cinq pistes d'une
-            // ÉDITION partagent le même jour, seul le parti les distingue.
-            <li className="fonds-piste" key={`${single.jour}/${single.parti}`}>
+            <li className="fonds-piste" key={single.jour}>
               <i className="fonds-piste-rang" aria-hidden="true">{i + 1}</i>
               <Pochette single={single} taille="piste" />
               <span className="fonds-piste-legende">
                 <b>{single.chiffres ? formatDuree(single.minutesUne) : "n. d."}</b>
-                <span>{legendePiste === "date" ? single.jourCourt : single.sigle}</span>
+                <span>{single.jourCourt}</span>
               </span>
             </li>
           ))}
         </ol>
       )}
+    </div>
+  );
+}
+
+/**
+ * UN SINGLE, SEUL — la carte de la vue Jour depuis le 2026-09-05. Même geste
+ * que `CartePlaque` (fermée par défaut), mais sans tracklist À L'INTÉRIEUR :
+ * un single est déjà l'unité la plus fine du fonds, il n'y a rien de plus
+ * petit à lister. Ce que le clic révèle est plutôt son PROPRE endos — les
+ * quatre mêmes grandeurs que le disque d'or du module publie sur l'endos de
+ * sa carte (temps, part, enjeu, ton), en tracklist elle aussi
+ * (`LigneTracklist`/`LigneTracklistTon`, `components/interactive/
+ * Tracklist.tsx`) : le même vocabulaire, qu'on retourne un single, un album
+ * ou une discographie.
+ *
+ * ⚠️ LA POCHETTE PIVOTE VRAIMENT (`.flip-carte`, PARTAGÉ AVEC LE DISQUE D'OR
+ * DU MODULE) — les informations sont DERRIÈRE elle, pas dessous : cliquer la
+ * retourne comme un vrai disque, plutôt que de faire apparaître un texte en
+ * dessous. `.fonds-plaque` ne prend donc plus la classe `ouverte` ici — elle
+ * déclenchait le passage en rangée de `CartePlaque` (la couverture rétrécit,
+ * la tracklist s'étale à côté), une mise en page pensée pour LISTER plusieurs
+ * pistes. Un single n'en a qu'une : sa carte reste en colonne, seule sa
+ * pochette tourne. */
+function CarteSingle({ single }: { single: Single }) {
+  const [ouverte, setOuverte] = useState(false);
+  const chiffres = single.chiffres;
+
+  return (
+    <div className="fonds-plaque" style={{ ["--party" as string]: single.couleur }}>
+      <button
+        type="button"
+        className="fonds-plaque-declencheur"
+        onClick={() => setOuverte((v) => !v)}
+        aria-expanded={ouverte}
+        aria-label={
+          `${single.sigle}, ${single.jourLabel}. ` +
+          `${chiffres ? `${formatDuree(single.minutesUne)} en Une.` : "Chiffres pas encore disponibles."} ` +
+          `${ouverte ? "Refermer" : "Voir"} le détail au dos de la pochette.`
+        }
+      >
+        <span className="fonds-plaque-couverture">
+          {/* LES DEUX FACES RESTENT TOUJOURS DANS LE DOM — un flip anime les
+              deux à la fois, démonter l'endos avant l'ouverture romprait
+              l'animation. Sans coût réel : l'endos n'est que du texte. */}
+          <span className={`flip-carte${ouverte ? " retournee" : ""}`}>
+            <span className="flip-face flip-face--recto">
+              <Pochette single={single} taille="couverture" />
+            </span>
+            <span className="flip-face flip-face--verso">
+              <dl className="fonds-piste-detail">
+                <LigneTracklist categorie="Temps en Une" chiffre>
+                  {chiffres ? formatDuree(single.minutesUne) : "n. d."}
+                </LigneTracklist>
+                <LigneTracklist categorie="Part de temps">
+                  {chiffres ? `${single.partPct} %` : "n. d."}
+                </LigneTracklist>
+                <LigneTracklist categorie="Enjeu">
+                  {chiffres ? (single.enjeu ?? "Aucun enjeu identifié") : "n. d."}
+                </LigneTracklist>
+                {chiffres ? (
+                  <LigneTracklistTon categorie="Ton" tonMot={single.ton} tonPct={single.tonPct} />
+                ) : (
+                  <LigneTracklist categorie="Ton">n. d.</LigneTracklist>
+                )}
+              </dl>
+            </span>
+          </span>
+        </span>
+        <span className="fonds-plaque-tete">
+          <b>{single.sigle}</b>
+          <span className="fonds-plaque-sous">{single.jourLabel}</span>
+          <span className="fonds-plaque-total">{chiffres ? formatDuree(single.minutesUne) : "n. d."}</span>
+        </span>
+      </button>
     </div>
   );
 }

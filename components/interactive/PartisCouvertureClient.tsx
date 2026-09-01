@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import type { ReactNode } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import type { Album, Discographie, Discotheque, Pochette, PochetteSource } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
@@ -12,6 +13,7 @@ import { samediDeLaSemaine } from "@/lib/semaine";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
+import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Tracklist";
 
 /** L'enjeu de reste : les phrases qui nomment un parti sans qu'aucun modèle CAP
  *  ne franchisse son seuil. Il EST sélectionnable — sans lui, cocher tous les
@@ -54,10 +56,12 @@ type ModePalmares = "ecoute" | "apprecie";
 
 type Mode = { cle: ModePalmares; onglet: string; titre: string; infobulle: string };
 
-/** UNE ENTRÉE DU TROPHÉE — un parti, sa place dans le classement de la vitesse
- *  choisie, et sa couverture quand une en existe. Mise à la même forme depuis
- *  trois sources différentes (`RowView`, `Album`, `Discographie`) : le trophée
- *  ne connaît que cette forme-là, pas d'où elle vient. */
+/** UNE ENTRÉE DU TROPHÉE — un parti, ses quatre grandeurs (temps, part,
+ *  enjeu, ton), et sa couverture quand une en existe. Mise à la même forme
+ *  depuis trois sources
+ *  différentes (`RowView` pour le jour, `Album`/`Discographie` — leur piste la
+ *  plus écoutée — pour la semaine et la campagne) : le trophée ne connaît que
+ *  cette forme-là, pas d'où elle vient. */
 type EntreeTrophee = {
   /** Clé React — la clé du parti suffit, les cinq entrées d'un même trophée ne
    *  peuvent pas se répéter. */
@@ -66,6 +70,15 @@ type EntreeTrophee = {
   nom: string;
   couleur: string;
   minutes: number;
+  /** L'écart au ton moyen des autres partis, au dernier relevé — la même
+   *  grandeur que `ChartSeries.lastEcartTon`, celle qui classe le palmarès en
+   *  mode Apprécié. `null` quand le parti n'a aucune couverture mesurée. */
+  ecart: number | null;
+  partPct: number;
+  enjeu: string;
+  tonMot: string;
+  tonPct: number;
+  tonTitle?: string;
   src?: string;
   sources?: PochetteSource[];
 };
@@ -119,11 +132,15 @@ const VITESSE_INFOBULLE: Record<RangeKey, string> = {
  *  couronné : un SINGLE (un jour), un ALBUM (une semaine, sept titres au plus,
  *  comme `/discotheque`), un DISQUE (toute la campagne). Reprend le vocabulaire
  *  déjà établi par `/discotheque` (Édition/Album/Discographie) plutôt que d'en
- *  inventer un autre pour ce trophée. */
+ *  inventer un autre pour ce trophée.
+ *
+ *  LE PALIER MONTE AVEC LA VITESSE — or, puis platine, puis diamant — sur le
+ *  modèle des certifications RIAA réelles : plus la période est longue, plus
+ *  la mener longtemps est rare, et plus haut le palier qui le dit. */
 const NOM_TROPHEE: Record<RangeKey, string> = {
   today: "Le single d'or",
-  week: "L'album d'or",
-  overall: "Le disque d'or",
+  week: "L'album de platine",
+  overall: "Le disque de diamant",
 };
 /** Avant que la course ne soit courue, rien n'est encore pressé — voir
  *  `chartTermine`. Le nom reste visible, seul le disque manque. */
@@ -131,6 +148,16 @@ const PRODUCTION_TROPHEE: Record<RangeKey, string> = {
   today: "Single en production",
   week: "Album en production",
   overall: "Disque en production",
+};
+
+/** LA COULEUR DE L'ENCADRÉ, une fois couronné — un token par palier, sur le
+ *  modèle des trois couleurs RIAA réelles (or, argent du platine, blanc
+ *  glacé du diamant) plutôt qu'un seul laiton pour les trois : le palier se
+ *  VOIT, pas seulement se lit dans le nom du trophée. */
+const PALIER_COULEUR: Record<RangeKey, string> = {
+  today: "var(--brass)",
+  week: "var(--platine)",
+  overall: "var(--diamant)",
 };
 
 /** LA COURSE EST-ELLE FINIE ? Même geste que `Palmares` (`resteACourir`), sans
@@ -263,9 +290,27 @@ export function PartisCouvertureClient({
   const [modePalmares, setModePalmares] = useState<ModePalmares>("ecoute");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
   const [showDoom, setShowDoom] = useState(false);
-  /** Le parti dont la pochette est OUVERTE, ou `null` quand rien n'est ouvert.
-   *  C'est un clic sur un DECK qui l'ouvre — voir `PochetteOuverte`. */
-  const [pochette, setPochette] = useState<PartyKey | null>(null);
+  /** LE PANNEAU DU DISQUE D'OR — les cinq partis en dessous du palmarès,
+   *  déplié par un clic sur le disque (voir `PalmaresTrophee`/`TropheePanel`).
+   *  Vit ICI, au-dessus de `.palmares-rangee`, et non dans `PalmaresTrophee` :
+   *  le panneau se rend en PLEINE LARGEUR, sous toute la rangée, pas dans la
+   *  seule colonne étroite du disque. */
+  const [trophéeOuvert, setTrophéeOuvert] = useState(false);
+  /** LA CARTE DU PANNEAU DÉJÀ RETOURNÉE À L'OUVERTURE, ou `null` quand aucune
+   *  ne l'est. C'est un clic sur un DECK qui la choisit (voir `Deck` /
+   *  `ouvrirPochetteDuParti`) : le deck mène vers LA MÊME pochette que le
+   *  disque d'or, déjà tournée sur son endos plutôt qu'à retourner soi-même.
+   *  Remise à `null` dès que le panneau se ferme ou se rouvre autrement — sans
+   *  quoi un deck cliqué une fois laisserait sa carte pré-tournée à chaque
+   *  réouverture manuelle du disque, sans rapport avec ce second clic. */
+  const [carteOuverte, setCarteOuverte] = useState<PartyKey | null>(null);
+  /** Le clic sur un deck : ouvre le panneau ET pré-tourne la carte de ce
+   *  parti, exactement comme le ferait un clic sur le disque d'or suivi d'un
+   *  clic sur sa carte — en un seul geste. */
+  const ouvrirPochetteDuParti = (cle: PartyKey) => {
+    setCarteOuverte(cle);
+    setTrophéeOuvert(true);
+  };
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
   const handlePcqTap = () => {
@@ -307,65 +352,98 @@ export function PartisCouvertureClient({
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
 
-  // La pochette du JOUR ouverte, résolue ICI : son volet se rend en pleine
-  // largeur, sous le pupitre — un volet double fait 720 px, aucune colonne du
-  // module n'est assez large pour l'accueillir en place.
-  const choisieDuJour = rangerParTemps(view.rows).find((r) => r.key === pochette) ?? null;
-  const engendreeDuJour = (row: RowView) => pochetteAppariee(row, discotheque?.duJour ?? []);
+  /** LE CLASSEMENT DU TROPHÉE, jusqu'à cinq entrées, pour la vitesse choisie
+   *  ET LA MESURE CHOISIE — le disque d'or suit le knob Mesure, exactement
+   *  comme le graphique juste à côté : en Apprécié, il couronne le ton, pas
+   *  l'écoute.
+   *
+   *  ⚠️ `data.ranges[range].rows` — L'AGRÉGAT, JAMAIS `view.rows`. `view` peut
+   *  être le tableau D'UN SEUL MÉDIA (`source.ranges[range]` plus haut) quand
+   *  le fader n'est pas sur « tous les médias » ; le trophée, comme le
+   *  graphique du palmarès (`data.ranges[range].chart`, jamais `view.chart`),
+   *  doit rester une course entre PARTIS, pas entre médias. Utiliser `view`
+   *  ici ferait couronner le meneur d'UN journal plutôt que celui de la
+   *  couverture réelle.
+   *
+   *  ⚠️ MÊME AGRÉGAT POUR LES TROIS VITESSES — c'est le bogue que ce
+   *  commentaire documente. Semaine et campagne lisaient `albums`/
+   *  `discographies` (le fonds de pochettes archivées) pour le CLASSEMENT
+   *  lui-même, pas seulement pour l'illustration ; un fonds vide ou pas
+   *  encore rattrapé (le raffineur d'images tourne à part de celui des
+   *  chiffres) faisait alors disparaître le disque d'or ENTIER sur ces deux
+   *  vitesses, silencieusement. `data.ranges[range].rows` existe TOUJOURS,
+   *  quel que soit l'état du fonds : c'est la même donnée qui trace déjà le
+   *  graphique et les barres du module, jamais en retard sur elles.
+   *
+   *  La COUVERTURE, elle, reste optionnelle et VIENT du fonds — c'est la
+   *  seule chose qu'il lui reste à fournir : `pochetteAppariee` pour le jour,
+   *  la piste la plus écoutée de l'album de la semaine COURANTE
+   *  (`samediDeLaSemaine`, ancrée sur `data.lastDate`, jamais sur l'horloge du
+   *  visiteur) ou de la discographie complète pour la campagne. Sans elle, le
+   *  disque affiche son repli — jamais son absence totale. */
+  const albumSemaineParParti = new Map(
+    (albums ?? [])
+      .filter((a) => a.semaineDebut === samediDeLaSemaine(data.lastDate))
+      .map((a) => [a.parti, a] as const),
+  );
+  const discographieParParti = new Map((discographies ?? []).map((d) => [d.parti, d] as const));
 
-  /** LE CLASSEMENT DU TROPHÉE, jusqu'à cinq entrées, pour la vitesse choisie.
-   *
-   *  TROIS SOURCES, UNE PAR VITESSE — jamais relues ni reclassées, seulement
-   *  mises à la même forme :
-   *  - Jour : `view.rows`, déjà la donnée LIVE du module, sa propre pochette
-   *    via `pochetteAppariee` (le même appariement que le deck).
-   *  - Semaine : les `albums` de la semaine COURANTE — `samediDeLaSemaine`
-   *    ancrée sur `data.lastDate`, jamais sur l'horloge du visiteur, comme
-   *    toute donnée de ce site (elle est écrite au build, pas lue en direct).
-   *  - Campagne : les `discographies`, déjà triées sur toute la campagne.
-   *
-   *  La couverture d'un album ou d'une discographie est celle de sa PISTE la
-   *  plus écoutée (`pistes[0]`) — le même principe que la vitrine du module
-   *  avant elle, et que la carte vedette de `/discotheque`. */
-  const entreesTrophee: EntreeTrophee[] =
-    range === "today"
-      ? rangerParTemps(view.rows)
-          .slice(0, 5)
-          .map((row) => {
-            const p = pochetteAppariee(row, discotheque?.duJour ?? []);
-            return {
-              cle: row.key,
-              sigle: row.label,
-              nom: row.fullLabel,
-              couleur: row.color,
-              minutes: row.minutesUne,
-              src: p?.src,
-              sources: p?.sources,
-            };
-          })
-      : range === "week"
-        ? (albums ?? [])
-            .filter((a) => a.semaineDebut === samediDeLaSemaine(data.lastDate))
-            .slice(0, 5)
-            .map((a) => ({
-              cle: a.parti,
-              sigle: a.sigle,
-              nom: a.nom,
-              couleur: a.couleur,
-              minutes: a.totalMinutes,
-              src: a.pistes[0]?.src,
-              sources: a.pistes[0]?.sources,
-            }))
-        : (discographies ?? []).slice(0, 5).map((d) => ({
-            cle: d.parti,
-            sigle: d.sigle,
-            nom: d.nom,
-            couleur: d.couleur,
-            minutes: d.totalMinutes,
-            src: d.pistes[0]?.src,
-            sources: d.pistes[0]?.sources,
-          }));
+  /** L'écart de ton de chaque parti, au dernier relevé — la MÊME grandeur que
+   *  `Palmares` (`valeurDe`) utilise pour classer ses lignes en Apprécié
+   *  (`ChartSeries.lastEcartTon`). Une carte plutôt qu'un accès direct : le
+   *  classement du trophée part de `rows` (`RowView`), le graphique de
+   *  `series` (`ChartSeries`) — deux tableaux distincts sur les mêmes partis,
+   *  et c'est cette carte qui les relie par clé. */
+  const ecartParParti = new Map(data.ranges[range].chart.series.map((s) => [s.key, s.lastEcartTon]));
+  const apprecieTrophee = modePalmares === "apprecie";
+  /** ⚠️ UN PARTI SANS TON EST ENVOYÉ EN QUEUE, jamais classé comme un ton
+   *  neutre — même garde que `Palmares` (`valeurDe`), pour la même raison :
+   *  `null` veut dire « aucune couverture », pas « couverture équilibrée ». */
+  const valeurTrophee = (row: RowView) =>
+    apprecieTrophee ? (ecartParParti.get(row.key) ?? Number.NEGATIVE_INFINITY) : row.minutesUne;
+  const classementTrophee = data.ranges[range].rows
+    .slice()
+    .sort((a, b) => valeurTrophee(b) - valeurTrophee(a) || a.label.localeCompare(b.label, "fr"));
+
+  const entreesTrophee: EntreeTrophee[] = classementTrophee
+    .slice(0, 5)
+    .map((row) => {
+      const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+      const couverture =
+        range === "today"
+          ? pochetteAppariee(row, discotheque?.duJour ?? [])
+          : range === "week"
+            ? (albumSemaineParParti.get(row.key)?.pistes[0] ?? null)
+            : (discographieParParti.get(row.key)?.pistes[0] ?? null);
+      return {
+        cle: row.key,
+        sigle: row.label,
+        nom: row.fullLabel,
+        couleur: row.color,
+        minutes: row.minutesUne,
+        ecart: ecartParParti.get(row.key) ?? null,
+        partPct: row.sovPct,
+        enjeu: enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE),
+        tonMot: row.toneLabel,
+        tonPct: row.tonePct,
+        tonTitle: row.toneTitle,
+        src: couverture?.src,
+        sources: couverture?.sources,
+      };
+    });
   const gagnantTrophee = entreesTrophee[0] ?? null;
+
+  /** LA DATE DE SORTIE — quand le disque « en production » sera pressé.
+   *  Réutilise `chart.finish` (`label`/`sub`), déjà la ligne d'arrivée du
+   *  graphique juste à côté : le disque et le graphique doivent annoncer LA
+   *  MÊME échéance, pas deux calculs qui pourraient un jour diverger. */
+  const finishTrophee = data.ranges[range].chart.finish;
+  const sortieTrophee =
+    range === "today"
+      ? `Sortie prévue à ${finishTrophee.label}`
+      : range === "week"
+        ? `Sortie prévue ${finishTrophee.label} à ${finishTrophee.sub}`
+        : `Sortie prévue le ${finishTrophee.sub}`;
 
   /** LE PLUS LONG DES TITRES POSSIBLES — le gabarit qui fige la largeur.
    *
@@ -427,8 +505,96 @@ export function PartisCouvertureClient({
 
       {data.indisponible && <AvisIndisponible info={data.indisponible} />}
 
-      {/* Le palmarès EN TÊTE du module : le mouvement d'abord, l'examen
-          ensuite, ce qui est l'ordre dans lequel on lit un classement.
+      <div className="pupitre">
+        <div className="pupitre-aide">
+          <InfoTip size="lg" label="Comment lire cette visualisation">
+              <b>Comment lire cette visualisation&nbsp;:</b>
+              <br />
+              <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
+              les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
+              l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
+              petite. Les cinq colonnes se partagent 100&nbsp;%.
+              <br />
+              <br />• Chaque colonne porte la <b>couleur de son parti</b>.
+              <br />
+              <br />• Le curseur <b>Source</b> change de média&nbsp;: les hauteurs se recalculent
+              sur les Unes de ce média seul.
+              <br />
+              <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
+              que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
+              affichée sans valeur. À égalité au plus bas, les deux y passent.
+              <br />
+              <br />• <b>Cliquez un disque</b> pour voir sa pochette, dans le disque d&apos;or.
+              <br />
+              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
+                En savoir plus sur la méthodologie →
+              </a>
+            </InfoTip>
+        </div>
+
+      {/* Quatre decks aux quatre coins, le vumètre entre eux.
+          La colonne de gauche porte les rangs 1 et 3, celle de droite les rangs
+          2 et 4 : la lecture suit l'ordre naturel de la page, le premier en haut
+          à gauche. Les decks débordent volontairement au-dessus et au-dessous de
+          la console — ce sont eux les objets, la console est l'instrument qui
+          les mesure. */}
+      <div className="regie">
+        <div className="regie-flanc regie-flanc--gauche">
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[0]?.key} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[2]?.key} />
+        </div>
+
+        <div className="regie-centre">
+          <Console
+            rows={view.rows}
+            reference={data.ranges[range].rows}
+            onPcqTap={handlePcqTap}
+            indisponible={data.indisponible}
+            saillanceRang={saillanceRang}
+            media={media}
+            depuis={view.depuisLabel}
+          />
+        </div>
+
+        <div className="regie-flanc regie-flanc--droite">
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[1]?.key} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
+            onSelect={ouvrirPochetteDuParti} selectionne={carteOuverte === decks[3]?.key} />
+        </div>
+      </div>
+
+      {/* Le fader reste EN PLACE tant que la ventilation par média n'est pas
+          publiée (aws-refiners#324) — QUE la mesure soit suspendue ou non.
+          La condition portait sur `data.indisponible` : elle affichait le
+          repli inerte pendant la suspension, puis se réduisait à `null` dès
+          que #542 a levé le drapeau, alors que la VRAIE raison de l'absence
+          — pas de ventilation par média — n'avait pas changé. Le fader
+          disparaissait donc précisément au moment où le module redevenait
+          actif. Le panel de médias est une CONSTANTE, connue indépendamment
+          de toute donnée : on peut le montrer. Inerte, parce qu'il n'y a rien
+          à filtrer, et le dire vaut mieux que de le faire disparaître. */}
+      {data.medias.length > 0 ? (
+        <Fader medias={data.medias} valeur={media} onChange={setMedia} />
+      ) : (
+        <Fader
+          medias={MEDIA_PANEL_QC.map((id) => ({
+            id,
+            label: MEDIA_LABELS[id] ?? id,
+          }))}
+          valeur={TOUS_MEDIAS}
+          onChange={() => {}}
+          inerte
+        />
+      )}
+      </div>
+
+      {/* LE PALMARÈS SUIT LA TABLE DE MIX depuis le 2026-09-01 (déplacé après
+          elle, plutôt qu'en tête du module) : on regarde d'abord qui occupe
+          la Une en ce moment, puis le classement qui en résulte dans le
+          temps.
 
           La condition ne teste PLUS `chart.tooShort` : `Palmares` le teste déjà
           et rend une phrase qui dit pourquoi il n'y a pas de courbe. Testé aux
@@ -502,7 +668,13 @@ export function PartisCouvertureClient({
                   detail: VITESSE_INFOBULLE[r],
                 }))}
                 valeur={range}
-                onChange={(c) => setRange(c as RangeKey)}
+                onChange={(c) => {
+                  setRange(c as RangeKey);
+                  // Le panneau déplié parlait de l'ancienne vitesse ; le
+                  // rouvrir pour la nouvelle est un second clic, pas un
+                  // carry-over qui induirait en erreur.
+                  setTrophéeOuvert(false);
+                }}
               />
             </div>
 
@@ -514,115 +686,52 @@ export function PartisCouvertureClient({
             {gagnantTrophee && (
               <PalmaresTrophee
                 range={range}
+                apprecie={apprecieTrophee}
                 termine={chartTermine(data.ranges[range].chart)}
                 gagnant={gagnantTrophee}
-                reste={entreesTrophee.slice(1)}
+                sortie={sortieTrophee}
+                ouvert={trophéeOuvert}
+                onToggle={() => {
+                  // Un clic direct sur le disque n'a pas de parti précis en
+                  // tête : la carte qu'un DECK aurait pré-tournée n'a plus
+                  // sa place, sans quoi elle resterait tournée sans rapport
+                  // avec ce second geste.
+                  setCarteOuverte(null);
+                  setTrophéeOuvert((v) => !v);
+                }}
               />
             )}
           </div>
+
+          {/* LE PANNEAU, PLEINE LARGEUR, SOUS TOUTE LA RANGÉE — pas dans la
+              seule colonne du disque, trop étroite pour cinq cartes. Les CINQ
+              entrées, gagnant compris : en production, aucune n'a de pochette
+              finale à montrer, les cinq sont à égalité, en cours de mesure. */}
+          {gagnantTrophee && trophéeOuvert && (
+            <TropheePanel
+              range={range}
+              apprecie={apprecieTrophee}
+              termine={chartTermine(data.ranges[range].chart)}
+              entrees={entreesTrophee}
+              sortie={sortieTrophee}
+              carteOuverte={carteOuverte}
+              onFermer={() => {
+                setTrophéeOuvert(false);
+                setCarteOuverte(null);
+              }}
+            />
+          )}
         </section>
       )}
-
-      <div className="pupitre">
-        <div className="pupitre-aide">
-          <InfoTip size="lg" label="Comment lire cette visualisation">
-              <b>Comment lire cette visualisation&nbsp;:</b>
-              <br />
-              <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
-              les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
-              l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
-              petite. Les cinq colonnes se partagent 100&nbsp;%.
-              <br />
-              <br />• Chaque colonne porte la <b>couleur de son parti</b>.
-              <br />
-              <br />• Le curseur <b>Source</b> change de média&nbsp;: les hauteurs se recalculent
-              sur les Unes de ce média seul.
-              <br />
-              <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
-              que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
-              affichée sans valeur. À égalité au plus bas, les deux y passent.
-              <br />
-              <br />• <b>Cliquez un disque</b> pour retourner sa pochette.
-              <br />
-              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
-                En savoir plus sur la méthodologie →
-              </a>
-            </InfoTip>
-        </div>
-
-      {/* Quatre decks aux quatre coins, le vumètre entre eux.
-          La colonne de gauche porte les rangs 1 et 3, celle de droite les rangs
-          2 et 4 : la lecture suit l'ordre naturel de la page, le premier en haut
-          à gauche. Les decks débordent volontairement au-dessus et au-dessous de
-          la console — ce sont eux les objets, la console est l'instrument qui
-          les mesure. */}
-      <div className="regie">
-        <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            onSelect={setPochette} selectionne={pochette === decks[0]?.key} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            onSelect={setPochette} selectionne={pochette === decks[2]?.key} />
-        </div>
-
-        <div className="regie-centre">
-          <Console
-            rows={view.rows}
-            reference={data.ranges[range].rows}
-            onPcqTap={handlePcqTap}
-            indisponible={data.indisponible}
-            saillanceRang={saillanceRang}
-            media={media}
-            depuis={view.depuisLabel}
-          />
-        </div>
-
-        <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            onSelect={setPochette} selectionne={pochette === decks[1]?.key} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            onSelect={setPochette} selectionne={pochette === decks[3]?.key} />
-        </div>
-      </div>
-
-      {/* Le fader reste EN PLACE tant que la ventilation par média n'est pas
-          publiée (aws-refiners#324) — QUE la mesure soit suspendue ou non.
-          La condition portait sur `data.indisponible` : elle affichait le
-          repli inerte pendant la suspension, puis se réduisait à `null` dès
-          que #542 a levé le drapeau, alors que la VRAIE raison de l'absence
-          — pas de ventilation par média — n'avait pas changé. Le fader
-          disparaissait donc précisément au moment où le module redevenait
-          actif. Le panel de médias est une CONSTANTE, connue indépendamment
-          de toute donnée : on peut le montrer. Inerte, parce qu'il n'y a rien
-          à filtrer, et le dire vaut mieux que de le faire disparaître. */}
-      {data.medias.length > 0 ? (
-        <Fader medias={data.medias} valeur={media} onChange={setMedia} />
-      ) : (
-        <Fader
-          medias={MEDIA_PANEL_QC.map((id) => ({
-            id,
-            label: MEDIA_LABELS[id] ?? id,
-          }))}
-          valeur={TOUS_MEDIAS}
-          onChange={() => {}}
-          inerte
-        />
-      )}
-      </div>
 
       {/* LE BAC DU JOUR ET LA DISCOTHÈQUE ONT QUITTÉ LE BAS DU PUPITRE le
           2026-09-01 : l'accès aux pochettes se fait désormais par le DISQUE
           D'OR, à côté du palmarès (voir `PalmaresTrophee`) — un seul disque à
-          la fois plutôt qu'un bac entier, et un bouton dédié vers
-          `/discotheque` pour qui veut tout voir. Le clic sur un DECK reste le
-          chemin le plus direct pour ouvrir la pochette d'UN parti choisi : le
-          volet qui suit s'ouvre pour lui. */}
-      {choisieDuJour && (
-        <PochetteOuverte
-          row={choisieDuJour}
-          pochette={engendreeDuJour(choisieDuJour)}
-          onFermer={() => setPochette(null)}
-        />
-      )}
+          la fois plutôt qu'un bac entier. Le clic sur un DECK reste le
+          chemin le plus direct vers UN parti choisi, mais mène maintenant à
+          la MÊME pochette que le disque d'or, déjà retournée, plutôt que
+          d'en ouvrir une autre en place ici (voir `Deck` /
+          `ouvrirPochetteDuParti`). */}
 
       <div className="module-last-updated">{data.lastUpdated}</div>
     </>
@@ -864,120 +973,6 @@ function Console({
 }
 
 /**
- * L'ILLUSTRATION d'une pochette, dans la pochette ouverte.
- *
- * N'a plus qu'un seul appelant depuis le 2026-08-31 (`PochetteOuverte`) : le
- * bac du jour, qui la partageait, a quitté le pupitre — voir le disque d'or,
- * `PalmaresTrophee`, qui dessine sa propre illustration plutôt que de
- * réemployer ce composant-ci (son gabarit, plus petit, ne s'y prêtait pas).
- *
- * L'IMAGE ENGENDRÉE arrive par la prop `pochette`, sur le modèle exact de
- * l'illustration de la Une des Unes : un raffineur l'engendre, la dépose sur R2,
- * et le build la rapatrie dans `public/data/generated-art/partis/`
- * (cf. `scripts/fetch_art.mjs`, `lib/data/pochettes.ts`). L'appelant ne la passe
- * que si sa SIGNATURE correspond à ce que le module affiche ; sinon, ou tant
- * qu'aucune image n'existe, on rend la composition géométrique d'origine.
- *
- * Le repli n'est PAS un pis-aller : il porte déjà les trois grandeurs du parti
- * (sa couleur, l'enjeu de tête, le ton) et reste lisible. Une pochette qui
- * disparaîtrait faute d'image serait pire qu'une pochette dessinée.
- *
- * ⚠️ ELLE NE CONNAÎT PAS LE MÉDIA, et c'est délibéré. Un bandeau nommait la
- * source en haut de l'illustration, si bien que la pochette changeait sous le
- * fader. Une pochette est un objet PRESSÉ un jour donné : elle est engendrée sur
- * l'agrégat (cf. `pochetteAppariee`) et ne peut donc pas prétendre parler d'une
- * source en particulier. Le nom du média reste gravé autour du capuchon du
- * deck : c'est l'instrument, et lui doit répondre au fader.
- */
-function PochetteArt({
-  row,
-  pochette,
-}: {
-  row: RowView;
-  /** L'illustration engendrée pour ce parti, quand elle existe ET qu'elle
-   *  correspond à ce que le module affiche (appariement par signature, fait par
-   *  l'appelant). Absente, la composition géométrique prend le relais. */
-  pochette?: Pochette | null;
-}) {
-  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
-  return (
-    <span
-      className="pochette-art"
-      style={{
-        ["--party" as string]: row.color,
-        ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
-        ["--ton" as string]: `var(--ton-${row.toneDirection})`,
-      }}
-    >
-      {pochette ? (
-        /* L'ILLUSTRATION ENGENDRÉE. `<picture>` ne liste que les formats
-           réellement écrits : les encodeurs WebP et AVIF sont best-effort côté
-           raffineur, et déclarer une source absente ferait afficher une image
-           cassée plutôt que le repli. Le PNG reste le dernier recours.
-           `aria-hidden` : tout ce que l'image raconte est écrit à côté. */
-        <picture>
-          {pochette.sources.map((f) => (
-            <source key={f.type} srcSet={f.src} type={f.type} />
-          ))}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="pochette-image" src={pochette.src} alt="" aria-hidden="true" loading="lazy" />
-        </picture>
-      ) : (
-        <svg className="pochette-formes" viewBox="0 0 100 100" aria-hidden="true">
-          {/* LA POCHETTE SEULE. Le disque n'en sort plus : une pochette d'album
-              se regarde de face, entière, et c'est la COMPOSITION qui doit
-              porter. Composition typographique, à la manière des pochettes de
-              jazz : un aplat, une bande franche, beaucoup de vide, et le nom en
-              gros. Le vide est ce qui manquait le plus aux essais précédents. */}
-          {/* Le fond, à la couleur du parti. */}
-          <rect className="fond" x="0" y="0" width="100" height="100" />
-          {/* La bande basse, dans un ton plus sombre du même parti : elle assied
-              la composition et donne un socle au nom. */}
-          <rect className="socle" x="0" y="58" width="100" height="42" />
-          {/* Le carré de l'enjeu, en haut à droite. Petite surface, donc toute
-              teinte y reste lisible, et c'est le seul accent de la pochette. */}
-          <rect className="pastille-enjeu" x="70" y="12" width="18" height="18" />
-          {/* Le filet du ton, tout en bas, sur toute la largeur. */}
-          <rect className="filet-ton" x="0" y="95" width="100" height="5" />
-        </svg>
-      )}
-      <b className="pochette-sigle">{row.label}</b>
-    </span>
-  );
-}
-
-/**
- * LA JAUGE DE TON, reprise du module de l'Assemblée nationale.
- *
- * Même objet visuel que le « Ton en chambre » (`.ass-tone`) : une barre en
- * dégradé, défavorable à gauche, favorable à droite, et un repère qui s'y
- * déplace. Deux modules qui mesurent un ton doivent le montrer de la même
- * façon, sinon le lecteur croit lire deux grandeurs différentes.
- */
-function JaugeTon({ pct, title }: { pct: number; title?: string }) {
-  return (
-    <span className="pochette-ton" title={title}>
-      <span className="pochette-ton-repere" style={{ left: `${pct}%` }} />
-    </span>
-  );
-}
-
-/** Le rangement « par temps d'écoute » : par MINUTES, du plus au moins
- *  présent. À égalité (deux partis à zéro, cas ordinaire quand la mesure ne
- *  détecte rien), le sigle départage, pour que l'ordre ne saute pas d'un rendu
- *  à l'autre.
- *
- *  DEUX APPELANTS : retrouver la pochette choisie par un clic sur un deck
- *  (`choisieDuJour`), et couronner le meneur du disque d'or sur la vue Jour
- *  (`entreesTrophee`). Le bac du jour, qui s'en servait aussi, a quitté le
- *  pupitre le 2026-08-31. */
-function rangerParTemps(rows: RowView[]): RowView[] {
-  return rows
-    .slice()
-    .sort((a, b) => b.minutesUne - a.minutesUne || a.label.localeCompare(b.label, "fr"));
-}
-
-/**
  * L'APPARIEMENT d'une pochette engendrée à la ligne qu'elle illustre.
  *
  * Une pochette n'est montrée que si sa signature correspond à ce que le module
@@ -992,8 +987,9 @@ function rangerParTemps(rows: RowView[]): RowView[] {
  * fader, l'enjeu et le ton sont ceux d'un seul média, et la signature ne
  * correspondra pas d'elle-même. C'est le comportement voulu.
  *
- * Vit au niveau du module, et non dans le deck, parce que la pochette OUVERTE
- * se rend en dehors de lui, en pleine largeur — voir `PochetteOuverte`.
+ * UN SEUL APPELANT depuis le 2026-09-01 : `entreesTrophee`, pour la couverture
+ * du disque d'or du jour. Le clic sur un deck n'ouvre plus de pochette en
+ * place — il mène vers `/discotheque`, qui appareille les siennes elle-même.
  */
 function pochetteAppariee(row: RowView, duJour: Pochette[]): Pochette | null {
   const attendue = signaturePochette(
@@ -1002,120 +998,6 @@ function pochetteAppariee(row: RowView, duJour: Pochette[]): Pochette | null {
     row.toneDirection,
   );
   return duJour.find((p) => p.parti === row.key && p.signature === attendue) ?? null;
-}
-
-/**
- * LA POCHETTE OUVERTE, en double volet.
- *
- * À gauche l’illustration, à droite les quatre grandeurs que le module publie :
- * temps en Une, part de temps, enjeu du parti, et le ton sur sa jauge. Ce sont
- * exactement les chiffres qui vivaient au dos du deck, mais lisibles : le verso
- * d’un disque de 4 cm ne pouvait porter ni libellé entier ni jauge.
- */
-function PochetteOuverte({
-  row,
-  pochette,
-  onFermer,
-}: {
-  row: RowView;
-  pochette?: Pochette | null;
-  onFermer: () => void;
-}) {
-  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
-
-  return (
-    <div className="gatefold" role="group" aria-label={`Pochette de ${row.fullLabel}`}>
-      <div className="gatefold-volet gatefold-volet--art">
-        <PochetteArt row={row} pochette={pochette} />
-      </div>
-
-      <GatefoldInfos
-        couleur={row.color}
-        nom={row.fullLabel}
-        rang={row.rang}
-        temps={formatDuree(row.minutesUne)}
-        partPct={row.sovPct}
-        enjeu={enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE)}
-        tonMot={row.toneLabel}
-        tonPct={row.tonePct}
-        tonTitle={row.toneTitle}
-        onFermer={onFermer}
-      />
-    </div>
-  );
-}
-
-/**
- * LE VOLET DROIT de la pochette ouverte : les quatre grandeurs et le bouton.
- *
- * N'a plus qu'un seul appelant depuis le 2026-09-01 (`PochetteOuverte`, pour la
- * pochette du jour qu'un clic sur un deck fait sortir) — la discothèque avait
- * son propre volet, sur les métadonnées FIGÉES d'une pochette d'archive, retiré
- * avec elle. Gardé à part malgré le seul appelant : c'est ce balisage-ci, et non
- * une copie, qui devra servir si un second volet réapparaît.
- */
-function GatefoldInfos({
-  couleur,
-  nom,
-  rang,
-  temps,
-  partPct,
-  enjeu,
-  tonMot,
-  tonPct,
-  tonTitle,
-  legende,
-  onFermer,
-}: {
-  couleur: string;
-  nom: string;
-  rang: number;
-  temps: string;
-  partPct: number;
-  enjeu: string;
-  tonMot: string;
-  tonPct: number;
-  tonTitle?: string;
-  /** Ligne d'entête facultative : la date, dans la discothèque. Le bac du jour
-   *  n'en a pas — il parle du jour même. */
-  legende?: string;
-  onFermer: () => void;
-}) {
-  return (
-    <div className="gatefold-volet gatefold-volet--info" style={{ ["--party" as string]: couleur }}>
-      {legende && <p className="gatefold-legende">{legende}</p>}
-      <p className="gatefold-nom">
-        {rang > 0 && <span className="gatefold-rang">{rang}</span>}
-        {nom}
-      </p>
-
-      <dl className="gatefold-pistes">
-        <div>
-          <dt>Temps en Une</dt>
-          <dd className="gatefold-chiffre">{temps}</dd>
-        </div>
-        <div>
-          <dt>Part de temps</dt>
-          <dd className="gatefold-chiffre">{partPct} %</dd>
-        </div>
-        <div>
-          <dt>Enjeu du parti</dt>
-          <dd>{enjeu}</dd>
-        </div>
-        <div className="gatefold-ton">
-          <dt>Ton de la couverture</dt>
-          <dd>
-            <JaugeTon pct={tonPct} title={tonTitle} />
-            <span className="gatefold-ton-mot">{tonMot}</span>
-          </dd>
-        </div>
-      </dl>
-
-      <button type="button" className="gatefold-fermer" onClick={onFermer}>
-        Refermer la pochette
-      </button>
-    </div>
-  );
 }
 
 function Deck({
@@ -1139,11 +1021,12 @@ function Deck({
    *  que le changement de disque ne se rejoue que sur un vrai changement de
    *  piste. */
   mediaLabel: string | null;
-  /** Sélectionner ce parti : sa pochette s'ouvre plus bas (`PochetteOuverte`).
-   *  Le deck ne se retourne plus — cf. `annonceDisque`. */
+  /** Sélectionner ce parti : sa pochette s'ouvre plus bas, déjà retournée,
+   *  dans le panneau du disque d'or (`ouvrirPochetteDuParti`). */
   onSelect?: (key: PartyKey) => void;
-  /** Vrai quand c'est CE parti dont la pochette est ouverte. Le deck le
-   *  montre, sans quoi rien ne relierait le clic à ce qui bouge plus bas. */
+  /** Vrai quand c'est CE parti dont la carte est ouverte dans le panneau. Le
+   *  deck le montre, sans quoi rien ne relierait le clic à ce qui bouge plus
+   *  bas. */
   selectionne?: boolean;
 }) {
 
@@ -1183,17 +1066,19 @@ function Deck({
   const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
   const ton = row.toneDirection;
 
-  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ. Le deck ne
-     se retourne plus : il ouvre sa pochette, plus bas. Sans le dire, le clic
-     paraîtrait sans effet — ce qui bouge n'est pas sous le doigt.
-     Le bac du jour a quitté le pupitre le 2026-08-31 (voir le disque d'or,
-     `PalmaresTrophee`) ; ce texte ne le mentionne donc plus. */
+  /* Le survol du disque annonce ce que le clic FAIT, et surtout OÙ. Le deck
+     n'ouvre plus rien SUR PLACE depuis le 2026-09-01 : il pointe vers LA
+     MÊME pochette que le disque d'or publie, plus bas, déjà retournée sur
+     son endos. Sans le dire, le clic paraîtrait sans effet — ce qui bouge
+     n'est pas sous le doigt.
+     « Plus bas » depuis le 2026-09-01 : la table de mix (ce deck) est
+     passée AVANT le palmarès et son disque d'or dans l'ordre de la page. */
   const annonceDisque = selectionne
-    ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas`
+    ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
     : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-      `Ouvrir sa pochette, plus bas, pour voir combien de temps ce parti a ` +
-      `occupé la Une, quelle part de la couverture il représente, l'enjeu dont on ` +
-      `parle le plus à son sujet et le ton de cette couverture.`;
+      `Voir sa pochette, plus bas, dans le disque d'or, pour combien de temps ce ` +
+      `parti a occupé la Une, quelle part de la couverture il représente, l'enjeu ` +
+      `dont on parle le plus à son sujet et le ton de cette couverture.`;
 
   return (
     <div
@@ -1208,10 +1093,8 @@ function Deck({
           Changer de média ne change pas forcément qui occupe ce deck : keyer sur
           la source rejouait le changement de disque à chaque coup de fader, y
           compris quand la piste restait la même. Ici le carré ne se remonte que
-          si le parti change vraiment — et c'est ce remontage qui rejoue la
-          sortie de pochette.
-          Il referme aussi la pochette ouverte, ce qui est juste : ce n'est plus
-          le même disque. */}
+          si le parti change vraiment — et c'est ce remontage qui rejouerait la
+          sortie de pochette si elle était ouverte. */}
       <button
         key={row.key}
         type="button"
@@ -1580,7 +1463,19 @@ function Knob({
           aria-hidden="true"
         />
       </button>
-      <span className="knob-valeur" aria-hidden="true">{positions[i].mot}</span>
+      {/* LE GABARIT, même geste que `.course-tete-gabarit` (le titre du
+          palmarès) : chaque position possible est posée, invisible, dans la
+          MÊME cellule de grille que le mot affiché — la boîte prend donc
+          toujours la largeur de la position la plus longue. Sans lui,
+          « Jour » et « Campagne 33 T » n'ont pas la même largeur, et tourner
+          un knob élargissait ou rétrécissait toute la colonne — jusqu'à
+          pousser le graphique du palmarès à côté. */}
+      <span className="knob-valeur-boite">
+        {positions.map((p) => (
+          <span key={p.cle} className="knob-valeur-gabarit" aria-hidden="true">{p.mot}</span>
+        ))}
+        <span className="knob-valeur" aria-hidden="true">{positions[i].mot}</span>
+      </span>
       <span className="fader-label">{voie}</span>
     </div>
   );
@@ -1924,126 +1819,367 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
  *
  * REMPLACE LE BAC DU JOUR ET LA DISCOTHÈQUE qui vivaient en bas du pupitre :
  * un seul disque, celui qui mène, plutôt qu'un bac entier de cinq pochettes
- * fixes ou une vitrine séparée. Cliquer le disque déplie le CLASSEMENT — les
- * places suivantes, en petites pochettes — sans quitter la page ; un second
- * bouton mène vers `/discotheque` pour qui veut tout le fonds.
+ * fixes ou une vitrine séparée. Cliquer le disque déplie le PANNEAU
+ * (`TropheePanel`) — les CINQ partis, sous le palmarès, chacun avec ses
+ * quatre grandeurs ; un second lien mène vers `/discotheque` pour qui veut
+ * tout le fonds.
  *
  * ⚠️ TROIS FORMES, PAS UNE. Le nom du trophée change avec la vitesse
- * (`NOM_TROPHEE`) : un SINGLE d'or pour un jour, un ALBUM d'or pour une
- * semaine — sept titres au plus, comme `/discotheque` — un DISQUE d'or pour
- * toute la campagne. Le classement, lui, vient TOUJOURS de l'écoute : la
- * mesure du palmarès (Écouté/Apprécié) ne change rien ici, le trophée n'existe
- * qu'à l'écoute — un « disque d'or » au ton n'aurait pas de sens.
+ * (`NOM_TROPHEE`) : un SINGLE d'or pour un jour, un ALBUM de platine pour une
+ * semaine — sept titres au plus, comme `/discotheque` — un DISQUE de diamant
+ * pour toute la campagne. Le palier MONTE avec la vitesse, comme les
+ * certifications RIAA réelles, et se voit dans l'encadré (`PALIER_COULEUR`),
+ * pas seulement dans le nom. Le classement, lui, vient TOUJOURS de l'écoute :
+ * la mesure du palmarès (Écouté/Apprécié) ne change rien ici, le trophée
+ * n'existe qu'à l'écoute — un « disque d'or » au ton n'aurait pas de sens.
  *
  * ⚠️ « EN PRODUCTION » TANT QUE LA COURSE N'EST PAS COURUE. Avant que le
  * palmarès n'atteigne sa ligne d'arrivée — 20 h aujourd'hui, vendredi pour la
  * semaine, le scrutin pour la campagne — le classement peut encore changer, et
  * aucune pochette FINALE n'existe pour le couronner. Le disque montre alors
  * qui mène pour l'instant, en texte, plutôt qu'une image qui pourrait se
- * révéler fausse une heure plus tard. Le CLASSEMENT, lui, reste consultable :
+ * révéler fausse une heure plus tard. Le PANNEAU, lui, reste consultable :
  * c'est une vraie donnée en direct, seule la pochette-trophée attend la fin.
+ *
+ * ⚠️ LA LÉGENDE NE PORTE QUE LE NOM DU TROPHÉE, UNE SEULE LIGNE, TOUJOURS —
+ * depuis le 2026-09-01. Elle portait aussi le nom complet du gagnant et sa
+ * durée une fois la course courue, une seconde ligne qui n'apparaissait qu'à
+ * ce moment-là : le disque d'or grandissait donc de façon VARIABLE, parfois
+ * plus haut que le graphique, et se décalait en changeant de vitesse. Le
+ * sigle du gagnant reste lisible SUR le disque lui-même (superposé à l'image,
+ * ou en repli) ; le nom complet et la durée survivent dans `aria-label` et
+ * `title`, au clic comme au survol, plutôt que dans un texte toujours
+ * affiché.
+ *
+ * ⚠️ L'ÉTAT `ouvert` VIT CHEZ L'APPELANT, PAS ICI — depuis le 2026-09-03.
+ * Le panneau qu'un clic déplie se rend en PLEINE LARGEUR, sous toute la
+ * rangée du palmarès (`.palmares-rangee`), pas dans la seule colonne étroite
+ * de ce disque : il lui faut donc un ancêtre commun avec le graphique et les
+ * knobs, que seul `PartisCouvertureClient` a.
  */
 function PalmaresTrophee({
   range,
+  apprecie,
   termine,
   gagnant,
-  reste,
+  sortie,
+  ouvert,
+  onToggle,
 }: {
   range: RangeKey;
+  /** Vrai quand le knob Mesure est sur Apprécié : le trophée couronne alors
+   *  le ton, pas l'écoute — voir `apprecieTrophee` chez l'appelant. */
+  apprecie: boolean;
   termine: boolean;
   gagnant: EntreeTrophee;
-  reste: EntreeTrophee[];
+  /** « Sortie prévue à 20h » — voir `sortieTrophee` chez l'appelant. */
+  sortie: string;
+  ouvert: boolean;
+  onToggle: () => void;
 }) {
-  const [ouvert, setOuvert] = useState(false);
   const nomTrophee = NOM_TROPHEE[range];
+  const chiffre = chiffreTrophee(gagnant, apprecie);
+  const detail = termine
+    ? `${nomTrophee} : ${gagnant.nom}, ${chiffre.valeur}.`
+    : `${nomTrophee}. ${PRODUCTION_TROPHEE[range]}. ${sortie}. En tête pour l'instant : ${gagnant.nom}, ${chiffre.valeur}.`;
+  const invite = ` ${ouvert ? "Refermer" : "Voir"} le classement complet, sous le palmarès.`;
 
   return (
     <div className="trophee">
       <button
         type="button"
-        className={`trophee-disque${termine ? " termine" : ""}`}
-        onClick={() => setOuvert((v) => !v)}
+        className="trophee-disque"
+        style={{ ["--palier" as string]: PALIER_COULEUR[range] }}
+        onClick={onToggle}
         aria-expanded={ouvert}
-        disabled={reste.length === 0}
-        aria-label={
-          termine
-            ? `${nomTrophee} : ${gagnant.nom}, ${formatDuree(gagnant.minutes)}. ` +
-              (reste.length > 0 ? `${ouvert ? "Refermer" : "Voir"} le reste du classement.` : "")
-            : `${PRODUCTION_TROPHEE[range]}. En tête pour l'instant : ${gagnant.nom}, ` +
-              `${formatDuree(gagnant.minutes)}. ` +
-              (reste.length > 0 ? `${ouvert ? "Refermer" : "Voir"} le reste du classement.` : "")
-        }
+        aria-controls="trophee-panel"
+        aria-label={detail + invite}
+        title={detail + invite}
       >
-        {termine ? (
-          gagnant.src ? (
-            <span className="pochette-art">
-              <picture>
-                {(gagnant.sources ?? []).map((f) => (
-                  <source key={f.type} srcSet={f.src} type={f.type} />
-                ))}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="pochette-image" src={gagnant.src} alt="" aria-hidden="true" />
-              </picture>
-              <b className="pochette-sigle">{gagnant.sigle}</b>
-            </span>
-          ) : (
-            // La course est courue mais aucune image n'a été confirmée : le
-            // sigle en texte sur son aplat de couleur, comme partout ailleurs
-            // sur le site quand une pochette manque plutôt que d'en inventer une.
-            <span className="trophee-repli" style={{ ["--party" as string]: gagnant.couleur }}>
-              <b>{gagnant.sigle}</b>
-            </span>
-          )
-        ) : (
-          <span className="trophee-production">
-            <b>{PRODUCTION_TROPHEE[range]}</b>
-            <span>En tête&nbsp;: {gagnant.sigle}</span>
-          </span>
-        )}
+        <TropheeCouverture
+          entree={gagnant}
+          termine={termine}
+          range={range}
+          sortie={sortie}
+          mention={!termine ? `En t\u00eate\u00a0: ${gagnant.sigle}` : undefined}
+        />
       </button>
-
-      <p className="trophee-legende">
-        <b>{nomTrophee}</b>
-        {termine && (
-          <span>
-            {gagnant.nom}, {formatDuree(gagnant.minutes)}
-          </span>
-        )}
-      </p>
-
-      {ouvert && reste.length > 0 && (
-        <ol className="trophee-classement">
-          {reste.map((e, i) => (
-            <li key={e.cle} style={{ ["--party" as string]: e.couleur }}>
-              <i className="trophee-rang" aria-hidden="true">{i + 2}</i>
-              {e.src ? (
-                <span className="pochette-art trophee-mini">
-                  <picture>
-                    {(e.sources ?? []).map((f) => (
-                      <source key={f.type} srcSet={f.src} type={f.type} />
-                    ))}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="pochette-image" src={e.src} alt="" aria-hidden="true" loading="lazy" />
-                  </picture>
-                </span>
-              ) : (
-                <span className="trophee-mini trophee-repli" aria-hidden="true" />
-              )}
-              <span className="trophee-classement-legende">
-                <b>{e.sigle}</b>
-                <span>{formatDuree(e.minutes)}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
 
       <a
         className="trophee-voir-tout"
         href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/discotheque/`}
+        aria-label={"Voir toute la discoth\u00e8que"}
+        title={"Voir toute la discoth\u00e8que"}
       >
-        Voir toute la discothèque
+        →
       </a>
     </div>
+  );
+}
+
+/**
+ * L'ILLUSTRATION D'UNE ENTRÉE DU TROPHÉE — le disque lui-même ou une carte du
+ * panneau déplié, au même gabarit. Trois états, dans l'ordre où ils
+ * s'excluent :
+ * 1. « En production » — la course n'est pas courue, `termine` est faux :
+ *    aucune image ne peut couronner un classement encore mobile. C'est
+ *    l'état le PLUS SOUVENT VU de toute cette page — la plupart des
+ *    consultations tombent en cours de journée, de semaine ou de campagne,
+ *    jamais pile à l'arrivée — d'où l'ÉTIQUETTE DE DISQUE VIERGE plutôt qu'un
+ *    simple hachurage : un aplat qui attend son impression mérite un vrai
+ *    dessin, pas un motif de chargement.
+ * 2. La VRAIE pochette engendrée, quand la course est courue ET qu'une image
+ *    a été confirmée.
+ * 3. Le REPLI géométrique — course courue, mais sans image confirmée : le
+ *    sigle en texte sur l'aplat du parti, comme partout ailleurs sur le site
+ *    plutôt que d'inventer une pochette.
+ */
+function TropheeCouverture({
+  entree,
+  termine,
+  range,
+  sortie,
+  mention,
+}: {
+  entree: EntreeTrophee;
+  termine: boolean;
+  range: RangeKey;
+  sortie: string;
+  /** Le sous-texte affiché sous « en production » — le disque du palmarès dit
+   *  qui mène (`En tête : X`) ; une carte du panneau ne le répète pas, son
+   *  rang est déjà son propre badge. */
+  mention?: string;
+}) {
+  if (!termine) {
+    return (
+      <span className="trophee-etiquette">
+        <span className="trophee-etiquette-disque" style={{ ["--party" as string]: entree.couleur }}>
+          <b className="trophee-etiquette-sigle">{entree.sigle}</b>
+        </span>
+        <span className="trophee-etiquette-mention">
+          <b>{PRODUCTION_TROPHEE[range]}</b>
+          <span>{sortie}</span>
+          {mention && <span>{mention}</span>}
+        </span>
+      </span>
+    );
+  }
+  if (entree.src) {
+    return (
+      <span className="pochette-art">
+        <picture>
+          {(entree.sources ?? []).map((f) => (
+            <source key={f.type} srcSet={f.src} type={f.type} />
+          ))}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="pochette-image" src={entree.src} alt="" aria-hidden="true" />
+        </picture>
+        <b className="pochette-sigle">{entree.sigle}</b>
+      </span>
+    );
+  }
+  // La course est courue mais aucune image n'a été confirmée : le sigle en
+  // texte sur son aplat de couleur, comme partout ailleurs sur le site quand
+  // une pochette manque plutôt que d'en inventer une.
+  return (
+    <span className="trophee-repli" style={{ ["--party" as string]: entree.couleur }}>
+      <b>{entree.sigle}</b>
+    </span>
+  );
+}
+
+/** LE CHIFFRE QU'ON MET EN AVANT — la même bascule que le palmarès juste à
+ *  côté (`Palmares`, `ecriteDe`) : le temps en Une quand le trophée couronne
+ *  l'écoute, l'écart de ton quand il couronne l'appréciation. Un seul point
+ *  de vérité pour ce choix, appelé partout où le chiffre du trophée s'écrit —
+ *  l'étiquette du disque, le panneau, chaque carte. */
+function chiffreTrophee(entree: EntreeTrophee, apprecie: boolean): { label: string; valeur: string } {
+  return apprecie
+    ? { label: "Écart de ton", valeur: formatEcartTon(entree.ecart) }
+    : { label: "Temps en Une", valeur: formatDuree(entree.minutes) };
+}
+
+/**
+ * LES QUATRE GRANDEURS D'UNE ENTRÉE — temps (ou écart de ton), part, enjeu,
+ * ton — en tracklist (`LigneTracklist`/`LigneTracklistTon`, partagées avec
+ * `/discotheque` — voir `components/interactive/Tracklist.tsx`). N'a plus
+ * qu'un seul appelant depuis le 2026-09-01, `CarteTrophee` (l'endos d'une
+ * carte du panneau du disque d'or) — le clic sur un deck n'ouvre plus de
+ * pochette ici, il mène vers `/discotheque` (voir `Deck`).
+ */
+function TracklisteGrandeurs({
+  temps,
+  partPct,
+  enjeu,
+  tonMot,
+  tonPct,
+  tonTitle,
+  labelTemps = "Temps en Une",
+  labelEnjeu = "Enjeu",
+  labelTon = "Ton",
+}: {
+  temps: string;
+  partPct: number;
+  enjeu: string;
+  tonMot: string;
+  tonPct: number;
+  tonTitle?: string;
+  /** « Écart de ton » depuis `CarteTrophee` en mode Apprécié — la première
+   *  ligne montre alors la MÊME grandeur que le classement du trophée, pas
+   *  une durée qui n'a plus rien à voir avec l'ordre affiché. */
+  labelTemps?: string;
+  /** Libellés plus longs, réservés à d'éventuels usages sur un seul volet
+   *  (« Enjeu du parti », « Ton de la couverture ») — cinq cartes de front,
+   *  comme dans le panneau du disque d'or, n'ont pas la place de le dire en
+   *  entier. */
+  labelEnjeu?: string;
+  labelTon?: string;
+}) {
+  return (
+    <>
+      <LigneTracklist categorie={labelTemps} chiffre>{temps}</LigneTracklist>
+      <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
+      <LigneTracklist categorie={labelEnjeu}>{enjeu}</LigneTracklist>
+      <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
+    </>
+  );
+}
+
+/**
+ * LE PANNEAU DU DISQUE D'OR, sous le palmarès — les CINQ partis, chacun avec
+ * sa pochette, qui se retourne au clic pour montrer son endos (voir
+ * `CarteTrophee`). Remplace le classement compact du
+ * 2026-09-01 (quatre miniatures dans la seule colonne du disque) : cinq
+ * cartes lisibles, en pleine largeur, disent plus et se lisent mieux — et un
+ * disque « en production » n'a de toute façon pas de meneur à distinguer du
+ * reste, les cinq sont à égalité, en cours de mesure.
+ */
+function TropheePanel({
+  range,
+  apprecie,
+  termine,
+  entrees,
+  sortie,
+  carteOuverte,
+  onFermer,
+}: {
+  range: RangeKey;
+  apprecie: boolean;
+  termine: boolean;
+  entrees: EntreeTrophee[];
+  sortie: string;
+  /** Le parti dont la carte doit s'ouvrir DÉJÀ RETOURNÉE — voir
+   *  `ouvrirPochetteDuParti` chez l'appelant. `null` : les cinq s'ouvrent
+   *  fermées, le geste par défaut. */
+  carteOuverte: PartyKey | null;
+  onFermer: () => void;
+}) {
+  return (
+    <div id="trophee-panel" className="trophee-panel" aria-label={`${NOM_TROPHEE[range]} : le classement complet`}>
+      <div className="trophee-panel-tete">
+        <p className="trophee-panel-titre">
+          {NOM_TROPHEE[range]}
+          <span>, le classement complet</span>
+        </p>
+        <button type="button" className="trophee-panel-fermer" onClick={onFermer}>
+          Refermer
+        </button>
+      </div>
+
+      <ol className="trophee-panel-grille">
+        {entrees.map((e, i) => (
+          <CarteTrophee
+            key={e.cle}
+            rang={i + 1}
+            entree={e}
+            apprecie={apprecie}
+            termine={termine}
+            range={range}
+            sortie={sortie}
+            ouvertParDefaut={e.cle === carteOuverte}
+          />
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/**
+ * UNE CARTE DU PANNEAU — fermée par défaut, comme une plaque de
+ * `/discotheque` (`CartePlaque`) : on regarde une pochette avant de la
+ * retourner. Cliquer LE DISQUE le fait PIVOTER — un vrai flip 3D
+ * (`.flip-carte`, partagé avec `/discotheque`) — pour montrer son endos, les
+ * quatre grandeurs, à la place de la pochette plutôt qu'en dessous d'elle :
+ * « les informations sont derrière la pochette », pas sous elle. Chaque
+ * carte garde son propre état : retourner celle du PLQ ne referme pas celle
+ * de la CAQ.
+ *
+ * ⚠️ LES DEUX FACES SONT TOUJOURS DANS LE DOM, contrairement à l'ancien
+ * dépliant (retiré le 2026-09-06) qui ne montait l'endos qu'à l'ouverture.
+ * Un flip anime les DEUX faces en même temps ; en démonter une romprait
+ * l'animation. Sans coût réel ici : l'endos n'est que du texte, pas des
+ * images à charger.
+ */
+function CarteTrophee({
+  rang,
+  entree,
+  apprecie,
+  termine,
+  range,
+  sortie,
+  ouvertParDefaut,
+}: {
+  rang: number;
+  entree: EntreeTrophee;
+  apprecie: boolean;
+  termine: boolean;
+  range: RangeKey;
+  sortie: string;
+  /** Ouvre la carte dès le premier rendu : le cas d'un clic sur le DECK de ce
+   *  parti, plus bas — voir `ouvrirPochetteDuParti` chez l'appelant. Absent
+   *  partout ailleurs, une carte du panneau reste fermée par défaut. */
+  ouvertParDefaut?: boolean;
+}) {
+  const [ouverte, setOuverte] = useState(Boolean(ouvertParDefaut));
+  const chiffre = chiffreTrophee(entree, apprecie);
+
+  return (
+    <li style={{ ["--party" as string]: entree.couleur }}>
+      <button
+        type="button"
+        className="trophee-panel-declencheur"
+        onClick={() => setOuverte((v) => !v)}
+        aria-expanded={ouverte}
+        aria-label={`${entree.nom}. ${ouverte ? "Refermer" : "Voir"} le détail au dos de la pochette.`}
+      >
+        <span className="trophee-panel-art">
+          <span className={`flip-carte${ouverte ? " retournee" : ""}`}>
+            <span className="flip-face flip-face--recto">
+              <TropheeCouverture entree={entree} termine={termine} range={range} sortie={sortie} />
+            </span>
+            <span className="flip-face flip-face--verso">
+              <dl className="trophee-panel-chiffres">
+                <TracklisteGrandeurs
+                  temps={chiffre.valeur}
+                  labelTemps={chiffre.label}
+                  partPct={entree.partPct}
+                  enjeu={entree.enjeu}
+                  tonMot={entree.tonMot}
+                  tonPct={entree.tonPct}
+                  tonTitle={entree.tonTitle}
+                />
+              </dl>
+            </span>
+          </span>
+        </span>
+        {/* Le NOM du parti ne s'écrit plus ici depuis le 2026-09-07 : le
+            sigle est déjà gravé sur la pochette elle-même
+            (`.pochette-sigle`/`.trophee-etiquette-sigle`), et le nom complet
+            reste accessible — `aria-label` du bouton, ci-dessus — sans qu'il
+            faille le répéter à l'écran pour tout le monde. Le rang, lui, n'y
+            est pas déjà : il reste seul, en badge. */}
+        <i className="trophee-panel-rang" aria-hidden="true">{rang}</i>
+      </button>
+    </li>
   );
 }

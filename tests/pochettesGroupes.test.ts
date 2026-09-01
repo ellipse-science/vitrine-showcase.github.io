@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { groupeParAlbums, groupeParDiscographie, groupeParEditions } from "@/lib/data/pochettes";
+import { groupeParAlbums, groupeParDiscographie, singlesParEcoute } from "@/lib/data/pochettes";
 import type { JourFonds, PochetteArchivee } from "@/lib/data/pochettes";
 
-// `groupeParAlbums`/`groupeParDiscographie`/`groupeParEditions` sont des
+// `groupeParAlbums`/`groupeParDiscographie`/`singlesParEcoute` sont des
 // fonctions PURES sur `fonds` déjà chargé : contrairement à `loadPochettes`,
 // elles ne touchent jamais au système de fichiers, et s'éprouvent donc
 // directement sur un jeu construit à la main.
@@ -124,41 +124,33 @@ describe("groupeParDiscographie", () => {
   });
 });
 
-describe("groupeParEditions", () => {
-  const editions = groupeParEditions(FONDS, formatJour);
+describe("singlesParEcoute", () => {
+  const singles = singlesParEcoute(FONDS);
 
-  it("une édition par journée qui a au moins une pochette", () => {
-    expect(editions.length).toBe(4);
+  it("TOUS les singles, un par (parti, jour) — aucun groupé", () => {
+    // 2 + 1 + 2 + 1 = 6 pochettes dans FONDS, un single chacune : la vue Jour
+    // ne compile plus les partis d'une même journée depuis le 2026-09-05.
+    expect(singles.length).toBe(6);
   });
 
-  it("garde les pistes de PLUSIEURS partis dans une même édition", () => {
-    // Le 22 août, CAQ ET PQ ont publié : contrairement à un album, une édition
-    // n'est pas limitée à un seul artiste.
-    const edition22 = editions.find((e) => e.jour === "2026-08-22")!;
-    expect(edition22.pistes.map((p) => p.parti).sort()).toEqual(["caq", "pq"]);
+  it("classés en ORDRE D'ÉCOUTE, tous partis et toutes journées mélangés", () => {
+    expect(singles.map((s) => s.minutesUne)).toEqual([100, 90, 40, 20, 15, 10]);
   });
 
-  it("classe les pistes de l'édition en ORDRE D'ÉCOUTE, sans dépendre du tri d'entrée", () => {
-    // Le fixture donne CAQ (40) avant PQ (90) dans `FONDS` : l'ordre attendu est
-    // pourtant l'inverse, PQ en tête, puisque `groupeParEditions` trie
-    // lui-même plutôt que de faire confiance à l'ordre reçu.
-    const edition22 = editions.find((e) => e.jour === "2026-08-22")!;
-    expect(edition22.pistes.map((p) => p.parti)).toEqual(["pq", "caq"]);
-  });
-
-  it("somme les minutes de TOUS les partis de la journée", () => {
-    const edition22 = editions.find((e) => e.jour === "2026-08-22")!;
-    expect(edition22.totalMinutes).toBe(40 + 90);
-  });
-
-  it("l'édition la plus RÉCENTE d'abord, même si `fonds` arrivait dans un autre ordre", () => {
-    expect(editions.map((e) => e.jour)).toEqual([
-      "2026-08-29", "2026-08-28", "2026-08-24", "2026-08-22",
+  it("ne groupe NI par jour NI par parti — chaque single garde son propre jour et son propre parti", () => {
+    expect(singles.map((s) => `${s.parti}/${s.jour}`)).toEqual([
+      "caq/2026-08-24",
+      "pq/2026-08-22",
+      "caq/2026-08-22",
+      "caq/2026-08-28",
+      "caq/2026-08-29",
+      "pq/2026-08-28",
     ]);
   });
 
-  it("le titre nomme l'édition sans répéter le nom du jour", () => {
-    const edition22 = editions.find((e) => e.jour === "2026-08-22")!;
-    expect(edition22.titre).toBe("Édition du 22/08 2026");
+  it("chaque single garde sa date en toutes lettres, comme dans un album ou une discographie", () => {
+    const premier = singles[0];
+    expect(premier.jourLabel).toBe("Lundi 24 août 2026");
+    expect(premier.jourCourt).toBe("24 août");
   });
 });
