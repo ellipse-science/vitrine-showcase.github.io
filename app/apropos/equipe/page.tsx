@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import fs from "node:fs";
 import path from "node:path";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
   // garde-redaction: ok (séparateur <title>, exception PR #246)
@@ -67,7 +68,7 @@ export default function EquipePage() {
         <RawMaquette chunk="top" />
       </div>
 
-      <main className="apropos-container" data-section="Équipe">
+      <main className="apropos-container" data-section="À propos · Équipe">
         <div className="apropos-header">
           <p className="apropos-fil">
             <a href="/apropos/" className="apropos-link">À propos</a> · Équipe
@@ -75,8 +76,8 @@ export default function EquipePage() {
           <h1 className="apropos-title">L'équipe</h1>
           <p className="apropos-lead dek-with-cap">
             La Vitrine démocratique est faite par l'équipe du Centre d'analyse des
-            politiques publiques de l'Université Laval&nbsp;: des chercheuses et
-            chercheurs en science politique, des scientifiques et analystes de
+            politiques publiques de l'Université Laval&nbsp;: des chercheurs en
+            science politique, des scientifiques et analystes de
             données, et des ingénieurs qui tiennent l'infrastructure. Voici qui fait
             quoi.
           </p>
@@ -111,6 +112,7 @@ export default function EquipePage() {
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
       </div>
+      <IssueReporter />
     </div>
   );
 }

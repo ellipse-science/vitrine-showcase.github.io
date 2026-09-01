@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RawMaquette } from "@/components/sections/RawMaquette";
+import { IssueReporter } from "@/components/interactive/IssueReporter";
 
 export const metadata: Metadata = {
   // garde-redaction: ok (séparateur <title>, exception PR #246)
@@ -15,7 +16,7 @@ export default function ModelesPage() {
         <RawMaquette chunk="top" />
       </div>
 
-      <main className="apropos-container" data-section="Modèles">
+      <main className="apropos-container" data-section="Méthodologie · Nos modèles">
         <div className="apropos-header">
           <p className="apropos-fil">
             <a href="/methodologie/" className="apropos-link">Méthodologie</a> · Nos modèles
@@ -140,6 +141,7 @@ export default function ModelesPage() {
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
       </div>
+      <IssueReporter />
     </div>
   );
 }
