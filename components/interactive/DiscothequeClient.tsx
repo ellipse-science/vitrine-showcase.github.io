@@ -290,7 +290,7 @@ function CarteSingle({ single }: { single: Single }) {
                   {chiffres ? formatDuree(single.minutesUne) : "n. d."}
                 </LigneTracklist>
                 <LigneTracklist categorie="Part de temps">
-                  {chiffres ? `${single.partPct} %` : "n. d."}
+                  {chiffres ? `${single.partPct} %` : "n. d."}
                 </LigneTracklist>
                 <LigneTracklist categorie="Enjeu">
                   {chiffres ? (single.enjeu ?? "Aucun enjeu identifié") : "n. d."}

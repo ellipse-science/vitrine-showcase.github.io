@@ -1074,7 +1074,7 @@ function Deck({
      « Plus bas » depuis le 2026-09-01 : la table de mix (ce deck) est
      passée AVANT le palmarès et son disque d'or dans l'ordre de la page. */
   const annonceDisque = selectionne
-    ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
+    ? `${row.fullLabel} : sa pochette est déjà ouverte, plus bas, dans le disque d'or`
     : `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
       `Voir sa pochette, plus bas, dans le disque d'or, pour combien de temps ce ` +
       `parti a occupé la Une, quelle part de la couverture il représente, l'enjeu ` +
@@ -1750,7 +1750,7 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
                   // raffineur cumule, la date du dernier jour sur les deux
                   // autres, où le classement se fait sur ce jour-là. Sans lui,
                   // le même nombre voudrait dire deux choses.
-                  `${s.label}, ${rangFin}${rangFin === 1 ? "er" : "e"} : ` +
+                  `${s.label}, ${rangFin}${rangFin === 1 ? "er" : "e"} : ` +
                   (apprecie
                     ? `${phraseEcartTon(s.lastEcartTon)}, ${chart.mesureLabel}. `
                     : `${ecriteDe(s)} de Une ${chart.mesureLabel}. `) +
@@ -1880,7 +1880,7 @@ function PalmaresTrophee({
   const nomTrophee = NOM_TROPHEE[range];
   const chiffre = chiffreTrophee(gagnant, apprecie);
   const detail = termine
-    ? `${nomTrophee} : ${gagnant.nom}, ${chiffre.valeur}.`
+    ? `${nomTrophee} : ${gagnant.nom}, ${chiffre.valeur}.`
     : `${nomTrophee}. ${PRODUCTION_TROPHEE[range]}. ${sortie}. En tête pour l'instant : ${gagnant.nom}, ${chiffre.valeur}.`;
   const invite = ` ${ouvert ? "Refermer" : "Voir"} le classement complet, sous le palmarès.`;
 
@@ -2075,7 +2075,7 @@ function TropheePanel({
   onFermer: () => void;
 }) {
   return (
-    <div id="trophee-panel" className="trophee-panel" aria-label={`${NOM_TROPHEE[range]} : le classement complet`}>
+    <div id="trophee-panel" className="trophee-panel" aria-label={`${NOM_TROPHEE[range]} : le classement complet`}>
       <div className="trophee-panel-tete">
         <p className="trophee-panel-titre">
           {NOM_TROPHEE[range]}

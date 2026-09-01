@@ -277,7 +277,11 @@ describe("buildChart — la course", () => {
 });
 
 describe("la seconde course — le disque le plus APPRÉCIÉ", () => {
-  const JOURS = ["2026-08-24", "2026-08-25", "2026-08-26"];
+  // Dates DANS la campagne (`ELECTION_CALL_DATE` = 2026-08-27) : la fenêtre
+  // « overall » écarte tout ce qui la précède (voir plus bas « le portrait
+  // global part du déclenchement du scrutin ») — sans ce décalage, ces trois
+  // jours sortaient entièrement et les séries naissaient vides.
+  const JOURS = ["2026-08-27", "2026-08-28", "2026-08-29"];
   const mk = (party: string, date: string, minutes: number, part: number, ton: number) => ({
     party, date_utc: date, date_montreal_tz: date,
     weighted_mentions: part, weighted_tone: ton, total_raw_score: minutes,
@@ -703,7 +707,10 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
     // La raison d'être du changement : un cumul VERROUILLE l'ordre, et un
     // graphique de rangs sans croisement ne montre rien. Ici la CAQ mène les
     // deux premiers jours, le PLQ le troisième — le classement doit suivre.
-    const JOURS = ["2026-08-24", "2026-08-25", "2026-08-26"];
+    // Dates DANS la campagne (`ELECTION_CALL_DATE` = 2026-08-27), sans quoi
+    // `buildChart(..., "overall")` les écarte toutes et les séries naissent
+    // vides.
+    const JOURS = ["2026-08-27", "2026-08-28", "2026-08-29"];
     const MINUTES: Record<string, number[]> = { caq: [200, 200, 10], plq: [50, 50, 400] };
     const mk = (party: string, date: string, minutes: number, part: number) => ({
       party, date_utc: date, date_montreal_tz: date,
