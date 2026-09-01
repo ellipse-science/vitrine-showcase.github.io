@@ -149,6 +149,7 @@ export default function AproposPage() {
               </p>
             </section>
 
+
             <section>
               <h2 className="apropos-section-title">Transparence et accès</h2>
               <p

@@ -58,6 +58,13 @@
   }
   .logo-vitrine { height: 120px; width: auto; display: block; opacity: 0.98; }
   .logo-capp { height: 28px; width: auto; display: block; opacity: 0.85; margin-left: -5px; }
+  .metho-rapport { margin-top: 28px; padding: 22px 24px; border: 0.5px solid var(--rule); background: rgba(0,0,0,0.025); }
+  .metho-rapport .metho-section-label { margin-top: 0; }
+  a.metho-btn { text-decoration: none; display: inline-block; }
+  .metho-partenaires-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--cordovan); margin: 22px 0 8px; }
+  .metho-partenaires { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; margin: 0; }
+  .metho-partner-logo { height: 34px; width: auto; max-width: 160px; object-fit: contain; filter: grayscale(1); opacity: 0.75; transition: opacity 0.25s ease, filter 0.25s ease; }
+  .metho-partner-logo:hover { opacity: 1; filter: none; }
   .mast .brand-footer {
     display: flex;
     align-items: center;
@@ -440,13 +447,13 @@
     <div class="brand">
       <a href="../" aria-label="La Vitrine démocratique">
         <img class="logo-vitrine" alt="La Vitrine démocratique"
-             src="https://dev.vitrinedemocratique.com/assets/images/default/logo_vitrinedemocratique_bg-none_theme-black.png">
+             src="/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png">
       </a>
       <div class="brand-footer">
         <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener">
           <span class="capp-prefix">Propulsé par</span>
           <img class="logo-capp" alt="CAPP · Université Laval"
-               src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
+               src="/images/brand/logo_capp_1row_bg-none_theme-black.png">
         </a>
         <span class="region">Édition Québec · __VERSION__</span>
       </div>
@@ -872,8 +879,22 @@
       <li>Le CAPP détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
       <li>Les données sont hébergées au Québec, dans les infrastructures cloud du CAPP. Aucune donnée personnelle n'est transmise à des tiers.</li>
       <li>Aucune donnée permettant d'identifier un individu n'est utilisée dans le calcul des indices de saillance médiatique ou parlementaire.</li>
+      <li><strong>Les modèles d'intelligence artificielle sont les nôtres.</strong> Les 30 classifieurs qui lisent les phrases des articles (21 thèmes, 9 partis) et le modèle de sentiment sont des modèles locaux, entraînés, calibrés et validés par notre équipe. Leur rapport de validation complet est public&nbsp;: voir ci-dessous.</li>
       <li>Le code de traitement des données est disponible sur les dépôts GitHub publics du CAPP et d'Ellipse Sciences (<a href="https://github.com/ellipse-science" target="_blank" rel="noopener">github.com/ellipse-science</a>).</li>
     </ul>
+
+    <div class="metho-rapport" id="rapport-modeles">
+      <p class="metho-section-label">Rapport de validation des modèles · 30 août 2026</p>
+      <p class="metho-body"><strong>Distillation.</strong> Les 30 modèles servis à la Vitrine sont des encodeurs légers (mDeBERTa), un par thème et un par parti, entraînés sur un corpus de 99&nbsp;997 phrases bilingues tirées de la presse et des débats parlementaires. Ce corpus a été annoté par un grand modèle de langue (gpt-5.4), puis les modèles légers ont été distillés à partir de ces annotations. Chaque modèle répond à une seule question («&nbsp;ce thème est-il présent dans cette phrase?&nbsp;»), ce qui permet de le mesurer, de le remplacer ou de le retirer sans toucher aux autres.</p>
+      <p class="metho-body"><strong>Calibration.</strong> Le seuil de décision de chaque tête thématique a été réglé sur des phrases annotées à la main, par validation croisée répétée deux cents fois, pour que le modèle ne dise «&nbsp;oui&nbsp;» ni trop souvent ni trop rarement. Les têtes de partis sont servies au seuil de 0,5, sans calibration.</p>
+      <p class="metho-body"><strong>Validation.</strong> Les modèles ont été confrontés à 2&nbsp;273 phrases annotées par des humains, hors du corpus d'entraînement. Le F1 moyen de la classe positive est de 0,656 pour les thèmes (13 têtes sur 21 dépassent 0,65; <code>domestic_commerce</code> et <code>public_lands</code> sont les moins sûrs), de 0,934 à 0,994 pour les quatre partis fédéraux disposant d'assez de cas de référence, et de 0,653 pour le sentiment, contre un accord entre annotateurs humains de 0,669. Les cinq partis provinciaux ne sont pas encore validés faute de cas de référence, et le Parti conservateur du Québec n'a pas de modèle. Aucun chiffre du rapport n'est saisi à la main&nbsp;: les tableaux sont régénérés depuis les journaux d'entraînement versionnés.</p>
+      <p class="metho-body"><a class="metho-btn" href="/docs/rapport-validation-modeles-locaux-2026-09.pdf" target="_blank" rel="noopener">Lire le rapport de validation complet (PDF) ↓</a></p>
+      <p class="metho-body metho-partenaires-label">Réalisé avec</p>
+      <p class="metho-partenaires">
+        <a href="https://github.com/antoinelemor/LLM_Tool" target="_blank" rel="noopener"><img class="metho-partner-logo" src="/images/partners/llm-tool.png" alt="LLM Tool"></a>
+        <a href="https://aws.amazon.com/" target="_blank" rel="noopener"><img class="metho-partner-logo" src="/images/partners/aws.svg" alt="Amazon Web Services"></a>
+      </p>
+    </div>
   </section>
 
   <!-- §12 Citation -->
