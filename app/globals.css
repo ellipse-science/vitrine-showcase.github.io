@@ -1176,6 +1176,15 @@
       grid-column: 2;
       grid-row: 2;
     }
+    /* SANS le bloc Ambiance, la rangée 1 de la colonne de droite n'a plus
+       d'occupant : sa hauteur `auto` tombe à 0, mais le `row-gap` de 18 px de
+       .une-main-grid, lui, reste — et l'illustration descend de 18 px sous le
+       haut du titre. Deux cas, pas un : les éditions passées (#434, jamais de
+       musique archivée) et, depuis 2026-08-31, toute la prod. On rend alors
+       les deux rangées à l'illustration. */
+    .une-main-grid.has-art:not(:has(.hero-audio-overlay)) .hero-figure-inline {
+      grid-row: 1 / span 2;
+    }
     .hero-figure-inline {
       display: flex;
       flex-direction: column;
@@ -1208,6 +1217,38 @@
   }
 
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
+  /* ============================================================
+     SYMBOLE D'ENJEU (issue #425) — le même glyphe dans les 4 modules.
+     Il prend la couleur du TEXTE qui l'entoure (`currentColor`) : chaque
+     module décide donc s'il porte la couleur de l'enjeu ou l'encre de sa
+     surface, sans qu'aucune couleur soit recopiée ici.
+     ============================================================ */
+  .symbole-enjeu {
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.22em;
+  }
+
+  /* Module 1 — la rubrique de la Une. Le texte garde son encre douce et le
+     filet sa couleur d'enjeu ; le glyphe reprend cette couleur. Sur le
+     traitement « breaking » (fond encre), l'aplat foncé d'un enjeu comme
+     Gouvernements (#234E78) ne passerait pas : on l'éclaircit vers le papier
+     plutôt que d'entretenir une seconde palette. */
+  /* 1,6em plutôt que le 1,15em par défaut : à côté d'un libellé mono de 10px
+     en capitales espacées, le glyphe paraissait timide (retour d'Adrien, 30-08).
+     Il porte l'identité de l'enjeu, il doit se voir avant le texte. */
+  .une-enjeu .symbole-enjeu {
+    color: var(--c);
+    width: 1.6em;
+    height: 1.6em;
+    vertical-align: -0.42em;
+    margin-right: 8px;
+  }
+  .unes-jour.breaking .une-enjeu .symbole-enjeu {
+    color: color-mix(in srgb, var(--c) 42%, #F3ECDD);
+  }
+
   .une-enjeu {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
@@ -2265,6 +2306,11 @@
   .solitudes .radar-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; fill: var(--red); fill-opacity: 0.82; }
   .solitudes .radar-eyebrow.side-qc  { fill: var(--bleu); }
   .solitudes .radar-eyebrow.side-can { fill: var(--red); }
+  /* Le texte de la rubrique garde sa couleur de RÉGION (bleu Québec, rouge
+     Canada) : elle dit qui mène l'axe, une information que le symbole ne
+     remplace pas. Le glyphe, lui, porte la couleur de l'enjeu. */
+  .solitudes .radar-symbole { opacity: 0.9; }
+  .radar-legend .lg-eyebrow .symbole-enjeu { width: 1.6em; height: 1.6em; vertical-align: -0.42em; margin-right: 7px; }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; fill: var(--ink-soft); }
   .solitudes .radar-lab.strong { font-weight: 600; fill: var(--ink); }
   .solitudes .radar-lab.side-qc  { fill: var(--ink-soft); }
@@ -3690,9 +3736,20 @@
     margin-bottom: 4px;
   }
   .carte-v-enjeux { display: block; }
+  /* Module 5 — le symbole d'enjeu (#425) prend la couleur de l'encre douce du
+     libellé qu'il précède, sur ces deux surfaces de papier. La colonne du
+     libellé gagne les 13px qu'il occupe, pris sur la piste : sans ça,
+     « Aff. int. » se coupait. */
+  .assemblee-symbole {
+    width: 11px;
+    height: 11px;
+    margin-right: 4px;
+    vertical-align: -0.16em;
+    opacity: 0.75;
+  }
   .carte-v-ligne {
     display: grid;
-    grid-template-columns: 62px 38px 1fr;
+    grid-template-columns: 77px 38px 1fr;
     align-items: center;
     gap: 5px;
     margin-bottom: 3px;
@@ -4413,8 +4470,9 @@
   .treemap-growth .gt-container-expanded .gt-collapsed { opacity: 0; pointer-events: none; }
   .treemap-growth .gt-head {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
     width: 100%;
     position: relative;
     z-index: 3;
@@ -4428,13 +4486,46 @@
     align-items: center;
     justify-content: center;
   }
+  /* Sur une tuile, le fond EST la couleur de l'enjeu : le glyphe prend donc
+     l'encre de la tuile, pas la couleur (qui serait invisible sur elle-même). */
+  .treemap-growth .gt-title .symbole-enjeu {
+    width: 1em;
+    height: 1em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+  }
+  .treemap-growth .gt-symbole-seul { width: 20px; height: 20px; opacity: 0.92; }
+  /* Le nom ne tenait pas : le symbole devient la seule étiquette, et prend la
+     place que le nom occupait. Il ne grossit pas au-delà de la tuile — 22 % de
+     la plus petite dimension, borné, sinon il déborderait sur une tuile plate. */
+  /* ⛔ LA CAUSE des noms écrasés, trouvée le 30-08 après trois mesures fausses :
+     le nom est un élément flex, donc il RÉTRÉCIT par défaut. Sa boîte tenait
+     toujours dans la tuile — c'est le texte qui était coupé À L'INTÉRIEUR, par
+     l'`overflow: hidden` du parent. Toute mesure portant sur la boîte concluait
+     « ça rentre » pendant que le lecteur voyait « Droits, libertés, minorités
+     et ». Sans rétrécissement, la boîte déborde pour de vrai. */
+  .treemap-growth .gt-title-nom { flex-shrink: 0; }
+  .treemap-growth .gt-title-sans-nom .gt-title-nom { display: none; }
+  .treemap-growth .gt-title-sans-nom .symbole-enjeu {
+    margin-bottom: 0;
+    opacity: 0.92;
+  }
+  .treemap-growth .gt-large.gt-title-sans-nom .symbole-enjeu,
+  .treemap-growth .gt-large .gt-title-sans-nom .symbole-enjeu { width: 34px; height: 34px; }
+  .treemap-growth .gt-medium .gt-title-sans-nom .symbole-enjeu { width: 26px; height: 26px; }
+  .treemap-growth .gt-small .gt-title-sans-nom .symbole-enjeu { width: 20px; height: 20px; }
+  .treemap-growth .gt-tip-name .symbole-enjeu { margin-right: 6px; }
+  .treemap-growth .gt-expanded-header h3 .symbole-enjeu { margin-right: 10px; opacity: 0.85; }
+  .treemap-mobile .tm-bar-name .symbole-enjeu { color: var(--c); margin-right: 6px; }
   /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
   .treemap-growth .gt-title {
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     text-align: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
@@ -4497,6 +4588,84 @@
     flex-shrink: 0;
     align-self: flex-start;
   }
+  /* La part de l'attention est le nombre PRINCIPAL de la tuile : c'est lui qui
+     chiffre ce que la surface montre. La variation reste, en retrait. */
+  .treemap-growth .gt-share {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .treemap-growth .gt-share-num {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: #F3ECDD;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* Le libellé n'a la place de se déployer que sur les grandes tuiles ; ailleurs
+     il tronquerait, et un libellé tronqué explique moins bien que rien. */
+  /* Les deux libellés du bandeau (« part de l'attention » à gauche, « depuis »
+     à droite) demandent ensemble ~250px : sous cette largeur ils se rentraient
+     dedans (« PART DE L'ATTENTIODEPUIS 11H », vu à 901px). La condition porte
+     sur la largeur RÉELLE de la tuile, pas sur celle de la fenêtre : une même
+     tuile est large à 1440 et étroite à 901, et les seuils d'aire du composant
+     sont en POURCENTAGE, donc insensibles à la fenêtre.
+     `container-type: inline-size` est sans effet de bord ici : la largeur de la
+     tuile vient déjà de son conteneur positionné, jamais de son contenu. */
+  .treemap-growth .gt-tile { container-type: inline-size; }
+  .treemap-growth .gt-share-kicker { display: none; }
+  @container (min-width: 250px) {
+  .treemap-growth .gt-large .gt-share-kicker {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.62;
+    white-space: nowrap;
+  }
+  }
+  /* `.gt-pct` se cale en haut partout ailleurs ; ici les deux nombres sont de
+     corps différents et doivent partager leur ligne de base. */
+  .treemap-growth .gt-head .gt-pct,
+  .treemap-growth .gt-figures .gt-pct { align-self: baseline; }
+  .treemap-growth .gt-figures {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 5px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  /* La variation et son « depuis » forment un bloc aligné à droite. Le
+     « depuis » ne s'affiche que sur les grandes tuiles : ailleurs il tiendrait
+     au prix du nom de l'enjeu, et il se lit déjà au survol. */
+  .treemap-growth .gt-variation {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    min-width: 0;
+  }
+  .treemap-growth .gt-depuis { display: none; }
+  @container (min-width: 250px) {
+  .treemap-growth .gt-large .gt-depuis,
+  .treemap-growth .gt-medium .gt-depuis {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.58;
+    white-space: nowrap;
+  }
+  }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-compact {
@@ -4517,16 +4686,23 @@
   .treemap-growth .gt-large { padding: 16px 18px; }
   .treemap-growth .gt-large .gt-title { font-size: 32px; }
   .treemap-growth .gt-large .gt-preview-head { font-size: 19px; }
-  .treemap-growth .gt-large .gt-pct { font-size: 28px; }
+  .treemap-growth .gt-large .gt-share-num { font-size: 34px; }
+  .treemap-growth .gt-large .gt-pct { font-size: 19px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
   .treemap-growth .gt-medium .gt-title { font-size: 23px; }
   .treemap-growth .gt-medium .gt-preview-head { font-size: 14.5px; }
-  .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
+  .treemap-growth .gt-medium .gt-share-num { font-size: 26px; }
+  .treemap-growth .gt-medium .gt-pct { font-size: 15px; }
   .treemap-growth .gt-small { padding: 10px 11px; }
   .treemap-growth .gt-small .gt-title { font-size: 15px; }
-  .treemap-growth .gt-small .gt-pct { font-size: 16px; }
+  .treemap-growth .gt-small .gt-share-num { font-size: 18px; }
+  .treemap-growth .gt-small .gt-pct { font-size: 12px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
-  .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-share-num { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-pct { font-size: 12px; }
+  /* Réduite à sa flèche, la variation n'a plus de marge à droite du glyphe. */
+  .treemap-growth .gt-pct-arrow .gt-up,
+  .treemap-growth .gt-pct-arrow .gt-down { margin-right: 0; }
   .treemap-growth .gt-tip {
     z-index: 40;
     pointer-events: none;
@@ -4553,6 +4729,21 @@
     font-weight: 700;
     line-height: 1.15;
   }
+  .treemap-growth .gt-tip-figures {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    margin: 0 0 9px;
+    padding-bottom: 9px;
+    border-bottom: 0.5px solid rgba(243, 236, 221, 0.22);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+  .treemap-growth .gt-tip-figures dt { opacity: 0.6; }
+  .treemap-growth .gt-tip-figures dd { margin: 0; text-align: right; white-space: nowrap; }
   .treemap-growth .gt-tip-head {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 13px;
@@ -4596,7 +4787,7 @@
   }
   .treemap-growth .gt-expanded-kicker,
   .treemap-growth .gt-expanded-count,
-  .treemap-growth .gt-expanded-growth > span:last-child {
+  .treemap-growth .gt-expanded-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
     text-transform: uppercase;
@@ -4617,10 +4808,14 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
+    gap: 3px;
     max-width: 210px;
     text-align: right;
   }
+  /* Le bouton Fermer et le second couple nombre/libellé gardent leur respiration ;
+     un libellé, lui, se colle au nombre qu'il légende. */
+  .treemap-growth .gt-expanded-growth .gt-expanded-close { margin-bottom: 7px; }
+  .treemap-growth .gt-expanded-growth .gt-expanded-label + .gt-pct { margin-top: 13px; }
   .treemap-growth .gt-expanded-close {
     display: inline-flex;
     align-items: center;
@@ -4640,10 +4835,22 @@
   .treemap-growth .gt-expanded-close span { font-size: 17px; line-height: 0.7; }
   .treemap-growth .gt-expanded-close:hover,
   .treemap-growth .gt-expanded-close:focus-visible { border-bottom-color: #F3ECDD; outline: none; }
-  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 32px; }
+  .treemap-growth .gt-expanded-share {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 42px;
+    line-height: 1;
+    color: #F3ECDD;
+  }
+  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 26px; }
+  /* `grid-auto-flow: column` + un nombre de rangées FIXE = remplissage par
+     colonne : 1-2-3 à gauche, 4-5-6 à droite. `--lignes` est posé par le
+     composant (⌈n/2⌉) ; le repli à 3 ne sert que si l'attribut manque. */
   .treemap-growth .gt-expanded-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--colonnes, 2), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--lignes, 3), auto);
+    grid-auto-flow: column;
     align-content: start;
     column-gap: 38px;
     overflow-y: auto;
@@ -4661,14 +4868,18 @@
     padding: 19px 0 17px;
     border-bottom: 1px solid rgba(243, 236, 221, 0.24);
   }
+  /* 17px plutôt que 10 : le rang EST une information — c'est le classement de
+     l'actualité dans son enjeu — et il se lisait comme une décoration (retour
+     d'Adrien, 31-08). Chiffres tabulaires pour que les colonnes s'alignent. */
   .treemap-growth .gt-expanded-index {
     grid-column: 1;
     grid-row: 1 / 3;
-    padding-top: 3px;
+    padding-top: 1px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    opacity: 0.56;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    opacity: 0.42;
   }
   .treemap-growth .gt-expanded-title {
     grid-column: 2;
@@ -4682,6 +4893,25 @@
     transition: opacity 0.15s ease;
   }
   .treemap-growth a.gt-expanded-title:hover { opacity: 0.72; }
+  /* Le sommet de saillance : quand la nouvelle a compté le plus. Discret,
+     dans la langue mono des métadonnées, sous le titre et avant les médias. */
+  .treemap-growth .gt-expanded-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #F3ECDD;
+    opacity: 0.5;
+    margin-top: 5px;
+  }
+  .fil-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 3px; }
+  .fil-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .treemap-growth .gt-expanded-outlets {
     grid-column: 2;
     display: flex;
@@ -4703,9 +4933,49 @@
     font-size: 19px;
     font-style: italic;
   }
+  /* L'avertissement d'Adrien, en tête de liste : il dit d'où vient le
+     classement. Sans lui, un article qui « parle à peine » d'un enjeu et qui
+     figure quand même dans sa liste passe pour une erreur. */
+  .treemap-growth .gt-expanded-avis {
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.45;
+    opacity: 0.72;
+    margin: 10px 0 0;
+    max-width: 96ch;
+  }
+  /* La part de l'article dans son enjeu : le seul chiffre qui raccroche la
+     liste au grand nombre de la tuile. */
+  .treemap-growth .gt-expanded-part {
+    font-weight: 500;
+    margin-right: 5px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
+  }
+
+  /* La saillance atteinte AU SOMMET, posée sur la même ligne que l'heure du
+     sommet : les deux décrivent le même instant. Séparée par un filet plutôt
+     que par un point, pour qu'on ne lise pas « 16h Saillance ». */
+  .treemap-growth .gt-expanded-saillance {
+    margin-left: 9px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(243, 236, 221, 0.3);
+  }
+  .treemap-growth .gt-expanded-saillance b {
+    font-weight: 500;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
   @media (max-width: 900px) {
     .treemap-growth .gt-expanded-panel { padding: 28px 30px 24px; }
-    .treemap-growth .gt-expanded-list { grid-template-columns: 1fr; }
+    /* Une seule colonne : le remplissage par colonne n'a plus de sens, on
+       revient au flux normal pour garder l'ordre 1, 2, 3… */
+    .treemap-growth .gt-expanded-list {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-flow: row;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .treemap-growth .gt-container { transition-duration: 0.01ms; }
@@ -5582,8 +5852,18 @@
      ============================================================ */
   .treemap-mobile { display: none; }
 
+  /* Deux groupes d'onglets côte à côte (période, puis représentation) : le
+     second est légèrement en retrait pour qu'on lise « quelle fenêtre » avant
+     « quelle vue », et qu'ils ne se confondent pas en une seule barre de six. */
+  .control-row .mode-toggle { margin-left: 10px; }
+  @media (max-width: 900px) {
+    .control-row .mode-toggle { margin-left: 0; }
+  }
+
   .tm-bar-legend {
     display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
     justify-content: space-between;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
@@ -5626,6 +5906,21 @@
     text-transform: uppercase;
     color: var(--c);
     line-height: 1;
+  }
+  /* Module 6 — le symbole à côté de la promesse et dans le menu des
+     catégories : c'est la demande d'origine de l'issue #425. */
+  .ppl-symbole { color: var(--ink-soft); opacity: 0.75; }
+  .ppl-title .ppl-symbole { margin-right: 7px; vertical-align: -0.18em; }
+  .ppl-cat-option .ppl-symbole { margin-right: 8px; }
+
+  .tm-bar-part {
+    margin-left: auto;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1;
+    white-space: nowrap;
   }
   .tm-bar-track {
     width: 100%;
@@ -7442,6 +7737,40 @@
     letter-spacing: 0.06em;
     color: var(--ink-soft);
     margin: 0 0 10px;
+  }
+
+  /* Enjeu du mode « campagne ». Même graisse et même échelle que .ppl-detail__meta
+     — c'est de la métadonnée, pas un titre. La pastille de couleur reprend
+     ISSUE_COLORS, comme les autres modules d'enjeux.
+
+     UNE PHRASE, PAS UNE RANGÉE. En flex, la puce et le ⓘ sont des items à part
+     entière : à 375, « Droits, libertés, minorités et discrimination » ne tient
+     pas sur la ligne de la puce, part seul à la ligne suivante et laisse la
+     pastille orpheline au-dessus, le ⓘ sur une quatrième ligne. En flux inline,
+     la puce reste collée au premier mot et le ⓘ suit le dernier, quelle que
+     soit la largeur. */
+  .ppl-detail__enjeu {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+
+  .ppl-enjeu-puce {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+
+  /* overflow-wrap : le plus long des douze libellés doit pouvoir se couper
+     plutôt que pousser la ligne hors du panneau sur téléphone. */
+  .ppl-enjeu-label {
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 820px) {

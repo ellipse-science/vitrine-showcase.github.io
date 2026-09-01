@@ -5,7 +5,7 @@
 // dans le paquet du navigateur. Même raison d'être que lib/medias.ts.
 //
 // C'est la SOURCE DE VÉRITÉ des couleurs d'enjeu : `lib/data/headlineEvents.ts`
-// (module « De quoi parle-t-on ? ») et le module des partis lisent toutes deux
+// (module « Les 12 enjeux de la campagne ») et le module des partis lisent toutes deux
 // d'ici. Elles étaient déclarées dans headlineEvents.ts, hors de portée du
 // navigateur ; les recopier ailleurs aurait garanti la dérive.
 
@@ -52,16 +52,19 @@ export const COULEUR_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
   Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, ISSUE_COLORS[cle]]),
 );
 
-/** L'index inverse : du libellé français vers la clé technique.
+/** L'index inverse des CLÉS : du libellé français vers la clé technique.
  *
- *  Sert au CIRCUIT DES POCHETTES. Le raffineur choisit ses images de référence
- *  par préfixe de nom de fichier (`governments_and_governance_generic1.jpg`), et
- *  ces préfixes sont EXACTEMENT les clés ci-dessus. Écrire une table de
- *  correspondance à la main aurait été un doublon de plus à faire dériver.
- *
- *  À savoir si les références évoluent : le dossier `references/` du raffineur
- *  connaît `health_and_social_services`, plus ancien que le libellé français
- *  « Santé et politiques sociales ». C'est la clé qui fait foi des deux côtés. */
+ *  DEUX CONSOMMATEURS. (1) Le CIRCUIT DES POCHETTES du module des partis : le
+ *  raffineur choisit ses images de référence par préfixe de nom de fichier
+ *  (`governments_and_governance_generic1.jpg`), et ces préfixes sont
+ *  EXACTEMENT les clés ci-dessus — à savoir si les références évoluent : le
+ *  dossier `references/` du raffineur connaît `health_and_social_services`,
+ *  plus ancien que le libellé français « Santé et politiques sociales ».
+ *  C'est la clé qui fait foi des deux côtés. (2) Le Polimètre+, qui ne connaît
+ *  ses enjeux que par leur libellé complet (`CATEGORY_ORDER` de
+ *  polimetre-meta.ts, les douze mêmes chaînes au caractère près), alors que le
+ *  symbole d'enjeu est rangé par clé. Sans cet index, l'un des deux modules
+ *  devrait recopier la correspondance et la laisser dériver. */
 export const CLE_PAR_LIBELLE: Record<string, string> = Object.fromEntries(
   Object.entries(ISSUE_LABELS_SHORT).map(([cle, libelle]) => [libelle, cle]),
 );

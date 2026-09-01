@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const title = `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
   const description =
     `La Vitrine démocratique telle qu'elle était à l'${edition.label.toLowerCase()} ` +
-    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, enjeux, ` +
+    `du ${edition.dateLabel.toLowerCase()} : Unes saillantes, deux solitudes, enjeux, ` +
     `partis, Polimètre+ et Assemblée nationale.`;
 
   return {

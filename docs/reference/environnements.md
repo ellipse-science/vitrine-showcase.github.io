@@ -6,7 +6,7 @@ celui-ci qui fait foi pour l'hébergement et le déploiement.
 ## En une phrase
 
 **On travaille sur `dev.vitrinedemocratique.com`** (Cloudflare, protégé par mot
-de passe). GitHub Pages tourne encore, mais **ne sert plus de référence**.
+de passe). L'ancien miroir GitHub Pages est **débranché** depuis le 2026-08-30.
 
 ## Les adresses
 
@@ -16,13 +16,28 @@ de passe). GitHub Pages tourne encore, mais **ne sert plus de référence**.
 | `dev.vitrinedemocratique.com` | **miroir de travail** | `main` | Cloudflare Access |
 | `api.vitrinedemocratique.com` | API de lecture | — (Worker) | clé d'API |
 | `api.vitrinedemocratique.com/admin` | gestion des clés | — (Worker) | Cloudflare Access |
-| `ellipse.science/vitrine-showcase.github.io` | ancien miroir | `main` | ouvert |
 
-### Pourquoi l'ancien miroir existe encore
+### Pourquoi l'ancien miroir a été débranché (2026-08-30)
 
-GitHub Pages est conservé comme **chemin de retour arrière** : si la chaîne
-Cloudflare tombe, il reste un site debout, construit par un chemin indépendant.
-Il se déploie donc toujours à chaque poussée sur `main`.
+Il ne remplissait plus son rôle de filet, et il coûtait deux fois.
+
+**Il n'était pas un double fidèle.** Il se construisait par un autre chemin ET
+sur une autre source : Pages lisait les JSON commités, dev et prod lisent
+l'API. « Même contenu que dev » n'a donc jamais été garanti — ni le build, ni
+la donnée.
+
+**Il induisait en erreur.** Le 30-08, un correctif a été déclaré « en dev »
+cinq fois de suite sur la foi de Pages, alors que l'intégration Git de
+Cloudflare avait cessé de bâtir à 20h14 et que `dev.vitrinedemocratique.com`
+servait un build antérieur. Deux sites, deux vérités, et c'est le mauvais qui
+a été regardé.
+
+**Il perçait Cloudflare Access.** Tant qu'un miroir public servait le même
+contenu, le mot de passe de `dev.vitrinedemocratique.com` ne protégeait rien.
+
+Le vrai filet, quand l'intégration Git de Cloudflare tombe, est le workflow
+`deploy-dev-cloudflare.yml` en `workflow_dispatch` — utilisé avec succès le
+30-08 pour rattraper ce gel.
 
 **Mais on ne s'y réfère plus.** Une capture d'écran, un rapport de bogue ou une
 recette qui viendraient de là décrivent un site que personne ne surveille. Deux
@@ -40,9 +55,10 @@ Cloudflare**.
 ## Comment le code circule
 
 ```
-                    ┌── deploy.yml ─────────────→ GitHub Pages   (filet)
-   PR ──→ main ─────┤
-                    └── deploy-dev-cloudflare ──→ dev.vitrinedemocratique.com
+   PR ──→ main ──→ deploy-dev-cloudflare.yml ──→ dev.vitrinedemocratique.com
+                   (au push depuis le 30-08 ; l'intégration Git de Cloudflare
+                    reste branchée, d'où un double déploiement quand elle
+                    fonctionne — assumé, cf. l'en-tête du workflow)
 
    main ──(fusion délibérée)──→ prod ──→ deploy-prod ──→ vitrinedemocratique.com
 ```
@@ -67,10 +83,16 @@ pour que la synchro des données continue.
 **Et depuis le 2026-08-19, la promotion exige une vérification sur dev**
 (règle dure #10, `AGENTS.md`) : la PR de promotion doit contenir la ligne
 « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` », bloquée
-mécaniquement par le check `garde-promotion` sinon. Un agent sans accès
-Cloudflare Access fait sa vérification sur le miroir GitHub Pages (même
-contenu que dev) et le précise dans la ligne. Les poussées de données
+mécaniquement par le check `garde-promotion` sinon. Les poussées de données
 automatiques (`[prod data sync]`) ne sont pas concernées.
+
+⚠️ **Le miroir GitHub Pages servait d'échappatoire à cette règle** pour un
+agent sans accès Cloudflare Access. Il est débranché : cette échappatoire
+n'existe plus, et elle reposait de toute façon sur une parité qui n'a jamais
+été garantie. **À trancher avec Adrien** : soit l'observation sur dev revient
+à un humain, soit un agent y accède autrement. En attendant, un agent qui
+remplit cette ligne doit dire ce qu'il a réellement vérifié (build local,
+déploiement Cloudflare confirmé) et ce qu'il n'a **pas** pu voir.
 
 ## D'où viennent les données
 
@@ -83,8 +105,8 @@ raffineurs (R, AWS Lambda) ──→ Athena
                  ▼                               ▼
       JSON commités dans le dépôt        POST /v1/sync ──→ Postgres (Neon)
                  │                                            │
-                 │                                            ▼
-      GitHub Pages lit les JSON               dev et prod lisent l'API
+       (archive et repli à 6h)                                ▼
+                                            dev et prod lisent l'API
 ```
 
 **L'ordre compte, et il est garanti.** `refresh-data` recharge Postgres *après*

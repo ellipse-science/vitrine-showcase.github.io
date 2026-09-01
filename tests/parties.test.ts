@@ -133,7 +133,11 @@ describe("buildRangeView", () => {
 });
 
 describe("buildChart — la course", () => {
-  const DATES = ["2026-06-08", "2026-06-09", "2026-06-10"];
+  // ⚠️ Dates DANS la campagne. Depuis que `ELECTION_CALL_DATE` est renseignée
+  // (2026-08-27), la fenêtre « overall » commence au déclenchement : des
+  // fixtures de juin en sortaient entièrement et la courbe naissait vide.
+  // Ces tests portent sur la GÉOMÉTRIE du graphique, pas sur la fenêtre.
+  const DATES = ["2026-08-28", "2026-08-29", "2026-08-30"];
   /** Cinq partis sur trois jours, parts de voix stables et bien séparées. */
   function threeDays(): SR[] {
     const vals: Record<string, number> = { caq: 0.4, pq: 0.3, qs: 0.15, plq: 0.1, pcq: 0.05 };
@@ -487,7 +491,9 @@ describe("sparkPoints / samplePoints", () => {
 });
 
 describe("le portrait global", () => {
-  const DAYS = ["2026-08-01", "2026-08-07", "2026-08-13"];
+  // Même contrainte que ci-dessus, en gardant l'espacement INÉGAL (6 jours puis
+  // 6) qui est tout l'objet du test sur le placement des points.
+  const DAYS = ["2026-08-27", "2026-09-02", "2026-09-08"];
   function rows(): SR[] {
     const v: Record<string, number> = { caq: 0.4, pq: 0.3, qs: 0.15, plq: 0.1, pcq: 0.05 };
     return DAYS.flatMap((d) => PARTY_KEYS.map((p) => row(p, d, v[p])));
@@ -510,8 +516,8 @@ describe("le portrait global", () => {
   });
 
   it("place les points selon la DATE et non selon leur rang", () => {
-    // Trois dates inégalement espacées : 1er, 7 et 13 août. Le point du milieu
-    // doit tomber à mi-chemin, pas au tiers comme le voudrait un rang.
+    // Trois dates inégalement espacées : 27 août, 2 et 8 septembre. Le point du
+    // milieu doit tomber à mi-chemin, pas au tiers comme le voudrait un rang.
     const { stats, dates } = statsOf(rows(), rows(), rows());
     const chart = buildChart(stats, dates, "overall");
     const xs = chart.series[0].polyline.split(" ").map((p) => Number(p.split(",")[0]));
@@ -733,5 +739,24 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
     const c = computeStats(j as never, j as never, j as never)!;
     expect(buildRangeView(c.stats, "today", c.dates).rows[0].enjeuxVentiles).toBe(false);
     expect(buildRangeView(c.stats, "today", c.dates, null, new Map()).rows[0].enjeuxVentiles).toBe(true);
+  });
+});
+
+// La fenêtre « Campagne » du module part du déclenchement du scrutin depuis le
+// 2026-08-30. Sans ce test, le jour où quelqu'un remet `ELECTION_CALL_DATE` à
+// `null`, la vue reprendrait tout l'historique sans que rien ne le signale.
+describe("le portrait global part du déclenchement du scrutin", () => {
+  it("écarte les journées antérieures au bref", () => {
+    const AVANT = ["2026-08-20", "2026-08-25"];
+    const APRES = ["2026-08-28", "2026-08-30"];
+    const v: Record<string, number> = { caq: 0.4, pq: 0.3, qs: 0.15, plq: 0.1, pcq: 0.05 };
+    const toutes = [...AVANT, ...APRES].flatMap((d) => PARTY_KEYS.map((p) => row(p, d, v[p])));
+
+    const { stats, dates } = statsOf(toutes, toutes, toutes);
+    const chart = buildChart(stats, dates, "overall");
+
+    // Deux points, pas quatre : les journées d'avant le 27 août sont hors champ.
+    const xs = chart.series[0].polyline.split(" ").filter(Boolean);
+    expect(xs).toHaveLength(APRES.length);
   });
 });
