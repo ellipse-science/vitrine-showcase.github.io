@@ -9675,26 +9675,28 @@
   overflow: visible;
   filter: drop-shadow(0 1px 3px rgba(28, 25, 23, 0.22));
 }
+/* LE CAPUCHON — un aplat de la couleur EXACTE du parti, celle du vumètre,
+   depuis le 2026-09-01. Il reprenait la composition à trois couleurs de la
+   pochette (parti, enjeu, ton) ; signalé « une pastille à trois couleurs,
+   elle doit être remplacée par une pastille de la couleur du parti » : le
+   deck identifie un CANAL, comme sa tranche sur la console — l'enjeu et le
+   ton restent sur la vraie pochette, où ils ont un sens, pas ici en double. */
 .deck-jog-cap .forme-parti { fill: var(--party, var(--ink-soft)); }
 .deck-jog-cap .cap-cercle {
   fill: none;
   stroke: rgba(28, 25, 23, 0.2);
   stroke-width: 1.2;
 }
-/* Les formes du capuchon ne portent PAS le filet crème de la pochette : à
-   46 % de la molette, il mangerait les aplats au lieu de les séparer. */
-.deck-jog-cap .forme-enjeu,
-.deck-jog-cap .forme-ton { stroke: none; }
 /* LE TROU DU SPINDLE DU CAPUCHON — crème, comme celui du disque d'or, depuis
    le 2026-09-01. Il était d'abord à la couleur du parti (`fill:
-   var(--party)`) : le pari (ce commentaire, plus haut) était qu'un trou
-   neutre « se perdrait » dans le mélange à trois couleurs du capuchon.
-   L'inverse s'est produit — signalé « pastilles qui doivent être pleines » :
-   quand le trou tombe sur `.forme-parti` (même couleur), l'anneau crème de
-   2 px ne suffit pas à le distinguer de ce qu'il y a derrière, et le disque
-   plein se lit comme un simple cercle creux. Vérifié sur le rendu réel :
-   le crème, lui, contraste avec LES TROIS couleurs du capuchon (parti, enjeu,
-   ton — jamais crème elles-mêmes), donc jamais avec l'inquiétude d'origine. */
+   var(--party)`) : sur l'aplat uni d'aujourd'hui il se fondrait plus encore
+   qu'avant — mais même du temps du capuchon à trois couleurs (parti, enjeu,
+   ton), l'anneau crème de 2 px ne suffisait déjà pas à le distinguer une
+   fois posé sur `.forme-parti` (même couleur que lui), et le disque plein se
+   lisait comme un simple cercle creux. Vérifié sur le rendu réel : le crème
+   contraste avec CHACUNE des couleurs de parti possibles (aucune n'est
+   elle-même crème), là où une pastille à la couleur du parti ne peut, par
+   définition, jamais contraster avec l'aplat du parti qui la porte. */
 .cap-pastille {
   fill: var(--paper-deep);
   stroke: var(--paper);

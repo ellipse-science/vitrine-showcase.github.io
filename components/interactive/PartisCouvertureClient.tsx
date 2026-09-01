@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import type { Album, Discographie, Discotheque, Pochette, PochetteSource } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
-import { couleurEnjeu, signaturePochette } from "@/lib/enjeux";
+import { signaturePochette } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { formatEcartTon, phraseEcartTon } from "@/lib/ton";
 import { cheminDeRang, depuisLOrigine, hauteurDuRang, rangsParInstant } from "@/lib/rangs";
@@ -1078,11 +1078,6 @@ function Deck({
     );
   }
 
-  // L'enjeu de tête, hors « Autres enjeux » : ce dernier agrège la queue de
-  // distribution et ne nomme rien, donc il ne peut pas être un « enjeu clé ».
-  const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
-  const ton = row.toneDirection;
-
   /* Le survol du disque annonce ce que le clic FAIT — quand il fait
      quelque chose. `articleUrl` seul déclenche un vrai geste : un lien qui
      QUITTE le site pour l'article qui parle le plus de ce parti. Sans lui,
@@ -1105,8 +1100,13 @@ function Deck({
     <>
       <span className="deck-face deck-face--disque" aria-hidden="true">
         <span className="deck-jog">
-          {/* Le capuchon n'est plus un aplat : il reprend la composition de la
-              pochette, découpée en rond. On voit ce qu'on va retourner. */}
+          {/* Le capuchon est un aplat de la couleur EXACTE du parti — celle du
+              vumètre — depuis le 2026-09-01. Il reprenait la composition à
+              trois couleurs de la pochette (parti, enjeu, ton) ; signalé
+              « une pastille à trois couleurs, elle doit être remplacée par
+              une pastille de la couleur du parti » : le deck identifie un
+              CANAL, comme sa tranche sur la console — l'enjeu et le ton ont
+              leur place sur la vraie pochette, pas ici en double. */}
           {mediaLabel && (
             <svg className="deck-jog-media" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -1134,20 +1134,17 @@ function Deck({
             </clipPath>
             <g clipPath={`url(#cap-${row.key})`}>
               <rect className="forme-parti" x="0" y="0" width="100" height="100" />
-              <circle className="forme-enjeu" cx="80" cy="18" r="44" />
-              <path className="forme-ton" d="M0 100 L0 48 L62 100 Z" />
             </g>
             <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
             {/* LE TROU DU SPINDLE — crème, comme celui du disque d'or
                 (`.trophee-etiquette-disque::before`), depuis le 2026-09-01.
-                Il était d'abord à la couleur du parti : le pari qu'un trou
-                neutre « se perdrait » dans le mélange à trois couleurs du
-                capuchon (parti, enjeu, ton) a fait l'inverse — signalé
-                « pastilles qui doivent être pleines » : posé sur `.forme-
-                parti` (même couleur que lui), l'anneau crème de 2 px ne
-                suffisait pas à le distinguer, et un plein disque se lisait
-                comme un simple cercle creux. Voir `.cap-pastille` dans
-                globals.css. */}
+                Il était d'abord à la couleur du parti : sur l'aplat uni
+                d'aujourd'hui il se fondrait plus encore qu'avant — mais
+                même du temps du capuchon à trois couleurs, l'anneau crème
+                de 2 px ne suffisait déjà pas à le distinguer une fois posé
+                sur `.forme-parti` (même couleur que lui), et un plein
+                disque se lisait comme un simple cercle creux. Voir
+                `.cap-pastille` dans globals.css. */}
             <circle className="cap-pastille" cx="50" cy="33" r="8" />
             <text className="cap-sigle" x="50" y="63" textAnchor="middle" dominantBaseline="central">
               {row.label}
@@ -1169,11 +1166,7 @@ function Deck({
   return (
     <div
       className="deck"
-      style={{
-        ["--party" as string]: row.color,
-        ["--enjeu" as string]: couleurEnjeu(enjeu?.label),
-        ["--ton" as string]: `var(--ton-${ton})`,
-      }}
+      style={{ ["--party" as string]: row.color }}
     >
       {/* La clé ne porte QUE le parti, et non la source : changer de média ne
           change pas forcément qui occupe ce deck, keyer sur la source
