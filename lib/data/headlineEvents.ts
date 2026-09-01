@@ -3019,10 +3019,103 @@ export async function loadTreemap(
   const day = buildPeriodData(dayRows, jourDuJour);
   if (!day) return null;
   const debutSemaine = debutDeLaSemaine(day.history)?.slice(0, 10) ?? null;
+
+  // SEMAINE et CAMPAGNE se calculent ICI, depuis les articles, sur la vraie
+  // fenêtre de chaque vue. Les tables issues_score_week/month publiées par le
+  // raffineur sont identiques à la table du jour (mesuré le 31-08 : mêmes
+  // valeurs, mêmes 2 lignes, au dernier tag des trois) — les brancher revenait
+  // à montrer trois fois la même chose. La matière des articles est celle-là
+  // même dont le raffineur tire ses scores (reproduction validée à 0,00 point
+  // d'écart), donc la somme sur une autre fenêtre est le MÊME calcul, borné
+  // autrement. Le jour, lui, reste sur sa table : elle est correcte, et porte
+  // la cadence 4 h (variation d'une passe à l'autre) que les articles, agrégés
+  // au jour, n'ont pas.
+  const week = buildPeriodeDepuisArticles(articlesEnjeux, debutSemaine, day)
+    ?? buildPeriodData(weekRows, debutSemaine) ?? day;
+  const month = buildPeriodeDepuisArticles(articlesEnjeux, ELECTION_CALL_DATE, day)
+    ?? buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day;
+  return { day, week, month };
+}
+
+/** Une période bâtie en sommant les articles depuis `depuis` (inclus).
+ *
+ *  - la PART est la somme des comptes de phrases de la fenêtre, normalisée ;
+ *  - la VARIATION compare la part d'aujourd'hui à celle qu'avait l'enjeu dans
+ *    la même fenêtre ARRÊTÉE À HIER : « depuis hier », au sens propre. Sur une
+ *    fenêtre cumulative, comparer les sommes brutes ne dirait rien (tout
+ *    monte) ; comparer les parts dit si l'enjeu gagne ou perd du terrain ;
+ *  - l'HISTORIQUE porte un point par jour (le rang du jour), là où le jour en
+ *    porte un par passe de 4 h ;
+ *  - l'entête (date, heure) est repris de la vue du jour : c'est la même
+ *    édition qui gouverne les trois vues. */
+function buildPeriodeDepuisArticles(
+  articles: ArticleEnjeu[],
+  depuis: string | null,
+  day: TreemapPeriodData,
+): TreemapPeriodData | null {
+  if (articles.length === 0 || !depuis) return null;
+  const fenetre = articles.filter((a) => (a.jour ?? "") >= depuis);
+  if (fenetre.length === 0) return null;
+  const jours = [...new Set(fenetre.map((a) => a.jour))].sort();
+  const dernierJour = jours[jours.length - 1];
+
+  const sommes = (sel: ArticleEnjeu[]) => {
+    const s: Record<string, number> = {};
+    for (const k of ISSUE_KEYS) s[k] = 0;
+    for (const a of sel) for (const k of ISSUE_KEYS) s[k] += Number(a[k] ?? 0);
+    return s;
+  };
+  const parts = (s: Record<string, number>) => {
+    const tot = ISSUE_KEYS.reduce((x, k) => x + s[k], 0);
+    const p: Record<string, number> = {};
+    for (const k of ISSUE_KEYS) p[k] = tot > 0 ? (s[k] / tot) * 100 : 0;
+    return p;
+  };
+  const agg = sommes(fenetre);
+  const part = parts(agg);
+  const veille = fenetre.filter((a) => (a.jour ?? "") < dernierJour);
+  const partVeille = veille.length > 0 ? parts(sommes(veille)) : null;
+
+  const topParEnjeu = topArticlesParEnjeu(articles, depuis);
+  const scored = ISSUE_KEYS.map((issueKey) => ({ issueKey, score: agg[issueKey] }))
+    .sort((a, b) => b.score - a.score);
+  const maxScore = scored[0]?.score || 1;
+  const tiles: TreemapIssueTile[] = scored.map(({ issueKey, score }) => {
+    const entree = topParEnjeu.get(issueKey);
+    const pv = partVeille?.[issueKey] ?? 0;
+    const growth = partVeille && pv > 0 ? ((part[issueKey] - pv) / pv) * 100 : null;
+    return {
+      issueKey,
+      issueFr: ISSUE_LABELS_SHORT[issueKey] ?? issueKey,
+      color: ISSUE_COLORS[issueKey] ?? "#463E3E",
+      score,
+      relScore: Math.round((score / maxScore) * 100),
+      share: part[issueKey],
+      topObject: "",
+      context: "",
+      url: null,
+      velocity: growth == null ? 0 : growth > 0 ? 1 : growth < 0 ? -1 : 0,
+      growth,
+      articles: entree?.articles ?? [],
+      articlesTotal: entree?.total ?? 0,
+    };
+  });
+
+  const history: TreemapHistoryPoint[] = jours.map((jour) => {
+    const duJour = sommes(fenetre.filter((a) => a.jour === jour));
+    const ranked = ISSUE_KEYS.map((key) => ({ key, score: duJour[key] }))
+      .sort((a, b) => b.score - a.score);
+    const ranks: Record<string, number> = {};
+    ranked.forEach((e, i) => { ranks[e.key] = i + 1; });
+    return { date: jour ?? "", ranks, tag: jour ?? "" };
+  });
+
   return {
-    day,
-    week: buildPeriodData(weekRows, debutSemaine) ?? day,
-    month: buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day,
+    tiles,
+    dateLabel: day.dateLabel,
+    growthSince: partVeille ? "hier" : null,
+    lastUpdated: day.lastUpdated,
+    history,
   };
 }
 
