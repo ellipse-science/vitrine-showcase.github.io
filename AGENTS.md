@@ -39,8 +39,8 @@ En cas de doute sur l'hébergement, c'est ce document qui fait foi.
 
 | Adresse | Rôle | Branche |
 |---|---|---|
-| `vitrinedemocratique.com` | **production**, publique | `prod` |
-| `dev.vitrinedemocratique.com` | **miroir de travail** (Cloudflare Access) | `main` |
+| `vitrinedemocratique.com` | **production**, publique | `main` |
+| `dev.vitrinedemocratique.com` | **miroir de travail** (Cloudflare Access) | `develop` |
 | `api.vitrinedemocratique.com` | API de lecture (clé requise) | Worker |
 
 
@@ -52,7 +52,7 @@ En cas de doute sur l'hébergement, c'est ce document qui fait foi.
   cessé de bâtir, et le site d'Adrien servait un vieux build. Ensuite il
   perçait Cloudflare Access : tant qu'un miroir public servait le même
   contenu, le mot de passe de `dev.vitrinedemocratique.com` ne protégeait rien.
-- **Push to `main`** → `deploy-dev-cloudflare.yml` bâtit et publie
+- **Push to `develop`** → `deploy-dev-cloudflare.yml` bâtit et publie
   `dev.vitrinedemocratique.com`. L'intégration Git de Cloudflare reste branchée
   en parallèle : quand elle fonctionne, la poussée déploie deux fois, ce qui est
   assumé (même `out/`, cf. l'en-tête du workflow). Elle **s'arrête sans
@@ -60,13 +60,13 @@ En cas de doute sur l'hébergement, c'est ce document qui fait foi.
   build. Pour savoir laquelle des deux voies a publié, ou si rien n'a publié :
   `gh api repos/ellipse-science/vitrine-showcase.github.io/commits/$(git rev-parse origin/main)/check-runs --jq '[.check_runs[]|select(.name|test("Cloudflare";"i"))|.conclusion]'`
   Vide = le site ne l'a pas. Remède : `gh workflow run deploy-dev-cloudflare.yml --ref main`.
-- **`prod` n'avance que de deux façons** : les données automatiquement toutes
-  les 4 h, et le code **uniquement par une fusion délibérée `main → prod`**.
-  ⚠️ Un correctif fusionné dans `main` **n'est pas en production**. Vérifier :
-  `git log --oneline origin/prod..origin/main -- app lib components`
-- `prod` est protégé : PR + une approbation, **sans dérogation admin**.
+- **`main` n'avance que de deux façons** : les données automatiquement toutes
+  les 4 h, et le code **uniquement par une fusion délibérée `develop → main`**.
+  ⚠️ Un correctif fusionné dans `develop` **n'est pas en production**. Vérifier :
+  `git log --oneline origin/main..origin/main -- app lib components`
+- `main` est protégé : PR + une approbation, **sans dérogation admin**.
 - **Pull requests** → `ci.yml` : type-check + build + tests. Rien de cassé
-  n'atteint `main`.
+  n'atteint `develop`.
 
 Travailler avec un agent : [`docs/reference/travail-avec-agents.md`](./docs/reference/travail-avec-agents.md).
 
@@ -77,7 +77,7 @@ Travailler avec un agent : [`docs/reference/travail-avec-agents.md`](./docs/refe
 - `2.0.0-beta.3` → **« Bêta v2.0.0 (b3) »** (compteur bêta visible)
 - `2.0.0` → **« v2.0.0 »** (hors bêta)
 
-Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au merge, `.github/workflows/version-bump.yml` bumpe `package.json` sur `main` et redéploie :
+Le bump est **automatique et piloté par label**. Mets un label sur ta PR ; au merge, `.github/workflows/version-bump.yml` bumpe `package.json` sur `develop` et redéploie :
 
 | Label | Effet en bêta | Effet hors bêta |
 |-------|---------------|-----------------|
@@ -100,7 +100,7 @@ En cas d'hésitation entre deux niveaux, prends le plus bas.
 
 - **PR sans label semver:*** → aucun bump (mais une entrée de journal quand même). Les commits `data: refresh …` n'ouvrent pas de PR → jamais de bump sur le pipeline 4h.
 - **Sortir de bêta** : éditer `package.json` à la main sur une PR (`2.0.0-beta.N` → `2.0.0`).
-- **Comment le bump contourne la protection de `main`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
+- **Comment le bump contourne la protection de `develop`** : le ruleset exige une PR pour toute modif, et `github-actions[bot]` (GITHUB_TOKEN) **n'est pas ajoutable** à la bypass-list. Le workflow pousse donc son commit avec la **même SSH deploy key que `refresh-data.yml`** (`secrets.REFRESH_DATA_DEPLOY_KEY`) — les Deploy keys **sont** dans le bypass du ruleset. Aucun réglage de ruleset à faire. Seul prérequis restant : les trois labels `semver:*` doivent exister dans le repo.
 
 ## Hard rules (non-negotiable)
 
@@ -125,7 +125,7 @@ En cas d'hésitation entre deux niveaux, prends le plus bas.
 
 9. **Un corps de PR se lit en une minute — le détail va dans l'issue liée.** Une PR tient dans un écran : 3 à 5 puces qui disent ce qui change et pourquoi, puis les sections du gabarit ([`.github/pull_request_template.md`](./.github/pull_request_template.md)) répondues en une ligne chacune. Les mesures, les tableaux, les sorties de tests et le récit de l'enquête vont dans **l'issue liée**, pas dans le corps de la PR; les issues, elles, restent aussi détaillées qu'il le faut (« garde les issues pour les machines, rends les PR plus digestes »). **Ce n'est pas une règle de style mais de sécurité du gitflow** : un corps de PR indigeste désarme le seul garde-fou humain de la chaîne. Le 2026-08-12, une PR longue a été approuvée avec le commentaire « J'approuve mais j'ai pas lu. Trop long et incompréhensible » — l'approbation qui la débloquait était devenue décorative. Corollaire : **une IA seule ne review pas une PR**, une approbation Copilot ne remplace jamais un œil humain. Demande de Patrick Poncet (2026-08-12), gabarit posé par [#469](https://github.com/ellipse-science/vitrine-showcase.github.io/pull/469) et propagé à `aws-refiners` et `aws-infra`. **Aucun check CI ne vérifie cette règle** : elle tient à la discipline de qui rédige, humain comme agent.
 
-10. **Aucune fonctionnalité en production sans passage vérifié sur dev.** La production (`vitrinedemocratique.com`, branche `prod`) n'avance en code que par une fusion délibérée `main → prod`; cette règle ajoute la condition d'entrée : la fonctionnalité doit avoir été **observée en marche** sur `dev.vitrinedemocratique.com` (même build que la prod, mêmes données lues de l'API) avant la promotion. La PR de promotion doit contenir la ligne « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` » : des faits (« le module X s'affiche avec les données du cycle courant », « aucune 404 d'actif », « les onglets répondent »), pas le mot « vérifié » tout seul. C'est « prouver, pas décrire » appliqué au gitflow. **Vérifié mécaniquement** par le check `garde-promotion` sur toute PR visant `prod`. Précisions : les poussées de données automatiques (`[prod data sync]`) passent par la clé de déploiement, pas par PR, et ne sont pas concernées; ⚠️ l'échappatoire « vérifier sur le miroir GitHub Pages » **n'existe plus** depuis son débranchement du 2026-08-30, et elle reposait sur une parité jamais garantie (autre build, autre source de données). À trancher : l'observation revient à un humain, ou un agent accède à dev autrement. D'ici là, un agent qui remplit cette ligne dit ce qu'il a vérifié (build, déploiement Cloudflare confirmé) et ce qu'il n'a PAS pu voir. Pourquoi : le piège documenté est la prod qui tourne sur du vieux code; le piège symétrique est de promouvoir du code que personne n'a regardé tourner, avec l'attention médiatique dessus. Demande du 2026-08-19.
+10. **Aucune fonctionnalité en production sans passage vérifié sur dev.** La production (`vitrinedemocratique.com`, branche `main`) n'avance en code que par une fusion délibérée `develop → main`; cette règle ajoute la condition d'entrée : la fonctionnalité doit avoir été **observée en marche** sur `dev.vitrinedemocratique.com` (même build que la prod, mêmes données lues de l'API) avant la promotion. La PR de promotion doit contenir la ligne « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` » : des faits (« le module X s'affiche avec les données du cycle courant », « aucune 404 d'actif », « les onglets répondent »), pas le mot « vérifié » tout seul. C'est « prouver, pas décrire » appliqué au gitflow. **Vérifié mécaniquement** par le check `garde-promotion` sur toute PR visant `main`. Précisions : les poussées de données automatiques (`[prod data sync]`) passent par la clé de déploiement, pas par PR, et ne sont pas concernées; ⚠️ l'échappatoire « vérifier sur le miroir GitHub Pages » **n'existe plus** depuis son débranchement du 2026-08-30, et elle reposait sur une parité jamais garantie (autre build, autre source de données). À trancher : l'observation revient à un humain, ou un agent accède à dev autrement. D'ici là, un agent qui remplit cette ligne dit ce qu'il a vérifié (build, déploiement Cloudflare confirmé) et ce qu'il n'a PAS pu voir. Pourquoi : le piège documenté est la prod qui tourne sur du vieux code; le piège symétrique est de promouvoir du code que personne n'a regardé tourner, avec l'attention médiatique dessus. Demande du 2026-08-19.
 
 ## Module naming + signalement labels (triage)
 

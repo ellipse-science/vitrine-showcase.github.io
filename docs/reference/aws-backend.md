@@ -30,10 +30,10 @@ How the data this site renders is produced upstream. **No AWS infrastructure liv
 
 ## How to deploy a refiner change (DEV)
 
-The deployment mechanism is **not** merging to `main`. Instead:
+The deployment mechanism is **not** merging to `develop`. Instead:
 
 1. Push your branch in `aws-refiners`
-2. Open (or update) **PR #102 "Keep open (never merge)"** — a permanent PR from `develop` → `main`
+2. Open (or update) **PR #102 "Keep open (never merge)"** — a permanent PR from `develop` → `develop`
 3. Merging your branch **into `develop`** triggers `pr.yml` → ECR push → EventBridge auto-redeploy
 4. The CDK construct `RedeployServiceOnNewImagePushedToEcr` (in `aws-infra/lib/construct/redeploy-lambda-image-on-push-ecr-stack.ts`) watches ECR pushes and calls `UpdateFunctionCode` automatically
 

@@ -34,7 +34,7 @@ diagnostics de juillet 2026) :
 
 Les diagrammes portent une ligne « Dernière mise à jour le … » : la mettre à
 jour à chaque édition. Une capture/page qui montre une autre date que celle
-du fichier sur `main` = copie divergente ou cache, à retirer/signaler.
+du fichier sur `develop` = copie divergente ou cache, à retirer/signaler.
 
 ## Quand une PR a un impact métho
 

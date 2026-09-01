@@ -1,6 +1,6 @@
 name: Déploiement prod (Cloudflare Pages)
 
-# Publie vitrinedemocratique.com depuis la branche `prod`.
+# Publie vitrinedemocratique.com depuis la branche `main`.
 #
 # `prod` n'avance que de deux façons : une fusion délibérée `main → prod` (le
 # code), et l'étape de synchro de `refresh-data.yml` toutes les 4 h (les
@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
-          ref: prod
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -115,5 +115,5 @@ jobs:
         run: |
           npx wrangler@4 pages deploy out \
             --project-name vitrine-democratique \
-            --branch prod \
+            --branch main \
             --commit-hash "$GITHUB_SHA"

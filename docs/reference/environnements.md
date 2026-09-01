@@ -12,8 +12,8 @@ de passe). L'ancien miroir GitHub Pages est **débranché** depuis le 2026-08-30
 
 | Adresse | Rôle | Branche | Accès |
 |---|---|---|---|
-| `vitrinedemocratique.com` | **production**, publique | `prod` | ouvert |
-| `dev.vitrinedemocratique.com` | **miroir de travail** | `main` | Cloudflare Access |
+| `vitrinedemocratique.com` | **production**, publique | `main` | ouvert |
+| `dev.vitrinedemocratique.com` | **miroir de travail** | `develop` | Cloudflare Access |
 | `api.vitrinedemocratique.com` | API de lecture | — (Worker) | clé d'API |
 | `api.vitrinedemocratique.com/admin` | gestion des clés | — (Worker) | Cloudflare Access |
 
@@ -63,20 +63,20 @@ Cloudflare**.
    main ──(fusion délibérée)──→ prod ──→ deploy-prod ──→ vitrinedemocratique.com
 ```
 
-**`prod` n'avance que de deux façons :**
+**`main` n'avance que de deux façons :**
 
 1. **les données**, automatiquement — `refresh-data.yml` y recopie
    `public/data/` et `public/audio/` toutes les 4 h ;
-2. **le code**, uniquement par une **fusion délibérée `main → prod`**.
+2. **le code**, uniquement par une **fusion délibérée `develop → main`**.
 
-⚠️ **Le piège à connaître.** Le code fusionné dans `main` n'est PAS en
+⚠️ **Le piège à connaître.** Le code fusionné dans `develop` n'est PAS en
 production. Oublier la promotion laisse la prod tourner sur du vieux code
 pendant que les données, elles, continuent d'arriver — c'est arrivé le soir du
-lancement, la prod servant des en-têtes de cache corrigés la veille sur `main`.
+lancement, la prod servant des en-têtes de cache corrigés la veille sur `develop`.
 Le symptôme est trompeur : le site a l'air vivant, ses données sont fraîches,
 seul son comportement est ancien.
 
-`prod` est protégé par un ruleset : PR + une approbation + contrôles verts,
+`main` est protégé par un ruleset : PR + une approbation + contrôles verts,
 **sans dérogation administrateur**. Seule la clé de déploiement passe outre,
 pour que la synchro des données continue.
 
@@ -110,7 +110,7 @@ raffineurs (R, AWS Lambda) ──→ Athena
 ```
 
 **L'ordre compte, et il est garanti.** `refresh-data` recharge Postgres *après*
-avoir commité sur `main` et *avant* de pousser sur `prod` — c'est cette poussée
+avoir commité sur `develop` et *avant* de pousser sur `main` — c'est cette poussée
 qui déclenche le déploiement. Sans cet ordre, le build lirait l'API pendant
 qu'elle contient encore le cycle précédent : c'est la régression du
 2026-08-18, où le site affichait des données de plusieurs heures plus anciennes
@@ -145,11 +145,11 @@ Chacun a coûté du temps ; ils sont listés pour qu'ils ne le coûtent qu'une f
 
 | Piège | Ce qui se passe | Ce qu'il faut faire |
 |---|---|---|
-| **`main` ≠ prod** | La prod tourne sur du vieux code, données fraîches | Fusionner `main → prod` |
+| **`develop` ≠ prod** | La prod tourne sur du vieux code, données fraîches | Fusionner `develop → main` |
 | **`NEXT_PUBLIC_BASE_PATH`** | Absente ou vide, le site se sert à la racine : c'est le cas normal sur Cloudflare Pages, prod et dev | Ne la poser que pour un hôte qui servirait le site sous un sous-chemin |
 | **`NEXT_PUBLIC_SITE_ORIGIN` oubliée** | URL canoniques et cartes de partage pointent vers le dev | La poser sur chaque environnement |
 | **Branches `aws-infra`** | PR fermée sans explication | Préfixe **`feature/`**, jamais `feat/` |
-| **`aws-infra` cible `main`** | Déploiement direct en **production** | Cibler **`develop`** |
+| **`aws-infra` cible `develop`** | Déploiement direct en **production** | Cibler **`develop`** |
 | **CPU des Workers** | La synchro meurt à la 6ᵉ table, en silence | `fetch` = 10 ms de CPU, `scheduled` = 30 s. Travailler par tranches |
 | **Cron en UTC** | L'horaire dérive à chaque changement d'heure | Déjà réglé dans le code (`schedule.ts`) — ne pas « simplifier » |
 | **Tiret cadratin** | La garde `typographie` refuse la PR | Deux phrases, ou un deux-points |
@@ -168,8 +168,8 @@ curl -s https://api.vitrinedemocratique.com/v1/health | python3 -m json.tool | h
 curl -sI https://dev.vitrinedemocratique.com | head -1
 
 # La prod porte-t-elle le dernier code ? (doit être vide)
-git log --oneline origin/prod..origin/main -- app lib components
+git log --oneline origin/main..origin/main -- app lib components
 ```
 
 Cette dernière commande est la plus utile : **si elle affiche des commits, la
-production tourne sur du code plus ancien que `main`.**
+production tourne sur du code plus ancien que `develop`.**

@@ -86,4 +86,4 @@ Data is pulled from AWS Athena every 4 hours by `scripts/fetch_data.R`, run via 
 
 Several table definitions sit dormant in `scripts/tables.json` with `enabled: false` — the inventory of what's available to switch on when a new section is built (federal partis, reflet summaries, headline events).
 
-**Note:** the 4h data refresh is committed by `.github/workflows/refresh-data.yml` (message `data: refresh …`), not by `fetch_data.R` itself. `deploy.yml` triggers on every push to `main` with no path filter, so each refresh currently triggers a full Pages rebuild. Reducing that (a path filter, or a `[skip ci]` convention) is tied to the hosting decision; see [`docs/cloudflare-pages-migration.md`](../cloudflare-pages-migration.md).
+**Note:** the 4h data refresh is committed by `.github/workflows/refresh-data.yml` (message `data: refresh …`), not by `fetch_data.R` itself. `deploy.yml` triggers on every push to `develop` with no path filter, so each refresh currently triggers a full Pages rebuild. Reducing that (a path filter, or a `[skip ci]` convention) is tied to the hosting decision; see [`docs/cloudflare-pages-migration.md`](../cloudflare-pages-migration.md).
