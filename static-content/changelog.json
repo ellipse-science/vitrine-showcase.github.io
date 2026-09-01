@@ -1,5 +1,131 @@
 [
   {
+    "pr": 658,
+    "date": "2026-09-01T02:05:46Z",
+    "note": "L'œuf de Pâques DOOM et ses fichiers ne sont plus servis sur le site public. L'illustration de la Une s'aligne désormais avec le haut du titre.",
+    "version": "2.39.0-beta.1"
+  },
+  {
+    "pr": 664,
+    "date": "2026-09-01T01:57:11Z",
+    "note": "La carte qui s'affiche quand vous partagez le module des 12 enjeux montre maintenant l'enjeu qui domine la campagne, son poids exact et le titre de l'article qui le porte, au lieu d'un texte fixe.",
+    "version": null
+  },
+  {
+    "pr": 663,
+    "date": "2026-09-01T01:11:17Z",
+    "note": "Les vues Jour, Semaine et Campagne du module des 12 enjeux montrent désormais des répartitions réellement différentes, calculées sur leur propre fenêtre. Et les noms d'enjeux ne disparaissent plus des grandes tuiles.",
+    "version": null
+  },
+  {
+    "pr": 662,
+    "date": "2026-09-01T00:19:26Z",
+    "note": "Sous chaque enjeu, vous voyez maintenant les six articles qui en parlent le plus, avec leur média et leur poids dans l'enjeu. Ce sont les articles qui composent réellement le pourcentage affiché, et non plus une sélection venue d'un autre calcul.",
+    "version": null
+  },
+  {
+    "pr": 661,
+    "date": "2026-08-31T23:57:24Z",
+    "note": "Rien de visible ne change pour l'instant. Cette mise à jour prépare l'affichage, sous chaque enjeu, des articles qui composent réellement son pourcentage.",
+    "version": null
+  },
+  {
+    "pr": 660,
+    "date": "2026-08-31T21:58:08Z",
+    "note": "Les douze enjeux restent tous visibles dans la grille, même ceux dont l'actualité est nulle sur la période : chacun dispose d'une taille minimale plutôt que de se réduire à un trait.",
+    "version": null
+  },
+  {
+    "pr": 659,
+    "date": "2026-08-31T21:51:04Z",
+    "note": "Un enjeu sans actualité québécoise sur la période le dit maintenant en toutes lettres, au lieu d'afficher un titre emprunté à un autre sujet. Et le module s'ouvre sur la vue Campagne, celle où le plus grand nombre d'enjeux ont quelque chose à montrer.",
+    "version": null
+  },
+  {
+    "pr": 657,
+    "date": "2026-08-31T21:33:23Z",
+    "note": "Quand un enjeu ne compte que deux ou trois actualités, elles s'empilent désormais l'une sous l'autre plutôt que de s'étaler côte à côte.",
+    "version": null
+  },
+  {
+    "pr": 656,
+    "date": "2026-08-31T21:11:54Z",
+    "note": "Quand vous ouvrez un enjeu, ses actualités se lisent maintenant en colonnes — 1, 2, 3 à gauche puis 4, 5, 6 à droite — avec un numéro de rang plus lisible et, pour chacune, le niveau de saillance atteint à son sommet.",
+    "version": null
+  },
+  {
+    "pr": 654,
+    "date": "2026-08-31T20:50:21Z",
+    "note": "Trois enjeux changent de symbole : la santé prend une croix, les terres publiques un tracteur, et l'environnement récupère l'épi. Les deux végétaux verts qui se ressemblaient de trop près sont maintenant distincts d'un coup d'œil.",
+    "version": null
+  },
+  {
+    "pr": 653,
+    "date": "2026-08-31T20:32:05Z",
+    "note": "Sur le module des 12 enjeux, les actualités listées sous chaque enjeu sont désormais uniquement celles couvertes par des médias québécois, et leurs liens mènent bien à l'article du média affiché. Des nouvelles traitées seulement au Canada anglais s'y glissaient, sans logo et vers des sites hors Québec.",
+    "version": null
+  },
+  {
+    "pr": 652,
+    "date": "2026-08-31T20:17:22Z",
+    "note": "Sur le module des 12 enjeux, quand vous ouvrez un enjeu pour lire ses actualités, vous pouvez maintenant le refermer en cliquant simplement à côté, plutôt qu'en visant le petit bouton « Fermer ».",
+    "version": null
+  },
+  {
+    "pr": 579,
+    "date": "2026-08-31T14:07:31Z",
+    "note": "Les promesses de la campagne affichent désormais leur thème — santé, environnement, économie — à côté du texte du parti.",
+    "version": "2.39.0-beta.0"
+  },
+  {
+    "pr": 578,
+    "date": "2026-08-31T13:56:04Z",
+    "note": "Rien ne change sur le site. Cette modification consigne une décision de méthode pour les travaux à venir.",
+    "version": null
+  },
+  {
+    "pr": 651,
+    "date": "2026-08-31T13:19:12Z",
+    "note": "Aucune. Cette PR ne touche qu'une note interne ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 650,
+    "date": "2026-08-31T12:40:03Z",
+    "note": "Aucune. Cette PR ajoute le code d'une application Android qui n'est ni compilée pour publication ni distribuée ; rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 648,
+    "date": "2026-08-31T04:17:10Z",
+    "note": "Chaque enjeu porte un symbole qui le suit d'un module à l'autre. Celui de l'économie devient un signe de dollar, plus direct que la pile de pièces qu'il remplace, et le symbole apparaît maintenant aussi sur les cartes de député de l'Assemblée. Partout, il est un peu plus gros, pour se reconnaître d'un coup d'œil.",
+    "version": null
+  },
+  {
+    "pr": 647,
+    "date": "2026-08-31T03:30:03Z",
+    "note": "Sous chaque enjeu, les actualités affichées correspondent désormais à la période choisie, portent l'heure à laquelle elles ont le plus compté, et sont classées de la plus récente à la plus ancienne.",
+    "version": "2.38.0-beta.0"
+  },
+  {
+    "pr": 643,
+    "date": "2026-08-31T03:11:41Z",
+    "note": "La semaine du module des enjeux va désormais du vendredi 20h au vendredi 20h, et la vue « Campagne » part du déclenchement du scrutin, le 27 août 2026.",
+    "version": "2.37.0-beta.0"
+  },
+  {
+    "pr": 642,
+    "date": "2026-08-31T01:35:44Z",
+    "note": "Chacune des trois périodes du module des enjeux peut désormais s'afficher de deux façons : la répartition en tuiles, ou l'évolution des rangs. Pour la journée, l'évolution se lit d'une publication à l'autre.",
+    "version": "2.36.0-beta.0"
+  },
+  {
+    "pr": 639,
+    "date": "2026-08-31T01:06:05Z",
+    "note": "Aucune : le site public ne change pas.",
+    "version": null
+  },
+  {
     "pr": 638,
     "date": "2026-08-31T00:55:47Z",
     "note": "Aucune : le site public ne change pas, seul un miroir interne est retiré.",

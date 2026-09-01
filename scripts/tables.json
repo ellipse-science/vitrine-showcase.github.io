@@ -511,6 +511,7 @@
         "promesse_id",
         "party_id",
         "label",
+        "category",
         "promesse_text",
         "announce_date",
         "release_url",
@@ -520,6 +521,7 @@
         "articles"
       ],
       "_note": "Mode « promesses de la campagne » du Polimètre+ : promesses repérées dans a-qc-press-releases (communiqués des partis) par le raffineur polimetre-promesses-neuves, puis classées par écho médiatique. Deux fenêtres par instantané (window_key = day | week) ; PAS de mois, volontairement. La pastille du module porte le PARTI (party_id) et non un verdict : une promesse tout juste formulée n'a pas d'état de réalisation.",
+      "_note_category": "`category` est le LIBELLÉ FRANÇAIS de l'un des 12 enjeux, ou la chaîne \"NA\" — MÊME forme que `category` de polimetre_plus, pour que la colonne veuille dire la même chose dans les deux tables du Polimètre+. Ce qui diffère du mode « 2022 » n'est pas l'écriture mais la PROVENANCE : là-bas le libellé est codé à la main dans mastersheet_Promesses, ici il est INFÉRÉ — une promesse tirée d'un communiqué d'hier n'a pas de ligne de mastersheet. Le raffineur la déduit des têtes cap_theme_* de l'infer-api. Le libellé français vient d'ISSUE_LABELS_SHORT à l'affichage. \"NA\" est un cas NORMAL (aucun thème au-dessus de son seuil) : la promesse reste affichée, sans puce d'enjeu.",
       "_note_int32": "rank_current et n_mentions sont produites par dplyr::n() / row_number(), donc en ENTIERS. Le raffineur les caste en as.numeric() AVANT publication — sans quoi le writer Parquet les sérialise en INT32 alors que Glue les déclare double, et Athena refuse de lire la table pour toute requête qui les projette (HIVE_BAD_DATA). C'est exactement ce qui a gelé polimetre_plus le 2026-07-28. Ne jamais retirer ce cast.",
       "_note_computed_at": "computed_at n'est pas projetée : elle sert au diagnostic côté Athena, jamais à l'affichage.",
       "enabled": false,
@@ -559,6 +561,24 @@
       ],
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
+    },
+    {
+      "name": "radar_annotated",
+      "athena": "vitrine_datamart-radar_annotated",
+      "out": "public/data/refined/issues_articles.json",
+      "cols": [
+        "title",
+        "url",
+        "media_id",
+        "country_id",
+        "headline_stop_utc",
+        "sentence_analysis"
+      ],
+      "_note": "Les articles qui FONT le pourcentage de chaque enjeu du module 4. sentence_analysis est projeté puis JETÉ par le filtre, qui n'écrit que les 12 comptes par article : ~14 Mo de brut deviennent quelques dizaines de Ko.",
+      "_note_date": "date_montreal_tz volontairement ABSENT des cols : remplie sur 206 lignes sur 33 377 (0,6 %, mesuré le 31-08). Le filtre dérive le jour de headline_stop_utc, comme le raffineur.",
+      "filter": "radar_annotated_issues",
+      "enabled": true,
+      "used_by": "lib/data/headlineEvents.ts (liste d'articles du module 4)"
     }
   ],
   "post_process": [

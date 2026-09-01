@@ -11,9 +11,15 @@ export const ELECTION_LABEL = "5 octobre 2026";
 /**
  * Date de DÉCLENCHEMENT des élections — le jour où le bref est émis.
  *
- * `null` tant que le scrutin n'est pas déclenché : au 2026-08-13 il ne l'est
- * pas, et la deviner reviendrait à afficher une date fausse sur un site public.
- * La renseigner le jour venu ; l'axe du portrait global partira alors de là,
- * et non du début du suivi.
+ * Renseignée le 2026-08-30, sur la foi des manchettes du corpus plutôt que de
+ * mémoire : le 27 août, quatre Unes distinctes annoncent le déclenchement au
+ * présent (« Fréchette déclenche les élections québécoises pour le 5 octobre »,
+ * « Déclenchement officiel des élections québécoises ce matin », « Début
+ * officiel de la campagne électorale québécoise »). La veille, une Une l'annonce
+ * au futur en nommant le jour : « Les élections au Québec seront déclenchées
+ * jeudi » — et le 27 août 2026 est un jeudi. Les deux se recoupent.
+ *
+ * Ce qu'elle commande : la fenêtre « Campagne » des modules part de là, et non
+ * du début du suivi.
  */
-export const ELECTION_CALL_DATE: string | null = null;
+export const ELECTION_CALL_DATE: string | null = "2026-08-27";

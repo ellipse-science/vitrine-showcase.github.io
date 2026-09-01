@@ -5,30 +5,56 @@ import type { TreemapIssueTile, TreemapHistoryPoint, TreemapAllPeriods } from "@
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
-import { rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
+import { jourMontreal, rankMovement, rankPointsForPeriod, type RankPeriod } from "@/lib/treemapRank";
+import { heurePublicationMontreal } from "@/lib/dates";
 import { useKonamiCode } from "./useKonamiCode";
 import { FlappyEnjeux } from "./FlappyEnjeux";
 
 // --- Treemap de croissance (onglet « Jour ») : partition + tuiles Proto A avec % de croissance ---
 interface Rect { x: number; y: number; w: number; h: number; }
-interface LayoutNode extends TreemapIssueTile { rect: Rect; }
+interface LayoutNode extends TreemapIssueTile {
+  rect: Rect;
+  /** Poids de MISE EN PAGE (part d'aire), plancher compris. Jamais affiché :
+   *  le nombre public d'une tuile reste `share`. Voir PLANCHER_AIRE. */
+  poids: number;
+}
 
 // Partition récursive (« slice-and-dice » équilibré) : rectangles proportionnels au score.
+// Part d'aire GARANTIE à chaque enjeu, quelle que soit sa saillance : les douze
+// doivent rester visibles et cliquables, même à 0 % (demande d'Adrien, 31-08).
+// Sans plancher, un enjeu sans actualité se réduit à un filet illisible et le
+// module cesse de montrer les DOUZE enjeux, ce qui est pourtant son titre.
+//
+// 2 % de l'aire pour chacun, soit 24 % réservés ; les 76 % restants se
+// répartissent au prorata de la saillance. Le prix est explicite et assumé :
+// la surface n'est plus STRICTEMENT proportionnelle. Elle reste monotone (un
+// enjeu plus saillant a toujours une plus grande tuile) et le chiffre affiché
+// sur chaque tuile, lui, reste la part exacte. La page Méthodologie le dit.
+const PLANCHER_AIRE = 0.02;
+
 function computeTreemapLayout(tiles: TreemapIssueTile[]): LayoutNode[] {
-  const nodes: LayoutNode[] = tiles.map((t) => ({ ...t, rect: { x: 0, y: 0, w: 0, h: 0 } }));
+  const totalScore = tiles.reduce((sum, t) => sum + Math.max(t.score, 0), 0);
+  const reste = Math.max(0, 1 - PLANCHER_AIRE * tiles.length);
+  // `poids` ne sert QU'À la mise en page. Ne jamais l'afficher ni le comparer :
+  // le nombre public d'une tuile est `share`, la vraie part de l'attention.
+  const nodes: LayoutNode[] = tiles.map((t) => ({
+    ...t,
+    poids: PLANCHER_AIRE + (totalScore > 0 ? reste * (Math.max(t.score, 0) / totalScore) : reste / tiles.length),
+    rect: { x: 0, y: 0, w: 0, h: 0 },
+  }));
   function partition(slice: LayoutNode[], rect: Rect) {
     if (slice.length === 0) return;
     if (slice.length === 1) { slice[0].rect = rect; return; }
-    const total = slice.reduce((s, t) => s + Math.max(t.score, 0.001), 0);
+    const total = slice.reduce((s, t) => s + t.poids, 0);
     let leftSum = 0, splitIdx = 1, minDiff = Infinity;
     for (let i = 0; i < slice.length - 1; i++) {
-      leftSum += Math.max(slice[i].score, 0.001);
+      leftSum += slice[i].poids;
       const diff = Math.abs(leftSum - total / 2);
       if (diff < minDiff) { minDiff = diff; splitIdx = i + 1; }
     }
     const leftSlice = slice.slice(0, splitIdx);
     const rightSlice = slice.slice(splitIdx);
-    const ratio = leftSlice.reduce((s, t) => s + Math.max(t.score, 0.001), 0) / total;
+    const ratio = leftSlice.reduce((s, t) => s + t.poids, 0) / total;
     if (rect.w > rect.h) {
       const wLeft = rect.w * ratio;
       partition(leftSlice, { x: rect.x, y: rect.y, w: wLeft, h: rect.h });
@@ -84,7 +110,18 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       setTaille(`${Math.round(r.width)}x${Math.round(r.height)}`);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    // Re-mesurer quand les POLICES arrivent. La première mesure peut tomber
+    // avant Playfair : le nom, rendu dans la police de repli, est plus large,
+    // on le cache — puis plus rien ne redéclenche la mesure, car la tuile n'a
+    // pas changé de taille. Résultat vu le 31-08 : « Terres publiques et
+    // agriculture » absent d'une tuile de 498x194. Le chargement des polices
+    // est le quatrième déclencheur qui manquait, après les trois pièges déjà
+    // documentés plus bas.
+    let vivant = true;
+    document.fonts?.ready?.then(() => {
+      if (vivant) setTaille((t) => (t.endsWith("·p") ? t : `${t}·p`));
+    });
+    return () => { vivant = false; ro.disconnect(); };
   }, [ref]);
 
   useLayoutEffect(() => {
@@ -135,12 +172,27 @@ function useNomTient(ref: React.RefObject<HTMLDivElement | null>, cle: string) {
       const portee = document.createRange();
       portee.selectNodeContents(nom);
       const texte = portee.getBoundingClientRect();
-      // 1px de tolérance : les bords tombent souvent sur des demi-pixels.
+      // Un rectangle NUL veut dire « pas mesurable » (élément non peint), pas
+      // « ça déborde » : ses zéros sont toujours hors de la boîte, et conclure
+      // au débordement cacherait le nom pour toujours. Dans le doute, on
+      // laisse l'état tel quel.
+      if (texte.width === 0 && texte.height === 0) {
+        if (etaitCache) el.classList.add("gt-title-sans-nom");
+        return;
+      }
+      // Tolérances ASYMÉTRIQUES, et c'est voulu.
+      // - Horizontal : 1 px. Un nom trop large wrappe ou se tronque — illisible
+      //   tout de suite, on passe au symbole.
+      // - Vertical : 5 px, un quart de ligne. Mesuré le 31-08 : « Culture et
+      //   nationalisme » débordait de 4 px sur une tuile de 620 px de large, et
+      //   la mesure binaire supprimait le nom entier pour des descendantes à
+      //   peine rognées. Un vrai écrasement (le nom qui wrappe) déborde de
+      //   20 px et plus : le seuil de 5 px ne le laisse pas passer.
       deborde =
         texte.left < boite.left - 1 ||
         texte.right > boite.right + 1 ||
-        texte.top < boite.top - 1 ||
-        texte.bottom > boite.bottom + 1;
+        texte.top < boite.top - 5 ||
+        texte.bottom > boite.bottom + 5;
     }
     if (etaitCache) el.classList.add("gt-title-sans-nom");
     setTient(!deborde);
@@ -306,7 +358,7 @@ function GrowthTile({
                 <span className="gt-expanded-kicker">Enjeu saillant</span>
                 <h3><SymboleEnjeu cle={tile.issueKey} />{tile.issueFr}</h3>
                 <span className="gt-expanded-count">
-                  {tile.articles.length} actualité{tile.articles.length > 1 ? "s" : ""} associée{tile.articles.length > 1 ? "s" : ""}
+                  {tile.articlesTotal.toLocaleString("fr-CA")} article{tile.articlesTotal > 1 ? "s" : ""} sur cette période
                 </span>
               </div>
               <div className="gt-expanded-growth">
@@ -322,8 +374,38 @@ function GrowthTile({
               </div>
             </div>
 
+              {/* Lecture en COLONNES : 1-2-3 à gauche, 4-5-6 à droite (demande
+                  d'Adrien, 31-08). La grille remplissait par RANGÉES (1-2 / 3-4),
+                  ce qui casse l'ordre du classement dès qu'on lit de haut en bas.
+                  `--lignes` fixe le nombre de rangées à ⌈n/2⌉ : avec
+                  `grid-auto-flow: column`, une colonne se remplit avant de passer
+                  à la suivante. Une grille multi-colonnes CSS (`columns: 2`)
+                  équilibrerait par HAUTEUR et pourrait mettre 4 titres d'un côté
+                  et 2 de l'autre ; ici le partage est exact par construction.
+
+                  ⚠️ SOUS QUATRE ACTUALITÉS, UNE SEULE COLONNE. Deux colonnes
+                  n'existent que pour éviter une liste trop longue à parcourir.
+                  À deux actualités, ⌈2/2⌉ donnait UNE rangée, donc les deux
+                  côte à côte, ce qui ne se lit plus comme un classement (retour
+                  d'Adrien, 31-08). En dessous du seuil il n'y a rien à
+                  raccourcir : elles s'empilent. */}
             {tile.articles.length > 0 ? (
-              <div className="gt-expanded-list" role="list">
+              <>
+              <p className="gt-expanded-avis">
+                Les 6 articles qui abordent le plus cet enjeu, selon le calcul de nos
+                modèles locaux d&apos;intelligence artificielle entraînés et validés à
+                l&apos;Université&nbsp;Laval.
+              </p>
+              <div
+                className="gt-expanded-list"
+                role="list"
+                style={{
+                  "--colonnes": tile.articles.length <= 3 ? 1 : 2,
+                  "--lignes": tile.articles.length <= 3
+                    ? tile.articles.length
+                    : Math.ceil(tile.articles.length / 2),
+                } as React.CSSProperties}
+              >
                 {tile.articles.map((article, index) => (
                   <article className="gt-expanded-story" role="listitem" key={`${article.title}-${index}`}>
                     <span className="gt-expanded-index">{String(index + 1).padStart(2, "0")}</span>
@@ -333,6 +415,27 @@ function GrowthTile({
                       </a>
                     ) : (
                       <div className="gt-expanded-title">{article.title}</div>
+                    )}
+                    {article.part > 0 && (
+                      <div className="gt-expanded-sommet">
+                        <span className="gt-expanded-part">{formatPct(article.part)}</span>
+                        de cet enjeu
+                      </div>
+                    )}
+                    {article.sommet && (
+                      <div className="gt-expanded-sommet">
+                        Sommet {article.sommet.libelle}
+                        {/* « Saillance élevée », pas « Élevée » seul : posée à
+                            côté de « Sommet à 16h », l'étiquette nue se lirait
+                            comme un qualificatif de l'heure. La table des bandes
+                            porte le libellé capitalisé (« Élevée ») — on le
+                            décapitalise ici, la mise en capitales est faite par
+                            le CSS de la ligne. */}
+                        <span className="gt-expanded-saillance">
+                          Saillance {article.sommet.saillance.toLocaleLowerCase("fr")}
+                          <b>{article.sommet.score.toFixed(1).replace(".", ",")}</b>
+                        </span>
+                      </div>
                     )}
                     {article.outlets.length > 0 && (
                       <div className="gt-expanded-outlets" aria-label="Médias associés à cette actualité">
@@ -346,8 +449,9 @@ function GrowthTile({
                   </article>
                 ))}
               </div>
+              </>
             ) : (
-              <p className="gt-expanded-empty">Aucune actualité saillante pour cet enjeu sur cette période.</p>
+              <p className="gt-expanded-empty">Aucune actualité québécoise sur cette période pour cet enjeu.</p>
             )}
           </div>
         )}
@@ -396,6 +500,19 @@ function fmtDate(d: string): string {
   const p = d.split("-");
   if (p.length < 3) return d;
   return `${parseInt(p[2], 10)} ${MOIS[parseInt(p[1], 10) - 1] ?? ""}`;
+}
+
+/** L'étiquette d'un point de la frise. À la période JOUR, tous les points
+ *  partagent la même date et seule l'HEURE les distingue : la date n'y
+ *  apprendrait rien et se répéterait six fois. Ailleurs, c'est la date. */
+function libelleAxe(pt: TreemapHistoryPoint, period: RankPeriod): string {
+  // `jourMontreal` et non `pt.date` : sur les tables hebdo et mensuelle, `date`
+  // est une date arbitraire prise DANS la fenêtre du tag, pas le jour de la
+  // passe. L'axe portait donc des étiquettes décalées.
+  if (period !== "day") return fmtDate(jourMontreal(pt));
+  const m = heurePublicationMontreal(pt.tag);
+  if (!m) return fmtDate(pt.date);
+  return m.heure >= 24 ? "minuit" : `${m.heure}h`;
 }
 function domainOf(u: string | null): string {
   if (!u) return "";
@@ -476,7 +593,7 @@ function IssuesRankMobile({
   const focusArticles = selected.articles.length > 0
     ? selected.articles.slice(0, 5)
     : selected.context
-      ? [{ title: selected.context, url: selected.url, outlets: [] }]
+      ? [{ title: selected.context, url: selected.url, outlets: [], sommet: null }]
       : [];
   const orderedLines = [...tiles].sort(
     (a, b) => (a.issueKey === selected.issueKey ? 1 : 0) - (b.issueKey === selected.issueKey ? 1 : 0),
@@ -532,8 +649,8 @@ function IssuesRankMobile({
         <text x={plotRight} y={selectedPoints.at(-1)!.y + 4} textAnchor="middle" className="irm-current-rank">
           {movement.endRank}
         </text>
-        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{fmtDate(points[0].date)}</text>
-        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{fmtDate(points.at(-1)!.date)}</text>
+        <text x={PAD_L} y={VB_H - 8} textAnchor="start" className="irm-date">{libelleAxe(points[0], period)}</text>
+        <text x={plotRight} y={VB_H - 8} textAnchor="end" className="irm-date">{libelleAxe(points.at(-1)!, period)}</text>
       </svg>
 
       <div className="irm-selector" aria-label="Choisir un enjeu à suivre">
@@ -654,13 +771,13 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
     tiles.find((t) => t.issueKey === hoveredLine) ??
     tiles[0];
   const focusArticles = focus
-    ? (focus.articles.length > 0 ? focus.articles.slice(0, 5) : (focus.context ? [{ title: focus.context, url: focus.url, outlets: [] }] : []))
+    ? (focus.articles.length > 0 ? focus.articles.slice(0, 5) : (focus.context ? [{ title: focus.context, url: focus.url, outlets: [], sommet: null }] : []))
     : [];
 
   return (
     <div className="spaghetti-container" style={containerStyle}>
       <div style={{ marginBottom: "18px", fontFamily: "Source Serif 4, serif", fontStyle: "italic", fontSize: "14.5px", color: "var(--ink-soft)", lineHeight: 1.5, maxWidth: "74ch" }}>
-        Évolution du rang de saillance des douze enjeux, jour après jour. Le rang 1 est l&apos;enjeu le plus saillant; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
+        Évolution du rang de saillance des douze enjeux, {period === "day" ? "publication après publication" : "jour après jour"}. Le rang 1 est l&apos;enjeu le plus saillant; cliquez sur un enjeu pour l&apos;isoler et afficher ses actualités.
       </div>
 
       <div style={{ overflowX: "auto", overflowY: "hidden" }}>
@@ -679,7 +796,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
               <line x1={x} y1={plotBottom + 10} x2={x} y2={plotBottom + (showLabel ? 17 : 13)} stroke="var(--rule)" strokeWidth="0.75" />
               {showLabel && (
                 <text x={x} y={plotBottom + 38} textAnchor="middle" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: "14px", letterSpacing: "0.02em", fill: "var(--ink-softer)" }}>
-                  {fmtDate(pt.date)}
+                  {libelleAxe(pt, period)}
                 </text>
               )}
             </g>
@@ -773,11 +890,15 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
                 a.url ? (
                   <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="fil-article">
                     <span className="fil-titre">{a.title}</span>
-                    {domainOf(a.url) && <span className="fil-source">{domainOf(a.url)} ↗</span>}
+                    <span className="fil-meta">
+                      {a.sommet && <span className="fil-sommet">Sommet {a.sommet.libelle}</span>}
+                      {domainOf(a.url) && <span className="fil-source">{domainOf(a.url)} ↗</span>}
+                    </span>
                   </a>
                 ) : (
                   <div key={i} className="fil-article">
                     <span className="fil-titre">{a.title}</span>
+                    {a.sommet && <span className="fil-meta"><span className="fil-sommet">Sommet {a.sommet.libelle}</span></span>}
                   </div>
                 )
               )
@@ -794,11 +915,29 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
 }
 
 export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; editionKey?: string }) {
-  const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  // CAMPAGNE par défaut (demande d'Adrien, 31-08), et non le jour. Deux
+  // raisons, dans cet ordre : la fenêtre de campagne porte assez d'actualités
+  // pour que chaque enjeu ait quelque chose à montrer — la vue du jour laisse 5
+  // enjeux sur 12 muets aux petites heures, ce qui donne un module à moitié
+  // vide au premier regard ; et sa variation se lit sur la veille plutôt que
+  // sur le traitement précédent, un écart plus parlant qu'un saut de quatre
+  // heures. Le lecteur peut toujours redescendre au jour d'un clic.
+  const [period, setPeriod] = useState<"day" | "week" | "month">("month");
+  // Deux contrôles INDÉPENDANTS depuis le 30-08 : la période et la
+  // représentation. Chacune des trois périodes se regarde des deux façons —
+  // avant, la répartition n'existait que pour le jour et l'évolution que pour
+  // la semaine et la campagne, et on ne pouvait pas comparer autrement.
+  // Le mode ne se réinitialise PAS en changeant de période : c'est ce qui
+  // permet de suivre la même lecture d'une fenêtre à l'autre.
+  const [mode, setMode] = useState<"repartition" | "evolution">("repartition");
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
+  // La zone des tuiles : tout ce qui est DEDANS ne referme pas l'enjeu ouvert,
+  // tout ce qui est dehors le referme (voir l'effet plus bas).
+  const zoneTuiles = useRef<HTMLDivElement | null>(null);
   const [tipTile, setTipTile] = useState<LayoutNode | null>(null);
   const [secret, setSecret] = useState(false);
-  useKonamiCode(() => { setTipTile(null); setExpandedIssue(null); setPeriod("month"); setSecret(true); });
+  // Flappy vit dans la vue d'ÉVOLUTION du mois : le code force donc les deux.
+  useKonamiCode(() => { setTipTile(null); setExpandedIssue(null); setPeriod("month"); setMode("evolution"); setSecret(true); });
 
   // Déverrouillage mobile / tactile : 3 clics/taps rapides sur le titre du module
   const tapCount = useRef(0);
@@ -811,6 +950,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
       setTipTile(null);
       setExpandedIssue(null);
       setPeriod("month");
+      setMode("evolution");
       setSecret(true);
     } else {
       tapTimer.current = window.setTimeout(() => {
@@ -818,6 +958,24 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
       }, 1000);
     }
   };
+
+  // Cliquer à côté referme l'enjeu déplié, exactement comme le bouton « Fermer ».
+  // C'est le geste attendu de tout panneau qui recouvre son module (demande
+  // d'Adrien, 31-08) : sans lui, la seule sortie est une cible de 60 px dans un
+  // coin. `pointerdown` plutôt que `click` pour que la fermeture parte au
+  // moment du doigt, avant que le navigateur ait décidé s'il s'agit d'un clic.
+  // L'écouteur n'existe QUE pendant qu'un enjeu est ouvert : rien ne tourne en
+  // permanence, et il se retire de lui-même à la fermeture comme au démontage.
+  useEffect(() => {
+    if (expandedIssue === null) return;
+    const fermerSiDehors = (evenement: PointerEvent) => {
+      const cible = evenement.target;
+      if (cible instanceof Node && zoneTuiles.current?.contains(cible)) return;
+      setExpandedIssue(null);
+    };
+    document.addEventListener("pointerdown", fermerSiDehors);
+    return () => document.removeEventListener("pointerdown", fermerSiDehors);
+  }, [expandedIssue]);
 
   const current = data[period];
   const tiles = current.tiles;
@@ -840,8 +998,8 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
             Les 12 enjeux de la campagne{" "}
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
-              • <b>Jour</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Semaine &amp; Campagne</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux jour après jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              • <b>Répartition</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
+              • <b>Évolution</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux, jour après jour pour la semaine et la campagne, publication après publication pour le jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>
@@ -871,14 +1029,32 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
                 Campagne
               </span>
             </div>
+            <div className="legend-toggle inline mode-toggle">
+              <span
+                className={mode === "repartition" ? "active" : undefined}
+                onClick={() => { setTipTile(null); setExpandedIssue(null); setMode("repartition"); }}
+                style={{ cursor: "pointer" }}
+                title="La part de chaque enjeu, en tuiles proportionnelles"
+              >
+                Répartition
+              </span>
+              <span
+                className={mode === "evolution" ? "active" : undefined}
+                onClick={() => { setTipTile(null); setExpandedIssue(null); setMode("evolution"); }}
+                style={{ cursor: "pointer" }}
+                title="L'évolution du rang des douze enjeux"
+              >
+                Évolution
+              </span>
+            </div>
             <ShareButton title="Les 12 enjeux de la campagne" anchor="enjeux-saillants" editionKey={editionKey} />
           </div>
         </div>
       </div>
 
-      {period === "day" ? (
+      {mode === "repartition" ? (
         <>
-          <div className="treemap-growth">
+          <div className="treemap-growth" ref={zoneTuiles}>
             {layout.map((tile) => (
               <GrowthTile
                 key={tile.issueKey}

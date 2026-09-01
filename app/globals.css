@@ -1170,6 +1170,15 @@
       grid-column: 2;
       grid-row: 2;
     }
+    /* SANS le bloc Ambiance, la rangée 1 de la colonne de droite n'a plus
+       d'occupant : sa hauteur `auto` tombe à 0, mais le `row-gap` de 18 px de
+       .une-main-grid, lui, reste — et l'illustration descend de 18 px sous le
+       haut du titre. Deux cas, pas un : les éditions passées (#434, jamais de
+       musique archivée) et, depuis 2026-08-31, toute la prod. On rend alors
+       les deux rangées à l'illustration. */
+    .une-main-grid.has-art:not(:has(.hero-audio-overlay)) .hero-figure-inline {
+      grid-row: 1 / span 2;
+    }
     .hero-figure-inline {
       display: flex;
       flex-direction: column;
@@ -1220,9 +1229,15 @@
      traitement « breaking » (fond encre), l'aplat foncé d'un enjeu comme
      Gouvernements (#234E78) ne passerait pas : on l'éclaircit vers le papier
      plutôt que d'entretenir une seconde palette. */
+  /* 1,6em plutôt que le 1,15em par défaut : à côté d'un libellé mono de 10px
+     en capitales espacées, le glyphe paraissait timide (retour d'Adrien, 30-08).
+     Il porte l'identité de l'enjeu, il doit se voir avant le texte. */
   .une-enjeu .symbole-enjeu {
     color: var(--c);
-    margin-right: 7px;
+    width: 1.6em;
+    height: 1.6em;
+    vertical-align: -0.42em;
+    margin-right: 8px;
   }
   .unes-jour.breaking .une-enjeu .symbole-enjeu {
     color: color-mix(in srgb, var(--c) 42%, #F3ECDD);
@@ -2289,7 +2304,7 @@
      Canada) : elle dit qui mène l'axe, une information que le symbole ne
      remplace pas. Le glyphe, lui, porte la couleur de l'enjeu. */
   .solitudes .radar-symbole { opacity: 0.9; }
-  .radar-legend .lg-eyebrow .symbole-enjeu { margin-right: 6px; }
+  .radar-legend .lg-eyebrow .symbole-enjeu { width: 1.6em; height: 1.6em; vertical-align: -0.42em; margin-right: 7px; }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; fill: var(--ink-soft); }
   .solitudes .radar-lab.strong { font-weight: 600; fill: var(--ink); }
   .solitudes .radar-lab.side-qc  { fill: var(--ink-soft); }
@@ -4822,9 +4837,14 @@
     color: #F3ECDD;
   }
   .treemap-growth .gt-expanded-growth .gt-pct { font-size: 26px; }
+  /* `grid-auto-flow: column` + un nombre de rangées FIXE = remplissage par
+     colonne : 1-2-3 à gauche, 4-5-6 à droite. `--lignes` est posé par le
+     composant (⌈n/2⌉) ; le repli à 3 ne sert que si l'attribut manque. */
   .treemap-growth .gt-expanded-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--colonnes, 2), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--lignes, 3), auto);
+    grid-auto-flow: column;
     align-content: start;
     column-gap: 38px;
     overflow-y: auto;
@@ -4842,14 +4862,18 @@
     padding: 19px 0 17px;
     border-bottom: 1px solid rgba(243, 236, 221, 0.24);
   }
+  /* 17px plutôt que 10 : le rang EST une information — c'est le classement de
+     l'actualité dans son enjeu — et il se lisait comme une décoration (retour
+     d'Adrien, 31-08). Chiffres tabulaires pour que les colonnes s'alignent. */
   .treemap-growth .gt-expanded-index {
     grid-column: 1;
     grid-row: 1 / 3;
-    padding-top: 3px;
+    padding-top: 1px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    opacity: 0.56;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    opacity: 0.42;
   }
   .treemap-growth .gt-expanded-title {
     grid-column: 2;
@@ -4863,6 +4887,25 @@
     transition: opacity 0.15s ease;
   }
   .treemap-growth a.gt-expanded-title:hover { opacity: 0.72; }
+  /* Le sommet de saillance : quand la nouvelle a compté le plus. Discret,
+     dans la langue mono des métadonnées, sous le titre et avant les médias. */
+  .treemap-growth .gt-expanded-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #F3ECDD;
+    opacity: 0.5;
+    margin-top: 5px;
+  }
+  .fil-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 3px; }
+  .fil-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .treemap-growth .gt-expanded-outlets {
     grid-column: 2;
     display: flex;
@@ -4884,9 +4927,49 @@
     font-size: 19px;
     font-style: italic;
   }
+  /* L'avertissement d'Adrien, en tête de liste : il dit d'où vient le
+     classement. Sans lui, un article qui « parle à peine » d'un enjeu et qui
+     figure quand même dans sa liste passe pour une erreur. */
+  .treemap-growth .gt-expanded-avis {
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.45;
+    opacity: 0.72;
+    margin: 10px 0 0;
+    max-width: 96ch;
+  }
+  /* La part de l'article dans son enjeu : le seul chiffre qui raccroche la
+     liste au grand nombre de la tuile. */
+  .treemap-growth .gt-expanded-part {
+    font-weight: 500;
+    margin-right: 5px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
+  }
+
+  /* La saillance atteinte AU SOMMET, posée sur la même ligne que l'heure du
+     sommet : les deux décrivent le même instant. Séparée par un filet plutôt
+     que par un point, pour qu'on ne lise pas « 16h Saillance ». */
+  .treemap-growth .gt-expanded-saillance {
+    margin-left: 9px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(243, 236, 221, 0.3);
+  }
+  .treemap-growth .gt-expanded-saillance b {
+    font-weight: 500;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
   @media (max-width: 900px) {
     .treemap-growth .gt-expanded-panel { padding: 28px 30px 24px; }
-    .treemap-growth .gt-expanded-list { grid-template-columns: 1fr; }
+    /* Une seule colonne : le remplissage par colonne n'a plus de sens, on
+       revient au flux normal pour garder l'ordre 1, 2, 3… */
+    .treemap-growth .gt-expanded-list {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-flow: row;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .treemap-growth .gt-container { transition-duration: 0.01ms; }
@@ -5759,6 +5842,14 @@
      Couleur = enjeu · Largeur = saillance (cachée sur desktop)
      ============================================================ */
   .treemap-mobile { display: none; }
+
+  /* Deux groupes d'onglets côte à côte (période, puis représentation) : le
+     second est légèrement en retrait pour qu'on lise « quelle fenêtre » avant
+     « quelle vue », et qu'ils ne se confondent pas en une seule barre de six. */
+  .control-row .mode-toggle { margin-left: 10px; }
+  @media (max-width: 900px) {
+    .control-row .mode-toggle { margin-left: 0; }
+  }
 
   .tm-bar-legend {
     display: flex;
@@ -7637,6 +7728,40 @@
     letter-spacing: 0.06em;
     color: var(--ink-soft);
     margin: 0 0 10px;
+  }
+
+  /* Enjeu du mode « campagne ». Même graisse et même échelle que .ppl-detail__meta
+     — c'est de la métadonnée, pas un titre. La pastille de couleur reprend
+     ISSUE_COLORS, comme les autres modules d'enjeux.
+
+     UNE PHRASE, PAS UNE RANGÉE. En flex, la puce et le ⓘ sont des items à part
+     entière : à 375, « Droits, libertés, minorités et discrimination » ne tient
+     pas sur la ligne de la puce, part seul à la ligne suivante et laisse la
+     pastille orpheline au-dessus, le ⓘ sur une quatrième ligne. En flux inline,
+     la puce reste collée au premier mot et le ⓘ suit le dernier, quelle que
+     soit la largeur. */
+  .ppl-detail__enjeu {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+
+  .ppl-enjeu-puce {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+
+  /* overflow-wrap : le plus long des douze libellés doit pouvoir se couper
+     plutôt que pousser la ligne hors du panneau sur téléphone. */
+  .ppl-enjeu-label {
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 820px) {
