@@ -141,6 +141,15 @@ jobs:
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            # noctua (client Athena dont depend tube) n’est plus sur CRAN : a froid,
+            # install_github("tube") echoue sur « dependency noctua is not available »
+            # (mesure le 1er septembre 2026, run 33580405204). On le prend dans l’archive CRAN, comme Patrick.
+            # Même recette que l’image de base des raffineurs (refiners/base-r-refiner-image/Dockerfile).
+            if (!requireNamespace("noctua", quietly = TRUE)) {
+              remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
+                                   upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent après installation depuis l’archive CRAN")
+            }
             # install_github touche un endpoint api.github.com soumis a la limite
             # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
             # surtout depuis les IP partagees des runners Actions. Cest intermittent
@@ -160,9 +169,9 @@ jobs:
             }
             # Le 1er septembre 2026, install_github a « réussi » sans installer tube
             # (cache invisible après le renommage de branche, compilation à froid en
-            # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l'étape Athena
+            # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l’étape Athena
             # deux fois de suite. On vérifie que le paquet est bien là, ici, fort.
-            if (!requireNamespace("tube", quietly = TRUE)) stop("tube n'est pas installé après install_github : voir le journal ci-dessus")
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent après install_github : voir le journal ci-dessus")
             cat("tube", as.character(packageVersion("tube")), "installé\n")
           '
 
@@ -247,29 +256,20 @@ jobs:
       # d'environ 4h SANS aucune erreur = un stepper de la cascade AWS coincé
       # un bloc en arrière — panne silencieuse restée invisible ~30h les
       # 6-7 août 2026. On mesure l'âge du bloc le plus frais réellement servi
-      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; l'alerte Slack
-      # ci-dessous sonne au-delà du seuil, à chaque fetch tant que ça dure.
+      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; au-delà du seuil
+      # (7 h, aligné sur garde-fraicheur.yml), Healthchecks reçoit un /fail.
       # Non bloquant : une donnée en retard doit quand même être publiée.
       - name: Check headline freshness (silent-lag alarm)
         id: freshness
         continue-on-error: true
         run: python scripts/check_freshness.py
 
-      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
-      # données plus bas — la donnée (même en retard) se publie toujours.
-      - name: Alert Slack if headline data is stale
-        if: steps.freshness.outputs.stale == 'true'
-        continue-on-error: true
-        run: |
-          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
-          # Sonar vitrine si le secret existe, sinon repli sur l'ancien webhook :
-          # une alerte au mauvais endroit vaut mieux qu'une alerte perdue.
-          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
-          if [ -n "$HOOK" ]; then
-            curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$HOOK"
-          fi
-
+      # PLUS D'ALERTE SLACK ICI (#672). L'alarme Slack de fraîcheur vit dans
+      # garde-fraicheur.yml (#628), hors de ce workflow, avec le même seuil de
+      # 7 h que scripts/check_freshness.py : une alarme qui vit dans ce
+      # qu'elle surveille se tait quand le filet meurt, et deux alarmes à
+      # deux seuils pour une même Une noyaient le sonar. Ce qui reste ici :
+      # le courriel Healthchecks (canal de secours hors Slack).
       # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
       # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
       # fetch, ping /fail quand la Une est périmée → courriel « DOWN » avec
@@ -421,15 +421,7 @@ jobs:
               "$HOOK"
           fi
 
-      # Musique : cosmétique et fréquent. Reste dans le watchdog — on ne
-      # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
-      # (L'illustration a son propre circuit : raffineur vitrine-art -> /v1/art.)
-      - name: Warn Slack if music generation failed (data still published)
-        if: steps.music.outcome == 'failure'
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine music generation failed* — data was refreshed normally; only the ambient music is stale.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
+      # Musique : plus d'avertissement Slack (#672). Hors du livrable prod depuis
+      # #658 et circuit vitrine-art cassé depuis aws-refiners#411 : le message
+      # « music generation failed » tombait six fois par jour sans rien dire de
+      # neuf. L'échec reste visible dans l'étape « Generate ambient music ».
