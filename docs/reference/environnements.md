@@ -134,7 +134,11 @@ de dépôt (Settings → Variables → `DATAMART_ENV`), côté Worker une variab
 variable choisit la paire. **On bascule les deux ensemble**, et le repli tient en
 une valeur : `DEV`. Ni code à modifier ni migration à rejouer. Avant de mettre
 `PROD`, vérifier que les 21 tables de `workers/api/src/tables.ts` existent dans le
-datamart PROD ; au 2 septembre 2026 il en manquait 7 (partis, Assemblée).
+datamart PROD ; au 2 septembre 2026 il en manquait 7 (partis, Assemblée). La
+répétition à blanc se lance depuis Actions, « Répétition à blanc (datamart) »,
+avec `PROD` : elle roule `fetch_data.R` avec les secrets du dépôt, résume table par
+table ce qui sort et dépose le résultat en artefact, sans commit ni synchro. Zéro
+table absente au résumé = feu vert pour la bascule.
 
 **L'ordre compte, et il est garanti.** `refresh-data` recharge Postgres *après*
 avoir commité sur `develop` et *avant* de pousser sur `main` — c'est cette poussée
