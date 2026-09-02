@@ -2489,9 +2489,14 @@ async function loadIssueScores(
    *  jusqu'au 2026-08-30 alors que la donnée la portait depuis toujours. */
   asOfIso?: string,
 ): Promise<Array<Record<string, unknown>> | null> {
-  const filePath = path.resolve(process.cwd(), "public", "data", "refined", period, `issues_score_${period}.json`);
+  // API D'ABORD, FICHIER EN REPLI (#688). Ce chargeur lisait le fichier commité
+  // par le filet refresh-data alors que les trois tables `issues_score_*` sont
+  // projetées par l'API : le module affichait le bloc précédent (« 12h » à
+  // 20h) tant que le filet n'avait pas recommité, et restait figé quand il
+  // échouait. `readDatasetText` suit la même voie que headline-events.json.
+  const filePath = `public/data/refined/${period}/issues_score_${period}.json`;
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await readDatasetText(filePath);
     const rows = JSON.parse(raw) as Array<Record<string, unknown>>;
     return asOfIso
       ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso)
