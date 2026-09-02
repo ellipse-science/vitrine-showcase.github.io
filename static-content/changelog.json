@@ -1,5 +1,11 @@
 [
   {
+    "pr": 686,
+    "date": "2026-09-02T02:04:57Z",
+    "note": "Les menus de la barre de navigation restent ouverts le temps de cliquer.",
+    "version": "2.43.0-beta.1"
+  },
+  {
     "pr": 687,
     "date": "2026-09-02T02:04:50Z",
     "note": "Aucune.",
