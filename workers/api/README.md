@@ -73,6 +73,22 @@ npx wrangler secret put DATABASE_URL   # l'URL Neon, hors du dépôt
 npm run deploy
 ```
 
+### Quel datamart la synchro lit (vitrine#489)
+
+La variable `DATAMART_ENV` de `wrangler.toml` choisit le compte AWS lu par la
+synchro Athena → Postgres : `DEV` (défaut) ou `PROD`. Les deux paires de clés de
+lecture peuvent coexister sur le Worker (secrets `AWS_ACCESS_KEY_ID_DEV` /
+`AWS_SECRET_ACCESS_KEY_DEV` et `AWS_ACCESS_KEY_ID_PROD` / `AWS_SECRET_ACCESS_KEY_PROD`) ;
+la variable désigne la paire et le seau de sortie (`ATHENA_OUTPUT` ou
+`ATHENA_OUTPUT_PROD`). La base Glue porte le même nom dans les deux comptes.
+
+Bascule : poser les secrets PROD, mettre `DATAMART_ENV = "PROD"`, `npm run deploy`.
+Repli : remettre `"DEV"`, redéployer. Ni code ni migration à rejouer. Chaque
+réponse de `/v1/sync` porte `datamart` pour que la bascule se voie dans les journaux.
+Le filet `refresh-data.yml` a son propre interrupteur, la variable de dépôt
+`DATAMART_ENV` : les deux se basculent ensemble, sinon les fichiers commités et
+Postgres ne racontent plus la même chose.
+
 ## Alimentation
 
 Les tables sont remplies par la synchro Athena → Postgres. Le schéma est généré
