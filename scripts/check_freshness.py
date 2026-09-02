@@ -6,8 +6,8 @@ la cascade AWS coincé un bloc en arrière — une panne silencieuse de ce genre
 est restée invisible ~30 h les 6-7 août 2026. Ce script tourne à chaque fetch
 (refresh-data.yml) : il mesure l'âge du bloc le plus frais réellement servi au
 site (normal ≈ 1 h au moment du fetch, ≈ 5 h dès qu'un bloc est manqué) et
-expose stale/resume au workflow, qui alerte Slack + Healthchecks au-delà du
-seuil.
+expose stale/resume au workflow, qui signale Healthchecks au-delà du seuil
+(l'alarme Slack vit dans garde-fraicheur.yml, #628 ; voir #672).
 
 Un fichier manquant, vide ou illisible est traité comme PÉRIMÉ (c'est le cas
 le plus grave : le fetch lui-même est suspect) — jamais comme une erreur de
@@ -22,7 +22,7 @@ import json
 import os
 
 PATH = "public/data/headline-events.json"
-SEUIL_H = 4.0  # entre le ~1 h nominal et le ~5 h d'un bloc manqué
+SEUIL_H = 7.0  # même seuil que garde-fraicheur.yml (#628) : au-dessus du ~5 h d'un bloc manqué, sous le ~9 h d'une édition manquée
 
 
 def fin_bloc_utc(date_utc: str, interval: str) -> datetime.datetime:

@@ -28,9 +28,10 @@ SEUIL. Un bloc de 4 h est publié ~1 h après sa fin et reste affiché jusqu'à
 l'édition suivante : l'âge de sa FIN oscille donc NORMALEMENT entre ~1 h et
 ~5 h. Une édition manquée le porte à ~9 h. Le seuil est à 7 h — au-dessus du
 maximum normal avec deux heures de marge, sous le plancher d'une édition
-manquée. Un simple retard de cascade (déjà couvert par #412, seuil 4 h mesuré
-au fetch) ne le déclenche donc pas : cette alarme-ci ouvre une issue, elle doit
-se taire tant qu'il n'y a pas de quoi réveiller quelqu'un.
+manquée. C'est le SEUL seuil depuis #672 : scripts/check_freshness.py (#412,
+mesuré au fetch) l'a repris à 7 h et ne parle plus à Slack, seulement à
+Healthchecks. Cette alarme-ci ouvre une issue, elle doit se taire tant qu'il
+n'y a pas de quoi réveiller quelqu'un.
 
 Comme #412 : une réponse absente, vide ou illisible est traitée comme PÉRIMÉE,
 jamais comme une erreur de script — sinon l'alerte ne partirait pas, ce qui est
