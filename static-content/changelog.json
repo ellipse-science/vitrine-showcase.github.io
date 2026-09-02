@@ -1,5 +1,11 @@
 [
   {
+    "pr": 689,
+    "date": "2026-09-02T02:19:37Z",
+    "note": "Le module des 12 enjeux se met à jour dès qu'un nouveau bloc est publié, sans attendre le rafraîchissement suivant du site.",
+    "version": null
+  },
+  {
     "pr": 690,
     "date": "2026-09-02T02:17:59Z",
     "note": "Rien de visible sur le site : moins de fausses alertes dans le canal de surveillance de l'équipe.",
