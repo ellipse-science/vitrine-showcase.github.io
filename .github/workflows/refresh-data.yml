@@ -143,9 +143,12 @@ jobs:
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
             # noctua (client Athena dont depend tube) n est plus sur CRAN : a froid,
             # install_github("tube") echoue sur « dependency noctua is not available »
-            # (mesure le 1er septembre 2026, run 33580405204). On le prend sur GitHub.
+            # (mesure le 1er septembre 2026, run 33580405204). On le prend dans l archive CRAN, comme Patrick.
+            # Meme recette que l image de base des raffineurs (refiners/base-r-refiner-image/Dockerfile).
             if (!requireNamespace("noctua", quietly = TRUE)) {
-              remotes::install_github("DyfanJones/noctua", upgrade = "never", quiet = FALSE)
+              remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
+                                   upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent apres installation depuis l archive CRAN")
             }
             # install_github touche un endpoint api.github.com soumis a la limite
             # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
