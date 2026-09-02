@@ -1,0 +1,34 @@
+# Sonde de l'API (vitrine#692) : ce que api.vitrinedemocratique.com sert VRAIMENT
+# aux builds, avec la clé du dépôt. Imprime /v1/health (synced_at et row_count
+# par table, d'après vitrine.sync_state) et, pour les jeux qui datent le site,
+# le bloc ou la date la plus récente que l'API renvoie. Lecture seule, aucun
+# effet de bord. Déclenchement manuel.
+#
+# Pourquoi un workflow : la clé d'API ne vit qu'en secret du dépôt ; personne
+# n'a à la copier sur un poste pour répondre à « Neon est-il à jour ? ».
+name: Sonde API (Neon)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+      API: https://api.vitrinedemocratique.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Interroger l'API
+        run: python scripts/sonde_api.py | tee -a "$GITHUB_STEP_SUMMARY"
