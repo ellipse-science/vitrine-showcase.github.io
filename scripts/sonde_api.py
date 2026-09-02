@@ -29,7 +29,13 @@ DATASETS = {
 def get(path: str):
     req = urllib.request.Request(
         f"{API}{path}",
-        headers={"Authorization": f"Bearer {KEY}", "Cache-Control": "no-cache"},
+        headers={
+            "Authorization": f"Bearer {KEY}",
+            "Cache-Control": "no-cache",
+            # Cloudflare répond 403 à l'agent « Python-urllib » avant même de lire
+            # la clé (mesuré le 2 septembre 2026) ; un agent nommé passe.
+            "User-Agent": "vitrine-sonde/1.0 (+https://github.com/ellipse-science/vitrine-showcase.github.io)",
+        },
     )
     with urllib.request.urlopen(req, timeout=120) as res:
         return res.status, json.load(res)
