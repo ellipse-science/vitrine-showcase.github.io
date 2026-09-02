@@ -102,7 +102,15 @@ The `.Renviron` at `~/.Renviron` (or in the repo root) must contain:
 ```
 AWS_ACCESS_KEY_ID_DEV=...
 AWS_SECRET_ACCESS_KEY_DEV=...
+AWS_ACCESS_KEY_ID_PROD=...
+AWS_SECRET_ACCESS_KEY_PROD=...
 AWS_REGION=ca-central-1
 ```
 
 Never commit credentials. The same variable names are used as GitHub Actions secrets in `refresh-data.yml`.
+
+`scripts/fetch_data.R` reads the datamart named by `DATAMART_ENV` (`DEV` by
+default, `PROD` after the switch — vitrine#489) and picks the matching key pair.
+In `refresh-data.yml` the value comes from the repository variable
+`DATAMART_ENV`; locally, export it before `Rscript scripts/fetch_data.R`. The
+Worker has the same switch in `workers/api/wrangler.toml` — flip both together.

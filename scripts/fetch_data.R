@@ -792,6 +792,17 @@ build_salience_calibration <- function(conn, out_path) {
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+# Environnement du datamart (vitrine#489) : "DEV" par défaut, "PROD" à la
+# bascule. Toute autre valeur arrête net : on ne devine pas un environnement.
+datamart_env_choisi <- function() {
+  env <- toupper(trimws(Sys.getenv("DATAMART_ENV", "DEV")))
+  if (env == "") env <- "DEV"
+  if (!env %in% c("DEV", "PROD")) {
+    stop("DATAMART_ENV inconnu : « ", env, " ». Valeurs : DEV, PROD.")
+  }
+  env
+}
+
 run <- function() {
   message("[", format(Sys.time(), "%H:%M:%S"), "] Loaded ",
           length(ENABLED_TABLES), " enabled table(s), ",
@@ -800,13 +811,19 @@ run <- function() {
   results       <- list()
   table_outputs <- list()  # name -> output path, populated as tables succeed
 
-  # noctua requires the standard (un-suffixed) env vars to be set for query
-  # execution, even though ellipse_connect() uses the _DEV suffixed vars.
-  # Pattern from vitrine-graph-data/runtime.R.
-  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv("AWS_ACCESS_KEY_ID_DEV"))
-  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV"))
+  # Environnement du datamart lu : DEV (défaut) ou PROD, piloté par la
+  # variable DATAMART_ENV (vitrine#489). Les clés suffixées _DEV / _PROD
+  # existent des deux côtés (secrets du dépôt, .Renviron en local) : on prend
+  # la paire qui correspond. noctua exige en plus les variables standard, non
+  # suffixées, pour exécuter la requête (motif vitrine-graph-data/runtime.R).
+  # Filet de sécurité de la bascule : revenir sur DEV = changer la variable,
+  # sans redéployer ni rejouer la migration.
+  datamart_env <- datamart_env_choisi()
+  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", datamart_env)))
+  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", datamart_env)))
+  message("[", format(Sys.time(), "%H:%M:%S"), "] Datamart environment: ", datamart_env)
 
-  conn <- tube::ellipse_connect("DEV", "datamarts")
+  conn <- tube::ellipse_connect(datamart_env, "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
   for (entry in ENABLED_TABLES) {

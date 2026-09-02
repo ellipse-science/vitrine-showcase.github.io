@@ -126,6 +126,16 @@ raffineurs (R, AWS Lambda) ──→ Athena
                                             dev et prod lisent l'API
 ```
 
+**Quel datamart est lu.** Les deux lecteurs, `scripts/fetch_data.R` et la synchro
+du Worker, lisent le datamart désigné par `DATAMART_ENV` : `DEV` aujourd'hui,
+`PROD` après la migration de Patrick (vitrine#489). Côté filet c'est une variable
+de dépôt (Settings → Variables → `DATAMART_ENV`), côté Worker une variable de
+`wrangler.toml` ; les clés des deux comptes sont en place des deux côtés, la
+variable choisit la paire. **On bascule les deux ensemble**, et le repli tient en
+une valeur : `DEV`. Ni code à modifier ni migration à rejouer. Avant de mettre
+`PROD`, vérifier que les 21 tables de `workers/api/src/tables.ts` existent dans le
+datamart PROD ; au 2 septembre 2026 il en manquait 7 (partis, Assemblée).
+
 **L'ordre compte, et il est garanti.** `refresh-data` recharge Postgres *après*
 avoir commité sur `develop` et *avant* de pousser sur `main` — c'est cette poussée
 qui déclenche le déploiement. Sans cet ordre, le build lirait l'API pendant

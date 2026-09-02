@@ -81,6 +81,10 @@ jobs:
       AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
       AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
+      # Datamart lu par fetch_data.R : DEV (défaut) ou PROD (vitrine#489).
+      # Variable de dépôt (Settings → Variables), pas un secret : la bascule
+      # et son repli se font en la changeant, sans redéployer.
+      DATAMART_ENV:               ${{ vars.DATAMART_ENV || 'DEV' }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
       # ─── DEUX DESTINATIONS, SELON LA GRAVITÉ (décision Adrien 2026-08-08) ───
       # L'architecture de surveillance est UNE CHAÎNE PAR CORPUS : les médias ont
