@@ -84,5 +84,5 @@ jobs:
         run: |
           npx wrangler@4 pages deploy out \
             --project-name vitrine-democratique-dev \
-            --branch main \
+            --branch develop \
             --commit-hash "$GITHUB_SHA"

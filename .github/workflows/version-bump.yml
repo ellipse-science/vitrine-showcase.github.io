@@ -28,7 +28,7 @@ name: Version bump + journal on PR merge
 
 # pull_request_target (et non pull_request) : ce job manipule une deploy key
 # sensible. pull_request_target exécute TOUJOURS la version de ce workflow
-# présente sur `main` (fiable), pas celle de la branche de la PR — un
+# présente sur `develop` (fiable), pas celle de la branche de la PR — un
 # contributeur ne peut donc pas altérer le workflow dans sa branche pour
 # exfiltrer la clé. C'est sûr ici parce qu'on ne checkout JAMAIS le code de la
 # PR : on checkout `main` et on ne lit que les métadonnées de l'événement
@@ -37,7 +37,7 @@ name: Version bump + journal on PR merge
 on:
   pull_request_target:
     types: [closed]
-    branches: [main]
+    branches: [develop]
 
 # Sérialise les runs entre eux : deux PR mergées coup sur coup ne se marchent
 # pas dessus (le rebase ci-dessous gère en plus les commits de refresh).
@@ -72,7 +72,7 @@ jobs:
       # est authentifié par une clé qui bypasse le ruleset de main.
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: develop
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
           fetch-depth: 0
 
@@ -123,12 +123,12 @@ jobs:
           # main peut avancer entre le checkout et le push (commits « data:
           # refresh … » poussés via deploy key). On rebase et on réessaie.
           for attempt in 1 2 3 4 5; do
-            if git push origin main; then
+            if git push origin develop; then
               echo "Push réussi (tentative $attempt) — deploy.yml se déclenche sur ce push."
               exit 0
             fi
             echo "Push refusé (tentative $attempt) — rebase sur main puis retry."
-            git pull --rebase origin main
+            git pull --rebase origin develop
           done
           echo "::error::Impossible de pousser le bump de version après 5 tentatives."
           exit 1
