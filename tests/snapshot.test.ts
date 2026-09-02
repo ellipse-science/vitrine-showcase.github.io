@@ -134,18 +134,7 @@ describe("instantané — table des types", () => {
     // inférable. Elle reste hors instantané et se lit dans son fichier —
     // c'est-à-dire, aujourd'hui, nulle part. Le jour où le fichier arrive,
     // régénérer suffit et cette ligne saute.
-    //
-    // `polimetre_promesses_neuves` : même cause, mais TRANSITOIRE. La table vient
-    // d'être allumée (2026-09-02) et son raffineur n'a encore rien publié, donc
-    // aucun fichier de données d'où inférer les types. Sans conséquence tant que
-    // les builds tournent en `VITRINE_DATA_SOURCE=api` (deploy-dev-cloudflare.yml,
-    // deploy-prod.yml) : ce chemin lit Postgres, où la table arrive normalement.
-    // Elle est seulement hors INSTANTANÉ R2. Dès la première publication,
-    // `node scripts/generate_column_types.mjs` puis retirer cette entrée.
-    const OMISSIONS_CONNUES = new Set([
-      "agora_decideurs_qc_affiliations",
-      "polimetre_promesses_neuves",
-    ]);
+    const OMISSIONS_CONNUES = new Set(["agora_decideurs_qc_affiliations"]);
     const sansTypes = TABLES.filter((t) => !hasColumnTypes(t.name)).map((t) => t.name);
     expect(sansTypes.filter((n) => !OMISSIONS_CONNUES.has(n))).toEqual([]);
   });

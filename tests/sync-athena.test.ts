@@ -60,14 +60,8 @@ describe("sync-athena — transformations pures", () => {
   // bien que le croisement parti × enjeu n'arrivait jamais par l'API. Les
   // pochettes affichaient alors « Aucun enjeu identifié » — une affirmation sur
   // la couverture, là où la vérité était que la table n'était pas servie.
-  //
-  // 22 depuis l'allumage en DEV du mode « promesses de la campagne »
-  // (`polimetre_promesses_neuves`, 2026-09-02) — même piège exactement :
-  // `enabled: true` dans scripts/tables.json ne sert à rien tant que la
-  // whitelist du Worker ne porte pas la table. Le contrat vit aux DEUX endroits
-  // tant que le filet existe (cf. l'en-tête de tables.ts).
-  it("whitelist embarquée : 22 tables, champs requis, filtres connus", () => {
-    expect(TABLES).toHaveLength(22);
+  it("whitelist embarquée : 21 tables, champs requis, filtres connus", () => {
+    expect(TABLES).toHaveLength(21);
     for (const t of TABLES) {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.athena.length).toBeGreaterThan(0);

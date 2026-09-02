@@ -408,27 +408,5 @@ export const TABLES: TableSpec[] = [
       "coverage_summary_month"
     ],
     "filter": "polimetre_plus_recent"
-  },
-  {
-    "name": "polimetre_promesses_neuves",
-    "athena": "vitrine_datamart-polimetre_promesses_neuves",
-    "cols": [
-      "country_id",
-      "window_key",
-      "window_end",
-      "rank_current",
-      "promesse_id",
-      "party_id",
-      "label",
-      "category",
-      "promesse_text",
-      "announce_date",
-      "release_url",
-      "release_title",
-      "n_mentions",
-      "salience_index",
-      "articles"
-    ],
-    "filter": null
   }
 ]
