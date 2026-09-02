@@ -1,5 +1,11 @@
 [
   {
+    "pr": 707,
+    "date": "2026-09-02T23:03:57Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'alarme de fraîcheur ne se déclenche plus quand l'histoire de tête reste la même d'une édition à l'autre.",
+    "version": null
+  },
+  {
     "pr": 706,
     "date": "2026-09-02T22:44:12Z",
     "note": "La Une des Unes et les modules retrouvent l'édition la plus récente à chaque reconstruction : depuis le 1er septembre au soir, le site pouvait afficher l'édition précédente.",
