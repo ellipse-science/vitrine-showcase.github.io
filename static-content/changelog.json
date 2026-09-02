@@ -1,5 +1,11 @@
 [
   {
+    "pr": 705,
+    "date": "2026-09-02T22:35:54Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 704,
     "date": "2026-09-02T22:26:44Z",
     "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut voir d'un clic ce que la base de l'API contient réellement.",
