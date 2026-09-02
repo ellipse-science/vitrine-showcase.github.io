@@ -559,6 +559,26 @@
   }
   .mode-pill.off { background: transparent; border: 0.8px solid var(--ink-softer); }
   .sub-nav .links { display: flex; gap: 22px; }
+  /* Menus déroulants de la barre : Méthodologie → Nos modèles, À propos → Équipe, Partenaires */
+  .sub-nav .nav-item { position: relative; display: inline-block; padding: 6px 0; }
+  /* Pont invisible entre le lien et le menu : le survol ne se perd plus dans l'interstice. */
+  .sub-nav .nav-item::after { content: ""; position: absolute; left: -8px; right: -8px; top: 100%; height: 14px; }
+  .sub-nav .nav-menu {
+    visibility: hidden; opacity: 0; position: absolute; top: calc(100% + 8px); left: -8px; z-index: 30;
+    min-width: 210px; padding: 6px 0;
+    background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: opacity 0.12s ease, visibility 0s linear 0.35s;
+  }
+  .sub-nav .nav-item:hover .nav-menu,
+  .sub-nav .nav-item:focus-within .nav-menu,
+  .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  .sub-nav .nav-menu a {
+    display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+  }
+  .sub-nav .nav-menu a:hover { color: var(--cordovan); background: rgba(0,0,0,0.04); }
 
   /* Sous-header hero — RESTYLE, repris de #section-headline-of-headlines-sticky-bar */
   .hero-subbar {
@@ -5143,10 +5163,14 @@
      elle le faisait déborder sur deux lignes. */
   .pupitre-aide { display: flex; justify-content: flex-end; }  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
      articulé les deux, mais depuis que chaque platine porte la couleur de son
-     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas. */
+     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas.
+     26 + 26 px de vide DATAIENT de l'époque où une manchette occupait le haut
+     du cadre — elle n'existe plus, et le mobile l'avait déjà corrigé
+     (≤640px, plus bas) sans que le bureau le soit. Le module entier doit
+     tenir sans défiler ; ce vide-là n'y aidait pas. */
   .pupitre .regie {
-    margin-top: 26px;
-    padding-top: 26px;
+    margin-top: 10px;
+    padding-top: 10px;
   }
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console
@@ -5774,6 +5798,25 @@
     transition: opacity 0.25s ease, filter 0.25s ease;
   }
   .partner-logo--clessn { height: 58px; }
+  /* Page Partenaires : grands logos, nom sous chacun */
+  .partners-grid--grand { grid-template-columns: repeat(3, 1fr); gap: 40px 48px; margin-top: 8px; }
+  .partner-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; text-decoration: none; color: inherit; }
+  .partner-logo--grand { height: 84px; max-width: 240px; opacity: 0.85; }
+  .partner-logo--grand.partner-logo--clessn { height: 110px; }
+  .partner-carte:hover .partner-logo--grand { opacity: 1; filter: grayscale(0) contrast(1); }
+  .partner-nom { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; line-height: 1.35; color: var(--ink-soft); max-width: 240px; }
+  /* Page Équipe */
+  .equipe-groupe { margin-top: 28px; }
+  .equipe-grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 32px; }
+  .equipe-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .equipe-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; filter: grayscale(1) contrast(0.95); }
+  .equipe-photo--initiales { display: inline-flex; align-items: center; justify-content: center; background: var(--rule); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 22px; letter-spacing: 0.08em; }
+  .equipe-nom { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; color: var(--ink); }
+  .equipe-titre { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cordovan); }
+  .equipe-detail { font-family: 'Source Serif 4', Georgia, serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
+  .apropos-fil { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cordovan); margin: 0 0 10px; }
+  .metho-btn-lien { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; border: 0.5px solid var(--ink); color: var(--ink); text-decoration: none; }
+  .metho-btn-lien:hover { background: var(--ink); color: var(--paper, #f4efe6); }
   .partner-logo:hover {
     opacity: 1;
     filter: grayscale(0) contrast(1);
@@ -6355,6 +6398,13 @@
     .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
     .partner-logo--clessn { height: 42px; }
+    .partners-grid--grand { grid-template-columns: repeat(2, 1fr); gap: 28px 24px; }
+    .equipe-grille { grid-template-columns: repeat(2, 1fr); gap: 22px 16px; }
+    /* Sans survol sur mobile : les sous-pages restent atteignables depuis leur page parente */
+    .sub-nav .nav-menu { display: none !important; }
+    .equipe-photo { width: 72px; height: 72px; }
+    .partner-logo--grand { height: 56px; max-width: 150px; }
+    .partner-logo--grand.partner-logo--clessn { height: 72px; }
 
     /* ── Footer ── */
     .footer-note {
@@ -8892,21 +8942,21 @@
    suivantes) ; un second lien mène vers `/discotheque` pour qui veut tout le
    fonds. Voir `PalmaresTrophee` (composant).
    ─────────────────────────────────────────────────────────────────────────── */
-/* LA COLONNE ENTIÈRE : le disque, sa légende (une seule ligne, toujours — voir
-   `PalmaresTrophee`), le lien vers la discothèque. Centrée VERTICALEMENT dans
-   la rangée du palmarès (`align-items: stretch` sur `.palmares-rangee` étire
-   cette boîte à 186 px, la hauteur des knobs et du graphique ; `justify-content:
-   center` centre son contenu, plus court, dedans) plutôt que collée en haut —
-   un disque plaqué au sommet et un vide en dessous se lirait comme une erreur
-   de mise en page, pas comme un choix. */
-/* 112 px, PAS 148 : le disque et sa légende doivent tenir, empilés, dans les
-   139 px du graphique (`.palmares-figure`) — voir `.palmares-rangee`. Le
-   compte, la légende retirée le 2026-09-07 : 122 (disque, carré) + 6
-   (intervalle) + ~14 (flèche vers la discothèque) ≈ 142, tout juste sous
-   139 + le débord tolérable de la flèche (`.trophee-voir-tout` a sa propre
-   cible de clic plus large que son texte). Le disque grandit donc de 112 à
-   122 pour combler l'espace que la légende laissait vide, et se rapprocher
-   de la hauteur du graphique juste à côté sans la dépasser. */
+/* LA COLONNE ENTIÈRE : le lien vers la discothèque, le disque, sa légende
+   (une seule ligne, toujours — voir `PalmaresTrophee`). Centrée
+   VERTICALEMENT dans la rangée du palmarès (`align-items: stretch` sur
+   `.palmares-rangee` étire cette boîte à 186 px, la hauteur des knobs et du
+   graphique ; `justify-content: center` centre son contenu, plus court,
+   dedans) plutôt que collée en haut — un disque plaqué au sommet et un vide
+   en dessous se lirait comme une erreur de mise en page, pas comme un
+   choix. */
+/* LE LIEN VIT AU-DESSUS DU DISQUE depuis le 2026-09-01 (avant, une flèche
+   seule, « → », vivait en dessous — elle ne disait rien qu'on lise sans
+   deviner, et un lien vers une discothèque encore en production se lit
+   mieux comme une invite qu'on croise EN PREMIER). 122 px de disque + un
+   court libellé au-dessus tiennent dans les 186 px stretchés de la rangée
+   sans s'approcher du bord ; rester proche des 139 px du graphique juste à
+   côté (`.palmares-figure`) reste le but, pas une contrainte dure. */
 .trophee {
   display: flex;
   flex-direction: column;
@@ -8925,8 +8975,13 @@
    course courue. Il a remplacé le nom du trophée en toutes lettres
    (« Le single d'or »), retiré du dessous du disque à cette date : c'est
    maintenant LUI qui dit de quel palier il s'agit, en permanence, pas
-   seulement au moment où il est décerné. Un double filet plutôt qu'une ombre
-   portée (« le journal n'a pas d'ombre portée »).
+   seulement au moment où il est décerné.
+
+   UNE LIGNE PLEINE, PAS UN DOUBLE FILET — signalé « pas beau » le 2026-09-01 :
+   le double filet (un contour laiton posé à 2 px du bord, plus un liseré
+   laiton à 1 px À L'INTÉRIEUR du bord noir) lisait comme trois lignes
+   concurrentes plutôt qu'un cadre net. Un seul trait, épais, à la couleur du
+   palier.
 
    `--palier`, POSÉE EN LIGNE PAR `PalmaresTrophee` (`PALIER_COULEUR`), PAS UN
    SEUL LAITON POUR LES TROIS : or pour un jour, argent du platine pour une
@@ -8938,10 +8993,7 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   padding: 0;
-  border: 1px solid var(--ink);
-  outline: 3px solid var(--palier, var(--brass));
-  outline-offset: 2px;
-  box-shadow: inset 0 0 0 1px var(--palier, var(--brass));
+  border: 3px solid var(--palier, var(--brass));
   background: var(--paper-deep);
   cursor: pointer;
   overflow: hidden;
@@ -9011,28 +9063,42 @@
    variable selon la largeur d'écran) — les tailles suivent la largeur RÉELLE
    de la boîte (`cqw`) plutôt que de deviner un contexte à l'avance.
 
-   DEUX RANGÉES, PAS UN GROUPE CENTRÉ. La première fois, le cercle et la
-   mention étaient centrés ENSEMBLE comme un seul bloc : la mention, posée
-   sous lui, tirait le cercle vers le haut du disque plutôt que de le laisser
-   au milieu. Une grille à deux rangées sépare les deux : la première (`1fr`)
-   prend toute la place qui reste et centre le cercle EN SON MILIEU À ELLE —
-   qui est, la mention étant courte, presque le milieu du disque entier — la
-   seconde (`auto`) loge la mention tout en bas, à sa propre hauteur. Aucun
-   fond posé ici : sur le grand disque du palmarès, il vient du bouton
-   `.trophee-disque` ; dans le panneau, de `.flip-face` — c'est LA POCHETTE
-   ENTIÈRE qui doit tourner au clic, pas seulement ce qu'il y a dessus. */
+   UN GROUPE CENTRÉ, PAS UNE GRILLE À DEUX RANGÉES. Une grille `1fr auto`
+   centre le cercle dans ce qui RESTE une fois la mention retirée d'en bas —
+   pas dans la carte entière : mesuré sur le rendu réel, le disque avait deux
+   à trois fois plus d'espace SOUS lui qu'AU-DESSUS (« le SINGLE EN
+   PRODUCTION lève le cercle »). Un double invisible de la mention, posé
+   au-dessus du disque pour peser l'autre côté à égalité, a été essayé et
+   abandonné le même jour : la carte est trop courte pour loger le disque ET
+   deux fois la mention, le total dépassait la boîte de 35 à 45 px, et comme
+   cette boîte masque son dépassement (`overflow: hidden`, sur
+   `.trophee-disque` et `.trophee-panel-art`), la mention RÉELLE disparaissait
+   entièrement plutôt que d'être mal centrée — un bogue silencieux, pire que
+   celui qu'il devait corriger.
+
+   Le disque et la mention forment donc un groupe (`justify-content: center`
+   sur la colonne), comme à la toute première version de cette étiquette —
+   mais cette fois le disque (plus grand que la mention) tombe un peu plus
+   BAS que le centre exact plutôt que plus haut, un écart bien plus discret :
+   mesuré sur le rendu réel, 3 à 8 px selon la taille de la carte, contre 27
+   à 45 px avant ce correctif. Aucun fond posé ici : sur le grand disque du
+   palmarès, il vient du bouton `.trophee-disque` ; dans le panneau, de
+   `.flip-face` — c'est LA POCHETTE ENTIÈRE qui doit tourner au clic, pas
+   seulement ce qu'il y a dessus. */
 .trophee-etiquette {
   container-type: inline-size;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   padding: 8% 6%;
   box-sizing: border-box;
 }
 .trophee-etiquette-disque {
-  align-self: center;
+  flex: none;
   position: relative;
   /* 62 → 70 % le 2026-09-07 : le cercle se perdait dans trop de papier crème
      autour de lui, surtout dans les coins du carré — un disque doit avoir de
@@ -9041,76 +9107,107 @@
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: var(--party, var(--ink-soft));
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 13%;
   box-sizing: border-box;
   /* Un anneau clair près du bord, comme le vernis imprimé d'une vraie
      étiquette — sans lui, le cercle se lisait comme une simple pastille. */
   box-shadow: inset 0 0 0 clamp(1px, 3cqw, 3px) rgba(255, 255, 255, 0.22);
+  /* ⚠️ DEUX CORRECTIFS D'AFFILÉE ONT RATÉ CE TROU (signalé trois fois).
+     D'abord `top: 50%` sur le `::before` seul — vérifié géométriquement
+     exact, mais le sigle restait plaqué tout en bas : la moitié haute du
+     disque ne portait que le trou, la moitié basse tout le texte, et cette
+     asymétrie se lisait comme un trou mal centré. Puis un groupe
+     (`flex-direction: column`) centrant trou + sigle ENSEMBLE comme un seul
+     bloc — mesuré sur le rendu réel : ça surcorrige, le trou (minuscule)
+     se retrouve tiré ~18 px au-DESSUS du centre exact du disque compact,
+     puisque le sigle (bien plus grand que le trou) pèse tout le bas du
+     groupe. Aucun des deux ne marche : le premier laissait le trou seul en
+     haut, le second le poussait plus haut encore.
+     Les deux éléments sont maintenant DÉCOUPLÉS : le trou reste au centre
+     géométrique exact (`top/left: 50%`, comme le tout premier essai — ce
+     n'était pas lui le problème), le sigle est positionné indépendamment
+     près du bas, avec de l'air sous lui (`bottom: 16 %`, pas plaqué contre
+     le bord comme avant) — les deux ne se disputent plus la même moitié de
+     boîte. */
 }
 .trophee-etiquette-disque::before {
-  /* Le trou du spindle, au centre géométrique du disque. */
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
+  transform: translate(-50%, -50%);
   width: 11%;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: var(--paper-deep);
-  transform: translate(-50%, -50%);
   box-shadow: 0 0 0 1px rgba(28, 25, 23, 0.18);
 }
 .trophee-etiquette-sigle {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  transform: translateX(-50%);
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
   font-size: clamp(9px, 19cqw, 26px);
   letter-spacing: -0.01em;
   line-height: 1;
   color: var(--paper);
+  white-space: nowrap;
 }
-.trophee-etiquette-mention {
-  align-self: end;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2em;
-  padding-top: 8%;
+/* LE TITRE (« SINGLE EN PRODUCTION ») EN HAUT, LA DATE EN BAS — depuis le
+   2026-09-01. Posés chacun sur son propre bord de la carte (`position:
+   absolute`), jamais empilés d'un seul côté : le disque, seul élément dans
+   le flux, se centre dans ce qui reste entre les deux, sans jamais se
+   disputer la moitié de boîte avec un bloc de texte trop grand pour elle —
+   voir le commentaire dans `PartisCouvertureClient.tsx`. Même famille que
+   le sigle sur le voile d'une vraie pochette (`.pochette-sigle`) : une
+   légende, pas un second sujet à égalité avec le disque. */
+.trophee-etiquette-titre {
+  position: absolute;
+  top: 4%;
+  left: 6%;
+  right: 6%;
   text-align: center;
-}
-.trophee-etiquette-mention b {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: clamp(7px, 6.5cqw, 9.5px);
+  font-size: clamp(6.5px, 5.5cqw, 8px);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cordovan);
 }
-.trophee-etiquette-mention span {
+.trophee-etiquette-mention {
+  position: absolute;
+  bottom: 4%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
   font-family: 'Source Serif 4', Georgia, serif;
-  font-size: clamp(7px, 6cqw, 10px);
+  font-size: clamp(6.5px, 5cqw, 8px);
   color: var(--ink-soft);
 }
 
-/* LE LIEN VERS LA DISCOTHÈQUE — une flèche, seule, sous le disque. Portait
-   aussi le nom du trophée (« Le single d'or ») jusqu'au 2026-09-07 : ce nom
-   s'écrit maintenant dans l'encadré du disque (`--palier`, voir
-   `.trophee-disque`) plutôt qu'en toutes lettres à côté — un encadré or,
-   platine ou diamant plutôt qu'une description. Il ne reste donc plus que ce
-   second accès, distinct du disque, vers l'historique complet.
+/* LE LIEN VERS LA DISCOTHÈQUE — un court libellé, au-dessus du disque depuis
+   le 2026-09-01 (une flèche seule, « → », vivait en dessous : elle ne disait
+   rien qu'on lise sans deviner, et une invite qu'on lit AVANT le disque se
+   comprend mieux qu'une sortie qu'on découvre après). Portait aussi le nom du
+   trophée (« Le single d'or ») jusqu'au 2026-09-07 : ce nom s'écrit
+   maintenant dans l'encadré du disque (`--palier`, voir `.trophee-disque`)
+   plutôt qu'en toutes lettres à côté. Il ne reste donc plus que ce second
+   accès, distinct du disque, vers l'historique complet.
 
-   `line-height: 1` et une cible plus large que son seul glyphe (`padding`) :
-   un caractère seul, aussi net soit-il, est une cible au clic frustrante
-   sans un peu de marge autour. `aria-label`/`title` portent le texte complet
-   — « → » seul ne dit rien à un lecteur d'écran. */
+   MÊME REGISTRE que les libellés des knobs (`.fader-label` dans `.knob`) :
+   petit, en capitales, espacé — le lien se lit comme une commande du pupitre,
+   pas comme une phrase éditoriale. */
 .trophee-voir-tout {
-  padding: 2px 3px;
-  margin: -2px -3px;
-  line-height: 1;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
   color: var(--cordovan);
   text-decoration: none;
 }
@@ -9245,22 +9342,6 @@
 }
 .trophee-panel-declencheur:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 
-/* LE NOM DU PARTI NE S'ÉCRIT PLUS SOUS LA POCHETTE depuis le 2026-09-07 : le
-   sigle est déjà gravé dessus (`.pochette-sigle`/`.trophee-etiquette-sigle`),
-   et le nom complet reste accessible dans l'`aria-label` du déclencheur — le
-   répéter à l'écran, pour tout le monde, n'ajoutait qu'une ligne. Il ne reste
-   donc que le rang, seul sous la pochette. `align-self: center` : sans lui,
-   un enfant de `.trophee-panel-declencheur` (colonne flexible) s'étire par
-   défaut sur toute la largeur plutôt que de rester la petite pastille qu'il
-   est. */
-.trophee-panel-rang {
-  align-self: center;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 600;
-  color: var(--party, var(--ink-softer));
-}
 /* La tracklist elle-même — catégorie, points, métrique — vit dans
    `.tracklist-ligne` et ses voisines (voir ce bloc, plus bas) : ce
    conteneur-ci ne fait qu'empiler les quatre lignes, à leur taille de base, à
@@ -9423,13 +9504,22 @@
 /* Le carré : format de la pochette, et cadre du disque. Le disque y est
    inscrit, la pochette l'occupe en entier.
 
-   ⚠️ C'EST UN `<button>`, ET IL DOIT ÊTRE DÉSHABILLÉ. Cette remise à zéro
-   vivait sur `.deck-carre--pivot` du temps où le deck se retournait ; le
-   modificateur est tombé avec le retournement et elle est partie avec lui. Le
-   navigateur redessinait alors son bouton par défaut — fond, bordure et anneau
-   de focus — en carré derrière le disque rond. Ne pas la retirer à nouveau :
-   sans elle le cadre revient. */
+   ⚠️ C'EST UN `<a>` QUAND LE PARTI A UN ARTICLE (aws-refiners#447), SINON UN
+   `<div>` INERTE (voir `Deck`) — plus jamais un `<button>` depuis le
+   2026-09-01 : le repli qui ouvrait le panneau du disque d'or est retiré, il
+   ne menait nulle part de vrai avant la fin de la course. Les DEUX doivent
+   être DÉSHABILLÉS. Cette remise à zéro vivait sur `.deck-carre--pivot` du
+   temps où le deck se retournait ; le modificateur est tombé avec le
+   retournement et elle est partie avec lui. Le navigateur redessinait alors
+   son bouton par défaut — fond, bordure et anneau de focus — en carré
+   derrière le disque rond. Ne pas la retirer à nouveau : sans elle le cadre
+   revient.
+
+   `display: block` n'est PAS accessoire : un `<a>` est `inline` par défaut,
+   qui ignore `width`/`aspect-ratio` — exactement le bogue qui a un jour vidé
+   `.flip-carte` de son contenu. */
 .deck-carre {
+  display: block;
   position: relative;
   width: 100%;
   max-width: 200px;
@@ -9442,18 +9532,22 @@
   background: none;
   color: inherit;
   font: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
+/* Le repli SANS article (`<div>`) : rien à cliquer, donc rien qui invite au
+   clic. Le curseur en main venait de `.deck-carre` (pensé pour le lien) ;
+   sans cette ligne, un deck inerte se survolait comme s'il faisait quelque
+   chose. */
+.deck-carre--inerte { cursor: default; }
 /* L'anneau du navigateur parti, il faut en redonner un : au clavier, rien
    d'autre ne dirait sur quel deck on se trouve. Posé LOIN du disque, pour ne pas
-   se lire comme une bague du vinyle. */
+   se lire comme une bague du vinyle. Sans objet sur `.deck-carre--inerte`, qui
+   n'est jamais dans l'ordre de tabulation. */
 .deck-carre:focus-visible {
   outline: 2px solid var(--cordovan);
   outline-offset: 6px;
 }
-
-/* Le deck dont la pochette est ouverte dans le panneau, plus bas. */
-.deck-carre--choisi { outline: 1px solid var(--party, var(--ink)); outline-offset: 3px; }
 
 .deck-face {
   position: absolute;
@@ -9635,17 +9729,22 @@
   overflow: visible;
   filter: drop-shadow(0 1px 3px rgba(28, 25, 23, 0.22));
 }
+/* LE CAPUCHON — un aplat de la couleur EXACTE du parti, celle du vumètre,
+   depuis le 2026-09-01. Il reprenait la composition à trois couleurs de la
+   pochette (parti, enjeu, ton) ; signalé « une pastille à trois couleurs,
+   elle doit être remplacée par une pastille de la couleur du parti » : le
+   deck identifie un CANAL, comme sa tranche sur la console — l'enjeu et le
+   ton restent sur la vraie pochette, où ils ont un sens, pas ici en double. */
 .deck-jog-cap .forme-parti { fill: var(--party, var(--ink-soft)); }
 .deck-jog-cap .cap-cercle {
   fill: none;
   stroke: rgba(28, 25, 23, 0.2);
   stroke-width: 1.2;
 }
-/* Les formes du capuchon ne portent PAS le filet crème de la pochette : à
-   46 % de la molette, il mangerait les aplats au lieu de les séparer. */
-.deck-jog-cap .forme-enjeu,
-.deck-jog-cap .forme-ton { stroke: none; }
-/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. */
+/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. Plus de
+   trou du spindle au-dessus depuis le 2026-09-01 (« enlève le trou au
+   centre de cette pastille ») — voir `y="50"` sur `.cap-sigle` dans
+   `PartisCouvertureClient.tsx`, qui revient donc au centre géométrique. */
 .cap-sigle {
   fill: var(--paper);
   font-family: Georgia, 'Times New Roman', serif;

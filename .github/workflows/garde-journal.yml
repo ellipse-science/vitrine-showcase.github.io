@@ -14,7 +14,7 @@ name: garde-journal
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
     # La note vit dans le CORPS de la PR : sans `edited`, corriger la note ne
     # relancerait pas le check et la PR resterait rouge sans raison.
     types: [opened, edited, reopened, synchronize]

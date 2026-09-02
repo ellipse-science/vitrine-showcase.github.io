@@ -56,6 +56,7 @@ export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
     governments_and_governance: "number",
     culture_and_nationalism: "number"
   },
+  agora_decideurs_qc_affiliations: {},
   federal_parties_score_week: {
     weighted_mentions: "number",
     weighted_tone: "number"
@@ -179,5 +180,6 @@ export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
     issue_share: "number",
     total_raw_score: "number",
     weighted_tone: "number"
-  }
+  },
+  radar_annotated: {}
 }

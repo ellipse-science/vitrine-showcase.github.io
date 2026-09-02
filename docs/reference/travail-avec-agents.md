@@ -28,14 +28,14 @@ n'est pas vérifiée.
 
 | Ce que vous touchez | Dépôt | Branche de départ | Cible |
 |---|---|---|---|
-| Site, modules, API | `vitrine-showcase.github.io` | `main` | `main` |
-| Mise en production | `vitrine-showcase.github.io` | `main` | `prod` |
-| Raffineurs (R) | `aws-refiners` | `main` | `main` |
+| Site, modules, API | `vitrine-showcase.github.io` | `develop` | `develop` |
+| Mise en production | `vitrine-showcase.github.io` | `develop` | `main` |
+| Raffineurs (R) | `aws-refiners` | `develop` | `develop` |
 | Infrastructure AWS | `aws-infra` | `develop` | `develop` |
 
 ⚠️ **`aws-infra` et `aws-refiners` ont leurs propres règles.** Les branches y
 prennent le préfixe **`feature/`** — une branche `feat/` voit sa PR fermée. Et
-`aws-infra` déploie `main` **directement en production** : sauf intention
+`aws-infra` déploie `develop` **directement en production** : sauf intention
 explicite, viser `develop`.
 
 **Le miroir de travail est `dev.vitrinedemocratique.com`**, pas GitHub Pages.
@@ -66,7 +66,7 @@ Voir [`environnements.md`](./environnements.md).
 - **Ouvrir une page derrière Cloudflare Access** (`/admin`, le miroir dev) : il
   faut une session interactive. Un agent peut éprouver les routes en local en
   injectant l'identité, pas la page dans un navigateur.
-- **Approuver une PR.** Hard rule #9 : une IA seule ne review pas. `prod` et
+- **Approuver une PR.** Hard rule #9 : une IA seule ne review pas. `main` et
   `aws-refiners` l'imposent techniquement.
 - **Vérifier un rendu visuel** sur plusieurs tailles d'écran.
 - **Décider d'un compromis** entre fraîcheur, coût et complexité.
@@ -100,7 +100,7 @@ Elles sont automatiques, et toutes ont une raison écrite quelque part.
 
 ```bash
 # La prod tourne-t-elle sur le dernier code ? (vide = oui)
-git log --oneline origin/prod..origin/main -- app lib components
+git log --oneline origin/main..origin/main -- app lib components
 
 # Fraîcheur des données de l'API
 curl -s https://api.vitrinedemocratique.com/v1/health | python3 -m json.tool | head
@@ -121,8 +121,8 @@ curl "http://localhost:8787/__scheduled"   # SYNC_FORCE=1 dans .dev.vars
 1. **Regarder la fraîcheur avant le code** : `/v1/health` et la dernière
    exécution de `refresh-data`. La cause la plus fréquente n'est pas une
    régression, c'est un rafraîchissement qui n'a pas tourné.
-2. **Vérifier que `prod` porte bien le code attendu** (commande ci-dessus). Un
-   correctif fusionné dans `main` n'est pas déployé.
+2. **Vérifier que `main` porte bien le code attendu** (commande ci-dessus). Un
+   correctif fusionné dans `develop` n'est pas déployé.
 3. **Distinguer les pannes**. Le 2026-08-18, deux choses sont arrivées le même
    jour — un `Setup R` annulé et une bascule de source de données — et il était
    tentant de n'y voir qu'un seul incident. Chercher la deuxième cause.

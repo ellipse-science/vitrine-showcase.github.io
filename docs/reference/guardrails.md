@@ -15,7 +15,7 @@ Il s'applique à tout agent travaillant dans le repo (après acceptation des ré
 
 ## Portes CI (sur chaque PR)
 
-`.github/workflows/ci.yml` exécute, sur toute PR vers `main` : **type-check → test → build**. Rien qui casse la compilation, la logique de données (tests `lib/data/`) ou le build n'atteint `main`.
+`.github/workflows/ci.yml` exécute, sur toute PR vers `develop` : **type-check → test → build**. Rien qui casse la compilation, la logique de données (tests `lib/data/`) ou le build n'atteint `develop`.
 
 ## Garde attribution humaine (sur chaque PR)
 
@@ -46,9 +46,9 @@ Dérogation légitime (séparateur de `<title>`, tiret employé comme glyphe de 
 
 ## Auto-merge Dependabot
 
-`.github/workflows/auto-merge-dependabot.yml` approuve puis active l'auto-merge (`gh pr merge --auto`) des PRs Dependabot. **L'auto-merge ne fusionne que si la protection de branche de `main` exige le check CI en succès.**
+`.github/workflows/auto-merge-dependabot.yml` approuve puis active l'auto-merge (`gh pr merge --auto`) des PRs Dependabot. **L'auto-merge ne fusionne que si la protection de branche de `develop` exige le check CI en succès.**
 
-À vérifier (réglage admin) : Settings → Branches → règle sur `main` → « Require status checks to pass before merging » doit inclure le job **CI**. Sans ça, une mise à jour de dépendance pourrait être fusionnée sans CI verte. Le workflow utilise `pull_request_target` (token avec write) — acceptable car restreint à l'auteur `dependabot[bot]`.
+À vérifier (réglage admin) : Settings → Branches → règle sur `develop` → « Require status checks to pass before merging » doit inclure le job **CI**. Sans ça, une mise à jour de dépendance pourrait être fusionnée sans CI verte. Le workflow utilise `pull_request_target` (token avec write) — acceptable car restreint à l'auteur `dependabot[bot]`.
 
 ## PR #102 « keep open » (aws-refiners)
 

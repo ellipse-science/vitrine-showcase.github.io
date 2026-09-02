@@ -44,7 +44,7 @@ Use `lib/data/parties.ts` + `components/sections/PartisCouvertureSection.tsx` + 
 2. Test locally if possible (mock data or direct Athena query)
 3. Commit and merge to `develop` in `aws-refiners` → ECR push → auto-redeploy to DEV Lambda (via PR #102 mechanism)
 4. Inspect output in Athena DEV (R snippet in [`aws-backend.md`](./aws-backend.md)) or wait for next scheduled run
-5. Once validated: open a PR to `main` in `aws-refiners` for production
+5. Once validated: open a PR to `develop` in `aws-refiners` for production
 
 ## How to change a refiner schedule
 

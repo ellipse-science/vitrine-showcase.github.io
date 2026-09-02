@@ -30,7 +30,7 @@ name: Déploiement dev (Cloudflare Pages)
 # d'affilée), retirer le `push:` ci-dessous et revenir au dispatch seul.
 on:
   push:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:
@@ -97,5 +97,5 @@ jobs:
         run: |
           npx wrangler@4 pages deploy out \
             --project-name vitrine-democratique-dev \
-            --branch main \
+            --branch develop \
             --commit-hash "$GITHUB_SHA"

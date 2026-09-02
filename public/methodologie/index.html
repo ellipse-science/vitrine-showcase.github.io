@@ -58,6 +58,13 @@
   }
   .logo-vitrine { height: 120px; width: auto; display: block; opacity: 0.98; }
   .logo-capp { height: 28px; width: auto; display: block; opacity: 0.85; margin-left: -5px; }
+  .metho-rapport { margin-top: 28px; padding: 22px 24px; border: 0.5px solid var(--rule); background: rgba(0,0,0,0.025); }
+  .metho-rapport .metho-section-label { margin-top: 0; }
+  a.metho-btn { text-decoration: none; display: inline-block; }
+  .metho-partenaires-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--cordovan); margin: 22px 0 8px; }
+  .metho-partenaires { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; margin: 0; }
+  .metho-partner-logo { height: 34px; width: auto; max-width: 160px; object-fit: contain; filter: grayscale(1); opacity: 0.75; transition: opacity 0.25s ease, filter 0.25s ease; }
+  .metho-partner-logo:hover { opacity: 1; filter: none; }
   .mast .brand-footer {
     display: flex;
     align-items: center;
@@ -109,6 +116,25 @@
     gap: 30px;
   }
   .sub-nav .links { display: flex; gap: 22px; }
+  .sub-nav .nav-item { position: relative; display: inline-block; padding: 6px 0; }
+  /* Pont invisible entre le lien et le menu : le survol ne se perd plus dans l'interstice. */
+  .sub-nav .nav-item::after { content: ""; position: absolute; left: -8px; right: -8px; top: 100%; height: 14px; }
+  .sub-nav .nav-menu {
+    visibility: hidden; opacity: 0; position: absolute; top: calc(100% + 8px); left: -8px; z-index: 30;
+    min-width: 210px; padding: 6px 0;
+    background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: opacity 0.12s ease, visibility 0s linear 0.35s;
+  }
+  .sub-nav .nav-item:hover .nav-menu,
+  .sub-nav .nav-item:focus-within .nav-menu,
+  .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  .sub-nav .nav-menu a {
+    display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+  }
+  .sub-nav .nav-menu a:hover { color: var(--cordovan); background: rgba(0,0,0,0.04); }
   .sub-nav .links a.active { color: var(--cordovan); }
 
   /* Page header */
@@ -440,13 +466,13 @@
     <div class="brand">
       <a href="../" aria-label="La Vitrine démocratique">
         <img class="logo-vitrine" alt="La Vitrine démocratique"
-             src="https://dev.vitrinedemocratique.com/assets/images/default/logo_vitrinedemocratique_bg-none_theme-black.png">
+             src="/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png">
       </a>
       <div class="brand-footer">
         <a class="capp-attribution" href="https://capp-ulaval.ca/" target="_blank" rel="noopener">
           <span class="capp-prefix">Propulsé par</span>
           <img class="logo-capp" alt="CAPP · Université Laval"
-               src="https://dev.vitrinedemocratique.com/assets/images/default/logo_capp_1row_bg-none_theme-black.png">
+               src="/images/brand/logo_capp_1row_bg-none_theme-black.png">
         </a>
         <span class="region">Édition Québec · __VERSION__</span>
       </div>
@@ -456,8 +482,14 @@
 
   <nav class="sub-nav">
     <div class="links">
-      <a href="./" class="active">Méthodologie</a>
-      <a href="../#propos">À propos</a>
+      <div class="nav-item">
+        <a href="./" class="active">Méthodologie</a>
+        <div class="nav-menu"><a href="/methodologie/modeles/">Nos modèles d'IA</a></div>
+      </div>
+      <div class="nav-item">
+        <a href="/apropos/">À propos</a>
+        <div class="nav-menu"><a href="/apropos/equipe/">Équipe</a><a href="/apropos/partenaires/">Partenaires</a></div>
+      </div>
     </div>
   </nav>
 
@@ -603,7 +635,7 @@
 
     <h3>Source des données</h3>
     <p class="metho-body">Le système regroupe les articles qui traitent d'un même fait d'actualité, à partir des captures des pages d'accueil des médias et des articles qui y figurent. Chaque regroupement, appelé «&nbsp;événement&nbsp;», reçoit un enjeu principal et un <strong>score de saillance</strong> (son importance médiatique), mesuré à la fois à l'échelle de l'ensemble des médias suivis et spécifiquement pour les médias québécois.</p>
-    <p class="metho-body">Ce regroupement est fait par un <strong>modèle de langue</strong>, à qui l'on soumet, toutes les quatre heures, les articles passés en Une pendant la période ainsi que la liste des histoires déjà suivies depuis 24 heures. Il répond à deux questions d'un seul tenant&nbsp;: quels articles forment une même histoire, et laquelle poursuit une histoire de la veille. La consigne définit une histoire comme un <strong>dossier d'actualité</strong>&nbsp;: l'annonce et la réaction politique, la gestion d'un événement et ses conséquences, la version française et la version anglaise d'un même fait vont ensemble. Elle précise aussi ce qui ne suffit pas à faire un même dossier (un personnage commun, un thème commun, une région commune), pour éviter que deux affaires distinctes soient présentées comme une seule.</p>
+    <p class="metho-body">Ce regroupement est fait par un <strong>modèle de langue</strong>, <strong>Claude Sonnet 5</strong> (Anthropic) depuis le 30 août 2026, retenu après un banc comparatif de quatre modèles sur trois jours de Unes (23 août 2026) et appliqué rétroactivement à toute la série publiée depuis le 17 mai 2025; GPT-4o, qui l'assurait auparavant, ne subsiste que dans l'extraction des objets décrite au §&nbsp;02. On lui soumet, toutes les quatre heures, les articles passés en Une pendant la période ainsi que la liste des histoires déjà suivies depuis 24 heures. Il répond à deux questions d'un seul tenant&nbsp;: quels articles forment une même histoire, et laquelle poursuit une histoire de la veille. La consigne définit une histoire comme un <strong>dossier d'actualité</strong>&nbsp;: l'annonce et la réaction politique, la gestion d'un événement et ses conséquences, la version française et la version anglaise d'un même fait vont ensemble. Elle précise aussi ce qui ne suffit pas à faire un même dossier (un personnage commun, un thème commun, une région commune), pour éviter que deux affaires distinctes soient présentées comme une seule.</p>
     <p class="metho-body">Cette méthode a remplacé un regroupement fondé sur la similarité statistique du vocabulaire, qui découpait une même actualité en plusieurs morceaux&nbsp;: chacun paraissait alors moins important qu'il ne l'était, et les médias qui la couvraient se retrouvaient répartis entre ces morceaux. Sur onze semaines d'archives rejouées, le nouveau regroupement reconnaît la suite d'une histoire dans 64&nbsp;% des cas contre 40&nbsp;% auparavant, et le nombre d'histoires portées par au moins trois médias québécois passe de 159 à 218.</p>
     <p class="metho-body">Le système suit aussi chaque histoire au fil de la journée. Sur une fenêtre glissante de 24 heures, il rassemble l'ensemble des médias qui l'ont mise en Une, le dernier article mis en Une par chacun d'eux, et le moment où elle est apparue pour la première fois parmi les Unes saillantes.</p>
 
@@ -872,8 +904,23 @@
       <li>Le CAPP détient les autorisations éthiques requises pour la collecte et le traitement des données, conformément aux politiques de l'Université Laval.</li>
       <li>Les données sont hébergées au Québec, dans les infrastructures cloud du CAPP. Aucune donnée personnelle n'est transmise à des tiers.</li>
       <li>Aucune donnée permettant d'identifier un individu n'est utilisée dans le calcul des indices de saillance médiatique ou parlementaire.</li>
+      <li><strong>Les modèles d'intelligence artificielle sont les nôtres.</strong> Les 30 classifieurs qui lisent les phrases des articles (21 thèmes, 9 partis) et le modèle de sentiment sont des modèles locaux, entraînés, calibrés et validés par notre équipe. Leur rapport de validation complet est public&nbsp;: voir ci-dessous.</li>
       <li>Le code de traitement des données est disponible sur les dépôts GitHub publics du CAPP et d'Ellipse Sciences (<a href="https://github.com/ellipse-science" target="_blank" rel="noopener">github.com/ellipse-science</a>).</li>
     </ul>
+
+    <div class="metho-rapport" id="rapport-modeles">
+      <p class="metho-section-label">Rapport de validation des modèles · 30 août 2026</p>
+      <p class="metho-body"><strong>Distillation.</strong> Les 30 modèles servis à la Vitrine sont des encodeurs légers (mDeBERTa), un par thème et un par parti, entraînés sur un corpus de 99&nbsp;997 phrases bilingues tirées de la presse et des débats parlementaires. Ce corpus a été annoté par un grand modèle de langue (gpt-5.4), puis les modèles légers ont été distillés à partir de ces annotations. Chaque modèle répond à une seule question («&nbsp;ce thème est-il présent dans cette phrase?&nbsp;»), ce qui permet de le mesurer, de le remplacer ou de le retirer sans toucher aux autres.</p>
+      <p class="metho-body"><strong>Calibration.</strong> Le seuil de décision de chaque tête thématique a été réglé sur des phrases annotées à la main, par validation croisée répétée deux cents fois, pour que le modèle ne dise «&nbsp;oui&nbsp;» ni trop souvent ni trop rarement. Les têtes de partis sont servies au seuil de 0,5, sans calibration.</p>
+      <p class="metho-body"><strong>Validation.</strong> Les modèles ont été confrontés à 2&nbsp;273 phrases annotées par des humains, hors du corpus d'entraînement. Le F1 moyen de la classe positive est de 0,656 pour les thèmes (13 têtes sur 21 dépassent 0,65; <code>domestic_commerce</code> et <code>public_lands</code> sont les moins sûrs), de 0,934 à 0,994 pour les quatre partis fédéraux disposant d'assez de cas de référence, et de 0,653 pour le sentiment, contre un accord entre annotateurs humains de 0,669. Les cinq partis provinciaux ne sont pas encore validés faute de cas de référence, et le Parti conservateur du Québec n'a pas de modèle. Aucun chiffre du rapport n'est saisi à la main&nbsp;: les tableaux sont régénérés depuis les journaux d'entraînement versionnés.</p>
+      <p class="metho-body">Une page dédiée résume nos valeurs, notre usage scientifique de l'IA et ses limites&nbsp;: <a href="/methodologie/modeles/">Nos modèles d'intelligence artificielle</a>.</p>
+      <p class="metho-body"><a class="metho-btn" href="/docs/rapport-validation-modeles-locaux-2026-09.pdf" target="_blank" rel="noopener">Lire le rapport de validation complet (PDF) ↓</a></p>
+      <p class="metho-body metho-partenaires-label">Réalisé avec</p>
+      <p class="metho-partenaires">
+        <a href="https://github.com/antoinelemor/LLM_Tool" target="_blank" rel="noopener"><img class="metho-partner-logo" src="/images/partners/llm-tool.png" alt="LLM Tool"></a>
+        <a href="https://aws.amazon.com/" target="_blank" rel="noopener"><img class="metho-partner-logo" src="/images/partners/aws.svg" alt="Amazon Web Services"></a>
+      </p>
+    </div>
   </section>
 
   <!-- §12 Citation -->
@@ -883,7 +930,7 @@
     <p class="metho-body">Si vous utilisez les données ou les indices de la Vitrine Démocratique dans vos travaux, veuillez citer&nbsp;:</p>
     <div class="metho-citation">
       <!-- garde-redaction: ok (citation APA : le style impose l'italique sur le titre de l'œuvre) -->
-      Centre d'analyse des politiques publiques (CAPP). (2026). <em>La Vitrine démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrine-showcase.github.io" target="_blank" rel="noopener">https://vitrine-showcase.github.io</a>
+      Centre d'analyse des politiques publiques (CAPP). (2026). <em>La Vitrine démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrinedemocratique.com" target="_blank" rel="noopener">https://vitrinedemocratique.com</a>
     </div>
     <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, utilisez le <a href="https://clessn.notion.site/2398cfa805498059a2b8f797f05867d0?pvs=105" target="_blank" rel="noopener" style="color: var(--cordovan);">formulaire d'accès aux données</a> ou écrivez à <a href="mailto:capp@ulaval.ca" style="color: var(--cordovan);">capp@ulaval.ca</a>.</p>
 

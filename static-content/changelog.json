@@ -1,5 +1,95 @@
 [
   {
+    "pr": 691,
+    "date": "2026-09-02T02:35:33Z",
+    "note": "Rien de visible : le site public se remet à recevoir ses données fraîches par les deux voies prévues, et non plus par une seule.",
+    "version": null
+  },
+  {
+    "pr": 689,
+    "date": "2026-09-02T02:19:37Z",
+    "note": "Le module des 12 enjeux se met à jour dès qu'un nouveau bloc est publié, sans attendre le rafraîchissement suivant du site.",
+    "version": null
+  },
+  {
+    "pr": 690,
+    "date": "2026-09-02T02:17:59Z",
+    "note": "Rien de visible sur le site : moins de fausses alertes dans le canal de surveillance de l'équipe.",
+    "version": null
+  },
+  {
+    "pr": 686,
+    "date": "2026-09-02T02:04:57Z",
+    "note": "Les menus de la barre de navigation restent ouverts le temps de cliquer.",
+    "version": "2.43.0-beta.1"
+  },
+  {
+    "pr": 687,
+    "date": "2026-09-02T02:04:50Z",
+    "note": "Aucune.",
+    "version": null
+  },
+  {
+    "pr": 685,
+    "date": "2026-09-02T01:41:14Z",
+    "note": "Aucune.",
+    "version": null
+  },
+  {
+    "pr": 683,
+    "date": "2026-09-02T00:57:30Z",
+    "note": "Aucune (documentation interne).",
+    "version": null
+  },
+  {
+    "pr": 679,
+    "date": "2026-09-01T23:40:28Z",
+    "note": "Les sous-pages se trouvent depuis la barre de navigation.",
+    "version": "2.43.0-beta.0"
+  },
+  {
+    "pr": 678,
+    "date": "2026-09-01T23:16:09Z",
+    "note": "L'équipe, les partenaires et nos modèles d'IA ont chacun leur page.",
+    "version": "2.42.0-beta.0"
+  },
+  {
+    "pr": 675,
+    "date": "2026-09-01T22:45:23Z",
+    "note": "Aucune.",
+    "version": null
+  },
+  {
+    "pr": 597,
+    "date": "2026-09-01T22:25:47Z",
+    "note": "Rien ne change sur le site : cette mise à jour corrige la documentation technique interne pour qu'elle nomme correctement le modèle qui rédige les titres de la Une, changé aujourd'hui.",
+    "version": null
+  },
+  {
+    "pr": 668,
+    "date": "2026-09-01T22:25:11Z",
+    "note": "Le rapport de validation de nos modèles d'IA est public, et nos partenaires sont nommés.",
+    "version": "2.41.0-beta.0"
+  },
+  {
+    "pr": 674,
+    "date": "2026-09-01T22:19:23Z",
+    "note": "Aucune.",
+    "version": null
+  },
+  {
+    "pr": 669,
+    "date": "2026-09-01T21:27:42Z",
+    "note": "Aucune (test seulement).",
+    "version": null
+  },
+  {
+    "pr": 670,
+    "date": "2026-09-01T21:19:22Z",
+    "note": "Dans le module Partis et couverture, cliquer sur un disque de la table de mixage vous mène maintenant vers l'article qui en parle le plus, quand on en connaît un. Plusieurs retouches visuelles aussi : les disques et leurs pastilles sont mieux centrés, et le cadre du disque d'or est plus net. Assisté par : Claude Code (Sonnet 5)",
+    "version": null
+  },
+  {
     "pr": 667,
     "date": "2026-09-01T18:42:19Z",
     "note": "Rien ne change sur le site.",
