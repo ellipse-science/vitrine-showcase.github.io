@@ -1,0 +1,152 @@
+# Aperçu du site bâti sur le datamart PROD (vitrine#702).
+#
+# Pourquoi : avant de basculer la Vitrine sur le compte PROD, l'équipe veut VOIR
+# les données PROD à côté de DEV, dans un navigateur, et constater que c'est
+# pareil. Ce workflow manuel lit le datamart PROD avec scripts/fetch_data.R,
+# bâtit le site depuis ces fichiers (aucun appel à l'API) et le publie comme
+# déploiement de PRÉVISUALISATION du projet Cloudflare Pages de dev, sous sa
+# propre branche « apercu-prod ». Adresse :
+#   https://apercu-prod.vitrine-democratique-dev.pages.dev
+# Rien ne touche dev.vitrinedemocratique.com ni vitrinedemocratique.com.
+#
+# Les tables que PROD n'a pas encore (partis en jour/semaine/mois, Agora
+# députés et affiliations, by_media au 2 sept. 2026) restent celles des fichiers
+# commités, donc DEV : le résumé du job dit, table par table, PROD ou DEV.
+name: Aperçu PROD (site bâti sur le datamart PROD)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: apercu-prod
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  apercu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      AWS_ACCESS_KEY_ID_PROD:     ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+      AWS_SECRET_ACCESS_KEY_PROD: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+      AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+      AWS_REGION:                 ${{ secrets.AWS_REGION }}
+      DATAMART_ENV:               PROD
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup R
+        timeout-minutes: 6
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5'
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-${{ runner.os }}-R4.5-v2
+          restore-keys: r-${{ runner.os }}-R4.5-
+
+      - name: Install R packages
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e '
+            pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
+            install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            if (!requireNamespace("noctua", quietly = TRUE)) {
+              remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
+                                   upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent apres installation depuis l archive CRAN")
+            }
+            for (i in 1:6) {
+              ok <- tryCatch({
+                remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = FALSE)
+                TRUE
+              }, error = function(e) {
+                message(sprintf("tube install attempt %d/6 failed: %s", i, conditionMessage(e)))
+                FALSE
+              })
+              if (ok) break
+              if (i == 6) stop("Failed to install tube after 6 attempts")
+              Sys.sleep(2^i * 5)
+            }
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent apres install_github")
+            cat("tube", as.character(packageVersion("tube")), "installe\n")
+          '
+
+      # Repère temporel : tout fichier de public/data plus récent que ce repère a
+      # été écrit par la lecture PROD ; les autres viennent des fichiers commités.
+      - name: Poser le repère
+        run: touch /tmp/repere-avant-prod && sleep 1
+
+      - name: Lire le datamart PROD (les tables absentes gardent les fichiers commités)
+        continue-on-error: true
+        run: Rscript scripts/fetch_data.R
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Dire, table par table, PROD ou DEV
+        run: |
+          python - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          repere = os.path.getmtime("/tmp/repere-avant-prod")
+          cfg = json.load(open("scripts/tables.json", encoding="utf-8"))
+          print("## Aperçu PROD : provenance des tables du site\n")
+          print("| Table | Source dans cet aperçu |")
+          print("|---|---|")
+          prod = dev = 0
+          for t in cfg.get("tables", []):
+              if not t.get("enabled"): continue
+              out = t.get("out", "")
+              if out and os.path.exists(out) and os.path.getmtime(out) > repere:
+                  prod += 1; print(f"| {t['athena']} | **PROD** |")
+              else:
+                  dev += 1; print(f"| {t['athena']} | DEV (fichier commité, table absente ou en échec en PROD) |")
+          print(f"\n**{prod} tables PROD, {dev} tables DEV.**")
+          EOF
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Périmètre PROD (ni ambiance, ni DOOM) : l'aperçu se compare à la
+      # production, pas au miroir de travail. Les fichiers sont la SEULE source :
+      # VITRINE_DATA_SOURCE reste vide, aucun appel à l'API ni à l'instantané.
+      - name: Build (fichiers seulement, périmètre prod)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_SITE_ENV: prod
+          NEXT_PUBLIC_SITE_ORIGIN: https://apercu-prod.vitrine-democratique-dev.pages.dev
+          NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
+
+      - name: Publier l'aperçu (prévisualisation Cloudflare Pages, branche apercu-prod)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler@4 pages deploy out \
+            --project-name vitrine-democratique-dev \
+            --branch apercu-prod \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "Aperçu PROD ($(date -u +%Y-%m-%dT%H:%MZ))"
+          echo "Aperçu : https://apercu-prod.vitrine-democratique-dev.pages.dev" | tee -a "$GITHUB_STEP_SUMMARY"
