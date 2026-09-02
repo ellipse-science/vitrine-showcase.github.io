@@ -1,5 +1,11 @@
 [
   {
+    "pr": 704,
+    "date": "2026-09-02T22:26:44Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut voir d'un clic ce que la base de l'API contient réellement.",
+    "version": null
+  },
+  {
     "pr": 701,
     "date": "2026-09-02T21:05:33Z",
     "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut vérifier d'un clic ce que le compte de production est capable de fournir au site avant de basculer.",
