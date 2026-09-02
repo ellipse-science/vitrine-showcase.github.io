@@ -141,6 +141,12 @@ jobs:
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            # noctua (client Athena dont depend tube) n est plus sur CRAN : a froid,
+            # install_github("tube") echoue sur « dependency noctua is not available »
+            # (mesure le 1er septembre 2026, run 33580405204). On le prend sur GitHub.
+            if (!requireNamespace("noctua", quietly = TRUE)) {
+              remotes::install_github("DyfanJones/noctua", upgrade = "never", quiet = FALSE)
+            }
             # install_github touche un endpoint api.github.com soumis a la limite
             # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
             # surtout depuis les IP partagees des runners Actions. Cest intermittent
@@ -162,8 +168,8 @@ jobs:
             # (cache invisible après le renommage de branche, compilation à froid en
             # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l'étape Athena
             # deux fois de suite. On vérifie que le paquet est bien là, ici, fort.
-            if (!requireNamespace("tube", quietly = TRUE)) stop("tube n'est pas installé après install_github : voir le journal ci-dessus")
-            cat("tube", as.character(packageVersion("tube")), "installé\n")
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent apres install_github : voir le journal ci-dessus")
+            cat("tube", as.character(packageVersion("tube")), "installe\n")
           '
 
       - name: Set up Python
