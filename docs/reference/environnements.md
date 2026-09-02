@@ -14,6 +14,23 @@ de passe). L'ancien miroir GitHub Pages est **débranché** depuis le 2026-08-30
 |---|---|---|---|
 | `vitrinedemocratique.com` | **production**, publique | `main` | ouvert |
 | `dev.vitrinedemocratique.com` | **miroir de travail** | `develop` | Cloudflare Access |
+
+> **Agents et scripts sur dev.** Un humain se connecte par courriel (session de
+> 30 jours depuis le 1er septembre 2026). Un agent ou un script passe par le jeton
+> de service Cloudflare Access `agents-vitrine`, autorisé par la politique « Agents
+> (jeton de service) » : deux en-têtes, `CF-Access-Client-Id` et
+> `CF-Access-Client-Secret`. Les valeurs se demandent à Adrien en message privé et
+> vont dans `~/repo_github/vitrine/.secrets/cf_access.env` (hors dépôt) ; la CI les a
+> en secrets GitHub `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`. Un 302 vers
+> `cloudflareaccess.com` veut dire « pas d'en-têtes ». Le jeton expire le
+> 1er septembre 2027.
+>
+> ```bash
+> set -a; . ~/repo_github/vitrine/.secrets/cf_access.env; set +a
+> curl -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+>      -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+>      https://dev.vitrinedemocratique.com/build-id.json
+> ```
 | `api.vitrinedemocratique.com` | API de lecture | — (Worker) | clé d'API |
 | `api.vitrinedemocratique.com/admin` | gestion des clés | — (Worker) | Cloudflare Access |
 
