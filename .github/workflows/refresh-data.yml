@@ -364,15 +364,14 @@ jobs:
       - name: Sync fresh data to main branch
         if: steps.commit.outputs.changed == 'true'
         run: |
-          # Dev/prod split: code is gated behind manual main→prod merges, but the
+          # Dev/prod split: code is gated behind reviewed develop→main merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
           # payload (public/data + public/audio + public/images/deputes) from the
-          # just-pushed main onto prod — never code. Replacing (not merging) the
+          # just-pushed develop onto main — never code. Replacing (not merging) the
           # paths means no conflicts.
-          # No-op until the main branch exists (created during Cloudflare setup),
-          # so this is safe to merge to main before prod is stood up.
+          # No-op if the main branch does not exist.
           if ! git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
-            echo "No main branch yet — skipping prod data sync."
+            echo "No main branch — skipping prod data sync."
             exit 0
           fi
           git fetch origin main
@@ -381,8 +380,8 @@ jobs:
           # origin/main may not exist. FETCH_HEAD always points at the just-fetched tip.
           git checkout -B main FETCH_HEAD
           # public/images/deputes/ included alongside data/audio: without it, a
-          # by-election winner's portrait would land on main daily but never
-          # reach the live prod site until someone happens to merge main→prod.
+          # by-election winner's portrait would land on develop daily but never
+          # reach the live prod site until someone happens to merge develop→main.
           git checkout develop -- public/data/ public/audio/ public/images/deputes/
           git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
@@ -393,7 +392,7 @@ jobs:
             echo "prod_sync=1" >> "$GITHUB_ENV"
           fi
 
-      # Le push sur `prod` ne déclenche RIEN par lui-même (deploy-prod.yml n'a
+      # Le push sur `main` ne déclenche RIEN par lui-même (deploy-prod.yml n'a
       # plus de `on: push`, et l'intégration Git de Pages n'a produit aucun
       # build entre le 21 et le 25 août — c'est le trou de #570). On demande
       # donc explicitement le build, et seulement quand des données ont
@@ -403,7 +402,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run deploy-prod.yml --repo "$GITHUB_REPOSITORY" --ref prod \
+          gh workflow run deploy-prod.yml --repo "$GITHUB_REPOSITORY" --ref main \
             && echo "build prod demandé" \
             || echo "::warning::le build prod n'a pas pu être déclenché — lancer deploy-prod.yml à la main"
 
