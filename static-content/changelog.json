@@ -1,5 +1,11 @@
 [
   {
+    "pr": 691,
+    "date": "2026-09-02T02:35:33Z",
+    "note": "Rien de visible : le site public se remet à recevoir ses données fraîches par les deux voies prévues, et non plus par une seule.",
+    "version": null
+  },
+  {
     "pr": 689,
     "date": "2026-09-02T02:19:37Z",
     "note": "Le module des 12 enjeux se met à jour dès qu'un nouveau bloc est publié, sans attendre le rafraîchissement suivant du site.",
