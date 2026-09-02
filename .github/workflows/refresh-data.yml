@@ -322,7 +322,7 @@ jobs:
           # Dev/prod split: code is gated behind manual main→prod merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
           # payload (public/data + public/audio + public/images/deputes) from the
-          # just-pushed main onto prod — never code. Replacing (not merging) the
+          # just-pushed develop onto main — never code. Replacing (not merging) the
           # paths means no conflicts.
           # No-op until the main branch exists (created during Cloudflare setup),
           # so this is safe to merge to main before prod is stood up.
