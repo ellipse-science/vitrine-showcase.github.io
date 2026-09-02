@@ -6,7 +6,7 @@ name: Refresh Data
 #
 # cron-job.org setup (post-merge, one-time):
 #   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/refresh-data.yml/dispatches
-#   Method: POST   Body: {"ref":"main"}
+#   Method: POST   Body: {"ref":"develop"}
 #   Header: Authorization: token <GitHub PAT with workflow scope>
 #   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
 
@@ -268,7 +268,7 @@ jobs:
             # Use SSH so pushes are authenticated with the dedicated deploy key.
             git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
             # Rebase first: defensive against any concurrent push to main.
-            git pull --rebase origin main
+            git pull --rebase origin develop
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -316,7 +316,7 @@ jobs:
           done
           echo "Synchro Postgres terminée."
 
-      - name: Sync fresh data to prod branch
+      - name: Sync fresh data to main branch
         if: steps.commit.outputs.changed == 'true'
         run: |
           # Dev/prod split: code is gated behind manual main→prod merges, but the
@@ -324,27 +324,27 @@ jobs:
           # payload (public/data + public/audio + public/images/deputes) from the
           # just-pushed main onto prod — never code. Replacing (not merging) the
           # paths means no conflicts.
-          # No-op until the prod branch exists (created during Cloudflare setup),
+          # No-op until the main branch exists (created during Cloudflare setup),
           # so this is safe to merge to main before prod is stood up.
-          if ! git ls-remote --exit-code --heads origin prod >/dev/null 2>&1; then
-            echo "No prod branch yet — skipping prod data sync."
+          if ! git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            echo "No main branch yet — skipping prod data sync."
             exit 0
           fi
-          git fetch origin prod
-          # Use FETCH_HEAD, not origin/prod: actions/checkout configures a narrow
+          git fetch origin main
+          # Use FETCH_HEAD, not origin/main: actions/checkout configures a narrow
           # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
-          # origin/prod may not exist. FETCH_HEAD always points at the just-fetched tip.
-          git checkout -B prod FETCH_HEAD
+          # origin/main may not exist. FETCH_HEAD always points at the just-fetched tip.
+          git checkout -B main FETCH_HEAD
           # public/images/deputes/ included alongside data/audio: without it, a
           # by-election winner's portrait would land on main daily but never
           # reach the live prod site until someone happens to merge main→prod.
-          git checkout main -- public/data/ public/audio/ public/images/deputes/
+          git checkout develop -- public/data/ public/audio/ public/images/deputes/
           git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "prod data already current — nothing to sync."
           else
             git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [prod data sync]"
-            git push origin prod
+            git push origin main
           fi
 
       # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
