@@ -1,5 +1,11 @@
 [
   {
+    "pr": 708,
+    "date": "2026-09-02T23:12:56Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut publier d'un clic une version du site bâtie sur le compte de production pour la comparer au site public.",
+    "version": null
+  },
+  {
     "pr": 707,
     "date": "2026-09-02T23:03:57Z",
     "note": "Rien ne change pour le visiteur. En coulisses, l'alarme de fraîcheur ne se déclenche plus quand l'histoire de tête reste la même d'une édition à l'autre.",
