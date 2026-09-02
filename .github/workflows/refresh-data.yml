@@ -141,14 +141,14 @@ jobs:
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
-            # noctua (client Athena dont depend tube) n est plus sur CRAN : a froid,
+            # noctua (client Athena dont depend tube) n’est plus sur CRAN : a froid,
             # install_github("tube") echoue sur « dependency noctua is not available »
-            # (mesure le 1er septembre 2026, run 33580405204). On le prend dans l archive CRAN, comme Patrick.
-            # Meme recette que l image de base des raffineurs (refiners/base-r-refiner-image/Dockerfile).
+            # (mesure le 1er septembre 2026, run 33580405204). On le prend dans l’archive CRAN, comme Patrick.
+            # Même recette que l’image de base des raffineurs (refiners/base-r-refiner-image/Dockerfile).
             if (!requireNamespace("noctua", quietly = TRUE)) {
               remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
                                    upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
-              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent apres installation depuis l archive CRAN")
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent après installation depuis l’archive CRAN")
             }
             # install_github touche un endpoint api.github.com soumis a la limite
             # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
@@ -169,10 +169,10 @@ jobs:
             }
             # Le 1er septembre 2026, install_github a « réussi » sans installer tube
             # (cache invisible après le renommage de branche, compilation à froid en
-            # échec, erreur avalée par quiet = TRUE) : le filet a casse a l etape Athena
+            # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l’étape Athena
             # deux fois de suite. On vérifie que le paquet est bien là, ici, fort.
-            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent apres install_github : voir le journal ci-dessus")
-            cat("tube", as.character(packageVersion("tube")), "installe\n")
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent après install_github : voir le journal ci-dessus")
+            cat("tube", as.character(packageVersion("tube")), "installé\n")
           '
 
       - name: Set up Python
