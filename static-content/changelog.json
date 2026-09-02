@@ -1,5 +1,11 @@
 [
   {
+    "pr": 700,
+    "date": "2026-09-02T20:52:03Z",
+    "note": "Rien ne change pour le visiteur aujourd'hui. En coulisses, le site peut désormais lire ses données depuis le compte de production ou celui de travail en changeant un seul réglage, avec un retour arrière immédiat.",
+    "version": null
+  },
+  {
     "pr": 691,
     "date": "2026-09-02T02:35:33Z",
     "note": "Rien de visible : le site public se remet à recevoir ses données fraîches par les deux voies prévues, et non plus par une seule.",
