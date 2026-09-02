@@ -42,6 +42,7 @@ const ligne = (o: Partial<Record<string, unknown>> = {}) => ({
   promesse_id: "pn-aaaaaaaaaaaa",
   party_id: "QS",
   label: "Injecter 7 M$ pour accélérer le traitement des dossiers",
+  category: "Santé et politiques sociales",
   promesse_text:
     "Injecter 7 millions de dollars supplémentaires pour accélérer le traitement des dossiers;",
   announce_date: "2026-09-03",
@@ -104,6 +105,35 @@ describe("chargeur des promesses neuves", () => {
       ligne({ promesse_id: "pn-vide", label: "   " }),
     ]);
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-ok"]);
+  });
+
+  it("rend le libellé d'enjeu quand le raffineur en publie un", async () => {
+    const d = await charger([ligne()]);
+    expect(d!.ranges.day[0].enjeu).toBe("Santé et politiques sociales");
+  });
+
+  // L'enjeu est un ENRICHISSEMENT, pas une condition de publication — contrairement
+  // au libellé court. Les seuils du classifieur sont calibrés sur de la presse, pas
+  // sur du communiqué : écarter les promesses sans enjeu viderait le module sur un
+  // simple décalage de calibration, au lieu de leur retirer une puce.
+  it("garde la promesse quand l'enjeu est « NA », sans puce", async () => {
+    const d = await charger([ligne({ category: "NA" })]);
+    expect(d!.ranges.day).toHaveLength(1);
+    expect(d!.ranges.day[0].enjeu).toBeNull();
+  });
+
+  it("garde la promesse quand l'enjeu sort des douze catégories", async () => {
+    const d = await charger([ligne({ category: "Hockey et poutine" })]);
+    expect(d!.ranges.day).toHaveLength(1);
+    expect(d!.ranges.day[0].enjeu).toBeNull();
+  });
+
+  it("garde la promesse quand la colonne enjeu est absente", async () => {
+    const sans = ligne();
+    delete (sans as Record<string, unknown>).category;
+    const d = await charger([sans]);
+    expect(d!.ranges.day).toHaveLength(1);
+    expect(d!.ranges.day[0].enjeu).toBeNull();
   });
 
   it("écarte une promesse dont le parti sort des cinq suivis", async () => {

@@ -1,27 +1,65 @@
 name: Refresh Data
 
-# Triggered exclusively by cron-job.org via the GitHub REST API.
-# No schedule: trigger — GitHub Actions native cron is unreliable for
-# election-scale data freshness. Use cron-job.org → workflow_dispatch instead.
+# ⚠️ CE QUI DÉCLENCHE CE WORKFLOW, ET CE QUI NE LE DÉCLENCHE PLUS.
+# Jusqu'au 2026-08-19, il était appelé 6×/jour par cron-job.org (POST sur
+# l'API de dispatch) — CE N'EST PLUS LE CAS, et son compte peut être fermé.
+# Ce qui le déclenche aujourd'hui, et rien d'autre : le `schedule:` ci-dessous
+# et le déclenchement à la main. Sa cadence a bougé deux fois en dix jours
+# (6×/jour → hebdomadaire le 19-08, puis 6×/jour de nouveau le 25-08) : ce bloc
+# et la ligne `cron:` doivent donc toujours bouger ensemble.
 #
-# cron-job.org setup (post-merge, one-time):
-#   URL:    https://api.github.com/repos/<owner>/vitrine-showcase.github.io/actions/workflows/refresh-data.yml/dispatches
-#   Method: POST   Body: {"ref":"develop"}
-#   Header: Authorization: token <GitHub PAT with workflow scope>
-#   Cron:   50 0,4,8,12,16,20 * * *  (UTC — 5 min after each pipeline publish)
+# Le commentaire qui tenait cette place décrivait encore le montage cron-job.org
+# et affirmait « no schedule: trigger ». Il était faux depuis dix jours, et il a
+# servi de point de départ à une enquête sur un gel de la prod (2026-08-30) : on
+# a cherché la panne d'un déclencheur externe qui n'existait plus. Un commentaire
+# périmé sur un déclencheur coûte plus cher qu'un commentaire absent.
 
-# BASCULE 2026-08-19 : ce workflow n'est PLUS le chemin critique. Le
-# rafraîchissement vit dans le Worker Cloudflare (cron :10, sync-athena.ts).
-# Il reste un FILET hebdomadaire : il garde les JSON commités (source de
-# repli du build) et le miroir GitHub Pages à peu près frais. cron-job.org
-# n'a plus à l'appeler ; son compte peut être fermé.
+# BASCULE 2026-08-19 : ce workflow n'était plus le chemin critique — le
+# rafraîchissement devait vivre dans le Worker Cloudflare (crons :56 et :10,
+# sync-athena.ts — cf. wrangler.toml) et le build venir du Deploy Hook ou de
+# l'intégration Git de Pages.
+#
+# REPRISE 2026-08-25 (#570) : mesuré, ce chemin ne rebâtit pas la prod. Le
+# Worker synchronise bien Athena -> Neon, mais entre le 21 et le 25 août
+# AUCUN build prod n'est parti tout seul : le site a servi des données vieilles
+# de 25 h, et il a fallu deux `workflow_dispatch` à la main pour le dégeler.
+# Tant que les questions 1-3 de #570 (Deploy Hooks, intégration Git de Pages,
+# cron-job.org) ne sont pas tranchées, ce workflow REDEVIENT le filet réel :
+# il tourne sur la grille des blocs et déclenche lui-même le déploiement.
+# Le filet ne remplace pas le Worker ; il garantit seulement qu'un site figé
+# se répare sans intervention humaine.
+#
+# SURVEILLANCE 2026-08-30 (#628) : ce filet n'est plus le seul garde-fou, et
+# surtout il n'est plus celui qui SURVEILLE. `garde-fraicheur.yml` mesure
+# toutes les heures la Une réellement servie par la prod et ouvre une issue
+# au-delà de 7 h — depuis un workflow séparé, donc elle continue de mesurer
+# même quand celui-ci ne tourne pas. C'était précisément le trou de #412 :
+# l'alarme de fraîcheur vivait ICI, en step, et s'éteignait avec la panne
+# qu'elle devait détecter. Ne pas l'y ramener.
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * 1' # lundi 12:00 UTC, filet hebdomadaire
+    # 6x/jour, 50 min après chaque publication de bloc. Les blocs de Montréal
+    # se terminent à {3,7,11,15,19,23} et sont publiés une heure plus tard
+    # (règle « fin + 1 »), soit des éditions à {4,8,12,16,20,0} heure de
+    # Montréal = {0,4,8,12,16,20} UTC L'ÉTÉ. D'où la grille ci-dessous.
+    #
+    # ⚠️ C'est la grille d'ÉTÉ, et elle ne suit pas l'heure avancée — le cron
+    # GitHub ignore les fuseaux. L'hiver, les publications glissent d'une heure
+    # (UTC-5) et ce filet tirera 50 min AVANT elles plutôt qu'après. Sans
+    # conséquence pour un filet : la passe suivante ramasse le bloc manqué, et
+    # la garde-fraîcheur horaire (#628) le dirait si ce n'était pas le cas.
+    # Le Worker, lui, enregistre les DEUX jeux et filtre dans le code
+    # (isTargetHourInNY, cf. wrangler.toml) — un cron GitHub ne sait pas faire ça.
+    #
+    # 🔗 La première des six passes tombe à 00:50 UTC, et c'est de ça que dépend
+    # la garde du scrape des portraits de députés plus bas (`date -u +%H = 00`).
+    # Toucher à cette ligne sans regarder celle-là éteindrait ce scrape en silence.
+    - cron: '50 0,4,8,12,16,20 * * *'
 
 permissions:
   contents: read
+  actions: write   # déclencher deploy-prod.yml après une synchro de données (#570)
 
 concurrency:
   group: refresh-data
@@ -86,15 +124,15 @@ jobs:
         timeout-minutes: 6
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.4'
+          r-version: '4.5'
           use-public-rspm: true
 
       - name: Cache R packages
         uses: actions/cache@v6
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: r-${{ runner.os }}-v1
-          restore-keys: r-${{ runner.os }}-
+          key: r-${{ runner.os }}-R4.5-v2
+          restore-keys: r-${{ runner.os }}-R4.5-
 
       - name: Install R packages
         env:
@@ -103,6 +141,15 @@ jobs:
           Rscript -e '
             pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
             install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            # noctua (client Athena dont depend tube) n’est plus sur CRAN : a froid,
+            # install_github("tube") echoue sur « dependency noctua is not available »
+            # (mesure le 1er septembre 2026, run 33580405204). On le prend dans l’archive CRAN, comme Patrick.
+            # Même recette que l’image de base des raffineurs (refiners/base-r-refiner-image/Dockerfile).
+            if (!requireNamespace("noctua", quietly = TRUE)) {
+              remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
+                                   upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent après installation depuis l’archive CRAN")
+            }
             # install_github touche un endpoint api.github.com soumis a la limite
             # SECONDAIRE de GitHub : HTTP 429 meme avec quota plein (5000/5000),
             # surtout depuis les IP partagees des runners Actions. Cest intermittent
@@ -110,7 +157,7 @@ jobs:
             # Pas depinglage de SHA : on veut le tube a jour (fix paws/dbplyr de Patrick).
             for (i in 1:6) {
               ok <- tryCatch({
-                remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = TRUE)
+                remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = FALSE)
                 TRUE
               }, error = function(e) {
                 message(sprintf("tube install attempt %d/6 failed: %s", i, conditionMessage(e)))
@@ -120,6 +167,12 @@ jobs:
               if (i == 6) stop("Failed to install tube after 6 attempts (GitHub secondary rate limit 429?)")
               Sys.sleep(2^i * 5)  # backoff: 10, 20, 40, 80, 160s
             }
+            # Le 1er septembre 2026, install_github a « réussi » sans installer tube
+            # (cache invisible après le renommage de branche, compilation à froid en
+            # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l’étape Athena
+            # deux fois de suite. On vérifie que le paquet est bien là, ici, fort.
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent après install_github : voir le journal ci-dessus")
+            cat("tube", as.character(packageVersion("tube")), "installé\n")
           '
 
       - name: Set up Python
@@ -137,7 +190,8 @@ jobs:
       # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
       # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
       # tourne donc que sur le PREMIER des six déclenchements quotidiens
-      # (00h50 UTC, cron cron-job.org) plutôt que d'ajouter un cron natif
+      # (00h50 UTC — la première entrée du `schedule:` en tête de fichier ;
+      # c'était cron-job.org avant le 19-08) plutôt que d'ajouter un cron natif
       # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
       # natif pour les données électorales plus haut, ne compte pas ici.
       #
@@ -202,29 +256,20 @@ jobs:
       # d'environ 4h SANS aucune erreur = un stepper de la cascade AWS coincé
       # un bloc en arrière — panne silencieuse restée invisible ~30h les
       # 6-7 août 2026. On mesure l'âge du bloc le plus frais réellement servi
-      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; l'alerte Slack
-      # ci-dessous sonne au-delà du seuil, à chaque fetch tant que ça dure.
+      # (normal ≈ 1h au fetch, ≈ 5h dès qu'un bloc manque) ; au-delà du seuil
+      # (7 h, aligné sur garde-fraicheur.yml), Healthchecks reçoit un /fail.
       # Non bloquant : une donnée en retard doit quand même être publiée.
       - name: Check headline freshness (silent-lag alarm)
         id: freshness
         continue-on-error: true
         run: python scripts/check_freshness.py
 
-      # Best-effort : un Slack indisponible ne doit pas empêcher le commit des
-      # données plus bas — la donnée (même en retard) se publie toujours.
-      - name: Alert Slack if headline data is stale
-        if: steps.freshness.outputs.stale == 'true'
-        continue-on-error: true
-        run: |
-          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          PAYLOAD="{\"text\":\"🔴 *Vitrine : la Une est périmée* — ${{ steps.freshness.outputs.resume }}. Diagnostic : skill diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep.\nRun: ${RUN_URL}\"}"
-          # Sonar vitrine si le secret existe, sinon repli sur l'ancien webhook :
-          # une alerte au mauvais endroit vaut mieux qu'une alerte perdue.
-          HOOK="${SLACK_VITRINE_SONAR_WEBHOOK_URL:-$SLACK_WEBHOOK_URL}"
-          if [ -n "$HOOK" ]; then
-            curl -fsS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$HOOK"
-          fi
-
+      # PLUS D'ALERTE SLACK ICI (#672). L'alarme Slack de fraîcheur vit dans
+      # garde-fraicheur.yml (#628), hors de ce workflow, avec le même seuil de
+      # 7 h que scripts/check_freshness.py : une alarme qui vit dans ce
+      # qu'elle surveille se tait quand le filet meurt, et deux alarmes à
+      # deux seuils pour une même Une noyaient le sonar. Ce qui reste ici :
+      # le courriel Healthchecks (canal de secours hors Slack).
       # Courriel clair via Healthchecks.io (secret HEALTHCHECKS_URL existant,
       # jusqu'ici déclaré mais jamais pingé) : battement de cœur à chaque
       # fetch, ping /fail quand la Une est périmée → courriel « DOWN » avec
@@ -319,25 +364,25 @@ jobs:
       - name: Sync fresh data to main branch
         if: steps.commit.outputs.changed == 'true'
         run: |
-          # Dev/prod split: code is gated behind manual main→prod merges, but the
+          # Dev/prod split: code is gated behind reviewed develop→main merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
           # payload (public/data + public/audio + public/images/deputes) from the
           # just-pushed develop onto main — never code. Replacing (not merging) the
           # paths means no conflicts.
-          # No-op until the main branch exists (created during Cloudflare setup),
-          # so this is safe to merge to main before prod is stood up.
+          # No-op if the main branch does not exist.
           if ! git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
-            echo "No main branch yet — skipping prod data sync."
+            echo "No main branch — skipping prod data sync."
             exit 0
           fi
           git fetch origin main
           # Use FETCH_HEAD, not origin/main: actions/checkout configures a narrow
-          # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
-          # origin/main may not exist. FETCH_HEAD always points at the just-fetched tip.
+          # fetch refspec scoped to the branch it checked out (develop here), so the
+          # remote-tracking ref refs/remotes/origin/main may not exist. FETCH_HEAD
+          # always points at the just-fetched tip.
           git checkout -B main FETCH_HEAD
           # public/images/deputes/ included alongside data/audio: without it, a
-          # by-election winner's portrait would land on main daily but never
-          # reach the live prod site until someone happens to merge main→prod.
+          # by-election winner's portrait would land on develop daily but never
+          # reach the live prod site until someone happens to merge develop→main.
           git checkout develop -- public/data/ public/audio/ public/images/deputes/
           git add public/data/ public/audio/ public/images/deputes/
           if git diff --cached --quiet; then
@@ -345,7 +390,23 @@ jobs:
           else
             git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [prod data sync]"
             git push origin main
+            echo "prod_sync=1" >> "$GITHUB_ENV"
           fi
+
+      # Le push sur `main` ne déclenche RIEN par lui-même (deploy-prod.yml n'a
+      # plus de `on: push`, et l'intégration Git de Pages n'a produit aucun
+      # build entre le 21 et le 25 août — c'est le trou de #570). On demande
+      # donc explicitement le build, et seulement quand des données ont
+      # réellement changé : pas de build à vide, pas de double build.
+      - name: Déclencher le build prod (si les données ont bougé)
+        if: env.prod_sync == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-prod.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            && echo "build prod demandé" \
+            || echo "::warning::le build prod n'a pas pu être déclenché — lancer deploy-prod.yml à la main"
+
 
       # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
       # alerte de sonar vitrine, pas du bruit cosmétique.
@@ -360,15 +421,7 @@ jobs:
               "$HOOK"
           fi
 
-      # Musique : cosmétique et fréquent. Reste dans le watchdog — on ne
-      # déverse pas ce bruit dans une chaîne qu'on veut pouvoir lire.
-      # (L'illustration a son propre circuit : raffineur vitrine-art -> /v1/art.)
-      - name: Warn Slack if music generation failed (data still published)
-        if: steps.music.outcome == 'failure'
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine music generation failed* — data was refreshed normally; only the ambient music is stale.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
+      # Musique : plus d'avertissement Slack (#672). Hors du livrable prod depuis
+      # #658 et circuit vitrine-art cassé depuis aws-refiners#411 : le message
+      # « music generation failed » tombait six fois par jour sans rien dire de
+      # neuf. L'échec reste visible dans l'étape « Generate ambient music ».

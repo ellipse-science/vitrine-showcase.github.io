@@ -8,6 +8,12 @@
     --rule-faint: #DED3B9;
     --cordovan: #6B1E2A;
     --brass: #A07A3D;
+    /* LES DEUX AUTRES PALIERS DU DISQUE D'OR — semaine, campagne. Sur le
+       modèle des couleurs RIAA réelles (or, argent du platine, blanc glacé
+       du diamant) plutôt qu'un seul laiton pour les trois paliers : voir
+       `PALIER_COULEUR` dans `PartisCouvertureClient.tsx`. */
+    --platine: #8B939B;
+    --diamant: #4F8FAE;
     --red: #A8302C;
     --bleu: #2E4663;
     --green: #3D6B3A;
@@ -553,6 +559,26 @@
   }
   .mode-pill.off { background: transparent; border: 0.8px solid var(--ink-softer); }
   .sub-nav .links { display: flex; gap: 22px; }
+  /* Menus déroulants de la barre : Méthodologie → Nos modèles, À propos → Équipe, Partenaires */
+  .sub-nav .nav-item { position: relative; display: inline-block; padding: 6px 0; }
+  /* Pont invisible entre le lien et le menu : le survol ne se perd plus dans l'interstice. */
+  .sub-nav .nav-item::after { content: ""; position: absolute; left: -8px; right: -8px; top: 100%; height: 14px; }
+  .sub-nav .nav-menu {
+    visibility: hidden; opacity: 0; position: absolute; top: calc(100% + 8px); left: -8px; z-index: 30;
+    min-width: 210px; padding: 6px 0;
+    background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: opacity 0.12s ease, visibility 0s linear 0.35s;
+  }
+  .sub-nav .nav-item:hover .nav-menu,
+  .sub-nav .nav-item:focus-within .nav-menu,
+  .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  .sub-nav .nav-menu a {
+    display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+  }
+  .sub-nav .nav-menu a:hover { color: var(--cordovan); background: rgba(0,0,0,0.04); }
 
   /* Sous-header hero — RESTYLE, repris de #section-headline-of-headlines-sticky-bar */
   .hero-subbar {
@@ -1170,6 +1196,15 @@
       grid-column: 2;
       grid-row: 2;
     }
+    /* SANS le bloc Ambiance, la rangée 1 de la colonne de droite n'a plus
+       d'occupant : sa hauteur `auto` tombe à 0, mais le `row-gap` de 18 px de
+       .une-main-grid, lui, reste — et l'illustration descend de 18 px sous le
+       haut du titre. Deux cas, pas un : les éditions passées (#434, jamais de
+       musique archivée) et, depuis 2026-08-31, toute la prod. On rend alors
+       les deux rangées à l'illustration. */
+    .une-main-grid.has-art:not(:has(.hero-audio-overlay)) .hero-figure-inline {
+      grid-row: 1 / span 2;
+    }
     .hero-figure-inline {
       display: flex;
       flex-direction: column;
@@ -1202,6 +1237,38 @@
   }
 
   /* Mention de l'enjeu : sobre, juste un trait coloré sous le texte */
+  /* ============================================================
+     SYMBOLE D'ENJEU (issue #425) — le même glyphe dans les 4 modules.
+     Il prend la couleur du TEXTE qui l'entoure (`currentColor`) : chaque
+     module décide donc s'il porte la couleur de l'enjeu ou l'encre de sa
+     surface, sans qu'aucune couleur soit recopiée ici.
+     ============================================================ */
+  .symbole-enjeu {
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.22em;
+  }
+
+  /* Module 1 — la rubrique de la Une. Le texte garde son encre douce et le
+     filet sa couleur d'enjeu ; le glyphe reprend cette couleur. Sur le
+     traitement « breaking » (fond encre), l'aplat foncé d'un enjeu comme
+     Gouvernements (#234E78) ne passerait pas : on l'éclaircit vers le papier
+     plutôt que d'entretenir une seconde palette. */
+  /* 1,6em plutôt que le 1,15em par défaut : à côté d'un libellé mono de 10px
+     en capitales espacées, le glyphe paraissait timide (retour d'Adrien, 30-08).
+     Il porte l'identité de l'enjeu, il doit se voir avant le texte. */
+  .une-enjeu .symbole-enjeu {
+    color: var(--c);
+    width: 1.6em;
+    height: 1.6em;
+    vertical-align: -0.42em;
+    margin-right: 8px;
+  }
+  .unes-jour.breaking .une-enjeu .symbole-enjeu {
+    color: color-mix(in srgb, var(--c) 42%, #F3ECDD);
+  }
+
   .une-enjeu {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
@@ -2259,6 +2326,11 @@
   .solitudes .radar-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; fill: var(--red); fill-opacity: 0.82; }
   .solitudes .radar-eyebrow.side-qc  { fill: var(--bleu); }
   .solitudes .radar-eyebrow.side-can { fill: var(--red); }
+  /* Le texte de la rubrique garde sa couleur de RÉGION (bleu Québec, rouge
+     Canada) : elle dit qui mène l'axe, une information que le symbole ne
+     remplace pas. Le glyphe, lui, porte la couleur de l'enjeu. */
+  .solitudes .radar-symbole { opacity: 0.9; }
+  .radar-legend .lg-eyebrow .symbole-enjeu { width: 1.6em; height: 1.6em; vertical-align: -0.42em; margin-right: 7px; }
   .solitudes .radar-lab { font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; fill: var(--ink-soft); }
   .solitudes .radar-lab.strong { font-weight: 600; fill: var(--ink); }
   .solitudes .radar-lab.side-qc  { fill: var(--ink-soft); }
@@ -3684,9 +3756,20 @@
     margin-bottom: 4px;
   }
   .carte-v-enjeux { display: block; }
+  /* Module 5 — le symbole d'enjeu (#425) prend la couleur de l'encre douce du
+     libellé qu'il précède, sur ces deux surfaces de papier. La colonne du
+     libellé gagne les 13px qu'il occupe, pris sur la piste : sans ça,
+     « Aff. int. » se coupait. */
+  .assemblee-symbole {
+    width: 11px;
+    height: 11px;
+    margin-right: 4px;
+    vertical-align: -0.16em;
+    opacity: 0.75;
+  }
   .carte-v-ligne {
     display: grid;
-    grid-template-columns: 62px 38px 1fr;
+    grid-template-columns: 77px 38px 1fr;
     align-items: center;
     gap: 5px;
     margin-bottom: 3px;
@@ -4407,8 +4490,9 @@
   .treemap-growth .gt-container-expanded .gt-collapsed { opacity: 0; pointer-events: none; }
   .treemap-growth .gt-head {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
     width: 100%;
     position: relative;
     z-index: 3;
@@ -4422,13 +4506,46 @@
     align-items: center;
     justify-content: center;
   }
+  /* Sur une tuile, le fond EST la couleur de l'enjeu : le glyphe prend donc
+     l'encre de la tuile, pas la couleur (qui serait invisible sur elle-même). */
+  .treemap-growth .gt-title .symbole-enjeu {
+    width: 1em;
+    height: 1em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+  }
+  .treemap-growth .gt-symbole-seul { width: 20px; height: 20px; opacity: 0.92; }
+  /* Le nom ne tenait pas : le symbole devient la seule étiquette, et prend la
+     place que le nom occupait. Il ne grossit pas au-delà de la tuile — 22 % de
+     la plus petite dimension, borné, sinon il déborderait sur une tuile plate. */
+  /* ⛔ LA CAUSE des noms écrasés, trouvée le 30-08 après trois mesures fausses :
+     le nom est un élément flex, donc il RÉTRÉCIT par défaut. Sa boîte tenait
+     toujours dans la tuile — c'est le texte qui était coupé À L'INTÉRIEUR, par
+     l'`overflow: hidden` du parent. Toute mesure portant sur la boîte concluait
+     « ça rentre » pendant que le lecteur voyait « Droits, libertés, minorités
+     et ». Sans rétrécissement, la boîte déborde pour de vrai. */
+  .treemap-growth .gt-title-nom { flex-shrink: 0; }
+  .treemap-growth .gt-title-sans-nom .gt-title-nom { display: none; }
+  .treemap-growth .gt-title-sans-nom .symbole-enjeu {
+    margin-bottom: 0;
+    opacity: 0.92;
+  }
+  .treemap-growth .gt-large.gt-title-sans-nom .symbole-enjeu,
+  .treemap-growth .gt-large .gt-title-sans-nom .symbole-enjeu { width: 34px; height: 34px; }
+  .treemap-growth .gt-medium .gt-title-sans-nom .symbole-enjeu { width: 26px; height: 26px; }
+  .treemap-growth .gt-small .gt-title-sans-nom .symbole-enjeu { width: 20px; height: 20px; }
+  .treemap-growth .gt-tip-name .symbole-enjeu { margin-right: 6px; }
+  .treemap-growth .gt-expanded-header h3 .symbole-enjeu { margin-right: 10px; opacity: 0.85; }
+  .treemap-mobile .tm-bar-name .symbole-enjeu { color: var(--c); margin-right: 6px; }
   /* nom d'enjeu : gros, centré, occupe le corps de la tuile */
   .treemap-growth .gt-title {
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     text-align: center;
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
@@ -4491,6 +4608,84 @@
     flex-shrink: 0;
     align-self: flex-start;
   }
+  /* La part de l'attention est le nombre PRINCIPAL de la tuile : c'est lui qui
+     chiffre ce que la surface montre. La variation reste, en retrait. */
+  .treemap-growth .gt-share {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .treemap-growth .gt-share-num {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: #F3ECDD;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* Le libellé n'a la place de se déployer que sur les grandes tuiles ; ailleurs
+     il tronquerait, et un libellé tronqué explique moins bien que rien. */
+  /* Les deux libellés du bandeau (« part de l'attention » à gauche, « depuis »
+     à droite) demandent ensemble ~250px : sous cette largeur ils se rentraient
+     dedans (« PART DE L'ATTENTIODEPUIS 11H », vu à 901px). La condition porte
+     sur la largeur RÉELLE de la tuile, pas sur celle de la fenêtre : une même
+     tuile est large à 1440 et étroite à 901, et les seuils d'aire du composant
+     sont en POURCENTAGE, donc insensibles à la fenêtre.
+     `container-type: inline-size` est sans effet de bord ici : la largeur de la
+     tuile vient déjà de son conteneur positionné, jamais de son contenu. */
+  .treemap-growth .gt-tile { container-type: inline-size; }
+  .treemap-growth .gt-share-kicker { display: none; }
+  @container (min-width: 250px) {
+  .treemap-growth .gt-large .gt-share-kicker {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.62;
+    white-space: nowrap;
+  }
+  }
+  /* `.gt-pct` se cale en haut partout ailleurs ; ici les deux nombres sont de
+     corps différents et doivent partager leur ligne de base. */
+  .treemap-growth .gt-head .gt-pct,
+  .treemap-growth .gt-figures .gt-pct { align-self: baseline; }
+  .treemap-growth .gt-figures {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 5px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  /* La variation et son « depuis » forment un bloc aligné à droite. Le
+     « depuis » ne s'affiche que sur les grandes tuiles : ailleurs il tiendrait
+     au prix du nom de l'enjeu, et il se lit déjà au survol. */
+  .treemap-growth .gt-variation {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    min-width: 0;
+  }
+  .treemap-growth .gt-depuis { display: none; }
+  @container (min-width: 250px) {
+  .treemap-growth .gt-large .gt-depuis,
+  .treemap-growth .gt-medium .gt-depuis {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #F3ECDD;
+    opacity: 0.58;
+    white-space: nowrap;
+  }
+  }
   .treemap-growth .gt-up { color: #A3E635; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-down { color: #FFAAAA; margin-right: 4px; font-family: sans-serif; }
   .treemap-growth .gt-compact {
@@ -4511,16 +4706,23 @@
   .treemap-growth .gt-large { padding: 16px 18px; }
   .treemap-growth .gt-large .gt-title { font-size: 32px; }
   .treemap-growth .gt-large .gt-preview-head { font-size: 19px; }
-  .treemap-growth .gt-large .gt-pct { font-size: 28px; }
+  .treemap-growth .gt-large .gt-share-num { font-size: 34px; }
+  .treemap-growth .gt-large .gt-pct { font-size: 19px; }
   .treemap-growth .gt-medium { padding: 13px 15px; }
   .treemap-growth .gt-medium .gt-title { font-size: 23px; }
   .treemap-growth .gt-medium .gt-preview-head { font-size: 14.5px; }
-  .treemap-growth .gt-medium .gt-pct { font-size: 22px; }
+  .treemap-growth .gt-medium .gt-share-num { font-size: 26px; }
+  .treemap-growth .gt-medium .gt-pct { font-size: 15px; }
   .treemap-growth .gt-small { padding: 10px 11px; }
   .treemap-growth .gt-small .gt-title { font-size: 15px; }
-  .treemap-growth .gt-small .gt-pct { font-size: 16px; }
+  .treemap-growth .gt-small .gt-share-num { font-size: 18px; }
+  .treemap-growth .gt-small .gt-pct { font-size: 12px; }
   .treemap-growth .gt-tiny { padding: 6px 8px; }
-  .treemap-growth .gt-tiny .gt-pct { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-share-num { font-size: 15px; }
+  .treemap-growth .gt-tiny .gt-pct { font-size: 12px; }
+  /* Réduite à sa flèche, la variation n'a plus de marge à droite du glyphe. */
+  .treemap-growth .gt-pct-arrow .gt-up,
+  .treemap-growth .gt-pct-arrow .gt-down { margin-right: 0; }
   .treemap-growth .gt-tip {
     z-index: 40;
     pointer-events: none;
@@ -4547,6 +4749,21 @@
     font-weight: 700;
     line-height: 1.15;
   }
+  .treemap-growth .gt-tip-figures {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    margin: 0 0 9px;
+    padding-bottom: 9px;
+    border-bottom: 0.5px solid rgba(243, 236, 221, 0.22);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+  .treemap-growth .gt-tip-figures dt { opacity: 0.6; }
+  .treemap-growth .gt-tip-figures dd { margin: 0; text-align: right; white-space: nowrap; }
   .treemap-growth .gt-tip-head {
     font-family: 'Source Serif 4', Georgia, serif;
     font-size: 13px;
@@ -4590,7 +4807,7 @@
   }
   .treemap-growth .gt-expanded-kicker,
   .treemap-growth .gt-expanded-count,
-  .treemap-growth .gt-expanded-growth > span:last-child {
+  .treemap-growth .gt-expanded-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
     text-transform: uppercase;
@@ -4611,10 +4828,14 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
+    gap: 3px;
     max-width: 210px;
     text-align: right;
   }
+  /* Le bouton Fermer et le second couple nombre/libellé gardent leur respiration ;
+     un libellé, lui, se colle au nombre qu'il légende. */
+  .treemap-growth .gt-expanded-growth .gt-expanded-close { margin-bottom: 7px; }
+  .treemap-growth .gt-expanded-growth .gt-expanded-label + .gt-pct { margin-top: 13px; }
   .treemap-growth .gt-expanded-close {
     display: inline-flex;
     align-items: center;
@@ -4634,10 +4855,22 @@
   .treemap-growth .gt-expanded-close span { font-size: 17px; line-height: 0.7; }
   .treemap-growth .gt-expanded-close:hover,
   .treemap-growth .gt-expanded-close:focus-visible { border-bottom-color: #F3ECDD; outline: none; }
-  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 32px; }
+  .treemap-growth .gt-expanded-share {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 42px;
+    line-height: 1;
+    color: #F3ECDD;
+  }
+  .treemap-growth .gt-expanded-growth .gt-pct { font-size: 26px; }
+  /* `grid-auto-flow: column` + un nombre de rangées FIXE = remplissage par
+     colonne : 1-2-3 à gauche, 4-5-6 à droite. `--lignes` est posé par le
+     composant (⌈n/2⌉) ; le repli à 3 ne sert que si l'attribut manque. */
   .treemap-growth .gt-expanded-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--colonnes, 2), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--lignes, 3), auto);
+    grid-auto-flow: column;
     align-content: start;
     column-gap: 38px;
     overflow-y: auto;
@@ -4655,14 +4888,18 @@
     padding: 19px 0 17px;
     border-bottom: 1px solid rgba(243, 236, 221, 0.24);
   }
+  /* 17px plutôt que 10 : le rang EST une information — c'est le classement de
+     l'actualité dans son enjeu — et il se lisait comme une décoration (retour
+     d'Adrien, 31-08). Chiffres tabulaires pour que les colonnes s'alignent. */
   .treemap-growth .gt-expanded-index {
     grid-column: 1;
     grid-row: 1 / 3;
-    padding-top: 3px;
+    padding-top: 1px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    opacity: 0.56;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    opacity: 0.42;
   }
   .treemap-growth .gt-expanded-title {
     grid-column: 2;
@@ -4676,6 +4913,25 @@
     transition: opacity 0.15s ease;
   }
   .treemap-growth a.gt-expanded-title:hover { opacity: 0.72; }
+  /* Le sommet de saillance : quand la nouvelle a compté le plus. Discret,
+     dans la langue mono des métadonnées, sous le titre et avant les médias. */
+  .treemap-growth .gt-expanded-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #F3ECDD;
+    opacity: 0.5;
+    margin-top: 5px;
+  }
+  .fil-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 3px; }
+  .fil-sommet {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-softer);
+  }
   .treemap-growth .gt-expanded-outlets {
     grid-column: 2;
     display: flex;
@@ -4697,9 +4953,49 @@
     font-size: 19px;
     font-style: italic;
   }
+  /* L'avertissement d'Adrien, en tête de liste : il dit d'où vient le
+     classement. Sans lui, un article qui « parle à peine » d'un enjeu et qui
+     figure quand même dans sa liste passe pour une erreur. */
+  .treemap-growth .gt-expanded-avis {
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.45;
+    opacity: 0.72;
+    margin: 10px 0 0;
+    max-width: 96ch;
+  }
+  /* La part de l'article dans son enjeu : le seul chiffre qui raccroche la
+     liste au grand nombre de la tuile. */
+  .treemap-growth .gt-expanded-part {
+    font-weight: 500;
+    margin-right: 5px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
+  }
+
+  /* La saillance atteinte AU SOMMET, posée sur la même ligne que l'heure du
+     sommet : les deux décrivent le même instant. Séparée par un filet plutôt
+     que par un point, pour qu'on ne lise pas « 16h Saillance ». */
+  .treemap-growth .gt-expanded-saillance {
+    margin-left: 9px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(243, 236, 221, 0.3);
+  }
+  .treemap-growth .gt-expanded-saillance b {
+    font-weight: 500;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
   @media (max-width: 900px) {
     .treemap-growth .gt-expanded-panel { padding: 28px 30px 24px; }
-    .treemap-growth .gt-expanded-list { grid-template-columns: 1fr; }
+    /* Une seule colonne : le remplissage par colonne n'a plus de sens, on
+       revient au flux normal pour garder l'ordre 1, 2, 3… */
+    .treemap-growth .gt-expanded-list {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-flow: row;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .treemap-growth .gt-container { transition-duration: 0.01ms; }
@@ -4867,10 +5163,14 @@
      elle le faisait déborder sur deux lignes. */
   .pupitre-aide { display: flex; justify-content: flex-end; }  /* L'espace seul sépare la manchette des platines : un filet y a longtemps
      articulé les deux, mais depuis que chaque platine porte la couleur de son
-     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas. */
+     parti, il ajoutait un trait de plus à une zone qui n'en manquait pas.
+     26 + 26 px de vide DATAIENT de l'époque où une manchette occupait le haut
+     du cadre — elle n'existe plus, et le mobile l'avait déjà corrigé
+     (≤640px, plus bas) sans que le bureau le soit. Le module entier doit
+     tenir sans défiler ; ce vide-là n'y aidait pas. */
   .pupitre .regie {
-    margin-top: 26px;
-    padding-top: 26px;
+    margin-top: 10px;
+    padding-top: 10px;
   }
   /* La régie : platine — console — platine. Les deux plateaux occupent
      l'espace qui restait vide de part et d'autre des vumètres, et la console
@@ -4910,7 +5210,10 @@
     --seg-h: calc((var(--piste) - 19 * var(--seg-gap)) / 20);
     background: var(--paper-deep);
     border: 1px solid var(--rule);
-    padding: 20px 22px 24px;
+    /* Rembourrage haut resserré le 2026-09-07 (20 → 12, puis 12 → 8 la même
+       journée, la première coupe ne suffisant pas) : l'écart entre le cadre
+       et le titre du vumètre se lisait comme un vide, pas comme de l'air. */
+    padding: 8px 22px 24px;
     /* Aucune marge haute : la position verticale de la console vient de
        l'alignement par le bas de la régie. */
     margin-top: 0;
@@ -5495,6 +5798,25 @@
     transition: opacity 0.25s ease, filter 0.25s ease;
   }
   .partner-logo--clessn { height: 58px; }
+  /* Page Partenaires : grands logos, nom sous chacun */
+  .partners-grid--grand { grid-template-columns: repeat(3, 1fr); gap: 40px 48px; margin-top: 8px; }
+  .partner-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; text-decoration: none; color: inherit; }
+  .partner-logo--grand { height: 84px; max-width: 240px; opacity: 0.85; }
+  .partner-logo--grand.partner-logo--clessn { height: 110px; }
+  .partner-carte:hover .partner-logo--grand { opacity: 1; filter: grayscale(0) contrast(1); }
+  .partner-nom { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; line-height: 1.35; color: var(--ink-soft); max-width: 240px; }
+  /* Page Équipe */
+  .equipe-groupe { margin-top: 28px; }
+  .equipe-grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 32px; }
+  .equipe-carte { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .equipe-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; filter: grayscale(1) contrast(0.95); }
+  .equipe-photo--initiales { display: inline-flex; align-items: center; justify-content: center; background: var(--rule); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 22px; letter-spacing: 0.08em; }
+  .equipe-nom { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; color: var(--ink); }
+  .equipe-titre { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cordovan); }
+  .equipe-detail { font-family: 'Source Serif 4', Georgia, serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
+  .apropos-fil { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cordovan); margin: 0 0 10px; }
+  .metho-btn-lien { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; border: 0.5px solid var(--ink); color: var(--ink); text-decoration: none; }
+  .metho-btn-lien:hover { background: var(--ink); color: var(--paper, #f4efe6); }
   .partner-logo:hover {
     opacity: 1;
     filter: grayscale(0) contrast(1);
@@ -5573,8 +5895,18 @@
      ============================================================ */
   .treemap-mobile { display: none; }
 
+  /* Deux groupes d'onglets côte à côte (période, puis représentation) : le
+     second est légèrement en retrait pour qu'on lise « quelle fenêtre » avant
+     « quelle vue », et qu'ils ne se confondent pas en une seule barre de six. */
+  .control-row .mode-toggle { margin-left: 10px; }
+  @media (max-width: 900px) {
+    .control-row .mode-toggle { margin-left: 0; }
+  }
+
   .tm-bar-legend {
     display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
     justify-content: space-between;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
@@ -5617,6 +5949,21 @@
     text-transform: uppercase;
     color: var(--c);
     line-height: 1;
+  }
+  /* Module 6 — le symbole à côté de la promesse et dans le menu des
+     catégories : c'est la demande d'origine de l'issue #425. */
+  .ppl-symbole { color: var(--ink-soft); opacity: 0.75; }
+  .ppl-title .ppl-symbole { margin-right: 7px; vertical-align: -0.18em; }
+  .ppl-cat-option .ppl-symbole { margin-right: 8px; }
+
+  .tm-bar-part {
+    margin-left: auto;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1;
+    white-space: nowrap;
   }
   .tm-bar-track {
     width: 100%;
@@ -6051,6 +6398,13 @@
     .partners-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
     .partner-logo { height: 30px; }
     .partner-logo--clessn { height: 42px; }
+    .partners-grid--grand { grid-template-columns: repeat(2, 1fr); gap: 28px 24px; }
+    .equipe-grille { grid-template-columns: repeat(2, 1fr); gap: 22px 16px; }
+    /* Sans survol sur mobile : les sous-pages restent atteignables depuis leur page parente */
+    .sub-nav .nav-menu { display: none !important; }
+    .equipe-photo { width: 72px; height: 72px; }
+    .partner-logo--grand { height: 56px; max-width: 150px; }
+    .partner-logo--grand.partner-logo--clessn { height: 72px; }
 
     /* ── Footer ── */
     .footer-note {
@@ -7435,6 +7789,40 @@
     margin: 0 0 10px;
   }
 
+  /* Enjeu du mode « campagne ». Même graisse et même échelle que .ppl-detail__meta
+     — c'est de la métadonnée, pas un titre. La pastille de couleur reprend
+     ISSUE_COLORS, comme les autres modules d'enjeux.
+
+     UNE PHRASE, PAS UNE RANGÉE. En flex, la puce et le ⓘ sont des items à part
+     entière : à 375, « Droits, libertés, minorités et discrimination » ne tient
+     pas sur la ligne de la puce, part seul à la ligne suivante et laisse la
+     pastille orpheline au-dessus, le ⓘ sur une quatrième ligne. En flux inline,
+     la puce reste collée au premier mot et le ⓘ suit le dernier, quelle que
+     soit la largeur. */
+  .ppl-detail__enjeu {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+
+  .ppl-enjeu-puce {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+
+  /* overflow-wrap : le plus long des douze libellés doit pouvoir se couper
+     plutôt que pousser la ligne hors du panneau sur téléphone. */
+  .ppl-enjeu-label {
+    overflow-wrap: anywhere;
+  }
+
   @media (max-width: 820px) {
     .ppl-grid { grid-template-columns: 1fr; gap: 28px; }
     .ppl-rail-head::after { display: none; }
@@ -8100,8 +8488,7 @@
      pouvoir lire, et elle est le seul poste qu'on ne rogne pas. */
   .deck-carre { max-width: 168px; }
   .deck { gap: 4px; }
-  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
-  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+  .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
@@ -8121,17 +8508,9 @@
   .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
-  .pochette-media { font-size: 6.5px; padding: 2px 5px; letter-spacing: 0.1em; }
   .deck-jog-media text { font-size: 5.4px; }
-  .deck-piste { font-size: 8.5px; gap: 4px; }
-  .deck-piste-val { font-size: 7.5px; }
-  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
   .pochette-sigle { font-size: 28px; }
   .cap-sigle { font-size: 32px; }
-  /* Sélecteur DESCENDANT, pas la classe seule : la règle de base
-     `.piste-court { display: none }` est déclarée plus BAS dans le fichier, et
-     à spécificité égale c'est elle qui l'emporterait. Les deux formes se
-     masquaient alors l'une l'autre et le libellé disparaissait. */
 
 }
 
@@ -8392,8 +8771,684 @@
 /* ── La course en tête du module ─────────────────────────────────────────────
    Bande d'entrée : basse, large, lue d'un coup d'œil. Le détail est plus bas,
    dans la console et les platines. */
-.partis-course--tete { margin: 0 0 22px; }
-.partis-course--tete .course-tete { margin: 0 0 10px; }@keyframes course-tete-apparait { to { opacity: 1; } }
+/* LA BASCULE ENTRE LES DEUX COURSES — un sélecteur de table de mix.
+   
+   Le module est un pupitre d'un bout à l'autre : platines, vumètre à segments,
+   fader de source, bac à disques. Un commutateur générique y aurait fait tache,
+   et c'est ce qu'était le premier jet — le cadre à deux cases de la rangée
+   d'onglets, réemployé tel quel.
+   
+   TROIS EMPRUNTS, ET AUCUN N'EST DÉCORATIF.
+   
+   1. LA PLAQUE reprend la matière de la console : papier creusé, filet d'encre.
+      Les deux objets commandent le même graphique, ils doivent se ressembler.
+   2. LA DIODE est un segment de vumètre. La console dit que « c'est ce contraste
+      plein/vide qui fait lire l'échelle » ; ici c'est lui qui dit quelle voie
+      est en service, sans avoir à colorer quoi que ce soit.
+   3. L'ÉTIQUETTE DE VOIE répond au « Source » posé sous le fader. Sur une table
+      de mix, un commutateur porte le nom de ce qu'il commute.
+   
+   La voie active est ENFONCÉE, pas surlignée : fond de papier clair et ombre
+   interne, le geste d'un bouton qu'on presse sur un panneau. Un aplat d'encre
+   en négatif — l'idiome de `.legend-toggle` — aurait crié plus fort que le
+   graphique qu'il commande. */
+/* LA RANGÉE DU PALMARÈS : les knobs, le graphique, le disque d'or.
+
+   ⚠️ LE GRAPHIQUE FIXE LA HAUTEUR, IL NE LA SUIT PAS. 139 px — voir le
+   commentaire de `.palmares-figure` — est la hauteur qu'un palmarès demande
+   depuis toujours, réglée sur plusieurs itérations documentées dans ce
+   fichier ; ce n'est pas au disque d'or ni aux knobs de la faire bouger. C'est
+   l'inverse qui a été essayé le 2026-09-01 (le graphique grandi à 186 px pour
+   rejoindre des knobs empilés) et défait le jour même : les deux colonnes
+   voisines doivent tenir DANS 139 px, quitte à se resserrer.
+   `align-items: stretch` centre ce qui est plus court qu'elles (`.trophee`,
+   dont la légende dépasse rarement une ligne) plutôt que de le coller en
+   haut. */
+.palmares-rangee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 16px 28px;
+}
+.palmares-rangee > .palmares-figure { flex: 1 1 320px; min-width: 0; }
+
+/* LES DEUX KNOBS, À GAUCHE DU PALMARÈS, L'UN AU-DESSUS DE L'AUTRE.
+
+   Le module est un pupitre : ses commandes se poussent, se pressent et se
+   tournent. Deux réglages choisissent ce que le palmarès montre — la mesure et
+   la période — et un commutateur rotatif est l'objet qui fait ça sur une
+   console. Ils ont été, tour à tour, une rangée d'onglets dans l'en-tête, des
+   touches encadrant le titre, une plaque au-dessus du graphique, une paire
+   côte à côte ; aucune de ces formes ne se TOURNAIT, et c'est ce que le geste
+   demandait — et la paire côte à côte s'est relue comme deux cadrans perdus
+   dans une rangée large, plutôt que la console resserrée que ce module veut
+   être.
+
+   RAPETISSÉS POUR TENIR EMPILÉS DANS 139 px : cadran à 34 px (contre 46), et
+   les deux textes sous chaque cadran resserrés d'autant. Le cadran reste la
+   cible qu'on clique OU qu'on tourne au clavier — 34 px est modeste mais
+   encore un disque net, pas un point. */
+.palmares-commandes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0;
+}
+.knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* LE CADRAN. Même matière que la console — papier creusé, filet d'encre — plus
+   une lèvre claire en haut qui lui donne son galbe : c'est ce reflet qui fait
+   lire un bouton qu'on saisit, et non un disque imprimé. */
+.knob-cadran {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--paper-deep);
+  box-shadow: inset 0 1px 0 var(--paper), 0 1px 2px rgba(28, 25, 23, 0.14);
+  cursor: pointer;
+}
+.knob-cadran:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+/* LES CRANS. Un trait par position, posé sur le rayon de son angle. Ils montrent
+   qu'il y a d'AUTRES positions — sans eux, l'aiguille pointerait dans le vide et
+   rien ne dirait que le bouton tourne. Le cran choisi s'allonge et s'encre.
+   `translateY(-15px)` : le rayon d'un cadran de 34 px, au lieu des 20 d'un
+   cadran de 46 — les crans suivent le cadran quand il rapetisse. */
+.knob-crans i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 4px;
+  margin: -2px 0 0 -0.5px;
+  background: var(--rule);
+  transform: rotate(var(--a, 0deg)) translateY(-15px);
+}
+.knob-crans i.actif { height: 5px; background: var(--ink); }
+
+/* L'AIGUILLE. Son pivot est le CENTRE du cadran, d'où `transform-origin` au bas
+   d'un trait qui monte : elle tourne autour du moyeu, comme une vraie. Sa
+   longueur (11 px) suit elle aussi le rayon du cadran rapetissé. */
+.knob-aiguille {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 11px;
+  margin: -11px 0 0 -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform-origin: 50% 100%;
+  transform: rotate(var(--a, 0deg));
+  transition: transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* Le mouvement de l'aiguille EST l'information — elle dit la position choisie.
+   On ne la fige donc pas, on la rend instantanée. */
+@media (prefers-reduced-motion: reduce) {
+  .knob-aiguille { transition: none; }
+}
+
+/* LA BOÎTE DU MOT — même geste que `.course-tete-gabarit` (le titre du
+   palmarès) : toutes les positions possibles partagent la MÊME cellule de
+   grille, superposées ; la plus large fixe la largeur de la boîte, quelle que
+   soit celle réellement affichée. Sans elle, passer de « Jour » à
+   « Campagne 33 T » élargissait la colonne des knobs et poussait le graphique
+   du palmarès à côté d'elle. */
+.knob-valeur-boite {
+  display: grid;
+  justify-items: center;
+}
+.knob-valeur-boite > * { grid-area: 1 / 1; }
+.knob-valeur-gabarit { visibility: hidden; }
+
+/* La position en toutes lettres, sous le cadran. L'aiguille dit OÙ l'on est,
+   le mot dit QUOI : un angle seul se devine, il ne se lit pas.
+   `.knob-valeur-gabarit` PARTAGE cette typographie : mesuré dans une police
+   différente, il fixerait une largeur qui ne correspond à rien de réel. */
+.knob-valeur,
+.knob-valeur-gabarit {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* Le nom de la commande reprend `.fader-label`, le « Source » du fader : les
+   trois réglages du module se nomment de la même façon — resserré ici pour
+   tenir sous un cadran de 34 px. */
+.knob .fader-label { margin-top: 0; font-size: 8px; letter-spacing: 0.18em; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LE DISQUE D'OR, à droite du palmarès.
+
+   Remplace le bac du jour et la discothèque qui vivaient en bas du pupitre :
+   un seul disque — celui qui MÈNE, à l'écoute, pour la vitesse en cours —
+   plutôt qu'un bac entier. Le clic déplie le CLASSEMENT (les places
+   suivantes) ; un second lien mène vers `/discotheque` pour qui veut tout le
+   fonds. Voir `PalmaresTrophee` (composant).
+   ─────────────────────────────────────────────────────────────────────────── */
+/* LA COLONNE ENTIÈRE : le lien vers la discothèque, le disque, sa légende
+   (une seule ligne, toujours — voir `PalmaresTrophee`). Centrée
+   VERTICALEMENT dans la rangée du palmarès (`align-items: stretch` sur
+   `.palmares-rangee` étire cette boîte à 186 px, la hauteur des knobs et du
+   graphique ; `justify-content: center` centre son contenu, plus court,
+   dedans) plutôt que collée en haut — un disque plaqué au sommet et un vide
+   en dessous se lirait comme une erreur de mise en page, pas comme un
+   choix. */
+/* LE LIEN VIT AU-DESSUS DU DISQUE depuis le 2026-09-01 (avant, une flèche
+   seule, « → », vivait en dessous — elle ne disait rien qu'on lise sans
+   deviner, et un lien vers une discothèque encore en production se lit
+   mieux comme une invite qu'on croise EN PREMIER). 122 px de disque + un
+   court libellé au-dessus tiennent dans les 186 px stretchés de la rangée
+   sans s'approcher du bord ; rester proche des 139 px du graphique juste à
+   côté (`.palmares-figure`) reste le but, pas une contrainte dure. */
+.trophee {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 122px;
+  gap: 6px;
+}
+
+/* LE DISQUE LUI-MÊME : un bouton carré, au même gabarit que la couverture
+   d'une plaque de `/discotheque` (`.fonds-plaque-couverture`) — l'œil doit y
+   reconnaître la même chose qu'un disque du fonds, pas un objet nouveau.
+
+   L'ENCADRÉ EST TOUJOURS LÀ depuis le 2026-09-07 — plus seulement une fois la
+   course courue. Il a remplacé le nom du trophée en toutes lettres
+   (« Le single d'or »), retiré du dessous du disque à cette date : c'est
+   maintenant LUI qui dit de quel palier il s'agit, en permanence, pas
+   seulement au moment où il est décerné.
+
+   UNE LIGNE PLEINE, PAS UN DOUBLE FILET — signalé « pas beau » le 2026-09-01 :
+   le double filet (un contour laiton posé à 2 px du bord, plus un liseré
+   laiton à 1 px À L'INTÉRIEUR du bord noir) lisait comme trois lignes
+   concurrentes plutôt qu'un cadre net. Un seul trait, épais, à la couleur du
+   palier.
+
+   `--palier`, POSÉE EN LIGNE PAR `PalmaresTrophee` (`PALIER_COULEUR`), PAS UN
+   SEUL LAITON POUR LES TROIS : or pour un jour, argent du platine pour une
+   semaine, blanc glacé du diamant pour la campagne. `var(--brass)` en repli
+   si jamais la variable n'était pas posée. */
+.trophee-disque {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 3px solid var(--palier, var(--brass));
+  background: var(--paper-deep);
+  cursor: pointer;
+  overflow: hidden;
+}
+.trophee-disque:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
+.trophee-disque .pochette-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+/* Même traitement que `.fonds-plaque-couverture` : le sigle en bas à gauche,
+   sur un voile — une illustration engendrée peut rester claire jusqu'en bas,
+   et un sigle sans fond s'y efface. */
+.trophee-disque .pochette-sigle {
+  position: absolute;
+  z-index: 2;
+  left: 6px;
+  bottom: 6px;
+  font-size: 14px;
+}
+.trophee-disque .pochette-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.55) 100%);
+  pointer-events: none;
+}
+
+/* SANS IMAGE CONFIRMÉE, alors même que la course est courue : le sigle en
+   texte sur l'aplat du parti, comme partout ailleurs sur le site où une
+   pochette manque plutôt que d'en inventer une. */
+.trophee-repli {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--party, var(--rule));
+}
+.trophee-repli b {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+}
+
+/* L'ÉTIQUETTE DE DISQUE VIERGE — tant que la course n'est pas courue, aucune
+   image ne peut couronner un classement encore mobile, elle pourrait se
+   révéler fausse une heure plus tard.
+
+   ⚠️ C'EST L'ÉTAT LE PLUS SOUVENT VU DE CETTE PAGE, PAS UN CAS RARE. La
+   plupart des visites tombent en cours de journée, de semaine ou de
+   campagne — jamais pile à l'arrivée. Un hachurage de chargement (essayé
+   avant, retiré le 2026-09-04) traite ça comme une attente technique ; une
+   étiquette VIERGE — le cercle central à la couleur du parti, le trou du
+   spindle en son centre, le sigle en bas comme un nom d'interprète — dit
+   plutôt « un disque existe déjà, il n'est pas encore pressé ».
+
+   `container-type: inline-size` : LA MÊME étiquette sert le grand disque du
+   palmarès (112 px) et les cartes plus larges du panneau (150 px et plus,
+   variable selon la largeur d'écran) — les tailles suivent la largeur RÉELLE
+   de la boîte (`cqw`) plutôt que de deviner un contexte à l'avance.
+
+   UN GROUPE CENTRÉ, PAS UNE GRILLE À DEUX RANGÉES. Une grille `1fr auto`
+   centre le cercle dans ce qui RESTE une fois la mention retirée d'en bas —
+   pas dans la carte entière : mesuré sur le rendu réel, le disque avait deux
+   à trois fois plus d'espace SOUS lui qu'AU-DESSUS (« le SINGLE EN
+   PRODUCTION lève le cercle »). Un double invisible de la mention, posé
+   au-dessus du disque pour peser l'autre côté à égalité, a été essayé et
+   abandonné le même jour : la carte est trop courte pour loger le disque ET
+   deux fois la mention, le total dépassait la boîte de 35 à 45 px, et comme
+   cette boîte masque son dépassement (`overflow: hidden`, sur
+   `.trophee-disque` et `.trophee-panel-art`), la mention RÉELLE disparaissait
+   entièrement plutôt que d'être mal centrée — un bogue silencieux, pire que
+   celui qu'il devait corriger.
+
+   Le disque et la mention forment donc un groupe (`justify-content: center`
+   sur la colonne), comme à la toute première version de cette étiquette —
+   mais cette fois le disque (plus grand que la mention) tombe un peu plus
+   BAS que le centre exact plutôt que plus haut, un écart bien plus discret :
+   mesuré sur le rendu réel, 3 à 8 px selon la taille de la carte, contre 27
+   à 45 px avant ce correctif. Aucun fond posé ici : sur le grand disque du
+   palmarès, il vient du bouton `.trophee-disque` ; dans le panneau, de
+   `.flip-face` — c'est LA POCHETTE ENTIÈRE qui doit tourner au clic, pas
+   seulement ce qu'il y a dessus. */
+.trophee-etiquette {
+  container-type: inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 8% 6%;
+  box-sizing: border-box;
+}
+.trophee-etiquette-disque {
+  flex: none;
+  position: relative;
+  /* 62 → 70 % le 2026-09-07 : le cercle se perdait dans trop de papier crème
+     autour de lui, surtout dans les coins du carré — un disque doit avoir de
+     la présence, pas flotter au milieu du vide. */
+  width: 70%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--party, var(--ink-soft));
+  box-sizing: border-box;
+  /* Un anneau clair près du bord, comme le vernis imprimé d'une vraie
+     étiquette — sans lui, le cercle se lisait comme une simple pastille. */
+  box-shadow: inset 0 0 0 clamp(1px, 3cqw, 3px) rgba(255, 255, 255, 0.22);
+  /* ⚠️ DEUX CORRECTIFS D'AFFILÉE ONT RATÉ CE TROU (signalé trois fois).
+     D'abord `top: 50%` sur le `::before` seul — vérifié géométriquement
+     exact, mais le sigle restait plaqué tout en bas : la moitié haute du
+     disque ne portait que le trou, la moitié basse tout le texte, et cette
+     asymétrie se lisait comme un trou mal centré. Puis un groupe
+     (`flex-direction: column`) centrant trou + sigle ENSEMBLE comme un seul
+     bloc — mesuré sur le rendu réel : ça surcorrige, le trou (minuscule)
+     se retrouve tiré ~18 px au-DESSUS du centre exact du disque compact,
+     puisque le sigle (bien plus grand que le trou) pèse tout le bas du
+     groupe. Aucun des deux ne marche : le premier laissait le trou seul en
+     haut, le second le poussait plus haut encore.
+     Les deux éléments sont maintenant DÉCOUPLÉS : le trou reste au centre
+     géométrique exact (`top/left: 50%`, comme le tout premier essai — ce
+     n'était pas lui le problème), le sigle est positionné indépendamment
+     près du bas, avec de l'air sous lui (`bottom: 16 %`, pas plaqué contre
+     le bord comme avant) — les deux ne se disputent plus la même moitié de
+     boîte. */
+}
+.trophee-etiquette-disque::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 11%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  box-shadow: 0 0 0 1px rgba(28, 25, 23, 0.18);
+}
+.trophee-etiquette-sigle {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  transform: translateX(-50%);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(9px, 19cqw, 26px);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+  white-space: nowrap;
+}
+/* LE TITRE (« SINGLE EN PRODUCTION ») EN HAUT, LA DATE EN BAS — depuis le
+   2026-09-01. Posés chacun sur son propre bord de la carte (`position:
+   absolute`), jamais empilés d'un seul côté : le disque, seul élément dans
+   le flux, se centre dans ce qui reste entre les deux, sans jamais se
+   disputer la moitié de boîte avec un bloc de texte trop grand pour elle —
+   voir le commentaire dans `PartisCouvertureClient.tsx`. Même famille que
+   le sigle sur le voile d'une vraie pochette (`.pochette-sigle`) : une
+   légende, pas un second sujet à égalité avec le disque. */
+.trophee-etiquette-titre {
+  position: absolute;
+  top: 4%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: clamp(6.5px, 5.5cqw, 8px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+}
+.trophee-etiquette-mention {
+  position: absolute;
+  bottom: 4%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(6.5px, 5cqw, 8px);
+  color: var(--ink-soft);
+}
+
+/* LE LIEN VERS LA DISCOTHÈQUE — un court libellé, au-dessus du disque depuis
+   le 2026-09-01 (une flèche seule, « → », vivait en dessous : elle ne disait
+   rien qu'on lise sans deviner, et une invite qu'on lit AVANT le disque se
+   comprend mieux qu'une sortie qu'on découvre après). Portait aussi le nom du
+   trophée (« Le single d'or ») jusqu'au 2026-09-07 : ce nom s'écrit
+   maintenant dans l'encadré du disque (`--palier`, voir `.trophee-disque`)
+   plutôt qu'en toutes lettres à côté. Il ne reste donc plus que ce second
+   accès, distinct du disque, vers l'historique complet.
+
+   MÊME REGISTRE que les libellés des knobs (`.fader-label` dans `.knob`) :
+   petit, en capitales, espacé — le lien se lit comme une commande du pupitre,
+   pas comme une phrase éditoriale. */
+.trophee-voir-tout {
+  padding: 2px 4px;
+  margin: -2px -4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
+  color: var(--cordovan);
+  text-decoration: none;
+}
+.trophee-voir-tout:hover,
+.trophee-voir-tout:focus-visible { text-decoration: underline; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LE PANNEAU DU DISQUE D'OR, en pleine largeur sous le palmarès.
+
+   Remplace le classement compact du 2026-09-01 (quatre miniatures dans la
+   seule colonne du disque, 26 px de côté, sigle et durée seulement) : cinq
+   cartes lisibles, chacune avec les mêmes quatre grandeurs — temps, part,
+   enjeu, ton — que sa carte retourne au clic (`.trophee-panel-chiffres`). La
+   largeur du module a la place ; la colonne du disque, 112 px, ne l'avait pas.
+   ─────────────────────────────────────────────────────────────────────────── */
+.trophee-panel {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 2px solid var(--ink);
+}
+.trophee-panel-tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+}
+.trophee-panel-titre {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.trophee-panel-titre span {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink-softer);
+}
+.trophee-panel-fermer {
+  flex: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cordovan);
+  cursor: pointer;
+}
+.trophee-panel-fermer:hover,
+.trophee-panel-fermer:focus-visible { text-decoration: underline; }
+
+/* CINQ CARTES, EN RANGÉE — `auto-fit` plutôt que cinq colonnes fixes : sous
+   une largeur qui ne les tient plus de front, elles se replient par deux ou
+   trois plutôt que de s'écraser jusqu'à l'illisible. */
+.trophee-panel-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.trophee-panel-grille li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trophee-panel-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  /* PAS DE BORDURE NI DE FOND ICI — ils vivent sur `.flip-face` (plus bas),
+     pas sur cette boîte statique qui ne tourne jamais. Posés ici, seul le
+     CONTENU aurait tourné à l'intérieur d'un cadre immobile ; le clic aurait
+     eu l'air de ne faire pivoter qu'un cercle, pas la pochette entière. */
+  /* La profondeur du FLIP (`.flip-carte`, plus bas) : sans elle, la carte se
+     retournerait à plat, comme un texte qui change plutôt qu'un disque qu'on
+     tourne. */
+  perspective: 900px;
+}
+/* `.trophee-repli`/`.trophee-etiquette` se dimensionnent déjà eux-mêmes à
+   100 % de leur parent ; seul `.pochette-art` en a besoin ici. Le sigle et son
+   voile reprennent le même traitement que `.trophee-disque` — bas à gauche,
+   sur un dégradé — plutôt que le repli géométrique par défaut (centré, 34 px)
+   qui n'a pas de sens sur une VRAIE illustration. */
+.trophee-panel-art .pochette-art {
+  width: 100%;
+  height: 100%;
+}
+.trophee-panel-art .pochette-sigle {
+  position: absolute;
+  z-index: 2;
+  left: 7px;
+  bottom: 7px;
+  font-size: 16px;
+}
+.trophee-panel-art .pochette-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.55) 100%);
+  pointer-events: none;
+}
+
+/* LE DÉCLENCHEUR — la pochette ET son nom, un seul bouton : cliquer L'UN OU
+   L'AUTRE retourne la carte. Même geste que `.fonds-plaque-declencheur` de
+   `/discotheque` — les deux pages ouvrent une pochette de la même façon. */
+.trophee-panel-declencheur {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.trophee-panel-declencheur:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
+/* La tracklist elle-même — catégorie, points, métrique — vit dans
+   `.tracklist-ligne` et ses voisines (voir ce bloc, plus bas) : ce
+   conteneur-ci ne fait qu'empiler les quatre lignes, à leur taille de base, à
+   l'intérieur de l'endos du flip (`.flip-face--verso`, plus bas) — qui lui
+   donne déjà son rembourrage. */
+.trophee-panel-chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LE FLIP — une pochette qui se RETOURNE, PARTAGÉ par le panneau du disque
+   d'or et chaque single de `/discotheque` (`.fonds-plaque-couverture .flip-
+   carte`) : cliquer LA POCHETTE la fait pivoter comme un vrai disque qu'on
+   tourne, plutôt que de faire apparaître un texte en dessous ou à côté —
+   « les informations sont derrière la pochette », pas sous elle.
+
+   TROIS COUCHES. Le PARENT (`.trophee-panel-art`/`.fonds-plaque-couverture`)
+   pose la `perspective`, sans quoi la carte se retournerait à plat plutôt que
+   de creuser en 3D. `.flip-carte` est ce qui pivote (`transform: rotateY`).
+   Chaque `.flip-face` occupe TOUTE la boîte, l'une sur l'autre
+   (`position: absolute`) ; `backface-visibility: hidden` cache celle qui
+   regarde loin de l'écran — sans elle, le dos transparaîtrait à travers le
+   recto, à l'envers, pendant la moitié du mouvement.
+
+   LES DEUX FACES RESTENT TOUJOURS DANS LE DOM. Un flip anime les deux en même
+   temps ; démonter l'endos avant l'ouverture, comme l'ancien dépliant le
+   faisait, romprait l'animation — il n'y aurait rien à faire pivoter VERS.
+   Sans coût réel : l'endos n'est que du texte, jamais des images à charger. */
+.flip-carte {
+  /* ⚠️ OBLIGATOIRE — omis une première fois le 2026-09-06, et la pochette
+     avait disparu : un `<span>` est `display: inline` par défaut, et `width`/
+     `height` n'ont AUCUN effet sur un élément en ligne. Ses seuls enfants
+     (`.flip-face`) sont `position: absolute`, donc hors du flux — sans un
+     `display` qui accepte `width`/`height`, cette boîte s'effondre à 0×0, et
+     `.flip-face { inset: 0 }` hérite ce zéro : plus de pochette visible, et
+     un clic qui ne change rien à l'écran. */
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 480ms cubic-bezier(0.4, 0.15, 0.2, 1);
+}
+.flip-carte.retournee { transform: rotateY(180deg); }
+.flip-face {
+  /* `position: absolute` calcule déjà `display: block` de lui-même sur un
+     `<span>` — posé quand même en toutes lettres, pour ne plus jamais
+     dépendre d'un comportement implicite sans pouvoir le VOIR fonctionner. */
+  display: block;
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* LA BORDURE DU DISQUE D'OR VIT ICI, SUR CHAQUE FACE — pas sur la boîte
+   statique qui les contient (`.trophee-panel-art`). Posée sur la boîte
+   statique, elle restait immobile pendant que seul le contenu tournait à
+   l'intérieur : au clic, on aurait vu un cercle bouger dans un cadre fixe,
+   pas une pochette se retourner. Ici, le cadre fait partie de ce qui pivote —
+   recto ET verso ont chacun le leur, pour que ce soit vraiment LA POCHETTE,
+   bords compris, qui tourne. */
+.trophee-panel-art .flip-face {
+  border: 1px solid var(--ink);
+  background: var(--paper-deep);
+}
+.flip-face--verso {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
+  background: var(--paper-deep);
+  /* Pivotée d'avance : sans ce second `rotateY`, l'endos se lirait à l'envers
+     une fois la carte retournée — les deux faces tournent ENSEMBLE
+     (`.flip-carte`), celle-ci part donc à 180° pour atterrir à l'endroit. */
+  transform: rotateY(180deg);
+}
+/* Le mouvement du flip EST l'information — il dit qu'on retourne une VRAIE
+   pochette, pas un panneau qui change. On ne le fige donc pas, on le rend
+   instantané. */
+@media (prefers-reduced-motion: reduce) {
+  .flip-carte { transition: none; }
+}
+
+/* LE TITRE SUR SON GABARIT. Les deux textes occupent la MÊME cellule : le
+   gabarit, invisible, y est toujours le plus large, donc c'est lui qui fixe la
+   largeur du bloc. Le titre du moment se centre dessus.
+   
+   Il a d'abord servi à empêcher deux touches, qui encadraient le titre, de
+   sauter à chaque bascule. Ces touches sont devenues des knobs posés dessous, et
+   il garde une utilité plus modeste : sans lui, le titre lui-même se RECENTRE à
+   chaque changement de mesure, « écouté » et « apprécié » n'ayant pas la même
+   longueur. */
+.partis-course--tete .course-tete { display: grid; }
+.partis-course--tete .course-tete > * { grid-area: 1 / 1; }
+.course-tete-gabarit { visibility: hidden; }
+
+/* DE L'AIR AU-DESSUS. Le palmarès ouvre le module et venait buter sur le titre :
+   dix pixels entre son intitulé et le cadre, aucun au-dessus de l'intitulé. Le
+   bloc a besoin de respirer avant de commencer, d'autant que la première ligne
+   de rang court tout en haut du cadre. */
+.partis-course--tete { margin: 26px 0 24px; }
+.partis-course--tete .course-tete { margin: 0 0 14px; }@keyframes course-tete-apparait { to { opacity: 1; } }
 
 .course-valeur {
   font-family: 'Playfair Display', Georgia, serif;
@@ -8422,7 +9477,8 @@
   /* Les decks DÉBORDENT la console, en haut et en bas. Ce sont eux les objets ;
      la console est l'instrument qui les mesure, et elle doit paraître logée
      entre eux plutôt que posée à côté. La marge négative est préférée à une
-     hauteur fixe : elle tient quand un deck gagne une ligne de nom.
+     hauteur fixe : elle tient quelle que soit la taille du carré, qui suit la
+     largeur disponible et n'est donc jamais connue d'avance.
 
      Le débordement doit rester DISCRET : la taille du carré est bornée pour que
      la pile des deux decks dépasse le vumètre d'une trentaine de pixels de part
@@ -8438,18 +9494,6 @@
   --ton-positive: #3D6B3A;
   --ton-negative: #A8302C;
   --ton-neutral: #6E685F;
-  /* Le fond des DEUX bandeaux de la pochette, celui du haut comme celui du bas.
-     Une seule déclaration : ils encadrent la même illustration et doivent se
-     répondre, et les tenir en phase à la main les avait déjà fait diverger.
-     
-     OPAQUE, et non une encre translucide. Celle du bas reposait sur le fond uni
-     du parti, mais celle du haut passe par-dessus les formes géométriques : à
-     travers elle on voyait le disque de l'enjeu et le coin du ton, et le
-     bandeau semblait transparent alors qu'il portait la même déclaration.
-     58 % de parti et 42 % d'encre donnent exactement ce que rendait
-     `rgba(28, 25, 23, 0.42)` posé sur le parti — la bande du bas est donc
-     inchangée à l'œil, et celle du haut lui répond enfin. */
-  --bandeau: color-mix(in srgb, var(--party, #433F38) 58%, #1C1917);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8457,23 +9501,50 @@
   min-width: 0;
 }
 
-/* Le carré : contenant du retournement, et format de la pochette. Le disque y
-   est inscrit, la pochette l'occupe en entier. */
+/* Le carré : format de la pochette, et cadre du disque. Le disque y est
+   inscrit, la pochette l'occupe en entier.
+
+   ⚠️ C'EST UN `<a>` QUAND LE PARTI A UN ARTICLE (aws-refiners#447), SINON UN
+   `<div>` INERTE (voir `Deck`) — plus jamais un `<button>` depuis le
+   2026-09-01 : le repli qui ouvrait le panneau du disque d'or est retiré, il
+   ne menait nulle part de vrai avant la fin de la course. Les DEUX doivent
+   être DÉSHABILLÉS. Cette remise à zéro vivait sur `.deck-carre--pivot` du
+   temps où le deck se retournait ; le modificateur est tombé avec le
+   retournement et elle est partie avec lui. Le navigateur redessinait alors
+   son bouton par défaut — fond, bordure et anneau de focus — en carré
+   derrière le disque rond. Ne pas la retirer à nouveau : sans elle le cadre
+   revient.
+
+   `display: block` n'est PAS accessoire : un `<a>` est `inline` par défaut,
+   qui ignore `width`/`aspect-ratio` — exactement le bogue qui a un jour vidé
+   `.flip-carte` de son contenu. */
 .deck-carre {
+  display: block;
   position: relative;
   width: 100%;
   max-width: 200px;
   aspect-ratio: 1;
-}
-.deck-carre--pivot {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
   padding: 0;
   border: 0;
   background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
   cursor: pointer;
-  perspective: 1000px;
-  transform-style: preserve-3d;
 }
-.deck-carre--pivot:focus-visible {
+/* Le repli SANS article (`<div>`) : rien à cliquer, donc rien qui invite au
+   clic. Le curseur en main venait de `.deck-carre` (pensé pour le lien) ;
+   sans cette ligne, un deck inerte se survolait comme s'il faisait quelque
+   chose. */
+.deck-carre--inerte { cursor: default; }
+/* L'anneau du navigateur parti, il faut en redonner un : au clavier, rien
+   d'autre ne dirait sur quel deck on se trouve. Posé LOIN du disque, pour ne pas
+   se lire comme une bague du vinyle. Sans objet sur `.deck-carre--inerte`, qui
+   n'est jamais dans l'ordre de tabulation. */
+.deck-carre:focus-visible {
   outline: 2px solid var(--cordovan);
   outline-offset: 6px;
 }
@@ -8486,9 +9557,6 @@
   transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .deck-face--disque { transform: rotateY(0deg); }
-.deck-face--pochette { transform: rotateY(180deg); }
-.deck-carre--pivot.retournee .deck-face--disque { transform: rotateY(-180deg); }
-.deck-carre--pivot.retournee .deck-face--pochette { transform: rotateY(0deg); }
 
 /* LE CHANGEMENT DE PISTE, en trois temps.
    Il ne se joue QUE si le parti du deck change : la clé de remontage ne porte
@@ -8553,25 +9621,25 @@
     transform: translate(0, 0) scale(1) rotate(0);
   }
 }
-.deck-carre--pivot .deck-face--disque {
+/* Rebranchée sur `.deck-carre` : le deck ne se retourne plus, mais le disque
+   doit toujours tourner quand un parti change de place au classement. En
+   retirant `--pivot` du bouton, cette animation avait été désactivée en
+   silence — le genre de perte qu'aucun test ne rattrape. */
+.deck-carre .deck-face--disque {
   animation: deck-tour-avant 1240ms linear;
 }
-.deck-carre--pivot .deck-face--pochette {
-  animation: deck-tour-arriere 1240ms linear;
-}
-.deck-carre--pivot .deck-face--disque .deck-jog {
+.deck-carre .deck-face--disque .deck-jog {
   animation: deck-sortie 1240ms linear;
 }
 /* Les trois éléments tournent ensemble : les prévenir évite que le navigateur
    ne les repromeuve sur une couche à chaque image. */
-.deck-carre--pivot .deck-face,
-.deck-carre--pivot .deck-jog { will-change: transform, opacity; }
+.deck-carre .deck-face,
+.deck-carre .deck-jog { will-change: transform, opacity; }
 
 @media (prefers-reduced-motion: reduce) {
   .deck-face { transition: none; }
-  .deck-carre--pivot .deck-face--disque,
-  .deck-carre--pivot .deck-face--pochette,
-  .deck-carre--pivot .deck-face--disque .deck-jog { animation: none; }
+  .deck-carre .deck-face--disque,
+  .deck-carre .deck-face--disque .deck-jog { animation: none; }
 }
 
 /* La molette — la face avant, épurée : un plateau nu et, au centre, un
@@ -8586,11 +9654,28 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* Même fond ET même bord que la console : les deux surfaces portaient déjà
-     `--paper-deep`, mais l'ombre portée et le filet clair de la molette la
-     faisaient lire comme une seconde teinte de crème. */
-  background: var(--paper-deep);
-  box-shadow: inset 0 0 0 1px var(--rule);
+  /* LE VINYLE, NOIR. Le plateau reprenait le crème de la console : il se lisait
+     comme un cadran d'instrument, pas comme un disque. Deux couches ici, et
+     l'ordre compte — les sillons passent PAR-DESSUS la matière.
+
+     1. LES SILLONS. Un dégradé radial qui se répète tous les 3 px : un cheveu
+        clair, puis du vide. Ils ne mesurent rien, ils donnent la matière.
+     2. LA MATIÈRE. Le centre du dégradé est décalé en haut à gauche (32 % / 26 %)
+        et non au milieu : c'est ce hors-centre qui fait la lumière rasante d'un
+        disque posé à plat, un reflet d'un côté et le noir profond de l'autre.
+
+     Le filet clair est remplacé par un bord sombre plus une ombre portée : sur
+     du noir, un liseré crème redessinerait exactement le cerceau qu'on vient
+     d'enlever. */
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(243, 236, 221, 0.05) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px),
+    radial-gradient(circle at 32% 26%,
+      #3A3733 0%, #1A1816 46%, #0B0A0A 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 1px 5px rgba(28, 25, 23, 0.3);
 }
 /* L'aiguille : un tour par minute, comme une trotteuse. Elle ne mesure rien —
    elle dit seulement que l'instrument tourne. Son pivot est le centre du
@@ -8604,7 +9689,9 @@
   height: 43%;
   margin-left: -0.75px;
   border-radius: 1px;
-  background: linear-gradient(to bottom, var(--ink-softer), rgba(110, 104, 95, 0.15));
+  /* CRÈME, et non plus l'encre : sur le disque noir, une aiguille foncée ne se
+     voyait plus du tout. */
+  background: linear-gradient(to bottom, rgba(243, 236, 221, 0.6), rgba(243, 236, 221, 0.08));
   transform-origin: 50% 100%;
   animation: deck-aiguille 60s linear infinite;
 }
@@ -8625,7 +9712,9 @@
   pointer-events: none;
 }
 .deck-jog-media text {
-  fill: var(--ink-softer);
+  /* Crème sourd : le nom est GRAVÉ dans le vinyle, il ne doit pas crier plus
+     fort que le sigle du capuchon. */
+  fill: rgba(243, 236, 221, 0.6);
   font-family: 'IBM Plex Mono', monospace;
   /* En unités du viewBox : 4,6 sur 100 donne ~9 px sur un deck de 200. */
   font-size: 4.6px;
@@ -8640,17 +9729,22 @@
   overflow: visible;
   filter: drop-shadow(0 1px 3px rgba(28, 25, 23, 0.22));
 }
+/* LE CAPUCHON — un aplat de la couleur EXACTE du parti, celle du vumètre,
+   depuis le 2026-09-01. Il reprenait la composition à trois couleurs de la
+   pochette (parti, enjeu, ton) ; signalé « une pastille à trois couleurs,
+   elle doit être remplacée par une pastille de la couleur du parti » : le
+   deck identifie un CANAL, comme sa tranche sur la console — l'enjeu et le
+   ton restent sur la vraie pochette, où ils ont un sens, pas ici en double. */
 .deck-jog-cap .forme-parti { fill: var(--party, var(--ink-soft)); }
 .deck-jog-cap .cap-cercle {
   fill: none;
   stroke: rgba(28, 25, 23, 0.2);
   stroke-width: 1.2;
 }
-/* Les formes du capuchon ne portent PAS le filet crème de la pochette : à
-   46 % de la molette, il mangerait les aplats au lieu de les séparer. */
-.deck-jog-cap .forme-enjeu,
-.deck-jog-cap .forme-ton { stroke: none; }
-/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. */
+/* Le sigle sur le bouchon, comme l'étiquette centrale d'un disque. Plus de
+   trou du spindle au-dessus depuis le 2026-09-01 (« enlève le trou au
+   centre de cette pastille ») — voir `y="50"` sur `.cap-sigle` dans
+   `PartisCouvertureClient.tsx`, qui revient donc au centre géométrique. */
 .cap-sigle {
   fill: var(--paper);
   font-family: Georgia, 'Times New Roman', serif;
@@ -8680,39 +9774,17 @@
    solidaire, à 3,94:1 — aucun texte courant ne passerait dessus, ni en crème
    (3,94) ni en encre (3,78). Les pistes, elles, sont du petit texte : elles
    descendent sur une bande sombre où le contraste ne dépend plus du parti. */
-.deck-face--pochette {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  overflow: hidden;
-  color: var(--paper);
-  text-align: left;
-  background: var(--party, var(--ink-soft));
-  box-shadow:
-    inset 0 0 0 1px rgba(243, 236, 221, 0.16),
-    0 3px 12px rgba(28, 25, 23, 0.26);
-}
 
-/* Le média, en bandeau le long du haut de la pochette. Fond d'ENCRE et non
-   transparent : le nom doit rester lisible sur les cinq couleurs de parti, dont
-   l'orange de Québec solidaire où le crème seul tombe à 3,94:1. */
-.pochette-media {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: 3px 8px;
-  background: var(--bandeau);
-  color: var(--paper);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* Le bandeau du MÉDIA a été retiré des pochettes le 2026-08-30 : une pochette
+   est un objet pressé un jour donné, elle n'a pas à changer quand on pousse le
+   fader. Le nom du média reste gravé autour du capuchon du deck — c'est
+   l'instrument, lui, qui doit répondre à la source. La date, elle, ne s'affiche
+   plus dans ce module depuis le 2026-08-31 (le bac du jour, qui la portait, a
+   quitté le pupitre) ; elle reste lisible sur chaque piste de `/discotheque`.
+
+   Il était de toute façon rompu ici : son fond était `var(--bandeau)`, déclarée
+   sur `.deck` seulement, et le bac n'en descendait pas — la bande n'avait donc
+   aucun fond et le crème se posait à nu sur l'illustration. */
 
 .pochette-art {
   position: relative;
@@ -8749,42 +9821,8 @@
 
 /* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
    il ne peut pas dépendre de la couleur du parti pour être lisible. */
-.deck-pistes {
-  display: flex;
-  flex-direction: column;
-  /* Enfant de grille : sans `min-width: 0` il refuse de rétrécir sous la
-     largeur de son contenu, et c'est TOUTE la bande qui sortait du cadre — les
-     valeurs se faisaient couper au bord de la pochette, « 2h27 » compris. */
-  min-width: 0;
-  gap: 3px;
-  padding: 8px 12px 9px;
-  background: var(--bandeau);
-}
-.deck-piste {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  /* `min-width: 0` et `overflow: hidden` : sans eux, la valeur sortait du cadre
-     et se faisait couper NET par la pochette, sans points de suspension ni
-     marge. Un enfant flex refuse de rétrécir sous sa largeur de contenu tant
-     qu'on ne lève pas ce plancher. */
-  min-width: 0;
-  overflow: hidden;
-  font-size: 10px;
-  line-height: 1.25;
-}
-.deck-piste-nom { flex: 0 0 auto; opacity: 0.9; white-space: nowrap; }
-/* Les deux formes du libellé cohabitent dans le DOM ; le CSS choisit laquelle
-   se voit. Le lecteur d'écran, lui, entend toujours la forme longue. */
-.piste-court { display: none; }
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
-.deck-piste-fil {
-  flex: 1 1 auto;
-  min-width: 6px;
-  border-bottom: 1px dotted rgba(243, 236, 221, 0.4);
-  transform: translateY(-2px);
-}
 /* La valeur tient sur UNE ligne, quitte à se couper.
    Les libellés d'enjeux du CAP vont jusqu'à 44 caractères (« Droits, libertés,
    minorités et discrimination ») : aucun corps lisible ne les fait tenir dans
@@ -8792,61 +9830,165 @@
    visuelle, un lecteur d'écran lit la chaîne entière — et l'attribut `title` le
    donne au survol. La couleur du disque de l'illustration porte de toute façon
    déjà l'enjeu. */
-.deck-piste-val {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 600;
-  line-height: 1.3;
-  text-align: right;
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LA POCHETTE OUVERTE, en double volet.
+   ─────────────────────────────────────────────────────────────────────────── */
+/* L'ILLUSTRATION ENGENDRÉE, quand elle existe.
+
+   `object-fit: cover` : l'image est carrée (1024×1024) et le cadre l'est aussi
+   au repos, mais le volet de la pochette ouverte ne l'est pas toujours. On
+   recadre plutôt que de déformer — une pochette étirée se voit immédiatement.
+   `<picture>` n'est pas une boîte de mise en page : c'est l'`<img>` qui porte
+   les dimensions, le parent ne fait que choisir le format. */
+.pochette-art picture {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+.pochette-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.deck-nom {
+/* ───────────────────────────────────────────────────────────────────────────
+   LA TRACKLISTE — catégorie à gauche, points de suite, métrique à droite.
+
+   Publiée par le panneau du disque d'or (`.trophee-panel-chiffres`) et par
+   l'endos des singles de la discothèque : les deux publient les quatre mêmes
+   grandeurs — temps, part, enjeu, ton — et un disque tient sa tracklist de la
+   même façon, qu'il soit une carte du panneau ou une pochette de la
+   discothèque.
+
+   Le `dt`/`dd` classiques (deux colonnes empilées, la valeur sous
+   l'étiquette) a été abandonné pour ceci : sur un disque, une grandeur se lit
+   d'un DISQUE, avec sa DURÉE au bout — c'est la lecture d'une tracklist, pas
+   d'une fiche technique. Les points de suite (`.tracklist-points`, un filet
+   pointillé qui s'étire) portent l'œil du nom à la valeur, comme au dos d'une
+   vraie pochette. */
+.tracklist-ligne {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.tracklist-cat {
+  flex: none;
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-softer);
+  white-space: nowrap;
+}
+.tracklist-points {
+  flex: 1 1 auto;
+  min-width: 8px;
+  align-self: baseline;
+  border-bottom: 1px dotted var(--rule);
+}
+.tracklist-metrique {
+  flex: none;
+  margin: 0;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink);
+  white-space: nowrap;
+  text-align: right;
+}
+/* LA DURÉE — la grandeur qu'on vient chercher en premier sur une tracklist —
+   reprend le traitement que portait `.gatefold-chiffre` : Playfair 900,
+   cordovan, tracking serré. C'est elle, et elle seule, qui mérite ce relief. */
+.tracklist-metrique--chiffre {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--cordovan);
+}
+/* LE TON : la métrique n'est pas un mot seul mais une jauge, qui a besoin de
+   place — `align-items: center` (et non `baseline`) pour que la jauge et son
+   mot s'alignent au centre l'un de l'autre plutôt qu'au pied du texte. */
+.tracklist-ligne--ton { align-items: center; }
+.tracklist-ligne--ton .tracklist-metrique {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 0;
+}
+.tracklist-ligne--ton .tracklist-metrique span {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.12em;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
+
+/* La jauge de ton, reprise du module de l'Assemblée (`.ass-tone`) : mêmes
+   couleurs, même repère. Deux modules qui mesurent un ton doivent le montrer de
+   la même façon. */
+.pochette-ton {
+  display: block;
+  width: 56px;
+  height: 12px;
+  background: linear-gradient(90deg, #A8302C 0%, #C8BDA6 50%, #3D6B3A 100%);
+  position: relative;
+  border: 0.5px solid var(--rule);
+}
+.pochette-ton-repere {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  background: var(--ink);
+}
+
+/* LE RANG, POSÉ SUR LE DISQUE, en haut à gauche.
+
+   Il vivait sous le vinyle, dans une ligne qui portait aussi le sigle du parti.
+   Cette ligne est retirée : le sigle est déjà gravé au centre du capuchon, et
+   l'`aria-label` du lien nomme le parti et sa place — la ligne répétait deux
+   fois ce qui était dit ailleurs.
+   
+   AU COIN DU CARRÉ, DONC HORS DU VINYLE. Le disque est un cercle INSCRIT dans
+   le carré : son bord touche le milieu de chaque côté, et les quatre coins lui
+   échappent. `top: 0; left: 0` pose donc la pastille sur le papier, à une
+   dizaine de pixels du noir — la vignette au coin d'une pochette, pas une
+   pastille collée sur le disque.
+   
+   Elle garde la couleur du parti : la ligne partie, c'est la seule couleur
+   d'identité qui reste en dehors du capuchon. */
 .deck-rang {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
   display: grid;
   place-items: center;
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--party, var(--ink-soft));
   color: var(--paper);
-  font-size: 9.5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 /* Un deck vide n'est pas une erreur : il dit qu'aucun parti n'occupait ce rang,
    deux s'étant partagé la dernière place en sourdine. */
-/* La ligne du rang d'un deck vide : même hauteur que celle d'un deck plein,
-   pastille éteinte. C'est elle qui garde la géométrie du module identique,
-   qu'il y ait de la donnée ou non. */
-.deck-nom--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
+/* La pastille d'un deck vide : même place, même taille, éteinte. La position
+   est écrite, pas la mesure — elle dit qu'il y a bien quatre places et que
+   celle-ci attend. */
+.deck--vide .deck-rang { background: var(--rule); color: var(--paper-deep); }
 .deck--vide .deck-jog--vide { opacity: 0.5; }
 .deck--vide .deck-jog-cap {
   background: var(--rule);
   box-shadow: inset 0 0 0 1px var(--rule);
-}
-.deck-vide-txt {
-  margin: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-  text-align: center;
 }
 
 /* Le titre du vumètre, dans le même idiome que « La course » : mono, capitales
@@ -8864,7 +10006,7 @@
   opacity: 0.78;
 }
 .console-tete {
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   text-align: center;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
@@ -8908,13 +10050,6 @@
     margin-bottom: 0;
     gap: 18px;
   }
-  /* La forme COURTE du libellé dès que les decks rétrécissent — c'est-à-dire
-     ici, où la disposition passe en 2×2 — et non seulement sur téléphone.
-     « Ton de la couverture » mangeait la place et faisait élider sa propre
-     valeur : « ↓ Défavor… ». */
-  .deck-piste-nom .piste-long { display: none; }
-  .deck-piste-nom .piste-court { display: inline; }
-
   .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
   .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
   .regie-centre { grid-area: 2 / 1 / 3 / 3; }
@@ -8942,8 +10077,7 @@
   /* Les decks restent GRANDS : la pochette doit rester lisible. */
   .deck-carre { max-width: 146px; }
   .deck { gap: 5px; }
-  .deck-nom { font-size: 9.5px; gap: 5px; letter-spacing: 0.08em; }
-  .deck-rang { width: 14px; height: 14px; font-size: 8px; }
+  .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
@@ -8953,9 +10087,6 @@
   .regie-centre { gap: 10px; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
-  .deck-piste { font-size: 8.5px; gap: 4px; }
-  .deck-piste-val { font-size: 7.5px; }
-  .deck-pistes { padding: 6px 8px 7px; gap: 2px; }
   .pochette-sigle { font-size: 26px; }
   .cap-sigle { font-size: 32px; }
 }
@@ -8972,34 +10103,72 @@
    aplatir ne pouvait qu'empirer. Une colonne ne dépend d'aucune hauteur. */
 
 .palmares-figure {
-  /* La colonne de classement et la réserve de l'axe des x doivent s'accorder :
-     une seule valeur, pas deux constantes à tenir en phase. */
-  --col-classement: 132px;
-  --gouttiere: 20px;
-  --marge-y: 40px;
+  /* ZÉRO. L'axe des rangs a été retiré le 2026-08-30 : le rang est écrit dans
+     l'étiquette de bout de ligne, à l'endroit même où l'œil arrive, et la
+     graduation de gauche n'avait plus rien à graduer. La gouttière qu'elle
+     occupait est rendue au tracé, qui part maintenant du bord du cadre. */
+  --marge-y: 0px;
+  /* LA RÉSERVE DE DROITE. Chaque ligne porte son nom et sa durée à son
+     extrémité — « PLQ 1h00 » fait une soixantaine de pixels. Sans réserve, le
+     bout d'une course TERMINÉE (la ligne d'arrivée est à 91 % du tracé) verrait
+     son étiquette sortir du cadre. On rétrécit donc le tracé plutôt que de
+     laisser déborder le texte.
+     
+     DIMENSIONNÉE SUR LE PIRE CAS des deux courses : « ⑤ PLQ −100 pts » à
+     l'appréciation, « ⑤ PLQ 58 min » à l'écoute. Une réserve calée sur les
+     seules durées aurait laissé l'autre déborder dès qu'on bascule. */
+  --marge-fin: 116px;
+  /* TOUTE LA LARGEUR DU MODULE.
+     
+     Le cadre a été borné à 720 px le temps où il portait cinq courbes de durées
+     écrasées dans une bande de 52 px — à 24:1, rien ne s'y lisait. La course aux
+     rangs n'a pas ce défaut : ses cinq rangées sont des rubans horizontaux, et
+     la largeur les sert au lieu de les écraser. Plus elle est grande, plus les
+     croisements s'espacent et se lisent. */
   margin: 0;
   border: 1px solid var(--rule);
   background: var(--paper-deep);
-  padding: 14px 18px 10px;
+  /* PLUS EN HAUT QU'EN BAS, et c'est voulu. Le bas porte déjà l'axe des heures,
+     qui fait sa propre marge visuelle ; le haut n'a rien, et la première ligne
+     de rang — avec son étiquette centrée dessus, donc débordant de cinq pixels
+     vers le haut — arrivait à une vingtaine de pixels du bord. Ça se voyait
+     comme un cadre trop serré. */
+  padding: 22px 20px 12px;
 }
+/* Il n'y a plus qu'une chose dedans. La grille à deux colonnes — le graphique et
+   l'encadré du classement — a été retirée le 2026-08-30 avec l'encadré. */
 .palmares-corps {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--col-classement);
-  gap: var(--gouttiere);
-  /* `stretch` et NON `start` : la colonne de classement est plus haute que le
-     graphique, et en alignant par le haut on laissait un vide sous la courbe
-     dans TOUTES les vues. Le graphique remplit désormais la rangée, quelle que
-     soit la hauteur de la colonne. */
-  align-items: stretch;
+  display: block;
 }
 
 .palmares-zone {
   position: relative;
-  /* Aplati : le graphique doit se lire d'un coup d'œil, pas s'explorer. La
-     hauteur suit la rangée pour ne jamais laisser de vide ; le plancher garde
-     le bloc lisible si la colonne venait à raccourcir. */
-  min-height: 104px;
+  /* APLATI, ET DEUX FOIS PLUS QU'AVANT. Le graphique doit se lire d'un coup
+     d'œil, pas s'explorer.
+
+     Cette valeur ne fixait qu'un PLANCHER tant que la colonne de classement
+     existait : la rangée s'étirait à la hauteur de la colonne, plus haute, et
+     c'est elle qui commandait vraiment. La colonne partie, plus rien n'étire —
+     ce nombre est maintenant la hauteur du graphique, tout court.
+
+     72 ET NON 52. Le graphique mesurait environ 145 px tant que la colonne
+     l'étirait ; sa moitié fait 72. Halver la valeur DÉCLARÉE (104 → 52) avait
+     donc coupé bien plus que de moitié, et c'est ce qui donnait la bande
+     illisible du 2026-08-30.
+
+     84 DEPUIS LA COURSE AUX RANGS : il faut loger cinq rangées distinctes, et
+     non plus une bande continue. 84 px font des rangées de 17, de quoi poser un
+     texte de 9 sans qu'il touche ses voisines.
+
+     ⚠️ NE PAS FAIRE GRANDIR CETTE VALEUR POUR LOGER LES KNOBS OU LE DISQUE
+     D'OR. Un essai du 2026-09-01 l'a portée à 131 px pour que le graphique
+     rejoigne leurs 186 px — défait le jour même : c'est au graphique de
+     GARDER sa hauteur (139 px au total, voir `.palmares-figure`), et aux
+     colonnes voisines de s'y tenir. `.palmares-commandes` et `.trophee`
+     savent maintenant s'y tasser. */
+  min-height: 84px;
   margin-left: var(--marge-y);
+  margin-right: var(--marge-fin);
 }
 .palmares-svg {
   position: absolute;
@@ -9012,13 +10181,35 @@
   pointer-events: none;
 }
 
-.palmares-grille {
-  stroke: var(--rule);
-  stroke-width: 1;
-  stroke-dasharray: 2 4;
-  opacity: 0.5;
+/* LE PROLONGEMENT JUSQU'À L'ARRIVÉE — ce qui remplit le vide.
+   
+   Entre le dernier relevé et la ligne d'arrivée, le cadre était blanc, et ce
+   blanc ne disait rien. Une piste hachurée et défilante y a été essayée le
+   2026-08-30 puis retirée le jour même : le mouvement attirait l'œil hors des
+   lignes, qui sont le sujet. Ce qui remplit le vide est maintenant la LIGNE
+   ELLE-MÊME, qui tient son rang jusqu'au bout.
+   
+   TIRETÉ, et il doit le rester. Le palier de gauche décrit du passé non
+   observé ; celui-ci décrit de l'AVENIR. Un trait plein affirmerait que le
+   classement tiendra jusqu'à l'arrivée — c'est le tireté, et lui seul, qui
+   sépare un prolongement d'une prédiction. */
+.palmares-attente {
+  fill: none;
+  stroke: var(--party, var(--ink-soft));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 1.4 3;
+  opacity: 0.42;
   vector-effect: non-scaling-stroke;
 }
+.palmares-attente.shadow { stroke: var(--ink-softer); opacity: 0.3; }
+
+/* `.palmares-grille` — les cinq pointillés horizontaux — a été retirée le
+   2026-08-30 avec le composant qui les dessinait. Ne pas la rétablir : sur un
+   graphique haut de 52 px, cinq hachures pèsent plus que les courbes.
+
+   Le pointillé qui RESTE est vertical, et ce n'est pas une graduation : c'est la
+   ligne d'arrivée, et son tireté la distingue justement d'un tracé de donnée. */
 .palmares-arrivee {
   stroke: var(--cordovan);
   stroke-width: 1;
@@ -9032,7 +10223,9 @@
 .palmares-trait {
   fill: none;
   stroke: var(--party, var(--ink-soft));
-  stroke-width: 1.4;
+  /* Plus épais qu'au temps des courbes de durées : une ligne de rang est un
+     ruban qu'on suit du regard à travers les croisements, pas un tracé fin. */
+  stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
@@ -9041,7 +10234,30 @@
   animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   animation-delay: var(--retard, 0ms);
 }
-.palmares-trait.meneur { stroke-width: 2; }
+.palmares-trait.meneur { stroke-width: 2.6; }
+
+/* LE HALO — la seule chose qui rend un croisement lisible.
+   
+   Deux lignes qui se coupent sans lui forment un X ambigu : on ne sait plus
+   laquelle passe devant, et c'est précisément l'information que la course aux
+   rangs est censée donner. Un liseré de papier, deux fois plus large que le
+   trait, creuse la ligne du dessous. L'ordre de dessin décide du reste — le
+   meneur est tracé en dernier, donc il passe au-dessus de tous.
+   
+   Il suit le même dévoilement que son trait : sans l'animation, les cinq halos
+   apparaîtraient d'un coup et effaceraient les traits en cours de tracé. */
+.palmares-halo {
+  fill: none;
+  stroke: var(--paper-deep);
+  stroke-width: 5.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: palmares-tracer 780ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--retard, 0ms);
+}
 .palmares-trait.shadow {
   stroke: var(--ink-softer);
   stroke-width: 1;
@@ -9062,23 +10278,9 @@
 
 /* La pochette de tête : un carré plein, avec la tranche claire d'un disque
    rangé de profil. */
-.palmares-pochette {
-  position: absolute;
-  z-index: 1;
-  width: 9px;
-  height: 9px;
-  margin: -4.5px 0 0 -4.5px;
-  background: var(--party, var(--ink-soft));
-  box-shadow: 0 0 0 1.5px var(--paper-deep);
-}
-.palmares-pochette::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: rgba(243, 236, 221, 0.5);
-}
-.palmares-pochette.shadow { background: var(--ink-softer); opacity: 0.6; }
+/* Les marqueurs carrés de bout de courbe ont été retirés le 2026-08-30 avec la
+   course aux rangs : l'étiquette est désormais AU bout de la ligne, sa puce fait
+   le point, et un carré de plus n'aurait fait qu'épaissir le nœud. */
 
 .palmares-damier {
   position: absolute;
@@ -9094,39 +10296,39 @@
   background-color: var(--paper);
   box-shadow: 0 0 0 1px var(--rule);
   opacity: 0.8;
+  /* IL NE BOUGE PAS. Un flottement de drapeau a été essayé le 2026-08-30 et
+     retiré le jour même : dans un cadre où l'information est portée par cinq
+     lignes fines, tout mouvement périphérique gagne la compétition du regard.
+     Le damier est un repère, pas une animation. */
 }
 
-.palmares-y {
-  position: absolute;
-  left: calc(var(--marge-y) * -1);
-  top: 0;
-  width: calc(var(--marge-y) - 6px);
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.palmares-y li {
-  position: absolute;
-  right: 0;
-  transform: translateY(-50%);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-  white-space: nowrap;
-}
+/* `.palmares-y` — la colonne de graduations à gauche — a été retirée le
+   2026-08-30. Elle a porté des durées, puis des rangs ; les deux ont fini par
+   faire double emploi avec l'étiquette de bout de ligne, qui dit la place ET la
+   durée là où le regard va de toute façon. Ne pas la rétablir : c'est la seule
+   chose qui empêchait le tracé d'occuper toute la largeur. */
 
 .palmares-x {
   position: relative;
   height: 14px;
-  margin: 5px calc(var(--col-classement) + var(--gouttiere)) 0 var(--marge-y);
+  /* La même réserve à droite que la zone, et rien à gauche : sans ça les
+     repères d'heures ne seraient plus sous les abscisses qu'ils nomment. */
+  margin: 5px var(--marge-fin) 0 var(--marge-y);
+  /* Le premier repère est centré sur l'abscisse zéro, donc à cheval sur le bord
+     du tracé. Il déborde dans le rembourrage du cadre, qui est plus large que sa
+     moitié — mais on l'ancre par la gauche pour n'en rien perdre. */
+  padding-left: 0;
   padding: 0;
   list-style: none;
 }
 .palmares-x li {
   position: absolute;
   transform: translateX(-50%);
+  /* Le repère de l'origine ne peut pas se centrer : la moitié gauche sortirait
+     du cadre. Il s'aligne par son bord. */
+}
+.palmares-x li:first-child { transform: none; }
+.palmares-x li {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 8.5px;
   letter-spacing: 0.08em;
@@ -9135,45 +10337,51 @@
 }
 .palmares-x-arrivee { color: var(--cordovan); font-weight: 600; }
 
-/* ── La colonne de classement ─────────────────────────────────────────────── */
-/* Le classement dans son propre encadré, à la manière du bandeau des données
-   fictives : filet cordovan et fond de papier. Il n'est pas de même nature que
-   la courbe — celle-ci raconte, celui-là arrête un résultat — et le cadre le
-   dit. */
-.palmares-classement {
-  min-width: 0;
-  border: 1px solid var(--cordovan);
-  /* `--paper`, le crème du journal, et NON `--paper-deep` qui est celui du bloc
-     du palmarès : l'encadré doit sembler posé sur la page, pas creusé dans le
-     graphique. */
-  background: var(--paper);
-  padding: 9px 10px;
-  /* Décalé vers la gauche : collé au bord du cadre, il se confondait avec lui. */
-  margin-right: 10px;
-}
-.palmares-liste {
-  margin: 0;
+/* ── L'étiquetage direct ──────────────────────────────────────────────────
+   Le nom ET la durée au bout de la ligne, sur la rangée du rang final. Il
+   remplace la ligne de légende posée sous l'axe le 2026-08-30 et retirée le jour
+   même : une bande de service sous un graphique oblige l'œil à un aller-retour
+   que l'étiquetage direct supprime.
+
+   AUCUN ARRANGEMENT N'EST NÉCESSAIRE depuis la course aux rangs. Les rangs sont
+   une permutation : à l'arrivée, une place par parti, donc une étiquette par
+   rangée. L'écarteur qu'exigeaient les courbes de durées a été supprimé avec
+   elles. */
+.palmares-etiquette {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  /* Posée à DROITE du bout de ligne et centrée sur sa rangée. La réserve
+     `--marge-fin` garantit la place, même pour une course terminée. */
+  margin-left: 9px;
+  transform: translateY(-50%);
   padding: 0;
-  list-style: none;
-}
-.palmares-nom {
-  display: grid;
-  grid-template-columns: 15px 1fr auto;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 1px 0;
   border: 0;
   background: none;
   cursor: pointer;
-  text-align: left;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  white-space: nowrap;
 }
-.palmares-nom:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 1px; }
+.palmares-etiquette:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+/* LA PASTILLE DU RANG, à la place de la puce de couleur.
+   
+   La puce ne disait que l'identité, déjà portée par le sigle juste à côté ; le
+   chiffre dit la PLACE. C'est lui qui remplace l'axe des rangs retiré à gauche :
+   la même information, posée là où le regard arrive plutôt qu'au bout d'une
+   rangée qu'il faut suivre à l'horizontale.
+   
+   Elle porte la couleur PURE du parti : un aplat de quinze pixels n'a pas de
+   seuil de contraste à tenir, contrairement au texte à côté — et le crème sur
+   le parti est du texte GRAS et court, dont le seuil est 3:1. */
 .palmares-rang {
+  align-self: center;
+  flex: none;
   display: grid;
   place-items: center;
   width: 15px;
@@ -9183,125 +10391,80 @@
   color: var(--paper);
   font-style: normal;
   font-size: 8.5px;
+  font-weight: 700;
   letter-spacing: 0;
-  transition: transform 180ms ease;
+  box-shadow: 0 0 0 2px var(--paper-deep);
 }
-.palmares-duree { color: var(--ink); font-weight: 600; }
-.palmares-nom.shadow { color: var(--ink-softer); }
-.palmares-nom.shadow .palmares-rang { background: var(--ink-softer); }
-.palmares-nom.shadow .palmares-duree { color: var(--ink-softer); font-weight: 500; }
-
-/* Le disque GAGNANT, une fois la période courue. */
-.palmares-gagnant {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-  padding-bottom: 7px;
-  border-bottom: 1px solid var(--rule);
-}
-/* Le disque gagnant ne porte AUCUN texte : le crème sur l'orange de Québec
-   solidaire donne 3,94:1, sous le seuil de 4,5 exigé du petit texte. Le nom vit
-   à côté, lisible et énonçable — le carré ne fait que la couleur, comme les
-   pochettes de tête. */
-.palmares-gagnant-album {
-  position: relative;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  background: var(--party, var(--ink-soft));
-  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.24);
-}
-.palmares-gagnant-album::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: rgba(243, 236, 221, 0.5);
-}
-.palmares-gagnant-nom {
-  display: block;
+/* LE SIGLE, DANS LA COULEUR DU PARTI FONCÉE DE 28 % VERS L'ENCRE.
+   
+   La couleur brute ne passe pas : l'orange de Québec solidaire donne 3,94:1 sur
+   le papier, sous le seuil de 4,5 exigé du petit texte. Foncée, elle monte à
+   5,5:1 et reste parfaitement reconnaissable. Le trait de la ligne, lui, garde
+   la teinte pure : c'est un grand aplat linéaire, son seuil est 3:1. */
+.palmares-etiquette-sigle {
   font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
+  color: color-mix(in srgb, var(--party, var(--ink-soft)) 72%, var(--ink));
 }
-/* « En tête » pendant la course, « Disque d'or » une fois l'arrivée franchie.
-   Le bloc est PERMANENT : ne le montrer qu'au terme faisait grandir la colonne
-   d'une cinquantaine de pixels d'un coup, et tout le module sautait. */
-.palmares-gagnant-etat {
-  display: block;
-  font-size: 7.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-softer);
-}
-.palmares-gagnant.termine .palmares-gagnant-etat { color: var(--cordovan); }
-.palmares-gagnant.termine .palmares-gagnant-album {
-  box-shadow:
-    0 0 0 2px var(--brass),
-    0 1px 4px rgba(28, 25, 23, 0.24);
-}
-.palmares-gagnant-txt {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  line-height: 1.35;
-  letter-spacing: 0.06em;
-  color: var(--ink-softer);
-}
-.palmares-gagnant-txt b {
-  display: block;
-  font-size: 12px;
+/* LA VALEUR, EN ENCRE. Le rang dit qui mène, jamais DE COMBIEN : premier de dix
+   minutes ou de six heures, c'est le même trait. C'est cette valeur-ci qui se
+   cite, et elle ne doit donc pas être une nuance de la couleur du parti.
+   
+   Elle porte une durée sur la course à l'écoute (« 1h42 ») et un mot sur celle
+   à l'appréciation (« en bien ») : le nom de classe est resté celui de la
+   première, mais le traitement vaut pour les deux. */
+.palmares-etiquette-duree {
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--ink);
 }
+.palmares-etiquette.shadow .palmares-etiquette-sigle,
+.palmares-etiquette.shadow .palmares-etiquette-duree { color: var(--ink-softer); font-weight: 500; }
+.palmares-etiquette.shadow .palmares-rang { background: var(--ink-softer); opacity: 0.75; }
 
 /* ── Mise en vedette ──────────────────────────────────────────────────────── */
 .palmares-figure.a-vedette .palmares-trait { opacity: 0.13; }
 .palmares-figure.a-vedette .palmares-trait.vedette { opacity: 1; stroke-width: 2.4; }
-.palmares-figure.a-vedette .palmares-pochette { opacity: 0.2; }
-.palmares-figure.a-vedette .palmares-pochette.vedette {
-  opacity: 1;
-  transform: scale(1.3);
-  z-index: 2;
-}
-.palmares-figure.a-vedette .palmares-nom { opacity: 0.4; }
-.palmares-figure.a-vedette .palmares-nom.vedette { opacity: 1; }
-.palmares-nom.vedette .palmares-rang { transform: scale(1.15); }
+/* Le halo suit son trait : sans ça, les liserés de papier des lignes éteintes
+   resteraient pleins et continueraient de couper celle qu'on met en vedette. */
+.palmares-figure.a-vedette .palmares-halo { opacity: 0.13; }
+.palmares-figure.a-vedette .palmares-etiquette { opacity: 0.28; }
+.palmares-figure.a-vedette .palmares-etiquette.vedette { opacity: 1; }
 .palmares-trait,
-.palmares-pochette,
-.palmares-nom { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
+.palmares-halo,
+.palmares-etiquette { transition: opacity 180ms ease, stroke-width 180ms ease, transform 180ms ease; }
 
 @media (prefers-reduced-motion: reduce) {
-  .palmares-trait { animation: none; stroke-dashoffset: 0; }
   .palmares-trait,
-  .palmares-pochette,
-  .palmares-nom,
-  .palmares-rang { transition: none; }
+  .palmares-halo { animation: none; stroke-dashoffset: 0; }
+
+  .palmares-trait,
+  .palmares-halo,
+  .palmares-etiquette { transition: none; }
 }
 
-/* Sur téléphone, le palmarès ne montre qu'UNE chose à la fois : il n'y a pas la
-   largeur pour un graphique ET une colonne, et les empiler l'un sous l'autre
-   allongerait le module au point de sortir de l'écran — or toute la table de
-   mix doit y tenir.
-
-   Tant que la course dure, ce sont les COURBES : c'est le mouvement qui
-   intéresse. Une fois l'arrivée franchie — l'édition de 20h, celle du vendredi
-   20h, le jour du scrutin — c'est le CLASSEMENT : la course est finie, seul le
-   résultat compte. */
+/* Sur téléphone, il ne reste que le graphique — l'encadré du classement, qui
+   lui disputait la largeur et le remplaçait une fois l'arrivée franchie, a été
+   retiré le 2026-08-30. La règle qui masquait la zone au terme de la course est
+   partie avec lui : sans elle, un palmarès terminé n'affichait plus rien. */
 @media (max-width: 640px) {
-  .palmares-figure { padding: 10px 10px 8px; --marge-y: 32px; }
-  .palmares-corps { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .palmares-zone { min-height: 88px; }
-  .palmares-x { margin: 4px 0 0 var(--marge-y); }
-
-  .palmares-classement { display: none; }
-
-  .palmares-figure.termine .palmares-zone,
-  .palmares-figure.termine .palmares-x { display: none; }
-  .palmares-figure.termine .palmares-classement { display: block; }
-  .palmares-classement { padding: 8px 9px; }
-  .palmares-figure.termine .palmares-gagnant { margin-bottom: 9px; padding-bottom: 9px; }
-  .palmares-figure.termine .palmares-nom { font-size: 11px; padding: 3px 0; }
-  .palmares-figure.termine .palmares-gagnant-album { width: 34px; height: 34px; }
+  /* `.palmares-rangee` empile déjà d'elle-même sous cette largeur
+     (`flex-wrap: wrap`, voir son commentaire) : knobs, graphique puis disque
+     d'or, dans l'ordre du DOM, chacun à sa propre taille — la hauteur commune
+     des trois n'a plus de raison d'être une fois qu'ils ne sont plus côte à
+     côte. Rien à forcer ici, seulement le graphique lui-même à resserrer. */
+  /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
+     et la largeur de l'écran fait déjà une proportion tenable. La réserve de
+     droite se resserre avec les étiquettes. */
+  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 92px; }
+  /* Cinq rangées restent cinq rangées : c'est le seul poste qu'on ne comprime
+     pas, sous 70 px elles se touchent. */
+  .palmares-zone { min-height: 74px; }
+  .palmares-x { margin: 4px var(--marge-fin) 0 var(--marge-y); }
+  .palmares-etiquette { margin-left: 6px; gap: 4px; font-size: 8px; letter-spacing: 0.08em; }
+  .palmares-rang { width: 13px; height: 13px; font-size: 7.5px; }
+  .palmares-trait { stroke-width: 1.7; }
+  .palmares-trait.meneur { stroke-width: 2.2; }
+  .palmares-halo { stroke-width: 4.6; }
 }
 
 /* Le fader d'un module suspendu : présent, mais sans prise. Le faire
@@ -9310,3 +10473,385 @@
    rien à filtrer pour l'instant. */
 .fader--inerte { opacity: 0.45; }
 .fader--inerte .fader-input { cursor: not-allowed; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   PAGE DU FONDS (/discotheque) — tout ce que la discothèque a jamais rangé.
+
+   Le module n'en montre qu'un mois glissant, et un seul disque (le plus
+   écouté). Ici c'est l'INVENTAIRE COMPLET, et il s'est rangé trois façons
+   depuis sa création :
+     1. une ligne par JOURNÉE, texte seul — le premier jet, jusqu'au 2026-08-31 ;
+     2. une ligne par journée, avec de vraies couvertures — le même jour, une
+        fois la crainte d'un « mur de 1825 images » démentie : ce n'est pas le
+        nombre total qui pose problème, c'est de les poser toutes sur un même
+        plan, et grouper par journée l'évitait déjà ;
+     3. PAR ARTISTE — depuis le 2026-09-01. Chaque parti a ses ALBUMS
+        hebdomadaires (sept singles au plus, samedi à vendredi, comme le
+        palmarès) et sa DISCOGRAPHIE de campagne (tous ses singles). Une
+        pochette n'est plus un point sur un calendrier, c'est un morceau dans le
+        catalogue d'un artiste — ce que la métaphore du magasin de disques
+        annonçait depuis le début sans jamais le tenir jusque-là.
+
+   LA VRAIE ILLUSTRATION QUAND ELLE EST CONFIRMÉE (`lireFonds`, dans
+   `lib/data/pochettes.ts`, ne l'écrit jamais sans avoir vérifié le fichier) ; à
+   défaut, un aplat de la couleur du parti — un trou dans une discographie doit
+   se voir, pas se confondre avec un vide de mise en page. */
+.fonds-container {
+  margin: 48px 0;
+  border-top: 0.5px solid var(--rule);
+  padding-top: 48px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  color: var(--ink);
+}
+.fonds-header { margin-bottom: 28px; }
+.fonds-title {
+  margin: 0 0 24px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 54px;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.fonds-lead {
+  margin: 0;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.fonds-compte,
+.fonds-vide {
+  margin: 0 0 30px;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* LE SÉLECTEUR DE VUE — Semaine (albums) / Campagne (discographies). Même
+   matière et même geste que les knobs du palmarès juste au-dessus dans le
+   module : une plaque, une diode qui s'allume sur la voie choisie. Rectangulaire
+   plutôt que rotative — deux positions seulement, pas trois, et un knob à deux
+   crans n'aurait rien gagné à tourner. */
+.fonds-vue {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  margin-bottom: 22px;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+}
+.fonds-vue-bouton {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 6px 13px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-softer);
+}
+.fonds-vue-bouton:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.fonds-vue-diode {
+  width: 4px;
+  height: 12px;
+  background: color-mix(in srgb, var(--rule) 62%, transparent);
+}
+.fonds-vue-bouton[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 2px 3px rgba(28, 25, 23, 0.16);
+}
+.fonds-vue-bouton[aria-pressed="true"] .fonds-vue-diode { background: var(--ink); }
+
+.fonds-vide {
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* ─── LES PLAQUES — un album ou une discographie, la même forme pour les deux.
+
+   UN MUR DE COUVERTURES au repos : chaque plaque fermée n'est qu'une pochette
+   et son étiquette, rangées en grille comme un vrai bac qu'on parcourt du
+   regard. `display: contents` sur le `<li>` : la liste garde son sens sémantique
+   (une liste de plaques) sans imposer de boîte qui empêcherait `.fonds-plaque`
+   d'être elle-même la cellule de la grille — c'est elle, et non son `<li>`, qui
+   porte `.ouverte`.
+
+   UNE PLAQUE OUVERTE PREND TOUTE LA LARGEUR (`grid-column: 1 / -1`) : sa
+   tracklist a besoin de place pour respirer, ce qu'une colonne de 170 px ne
+   permet pas. Les plaques suivantes refluent simplement à la ligne d'après —
+   aucun JavaScript de réagencement, la grille s'en charge seule. ─── */
+.fonds-albums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-items: start;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fonds-albums > li { display: contents; }
+
+/* LA VUE JOUR, CINQ DE LARGE — EXACTEMENT, pas « autant que la largeur en
+   prend ». Les deux autres vues (album, discographie) restent en
+   `auto-fill` : leurs plaques sont peu nombreuses et grandissent avec
+   l'écran. La vue Jour, elle, peut compter des centaines de singles — un
+   nombre de colonnes FIXE en fait un mur régulier plutôt qu'une grille qui se
+   redispose à chaque pixel de plus. */
+.fonds-albums--singles { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 900px) {
+  .fonds-albums--singles { grid-template-columns: repeat(3, 1fr); }
+}
+
+.fonds-plaque {
+  border: 1px solid var(--ink);
+  /* Le filet de couleur EN HAUT : une pochette posée à plat porte sa tranche
+     dessus. */
+  border-top: 3px solid var(--party, var(--ink));
+  background: var(--paper-deep);
+}
+.fonds-plaque.ouverte { grid-column: 1 / -1; }
+
+/* LE DÉCLENCHEUR — toute la surface visible d'une plaque fermée. Colonne
+   (couverture au-dessus du texte) au repos, comme un disque debout dans un bac ;
+   rangée (couverture à côté du texte) une fois ouverte, où la couverture cède la
+   place à la tracklist. */
+.fonds-plaque-declencheur {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.fonds-plaque.ouverte .fonds-plaque-declencheur {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+}
+.fonds-plaque-declencheur:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+
+.fonds-plaque-couverture {
+  display: block;
+  position: relative;
+  width: 100%;
+  /* CARRÉE PAR ELLE-MÊME, pas seulement parce que `.pochette-art` l'est à
+     l'intérieur : le single (`CarteSingle`) loge un `.flip-carte` ici, dont
+     les faces sont `position: absolute` — hors du flux normal, elles ne
+     peuvent plus faire grandir ce conteneur comme le ferait un enfant
+     ordinaire. La carrure doit donc venir d'ici. */
+  aspect-ratio: 1 / 1;
+  /* La profondeur du FLIP (`.flip-carte`, plus bas) : sans elle, la carte se
+     retournerait à plat plutôt que de creuser en 3D. Sans effet sur
+     `CartePlaque`, qui n'a pas de `.flip-carte` à l'intérieur. */
+  perspective: 900px;
+}
+.fonds-plaque.ouverte .fonds-plaque-couverture {
+  flex: none;
+  width: 64px;
+}
+.fonds-plaque-couverture .pochette-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.fonds-plaque-couverture .pochette-sigle {
+  position: absolute;
+  z-index: 2;
+  left: 8px;
+  bottom: 8px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.35);
+}
+/* Le voile sous le sigle : une illustration engendrée peut être claire jusqu'en
+   bas, et un sigle sans fond s'y efface. */
+.fonds-plaque-couverture .pochette-art::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  background: linear-gradient(to bottom, rgba(28, 25, 23, 0) 0%, rgba(28, 25, 23, 0.55) 100%);
+  pointer-events: none;
+}
+.fonds-plaque.ouverte .fonds-plaque-couverture .pochette-sigle { display: none; }
+
+.fonds-plaque-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 10px 12px 12px;
+}
+.fonds-plaque.ouverte .fonds-plaque-tete { padding: 0; flex: 1 1 auto; }
+.fonds-plaque-tete b {
+  width: 100%;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.fonds-plaque.ouverte .fonds-plaque-tete b { width: auto; font-size: 19px; }
+.fonds-plaque-sous {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+/* LE TEMPS TOTAL : c'est le chiffre qui classe les plaques entre elles (l'album
+   ou la discographie le plus écouté vient en premier), il mérite la même place
+   que dans le palmarès. Poussé à droite SEULEMENT une fois ouverte — fermée, la
+   plaque est trop étroite pour que « poussé à droite » veuille dire autre chose
+   que « collé au bord ». */
+.fonds-plaque-total {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fonds-plaque.ouverte .fonds-plaque-total { margin-left: auto; font-size: 12px; }
+
+/* L'ENDOS D'UN SINGLE — derrière la pochette (`.flip-face--verso`, qui pose
+   déjà le rembourrage), pas dessous : un single n'a rien à LISTER (il est
+   déjà l'unité la plus fine du fonds) — ce qu'il montre à la place, ce sont
+   ses propres quatre grandeurs — temps, part, enjeu, ton — dans le même
+   vocabulaire tracklist (`.tracklist-*`) que la pochette qu'un clic sur un
+   deck ouvre dans le module, ou qu'une carte du disque d'or. */
+.fonds-piste-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+/* LA TRACKLIST — n'existe dans le DOM que plaque ouverte (voir
+   `DiscothequeClient.tsx`). `flex-wrap` la range en plusieurs lignes dans sa
+   plaque plutôt que d'imposer une largeur qui l'écraserait : un album en fait
+   sept au plus, une discographie de campagne peut en aligner des dizaines. */
+.fonds-pistes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-top: 0.5px solid var(--rule);
+  list-style: none;
+}
+.fonds-piste {
+  position: relative;
+  width: 58px;
+}
+.fonds-piste .pochette-art {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
+}
+/* LE RANG DE LA PISTE — une vraie tracklist se numérote. Posé en médaillon sur
+   le coin de la pochette plutôt qu'à côté : à 58 px de large, il n'y a pas la
+   place pour un numéro ET une image côte à côte. */
+.fonds-piste-rang {
+  position: absolute;
+  z-index: 2;
+  top: -5px;
+  left: -5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-style: normal;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--paper-deep);
+}
+.fonds-piste-legende {
+  display: block;
+  margin-top: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+}
+.fonds-piste-legende b {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+.fonds-piste-legende span {
+  color: var(--ink-softer);
+}
+
+/* LE REPLI, sans image confirmée — même aplat pour la couverture d'une plaque
+   et pour une piste de la tracklist, chacune à sa propre taille. Un trou dans
+   la discographie reste visible comme tel, pas comme une case vide qu'on
+   pourrait confondre avec une erreur de mise en page. */
+.fonds-repli {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--party, var(--rule));
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
+}
+/* Sur une COUVERTURE seulement : le sigle en texte, seul repère qui resterait
+   sinon pour parcourir un mur de plaques fermées sans image confirmée. Même
+   position que `.pochette-sigle`, pour que l'œil ne perçoive pas de différence
+   entre une vraie illustration et son repli. */
+.fonds-repli-sigle {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 0 1px 2px rgba(28, 25, 23, 0.3);
+}
+
+@media (max-width: 900px) {
+  .fonds-title { font-size: 38px; }
+  .fonds-lead { font-size: 16px; }
+}
+@media (max-width: 480px) {
+  .fonds-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fonds-piste { width: 48px; }
+}

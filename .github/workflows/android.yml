@@ -1,0 +1,114 @@
+# Compilation et tests de l'application Android.
+#
+# Contrairement à iOS, tout ceci tourne sur un coureur Ubuntu ordinaire :
+# gratuit, rapide, et le SDK Android y est préinstallé. Les tests unitaires
+# s'exécutent donc VRAIMENT à chaque PR, là où le code Swift ne peut être que
+# compilé.
+name: android
+
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: compilation et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Le dépôt ne versionne pas gradle-wrapper.jar : un binaire qu'on ne peut
+      # ni relire ni reconstruire n'a pas sa place dans un dépôt public. Gradle
+      # vient donc de l'action, à version épinglée.
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Tests unitaires
+        working-directory: android
+        run: gradle testDebugUnitTest --no-daemon
+
+      # « BUILD SUCCESSFUL » ne dit PAS que des tests ont tourné : une suite
+      # vide réussit tout aussi bien. On lit donc le compte réel, et on refuse
+      # un passage à zéro test.
+      - name: Compter les tests réellement exécutés
+        working-directory: android
+        run: |
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          fichiers = glob.glob("app/build/test-results/**/TEST-*.xml", recursive=True)
+          total = echecs = erreurs = ignores = 0
+          for f in fichiers:
+              r = ET.parse(f).getroot()
+              total += int(r.get("tests", 0))
+              echecs += int(r.get("failures", 0))
+              erreurs += int(r.get("errors", 0))
+              ignores += int(r.get("skipped", 0))
+          print(f"fichiers de résultats : {len(fichiers)}")
+          print(f"tests exécutés        : {total}")
+          print(f"échecs / erreurs      : {echecs} / {erreurs}")
+          print(f"ignorés               : {ignores}")
+          if total == 0:
+              sys.exit("aucun test n'a tourné : la suite est vide ou n'a pas été trouvée")
+          if echecs or erreurs:
+              sys.exit("des tests ont échoué")
+          PY
+
+      - name: Analyse (lint)
+        working-directory: android
+        run: gradle lintDebug --no-daemon
+
+      - name: Construire le paquet de publication
+        working-directory: android
+        run: gradle bundleRelease assembleDebug --no-daemon
+
+      # « Vert » doit vouloir dire « un paquet est sorti ». Une tâche Gradle
+      # peut réussir en ayant produit moins qu'on ne croit.
+      - name: Vérifier que les artefacts existent
+        working-directory: android
+        run: |
+          aab=app/build/outputs/bundle/release/app-release.aab
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          echec=0
+          for f in "$aab" "$apk"; do
+            if [ -s "$f" ]; then
+              echo "  OK  $f ($(du -h "$f" | cut -f1))"
+            else
+              echo "  NON $f absent ou vide"
+              echec=1
+            fi
+          done
+          exit $echec
+
+      - name: Conserver le paquet
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitrine-android
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

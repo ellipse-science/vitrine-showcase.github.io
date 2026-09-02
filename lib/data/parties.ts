@@ -20,7 +20,8 @@ import { readDatasetText } from "@/lib/data/source";
 
 import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
-import { MEDIA_LABELS } from "@/lib/medias";
+import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
+import { samediDeLaSemaine } from "@/lib/semaine";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -159,6 +160,11 @@ type ShadowRow = {
   computed_at?: string;
   /** Présent uniquement dans les tables `*_by_media_*`. */
   media_id?: string;
+  /** Présent uniquement dans les tables `*_by_media_*` (aws-refiners#447) :
+   *  l'URL de l'article qui pèse le plus dans le score de ce parti sur CE
+   *  média. `null`/absent quand aucun article du groupe n'en a — jamais une
+   *  chaîne vide, qui se lirait comme un lien valide. */
+  representative_url?: string | null;
 };
 
 /** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
@@ -176,7 +182,53 @@ type IssueRow = {
   weighted_tone: number;
   date_utc: string;
   date_montreal_tz?: string;
+  /** Instant UTC exact du calcul. C'est LUI qui donne la date de Montréal —
+   *  voir `dateMontreal()`. */
+  computed_at?: string;
 };
+
+/**
+ * La date de MONTRÉAL d'un relevé, déduite de `computed_at`.
+ *
+ * ⚠️ NE PAS se fier à `date_montreal_tz` : la colonne porte ce nom mais contient
+ * la date UTC. Le raffineur écrit `as.Date(now_mtl)`, or `as.Date()` sur un
+ * horodatage R IGNORE son fuseau et retombe sur UTC. Vérifié :
+ *
+ *   as.Date(ymd_hms("2026-08-27 23:31:12", tz = "America/Montreal"))
+ *     → 2026-08-28        (et non le 27)
+ *
+ * Tout relevé calculé entre 20 h et minuit heure de Montréal est donc classé au
+ * LENDEMAIN — un bloc de 4 h sur six, systématiquement. Constaté dans Athena le
+ * 2026-08-28 : le bloc « 20h » calculé à 03h31 UTC, soit 23h31 à Montréal le 27,
+ * portait `date_montreal_tz = 2026-08-28`. La courbe du jour mélangeait alors la
+ * soirée de la veille et le matin courant, avec le point de 20h posé à l'extrême
+ * droite de l'axe alors qu'il PRÉCÈDE celui de 4h.
+ *
+ * On corrige ICI et non dans le raffineur (décision du 2026-08-28) : la colonne
+ * reste telle quelle en base, le site recalcule depuis `computed_at`, qui est un
+ * instant UTC exact. Même fuseau que `aujourdhuiMontreal()`, pour que les deux
+ * ne puissent pas diverger.
+ *
+ * Repli sur les colonnes publiées quand `computed_at` manque — une archive
+ * antérieure à son introduction, par exemple. Le repli est alors décalé comme
+ * avant, ce qui reste préférable à une date vide.
+ */
+function dateMontreal(row: {
+  computed_at?: string;
+  date_montreal_tz?: string;
+  date_utc?: string;
+}): string {
+  const quand = row.computed_at ? Date.parse(row.computed_at) : NaN;
+  if (!Number.isNaN(quand)) {
+    return new Intl.DateTimeFormat("fr-CA", {
+      timeZone: "America/Toronto",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(quand));
+  }
+  return String(row.date_montreal_tz ?? row.date_utc ?? "");
+}
 
 type Entry = { mentions: number; tone: number; minutes: number };
 type Lookup = Record<string, Record<string, Entry>>; // date → party_lower → entry
@@ -252,6 +304,18 @@ export type RowView = {
   toneLabel: string;
   toneDirection: "positive" | "negative" | "neutral";
   toneTitle: string;
+  /** Position du ton sur une jauge de 0 à 100, pour le repère de la pochette
+   *  ouverte : 0 = défavorable, 50 = neutre, 100 = favorable.
+   *
+   *  MÊME OBJET VISUEL que le « Ton en chambre » du module de l'Assemblée
+   *  (`.ass-tone`) : une barre en dégradé et un repère qui s'y déplace. Deux
+   *  modules qui mesurent un ton doivent le montrer de la même façon, sinon le
+   *  lecteur croit lire deux grandeurs différentes.
+   *
+   *  L'échelle va de -1 à +1 et se borne : la proportion nette de mots
+   *  favorables ne sort pas de cet intervalle, et une valeur aberrante doit
+   *  buter contre le bord plutôt que sortir de la barre. */
+  tonePct: number;
   /** Minutes en Une attribuées à ce parti sur la période, arrondies.
    *
    *  Publiées telles quelles pour un palmarès : « la CAQ a occupé 2 h 15 de
@@ -285,6 +349,13 @@ export type RowView = {
   peakDate: string;
   sparkPolyline: string;
   sparkCircles: { cx: number; cy: number; r: number }[];
+  /** L'article qui pèse le plus dans le score de ce parti — voir
+   *  `dernieresUrlsParParti`. Présent SEULEMENT sur les vues par média
+   *  (`byMedia`, aws-refiners#447) : l'agrégat « tous les médias » n'a pas
+   *  d'URL propre, il en existe une par média. `undefined` sur l'agrégat,
+   *  `null` sur un média sans article connu — deux absences différentes que
+   *  `Deck` distingue (voir `PartisCouvertureClient.tsx`). */
+  representativeUrl?: string | null;
 };
 
 /** Une ligne de la course, déjà projetée en coordonnées du viewBox. */
@@ -320,6 +391,41 @@ export type ChartSeries = {
   lastYMin: number;
   /** Minutes du dernier point, pour l'étiquette de bout de courbe. */
   lastMinutes: number;
+  /** LE SECOND TRACÉ DU PALMARÈS : mêmes abscisses, mais l'ordonnée porte le
+   *  TON — la proportion nette de mots favorables, dans [-1, 1].
+   *
+   *  Le palmarès sait classer deux choses, et le lecteur bascule de l'une à
+   *  l'autre : le disque le plus ÉCOUTÉ (les minutes) et le plus APPRÉCIÉ (le
+   *  ton). Les deux pistes voyagent ensemble parce que la bascule est
+   *  instantanée, côté client : aller chercher la seconde au moment du clic
+   *  aurait demandé une requête pour une donnée déjà calculée.
+   *
+   *  ⚠️ L'ordonnée est INVERSÉE comme partout en SVG : un ton favorable donne un
+   *  `y` PETIT, donc un bon rang. Sans ça le classement se lirait à l'envers. */
+  polylineTon: string;
+  /** L'ÉCART DU DERNIER POINT AU TON MOYEN DES AUTRES PARTIS, au même instant.
+   *
+   *  Et non le ton brut. Un ton absolu — « +24,3 % de mots favorables en net » —
+   *  ne dit rien à un lecteur qui n'a aucun repère pour le juger. Un écart en
+   *  fournit un : « couverture 42 points plus négative que celle des autres
+   *  partis » se lit sans rien connaître d'avance.
+   *
+   *  DES AUTRES, ET NON DES CINQ. Un parti comparé à une moyenne qui le contient
+   *  se compare en partie à lui-même, et l'écart s'en trouve tassé d'autant.
+   *  « Plus négative que les autres » exclut le parti de sa propre référence,
+   *  ce que la phrase affichée annonce d'ailleurs mot pour mot.
+   *
+   *  Le CLASSEMENT n'en est pas changé. Retrancher aux uns la moyenne des autres
+   *  est une transformation CROISSANTE du ton — le calcul se ramène à
+   *  `ton × n/(n-1)` moins une constante commune — donc l'ordre est identique à
+   *  celui du ton brut, et c'est pourquoi `polylineTon` reste tracée dessus.
+   *
+   *  `null` QUAND IL N'Y A RIEN À MESURER. Un parti dont on n'a pas parlé n'a
+   *  pas un ton neutre : il n'a PAS DE TON. Le raffineur écrit pourtant zéro
+   *  (`replace_na(weighted_tone = 0)`), valeur indistinguable d'une couverture
+   *  parfaitement équilibrée, et le module le classait donc au milieu du
+   *  peloton, au-dessus de partis réellement malmenés. */
+  lastEcartTon: number | null;
 };
 
 export type ChartView = {
@@ -337,9 +443,18 @@ export type ChartView = {
    *  seul point ne veut rien dire, le composant affiche autre chose. */
   tooShort: boolean;
   /** Pourquoi il n'y a rien à tracer, quand `tooShort` est vrai. */
-  raison?: "court" | "sans-detail-horaire" | "detail-horaire-absent";
+  raison?: "court" | "detail-horaire-absent";
   /** Graduations de l'axe des minutes, pour le palmarès. */
   yLabels: { label: string; y: number }[];
+  /** CE QUE COUVRE `lastMinutes`, en toutes lettres.
+   *
+   *  Il le faut depuis que les onglets ne mesurent plus la même chose. Sur
+   *  « Jour », la mesure du raffineur CUMULE depuis minuit : le dernier bloc
+   *  vaut la journée entière. Sur « Semaine » et « Période », le palmarès classe
+   *  désormais sur les minutes DU JOUR, et sa dernière valeur est donc celle du
+   *  dernier jour publié — pas un total de période. Sans cette phrase, la même
+   *  durée affichée voudrait dire deux choses selon l'onglet. */
+  mesureLabel: string;
 };
 
 export type RangeView = {
@@ -399,6 +514,22 @@ export type Indisponibilite = {
   joursDeRetard: number;
 };
 
+/** Le dernier bloc de 4 h publié pour la journée la plus récente.
+ *
+ *  Sert au CONTRAT D'ILLUSTRATION (`data/partis-selection.json`) : le raffineur
+ *  des pochettes a besoin de savoir quelle édition il illustre, pour ranger
+ *  l'image sous le bon jour et pour savoir quand la journée est close. `null`
+ *  quand la table intra-journée n'est pas publiée — le contrat le dit alors,
+ *  plutôt que d'inventer un bloc. */
+export type BlocCourant = {
+  /** Jour de Montréal du bloc, « 2026-08-30 ». */
+  date: string;
+  /** Heure de FIN du bloc (0, 4, 8, 12, 16, 20). */
+  hour: number;
+  /** Intervalle brut publié par le raffineur, « 16-20 ». */
+  label: string | null;
+};
+
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
   /** Non nul quand le module ne peut rien affirmer — voir `Indisponibilite`.
@@ -423,6 +554,8 @@ export type PartiesData = {
    *  Le module l'affiche en toutes lettres — cf. `.gitignore` : « aucune donnée
    *  inventée ne doit pouvoir être confondue avec la donnée réelle ». */
   surFixtures: boolean;
+  /** Dernier bloc de 4 h publié, ou `null` sans table intra-journée. */
+  blocCourant: BlocCourant | null;
   lastDate: string; // ISO date de la dernière donnée disponible
   /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
   lastUpdated: string;
@@ -583,6 +716,31 @@ function lastDatesPerMonth(dates: string[]): string[] {
   return [...last.values()].sort();
 }
 
+/**
+ * L'URL représentative la plus RÉCENTE par parti, dans des lignes déjà
+ * filtrées sur UN SEUL média.
+ *
+ * `representative_url` n'est PAS une série — contrairement à `weighted_tone`
+ * ou `total_raw_score`, elle ne s'accumule pas sur la fenêtre glissante :
+ * chaque relevé republie sa propre valeur, la plus à jour l'emportant tout
+ * simplement sur les précédentes. Même départage que `buildLookup`,
+ * `computed_at`, pour la même raison : plusieurs relevés par jour sont
+ * publiés depuis que le raffineur tourne six fois par jour.
+ */
+function dernieresUrlsParParti(rows: ShadowRow[]): Map<string, string | null> {
+  const vus = new Map<string, string>();
+  const urls = new Map<string, string | null>();
+  for (const row of rows) {
+    const pKey = row.party.toLowerCase();
+    const quand = row.computed_at ?? "";
+    const vu = vus.get(pKey);
+    if (vu !== undefined && vu >= quand) continue;
+    vus.set(pKey, quand);
+    urls.set(pKey, row.representative_url ?? null);
+  }
+  return urls;
+}
+
 // Builds a date → party → entry lookup. First occurrence wins for duplicate
 // (date, party) pairs — the refiner guarantees uniqueness per run.
 /**
@@ -697,7 +855,15 @@ const CHART_W = 100;
 const CHART_H = 30;
 /** Marge droite réservée aux étiquettes de parti posées en bout de ligne.
  *  Resserrée pour que la ligne d'arrivée se rapproche du bord. */
-const CHART_PAD_R = 9;
+/** Réserve à DROITE de la ligne d'arrivée, en unités du viewBox.
+ *
+ *  ZÉRO depuis le 2026-08-30 : l'arrivée touche le bord droit du tracé. Ces 9 %
+ *  existaient pour loger les étiquettes de bout de ligne, qui vivaient alors
+ *  dans le repère du graphique. Elles vivent maintenant dans `--marge-fin`, une
+ *  réserve CSS posée HORS de la zone de tracé — garder les deux revenait à
+ *  réserver la place deux fois, et à laisser un vide de 9 % après l'arrivée qui
+ *  se lisait comme du chemin restant alors que la course y était finie. */
+const CHART_PAD_R = 0;
 
 const MONTHS_SHORT_FR = [
   "janv.", "févr.", "mars", "avr.", "mai", "juin",
@@ -801,7 +967,7 @@ const HEURE_ARRIVEE = 20;
  * La ligne d'ARRIVÉE de chaque onglet, et la fenêtre de données à montrer.
  *
  *   Jour     → 20 h aujourd'hui, sur les sept derniers jours
- *   Semaine  → vendredi 20 h de la semaine en cours, sur quatre semaines
+ *   Semaine  → vendredi 20 h, sur les sept jours qui l'ouvrent (samedi → vendredi)
  *   Tout     → le jour du scrutin, sur toute la fenêtre suivie
  *
  * Chaque onglet a donc sa propre course et son propre but, au lieu d'une
@@ -811,16 +977,30 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
   const j = new Date(`${derniere}T00:00:00Z`);
   if (range === "overall") {
     return {
-      t: Date.parse(`${ELECTION_DATE}T00:00:00Z`),
+      // L'ÉDITION DE 20 H DU JOUR DU SCRUTIN, et non son minuit.
+      //
+      // Depuis que les points sont posés sur les éditions (`instantDe`), une
+      // arrivée à minuit tombait vingt heures AVANT le dernier point possible :
+      // le jour du scrutin, la ligne aurait dépassé sa propre arrivée. Les deux
+      // bornes se calculent maintenant de la même façon, donc elles coïncident
+      // exactement le jour où la course se termine.
+      t: Date.parse(`${ELECTION_DATE}T00:00:00Z`) + HEURE_ARRIVEE * 3_600_000,
       label: "Scrutin",
       sub: shortDateFr(ELECTION_DATE),
     };
   }
   if (range === "week") {
-    // Vendredi de la semaine en cours (lundi = 1).
-    const jour = j.getUTCDay() || 7;
+    // VENDREDI 20 h — mais d'une semaine qui S'OUVRE LE SAMEDI.
+    //
+    // C'est ce qui donne sept jours à l'axe sans déplacer l'arrivée : samedi,
+    // dimanche, puis du lundi au vendredi. Une semaine lundi → vendredi n'en
+    // comptait que cinq, et les repères s'arrêtant à l'arrivée, la fin de
+    // semaine n'apparaissait jamais.
+    //
+    // Le rang du jour dans CETTE semaine : samedi = 0 … vendredi = 6.
+    const rang = (j.getUTCDay() + 1) % 7;
     const vendredi = new Date(j);
-    vendredi.setUTCDate(j.getUTCDate() + (5 - jour));
+    vendredi.setUTCDate(j.getUTCDate() + (6 - rang));
     return {
       t: vendredi.getTime() + HEURE_ARRIVEE * 3_600_000,
       label: "vendredi",
@@ -833,8 +1013,8 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
 /**
  * Départ de l'axe, en regard de l'arrivée.
  *
- *   Semaine → vendredi 22 h de la semaine PRÉCÉDENTE, soit exactement sept
- *             jours avant l'arrivée du vendredi 20 h.
+ *   Semaine → le SAMEDI 00 h qui ouvre la semaine d'arrivée, six jours pleins
+ *             avant le vendredi de la ligne d'arrivée.
  *   Tout    → le déclenchement du scrutin quand il est connu, sinon le début
  *             du suivi : mieux vaut un axe plus large qu'une date inventée.
  *   Jour    → la première journée montrée.
@@ -844,11 +1024,21 @@ function arrivee(range: RangeKey, derniere: string): { t: number; label: string;
  * fichier. Une seule définition, partagée par la borne de l'axe et par ses
  * repères : c'est en les calculant chacun de leur côté qu'ils avaient divergé.
  */
-function lundiDeLaSemaine(t: number): number {
-  const d = new Date(t);
-  const recul = (d.getUTCDay() + 6) % 7; // 0 = lundi
-  const lundi = new Date(d.getTime() - recul * 86_400_000);
-  return Date.parse(`${lundi.toISOString().slice(0, 10)}T00:00:00Z`);
+/** Le SAMEDI 00 h qui ouvre la semaine contenant `t`.
+ *
+ *  La semaine de ce module va du samedi au vendredi : l'arrivée est le vendredi
+ *  20 h, et les deux jours de fin de semaine qui la précèdent en font partie
+ *  plutôt que d'en être exclus.
+ *
+ *  LA FORMULE VIT DANS `lib/semaine.ts`, PARTAGÉE avec la discothèque : ses
+ *  albums hebdomadaires doivent compter EXACTEMENT la même semaine que ce
+ *  palmarès, sans quoi « sept singles » ne voudrait pas dire la même chose aux
+ *  deux endroits. Ce wrapper ne fait que convertir entre l'ISO du module
+ *  partagé et les timestamps en millisecondes qu'emploie le reste de ce
+ *  fichier. */
+function samediDOuverture(t: number): number {
+  const jourIso = new Date(t).toISOString().slice(0, 10);
+  return Date.parse(`${samediDeLaSemaine(jourIso)}T00:00:00Z`);
 }
 
 function depart(range: RangeKey, premiere: string, arriveeT: number): number {
@@ -864,7 +1054,15 @@ function depart(range: RangeKey, premiere: string, arriveeT: number): number {
     // calé sur le lundi — `arrivee()` cherche « le vendredi de la semaine en
     // cours (lundi = 1) » et le texte sous le graphique dit « depuis lundi ».
     // Seule cette borne-ci ne l'était pas.
-    return lundiDeLaSemaine(arriveeT);
+    // Le SAMEDI de la semaine d'arrivée, à son ÉDITION DE 20 H.
+    //
+    // Pas à son minuit : l'axe porte les éditions, pas les minuits (voir
+    // `instantDe` dans `buildChart`). Ouvrir à minuit laissait vingt heures
+    // mortes avant le premier point, et surtout décalait les six intervalles
+    // suivants — le vendredi tombait alors vingt heures AVANT sa propre ligne
+    // d'arrivée. D'ici à l'arrivée il y a exactement six jours pleins, donc sept
+    // repères régulièrement espacés dont le dernier est l'arrivée elle-même.
+    return samediDOuverture(arriveeT) + HEURE_ARRIVEE * 3_600_000;
   }
   if (range === "overall" && ELECTION_CALL_DATE) {
     return Date.parse(`${ELECTION_CALL_DATE}T00:00:00Z`);
@@ -878,7 +1076,7 @@ function depart(range: RangeKey, premiere: string, arriveeT: number): number {
  *  20 h — ne contiendrait qu'un point : le raffineur ne publie QU'UN relevé par
  *  jour, pris à 20 h. Tracer une tendance intra-journée demanderait qu'il
  *  conserve ses six blocs de 4 h au lieu de les écraser.
- *  `week` : 7 jours, soit exactement vendredi à vendredi. */
+ *  `week` : 7 jours, soit exactement samedi à vendredi. */
 const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity };
 
 /**
@@ -898,11 +1096,63 @@ const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity
  *  au bloc courant : le vide à droite est ce qu'il reste à courir, exactement
  *  comme la ligne d'arrivée des autres onglets.
  */
+/** Le dernier bloc publié de la journée la plus récente.
+ *
+ *  On date les lignes avec `dateMontreal`, comme partout ailleurs dans ce
+ *  fichier : `date_montreal_tz` porte en réalité la date UTC (le raffineur
+ *  fait `as.Date()` sur un POSIXct, ce qui ignore le fuseau), si bien qu'un
+ *  relevé de 21 h à Montréal est classé au lendemain. Se fier à la colonne
+ *  ferait illustrer la mauvaise journée un soir sur deux. */
+function dernierBloc(rows: IntradayRow[] | null): BlocCourant | null {
+  if (!rows || rows.length === 0) return null;
+  const date = rows.map(dateMontreal).sort().at(-1);
+  if (!date) return null;
+  const duJour = rows.filter((r) => dateMontreal(r) === date);
+  const heures = duJour.map((r) => Number(r.block_hour)).filter((h) => Number.isFinite(h));
+  if (heures.length === 0) return null;
+  const hour = Math.max(...heures);
+  const label = duJour.find((r) => Number(r.block_hour) === hour)?.block_label ?? null;
+  return { date, hour, label: label ? String(label) : null };
+}
+
+/** Le pas des graduations de la journée : un repère toutes les quatre heures,
+ *  00h, 04h … 20h. Les mêmes que le sélecteur d'édition en tête du site. */
+const PAS_GRADUATION_H = 4;
+
+/**
+ * Le bloc, REMONTÉ à sa graduation.
+ *
+ * On TRICHE, et c'est délibéré. Le raffineur nomme un bloc par son heure de fin,
+ * et rien ne garantit qu'elle tombe sur la grille : un passage qui couvre 7h à
+ * 11h publie `block_hour: 11`, et le point se pose alors entre le repère de 08h
+ * et celui de 12h. Sur un axe dont les seules références sont ces repères, un
+ * point posé entre deux d'entre eux se lit comme une erreur de calage — on
+ * cherche à quoi il correspond, il ne correspond à rien.
+ *
+ * On le remonte donc au repère SUIVANT : ce bloc est ce qu'on sait de la journée
+ * au moment où l'on arrive à 12h, et c'est là qu'il se lit. Vers le haut et non
+ * vers le bas, parce que redescendre à 08h daterait la mesure d'avant les
+ * trois heures qu'elle couvre.
+ *
+ * Ce que ça coûte : l'abscisse d'un point n'est plus l'instant exact de sa
+ * mesure, à moins de quatre heures près. Le module ne prétend rien de plus fin —
+ * ses repères sont espacés de quatre heures.
+ */
+const surLaGraduation = (h: number): number =>
+  Math.min(20, Math.max(0, Math.ceil(h / PAS_GRADUATION_H) * PAS_GRADUATION_H));
+
 function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
   if (rows.length === 0) return null;
-  const dernierJour = rows.map((r) => String(r.date_montreal_tz ?? r.date_utc)).sort().at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc) === dernierJour);
-  const blocs = [...new Set(duJour.map((r) => Number(r.block_hour)))].sort((a, b) => a - b);
+  const dernierJour = rows.map(dateMontreal).sort().at(-1);
+  // TRIÉ par heure BRUTE : deux blocs bâtards peuvent remonter sur la même
+  // graduation (9h et 11h donnent 12h tous les deux), et les tables ci-dessous
+  // gardent alors le dernier inscrit. Trié, le dernier est le plus récent —
+  // donc, sur une mesure qui cumule depuis minuit, le plus complet.
+  const duJour = rows
+    .filter((r) => dateMontreal(r) === dernierJour)
+    .sort((a, b) => Number(a.block_hour) - Number(b.block_hour));
+  const heureBloc = (r: IntradayRow) => surLaGraduation(Number(r.block_hour));
+  const blocs = [...new Set(duJour.map(heureBloc))].sort((a, b) => a - b);
   if (blocs.length <= 1) return null;
 
   const plotW = CHART_W - CHART_PAD_R;
@@ -915,7 +1165,7 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
   // de la journée — c'est ce que le vumètre montre au même instant.
   const valeurCourante = (key: PartyKey) =>
     duJour
-      .filter((r) => String(r.party ?? "").toLowerCase() === key && Number(r.block_hour) === blocs.at(-1))
+      .filter((r) => String(r.party ?? "").toLowerCase() === key && heureBloc(r) === blocs.at(-1))
       .reduce((s, r) => s + (Number(r.weighted_mentions) || 0), 0);
   const sourdineCourse = clesEnSourdine(parts.map((k) => [k, valeurCourante(k)]));
 
@@ -930,18 +1180,43 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
     const m = new Map(
       duJour
         .filter((r) => String(r.party ?? "").toLowerCase() === key)
-        .map((r) => [Number(r.block_hour), Number(r.total_raw_score) || 0]),
+        .map((r) => [heureBloc(r), Number(r.total_raw_score) || 0]),
     );
     return blocs.map((h) => m.get(h) ?? 0);
   };
   const topMin = paliersMinutes(Math.max(0, ...parts.flatMap((k) => minParBloc(k))));
   const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
 
+  /** Le TON de chaque bloc — la seconde piste du palmarès, celle du disque le
+   *  plus APPRÉCIÉ. Contrairement aux minutes, le ton ne s'accumule pas : c'est
+   *  l'état du vocabulaire au moment du relevé, et il monte comme il descend. */
+  const tonParBloc = (key: PartyKey) => {
+    const m = new Map(
+      duJour
+        .filter((r) => String(r.party ?? "").toLowerCase() === key)
+        .map((r) => [heureBloc(r), Number(r.weighted_tone) || 0]),
+    );
+    return blocs.map((h) => m.get(h) ?? 0);
+  };
+  const yTon = (t: number) => CHART_H - ((Math.min(1, Math.max(-1, t)) + 1) / 2) * CHART_H;
+  /** Même règle que la vue par journées : zéro minute en Une, aucun ton. Ici les
+   *  minutes CUMULENT depuis minuit, donc un parti peut n'apparaître qu'à partir
+   *  du bloc où on a commencé à en parler, et sa ligne démarre là. */
+  const mesure = (key: PartyKey, i: number) => (minParBloc(key)[i] ?? 0) > 0;
+
+  const derBloc = blocs.length - 1;
+  const tonsFinaux = parts
+    .filter((k) => mesure(k, derBloc))
+    .map((k) => tonParBloc(k).at(-1) ?? 0);
+  const sommeTons = tonsFinaux.reduce((a, b) => a + b, 0);
+  const ecartAuxAutres = (ton: number): number | null =>
+    tonsFinaux.length > 1 ? ton - (sommeTons - ton) / (tonsFinaux.length - 1) : null;
+
   const series: ChartSeries[] = parts.map((key) => {
     const parBloc = new Map(
       duJour
         .filter((r) => String(r.party ?? "").toLowerCase() === key)
-        .map((r) => [Number(r.block_hour), Number(r.weighted_mentions) || 0]),
+        .map((r) => [heureBloc(r), Number(r.weighted_mentions) || 0]),
     );
     const hist = blocs.map((h) => parBloc.get(h) ?? 0);
     const pts = blocs.map((h, i) => [xAtH(h), soloY(hist)[i]] as const);
@@ -956,6 +1231,15 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
         .join(" "),
       lastYMin: Number(yMin(minParBloc(key).at(-1) ?? 0).toFixed(2)),
       lastMinutes: Math.round(minParBloc(key).at(-1) ?? 0),
+      polylineTon: tonParBloc(key)
+        .map((t, i) => (mesure(key, i) ? `${xAtH(blocs[i]).toFixed(2)},${yTon(t).toFixed(2)}` : ""))
+        .filter(Boolean)
+        .join(" "),
+      lastEcartTon: (() => {
+        if (!mesure(key, derBloc)) return null;
+        const e = ecartAuxAutres(tonParBloc(key).at(-1) ?? 0);
+        return e === null ? null : Number(e.toFixed(4));
+      })(),
       polyline: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       polylineSolo: pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
       lastX: Number(last[0].toFixed(2)),
@@ -978,6 +1262,9 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
     height: CHART_H,
     tooShort: false,
     yLabels: graduationsMinutes(topMin),
+    // Le raffineur accumule depuis minuit à chaque passage : le dernier bloc
+    // vaut donc la journée entière, et c'est bien un total.
+    mesureLabel: "depuis minuit",
   };
 }
 
@@ -1018,25 +1305,19 @@ function reperesAxe(
   }
 
   if (range === "week") {
-    // Du LUNDI d'ouverture jusqu'à l'arrivée. La variable s'appelait déjà
-    // `lundi` mais reculait de six jours depuis le vendredi, ce qui tombait un
-    // samedi : le nom disait l'intention, le calcul disait autre chose. Les
-    // deux bornes viennent maintenant de la même fonction.
-    const lundi = lundiDeLaSemaine(tFin);
-    // Du lundi JUSQU'À la ligne d'arrivée, jours à venir compris : c'est ce qui
-    // montre le chemin restant. On s'arrête à l'arrivée plutôt qu'au dimanche —
-    // la semaine de ce module se termine le vendredi (cf. `arrivee`), et un
-    // repère posé au-delà désignerait un moment qui ne sera jamais couru.
-    // Le VENDREDI reprend sa place, sinon l'écart entre jeudi et l'arrivée
-    // valait 44 h contre 24 h partout ailleurs — presque le double, ce qui se
-    // voyait comme un axe mal calé. Les sept jours sont maintenant régulièrement
-    // espacés ; l'écart plus court qui suit le vendredi est le reste de sa
-    // journée, jusqu'à l'édition de 20h.
+    // LES SEPT ÉDITIONS, du samedi 20 h au vendredi 20 h.
     //
-    // Il s'écrit en toutes lettres : c'est le jour d'arrivée, et le distinguer
-    // évite d'avoir à poser une étiquette de plus au bout de l'axe.
-    const minuitVendredi = tFin - HEURE_ARRIVEE * 3_600_000;
-    for (let t = lundi; t <= minuitVendredi + 1; t += JOUR) {
+    // Elles partent de `t0` et vont jusqu'à `tFin` : la boucle ne calcule donc
+    // plus ses propres bornes, elle suit celles de l'axe. C'est ce qui garantit
+    // que le dernier repère — « vendredi » — TOMBE EXACTEMENT SUR LA LIGNE
+    // D'ARRIVÉE. Il tombait auparavant sur le minuit du vendredi, vingt heures
+    // avant elle, et l'axe se lisait comme mal calé.
+    //
+    // Sept repères, six intervalles de 24 h, parfaitement réguliers.
+    //
+    // Le jour d'ARRIVÉE s'écrit en toutes lettres : le distinguer évite d'avoir
+    // à poser une étiquette de plus au bout de l'axe.
+    for (let t = t0; t <= tFin + 1; t += JOUR) {
       const j = new Date(t).getUTCDay();
       pousser(t, j === 5 ? "vendredi" : JOURS_COURTS[j]);
     }
@@ -1087,35 +1368,79 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
 
   // LES BORNES DE L'AXE D'ABORD, LES POINTS ENSUITE : une date anterieure au
   // depart se dessinerait a gauche du cadre, hors champ. C'est ce qui arrivait
-  // a la vue semaine, dont l'axe commence le vendredi 22 h alors que la fenetre
-  // de sept jours remonte au-dela.
-  const axisDates = fenetre.filter((iso) => Date.parse(`${iso}T00:00:00Z`) >= t0);
+  // a la vue semaine, dont l'axe commence le samedi 00 h alors que la fenetre
+  // de sept jours peut remonter au-dela.
+  /** L'INSTANT D'UNE JOURNÉE SUR L'AXE : son ÉDITION DE 20 H, pas son minuit.
+   *
+   *  Le relevé quotidien du raffineur est une accumulation de FIN de journée :
+   *  le poser à minuit le datait de son début, soit vingt heures trop tôt. Et
+   *  c'est ce décalage qui empêchait le vendredi de tomber sur sa ligne
+   *  d'arrivée — elle est à 20 h, le point était à 00 h.
+   *
+   *  Repères et points partagent maintenant la même fonction d'instant : une
+   *  étiquette est toujours sous le point qu'elle nomme. */
+  const instantDe = (iso: string) => Date.parse(`${iso}T00:00:00Z`) + HEURE_ARRIVEE * 3_600_000;
+  const axisDates = fenetre.filter((iso) => instantDe(iso) >= t0);
   const decalage = toutes.length - axisDates.length;
   const n = axisDates.length;
 
   const histOf = (s: Stat) => s.history.daily.slice(decalage);
-  /** Les minutes CUMULÉES sur la fenêtre affichée.
+  /** Les minutes DU JOUR, jour par jour — et non plus leur cumul.
    *
-   *  Une courbe qui ne fait que monter, comme un compteur de course. Les
-   *  minutes du jour, elles, montaient et redescendaient au gré de l'actualité :
-   *  cinq lignes qui se croisent sans cesse ne se lisent pas, et surtout elles
-   *  ne racontent pas ce qu'on veut voir — qui prend de l'avance.
+   *  POURQUOI LE CUMUL A ÉTÉ ABANDONNÉ. Il servait quand le palmarès traçait des
+   *  durées : une courbe qui ne fait que monter, comme un compteur de course.
+   *  Depuis qu'il classe des RANGS, le cumul est exactement la mauvaise
+   *  grandeur — il VERROUILLE l'ordre. Une fois devant, on y reste : mesuré sur
+   *  trente-cinq jours du jeu d'essai, deux changements de classement dans les
+   *  trois premiers jours, puis plus aucun pendant trente-deux. Un graphique de
+   *  rangs sans croisement ne montre rien.
    *
-   *  ⚠️ Le cumul se fait ICI et non sur la vue intra-journée : le raffineur
-   *  accumule DÉJÀ depuis minuit à chaque passage, donc y appliquer une somme
-   *  courante compterait deux fois. */
-  const minOf = (s: Stat) => {
-    let somme = 0;
-    return s.minutesHistory.daily.slice(decalage).map((m) => (somme += m));
-  };
+   *  Les minutes du jour, elles, montent et redescendent au gré de l'actualité,
+   *  et le classement bouge avec. C'est la question que la courbe pose :
+   *  QUI MÈNE CE JOUR-LÀ.
+   *
+   *  ⚠️ CONSÉQUENCE HEUREUSE, à ne pas défaire par mégarde. Le palmarès ne
+   *  publie plus de total de période : sa dernière valeur est celle du dernier
+   *  jour. Il ne peut donc plus contredire la durée de la pochette, qui vient de
+   *  la table hebdomadaire du raffineur — la divergence qu'ouvrait l'axe du
+   *  samedi (cf. `libelleDepuis`) n'a plus de surface où se voir. */
+  const minOf = (s: Stat) => s.minutesHistory.daily.slice(decalage);
+  /** Le TON, jour par jour. Même fenêtre, mêmes abscisses que les minutes : les
+   *  deux pistes se superposent exactement, et basculer de l'une à l'autre ne
+   *  déplace aucun point sur l'axe du temps. */
+  const tonOf = (s: Stat) => s.toneHistory.daily.slice(decalage);
+  /** UN TON N'EXISTE QUE LÀ OÙ IL Y A EU DE LA COUVERTURE.
+   *
+   *  Le raffineur écrit `weighted_tone = 0` pour un parti dont aucun article ne
+   *  parle, et ce zéro est indistinguable d'une couverture parfaitement
+   *  équilibrée. Un parti silencieux se retrouvait donc classé au MILIEU du
+   *  peloton, au-dessus de partis réellement malmenés, et sa valeur tirait en
+   *  plus la référence des autres vers le neutre.
+   *
+   *  Les minutes tranchent : zéro minute en Une, aucune phrase à classer, donc
+   *  aucun ton. C'est un signal déjà publié, exact, et qui ne demande rien au
+   *  raffineur. */
+  const mesure = (s: Stat, i: number) => (minOf(s)[i] ?? 0) > 0;
+
+  /** L'écart au ton moyen des AUTRES partis MESURÉS, au dernier instant. Un
+   *  parti sans couverture ne compte donc ni comme sujet ni comme repère. */
+  const dernier = axisDates.length - 1;
+  const tonsFinaux = stats.filter((st) => mesure(st, dernier)).map((st) => tonOf(st).at(-1) ?? 0);
+  const sommeTons = tonsFinaux.reduce((a, b) => a + b, 0);
+  const ecartAuxAutres = (ton: number): number | null =>
+    tonsFinaux.length > 1 ? ton - (sommeTons - ton) / (tonsFinaux.length - 1) : null;
   const top = axisTop(Math.max(0, ...stats.flatMap(histOf)) * 100);
   // ÉCHELLE COMMUNE des minutes : c'est la comparaison des durées qui fait le
   // palmarès. Une échelle par parti dirait la forme, pas le classement.
   const topMin = paliersMinutes(Math.max(0, ...stats.flatMap(minOf)));
   const yMin = (m: number) => CHART_H - (topMin > 0 ? (m / topMin) * CHART_H : 0);
+  /** Le ton, de -1 à +1, reporté sur la hauteur. Borné : la mesure peut sortir
+   *  de l'intervalle sur de très petits volumes, et un point hors cadre se
+   *  lirait comme une erreur de tracé plutôt que comme une valeur extrême. */
+  const yTon = (t: number) => CHART_H - ((Math.min(1, Math.max(-1, t)) + 1) / 2) * CHART_H;
   const span = Math.max(but.t - t0, 86_400_000);
   const xAt = (t: number) => ((t - t0) / span) * plotW;
-  const xAtDate = (iso: string) => xAt(Date.parse(`${iso}T00:00:00Z`));
+  const xAtDate = (iso: string) => xAt(instantDe(iso));
   const yAt = (pct: number) => CHART_H - (pct / top) * CHART_H;
 
   // Même définition de sourdine que le vumètre (voir `clesEnSourdine`).
@@ -1127,6 +1452,7 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     .map((stat) => {
       const hist = histOf(stat);
       const mins = minOf(stat);
+      const tons = tonOf(stat);
       const pts = hist.map((v, i) => [xAtDate(axisDates[i] ?? ""), yAt(v * 100)] as const);
       const ptsMin = mins.map((m, i) => [xAtDate(axisDates[i] ?? ""), yMin(m)] as const);
       return {
@@ -1144,7 +1470,24 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         lastPct: Math.round((hist.at(-1) ?? 0) * 100),
         polylineMin: ptsMin.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
         lastYMin: Number((ptsMin.at(-1)?.[1] ?? CHART_H).toFixed(2)),
+        // La dernière valeur est celle du DERNIER JOUR, pas un total de période :
+        // c'est la grandeur sur laquelle la ligne vient d'être classée, donc la
+        // seule que l'étiquette puisse afficher à côté de son rang sans le
+        // contredire.
         lastMinutes: Math.round(mins.at(-1) ?? 0),
+        // Seuls les instants MESURÉS sont tracés : ailleurs, la ligne n'a pas
+        // de place à occuper, et lui en donner une inventerait un classement.
+        polylineTon: tons
+          .map((t, i) =>
+            mesure(stat, i) ? `${xAtDate(axisDates[i] ?? "").toFixed(2)},${yTon(t).toFixed(2)}` : "",
+          )
+          .filter(Boolean)
+          .join(" "),
+        lastEcartTon: (() => {
+          if (!mesure(stat, dernier)) return null;
+          const e = ecartAuxAutres(tons.at(-1) ?? 0);
+          return e === null ? null : Number(e.toFixed(4));
+        })(),
       };
     });
 
@@ -1166,6 +1509,7 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     height: CHART_H,
     tooShort: n <= 1,
     yLabels: graduationsMinutes(topMin),
+    mesureLabel: axisDates.at(-1) ? `le ${shortDateFr(axisDates.at(-1)!)}` : "ce jour-là",
 };
 }
 
@@ -1315,11 +1659,8 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   const vide: EnjeuMix = { enjeux: [], parParti: {} };
   if (rows.length === 0) return vide;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
-  const duJour = rows.filter((r) => String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
+  const duJour = rows.filter((r) => dateMontreal(r) === dernier);
   if (duJour.length === 0) return vide;
 
   const parParti: EnjeuMix["parParti"] = {};
@@ -1358,17 +1699,12 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
 
-  const dernier = rows
-    .map((r) => String(r.date_montreal_tz ?? r.date_utc ?? ""))
-    .sort()
-    .at(-1);
+  const dernier = rows.map(dateMontreal).sort().at(-1);
 
   for (const key of PARTY_KEYS) {
     const siens = rows
       .filter(
-        (r) =>
-          String(r.party ?? "").toLowerCase() === key &&
-          String(r.date_montreal_tz ?? r.date_utc ?? "") === dernier,
+        (r) => String(r.party ?? "").toLowerCase() === key && dateMontreal(r) === dernier,
       )
       .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
       .slice(0, 5);
@@ -1451,8 +1787,33 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       streak.direction === "neutral" || streak.count <= 1 || range === "today"
         ? `${arrow} ${dirLabel}`
         : `${arrow} ${dirLabel}  ${streak.count} ${unit}`;
+    /* ⚠️ CETTE PHRASE A DIT FAUX jusqu'au 2026-08-31, et il faut savoir pourquoi
+       pour ne pas y revenir.
+       
+       Elle annonçait « Proportion nette de mots favorables : +24,30 % ». AUCUN
+       MOT N'EST COMPTÉ NULLE PART. Ce que le raffineur produit
+       (radar-party-score-salient-shadow/runtime.R:142) est tout autre chose :
+       chaque PHRASE qui nomme le parti est classée favorable, défavorable ou
+       neutre par le modèle, et vaut alors `+confiance`, `-confiance` ou zéro.
+       Ces valeurs sont moyennées sur les phrases du parti, puis sur les
+       articles, pondérées par leurs MINUTES EN UNE.
+       
+       L'écart n'était pas cosmétique : une « proportion de mots » se vérifie en
+       comptant des mots, et un journaliste citant le chiffre aurait décrit une
+       méthode qui n'existe pas. Le pourcentage aggravait le tout, la mesure
+       n'étant une part de rien.
+       
+       La formulation dit maintenant les trois choses qui la définissent : ce
+       qu'on classe (des phrases), ce qui les pondère (la confiance, puis le
+       temps en Une), et sur quelle échelle on lit le résultat. */
     // Vocabulaire aligné sur la manchette : « du temps », jamais « couverture ».
-    const toneTitle = `Ton\u00a0: ${toneLabel}. Proportion nette de mots favorables\u00a0: ${unclamped >= 0 ? "+" : ""}${(unclamped * 100).toFixed(2)}\u00a0%.`;
+    const toneValeur = `${unclamped >= 0 ? "+" : "\u2212"}${Math.abs(unclamped).toFixed(2).replace(".", ",")}`;
+    const toneTitle =
+      `Ton\u00a0: ${toneLabel}. Orientation moyenne des phrases qui nomment le parti, ` +
+      `pondérée par la confiance du classement puis par le temps passé en Une\u00a0: ` +
+      `${toneValeur} sur une échelle de \u22121 (défavorable) à +1 (favorable).`;
+    // Le ton report\u00e9 sur une jauge de 0 \u00e0 100, born\u00e9 : -1 \u2192 0, 0 \u2192 50, +1 \u2192 100.
+    const tonePct = Math.round(Math.min(1, Math.max(-1, unclamped)) * 50 + 50);
 
     const rawHistory =
       range === "week" ? stat.history.weekly : stat.history.week;
@@ -1494,6 +1855,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
       toneLabel,
       toneDirection: streak.direction,
       toneTitle,
+      tonePct,
       sparkPolyline: polyline,
       sparkCircles: circles,
     };
@@ -1507,30 +1869,27 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
     periodeLabel: libellePeriode(range, dates.daily),
     depuisLabel: libelleDepuis(range, dates.daily),
     rows,
-    // La journée se trace sur ses blocs de 4 h quand ils existent ; sinon on
-    // retombe sur la courbe au jour le jour, qui reste juste, simplement moins
-    // fine.
     // Vue JOUR sans détail horaire : on ne trace RIEN.
     //
     // `buildChart` sait tracer des jours, pas des heures : son axe couvre toute
     // la fenêtre du suivi, et les six repères horaires d'une seule journée s'y
     // écrasaient dans les 12 % de droite (mesuré : 00h à 79,9 et 20h à 91 sur un
-    // axe de 91). C'est exactement ce qui arrivait dès qu'on bougeait le fader,
-    // la table intra-journée n'étant PAS ventilée par média.
+    // axe de 91). Un axe faux est pire qu'un axe absent : il se lit comme une
+    // mesure.
     //
-    // Un axe faux est pire qu'un axe absent : il se lit comme une mesure.
-    // `chartJour` vaut `undefined` pour une vue PAR MÉDIA (l'appelant ne le
-    // passe pas) et `null` pour l'agrégat quand la table intra-journée manque.
-    // Les deux cas ne se disent pas de la même façon : dans le premier le
-    // détail existe ailleurs, dans le second il n'existe pas encore.
+    // UNE SEULE raison publiée pour les deux chemins qui mènent ici :
+    // `chartJour` à `null` (agrégat, table intra-journée manquante ou réduite à
+    // un bloc) et à `undefined` (vue PAR MÉDIA, l'appelant ne le passe pas).
+    // Ils portaient deux raisons distinctes, dont `sans-detail-horaire` pour la
+    // seconde — que rien ne pouvait afficher : le palmarès lit TOUJOURS
+    // l'agrégat, donc une vue par média n'atteint aucun rendu. Distinguer deux
+    // cas dont un seul se voit, c'est se donner une garantie qu'on n'a pas.
     chart:
       range === "today"
         ? chartJour ?? {
             ...buildChart(stats, dates, range),
             tooShort: true,
-            raison: chartJour === null
-              ? ("detail-horaire-absent" as const)
-              : ("sans-detail-horaire" as const),
+            raison: "detail-horaire-absent" as const,
           }
         : buildChart(stats, dates, range),
   };
@@ -1554,12 +1913,22 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
  *  faux — le bloc de 4 h est la fréquence de PUBLICATION, pas la fenêtre
  *  mesurée : à 16h, la colonne porte tout ce qui s'est dit depuis minuit.
  *
- *  La semaine repart le LUNDI, et l'axe du palmarès aussi depuis la PR #539.
- *  Ce commentaire a longtemps présenté l'écart comme voulu (« l'axe cadre la
- *  course, la table agrège la donnée ») : c'était une justification après coup.
- *  Un axe ouvert le samedi cumulait deux jours hors de la fenêtre agrégée, et
- *  la pochette et le palmarès affichaient deux durées différentes pour le même
- *  parti sur le même écran. Une seule borne, `lundiDeLaSemaine`, désormais.
+ *  ⚠️ « DEPUIS LUNDI » DÉCRIT LA TABLE, PAS L'AXE DU PALMARÈS — et depuis le
+ *  2026-08-30 les deux ne coïncident plus.
+ *
+ *  Le raffineur agrège sa semaine avec `week_start = 1`, donc du lundi, et c'est
+ *  de cette table que viennent les minutes de la pochette : ce libellé est exact
+ *  pour elle. L'axe du palmarès, lui, ouvre la semaine le SAMEDI, pour que la
+ *  fin de semaine apparaisse avant une arrivée fixée au vendredi 20h. Il cumule
+ *  donc deux journées que la table n'agrège pas.
+ *
+ *  C'est exactement la divergence qu'avait corrigée la PR #539 — la pochette
+ *  annonçait 14h40 quand le palmarès finissait à 17h16 pour le même parti, sur
+ *  le même écran. Elle est rétablie en connaissance de cause, à la demande, et
+ *  mesurée par un test (« le palmarès cumule DEUX JOURS DE PLUS que la
+ *  pochette »). La seule vraie correction est côté raffineur : agréger la
+ *  semaine du samedi. Tant qu'elle n'est pas faite, ne pas « réparer » l'un des
+ *  deux côtés sans l'autre.
  */
 function libelleDepuis(range: RangeKey, joursIso: string[]): string {
   if (range === "today") return "depuis minuit";
@@ -1599,16 +1968,24 @@ export const __test__ = {
   samplePoints,
   buildRangeView,
   buildChart,
+  buildChartIntraday,
+  dateMontreal,
   axisTop,
   detecterIndisponibilite,
-  lundiDeLaSemaine,
+  samediDOuverture,
 };
 
-// Par défaut : la donnée réelle publiée par fetch_data.R. En développement,
-// VITRINE_PARTIES_FIXTURES pointe vers un jeu FICTIF au même schéma
-// (cf. scripts/make_parties_fixtures.mjs) — la donnée réelle est aujourd'hui
-// dégénérée (un seul parti détecté, cf. aws-refiners#223/#248), donc impossible
-// d'y juger un changement visuel. Variable absente ⇒ comportement inchangé.
+// Par défaut : la donnée réelle publiée par fetch_data.R. En développement
+// LOCAL, VITRINE_PARTIES_FIXTURES pointe vers un jeu FICTIF au même schéma
+// (cf. scripts/make_parties_fixtures.mjs) — utile pour juger un changement
+// visuel sans dépendre de ce que les raffineurs ont produit à l'instant.
+//
+// ⚠️ N'EST PLUS FORCÉE SUR LE MIROIR DEV depuis le 2026-09-01 : elle l'était
+// tant que le modèle des partis restait dégénéré (un seul parti détecté,
+// aws-refiners#223/#248) et pour garder dev identique au miroir GitHub
+// Pages — débranché depuis. Le modèle a été réentraîné (§06 de la
+// méthodologie) ; dev lit maintenant l'API comme le reste du build. Variable
+// absente ⇒ comportement inchangé.
 const SUR_FIXTURES = Boolean(process.env.VITRINE_PARTIES_FIXTURES);
 
 // GARDE-FOU : des fausses données ne doivent JAMAIS partir en production.
@@ -1693,17 +2070,27 @@ export async function loadParties(
     // Ventilation par média — facultative : le fader ne s'affiche que si les
     // tables `*_by_media_*` sont publiées. Un `null` ici n'est pas une erreur,
     // c'est l'état d'avant aws-refiners#… (la PR qui les crée).
-    const lireMedia = async (p: string) => {
-      try {
-        return JSON.parse(await fs.readFile(p, "utf8")) as ShadowRow[];
-      } catch {
-        return null;
-      }
-    };
+    //
+    // ⚠️ PASSE PAR `lireJeu`, comme les cinq autres tables, et NON par un
+    // `fs.readFile` direct. C'est la même correction que celle déjà appliquée
+    // aux tables des enjeux et de l'intra-journée (voir plus haut), et elle
+    // avait été oubliée ici.
+    //
+    // Ce que le `fs.readFile` produisait : sur dev, `VITRINE_DATA_SOURCE=api`,
+    // donc l'agrégat venait de l'API tandis que la ventilation par média lisait
+    // les JSON du disque. UN SEUL ÉCRAN, DEUX SOURCES. Et comme l'API ne servait
+    // pas `total_raw_score`, la position « tous les médias » affichait 0 minute
+    // sur les pochettes et dans le palmarès, pendant que chaque position par
+    // média affichait la bonne durée — lue ailleurs. Le repli était muet :
+    // `Number(undefined) || 0` ne lève rien.
+    const lireMedia = (periode: "day" | "week" | "month") =>
+      lireJeu(periode, `provincial_parties_salient_shadow_by_media_${periode}.json`)
+        .then((txt) => JSON.parse(txt) as ShadowRow[])
+        .catch(() => null);
     const [mDay, mWeek, mMonth] = await Promise.all([
-      lireMedia(path.join(DATA_DIR, "day",   "provincial_parties_salient_shadow_by_media_day.json")),
-      lireMedia(path.join(DATA_DIR, "week",  "provincial_parties_salient_shadow_by_media_week.json")),
-      lireMedia(path.join(DATA_DIR, "month", "provincial_parties_salient_shadow_by_media_month.json")),
+      lireMedia("day"),
+      lireMedia("week"),
+      lireMedia("month"),
     ]);
 
     const computed = computeStats(dayRows, weekRows, monthRows);
@@ -1718,18 +2105,35 @@ export async function loadParties(
     const byMedia: Record<string, MediaView> = {};
 
     if (mDay && mWeek && mMonth) {
-      const ids = [...new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x))].sort();
+      // C'EST LE PANEL QUI DÉCIDE, pas la donnée. La table publie tout le
+      // corpus — CBC, CNN, Fox News, sans colonne de pays pour les écarter —
+      // alors que le module porte sur des partis PROVINCIAUX. On part donc des
+      // six médias québécois et on ne garde que ceux qui ont une ligne, plutôt
+      // que de prendre tous les `media_id` rencontrés (cf. `MEDIA_PANEL_QC`).
+      //
+      // L'ordre est celui du panel, et non alphabétique : c'est celui des crans
+      // du fader, et le `sort()` d'avant ne servait qu'à rendre la sortie
+      // déterministe — le panel l'est déjà.
+      const publies = new Set(mDay.map((r) => r.media_id).filter((x): x is string => !!x));
+      const ids = MEDIA_PANEL_QC.filter((id) => publies.has(id));
       for (const id of ids) {
         const parMedia = (rows: ShadowRow[] | null) =>
           upTo((rows ?? []).filter((r) => r.media_id === id));
         const c = computeStats(parMedia(mDay), parMedia(mWeek), parMedia(mMonth));
         if (!c) continue;
         medias.push({ id, label: MEDIA_LABELS[id] ?? id });
+        // `representative_url` n'est pas un champ du pipeline stats/history
+        // (`computeStats`/`buildRangeView` ne connaissent que des séries) :
+        // elle se pose à part, à même les lignes déjà filtrées sur CE média.
+        const avecUrl = (vue: RangeView, urls: Map<string, string | null>): RangeView => ({
+          ...vue,
+          rows: vue.rows.map((row) => ({ ...row, representativeUrl: urls.get(row.key) ?? null })),
+        });
         byMedia[id] = {
           ranges: {
-            today: buildRangeView(c.stats, "today", c.dates),
-            week: buildRangeView(c.stats, "week", c.dates),
-            overall: buildRangeView(c.stats, "overall", c.dates),
+            today: avecUrl(buildRangeView(c.stats, "today", c.dates), dernieresUrlsParParti(parMedia(mDay))),
+            week: avecUrl(buildRangeView(c.stats, "week", c.dates), dernieresUrlsParParti(parMedia(mWeek))),
+            overall: avecUrl(buildRangeView(c.stats, "overall", c.dates), dernieresUrlsParParti(parMedia(mMonth))),
           },
         };
       }
@@ -1747,13 +2151,20 @@ export async function loadParties(
       enjeuxRaw ? (upTo(JSON.parse(enjeuxRaw) as unknown as ShadowRow[]) as unknown as IssueRow[]) : [],
     );
 
-    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
-    // pas encore deux blocs — un seul point ne dessine pas une journée.
-    const chartJour = intradayRaw
-      ? buildChartIntraday(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[], [...PARTY_KEYS])
+    // Une seule lecture de la table intra-journée, pour deux usages : la course
+    // de la journée et le bloc courant. Elle était parsée à l'endroit même où
+    // on s'en servait ; deux `JSON.parse` du même texte auraient fini par
+    // diverger sur le filtre `upTo`.
+    const intradayRows = intradayRaw
+      ? (upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
       : null;
 
+    // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
+    // pas encore deux blocs — un seul point ne dessine pas une journée.
+    const chartJour = intradayRows ? buildChartIntraday(intradayRows, [...PARTY_KEYS]) : null;
+
     return {
+      blocCourant: dernierBloc(intradayRows),
       lastDate,
       lastUpdated: lastUpdatedLabel(lastDate),
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci

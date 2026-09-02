@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { listEditions } from "@/lib/data/headlineEvents";
+import { siteOrigin, basePath } from "@/lib/site";
 
 // sitemap.xml généré au build (export statique), absent jusqu'ici — le seul
 // vrai manque SEO relevé par l'audit de lancement du 2026-08-19. Les liens
@@ -11,9 +12,6 @@ import { listEditions } from "@/lib/data/headlineEvents";
 // L'origine vient de NEXT_PUBLIC_SITE_ORIGIN — le même signal que
 // metadataBase. Sur le miroir dev, robots.ts interdit déjà tout : un sitemap
 // y est inoffensif.
-
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://vitrinedemocratique.com";
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const dynamic = "force-static";
 

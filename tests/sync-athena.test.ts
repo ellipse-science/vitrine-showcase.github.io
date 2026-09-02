@@ -55,8 +55,13 @@ describe("sync-athena — transformations pures", () => {
     expect(polimetreCutoff([null, "n/a"])).toBeNull();
   });
 
-  it("whitelist embarquée : 19 tables, champs requis, filtres connus", () => {
-    expect(TABLES).toHaveLength(19);
+  // 21 depuis l'ajout de `parties_issues_salient_shadow_day` : elle était
+  // déclarée dans scripts/tables.json et absente de la whitelist du Worker, si
+  // bien que le croisement parti × enjeu n'arrivait jamais par l'API. Les
+  // pochettes affichaient alors « Aucun enjeu identifié » — une affirmation sur
+  // la couverture, là où la vérité était que la table n'était pas servie.
+  it("whitelist embarquée : 21 tables, champs requis, filtres connus", () => {
+    expect(TABLES).toHaveLength(21);
     for (const t of TABLES) {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.athena.length).toBeGreaterThan(0);

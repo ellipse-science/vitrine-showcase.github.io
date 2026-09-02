@@ -6,23 +6,55 @@ celui-ci qui fait foi pour l'hébergement et le déploiement.
 ## En une phrase
 
 **On travaille sur `dev.vitrinedemocratique.com`** (Cloudflare, protégé par mot
-de passe). GitHub Pages tourne encore, mais **ne sert plus de référence**.
+de passe). L'ancien miroir GitHub Pages est **débranché** depuis le 2026-08-30.
 
 ## Les adresses
 
 | Adresse | Rôle | Branche | Accès |
 |---|---|---|---|
-| `vitrinedemocratique.com` | **production**, publique | `prod` | ouvert |
-| `dev.vitrinedemocratique.com` | **miroir de travail** | `main` | Cloudflare Access |
+| `vitrinedemocratique.com` | **production**, publique | `main` | ouvert |
+| `dev.vitrinedemocratique.com` | **miroir de travail** | `develop` | Cloudflare Access |
+
+> **Agents et scripts sur dev.** Un humain se connecte par courriel (session de
+> 30 jours depuis le 1er septembre 2026). Un agent ou un script passe par le jeton
+> de service Cloudflare Access `agents-vitrine`, autorisé par la politique « Agents
+> (jeton de service) » : deux en-têtes, `CF-Access-Client-Id` et
+> `CF-Access-Client-Secret`. Les valeurs se demandent à Adrien en message privé et
+> vont dans `~/repo_github/vitrine/.secrets/cf_access.env` (hors dépôt) ; la CI les a
+> en secrets GitHub `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`. Un 302 vers
+> `cloudflareaccess.com` veut dire « pas d'en-têtes ». Le jeton expire le
+> 1er septembre 2027.
+>
+> ```bash
+> set -a; . ~/repo_github/vitrine/.secrets/cf_access.env; set +a
+> curl -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+>      -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+>      https://dev.vitrinedemocratique.com/build-id.json
+> ```
 | `api.vitrinedemocratique.com` | API de lecture | — (Worker) | clé d'API |
 | `api.vitrinedemocratique.com/admin` | gestion des clés | — (Worker) | Cloudflare Access |
-| `ellipse.science/vitrine-showcase.github.io` | ancien miroir | `main` | ouvert |
 
-### Pourquoi l'ancien miroir existe encore
+### Pourquoi l'ancien miroir a été débranché (2026-08-30)
 
-GitHub Pages est conservé comme **chemin de retour arrière** : si la chaîne
-Cloudflare tombe, il reste un site debout, construit par un chemin indépendant.
-Il se déploie donc toujours à chaque poussée sur `main`.
+Il ne remplissait plus son rôle de filet, et il coûtait deux fois.
+
+**Il n'était pas un double fidèle.** Il se construisait par un autre chemin ET
+sur une autre source : Pages lisait les JSON commités, dev et prod lisent
+l'API. « Même contenu que dev » n'a donc jamais été garanti — ni le build, ni
+la donnée.
+
+**Il induisait en erreur.** Le 30-08, un correctif a été déclaré « en dev »
+cinq fois de suite sur la foi de Pages, alors que l'intégration Git de
+Cloudflare avait cessé de bâtir à 20h14 et que `dev.vitrinedemocratique.com`
+servait un build antérieur. Deux sites, deux vérités, et c'est le mauvais qui
+a été regardé.
+
+**Il perçait Cloudflare Access.** Tant qu'un miroir public servait le même
+contenu, le mot de passe de `dev.vitrinedemocratique.com` ne protégeait rien.
+
+Le vrai filet, quand l'intégration Git de Cloudflare tombe, est le workflow
+`deploy-dev-cloudflare.yml` en `workflow_dispatch` — utilisé avec succès le
+30-08 pour rattraper ce gel.
 
 **Mais on ne s'y réfère plus.** Une capture d'écran, un rapport de bogue ou une
 recette qui viendraient de là décrivent un site que personne ne surveille. Deux
@@ -40,37 +72,44 @@ Cloudflare**.
 ## Comment le code circule
 
 ```
-                    ┌── deploy.yml ─────────────→ GitHub Pages   (filet)
-   PR ──→ main ─────┤
-                    └── deploy-dev-cloudflare ──→ dev.vitrinedemocratique.com
+   PR ──→ main ──→ deploy-dev-cloudflare.yml ──→ dev.vitrinedemocratique.com
+                   (au push depuis le 30-08 ; l'intégration Git de Cloudflare
+                    reste branchée, d'où un double déploiement quand elle
+                    fonctionne — assumé, cf. l'en-tête du workflow)
 
    main ──(fusion délibérée)──→ prod ──→ deploy-prod ──→ vitrinedemocratique.com
 ```
 
-**`prod` n'avance que de deux façons :**
+**`main` n'avance que de deux façons :**
 
 1. **les données**, automatiquement — `refresh-data.yml` y recopie
    `public/data/` et `public/audio/` toutes les 4 h ;
-2. **le code**, uniquement par une **fusion délibérée `main → prod`**.
+2. **le code**, uniquement par une **fusion délibérée `develop → main`**.
 
-⚠️ **Le piège à connaître.** Le code fusionné dans `main` n'est PAS en
+⚠️ **Le piège à connaître.** Le code fusionné dans `develop` n'est PAS en
 production. Oublier la promotion laisse la prod tourner sur du vieux code
 pendant que les données, elles, continuent d'arriver — c'est arrivé le soir du
-lancement, la prod servant des en-têtes de cache corrigés la veille sur `main`.
+lancement, la prod servant des en-têtes de cache corrigés la veille sur `develop`.
 Le symptôme est trompeur : le site a l'air vivant, ses données sont fraîches,
 seul son comportement est ancien.
 
-`prod` est protégé par un ruleset : PR + une approbation + contrôles verts,
+`main` est protégé par un ruleset : PR + une approbation + contrôles verts,
 **sans dérogation administrateur**. Seule la clé de déploiement passe outre,
 pour que la synchro des données continue.
 
 **Et depuis le 2026-08-19, la promotion exige une vérification sur dev**
 (règle dure #10, `AGENTS.md`) : la PR de promotion doit contenir la ligne
 « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` », bloquée
-mécaniquement par le check `garde-promotion` sinon. Un agent sans accès
-Cloudflare Access fait sa vérification sur le miroir GitHub Pages (même
-contenu que dev) et le précise dans la ligne. Les poussées de données
+mécaniquement par le check `garde-promotion` sinon. Les poussées de données
 automatiques (`[prod data sync]`) ne sont pas concernées.
+
+⚠️ **Le miroir GitHub Pages servait d'échappatoire à cette règle** pour un
+agent sans accès Cloudflare Access. Il est débranché : cette échappatoire
+n'existe plus, et elle reposait de toute façon sur une parité qui n'a jamais
+été garantie. **À trancher avec Adrien** : soit l'observation sur dev revient
+à un humain, soit un agent y accède autrement. En attendant, un agent qui
+remplit cette ligne doit dire ce qu'il a réellement vérifié (build local,
+déploiement Cloudflare confirmé) et ce qu'il n'a **pas** pu voir.
 
 ## D'où viennent les données
 
@@ -83,12 +122,12 @@ raffineurs (R, AWS Lambda) ──→ Athena
                  ▼                               ▼
       JSON commités dans le dépôt        POST /v1/sync ──→ Postgres (Neon)
                  │                                            │
-                 │                                            ▼
-      GitHub Pages lit les JSON               dev et prod lisent l'API
+       (archive et repli à 6h)                                ▼
+                                            dev et prod lisent l'API
 ```
 
 **L'ordre compte, et il est garanti.** `refresh-data` recharge Postgres *après*
-avoir commité sur `main` et *avant* de pousser sur `prod` — c'est cette poussée
+avoir commité sur `develop` et *avant* de pousser sur `main` — c'est cette poussée
 qui déclenche le déploiement. Sans cet ordre, le build lirait l'API pendant
 qu'elle contient encore le cycle précédent : c'est la régression du
 2026-08-18, où le site affichait des données de plusieurs heures plus anciennes
@@ -123,11 +162,11 @@ Chacun a coûté du temps ; ils sont listés pour qu'ils ne le coûtent qu'une f
 
 | Piège | Ce qui se passe | Ce qu'il faut faire |
 |---|---|---|
-| **`main` ≠ prod** | La prod tourne sur du vieux code, données fraîches | Fusionner `main → prod` |
-| **`NEXT_PUBLIC_BASE_PATH` absente** | Tous les actifs en 404 sur la prod | La poser **vide**, pas l'omettre (`??` ne se déclenche que sur `undefined`) |
+| **`develop` ≠ prod** | La prod tourne sur du vieux code, données fraîches | Fusionner `develop → main` |
+| **`NEXT_PUBLIC_BASE_PATH`** | Absente ou vide, le site se sert à la racine : c'est le cas normal sur Cloudflare Pages, prod et dev | Ne la poser que pour un hôte qui servirait le site sous un sous-chemin |
 | **`NEXT_PUBLIC_SITE_ORIGIN` oubliée** | URL canoniques et cartes de partage pointent vers le dev | La poser sur chaque environnement |
 | **Branches `aws-infra`** | PR fermée sans explication | Préfixe **`feature/`**, jamais `feat/` |
-| **`aws-infra` cible `main`** | Déploiement direct en **production** | Cibler **`develop`** |
+| **`aws-infra` cible `develop`** | Déploiement direct en **production** | Cibler **`develop`** |
 | **CPU des Workers** | La synchro meurt à la 6ᵉ table, en silence | `fetch` = 10 ms de CPU, `scheduled` = 30 s. Travailler par tranches |
 | **Cron en UTC** | L'horaire dérive à chaque changement d'heure | Déjà réglé dans le code (`schedule.ts`) — ne pas « simplifier » |
 | **Tiret cadratin** | La garde `typographie` refuse la PR | Deux phrases, ou un deux-points |
@@ -146,8 +185,8 @@ curl -s https://api.vitrinedemocratique.com/v1/health | python3 -m json.tool | h
 curl -sI https://dev.vitrinedemocratique.com | head -1
 
 # La prod porte-t-elle le dernier code ? (doit être vide)
-git log --oneline origin/prod..origin/main -- app lib components
+git log --oneline origin/main..origin/main -- app lib components
 ```
 
 Cette dernière commande est la plus utile : **si elle affiche des commits, la
-production tourne sur du code plus ancien que `main`.**
+production tourne sur du code plus ancien que `develop`.**

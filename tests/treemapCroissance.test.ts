@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { previousDistinctAggregate } from "@/lib/data/headlineEvents";
 
 // Les valeurs ci-dessous sont celles VUES EN PRODUCTION le 2026-08-26, qui ont
-// fait afficher « 0,0 % » sur les douze tuiles du module « De quoi parle-t-on ? ».
+// fait afficher « 0,0 % » sur les douze tuiles du module « Les 12 enjeux de la campagne ».
 // Les tags « 11:37 » et « 07:36 » portent la même période et les mêmes scores :
 // seuls les libellés d'`issues_meta`, régénérés par le LLM, différaient.
 const row = (

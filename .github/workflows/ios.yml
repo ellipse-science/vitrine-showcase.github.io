@@ -1,0 +1,59 @@
+# Compilation de l'application iOS sur un coureur macOS.
+#
+# POURQUOI : personne dans l'équipe n'a forcément un Mac sous la main, et le
+# code Swift de `ios/` a été écrit sans Xcode. Sans ce workflow, « est-ce que ça
+# compile ? » reste une question ouverte que personne ne peut trancher.
+# Le dépôt est public : les coureurs macOS y sont gratuits.
+#
+# Ce workflow ne SIGNE rien et ne publie rien. Il répond à une seule question,
+# celle qui bloque tout le reste. L'envoi vers TestFlight viendra dans un
+# workflow séparé, quand la compilation passera.
+name: ios
+
+on:
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: compilation
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Version d'Xcode
+        run: xcodebuild -version
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Générer le projet
+        working-directory: ios
+        run: xcodegen generate
+
+      # Signature désactivée : on veut savoir si le code COMPILE, pas produire
+      # un binaire installable. Aucun certificat, donc aucun secret nécessaire.
+      - name: Compiler pour le simulateur
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Vitrine.xcodeproj \
+            -scheme Vitrine \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            | tail -80
