@@ -169,7 +169,7 @@ jobs:
             }
             # Le 1er septembre 2026, install_github a « réussi » sans installer tube
             # (cache invisible après le renommage de branche, compilation à froid en
-            # échec, erreur avalée par quiet = TRUE) : le filet a cassé à l'étape Athena
+            # échec, erreur avalée par quiet = TRUE) : le filet a casse a l etape Athena
             # deux fois de suite. On vérifie que le paquet est bien là, ici, fort.
             if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent apres install_github : voir le journal ci-dessus")
             cat("tube", as.character(packageVersion("tube")), "installe\n")
