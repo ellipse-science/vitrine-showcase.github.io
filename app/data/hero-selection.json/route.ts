@@ -23,8 +23,25 @@ export async function GET() {
   // illustrer, et le raffineur sait quoi faire d'un null — rien.
   try {
     const raw = await readDatasetText("public/data/headline-events.json");
-    const selection = selectHeroFromRawEvents(parseEvents(raw));
-    return Response.json(selection);
+    const events = parseEvents(raw);
+    const selection = selectHeroFromRawEvents(events);
+    // `latest_block` = le bloc le plus récent du jeu servi, indépendant de
+    // l'histoire de tête. La Une garde le bloc de sa dernière occurrence (une
+    // histoire dominante depuis hier soir affiche « hier soir » à bon droit) ;
+    // la sonde de fraîcheur, elle, doit mesurer l'âge du jeu, pas celui de
+    // l'histoire — sinon elle sonne quand la tête ne se renouvelle pas (vécu le
+    // 2 septembre 2026 : « 22,4 h de retard » sur un site à jour).
+    const latest = events.reduce<{ date_utc: string; time_interval_utc: string } | null>(
+      (best, e) => {
+        if (!e.date_utc || !e.time_interval_utc) return best;
+        const key = `${e.date_utc} ${e.time_interval_utc}`;
+        return !best || key > `${best.date_utc} ${best.time_interval_utc}`
+          ? { date_utc: e.date_utc, time_interval_utc: e.time_interval_utc }
+          : best;
+      },
+      null,
+    );
+    return Response.json(selection ? { ...selection, latest_block: latest } : selection);
   } catch {
     return Response.json(null);
   }
