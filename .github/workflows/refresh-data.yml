@@ -376,8 +376,9 @@ jobs:
           fi
           git fetch origin main
           # Use FETCH_HEAD, not origin/main: actions/checkout configures a narrow
-          # fetch refspec scoped to main, so the remote-tracking ref refs/remotes/
-          # origin/main may not exist. FETCH_HEAD always points at the just-fetched tip.
+          # fetch refspec scoped to the branch it checked out (develop here), so the
+          # remote-tracking ref refs/remotes/origin/main may not exist. FETCH_HEAD
+          # always points at the just-fetched tip.
           git checkout -B main FETCH_HEAD
           # public/images/deputes/ included alongside data/audio: without it, a
           # by-election winner's portrait would land on develop daily but never
