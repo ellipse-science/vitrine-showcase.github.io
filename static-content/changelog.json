@@ -1,5 +1,11 @@
 [
   {
+    "pr": 710,
+    "date": "2026-09-03T02:23:51Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, le miroir de travail se reconstruit après la mise à jour de la base, plus avant.",
+    "version": null
+  },
+  {
     "pr": 708,
     "date": "2026-09-02T23:12:56Z",
     "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut publier d'un clic une version du site bâtie sur le compte de production pour la comparer au site public.",
