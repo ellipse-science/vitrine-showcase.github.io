@@ -1549,7 +1549,7 @@
                 },
                 'parties_score_legacy': {
                     title: 'Tables: *_parties_score_* (legacy)',
-                    description: 'Tables calculées par radar-party-score.R, le pipeline historique — toujours actif et consommé par la Vitrine.',
+                    description: 'Tables calculées par radar-party-score.R, le pipeline historique. PLUS CONSOMMÉES PAR LA VITRINE depuis le 2026-09-03 : aucun fichier de app/, components/ ou lib/ ne les lit, le module Partis tourne sur les tables *_salient_shadow_*. Dépréciées dans scripts/tables.json (enabled: false) et retirées de la whitelist du Worker.',
                     columns: [
                         'party - Code parti (lpc, cpc, ndp, bq, gpc, ppc, caq, pq, plq, qs, pcq)',
                         'weighted_mentions - Score de pertinence pondéré',
@@ -2089,12 +2089,12 @@
                         '⏳ TIMEOUT: 15 minutes (tous)',
                         '',
                         '🔗 DÉPENDANCES: nécessite radar_annotated généré par radar-data-preparation',
-                        '🌐 Consommé par la Vitrine : les 3 tables PROVINCIALES seulement (components/interactive/PartisCouvertureClient.tsx). Les fédérales sont produites et non lues.'
+                        '🌐 Consommé par la Vitrine : les tables PROVINCIALES — day/week/month, _intraday, _by_media_day/week/month et parties_issues_salient_shadow_day (lib/data/parties.ts, les by_media par nom construit). Les fédérales sont produites et non lues.'
                     ]
                 },
                 'party-score-legacy': {
                     title: 'Refiner: radar-party-score.R (legacy)',
-                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle. Toujours actif — c\'est lui qui alimente le module Partis de la Vitrine.',
+                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle. Tourne encore en DEV, mais N\'ALIMENTE PLUS le module Partis : radar-party-score-salient-shadow l\'a remplacé. Laissé hors PROD (aws-infra#557).',
                     details: [
                         '📥 SOURCES:',
                         '• <span class="badge-dev">DEV</span>/datamarts - Table vitrine_datamart-salient_index',
