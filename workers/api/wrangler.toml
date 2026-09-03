@@ -80,8 +80,9 @@ service = "vitrine-api"
 #   wrangler secret put DATABASE_URL
 #   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena, compte DEV)
 #   wrangler secret put AWS_SECRET_ACCESS_KEY_DEV  (idem)
-#   wrangler secret put AWS_ACCESS_KEY_ID_PROD     (clé de LECTURE Athena, compte PROD ;
-#   wrangler secret put AWS_SECRET_ACCESS_KEY_PROD  à poser AVANT DATAMART_ENV = "PROD")
+#   wrangler secret put AWS_ACCESS_KEY_ID_PROD     (clé de LECTURE Athena, compte PROD)
+#   wrangler secret put AWS_SECRET_ACCESS_KEY_PROD (idem)
+#     ⚠️ Les deux clés PROD sont à poser AVANT de passer DATAMART_ENV à "PROD".
 #   wrangler secret put SLACK_WEBHOOK_URL          (optionnel, alertes)
 #   wrangler secret put DEPLOY_HOOK_PROD           (à la bascule)
 #   wrangler secret put DEPLOY_HOOK_DEV            (à la bascule)

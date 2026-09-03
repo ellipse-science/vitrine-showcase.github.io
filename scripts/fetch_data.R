@@ -826,8 +826,28 @@ run <- function() {
   # Filet de sécurité de la bascule : revenir sur DEV = changer la variable,
   # sans redéployer ni rejouer la migration.
   datamart_env <- datamart_env_choisi()
-  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", datamart_env)))
-  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", datamart_env)))
+  cle_id     <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", datamart_env))
+  cle_secret <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", datamart_env))
+
+  # Échouer TÔT et lisiblement si les clés de l'environnement choisi manquent.
+  # Sans ça, noctua part quand même et meurt bien plus loin sur une erreur de
+  # requête qui ne nomme jamais la vraie cause — on croit à un problème de
+  # table ou de schéma. Le Worker fait la même vérification côté sync-athena.
+  # Le cas est réel au moment de la bascule : DATAMART_ENV passe à PROD avant
+  # que les secrets _PROD soient posés.
+  manquantes <- c(
+    if (!nzchar(cle_id))     paste0("AWS_ACCESS_KEY_ID_", datamart_env),
+    if (!nzchar(cle_secret)) paste0("AWS_SECRET_ACCESS_KEY_", datamart_env)
+  )
+  if (length(manquantes) > 0) {
+    stop("DATAMART_ENV = ", datamart_env, " mais ces variables sont absentes ou vides : ",
+         paste(manquantes, collapse = ", "),
+         ". Posez-les (secrets du dépôt en CI, .Renviron en local), ",
+         "ou remettez DATAMART_ENV à DEV.", call. = FALSE)
+  }
+
+  Sys.setenv(AWS_ACCESS_KEY_ID     = cle_id)
+  Sys.setenv(AWS_SECRET_ACCESS_KEY = cle_secret)
   message("[", format(Sys.time(), "%H:%M:%S"), "] Datamart environment: ", datamart_env)
 
   conn <- tube::ellipse_connect(datamart_env, "datamarts")
