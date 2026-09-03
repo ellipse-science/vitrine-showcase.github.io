@@ -1,5 +1,11 @@
 [
   {
+    "pr": 719,
+    "date": "2026-09-03T19:03:28Z",
+    "note": "Une note du journal annonçait une amélioration visuelle que le site public n'affiche pas encore ; elle a été corrigée pour ne décrire que ce qui est réellement en ligne.",
+    "version": null
+  },
+  {
     "pr": 717,
     "date": "2026-09-03T17:03:03Z",
     "note": "Dans le palmarès des partis, l'onglet « Jour » affiche maintenant à midi les données arrêtées à midi, et non celles du créneau précédent ; le classement, le disque d'or et les jauges sont désormais tous sur le même relevé.",
