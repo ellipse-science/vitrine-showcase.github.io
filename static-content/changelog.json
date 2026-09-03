@@ -1,5 +1,11 @@
 [
   {
+    "pr": 699,
+    "date": "2026-09-03T16:47:23Z",
+    "note": "Une nouvelle page explique, en langage clair, comment les données du site circulent de la collecte à la publication.",
+    "version": null
+  },
+  {
     "pr": 715,
     "date": "2026-09-03T04:28:14Z",
     "note": "Rien ne change pour le visiteur.",
