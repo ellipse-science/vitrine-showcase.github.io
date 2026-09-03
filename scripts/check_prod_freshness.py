@@ -126,8 +126,14 @@ def mesurer() -> tuple[bool, str, str]:
     build_age, mention_build = age_du_build()
     try:
         une = _lire_json(URL_UNE)
-        fin = fin_bloc_utc(une["date_utc"], une["time_interval_utc"])
-        bloc = f"{une['date_utc']} {une['time_interval_utc']} UTC"
+        # Le bloc mesuré est celui du JEU servi (`latest_block`, depuis le
+        # 2 septembre 2026), pas celui de l'histoire de tête : une histoire
+        # dominante depuis la veille garde le bloc de sa dernière occurrence, et
+        # la sonde criait « 22 h de retard » sur un site à jour. Repli sur le
+        # bloc de la Une tant qu'un build antérieur ne porte pas le champ.
+        ref = une.get("latest_block") or une
+        fin = fin_bloc_utc(ref["date_utc"], ref["time_interval_utc"])
+        bloc = f"{ref['date_utc']} {ref['time_interval_utc']} UTC"
     except Exception as e:
         return (
             True,

@@ -1,5 +1,83 @@
 [
   {
+    "pr": 715,
+    "date": "2026-09-03T04:28:14Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 714,
+    "date": "2026-09-03T03:52:02Z",
+    "note": "Le module des 12 enjeux affiche maintenant l'heure de sa vraie édition : il disait « 16h » quand ses données étaient déjà celles de 20h.",
+    "version": null
+  },
+  {
+    "pr": 712,
+    "date": "2026-09-03T03:50:46Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 697,
+    "date": "2026-09-03T02:37:18Z",
+    "note": "Le transport et le logement sont maintenant comptés dans l'enjeu « Économie et travail », et non plus dans « Culture et nationalisme », conformément à la classification du Polimètre. La page Méthodologie explique désormais comment les 21 thèmes sont regroupés en 12 enjeux.",
+    "version": "2.43.0-beta.3"
+  },
+  {
+    "pr": 709,
+    "date": "2026-09-03T02:25:02Z",
+    "note": "Dans la table qui compare les partis, chaque colonne affiche maintenant un petit cadran indiquant d'un coup d'œil si la couverture médiatique de ce parti penche plutôt en sa faveur ou en sa défaveur.",
+    "version": null
+  },
+  {
+    "pr": 710,
+    "date": "2026-09-03T02:23:51Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, le miroir de travail se reconstruit après la mise à jour de la base, plus avant.",
+    "version": null
+  },
+  {
+    "pr": 708,
+    "date": "2026-09-02T23:12:56Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut publier d'un clic une version du site bâtie sur le compte de production pour la comparer au site public.",
+    "version": null
+  },
+  {
+    "pr": 707,
+    "date": "2026-09-02T23:03:57Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'alarme de fraîcheur ne se déclenche plus quand l'histoire de tête reste la même d'une édition à l'autre.",
+    "version": null
+  },
+  {
+    "pr": 706,
+    "date": "2026-09-02T22:44:12Z",
+    "note": "La Une des Unes et les modules retrouvent l'édition la plus récente à chaque reconstruction : depuis le 1er septembre au soir, le site pouvait afficher l'édition précédente.",
+    "version": "2.43.0-beta.2"
+  },
+  {
+    "pr": 705,
+    "date": "2026-09-02T22:35:54Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 704,
+    "date": "2026-09-02T22:26:44Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut voir d'un clic ce que la base de l'API contient réellement.",
+    "version": null
+  },
+  {
+    "pr": 701,
+    "date": "2026-09-02T21:05:33Z",
+    "note": "Rien ne change pour le visiteur. En coulisses, l'équipe peut vérifier d'un clic ce que le compte de production est capable de fournir au site avant de basculer.",
+    "version": null
+  },
+  {
+    "pr": 700,
+    "date": "2026-09-02T20:52:03Z",
+    "note": "Rien ne change pour le visiteur aujourd'hui. En coulisses, le site peut désormais lire ses données depuis le compte de production ou celui de travail en changeant un seul réglage, avec un retour arrière immédiat.",
+    "version": null
+  },
+  {
     "pr": 691,
     "date": "2026-09-02T02:35:33Z",
     "note": "Rien de visible : le site public se remet à recevoir ses données fraîches par les deux voies prévues, et non plus par une seule.",

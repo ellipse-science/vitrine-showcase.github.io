@@ -38,9 +38,9 @@ export function rankPointsForPeriod(
 }
 
 /** L'instant d'un point, en heure de Montréal, sous une forme comparable
- *  lexicographiquement : « 2026-08-29T04 ». Le `tag` est en UTC, d'où la
- *  conversion — comparer les tags bruts décalerait la frontière de 4 ou 5h
- *  selon la saison. */
+ *  lexicographiquement : « 2026-08-28T23 ». Le `tag` est déjà en heure de
+ *  Montréal (écrit ainsi par le raffineur) ; `momentMontreal` le lit tel quel
+ *  et ramène aussi les instants ISO (`Z`, décalage) à la même horloge. */
 /** Le JOUR d'une observation, en heure de Montréal, tiré du `tag` de la passe.
  *
  *  ⚠️ Surtout pas `point.date` : sur les tables hebdomadaire et mensuelle, un

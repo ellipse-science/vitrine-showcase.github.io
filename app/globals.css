@@ -5304,15 +5304,16 @@
     width: var(--tranche);
     min-width: 0;
     display: grid;
-    /* La troisième rangée est de hauteur FIXE, et réservée dans TOUTES les
-       colonnes. En `auto`, seule la colonne en sourdine avait du contenu à cet
-       étage : plus haute que ses voisines et alignée par le bas, elle remontait
-       sa piste de 20 px et se retrouvait décalée. 26 px laissent la place à
-       deux lignes de 9 px, le repli restant autorisé. */
-    grid-template-rows: var(--piste) auto 26px;
+    /* QUATRE rangées, toutes RÉSERVÉES dans TOUTES les colonnes — sans quoi la
+       colonne en sourdine, seule à porter du contenu au bas, se retrouve plus
+       haute que ses voisines et décale sa piste (bug constaté deux fois).
+         3 — le petit vumètre de ton (26 px) ;
+         4 — l'étiquette « Sourdine » (14 px), sous le vumètre cassé de la
+             colonne en sourdine, vide pour les autres. */
+    grid-template-rows: var(--piste) auto 26px 14px;
     align-items: end;
     justify-items: center;
-    row-gap: 9px;
+    row-gap: 6px;
   }
 
   /* Le vumètre : une pile de segments, du bas vers le haut. */
@@ -5411,6 +5412,95 @@
     letter-spacing: 0.08em;
     line-height: 1;
   }
+
+  /* LE PETIT VUMÈTRE DE TON — sous la colonne, dans la 3e rangée de la grille
+     (26 px). Une fenêtre rectangulaire, verre fumé, traits fins : un
+     instrument, pas une pastille. `--ct-angle` (du composant, d'après
+     `tonePct`) donne la déviation, `--ct-ton` la couleur de l'aiguille. */
+  .console-ton {
+    display: block;
+    width: 100%;
+    max-width: 62px;
+    height: 24px;
+  }
+  /* Cadran IVOIRE, comme un vrai vumètre — plus de verre fumé quasi noir qui
+     avalait l'aiguille et les couleurs. Un liseré sombre le détache du fond
+     crème de la console. */
+  .ct-cadre {
+    fill: #E4D8BC;
+    stroke: rgba(28, 25, 23, 0.4);
+    stroke-width: 0.8;
+  }
+  /* L'échelle — segment rouge à gauche, vert à droite, bien marqués ; le
+     milieu neutre en encre discrète. */
+  .ct-echelle {
+    fill: none;
+    stroke: rgba(28, 25, 23, 0.32);
+    stroke-width: 2.6;
+    stroke-linecap: butt;
+  }
+  .ct-echelle--defav { stroke: #A8302C; stroke-width: 4.2; }
+  .ct-echelle--fav { stroke: #3D6B3A; stroke-width: 4.2; }
+  .ct-tick {
+    stroke: rgba(28, 25, 23, 0.4);
+    stroke-width: 1.4;
+  }
+  /* L'angle du ton, amorti : bascule d'onglet ou de média, l'aiguille glisse. */
+  .ct-pivot {
+    transform: rotate(var(--ct-angle, 0deg));
+    transform-origin: 32px 27px;
+    transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  /* LE FRÉMISSEMENT — petit, décalé d'une colonne à l'autre (`--ct-phase`). */
+  .ct-saut {
+    transform-origin: 32px 27px;
+    animation: ct-saut 2.5s ease-in-out infinite;
+    animation-delay: calc(var(--ct-phase, 0) * -1s);
+  }
+  @keyframes ct-saut {
+    0%, 100% { transform: rotate(0deg); }
+    8% { transform: rotate(1.6deg); }
+    19% { transform: rotate(-0.7deg); }
+    32% { transform: rotate(0.4deg); }
+    54% { transform: rotate(0deg); }
+  }
+  /* L'aiguille : un liseré sombre dessous (toujours lisible sur l'ivoire), la
+     couleur du ton dessus, épaisse. */
+  .ct-aiguille-fond {
+    stroke: rgba(24, 22, 19, 0.92);
+    stroke-width: 5;
+    stroke-linecap: round;
+  }
+  .ct-aiguille {
+    stroke: var(--ct-ton, var(--amber));
+    stroke-width: 3.2;
+    stroke-linecap: round;
+  }
+  .ct-axe { fill: rgba(24, 22, 19, 0.85); }
+  @media (prefers-reduced-motion: reduce) {
+    .ct-saut { animation: none; }
+  }
+
+  /* CASSÉ — le vumètre de ton d'un canal en sourdine. Rien n'y est mesuré :
+     l'aiguille est affalée HORS échelle (−74°, bien au-delà du bout rouge),
+     le cadran s'éteint, le frémissement s'arrête. On lit « instrument mort »,
+     pas « ton très défavorable ». */
+  .console-ton--casse { opacity: 0.72; }
+  .console-ton--casse .ct-cadre { fill: #D8CCAF; }
+  .console-ton--casse .ct-pivot {
+    transform: rotate(-74deg);
+    transition: none;
+  }
+  .console-ton--casse .ct-saut { animation: none; }
+  .console-ton--casse .ct-aiguille-fond { stroke: rgba(24, 22, 19, 0.38); }
+  .console-ton--casse .ct-aiguille { stroke: rgba(24, 22, 19, 0.2); }
+  .console-ton--casse .ct-echelle,
+  .console-ton--casse .ct-echelle--defav,
+  .console-ton--casse .ct-echelle--fav {
+    stroke: rgba(28, 25, 23, 0.16);
+  }
+  .console-ton--casse .ct-tick { stroke: rgba(28, 25, 23, 0.16); }
+  .console-ton--casse .ct-axe { fill: rgba(24, 22, 19, 0.3); }
 
   /* Graduations : posées en absolu sur la hauteur du vumètre, pour tomber
      exactement en face du niveau qu'elles annoncent. */
@@ -8576,11 +8666,13 @@
      qu'une aide, et le mot « Sourdine » se suffit. */
   .console-sourdine .saillance-info-tip { display: none; }
   .console-sourdine { font-size: 8px; letter-spacing: 0.1em; }
-  /* La rangée réserve 26 px pour deux lignes plus l'infobulle. Celle-ci partie,
-     le mot tient sur une ligne et se retrouvait collé au bas d'une case trop
-     haute. Les colonnes restent alignées entre elles : la hauteur change pour
-     TOUTES, pas seulement pour celle en sourdine. */
-  .console .console-tranche { grid-template-rows: var(--piste) auto 12px; row-gap: 6px; }
+  /* Sur mobile la 3e rangée retombe à 0 (le vumètre de ton est masqué, cf.
+     plus bas) ; la 4e garde de quoi poser « Sourdine » sur une ligne. Les
+     colonnes restent alignées : la hauteur change pour TOUTES. */
+  .console .console-tranche { grid-template-rows: var(--piste) auto 0 12px; row-gap: 6px; }
+  /* La 3e rangée est à 0 : le petit vumètre de ton n'y tiendrait pas et serait
+     illisible. Il quitte l'affichage tactile — le ton reste sur la pochette. */
+  .console-ton { display: none; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
   .deck-jog-media text { font-size: 5.4px; }
@@ -9774,6 +9866,70 @@
   to { transform: rotate(360deg); }
 }
 
+/* LE VUMÈTRE DU DECK — une fenêtre rectangulaire au coin bas-droit du vinyle,
+   dans l'esprit d'un vumètre de magnéto. `--vu-angle` (du composant, d'après
+   `tonePct`) donne la déviation de l'aiguille, `--vu-ton` sa couleur, sur le
+   dégradé de `.ass-tone`. L'échelle porte deux courts segments de couleur, aux
+   deux bouts. `pointer-events: none` : rien n'est intercepté sur le clic. */
+.deck-vu {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+/* Le verre fumé et son cadre fin. Traits minces partout : c'est ce qui le fait
+   lire comme un instrument plutôt que comme une pastille. */
+.deck-vu-cadre {
+  fill: rgba(12, 11, 10, 0.82);
+  stroke: rgba(243, 236, 221, 0.34);
+  stroke-width: 0.7;
+}
+/* L'échelle — une hairline, avec un court segment rouge à gauche et vert à
+   droite (le « rouge » d'un vrai vumètre, ici aux deux bouts). */
+.deck-vu-echelle {
+  fill: none;
+  stroke: rgba(243, 236, 221, 0.32);
+  stroke-width: 1;
+  stroke-linecap: butt;
+}
+.deck-vu-echelle--defav { stroke: rgba(168, 48, 44, 0.85); }
+.deck-vu-echelle--fav { stroke: rgba(61, 107, 58, 0.9); }
+.deck-vu-tick {
+  stroke: rgba(243, 236, 221, 0.4);
+  stroke-width: 0.7;
+  stroke-linecap: butt;
+}
+/* L'angle du ton, amorti : bascule d'onglet ou de média, l'aiguille glisse
+   vers sa nouvelle valeur au lieu d'y sauter. Pivot = l'axe, sous la fenêtre. */
+.deck-vu-pivot {
+  transform: rotate(var(--vu-angle, 0deg));
+  transform-origin: 76.5px 96px;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* LE FRÉMISSEMENT — petit, irrégulier, jamais en phase d'un deck à l'autre
+   (`--vu-phase` en secondes négatives). Il ne mesure rien. */
+.deck-vu-saut {
+  transform-origin: 76.5px 96px;
+  animation: deck-vu-saut 2.5s ease-in-out infinite;
+  animation-delay: calc(var(--vu-phase, 0) * -1s);
+}
+@keyframes deck-vu-saut {
+  0%, 100% { transform: rotate(0deg); }
+  8% { transform: rotate(1.6deg); }
+  19% { transform: rotate(-0.7deg); }
+  32% { transform: rotate(0.4deg); }
+  54% { transform: rotate(0deg); }
+}
+.deck-vu-aiguille {
+  stroke: var(--vu-ton, var(--amber));
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+.deck-vu-axe { fill: rgba(243, 236, 221, 0.6); }
+
 /* Le capuchon central : la même composition que la pochette, découpée en rond.
    Sans pictogramme — à cette taille il ne ferait que brouiller les à-plats. */
 /* Le nom du média épouse la courbe du disque, COLLÉ au capuchon central.
@@ -10092,10 +10248,12 @@
 }
 
 /* Mouvement décoratif : il s'arrête net pour qui demande moins d'animation.
-   Ni l'aiguille ni le clignotement ne portent d'information — les couper ne
-   retire donc rien à la lecture. */
+   Ni l'aiguille du plateau ni le clignotement ne portent d'information — les
+   couper ne retire rien. Le frémissement du vumètre du deck s'arrête aussi,
+   mais l'aiguille GARDE son angle et sa couleur, qui portent le ton. */
 @media (prefers-reduced-motion: reduce) {
   .deck-jog::after,
+  .deck-vu-saut,
   .console-vumetre .seg.on.vu { animation: none; opacity: 1; }
 }
 

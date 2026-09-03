@@ -1,0 +1,123 @@
+# Répétition à blanc de fetch_data.R contre le datamart DEV ou PROD (vitrine#489).
+#
+# Ce que ça fait : roule scripts/fetch_data.R avec DATAMART_ENV choisi à la main,
+# puis résume table par table ce qui est sorti (fichier écrit, lignes, date la
+# plus récente) et dépose public/data en artefact. RIEN d'autre : pas de commit,
+# pas de poussée, pas de synchro Postgres, pas de hook, pas de Slack. C'est la
+# répétition que la bascule PROD exige avant de toucher aux vrais interrupteurs
+# (variable de dépôt DATAMART_ENV et wrangler.toml du Worker) : elle dit quelles
+# tables manquent ou échouent en PROD, avec les secrets du dépôt, ceux que le
+# vrai filet utilisera.
+#
+# Déclenchement manuel seulement. Le filet réel reste refresh-data.yml.
+name: Répétition à blanc (datamart)
+
+on:
+  workflow_dispatch:
+    inputs:
+      datamart_env:
+        description: "Datamart à lire : DEV ou PROD"
+        required: true
+        type: choice
+        options: [PROD, DEV]
+        default: PROD
+
+concurrency:
+  group: repetition-a-blanc
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  repetition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      AWS_ACCESS_KEY_ID_PROD:     ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+      AWS_SECRET_ACCESS_KEY_PROD: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+      AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+      AWS_REGION:                 ${{ secrets.AWS_REGION }}
+      DATAMART_ENV:               ${{ inputs.datamart_env }}
+      # Volontairement absents : HEALTHCHECKS_URL et les webhooks Slack. Une
+      # répétition ne doit ni rassurer ni alarmer la surveillance du vrai filet.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Même recette que refresh-data.yml (R 4.5, noctua depuis l'archive CRAN,
+      # tube depuis GitHub avec reprise) et MÊME clé de cache : la répétition
+      # profite du cache du filet et ne le pollue pas.
+      - name: Setup R
+        timeout-minutes: 6
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5'
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-${{ runner.os }}-R4.5-v2
+          restore-keys: r-${{ runner.os }}-R4.5-
+
+      - name: Install R packages
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e '
+            pkgs <- c("remotes", "dplyr", "jsonlite", "lubridate")
+            install.packages(pkgs[!pkgs %in% installed.packages()[,"Package"]])
+            if (!requireNamespace("noctua", quietly = TRUE)) {
+              remotes::install_url("https://cran.r-project.org/src/contrib/Archive/noctua/noctua_2.6.3.tar.gz",
+                                   upgrade = "never", INSTALL_opts = c("--no-help", "--no-html", "--no-docs"))
+              if (!requireNamespace("noctua", quietly = TRUE)) stop("noctua absent apres installation depuis l archive CRAN")
+            }
+            for (i in 1:6) {
+              ok <- tryCatch({
+                remotes::install_github("ellipse-science/tube", upgrade = "never", quiet = FALSE)
+                TRUE
+              }, error = function(e) {
+                message(sprintf("tube install attempt %d/6 failed: %s", i, conditionMessage(e)))
+                FALSE
+              })
+              if (ok) break
+              if (i == 6) stop("Failed to install tube after 6 attempts")
+              Sys.sleep(2^i * 5)
+            }
+            if (!requireNamespace("tube", quietly = TRUE)) stop("tube absent apres install_github")
+            cat("tube", as.character(packageVersion("tube")), "installe\n")
+          '
+
+      # public/data part d'un dossier vide : un fichier présent à la fin vient
+      # de CETTE lecture, jamais d'un reste commité. C'est ce qui rend le résumé
+      # digne de foi pour dire « cette table manque en PROD ».
+      - name: Vider public/data
+        run: rm -rf public/data && mkdir -p public/data
+
+      - name: Lire le datamart ${{ inputs.datamart_env }}
+        id: lecture
+        continue-on-error: true
+        run: Rscript scripts/fetch_data.R
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Résumer table par table
+        run: |
+          python scripts/resume_repetition.py --env "$DATAMART_ENV" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "fetch_data.R : ${{ steps.lecture.outcome }}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Déposer public/data en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-data-${{ inputs.datamart_env }}
+          path: public/data
+          if-no-files-found: warn
+          retention-days: 7

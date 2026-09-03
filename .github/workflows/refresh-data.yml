@@ -81,6 +81,10 @@ jobs:
       AWS_ACCESS_KEY_ID_DEV:      ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
       AWS_SECRET_ACCESS_KEY_DEV:  ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
       AWS_REGION:                 ${{ secrets.AWS_REGION }}
+      # Datamart lu par fetch_data.R : DEV (défaut) ou PROD (vitrine#489).
+      # Variable de dépôt (Settings → Variables), pas un secret : la bascule
+      # et son repli se font en la changeant, sans redéployer.
+      DATAMART_ENV:               ${{ vars.DATAMART_ENV || 'DEV' }}
       HEALTHCHECKS_URL:      ${{ secrets.HEALTHCHECKS_URL }}
       # ─── DEUX DESTINATIONS, SELON LA GRAVITÉ (décision Adrien 2026-08-08) ───
       # L'architecture de surveillance est UNE CHAÎNE PAR CORPUS : les médias ont
@@ -398,6 +402,19 @@ jobs:
       # build entre le 21 et le 25 août — c'est le trou de #570). On demande
       # donc explicitement le build, et seulement quand des données ont
       # réellement changé : pas de build à vide, pas de double build.
+      # Même logique pour dev : le push des données sur `develop` ne déclenche
+      # plus deploy-dev-cloudflare.yml (paths-ignore), sinon le build partait
+      # sept secondes AVANT la synchro Neon et servait l'édition précédente
+      # (2 septembre 2026, 21h18). On le demande ici, après la synchro.
+      - name: Déclencher le build dev (après la synchro Neon)
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-dev-cloudflare.yml --repo "$GITHUB_REPOSITORY" --ref develop \
+            && echo "build dev demandé" \
+            || echo "::warning::le build dev n'a pas pu être déclenché — lancer deploy-dev-cloudflare.yml à la main"
+
       - name: Déclencher le build prod (si les données ont bougé)
         if: env.prod_sync == '1'
         env:
