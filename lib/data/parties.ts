@@ -697,25 +697,6 @@ function samplePoints(points: [number, number][], n: number): [number, number][]
   return out;
 }
 
-// Returns the last date of each ISO week — one sparkline point per week.
-function lastDatesPerWeek(dates: string[]): string[] {
-  const last = new Map<string, string>();
-  for (const d of dates) {
-    const dt = new Date(d + "T12:00:00Z");
-    const day = dt.getUTCDay() || 7;
-    dt.setUTCDate(dt.getUTCDate() - (day - 1));
-    last.set(dt.toISOString().slice(0, 10), d);
-  }
-  return [...last.values()].sort();
-}
-
-// Returns the last date of each calendar month — one sparkline point per month.
-function lastDatesPerMonth(dates: string[]): string[] {
-  const last = new Map<string, string>();
-  for (const d of dates) last.set(d.slice(0, 7), d);
-  return [...last.values()].sort();
-}
-
 /**
  * L'URL représentative la plus RÉCENTE par parti, dans des lignes déjà
  * filtrées sur UN SEUL média.
@@ -772,79 +753,135 @@ function buildLookup(rows: ShadowRow[]): Lookup {
   return result;
 }
 
-function computeStats(
-  dayRows: ShadowRow[],
-  weekRows: ShadowRow[],
-  monthRows: ShadowRow[],
-): { stats: Stat[]; dates: SeriesDates } | null {
-  const dayLookup   = buildLookup(dayRows);
-  const weekLookup  = buildLookup(weekRows);
-  const monthLookup = buildLookup(monthRows);
+/**
+ * Toutes les fenêtres se DÉRIVENT de la table quotidienne.
+ *
+ * Avant, « Semaine » lisait `_salient_shadow_week` (remise à zéro le lundi) et
+ * « Campagne » sommait `_day`. Deux problèmes : le lundi, l'onglet Semaine
+ * retombait à quelques heures ; et ni l'un ni l'autre ne bougeait avant le
+ * calcul de fin de journée (23h35). Désormais :
+ *
+ *   Jour     → la journée en cours (dernière ligne de `_day`)
+ *   Semaine  → depuis le SAMEDI 00h (`samediDeLaSemaine`), la semaine se
+ *              terminant vendredi 20h — même semaine que la discothèque
+ *   Campagne → depuis le déclenchement du scrutin (`ELECTION_CALL_DATE`)
+ *
+ * Les minutes s'ADDITIONNENT (`total_raw_score` est une durée). La part de voix,
+ * elle, NE s'additionne pas — c'est une fraction déjà normalisée par jour ; on
+ * somme les minutes puis on renormalise. Le ton est la moyenne des tons
+ * quotidiens PONDÉRÉE par les minutes.
+ *
+ * Le bloc intra-journée courant est replié par-dessus dans l'assembleur
+ * (`statsAvecBlocCourant`), pour que Semaine et Campagne suivent aussi les
+ * blocs de 4 h.
+ *
+ * ⚠️ DÉFAUT HÉRITÉ DE `_day` — aws-refiners#473. Les lignes des jours TERMINÉS
+ * de `*_parties_salient_shadow_day` ne couvrent pas toute leur journée : elles
+ * portent `computed_at = <jour>T23:31Z` et s'arrêtent vers 15h16 heure de
+ * Montréal (la dédup se fait sur `date_utc` alors que la table se date en heure
+ * de Montréal ; le passage de 23h31 bascule sous la clé du lendemain et s'y
+ * fait battre). Mesuré sur samedi 29/08 → mercredi 02/09 : ~77 % des minutes
+ * capturées. La renormalisation ci-dessous absorbe l'essentiel — le SOV reste
+ * juste à ~1 point — mais le biais résiduel est SYSTÉMATIQUE, pas du bruit
+ * (PQ −3,5 pt, PLQ +2,4 pt sur cette fenêtre), parce que l'amputation n'est pas
+ * uniforme entre partis. Avant, `_week` était UNE ligne = UNE troncature ;
+ * sommer N lignes de `_day` cumule la perte. À reprendre sur `parties_articles_4h`
+ * (aws-refiners#472) quand sa rétention couvrira la campagne.
+ */
+function computeStats(dayRows: ShadowRow[]): { stats: Stat[]; dates: SeriesDates } | null {
+  const dayLookup = buildLookup(dayRows);
+  const allDayDates = Object.keys(dayLookup).sort();
+  if (!allDayDates.length) return null;
 
-  const allDayDates  = Object.keys(dayLookup).sort();
-  const weekDates    = Object.keys(weekLookup).sort();
-  const monthDates   = Object.keys(monthLookup).sort();
+  const latestDay = allDayDates[allDayDates.length - 1];
 
-  if (!allDayDates.length || !weekDates.length || !monthDates.length) return null;
+  const minutesSur = (jours: string[], pKey: PartyKey) =>
+    jours.reduce((t, d) => t + (dayLookup[d]?.[pKey]?.minutes || 0), 0);
+  const tonPondere = (jours: string[], pKey: PartyKey) => {
+    let num = 0;
+    let den = 0;
+    for (const d of jours) {
+      const e = dayLookup[d]?.[pKey];
+      if (!e) continue;
+      num += (e.tone || 0) * (e.minutes || 0);
+      den += e.minutes || 0;
+    }
+    return den > 0 ? num / den : 0;
+  };
+  const partSur = (jours: string[], pKey: PartyKey) => {
+    const tous = PARTY_KEYS.reduce((t, k) => t + minutesSur(jours, k), 0);
+    return tous > 0 ? minutesSur(jours, pKey) / tous : 0;
+  };
 
-  const latestDay   = allDayDates[allDayDates.length - 1];
-  const latestWeek  = weekDates[weekDates.length - 1];
-  const latestMonth = monthDates[monthDates.length - 1];
+  // Les semaines samedi → vendredi présentes dans la fenêtre, par samedi.
+  const parSemaine = new Map<string, string[]>();
+  for (const d of allDayDates) {
+    const sam = samediDeLaSemaine(d);
+    const l = parSemaine.get(sam);
+    if (l) l.push(d);
+    else parSemaine.set(sam, [d]);
+  }
+  const samedis = [...parSemaine.keys()].sort();
+  const echSemaines = samedis.slice(-12);
+  const semaineCourante = parSemaine.get(samedis[samedis.length - 1]) ?? [];
 
-  const last7DayDates    = allDayDates.slice(-7);
-  const weekSampleDates  = lastDatesPerWeek(weekDates).slice(-12);
-  const monthSampleDates = lastDatesPerMonth(monthDates).slice(-12);
+  const debutCampagne = ELECTION_CALL_DATE;
+  const joursCampagne = debutCampagne
+    ? allDayDates.filter((d) => d >= debutCampagne)
+    : allDayDates;
 
-  const avg = (arr: number[]) =>
-    arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+  // La RÉFÉRENCE de l'onglet Semaine (« moyenne de la semaine ») : la part
+  // habituelle du parti, sur les 28 derniers jours.
+  const jours28 = allDayDates.slice(-28);
+  const last7DayDates = allDayDates.slice(-7);
+  const joursDe = (sam: string) => parSemaine.get(sam) ?? [];
 
-  const stats = PARTY_KEYS.map((pKey): Stat => {
-    const todaySov  = dayLookup[latestDay]?.[pKey]?.mentions   || 0;
-    const weekSov   = weekLookup[latestWeek]?.[pKey]?.mentions  || 0;
-    const monthSov  = monthLookup[latestMonth]?.[pKey]?.mentions || 0;
-    const yearSov   = avg(allDayDates.map((d) => dayLookup[d]?.[pKey]?.mentions || 0));
-
-    const todayTone = dayLookup[latestDay]?.[pKey]?.tone   || 0;
-    const weekTone  = weekLookup[latestWeek]?.[pKey]?.tone  || 0;
-    const monthTone = monthLookup[latestMonth]?.[pKey]?.tone || 0;
-
-    // Les minutes de chaque période, à côté des parts. Le `year` somme la
-    // fenêtre entière, puisqu'il n'existe pas de table annuelle.
-    const minutes: Sov = {
+  const stats = PARTY_KEYS.map((pKey): Stat => ({
+    key: pKey,
+    minutes: {
       today: dayLookup[latestDay]?.[pKey]?.minutes || 0,
-      week:  weekLookup[latestWeek]?.[pKey]?.minutes || 0,
-      month: monthLookup[latestMonth]?.[pKey]?.minutes || 0,
-      year:  allDayDates.reduce((t, d) => t + (dayLookup[d]?.[pKey]?.minutes || 0), 0),
-    };
-
-    return {
-      key: pKey,
-      minutes,
-      sov:  { today: todaySov, week: weekSov,  month: monthSov,  year: yearSov },
-      tone: { today: todayTone, week: weekTone, month: monthTone, year: 0 },
-      history: {
-        daily:   allDayDates.map((d)      => dayLookup[d]?.[pKey]?.mentions   || 0),
-        week:    last7DayDates.map((d)    => dayLookup[d]?.[pKey]?.mentions   || 0),
-        weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.mentions  || 0),
-        month:   [],
-        monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.mentions || 0),
-      },
-      minutesHistory: {
-        daily:   allDayDates.map((d)      => dayLookup[d]?.[pKey]?.minutes   || 0),
-        weekly:  weekSampleDates.map((d)  => weekLookup[d]?.[pKey]?.minutes  || 0),
-        monthly: monthSampleDates.map((d) => monthLookup[d]?.[pKey]?.minutes || 0),
-      },
-      toneHistory: {
-        daily:   allDayDates.map((d)       => dayLookup[d]?.[pKey]?.tone   || 0),
-        weekly:  weekSampleDates.map((d)   => weekLookup[d]?.[pKey]?.tone  || 0),
-        monthly: monthSampleDates.map((d)  => monthLookup[d]?.[pKey]?.tone || 0),
-      },
-    };
-  });
+      week: minutesSur(semaineCourante, pKey),
+      month: minutesSur(jours28, pKey),
+      year: minutesSur(joursCampagne, pKey),
+    },
+    sov: {
+      today: dayLookup[latestDay]?.[pKey]?.mentions || 0,
+      week: partSur(semaineCourante, pKey),
+      month: partSur(jours28, pKey),
+      year: partSur(joursCampagne, pKey),
+    },
+    tone: {
+      today: dayLookup[latestDay]?.[pKey]?.tone || 0,
+      week: tonPondere(semaineCourante, pKey),
+      month: tonPondere(jours28, pKey),
+      year: tonPondere(joursCampagne, pKey),
+    },
+    history: {
+      daily: allDayDates.map((d) => dayLookup[d]?.[pKey]?.mentions || 0),
+      week: last7DayDates.map((d) => dayLookup[d]?.[pKey]?.mentions || 0),
+      weekly: echSemaines.map((s) => partSur(joursDe(s), pKey)),
+      month: [],
+      monthly: [],
+    },
+    minutesHistory: {
+      daily: allDayDates.map((d) => dayLookup[d]?.[pKey]?.minutes || 0),
+      weekly: echSemaines.map((s) => minutesSur(joursDe(s), pKey)),
+      monthly: [],
+    },
+    toneHistory: {
+      daily: allDayDates.map((d) => dayLookup[d]?.[pKey]?.tone || 0),
+      weekly: echSemaines.map((s) => tonPondere(joursDe(s), pKey)),
+      monthly: [],
+    },
+  }));
 
   return {
     stats,
-    dates: { daily: allDayDates, weekly: weekSampleDates, monthly: monthSampleDates },
+    dates: {
+      daily: allDayDates,
+      weekly: echSemaines.map((s) => joursDe(s).at(-1) ?? s),
+      monthly: [],
+    },
   };
 }
 
@@ -1319,16 +1356,18 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
  *
  *  Ces valeurs CUMULENT depuis minuit (comme toute l'intra-journée), donc elles
  *  remplacent `stat.sov.today` telle quelle. `null` si la table n'a rien. */
+type BlocParParti = Map<PartyKey, { mentions: number; tone: number; minutes: number }>;
+
 function blocIntradayCourant(
   rows: IntradayRow[],
-): Map<PartyKey, { mentions: number; tone: number; minutes: number }> | null {
+): { dateMtl: string; parParti: BlocParParti } | null {
   if (rows.length === 0) return null;
   let ref: IntradayRow | null = null;
   for (const r of rows) {
     if (!ref || (r.computed_at ?? "") > (ref.computed_at ?? "")) ref = r;
   }
   if (!ref) return null;
-  const out = new Map<PartyKey, { mentions: number; tone: number; minutes: number }>();
+  const parParti: BlocParParti = new Map();
   const vus = new Map<PartyKey, string>();
   for (const r of rows) {
     if (r.date_utc !== ref.date_utc || Number(r.block_hour) !== Number(ref.block_hour)) continue;
@@ -1337,38 +1376,106 @@ function blocIntradayCourant(
     const quand = r.computed_at ?? "";
     if ((vus.get(k) ?? "") > quand) continue;
     vus.set(k, quand);
-    out.set(k, {
+    parParti.set(k, {
       mentions: Number(r.weighted_mentions) || 0,
       tone: Number(r.weighted_tone) || 0,
       minutes: Number(r.total_raw_score) || 0,
     });
   }
-  return out.size ? out : null;
+  return parParti.size ? { dateMtl: dateMontreal(ref), parParti } : null;
 }
 
-/** Une COPIE des stats où la tranche « aujourd'hui » — `sov`/`tone`/`minutes`
- *  `.today`, et le dernier point des historiques quotidiens — est remplacée par
- *  le bloc intra-journée courant. `buildRangeView(…, "today", …)` en tire alors
- *  podium, disque d'or, vumètre et decks sur le MÊME bloc que la course.
- *  Les vues Semaine / Campagne, elles, reçoivent les stats d'origine. */
+/** Une COPIE des stats où le bloc intra-journée courant est REPLIÉ par-dessus.
+ *
+ *  - Jour     : `sov`/`tone`/`minutes` `.today` = le bloc, tel quel — le
+ *               podium, le disque d'or, le vumètre et les decks lisent alors le
+ *               même instant que la course.
+ *  - Semaine / Campagne : les minutes du bloc sont AJOUTÉES à la fenêtre (ou
+ *               SUBSTITUÉES à la contribution du jour si `_day` a déjà une ligne
+ *               pour ce jour) ; la part est renormalisée sur tous les partis ;
+ *               le ton est repondéré. Les deux onglets suivent donc les blocs
+ *               de 4 h, sans attendre le calcul de fin de journée.
+ *
+ *  `datesDaily` = `dates.daily`, pour savoir si le jour du bloc est déjà dans la
+ *  table quotidienne (substitution) ou pas encore (ajout).
+ *
+ *  ⚠️ DEUX RÉGIMES DANS UNE MÊME SOMME. Le bloc courant vient de `_intraday`,
+ *  dont la clé porte `block_hour` : il est IMMUNISÉ contre la troncature
+ *  aws-refiners#473 qui ampute les lignes de `_day` (voir `computeStats`). On
+ *  superpose donc une mesure complète (le jour en cours) à des jours passés
+ *  amputés (~77 % des minutes). Le jour en cours compte plus complètement
+ *  qu'hier. Invisible en pratique, mais ce mélange disparaîtra en passant tout
+ *  sur `parties_articles_4h` (aws-refiners#472). */
 function statsAvecBlocCourant(
   stats: Stat[],
-  bloc: Map<PartyKey, { mentions: number; tone: number; minutes: number }>,
+  bloc: { dateMtl: string; parParti: BlocParParti },
+  datesDaily: string[],
 ): Stat[] {
+  const { dateMtl, parParti } = bloc;
+  const remplace = dateMtl === (datesDaily.at(-1) ?? "");
+  const dansCampagne = !ELECTION_CALL_DATE || dateMtl >= ELECTION_CALL_DATE;
+
+  const dernierMin = (s: Stat) => s.minutesHistory.daily.at(-1) ?? 0;
+  const dernierTon = (s: Stat) => s.toneHistory.daily.at(-1) ?? 0;
+  const deltaMin = (s: Stat) => {
+    const b = parParti.get(s.key);
+    if (!b) return 0;
+    return remplace ? b.minutes - dernierMin(s) : b.minutes;
+  };
+
+  // Pré-passe : minutes de la fenêtre APRÈS repli, tous partis — pour
+  // renormaliser la part de voix.
+  const totWeek = stats.reduce((t, s) => t + s.minutes.week + deltaMin(s), 0);
+  const totYear = stats.reduce(
+    (t, s) => t + s.minutes.year + (dansCampagne ? deltaMin(s) : 0),
+    0,
+  );
+
   const dernier = (arr: number[], v: number) => (arr.length ? [...arr.slice(0, -1), v] : [v]);
+
   return stats.map((s) => {
-    const b = bloc.get(s.key);
+    const b = parParti.get(s.key);
     if (!b) return s;
+    const dm = deltaMin(s);
+    // Ton repondéré : numérateur = Σ tone_j · min_j ; on retire la contribution
+    // du jour substituée, on ajoute celle du bloc.
+    const reponderer = (toneWin: number, minWin: number) => {
+      const num =
+        toneWin * minWin - (remplace ? dernierTon(s) * dernierMin(s) : 0) + b.tone * b.minutes;
+      const den = minWin + dm;
+      return den > 0 ? num / den : toneWin;
+    };
+    const minWeek = s.minutes.week + dm;
+    const minYear = s.minutes.year + (dansCampagne ? dm : 0);
+    const sovWeek = totWeek > 0 ? minWeek / totWeek : 0;
+    const sovYear = totYear > 0 ? minYear / totYear : 0;
+    const tonWeek = reponderer(s.tone.week, s.minutes.week);
+    const tonYear = dansCampagne ? reponderer(s.tone.year, s.minutes.year) : s.tone.year;
+
+    // Les historiques QUOTIDIENS ne sont repatchés que si le bloc porte le
+    // dernier jour de la table (`remplace`) : sinon on écraserait la veille.
+    const patchDaily = (arr: number[], v: number) => (remplace ? dernier(arr, v) : arr);
+
     return {
       ...s,
-      sov: { ...s.sov, today: b.mentions },
-      tone: { ...s.tone, today: b.tone },
-      minutes: { ...s.minutes, today: b.minutes },
-      toneHistory: { ...s.toneHistory, daily: dernier(s.toneHistory.daily, b.tone) },
+      sov: { ...s.sov, today: b.mentions, week: sovWeek, year: sovYear },
+      tone: { ...s.tone, today: b.tone, week: tonWeek, year: tonYear },
+      minutes: { ...s.minutes, today: b.minutes, week: minWeek, year: minYear },
       history: {
         ...s.history,
-        daily: dernier(s.history.daily, b.mentions),
-        week: dernier(s.history.week, b.mentions),
+        daily: patchDaily(s.history.daily, b.mentions),
+        week: patchDaily(s.history.week, b.mentions),
+        weekly: dernier(s.history.weekly, sovWeek),
+      },
+      minutesHistory: {
+        ...s.minutesHistory,
+        daily: patchDaily(s.minutesHistory.daily, b.minutes),
+        weekly: dernier(s.minutesHistory.weekly, minWeek),
+      },
+      toneHistory: {
+        ...s.toneHistory,
+        daily: patchDaily(s.toneHistory.daily, b.tone),
+        weekly: dernier(s.toneHistory.weekly, tonWeek),
       },
     };
   });
@@ -2150,11 +2257,11 @@ export async function loadParties(
         ? fs.readFile(path.join(DATA_DIR, periode, fichier), "utf8")
         : readDatasetText(`public/data/refined/${periode}/${fichier}`);
 
-    const [dayRaw, weekRaw, monthRaw] = await Promise.all([
-      lireJeu("day",   "provincial_parties_salient_shadow_day.json"),
-      lireJeu("week",  "provincial_parties_salient_shadow_week.json"),
-      lireJeu("month", "provincial_parties_salient_shadow_month.json"),
-    ]);
+    // Une SEULE table principale : la quotidienne. Semaine et Campagne s'en
+    // dérivent (voir `computeStats`) — les tables `_week` / `_month` ne sont
+    // plus lues (elles se remettaient à zéro le lundi / le 1er, ce que
+    // l'onglet Semaine ne doit pas faire).
+    const dayRaw = await lireJeu("day", "provincial_parties_salient_shadow_day.json");
 
     // La série intra-journée est FACULTATIVE : elle n'existe que depuis
     // aws-refiners#355, et les archives antérieures n'en ont pas. Son absence
@@ -2177,9 +2284,7 @@ export async function loadParties(
 
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
-    const dayRows   = upTo(JSON.parse(dayRaw)   as ShadowRow[]);
-    const weekRows  = upTo(JSON.parse(weekRaw)  as ShadowRow[]);
-    const monthRows = upTo(JSON.parse(monthRaw) as ShadowRow[]);
+    const dayRows = upTo(JSON.parse(dayRaw) as ShadowRow[]);
 
     // Ventilation par média — facultative : le fader ne s'affiche que si les
     // tables `*_by_media_*` sont publiées. Un `null` ici n'est pas une erreur,
@@ -2207,7 +2312,7 @@ export async function loadParties(
       lireMedia("month"),
     ]);
 
-    const computed = computeStats(dayRows, weekRows, monthRows);
+    const computed = computeStats(dayRows);
     if (!computed) return null;
     const { stats, dates } = computed;
 
@@ -2233,7 +2338,7 @@ export async function loadParties(
       for (const id of ids) {
         const parMedia = (rows: ShadowRow[] | null) =>
           upTo((rows ?? []).filter((r) => r.media_id === id));
-        const c = computeStats(parMedia(mDay), parMedia(mWeek), parMedia(mMonth));
+        const c = computeStats(parMedia(mDay));
         if (!c) continue;
         medias.push({ id, label: MEDIA_LABELS[id] ?? id });
         // `representative_url` n'est pas un champ du pipeline stats/history
@@ -2277,12 +2382,11 @@ export async function loadParties(
     // pas encore deux blocs — un seul point ne dessine pas une journée.
     const chartJour = intradayRows ? buildChartIntraday(intradayRows, [...PARTY_KEYS]) : null;
 
-    // LE BLOC INTRA-JOURNÉE COURANT — le relevé le plus récent. La vue « Jour »
-    // aligne dessus son podium, son disque d'or, son vumètre et ses decks, pour
-    // qu'ils lisent le MÊME instant que la course. On patche une COPIE des
-    // stats : Semaine et Campagne gardent la table `_day`.
+    // LE BLOC INTRA-JOURNÉE COURANT — le relevé le plus récent, replié sur une
+    // COPIE des stats. Jour, Semaine et Campagne le lisent tous : les trois
+    // onglets suivent donc les blocs de 4 h.
     const blocJour = intradayRows ? blocIntradayCourant(intradayRows) : null;
-    const statsJour = blocJour ? statsAvecBlocCourant(stats, blocJour) : stats;
+    const statsJour = blocJour ? statsAvecBlocCourant(stats, blocJour, dates.daily) : stats;
 
     return {
       blocCourant: dernierBloc(intradayRows),
@@ -2307,8 +2411,8 @@ export async function loadParties(
       byMedia,
       ranges: {
         today: buildRangeView(statsJour, "today", dates, chartJour, enjeuxParParti),
-        week:  buildRangeView(stats, "week", dates, null, enjeuxParParti),
-        overall: buildRangeView(stats, "overall", dates, null, enjeuxParParti),
+        week:  buildRangeView(statsJour, "week", dates, null, enjeuxParParti),
+        overall: buildRangeView(statsJour, "overall", dates, null, enjeuxParParti),
       },
     };
   } catch (err) {

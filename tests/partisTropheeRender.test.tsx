@@ -54,7 +54,7 @@ function donnees(blocs: number[]): PartiesData {
       block_label: `${h}h`,
     })),
   );
-  const calcule = __test__.computeStats(lignes, lignes, lignes);
+  const calcule = __test__.computeStats(lignes);
   if (!calcule) throw new Error("computeStats a rendu null sur un jeu valide");
   const { stats, dates } = calcule;
   const chartJour = __test__.buildChartIntraday(intra, [...PARTY_KEYS]);
