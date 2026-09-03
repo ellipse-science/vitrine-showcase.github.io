@@ -87,18 +87,25 @@ ISSUES_ARTICLES_KEEP_DAYS <- 45L
 
 # Thèmes CAP -> les 12 enjeux affichés.
 #
+# SOURCE DE VÉRITÉ : la page Notion « Catégories d'enjeux de la CLESSN et du
+# Polimètre » (Alexandre Fortier-Chouinard, déc. 2021), qui répartit les 21 grands
+# thèmes du Comparative Agendas Project en 12 catégories. « housing » et
+# « transportation » y sont dans « Économie et travail » (corrigé le 2026-09-02 :
+# ils étaient comptés dans « Culture et nationalisme »).
+#
 # ⚠️ COPIE FIDÈLE de THEME_TO_CATEGORY dans
 # aws-refiners/refiners/radar-issues-score/runtime.R. Les deux DOIVENT rester
 # identiques : le POURCENTAGE d'un enjeu vient du raffineur, la LISTE D'ARTICLES
 # qui l'explique vient d'ici. Une divergence ferait mentir l'une ou l'autre sans
-# que rien ne le signale. Le test `enjeuxArticles` fige la table côté site.
+# que rien ne le signale. Le test tests/enjeuxCategories.test.ts fige la table
+# côté site et la compare à celle du module des partis (lib/data/parties.ts).
 #
 # Cette duplication est un pis-aller assumé : la bonne réponse est que le
 # raffineur publie lui-même son `df_issues` (une ligne par article, url, titre,
 # 12 comptes), qu'il calcule déjà et jette. Tant qu'il ne le fait pas, on refait
 # ici exactement son calcul — vérifié le 31-08 : 0,00 point d'écart sur les 12.
 ISSUES_THEME_TO_CATEGORY <- list(
-  economy_and_labour                         = c("macroeconomics", "labor", "domestic_commerce", "foreign_trade"),
+  economy_and_labour                         = c("macroeconomics", "labor", "domestic_commerce", "foreign_trade", "housing", "transportation"),
   rights_liberties_minorities_discrimination = c("rights_liberties_minorities_discrimination"),
   health_and_social_services                 = c("health", "social_welfare"),
   public_lands_and_agriculture               = c("public_lands", "agriculture"),
@@ -109,7 +116,7 @@ ISSUES_THEME_TO_CATEGORY <- list(
   international_affairs_and_defense          = c("international_affairs", "defense"),
   technology                                 = c("technology"),
   governments_and_governance                 = c("governments_governance"),
-  culture_and_nationalism                    = c("culture_nationalism", "transportation", "housing")
+  culture_and_nationalism                    = c("culture_nationalism")
 )
 
 # Per-table optional filtering, keyed by entry$filter.

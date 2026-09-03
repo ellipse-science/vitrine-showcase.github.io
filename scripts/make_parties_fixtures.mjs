@@ -495,9 +495,10 @@ files.push(["day", "provincial_parties_salient_shadow_intraday.json", intraday])
 // qui le pose, pour les phrases qui nomment un parti sans qu'aucun modèle CAP ne
 // franchisse son seuil.
 // Des têtes qui FUSIONNENT volontairement : `macroeconomics` + `labor` +
-// `foreign_trade` tombent tous dans « Économie et travail », `health` +
-// `social_welfare` dans « Santé et politiques sociales », `international_affairs`
-// + `defense` dans « Affaires internationales et défense ». Sans elles,
+// `foreign_trade` + `transportation` tombent tous dans « Économie et travail »,
+// `health` + `social_welfare` dans « Santé et politiques sociales »,
+// `international_affairs` + `defense` dans « Affaires internationales et
+// défense ». Sans elles,
 // l'agrégation des 21 têtes en 12 catégories ne serait jamais éprouvée en
 // développement — chaque clé tomberait dans une catégorie distincte et le
 // regroupement passerait inaperçu jusqu'en production.
