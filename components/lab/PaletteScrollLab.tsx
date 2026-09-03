@@ -81,7 +81,7 @@ function PaletteScrollLabInner() {
   const [humeur, setHumeur] = useState<Humeur>("off");
   const [replie, setReplie] = useState(false);
   const [glisse, setGlisse] = useState(false);
-  const [courant, setCourant] = useState("—");
+  const [courant, setCourant] = useState("");
   const glisseRef = useRef(false);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ function PaletteScrollLabInner() {
     if (humeur === "off") {
       root.style.removeProperty("--lab-fond");
       root.style.removeProperty("--lab-accent");
-      setCourant("—");
+      setCourant("");
       return;
     }
     const H = HUMEURS[humeur];
