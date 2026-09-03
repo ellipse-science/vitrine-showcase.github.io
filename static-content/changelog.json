@@ -1,5 +1,11 @@
 [
   {
+    "pr": 715,
+    "date": "2026-09-03T04:28:14Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 714,
     "date": "2026-09-03T03:52:02Z",
     "note": "Le module des 12 enjeux affiche maintenant l'heure de sa vraie édition : il disait « 16h » quand ses données étaient déjà celles de 20h.",
