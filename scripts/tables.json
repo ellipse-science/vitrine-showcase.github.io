@@ -240,7 +240,6 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
-        "representative_url",
         "computed_at"
       ],
       "enabled": true,
@@ -258,7 +257,6 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
-        "representative_url",
         "computed_at"
       ],
       "enabled": true,
@@ -276,7 +274,6 @@
         "weighted_mentions",
         "total_raw_score",
         "weighted_tone",
-        "representative_url",
         "computed_at"
       ],
       "enabled": true,
@@ -527,7 +524,9 @@
       "_note_category": "`category` est le LIBELLÉ FRANÇAIS de l'un des 12 enjeux, ou la chaîne \"NA\" — MÊME forme que `category` de polimetre_plus, pour que la colonne veuille dire la même chose dans les deux tables du Polimètre+. Ce qui diffère du mode « 2022 » n'est pas l'écriture mais la PROVENANCE : là-bas le libellé est codé à la main dans mastersheet_Promesses, ici il est INFÉRÉ — une promesse tirée d'un communiqué d'hier n'a pas de ligne de mastersheet. Le raffineur la déduit des têtes cap_theme_* de l'infer-api. Le libellé français vient d'ISSUE_LABELS_SHORT à l'affichage. \"NA\" est un cas NORMAL (aucun thème au-dessus de son seuil) : la promesse reste affichée, sans puce d'enjeu.",
       "_note_int32": "rank_current et n_mentions sont produites par dplyr::n() / row_number(), donc en ENTIERS. Le raffineur les caste en as.numeric() AVANT publication — sans quoi le writer Parquet les sérialise en INT32 alors que Glue les déclare double, et Athena refuse de lire la table pour toute requête qui les projette (HIVE_BAD_DATA). C'est exactement ce qui a gelé polimetre_plus le 2026-07-28. Ne jamais retirer ce cast.",
       "_note_computed_at": "computed_at n'est pas projetée : elle sert au diagnostic côté Athena, jamais à l'affichage.",
-      "enabled": false,
+      "_note_enabled": "Allumée le 2026-09-02, en DEV seulement — les deux raffineurs sont `!isProd(envName)` dans aws-infra, donc rien de ceci n'atteint la PROD. À savoir en lisant la série : l'extraction des promesses fonctionne, leur APPARIEMENT à la couverture médiatique est le maillon faible (mesure du 2026-08-18 : 4 promesses retenues, 3 fausses à la relecture — README du raffineur). Cette mesure date d'un jour HORS campagne, où le taux de base est quasi nul : c'est le pire cas pour la précision, et l'objet de l'allumage est justement de mesurer en campagne. Retour arrière : remettre `enabled: false` — le module retombe seul sur son mode « 2022 ».",
+      "_note_etape_2": "PREMIÈRE ÉTAPE SEULEMENT. La table n'est PAS encore dans la whitelist du Worker (workers/api/src/tables.ts), et c'est délibéré : l'y mettre avant que Postgres ne porte la table ferait échouer la synchro à CHAQUE passe et retiendrait les Deploy Hooks (check_schema_drift.mjs le dit). Or le DDL ne peut pas être généré tant qu'aucune donnée n'est publiée — generate_pg_schema.mjs infère les types de public/data/, et omet la table faute de fichier. Ordre : (1) ce `enabled: true` fait écrire le JSON par fetch_data.R, et le build le lit depuis le FICHIER ; (2) une fois le fichier là, regénérer sql/schema.sql et column-types.ts, l'appliquer à Postgres, et ajouter la table à tables.ts — le chemin API prend alors le relais.",
+      "enabled": true,
       "used_by": "lib/data/promessesNeuves.ts + components/sections/PolimetrePlusSection.tsx"
     },
     {
@@ -564,24 +563,6 @@
       ],
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"
-    },
-    {
-      "name": "radar_annotated",
-      "athena": "vitrine_datamart-radar_annotated",
-      "out": "public/data/refined/issues_articles.json",
-      "cols": [
-        "title",
-        "url",
-        "media_id",
-        "country_id",
-        "headline_stop_utc",
-        "sentence_analysis"
-      ],
-      "_note": "Les articles qui FONT le pourcentage de chaque enjeu du module 4. sentence_analysis est projeté puis JETÉ par le filtre, qui n'écrit que les 12 comptes par article : ~14 Mo de brut deviennent quelques dizaines de Ko.",
-      "_note_date": "date_montreal_tz volontairement ABSENT des cols : remplie sur 206 lignes sur 33 377 (0,6 %, mesuré le 31-08). Le filtre dérive le jour de headline_stop_utc, comme le raffineur.",
-      "filter": "radar_annotated_issues",
-      "enabled": true,
-      "used_by": "lib/data/headlineEvents.ts (liste d'articles du module 4)"
     }
   ],
   "post_process": [
