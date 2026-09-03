@@ -1,5 +1,35 @@
 [
   {
+    "pr": 699,
+    "date": "2026-09-03T16:47:23Z",
+    "note": "Une nouvelle page explique, en langage clair, comment les données du site circulent de la collecte à la publication.",
+    "version": null
+  },
+  {
+    "pr": 715,
+    "date": "2026-09-03T04:28:14Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 714,
+    "date": "2026-09-03T03:52:02Z",
+    "note": "Le module des 12 enjeux affiche maintenant l'heure de sa vraie édition : il disait « 16h » quand ses données étaient déjà celles de 20h.",
+    "version": null
+  },
+  {
+    "pr": 712,
+    "date": "2026-09-03T03:50:46Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 697,
+    "date": "2026-09-03T02:37:18Z",
+    "note": "Le transport et le logement sont maintenant comptés dans l'enjeu « Économie et travail », et non plus dans « Culture et nationalisme », conformément à la classification du Polimètre. La page Méthodologie explique désormais comment les 21 thèmes sont regroupés en 12 enjeux.",
+    "version": "2.43.0-beta.3"
+  },
+  {
     "pr": 709,
     "date": "2026-09-03T02:25:02Z",
     "note": "Dans la table qui compare les partis, chaque colonne affiche maintenant un petit cadran indiquant d'un coup d'œil si la couverture médiatique de ce parti penche plutôt en sa faveur ou en sa défaveur.",

@@ -8,6 +8,7 @@ import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection
 import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { listEditions } from "@/lib/data/headlineEvents";
+import PaletteScrollLab from "@/components/lab/PaletteScrollLab";
 
 // Module RETIRÉ DE PROD, gardé sur dev (2026-08-20) : sa section se garde
 // déjà elle-même (elle rend null en prod) — on retire AUSSI l'enveloppe
@@ -28,6 +29,7 @@ export default async function Home() {
         <RawMaquette chunk="top" />
       </div>
 
+      {!isProd && <PaletteScrollLab />}
       <div id="une-des-unes" data-section="Une des Unes">
         <UneDesUnesSection shareEditionKey={editions[0]?.key} />
       </div>

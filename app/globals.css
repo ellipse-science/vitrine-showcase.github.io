@@ -7076,6 +7076,81 @@
   }
 
   /* ============================================================ */
+  /* Infrastructure de données — schéma du parcours (methodologie/ */
+  /* infrastructure). Étend le registre apropos-* : mêmes couleurs,*/
+  /* mêmes familles de police, rien de nouveau à charger.          */
+  /* ============================================================ */
+  .infra-diagram {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin: 28px 0 14px;
+  }
+
+  .infra-stage {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 8px;
+    border: 0.5px solid var(--rule);
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .infra-stage-final {
+    border-color: var(--cordovan);
+    background: rgba(107, 30, 42, 0.05);
+  }
+
+  .infra-stage-icon {
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .infra-stage-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .infra-stage-final .infra-stage-label {
+    color: var(--cordovan);
+  }
+
+  .infra-arrow {
+    flex: 0 0 auto;
+    align-self: center;
+    font-size: 18px;
+    color: var(--rule);
+  }
+
+  .infra-diagram-caption {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--ink-softer);
+    text-align: center;
+    margin: 0 0 28px;
+  }
+
+  @media (max-width: 700px) {
+    .infra-diagram {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .infra-arrow {
+      transform: rotate(90deg);
+    }
+  }
+
+  /* ============================================================ */
   /* Polimètre+ — promesses les plus médiatisées (prototype)      */
   /* Couleurs de verdict tirées du pipeline Polimètre (R).        */
   /* Per design_language.md §1 : couleurs data exposées via       */
