@@ -774,6 +774,19 @@ function buildLookup(rows: ShadowRow[]): Lookup {
  * Le bloc intra-journée courant est replié par-dessus dans l'assembleur
  * (`statsAvecBlocCourant`), pour que Semaine et Campagne suivent aussi les
  * blocs de 4 h.
+ *
+ * ⚠️ DÉFAUT HÉRITÉ DE `_day` — aws-refiners#473. Les lignes des jours TERMINÉS
+ * de `*_parties_salient_shadow_day` ne couvrent pas toute leur journée : elles
+ * portent `computed_at = <jour>T23:31Z` et s'arrêtent vers 15h16 heure de
+ * Montréal (la dédup se fait sur `date_utc` alors que la table se date en heure
+ * de Montréal ; le passage de 23h31 bascule sous la clé du lendemain et s'y
+ * fait battre). Mesuré sur samedi 29/08 → mercredi 02/09 : ~77 % des minutes
+ * capturées. La renormalisation ci-dessous absorbe l'essentiel — le SOV reste
+ * juste à ~1 point — mais le biais résiduel est SYSTÉMATIQUE, pas du bruit
+ * (PQ −3,5 pt, PLQ +2,4 pt sur cette fenêtre), parce que l'amputation n'est pas
+ * uniforme entre partis. Avant, `_week` était UNE ligne = UNE troncature ;
+ * sommer N lignes de `_day` cumule la perte. À reprendre sur `parties_articles_4h`
+ * (aws-refiners#472) quand sa rétention couvrira la campagne.
  */
 function computeStats(dayRows: ShadowRow[]): { stats: Stat[]; dates: SeriesDates } | null {
   const dayLookup = buildLookup(dayRows);
@@ -1384,7 +1397,15 @@ function blocIntradayCourant(
  *               de 4 h, sans attendre le calcul de fin de journée.
  *
  *  `datesDaily` = `dates.daily`, pour savoir si le jour du bloc est déjà dans la
- *  table quotidienne (substitution) ou pas encore (ajout). */
+ *  table quotidienne (substitution) ou pas encore (ajout).
+ *
+ *  ⚠️ DEUX RÉGIMES DANS UNE MÊME SOMME. Le bloc courant vient de `_intraday`,
+ *  dont la clé porte `block_hour` : il est IMMUNISÉ contre la troncature
+ *  aws-refiners#473 qui ampute les lignes de `_day` (voir `computeStats`). On
+ *  superpose donc une mesure complète (le jour en cours) à des jours passés
+ *  amputés (~77 % des minutes). Le jour en cours compte plus complètement
+ *  qu'hier. Invisible en pratique, mais ce mélange disparaîtra en passant tout
+ *  sur `parties_articles_4h` (aws-refiners#472). */
 function statsAvecBlocCourant(
   stats: Stat[],
   bloc: { dateMtl: string; parParti: BlocParParti },
