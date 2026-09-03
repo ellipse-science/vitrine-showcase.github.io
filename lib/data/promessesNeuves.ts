@@ -49,7 +49,9 @@ type Row = {
   promesse_id: string;
   party_id: string;
   label: string;
-  category: string; // clé d'ISSUE_COLORS, ou "NA"
+  // Libellé FRANÇAIS de l'enjeu (clé de COULEUR_PAR_LIBELLE), « NA », ou colonne
+  // absente : ce n'est PAS une clé d'ISSUE_COLORS (voir scripts/tables.json).
+  category?: string | null;
   promesse_text: string;
   announce_date: string;
   release_url: string;

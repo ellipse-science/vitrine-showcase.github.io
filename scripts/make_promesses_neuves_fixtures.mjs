@@ -50,7 +50,7 @@ const article = (media, titre) => ({
 });
 
 // [parti, verbatim, libellé court, jours écoulés depuis l'annonce, mentions,
-//  catégorie d'enjeu (clé d'ISSUE_COLORS, ou "NA"), articles]
+//  catégorie d'enjeu (libellé français, comme dans scripts/tables.json, ou "NA"), articles]
 const PROMESSES = [
   ["CAQ",
    "Un gouvernement de la Coalition avenir Québec réélu portera à 2 000 $ le crédit d'impôt pour la rénovation énergétique des résidences principales, dès le budget suivant l'élection.",
