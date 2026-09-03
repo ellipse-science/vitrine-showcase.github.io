@@ -87,18 +87,25 @@ ISSUES_ARTICLES_KEEP_DAYS <- 45L
 
 # Thèmes CAP -> les 12 enjeux affichés.
 #
+# SOURCE DE VÉRITÉ : la page Notion « Catégories d'enjeux de la CLESSN et du
+# Polimètre » (Alexandre Fortier-Chouinard, déc. 2021), qui répartit les 21 grands
+# thèmes du Comparative Agendas Project en 12 catégories. « housing » et
+# « transportation » y sont dans « Économie et travail » (corrigé le 2026-09-02 :
+# ils étaient comptés dans « Culture et nationalisme »).
+#
 # ⚠️ COPIE FIDÈLE de THEME_TO_CATEGORY dans
 # aws-refiners/refiners/radar-issues-score/runtime.R. Les deux DOIVENT rester
 # identiques : le POURCENTAGE d'un enjeu vient du raffineur, la LISTE D'ARTICLES
 # qui l'explique vient d'ici. Une divergence ferait mentir l'une ou l'autre sans
-# que rien ne le signale. Le test `enjeuxArticles` fige la table côté site.
+# que rien ne le signale. Le test tests/enjeuxCategories.test.ts fige la table
+# côté site et la compare à celle du module des partis (lib/data/parties.ts).
 #
 # Cette duplication est un pis-aller assumé : la bonne réponse est que le
 # raffineur publie lui-même son `df_issues` (une ligne par article, url, titre,
 # 12 comptes), qu'il calcule déjà et jette. Tant qu'il ne le fait pas, on refait
 # ici exactement son calcul — vérifié le 31-08 : 0,00 point d'écart sur les 12.
 ISSUES_THEME_TO_CATEGORY <- list(
-  economy_and_labour                         = c("macroeconomics", "labor", "domestic_commerce", "foreign_trade"),
+  economy_and_labour                         = c("macroeconomics", "labor", "domestic_commerce", "foreign_trade", "housing", "transportation"),
   rights_liberties_minorities_discrimination = c("rights_liberties_minorities_discrimination"),
   health_and_social_services                 = c("health", "social_welfare"),
   public_lands_and_agriculture               = c("public_lands", "agriculture"),
@@ -109,7 +116,7 @@ ISSUES_THEME_TO_CATEGORY <- list(
   international_affairs_and_defense          = c("international_affairs", "defense"),
   technology                                 = c("technology"),
   governments_and_governance                 = c("governments_governance"),
-  culture_and_nationalism                    = c("culture_nationalism", "transportation", "housing")
+  culture_and_nationalism                    = c("culture_nationalism")
 )
 
 # Per-table optional filtering, keyed by entry$filter.
@@ -792,6 +799,17 @@ build_salience_calibration <- function(conn, out_path) {
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+# Environnement du datamart (vitrine#489) : "DEV" par défaut, "PROD" à la
+# bascule. Toute autre valeur arrête net : on ne devine pas un environnement.
+datamart_env_choisi <- function() {
+  env <- toupper(trimws(Sys.getenv("DATAMART_ENV", "DEV")))
+  if (env == "") env <- "DEV"
+  if (!env %in% c("DEV", "PROD")) {
+    stop("DATAMART_ENV inconnu : « ", env, " ». Valeurs : DEV, PROD.")
+  }
+  env
+}
+
 run <- function() {
   message("[", format(Sys.time(), "%H:%M:%S"), "] Loaded ",
           length(ENABLED_TABLES), " enabled table(s), ",
@@ -800,13 +818,19 @@ run <- function() {
   results       <- list()
   table_outputs <- list()  # name -> output path, populated as tables succeed
 
-  # noctua requires the standard (un-suffixed) env vars to be set for query
-  # execution, even though ellipse_connect() uses the _DEV suffixed vars.
-  # Pattern from vitrine-graph-data/runtime.R.
-  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv("AWS_ACCESS_KEY_ID_DEV"))
-  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV"))
+  # Environnement du datamart lu : DEV (défaut) ou PROD, piloté par la
+  # variable DATAMART_ENV (vitrine#489). Les clés suffixées _DEV / _PROD
+  # existent des deux côtés (secrets du dépôt, .Renviron en local) : on prend
+  # la paire qui correspond. noctua exige en plus les variables standard, non
+  # suffixées, pour exécuter la requête (motif vitrine-graph-data/runtime.R).
+  # Filet de sécurité de la bascule : revenir sur DEV = changer la variable,
+  # sans redéployer ni rejouer la migration.
+  datamart_env <- datamart_env_choisi()
+  Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", datamart_env)))
+  Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", datamart_env)))
+  message("[", format(Sys.time(), "%H:%M:%S"), "] Datamart environment: ", datamart_env)
 
-  conn <- tube::ellipse_connect("DEV", "datamarts")
+  conn <- tube::ellipse_connect(datamart_env, "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
   for (entry in ENABLED_TABLES) {

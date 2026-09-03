@@ -31,6 +31,15 @@ name: Déploiement dev (Cloudflare Pages)
 on:
   push:
     branches: [develop]
+    # Un commit de DONNÉES ne déclenche pas ce build : le filet (refresh-data.yml)
+    # pousse les fichiers, PUIS recharge Neon, PUIS demande ce build lui-même,
+    # comme pour prod. Sans cette exclusion, le push déclenchait le build sept
+    # secondes avant l'écriture de Neon, et dev servait l'édition précédente
+    # (vécu le 2 septembre 2026 à 21h18, dev « 16h » contre prod « 20h »).
+    paths-ignore:
+      - 'public/data/**'
+      - 'public/audio/**'
+      - 'public/images/deputes/**'
   workflow_dispatch:
 
 concurrency:

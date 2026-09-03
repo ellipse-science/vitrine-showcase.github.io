@@ -484,7 +484,7 @@
     <div class="links">
       <div class="nav-item">
         <a href="./" class="active">Méthodologie</a>
-        <div class="nav-menu"><a href="/methodologie/modeles/">Nos modèles d'IA</a></div>
+        <div class="nav-menu"><a href="/methodologie/modeles/">Nos modèles d'IA</a><a href="/methodologie/infrastructure/">Notre infrastructure</a></div>
       </div>
       <div class="nav-item">
         <a href="/apropos/">À propos</a>
@@ -703,6 +703,7 @@
         </tbody>
       </table>
     </div>
+    <p class="metho-body">Ces douze enjeux regroupent les 21 grands thèmes du <a href="https://www.comparativeagendas.net/pages/master-codebook" target="_blank" rel="noopener"><em>Comparative Agendas Project</em></a>, une grille internationale de codage des politiques publiques, selon la classification établie par la CLESSN pour le Polimètre. Quelques regroupements méritent d'être nommés&nbsp;: le transport et le logement comptent dans «&nbsp;Économie et travail&nbsp;», avec la macroéconomie, le travail, le commerce intérieur et le commerce extérieur; la santé et l'aide sociale forment «&nbsp;Santé&nbsp;»; l'environnement et l'énergie, «&nbsp;Environnement&nbsp;»; les affaires internationales et la défense, «&nbsp;Aff. internationales&nbsp;»; les terres publiques et l'agriculture, «&nbsp;Terres publiques&nbsp;». «&nbsp;Culture&nbsp;» ne contient que la culture et le nationalisme.</p>
 
     <h3>Source des données</h3>
     <p class="metho-body">Le système produit, pour chaque fenêtre temporelle et chaque bloc de collecte (matin, midi, après-midi), un score de couverture pour chacun des 12 grands enjeux.</p>
@@ -913,7 +914,7 @@
       <p class="metho-body"><strong>Distillation.</strong> Les 30 modèles servis à la Vitrine sont des encodeurs légers (mDeBERTa), un par thème et un par parti, entraînés sur un corpus de 99&nbsp;997 phrases bilingues tirées de la presse et des débats parlementaires. Ce corpus a été annoté par un grand modèle de langue (gpt-5.4), puis les modèles légers ont été distillés à partir de ces annotations. Chaque modèle répond à une seule question («&nbsp;ce thème est-il présent dans cette phrase?&nbsp;»), ce qui permet de le mesurer, de le remplacer ou de le retirer sans toucher aux autres.</p>
       <p class="metho-body"><strong>Calibration.</strong> Le seuil de décision de chaque tête thématique a été réglé sur des phrases annotées à la main, par validation croisée répétée deux cents fois, pour que le modèle ne dise «&nbsp;oui&nbsp;» ni trop souvent ni trop rarement. Les têtes de partis sont servies au seuil de 0,5, sans calibration.</p>
       <p class="metho-body"><strong>Validation.</strong> Les modèles ont été confrontés à 2&nbsp;273 phrases annotées par des humains, hors du corpus d'entraînement. Le F1 moyen de la classe positive est de 0,656 pour les thèmes (13 têtes sur 21 dépassent 0,65; <code>domestic_commerce</code> et <code>public_lands</code> sont les moins sûrs), de 0,934 à 0,994 pour les quatre partis fédéraux disposant d'assez de cas de référence, et de 0,653 pour le sentiment, contre un accord entre annotateurs humains de 0,669. Les cinq partis provinciaux ne sont pas encore validés faute de cas de référence, et le Parti conservateur du Québec n'a pas de modèle. Aucun chiffre du rapport n'est saisi à la main&nbsp;: les tableaux sont régénérés depuis les journaux d'entraînement versionnés.</p>
-      <p class="metho-body">Une page dédiée résume nos valeurs, notre usage scientifique de l'IA et ses limites&nbsp;: <a href="/methodologie/modeles/">Nos modèles d'intelligence artificielle</a>.</p>
+      <p class="metho-body">Une page dédiée résume nos valeurs, notre usage scientifique de l'IA et ses limites&nbsp;: <a href="/methodologie/modeles/">Nos modèles d'intelligence artificielle</a>. Le parcours de la donnée, de la collecte à la publication, est décrit sur la page <a href="/methodologie/infrastructure/">Notre infrastructure de données</a>.</p>
       <p class="metho-body"><a class="metho-btn" href="/docs/rapport-validation-modeles-locaux-2026-09.pdf" target="_blank" rel="noopener">Lire le rapport de validation complet (PDF) ↓</a></p>
       <p class="metho-body metho-partenaires-label">Réalisé avec</p>
       <p class="metho-partenaires">
