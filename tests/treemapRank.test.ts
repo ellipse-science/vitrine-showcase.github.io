@@ -101,7 +101,9 @@ describe("rankPointsForPeriod — période jour", () => {
 // Règle d'Adrien (30-08) : la semaine du site va du VENDREDI 20h au vendredi
 // 20h, heure de Montréal. Ni le calendrier, ni une fenêtre glissante de 7 jours.
 describe("debutDeLaSemaine", () => {
-  const pt = (tagUtc: string, date: string) => ({ date, ranks: {}, tag: tagUtc });
+  // Le tag est écrit en heure de Montréal par le raffineur (preuve CloudWatch du
+  // 2026-09-02) : il se lit tel quel, sans conversion.
+  const pt = (tagMontreal: string, date: string) => ({ date, ranks: {}, tag: tagMontreal });
 
   it("recule au vendredi précédent quand le dernier point est un dimanche", () => {
     // 2026-08-30 est un dimanche ; le vendredi d'avant est le 28.
@@ -109,10 +111,10 @@ describe("debutDeLaSemaine", () => {
   });
 
   it("garde le vendredi même quand le dernier point est ce vendredi APRÈS 20h", () => {
-    // 2026-08-28 23:36 UTC = 19h36 à Montréal → avant 20h, donc semaine d'avant.
-    expect(debutDeLaSemaine([pt("2026-08-28 23:36", "2026-08-28")])).toBe("2026-08-21T20");
-    // 2026-08-29 03:36 UTC = 23h36 le 28 à Montréal → après 20h, semaine en cours.
-    expect(debutDeLaSemaine([pt("2026-08-29 03:36", "2026-08-28")])).toBe("2026-08-28T20");
+    // Vendredi 28 août, passe de 19h36 (Montréal) → avant 20h, donc semaine d'avant.
+    expect(debutDeLaSemaine([pt("2026-08-28 19:36", "2026-08-28")])).toBe("2026-08-21T20");
+    // Vendredi 28 août, passe de 23h36 (Montréal) → après 20h, semaine en cours.
+    expect(debutDeLaSemaine([pt("2026-08-28 23:36", "2026-08-28")])).toBe("2026-08-28T20");
   });
 
   it("recule d'une semaine entière quand le dernier point est un jeudi", () => {
