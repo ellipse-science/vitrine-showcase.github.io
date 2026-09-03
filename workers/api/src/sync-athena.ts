@@ -51,11 +51,19 @@ const BATCH_ROWS = 400
 
 export interface SyncAthenaEnv extends SnapshotEnv {
   DATABASE_URL: string
+  /** Environnement du datamart lu : 'DEV' (défaut) ou 'PROD' (vitrine#489).
+   *  Une variable, pas un secret : la bascule et son repli se font en la
+   *  changeant, sans toucher au code ni rejouer une migration. */
+  DATAMART_ENV?: string
   AWS_ACCESS_KEY_ID_DEV?: string
   AWS_SECRET_ACCESS_KEY_DEV?: string
+  AWS_ACCESS_KEY_ID_PROD?: string
+  AWS_SECRET_ACCESS_KEY_PROD?: string
   ATHENA_REGION?: string
   ATHENA_DATABASE?: string
+  /** Seau de sortie Athena du compte DEV (défaut) et du compte PROD. */
   ATHENA_OUTPUT?: string
+  ATHENA_OUTPUT_PROD?: string
   SYNC_TRIGGER_DEPLOYS?: string
   DEPLOY_HOOK_PROD?: string
   DEPLOY_HOOK_DEV?: string
@@ -220,6 +228,43 @@ export interface SyncAthenaResult {
   snapshotSkipped: string[]
   total: number
   next: number | null
+  /** Datamart lu par cette passe ('DEV' ou 'PROD') : visible dans la réponse
+   *  de /v1/sync et dans le journal du filet, pour qu'une bascule se voie. */
+  datamart: DatamartEnv
+}
+
+/** Environnement du datamart lu par la synchro : 'DEV' par défaut, 'PROD' à la
+ *  bascule (vitrine#489). Toute autre valeur arrête net : on ne devine pas un
+ *  environnement quand on écrase Postgres. */
+export type DatamartEnv = 'DEV' | 'PROD'
+
+export function datamartEnv(env: Pick<SyncAthenaEnv, 'DATAMART_ENV'>): DatamartEnv {
+  const raw = (env.DATAMART_ENV ?? 'DEV').trim().toUpperCase()
+  if (raw === '' || raw === 'DEV') return 'DEV'
+  if (raw === 'PROD') return 'PROD'
+  throw new Error(`DATAMART_ENV inconnu : « ${raw} ». Valeurs : DEV, PROD.`)
+}
+
+/** Clés de lecture Athena et seau de sortie de l'environnement choisi. Les deux
+ *  paires de secrets peuvent coexister sur le Worker : la variable choisit. */
+export function datamartCredentials(
+  env: SyncAthenaEnv,
+  datamart: DatamartEnv,
+): { accessKeyId: string; secretAccessKey: string; outputLocation: string } {
+  const accessKeyId = datamart === 'PROD' ? env.AWS_ACCESS_KEY_ID_PROD : env.AWS_ACCESS_KEY_ID_DEV
+  const secretAccessKey =
+    datamart === 'PROD' ? env.AWS_SECRET_ACCESS_KEY_PROD : env.AWS_SECRET_ACCESS_KEY_DEV
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error(
+      `Clés de lecture Athena absentes pour ${datamart} ` +
+        `(secrets AWS_ACCESS_KEY_ID_${datamart} / AWS_SECRET_ACCESS_KEY_${datamart}).`,
+    )
+  }
+  const outputLocation =
+    datamart === 'PROD'
+      ? (env.ATHENA_OUTPUT_PROD ?? 's3://bucket-stack-athenaqueryresultsbucket6f63bbe4-axrogwxi2lrx/')
+      : (env.ATHENA_OUTPUT ?? 's3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3/')
+  return { accessKeyId, secretAccessKey, outputLocation }
 }
 
 /** Exécute la synchronisation sur une TRANCHE de la whitelist (offset/limit
@@ -230,11 +275,8 @@ export async function runAthenaSync(
   env: SyncAthenaEnv,
   slice: { offset?: number; limit?: number; cycle?: string } = {},
 ): Promise<SyncAthenaResult> {
-  if (!env.AWS_ACCESS_KEY_ID_DEV || !env.AWS_SECRET_ACCESS_KEY_DEV) {
-    throw new Error(
-      'Clés de lecture Athena absentes (secrets AWS_ACCESS_KEY_ID_DEV / AWS_SECRET_ACCESS_KEY_DEV).',
-    )
-  }
+  const datamart = datamartEnv(env)
+  const creds = datamartCredentials(env, datamart)
   const offset = slice.offset ?? 0
   const limit = slice.limit ?? TABLES.length
   const cycle = slice.cycle
@@ -242,13 +284,13 @@ export async function runAthenaSync(
   const next = offset + limit < TABLES.length ? offset + limit : null
 
   const athena = new AthenaClient({
-    accessKeyId: env.AWS_ACCESS_KEY_ID_DEV,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY_DEV,
+    accessKeyId: creds.accessKeyId,
+    secretAccessKey: creds.secretAccessKey,
     region: env.ATHENA_REGION ?? 'ca-central-1',
+    // La base Glue porte le même nom dans les deux comptes ; seuls les clés
+    // et le seau de sortie changent.
     database: env.ATHENA_DATABASE ?? 'gluestackdatamartdbd046f685',
-    outputLocation:
-      env.ATHENA_OUTPUT ??
-      's3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3/',
+    outputLocation: creds.outputLocation,
   })
 
   const pg = new Client(env.DATABASE_URL)
@@ -322,5 +364,5 @@ export async function runAthenaSync(
   // qui agrège les tranches ; le budget CPU d'une invocation planifiée ne
   // survit pas aux 19 tables d'un coup (constaté le 2026-08-19 : la passe
   // monolithique mourait après 8 tables), c'est la même leçon que /v1/sync.
-  return { synced, failed, snapshotSkipped, total: TABLES.length, next }
+  return { synced, failed, snapshotSkipped, total: TABLES.length, next, datamart }
 }

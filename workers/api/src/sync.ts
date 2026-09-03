@@ -42,8 +42,15 @@ import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
 
 export { isTargetHourInNY, TARGET_HOURS_NY } from './schedule'
 
+// La branche lue est celle où refresh-data.yml COMMITE EN PREMIER : `develop`.
+// Depuis le renommage des branches (1er sept. 2026, vitrine#680), `main` est la
+// production, et le filet n'y pousse les données QU'APRÈS avoir appelé /v1/sync.
+// Lire `main` ici, c'est recharger Neon avec l'édition précédente à chaque
+// cycle — et écraser au passage ce que le cron Athena venait de charger de
+// frais. Vécu du 1er au 2 septembre (vitrine#692) : dev et prod bâtis en mode
+// api servaient la Une de la veille.
 const RAW_BASE =
-  'https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/main'
+  'https://raw.githubusercontent.com/ellipse-science/vitrine-showcase.github.io/develop'
 
 interface TableSpec {
   name: string

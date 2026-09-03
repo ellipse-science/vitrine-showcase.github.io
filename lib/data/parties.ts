@@ -1604,10 +1604,16 @@ export const SANS_ENJEU = "Aucun enjeu identifié";
  *  l'Assemblée : trois modules qui découperaient l'actualité différemment ne se
  *  liraient plus ensemble.
  *
+ *  La SOURCE DE VÉRITÉ de cette grille est la page Notion « Catégories d'enjeux
+ *  de la CLESSN et du Polimètre » (Alexandre Fortier-Chouinard, déc. 2021), qui
+ *  répartit les 21 grands thèmes du Comparative Agendas Project en 12 catégories.
  *  Elle tranche notamment deux cas qui n'ont pas de catégorie évidente :
- *  `transportation` et `housing` sont rattachés à « Culture et nationalisme ».
- *  Surprenant, mais c'est la convention en place — la changer ici la ferait
- *  diverger des deux autres raffineurs en silence.
+ *  `transportation` et `housing` vont dans « Économie et travail », avec la
+ *  macroéconomie, le travail, le commerce intérieur et le commerce extérieur.
+ *  Jusqu'au 2026-09-02, les trois copies les comptaient dans « Culture et
+ *  nationalisme » — plus de la moitié de cette catégorie était en fait du
+ *  transport et du logement. Le test tests/enjeuxCategories.test.ts compare
+ *  cette table à celle de scripts/fetch_data.R.
  *
  *  Les libellés viennent du dictionnaire `CAP_ISSUES` de `radar-event-salience`,
  *  qui note : « les libellés FR sont ceux du Polimètre […] c'est la seule
@@ -1619,6 +1625,8 @@ const THEME_VERS_CATEGORIE: Record<string, string> = {
   labor: "Économie et travail",
   domestic_commerce: "Économie et travail",
   foreign_trade: "Économie et travail",
+  housing: "Économie et travail",
+  transportation: "Économie et travail",
   rights_liberties_minorities_discrimination: "Droits, libertés, minorités et discrimination",
   health: "Santé et politiques sociales",
   social_welfare: "Santé et politiques sociales",
@@ -1634,8 +1642,6 @@ const THEME_VERS_CATEGORIE: Record<string, string> = {
   technology: "Technologie",
   governments_governance: "Gouvernements et gouvernance",
   culture_nationalism: "Culture et nationalisme",
-  transportation: "Culture et nationalisme",
-  housing: "Culture et nationalisme",
 };
 
 /** La catégorie d'affichage d'une tête CAP, tolérante à une clé inconnue.
