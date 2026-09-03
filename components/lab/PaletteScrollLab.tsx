@@ -20,7 +20,7 @@
  *
  *   ?lab=clair | franc | sepia | moderne | off      ?glisse=1 pour le dégradé continu
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Famille = "médias" | "pont" | "décideurs";
 type Humeur = "off" | "clair" | "franc" | "sepia" | "moderne";
@@ -82,7 +82,6 @@ function PaletteScrollLabInner() {
   const [replie, setReplie] = useState(false);
   const [glisse, setGlisse] = useState(false);
   const [courant, setCourant] = useState("");
-  const glisseRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -97,7 +96,6 @@ function PaletteScrollLabInner() {
   }, []);
 
   useEffect(() => {
-    glisseRef.current = glisse;
     try {
       window.localStorage.setItem("lab-humeur", humeur);
       window.localStorage.setItem("lab-glisse", glisse ? "1" : "0");
