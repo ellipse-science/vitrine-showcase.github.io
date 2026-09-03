@@ -1,5 +1,11 @@
 [
   {
+    "pr": 709,
+    "date": "2026-09-03T02:25:02Z",
+    "note": "Dans la table qui compare les partis, chaque colonne affiche maintenant un petit cadran indiquant d'un coup d'œil si la couverture médiatique de ce parti penche plutôt en sa faveur ou en sa défaveur.",
+    "version": null
+  },
+  {
     "pr": 710,
     "date": "2026-09-03T02:23:51Z",
     "note": "Rien ne change pour le visiteur. En coulisses, le miroir de travail se reconstruit après la mise à jour de la base, plus avant.",
