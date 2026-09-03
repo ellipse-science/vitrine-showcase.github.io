@@ -32,15 +32,24 @@ function donnees(blocs: number[]): PartiesData {
       computed_at: `${j}T11:31:00Z`,
     })),
   );
-  const intra = blocs.flatMap((h, k) =>
+  // Chaque bloc se pose à la fin de sa période et le bloc 20h–00h ouvre la
+  // course du lendemain : la course « du 27 » veut donc le block_hour 20
+  // calculé la veille au soir (23h31 le 26) plus les block_hour 0…16 du 27,
+  // calculés à Montréal (h+3)h31. On date `computed_at` en conséquence.
+  const computedAt = (h: number) =>
+    h === 20 ? "2026-08-27T03:31:00Z" : `2026-08-27T${String(h + 7).padStart(2, "0")}:31:00Z`;
+  // Graduation = fin de période (bloc 20h–00h → 00h) : les minutes montent le
+  // long de la course, comme un cumul depuis minuit.
+  const grad = (h: number) => (h === 20 ? 0 : h + 4);
+  const intra = blocs.flatMap((h) =>
     PARTY_KEYS.map((p, i) => ({
       party: p.toUpperCase(),
       date_utc: "2026-08-27",
       date_montreal_tz: "2026-08-27",
       weighted_mentions: 0.3 - i * 0.05,
-      total_raw_score: Math.max(0, 20 * (k + 1) - i * 3),
+      total_raw_score: Math.max(0, (grad(h) + 4) * 5 - i * 3),
       weighted_tone: 0,
-      computed_at: "2026-08-27T11:31:00Z",
+      computed_at: computedAt(h),
       block_hour: h,
       block_label: `${h}h`,
     })),

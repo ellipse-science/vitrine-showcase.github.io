@@ -1141,23 +1141,67 @@ const PAS_GRADUATION_H = 4;
 const surLaGraduation = (h: number): number =>
   Math.min(20, Math.max(0, Math.ceil(h / PAS_GRADUATION_H) * PAS_GRADUATION_H));
 
+/** « 2026-08-27 » + n jours → « 2026-08-28 ». */
+function isoJourPlus(iso: string, n: number): string {
+  const t = Date.parse(`${iso}T00:00:00Z`);
+  if (Number.isNaN(t)) return iso;
+  return new Date(t + n * 86_400_000).toISOString().slice(0, 10);
+}
+
 function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView | null {
   if (rows.length === 0) return null;
-  const dernierJour = rows.map(dateMontreal).sort().at(-1);
-  // TRIÉ par heure BRUTE : deux blocs bâtards peuvent remonter sur la même
-  // graduation (9h et 11h donnent 12h tous les deux), et les tables ci-dessous
-  // gardent alors le dernier inscrit. Trié, le dernier est le plus récent —
-  // donc, sur une mesure qui cumule depuis minuit, le plus complet.
-  const duJour = rows
-    .filter((r) => dateMontreal(r) === dernierJour)
-    .sort((a, b) => Number(a.block_hour) - Number(b.block_hour));
-  const heureBloc = (r: IntradayRow) => surLaGraduation(Number(r.block_hour));
+
+  // CHAQUE BLOC SE POSE À LA FIN DE SA PÉRIODE. `block_hour` est le DÉBUT sur la
+  // grille (0, 4, … 20) et la période couvre [block_hour, block_hour+4] ; le
+  // point se lit à cette FIN — c'est ce qu'on sait de la journée quand on
+  // arrive à cette graduation. `surLaGraduation` d'abord, pour un éventuel bloc
+  // bâtard hors grille.
+  //
+  // LE BLOC 20h–00h (block_hour 20) finit à minuit : il ouvre la course du
+  // LENDEMAIN, à la graduation 00h. Conséquence voulue : l'ordre des
+  // graduations devient l'ordre CHRONOLOGIQUE des computes — 00h vient du 23h31
+  // de la veille, 04h du 03h31, … 20h du 19h31. `blocs.at(-1)` est donc bien le
+  // bloc le plus récent, et la sourdine, l'écart de ton et les figures du
+  // disque d'or restent calés dessus sans traitement particulier.
+  const finDeBloc = (r: IntradayRow) => surLaGraduation(Number(r.block_hour)) + PAS_GRADUATION_H;
+  const heureBloc = (r: IntradayRow) => finDeBloc(r) % 24;
+  const jourCourse = (r: IntradayRow) =>
+    finDeBloc(r) >= 24 ? isoJourPlus(dateMontreal(r), 1) : dateMontreal(r);
+
+  // Le plus récent JOUR DE COURSE qui a au moins deux blocs à tracer. On recule
+  // au besoin : entre le compute de 23h31 et celui de 03h31, le jour qui vient
+  // de s'ouvrir n'a que son point de 00h, et une course d'un seul point ne se
+  // dessine pas — on montre alors la journée d'hier, complète, plutôt que rien.
+  const parJour = new Map<string, IntradayRow[]>();
+  for (const r of rows) {
+    const j = jourCourse(r);
+    const l = parJour.get(j);
+    if (l) l.push(r);
+    else parJour.set(j, [r]);
+  }
+  const joursOrdonnes = [...parJour.keys()].sort();
+  let duJour: IntradayRow[] | null = null;
+  for (let i = joursOrdonnes.length - 1; i >= 0; i--) {
+    const rs = parJour.get(joursOrdonnes[i])!;
+    if (new Set(rs.map(heureBloc)).size >= 2) {
+      duJour = rs;
+      break;
+    }
+  }
+  if (!duJour) return null;
+  // Trié par (graduation, heure brute) : deux blocs bâtards peuvent retomber
+  // sur la même graduation (7h et 9h → 12h), et les tables ci-dessous gardent
+  // alors le dernier inscrit — qui doit être le plus récent, donc la plus
+  // grande `block_hour`.
+  duJour = duJour
+    .slice()
+    .sort((a, b) => heureBloc(a) - heureBloc(b) || Number(a.block_hour) - Number(b.block_hour));
   const blocs = [...new Set(duJour.map(heureBloc))].sort((a, b) => a - b);
   if (blocs.length <= 1) return null;
 
   const plotW = CHART_W - CHART_PAD_R;
-  // 20h est le dernier bloc publié, donc la fin de l'axe : au-delà, le
-  // raffineur ne produit plus rien avant le reset de minuit.
+  // 20h ferme l'axe : c'est la fin de la période 16h–20h, la dernière du jour
+  // de course. Le bloc 20h–00h est déjà passé sur la course du lendemain.
   const xAtH = (h: number) => (h / 20) * plotW;
 
   // Même définition de sourdine que le vumètre : le dernier au classement, pas
@@ -1266,6 +1310,68 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
     // vaut donc la journée entière, et c'est bien un total.
     mesureLabel: "depuis minuit",
   };
+}
+
+/** Les valeurs par parti du bloc intra-journée le PLUS RÉCENT — le relevé au
+ *  `computed_at` le plus grand. La vue « Jour » y aligne son podium, son disque
+ *  d'or, son vumètre et ses decks, pour qu'ils lisent le même instant que la
+ *  course.
+ *
+ *  Ces valeurs CUMULENT depuis minuit (comme toute l'intra-journée), donc elles
+ *  remplacent `stat.sov.today` telle quelle. `null` si la table n'a rien. */
+function blocIntradayCourant(
+  rows: IntradayRow[],
+): Map<PartyKey, { mentions: number; tone: number; minutes: number }> | null {
+  if (rows.length === 0) return null;
+  let ref: IntradayRow | null = null;
+  for (const r of rows) {
+    if (!ref || (r.computed_at ?? "") > (ref.computed_at ?? "")) ref = r;
+  }
+  if (!ref) return null;
+  const out = new Map<PartyKey, { mentions: number; tone: number; minutes: number }>();
+  const vus = new Map<PartyKey, string>();
+  for (const r of rows) {
+    if (r.date_utc !== ref.date_utc || Number(r.block_hour) !== Number(ref.block_hour)) continue;
+    const k = String(r.party ?? "").toLowerCase() as PartyKey;
+    if (!PARTY_KEYS.includes(k)) continue;
+    const quand = r.computed_at ?? "";
+    if ((vus.get(k) ?? "") > quand) continue;
+    vus.set(k, quand);
+    out.set(k, {
+      mentions: Number(r.weighted_mentions) || 0,
+      tone: Number(r.weighted_tone) || 0,
+      minutes: Number(r.total_raw_score) || 0,
+    });
+  }
+  return out.size ? out : null;
+}
+
+/** Une COPIE des stats où la tranche « aujourd'hui » — `sov`/`tone`/`minutes`
+ *  `.today`, et le dernier point des historiques quotidiens — est remplacée par
+ *  le bloc intra-journée courant. `buildRangeView(…, "today", …)` en tire alors
+ *  podium, disque d'or, vumètre et decks sur le MÊME bloc que la course.
+ *  Les vues Semaine / Campagne, elles, reçoivent les stats d'origine. */
+function statsAvecBlocCourant(
+  stats: Stat[],
+  bloc: Map<PartyKey, { mentions: number; tone: number; minutes: number }>,
+): Stat[] {
+  const dernier = (arr: number[], v: number) => (arr.length ? [...arr.slice(0, -1), v] : [v]);
+  return stats.map((s) => {
+    const b = bloc.get(s.key);
+    if (!b) return s;
+    return {
+      ...s,
+      sov: { ...s.sov, today: b.mentions },
+      tone: { ...s.tone, today: b.tone },
+      minutes: { ...s.minutes, today: b.minutes },
+      toneHistory: { ...s.toneHistory, daily: dernier(s.toneHistory.daily, b.tone) },
+      history: {
+        ...s.history,
+        daily: dernier(s.history.daily, b.mentions),
+        week: dernier(s.history.week, b.mentions),
+      },
+    };
+  });
 }
 
 const JOURS_COURTS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -1975,6 +2081,8 @@ export const __test__ = {
   buildRangeView,
   buildChart,
   buildChartIntraday,
+  blocIntradayCourant,
+  statsAvecBlocCourant,
   dateMontreal,
   axisTop,
   detecterIndisponibilite,
@@ -2169,6 +2277,13 @@ export async function loadParties(
     // pas encore deux blocs — un seul point ne dessine pas une journée.
     const chartJour = intradayRows ? buildChartIntraday(intradayRows, [...PARTY_KEYS]) : null;
 
+    // LE BLOC INTRA-JOURNÉE COURANT — le relevé le plus récent. La vue « Jour »
+    // aligne dessus son podium, son disque d'or, son vumètre et ses decks, pour
+    // qu'ils lisent le MÊME instant que la course. On patche une COPIE des
+    // stats : Semaine et Campagne gardent la table `_day`.
+    const blocJour = intradayRows ? blocIntradayCourant(intradayRows) : null;
+    const statsJour = blocJour ? statsAvecBlocCourant(stats, blocJour) : stats;
+
     return {
       blocCourant: dernierBloc(intradayRows),
       lastDate,
@@ -2191,7 +2306,7 @@ export async function loadParties(
       medias,
       byMedia,
       ranges: {
-        today: buildRangeView(stats, "today", dates, chartJour, enjeuxParParti),
+        today: buildRangeView(statsJour, "today", dates, chartJour, enjeuxParParti),
         week:  buildRangeView(stats, "week", dates, null, enjeuxParParti),
         overall: buildRangeView(stats, "overall", dates, null, enjeuxParParti),
       },
