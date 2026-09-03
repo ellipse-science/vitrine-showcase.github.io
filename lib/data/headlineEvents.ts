@@ -2012,7 +2012,8 @@ export type TreemapIssueTile = {
 export type TreemapHistoryPoint = {
   date: string;
   ranks: Record<string, number>;
-  /** Le tag de la passe (UTC). Sert d'axe des X à la frise du JOUR, où tous les
+  /** Le tag de la passe (heure de Montréal, telle qu'écrite par le raffineur).
+   *  Sert d'axe des X à la frise du JOUR, où tous les
    *  points partagent la même date et où seule l'heure les distingue. */
   tag: string;
 };
@@ -2024,8 +2025,9 @@ export type TreemapPeriodData = {
    *  « hier soir »… `null` quand aucune publication antérieure ne diffère.
    *  Commun aux 12 tuiles : c'est le même traitement précédent pour toutes. */
   growthSince: string | null;
-  /** « Dernière mise à jour : jeudi 27 août 2026, 15h » — l'heure vient du `tag`
-   *  de la passe, converti depuis l'UTC. La table a une fenêtre journalière mais
+  /** « Dernière mise à jour : mercredi 2 septembre 2026, 20h » — l'heure vient du
+   *  `tag` de la passe (heure de Montréal), placé sur la grille des éditions.
+   *  La table a une fenêtre journalière mais
    *  une cadence de SIX passes par jour : c'est la confusion entre les deux qui
    *  a longtemps privé ce module de son heure. */
   lastUpdated: string;

@@ -41,20 +41,32 @@ function parseIsoDate(dateStr: string): { y: number; m: number; d: number; date:
  *  Rend `null` si l'entrée n'est pas un instant exploitable ; l'appelant
  *  retombe alors sur la date seule, comme avant.
  */
-export function momentMontreal(instantUtc: string | null | undefined): { date: string; heure: number } | null {
-  const brut = String(instantUtc ?? "").trim();
+export function momentMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+  const brut = String(horodatage ?? "").trim();
   if (!brut) return null;
-  // « 2026-08-27 19:37 » n'est pas de l'ISO : sans le `T` ni le `Z`, JS le lit
-  // comme une heure LOCALE de la machine de build, qui n'est pas Montréal en CI.
+  // « 2026-09-02 19:37 » est l'HORLOGE DE MONTRÉAL, pas de l'UTC : le raffineur
+  // écrit `format(Sys.time(), "%Y-%m-%d %H:%M")` dans une image réglée sur
+  // America/Toronto. Preuve du 2026-09-02 : la Lambda radar-issues-score tourne
+  // à 3h36, 7h36, 11h36, 15h36, 19h36 et 23h36 (CloudWatch, heure de Montréal)
+  // et ses tags disent 03:36, 07:36, 11:37, 15:36, 19:37, 23:37. Le premier jet
+  // (2026-08-30) collait un `Z` à cette forme et reculait tout de quatre heures :
+  // le module des 12 enjeux annonçait « 16h » pour la passe de 19h37, servie à
+  // 20h, et datait la passe de 3h36 de la veille à minuit. Une chaîne sans
+  // fuseau se lit donc telle quelle, sans conversion.
   //
-  // ⚠️ La réécriture ne vaut QUE pour cette forme sans fuseau. Un premier jet
-  // testait le seul PRÉFIXE `YYYY-MM-DD HH:MM` : il réécrivait donc aussi
-  // « 2026-08-27T23:31:44-04:00 » en « …T23:31:00Z », jetant l'offset et
-  // déplaçant l'instant de quatre heures. `Date.parse` sait déjà lire un ISO
-  // complet, avec `Z` comme avec un décalage : on le lui laisse.
-  const sansFuseau = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(brut);
-  const iso = sansFuseau ? `${brut.slice(0, 10)}T${brut.slice(11, 16)}:00Z` : brut;
-  const t = Date.parse(iso);
+  // Un ISO complet (`Z` ou décalage, comme `computed_at`) passe par
+  // `Date.parse`, qui sait le lire, puis est ramené à Montréal ci-dessous.
+  const sansFuseau = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2})?$/.exec(brut);
+  if (sansFuseau) {
+    const [, y, mo, jour, h, mi] = sansFuseau;
+    const heure = Number(h);
+    // Mois 13, 31 février, 25h ou 99 min : mieux vaut « — » qu'une étiquette fausse.
+    const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
+    const valide = ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
+    if (!valide || heure > 23 || Number(mi) > 59) return null;
+    return { date: `${y}-${mo}-${jour}`, heure };
+  }
+  const t = Date.parse(brut);
   if (Number.isNaN(t)) return null;
   const d = new Date(t);
   // `America/Montreal` et `hourCycle: "h23"` : les mêmes que le formateur de
@@ -99,8 +111,8 @@ export function momentMontreal(instantUtc: string | null | undefined): { date: s
  *  ce que `lastUpdatedLabel` attend pour écrire « minuit ».
  *  Rend `null` si l'instant n'est pas exploitable.
  */
-export function heurePublicationMontreal(instantUtc: string | null | undefined): { date: string; heure: number } | null {
-  const m = momentMontreal(instantUtc);
+export function heurePublicationMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+  const m = momentMontreal(horodatage);
   if (!m) return null;
   // Bloc de 4 h contenant la passe → sa fin → +1 h. 15h37 tombe dans le bloc
   // 12-16, servi à 16h. 23h36 tombe dans 20-24, servi à minuit (24, pas 0).
