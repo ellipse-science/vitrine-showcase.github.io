@@ -1155,6 +1155,35 @@
             </div>
         </div>
 
+        <!-- POLIMÈTRE+ — MODE « PROMESSES DE LA CAMPAGNE » -->
+        <div class="pipeline pipeline-polimetre" data-pipeline="polimetre-neuves">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🗳️ Polimètre+ — promesses de la campagne</span>
+                <span class="frequency">Détection quatre fois par jour aux&nbsp;:05 • saillance 13:45 et 21:45 (heure du Québec) • fenêtres jour et semaine</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="a-qc-press-releases" data-env-source="PROD">
+                    a-qc-press-releases<br>party-manifestos
+                    <div class="node-detail">Communiqués des partis québécois (datawarehouse) et plateformes électorales déposées à la main (datalake). Les deux entrent par la même porte.</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-promesses-neuves" data-ecr="polimetre-promesses-neuves" data-active="true" data-cron="09:05,13:05,17:05,21:05,13:45,21:45">
+                    polimetre-promesses-neuves.R
+                    <div class="node-detail">Deux étages sur une même image, choisis par le payload. <code>detection</code> aux&nbsp;:05&nbsp;: portillon puis extraction verbatim des promesses formulées par les partis. <code>saillance</code>&nbsp;: leur reprise dans les unes québécoises.</div>
+                    <div class="node-schedule">⏰ détection 09:05, 13:05, 17:05, 21:05 • saillance 13:45, 21:45</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_promesses_neuves" data-env-output="DEV">
+                    polimetre_promesses_neuves_detections<br>polimetre_promesses_neuves
+                    <div class="node-detail">⚠️ Allumé en DEV pour OBSERVATION, pas pour publication&nbsp;: l'appariement promesse ↔ couverture médiatique est mesuré comme peu fiable (README du raffineur, 21 août 2026). L'extraction, elle, fonctionne.</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+            </div>
+        </div>
+
         <!-- PUBLICATION VITRINE -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
@@ -1538,8 +1567,7 @@
                         'date_utc / date_montreal_tz - Horodatages de fin de calcul.',
                         'period_start / period_end - Fenêtre exacte de l\'accumulation.',
                         'computed_at - Horodatage UTC du calcul (sert à dédupliquer).',
-                        'threshold - Seuil d\'éclipse (0.02).',
-                        'representative_url - URL de l\'article ayant le plus contribué au score du parti sur ce média (aws-refiners#447) — colonne des SEULES tables _by_media_ ; permet au deck de la Vitrine de lier vers un article plutôt que de rester inerte.'
+                        'threshold - Seuil d\'éclipse (0.02).'
                     ],
                     details: [
                         '📋 15 tables publiées (aws-refiners#324) : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date)',
@@ -2222,8 +2250,7 @@
                         '• absent_from_media_ids: COUNTRY_OUTLETS[country] \\ media_ids (frontend « Absent de... »)',
                         '',
                         '🤖 MÉTHODOLOGIE — 2. LLM (top 3 par pays uniquement):',
-                        '• Modèle: claude-sonnet-5, réflexion adaptative DÉSACTIVÉE (aws-refiners#400, en service le 26 août 2026). gpt-4o via ellipsellm (temperature = 0) avant cette date. Repli AUTOMATIQUE et journalisé sur gpt-4o si la clé Anthropic manque de l\'image; LLM_PROVIDER=openai force l\'ancien chemin sans redéploiement.',
-                        '&nbsp;&nbsp;↳ Choix issu d\'un banc du 23 août 2026 sur 18 blocs réels&nbsp;: Sonnet 5 sans réflexion l\'emporte sur les deux mesures. Continuité des histoires, où le PLUS HAUT est le mieux&nbsp;: 0,607 contre 0,581. Part des histoires vues dans un seul bloc, où le PLUS BAS est le mieux&nbsp;: 0,388 contre 0,456. C\'est le modèle avec lequel la série 2025-05-17 → 2026-07-23 a été recalculée&nbsp;: sans cette bascule, la série bifurquerait à la jonction avec le direct.',
+                        '• Modèle: gpt-4o via ellipsellm (temperature = 0)',
                         '• GARDE D\'APPARTENANCE (aws-refiners#235): RETIRÉ le 2026-07-22 (PR #243, issue #213). Mesuré sur 11 semaines: il défaisait plus de regroupements justes qu\'il ne corrigeait d\'erreurs (il jugeait chaque article contre le SEUL titre de la manchette, donc écartait les autres facettes du dossier). Sa consigne négative est passée dans le prompt de regroupement.',
                         '• Appel 2: titre journalistique FR canadien (60-90 char) + lead (150-280 char)',
                         '• Appel 3: classification main_issue parmi 12 enjeux CAP',
@@ -2390,11 +2417,7 @@
                         '• Calcule <code>salience_calibration.json</code> : percentiles p5/p20/p50/p80/p95 de score_qc, score_roc et interval_convergence_score sur 365 jours glissants',
                         '• Écrit <code>meta.json</code> : statut et compte de lignes par table (diagnostic de fraîcheur)',
                         '',
-                        '⏰ HORAIRE: <strong>6×/jour</strong> depuis le 25 août 2026 (vitrine#581), à 00:50, 04:50, 08:50, 12:50, 16:50 et 20:50 UTC, soit 50 min après chaque publication de bloc à l\'heure d\'été. L\'hiver, les blocs se publient une heure plus tard en UTC : la même grille tombe alors 10 min avant la publication suivante et rattrape le bloc précédent, ce qui est sans conséquence pour un filet. Plus le <code>workflow_dispatch</code> à la main. cron-job.org n\'appelle plus ce workflow depuis la bascule du 19 août 2026.',
-                        '',
-                        '🚨 CE FILET N\'EST PLUS SEULEMENT UN FILET (vitrine#581) : quand la synchro a réellement changé les données de <code>prod</code>, il déclenche lui-même <code>deploy-prod.yml</code>. C\'est ce qui répare un site figé sans intervention humaine, tant que les questions 1-3 de vitrine#570 (Deploy Hooks du Worker, intégration Git de Cloudflare Pages) ne sont pas tranchées.',
-                        '',
-                        '👁️ CE WORKFLOW NE SE SURVEILLE PLUS LUI-MÊME (vitrine#628) : l\'alarme de fraîcheur vivait ICI, en step. Elle ne mesurait donc rien quand le workflow ne tournait pas, et elle est restée muette pendant deux gels de plusieurs jours (21-23 et 28-30 août 2026). La garde <code>garde-fraicheur.yml</code> tourne maintenant <strong>toutes les heures</strong>, depuis un workflow séparé : elle lit sur la prod déployée <code>/data/hero-selection.json</code> (le bloc affiché) et <code>/build-id.json</code> (l\'âge du build), et ouvre une issue au-delà de 7h.',
+                        '⏰ HORAIRE: filet — <code>workflow_dispatch</code> à la main, plus un cron GitHub de secours. cron-job.org n\'appelle plus ce workflow depuis la bascule du 19 août 2026.',
                         '',
                         '🚀 Après le commit : Cloudflare Pages reconstruit <code>dev.vitrinedemocratique.com</code> par son intégration Git ; les données fraîches sont aussi synchronisées vers la branche <code>prod</code>. Le miroir GitHub Pages et son workflow <code>deploy.yml</code> ont été débranchés le 30 août 2026.',
                         '',
