@@ -26,7 +26,7 @@ function donnees(): PartiesData {
       computed_at: `${j}T11:31:00Z`,
     })),
   );
-  const calcule = __test__.computeStats(lignes, lignes, lignes);
+  const calcule = __test__.computeStats(lignes);
   if (!calcule) throw new Error("computeStats a rendu null");
   const { stats, dates } = calcule;
   return {

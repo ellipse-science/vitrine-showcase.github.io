@@ -1,5 +1,23 @@
 [
   {
+    "pr": 721,
+    "date": "2026-09-03T19:40:41Z",
+    "note": "Dans le palmarès des partis, l'onglet « Semaine » cumule maintenant du samedi au vendredi sans repartir de zéro le lundi, et « Semaine » comme « Toute la campagne » se mettent à jour à chaque bloc de 4 h au lieu d'attendre le soir.",
+    "version": null
+  },
+  {
+    "pr": 718,
+    "date": "2026-09-03T19:07:14Z",
+    "note": "Le site cessait d'aller chercher toutes les quatre heures des données qu'il n'affichait plus depuis des mois. Rien ne change à l'écran : ce ménage rend seulement la mise à jour du site plus légère et plus sûre.",
+    "version": null
+  },
+  {
+    "pr": 720,
+    "date": "2026-09-03T19:07:01Z",
+    "note": "Rien ne change pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 693,
     "date": "2026-09-03T19:04:33Z",
     "note": "Rien de visible sur le site : la documentation de l'horaire suit le nouveau passage de l'illustration.",

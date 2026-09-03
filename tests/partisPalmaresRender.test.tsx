@@ -31,7 +31,7 @@ function donneesUnSeulJour(): PartiesData {
     computed_at: "2026-08-27T11:31:00Z",
   }));
 
-  const calcule = __test__.computeStats(lignes, lignes, lignes);
+  const calcule = __test__.computeStats(lignes);
   if (!calcule) throw new Error("computeStats a rendu null sur un jeu valide");
   const { stats, dates } = calcule;
 
@@ -92,7 +92,7 @@ describe("le palmarès sans courbe à tracer — régression", () => {
       weighted_tone: 0,
       computed_at: "2026-08-27T11:31:00Z",
     }));
-    const calcule = __test__.computeStats(lignes, lignes, lignes)!;
+    const calcule = __test__.computeStats(lignes)!;
     const parMedia = __test__.buildRangeView(calcule.stats, "today", calcule.dates);
 
     expect(parMedia.chart.raison).toBe("detail-horaire-absent");
@@ -140,7 +140,7 @@ function donneesAvecCourbe(): PartiesData {
     })),
   );
 
-  const calcule = __test__.computeStats(lignes, lignes, lignes);
+  const calcule = __test__.computeStats(lignes);
   if (!calcule) throw new Error("computeStats a rendu null sur un jeu valide");
   const { stats, dates } = calcule;
   const chartJour = __test__.buildChartIntraday(intra, [...PARTY_KEYS]);
@@ -307,7 +307,7 @@ describe("le prolongement jusqu'à l'arrivée", () => {
         block_label: `${h}h`,
       })),
     );
-    const calcule = __test__.computeStats(lignes, lignes, lignes)!;
+    const calcule = __test__.computeStats(lignes)!;
     const chartJour = __test__.buildChartIntraday(intra, [...PARTY_KEYS])!;
     return {
       blocCourant: { date: "2026-08-27", hour: blocs.at(-1)!, label: null },
