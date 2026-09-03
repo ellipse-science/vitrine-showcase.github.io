@@ -1,5 +1,11 @@
 [
   {
+    "pr": 718,
+    "date": "2026-09-03T19:07:14Z",
+    "note": "Le site cessait d'aller chercher toutes les quatre heures des données qu'il n'affichait plus depuis des mois. Rien ne change à l'écran : ce ménage rend seulement la mise à jour du site plus légère et plus sûre.",
+    "version": null
+  },
+  {
     "pr": 720,
     "date": "2026-09-03T19:07:01Z",
     "note": "Rien ne change pour le visiteur.",
