@@ -41,8 +41,8 @@ function parseIsoDate(dateStr: string): { y: number; m: number; d: number; date:
  *  Rend `null` si l'entrée n'est pas un instant exploitable ; l'appelant
  *  retombe alors sur la date seule, comme avant.
  */
-export function momentMontreal(instantUtc: string | null | undefined): { date: string; heure: number } | null {
-  const brut = String(instantUtc ?? "").trim();
+export function momentMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+  const brut = String(horodatage ?? "").trim();
   if (!brut) return null;
   // « 2026-09-02 19:37 » est l'HORLOGE DE MONTRÉAL, pas de l'UTC : le raffineur
   // écrit `format(Sys.time(), "%Y-%m-%d %H:%M")` dans une image réglée sur
@@ -58,10 +58,12 @@ export function momentMontreal(instantUtc: string | null | undefined): { date: s
   // `Date.parse`, qui sait le lire, puis est ramené à Montréal ci-dessous.
   const sansFuseau = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2})?$/.exec(brut);
   if (sansFuseau) {
-    const [, y, mo, jour, h] = sansFuseau;
+    const [, y, mo, jour, h, mi] = sansFuseau;
     const heure = Number(h);
-    const valide = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour))).getUTCDate() === Number(jour);
-    if (!valide || heure > 23) return null;
+    // Mois 13, 31 février, 25h ou 99 min : mieux vaut « — » qu'une étiquette fausse.
+    const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
+    const valide = ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
+    if (!valide || heure > 23 || Number(mi) > 59) return null;
     return { date: `${y}-${mo}-${jour}`, heure };
   }
   const t = Date.parse(brut);
@@ -109,8 +111,8 @@ export function momentMontreal(instantUtc: string | null | undefined): { date: s
  *  ce que `lastUpdatedLabel` attend pour écrire « minuit ».
  *  Rend `null` si l'instant n'est pas exploitable.
  */
-export function heurePublicationMontreal(instantUtc: string | null | undefined): { date: string; heure: number } | null {
-  const m = momentMontreal(instantUtc);
+export function heurePublicationMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+  const m = momentMontreal(horodatage);
   if (!m) return null;
   // Bloc de 4 h contenant la passe → sa fin → +1 h. 15h37 tombe dans le bloc
   // 12-16, servi à 16h. 23h36 tombe dans 20-24, servi à minuit (24, pas 0).

@@ -33,6 +33,8 @@ describe("momentMontreal", () => {
     expect(momentMontreal("pas une date")).toBeNull();
     expect(momentMontreal("2026-09-02 25:00")).toBeNull();
     expect(momentMontreal("2026-02-30 03:36")).toBeNull();
+    expect(momentMontreal("2026-13-02 03:36")).toBeNull();
+    expect(momentMontreal("2026-09-02 03:99")).toBeNull();
   });
 });
 
