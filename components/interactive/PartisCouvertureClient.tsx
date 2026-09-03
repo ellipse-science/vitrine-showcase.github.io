@@ -1303,8 +1303,13 @@ function Tranche({
         {row.label}
       </span>
       {/* LE PETIT VUMÈTRE DE TON, sous la colonne — une fenêtre rectangulaire,
-          esprit vumètre de magnéto. L'AIGUILLE dévie de −27° (bout rouge,
-          défavorable) à +27° (bout vert, favorable) selon `tonePct` ; sa
+          esprit vumètre de magnéto. L'AIGUILLE dévie de −58° (bout rouge,
+          défavorable) à +58° (bout vert, favorable) selon `tonePct`, qui va
+          de 0 à 100 : l'angle vaut `(tonePct − 50) × 1,16`. Le commentaire
+          annonçait ±27°, l'échelle réellement appliquée est ±58° — corrigé
+          sur le code, pas l'inverse : personne n'a demandé de réduire la
+          course de l'aiguille. Si ±27° était l'intention, c'est le facteur
+          1,16 qu'il faut revoir (il vaudrait 0,54). Sa
           couleur reprend le dégradé de « Ton en chambre » (`couleurTon`).
           Angle ET couleur disent la même chose. Elle frémit, décalée d'une
           colonne à l'autre (`--ct-phase`) ; coupé pour `prefers-reduced-motion`.
