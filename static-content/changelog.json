@@ -1,5 +1,11 @@
 [
   {
+    "pr": 693,
+    "date": "2026-09-03T19:04:33Z",
+    "note": "Rien de visible sur le site : la documentation de l'horaire suit le nouveau passage de l'illustration.",
+    "version": null
+  },
+  {
     "pr": 719,
     "date": "2026-09-03T19:03:28Z",
     "note": "Une note du journal annonçait une amélioration visuelle que le site public n'affiche pas encore ; elle a été corrigée pour ne décrire que ce qui est réellement en ligne.",
