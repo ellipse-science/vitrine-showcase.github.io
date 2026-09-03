@@ -121,6 +121,11 @@ function donneesAvecCourbe(): PartiesData {
   // Des minutes qui MONTENT puis REDESCENDENT : le profil où un lissage
   // ordinaire déborde, et donc celui qu'il faut faire passer par le rendu.
   const paliers = [10, 90, 20, 80, 15, 60];
+  // Chaque bloc à la fin de sa période, le bloc 20h–00h ouvrant la course du
+  // lendemain : la course « du 27 » veut le block_hour 20 calculé le 26 au soir
+  // (23h31 → 03h31 UTC) et les block_hour 0…16 du 27, à Montréal (h+3)h31.
+  const computedAt = (h: number) =>
+    h === 20 ? "2026-08-27T03:31:00Z" : `2026-08-27T${String(h + 7).padStart(2, "0")}:31:00Z`;
   const intra = [0, 4, 8, 12, 16, 20].flatMap((h, k) =>
     PARTY_KEYS.map((p, i) => ({
       party: p.toUpperCase(),
@@ -129,7 +134,7 @@ function donneesAvecCourbe(): PartiesData {
       weighted_mentions: 0.3 - i * 0.05,
       total_raw_score: Math.max(0, paliers[k] - i * 8),
       weighted_tone: 0,
-      computed_at: "2026-08-27T11:31:00Z",
+      computed_at: computedAt(h),
       block_hour: h,
       block_label: `${String(h).padStart(2, "0")}h`,
     })),
@@ -283,15 +288,21 @@ describe("le prolongement jusqu'à l'arrivée", () => {
         computed_at: `${j}T11:31:00Z`,
       })),
     );
-    const intra = blocs.flatMap((h, k) =>
+    // Bloc à la fin de sa période, 20h–00h sur la course du lendemain : le
+    // block_hour 20 est calculé le 26 au soir (03h31 UTC), les autres le 27 à
+    // Montréal (h+3)h31. Les minutes montent le long de la course.
+    const computedAt = (h: number) =>
+      h === 20 ? "2026-08-27T03:31:00Z" : `2026-08-27T${String(h + 7).padStart(2, "0")}:31:00Z`;
+    const grad = (h: number) => (h === 20 ? 0 : h + 4);
+    const intra = blocs.flatMap((h) =>
       PARTY_KEYS.map((p, i) => ({
         party: p.toUpperCase(),
         date_utc: "2026-08-27",
         date_montreal_tz: "2026-08-27",
         weighted_mentions: 0.3 - i * 0.05,
-        total_raw_score: 20 * (k + 1) - i * 3,
+        total_raw_score: Math.max(0, (grad(h) + 4) * 5 - i * 3),
         weighted_tone: 0,
-        computed_at: "2026-08-27T11:31:00Z",
+        computed_at: computedAt(h),
         block_hour: h,
         block_label: `${h}h`,
       })),
@@ -316,9 +327,9 @@ describe("le prolongement jusqu'à l'arrivée", () => {
   }
 
   it("chaque ligne tient son rang à plat jusqu'à l'arrivée", () => {
-    // Publié jusqu'à 12h sur un axe qui va à 20h : le prolongement court de 60
-    // à 100 (unités du viewBox), et il est HORIZONTAL — un rang tenu, pas une
-    // trajectoire devinée.
+    // `[0, 4, 8, 12]` : le dernier bloc couvre 12h–16h et se pose à 16h (80 sur
+    // un axe de 100 qui va à 20h). Le prolongement court donc de 80 à 100, et
+    // il est HORIZONTAL — un rang tenu, pas une trajectoire devinée.
     const html = renderToStaticMarkup(
       <PartisCouvertureClient data={donneesJourneePartielle([0, 4, 8, 12])} />,
     );
@@ -326,7 +337,7 @@ describe("le prolongement jusqu'à l'arrivée", () => {
     expect(attentes.length).toBe(PARTY_KEYS.length);
     for (const d of attentes) {
       const [, x0, y0, x1, y1] = d.match(/^M ([\d.]+) ([\d.]+) L ([\d.]+) ([\d.]+)$/)!;
-      expect(Number(x0)).toBeCloseTo(60, 6);
+      expect(Number(x0)).toBeCloseTo(80, 6);
       expect(Number(x1)).toBeCloseTo(100, 6);
       expect(Number(y0)).toBe(Number(y1)); // à plat : le rang est TENU
     }

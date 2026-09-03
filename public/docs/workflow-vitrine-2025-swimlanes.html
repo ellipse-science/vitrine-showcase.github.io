@@ -552,8 +552,8 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 26 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
-        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> restent DEV-only (actifs en DEV, inactifs en PROD).</p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 26 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
              Deux lectures du même système. «&nbsp;Par module&nbsp;» répond à «&nbsp;d'où vient ce
@@ -1106,7 +1106,7 @@
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-table" data-type="table" data-table="agora_decideurs_qc_phrases" data-env-output="DEV">
-                    agora_decideurs_qc_phrases<br>agora_decideurs_qc_affiliations
+                    agora_decideurs_qc_phrases<br>agora_decideurs_qc_phrase_identities
                     <div class="node-detail">Datamart&nbsp;: agora_datamart</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
@@ -1223,7 +1223,7 @@
                     <div class="info-badge">🌐 Cliquer pour ouvrir site</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:40,04:40,08:40,12:40,16:40,20:40">
+                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:12,04:12,08:12,12:12,16:12,20:12">
                     vitrine-art.R
                     <div class="node-detail">Illustration de la Une (gpt-image-1) → <code>PUT /v1/art</code> (R2) → Deploy Hooks si la Une a changé</div>
                     <div class="node-schedule">⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40</div>
@@ -1577,7 +1577,7 @@
                 },
                 'parties_score_legacy': {
                     title: 'Tables: *_parties_score_* (legacy)',
-                    description: 'Tables calculées par radar-party-score.R, le pipeline historique — toujours actif et consommé par la Vitrine.',
+                    description: 'Tables calculées par radar-party-score.R, le pipeline historique. PLUS CONSOMMÉES PAR LA VITRINE depuis le 2026-09-03 : aucun fichier de app/, components/ ou lib/ ne les lit, le module Partis tourne sur les tables *_salient_shadow_*. Dépréciées dans scripts/tables.json (enabled: false) et retirées de la whitelist du Worker.',
                     columns: [
                         'party - Code parti (lpc, cpc, ndp, bq, gpc, ppc, caq, pq, plq, qs, pcq)',
                         'weighted_mentions - Score de pertinence pondéré',
@@ -1785,7 +1785,7 @@
                     ]
                 },
                 'agora_decideurs_qc_phrases': {
-                    title: 'Tables: agora_decideurs_qc_phrases + agora_decideurs_qc_affiliations',
+                    title: 'Tables: agora_decideurs_qc_phrases + agora_decideurs_qc_phrase_identities',
                     description: 'Interventions du Salon bleu segmentées en phrases et annotées, accompagnées d’une dimension datée des affiliations issue du même référentiel que l’appariement des prises de parole.',
                     columns: [
                         'Une ligne par phrase d\'intervention parlementaire',
@@ -2117,12 +2117,12 @@
                         '⏳ TIMEOUT: 15 minutes (tous)',
                         '',
                         '🔗 DÉPENDANCES: nécessite radar_annotated généré par radar-data-preparation',
-                        '🌐 Consommé par la Vitrine : les 3 tables PROVINCIALES seulement (components/interactive/PartisCouvertureClient.tsx). Les fédérales sont produites et non lues.'
+                        '🌐 Consommé par la Vitrine : les tables PROVINCIALES — day/week/month, _intraday, _by_media_day/week/month et parties_issues_salient_shadow_day (lib/data/parties.ts, les by_media par nom construit). Les fédérales sont produites et non lues.'
                     ]
                 },
                 'party-score-legacy': {
                     title: 'Refiner: radar-party-score.R (legacy)',
-                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle. Toujours actif — c\'est lui qui alimente le module Partis de la Vitrine.',
+                    description: 'Pipeline historique des Party Scores: matching dictionnaires sur salient_index + tonalité dictionnaire + pondération temporelle. Tourne encore en DEV, mais N\'ALIMENTE PLUS le module Partis : radar-party-score-salient-shadow l\'a remplacé. Laissé hors PROD (aws-infra#557).',
                     details: [
                         '📥 SOURCES:',
                         '• <span class="badge-dev">DEV</span>/datamarts - Table vitrine_datamart-salient_index',
@@ -2365,7 +2365,7 @@
                     description: 'Charge les interventions du Salon bleu, les segmente en phrases et les annote (thèmes CAP + sentiment) via l\'INFER API. Étage amont du module Assemblée.',
                     details: [
                         '📥 SOURCE: <span class="badge-prod">PROD</span>/datawarehouse - Table a-qc-parliament-debates',
-                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - Tables agora_datamart.agora_decideurs_qc_phrases et agora_decideurs_qc_affiliations',
+                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - Tables agora_datamart.agora_decideurs_qc_phrases et agora_decideurs_qc_phrase_identities. ⚠️ CORRIGÉ le 2026-09-03 : ce raffineur ne produit PAS agora_decideurs_qc_affiliations. Ses deux seules publications sont TABLE_PHRASES et TABLE_IDENTITIES (runtime.R l. 339-340) ; aucun fichier d\'aws-refiners ne contient le mot « affiliation ». Cette table n\'a pas de producteur connu et ne peut atteindre PROD que par migration (aws-refiners#470).',
                         '',
                         '⚙️ TRAITEMENT:',
                         '• Reprise incrémentale : cherche la prochaine date de séance non encore traitée',

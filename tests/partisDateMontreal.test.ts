@@ -60,13 +60,20 @@ describe("la date de Montréal vient de computed_at, pas de la colonne", () => {
       .toEqual([20, 4]);
   });
 
-  it("ne trace RIEN quand le dernier jour n'a qu'un bloc réel", () => {
-    // Le 28 août n'a que le bloc de 4h une fois le 20h rendu au 27. Une courbe
-    // d'un seul point ne se trace pas — et surtout, l'ancienne version en
-    // traçait une FAUSSE, en reliant la soirée de la veille au matin courant.
+  it("le bloc 20h–00h OUVRE la course du lendemain, à la graduation 00h", () => {
+    // Chaque bloc se pose à la FIN de sa période. Le bloc de 20h (soirée du 27,
+    // calculé à 23h31 = 03h31 UTC) couvre 20h–00h : sa fin est minuit, donc il
+    // devient le PREMIER point de la course du 28, posé à 00h. Le 28 a alors
+    // deux points — 00h (soirée du 27) et 08h (bloc de 4h) — et une vraie
+    // courbe, chronologique, pas une jointure inventée.
     const rows = RELEVES.flatMap((r) => ["CAQ", "PLQ", "PQ", "QS", "PCQ"].map((p) => ligne(r, p)));
-    const chart = __test__.buildChartIntraday(rows, ["plq", "caq", "qs", "pq", "pcq"]);
-    expect(chart).toBeNull();
+    const chart = __test__.buildChartIntraday(rows, ["plq", "caq", "qs", "pq", "pcq"])!;
+    expect(chart).not.toBeNull();
+    // Les abscisses tracées : 00h (bloc 20h) puis 08h (bloc 4h).
+    const x00 = chart.xLabels.find((l) => l.label === "00h")!.x;
+    const x08 = chart.xLabels.find((l) => l.label === "08h")!.x;
+    const xs = chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0]));
+    expect(xs).toEqual([x00, x08]);
   });
 
   it("trace dès que le jour courant a deux blocs à lui", () => {

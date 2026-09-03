@@ -31,6 +31,14 @@ export async function GET() {
     // la sonde de fraîcheur, elle, doit mesurer l'âge du jeu, pas celui de
     // l'histoire — sinon elle sonne quand la tête ne se renouvelle pas (vécu le
     // 2 septembre 2026 : « 22,4 h de retard » sur un site à jour).
+    // Le tri est LEXICOGRAPHIQUE, et il est juste parce que les intervalles
+    // sont zéro-padés à deux chiffres. Mesuré le 2026-09-03 sur le jeu servi :
+    // les six seules valeurs présentes sont 03-07, 07-11, 11-15, 15-19, 19-23
+    // et 23-03 (750 lignes). L'ordre des chaînes suit donc l'ordre du temps, y
+    // compris pour 23-03, dernier bloc de sa date. ⚠️ Une valeur non padée
+    // (« 3-7 ») casserait silencieusement ce tri : « 3-7 » se compare après
+    // « 19-23 ». Si le raffineur cesse un jour de pader, passer par une clé
+    // ISO comme le fait lib/data/headlineEvents.ts.
     const latest = events.reduce<{ date_utc: string; time_interval_utc: string } | null>(
       (best, e) => {
         if (!e.date_utc || !e.time_interval_utc) return best;

@@ -1,5 +1,23 @@
 [
   {
+    "pr": 693,
+    "date": "2026-09-03T19:04:33Z",
+    "note": "Rien de visible sur le site : la documentation de l'horaire suit le nouveau passage de l'illustration.",
+    "version": null
+  },
+  {
+    "pr": 719,
+    "date": "2026-09-03T19:03:28Z",
+    "note": "Une note du journal annonçait une amélioration visuelle que le site public n'affiche pas encore ; elle a été corrigée pour ne décrire que ce qui est réellement en ligne.",
+    "version": null
+  },
+  {
+    "pr": 717,
+    "date": "2026-09-03T17:03:03Z",
+    "note": "Dans le palmarès des partis, l'onglet « Jour » affiche maintenant à midi les données arrêtées à midi, et non celles du créneau précédent ; le classement, le disque d'or et les jauges sont désormais tous sur le même relevé.",
+    "version": null
+  },
+  {
     "pr": 699,
     "date": "2026-09-03T16:47:23Z",
     "note": "Une nouvelle page explique, en langage clair, comment les données du site circulent de la collecte à la publication.",
@@ -32,7 +50,7 @@
   {
     "pr": 709,
     "date": "2026-09-03T02:25:02Z",
-    "note": "Dans la table qui compare les partis, chaque colonne affiche maintenant un petit cadran indiquant d'un coup d'œil si la couverture médiatique de ce parti penche plutôt en sa faveur ou en sa défaveur.",
+    "note": "Rien ne change pour le visiteur.",
     "version": null
   },
   {
