@@ -71,9 +71,9 @@ describe("instantané — conversion des types", () => {
 describe("instantané — lignes en objets", () => {
   it("reproduit la forme servie par /v1/datasets", () => {
     const rows = rowsToObjects(
-      "provincial_parties_score_day",
-      ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone", "pass"],
-      [["CAQ", "2026-08-26", "2026-08-26", "12.5", "-0.3", "am"]],
+      "provincial_parties_salient_shadow_day",
+      ["party", "date_utc", "date_montreal_tz", "weighted_mentions", "weighted_tone"],
+      [["CAQ", "2026-08-26", "2026-08-26", "12.5", "-0.3"]],
     );
     expect(rows).toEqual([
       {
@@ -82,7 +82,6 @@ describe("instantané — lignes en objets", () => {
         date_montreal_tz: "2026-08-26",
         weighted_mentions: 12.5,
         weighted_tone: -0.3,
-        pass: "am",
       },
     ]);
     // La forme sérialisée est ce que le build recevra : les nombres ne
@@ -91,14 +90,14 @@ describe("instantané — lignes en objets", () => {
   });
 
   it("laisse en chaîne une colonne textuelle qui ressemble à un nombre", () => {
-    // `pass` est du texte : « 2 » doit rester « 2 ». C'est la conversion PAR
+    // `party` est du texte : « 2 » doit rester « 2 ». C'est la conversion PAR
     // COLONNE DÉCLARÉE, jamais par apparence de la valeur, qui l'assure.
     const rows = rowsToObjects(
-      "provincial_parties_score_day",
-      ["party", "pass", "weighted_mentions"],
-      [["CAQ", "2", "2"]],
+      "provincial_parties_salient_shadow_day",
+      ["party", "weighted_mentions"],
+      [["2", "2"]],
     );
-    expect(rows[0].pass).toBe("2");
+    expect(rows[0].party).toBe("2");
     expect(rows[0].weighted_mentions).toBe(2);
   });
 });

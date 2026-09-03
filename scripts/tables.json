@@ -23,8 +23,9 @@
         "weighted_tone",
         "pass"
       ],
-      "enabled": true,
-      "used_by": "lib/data/parties.ts + components/sections/PartisCouvertureSection.tsx"
+      "enabled": false,
+      "_deprecated": "2026-09-03 — table morte. Aucun fichier de app/, components/ ou lib/ ne la lit, ni en dur ni par un nom construit ; le module des partis tourne sur provincial_parties_salient_shadow_*. Jules Piral, 2026-09-03 : le raffineur radar-party-score « a ete remplace par radar-party-score-salient-shadow ». La laisser active faisait echouer la lecture du datamart PROD (TABLE_NOT_FOUND), et les Deploy Hooks etant tout ou rien, un echec retient toute reconstruction du site.",
+      "used_by": null
     },
     {
       "name": "agora_decideurs_qc",
@@ -135,7 +136,8 @@
         "weighted_mentions",
         "weighted_tone"
       ],
-      "enabled": true,
+      "enabled": false,
+      "_deprecated": "2026-09-03 — table morte. Aucun fichier de app/, components/ ou lib/ ne la lit, ni en dur ni par un nom construit ; le module des partis tourne sur provincial_parties_salient_shadow_*. Jules Piral, 2026-09-03 : le raffineur radar-party-score « a ete remplace par radar-party-score-salient-shadow ». La laisser active faisait echouer la lecture du datamart PROD (TABLE_NOT_FOUND), et les Deploy Hooks etant tout ou rien, un echec retient toute reconstruction du site.",
       "used_by": null
     },
     {
@@ -149,7 +151,8 @@
         "weighted_mentions",
         "weighted_tone"
       ],
-      "enabled": true,
+      "enabled": false,
+      "_deprecated": "2026-09-03 — table morte. Aucun fichier de app/, components/ ou lib/ ne la lit, ni en dur ni par un nom construit ; le module des partis tourne sur provincial_parties_salient_shadow_*. Jules Piral, 2026-09-03 : le raffineur radar-party-score « a ete remplace par radar-party-score-salient-shadow ». La laisser active faisait echouer la lecture du datamart PROD (TABLE_NOT_FOUND), et les Deploy Hooks etant tout ou rien, un echec retient toute reconstruction du site.",
       "used_by": null
     },
     {
@@ -163,7 +166,8 @@
         "weighted_mentions",
         "weighted_tone"
       ],
-      "enabled": true,
+      "enabled": false,
+      "_deprecated": "2026-09-03 — table morte. Aucun fichier de app/, components/ ou lib/ ne la lit, ni en dur ni par un nom construit ; le module des partis tourne sur provincial_parties_salient_shadow_*. Jules Piral, 2026-09-03 : le raffineur radar-party-score « a ete remplace par radar-party-score-salient-shadow ». La laisser active faisait echouer la lecture du datamart PROD (TABLE_NOT_FOUND), et les Deploy Hooks etant tout ou rien, un echec retient toute reconstruction du site.",
       "used_by": null
     },
     {
@@ -177,7 +181,8 @@
         "weighted_mentions",
         "weighted_tone"
       ],
-      "enabled": true,
+      "enabled": false,
+      "_deprecated": "2026-09-03 — table morte. Aucun fichier de app/, components/ ou lib/ ne la lit, ni en dur ni par un nom construit ; le module des partis tourne sur provincial_parties_salient_shadow_*. Jules Piral, 2026-09-03 : le raffineur radar-party-score « a ete remplace par radar-party-score-salient-shadow ». La laisser active faisait echouer la lecture du datamart PROD (TABLE_NOT_FOUND), et les Deploy Hooks etant tout ou rien, un echec retient toute reconstruction du site.",
       "used_by": null
     },
     {

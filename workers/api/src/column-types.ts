@@ -16,10 +16,6 @@
 export type ColumnKind = 'number' | 'boolean'
 
 export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
-  provincial_parties_score_day: {
-    weighted_mentions: "number",
-    weighted_tone: "number"
-  },
   agora_decideurs_qc: {
     n_interventions: "number",
     word_count: "number",
@@ -57,22 +53,6 @@ export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
     culture_and_nationalism: "number"
   },
   agora_decideurs_qc_affiliations: {},
-  federal_parties_score_week: {
-    weighted_mentions: "number",
-    weighted_tone: "number"
-  },
-  provincial_parties_score_week: {
-    weighted_mentions: "number",
-    weighted_tone: "number"
-  },
-  federal_parties_score_month: {
-    weighted_mentions: "number",
-    weighted_tone: "number"
-  },
-  provincial_parties_score_month: {
-    weighted_mentions: "number",
-    weighted_tone: "number"
-  },
   provincial_parties_salient_shadow_day: {
     weighted_mentions: "number",
     total_raw_score: "number",
