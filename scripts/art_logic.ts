@@ -139,17 +139,26 @@ export function buildPrompt(headline: string, mainIssueTextFr: string, contextDi
  *
  *  Une clé OpenAI absente = lecture seule du cache par histoire, jamais un
  *  échec. Avec la clé : les builds de `develop` et de `main` génèrent (c'est
- *  ce qui met l'image en ligne) ; un aperçu de branche ne génère pas, il
- *  reprend l'image si elle existe. `VITRINE_ART_GENERATE=1` force (essai
- *  local), `=0` coupe partout. */
+ *  ce qui met l'image en ligne) ; un aperçu de branche ou un build de PR ne
+ *  génère pas, il reprend l'image si elle existe. `VITRINE_ART_GENERATE=1`
+ *  force (essai local), `=0` coupe partout.
+ *
+ *  LA BRANCHE VIENT DE DEUX ENDROITS, et il faut les deux. Cloudflare Pages
+ *  pose `CF_PAGES_BRANCH` ; mais depuis le gel de l'intégration Git du
+ *  2026-08-30, nos vrais déploiements bâtissent dans GitHub Actions
+ *  (deploy-prod.yml, deploy-dev-cloudflare.yml, puis `wrangler pages deploy`),
+ *  où seule `GITHUB_REF_NAME` existe. Sans elle, la garde répondrait « hors
+ *  Pages » à chaque édition et personne ne le verrait (revue d'Adrien, #728).
+ *  Sur une PR, `GITHUB_REF_NAME` vaut `<n>/merge` : refusé, comme un aperçu. */
 export function generationAllowed(env: Record<string, string | undefined>): { allowed: boolean; reason: string } {
   if (!env.OPENAI_API_KEY) return { allowed: false, reason: "OPENAI_API_KEY absente" };
   if (env.VITRINE_ART_GENERATE === "0") return { allowed: false, reason: "VITRINE_ART_GENERATE=0" };
   if (env.VITRINE_ART_GENERATE === "1") return { allowed: true, reason: "VITRINE_ART_GENERATE=1" };
-  const branch = env.CF_PAGES_BRANCH;
-  if (branch === "develop" || branch === "main") return { allowed: true, reason: `branche ${branch}` };
-  if (branch) return { allowed: false, reason: `branche d'aperçu ${branch}` };
-  return { allowed: false, reason: "hors Cloudflare Pages (CF_PAGES_BRANCH absente)" };
+  const branch = env.CF_PAGES_BRANCH ?? env.GITHUB_REF_NAME;
+  const source = env.CF_PAGES_BRANCH ? "Pages" : "Actions";
+  if (branch === "develop" || branch === "main") return { allowed: true, reason: `branche ${branch} (${source})` };
+  if (branch) return { allowed: false, reason: `branche d'aperçu ${branch} (${source})` };
+  return { allowed: false, reason: "hors Cloudflare Pages et hors GitHub Actions (ni CF_PAGES_BRANCH ni GITHUB_REF_NAME)" };
 }
 
 /** Le corps de la requête à l'API Responses : vingt références en

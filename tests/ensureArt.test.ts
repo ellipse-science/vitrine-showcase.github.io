@@ -117,12 +117,26 @@ describe("generationAllowed (la barrière économique)", () => {
     expect(generationAllowed({ CF_PAGES_BRANCH: "main", VITRINE_ART_GENERATE: "1" }).allowed).toBe(false);
   });
 
-  it("develop et main génèrent, un aperçu de branche non", () => {
+  it("develop et main génèrent, un aperçu de branche non (Cloudflare Pages)", () => {
     const k = { OPENAI_API_KEY: "sk" };
     expect(generationAllowed({ ...k, CF_PAGES_BRANCH: "main" }).allowed).toBe(true);
     expect(generationAllowed({ ...k, CF_PAGES_BRANCH: "develop" }).allowed).toBe(true);
     expect(generationAllowed({ ...k, CF_PAGES_BRANCH: "feat/x" }).allowed).toBe(false);
     expect(generationAllowed(k).allowed).toBe(false);
+  });
+
+  it("le vrai chemin de déploiement, GitHub Actions, est reconnu par GITHUB_REF_NAME", () => {
+    // deploy-dev-cloudflare.yml (push sur develop) et deploy-prod.yml
+    // (dispatch, checkout de main) n'ont pas CF_PAGES_BRANCH : sans ce
+    // chemin, la garde refuserait chaque édition en silence (revue #728).
+    const k = { OPENAI_API_KEY: "sk" };
+    expect(generationAllowed({ ...k, GITHUB_REF_NAME: "develop" })).toEqual({ allowed: true, reason: "branche develop (Actions)" });
+    expect(generationAllowed({ ...k, GITHUB_REF_NAME: "main" }).allowed).toBe(true);
+    // Un build de PR (ci.yml) voit « 728/merge » : refusé, comme un aperçu.
+    expect(generationAllowed({ ...k, GITHUB_REF_NAME: "728/merge" }).allowed).toBe(false);
+    expect(generationAllowed({ ...k, GITHUB_REF_NAME: "feat/x" }).allowed).toBe(false);
+    // Pages a priorité quand les deux existent.
+    expect(generationAllowed({ ...k, CF_PAGES_BRANCH: "feat/x", GITHUB_REF_NAME: "main" }).allowed).toBe(false);
   });
 
   it("VITRINE_ART_GENERATE force ou coupe", () => {
