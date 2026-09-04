@@ -177,6 +177,35 @@ describe("buildChart — la course", () => {
     expect(leader.lastPct).toBe(40);
   });
 
+  it("les graduations multi-jours désignent une journée RÉELLE, pas leur propre abscisse", () => {
+    // C'est ce qui rend le clic possible : une graduation doit pouvoir dire
+    // « le classement DE CE JOUR-LÀ ». Sur la semaine les repères tombent sur
+    // les éditions ; sur la campagne ils sont ÉQUIDISTANTS et ne coïncident
+    // avec aucun relevé — d'où `xPoint`, l'abscisse du relevé le plus proche.
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    for (const range of ["week", "overall"] as const) {
+      const chart = buildChart(stats, dates, range);
+      const abscisses = new Set(
+        chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0])),
+      );
+      for (const l of chart.xLabels) {
+        expect(l.jour, `${range} : ${l.label} doit nommer une journée`).toBeTruthy();
+        expect(l.xPoint, `${range} : ${l.label} doit viser un relevé`).toBeDefined();
+        // Et ce relevé EXISTE : sans quoi le clic ne trouverait aucun rang.
+        expect(abscisses.has(l.xPoint!), `${range} : ${l.label} vise un relevé absent`).toBe(true);
+      }
+    }
+  });
+
+  it("les graduations de la vue JOUR ne désignent aucune journée : ce sont des heures", () => {
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    const chart = buildChart(stats, dates, "today");
+    for (const l of chart.xLabels) {
+      expect(l.jour).toBeUndefined();
+      expect(l.xPoint).toBeUndefined();
+    }
+  });
+
   it("axisTop : tronqué au-dessus du maximum observé, plancher à 20 %", () => {
     expect(axisTop(4)).toBe(20);
     expect(axisTop(35)).toBe(40);

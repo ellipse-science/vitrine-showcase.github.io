@@ -430,8 +430,19 @@ export type ChartSeries = {
 
 export type ChartView = {
   series: ChartSeries[];
-  /** Bornes de la période affichée, aux deux extrémités de l'axe. */
-  xLabels: { label: string; x: number }[];
+  /** Les graduations de l'axe du temps.
+   *
+   *  `jour` et `xPoint` ne sont posés que sur les vues MULTI-JOURS, où chaque
+   *  graduation désigne une journée qu'on peut choisir pour lire son classement.
+   *  Sur la vue Jour les repères sont horaires et n'ont pas de journée à
+   *  désigner, donc ils restent nus.
+   *
+   *  ⚠️ `xPoint` n'est PAS `x`. Sur la semaine les sept repères tombent
+   *  exactement sur les sept éditions, mais sur la campagne les six repères sont
+   *  ÉQUIDISTANTS et ne coïncident avec aucun relevé. `xPoint` est l'abscisse du
+   *  relevé le plus proche : c'est elle qu'il faut pour retrouver un rang, `x`
+   *  ne servant qu'à placer l'étiquette. */
+  xLabels: { label: string; x: number; jour?: string; xPoint?: number }[];
   /** La ligne d'ARRIVÉE, propre à l'onglet : 20 h aujourd'hui pour le jour,
    *  vendredi 20 h pour la semaine, le jour du scrutin pour tout le suivi.
    *  Le vide entre la dernière donnée et elle EST l'information — c'est ce
@@ -1712,7 +1723,21 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   // court jusqu'au vendredi même si la donnée s'arrête mercredi, et le lecteur
   // voit ce qu'il reste à courir. Une version antérieure dérivait les repères
   // des dates publiées, donc l'axe s'arrêtait avec elles.
-  const xLabels = reperesAxe(range, t0, but.t, xAt, axisDates);
+  const reperes = reperesAxe(range, t0, but.t, xAt, axisDates);
+  // On RABAT chaque graduation sur le relevé le plus proche. Sans ce rabattage,
+  // un clic sur la campagne ne désignerait aucune journée : ses six repères sont
+  // équidistants, pas alignés sur la donnée.
+  const abscissesJours = axisDates.map((iso) => ({ iso, x: xAtDate(iso) }));
+  const xLabels =
+    range === "today" || abscissesJours.length === 0
+      ? reperes
+      : reperes.map((l) => {
+          let proche = abscissesJours[0];
+          for (const a of abscissesJours) {
+            if (Math.abs(a.x - l.x) < Math.abs(proche.x - l.x)) proche = a;
+          }
+          return { ...l, jour: proche.iso, xPoint: Number(proche.x.toFixed(2)) };
+        });
 
   return {
     series,
