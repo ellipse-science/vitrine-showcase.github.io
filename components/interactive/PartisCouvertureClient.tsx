@@ -1644,11 +1644,31 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
    *
    *  On garde l'abscisse du RELEVÉ (`xPoint`) et non celle de la graduation :
    *  sur la campagne, les repères ne tombent pas sur les journées. */
-  const [jourChoisi, setJourChoisi] = useState<{ x: number; label: string } | null>(null);
+  /** ⚠️ `null`, ET SURTOUT PAS `0`, POUR « AUCUN CHOIX ». Sur la vue Jour la
+   *  graduation « 00h » a pour abscisse ZÉRO : tout test de vérité (`if
+   *  (jourChoisi)`, `jourChoisi ? … : …`) traiterait un clic sur 00h comme une
+   *  absence de choix, et le premier bloc de la journée serait le seul
+   *  inatteignable. Chaque lecture ci-dessous compare donc explicitement à
+   *  `null`. Le champ portait aussi un `label` que personne ne lisait ; il est
+   *  parti avec.
+   *
+   *  Sur les vues multi-jours l'abscisse zéro n'existe pas, ce qui explique que
+   *  le piège soit resté invisible jusqu'ici. */
+  const [jourChoisi, setJourChoisi] = useState<number | null>(null);
 
   /** « Mercredi 8 juillet » s'insère après « du » : la majuscule y ferait une
    *  coquille. Même geste que `labelDateIndispo` dans `lib/data/parties.ts`. */
   const enMinuscule = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
+  /** CE QUE NOMME UNE GRADUATION, prêt à suivre « Classement » — ou `null`
+   *  quand elle ne nomme rien et doit rester du texte.
+   *
+   *  Deux vues, deux natures : une DATE sur Semaine et Campagne, un BLOC de 4 h
+   *  sur Jour. Les deux se rédigent avec « du », mais pas de la même façon, et
+   *  c'est le seul endroit qui a besoin de le savoir : la mécanique du choix,
+   *  elle, ne connaît que des abscisses. */
+  const nomDuReleve = (l: ChartView["xLabels"][number]): string | null =>
+    l.jour ? `du ${enMinuscule(formatDateFr(l.jour))}` : l.bloc ? `du bloc de ${l.bloc}` : null;
 
   const pisteDe = (s: ChartView["series"][number]) => (apprecie ? s.polylineTon : s.polylineMin);
   /** ⚠️ UN PARTI SANS TON EST RENVOYÉ EN QUEUE, jamais au milieu.
@@ -1679,20 +1699,20 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
      l'ordre. */
   const rangs = rangsParInstant(chart.series.map((s) => ({ cle: s.key, points: pisteDe(s) })));
 
-  /** Le rang d'un parti à la journée choisie, ou au dernier relevé. */
+  /** Le rang d'un parti au relevé choisi — journée ou bloc —, ou au dernier. */
   const rangAu = (cle: string): [number, number] | null => {
     const suite = rangs.get(cle) ?? [];
-    if (!jourChoisi) return suite.at(-1) ?? null;
-    return suite.find(([x]) => Math.abs(x - jourChoisi.x) < 0.01) ?? suite.at(-1) ?? null;
+    if (jourChoisi === null) return suite.at(-1) ?? null;
+    return suite.find(([x]) => Math.abs(x - jourChoisi) < 0.01) ?? suite.at(-1) ?? null;
   };
 
-  // De haut en bas : le meilleur en premier, comme un classement. Quand une
-  // journée est choisie, c'est SON classement qui ordonne — c'est tout l'objet
-  // du clic. Sinon, l'ordre du dernier relevé.
+  // De haut en bas : le meilleur en premier, comme un classement. Quand un
+  // relevé est choisi, c'est SON classement qui ordonne — c'est tout l'objet du
+  // clic. Sinon, l'ordre du dernier relevé.
   const series = chart.series
     .slice()
     .sort((a, b) =>
-      jourChoisi
+      jourChoisi !== null
         ? (rangAu(a.key)?.[1] ?? Number.POSITIVE_INFINITY) -
           (rangAu(b.key)?.[1] ?? Number.POSITIVE_INFINITY)
         : valeurDe(b) - valeurDe(a),
@@ -1938,7 +1958,7 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
         {chart.xLabels.map((l) => {
           const arrivee =
             Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label;
-          const choisie = jourChoisi !== null && l.xPoint === jourChoisi.x;
+          const choisie = jourChoisi !== null && l.xPoint === jourChoisi;
           const classes =
             (arrivee ? "palmares-x-arrivee" : "") + (choisie ? " palmares-x-choisi" : "");
           return (
@@ -1952,19 +1972,19 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
                   lisait la position d'une ligne sans pouvoir nommer le jour.
                   Les repères de la vue Jour sont horaires et ne désignent
                   aucune journée : ils restent du texte. */}
-              {l.jour && l.xPoint !== undefined ? (
+              {nomDuReleve(l) !== null && l.xPoint !== undefined ? (
                 <button
                   type="button"
                   className="palmares-x-bouton"
                   aria-pressed={choisie}
                   title={
                     choisie
-                      ? `Classement du ${enMinuscule(formatDateFr(l.jour))}. Cliquez pour revenir au dernier relevé.`
-                      : `Voir le classement du ${enMinuscule(formatDateFr(l.jour))}.`
+                      ? `Classement ${nomDuReleve(l)}. Cliquez pour revenir au dernier relevé.`
+                      : `Voir le classement ${nomDuReleve(l)}.`
                   }
                   onClick={() =>
                     setJourChoisi((j) =>
-                      j && j.x === l.xPoint ? null : { x: l.xPoint!, label: enMinuscule(formatDateFr(l.jour!)) },
+                      j !== null && j === l.xPoint ? null : l.xPoint!,
                     )
                   }
                 >

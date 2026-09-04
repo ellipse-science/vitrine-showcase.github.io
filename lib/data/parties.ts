@@ -432,17 +432,24 @@ export type ChartView = {
   series: ChartSeries[];
   /** Les graduations de l'axe du temps.
    *
-   *  `jour` et `xPoint` ne sont posés que sur les vues MULTI-JOURS, où chaque
-   *  graduation désigne une journée qu'on peut choisir pour lire son classement.
-   *  Sur la vue Jour les repères sont horaires et n'ont pas de journée à
-   *  désigner, donc ils restent nus.
+   *  UNE GRADUATION QUI DÉSIGNE UN RELEVÉ EST CLIQUABLE ; les autres restent du
+   *  texte. Ce qu'elle désigne dépend de la vue, d'où deux champs et non un :
+   *  `jour` sur les vues multi-jours (Semaine, Campagne), `bloc` sur la vue Jour,
+   *  où un repère horaire nomme le bloc de 4 h qui se termine là. Ils
+   *  s'excluent, et l'un ou l'autre accompagne toujours un `xPoint`.
    *
    *  ⚠️ `xPoint` n'est PAS `x`. Sur la semaine les sept repères tombent
    *  exactement sur les sept éditions, mais sur la campagne les six repères sont
    *  ÉQUIDISTANTS et ne coïncident avec aucun relevé. `xPoint` est l'abscisse du
    *  relevé le plus proche : c'est elle qu'il faut pour retrouver un rang, `x`
-   *  ne servant qu'à placer l'étiquette. */
-  xLabels: { label: string; x: number; jour?: string; xPoint?: number }[];
+   *  ne servant qu'à placer l'étiquette.
+   *
+   *  ⚠️ SUR LA VUE JOUR, AUCUN RATTRAPAGE AU PLUS PROCHE. `x` et `xPoint` y
+   *  coïncident toujours, graduation et point partageant `xAtH(h)` ; une heure
+   *  dont le bloc n'existe pas encore reste NUE plutôt que de se replier sur son
+   *  voisin. Se rabattre du 12h vers le 08h nommerait « midi » un classement de
+   *  huit heures — pire qu'une graduation qu'on ne peut pas prendre. */
+  xLabels: { label: string; x: number; jour?: string; bloc?: string; xPoint?: number }[];
   /** La ligne d'ARRIVÉE, propre à l'onglet : 20 h aujourd'hui pour le jour,
    *  vendredi 20 h pour la semaine, le jour du scrutin pour tout le suivi.
    *  Le vide entre la dernière donnée et elle EST l'information — c'est ce
@@ -1345,10 +1352,29 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
 
   return {
     series,
-    xLabels: [0, 4, 8, 12, 16, 20].map((h) => ({
-      label: `${String(h).padStart(2, "0")}h`,
-      x: Number(xAtH(h).toFixed(2)),
-    })),
+    // UNE HEURE DONT LE BLOC EXISTE EST CLIQUABLE ; les autres restent nues.
+    //
+    // La course classe déjà les partis à chaque bloc — rien ne permettait de
+    // DÉSIGNER ce classement. Un repère horaire nomme le bloc de 4 h qui se
+    // termine là, ce qui est parfaitement défini : c'est ce qu'on sait de la
+    // journée en arrivant à cette graduation.
+    //
+    // ⚠️ SEULEMENT LES HEURES PRÉSENTES DANS `blocs`. L'axe porte toujours les
+    // six repères, mais à 9 h du matin `blocs` ne contient que [0, 4, 8] : les
+    // graduations 12h, 16h et 20h sont tracées et ne visent AUCUN relevé. On ne
+    // les rabat pas sur le bloc le plus proche — contrairement à la campagne,
+    // où les repères sont équidistants et où c'est la seule façon d'en faire
+    // quelque chose. Nommer « 12h » un classement de 08h serait pire qu'une
+    // graduation qu'on ne peut pas prendre.
+    //
+    // Quand le bloc existe, `x` et `xPoint` sont ÉGAUX : graduation et point
+    // partagent `xAtH(h)`. Les deux champs restent distincts parce que le
+    // composant ne connaît qu'un contrat, pas la vue qui le remplit.
+    xLabels: [0, 4, 8, 12, 16, 20].map((h) => {
+      const label = `${String(h).padStart(2, "0")}h`;
+      const x = Number(xAtH(h).toFixed(2));
+      return blocs.includes(h) ? { label, x, bloc: label, xPoint: x } : { label, x };
+    }),
     finish: { x: Number(xAtH(20).toFixed(2)), label: "20h", sub: "fin du jour" },
     width: CHART_W,
     height: CHART_H,
