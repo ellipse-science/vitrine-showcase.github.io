@@ -34,7 +34,7 @@ const polimetre: PolimetreData = {
         verdictLabel: "En cours",
         category: "Environnement et énergie",
         salienceIndex: 12,
-        url: "https://polimeter.org/fr/legault/2.10.008",
+        url: "https://polimeter.org/fr/legault-frechette/2.10.008",
         trend: { dir: "flat", delta: 0 },
         articles: [],
       },

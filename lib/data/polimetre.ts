@@ -345,7 +345,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         verdictLabel: r.verdict ?? "",
         category: category || null,
         salienceIndex: a.salience,
-        url: `https://polimeter.org/fr/legault/${num}`,
+        url: `https://polimeter.org/fr/legault-frechette/${num}`,
         trend,
         articles: pickArticlesByMedia(r),
       };
