@@ -1203,7 +1203,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-output" data-type="output" data-output="api-art">
                     api.vitrinedemocratique.com/v1/art
-                    <div class="node-detail">latest.png/webp/avif + latest.json (R2) — rapatriés AU BUILD par <code>scripts/fetch_art.mjs</code></div>
+                    <div class="node-detail">latest.* et une/&lt;clé&gt;.* (R2) — lus ET écrits AU BUILD par <code>scripts/ensure_art.ts</code> (rapatriement <code>fetch_art.mjs</code> en amont) ; references/*.jpg pour la génération</div>
                     <div class="info-badge">📄 Cliquer pour détails</div>
                 </div>
             </div>
@@ -2409,7 +2409,8 @@
                         '• Désigne la Une n°1 avec le MÊME code que le site, pour que l\'illustration ne se trompe pas de manchette (aws-refiners#259)',
                         '• Le fichier est effacé avant chaque exécution : mieux vaut aucun fichier qu\'un fichier périmé',
                         '',
-                        '🖼️ L\'illustration N\'EST PLUS générée ici depuis le 2026-08-20 (vitrine-showcase#534) : elle a son propre circuit, le raffineur <code>vitrine-art</code> (nœud suivant dans le couloir). Le build se contente de la rapatrier (<code>scripts/fetch_art.mjs</code>, hook <code>prebuild</code>).',
+                        '🖼️ Depuis le 2026-09-04 (vitrine-showcase#723), c\'est LE BUILD qui illustre la Une : <code>scripts/ensure_art.ts</code> (hook <code>prebuild</code>, après <code>fetch_art.mjs</code>) désigne la Une n°1 avec le même code que le rendu, reprend l\'image de cette histoire si l\'API l\'a déjà (<code>/v1/art/une/&lt;clé&gt;.*</code>), sinon la génère (gpt-4o + image_generation, 20 références de l\'artiste maison lues sur <code>/v1/art/references/</code>) et la dépose en R2 sous la clé ET sous latest.*. Un seul build par édition : la page part en ligne avec son image.',
+                        '• Génération seulement sur develop et main, et seulement si la clé OpenAI est posée sur le projet Pages (sinon lecture seule du cache par histoire) ; tout échec laisse latest.* de fetch_art et la garde d\'appariement décide. Le raffineur <code>vitrine-art</code> (nœud suivant dans le couloir) reste en filet : il trouve l\'image « déjà à jour ». Entre le 2026-08-20 (vitrine-showcase#534) et le 2026-09-04, seul le raffineur illustrait, après un second build.',
                         '',
                         '🎵 <code>scripts/generate_music.py</code> → <code>public/audio/</code>',
                         '',
@@ -2684,14 +2685,14 @@
                         '• salience_calibration.json - percentiles sur 365 jours glissants',
                         '• hero-selection.json - la Une n°1 désignée par le code du site',
                         '• meta.json - statut et compte de lignes par table (diagnostic de fraîcheur)',
-                        '• generated-art/latest.json - illustration de la Une (rapatriée au build depuis /v1/art, raffineur vitrine-art)',
+                        '• generated-art/latest.json - illustration de la Une (lue ou générée au build par scripts/ensure_art.ts ; filet : raffineur vitrine-art)',
                         '',
                         '🔄 Mise à jour: 6x/jour • ⛔ Jamais édités à la main'
                     ]
                 },
                 'api-art': {
                     title: 'API Vitrine — /v1/art (R2)',
-                    description: 'L\'illustration courante de la Une, déposée par vitrine-art et servie par le Worker api.vitrinedemocratique.com (stockage R2).',
+                    description: 'L\'illustration de la Une, déposée par le build (depuis le 2026-09-04) ou par le raffineur vitrine-art, servie par le Worker api.vitrinedemocratique.com (stockage R2) : latest.* pour la Une courante, une/&lt;clé&gt;.* par histoire, references/*.jpg de l\'artiste maison pour la génération.',
                     details: [
                         '• latest.png, latest.webp, latest.avif : l\'image (1024×1024)',
                         '• latest.json : métadonnées (generated_at, storyline_id, event_id, headline_fr, main_issue)',

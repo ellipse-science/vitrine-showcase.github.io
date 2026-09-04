@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fetch_art.mjs",
+    "prebuild": "node scripts/fetch_art.mjs && tsx scripts/ensure_art.ts",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",
@@ -23,6 +23,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "aws4fetch": "^1.0.20",
+    "sharp": "^0.35.4",
+    "tsx": "^4.23.13",
     "typescript": "^7",
     "vitest": "^4.1.11"
   }
