@@ -9587,6 +9587,26 @@
   border: 1px solid var(--ink);
   background: var(--paper-deep);
 }
+/* LE SIGLE À L'ENVERS SUR LES POCHETTES AVEC IMAGE.
+   `backface-visibility: hidden` posé sur `.flip-face` cache bien la face
+   tournée — mais PAS un descendant que le navigateur a promu dans sa propre
+   couche de composition. `.pochette-sigle` cumule les trois déclencheurs
+   habituels : `position: absolute`, un `z-index`, un `text-shadow`. Promu, il
+   se rend indépendamment de sa face et reste visible, EN MIROIR, une fois la
+   pochette retournée.
+   D'où l'asymétrie signalée : les pochettes SANS image affichent leur sigle
+   par `.trophee-repli b`, une simple cellule de grille sans aucun de ces
+   déclencheurs — elles n'ont jamais eu le défaut.
+   Le remède est de redire la règle sur les descendants eux-mêmes : un élément
+   qui porte sa propre couche doit porter sa propre consigne de dos. */
+.flip-face .pochette-art,
+.flip-face .pochette-image,
+.flip-face .pochette-sigle,
+.flip-face .pochette-formes {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 .flip-face--verso {
   display: flex;
   flex-direction: column;
@@ -10140,16 +10160,16 @@
   white-space: nowrap;
   text-align: right;
 }
-/* LA DURÉE — la grandeur qu'on vient chercher en premier sur une tracklist —
-   reprend le traitement que portait `.gatefold-chiffre` : Playfair 900,
-   cordovan, tracking serré. C'est elle, et elle seule, qui mérite ce relief. */
-.tracklist-metrique--chiffre {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 900;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: var(--cordovan);
-}
+/* UNE SEULE TYPOGRAPHIE POUR LES DONNÉES, le ton excepté.
+   La durée portait un traitement à part — Playfair 900, 16 px, cordovan —
+   « la grandeur qu'on vient chercher en premier ». Sur un dos de 130 px de
+   large, trois valeurs dans trois styles différents ne se lisaient plus comme
+   une fiche technique mais comme trois éléments sans rapport, et le corps 16
+   mangeait la place dont la rangée « Enjeu » manquait déjà.
+   Temps, part et enjeu partagent donc désormais `.tracklist-metrique`. Le TON
+   garde le sien : ce n'est pas une valeur écrite mais une jauge, et son mot
+   accompagne l'aiguille (`.tracklist-ligne--ton`, plus bas).
+   Rendre son relief à la durée = une règle à remettre ici, rien d'autre. */
 /* LE TON : la métrique n'est pas un mot seul mais une jauge, qui a besoin de
    place — `align-items: center` (et non `baseline`) pour que la jauge et son
    mot s'alignent au centre l'un de l'autre plutôt qu'au pied du texte. */
