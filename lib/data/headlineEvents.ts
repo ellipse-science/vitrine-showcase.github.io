@@ -1550,6 +1550,21 @@ export type SalienceTrend = {
 // heure publique associée. C'est LE repère commun : le jour d'un bloc et le
 // jour de l'édition courante doivent se calculer avec la même règle, sinon
 // « aujourd'hui » ne veut plus dire la même chose des deux côtés.
+/** L'INSTANT OÙ UN BLOC EST PUBLIÉ, en UTC — début du bloc + 5 h (fin +4 h,
+ *  puis +1 h de pipeline, réforme #195).
+ *
+ *  Cette arithmétique vivait en DEUX exemplaires, dans `blockAnchor` et dans la
+ *  liste des éditions, chacun avec son commentaire disant qu'il fallait qu'elle
+ *  reste la même. Un seul endroit désormais, et il porte un nom.
+ *
+ *  C'est aussi la borne du retour en arrière : une édition ne peut montrer que
+ *  ce qui existait à cet instant-là (#735). */
+export function instantPublicationBloc(blockUtc: string): string | null {
+  const t = Date.parse(`${blockUtc}:00:00Z`);
+  if (Number.isNaN(t)) return null;
+  return new Date(t + 5 * 3_600_000).toISOString();
+}
+
 function blockAnchor(blockUtc: string): { anchorIso: string; pubHour: number } | null {
   const t = new Date(`${blockUtc}:00:00Z`);
   if (Number.isNaN(t.getTime())) return null;
@@ -2073,6 +2088,13 @@ export type EditionRef = {
    *  vient de vivre. Confondre les deux laissait l'icône 00 h morte en
    *  permanence : jamais aucune édition ne tombait dans sa case. */
   navDateIso: string;
+  /** L'INSTANT EXACT de publication, en UTC (`instantPublicationBloc`).
+   *
+   *  `navDateIso` nomme le jour, celui-ci nomme l'édition. C'est la borne dont
+   *  a besoin toute table publiée PLUSIEURS FOIS par jour : sans elle, les six
+   *  éditions d'une journée servent le même contenu, y compris les blocs
+   *  publiés après elles (#735). */
+  pubInstantIso: string;
   /** Heure de publication : {4, 8, 12, 16, 20, 24}. 24 = minuit. */
   pubHour: number;
   /** Index de l'icône céleste dans le bandeau, 0 (00 h) à 5 (20 h). */
@@ -2119,14 +2141,20 @@ export const listEditions = cache(async (): Promise<EditionRef[]> => {
     // à l'écran : c'est elle qui nomme l'édition et qui allume l'icône. Le bloc
     // de données 03-07 est l'« édition du matin », publiée à 8 h — jamais « 3 h ».
     const hour24 = anchor.pubHour % 24;
-    // Jour calendaire de l'instant de publication = début du bloc + 5 h (fin
-    // +4 h, puis +1 h de pipeline) — la MÊME arithmétique que blockAnchor,
-    // mais lue AVANT son exception de minuit.
-    const publishedAt = new Date(Date.parse(`${key}:00:00Z`) + 5 * 3_600_000);
+    // Jour calendaire de l'instant de publication, lu AVANT l'exception de
+    // minuit de `blockAnchor`.
+    const pubIso = instantPublicationBloc(key)!;
+    const publishedAt = new Date(pubIso);
     return [{
       key,
       dateIso: anchor.anchorIso,
       navDateIso: mtlDateAndHour(publishedAt).dateIso,
+      // ⚠️ `navDateIso` NE PORTE PAS D'HEURE, et c'est voulu : il nomme le JOUR
+      // de l'édition. Toutes les éditions d'une même journée le partagent, si
+      // bien qu'un module qui ne lit que lui ne peut pas différer de l'une à
+      // l'autre — c'était le défaut #735. Ce qui suit est l'instant EXACT, pour
+      // les tables qui ont mieux qu'une résolution au jour.
+      pubInstantIso: pubIso,
       pubHour: anchor.pubHour,
       slot: editionSlot(hour24),
       label: `Édition ${editionLabel(hour24)}`,
