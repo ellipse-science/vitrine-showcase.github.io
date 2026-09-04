@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Présence ET FORME. Coller un secret dans l'interface de GitHub y laisse
       # très facilement un saut de ligne final. Xcode envoie alors « ABC123\n »
