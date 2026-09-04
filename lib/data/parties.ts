@@ -285,6 +285,11 @@ export type EnjeuView = {
   /** Vrai pour le pad « Autres enjeux », qui agrège la queue de distribution.
    *  Il se rend éteint : ce n'est pas un enjeu, c'est ce qui reste. */
   reste?: boolean;
+  /** La journée d'où viennent ces enjeux, quand ce n'est PAS la plus récente
+   *  publiée : la journée en cours n'en portait aucun, on a reculé (voir
+   *  `buildEnjeux`). Absent le reste du temps, qui est le cas courant — sa
+   *  présence est donc exactement le signal « à dire au lecteur ». */
+  dateSource?: string;
 };
 
 export type RowView = {
@@ -1914,19 +1919,73 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   return { enjeux, parParti };
 }
 
+/** LES ENJEUX D'UN PARTI, tels que la pochette et le trophée les annoncent.
+ *
+ *  DEUX RÈGLES, au service de la même fin : qu'une pochette porte un enjeu RÉEL
+ *  chaque fois que la fenêtre en contient un.
+ *
+ *  1. L'ENJEU DE RESTE PART EN DERNIER, quel que soit son poids. C'est la règle
+ *     que `buildEnjeuMix` applique déjà aux pads, dix lignes plus haut, et elle
+ *     manquait ici : le tri par part seule plaçait « Aucun enjeu identifié » en
+ *     tête dès qu'il dominait, et la pochette l'annonçait comme LE sujet du
+ *     parti. Ce n'est pas un sujet, c'est ce qui n'en a pas.
+ *
+ *  2. ON RECULE JUSQU'À LA DERNIÈRE JOURNÉE QUI EN PORTE UN. La vue ne lisait
+ *     que la date la plus récente — c'est-à-dire la journée EN COURS. Or un
+ *     couple parti × enjeu exige que les DEUX têtes franchissent leur seuil sur
+ *     la MÊME phrase, et les premiers blocs n'en fournissent pas le volume.
+ *     Mesuré le 2026-09-04 à 09h22 : QS 100 % de reste sur 21 minutes, PLQ 93 %
+ *     sur 271, contre 3 à 40 % sur une journée pleine. Les pochettes restaient
+ *     donc sans enjeu une bonne partie de la matinée, tous les jours.
+ *
+ *  Ce qu'on ne fait PAS : moyenner la fenêtre. La question reste « de quoi
+ *  parle-t-on à propos de ce parti », pas « de quoi a-t-on parlé ce mois-ci ».
+ *  On prend UNE journée — la plus récente qui ait quelque chose à dire — et ses
+ *  parts restent celles de cette journée-là, donc cohérentes entre elles et
+ *  sommant à 100. Reculer d'un jour se DIT (`dateSource`) ; moyenner ne se
+ *  serait pas vu.
+ *
+ *  Quand aucune journée de la fenêtre ne porte d'enjeu, on garde la plus
+ *  récente et la pochette avoue « Aucun enjeu identifié » : c'est alors vrai de
+ *  toute la fenêtre, et non un artefact de l'heure qu'il est.
+ */
 function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
 
   const dernier = rows.map(dateMontreal).sort().at(-1);
 
+  const estReste = (r: IssueRow) => libelleEnjeu(String(r.theme ?? "")) === SANS_ENJEU;
+
+  /** Le plus présent en tête, l'enjeu de reste toujours en queue. Même
+   *  comparateur que celui des pads (`buildEnjeuMix`). */
+  const parPresence = (a: IssueRow, b: IssueRow) => {
+    if (estReste(a)) return 1;
+    if (estReste(b)) return -1;
+    return Number(b.issue_share) - Number(a.issue_share);
+  };
+
   for (const key of PARTY_KEYS) {
-    const siens = rows
-      .filter(
-        (r) => String(r.party ?? "").toLowerCase() === key && dateMontreal(r) === dernier,
-      )
-      .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
-      .slice(0, 5);
+    const tous = rows.filter((r) => String(r.party ?? "").toLowerCase() === key);
+    if (tous.length === 0) continue;
+
+    const parJour = new Map<string, IssueRow[]>();
+    for (const r of tous) {
+      const jour = dateMontreal(r);
+      const deja = parJour.get(jour);
+      if (deja) deja.push(r);
+      else parJour.set(jour, [r]);
+    }
+
+    // De la plus récente à la plus ancienne : on s'arrête à la première qui
+    // porte autre chose que du reste.
+    const jours = [...parJour.keys()].sort().reverse();
+    const porteUnEnjeu = (lignes: IssueRow[]) =>
+      lignes.some((r) => !estReste(r) && Number(r.issue_share) > 0);
+    const jourRetenu = jours.find((j) => porteUnEnjeu(parJour.get(j)!)) ?? jours[0];
+    const dateSource = jourRetenu === dernier ? undefined : jourRetenu;
+
+    const siens = parJour.get(jourRetenu)!.slice().sort(parPresence).slice(0, 5);
 
     if (siens.length === 0) continue;
 
@@ -1949,6 +2008,7 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
           // guide de rédaction pour ce module.
           toneLabel: dir === "positive" ? "Favorable" : dir === "negative" ? "Défavorable" : "Neutre",
           toneDirection: dir as EnjeuView["toneDirection"],
+          ...(dateSource ? { dateSource } : {}),
         };
       }),
       ...(reste > 0.01
@@ -1958,6 +2018,7 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
             toneLabel: "Neutre",
             toneDirection: "neutral" as const,
             reste: true,
+            ...(dateSource ? { dateSource } : {}),
           }]
         : []),
       ],
@@ -2182,6 +2243,7 @@ function libellePeriode(range: RangeKey, joursIso: string[]): string {
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
   buildLookup,
+  buildEnjeux,
   computeStats,
   sparkPoints,
   samplePoints,
