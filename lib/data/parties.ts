@@ -1597,31 +1597,76 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   const decalage = toutes.length - axisDates.length;
   const n = axisDates.length;
 
-  const histOf = (s: Stat) => s.history.daily.slice(decalage);
-  /** Les minutes DU JOUR, jour par jour — et non plus leur cumul.
+  /** LE PALMARÈS CUMULE, comme les pochettes.
    *
-   *  POURQUOI LE CUMUL A ÉTÉ ABANDONNÉ. Il servait quand le palmarès traçait des
-   *  durées : une courbe qui ne fait que monter, comme un compteur de course.
-   *  Depuis qu'il classe des RANGS, le cumul est exactement la mauvaise
-   *  grandeur — il VERROUILLE l'ordre. Une fois devant, on y reste : mesuré sur
-   *  trente-cinq jours du jeu d'essai, deux changements de classement dans les
-   *  trois premiers jours, puis plus aucun pendant trente-deux. Un graphique de
-   *  rangs sans croisement ne montre rien.
+   *  Chaque point porte le TOTAL depuis le début de l'onglet — samedi 00 h pour
+   *  la semaine, le déclenchement du scrutin pour la campagne. La dernière
+   *  valeur d'une ligne EST donc la durée écrite sur la pochette du parti, et
+   *  le classement du palmarès EST celui des pochettes.
    *
-   *  Les minutes du jour, elles, montent et redescendent au gré de l'actualité,
-   *  et le classement bouge avec. C'est la question que la courbe pose :
-   *  QUI MÈNE CE JOUR-LÀ.
+   *  POURQUOI CE RETOUR AU CUMUL (2026-09-04). Le tracé jour par jour avait été
+   *  choisi pour que le classement bouge : un cumul VERROUILLE l'ordre, et
+   *  c'est vrai — mesuré sur trente-cinq jours du jeu d'essai, deux changements
+   *  dans les trois premiers jours puis plus aucun pendant trente-deux. Mais la
+   *  justification qui l'accompagnait est devenue fausse : elle disait que la
+   *  valeur du dernier jour « ne peut plus contredire la durée de la pochette,
+   *  qui vient de la table hebdomadaire du raffineur ». Depuis
+   *  vitrine-showcase#721, la pochette ne lit plus `_week` — elle cumule `_day`
+   *  sur la fenêtre. Les deux grandeurs se sont retrouvées dans le même cadre,
+   *  et elles se contredisaient à l'écran : mesuré le 4 septembre, pochette
+   *  Semaine CAQ 90 h 03 devant PQ 64 h 36, palmarès PQ 6 h 34 devant PLQ
+   *  4 h 31 — pas le même gagnant, et des durées dix fois plus basses parce que
+   *  le dernier jour est le jour EN COURS.
    *
-   *  ⚠️ CONSÉQUENCE HEUREUSE, à ne pas défaire par mégarde. Le palmarès ne
-   *  publie plus de total de période : sa dernière valeur est celle du dernier
-   *  jour. Il ne peut donc plus contredire la durée de la pochette, qui vient de
-   *  la table hebdomadaire du raffineur — la divergence qu'ouvrait l'axe du
-   *  samedi (cf. `libelleDepuis`) n'a plus de surface où se voir. */
-  const minOf = (s: Stat) => s.minutesHistory.daily.slice(decalage);
-  /** Le TON, jour par jour. Même fenêtre, mêmes abscisses que les minutes : les
-   *  deux pistes se superposent exactement, et basculer de l'une à l'autre ne
-   *  déplace aucun point sur l'axe du temps. */
-  const tonOf = (s: Stat) => s.toneHistory.daily.slice(decalage);
+   *  Une courbe plus plate est le prix assumé d'un module qui ne se contredit
+   *  plus. La vue JOUR, elle, garde son détail horaire (`buildChartIntraday`)
+   *  et c'est là que le mouvement se lit. */
+  const cumule = (xs: number[]) => {
+    let t = 0;
+    return xs.map((v) => (t += Number.isFinite(v) ? v : 0));
+  };
+
+  const minsCum = new Map<PartyKey, number[]>(
+    stats.map((s) => [s.key, cumule(s.minutesHistory.daily.slice(decalage))]),
+  );
+
+  /** Le TON cumulé est une moyenne PONDÉRÉE PAR LES MINUTES, jamais une moyenne
+   *  de moyennes : une journée à trois minutes ne pèse pas comme une journée à
+   *  six heures. Même pondération que `computeStats` pour la pochette, pour que
+   *  les deux ne puissent pas diverger. */
+  const tonsCum = new Map<PartyKey, number[]>(
+    stats.map((s) => {
+      const m = s.minutesHistory.daily.slice(decalage);
+      const t = s.toneHistory.daily.slice(decalage);
+      let sm = 0;
+      let st = 0;
+      return [
+        s.key,
+        m.map((v, i) => {
+          const mm = Number.isFinite(v) ? v : 0;
+          sm += mm;
+          st += (t[i] ?? 0) * mm;
+          return sm > 0 ? st / sm : 0;
+        }),
+      ];
+    }),
+  );
+
+  /** La part de voix se RENORMALISE sur les cumuls, à chaque point : c'est une
+   *  fraction, elle ne s'additionne pas. On somme les minutes, puis on divise. */
+  const totCum = axisDates.map((_, i) =>
+    stats.reduce((a, s) => a + (minsCum.get(s.key)?.[i] ?? 0), 0),
+  );
+  const histCum = new Map<PartyKey, number[]>(
+    stats.map((s) => [
+      s.key,
+      (minsCum.get(s.key) ?? []).map((m, i) => (totCum[i] > 0 ? m / totCum[i] : 0)),
+    ]),
+  );
+
+  const histOf = (s: Stat) => histCum.get(s.key) ?? [];
+  const minOf = (s: Stat) => minsCum.get(s.key) ?? [];
+  const tonOf = (s: Stat) => tonsCum.get(s.key) ?? [];
   /** UN TON N'EXISTE QUE LÀ OÙ IL Y A EU DE LA COUVERTURE.
    *
    *  Le raffineur écrit `weighted_tone = 0` pour un parti dont aucun article ne
@@ -1683,10 +1728,10 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
         lastPct: Math.round((hist.at(-1) ?? 0) * 100),
         polylineMin: ptsMin.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" "),
         lastYMin: Number((ptsMin.at(-1)?.[1] ?? CHART_H).toFixed(2)),
-        // La dernière valeur est celle du DERNIER JOUR, pas un total de période :
-        // c'est la grandeur sur laquelle la ligne vient d'être classée, donc la
-        // seule que l'étiquette puisse afficher à côté de son rang sans le
-        // contredire.
+        // La dernière valeur est le TOTAL DE LA PÉRIODE, donc exactement la durée
+        // écrite sur la pochette du parti — et la grandeur sur laquelle la ligne
+        // vient d'être classée. L'étiquette, le rang et la pochette disent
+        // désormais la même chose.
         lastMinutes: Math.round(mins.at(-1) ?? 0),
         // Seuls les instants MESURÉS sont tracés : ailleurs, la ligne n'a pas
         // de place à occuper, et lui en donner une inventerait un classement.
@@ -1722,7 +1767,10 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
     height: CHART_H,
     tooShort: n <= 1,
     yLabels: graduationsMinutes(topMin),
-    mesureLabel: axisDates.at(-1) ? `le ${shortDateFr(axisDates.at(-1)!)}` : "ce jour-là",
+    // Le tracé cumule : le libellé doit dire DEPUIS QUAND, pas à quelle date.
+    // « le 4 sept. » sous un total de semaine se lisait comme la valeur d'un
+    // seul jour — c'est ce malentendu que ce module vient de corriger.
+    mesureLabel: axisDates[0] ? `depuis le ${shortDateFr(axisDates[0])}` : "sur la période",
 };
 }
 

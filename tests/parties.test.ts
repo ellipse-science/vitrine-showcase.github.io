@@ -23,10 +23,23 @@ function statsOf(day: SR[], _week?: SR[], _month?: SR[]) {
   return c;
 }
 
-type SR = { party: string; date_utc: string; date_montreal_tz: string; weighted_mentions: number; weighted_tone: number; computed_at?: string };
+type SR = { party: string; date_utc: string; date_montreal_tz: string; weighted_mentions: number; weighted_tone: number; total_raw_score: number; computed_at?: string };
 
+/** UNE PART DE VOIX VIENT TOUJOURS AVEC SES MINUTES.
+ *
+ *  `total_raw_score` est dérivé de la part plutôt que laissé à zéro : depuis
+ *  que le palmarès cumule, la part de voix du graphique se RECALCULE à partir
+ *  des minutes — exactement comme la pochette, pour que les deux ne puissent
+ *  pas diverger. Une fixture sans minutes décrivait donc une donnée qui
+ *  n'existe pas en production, et faisait retomber le graphique à zéro.
+ *  L'échelle (100 min pour 100 %) est arbitraire et sans effet : tout ce qui
+ *  est vérifié ici est une proportion. */
 function row(party: string, date: string, mentions: number, tone = 0): SR {
-  return { party, date_utc: date, date_montreal_tz: date, weighted_mentions: mentions, weighted_tone: tone };
+  return {
+    party, date_utc: date, date_montreal_tz: date,
+    weighted_mentions: mentions, weighted_tone: tone,
+    total_raw_score: mentions * 100,
+  };
 }
 
 const DATE_A = "2026-06-10";
@@ -692,19 +705,37 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
       Math.round((semCaq / (semCaq + semPlq)) * 100),
     );
 
-    // LE GRAPHIQUE, lui, montre toujours la valeur du DERNIER JOUR (pas un
-    // total) — c'est ce que trace la course aux rangs.
+    // LE GRAPHIQUE CUMULE, ET FINIT SUR LA POCHETTE.
+    //
+    // C'est l'invariant du module : la valeur au bout de la ligne, le rang du
+    // palmarès et la durée de la pochette disent la même chose. Ils ne le
+    // disaient plus — le graphique montrait le DERNIER JOUR pendant que la
+    // pochette montrait la période, et le dernier jour est le jour EN COURS.
+    // Mesuré sur les données servies le 2026-09-04 : pochette Semaine CAQ
+    // 90 h 03 devant PQ 64 h 36, palmarès PQ 6 h 34 devant PLQ 4 h 31 — pas le
+    // même gagnant. On vérifie donc l'ACCORD, pas une valeur en dur.
     for (const cle of ["caq", "plq"] as const) {
       const serie = vue.chart.series.find((s) => s.key === cle)!;
-      expect(serie.lastMinutes, `${cle} : dernier jour`).toBe(MIN[cle].at(-1));
+      const pochette = vue.rows.find((r) => r.key === cle)!;
+      expect(serie.lastMinutes, `${cle} : le bout de la ligne == la pochette`)
+        .toBe(pochette.minutesUne);
     }
-    expect(vue.chart.mesureLabel).toMatch(/^le \d/);
+    expect(vue.chart.series[0].key, "le palmarès classe comme les pochettes")
+      .toBe(vue.rows[0].key);
+    // Le libellé dit DEPUIS QUAND, puisque la mesure cumule.
+    expect(vue.chart.mesureLabel).toMatch(/^depuis le \d/);
   });
 
   it("le classement de la semaine bouge d'un jour à l'autre", () => {
-    // La raison d'être du changement : un cumul VERROUILLE l'ordre, et un
-    // graphique de rangs sans croisement ne montre rien. Ici la CAQ mène les
-    // deux premiers jours, le PLQ le troisième — le classement doit suivre.
+    // LE CUMUL N'INTERDIT PAS LES CROISEMENTS, il les rend plus coûteux.
+    //
+    // C'était l'objection au cumul, et elle est réelle : une fois devant, on y
+    // reste, sauf journée décisive. Ce test garde donc sa valeur — il vérifie
+    // qu'une journée franchement dominante fait BASCULER le classement. Ici la
+    // CAQ mène les deux premiers jours (200 + 200 contre 50 + 50), et le PLQ
+    // passe devant au troisième (400 contre 10) : 410 contre 500 en cumul.
+    // Si un jour ce croisement disparaissait, c'est le cumul qu'il faudrait
+    // rediscuter, pas ce test qu'il faudrait assouplir.
     // Dates DANS la campagne (`ELECTION_CALL_DATE` = 2026-08-27), sans quoi
     // `buildChart(..., "overall")` les écarte toutes et les séries naissent
     // vides.
