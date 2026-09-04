@@ -456,7 +456,7 @@ export function PartisCouvertureClient({
         // journée en cours n'en portait aucun et `buildEnjeux` a reculé. Rien
         // à dire dans le cas courant, donc pas d'infobulle.
         enjeuTitle: enjeu?.dateSource
-          ? `Enjeu du ${formatDateFr(enjeu.dateSource)} : la journée en cours n'en porte pas encore.`
+          ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
           : undefined,
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
