@@ -1,5 +1,11 @@
 [
   {
+    "pr": 739,
+    "date": "2026-09-04T18:47:46Z",
+    "note": "Les éditions passées du site montrent maintenant l'état exact des partis au moment où elles ont été publiées. L'édition du matin ne laisse plus voir ce qui n'est arrivé que le soir.",
+    "version": null
+  },
+  {
     "pr": 733,
     "date": "2026-09-04T18:02:49Z",
     "note": "Dans le palmarès des partis, on peut maintenant cliquer une date sous le graphique pour voir le classement de cette journée-là.",
