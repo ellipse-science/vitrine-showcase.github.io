@@ -1,5 +1,11 @@
 [
   {
+    "pr": 722,
+    "date": "2026-09-04T14:06:51Z",
+    "note": "Le mode « promesses de la campagne » du Polimètre+ était activé sur la mauvaise branche depuis le 2026-09-03 — corrigé, sans changement visible tant qu'aucune donnée n'est publiée.",
+    "version": null
+  },
+  {
     "pr": 731,
     "date": "2026-09-04T04:06:16Z",
     "note": "Sans objet — correctif d'infrastructure, rien de perçu directement par un visiteur au-delà de la cohérence retrouvée du module.",
