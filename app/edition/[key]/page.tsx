@@ -12,10 +12,6 @@ import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { listEditions } from "@/lib/data/headlineEvents";
 
-// Modules RETIRÉS DE PROD, gardés sur dev (2026-08-20) — même motif que la
-// page d'accueil : les sections se gardent elles-mêmes, on retire aussi
-// l'enveloppe pour ne pas laisser d'ancre vide.
-const isProdEnv = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 // ÉDITIONS PASSÉES (#434) — une page pré-rendue par édition du snapshot.
 //
@@ -134,11 +130,9 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
         <TreemapSection editionKey={edition.key} asOfIso={edition.navDateIso} />
       </div>
 
-      {!isProdEnv && (
-        <div id="partis-et-couverture" data-section="Partis et couverture">
-          <PartisCouvertureSection asOfIso={edition.navDateIso} editionKey={edition.key} />
-        </div>
-      )}
+      <div id="partis-et-couverture" data-section="Partis et couverture">
+        <PartisCouvertureSection asOfIso={edition.navDateIso} editionKey={edition.key} />
+      </div>
 
       <div id="polimetre-plus" data-section="Polimètre+">
         <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />

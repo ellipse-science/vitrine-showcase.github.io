@@ -22,6 +22,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: now, changeFrequency: "hourly", priority: 1 },
     { url: `${base}/methodologie/`, changeFrequency: "monthly", priority: 0.8 },
+    // Absente jusqu'ici parce que la Discothèque était fermée en production le
+    // temps du rodage des Partis : rien ne devait y mener. Elle rouvre avec le
+    // module, donc elle entre au plan. Une nouvelle pochette par parti chaque
+    // jour à 20h, d'où « daily ».
+    { url: `${base}/discotheque/`, changeFrequency: "daily", priority: 0.5 },
     { url: `${base}/apropos/`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/journal/`, changeFrequency: "weekly", priority: 0.4 },
     { url: `${base}/abonnement/`, changeFrequency: "monthly", priority: 0.4 },

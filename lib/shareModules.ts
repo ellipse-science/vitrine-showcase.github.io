@@ -19,14 +19,16 @@ const BASE_SHARE_MODULE_SLUGS = [
 
 export type ShareModuleSlug = (typeof BASE_SHARE_MODULE_SLUGS)[number];
 
-// Le module Partis reste temporairement masqué en production (#544).
-// L'Assemblée en est sortie le 2026-08-27 (#608) : identités stables
+// Plus aucun module en rodage : la liste est vide, le mécanisme reste.
+// L'Assemblée est sortie le 2026-08-27 (#608) : identités stables
 // (pplmatch#5, aws-refiners#395/#397), cache de performance validé sur
 // Lambda réelle (aws-refiners#412) et parcours des député·es publié
-// (aws-refiners#414, vitrine#604).
+// (aws-refiners#414, vitrine#604). Les Partis suivent : modèle réentraîné
+// (§ 06 de la méthodologie) et module démasqué en même temps que ses gardes
+// d'accueil, d'édition et de Discothèque.
 // Ne générons pas de route de partage vers une ancre vide : la surface
 // partageable doit suivre le même signal que la section elle-même.
-const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = ["partis-et-couverture"];
+const PROD_HIDDEN_SHARE_MODULES: readonly ShareModuleSlug[] = [];
 
 export const SHARE_MODULE_SLUGS: readonly ShareModuleSlug[] =
   process.env.NEXT_PUBLIC_SITE_ENV === "prod"
