@@ -10570,6 +10570,33 @@
 }
 .palmares-x-arrivee { color: var(--cordovan); font-weight: 600; }
 
+/* UNE GRADUATION QUI DÉSIGNE UNE JOURNÉE EST UN BOUTON — mais elle doit rester
+   une graduation à l'œil : même fonte, même taille, même couleur que le texte
+   qu'elle remplace. Seul le curseur et le soulignement au survol disent qu'on
+   peut la prendre. */
+.palmares-x-bouton {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  background: none;
+  border: 0;
+  padding: 2px 3px;
+  margin: -2px -3px; /* la zone de clic déborde sans déplacer le repère */
+  cursor: pointer;
+  border-radius: 2px;
+}
+.palmares-x-bouton:hover { text-decoration: underline; text-underline-offset: 2px; }
+.palmares-x-bouton:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 1px;
+}
+/* La journée choisie : c'est elle que lisent les étiquettes de bout. */
+.palmares-x-choisi .palmares-x-bouton {
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--ink-faint, rgba(0, 0, 0, 0.06));
+}
+
 /* ── L'étiquetage direct ──────────────────────────────────────────────────
    Le nom ET la durée au bout de la ligne, sur la rangée du rang final. Il
    remplace la ligne de légende posée sous l'axe le 2026-08-30 et retirée le jour

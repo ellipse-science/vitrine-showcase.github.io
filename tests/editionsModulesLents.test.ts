@@ -64,6 +64,77 @@ describe("module 3 — partis et couverture", () => {
   });
 });
 
+// LA COUPE AU JOUR NE SUFFIT PAS À TOUTES LES TABLES DU MODULE 3 (#735).
+//
+// Le commentaire du haut de ce fichier range le module 3 parmi ceux « publiés
+// au jour ». C'est vrai de sa table quotidienne, qui ne porte qu'UNE ligne par
+// parti et par journée. Ça ne l'est pas de sa table intra-journée, qui en publie
+// SIX — une par bloc de 4 h. Bornée au jour, elle les livrait toutes les six à
+// chacune des six éditions : celle du matin montrait les blocs du soir, publiés
+// après elle. D'où une seconde borne, à l'INSTANT.
+describe("module 3 — la table intra-journée se coupe au BLOC, pas au jour", () => {
+  const jour = (date: string, party: string, mentions: number) => ({
+    party, date_utc: date, date_montreal_tz: date,
+    weighted_mentions: mentions, weighted_tone: 0,
+  });
+
+  /** Un bloc, avec le `computed_at` que le raffineur lui donne réellement : une
+   *  demi-heure avant l'édition qui le porte. Relevé sur la donnée servie du
+   *  2026-09-03 — blocs 0/4/8/12/16/20 calculés à 07h31, 11h31, 15h31, 19h31,
+   *  23h31, puis 03h31 le LENDEMAIN pour celui de 20 h. */
+  const bloc = (h: number, party: string, mentions: number) => {
+    const t = Date.UTC(2026, 6, 28, 7, 31) + h * 3_600_000;
+    return {
+      party, date_utc: "2026-07-28", date_montreal_tz: "2026-07-28",
+      block_hour: h, block_label: `${h}h`,
+      weighted_mentions: mentions, total_raw_score: mentions * 1000, weighted_tone: 0,
+      computed_at: new Date(t).toISOString(),
+    };
+  };
+
+  const PARTIS = ["CAQ", "PLQ", "QS", "PQ", "PCQ"];
+  const quotidien = PARTIS.flatMap((p) => [jour("2026-07-20", p, 0.2), jour("2026-07-28", p, 0.2)]);
+
+  beforeEach(() => {
+    servir({
+      "provincial_parties_salient_shadow_intraday": [0, 4, 8, 12, 16, 20].flatMap((h) =>
+        PARTIS.map((p, i) => bloc(h, p, 0.1 + h / 100 - i / 1000)),
+      ),
+      "provincial_parties_salient_shadow_day": quotidien,
+      "provincial_parties_salient_shadow_week": quotidien,
+      "provincial_parties_salient_shadow_month": quotidien,
+    });
+  });
+
+  it("une édition ne voit que les blocs publiés AVANT elle", async () => {
+    const { loadParties } = await import("@/lib/data/parties");
+    // Édition de midi : publiée à 12 h à Montréal, soit 16 h UTC l'été. Les
+    // blocs 0, 4 et 8 sont calculés avant (07h31, 11h31, 15h31) ; ceux de 12,
+    // 16 et 20 après. Le dernier bloc visible doit donc être celui de 8 h.
+    const midi = await loadParties("2026-07-28", "2026-07-28T16:00:00.000Z");
+    expect(midi!.blocCourant).toEqual({ date: "2026-07-28", hour: 8, label: "8h" });
+  });
+
+  it("DEUX ÉDITIONS DU MÊME JOUR NE SE RESSEMBLENT PLUS — c'est tout l'objet de #735", async () => {
+    const { loadParties } = await import("@/lib/data/parties");
+    // Les deux partagent le même JOUR, donc le même `asOfIso` : c'est
+    // exactement pourquoi la borne au jour ne pouvait pas les distinguer.
+    const matin = await loadParties("2026-07-28", "2026-07-28T12:00:00.000Z");
+    const soir = await loadParties("2026-07-28", "2026-07-29T00:00:00.000Z");
+    expect(matin!.blocCourant!.hour).toBe(4);
+    expect(soir!.blocCourant!.hour).toBe(16);
+    expect(matin!.blocCourant).not.toEqual(soir!.blocCourant);
+  });
+
+  it("sans instant, rien ne change : le comportement courant est intact", async () => {
+    const { loadParties } = await import("@/lib/data/parties");
+    // La page d'accueil n'a pas d'édition et ne passe donc pas d'instant. Elle
+    // doit continuer de voir le dernier bloc du fichier.
+    expect((await loadParties())!.blocCourant!.hour).toBe(20);
+    expect((await loadParties("2026-07-28"))!.blocCourant!.hour).toBe(20);
+  });
+});
+
 // Le module 5 est câblé comme les modules 3 et 6, mais il lit TROIS fichiers.
 // Seul le premier est servi ici : députés et portraits dégradent déjà en liste
 // vide quand leur lecture échoue, et c'est exactement ce que le rejet de la
