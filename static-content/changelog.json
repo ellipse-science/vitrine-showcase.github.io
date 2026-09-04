@@ -1,5 +1,11 @@
 [
   {
+    "pr": 729,
+    "date": "2026-09-04T03:26:25Z",
+    "note": "Sans objet — documentation technique interne, rien de perçu par un visiteur.",
+    "version": null
+  },
+  {
     "pr": 725,
     "date": "2026-09-04T01:38:06Z",
     "note": "L'illustration de la Une revient plus vite après chaque nouvelle édition : le site vérifie désormais toutes les dix minutes si une nouvelle Une attend son image, au lieu d'une seule fois par édition.",
