@@ -1,5 +1,23 @@
 [
   {
+    "pr": 722,
+    "date": "2026-09-04T14:06:51Z",
+    "note": "Le mode « promesses de la campagne » du Polimètre+ était activé sur la mauvaise branche depuis le 2026-09-03 — corrigé, sans changement visible tant qu'aucune donnée n'est publiée.",
+    "version": null
+  },
+  {
+    "pr": 731,
+    "date": "2026-09-04T04:06:16Z",
+    "note": "Sans objet — correctif d'infrastructure, rien de perçu directement par un visiteur au-delà de la cohérence retrouvée du module.",
+    "version": null
+  },
+  {
+    "pr": 729,
+    "date": "2026-09-04T03:26:25Z",
+    "note": "Sans objet — documentation technique interne, rien de perçu par un visiteur.",
+    "version": null
+  },
+  {
     "pr": 725,
     "date": "2026-09-04T01:38:06Z",
     "note": "L'illustration de la Une revient plus vite après chaque nouvelle édition : le site vérifie désormais toutes les dix minutes si une nouvelle Une attend son image, au lieu d'une seule fois par édition.",

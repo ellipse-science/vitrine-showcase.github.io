@@ -91,6 +91,18 @@ const DATASETS: Record<string, { filters: string[]; order: string }> = {
   provincial_parties_salient_shadow_day: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
   provincial_parties_salient_shadow_week: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
   provincial_parties_salient_shadow_month: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
+  // Les cinq tables ci-dessous étaient SYNCHRONISÉES vers Neon (elles sont dans
+  // TABLES, tables.ts) mais absentes d'ici, donc jamais servies : /v1/datasets
+  // répondait 404 et le site retombait sur les fichiers du dépôt, en silence
+  // (un console.warn au build). Le module des partis lisait donc DEUX sources à
+  // la fois — sa table quotidienne par l'API, le reste par fichier — et rien ne
+  // le signalait. Les deux listes doivent bouger ensemble ; le contrat reste
+  // scripts/tables.json, où ces cinq tables sont `enabled: true`.
+  provincial_parties_salient_shadow_intraday: { filters: ['party', 'date_montreal_tz'], order: 'date_montreal_tz' },
+  provincial_parties_salient_shadow_by_media_day: { filters: ['party', 'media_id', 'date_montreal_tz'], order: 'date_montreal_tz' },
+  provincial_parties_salient_shadow_by_media_week: { filters: ['party', 'media_id', 'date_montreal_tz'], order: 'date_montreal_tz' },
+  provincial_parties_salient_shadow_by_media_month: { filters: ['party', 'media_id', 'date_montreal_tz'], order: 'date_montreal_tz' },
+  parties_issues_salient_shadow_day: { filters: ['party', 'theme', 'date_montreal_tz'], order: 'date_montreal_tz' },
   agora_decideurs_qc: { filters: ['party', 'period_type'], order: 'period_start_date' },
   agora_decideurs_qc_deputes: { filters: ['party', 'deputy', 'period_type'], order: 'period_start_date' },
   // Dimension, pas une série temporelle : une ligne par intervalle
