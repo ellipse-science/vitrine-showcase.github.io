@@ -100,6 +100,6 @@ describe("computeStats sur un média hors panel", () => {
       weighted_tone: 0,
       computed_at: "2026-08-27T11:31:00Z",
     }));
-    expect(__test__.computeStats(lignes, lignes, lignes)).not.toBeNull();
+    expect(__test__.computeStats(lignes)).not.toBeNull();
   });
 });

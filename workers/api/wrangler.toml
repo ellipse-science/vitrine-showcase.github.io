@@ -40,11 +40,17 @@ ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 # BASCULE 2026-08-19 : "true" = les Deploy Hooks partent quand LES 15 tables
 # ont réussi (tout ou rien). Retour à l'ombre : remettre "false".
 SYNC_TRIGGER_DEPLOYS = "true"
-# Coordonnées Athena (non secrètes) : base Glue des datamarts DEV et
-# compartiment de résultats, les mêmes que ceux que `tube` résout.
+# Datamart lu par la synchro (vitrine#489) : "DEV" (défaut) ou "PROD". La base
+# Glue porte le même nom dans les deux comptes ; seuls les clés (secrets
+# AWS_*_DEV / AWS_*_PROD, ci-dessous) et le seau de sortie changent. Bascule et
+# repli = changer cette valeur, puis `wrangler deploy` — sans toucher au code.
+DATAMART_ENV = "DEV"
+# Coordonnées Athena (non secrètes) : base Glue des datamarts et compartiments
+# de résultats de chaque compte, les mêmes que ceux que `tube` résout.
 ATHENA_REGION = "ca-central-1"
 ATHENA_DATABASE = "gluestackdatamartdbd046f685"
 ATHENA_OUTPUT = "s3://pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3/"
+ATHENA_OUTPUT_PROD = "s3://bucket-stack-athenaqueryresultsbucket6f63bbe4-axrogwxi2lrx/"
 
 # L'illustration de la Une des unes (routes /v1/art, src/art.ts). Le bucket
 # est créé une fois : npx wrangler r2 bucket create vitrine-art
@@ -72,8 +78,11 @@ service = "vitrine-api"
 
 # Secrets à poser hors du dépôt :
 #   wrangler secret put DATABASE_URL
-#   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena)
+#   wrangler secret put AWS_ACCESS_KEY_ID_DEV      (clé de LECTURE Athena, compte DEV)
 #   wrangler secret put AWS_SECRET_ACCESS_KEY_DEV  (idem)
+#   wrangler secret put AWS_ACCESS_KEY_ID_PROD     (clé de LECTURE Athena, compte PROD)
+#   wrangler secret put AWS_SECRET_ACCESS_KEY_PROD (idem)
+#     ⚠️ Les deux clés PROD sont à poser AVANT de passer DATAMART_ENV à "PROD".
 #   wrangler secret put SLACK_WEBHOOK_URL          (optionnel, alertes)
 #   wrangler secret put DEPLOY_HOOK_PROD           (à la bascule)
 #   wrangler secret put DEPLOY_HOOK_DEV            (à la bascule)

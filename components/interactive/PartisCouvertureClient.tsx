@@ -1204,6 +1204,26 @@ function formatCourt(iso: string): string {
   return `${Number(d)} ${MOIS_COURTS[Number(m) - 1] ?? ""}`;
 }
 
+/** La couleur de l'aiguille du petit vumètre de ton, sous chaque colonne —
+ *  reprise À L'IDENTIQUE de « Ton en chambre » du module de l'Assemblée
+ *  (`.ass-tone` dans `globals.css`) : rouge défavorable `#A8302C`, parchemin
+ *  neutre `#C8BDA6`, vert favorable `#3D6B3A`. Deux modules qui mesurent un ton
+ *  le montrent pareil.
+ *
+ *  `tonePct` va de 0 (défavorable) à 100 (favorable), 50 = neutre — le champ
+ *  déjà calculé pour le repère de la pochette (`RowView.tonePct`). Interpolation
+ *  linéaire entre les deux arrêts qui encadrent la valeur. */
+function couleurTon(tonePct: number): string {
+  const ROUGE = [0xa8, 0x30, 0x2c];
+  const NEUTRE = [0xc8, 0xbd, 0xa6];
+  const VERT = [0x3d, 0x6b, 0x3a];
+  const p = Math.max(0, Math.min(100, tonePct));
+  const [depart, arrivee, f] =
+    p <= 50 ? [ROUGE, NEUTRE, p / 50] : [NEUTRE, VERT, (p - 50) / 50];
+  const c = depart.map((v, i) => Math.round(v + (arrivee[i] - v) * f));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
+
 /** Une tranche : vumètre segmenté, peak hold, ruban d'identité, ton. */
 function Tranche({
   row,
@@ -1222,14 +1242,13 @@ function Tranche({
    *  segment ne s'allume et rien ne s'écrit dessous. */
   muet?: boolean;
 }) {
-  // Sourdine : DEUX segments GRIS en bas — le signal résiduel qu'affiche une
-  // table de mix pour une tranche muette. Ni zéro (la tranche aurait l'air
-  // absente), ni son vrai niveau (il n'est justement pas retenu comme audible).
-  // Gris et non vert : le vert appartient à l'échelle des canaux qui jouent, et
-  // une tranche en sourdine n'est pas sur cette échelle.
+  // Sourdine : la colonne reste VIDE — aucun segment, gris compris. Les deux
+  // segments gris d'avant (« signal résiduel » d'une table de mix) laissaient
+  // croire à un petit niveau ; rien du tout se lit plus clairement, et le
+  // vumètre de ton CASSÉ dessous dit déjà « pas de mesure ici ».
   const coupe = !muet && row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
-  const allumes = muet ? 0 : coupe ? 2 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
+  const allumes = muet || coupe ? 0 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   /** Le rang d'un segment dans la tête du vumètre, de 1 (le plus bas des trois)
@@ -1283,14 +1302,66 @@ function Tranche({
       <span className="console-ruban-nom" onClick={() => onPcqTap?.()}>
         {row.label}
       </span>
-      {/* « Sourdine » : le mot tient dans les 44 px de la tranche, contrairement
-          à « Trop peu présent » qui débordait par-dessus ses voisines. Il reste
-          le seul emprunt au vocabulaire de la table de mixage dans le texte
-          visible, et c'est un choix assumé — le mot est court, connu, et dit
-          l'état mieux qu'un rang.
+      {/* LE PETIT VUMÈTRE DE TON, sous la colonne — une fenêtre rectangulaire,
+          esprit vumètre de magnéto. L'AIGUILLE dévie de −58° (bout rouge,
+          défavorable) à +58° (bout vert, favorable) selon `tonePct`, qui va
+          de 0 à 100 : l'angle vaut `(tonePct − 50) × 1,16`. Ce commentaire
+          annonçait ±27° ; c'est LUI qui a été réécrit pour dire ce que le
+          code fait, et le code n'a pas bougé — personne n'a demandé de
+          réduire la course de l'aiguille. Si ±27° était bien l'intention de
+          départ, alors c'est le facteur 1,16 qui est à revoir (0,54), et ça
+          se décide avec Jules, pas dans un commentaire. Sa
+          couleur reprend le dégradé de « Ton en chambre » (`couleurTon`).
+          Angle ET couleur disent la même chose. Elle frémit, décalée d'une
+          colonne à l'autre (`--ct-phase`) ; coupé pour `prefers-reduced-motion`.
 
-          La flèche de ton qui occupait l'autre branche est retirée : le ton vit
-          désormais sur la pochette, et une seule fois. */}
+          POUR UN CANAL EN SOURDINE : le même boîtier, mais CASSÉ (`--casse`) —
+          aiguille affalée hors échelle, cadran éteint, plus aucun frémissement.
+          Rien n'est mesuré là, et ça se voit.
+
+          `aria-hidden` ; le `<title>` porte la phrase de ton au survol. */}
+      {!muet && (
+        <svg
+          className={`console-ton${coupe ? " console-ton--casse" : ""}`}
+          viewBox="0 0 64 24"
+          aria-hidden="true"
+          style={{
+            ["--ct-angle" as string]: `${((row.tonePct - 50) * 1.16).toFixed(1)}deg`,
+            ["--ct-ton" as string]: couleurTon(row.tonePct),
+            ["--ct-phase" as string]: (choisirParmi(row.key, 24) / 10).toFixed(1),
+          }}
+        >
+          <title>{coupe ? "Aucun ton à mesurer : le parti est en sourdine." : row.toneTitle}</title>
+          <clipPath id={`ct-${row.key}`}>
+            <rect x="0.6" y="0.6" width="62.8" height="22.8" rx="1.6" />
+          </clipPath>
+          <rect className="ct-cadre" x="0.6" y="0.6" width="62.8" height="22.8" rx="1.6" />
+          {/* Cadran, aiguille et couleurs occupent TOUT le boîtier (viewBox
+              inchangé) : arc large, traits épais. Le débord est rogné par le
+              clip. */}
+          <g clipPath={`url(#ct-${row.key})`}>
+            <path className="ct-echelle ct-echelle--defav" d="M15.04 16.40 A20 20 0 0 1 25.38 8.13" />
+            <path className="ct-echelle" d="M25.38 8.13 A20 20 0 0 1 38.62 8.13" />
+            <path className="ct-echelle ct-echelle--fav" d="M38.62 8.13 A20 20 0 0 1 48.96 16.40" />
+            <line className="ct-tick" x1="32" y1="7" x2="32" y2="10.5" />
+            <g className="ct-pivot">
+              <g className="ct-saut">
+                {/* L'aiguille en deux traits : un liseré sombre dessous pour
+                    qu'elle tienne sur le cadran ivoire quel que soit le ton,
+                    la couleur du ton dessus. */}
+                <line className="ct-aiguille-fond" x1="32" y1="27" x2="32" y2="4" />
+                <line className="ct-aiguille" x1="32" y1="27" x2="32" y2="4" />
+              </g>
+            </g>
+            <circle className="ct-axe" cx="32" cy="27" r="3" />
+          </g>
+        </svg>
+      )}
+
+      {/* « Sourdine » — SOUS le vumètre cassé, dans la 4e rangée réservée de la
+          grille (vide pour les colonnes actives, pour que tous les boîtiers
+          restent alignés). Le mot reste le seul emprunt visible au vocabulaire
+          de la table de mixage : court, connu, il dit l'état mieux qu'un rang. */}
       {coupe && (
         <span className="console-sourdine">
           Sourdine

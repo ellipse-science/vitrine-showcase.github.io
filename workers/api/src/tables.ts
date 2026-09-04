@@ -11,19 +11,6 @@ export interface TableSpec {
 
 export const TABLES: TableSpec[] = [
   {
-    "name": "provincial_parties_score_day",
-    "athena": "vitrine_datamart-provincial_parties_score_day",
-    "cols": [
-      "party",
-      "date_utc",
-      "date_montreal_tz",
-      "weighted_mentions",
-      "weighted_tone",
-      "pass"
-    ],
-    "filter": null
-  },
-  {
     "name": "agora_decideurs_qc",
     "athena": "agora_datamart-agora_decideurs_qc",
     "cols": [
@@ -95,54 +82,6 @@ export const TABLES: TableSpec[] = [
       "affiliation_end_date",
       "start_reason",
       "end_reason"
-    ],
-    "filter": null
-  },
-  {
-    "name": "federal_parties_score_week",
-    "athena": "vitrine_datamart-federal_parties_score_week",
-    "cols": [
-      "party",
-      "date_utc",
-      "date_montreal_tz",
-      "weighted_mentions",
-      "weighted_tone"
-    ],
-    "filter": null
-  },
-  {
-    "name": "provincial_parties_score_week",
-    "athena": "vitrine_datamart-provincial_parties_score_week",
-    "cols": [
-      "party",
-      "date_utc",
-      "date_montreal_tz",
-      "weighted_mentions",
-      "weighted_tone"
-    ],
-    "filter": null
-  },
-  {
-    "name": "federal_parties_score_month",
-    "athena": "vitrine_datamart-federal_parties_score_month",
-    "cols": [
-      "party",
-      "date_utc",
-      "date_montreal_tz",
-      "weighted_mentions",
-      "weighted_tone"
-    ],
-    "filter": null
-  },
-  {
-    "name": "provincial_parties_score_month",
-    "athena": "vitrine_datamart-provincial_parties_score_month",
-    "cols": [
-      "party",
-      "date_utc",
-      "date_montreal_tz",
-      "weighted_mentions",
-      "weighted_tone"
     ],
     "filter": null
   },

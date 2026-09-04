@@ -55,13 +55,19 @@ describe("sync-athena — transformations pures", () => {
     expect(polimetreCutoff([null, "n/a"])).toBeNull();
   });
 
-  // 21 depuis l'ajout de `parties_issues_salient_shadow_day` : elle était
-  // déclarée dans scripts/tables.json et absente de la whitelist du Worker, si
-  // bien que le croisement parti × enjeu n'arrivait jamais par l'API. Les
-  // pochettes affichaient alors « Aucun enjeu identifié » — une affirmation sur
-  // la couverture, là où la vérité était que la table n'était pas servie.
-  it("whitelist embarquée : 21 tables, champs requis, filtres connus", () => {
-    expect(TABLES).toHaveLength(21);
+  // Le compte est assené volontairement : c'est lui qui a révélé l'oubli de
+  // `parties_issues_salient_shadow_day`, déclarée dans scripts/tables.json et
+  // absente de la whitelist du Worker, si bien que le croisement parti × enjeu
+  // n'arrivait jamais par l'API. Les pochettes affichaient alors « Aucun enjeu
+  // identifié » — une affirmation sur la couverture, là où la vérité était que
+  // la table n'était pas servie.
+  //
+  // 21 → 16 le 2026-09-03 : les cinq `*_parties_score_*` encore actives ont été
+  // dépréciées. Aucun fichier de app/, components/ ou lib/ ne les lisait — le
+  // module des partis tourne sur `provincial_parties_salient_shadow_*` — et les
+  // laisser dans la whitelist faisait échouer la lecture du datamart PROD.
+  it("whitelist embarquée : 16 tables, champs requis, filtres connus", () => {
+    expect(TABLES).toHaveLength(16);
     for (const t of TABLES) {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.athena.length).toBeGreaterThan(0);

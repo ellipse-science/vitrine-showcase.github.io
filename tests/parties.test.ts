@@ -15,8 +15,11 @@ const {
 
 /** computeStats renvoie désormais { stats, dates } — les dates servent à
  *  étiqueter l'axe horizontal de la course. */
-function statsOf(day: SR[], week: SR[], month: SR[]) {
-  const c = computeStats(day, week, month)!;
+function statsOf(day: SR[], _week?: SR[], _month?: SR[]) {
+  // `computeStats` ne prend plus que la table quotidienne : Semaine et Campagne
+  // s'en dérivent. Les 2e/3e arguments sont tolérés pour ne pas réécrire les
+  // ~30 appels, mais ignorés.
+  const c = computeStats(day)!;
   return c;
 }
 
@@ -54,12 +57,12 @@ describe("buildLookup", () => {
 });
 
 describe("computeStats", () => {
-  it("renvoie null quand les trois fichiers sont vides", () => {
-    expect(computeStats([], [], [])).toBeNull();
+  it("renvoie null quand la table quotidienne est vide", () => {
+    expect(computeStats([])).toBeNull();
   });
-  it("renvoie null si l'un des fichiers est vide", () => {
+  it("suffit d'une table quotidienne non vide (Semaine et Campagne s'en dérivent)", () => {
     const rows = PARTY_KEYS.map((p) => row(p, DATE_A, 0.2));
-    expect(computeStats(rows, [], rows)).toBeNull();
+    expect(computeStats(rows)).not.toBeNull();
   });
   it("renvoie une stat par parti et des SOV qui somment à ~1", () => {
     const dayRows = [
@@ -419,12 +422,12 @@ describe("les graduations des trois vues", () => {
     expect(chart.finish.label).toBe("20h");
   });
 
-  it("Jour : un bloc bâtard REMONTE sur sa graduation", () => {
-    // C'est la triche assumée de `surLaGraduation`. Un passage qui couvre 7h à
-    // 11h publie `block_hour: 11` ; posé à sa valeur brute, le point tomberait
-    // entre le repère de 08h et celui de 12h, et se lirait comme un axe mal
-    // calé. On le remonte à 12h — vers le haut, jamais vers le bas : redescendre
-    // à 08h daterait la mesure d'avant les trois heures qu'elle couvre.
+  it("Jour : un bloc bâtard se pose sur la graduation de FIN de sa période", () => {
+    // Un bloc se lit à la FIN de sa période. `surLaGraduation` cale d'abord une
+    // heure bâtarde sur la grille (7h → 8h, 11h → 12h), puis on ajoute les
+    // quatre heures de la période : 7h → 12h, 11h → 16h. Vers la fin, jamais
+    // vers le début — dater le point d'avant les heures qu'il couvre le
+    // vieillirait à tort.
     const rows = [7, 11].flatMap((h) =>
       PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
     );
@@ -437,11 +440,11 @@ describe("les graduations des trois vues", () => {
       expect(xs.length).toBe(2);
       for (const x of xs) expect(graduations).toContain(x);
     }
-    // 7h → 08h et 11h → 12h : les deux repères visés, et pas d'autres.
-    const x08 = chart.xLabels.find((l) => l.label === "08h")!.x;
+    // 7h → 12h et 11h → 16h : les deux repères visés, et pas d'autres.
     const x12 = chart.xLabels.find((l) => l.label === "12h")!.x;
+    const x16 = chart.xLabels.find((l) => l.label === "16h")!.x;
     const xs = chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0]));
-    expect(xs).toEqual([x08, x12]);
+    expect(xs).toEqual([x12, x16]);
   });
 
   it("Jour : deux blocs bâtards sur la même graduation gardent le PLUS RÉCENT", () => {
@@ -648,13 +651,12 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
     }
   });
 
-  it("le palmarès ne publie AUCUN total de période, donc ne peut plus contredire la pochette", () => {
-    // Le SAMEDI et le DIMANCHE qui précèdent sont présents et non nuls : sans
-    // eux, ouvrir l'axe deux jours trop tôt n'ajoute rien et le test ne prouve
-    // rien. C'est précisément ce qui rendait la régression invisible.
-    const AVANT = ["2026-08-15", "2026-08-16"];
-    // Lundi 2026-08-17 au vendredi 2026-08-21, 5 jours, minutes connues.
-    const JOURS = ["2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"];
+  it("l'onglet Semaine cumule SAMEDI → dernier jour, depuis la table quotidienne", () => {
+    // Le SAMEDI et le DIMANCHE font désormais partie de la semaine : le total
+    // du podium les inclut. C'est le comportement demandé le 2026-09-03 (la
+    // table `_week`, remise à zéro le lundi, n'est plus lue).
+    const AVANT = ["2026-08-15", "2026-08-16"]; // samedi, dimanche
+    const JOURS = ["2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"]; // lun → ven
     const MIN: Record<string, number[]> = {
       caq: [120, 90, 140, 60, 100],
       plq: [60, 80, 40, 70, 50],
@@ -676,30 +678,26 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
         return [mk("caq", d, MIN.caq[i], MIN.caq[i] / tot), mk("plq", d, MIN.plq[i], MIN.plq[i] / tot)];
       }),
     ];
-    // La table semaine, telle que le raffineur la produit : la somme des jours.
-    const sCaq = MIN.caq.reduce((a, b) => a + b, 0);
-    const sPlq = MIN.plq.reduce((a, b) => a + b, 0);
-    const semaine = [
-      mk("caq", JOURS.at(-1)!, sCaq, sCaq / (sCaq + sPlq)),
-      mk("plq", JOURS.at(-1)!, sPlq, sPlq / (sCaq + sPlq)),
-    ];
 
-    const c = computeStats(jours as never, semaine as never, semaine as never)!;
+    const c = computeStats(jours as never)!;
     const vue = buildRangeView(c.stats, "week", c.dates);
 
-    // LA POCHETTE lit la table hebdomadaire du raffineur, qui part du lundi.
-    expect(vue.rows[0].minutesUne).toBe(sCaq);
+    // Le total de la SEMAINE = samedi 15 → vendredi 21, tout compris.
+    const semCaq = [...AVANT_MIN.caq, ...MIN.caq].reduce((a, b) => a + b, 0); // 890
+    const semPlq = [...AVANT_MIN.plq, ...MIN.plq].reduce((a, b) => a + b, 0); // 500
+    expect(vue.rows.find((r) => r.key === "caq")!.minutesUne).toBe(semCaq);
+    expect(vue.rows.find((r) => r.key === "plq")!.minutesUne).toBe(semPlq);
+    // Part de voix renormalisée sur la fenêtre, pas une somme de pourcentages.
+    expect(vue.rows.find((r) => r.key === "caq")!.sovPct).toBe(
+      Math.round((semCaq / (semCaq + semPlq)) * 100),
+    );
 
-    // LE PALMARÈS affiche la valeur du DERNIER JOUR, pas un total. Les deux
-    // nombres ne sont donc plus la même grandeur, et l'un ne peut plus démentir
-    // l'autre — quelle que soit la borne d'ouverture de l'axe.
+    // LE GRAPHIQUE, lui, montre toujours la valeur du DERNIER JOUR (pas un
+    // total) — c'est ce que trace la course aux rangs.
     for (const cle of ["caq", "plq"] as const) {
       const serie = vue.chart.series.find((s) => s.key === cle)!;
       expect(serie.lastMinutes, `${cle} : dernier jour`).toBe(MIN[cle].at(-1));
     }
-
-    // Et le libellé dit ce que ce nombre couvre, sans quoi il se lirait comme
-    // un total de semaine.
     expect(vue.chart.mesureLabel).toMatch(/^le \d/);
   });
 
@@ -722,7 +720,7 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
               mk("plq", d, MINUTES.plq[i], MINUTES.plq[i] / tot)];
     });
 
-    const c = computeStats(jours as never, jours as never, jours as never)!;
+    const c = computeStats(jours as never)!;
     const chart = buildChart(c.stats, c.dates, "overall");
     const yDe = (cle: string) =>
       chart.series.find((s) => s.key === cle)!.polylineMin.split(" ").map((p) => Number(p.split(",")[1]));
@@ -743,7 +741,7 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
       { party: "caq", date_utc: "2026-08-21", date_montreal_tz: "2026-08-21", weighted_mentions: 0.6, weighted_tone: 0, total_raw_score: 100 },
       { party: "plq", date_utc: "2026-08-21", date_montreal_tz: "2026-08-21", weighted_mentions: 0.4, weighted_tone: 0, total_raw_score: 60 },
     ];
-    const c = computeStats(j as never, j as never, j as never)!;
+    const c = computeStats(j as never)!;
     expect(buildRangeView(c.stats, "today", c.dates).rows[0].enjeuxVentiles).toBe(false);
     expect(buildRangeView(c.stats, "today", c.dates, null, new Map()).rows[0].enjeuxVentiles).toBe(true);
   });
@@ -765,5 +763,222 @@ describe("le portrait global part du déclenchement du scrutin", () => {
     // Deux points, pas quatre : les journées d'avant le 27 août sont hors champ.
     const xs = chart.series[0].polyline.split(" ").filter(Boolean);
     expect(xs).toHaveLength(APRES.length);
+  });
+});
+
+describe("la vue Jour est alignée sur le bloc intra-journée courant", () => {
+  const {
+    blocIntradayCourant,
+    statsAvecBlocCourant,
+    computeStats: cs,
+    buildRangeView: brv,
+  } = __test__;
+
+  const JOURS = ["2026-08-25", "2026-08-26", "2026-08-27"];
+  // Table `_day` : la CAQ mène LARGEMENT la journée en cours.
+  const jourRow = (p: string, d: string, m: number) => ({
+    party: p,
+    date_utc: d,
+    date_montreal_tz: d,
+    weighted_mentions: m,
+    weighted_tone: 0,
+    total_raw_score: m * 1000,
+  });
+  const dayRows = JOURS.flatMap((d) => [
+    jourRow("caq", d, 0.55),
+    jourRow("plq", d, 0.2),
+    jourRow("qs", d, 0.12),
+    jourRow("pq", d, 0.1),
+    jourRow("pcq", d, 0.03),
+  ]);
+
+  // Table `_intraday` : deux blocs pour le 27, et au DERNIER (11h31) c'est le
+  // PLQ qui mène, pas la CAQ.
+  const blk = (
+    p: string,
+    h: number,
+    ca: string,
+    m: number,
+    minutes: number,
+    tone: number,
+  ) => ({
+    party: p,
+    date_utc: "2026-08-27",
+    date_montreal_tz: "2026-08-27",
+    weighted_mentions: m,
+    weighted_tone: tone,
+    total_raw_score: minutes,
+    computed_at: ca,
+    block_hour: h,
+    block_label: `${String(h).padStart(2, "0")}h`,
+  });
+  const intra = [
+    blk("caq", 4, "2026-08-27T11:31:00Z", 0.4, 200, -0.1),
+    blk("plq", 4, "2026-08-27T11:31:00Z", 0.3, 150, 0.1),
+    blk("qs", 4, "2026-08-27T11:31:00Z", 0.15, 70, 0),
+    blk("pq", 4, "2026-08-27T11:31:00Z", 0.1, 50, 0),
+    blk("pcq", 4, "2026-08-27T11:31:00Z", 0.05, 20, 0),
+    // Dernier bloc (11h31) : le PLQ passe devant.
+    blk("plq", 8, "2026-08-27T15:31:00Z", 0.5, 480, 0.42),
+    blk("caq", 8, "2026-08-27T15:31:00Z", 0.25, 240, -0.3),
+    blk("qs", 8, "2026-08-27T15:31:00Z", 0.15, 140, 0),
+    blk("pq", 8, "2026-08-27T15:31:00Z", 0.07, 60, 0),
+    blk("pcq", 8, "2026-08-27T15:31:00Z", 0.03, 20, 0),
+  ];
+
+  it("blocIntradayCourant sort le bloc au computed_at le plus récent, avec sa date de Montréal", () => {
+    const bloc = blocIntradayCourant(intra)!;
+    expect(bloc).not.toBeNull();
+    expect(bloc.dateMtl).toBe("2026-08-27"); // 15h31 UTC = 11h31 à Montréal
+    // 11h31, pas 07h31.
+    expect(bloc.parParti.get("plq")!.mentions).toBeCloseTo(0.5, 6);
+    expect(bloc.parParti.get("caq")!.mentions).toBeCloseTo(0.25, 6);
+    expect(bloc.parParti.get("plq")!.minutes).toBe(480);
+    expect(bloc.parParti.get("plq")!.tone).toBeCloseTo(0.42, 6);
+  });
+
+  it("le podium de la vue Jour suit ce bloc, pas la table _day", () => {
+    const { stats, dates } = cs(dayRows)!;
+    // Sans le patch : la CAQ mène (table _day).
+    expect(brv(stats, "today", dates).rows[0].key).toBe("caq");
+
+    // Avec le patch : le PLQ mène, comme dans le dernier bloc intra-journée.
+    const patchees = statsAvecBlocCourant(stats, blocIntradayCourant(intra)!, dates.daily);
+    const vue = brv(patchees, "today", dates);
+    expect(vue.rows[0].key).toBe("plq");
+    expect(vue.rows.find((r) => r.key === "plq")!.sovPct).toBe(50);
+    expect(vue.rows.find((r) => r.key === "plq")!.minutesUne).toBe(480);
+    // Le ton du PLQ vient aussi du bloc (favorable).
+    expect(vue.rows.find((r) => r.key === "plq")!.toneDirection).toBe("positive");
+  });
+
+  it("Semaine et Campagne suivent AUSSI le bloc courant", () => {
+    const { stats, dates } = cs(dayRows)!;
+    const patchees = statsAvecBlocCourant(stats, blocIntradayCourant(intra)!, dates.daily);
+
+    // Le bloc du 27 (PLQ 480 min, CAQ 240) est REPLIÉ sur la fenêtre : il
+    // remplace la contribution du 27 de la table `_day` (PLQ 200, CAQ 550).
+    // Semaine = 23→27 : la CAQ garde la tête (2 jours d'avance), mais ses
+    // minutes ont baissé de 3×550=1650 à 1650−550+240=1340.
+    const semCaq = brv(patchees, "week", dates).rows.find((r) => r.key === "caq")!;
+    expect(semCaq.minutesUne).toBe(1340);
+    // Campagne = depuis le déclenchement (27 août) = ce seul jour, donc = le
+    // bloc : le PLQ passe devant.
+    expect(brv(patchees, "overall", dates).rows[0].key).toBe("plq");
+    expect(brv(patchees, "overall", dates).rows.find((r) => r.key === "plq")!.minutesUne).toBe(480);
+  });
+
+  it("le patch n'a pas muté la source", () => {
+    const { stats, dates } = cs(dayRows)!;
+    const avantWeek = stats.find((s) => s.key === "caq")!.minutes.week;
+    statsAvecBlocCourant(stats, blocIntradayCourant(intra)!, dates.daily);
+    expect(stats.find((s) => s.key === "caq")!.minutes.week).toBe(avantWeek);
+    expect(stats.find((s) => s.key === "plq")!.sov.today).toBeCloseTo(0.2, 6);
+  });
+});
+
+describe("la course Jour recule d'un jour quand celui qui s'ouvre n'a qu'un bloc", () => {
+  const { buildChartIntraday: bci } = __test__;
+  const l = (party: string, h: number, ca: string) => ({
+    party,
+    block_hour: h,
+    block_label: `${String(h).padStart(2, "0")}h`,
+    weighted_mentions: 0.2,
+    weighted_tone: 0,
+    total_raw_score: 60,
+    date_utc: ca.slice(0, 10),
+    date_montreal_tz: ca.slice(0, 10),
+    computed_at: ca,
+  });
+  const P = ["CAQ", "PLQ", "PQ", "QS", "PCQ"];
+
+  it("entre 23h31 et 03h31, on montre la journée d'hier — complète — pas un point seul", () => {
+    // Jour A : quatre blocs (04h → 16h). Jour A+1 : seulement le bloc 20h–00h
+    // de la soirée d'A, calculé à 23h31 (03h31 UTC) → sa graduation est 00h,
+    // seul point du jour A+1.
+    const rows = [
+      ...[
+        ["2026-08-27T11:31:00Z", 4],
+        ["2026-08-27T15:31:00Z", 8],
+        ["2026-08-27T19:31:00Z", 12],
+        ["2026-08-27T23:31:00Z", 16],
+      ].flatMap(([ca, h]) => P.map((p) => l(p, h as number, ca as string))),
+      // 20h d'A : 03h31 UTC le 28 → jour de course 28, graduation 00h.
+      ...P.map((p) => l(p, 20, "2026-08-28T03:31:00Z")),
+    ];
+    const chart = bci(rows, ["plq", "caq", "qs", "pq", "pcq"])!;
+    expect(chart).not.toBeNull();
+    // Ce sont les graduations du jour A (08h → 20h, fins des périodes 04h…16h),
+    // pas le point unique 00h du jour A+1.
+    const labels = chart.xLabels.map((x) => x.label);
+    const tracees = new Set(
+      chart.series[0].polylineMin.split(" ").map((pt) => Number(pt.split(",")[0])),
+    );
+    const xDe = (lab: string) => chart.xLabels.find((x) => x.label === lab)!.x;
+    expect([...tracees].sort((a, b) => a - b)).toEqual(
+      ["08h", "12h", "16h", "20h"].map(xDe).sort((a, b) => a - b),
+    );
+    expect(tracees.has(xDe("00h"))).toBe(false);
+    void labels;
+  });
+});
+
+describe("Semaine et Campagne se dérivent de la table quotidienne", () => {
+  const { computeStats: cs } = __test__;
+  const mk = (party: string, date: string, minutes: number, part: number, ton = 0) => ({
+    party, date_utc: date, date_montreal_tz: date,
+    weighted_mentions: part, weighted_tone: ton, total_raw_score: minutes,
+  });
+
+  it("la Semaine NE se remet PAS à zéro le lundi — elle repart le samedi", () => {
+    // Samedi 29/08 → lundi 31/08. Le lundi ne doit PAS retomber à sa seule
+    // valeur : la semaine samedi→vendredi englobe sam + dim + lun.
+    const jours = [
+      ...["2026-08-29", "2026-08-30", "2026-08-31"].map((d) =>
+        [mk("caq", d, 100, 0.5), mk("plq", d, 100, 0.5)],
+      ).flat(),
+    ];
+    const { stats } = cs(jours)!;
+    const caq = stats.find((s) => s.key === "caq")!;
+    // 3 jours × 100 min, tous dans la semaine ouverte le samedi 29.
+    expect(caq.minutes.week).toBe(300);
+    // (et non 100, la seule valeur du lundi)
+  });
+
+  it("la Campagne part du déclenchement du scrutin, pas d'avant", () => {
+    const jours = [
+      // avant la campagne (ELECTION_CALL_DATE = 2026-08-27) — ignoré
+      mk("caq", "2026-08-25", 500, 0.5), mk("plq", "2026-08-25", 500, 0.5),
+      // pendant la campagne
+      mk("caq", "2026-08-27", 100, 0.5), mk("plq", "2026-08-27", 100, 0.5),
+      mk("caq", "2026-08-28", 100, 0.5), mk("plq", "2026-08-28", 100, 0.5),
+    ];
+    const { stats } = cs(jours)!;
+    // 2 jours × 100, pas les 500 du 25.
+    expect(stats.find((s) => s.key === "caq")!.minutes.year).toBe(200);
+  });
+
+  it("la part de voix d'une fenêtre est RENORMALISÉE, pas une somme de %", () => {
+    // Jour 1 : CAQ 90 % ; jour 2 : CAQ 10 %. Une somme de parts donnerait 100 %.
+    // La vraie part = minutes CAQ / minutes totales.
+    const jours = [
+      mk("caq", "2026-08-29", 90, 0.9), mk("plq", "2026-08-29", 10, 0.1),
+      mk("caq", "2026-08-30", 10, 0.1), mk("plq", "2026-08-30", 90, 0.9),
+    ];
+    const { stats } = cs(jours)!;
+    // CAQ : (90 + 10) / (100 + 100) = 0,5.
+    expect(stats.find((s) => s.key === "caq")!.sov.week).toBeCloseTo(0.5, 6);
+  });
+
+  it("le ton d'une fenêtre est la moyenne PONDÉRÉE par les minutes", () => {
+    // Jour léger très favorable, jour lourd défavorable : la moyenne penche
+    // vers le jour lourd.
+    const jours = [
+      mk("caq", "2026-08-29", 10, 0.5, 0.8), mk("plq", "2026-08-29", 10, 0.5, 0),
+      mk("caq", "2026-08-30", 90, 0.5, -0.4), mk("plq", "2026-08-30", 90, 0.5, 0),
+    ];
+    const { stats } = cs(jours)!;
+    // (0,8·10 + (−0,4)·90) / 100 = (8 − 36) / 100 = −0,28.
+    expect(stats.find((s) => s.key === "caq")!.tone.week).toBeCloseTo(-0.28, 6);
   });
 });

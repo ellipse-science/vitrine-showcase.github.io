@@ -97,7 +97,12 @@ CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_affiliations" (
   "start_reason" text,
   "end_reason" text
 );
-CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_deputy_idx" ON vitrine."agora_decideurs_qc_affiliations" ("deputy");
+-- L'API filtre par party, deputy_id et district_id et trie par affiliation_start_date
+-- (workers/api/src/index.ts) ; l'index sur le nom « deputy » ne servait à rien.
+DROP INDEX IF EXISTS vitrine."agora_decideurs_qc_affiliations_deputy_idx";
+CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_deputy_id_idx" ON vitrine."agora_decideurs_qc_affiliations" ("deputy_id");
+CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_district_id_idx" ON vitrine."agora_decideurs_qc_affiliations" ("district_id");
+CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_start_date_idx" ON vitrine."agora_decideurs_qc_affiliations" ("affiliation_start_date");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_affiliations_party_idx" ON vitrine."agora_decideurs_qc_affiliations" ("party");
 
 -- federal_parties_score_week  (Athena : vitrine_datamart-federal_parties_score_week)
