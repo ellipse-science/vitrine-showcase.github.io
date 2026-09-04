@@ -1,7 +1,7 @@
 import { loadParties } from "@/lib/data/parties";
 import { groupeParAlbums, groupeParDiscographie, loadPochettes } from "@/lib/data/pochettes";
 import { formatDateFr } from "@/lib/dates";
-import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
+import { instantPublicationBloc, loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 
 // RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20, avant l'envoi aux
@@ -13,7 +13,12 @@ const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
   if (isProd) return null;
-  const data = await loadParties(asOfIso);
+  // DEUX BORNES, PAS UNE. `asOfIso` nomme le jour de l'édition ; il suffit à la
+  // table quotidienne, qui n'a qu'une ligne par journée. La table intra-journée
+  // en publie six, et bornée au jour elle les servait TOUTES à chaque édition —
+  // celle du matin montrait donc les blocs du soir (#735). `editionKey` est le
+  // début du bloc en UTC, dont on tire l'instant de publication.
+  const data = await loadParties(asOfIso, editionKey ? instantPublicationBloc(editionKey) ?? undefined : undefined);
   if (!data) return null;
 
   // Le RYTHME des vumètres suit la saillance de la Une du moment : nerveux

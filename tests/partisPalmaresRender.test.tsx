@@ -204,18 +204,50 @@ describe("le palmarès dépouillé — la course aux rangs", () => {
     expect([...halos].sort()).toEqual([...traits].sort());
   });
 
-  it("chaque ligne porte son NOM et sa DURÉE à son extrémité", () => {
+  it("chaque ligne porte son NOM et son RANG à son extrémité, jamais une durée", () => {
     const etiquettes = [...html.matchAll(/<button[^>]*class="palmares-etiquette[ "]/g)];
     expect(etiquettes.length).toBe(PARTY_KEYS.length);
     for (const p of PARTY_KEYS) {
       expect(html).toContain(`>${p.toUpperCase()}</span>`);
     }
-    // Le rang dit qui mène, jamais de combien : sans la durée, le module
-    // n'affiche plus une seule minute.
-    expect(html).toContain("palmares-etiquette-duree");
+    // AUCUNE DURÉE AU BOUT DES LIGNES, en mode « Écouté ».
+    //
+    // Le graphique trace des RANGS, pas des durées. Y écrire des minutes
+    // invitait à les comparer à la pochette du même parti, qui couvre toute la
+    // période : les deux ne mesuraient pas la même chose et se contredisaient à
+    // l'écran — mesuré le 2026-09-04, pochette CAQ 90 h 03 en tête quand le
+    // palmarès affichait 6 h 34 au PQ, soit ni le même chiffre ni le même
+    // gagnant. Le rang, lui, se lit sans ambiguïté.
+    expect(html).not.toContain("palmares-etiquette-duree");
+    // Le rang, en revanche, est bien là.
+    expect(html).toContain("palmares-rang");
     // Ni légende sous l'axe, ni encadré de classement.
     expect(html).not.toContain("palmares-legende");
     expect(html).not.toContain("palmares-classement");
+  });
+
+  it("sur la vue JOUR, une heure dont le bloc existe est un bouton qui NOMME ce bloc", () => {
+    // L'onglet ouvert dans un rendu statique est « Jour », et ses repères sont
+    // horaires. Un repère horaire ne désigne aucune journée — c'est pourquoi
+    // #733 les laissait nus — mais il désigne le BLOC de 4 h qui se termine là,
+    // et la course y classe déjà les partis.
+    //
+    // Le jeu de ce rendu porte les six blocs, donc les six repères sont pris.
+    const boutons = [...html.matchAll(/class="palmares-x-bouton"[^>]*title="([^"]*)"/g)].map(
+      (m) => m[1],
+    );
+    expect(boutons.length).toBe(6);
+
+    // ⚠️ CHAQUE BOUTON NOMME SON PROPRE BLOC. Une infobulle générique passerait
+    // ce test avec un simple `toContain`, et le clic pourrait viser un tout
+    // autre relevé sans que rien ne le dise.
+    for (const h of ["00h", "04h", "08h", "12h", "16h", "20h"]) {
+      expect(boutons).toContain(`Voir le classement du bloc de ${h}.`);
+    }
+
+    // Une DATE ne se rédige pas comme une heure : aucun repère de cette vue ne
+    // doit emprunter la formule des vues multi-jours.
+    expect(html).not.toContain("Voir le classement du lundi");
   });
 
   it("une étiquette par RANGÉE, exactement — c'est ce que garantit la permutation", () => {

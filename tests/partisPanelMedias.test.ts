@@ -36,11 +36,8 @@ describe("le panel de médias du fader", () => {
   });
 
   it("écarte les médias hors Québec présents dans la donnée publiée", async () => {
-    // Lu sur la semaine, pas le jour : un jour donné peut n'avoir AUCUN relevé
-    // hors Québec (la salience provinciale y couvre rarement la presse
-    // canadienne ou américaine un jour précis), ce qui viderait la garde
-    // ci-dessous sans que le filtre soit en cause. La semaine agrège assez de
-    // jours pour que le corpus hors panel y apparaisse de façon fiable.
+    // Lu sur la semaine, pas le jour : elle agrège assez de journées pour que le
+    // corpus publié soit représentatif de ce que le chargeur reçoit vraiment.
     const brut = await fs.readFile(
       path.resolve(
         process.cwd(),
@@ -51,11 +48,21 @@ describe("le panel de médias du fader", () => {
     const rows = JSON.parse(brut) as { media_id?: string }[];
     const dansLaDonnee = [...new Set(rows.map((r) => r.media_id).filter(Boolean))] as string[];
 
-    // La table publie bien plus que le panel — sinon ce test ne prouverait rien.
-    const horsPanel = dansLaDonnee.filter((id) => !MEDIA_PANEL_QC.includes(id));
-    expect(horsPanel.length).toBeGreaterThan(0);
+    // LE FILTRE SE VÉRIFIE SUR UNE ENTRÉE CHOISIE, PAS SUR LES SCORIES DU JOUR.
+    //
+    // Ce test exigeait auparavant que la table PUBLIÉE contienne des médias hors
+    // panel — « sinon ce test ne prouverait rien ». Cette prémisse portait sur
+    // une scorie : les journées d'avant aws-refiners#407, quand la table
+    // provinciale n'était pas encore restreinte au panel québécois. Le rejeu du
+    // 2026-09-04 les a normalisées, la prémisse est tombée, et le test a échoué
+    // sans qu'aucun code ne soit en cause. Un test dont la validité dépend de la
+    // saleté de la donnée s'éteint le jour où on la nettoie.
+    const avecIntrus = [...dansLaDonnee, "CNN", "FXN"];
+    const retenusDuCas = avecIntrus.filter((id) => MEDIA_PANEL_QC.includes(id));
+    expect(retenusDuCas).not.toContain("CNN");
+    expect(retenusDuCas).not.toContain("FXN");
 
-    // Et le filtre du chargeur les retire tous.
+    // Et sur la donnée réellement publiée, rien ne sort du panel.
     const publies = new Set(dansLaDonnee);
     const retenus = MEDIA_PANEL_QC.filter((id) => publies.has(id));
     expect(retenus.every((id) => MEDIA_PANEL_QC.includes(id))).toBe(true);

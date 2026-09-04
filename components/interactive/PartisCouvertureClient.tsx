@@ -10,6 +10,7 @@ import { formatDuree } from "@/lib/duree";
 import { formatEcartTon, phraseEcartTon } from "@/lib/ton";
 import { cheminDeRang, depuisLOrigine, hauteurDuRang, rangsParInstant } from "@/lib/rangs";
 import { samediDeLaSemaine } from "@/lib/semaine";
+import { formatDateFr } from "@/lib/dates";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -93,6 +94,8 @@ type EntreeTrophee = {
   ecart: number | null;
   partPct: number;
   enjeu: string;
+  /** Renseigné seulement quand l'enjeu ne vient pas de la journée affichée. */
+  enjeuTitle?: string;
   tonMot: string;
   tonPct: number;
   tonTitle?: string;
@@ -429,7 +432,11 @@ export function PartisCouvertureClient({
   const entreesTrophee: EntreeTrophee[] = classementTrophee
     .slice(0, 5)
     .map((row) => {
-      const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+      // `SANS_ENJEU` est écarté ICI AUSSI — `pochetteAppariee` et
+      // `app/data/partis-selection.json` le faisaient déjà, ce site-ci l'avait
+      // oublié. « Aucun enjeu identifié » n'est pas un sujet à annoncer sur une
+      // pochette ; quand c'est tout ce qu'on a, le repli plus bas le dit.
+      const enjeu = row.enjeux.find((e) => !e.reste && e.label !== SANS_ENJEU) ?? null;
       const couverture =
         range === "today"
           ? pochetteAppariee(row, discotheque?.duJour ?? [])
@@ -445,6 +452,12 @@ export function PartisCouvertureClient({
         ecart: ecartParParti.get(row.key) ?? null,
         partPct: row.sovPct,
         enjeu: enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE),
+        // Dire d'où vient l'enjeu quand ce n'est pas la journée affichée : la
+        // journée en cours n'en portait aucun et `buildEnjeux` a reculé. Rien
+        // à dire dans le cas courant, donc pas d'infobulle.
+        enjeuTitle: enjeu?.dateSource
+          ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+          : undefined,
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
         tonTitle: row.toneTitle,
@@ -1633,6 +1646,42 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
      découle. Les deux pistes partagent les mêmes abscisses, si bien que basculer
      ne déplace aucun point sur l'axe du temps : seules les hauteurs changent. */
   const apprecie = mode === "apprecie";
+  /** LA JOURNÉE CHOISIE SUR L'AXE, ou `null` pour la dernière.
+   *
+   *  Le graphique trace une course aux RANGS : à chaque journée, qui est
+   *  premier, deuxième, troisième. Cette information était tracée sans qu'on
+   *  puisse la DÉSIGNER — on lisait la position d'une ligne, pas le classement
+   *  d'un jour. Choisir une graduation fige le classement de cette journée-là
+   *  dans les étiquettes de bout ; la reprendre revient au dernier relevé.
+   *
+   *  On garde l'abscisse du RELEVÉ (`xPoint`) et non celle de la graduation :
+   *  sur la campagne, les repères ne tombent pas sur les journées. */
+  /** ⚠️ `null`, ET SURTOUT PAS `0`, POUR « AUCUN CHOIX ». Sur la vue Jour la
+   *  graduation « 00h » a pour abscisse ZÉRO : tout test de vérité (`if
+   *  (jourChoisi)`, `jourChoisi ? … : …`) traiterait un clic sur 00h comme une
+   *  absence de choix, et le premier bloc de la journée serait le seul
+   *  inatteignable. Chaque lecture ci-dessous compare donc explicitement à
+   *  `null`. Le champ portait aussi un `label` que personne ne lisait ; il est
+   *  parti avec.
+   *
+   *  Sur les vues multi-jours l'abscisse zéro n'existe pas, ce qui explique que
+   *  le piège soit resté invisible jusqu'ici. */
+  const [jourChoisi, setJourChoisi] = useState<number | null>(null);
+
+  /** « Mercredi 8 juillet » s'insère après « du » : la majuscule y ferait une
+   *  coquille. Même geste que `labelDateIndispo` dans `lib/data/parties.ts`. */
+  const enMinuscule = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
+  /** CE QUE NOMME UNE GRADUATION, prêt à suivre « Classement » — ou `null`
+   *  quand elle ne nomme rien et doit rester du texte.
+   *
+   *  Deux vues, deux natures : une DATE sur Semaine et Campagne, un BLOC de 4 h
+   *  sur Jour. Les deux se rédigent avec « du », mais pas de la même façon, et
+   *  c'est le seul endroit qui a besoin de le savoir : la mécanique du choix,
+   *  elle, ne connaît que des abscisses. */
+  const nomDuReleve = (l: ChartView["xLabels"][number]): string | null =>
+    l.jour ? `du ${enMinuscule(formatDateFr(l.jour))}` : l.bloc ? `du bloc de ${l.bloc}` : null;
+
   const pisteDe = (s: ChartView["series"][number]) => (apprecie ? s.polylineTon : s.polylineMin);
   /** ⚠️ UN PARTI SANS TON EST RENVOYÉ EN QUEUE, jamais au milieu.
    *
@@ -1646,9 +1695,6 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   const ecriteDe = (s: ChartView["series"][number]) =>
     apprecie ? formatEcartTon(s.lastEcartTon) : formatDuree(s.lastMinutes);
 
-  // De haut en bas : le meilleur en premier, comme un classement.
-  const series = chart.series.slice().sort((a, b) => valeurDe(b) - valeurDe(a));
-
   /* LA COURSE AUX RANGS. On ne trace plus des durées mais des PLACES : à chaque
      bloc, qui est premier, deuxième, troisième. `lib/rangs.ts` dit pourquoi la
      forme a changé — en deux mots, six points par jour et une donnée très
@@ -1656,9 +1702,35 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
 
      Chaque ligne est dessinée deux fois — le trait qu'on voit et la bande large
      qu'on vise — et les deux suivent exactement le même chemin, sinon on
-     cliquerait à côté de ce qu'on montre. */
+     cliquerait à côté de ce qu'on montre.
+
+     CALCULÉS AVANT LE TRI, et non après : `rangsParInstant` classe lui-même à
+     chaque abscisse, sa sortie ne dépend donc pas de l'ordre qu'on lui donne.
+     C'est ce qui permet d'ORDONNER les étiquettes sur le classement d'une
+     journée choisie — l'ordre a besoin des rangs, les rangs n'ont pas besoin de
+     l'ordre. */
+  const rangs = rangsParInstant(chart.series.map((s) => ({ cle: s.key, points: pisteDe(s) })));
+
+  /** Le rang d'un parti au relevé choisi — journée ou bloc —, ou au dernier. */
+  const rangAu = (cle: string): [number, number] | null => {
+    const suite = rangs.get(cle) ?? [];
+    if (jourChoisi === null) return suite.at(-1) ?? null;
+    return suite.find(([x]) => Math.abs(x - jourChoisi) < 0.01) ?? suite.at(-1) ?? null;
+  };
+
+  // De haut en bas : le meilleur en premier, comme un classement. Quand un
+  // relevé est choisi, c'est SON classement qui ordonne — c'est tout l'objet du
+  // clic. Sinon, l'ordre du dernier relevé.
+  const series = chart.series
+    .slice()
+    .sort((a, b) =>
+      jourChoisi !== null
+        ? (rangAu(a.key)?.[1] ?? Number.POSITIVE_INFINITY) -
+          (rangAu(b.key)?.[1] ?? Number.POSITIVE_INFINITY)
+        : valeurDe(b) - valeurDe(a),
+    );
+
   const nRangs = series.length;
-  const rangs = rangsParInstant(series.map((s) => ({ cle: s.key, points: pisteDe(s) })));
   const chemins = new Map(
     series.map((s) => [
       s.key,
@@ -1672,7 +1744,7 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   /* Le bout de chaque ligne : c'est là que se pose son étiquette. Pris dans la
      suite des rangs et non dans `lastX`/`lastYMin`, pour que le nom soit
      exactement au bout du trait et non à côté. */
-  const bouts = new Map(series.map((s) => [s.key, (rangs.get(s.key) ?? []).at(-1) ?? null]));
+  const bouts = new Map(series.map((s) => [s.key, rangAu(s.key)]));
 
   /* CE QU'IL RESTE À COURIR : du dernier relevé jusqu'à la ligne d'arrivée.
      Toutes les lignes partagent les mêmes abscisses, donc n'importe laquelle
@@ -1701,6 +1773,7 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   const [isole, setIsole] = useState<string | null>(null);
   const [focalise, setFocalise] = useState<string | null>(null);
   const vedette = focalise ?? isole;
+
 
   return (
     <figure className={"palmares-figure" + (vedette ? " a-vedette" : "")}>
@@ -1865,7 +1938,16 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
                     gauche : la graduation n'a plus rien à graduer. */}
                 <i className="palmares-rang" aria-hidden="true">{rangFin}</i>
                 <span className="palmares-etiquette-sigle">{s.label}</span>
-                <b className="palmares-etiquette-duree">{ecriteDe(s)}</b>
+                {/* PAS DE DURÉE AU BOUT DE LA LIGNE.
+                    Le graphique trace des RANGS, pas des durées : y écrire des
+                    minutes invitait à les comparer à la pochette du même parti,
+                    qui couvre toute la période. Les deux ne mesuraient pas la
+                    même chose et se contredisaient à l'écran — mesuré le
+                    2026-09-04, pochette CAQ 90 h 03 en tête quand le palmarès
+                    montrait 6 h 34 au PQ. Le rang, lui, se lit sans ambiguïté.
+                    L'écart de ton reste écrit : ce n'est pas une durée, et rien
+                    d'autre à l'écran ne le donne. */}
+                {apprecie && <b className="palmares-etiquette-duree">{ecriteDe(s)}</b>}
               </button>
             );
           })}
@@ -1884,20 +1966,48 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
           deux vues (« 20h » sur la journée, le dernier jour sur les autres), et
           en ajouter un l'écrivait exactement par-dessus. On ne l'ajoute que si
           aucun ne coïncide. */}
-      <ul className="palmares-x" aria-hidden="true">
-        {chart.xLabels.map((l) => (
-          <li
-            key={l.label}
-            className={
-              Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label
-                ? "palmares-x-arrivee"
-                : undefined
-            }
-            style={{ left: `${(l.x / chart.width) * 100}%` }}
-          >
-            {l.label}
-          </li>
-        ))}
+      <ul className="palmares-x">
+        {chart.xLabels.map((l) => {
+          const arrivee =
+            Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label;
+          const choisie = jourChoisi !== null && l.xPoint === jourChoisi;
+          const classes =
+            (arrivee ? "palmares-x-arrivee" : "") + (choisie ? " palmares-x-choisi" : "");
+          return (
+            <li
+              key={l.label}
+              className={classes.trim() || undefined}
+              style={{ left: `${(l.x / chart.width) * 100}%` }}
+            >
+              {/* UNE GRADUATION QUI DÉSIGNE UNE JOURNÉE EST UN BOUTON.
+                  La course trace un classement par journée ; sans prise, on
+                  lisait la position d'une ligne sans pouvoir nommer le jour.
+                  Les repères de la vue Jour sont horaires et ne désignent
+                  aucune journée : ils restent du texte. */}
+              {nomDuReleve(l) !== null && l.xPoint !== undefined ? (
+                <button
+                  type="button"
+                  className="palmares-x-bouton"
+                  aria-pressed={choisie}
+                  title={
+                    choisie
+                      ? `Classement ${nomDuReleve(l)}. Cliquez pour revenir au dernier relevé.`
+                      : `Voir le classement ${nomDuReleve(l)}.`
+                  }
+                  onClick={() =>
+                    setJourChoisi((j) =>
+                      j !== null && j === l.xPoint ? null : l.xPoint!,
+                    )
+                  }
+                >
+                  {l.label}
+                </button>
+              ) : (
+                l.label
+              )}
+            </li>
+          );
+        })}
         {/* On dédoublonne aussi sur le TEXTE : sur la semaine, le repère du
             vendredi porte déjà le nom de l'arrivée sans être à sa position. */}
         {!chart.xLabels.some(
@@ -1905,6 +2015,7 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
         ) && (
           <li
             className="palmares-x-arrivee"
+            aria-hidden="true"
             style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
           >
             {chart.finish.label}
@@ -2120,6 +2231,7 @@ function TracklisteGrandeurs({
   tonMot,
   tonPct,
   tonTitle,
+  enjeuTitle,
   labelTemps = "Temps en Une",
   labelEnjeu = "Enjeu",
   labelTon = "Ton",
@@ -2127,6 +2239,9 @@ function TracklisteGrandeurs({
   temps: string;
   partPct: number;
   enjeu: string;
+  /** Infobulle de la rangée « Enjeu » — sert à dater l'enjeu quand il ne vient
+   *  pas de la journée affichée. Absente le reste du temps. */
+  enjeuTitle?: string;
   tonMot: string;
   tonPct: number;
   tonTitle?: string;
@@ -2145,7 +2260,7 @@ function TracklisteGrandeurs({
     <>
       <LigneTracklist categorie={labelTemps} chiffre>{temps}</LigneTracklist>
       <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
-      <LigneTracklist categorie={labelEnjeu}>{enjeu}</LigneTracklist>
+      <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
       <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
     </>
   );
@@ -2256,6 +2371,7 @@ function CarteTrophee({
                   labelTemps={chiffre.label}
                   partPct={entree.partPct}
                   enjeu={entree.enjeu}
+                  enjeuTitle={entree.enjeuTitle}
                   tonMot={entree.tonMot}
                   tonPct={entree.tonPct}
                   tonTitle={entree.tonTitle}
