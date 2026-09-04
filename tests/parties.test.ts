@@ -3,6 +3,7 @@ import { __test__, PARTY_KEYS, PARTY_COLORS } from "@/lib/data/parties";
 
 const {
   buildLookup,
+  buildEnjeux,
   computeStats,
   sparkPoints,
   samplePoints,
@@ -175,6 +176,46 @@ describe("buildChart — la course", () => {
     const leader = chart.series[0];
     expect(leader.lastY).toBeGreaterThanOrEqual(0);
     expect(leader.lastPct).toBe(40);
+  });
+
+  it("les graduations multi-jours désignent une journée RÉELLE, pas leur propre abscisse", () => {
+    // C'est ce qui rend le clic possible : une graduation doit pouvoir dire
+    // « le classement DE CE JOUR-LÀ ». Sur la semaine les repères tombent sur
+    // les éditions ; sur la campagne ils sont ÉQUIDISTANTS et ne coïncident
+    // avec aucun relevé — d'où `xPoint`, l'abscisse du relevé le plus proche.
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    for (const range of ["week", "overall"] as const) {
+      const chart = buildChart(stats, dates, range);
+      const abscisses = new Set(
+        chart.series[0].polylineMin.split(" ").map((p) => Number(p.split(",")[0])),
+      );
+      for (const l of chart.xLabels) {
+        expect(l.jour, `${range} : ${l.label} doit nommer une journée`).toBeTruthy();
+        expect(l.xPoint, `${range} : ${l.label} doit viser un relevé`).toBeDefined();
+        // Et ce relevé EXISTE : sans quoi le clic ne trouverait aucun rang.
+        expect(abscisses.has(l.xPoint!), `${range} : ${l.label} vise un relevé absent`).toBe(true);
+      }
+    }
+  });
+
+  it("la vue Jour DE REPLI garde des repères nus : ils viennent de l'horloge, pas des relevés", () => {
+    // ⚠️ DEUX VUES JOUR, ET UNE SEULE EST CLIQUABLE.
+    //
+    // Celle-ci est le REPLI, servi quand la table intra-journée manque
+    // (`loadParties` la lit avec un `.catch`). Ses repères sont construits sur
+    // le TEMPS — `reperesAxe`, la même mécanique qui étiquette des jours à
+    // venir sur la semaine — et non sur la donnée : aucun ne correspond à un
+    // relevé, donc aucun ne peut désigner un classement.
+    //
+    // La vraie vue Jour, `buildChartIntraday`, tire ses repères des blocs
+    // publiés et les rend cliquables. Voir le test des six repères plus bas.
+    const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
+    const chart = buildChart(stats, dates, "today");
+    for (const l of chart.xLabels) {
+      expect(l.jour).toBeUndefined();
+      expect(l.bloc).toBeUndefined();
+      expect(l.xPoint).toBeUndefined();
+    }
   });
 
   it("axisTop : tronqué au-dessus du maximum observé, plancher à 20 %", () => {
@@ -420,6 +461,55 @@ describe("les graduations des trois vues", () => {
     const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
     expect(chart.xLabels.map((l) => l.label)).toEqual(["00h", "04h", "08h", "12h", "16h", "20h"]);
     expect(chart.finish.label).toBe("20h");
+  });
+
+  it("Jour : seules les heures dont le BLOC EXISTE sont désignables", () => {
+    // LE CAS QUI COMPTE : une journée en cours, incomplète.
+    //
+    // Les blocs 7h et 11h se posent sur les graduations 12h et 16h (fin de
+    // période). L'axe porte quand même ses six repères — c'est voulu, il montre
+    // ce qu'il reste à courir — mais 00h, 04h, 08h et 20h ne visent AUCUN
+    // relevé. À 9 h du matin, c'est l'état normal de la journée.
+    //
+    // ⚠️ Ils doivent rester NUS, et surtout PAS se rabattre sur le relevé le
+    // plus proche comme le fait la campagne. Nommer « 20h » un classement de
+    // 16h serait pire qu'une graduation qu'on ne peut pas prendre.
+    const rows = [7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    const par = new Map(chart.xLabels.map((l) => [l.label, l]));
+
+    for (const h of ["12h", "16h"]) {
+      expect(par.get(h)!.bloc, `${h} doit nommer son bloc`).toBe(h);
+      // `x` et `xPoint` COÏNCIDENT ici : graduation et point partagent `xAtH`.
+      expect(par.get(h)!.xPoint).toBe(par.get(h)!.x);
+    }
+    for (const h of ["00h", "04h", "08h", "20h"]) {
+      expect(par.get(h)!.bloc, `${h} n'a pas de bloc à nommer`).toBeUndefined();
+      expect(par.get(h)!.xPoint, `${h} ne doit viser aucun relevé`).toBeUndefined();
+    }
+
+    // Une heure n'est jamais une journée, dans aucun des deux cas.
+    for (const l of chart.xLabels) expect(l.jour).toBeUndefined();
+  });
+
+  it("Jour : une graduation désignable vise un relevé RÉELLEMENT tracé", () => {
+    // Même garantie que pour les vues multi-jours : si `xPoint` ne tombait pas
+    // sur une abscisse de la polyligne, le clic ne trouverait aucun rang et
+    // l'étiquette retomberait en silence sur le dernier relevé.
+    const rows = [3, 7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    const abscisses = new Set(
+      chart.series[0].polylineMin.split(" ").map((pt) => Number(pt.split(",")[0])),
+    );
+    const designables = chart.xLabels.filter((l) => l.xPoint !== undefined);
+    expect(designables.length).toBe(3);
+    for (const l of designables) {
+      expect(abscisses.has(l.xPoint!), `${l.label} vise un relevé absent`).toBe(true);
+    }
   });
 
   it("Jour : un bloc bâtard se pose sur la graduation de FIN de sa période", () => {
@@ -744,6 +834,80 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
     const c = computeStats(j as never)!;
     expect(buildRangeView(c.stats, "today", c.dates).rows[0].enjeuxVentiles).toBe(false);
     expect(buildRangeView(c.stats, "today", c.dates, null, new Map()).rows[0].enjeuxVentiles).toBe(true);
+  });
+});
+
+// L'enjeu de RESTE (« Aucun enjeu identifié ») compte dans les parts, mais il
+// n'est pas un sujet : il ne doit jamais être ce qu'une pochette annonce tant
+// qu'un vrai enjeu existe. Deux mécanismes le garantissent, et aucun des deux
+// n'était couvert avant le 2026-09-04 — c'est ce qui a laissé les pochettes
+// afficher « Aucun enjeu identifié » toutes les matinées.
+describe("l'enjeu de reste ne prend jamais la tête", () => {
+  const RESTE = "Aucun enjeu identifié";
+  const ir = (party: string, date: string, theme: string, share: number, minutes = 100) => ({
+    party,
+    date_utc: date,
+    date_montreal_tz: date,
+    theme,
+    issue_share: share,
+    total_raw_score: minutes,
+    weighted_tone: 0,
+  });
+
+  it("rétrograde le reste même quand il pèse le plus lourd", () => {
+    // Le cas réel du PLQ au 4 septembre : 93 % de reste, 7 % de gouvernance.
+    // Le tri par part seule mettait le reste en tête, et la pochette l'annonçait.
+    const m = buildEnjeux([
+      ir("plq", "2026-09-04", RESTE, 0.93),
+      ir("plq", "2026-09-04", "governments_governance", 0.07),
+    ] as never);
+    const vues = m.get("plq")!;
+    expect(vues[0].label).not.toBe(RESTE);
+    expect(vues.at(-1)!.label).toBe(RESTE);
+  });
+
+  it("recule d'une journée quand celle en cours n'a que du reste, et le dit", () => {
+    // Le cas réel de QS au 4 septembre : 100 % de reste sur 21 minutes.
+    const m = buildEnjeux([
+      ir("qs", "2026-09-03", "governments_governance", 0.83),
+      ir("qs", "2026-09-03", RESTE, 0.17),
+      ir("qs", "2026-09-04", RESTE, 1),
+    ] as never);
+    const vues = m.get("qs")!;
+    expect(vues[0].label).toBe("Gouvernements et gouvernance");
+    // La date du repli VOYAGE jusqu'à la vue : sans elle, la pochette
+    // afficherait un enjeu de la veille en le faisant passer pour celui du jour.
+    expect(vues[0].dateSource).toBe("2026-09-03");
+  });
+
+  it("ne marque aucun repli quand la journée en cours porte un enjeu", () => {
+    const m = buildEnjeux([
+      ir("pq", "2026-09-03", "health", 0.9),
+      ir("pq", "2026-09-04", "education", 0.42),
+      ir("pq", "2026-09-04", RESTE, 0.53),
+    ] as never);
+    const vues = m.get("pq")!;
+    expect(vues[0].label).toBe("Éducation");
+    expect(vues[0].dateSource).toBeUndefined();
+  });
+
+  it("avoue le reste quand AUCUNE journée de la fenêtre ne porte d'enjeu", () => {
+    // Là, « Aucun enjeu identifié » est la vérité sur toute la fenêtre et non un
+    // artefact de l'heure : on garde la journée la plus récente, sans repli.
+    const m = buildEnjeux([
+      ir("caq", "2026-09-03", RESTE, 1),
+      ir("caq", "2026-09-04", RESTE, 1),
+    ] as never);
+    const vues = m.get("caq")!;
+    expect(vues[0].label).toBe(RESTE);
+    expect(vues[0].dateSource).toBeUndefined();
+  });
+
+  it("laisse un parti jamais détecté sans aucune entrée", () => {
+    // Le PCQ n'a pas de tête de classification (aws-refiners#248) : il n'a
+    // aucune ligne, et il ne faut surtout pas lui en inventer une.
+    const m = buildEnjeux([ir("pq", "2026-09-04", "education", 1)] as never);
+    expect(m.has("pcq")).toBe(false);
   });
 });
 

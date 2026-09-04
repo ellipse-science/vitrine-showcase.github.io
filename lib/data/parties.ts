@@ -285,6 +285,11 @@ export type EnjeuView = {
   /** Vrai pour le pad « Autres enjeux », qui agrège la queue de distribution.
    *  Il se rend éteint : ce n'est pas un enjeu, c'est ce qui reste. */
   reste?: boolean;
+  /** La journée d'où viennent ces enjeux, quand ce n'est PAS la plus récente
+   *  publiée : la journée en cours n'en portait aucun, on a reculé (voir
+   *  `buildEnjeux`). Absent le reste du temps, qui est le cas courant — sa
+   *  présence est donc exactement le signal « à dire au lecteur ». */
+  dateSource?: string;
 };
 
 export type RowView = {
@@ -430,8 +435,26 @@ export type ChartSeries = {
 
 export type ChartView = {
   series: ChartSeries[];
-  /** Bornes de la période affichée, aux deux extrémités de l'axe. */
-  xLabels: { label: string; x: number }[];
+  /** Les graduations de l'axe du temps.
+   *
+   *  UNE GRADUATION QUI DÉSIGNE UN RELEVÉ EST CLIQUABLE ; les autres restent du
+   *  texte. Ce qu'elle désigne dépend de la vue, d'où deux champs et non un :
+   *  `jour` sur les vues multi-jours (Semaine, Campagne), `bloc` sur la vue Jour,
+   *  où un repère horaire nomme le bloc de 4 h qui se termine là. Ils
+   *  s'excluent, et l'un ou l'autre accompagne toujours un `xPoint`.
+   *
+   *  ⚠️ `xPoint` n'est PAS `x`. Sur la semaine les sept repères tombent
+   *  exactement sur les sept éditions, mais sur la campagne les six repères sont
+   *  ÉQUIDISTANTS et ne coïncident avec aucun relevé. `xPoint` est l'abscisse du
+   *  relevé le plus proche : c'est elle qu'il faut pour retrouver un rang, `x`
+   *  ne servant qu'à placer l'étiquette.
+   *
+   *  ⚠️ SUR LA VUE JOUR, AUCUN RATTRAPAGE AU PLUS PROCHE. `x` et `xPoint` y
+   *  coïncident toujours, graduation et point partageant `xAtH(h)` ; une heure
+   *  dont le bloc n'existe pas encore reste NUE plutôt que de se replier sur son
+   *  voisin. Se rabattre du 12h vers le 08h nommerait « midi » un classement de
+   *  huit heures — pire qu'une graduation qu'on ne peut pas prendre. */
+  xLabels: { label: string; x: number; jour?: string; bloc?: string; xPoint?: number }[];
   /** La ligne d'ARRIVÉE, propre à l'onglet : 20 h aujourd'hui pour le jour,
    *  vendredi 20 h pour la semaine, le jour du scrutin pour tout le suivi.
    *  Le vide entre la dernière donnée et elle EST l'information — c'est ce
@@ -1334,10 +1357,29 @@ function buildChartIntraday(rows: IntradayRow[], parts: PartyKey[]): ChartView |
 
   return {
     series,
-    xLabels: [0, 4, 8, 12, 16, 20].map((h) => ({
-      label: `${String(h).padStart(2, "0")}h`,
-      x: Number(xAtH(h).toFixed(2)),
-    })),
+    // UNE HEURE DONT LE BLOC EXISTE EST CLIQUABLE ; les autres restent nues.
+    //
+    // La course classe déjà les partis à chaque bloc — rien ne permettait de
+    // DÉSIGNER ce classement. Un repère horaire nomme le bloc de 4 h qui se
+    // termine là, ce qui est parfaitement défini : c'est ce qu'on sait de la
+    // journée en arrivant à cette graduation.
+    //
+    // ⚠️ SEULEMENT LES HEURES PRÉSENTES DANS `blocs`. L'axe porte toujours les
+    // six repères, mais à 9 h du matin `blocs` ne contient que [0, 4, 8] : les
+    // graduations 12h, 16h et 20h sont tracées et ne visent AUCUN relevé. On ne
+    // les rabat pas sur le bloc le plus proche — contrairement à la campagne,
+    // où les repères sont équidistants et où c'est la seule façon d'en faire
+    // quelque chose. Nommer « 12h » un classement de 08h serait pire qu'une
+    // graduation qu'on ne peut pas prendre.
+    //
+    // Quand le bloc existe, `x` et `xPoint` sont ÉGAUX : graduation et point
+    // partagent `xAtH(h)`. Les deux champs restent distincts parce que le
+    // composant ne connaît qu'un contrat, pas la vue qui le remplit.
+    xLabels: [0, 4, 8, 12, 16, 20].map((h) => {
+      const label = `${String(h).padStart(2, "0")}h`;
+      const x = Number(xAtH(h).toFixed(2));
+      return blocs.includes(h) ? { label, x, bloc: label, xPoint: x } : { label, x };
+    }),
     finish: { x: Number(xAtH(20).toFixed(2)), label: "20h", sub: "fin du jour" },
     width: CHART_W,
     height: CHART_H,
@@ -1712,7 +1754,21 @@ function buildChart(stats: Stat[], dates: SeriesDates, range: RangeKey): ChartVi
   // court jusqu'au vendredi même si la donnée s'arrête mercredi, et le lecteur
   // voit ce qu'il reste à courir. Une version antérieure dérivait les repères
   // des dates publiées, donc l'axe s'arrêtait avec elles.
-  const xLabels = reperesAxe(range, t0, but.t, xAt, axisDates);
+  const reperes = reperesAxe(range, t0, but.t, xAt, axisDates);
+  // On RABAT chaque graduation sur le relevé le plus proche. Sans ce rabattage,
+  // un clic sur la campagne ne désignerait aucune journée : ses six repères sont
+  // équidistants, pas alignés sur la donnée.
+  const abscissesJours = axisDates.map((iso) => ({ iso, x: xAtDate(iso) }));
+  const xLabels =
+    range === "today" || abscissesJours.length === 0
+      ? reperes
+      : reperes.map((l) => {
+          let proche = abscissesJours[0];
+          for (const a of abscissesJours) {
+            if (Math.abs(a.x - l.x) < Math.abs(proche.x - l.x)) proche = a;
+          }
+          return { ...l, jour: proche.iso, xPoint: Number(proche.x.toFixed(2)) };
+        });
 
   return {
     series,
@@ -1914,19 +1970,73 @@ function buildEnjeuMix(rows: IssueRow[]): EnjeuMix {
   return { enjeux, parParti };
 }
 
+/** LES ENJEUX D'UN PARTI, tels que la pochette et le trophée les annoncent.
+ *
+ *  DEUX RÈGLES, au service de la même fin : qu'une pochette porte un enjeu RÉEL
+ *  chaque fois que la fenêtre en contient un.
+ *
+ *  1. L'ENJEU DE RESTE PART EN DERNIER, quel que soit son poids. C'est la règle
+ *     que `buildEnjeuMix` applique déjà aux pads, dix lignes plus haut, et elle
+ *     manquait ici : le tri par part seule plaçait « Aucun enjeu identifié » en
+ *     tête dès qu'il dominait, et la pochette l'annonçait comme LE sujet du
+ *     parti. Ce n'est pas un sujet, c'est ce qui n'en a pas.
+ *
+ *  2. ON RECULE JUSQU'À LA DERNIÈRE JOURNÉE QUI EN PORTE UN. La vue ne lisait
+ *     que la date la plus récente — c'est-à-dire la journée EN COURS. Or un
+ *     couple parti × enjeu exige que les DEUX têtes franchissent leur seuil sur
+ *     la MÊME phrase, et les premiers blocs n'en fournissent pas le volume.
+ *     Mesuré le 2026-09-04 à 09h22 : QS 100 % de reste sur 21 minutes, PLQ 93 %
+ *     sur 271, contre 3 à 40 % sur une journée pleine. Les pochettes restaient
+ *     donc sans enjeu une bonne partie de la matinée, tous les jours.
+ *
+ *  Ce qu'on ne fait PAS : moyenner la fenêtre. La question reste « de quoi
+ *  parle-t-on à propos de ce parti », pas « de quoi a-t-on parlé ce mois-ci ».
+ *  On prend UNE journée — la plus récente qui ait quelque chose à dire — et ses
+ *  parts restent celles de cette journée-là, donc cohérentes entre elles et
+ *  sommant à 100. Reculer d'un jour se DIT (`dateSource`) ; moyenner ne se
+ *  serait pas vu.
+ *
+ *  Quand aucune journée de la fenêtre ne porte d'enjeu, on garde la plus
+ *  récente et la pochette avoue « Aucun enjeu identifié » : c'est alors vrai de
+ *  toute la fenêtre, et non un artefact de l'heure qu'il est.
+ */
 function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
   const out = new Map<PartyKey, EnjeuView[]>();
   if (rows.length === 0) return out;
 
   const dernier = rows.map(dateMontreal).sort().at(-1);
 
+  const estReste = (r: IssueRow) => libelleEnjeu(String(r.theme ?? "")) === SANS_ENJEU;
+
+  /** Le plus présent en tête, l'enjeu de reste toujours en queue. Même
+   *  comparateur que celui des pads (`buildEnjeuMix`). */
+  const parPresence = (a: IssueRow, b: IssueRow) => {
+    if (estReste(a)) return 1;
+    if (estReste(b)) return -1;
+    return Number(b.issue_share) - Number(a.issue_share);
+  };
+
   for (const key of PARTY_KEYS) {
-    const siens = rows
-      .filter(
-        (r) => String(r.party ?? "").toLowerCase() === key && dateMontreal(r) === dernier,
-      )
-      .sort((a, b) => Number(b.issue_share) - Number(a.issue_share))
-      .slice(0, 5);
+    const tous = rows.filter((r) => String(r.party ?? "").toLowerCase() === key);
+    if (tous.length === 0) continue;
+
+    const parJour = new Map<string, IssueRow[]>();
+    for (const r of tous) {
+      const jour = dateMontreal(r);
+      const deja = parJour.get(jour);
+      if (deja) deja.push(r);
+      else parJour.set(jour, [r]);
+    }
+
+    // De la plus récente à la plus ancienne : on s'arrête à la première qui
+    // porte autre chose que du reste.
+    const jours = [...parJour.keys()].sort().reverse();
+    const porteUnEnjeu = (lignes: IssueRow[]) =>
+      lignes.some((r) => !estReste(r) && Number(r.issue_share) > 0);
+    const jourRetenu = jours.find((j) => porteUnEnjeu(parJour.get(j)!)) ?? jours[0];
+    const dateSource = jourRetenu === dernier ? undefined : jourRetenu;
+
+    const siens = parJour.get(jourRetenu)!.slice().sort(parPresence).slice(0, 5);
 
     if (siens.length === 0) continue;
 
@@ -1949,6 +2059,7 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
           // guide de rédaction pour ce module.
           toneLabel: dir === "positive" ? "Favorable" : dir === "negative" ? "Défavorable" : "Neutre",
           toneDirection: dir as EnjeuView["toneDirection"],
+          ...(dateSource ? { dateSource } : {}),
         };
       }),
       ...(reste > 0.01
@@ -1958,6 +2069,7 @@ function buildEnjeux(rows: IssueRow[]): Map<PartyKey, EnjeuView[]> {
             toneLabel: "Neutre",
             toneDirection: "neutral" as const,
             reste: true,
+            ...(dateSource ? { dateSource } : {}),
           }]
         : []),
       ],
@@ -2182,6 +2294,7 @@ function libellePeriode(range: RangeKey, joursIso: string[]): string {
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
   buildLookup,
+  buildEnjeux,
   computeStats,
   sparkPoints,
   samplePoints,
@@ -2241,11 +2354,25 @@ const DATA_DIR = SUR_FIXTURES
   : path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(
-  /** Édition passée (#434) : jour de publication de l'édition affichée. Ce
-   *  module est publié une fois par JOUR — son archive est donc exacte au jour,
-   *  pas au bloc de 4 h. Naviguer de l'édition de 8 h à celle de midi le laisse
-   *  identique, et c'est la vérité : rien n'a été republié entre les deux. */
+  /** Édition passée (#434) : JOUR de publication de l'édition affichée.
+   *
+   *  Il borne les tables qui n'ont qu'une résolution au jour — la quotidienne
+   *  en tête, qui ne publie qu'UNE ligne par parti et par journée. Là, il n'y a
+   *  rien de plus fin à retrouver, et une archive exacte au jour est exacte
+   *  tout court. */
   asOfIso?: string,
+  /** Le même repère, mais à l'INSTANT : la publication de l'édition affichée
+   *  (`ShareEdition.pubInstantIso`), en UTC.
+   *
+   *  ⚠️ IL N'EST PAS REDONDANT AVEC `asOfIso`, il le complète là où celui-ci
+   *  est trop grossier. La table intra-journée publie SIX relevés par jour ;
+   *  bornée au jour, elle les livrait tous les six à toutes les éditions —
+   *  l'édition du matin montrait donc les blocs du soir, publiés après elle
+   *  (#735). Un commentaire affirmait ici que « rien n'a été republié entre les
+   *  deux » : c'était vrai de la table quotidienne, faux de celle-ci.
+   *
+   *  Absent = édition courante, aucune borne. */
+  asOfInstantIso?: string,
 ): Promise<PartiesData | null> {
   try {
     // SUR FIXTURES, ON NE PASSE JAMAIS PAR L'API : les fausses données vivent
@@ -2284,6 +2411,22 @@ export async function loadParties(
 
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
+
+    /** LA BORNE DE L'INTRA-JOURNÉE, au relevé et non à la journée.
+     *
+     *  On filtre sur `computed_at`, l'instant où le raffineur a produit le
+     *  bloc, et NON sur une heure reconstruite à partir de `block_hour` : la
+     *  donnée porte déjà sa propre date de naissance, en UTC, et la recalculer
+     *  demanderait de convertir une heure de Montréal — avec son changement
+     *  d'heure — pour retomber sur ce qui est écrit dans la colonne d'à côté.
+     *
+     *  Vérifié sur la donnée servie : les six blocs du 2026-09-03 portent
+     *  07h31, 11h31, 15h31, 19h31, 23h31 puis 03h31 le lendemain — soit
+     *  exactement une demi-heure avant chacune des six éditions. */
+    const upToInstant = (rows: IntradayRow[]) =>
+      asOfInstantIso
+        ? rows.filter((r) => String(r.computed_at ?? "") <= asOfInstantIso)
+        : rows;
     const dayRows = upTo(JSON.parse(dayRaw) as ShadowRow[]);
 
     // Ventilation par média — facultative : le fader ne s'affiche que si les
@@ -2374,8 +2517,11 @@ export async function loadParties(
     // de la journée et le bloc courant. Elle était parsée à l'endroit même où
     // on s'en servait ; deux `JSON.parse` du même texte auraient fini par
     // diverger sur le filtre `upTo`.
+    // Les DEUX bornes, dans cet ordre : la journée écarte le gros, l'instant
+    // tranche à l'intérieur de la dernière. Garder `upTo` n'est pas décoratif —
+    // un bloc sans `computed_at` traverserait `upToInstant` sans être vu.
     const intradayRows = intradayRaw
-      ? (upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
+      ? upToInstant(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
       : null;
 
     // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
