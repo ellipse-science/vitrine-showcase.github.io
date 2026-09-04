@@ -532,6 +532,48 @@ function smoothPath(pts: { x: number; y: number }[]): string {
   return d;
 }
 
+/* Géométrie de la gouttière d'étiquettes du graphique de classement. Au niveau du
+ * module, et non dans le composant, pour que le test puisse vérifier que les douze
+ * libellés canoniques y tiennent — c'est là qu'ils débordaient. */
+const ETIQ_PAD_R = 348;   // gouttière réservée à droite du tracé
+const ETIQ_DEPART = 32;   // du centre de la pastille de rang au début du texte
+const ETIQ_CORPS = 15;    // corps du libellé, en unités de viewBox
+const ETIQ_INTERLIGNE = 18;
+const ETIQ_MARGE = 16;    // ce qu'on laisse respirer avant le bord du viewBox
+
+/** Combien de caractères tiennent sur une ligne d'étiquette. Le compte est fiable
+ *  parce que la police est à chasse fixe : IBM Plex Mono avance de 0,6 em par
+ *  caractère, plus les 0,04 em d'interlettrage posés au rendu — soit 9,61 unités
+ *  de viewBox par caractère, mesuré dans le navigateur. */
+export const ETIQ_MAX_CAR = Math.floor(
+  (ETIQ_PAD_R - ETIQ_DEPART - ETIQ_MARGE) / (ETIQ_CORPS * 0.64),
+);
+
+/** Le libellé d'un enjeu, rangé sur au plus deux lignes de `maxCar` caractères.
+ *
+ *  Le SVG ne replie pas le texte et ne le tronque pas : une étiquette trop longue
+ *  sort du viewBox et se fait couper net par le bord, en plein mot
+ *  (« DROITS, LIBERTÉS, MINOR »). On coupe donc nous-mêmes, à l'espace, au point
+ *  qui équilibre le mieux les deux lignes. Les libellés sont canoniques et
+ *  partagés hors du projet (lib/enjeux.ts) : on ne les abrège pas, on les replie.
+ *
+ *  Dernier filet, au caractère : un libellé sans espace — une clé technique tombée
+ *  du repli de `ISSUE_LABELS_SHORT` — est coupé avec des points de suspension
+ *  plutôt que laissé sortir du cadre. */
+export function plierEtiquette(texte: string, maxCar: number): string[] {
+  if (texte.length <= maxCar) return [texte];
+  const mots = texte.split(" ");
+  let coupe = 0;
+  let pire = Infinity;
+  for (let i = 1; i < mots.length; i++) {
+    const haut = mots.slice(0, i).join(" ").length;
+    const bas = mots.slice(i).join(" ").length;
+    if (Math.max(haut, bas) < pire) { pire = Math.max(haut, bas); coupe = i; }
+  }
+  const lignes = coupe > 0 ? [mots.slice(0, coupe).join(" "), mots.slice(coupe).join(" ")] : [texte];
+  return lignes.map((l) => (l.length > maxCar ? `${l.slice(0, maxCar - 1)}…` : l));
+}
+
 function rankLabel(rank: number): string {
   return rank === 1 ? "1er" : `${rank}e`;
 }
@@ -746,7 +788,10 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
   const VB_W = 1200;
   const VB_H = 640;
   const PAD_L = 50;
-  const PAD_R = 252;
+  // Gouttière de droite : la pastille de rang, puis le libellé. Dimensionnée sur
+  // le plus long libellé d'une seule ligne, « Terres publiques et agriculture »
+  // (31 caractères) ; les deux qui dépassent encore se replient (plierEtiquette).
+  const PAD_R = ETIQ_PAD_R;
   const PAD_T = 44;
   const PAD_B = 58;
   const plotW = VB_W - PAD_L - PAD_R;
@@ -758,6 +803,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
   const getX = (idx: number) => (n <= 1 ? PAD_L + plotW / 2 : PAD_L + idx * (plotW / (n - 1)));
   const getY = (rank: number) => plotTop + (rank - 1) * rowStep;
   const plotRight = PAD_L + plotW;
+  const ETIQ_X = plotRight + ETIQ_DEPART;
 
   const activeLine = selectedLine ?? hoveredLine;
   const isAnyActive = activeLine !== null;
@@ -814,6 +860,7 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
           const strokeWidth = isActive ? 9.5 : dimmed ? 2.5 : 6.5;
           const lastRank = points[points.length - 1]?.ranks[key] ?? 12;
           const endY = getY(lastRank);
+          const lignes = plierEtiquette(tile.issueFr, ETIQ_MAX_CAR);
           const handlers = {
             onMouseEnter: () => setHoveredLine(key),
             onMouseLeave: () => setHoveredLine(null),
@@ -849,11 +896,11 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
                 {lastRank}
               </text>
               <text
-                x={plotRight + 32}
-                y={endY + 5}
+                x={ETIQ_X}
+                y={endY + 5 - ((lignes.length - 1) * ETIQ_INTERLIGNE) / 2}
                 style={{
                   fontFamily: "IBM Plex Mono, monospace",
-                  fontSize: "15px",
+                  fontSize: `${ETIQ_CORPS}px`,
                   fontWeight: isActive ? 700 : 500,
                   letterSpacing: "0.04em",
                   fill: isActive ? "var(--ink)" : "var(--ink-soft)",
@@ -862,7 +909,9 @@ function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]
                   transition: "fill 0.18s ease, opacity 0.18s ease, font-weight 0.18s ease"
                 }}
               >
-                {tile.issueFr}
+                {lignes.map((ligne, i) => (
+                  <tspan key={i} x={ETIQ_X} dy={i === 0 ? 0 : ETIQ_INTERLIGNE}>{ligne}</tspan>
+                ))}
               </text>
             </g>
           );

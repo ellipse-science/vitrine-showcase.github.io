@@ -1,5 +1,17 @@
 [
   {
+    "pr": 725,
+    "date": "2026-09-04T01:38:06Z",
+    "note": "L'illustration de la Une revient plus vite après chaque nouvelle édition : le site vérifie désormais toutes les dix minutes si une nouvelle Une attend son image, au lieu d'une seule fois par édition.",
+    "version": null
+  },
+  {
+    "pr": 724,
+    "date": "2026-09-04T00:13:32Z",
+    "note": "Les noms des douze enjeux s'affichent maintenant en entier dans le graphique d'évolution du classement. Les plus longs étaient coupés en plein mot sur la droite.",
+    "version": "2.43.0-beta.4"
+  },
+  {
     "pr": 721,
     "date": "2026-09-03T19:40:41Z",
     "note": "Dans le palmarès des partis, l'onglet « Semaine » cumule maintenant du samedi au vendredi sans repartir de zéro le lundi, et « Semaine » comme « Toute la campagne » se mettent à jour à chaque bloc de 4 h au lieu d'attendre le soir.",
