@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { __test__, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
+import { __test__, instantPublicationBloc, selectHeroFromRawEvents } from "@/lib/data/headlineEvents";
 import { RECENCY_WEIGHT_TOTAL } from "@/lib/data/salienceCutover";
 
 const { latestIssueRow, parseIssuesMeta, capitalizeObject, firstSeenSaillantLabel, dedupeByStoryline, buildIssueMedia } = __test__;
@@ -1292,5 +1292,27 @@ describe("selectTopUnes — règle de domination (#430 B6)", () => {
     expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 52)] as never)).toHaveLength(3);
     // 100 / 55 / 45 : la 3e tombe sous la moitié du meneur → elle sort.
     expect(selectTopUnes([st("A", 100), st("B", 55), st("C", 45)] as never)).toHaveLength(2);
+  });
+});
+
+describe("instantPublicationBloc", () => {
+  // LA RÈGLE « FIN + 1 » EN UN SEUL ENDROIT. Elle vivait en double — dans
+  // `blockAnchor` et dans la liste des éditions —, chaque copie portant un
+  // commentaire disant qu'elle devait rester identique à l'autre.
+  //
+  // Elle borne aussi le retour en arrière (#735) : une édition ne montre que ce
+  // qui existait à cet instant. Une erreur ici décalerait TOUTE l'archive d'un
+  // bloc, sans rien casser de visible.
+  it("ajoute cinq heures au début du bloc : quatre de durée, une de traitement", () => {
+    expect(instantPublicationBloc("2026-07-28T07")).toBe("2026-07-28T12:00:00.000Z");
+  });
+
+  it("franchit le jour sans se tromper de date", () => {
+    // Le bloc de 20 h UTC est publié à 1 h du matin, LE LENDEMAIN.
+    expect(instantPublicationBloc("2026-07-28T20")).toBe("2026-07-29T01:00:00.000Z");
+  });
+
+  it("renvoie null sur une clé qui n'est pas un bloc", () => {
+    expect(instantPublicationBloc("pas-une-date")).toBeNull();
   });
 });

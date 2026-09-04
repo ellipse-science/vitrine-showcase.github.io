@@ -140,6 +140,10 @@ export type ShareEdition = {
   key: string;
   /** Jour de publication de l'édition, pour les modules au jour/semaine. */
   navDateIso: string;
+  /** Instant EXACT de publication, en UTC, pour les modules qui publient
+   *  plusieurs fois par jour : le jour seul les laisserait identiques d'une
+   *  édition à l'autre (#735). */
+  pubInstantIso: string;
   /** « Édition du matin ». */
   label: string;
   /** « mardi 19 août 2026 ». */
@@ -152,7 +156,13 @@ export type ShareEdition = {
 // par l'instantané roulant, donc le nombre de cartes à générer l'est aussi.
 export async function listShareEditions(): Promise<ShareEdition[]> {
   const editions = await listEditions();
-  return editions.map(({ key, navDateIso, label, dateLabel }) => ({ key, navDateIso, label, dateLabel }));
+  return editions.map(({ key, navDateIso, pubInstantIso, label, dateLabel }) => ({
+    key,
+    navDateIso,
+    pubInstantIso,
+    label,
+    dateLabel,
+  }));
 }
 
 /** Pied de carte d'archive : « Édition du matin, mardi 19 août 2026 ». */
@@ -218,7 +228,9 @@ export async function getShareModuleContent(
   }
 
   if (slug === "partis-et-couverture") {
-    const parties = await loadParties(asOfIso);
+    // Même borne à l'instant que le module lui-même : une carte de partage
+    // datée d'une édition ne doit pas citer un bloc publié après elle (#735).
+    const parties = await loadParties(asOfIso, edition?.pubInstantIso);
     const leader = parties?.ranges.today.rows[0];
     // `indisponible` est décisif ICI en particulier : une carte de partage ne
     // peut pas porter le bandeau qui nuance le module, et elle parle au présent

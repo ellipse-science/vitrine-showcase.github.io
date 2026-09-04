@@ -2266,11 +2266,25 @@ const DATA_DIR = SUR_FIXTURES
   : path.resolve(process.cwd(), "public", "data", "refined");
 
 export async function loadParties(
-  /** Édition passée (#434) : jour de publication de l'édition affichée. Ce
-   *  module est publié une fois par JOUR — son archive est donc exacte au jour,
-   *  pas au bloc de 4 h. Naviguer de l'édition de 8 h à celle de midi le laisse
-   *  identique, et c'est la vérité : rien n'a été republié entre les deux. */
+  /** Édition passée (#434) : JOUR de publication de l'édition affichée.
+   *
+   *  Il borne les tables qui n'ont qu'une résolution au jour — la quotidienne
+   *  en tête, qui ne publie qu'UNE ligne par parti et par journée. Là, il n'y a
+   *  rien de plus fin à retrouver, et une archive exacte au jour est exacte
+   *  tout court. */
   asOfIso?: string,
+  /** Le même repère, mais à l'INSTANT : la publication de l'édition affichée
+   *  (`ShareEdition.pubInstantIso`), en UTC.
+   *
+   *  ⚠️ IL N'EST PAS REDONDANT AVEC `asOfIso`, il le complète là où celui-ci
+   *  est trop grossier. La table intra-journée publie SIX relevés par jour ;
+   *  bornée au jour, elle les livrait tous les six à toutes les éditions —
+   *  l'édition du matin montrait donc les blocs du soir, publiés après elle
+   *  (#735). Un commentaire affirmait ici que « rien n'a été republié entre les
+   *  deux » : c'était vrai de la table quotidienne, faux de celle-ci.
+   *
+   *  Absent = édition courante, aucune borne. */
+  asOfInstantIso?: string,
 ): Promise<PartiesData | null> {
   try {
     // SUR FIXTURES, ON NE PASSE JAMAIS PAR L'API : les fausses données vivent
@@ -2309,6 +2323,22 @@ export async function loadParties(
 
     const upTo = (rows: ShadowRow[]) =>
       asOfIso ? rows.filter((r) => String(r.date_utc ?? "") <= asOfIso) : rows;
+
+    /** LA BORNE DE L'INTRA-JOURNÉE, au relevé et non à la journée.
+     *
+     *  On filtre sur `computed_at`, l'instant où le raffineur a produit le
+     *  bloc, et NON sur une heure reconstruite à partir de `block_hour` : la
+     *  donnée porte déjà sa propre date de naissance, en UTC, et la recalculer
+     *  demanderait de convertir une heure de Montréal — avec son changement
+     *  d'heure — pour retomber sur ce qui est écrit dans la colonne d'à côté.
+     *
+     *  Vérifié sur la donnée servie : les six blocs du 2026-09-03 portent
+     *  07h31, 11h31, 15h31, 19h31, 23h31 puis 03h31 le lendemain — soit
+     *  exactement une demi-heure avant chacune des six éditions. */
+    const upToInstant = (rows: IntradayRow[]) =>
+      asOfInstantIso
+        ? rows.filter((r) => String(r.computed_at ?? "") <= asOfInstantIso)
+        : rows;
     const dayRows = upTo(JSON.parse(dayRaw) as ShadowRow[]);
 
     // Ventilation par média — facultative : le fader ne s'affiche que si les
@@ -2399,8 +2429,11 @@ export async function loadParties(
     // de la journée et le bloc courant. Elle était parsée à l'endroit même où
     // on s'en servait ; deux `JSON.parse` du même texte auraient fini par
     // diverger sur le filtre `upTo`.
+    // Les DEUX bornes, dans cet ordre : la journée écarte le gros, l'instant
+    // tranche à l'intérieur de la dernière. Garder `upTo` n'est pas décoratif —
+    // un bloc sans `computed_at` traverserait `upToInstant` sans être vu.
     const intradayRows = intradayRaw
-      ? (upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
+      ? upToInstant(upTo(JSON.parse(intradayRaw) as IntradayRow[]) as IntradayRow[])
       : null;
 
     // La course de la journée, sur ses blocs de 4 h. `null` quand la table n'a
