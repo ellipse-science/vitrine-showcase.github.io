@@ -198,11 +198,22 @@ describe("buildChart — la course", () => {
     }
   });
 
-  it("les graduations de la vue JOUR ne désignent aucune journée : ce sont des heures", () => {
+  it("la vue Jour DE REPLI garde des repères nus : ils viennent de l'horloge, pas des relevés", () => {
+    // ⚠️ DEUX VUES JOUR, ET UNE SEULE EST CLIQUABLE.
+    //
+    // Celle-ci est le REPLI, servi quand la table intra-journée manque
+    // (`loadParties` la lit avec un `.catch`). Ses repères sont construits sur
+    // le TEMPS — `reperesAxe`, la même mécanique qui étiquette des jours à
+    // venir sur la semaine — et non sur la donnée : aucun ne correspond à un
+    // relevé, donc aucun ne peut désigner un classement.
+    //
+    // La vraie vue Jour, `buildChartIntraday`, tire ses repères des blocs
+    // publiés et les rend cliquables. Voir le test des six repères plus bas.
     const { stats, dates } = statsOf(threeDays(), threeDays(), threeDays());
     const chart = buildChart(stats, dates, "today");
     for (const l of chart.xLabels) {
       expect(l.jour).toBeUndefined();
+      expect(l.bloc).toBeUndefined();
       expect(l.xPoint).toBeUndefined();
     }
   });
@@ -450,6 +461,55 @@ describe("les graduations des trois vues", () => {
     const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
     expect(chart.xLabels.map((l) => l.label)).toEqual(["00h", "04h", "08h", "12h", "16h", "20h"]);
     expect(chart.finish.label).toBe("20h");
+  });
+
+  it("Jour : seules les heures dont le BLOC EXISTE sont désignables", () => {
+    // LE CAS QUI COMPTE : une journée en cours, incomplète.
+    //
+    // Les blocs 7h et 11h se posent sur les graduations 12h et 16h (fin de
+    // période). L'axe porte quand même ses six repères — c'est voulu, il montre
+    // ce qu'il reste à courir — mais 00h, 04h, 08h et 20h ne visent AUCUN
+    // relevé. À 9 h du matin, c'est l'état normal de la journée.
+    //
+    // ⚠️ Ils doivent rester NUS, et surtout PAS se rabattre sur le relevé le
+    // plus proche comme le fait la campagne. Nommer « 20h » un classement de
+    // 16h serait pire qu'une graduation qu'on ne peut pas prendre.
+    const rows = [7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    const par = new Map(chart.xLabels.map((l) => [l.label, l]));
+
+    for (const h of ["12h", "16h"]) {
+      expect(par.get(h)!.bloc, `${h} doit nommer son bloc`).toBe(h);
+      // `x` et `xPoint` COÏNCIDENT ici : graduation et point partagent `xAtH`.
+      expect(par.get(h)!.xPoint).toBe(par.get(h)!.x);
+    }
+    for (const h of ["00h", "04h", "08h", "20h"]) {
+      expect(par.get(h)!.bloc, `${h} n'a pas de bloc à nommer`).toBeUndefined();
+      expect(par.get(h)!.xPoint, `${h} ne doit viser aucun relevé`).toBeUndefined();
+    }
+
+    // Une heure n'est jamais une journée, dans aucun des deux cas.
+    for (const l of chart.xLabels) expect(l.jour).toBeUndefined();
+  });
+
+  it("Jour : une graduation désignable vise un relevé RÉELLEMENT tracé", () => {
+    // Même garantie que pour les vues multi-jours : si `xPoint` ne tombait pas
+    // sur une abscisse de la polyligne, le clic ne trouverait aucun rang et
+    // l'étiquette retomberait en silence sur le dernier relevé.
+    const rows = [3, 7, 11].flatMap((h) =>
+      PARTY_KEYS.map((p, i) => bloc(p.toUpperCase(), h, 100 * h - i * 10)),
+    );
+    const chart = buildChartIntraday(rows, [...PARTY_KEYS])!;
+    const abscisses = new Set(
+      chart.series[0].polylineMin.split(" ").map((pt) => Number(pt.split(",")[0])),
+    );
+    const designables = chart.xLabels.filter((l) => l.xPoint !== undefined);
+    expect(designables.length).toBe(3);
+    for (const l of designables) {
+      expect(abscisses.has(l.xPoint!), `${l.label} vise un relevé absent`).toBe(true);
+    }
   });
 
   it("Jour : un bloc bâtard se pose sur la graduation de FIN de sa période", () => {

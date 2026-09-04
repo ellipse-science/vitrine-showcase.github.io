@@ -226,12 +226,28 @@ describe("le palmarès dépouillé — la course aux rangs", () => {
     expect(html).not.toContain("palmares-classement");
   });
 
-  it("sur la vue JOUR, les graduations ne sont PAS des boutons — une heure ne désigne aucune journée", () => {
+  it("sur la vue JOUR, une heure dont le bloc existe est un bouton qui NOMME ce bloc", () => {
     // L'onglet ouvert dans un rendu statique est « Jour », et ses repères sont
-    // horaires : 00h, 04h… Ils ne désignent aucune journée dont on pourrait
-    // lire le classement, donc ils restent du texte. Le contrat des vues
-    // multi-jours, lui, s'éprouve sur la donnée (`parties.test.ts`).
-    expect(html).not.toContain("palmares-x-bouton");
+    // horaires. Un repère horaire ne désigne aucune journée — c'est pourquoi
+    // #733 les laissait nus — mais il désigne le BLOC de 4 h qui se termine là,
+    // et la course y classe déjà les partis.
+    //
+    // Le jeu de ce rendu porte les six blocs, donc les six repères sont pris.
+    const boutons = [...html.matchAll(/class="palmares-x-bouton"[^>]*title="([^"]*)"/g)].map(
+      (m) => m[1],
+    );
+    expect(boutons.length).toBe(6);
+
+    // ⚠️ CHAQUE BOUTON NOMME SON PROPRE BLOC. Une infobulle générique passerait
+    // ce test avec un simple `toContain`, et le clic pourrait viser un tout
+    // autre relevé sans que rien ne le dise.
+    for (const h of ["00h", "04h", "08h", "12h", "16h", "20h"]) {
+      expect(boutons).toContain(`Voir le classement du bloc de ${h}.`);
+    }
+
+    // Une DATE ne se rédige pas comme une heure : aucun repère de cette vue ne
+    // doit emprunter la formule des vues multi-jours.
+    expect(html).not.toContain("Voir le classement du lundi");
   });
 
   it("une étiquette par RANGÉE, exactement — c'est ce que garantit la permutation", () => {
