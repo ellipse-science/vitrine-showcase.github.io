@@ -1919,47 +1919,6 @@ const THEME_VERS_CATEGORIE: Record<string, string> = {
   culture_nationalism: "Culture et nationalisme",
 };
 
-/** LES MÊMES CATÉGORIES, EN TREIZE SIGNES — pour le dos de la pochette.
- *
- *  Le dos est un carré de 150 px de côté au plus étroit (`.trophee-panel-grille`,
- *  `minmax(150px, 1fr)`), moins 10 px de marge de chaque côté. Une fois posés le
- *  libellé « ENJEU », les deux gouttières et le filet pointillé, il reste 77 px
- *  à la valeur : environ TREIZE SIGNES en Source Serif 12 px.
- *
- *  Or la moitié des catégories dépasse largement — « Droits, libertés,
- *  minorités et discrimination » en fait 45. Comme ni le libellé ni la valeur
- *  n'ont le droit de rétrécir (`flex: none`) et que la boîte coupe ce qui
- *  déborde (`overflow: hidden`), la phrase était tranchée en plein mot, sans
- *  même des points de suspension.
- *
- *  ⚠️ CE SONT DES NOMS D'AFFICHAGE, PAS DES RENOMMAGES. La catégorie complète
- *  reste celle de `THEME_VERS_CATEGORIE` : elle nomme les pads d'enjeux, et le
- *  dos de la pochette la porte en infobulle. On abrège là où la place manque,
- *  on ne réécrit pas la nomenclature.
- *
- *  📝 À RELIRE PAR UN HUMAIN. Abréger « Droits, libertés, minorités et
- *  discrimination » en « Droits » est un arbitrage éditorial, pas une mesure.
- */
-const ENJEU_COURT: Record<string, string> = {
-  "Économie et travail": "Économie",
-  "Droits, libertés, minorités et discrimination": "Droits",
-  "Santé et politiques sociales": "Santé",
-  "Terres publiques et agriculture": "Agriculture",
-  "Environnement et énergie": "Environnement",
-  "Affaires internationales et défense": "International",
-  "Gouvernements et gouvernance": "Gouvernance",
-  "Culture et nationalisme": "Culture",
-  [SANS_ENJEU]: "Aucun enjeu",
-};
-
-/** Le nom court d'une catégorie, ou la catégorie elle-même quand elle tient
- *  déjà — « Éducation », « Immigration », « Technologie », « Loi et crime »
- *  n'ont pas besoin d'être abrégés. Une catégorie inconnue passe telle quelle :
- *  mieux vaut un libellé long qu'un libellé faux. */
-export function libelleEnjeuCourt(libelle: string): string {
-  return ENJEU_COURT[libelle] ?? libelle;
-}
-
 /** La catégorie d'affichage d'une tête CAP, tolérante à une clé inconnue.
  *
  *  La liste des modèles est DÉCOUVERTE à l'exécution par

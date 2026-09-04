@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { __test__, libelleEnjeuCourt, SANS_ENJEU } from "@/lib/data/parties";
+import { __test__, SANS_ENJEU } from "@/lib/data/parties";
+import { ISSUE_LABELS_SHORT, libelleEnjeuCourt } from "@/lib/enjeux";
 
 const { THEME_VERS_CATEGORIE } = __test__;
 
@@ -17,10 +18,20 @@ const BUDGET = 13;
 
 describe("les libellés d'enjeux tiennent au dos de la pochette", () => {
   it("AUCUNE catégorie ne dépasse le budget une fois abrégée", () => {
-    // ⚠️ LA GARDE QUI COMPTE. Elle porte sur la table AMONT, pas sur la liste
-    // des abréviations : une catégorie ajoutée à `THEME_VERS_CATEGORIE` sans
-    // nom court se ferait couper à l'écran, en silence. Ce test la refuse.
-    for (const categorie of new Set(Object.values(THEME_VERS_CATEGORIE))) {
+    // ⚠️ LA GARDE QUI COMPTE. Elle porte sur les tables AMONT, pas sur la liste
+    // des abréviations : un libellé ajouté sans nom court se ferait couper à
+    // l'écran, en silence. Ce test le refuse.
+    //
+    // LES DEUX SOURCES, et non une seule. `ISSUE_LABELS_SHORT` (lib/enjeux) est
+    // le vocabulaire canonique, partagé avec le Digital Society Lab et
+    // l'Institut Donald J. Savoie ; `THEME_VERS_CATEGORIE` (parties) mappe les
+    // têtes CAP vers ces mêmes libellés. Les deux doivent tenir, et les couvrir
+    // ensemble signale aussi une divergence entre elles.
+    const tous = new Set([
+      ...Object.values(THEME_VERS_CATEGORIE),
+      ...Object.values(ISSUE_LABELS_SHORT),
+    ]);
+    for (const categorie of tous) {
       const court = libelleEnjeuCourt(categorie);
       expect(court.length, `« ${categorie} » → « ${court} » (${court.length} signes)`).toBeLessThanOrEqual(BUDGET);
     }
