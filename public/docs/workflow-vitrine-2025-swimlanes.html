@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 26 août 2026 (deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 4 septembre 2026 (quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1194,10 +1194,10 @@
                     <div class="info-badge">🌐 Cliquer pour ouvrir site</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:12,04:12,08:12,12:12,16:12,20:12">
+                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:12,04:12,08:12,12:12,16:12,20:12,5/10,00:45,04:45,08:45,12:45,16:45,20:45">
                     vitrine-art.R
                     <div class="node-detail">Illustration de la Une (gpt-image-1) → <code>PUT /v1/art</code> (R2) → Deploy Hooks si la Une a changé</div>
-                    <div class="node-schedule">⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40</div>
+                    <div class="node-schedule">⏰ Une&nbsp;: 00:12, 04:12, 08:12, 12:12, 16:12, 20:12, puis sondage toutes les 10 min (5/10, DEV) • Pochettes&nbsp;: 00:45, 04:45, 08:45, 12:45, 16:45, 20:45</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1542,9 +1542,9 @@
                         'representative_url - URL de l\'article ayant le plus contribué au score du parti sur ce média (aws-refiners#447) — colonne des SEULES tables _by_media_ ; permet au deck de la Vitrine de lier vers un article plutôt que de rester inerte.'
                     ],
                     details: [
-                        '📋 15 tables publiées (aws-refiners#324) : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date)',
+                        '📋 19 tables publiées : federal_ et provincial_ × day / week / month, + federal_ et provincial_ _intraday (un point par bloc de 4 h), + parties_issues_salient_shadow_day (croisement parti × enjeu), + federal_ et provincial_ _by_media_ × day / week / month (part de voix par média, une ligne par parti × média × date, aws-refiners#324), + parties_issues_salient_shadow_by_media_ × day / week / month (le croisement parti × enjeu ventilé par média : « quand CE média parle de CE parti, de quoi parle-t-il ? », aws-refiners#468), + parties_articles_4h (une ligne par parti × bloc de 4 h, portant TOUS les articles du bloc en JSON avec leur URL — le grain article derrière la part de voix agrégée, aws-refiners#472)',
                         '🪟 Fenêtre glissante conservée dans la table : 35 jours (HISTORY_DAYS)',
-                        '🌐 Consommées par la Vitrine : les <strong>8 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday, parties_issues_salient_shadow_day et _by_media_day/week/month (branchées par vitrine#585, panel québécois appliqué par aws-refiners#407) — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 7 fédérales (day/week/month, _intraday, _by_media_day/week/month) sont produites mais non lues.'
+                        '🌐 Consommées par la Vitrine : les <strong>8 tables provinciales</strong> — provincial_parties_salient_shadow_day/week/month, _intraday, parties_issues_salient_shadow_day et _by_media_day/week/month (branchées par vitrine#585, panel québécois appliqué par aws-refiners#407) — toutes lues par components/interactive/PartisCouvertureClient.tsx (vérifié dans scripts/tables.json, enabled: true). Les 7 fédérales (day/week/month, _intraday, _by_media_day/week/month) sont produites mais non lues. <strong>Les 4 tables ajoutées en septembre 2026 ne sont lues par personne pour l\'instant</strong> : parties_issues_salient_shadow_by_media_day/week/month et parties_articles_4h sont produites mais absentes de scripts/tables.json — elles ne changent rien à l\'écran tant qu\'elles n\'y sont pas ajoutées.'
                     ]
                 },
                 'parties_score_legacy': {
@@ -2076,7 +2076,7 @@
                         '• Assure la présence de tous les partis (codes fixes) même à 0',
                         '',
                         '📋 OUTPUTS:',
-                        '• 6 tables: federal/provincial × day/week/month (suffixe _salient_shadow_)',
+                        '• 19 tables au total : les 6 de base (federal/provincial × day/week/month, suffixe _salient_shadow_), + _intraday ×2, + parties_issues_salient_shadow_day, + _by_media_ ×6, + parties_issues_salient_shadow_by_media_ ×3 (#468), + parties_articles_4h (#472)',
                         '• Colonnes clés: party, weighted_mentions, weighted_tone, total_raw_score, variation_pct, computed_at, threshold',
                         '• Fenêtre glissante conservée : 35 jours',
                         '',
@@ -2441,7 +2441,9 @@
                     title: 'vitrine-art — illustration de la Une des Unes',
                     description: 'Raffineur EventBridge (aws-refiners#361, aws-infra#503). Lit la Une désignée par le site, dessine l\'illustration et la publie sur l\'API ; le Worker décide des builds.',
                     details: [
-                        '⏰ 00:40, 04:40, 08:40, 12:40, 16:40, 20:40 (heure de Montréal), ~30 min après le cron de synchro du Worker (:10), le temps que le build post-synchro soit en ligne',
+                        '⏰ Tirs uniques à 00:12, 04:12, 08:12, 12:12, 16:12, 20:12 (heure de Montréal, aws-infra#550), ~7 min après la mise en ligne du build qui suit la synchro du Worker (:56)',
+                        '🔁 Sondage toutes les 10 min à partir de :05 (fonction <code>vitrine-art-sonde</code>, même image, compte DEV seulement, aws-infra#559) : le build qui publie la nouvelle Une attend souvent de 30 à 60 min dans la file de Cloudflare Pages (un seul build à la fois pour tout le compte) et peut y être sauté au profit d\'un build plus récent ; un tir unique lit alors l\'ancienne Une et la nouvelle reste sans image jusqu\'à l\'édition suivante (mesuré le 3 septembre 2026 : 2 h 33 sans illustration). Le sondage sort aussitôt si la Une est déjà illustrée : ni OpenAI ni build.',
+                        '🎨 Mode « partis » (pochettes du module Partis et couverture) : 00:45, 04:45, 08:45, 12:45, 16:45, 20:45, un album par jour au bloc de 20h (aws-infra#526)',
                         '',
                         '1. Lit <code>vitrinedemocratique.com/data/hero-selection.json</code> (la Une n°1, désignée par le MÊME code que le rendu, issue #259)',
                         '2. Si la storyline n\'a pas changé depuis <code>GET /v1/art/latest.json</code> : rien (ni OpenAI ni build), publication idempotente',
