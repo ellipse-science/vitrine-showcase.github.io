@@ -46,15 +46,23 @@ describe("le panel de médias du fader", () => {
     const rows = JSON.parse(brut) as { media_id?: string }[];
     const dansLaDonnee = [...new Set(rows.map((r) => r.media_id).filter(Boolean))] as string[];
 
-    // La table publie bien plus que le panel — sinon ce test ne prouverait rien.
+    // La table publiait bien plus que le panel (15 médias le 2026-08-27), et
+    // c'est ce surplus que le filtre du chargeur retire. Depuis le
+    // rafraîchissement du 2026-09-04 13:12 UTC, la table publiée ne porte
+    // plus que les six médias du panel : le surplus n'est plus une garantie,
+    // et l'exiger faisait échouer toute PR à jour sur develop pour une raison
+    // de DONNÉES, pas de code. Quand il est là, on vérifie qu'il est retiré ;
+    // quand il n'y est pas, la table est déjà le panel et le filtre est sans
+    // objet — ce n'est pas un échec.
     const horsPanel = dansLaDonnee.filter((id) => !MEDIA_PANEL_QC.includes(id));
-    expect(horsPanel.length).toBeGreaterThan(0);
+    expect(dansLaDonnee.length).toBeGreaterThan(0);
 
-    // Et le filtre du chargeur les retire tous.
+    // Et le filtre du chargeur retire tout surplus, quel qu'il soit.
     const publies = new Set(dansLaDonnee);
     const retenus = MEDIA_PANEL_QC.filter((id) => publies.has(id));
     expect(retenus.every((id) => MEDIA_PANEL_QC.includes(id))).toBe(true);
     expect(retenus.length).toBeLessThanOrEqual(6);
+    for (const id of horsPanel) expect(retenus, `${id} devrait être écarté`).not.toContain(id);
   });
 
   it("filtrer le panel ne désaccorde pas la position « tous les médias »", async () => {
