@@ -115,7 +115,7 @@ jobs:
           echo "fetch_data.R : ${{ steps.lecture.outcome }}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Déposer public/data en artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: public-data-${{ inputs.datamart_env }}
           path: public/data
