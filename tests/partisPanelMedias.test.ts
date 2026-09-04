@@ -36,10 +36,15 @@ describe("le panel de médias du fader", () => {
   });
 
   it("écarte les médias hors Québec présents dans la donnée publiée", async () => {
+    // Lu sur la semaine, pas le jour : un jour donné peut n'avoir AUCUN relevé
+    // hors Québec (la salience provinciale y couvre rarement la presse
+    // canadienne ou américaine un jour précis), ce qui viderait la garde
+    // ci-dessous sans que le filtre soit en cause. La semaine agrège assez de
+    // jours pour que le corpus hors panel y apparaisse de façon fiable.
     const brut = await fs.readFile(
       path.resolve(
         process.cwd(),
-        "public/data/refined/day/provincial_parties_salient_shadow_by_media_day.json",
+        "public/data/refined/week/provincial_parties_salient_shadow_by_media_week.json",
       ),
       "utf8",
     );

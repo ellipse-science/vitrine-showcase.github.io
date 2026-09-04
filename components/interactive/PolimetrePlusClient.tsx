@@ -485,7 +485,7 @@ function PolimetreView({
           <div className="ppl-discover-wrap">
             <a
               className="ppl-discover"
-              href="https://polimeter.org/fr/legault"
+              href="https://polimeter.org/fr/legault-frechette"
               target="_blank"
               rel="noopener"
             >
