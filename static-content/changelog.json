@@ -1,5 +1,11 @@
 [
   {
+    "pr": 731,
+    "date": "2026-09-04T04:06:16Z",
+    "note": "Sans objet — correctif d'infrastructure, rien de perçu directement par un visiteur au-delà de la cohérence retrouvée du module.",
+    "version": null
+  },
+  {
     "pr": 729,
     "date": "2026-09-04T03:26:25Z",
     "note": "Sans objet — documentation technique interne, rien de perçu par un visiteur.",
