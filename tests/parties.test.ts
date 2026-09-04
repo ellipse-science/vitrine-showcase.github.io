@@ -3,6 +3,7 @@ import { __test__, PARTY_KEYS, PARTY_COLORS } from "@/lib/data/parties";
 
 const {
   buildLookup,
+  buildEnjeux,
   computeStats,
   sparkPoints,
   samplePoints,
@@ -773,6 +774,80 @@ describe("la semaine du palmarès — samedi → vendredi", () => {
     const c = computeStats(j as never)!;
     expect(buildRangeView(c.stats, "today", c.dates).rows[0].enjeuxVentiles).toBe(false);
     expect(buildRangeView(c.stats, "today", c.dates, null, new Map()).rows[0].enjeuxVentiles).toBe(true);
+  });
+});
+
+// L'enjeu de RESTE (« Aucun enjeu identifié ») compte dans les parts, mais il
+// n'est pas un sujet : il ne doit jamais être ce qu'une pochette annonce tant
+// qu'un vrai enjeu existe. Deux mécanismes le garantissent, et aucun des deux
+// n'était couvert avant le 2026-09-04 — c'est ce qui a laissé les pochettes
+// afficher « Aucun enjeu identifié » toutes les matinées.
+describe("l'enjeu de reste ne prend jamais la tête", () => {
+  const RESTE = "Aucun enjeu identifié";
+  const ir = (party: string, date: string, theme: string, share: number, minutes = 100) => ({
+    party,
+    date_utc: date,
+    date_montreal_tz: date,
+    theme,
+    issue_share: share,
+    total_raw_score: minutes,
+    weighted_tone: 0,
+  });
+
+  it("rétrograde le reste même quand il pèse le plus lourd", () => {
+    // Le cas réel du PLQ au 4 septembre : 93 % de reste, 7 % de gouvernance.
+    // Le tri par part seule mettait le reste en tête, et la pochette l'annonçait.
+    const m = buildEnjeux([
+      ir("plq", "2026-09-04", RESTE, 0.93),
+      ir("plq", "2026-09-04", "governments_governance", 0.07),
+    ] as never);
+    const vues = m.get("plq")!;
+    expect(vues[0].label).not.toBe(RESTE);
+    expect(vues.at(-1)!.label).toBe(RESTE);
+  });
+
+  it("recule d'une journée quand celle en cours n'a que du reste, et le dit", () => {
+    // Le cas réel de QS au 4 septembre : 100 % de reste sur 21 minutes.
+    const m = buildEnjeux([
+      ir("qs", "2026-09-03", "governments_governance", 0.83),
+      ir("qs", "2026-09-03", RESTE, 0.17),
+      ir("qs", "2026-09-04", RESTE, 1),
+    ] as never);
+    const vues = m.get("qs")!;
+    expect(vues[0].label).toBe("Gouvernements et gouvernance");
+    // La date du repli VOYAGE jusqu'à la vue : sans elle, la pochette
+    // afficherait un enjeu de la veille en le faisant passer pour celui du jour.
+    expect(vues[0].dateSource).toBe("2026-09-03");
+  });
+
+  it("ne marque aucun repli quand la journée en cours porte un enjeu", () => {
+    const m = buildEnjeux([
+      ir("pq", "2026-09-03", "health", 0.9),
+      ir("pq", "2026-09-04", "education", 0.42),
+      ir("pq", "2026-09-04", RESTE, 0.53),
+    ] as never);
+    const vues = m.get("pq")!;
+    expect(vues[0].label).toBe("Éducation");
+    expect(vues[0].dateSource).toBeUndefined();
+  });
+
+  it("avoue le reste quand AUCUNE journée de la fenêtre ne porte d'enjeu", () => {
+    // Là, « Aucun enjeu identifié » est la vérité sur toute la fenêtre et non un
+    // artefact de l'heure : on garde la journée la plus récente, sans repli.
+    const m = buildEnjeux([
+      ir("caq", "2026-09-03", RESTE, 1),
+      ir("caq", "2026-09-04", RESTE, 1),
+    ] as never);
+    const vues = m.get("caq")!;
+    expect(vues[0].label).toBe(RESTE);
+    expect(vues[0].dateSource).toBeUndefined();
+  });
+
+  it("laisse un parti jamais détecté sans aucune entrée", () => {
+    // Le PCQ n'a pas de tête de classification (aws-refiners#248) : il n'a
+    // aucune ligne, et il ne faut surtout pas lui en inventer une.
+    const m = buildEnjeux([ir("pq", "2026-09-04", "education", 1)] as never);
+    expect(m.has("pcq")).toBe(false);
   });
 });
 

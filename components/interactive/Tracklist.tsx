@@ -36,14 +36,19 @@ export function JaugeTon({ pct, title }: { pct: number; title?: string }) {
 export function LigneTracklist({
   categorie,
   chiffre,
+  title,
   children,
 }: {
   categorie: string;
   chiffre?: boolean;
+  /** Précision de survol, quand la métrique a besoin d'être qualifiée sans
+   *  qu'on puisse l'écrire en toutes lettres — cinq cartes de front n'en ont
+   *  pas la place. `undefined` ne pose aucun attribut. */
+  title?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="tracklist-ligne">
+    <div className="tracklist-ligne" title={title}>
       <dt className="tracklist-cat">{categorie}</dt>
       <span className="tracklist-points" aria-hidden="true" />
       <dd className={`tracklist-metrique${chiffre ? " tracklist-metrique--chiffre" : ""}`}>{children}</dd>

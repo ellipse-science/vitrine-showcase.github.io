@@ -94,6 +94,8 @@ type EntreeTrophee = {
   ecart: number | null;
   partPct: number;
   enjeu: string;
+  /** Renseigné seulement quand l'enjeu ne vient pas de la journée affichée. */
+  enjeuTitle?: string;
   tonMot: string;
   tonPct: number;
   tonTitle?: string;
@@ -430,7 +432,11 @@ export function PartisCouvertureClient({
   const entreesTrophee: EntreeTrophee[] = classementTrophee
     .slice(0, 5)
     .map((row) => {
-      const enjeu = row.enjeux.find((e) => !e.reste) ?? null;
+      // `SANS_ENJEU` est écarté ICI AUSSI — `pochetteAppariee` et
+      // `app/data/partis-selection.json` le faisaient déjà, ce site-ci l'avait
+      // oublié. « Aucun enjeu identifié » n'est pas un sujet à annoncer sur une
+      // pochette ; quand c'est tout ce qu'on a, le repli plus bas le dit.
+      const enjeu = row.enjeux.find((e) => !e.reste && e.label !== SANS_ENJEU) ?? null;
       const couverture =
         range === "today"
           ? pochetteAppariee(row, discotheque?.duJour ?? [])
@@ -446,6 +452,12 @@ export function PartisCouvertureClient({
         ecart: ecartParParti.get(row.key) ?? null,
         partPct: row.sovPct,
         enjeu: enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE),
+        // Dire d'où vient l'enjeu quand ce n'est pas la journée affichée : la
+        // journée en cours n'en portait aucun et `buildEnjeux` a reculé. Rien
+        // à dire dans le cas courant, donc pas d'infobulle.
+        enjeuTitle: enjeu?.dateSource
+          ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+          : undefined,
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
         tonTitle: row.toneTitle,
@@ -2199,6 +2211,7 @@ function TracklisteGrandeurs({
   tonMot,
   tonPct,
   tonTitle,
+  enjeuTitle,
   labelTemps = "Temps en Une",
   labelEnjeu = "Enjeu",
   labelTon = "Ton",
@@ -2206,6 +2219,9 @@ function TracklisteGrandeurs({
   temps: string;
   partPct: number;
   enjeu: string;
+  /** Infobulle de la rangée « Enjeu » — sert à dater l'enjeu quand il ne vient
+   *  pas de la journée affichée. Absente le reste du temps. */
+  enjeuTitle?: string;
   tonMot: string;
   tonPct: number;
   tonTitle?: string;
@@ -2224,7 +2240,7 @@ function TracklisteGrandeurs({
     <>
       <LigneTracklist categorie={labelTemps} chiffre>{temps}</LigneTracklist>
       <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
-      <LigneTracklist categorie={labelEnjeu}>{enjeu}</LigneTracklist>
+      <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
       <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
     </>
   );
@@ -2335,6 +2351,7 @@ function CarteTrophee({
                   labelTemps={chiffre.label}
                   partPct={entree.partPct}
                   enjeu={entree.enjeu}
+                  enjeuTitle={entree.enjeuTitle}
                   tonMot={entree.tonMot}
                   tonPct={entree.tonPct}
                   tonTitle={entree.tonTitle}
