@@ -1,5 +1,11 @@
 [
   {
+    "pr": 733,
+    "date": "2026-09-04T18:02:49Z",
+    "note": "Dans le palmarès des partis, on peut maintenant cliquer une date sous le graphique pour voir le classement de cette journée-là.",
+    "version": null
+  },
+  {
     "pr": 722,
     "date": "2026-09-04T14:06:51Z",
     "note": "Le mode « promesses de la campagne » du Polimètre+ était activé sur la mauvaise branche depuis le 2026-09-03 — corrigé, sans changement visible tant qu'aucune donnée n'est publiée.",
