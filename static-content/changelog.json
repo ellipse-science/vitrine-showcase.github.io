@@ -1,5 +1,11 @@
 [
   {
+    "pr": 738,
+    "date": "2026-09-04T18:48:32Z",
+    "note": "Dans le palmarès des partis, l'onglet du jour permet maintenant de cliquer une heure pour voir le classement à ce moment de la journée. Les heures pas encore atteintes restent inertes.",
+    "version": null
+  },
+  {
     "pr": 739,
     "date": "2026-09-04T18:47:46Z",
     "note": "Les éditions passées du site montrent maintenant l'état exact des partis au moment où elles ont été publiées. L'édition du matin ne laisse plus voir ce qui n'est arrivé que le soir.",
