@@ -1,5 +1,11 @@
 [
   {
+    "pr": 747,
+    "date": "2026-09-05T21:22:06Z",
+    "note": "Les logos des partenaires, au bas de chaque page, tiennent maintenant sur deux rangées au lieu de trois.",
+    "version": "2.43.0-beta.9"
+  },
+  {
     "pr": 746,
     "date": "2026-09-05T21:21:50Z",
     "note": "Le pied de page décrit maintenant tout ce que la Vitrine analyse : les médias, les discours de l'Assemblée nationale et l'écho des promesses électorales, au lieu des seuls médias.",
