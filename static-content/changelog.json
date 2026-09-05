@@ -1,5 +1,11 @@
 [
   {
+    "pr": 746,
+    "date": "2026-09-05T21:21:50Z",
+    "note": "Le pied de page décrit maintenant tout ce que la Vitrine analyse : les médias, les discours de l'Assemblée nationale et l'écho des promesses électorales, au lieu des seuls médias.",
+    "version": "2.43.0-beta.8"
+  },
+  {
     "pr": 745,
     "date": "2026-09-05T21:02:22Z",
     "note": "Le pied de page dit maintenant, sur chaque page, que les analyses viennent de modèles d'intelligence artificielle locaux, entraînés et validés à l'Université Laval, qu'ils peuvent se tromper, et comment nous écrire pour signaler une erreur.",
