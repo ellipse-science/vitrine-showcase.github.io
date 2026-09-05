@@ -5872,7 +5872,11 @@
   }
   .partners-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* Autant de colonnes que la largeur en admet, 190 px au moins par logo :
+       dix partenaires tiennent sur deux rangées de cinq dans le gabarit
+       (1184 px), sur quatre puis trois colonnes quand la page se resserre. Le
+       bloc mobile (≤ 768 px) garde ses deux colonnes. */
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 28px 44px;
     align-items: center;
     justify-items: start;
