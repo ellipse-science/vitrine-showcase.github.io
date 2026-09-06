@@ -5237,6 +5237,7 @@
     --tranche: 72px;
     --gradu: 46px;    /* largeur de la colonne de graduations */
     --gradu-gap: 20px;
+    position: relative;
   }
 
   /* La console et ses graduations, côte à côte. */
@@ -5325,7 +5326,10 @@
     flex-direction: column;
     gap: var(--seg-gap);
     padding: 0;
+    border: 0;
+    cursor: pointer;
   }
+  .console-vumetre:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 4px; }
   .console-vumetre .seg {
     flex: 1 1 0;
     min-height: 3px;
@@ -5574,6 +5578,44 @@
     text-transform: none;
     color: var(--ink-soft);
   }
+
+  /* LE VERSO DU VUMÈTRE — cliquer une tranche retourne l'instrument vers ses
+     sources publiées. La même boîte garde sa place dans la régie : les platines
+     ne sautent pas quand on quitte la mesure pour ses pièces justificatives. */
+  /* La face cachée reste dans le flux : elle donne au verso EXACTEMENT les
+     dimensions du vumètre, y compris ses variations aux breakpoints. */
+  .console-face--masquee { visibility: hidden; }
+  .console-sources { position: absolute; inset: 8px 22px 24px; min-height: 0; display: flex; flex-direction: column; }
+  .console-sources-retour {
+    align-self: flex-start; padding: 4px 0; border: 0; background: none; color: var(--cordovan);
+    font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .16em; text-transform: uppercase; cursor: pointer;
+  }
+  .console-sources-retour:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .console-sources-surtitle { margin: 14px 0 2px; font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-softer); }
+  .console-sources h3 { margin: 0 0 12px; font: 700 25px/1.05 'Playfair Display', Georgia, serif; color: var(--ink); }
+  .console-sources > p { margin: 10px 0 14px; font: 15px/1.45 'Source Serif 4', Georgia, serif; color: var(--ink-soft); }
+  .console-sources ul {
+    list-style: none; padding: 0 5px 0 0; margin: 0; overflow-y: auto; min-height: 0; flex: 1 1 auto;
+    display: grid; gap: 7px; counter-reset: source;
+  }
+  .console-sources li {
+    counter-increment: source; min-width: 0; border: 1px solid var(--rule); background: var(--paper);
+    box-shadow: inset 3px 0 0 var(--cordovan);
+  }
+  .console-sources a {
+    display: grid; grid-template-columns: 24px minmax(0, 1fr) 16px; align-items: center; gap: 7px;
+    padding: 9px 10px 9px 8px; color: var(--ink); font: 600 11px/1.25 'Source Serif 4', Georgia, serif;
+    text-decoration: none;
+  }
+  .console-sources a::before {
+    content: counter(source, decimal-leading-zero); color: var(--cordovan);
+    font: 600 8px 'IBM Plex Mono', monospace; letter-spacing: .06em;
+  }
+  .console-sources a span { color: var(--cordovan); font: 600 14px 'IBM Plex Mono', monospace; }
+  .console-sources a:hover { background: color-mix(in srgb, var(--cordovan) 7%, var(--paper)); }
+  .console-sources a:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+  .console-sources-vide { font-style: italic; }
+  .deck--attenue { opacity: .28; filter: grayscale(.35); transition: opacity 180ms ease, filter 180ms ease; }
 
   /* ── Le fader : choisir la source qu'on écoute ──────────────────────────
      Un curseur, pas un menu : sur une console on pousse, on ne déroule pas.
@@ -5908,6 +5950,9 @@
   .equipe-nom { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; color: var(--ink); }
   .equipe-titre { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cordovan); }
   .equipe-detail { font-family: 'Source Serif 4', Georgia, serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
+  .equipe-universite { font-family: 'Source Serif 4', Georgia, serif; font-size: 13px; color: var(--ink-soft); }
+  .equipe-nom--lien { text-decoration: none; border-bottom: 1px solid var(--rule); }
+  .equipe-nom--lien:hover, .equipe-nom--lien:focus-visible { border-bottom-color: var(--cordovan); color: var(--cordovan); }
   .apropos-fil { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cordovan); margin: 0 0 10px; }
   .metho-btn-lien { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; border: 0.5px solid var(--ink); color: var(--ink); text-decoration: none; }
   .metho-btn-lien:hover { background: var(--ink); color: var(--paper, #f4efe6); }
@@ -8672,13 +8717,24 @@
      qu'une aide, et le mot « Sourdine » se suffit. */
   .console-sourdine .saillance-info-tip { display: none; }
   .console-sourdine { font-size: 8px; letter-spacing: 0.1em; }
-  /* Sur mobile la 3e rangée retombe à 0 (le vumètre de ton est masqué, cf.
-     plus bas) ; la 4e garde de quoi poser « Sourdine » sur une ligne. Les
-     colonnes restent alignées : la hauteur change pour TOUTES. */
-  .console .console-tranche { grid-template-rows: var(--piste) auto 0 12px; row-gap: 6px; }
-  /* La 3e rangée est à 0 : le petit vumètre de ton n'y tiendrait pas et serait
-     illisible. Il quitte l'affichage tactile — le ton reste sur la pochette. */
-  .console-ton { display: none; }
+  /* LE TON REVIENT SUR LE TACTILE. La 3e rangée retombait à 0 et le petit
+     vumètre était masqué — « le ton reste sur la pochette », disait la règle.
+     Mais la pochette ne porte le ton que du parti qu'elle illustre, alors que
+     la console les montre tous les cinq : sur téléphone, comparer les tons
+     devenait impossible. Le boîtier revient, à 20 px au lieu de 26.
+
+     LA 4e RANGÉE PASSE DE 12 À 16 px, et c'est le correctif de l'empiètement.
+     « Sourdine » est un mot INSÉCABLE : il ne se replie pas, il DÉBORDE. Avec
+     `align-items: end`, ce débordement remontait dans la rangée du dessus —
+     c'est-à-dire par-dessus le nom du parti. Une rangée assez haute pour la
+     ligne, et le mot reste chez lui.
+
+     Les quatre hauteurs restent FIXES et identiques d'une colonne à l'autre :
+     chaque tranche est sa propre grille, et c'est ce qui garde les cinq pistes
+     alignées (bug constaté deux fois). */
+  .console .console-tranche { grid-template-rows: var(--piste) auto 20px 16px; row-gap: 5px; }
+  .console-ton { display: block; max-width: 46px; height: 20px; }
+  .console-sourdine { line-height: 1.1; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
   .deck-jog-media text { font-size: 5.4px; }
@@ -9584,6 +9640,26 @@
   border: 1px solid var(--ink);
   background: var(--paper-deep);
 }
+/* LE SIGLE À L'ENVERS SUR LES POCHETTES AVEC IMAGE.
+   `backface-visibility: hidden` posé sur `.flip-face` cache bien la face
+   tournée — mais PAS un descendant que le navigateur a promu dans sa propre
+   couche de composition. `.pochette-sigle` cumule les trois déclencheurs
+   habituels : `position: absolute`, un `z-index`, un `text-shadow`. Promu, il
+   se rend indépendamment de sa face et reste visible, EN MIROIR, une fois la
+   pochette retournée.
+   D'où l'asymétrie signalée : les pochettes SANS image affichent leur sigle
+   par `.trophee-repli b`, une simple cellule de grille sans aucun de ces
+   déclencheurs — elles n'ont jamais eu le défaut.
+   Le remède est de redire la règle sur les descendants eux-mêmes : un élément
+   qui porte sa propre couche doit porter sa propre consigne de dos. */
+.flip-face .pochette-art,
+.flip-face .pochette-image,
+.flip-face .pochette-sigle,
+.flip-face .pochette-formes {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 .flip-face--verso {
   display: flex;
   flex-direction: column;
@@ -9720,6 +9796,16 @@
 .deck-carre:focus-visible {
   outline: 2px solid var(--cordovan);
   outline-offset: 6px;
+}
+.deck-carre--retournable { perspective: 900px; }
+.deck-carre--retournable .flip-face--verso { border: 1px solid var(--ink); }
+.deck-carre--retournable .deck-rang { transition: opacity 120ms ease; }
+.deck-carre--dos-ouvert .deck-rang { opacity: 0; pointer-events: none; }
+.deck-verso-chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
 }
 
 .deck-face {
@@ -10137,16 +10223,16 @@
   white-space: nowrap;
   text-align: right;
 }
-/* LA DURÉE — la grandeur qu'on vient chercher en premier sur une tracklist —
-   reprend le traitement que portait `.gatefold-chiffre` : Playfair 900,
-   cordovan, tracking serré. C'est elle, et elle seule, qui mérite ce relief. */
-.tracklist-metrique--chiffre {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 900;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: var(--cordovan);
-}
+/* UNE SEULE TYPOGRAPHIE POUR LES DONNÉES, le ton excepté.
+   La durée portait un traitement à part — Playfair 900, 16 px, cordovan —
+   « la grandeur qu'on vient chercher en premier ». Sur un dos de 130 px de
+   large, trois valeurs dans trois styles différents ne se lisaient plus comme
+   une fiche technique mais comme trois éléments sans rapport, et le corps 16
+   mangeait la place dont la rangée « Enjeu » manquait déjà.
+   Temps, part et enjeu partagent donc désormais `.tracklist-metrique`. Le TON
+   garde le sien : ce n'est pas une valeur écrite mais une jauge, et son mot
+   accompagne l'aiguille (`.tracklist-ligne--ton`, plus bas).
+   Rendre son relief à la durée = une règle à remettre ici, rien d'autre. */
 /* LE TON : la métrique n'est pas un mot seul mais une jauge, qui a besoin de
    place — `align-items: center` (et non `baseline`) pour que la jauge et son
    mot s'alignent au centre l'un de l'autre plutôt qu'au pied du texte. */
@@ -10408,6 +10494,27 @@
   min-height: 84px;
   margin-left: var(--marge-y);
   margin-right: var(--marge-fin);
+}
+
+/* LE MESSAGE D'ABSENCE, POSÉ DANS LE CADRE — et non à sa place.
+ *
+ * `.course-vide` est une règle héritée, écrite quand ce message REMPLAÇAIT la
+ * figure entière : son `padding: 28px 0` faisait alors toute la hauteur du
+ * bloc. Depuis que le cadre survit à l'absence de données, ce paragraphe vit
+ * DANS la zone — il doit donc s'y centrer sans en changer la hauteur, que
+ * `min-height: 84px` fixe seule.
+ *
+ * La réserve latérale tient le texte à l'écart de la ligne d'arrivée, qui se
+ * dresse à droite du cadre et que la phrase traverserait sinon. */
+.palmares-figure--vide .palmares-zone .course-vide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12%;
+  text-wrap: balance;
 }
 .palmares-svg {
   position: absolute;
@@ -10713,18 +10820,73 @@
    retiré le 2026-08-30. La règle qui masquait la zone au terme de la course est
    partie avec lui : sans elle, un palmarès terminé n'affichait plus rien. */
 @media (max-width: 640px) {
-  /* `.palmares-rangee` empile déjà d'elle-même sous cette largeur
-     (`flex-wrap: wrap`, voir son commentaire) : knobs, graphique puis disque
-     d'or, dans l'ordre du DOM, chacun à sa propre taille — la hauteur commune
-     des trois n'a plus de raison d'être une fois qu'ils ne sont plus côte à
-     côte. Rien à forcer ici, seulement le graphique lui-même à resserrer. */
+  /* DEUX LIGNES, ET NON TROIS. `.palmares-rangee` empilait ses trois enfants
+     — knobs, graphique, disque d'or — chacun sur sa ligne : le disque se
+     retrouvait seul tout en bas, loin du classement qu'il couronne, et le
+     graphique s'étalait sur toute la largeur en restant aplati.
+     
+     Désormais : les knobs sur une première ligne, À L'HORIZONTALE ; le
+     graphique et le disque d'or côte à côte sur la seconde. Le graphique est
+     donc PLUS COURT en largeur — c'est ce qui fait la place au disque — et
+     MOINS ÉCRASÉ en hauteur, la place gagnée par la ligne supprimée lui
+     revenant. */
+  /* LE GRAPHIQUE SEUL SUR SA LIGNE, LES COMMANDES ET LE DISQUE SOUS LUI.
+     
+     L'ordre du DOM est commandes → graphique → disque. `order` le réarrange
+     sans toucher au balisage : le graphique prend toute la première ligne, et
+     les deux objets qui le COMMANDENT ou le COURONNENT se partagent la
+     seconde. Le graphique récupère ainsi toute la largeur, et le disque d'or
+     cesse d'être relégué seul en bas. */
+  .palmares-rangee { gap: 12px 16px; justify-content: center; align-items: center; }
+  .palmares-rangee > .palmares-figure { order: 1; flex: 1 0 100%; }
+  .palmares-commandes { order: 2; }
+  .trophee { order: 3; width: 96px; }
+
+  /* LES KNOBS RESTENT EN COLONNE — c'est leur forme de bureau, et elle tient
+     dans la hauteur du disque d'or posé à côté. Une disposition à plat les
+     étalait sur une ligne entière pour rien. */
+  .palmares-commandes { flex-direction: column; gap: 10px; }
+
+  /* SOUS CHAQUE CADRAN, TOUTES SES POSITIONS — plus seulement celle en cours.
+     
+     Sur bureau, `.knob-valeur-boite` empile les mots dans une seule cellule de
+     grille : les gabarits sont invisibles et ne servent qu'à FIGER la largeur,
+     seul `.knob-valeur` s'affiche. Au doigt, un cadran qui n'annonce que sa
+     position en cours n'apprend pas ce qu'il y a d'autre à choisir — il faut
+     le tourner pour le découvrir.
+     
+     Les mots se mettent donc à la file, l'actif en évidence. Le nom de la voie
+     (« Mesure », « Période ») s'efface : les mots eux-mêmes le disent, et deux
+     lignes d'étiquette sous un cadran de 34 px, c'est plus de texte que de
+     commande. */
+  .knob-valeur-boite {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 7px;
+  }
+  .knob-valeur-boite > * { grid-area: auto; }
+  .knob-valeur { display: none; }
+  .knob-valeur-gabarit {
+    visibility: visible;
+    color: var(--ink-softer);
+    opacity: 0.42;
+  }
+  .knob-valeur-gabarit.actif {
+    opacity: 1;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .knob .fader-label { display: none; }
   /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
      et la largeur de l'écran fait déjà une proportion tenable. La réserve de
-     droite se resserre avec les étiquettes. */
-  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 92px; }
-  /* Cinq rangées restent cinq rangées : c'est le seul poste qu'on ne comprime
-     pas, sous 70 px elles se touchent. */
-  .palmares-zone { min-height: 74px; }
+     droite se resserre avec les étiquettes — et davantage encore ici, le
+     graphique ayant cédé de la largeur au disque. */
+  .palmares-figure { padding: 10px 8px; --marge-y: 0px; --marge-fin: 84px; }
+  /* MOINS ÉCRASÉ : 74 px pour cinq rangées faisaient des rangées de 15, où deux
+     lignes voisines se touchent. 92 px les portent à 18, comme sur le bureau.
+     C'est la ligne rendue par le disque d'or qui paie cette hauteur. */
+  .palmares-zone { min-height: 92px; }
   .palmares-x { margin: 4px var(--marge-fin) 0 var(--marge-y); }
   .palmares-etiquette { margin-left: 6px; gap: 4px; font-size: 8px; letter-spacing: 0.08em; }
   .palmares-rang { width: 13px; height: 13px; font-size: 7.5px; }

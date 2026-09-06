@@ -16,13 +16,14 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { heurePublicationMontreal, momentMontreal } from "@/lib/dates";
 import { ELECTION_CALL_DATE } from "@/lib/election";
-import { debutDeLaSemaine, jourMoins } from "@/lib/treemapRank";
+import { JOURS_DE_LA_SEMAINE, debutDeLaSemaine, jourMoins } from "@/lib/treemapRank";
 import {
   formatDateFr,
   lastUpdatedLabel,
   publicationDateFromInterval,
   publicationHourFromInterval,
 } from "@/lib/dates";
+import { editionDesArticles } from "./fraicheur";
 import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
@@ -2040,11 +2041,12 @@ export type TreemapPeriodData = {
    *  « hier soir »… `null` quand aucune publication antérieure ne diffère.
    *  Commun aux 12 tuiles : c'est le même traitement précédent pour toutes. */
   growthSince: string | null;
-  /** « Dernière mise à jour : mercredi 2 septembre 2026, 20h » — l'heure vient du
-   *  `tag` de la passe (heure de Montréal), placé sur la grille des éditions.
-   *  La table a une fenêtre journalière mais
-   *  une cadence de SIX passes par jour : c'est la confusion entre les deux qui
-   *  a longtemps privé ce module de son heure. */
+  /** « Dernière mise à jour : samedi 5 septembre 2026, 16h » — l'ÉDITION DU PLUS
+   *  RÉCENT ARTICLE ANNOTÉ que la passe a pu compter (`editionDesArticles`),
+   *  jamais l'heure de la passe elle-même. Le 6 septembre 2026, INFER en panne,
+   *  la passe de 11h37 republiait les articles de la veille 15h52 et le module
+   *  annonçait « 12h » : l'heure avançait, pas la donnée. Sans article daté, la
+   *  date seule (celle de la ligne), sans heure. */
   lastUpdated: string;
   /** Classement des 12 enjeux dans le temps (un point par tag), pour le graphique de rang. */
   history: TreemapHistoryPoint[];
@@ -2830,7 +2832,15 @@ function buildIssueMedia(
 /** Un article québécois et ses 12 comptes de phrases, tels que publiés par
  *  `scripts/fetch_data.R` (filtre `radar_annotated_issues`). C'est la MÊME
  *  matière que celle dont le raffineur tire le pourcentage de chaque enjeu. */
-type ArticleEnjeu = { title: string; url: string | null; media_id: string; jour: string } & Record<string, number | string | null>;
+type ArticleEnjeu = {
+  title: string;
+  url: string | null;
+  media_id: string;
+  jour: string;
+  /** Dernière capture de l'article en Une, UTC ISO — absent des fichiers
+   *  produits avant le 2026-09-06 (le module retombe alors sur la date seule). */
+  fin_utc?: string | null;
+} & Record<string, number | string | null | undefined>;
 
 async function loadIssueArticles(): Promise<ArticleEnjeu[]> {
   let txt: string;
@@ -2909,6 +2919,12 @@ export async function loadTreemap(
   const articlesEnjeuxBornes = asOfIso
     ? articlesEnjeux.filter((a) => (a.jour ?? "") <= asOfIso)
     : articlesEnjeux;
+  // L'ÉDITION DE LA DONNÉE : celle du plus récent article annoté que le module
+  // a pu voir — pour une archive, bornée à l'instant de publication de son bloc.
+  const fraicheurArticles = editionDesArticles(
+    articlesEnjeuxBornes,
+    editionKey ? instantPublicationBloc(editionKey) : null,
+  );
 
   function buildPeriodData(
     rows: Array<Record<string, unknown>> | null,
@@ -2943,8 +2959,11 @@ export async function loadTreemap(
           : `le ${dateFr.charAt(0).toLowerCase()}${dateFr.slice(1)}`;
       return momentLabel(dayWord, m.heure, false);
     };
-    const lastUpdated = passe
-      ? lastUpdatedLabel(passe.date, passe.heure)
+    // L'HEURE VIENT DE LA DONNÉE, PAS DE LA PASSE (règle du 2026-09-06, cf.
+    // lastUpdatedLabel) : `passe` ne sert plus qu'à dater la comparaison
+    // « depuis 16h ». Sans article daté, la date de la ligne, sans heure.
+    const lastUpdated = fraicheurArticles
+      ? lastUpdatedLabel(fraicheurArticles.date, fraicheurArticles.heure)
       : lastUpdatedLabel(dateStr);
     // La liste vient désormais des ARTICLES qui font le score, pas des
     // événements constitués. Deux tables différentes racontaient la même chose
@@ -3057,10 +3076,25 @@ export async function loadTreemap(
   // en cours, la semaine aux sept derniers jours, la campagne au déclenchement
   // du scrutin : les mêmes fenêtres que les frises, pour que la liste sous le
   // graphique parle de ce que le graphique montre.
-  const jourDuJour = momentMontreal((latestIssueRow(dayRows ?? [])?.tag as string) ?? "")?.date ?? null;
+  // Le jour de la DONNÉE (date de la ligne), pas celui de la passe : quand la
+  // passe republie une journée figée, le tag est au lendemain et la liste du
+  // jour se viderait de ses articles.
+  const derniereLigneJour = latestIssueRow(dayRows ?? []);
+  const jourDuJour = (derniereLigneJour?.date_montreal_tz as string | undefined)
+    ?? momentMontreal((derniereLigneJour?.tag as string) ?? "")?.date
+    ?? null;
   const day = buildPeriodData(dayRows, jourDuJour);
   if (!day) return null;
-  const debutSemaine = debutDeLaSemaine(day.history);
+  // La semaine s'ancre sur le DERNIER JOUR D'ARTICLES, la donnée elle-même, et
+  // non sur le tag de la passe : pendant une panne, la passe republie une
+  // journée figée sous de nouveaux tags (06-09) et son jour avance sans que
+  // rien n'entre. Sept jours de donnée, donc — la même règle que l'heure
+  // affichée (#749). Sans article, le jour de la dernière passe.
+  const dernierJourArticles = articlesEnjeuxBornes
+    .reduce((max, a) => ((a.jour ?? "") > max ? (a.jour ?? "") : max), "");
+  const debutSemaine = dernierJourArticles
+    ? jourMoins(dernierJourArticles, JOURS_DE_LA_SEMAINE - 1)
+    : debutDeLaSemaine(day.history);
   // La semaine GLISSE : la veille, elle commençait un jour plus tôt. C'est à
   // cette fenêtre-là, celle que le module affichait hier, que la variation des
   // tuiles se compare — pas à la fenêtre d'aujourd'hui amputée de son dernier jour.

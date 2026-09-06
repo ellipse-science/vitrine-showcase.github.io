@@ -286,7 +286,7 @@ function CarteSingle({ single }: { single: Single }) {
             </span>
             <span className="flip-face flip-face--verso">
               <dl className="fonds-piste-detail">
-                <LigneTracklist categorie="Temps en Une" chiffre>
+                <LigneTracklist categorie="Temps en Une">
                   {chiffres ? formatDuree(single.minutesUne) : "n. d."}
                 </LigneTracklist>
                 <LigneTracklist categorie="Part de temps">
