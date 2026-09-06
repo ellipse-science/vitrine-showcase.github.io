@@ -1,5 +1,11 @@
 [
   {
+    "pr": 750,
+    "date": "2026-09-06T17:57:08Z",
+    "note": "La page Équipe indique l'université de chaque membre, renvoie aux sites Web personnels et classe chaque section par ordre alphabétique.",
+    "version": "2.43.0-beta.11"
+  },
+  {
     "pr": 749,
     "date": "2026-09-06T17:55:05Z",
     "note": "L'heure affichée sous les modules Enjeux saillants et Partis et couverture est désormais celle de la donnée la plus récente, jamais celle du dernier calcul : quand la collecte prend du retard, l'heure le montre.",
