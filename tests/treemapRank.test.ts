@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { debutDeLaSemaine, rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
+import { debutDeLaSemaine, jourMoins, rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
 
 const point = (date: string, rank: number, heure = "12:00") => ({
   date,
@@ -9,11 +9,7 @@ const point = (date: string, rank: number, heure = "12:00") => ({
 });
 
 describe("rankPointsForPeriod", () => {
-  // ⚠️ Ce cas rend bien SEPT points, mais ce n'est plus la règle « les sept plus
-  // récents » : c'est une coïncidence de calendrier. 2026-07-10 est un vendredi
-  // et son tag tombe à 8h à Montréal, donc AVANT la bascule de 20h : la semaine
-  // en cours a commencé le vendredi 3 à 20h, et sept points la suivent.
-  it("va du vendredi 20h au vendredi 20h, soit sept points ici", () => {
+  it("garde les sept derniers jours : le dernier point et les six jours qui le précèdent", () => {
     const history = Array.from({ length: 10 }, (_, index) => point(`2026-07-${String(index + 1).padStart(2, "0")}`, index + 1));
 
     expect(rankPointsForPeriod(history, "week").map((entry) => entry.date)).toEqual([
@@ -24,6 +20,30 @@ describe("rankPointsForPeriod", () => {
       "2026-07-08",
       "2026-07-09",
       "2026-07-10",
+    ]);
+  });
+
+  it("ne repart pas de zéro le vendredi soir : un samedi montre encore sept jours", () => {
+    // Le cas signalé par Laurence-Olivier le samedi 5 septembre : la semaine
+    // partait du vendredi 20h et la frise ne portait qu'un point. Avec la
+    // fenêtre glissante, le samedi voit le samedi précédent et tout ce qui suit.
+    const history = ["2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31",
+      "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"].map((d, i) => point(d, i + 1, "15:36"));
+
+    expect(rankPointsForPeriod(history, "week").map((entry) => entry.date)).toEqual([
+      "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05",
+    ]);
+  });
+
+  it("lit un point daté d'un jour seul (la frise bâtie depuis les articles) sans le reculer d'un jour", () => {
+    // Les frises Semaine et Campagne portent un point par jour, dont le `tag`
+    // est le jour lui-même (« 2026-09-05 »). Lu comme minuit UTC, ce jour devenait
+    // le 4 à 20h à Montréal : le premier jour de la fenêtre sortait du filtre.
+    const history = ["2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"].map((d, i) => ({ date: d, ranks: { economy_and_labour: i }, tag: d }));
+
+    expect(rankPointsForPeriod(history, "week").map((entry) => entry.date)).toEqual([
+      "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05",
     ]);
   });
 
@@ -98,32 +118,42 @@ describe("rankPointsForPeriod — période jour", () => {
   });
 });
 
-// Règle d'Adrien (30-08) : la semaine du site va du VENDREDI 20h au vendredi
-// 20h, heure de Montréal. Ni le calendrier, ni une fenêtre glissante de 7 jours.
+// La semaine du module = les SEPT derniers jours, comptés en jours de Montréal
+// depuis le dernier point. Une fenêtre glissante : ni le calendrier, ni un
+// vendredi 20h qui remet le compteur à zéro (Laurence-Olivier, 05-09).
 describe("debutDeLaSemaine", () => {
   // Le tag est écrit en heure de Montréal par le raffineur (preuve CloudWatch du
   // 2026-09-02) : il se lit tel quel, sans conversion.
   const pt = (tagMontreal: string, date: string) => ({ date, ranks: {}, tag: tagMontreal });
 
-  it("recule au vendredi précédent quand le dernier point est un dimanche", () => {
-    // 2026-08-30 est un dimanche ; le vendredi d'avant est le 28.
-    expect(debutDeLaSemaine([pt("2026-08-30 15:36", "2026-08-30")])).toBe("2026-08-28T20");
+  it("recule de six jours depuis le jour du dernier point", () => {
+    // Dimanche 30 août : la semaine va du lundi 24 au dimanche 30.
+    expect(debutDeLaSemaine([pt("2026-08-30 15:36", "2026-08-30")])).toBe("2026-08-24");
   });
 
-  it("garde le vendredi même quand le dernier point est ce vendredi APRÈS 20h", () => {
-    // Vendredi 28 août, passe de 19h36 (Montréal) → avant 20h, donc semaine d'avant.
-    expect(debutDeLaSemaine([pt("2026-08-28 19:36", "2026-08-28")])).toBe("2026-08-21T20");
-    // Vendredi 28 août, passe de 23h36 (Montréal) → après 20h, semaine en cours.
-    expect(debutDeLaSemaine([pt("2026-08-28 23:36", "2026-08-28")])).toBe("2026-08-28T20");
+  it("traverse un changement de mois", () => {
+    expect(debutDeLaSemaine([pt("2026-09-02 03:36", "2026-09-02")])).toBe("2026-08-27");
   });
 
-  it("recule d'une semaine entière quand le dernier point est un jeudi", () => {
-    // 2026-08-27 est un jeudi : la semaine en cours a commencé le vendredi 21.
-    expect(debutDeLaSemaine([pt("2026-08-27 15:36", "2026-08-27")])).toBe("2026-08-21T20");
+  it("ne dépend pas de l'heure de la passe : 19h36 ou 23h36, même jour, même début", () => {
+    expect(debutDeLaSemaine([pt("2026-08-28 19:36", "2026-08-28")])).toBe("2026-08-22");
+    expect(debutDeLaSemaine([pt("2026-08-28 23:36", "2026-08-28")])).toBe("2026-08-22");
+  });
+
+  it("accepte un point daté d'un jour seul, sans le lire comme minuit UTC", () => {
+    expect(debutDeLaSemaine([pt("2026-09-05", "2026-09-05")])).toBe("2026-08-30");
   });
 
   it("rend null sans point exploitable", () => {
     expect(debutDeLaSemaine([])).toBeNull();
+  });
+});
+
+describe("jourMoins", () => {
+  it("recule d'un nombre de jours sans regarder le fuseau de la machine", () => {
+    expect(jourMoins("2026-09-06", 6)).toBe("2026-08-31");
+    expect(jourMoins("2026-09-06", 0)).toBe("2026-09-06");
+    expect(jourMoins("2026-03-01", 1)).toBe("2026-02-28");
   });
 });
 
@@ -132,6 +162,18 @@ describe("rankPointsForPeriod — campagne", () => {
 
   it("ne garde que les points depuis le déclenchement du scrutin", () => {
     const history = ["2026-08-24", "2026-08-26", "2026-08-27", "2026-08-29", "2026-08-30"].map(pt);
+    expect(rankPointsForPeriod(history, "month").map((p) => p.date)).toEqual([
+      "2026-08-27",
+      "2026-08-29",
+      "2026-08-30",
+    ]);
+  });
+
+  it("garde le jour du déclenchement quand les points sont datés d'un jour seul", () => {
+    // La frise Campagne bâtie depuis les articles : le 27 août, lu comme minuit
+    // UTC, devenait le 26 à Montréal et tombait hors de la campagne.
+    const history = ["2026-08-24", "2026-08-26", "2026-08-27", "2026-08-29", "2026-08-30"]
+      .map((d) => ({ date: d, ranks: {}, tag: d }));
     expect(rankPointsForPeriod(history, "month").map((p) => p.date)).toEqual([
       "2026-08-27",
       "2026-08-29",

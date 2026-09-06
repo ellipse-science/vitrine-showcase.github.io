@@ -16,7 +16,7 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { heurePublicationMontreal, momentMontreal } from "@/lib/dates";
 import { ELECTION_CALL_DATE } from "@/lib/election";
-import { debutDeLaSemaine } from "@/lib/treemapRank";
+import { JOURS_DE_LA_SEMAINE, debutDeLaSemaine, jourMoins } from "@/lib/treemapRank";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -3073,8 +3073,8 @@ export async function loadTreemap(
   }
 
   // Chaque période borne SA liste d'actualités. Le jour s'arrête à la journée
-  // en cours, la semaine au vendredi 20h, la campagne au déclenchement du
-  // scrutin : les mêmes fenêtres que les frises, pour que la liste sous le
+  // en cours, la semaine aux sept derniers jours, la campagne au déclenchement
+  // du scrutin : les mêmes fenêtres que les frises, pour que la liste sous le
   // graphique parle de ce que le graphique montre.
   // Le jour de la DONNÉE (date de la ligne), pas celui de la passe : quand la
   // passe republie une journée figée, le tag est au lendemain et la liste du
@@ -3085,7 +3085,20 @@ export async function loadTreemap(
     ?? null;
   const day = buildPeriodData(dayRows, jourDuJour);
   if (!day) return null;
-  const debutSemaine = debutDeLaSemaine(day.history)?.slice(0, 10) ?? null;
+  // La semaine s'ancre sur le DERNIER JOUR D'ARTICLES, la donnée elle-même, et
+  // non sur le tag de la passe : pendant une panne, la passe republie une
+  // journée figée sous de nouveaux tags (06-09) et son jour avance sans que
+  // rien n'entre. Sept jours de donnée, donc — la même règle que l'heure
+  // affichée (#749). Sans article, le jour de la dernière passe.
+  const dernierJourArticles = articlesEnjeuxBornes
+    .reduce((max, a) => ((a.jour ?? "") > max ? (a.jour ?? "") : max), "");
+  const debutSemaine = dernierJourArticles
+    ? jourMoins(dernierJourArticles, JOURS_DE_LA_SEMAINE - 1)
+    : debutDeLaSemaine(day.history);
+  // La semaine GLISSE : la veille, elle commençait un jour plus tôt. C'est à
+  // cette fenêtre-là, celle que le module affichait hier, que la variation des
+  // tuiles se compare — pas à la fenêtre d'aujourd'hui amputée de son dernier jour.
+  const debutSemaineVeille = debutSemaine ? jourMoins(debutSemaine, 1) : null;
 
   // SEMAINE et CAMPAGNE se calculent ICI, depuis les articles, sur la vraie
   // fenêtre de chaque vue. Les tables issues_score_week/month publiées par le
@@ -3097,7 +3110,7 @@ export async function loadTreemap(
   // autrement. Le jour, lui, reste sur sa table : elle est correcte, et porte
   // la cadence 4 h (variation d'une passe à l'autre) que les articles, agrégés
   // au jour, n'ont pas.
-  const week = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutSemaine, day)
+  const week = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutSemaine, day, debutSemaineVeille)
     ?? buildPeriodData(weekRows, debutSemaine) ?? day;
   const month = buildPeriodeDepuisArticles(articlesEnjeuxBornes, ELECTION_CALL_DATE, day)
     ?? buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day;
@@ -3108,9 +3121,12 @@ export async function loadTreemap(
  *
  *  - la PART est la somme des comptes de phrases de la fenêtre, normalisée ;
  *  - la VARIATION compare la part d'aujourd'hui à celle qu'avait l'enjeu dans
- *    la même fenêtre ARRÊTÉE À HIER : « depuis hier », au sens propre. Sur une
- *    fenêtre cumulative, comparer les sommes brutes ne dirait rien (tout
- *    monte) ; comparer les parts dit si l'enjeu gagne ou perd du terrain ;
+ *    la même fenêtre ARRÊTÉE À HIER : « depuis hier », au sens propre. Une
+ *    fenêtre qui GLISSE (la semaine) commençait aussi un jour plus tôt la
+ *    veille : `depuisVeille` le dit ; une fenêtre ancrée (la campagne) le
+ *    laisse à `depuis`. Sur une fenêtre cumulative, comparer les sommes brutes
+ *    ne dirait rien (tout monte) ; comparer les parts dit si l'enjeu gagne ou
+ *    perd du terrain ;
  *  - l'HISTORIQUE porte un point par jour (le rang du jour), là où le jour en
  *    porte un par passe de 4 h ;
  *  - l'entête (date, heure) est repris de la vue du jour : c'est la même
@@ -3119,6 +3135,7 @@ function buildPeriodeDepuisArticles(
   articles: ArticleEnjeu[],
   depuis: string | null,
   day: TreemapPeriodData,
+  depuisVeille: string | null = depuis,
 ): TreemapPeriodData | null {
   if (articles.length === 0 || !depuis) return null;
   const fenetre = articles.filter((a) => (a.jour ?? "") >= depuis);
@@ -3140,7 +3157,10 @@ function buildPeriodeDepuisArticles(
   };
   const agg = sommes(fenetre);
   const part = parts(agg);
-  const veille = fenetre.filter((a) => (a.jour ?? "") < dernierJour);
+  const veille = articles.filter((a) => {
+    const jour = a.jour ?? "";
+    return jour >= (depuisVeille ?? depuis) && jour < dernierJour;
+  });
   const partVeille = veille.length > 0 ? parts(sommes(veille)) : null;
 
   const topParEnjeu = topArticlesParEnjeu(articles, depuis);
@@ -3228,5 +3248,6 @@ export const __test__ = {
   titleTokens,
   sameStory,
   buildIssueMedia,
+  buildPeriodeDepuisArticles,
   CAL_CONV,
 };
