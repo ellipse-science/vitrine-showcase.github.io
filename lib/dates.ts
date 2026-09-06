@@ -23,12 +23,12 @@ function parseIsoDate(dateStr: string): { y: number; m: number; d: number; date:
 /** L'instant d'une passe de raffineur, ramené à l'heure de Montréal.
  *
  *  POURQUOI CE HELPER EXISTE. Les tables des modules republiés six fois par
- *  jour portent l'instant de leur passe en UTC — `computed_at` pour les partis,
- *  la colonne `tag` pour les 12 enjeux (« 2026-08-27 19:37 », vérifié UTC le
- *  2026-08-30 : le tag `03:36` porte `pass: pm`, ce qui n'a de sens qu'à 23h36
- *  à Montréal). C'est l'exception admise par la règle « heure de Montréal
- *  partout » : une clé d'ordre de stepper reste en UTC. Rien n'interdit donc
- *  cet UTC-là, mais rien n'autorise à l'AFFICHER tel quel.
+ *  jour portent l'instant de leur passe sous trois formes : un instant ISO avec
+ *  fuseau (`computed_at` pour les partis, à ramener à Montréal), un `tag` sans
+ *  fuseau pour les 12 enjeux (« 2026-09-02 19:37 », qui EST l'heure de Montréal,
+ *  voir plus bas), et une date seule pour le `jour` d'un article. Une seule
+ *  lecture pour les trois, sinon chaque appelant réinvente la conversion — et
+ *  se trompe de quatre heures ou d'un jour.
  *
  *  ⚠️ L'écart n'est pas −4 h : c'est −4 l'été et −5 l'hiver. D'où `Intl` et sa
  *  base de fuseaux, jamais une soustraction.
@@ -61,10 +61,19 @@ export function momentMontreal(horodatage: string | null | undefined): { date: s
     const [, y, mo, jour, h, mi] = sansFuseau;
     const heure = Number(h);
     // Mois 13, 31 février, 25h ou 99 min : mieux vaut « — » qu'une étiquette fausse.
-    const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
-    const valide = ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
-    if (!valide || heure > 23 || Number(mi) > 59) return null;
+    if (!jourCivilValide(y, mo, jour) || heure > 23 || Number(mi) > 59) return null;
     return { date: `${y}-${mo}-${jour}`, heure };
+  }
+  // Une DATE SEULE (« 2026-09-05 ») est un JOUR de Montréal, pas un instant :
+  // c'est le `jour` des articles du module des 12 enjeux, et le point quotidien
+  // des frises Semaine et Campagne. `Date.parse` la lirait comme minuit UTC,
+  // soit la VEILLE à 20h à Montréal : chaque point reculait d'un jour (« 4 sept. »
+  // pour les articles du 5) et le premier jour de chaque fenêtre tombait hors du
+  // filtre (vu le 2026-09-05). Un jour se lit donc tel quel, à l'heure 0.
+  const dateSeule = /^(\d{4})-(\d{2})-(\d{2})$/.exec(brut);
+  if (dateSeule) {
+    const [, y, mo, jour] = dateSeule;
+    return jourCivilValide(y, mo, jour) ? { date: `${y}-${mo}-${jour}`, heure: 0 } : null;
   }
   const t = Date.parse(brut);
   if (Number.isNaN(t)) return null;
@@ -88,6 +97,13 @@ export function momentMontreal(horodatage: string | null | undefined): { date: s
   // ICU récalcitrante donnerait une heure du jour SUIVANT collée à la date du
   // jour courant. Le modulo garantit que les deux se tiennent.
   return { date, heure: heure % 24 };
+}
+
+/** Un jour du calendrier qui existe : rejette le 30 février et le mois 13, que
+ *  `Date.UTC` accepterait en débordant sur le mois suivant. */
+function jourCivilValide(y: string, mo: string, jour: string): boolean {
+  const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
+  return ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
 }
 
 /** L'heure PUBLIQUE d'une passe de raffineur, à partir de son instant.
