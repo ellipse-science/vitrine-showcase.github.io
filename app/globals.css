@@ -9618,6 +9618,33 @@
   transition: transform 480ms cubic-bezier(0.4, 0.15, 0.2, 1);
 }
 .flip-carte.retournee { transform: rotateY(180deg); }
+
+/* LA FACE CACHÉE EST RETIRÉE, PAS SEULEMENT « NON VISIBLE ».
+ *
+ * `backface-visibility: hidden` est posé sur `.flip-face` — et ça ne suffit
+ * pas. Un descendant promu dans sa propre couche de composition est composé
+ * indépendamment de son parent : le sigle du deck (`.cap-sigle`, un <text> SVG
+ * sur un capuchon en aplat) restait visible EN MIROIR une fois la carte
+ * retournée. Deux tentatives ont échoué à le corriger en étendant
+ * `backface-visibility` aux descendants — le compositeur passe outre.
+ *
+ * On cesse donc d'en dépendre : la face qui n'est pas tournée vers le lecteur
+ * est `visibility: hidden`, ce qu'aucune couche de composition ne peut
+ * contredire. La règle vaut pour les trois porteurs — deck, disque d'or,
+ * discothèque — qui partagent `.flip-carte`.
+ *
+ * LE DÉLAI DE 240 ms est la MOITIÉ de la rotation (480 ms) : la face bascule
+ * au moment où la carte est de profil, donc invisible. Sans lui, elle
+ * disparaîtrait pendant qu'on la regarde encore.
+ *
+ * Effet de bord souhaitable : la face cachée quitte aussi l'arbre
+ * d'accessibilité, au lieu que les deux y soient lues en même temps. */
+.flip-face--recto,
+.flip-face--verso {
+  transition: visibility 0s linear 240ms;
+}
+.flip-carte.retournee .flip-face--recto { visibility: hidden; }
+.flip-carte:not(.retournee) .flip-face--verso { visibility: hidden; }
 .flip-face {
   /* `position: absolute` calcule déjà `display: block` de lui-même sur un
      `<span>` — posé quand même en toutes lettres, pour ne plus jamais
@@ -10127,6 +10154,13 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  /* LA MÊME pochette sert le bac (132 px) et le volet ouvert (260 px). Les
+     bandes du sigle et de la date se dimensionnent donc en `cqw`, d'après la
+     largeur RÉELLE de la boîte — même geste que l'étiquette du disque
+     (`.trophee-repli`), plutôt que des pixels qui conviennent à une taille et
+     pas à l'autre. `inline-size` ne contient que l'axe horizontal : la hauteur
+     continue de venir de l'image. */
+  container-type: inline-size;
 }
 
 /* Les à-plats. `preserveAspectRatio: none` : ils doivent épouser le cadre, pas
@@ -10145,51 +10179,49 @@
 .forme-enjeu { fill: var(--enjeu, #463E3E); }
 .forme-ton { fill: var(--ton, #6E685F); }
 /* L'acronyme, centré, par-dessus tout — le nom du groupe sur la pochette. */
-/* LE SIGLE EN HAUT, CENTRÉ — et non plus au milieu de l'image.
+/* LE SIGLE ET LA DATE, EN BANDES — blanc sur noir, comme les cartouches d'une
+ * pochette de disque. Le sigle en haut, la date en bas.
  *
- * `.pochette-art` centre ses enfants (`place-items: center`), ce qui posait le
- * sigle en plein milieu de l'illustration, là où elle est la plus chargée. En
- * haut, il se lit comme le titre d'une pochette de disque, et il laisse voir
- * ce que l'image raconte.
+ * POURQUOI DES BANDES ET NON DU TEXTE POSÉ. Une illustration engendrée n'a
+ * aucune zone calme garantie : le même texte se détachait sur une pochette et
+ * disparaissait sur la suivante, et l'ombre portée ne rattrapait que la
+ * moitié des cas. Un aplat opaque rend la lisibilité indépendante de l'image.
  *
- * Sorti du flux : sans quoi il pousserait l'image dans la grille au lieu de se
- * poser dessus. */
-.pochette-sigle {
+ * `z-index: 2` : le deck pose déjà un voile sombre en dégradé sur ses 44 %
+ * inférieurs (`.trophee-disque .pochette-art::after`, `z-index: 1`). Les
+ * bandes passent au-dessus, sinon la date se lirait à travers un voile.
+ *
+ * Les deux se collent aux bords (`left: 0; right: 0`) : `overflow: hidden` sur
+ * `.pochette-art` les recadre proprement. */
+.pochette-sigle,
+.pochette-date {
   position: absolute;
-  top: 7%;
-  left: 6%;
-  right: 6%;
+  left: 0;
+  right: 0;
+  z-index: 2;
   text-align: center;
+  background: rgba(18, 16, 14, 0.92);
+  color: var(--paper);
+}
+.pochette-sigle {
+  top: 0;
+  padding: 4cqw 5cqw 4.5cqw;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 34px;
+  font-size: 16cqw;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
-  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.3);
 }
-
-/* LA DATE DE L'ALBUM, sous le sigle. Une pochette de la discothèque ne dit pas
- * de quel jour elle est ; le fonds les range par date, mais une image sortie
- * de son bac n'a plus de repère. Petite, en chasse fixe, à la manière d'une
- * mention légale au dos d'un disque. */
 .pochette-date {
-  position: absolute;
-  top: 7%;
-  left: 6%;
-  right: 6%;
-  margin-top: 34px;
-  text-align: center;
+  bottom: 0;
+  padding: 3.5cqw 5cqw;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
+  font-size: 6cqw;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  line-height: 1;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--paper);
-  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.45);
-  opacity: 0.85;
-}
-
-/* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
+}s, comme le verso d'un disque. Fond sombre : c'est du petit texte,
    il ne peut pas dépendre de la couleur du parti pour être lisible. */
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
