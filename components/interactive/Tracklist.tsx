@@ -30,17 +30,19 @@ export function JaugeTon({ pct, title }: { pct: number; title?: string }) {
   );
 }
 
-/** Une rangée ordinaire — une catégorie, une valeur simple. `chiffre` marque
- *  LA grandeur qu'on vient chercher en premier (la durée) : elle seule porte
- *  l'emphase Playfair/cordovan. */
+/** Une rangée ordinaire — une catégorie, une valeur simple.
+ *
+ *  TOUTES LES VALEURS PARTAGENT LA MÊME TYPOGRAPHIE. La durée portait une
+ *  emphase à part (Playfair 900, 16 px, cordovan) ; sur un dos de 130 px, trois
+ *  valeurs dans trois styles ne se lisaient plus comme une fiche technique.
+ *  Seul le TON garde la sienne (`LigneTracklistTon`) : c'est une jauge, pas un
+ *  texte. */
 export function LigneTracklist({
   categorie,
-  chiffre,
   title,
   children,
 }: {
   categorie: string;
-  chiffre?: boolean;
   /** Précision de survol, quand la métrique a besoin d'être qualifiée sans
    *  qu'on puisse l'écrire en toutes lettres — cinq cartes de front n'en ont
    *  pas la place. `undefined` ne pose aucun attribut. */
@@ -51,7 +53,7 @@ export function LigneTracklist({
     <div className="tracklist-ligne" title={title}>
       <dt className="tracklist-cat">{categorie}</dt>
       <span className="tracklist-points" aria-hidden="true" />
-      <dd className={`tracklist-metrique${chiffre ? " tracklist-metrique--chiffre" : ""}`}>{children}</dd>
+      <dd className="tracklist-metrique">{children}</dd>
     </div>
   );
 }
@@ -76,7 +78,15 @@ export function LigneTracklistTon({
       <span className="tracklist-points" aria-hidden="true" />
       <dd className="tracklist-metrique">
         <JaugeTon pct={tonPct} title={tonTitle} />
-        <span>{tonMot}</span>
+        {/* LA BARRE SEULE, ET PLUS LE MOT. « Défavorable » redisait en toutes
+            lettres ce que le repère de la jauge montre déjà, et il prenait la
+            moitié d'une rangée large de 130 px — la même contrainte qui avait
+            imposé d'abréger les enjeux.
+
+            Le mot n'est pas SUPPRIMÉ, il devient invisible à l'œil seul : sans
+            lui, un lecteur d'écran n'aurait plus qu'une barre muette, la jauge
+            étant purement graphique. */}
+        <span className="visually-hidden">{tonMot}</span>
       </dd>
     </div>
   );

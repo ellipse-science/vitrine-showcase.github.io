@@ -4,6 +4,10 @@ import { ELECTION_CALL_DATE } from "@/lib/election";
 
 export type RankPeriod = "day" | "week" | "month";
 
+/** La fenêtre « Semaine » : les SEPT derniers jours, le jour de l'édition
+ *  compris. Une fenêtre qui glisse, pas une semaine du calendrier. */
+export const JOURS_DE_LA_SEMAINE = 7;
+
 export function rankPointsForPeriod(
   history: TreemapHistoryPoint[],
   period: RankPeriod,
@@ -18,10 +22,12 @@ export function rankPointsForPeriod(
     const duJour = points.filter((point) => point.date === dernierJour);
     return duJour.length > 1 ? duJour : points.slice(-6);
   }
+  // SEMAINE : les sept derniers jours, comptés en jours de Montréal depuis le
+  // dernier point. Sans point datable, les sept derniers points, faute de mieux.
   if (period === "week") {
     const debut = debutDeLaSemaine(points);
-    if (!debut) return points.slice(-7);
-    return points.filter((point) => instantMontreal(point) >= debut);
+    if (!debut) return points.slice(-JOURS_DE_LA_SEMAINE);
+    return points.filter((point) => jourMontreal(point) >= debut);
   }
 
   // CAMPAGNE : depuis le déclenchement du scrutin, jamais depuis le début du
@@ -37,11 +43,11 @@ export function rankPointsForPeriod(
   return inMonth.length > 1 ? inMonth : points.slice(-30);
 }
 
-/** L'instant d'un point, en heure de Montréal, sous une forme comparable
- *  lexicographiquement : « 2026-08-28T23 ». Le `tag` est déjà en heure de
- *  Montréal (écrit ainsi par le raffineur) ; `momentMontreal` le lit tel quel
- *  et ramène aussi les instants ISO (`Z`, décalage) à la même horloge. */
 /** Le JOUR d'une observation, en heure de Montréal, tiré du `tag` de la passe.
+ *  Le `tag` est déjà en heure de Montréal (écrit ainsi par le raffineur) ;
+ *  `momentMontreal` le lit tel quel, ramène les instants ISO (`Z`, décalage) à
+ *  la même horloge, et prend une date seule (le point quotidien des frises
+ *  Semaine et Campagne) pour le jour qu'elle nomme.
  *
  *  ⚠️ Surtout pas `point.date` : sur les tables hebdomadaire et mensuelle, un
  *  tag couvre PLUSIEURS jours (trois pour le dernier tag du 30-08) et `date`
@@ -53,32 +59,30 @@ export function jourMontreal(point: TreemapHistoryPoint): string {
   return momentMontreal(point.tag)?.date ?? point.date;
 }
 
-function instantMontreal(point: TreemapHistoryPoint): string {
-  const m = momentMontreal(point.tag);
-  if (!m) return `${point.date}T00`;
-  return `${m.date}T${String(m.heure).padStart(2, "0")}`;
-}
-
-/** Le début de la semaine en cours : le VENDREDI 20h le plus récent, à l'heure
- *  de Montréal (règle d'Adrien, 30-08). Une semaine du site ne suit donc ni le
- *  calendrier ni une fenêtre glissante de sept jours : elle commence quand la
- *  dernière édition du vendredi est publiée.
+/** Le premier jour de la fenêtre « Semaine » : le jour du DERNIER point (en
+ *  heure de Montréal) et les six qui le précèdent — du 31 août au 6 septembre
+ *  pour une édition du 6. La semaine GLISSE : elle ne repart jamais de zéro.
+ *
+ *  Du 31-08 au 06-09, elle partait du vendredi 20h le plus récent, et le samedi
+ *  elle ne montrait qu'un jour. Laurence-Olivier, le 05-09 : « Semaine, ça
+ *  devrait être 7 derniers jours. » Adrien a tranché dans ce sens.
  *
  *  Calculé à partir du DERNIER point plutôt que de l'horloge : la frise doit
- *  décrire la période que les données couvrent, pas l'instant du build. */
+ *  décrire la période que les données couvrent, pas l'instant du build. Rend un
+ *  jour ISO (« 2026-08-31 »), comparable au `jour` des articles. */
 export function debutDeLaSemaine(points: TreemapHistoryPoint[]): string | null {
   const dernier = points.at(-1);
   if (!dernier) return null;
   const m = momentMontreal(dernier.tag);
   if (!m) return null;
-  const [y, mo, d] = m.date.split("-").map(Number);
-  const jour = new Date(Date.UTC(y, mo - 1, d));
-  // 5 = vendredi. On recule jusqu'au vendredi ; si le dernier point EST un
-  // vendredi mais avant 20h, la semaine en cours a commencé le vendredi d'avant.
-  let recul = (jour.getUTCDay() - 5 + 7) % 7;
-  if (recul === 0 && m.heure < 20) recul = 7;
-  jour.setUTCDate(jour.getUTCDate() - recul);
-  return `${jour.toISOString().slice(0, 10)}T20`;
+  return jourMoins(m.date, JOURS_DE_LA_SEMAINE - 1);
+}
+
+/** Le jour ISO situé `n` jours avant `jourIso`. Arithmétique en UTC sur une
+ *  date nue : le fuseau de la machine n'y entre pas. */
+export function jourMoins(jourIso: string, n: number): string {
+  const [y, mo, d] = jourIso.split("-").map(Number);
+  return new Date(Date.UTC(y, mo - 1, d) - n * 86_400_000).toISOString().slice(0, 10);
 }
 
 export function rankMovement(points: TreemapHistoryPoint[], issueKey: string) {
