@@ -309,6 +309,9 @@ export function PartisCouvertureClient({
   const [range, setRange] = useState<RangeKey>("today");
   const [modePalmares, setModePalmares] = useState<ModePalmares>("ecoute");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
+  /** Le verso du vumètre : une tranche ouvre les pièces publiées qui permettent
+   * de remonter de ce parti à ses articles représentatifs. */
+  const [partiSources, setPartiSources] = useState<PartyKey | null>(null);
   const [showDoom, setShowDoom] = useState(false);
   /** LE PANNEAU DU DISQUE D'OR — les cinq partis en dessous du palmarès,
    *  déplié par un clic sur le disque (voir `PalmaresTrophee`/`TropheePanel`).
@@ -356,6 +359,20 @@ export function PartisCouvertureClient({
   const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
+
+  /** Une URL représentative est publiée par média, pas par article. Le verso
+   * ne prétend donc pas montrer tous les articles : il liste exactement les
+   * sources traçables dans l'instantané affiché. */
+  const sourcesParti = partiSources
+    ? (media === TOUS_MEDIAS ? data.medias : data.medias.filter((m) => m.id === media))
+        .map((m) => ({
+          url: data.byMedia[m.id]?.ranges[range].rows.find((r) => r.key === partiSources)?.representativeUrl ?? null,
+          title: "",
+        }))
+        .filter((source): source is { title: string; url: string } => !!source.url)
+        .map((source) => ({ ...source, title: data.titresArticles?.[source.url] ?? "Article source" }))
+        .filter((source, index, toutes) => toutes.findIndex((autre) => autre.url === source.url) === index)
+    : [];
 
   /** L'ARTICLE VERS LEQUEL UN DECK MÈNE (aws-refiners#447), pour CE parti à LA
    *  POSITION COURANTE du fader.
@@ -587,11 +604,11 @@ export function PartisCouvertureClient({
           à gauche. Les decks débordent volontairement au-dessus et au-dessous de
           la console — ce sont eux les objets, la console est l'instrument qui
           les mesure. */}
-      <div className="regie">
+      <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
             articleUrl={decks[0] && lienArticle(decks[0])} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
             articleUrl={decks[2] && lienArticle(decks[2])} />
         </div>
 
@@ -604,13 +621,16 @@ export function PartisCouvertureClient({
             saillanceRang={saillanceRang}
             media={media}
             depuis={view.depuisLabel}
+            partiSources={partiSources}
+            sources={sourcesParti}
+            onSelectParti={setPartiSources}
           />
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
             articleUrl={decks[1] && lienArticle(decks[1])} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
             articleUrl={decks[3] && lienArticle(decks[3])} />
         </div>
       </div>
@@ -902,6 +922,9 @@ function Console({
   saillanceRang,
   media,
   depuis,
+  partiSources,
+  sources,
+  onSelectParti,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -917,6 +940,9 @@ function Console({
   media: string;
   /** Depuis quand la mesure court : « depuis minuit », « depuis lundi »… */
   depuis: string;
+  partiSources: PartyKey | null;
+  sources: { title: string; url: string }[];
+  onSelectParti: (parti: PartyKey | null) => void;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -963,6 +989,8 @@ function Console({
     return <p className="console-vide">Aucun parti n&apos;a été détecté sur cette période.</p>;
   }
 
+  const partiChoisi = partiSources ? rows.find((row) => row.key === partiSources) : null;
+
   return (
     <section
       className="console"
@@ -972,6 +1000,29 @@ function Console({
          de l'échelle plutôt qu'à une extrémité. */
       style={{ ["--tempo" as string]: `${saillanceRang > 0 ? 2.0 - (saillanceRang - 1) * 0.26 : 1.35}s` }}
     >
+      {partiChoisi && (
+        <div className="console-sources" aria-live="polite">
+          <button className="console-sources-retour" type="button" onClick={() => onSelectParti(null)}>
+            Retour au vumètre
+          </button>
+          <p className="console-sources-surtitle">Sources de la mesure</p>
+          <h3>{partiChoisi.fullLabel}</h3>
+          {sources.length > 0 ? (
+            <ul>
+              {sources.map((source) => (
+                <li key={source.url}>
+                  <a href={source.url} target="_blank" rel="noopener noreferrer">
+                    {source.title} <span aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="console-sources-vide">Aucune source représentative n’est publiée pour cette vue.</p>
+          )}
+        </div>
+      )}
+      <div className={`console-face${partiChoisi ? " console-face--masquee" : ""}`} aria-hidden={partiChoisi ? true : undefined}>
       {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
           l'instrument, il ne l'introduit pas. */}
       <p className="console-tete">
@@ -989,6 +1040,7 @@ function Console({
               total={tranches.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
+              onSelect={() => onSelectParti(row.key)}
             />
           ))}
         </ol>
@@ -1009,6 +1061,7 @@ function Console({
             </li>
           ))}
         </ul>
+      </div>
       </div>
 
     </section>
@@ -1049,6 +1102,7 @@ function Deck({
   indisponible,
   mediaLabel,
   articleUrl,
+  selection,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
@@ -1072,6 +1126,7 @@ function Deck({
    *  JOUR… ») — le deck reste inerte, place gardée pour le jour où l'article
    *  existe vraiment. */
   articleUrl?: string | null;
+  selection?: PartyKey | null;
 }) {
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
@@ -1187,7 +1242,7 @@ function Deck({
 
   return (
     <div
-      className="deck"
+      className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
       style={{ ["--party" as string]: row.color }}
     >
       {/* La clé ne porte QUE le parti, et non la source : changer de média ne
@@ -1258,6 +1313,7 @@ function Tranche({
   total,
   moyennePct,
   onPcqTap,
+  onSelect,
   muet,
 }: {
   row: RowView;
@@ -1265,6 +1321,7 @@ function Tranche({
   total: number;
   moyennePct: number;
   onPcqTap?: () => void;
+  onSelect: () => void;
   /** Mesure suspendue : la piste garde sa place et son échelle, mais AUCUN
    *  segment ne s'allume et rien ne s'écrit dessous. */
   muet?: boolean;
@@ -1307,7 +1364,7 @@ function Tranche({
         ["--party" as string]: row.color,
       }}
     >
-      <div className="console-vumetre" title={phrase}>
+      <button className="console-vumetre" type="button" onClick={onSelect} title={`${phrase} Voir les sources.`}>
         <span className="visually-hidden">{phrase}</span>
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
@@ -1320,7 +1377,7 @@ function Tranche({
             aria-hidden="true"
           />
         ))}
-      </div>
+      </button>
 
       {/* Le ruban n'est plus une commande : les decks se remplissent seuls, par
           rang. Un <button> annoncerait donc aux lecteurs d'écran un contrôle

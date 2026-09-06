@@ -588,6 +588,8 @@ export type PartiesData = {
    *  article n'est arrivé : seul l'article dit si la donnée a bougé. Sans table
    *  intra-journée ni article daté, la date seule. */
   lastUpdated: string;
+  /** URL d'article → titre, lu dans l'index d'articles publié au build. */
+  titresArticles?: Record<string, string>;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -2360,6 +2362,27 @@ const DATA_DIR = SUR_FIXTURES
   ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES as string)
   : path.resolve(process.cwd(), "public", "data", "refined");
 
+/** Les scores de partis publient une URL représentative, mais pas son titre.
+ * L'index local d'articles permet de rendre cette source lisible sans requête
+ * côté navigateur. */
+async function loadTitresArticles(): Promise<Record<string, string>> {
+  try {
+    const raw = await readDatasetText("public/data/refined/issues_articles.json");
+    // Objet ordinaire : cette donnée traverse la frontière Server → Client de
+    // Next.js, qui refuse les objets à prototype nul (`Object.create(null)`).
+    const titres: Record<string, string> = {};
+    for (const article of JSON.parse(raw) as { url?: unknown; title?: unknown }[]) {
+      if (typeof article.url !== "string" || typeof article.title !== "string") continue;
+      const url = article.url.trim();
+      const title = article.title.trim();
+      if (url && title) titres[url] = title;
+    }
+    return titres;
+  } catch {
+    return {};
+  }
+}
+
 export async function loadParties(
   /** Édition passée (#434) : JOUR de publication de l'édition affichée.
    *
@@ -2462,7 +2485,10 @@ export async function loadParties(
       lireMedia("month"),
     ]);
 
-    const computed = computeStats(dayRows);
+    const [computed, titresArticles] = await Promise.all([
+      Promise.resolve(computeStats(dayRows)),
+      loadTitresArticles(),
+    ]);
     if (!computed) return null;
     const { stats, dates } = computed;
 
@@ -2559,6 +2585,7 @@ export async function loadParties(
       blocCourant,
       lastDate,
       lastUpdated: edition ? lastUpdatedLabel(edition.date, edition.heure) : lastUpdatedLabel(lastDate),
+      titresArticles,
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.
@@ -2587,4 +2614,3 @@ export async function loadParties(
     throw err;
   }
 }
-
