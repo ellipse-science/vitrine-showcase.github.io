@@ -7062,6 +7062,37 @@
     border-bottom: 0.5px solid var(--cordovan);
   }
 
+  .apropos-members-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .apropos-member {
+    line-height: 1.4;
+  }
+
+  .apropos-member-name {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    display: block;
+  }
+
+  .apropos-member-role {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+    margin-top: 2px;
+  }
+
   @media (max-width: 900px) {
     .apropos-grid {
       grid-template-columns: 1fr;
