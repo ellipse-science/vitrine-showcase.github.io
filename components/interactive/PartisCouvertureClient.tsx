@@ -1199,13 +1199,6 @@ function Deck({
         </span>
       </span>
 
-      {/* LE RANG, dans le coin du vinyle. Il vit DANS le lien ou le bouton,
-          seul élément à position relative du deck : posé plus haut dans
-          l'arbre, il se serait calé sur `.deck` et non sur le carré, donc à
-          côté du disque plutôt que dessus. L'`aria-label` du conteneur
-          l'emporte de toute façon sur ce contenu, qui n'est donc jamais
-          annoncé deux fois. */}
-      <span className="deck-rang">{rang}</span>
     </>
   );
 
@@ -1217,7 +1210,7 @@ function Deck({
       <button
         key={row.key}
         type="button"
-        className="deck-carre deck-carre--retournable"
+        className={`deck-carre deck-carre--retournable${ouverte ? " deck-carre--dos-ouvert" : ""}`}
         onClick={() => setOuverte((value) => !value)}
         aria-expanded={ouverte}
         aria-label={annonceDisque}
@@ -1239,6 +1232,10 @@ function Deck({
             </dl>
           </span>
         </span>
+        {/* Le rang est un repère de la platine, pas une information imprimée
+            sur la pochette. Il reste donc hors de la carte 3D et s'efface
+            avant que le verso n'apparaisse. */}
+        <span className="deck-rang" aria-hidden="true">{rang}</span>
       </button>
     </div>
   );

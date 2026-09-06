@@ -9788,6 +9788,8 @@
 }
 .deck-carre--retournable { perspective: 900px; }
 .deck-carre--retournable .flip-face--verso { border: 1px solid var(--ink); }
+.deck-carre--retournable .deck-rang { transition: opacity 120ms ease; }
+.deck-carre--dos-ouvert .deck-rang { opacity: 0; pointer-events: none; }
 .deck-verso-chiffres {
   display: flex;
   flex-direction: column;
