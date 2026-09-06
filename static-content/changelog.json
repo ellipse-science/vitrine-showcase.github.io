@@ -1,5 +1,11 @@
 [
   {
+    "pr": 762,
+    "date": "2026-09-06T22:33:46Z",
+    "note": "Le sigle et la date d'un album se lisent dans deux bandes noires, en haut et en bas de la pochette ; et la face cachée d'une pochette retournée est désormais retirée, non plus seulement rendue invisible.",
+    "version": "2.44.0-beta.8"
+  },
+  {
     "pr": 761,
     "date": "2026-09-06T22:17:54Z",
     "note": "Le sigle d'un parti ne se lit plus à l'envers au dos de son deck, et chaque pochette porte désormais la date de l'album dont elle vient.",
