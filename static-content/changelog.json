@@ -1,5 +1,11 @@
 [
   {
+    "pr": 749,
+    "date": "2026-09-06T17:55:05Z",
+    "note": "L'heure affichée sous les modules Enjeux saillants et Partis et couverture est désormais celle de la donnée la plus récente, jamais celle du dernier calcul : quand la collecte prend du retard, l'heure le montre.",
+    "version": "2.43.0-beta.10"
+  },
+  {
     "pr": 747,
     "date": "2026-09-05T21:22:06Z",
     "note": "Les logos des partenaires, au bas de chaque page, tiennent maintenant sur deux rangées au lieu de trois.",
