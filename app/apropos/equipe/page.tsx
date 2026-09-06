@@ -49,6 +49,16 @@ const GROUPES: { titre: string; membres: Membre[] }[] = [
       { nom: "Hugo Catellier", titre: "Programmeur", photo: "hugo-catellier" },
     ],
   },
+  {
+    // Les deux ont bâti la première version du projet (fil #02___vitrine,
+    // 2-3 septembre 2026, invitation d'Adrien aux « anciens et anciennes »).
+    // Même règle de titres que pour l'équipe en place.
+    titre: "Anciens membres",
+    membres: [
+      { nom: "Jérémie Drouin", titre: "Scientifique de données", detail: "Doctorant, Université de Toronto · première version", photo: "jeremie-drouin" },
+      { nom: "Jérémy Gilbert", titre: "Analyste de données", detail: "Maîtrise · première version", photo: "jeremy-gilbert" },
+    ],
+  },
 ];
 
 /** Une photo n'est affichée que si `public/images/equipe/<slug>.jpg` existe au
