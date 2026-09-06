@@ -374,25 +374,6 @@ export function PartisCouvertureClient({
         .filter((source, index, toutes) => toutes.findIndex((autre) => autre.url === source.url) === index)
     : [];
 
-  /** L'ARTICLE VERS LEQUEL UN DECK MÈNE (aws-refiners#447), pour CE parti à LA
-   *  POSITION COURANTE du fader.
-   *
-   *  Sur un média précis, `view` EST déjà la vue de ce média : la ligne du
-   *  parti porte directement l'URL qui le concerne (`representativeUrl`,
-   *  posée par `lib/data/parties.ts`).
-   *
-   *  Sur « Tous les médias », l'agrégat n'a pas d'URL propre — il n'existe
-   *  qu'une URL PAR média. On en choisit une parmi les médias qui en ont une
-   *  pour ce parti, jamais un article qui ne le mentionne pas. */
-  const lienArticle = (row: RowView): string | null => {
-    if (media !== TOUS_MEDIAS) return row.representativeUrl ?? null;
-    const disponibles = data.medias
-      .map((m) => data.byMedia[m.id]?.ranges[range].rows.find((r) => r.key === row.key)?.representativeUrl)
-      .filter((u): u is string => !!u);
-    if (disponibles.length === 0) return null;
-    return disponibles[choisirParmi(row.key, disponibles.length)];
-  };
-
   /** LE CLASSEMENT DU TROPHÉE, jusqu'à cinq entrées, pour la vitesse choisie
    *  ET LA MESURE CHOISIE — le disque d'or suit le knob Mesure, exactement
    *  comme le graphique juste à côté : en Apprécié, il couronne le ton, pas
@@ -589,8 +570,8 @@ export function PartisCouvertureClient({
               que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
               affichée sans valeur. À égalité au plus bas, les deux y passent.
               <br />
-              <br />• <b>Cliquez un disque</b> pour lire l&apos;article qui en parle le plus,
-              quand on en connaît un.
+              <br />• <b>Cliquez un disque</b> pour retourner sa pochette et lire les détails
+              de la mesure.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -606,10 +587,8 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
-            articleUrl={decks[0] && lienArticle(decks[0])} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
-            articleUrl={decks[2] && lienArticle(decks[2])} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
 
         <div className="regie-centre">
@@ -628,10 +607,8 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
-            articleUrl={decks[1] && lienArticle(decks[1])} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources}
-            articleUrl={decks[3] && lienArticle(decks[3])} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
       </div>
 
@@ -1101,7 +1078,6 @@ function Deck({
   rang,
   indisponible,
   mediaLabel,
-  articleUrl,
   selection,
 }: {
   row: RowView | null;
@@ -1117,17 +1093,9 @@ function Deck({
    *  que le changement de disque ne se rejoue que sur un vrai changement de
    *  piste. */
   mediaLabel: string | null;
-  /** L'article vers lequel le deck mène (aws-refiners#447), déjà résolu par
-   *  l'appelant — média courant si le fader en désigne un, sinon un média
-   *  choisi parmi ceux qui en ont un pour ce parti (voir `lienArticle`).
-   *
-   *  ⚠️ `null`/absent : PAS de repli vers le panneau du disque d'or (retiré
-   *  le 2026-09-01, cf. `PartisCouvertureClient`, section « LE BAC DU
-   *  JOUR… ») — le deck reste inerte, place gardée pour le jour où l'article
-   *  existe vraiment. */
-  articleUrl?: string | null;
   selection?: PartyKey | null;
 }) {
+  const [ouverte, setOuverte] = useState(false);
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
    *  ce rang, deux partis s'étant partagé la dernière place en sourdine. */
@@ -1160,16 +1128,17 @@ function Deck({
     );
   }
 
-  /* Le survol du disque annonce ce que le clic FAIT — quand il fait
-     quelque chose. `articleUrl` seul déclenche un vrai geste : un lien qui
-     QUITTE le site pour l'article qui parle le plus de ce parti. Sans lui,
-     le deck n'a RIEN à annoncer depuis le 2026-09-01 (voir la section
-     « LE BAC DU JOUR… » plus haut dans le fichier) : plus de repli vers un
-     panneau qui ne menait nulle part avant la fin de la course. */
-  const annonceDisque = articleUrl
-    ? `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-      `Lire l'article qui en parle le plus, dans un nouvel onglet.`
-    : undefined;
+  const enjeu = row.enjeux.find((item) => !item.reste && item.label !== SANS_ENJEU);
+  const enjeuLibelle = enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE);
+  const enjeuCourt = libelleEnjeuCourt(enjeuLibelle);
+  const enjeuTitle = [
+    enjeuCourt === enjeuLibelle ? null : enjeuLibelle,
+    enjeu?.dateSource
+      ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+      : null,
+  ].filter(Boolean).join(" ") || undefined;
+  const annonceDisque = `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
+    `${ouverte ? "Refermer" : "Voir"} le détail au dos de la pochette.`;
 
   {/* Face avant — le vinyle. Il n'est plus seulement décoratif depuis que
       la ligne de nom est partie : le sigle gravé sur son capuchon est
@@ -1245,30 +1214,32 @@ function Deck({
       className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
       style={{ ["--party" as string]: row.color }}
     >
-      {/* La clé ne porte QUE le parti, et non la source : changer de média ne
-          change pas forcément qui occupe ce deck, keyer sur la source
-          rejouait le changement de disque à chaque coup de fader. */}
-      {articleUrl ? (
-        <a
-          key={row.key}
-          className="deck-carre"
-          href={articleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={annonceDisque}
-          title={annonceDisque}
-        >
-          {visuel}
-        </a>
-      ) : (
-        // INERTE, sans `aria-label` ni `title` : rien à annoncer tant qu'il
-        // n'y a pas d'article (voir `annonceDisque`), et un `<div>` plutôt
-        // qu'un `<button>` pour ne pas laisser croire au clavier ou au
-        // survol qu'un clic ferait quelque chose.
-        <div key={row.key} className="deck-carre deck-carre--inerte">
-          {visuel}
-        </div>
-      )}
+      <button
+        key={row.key}
+        type="button"
+        className="deck-carre deck-carre--retournable"
+        onClick={() => setOuverte((value) => !value)}
+        aria-expanded={ouverte}
+        aria-label={annonceDisque}
+        title={annonceDisque}
+      >
+        <span className={`flip-carte${ouverte ? " retournee" : ""}`}>
+          <span className="flip-face flip-face--recto">{visuel}</span>
+          <span className="flip-face flip-face--verso">
+            <dl className="deck-verso-chiffres">
+              <TracklisteGrandeurs
+                temps={formatDuree(row.minutesUne)}
+                partPct={row.sovPct}
+                enjeu={enjeuCourt}
+                enjeuTitle={enjeuTitle}
+                tonMot={row.toneLabel}
+                tonPct={row.tonePct}
+                tonTitle={row.toneTitle}
+              />
+            </dl>
+          </span>
+        </span>
+      </button>
     </div>
   );
 }

@@ -9786,6 +9786,14 @@
   outline: 2px solid var(--cordovan);
   outline-offset: 6px;
 }
+.deck-carre--retournable { perspective: 900px; }
+.deck-carre--retournable .flip-face--verso { border: 1px solid var(--ink); }
+.deck-verso-chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+}
 
 .deck-face {
   position: absolute;
