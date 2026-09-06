@@ -18,7 +18,7 @@ import path from "node:path";
 
 import { readDatasetText } from "@/lib/data/source";
 
-import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
+import { heurePublicationMontreal, lastUpdatedLabel, formatDateFr } from "@/lib/dates";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { samediDeLaSemaine } from "@/lib/semaine";
@@ -106,6 +106,7 @@ export function clesEnSourdine(parts: [PartyKey, number][]): Set<PartyKey> {
   const min = Math.min(...parts.map(([, v]) => v));
   return new Set(parts.filter(([, v]) => v === min).map(([k]) => k));
 }
+
 const SPARK_W = 100;
 const SPARK_H = 30;
 
@@ -580,7 +581,7 @@ export type PartiesData = {
   /** Dernier bloc de 4 h publié, ou `null` sans table intra-journée. */
   blocCourant: BlocCourant | null;
   lastDate: string; // ISO date de la dernière donnée disponible
-  /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
+  /** « Dernière mise à jour : mardi 30 juin 2026, 16h » — la dernière édition publiée. */
   lastUpdated: string;
 };
 
@@ -2461,6 +2462,25 @@ export async function loadParties(
 
     const lastDate = dayRows.reduce((max, r) => (r.date_utc > max ? r.date_utc : max), "");
 
+    /** La date ET l'heure de la dernière édition viennent du même `computed_at`.
+     *
+     * La table quotidienne est recalculée six fois par jour. Afficher seulement
+     * son jour de données masquait donc jusqu'à quatre heures de décalage. On ne
+     * montre pas l'heure brute du raffineur : une passe à 15h37 sert l'édition
+     * de 16h, comme partout ailleurs dans la vitrine. `heurePublicationMontreal`
+     * fait cette conversion, avec le changement d'heure et le passage à minuit.
+     *
+     * Les archives antérieures à `computed_at` conservent le rendu historique,
+     * date seule. */
+    const dernierCalcul = dayRows.reduce<string | null>((plusRecent, row) => {
+      const instant = String(row.computed_at ?? "");
+      const t = Date.parse(instant);
+      if (Number.isNaN(t)) return plusRecent;
+      if (!plusRecent || t > Date.parse(plusRecent)) return instant;
+      return plusRecent;
+    }, null);
+    const derniereEdition = heurePublicationMontreal(dernierCalcul);
+
     // Une vue par média, construite avec exactement le même code que la vue
     // agrégée — seules les lignes d'entrée changent.
     const medias: MediaOption[] = [];
@@ -2537,7 +2557,7 @@ export async function loadParties(
     return {
       blocCourant: dernierBloc(intradayRows),
       lastDate,
-      lastUpdated: lastUpdatedLabel(lastDate),
+      lastUpdated: lastUpdatedLabel(derniereEdition?.date ?? lastDate, derniereEdition?.heure),
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.
@@ -2566,4 +2586,3 @@ export async function loadParties(
     throw err;
   }
 }
-

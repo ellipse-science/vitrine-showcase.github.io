@@ -62,6 +62,24 @@ describe("module 3 — partis et couverture", () => {
     const { loadParties } = await import("@/lib/data/parties");
     expect((await loadParties())!.lastUpdated).toContain("28 juillet 2026");
   });
+
+  it("affiche l'heure de la dernière édition, pas l'heure brute du calcul", async () => {
+    // 19h37 UTC = 15h37 à Montréal : le bloc alors traité est publié à 16h.
+    // La date et l'heure doivent venir du même `computed_at`.
+    const horodatees = lignes.map((row) => ({
+      ...row,
+      computed_at: `${row.date_utc}T19:37:00Z`,
+    }));
+    servir({
+      "provincial_parties_salient_shadow_day": horodatees,
+      "provincial_parties_salient_shadow_week": horodatees,
+      "provincial_parties_salient_shadow_month": horodatees,
+    });
+    const { loadParties } = await import("@/lib/data/parties");
+    expect((await loadParties())!.lastUpdated).toBe(
+      "Dernière mise à jour du module : mardi 28 juillet 2026, 16h",
+    );
+  });
 });
 
 // LA COUPE AU JOUR NE SUFFIT PAS À TOUTES LES TABLES DU MODULE 3 (#735).
