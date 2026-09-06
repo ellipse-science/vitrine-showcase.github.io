@@ -10221,7 +10221,9 @@
   line-height: 1;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}s, comme le verso d'un disque. Fond sombre : c'est du petit texte,
+}
+
+/* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
    il ne peut pas dépendre de la couleur du parti pour être lisible. */
 /* Les pointillés vivent ENTRE le titre et la valeur, et non sous le titre :
    c'est ainsi que se lit une liste de pistes. */
