@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
 import type { PartiesData, RowView } from "@/lib/data/parties";
@@ -370,5 +371,32 @@ describe("le ton au dos de la pochette", () => {
       const avant = ligne.slice(0, m.index);
       expect(avant.lastIndexOf("visually-hidden")).toBeGreaterThan(avant.lastIndexOf("</span>"));
     }
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   PAS D'ENJEU SUR UNE POSITION DU FADER — et plus de rangée pour le dire.
+   Le raffineur publie bien parti × enjeu × média (aws-refiners#415), mais la
+   table n'est pas dans `scripts/tables.json` : les vues par média n'ont donc
+   aucun enjeu. On affichait « Non ventilé par média » ; la rangée disparaît.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("l'enjeu sur une vue par média", () => {
+  // La fixture de ce fichier porte `medias: []` : elle ne peut donc PAS
+  // exercer le chemin par média, et une assertion sur `enjeuxVentiles` y
+  // serait vide de sens. Ce qu'elle prouve, c'est que le libellé de repli a
+  // bien quitté le rendu — ce qui suffit à empêcher son retour.
+  it("le libellé de repli « Non ventilé par média » n'est plus rendu", () => {
+    const html = renderToStaticMarkup(
+      <PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />,
+    );
+    expect(html).not.toContain("Non ventilé");
+  });
+
+  it("la rangée d'enjeu est conditionnelle, pas inconditionnelle", () => {
+    // Garde de SOURCE : le jour où quelqu'un remet un `<LigneTracklist
+    // categorie="Enjeu">` sans garde, ce test le voit. C'est la seule façon
+    // d'éprouver ici un chemin que la fixture n'atteint pas.
+    const src = readFileSync("components/interactive/PartisCouvertureClient.tsx", "utf8");
+    expect(src).toContain("{enjeu !== null && (");
   });
 });
