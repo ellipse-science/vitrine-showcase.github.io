@@ -1,5 +1,11 @@
 [
   {
+    "pr": 753,
+    "date": "2026-09-06T19:07:43Z",
+    "note": "Les partis et les sources de leur couverture deviennent plus faciles à explorer. Un clic permet de retourner un vinyle pour lire les détails de la mesure.",
+    "version": "2.44.0-beta.0"
+  },
+  {
     "pr": 740,
     "date": "2026-09-06T18:42:25Z",
     "note": "Au dos des pochettes de partis, l'enjeu du jour ne se fait plus couper au milieu d'un mot : il s'écrit en abrégé, et le nom complet apparaît au survol. Les chiffres y adoptent une seule et même écriture.",
