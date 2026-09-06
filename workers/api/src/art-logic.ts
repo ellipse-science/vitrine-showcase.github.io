@@ -166,6 +166,33 @@ export function borneJoursPosterieurs(jour: string): string {
   return `partis/${jour}0`
 }
 
+/** Parmi les clés que le listage rapporte APRÈS la borne, la première qui est
+ *  vraiment la pochette d'une journée postérieure — ou `null`.
+ *
+ *  POURQUOI CE FILTRE EXISTE. `borneJoursPosterieurs` place le curseur au bon
+ *  endroit, mais le préfixe `partis/` ne contient pas QUE des pochettes : le
+ *  registre du fonds y vit aussi, sous `partis/fonds.json`. Or « f » vaut 0x66
+ *  quand les chiffres valent 0x30 à 0x39 : `partis/fonds.json` trie donc APRÈS
+ *  n'importe quelle clé datée, quelle que soit la date.
+ *
+ *  Conséquence, mesurée le 2026-09-06 : dès le premier album qui écrivait le
+ *  registre, le listage `limit: 1` rapportait `partis/fonds.json`, la garde y
+ *  lisait « une journée plus récente existe » et refusait TOUT téléversement de
+ *  pochette — pour toujours, quel que soit le jour. Le fonds s'est arrêté au
+ *  2026-09-02 et chaque cycle a engendré puis jeté une image pendant quatre
+ *  jours (aws-refiners#480).
+ *
+ *  On ne se fie donc plus à la position lexicographique seule : ce qui compte
+ *  comme « journée plus récente » doit d'abord ÊTRE une pochette, ce que seul
+ *  `parsePochette` peut dire. */
+export function premierePochettePosterieure(cles: string[], jour: string): string | null {
+  for (const cle of cles) {
+    const ref = parsePochette(cle)
+    if (ref && ref.jour > jour) return cle
+  }
+  return null
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
    L'ILLUSTRATION PAR HISTOIRE — `une/<clé>.<ext>` — ET LES RÉFÉRENCES.
 
