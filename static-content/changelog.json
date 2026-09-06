@@ -1,5 +1,11 @@
 [
   {
+    "pr": 761,
+    "date": "2026-09-06T22:17:54Z",
+    "note": "Le sigle d'un parti ne se lit plus à l'envers au dos de son deck, et chaque pochette porte désormais la date de l'album dont elle vient.",
+    "version": "2.44.0-beta.7"
+  },
+  {
     "pr": 760,
     "date": "2026-09-06T21:24:29Z",
     "note": "Le dos d'une pochette ne s'excuse plus de ce qu'il ne mesure pas : hors de la vue d'ensemble, la ligne d'enjeu s'efface.",
