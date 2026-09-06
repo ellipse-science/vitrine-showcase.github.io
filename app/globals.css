@@ -9655,7 +9655,20 @@
 .flip-face .pochette-art,
 .flip-face .pochette-image,
 .flip-face .pochette-sigle,
-.flip-face .pochette-formes {
+.flip-face .pochette-formes,
+/* LE DISQUE AUSSI — c'est ce qui manquait. La règle ne couvrait que les
+   éléments de POCHETTE, alors que le deck montre un VINYLE : `.deck-face`,
+   son capuchon et le sigle gravé dessus (`.cap-sigle`, un <text> SVG).
+   Chacun est promu dans sa propre couche de composition, et
+   `backface-visibility` posé sur le parent ne descend pas jusque-là : le
+   sigle du parti restait donc visible EN MIROIR une fois la carte
+   retournée. Signalé à l'usage le 2026-09-06, après que #740 eut traité les
+   pochettes sans voir que le deck n'en est pas une. */
+.flip-face .deck-face,
+.flip-face .deck-jog,
+.flip-face .deck-jog-cap,
+.flip-face .deck-jog-media,
+.flip-face .cap-sigle {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
@@ -10132,14 +10145,48 @@
 .forme-enjeu { fill: var(--enjeu, #463E3E); }
 .forme-ton { fill: var(--ton, #6E685F); }
 /* L'acronyme, centré, par-dessus tout — le nom du groupe sur la pochette. */
+/* LE SIGLE EN HAUT, CENTRÉ — et non plus au milieu de l'image.
+ *
+ * `.pochette-art` centre ses enfants (`place-items: center`), ce qui posait le
+ * sigle en plein milieu de l'illustration, là où elle est la plus chargée. En
+ * haut, il se lit comme le titre d'une pochette de disque, et il laisse voir
+ * ce que l'image raconte.
+ *
+ * Sorti du flux : sans quoi il pousserait l'image dans la grille au lieu de se
+ * poser dessus. */
 .pochette-sigle {
-  position: relative;
+  position: absolute;
+  top: 7%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 34px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 3px rgba(28, 25, 23, 0.3);
+}
+
+/* LA DATE DE L'ALBUM, sous le sigle. Une pochette de la discothèque ne dit pas
+ * de quel jour elle est ; le fonds les range par date, mais une image sortie
+ * de son bac n'a plus de repère. Petite, en chasse fixe, à la manière d'une
+ * mention légale au dos d'un disque. */
+.pochette-date {
+  position: absolute;
+  top: 7%;
+  left: 6%;
+  right: 6%;
+  margin-top: 34px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-shadow: 0 1px 3px rgba(28, 25, 23, 0.45);
+  opacity: 0.85;
 }
 
 /* Les pistes, comme le verso d'un disque. Fond sombre : c'est du petit texte,
