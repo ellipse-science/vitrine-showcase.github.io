@@ -1,5 +1,11 @@
 [
   {
+    "pr": 760,
+    "date": "2026-09-06T21:24:29Z",
+    "note": "Le dos d'une pochette ne s'excuse plus de ce qu'il ne mesure pas : hors de la vue d'ensemble, la ligne d'enjeu s'efface.",
+    "version": "2.44.0-beta.6"
+  },
+  {
     "pr": 758,
     "date": "2026-09-06T21:08:38Z",
     "note": "Dans le module des 12 enjeux, la vue « Semaine » couvre maintenant les sept derniers jours au lieu de repartir de zéro chaque vendredi soir, et les dates des graphiques d'évolution tombent sur le bon jour.",
