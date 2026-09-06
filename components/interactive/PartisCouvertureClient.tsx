@@ -1670,13 +1670,77 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   // s'afficher — le palmarès reçoit TOUJOURS l'agrégat, jamais une vue par
   // média — et il aurait été trompeur s'il l'avait pu, le fader ne commandant
   // pas ce graphique.
+  /* SANS DONNÉES, LE CADRE RESTE — seules les lignes manquent.
+   *
+   * Ce retour rendait un simple <p> À LA PLACE de la figure : le cadre, la
+   * ligne d'arrivée et les graduations disparaissaient avec les courbes, la
+   * rangée passait de 139 px à la hauteur d'un paragraphe, et les colonnes
+   * voisines (les knobs, le disque d'or) se retrouvaient en face du vide. La
+   * vue Semaine, qui n'a qu'une journée tant que la semaine commence, cassait
+   * ainsi la mise en page une fois sur deux.
+   *
+   * On garde donc la MÊME coquille — `figure` > `corps` > `zone`, la ligne
+   * d'arrivée, l'axe des abscisses — et on n'omet que ce qui dépend vraiment
+   * des données : les cinq courbes, leurs étiquettes de bout et les bandes de
+   * saisie. Le message se pose dans la zone, à la place des lignes.
+   *
+   * Les graduations restent du TEXTE, jamais des boutons : elles servent
+   * normalement à figer le classement d'une journée, et il n'y a ici aucun
+   * classement à figer. */
   if (chart.tooShort) {
+    const arriveeDeja = chart.xLabels.some(
+      (l) => Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label,
+    );
     return (
-      <p className="course-vide">
-        {chart.raison === "detail-horaire-absent"
-          ? "Le détail heure par heure n'est pas encore publié pour cette période."
-          : "Une seule journée de données. Pas encore de tendance à lire."}
-      </p>
+      <figure className="palmares-figure palmares-figure--vide">
+        <div className="palmares-corps">
+          <div className="palmares-zone">
+            <svg
+              className="palmares-svg"
+              viewBox={`0 0 ${chart.width} ${chart.height}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                className="palmares-arrivee"
+                x1={chart.finish.x}
+                x2={chart.finish.x}
+                y1="0"
+                y2={chart.height}
+              />
+            </svg>
+            <p className="course-vide">
+              {chart.raison === "detail-horaire-absent"
+                ? "Le détail heure par heure n'est pas encore publié pour cette période."
+                : "Une seule journée de données. Pas encore de tendance à lire."}
+            </p>
+          </div>
+        </div>
+        <ul className="palmares-x">
+          {chart.xLabels.map((l) => (
+            <li
+              key={l.label}
+              className={
+                Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label
+                  ? "palmares-x-arrivee"
+                  : undefined
+              }
+              style={{ left: `${(l.x / chart.width) * 100}%` }}
+            >
+              {l.label}
+            </li>
+          ))}
+          {!arriveeDeja && (
+            <li
+              className="palmares-x-arrivee"
+              aria-hidden="true"
+              style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
+            >
+              {chart.finish.label}
+            </li>
+          )}
+        </ul>
+      </figure>
     );
   }
 

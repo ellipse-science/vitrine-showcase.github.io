@@ -10484,6 +10484,27 @@
   margin-left: var(--marge-y);
   margin-right: var(--marge-fin);
 }
+
+/* LE MESSAGE D'ABSENCE, POSÉ DANS LE CADRE — et non à sa place.
+ *
+ * `.course-vide` est une règle héritée, écrite quand ce message REMPLAÇAIT la
+ * figure entière : son `padding: 28px 0` faisait alors toute la hauteur du
+ * bloc. Depuis que le cadre survit à l'absence de données, ce paragraphe vit
+ * DANS la zone — il doit donc s'y centrer sans en changer la hauteur, que
+ * `min-height: 84px` fixe seule.
+ *
+ * La réserve latérale tient le texte à l'écart de la ligne d'arrivée, qui se
+ * dresse à droite du cadre et que la phrase traverserait sinon. */
+.palmares-figure--vide .palmares-zone .course-vide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12%;
+  text-wrap: balance;
+}
 .palmares-svg {
   position: absolute;
   inset: 0;
