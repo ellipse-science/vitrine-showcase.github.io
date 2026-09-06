@@ -5237,6 +5237,7 @@
     --tranche: 72px;
     --gradu: 46px;    /* largeur de la colonne de graduations */
     --gradu-gap: 20px;
+    position: relative;
   }
 
   /* La console et ses graduations, côte à côte. */
@@ -5325,7 +5326,10 @@
     flex-direction: column;
     gap: var(--seg-gap);
     padding: 0;
+    border: 0;
+    cursor: pointer;
   }
+  .console-vumetre:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 4px; }
   .console-vumetre .seg {
     flex: 1 1 0;
     min-height: 3px;
@@ -5574,6 +5578,44 @@
     text-transform: none;
     color: var(--ink-soft);
   }
+
+  /* LE VERSO DU VUMÈTRE — cliquer une tranche retourne l'instrument vers ses
+     sources publiées. La même boîte garde sa place dans la régie : les platines
+     ne sautent pas quand on quitte la mesure pour ses pièces justificatives. */
+  /* La face cachée reste dans le flux : elle donne au verso EXACTEMENT les
+     dimensions du vumètre, y compris ses variations aux breakpoints. */
+  .console-face--masquee { visibility: hidden; }
+  .console-sources { position: absolute; inset: 8px 22px 24px; min-height: 0; display: flex; flex-direction: column; }
+  .console-sources-retour {
+    align-self: flex-start; padding: 4px 0; border: 0; background: none; color: var(--cordovan);
+    font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .16em; text-transform: uppercase; cursor: pointer;
+  }
+  .console-sources-retour:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+  .console-sources-surtitle { margin: 14px 0 2px; font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-softer); }
+  .console-sources h3 { margin: 0 0 12px; font: 700 25px/1.05 'Playfair Display', Georgia, serif; color: var(--ink); }
+  .console-sources > p { margin: 10px 0 14px; font: 15px/1.45 'Source Serif 4', Georgia, serif; color: var(--ink-soft); }
+  .console-sources ul {
+    list-style: none; padding: 0 5px 0 0; margin: 0; overflow-y: auto; min-height: 0; flex: 1 1 auto;
+    display: grid; gap: 7px; counter-reset: source;
+  }
+  .console-sources li {
+    counter-increment: source; min-width: 0; border: 1px solid var(--rule); background: var(--paper);
+    box-shadow: inset 3px 0 0 var(--cordovan);
+  }
+  .console-sources a {
+    display: grid; grid-template-columns: 24px minmax(0, 1fr) 16px; align-items: center; gap: 7px;
+    padding: 9px 10px 9px 8px; color: var(--ink); font: 600 11px/1.25 'Source Serif 4', Georgia, serif;
+    text-decoration: none;
+  }
+  .console-sources a::before {
+    content: counter(source, decimal-leading-zero); color: var(--cordovan);
+    font: 600 8px 'IBM Plex Mono', monospace; letter-spacing: .06em;
+  }
+  .console-sources a span { color: var(--cordovan); font: 600 14px 'IBM Plex Mono', monospace; }
+  .console-sources a:hover { background: color-mix(in srgb, var(--cordovan) 7%, var(--paper)); }
+  .console-sources a:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+  .console-sources-vide { font-style: italic; }
+  .deck--attenue { opacity: .28; filter: grayscale(.35); transition: opacity 180ms ease, filter 180ms ease; }
 
   /* ── Le fader : choisir la source qu'on écoute ──────────────────────────
      Un curseur, pas un menu : sur une console on pousse, on ne déroule pas.
@@ -9743,6 +9785,16 @@
 .deck-carre:focus-visible {
   outline: 2px solid var(--cordovan);
   outline-offset: 6px;
+}
+.deck-carre--retournable { perspective: 900px; }
+.deck-carre--retournable .flip-face--verso { border: 1px solid var(--ink); }
+.deck-carre--retournable .deck-rang { transition: opacity 120ms ease; }
+.deck-carre--dos-ouvert .deck-rang { opacity: 0; pointer-events: none; }
+.deck-verso-chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
 }
 
 .deck-face {
