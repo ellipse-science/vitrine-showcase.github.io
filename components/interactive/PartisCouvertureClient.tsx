@@ -28,10 +28,17 @@ import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Trac
  *  compilation. La chaîne doit rester identique ici, dans `parties.ts` et dans
  *  `radar-party-score-salient-shadow/runtime.R`. */
 const SANS_ENJEU = "Aucun enjeu identifié";
-/** Quand le fader quitte le centre, le raffineur ne croise pas parti × enjeu ×
- *  média : il n'y a rien à afficher, mais ce n'est PAS « aucun enjeu ». Dire la
- *  limite de la mesure plutôt qu'inventer un fait sur la couverture. */
-const ENJEU_NON_VENTILE = "Non ventilé par média";
+/* Quand le fader quitte le centre, le raffineur ne croise pas parti × enjeu ×
+ * média : la table `parties_issues_salient_shadow_by_media_*` existe côté
+ * raffineur (aws-refiners#415) mais n'est pas dans `scripts/tables.json`, donc
+ * le site ne la lit pas.
+ *
+ * On affichait alors « Non ventilé par média » à la place de l'enjeu. La rangée
+ * disait la limite de la mesure — honnête, mais elle occupait une des quatre
+ * lignes du dos pour ne rien mesurer, sur une pochette large de 130 px.
+ *
+ * La rangée DISPARAÎT désormais : trois grandeurs au lieu de quatre, et rien
+ * qui prétende parler d'enjeux quand aucun n'est mesuré. */
 
 // Doom RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20) : l'easter egg
 // des partis reste un jeu d'équipe, pas une porte du site public. Même signal
@@ -93,7 +100,10 @@ type EntreeTrophee = {
    *  mode Apprécié. `null` quand le parti n'a aucune couverture mesurée. */
   ecart: number | null;
   partPct: number;
-  enjeu: string;
+  /** `null` = aucun enjeu MESURÉ pour cette vue (une position du fader) : la
+   *  rangée ne se rend pas du tout. Distinct de `SANS_ENJEU`, qui est un
+   *  résultat — « on en a parlé, sans enjeu identifiable ». */
+  enjeu: string | null;
   /** Renseigné seulement quand l'enjeu ne vient pas de la journée affichée. */
   enjeuTitle?: string;
   tonMot: string;
@@ -448,7 +458,7 @@ export function PartisCouvertureClient({
       // Le libellé COMPLET, calculé une fois : `enjeu` en garde la forme
       // courte, `enjeuTitle` la forme entière. Les deux doivent parler du même
       // enjeu, donc ils partent de la même variable.
-      const enjeuLibelle = enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE);
+      const enjeuLibelle = row.enjeuxVentiles ? (enjeu?.label ?? SANS_ENJEU) : null;
       return {
         cle: row.key,
         sigle: row.label,
@@ -461,12 +471,12 @@ export function PartisCouvertureClient({
         // ~13 signes à la valeur (voir `libelleEnjeuCourt`), et la boîte coupe
         // net ce qui dépasse. On abrège donc à l'affichage seulement : la
         // catégorie entière reste celle des pads, et le survol la donne.
-        enjeu: libelleEnjeuCourt(enjeuLibelle),
+        enjeu: enjeuLibelle === null ? null : libelleEnjeuCourt(enjeuLibelle),
         // L'infobulle porte DEUX choses, et l'une des deux seulement le plus
         // souvent : la catégorie complète (dès qu'elle a été abrégée), et la
         // date d'où vient l'enjeu (seulement quand `buildEnjeux` a reculé d'un
         // jour). Quand il n'y a rien à dire, pas d'attribut du tout.
-        enjeuTitle: [
+        enjeuTitle: enjeuLibelle === null ? undefined : [
           libelleEnjeuCourt(enjeuLibelle) === enjeuLibelle ? null : enjeuLibelle,
           enjeu?.dateSource
             ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
@@ -1133,9 +1143,9 @@ function Deck({
   }
 
   const enjeu = row.enjeux.find((item) => !item.reste && item.label !== SANS_ENJEU);
-  const enjeuLibelle = enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE);
-  const enjeuCourt = libelleEnjeuCourt(enjeuLibelle);
-  const enjeuTitle = [
+  const enjeuLibelle = row.enjeuxVentiles ? (enjeu?.label ?? SANS_ENJEU) : null;
+  const enjeuCourt = enjeuLibelle === null ? null : libelleEnjeuCourt(enjeuLibelle);
+  const enjeuTitle = enjeuLibelle === null ? undefined : [
     enjeuCourt === enjeuLibelle ? null : enjeuLibelle,
     enjeu?.dateSource
       ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
@@ -2360,7 +2370,10 @@ function TracklisteGrandeurs({
 }: {
   temps: string;
   partPct: number;
-  enjeu: string;
+  /** `null` = aucun enjeu MESURÉ pour cette vue (une position du fader) : la
+   *  rangée ne se rend pas du tout. Distinct de `SANS_ENJEU`, qui est un
+   *  résultat — « on en a parlé, sans enjeu identifiable ». */
+  enjeu: string | null;
   /** Infobulle de la rangée « Enjeu » — sert à dater l'enjeu quand il ne vient
    *  pas de la journée affichée. Absente le reste du temps. */
   enjeuTitle?: string;
@@ -2382,7 +2395,9 @@ function TracklisteGrandeurs({
     <>
       <LigneTracklist categorie={labelTemps}>{temps}</LigneTracklist>
       <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
-      <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
+      {enjeu !== null && (
+        <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
+      )}
       <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
     </>
   );
