@@ -1,5 +1,83 @@
 [
   {
+    "pr": 756,
+    "date": "2026-09-06T20:27:35Z",
+    "note": "Le palmarès prend toute sa largeur, ses cadrans annoncent leurs positions, et l'endos des pochettes montre le ton sans le nommer.",
+    "version": "2.44.0-beta.3"
+  },
+  {
+    "pr": 755,
+    "date": "2026-09-06T20:06:23Z",
+    "note": "Sur téléphone, le module retrouve son ton, ses commandes à plat et son disque d'or à côté du classement.",
+    "version": "2.44.0-beta.2"
+  },
+  {
+    "pr": 754,
+    "date": "2026-09-06T19:42:16Z",
+    "note": "Le palmarès garde son cadre les jours où il n'a rien à tracer : la course reste dessinée, il n'y manque que les coureurs.",
+    "version": "2.44.0-beta.1"
+  },
+  {
+    "pr": 753,
+    "date": "2026-09-06T19:07:43Z",
+    "note": "Les partis et les sources de leur couverture deviennent plus faciles à explorer. Un clic permet de retourner un vinyle pour lire les détails de la mesure.",
+    "version": "2.44.0-beta.0"
+  },
+  {
+    "pr": 740,
+    "date": "2026-09-06T18:42:25Z",
+    "note": "Au dos des pochettes de partis, l'enjeu du jour ne se fait plus couper au milieu d'un mot : il s'écrit en abrégé, et le nom complet apparaît au survol. Les chiffres y adoptent une seule et même écriture.",
+    "version": null
+  },
+  {
+    "pr": 751,
+    "date": "2026-09-06T18:42:18Z",
+    "note": "Le registre du fonds vivait sous le même préfixe que les pochettes qu'il décrit, et triait après elles toutes. Une garde qui ne regardait que l'ordre des octets y a lu un avenir qui n'existait pas. 🤖 Assisté par Claude Code (Opus 5)",
+    "version": null
+  },
+  {
+    "pr": 750,
+    "date": "2026-09-06T17:57:08Z",
+    "note": "La page Équipe indique l'université de chaque membre, renvoie aux sites Web personnels et classe chaque section par ordre alphabétique.",
+    "version": "2.43.0-beta.11"
+  },
+  {
+    "pr": 749,
+    "date": "2026-09-06T17:55:05Z",
+    "note": "L'heure affichée sous les modules Enjeux saillants et Partis et couverture est désormais celle de la donnée la plus récente, jamais celle du dernier calcul : quand la collecte prend du retard, l'heure le montre.",
+    "version": "2.43.0-beta.10"
+  },
+  {
+    "pr": 747,
+    "date": "2026-09-05T21:22:06Z",
+    "note": "Les logos des partenaires, au bas de chaque page, tiennent maintenant sur deux rangées au lieu de trois.",
+    "version": "2.43.0-beta.9"
+  },
+  {
+    "pr": 746,
+    "date": "2026-09-05T21:21:50Z",
+    "note": "Le pied de page décrit maintenant tout ce que la Vitrine analyse : les médias, les discours de l'Assemblée nationale et l'écho des promesses électorales, au lieu des seuls médias.",
+    "version": "2.43.0-beta.8"
+  },
+  {
+    "pr": 745,
+    "date": "2026-09-05T21:02:22Z",
+    "note": "Le pied de page dit maintenant, sur chaque page, que les analyses viennent de modèles d'intelligence artificielle locaux, entraînés et validés à l'Université Laval, qu'ils peuvent se tromper, et comment nous écrire pour signaler une erreur.",
+    "version": "2.43.0-beta.7"
+  },
+  {
+    "pr": 743,
+    "date": "2026-09-05T19:11:22Z",
+    "note": "La page Équipe montre maintenant les visages de l'équipe et accueille deux anciens membres, qui ont bâti la première version du projet.",
+    "version": "2.43.0-beta.6"
+  },
+  {
+    "pr": 728,
+    "date": "2026-09-04T19:30:22Z",
+    "note": "L'illustration de la Une est désormais produite au moment même où le site se met à jour : chaque nouvelle édition arrive avec son image, sans attente.",
+    "version": "2.43.0-beta.5"
+  },
+  {
     "pr": 738,
     "date": "2026-09-04T18:48:32Z",
     "note": "Dans le palmarès des partis, l'onglet du jour permet maintenant de cliquer une heure pour voir le classement à ce moment de la journée. Les heures pas encore atteintes restent inertes.",

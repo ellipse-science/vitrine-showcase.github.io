@@ -88,6 +88,11 @@ jobs:
           # Les jeux sont payants : même le site s'authentifie. Cette clé porte
           # la portée totale et aucun quota — ce n'est pas un client.
           VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+          # L'illustration de la Une se fait AU BUILD (scripts/ensure_art.ts,
+          # #723) : sans cette clé, le build lit seulement le cache par
+          # histoire et retombe sur le circuit du raffineur. La garde ne
+          # génère que sur develop et main (GITHUB_REF_NAME ici).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
           NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
           NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}

@@ -4,12 +4,86 @@ import {
   ART_FILES,
   MAX_UPLOAD_BYTES,
   PARTY_SLUGS,
+  REFERENCES_INDEX,
+  UNE_KEY_MAX_LENGTH,
   borneIndex,
   borneJoursPosterieurs,
   heroKey,
   parsePochette,
+  premierePochettePosterieure,
+  parseReference,
+  parseUne,
   publishDecision,
 } from "@/workers/api/src/art-logic";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   L'ILLUSTRATION PAR HISTOIRE (`une/<clé>.<ext>`) et les RÉFÉRENCES — même
+   discipline que les pochettes : le parseur est le seul contrôle entre le
+   réseau et le bucket, on éprouve autant les refus que les acceptations.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("parseUne (image rangée sous sa clé d'histoire)", () => {
+  it("accepte une storyline et un event_id du pipeline, dans les quatre formats", () => {
+    for (const key of [
+      "story-voting-information-mailings-01a5194c",
+      "story-caq-10963544",
+      "20260903T150000Z-evt-frechette-holds-firm-french-only-3eb9c369",
+    ]) {
+      for (const ext of ["png", "webp", "avif", "json"]) {
+        const ref = parseUne(`une/${key}.${ext}`);
+        expect(ref, `${key}.${ext}`).toMatchObject({ key, ext });
+        expect(ref?.contentType).toBeTruthy();
+      }
+    }
+  });
+
+  it("refuse tout ce qui n'est pas exactement une clé du pipeline", () => {
+    const refuses = [
+      "une/latest.png",                        // pas une clé
+      "une/story-caq-10963544.gif",            // format non publié
+      "une/Story-caq-10963544.png",            // casse
+      "une/story-caq--10963544.png",           // tiret double
+      "une/story-caq-10963544-.png",           // tiret final
+      "une/story-caq-10963544/../x.png",       // remontée de chemin
+      "une/../latest.png",                     // remontée
+      "une/story-caq-10963544.png ",           // espace final
+      "une//story-caq-10963544.png",           // segment vide
+      "une/story.png",                         // trop court
+      "une/story-" + "a".repeat(UNE_KEY_MAX_LENGTH) + ".png", // trop long
+      "partis/2026-08-30/caq.png",             // autre famille
+      "",
+    ];
+    for (const chemin of refuses) {
+      expect(parseUne(chemin), chemin).toBeNull();
+    }
+  });
+});
+
+describe("parseReference (images de référence de l'artiste)", () => {
+  it("accepte les noms <enjeu>_generic<n>.jpg", () => {
+    expect(parseReference("references/economy_and_labour_generic3.jpg")).toEqual({
+      name: "economy_and_labour_generic3",
+      contentType: "image/jpeg",
+    });
+    expect(parseReference("references/rights_liberties_minorities_discrimination_generic12.jpg")?.name).toBe(
+      "rights_liberties_minorities_discrimination_generic12",
+    );
+  });
+
+  it("refuse le reste, et l'index n'est pas une image", () => {
+    for (const chemin of [
+      "references/index.json",
+      "references/economy_and_labour_generic3.png",
+      "references/Economy_generic3.jpg",
+      "references/economy_generic.jpg",
+      "references/../latest.png",
+      "economy_and_labour_generic3.jpg",
+      "",
+    ]) {
+      expect(parseReference(chemin), chemin).toBeNull();
+    }
+    expect(REFERENCES_INDEX).toBe("references/index.json");
+  });
+});
 
 /**
  * La décision de publication est LE garde-fou économique du circuit
@@ -148,5 +222,42 @@ describe("borneJoursPosterieurs", () => {
     for (const cle of ["partis/2026-08-31/caq.png", "partis/2026-09-01/caq.png", "partis/2027-01-01/caq.png"]) {
       expect(cle > borne, cle).toBe(true);
     }
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LA GARDE DE JOURNÉE CLOSE, ET LE PIÈGE QU'ELLE A CACHÉ QUATRE JOURS.
+
+   Les tests de `borneJoursPosterieurs` ci-dessus vérifient la borne sur des
+   clés DATÉES uniquement. C'était l'angle mort : sous `partis/` vit aussi le
+   registre du fonds, et « f » trie après tous les chiffres. La garde y lisait
+   « une journée plus récente existe » et refusait toute pochette, à jamais.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("premierePochettePosterieure", () => {
+  const jour = "2026-09-05";
+
+  it("ne prend PAS le registre du fonds pour une journée plus récente", () => {
+    // Exactement ce que le listage rapportait le 2026-09-06 : le registre seul
+    // passe la borne, et rien d'autre.
+    expect(premierePochettePosterieure(["partis/fonds.json"], jour)).toBeNull();
+  });
+
+  it("voit une vraie journée postérieure, registre présent ou non", () => {
+    const cles = ["partis/2026-09-06/caq.json", "partis/fonds.json"];
+    expect(premierePochettePosterieure(cles, jour)).toBe("partis/2026-09-06/caq.json");
+  });
+
+  it("ignore la journée elle-même et les antérieures", () => {
+    const cles = ["partis/2026-09-05/caq.json", "partis/2026-09-04/pq.json", "partis/fonds.json"];
+    expect(premierePochettePosterieure(cles, jour)).toBeNull();
+  });
+
+  it("ignore tout objet étranger qui viendrait à vivre sous le préfixe", () => {
+    const cles = ["partis/index.json", "partis/README.md", "partis/zzz/pas-un-parti.png"];
+    expect(premierePochettePosterieure(cles, jour)).toBeNull();
+  });
+
+  it("liste vide : rien ne s'oppose au téléversement", () => {
+    expect(premierePochettePosterieure([], jour)).toBeNull();
   });
 });
