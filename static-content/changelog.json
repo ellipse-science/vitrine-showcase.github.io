@@ -1,5 +1,11 @@
 [
   {
+    "pr": 758,
+    "date": "2026-09-06T21:08:38Z",
+    "note": "Dans le module des 12 enjeux, la vue « Semaine » couvre maintenant les sept derniers jours au lieu de repartir de zéro chaque vendredi soir, et les dates des graphiques d'évolution tombent sur le bon jour.",
+    "version": "2.44.0-beta.5"
+  },
+  {
     "pr": 757,
     "date": "2026-09-06T20:55:46Z",
     "note": "Sur la page Partenaires, la liste des partenaires n'apparaît plus deux fois.",
