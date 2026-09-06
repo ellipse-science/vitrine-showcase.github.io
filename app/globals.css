@@ -8717,13 +8717,24 @@
      qu'une aide, et le mot « Sourdine » se suffit. */
   .console-sourdine .saillance-info-tip { display: none; }
   .console-sourdine { font-size: 8px; letter-spacing: 0.1em; }
-  /* Sur mobile la 3e rangée retombe à 0 (le vumètre de ton est masqué, cf.
-     plus bas) ; la 4e garde de quoi poser « Sourdine » sur une ligne. Les
-     colonnes restent alignées : la hauteur change pour TOUTES. */
-  .console .console-tranche { grid-template-rows: var(--piste) auto 0 12px; row-gap: 6px; }
-  /* La 3e rangée est à 0 : le petit vumètre de ton n'y tiendrait pas et serait
-     illisible. Il quitte l'affichage tactile — le ton reste sur la pochette. */
-  .console-ton { display: none; }
+  /* LE TON REVIENT SUR LE TACTILE. La 3e rangée retombait à 0 et le petit
+     vumètre était masqué — « le ton reste sur la pochette », disait la règle.
+     Mais la pochette ne porte le ton que du parti qu'elle illustre, alors que
+     la console les montre tous les cinq : sur téléphone, comparer les tons
+     devenait impossible. Le boîtier revient, à 20 px au lieu de 26.
+
+     LA 4e RANGÉE PASSE DE 12 À 16 px, et c'est le correctif de l'empiètement.
+     « Sourdine » est un mot INSÉCABLE : il ne se replie pas, il DÉBORDE. Avec
+     `align-items: end`, ce débordement remontait dans la rangée du dessus —
+     c'est-à-dire par-dessus le nom du parti. Une rangée assez haute pour la
+     ligne, et le mot reste chez lui.
+
+     Les quatre hauteurs restent FIXES et identiques d'une colonne à l'autre :
+     chaque tranche est sa propre grille, et c'est ce qui garde les cinq pistes
+     alignées (bug constaté deux fois). */
+  .console .console-tranche { grid-template-rows: var(--piste) auto 20px 16px; row-gap: 5px; }
+  .console-ton { display: block; max-width: 46px; height: 20px; }
+  .console-sourdine { line-height: 1.1; }
 
   /* La pochette garde ses quatre pistes : c'est elle qui porte les chiffres. */
   .deck-jog-media text { font-size: 5.4px; }
@@ -10809,18 +10820,38 @@
    retiré le 2026-08-30. La règle qui masquait la zone au terme de la course est
    partie avec lui : sans elle, un palmarès terminé n'affichait plus rien. */
 @media (max-width: 640px) {
-  /* `.palmares-rangee` empile déjà d'elle-même sous cette largeur
-     (`flex-wrap: wrap`, voir son commentaire) : knobs, graphique puis disque
-     d'or, dans l'ordre du DOM, chacun à sa propre taille — la hauteur commune
-     des trois n'a plus de raison d'être une fois qu'ils ne sont plus côte à
-     côte. Rien à forcer ici, seulement le graphique lui-même à resserrer. */
+  /* DEUX LIGNES, ET NON TROIS. `.palmares-rangee` empilait ses trois enfants
+     — knobs, graphique, disque d'or — chacun sur sa ligne : le disque se
+     retrouvait seul tout en bas, loin du classement qu'il couronne, et le
+     graphique s'étalait sur toute la largeur en restant aplati.
+     
+     Désormais : les knobs sur une première ligne, À L'HORIZONTALE ; le
+     graphique et le disque d'or côte à côte sur la seconde. Le graphique est
+     donc PLUS COURT en largeur — c'est ce qui fait la place au disque — et
+     MOINS ÉCRASÉ en hauteur, la place gagnée par la ligne supprimée lui
+     revenant. */
+  .palmares-commandes {
+    flex-direction: row;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+  }
+  /* La base de 320 px forçait le retour à la ligne dès qu'un voisin partageait
+     la rangée. En `auto`, le graphique prend ce qui reste une fois le disque
+     servi, sans jamais réclamer une ligne à lui seul. */
+  .palmares-rangee > .palmares-figure { flex: 1 1 auto; }
+  .palmares-rangee { gap: 12px 12px; }
+  /* Le disque se resserre pour tenir à côté sans écraser le graphique. */
+  .trophee { width: 92px; }
   /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
      et la largeur de l'écran fait déjà une proportion tenable. La réserve de
-     droite se resserre avec les étiquettes. */
-  .palmares-figure { padding: 10px 10px; --marge-y: 0px; --marge-fin: 92px; }
-  /* Cinq rangées restent cinq rangées : c'est le seul poste qu'on ne comprime
-     pas, sous 70 px elles se touchent. */
-  .palmares-zone { min-height: 74px; }
+     droite se resserre avec les étiquettes — et davantage encore ici, le
+     graphique ayant cédé de la largeur au disque. */
+  .palmares-figure { padding: 10px 8px; --marge-y: 0px; --marge-fin: 62px; }
+  /* MOINS ÉCRASÉ : 74 px pour cinq rangées faisaient des rangées de 15, où deux
+     lignes voisines se touchent. 92 px les portent à 18, comme sur le bureau.
+     C'est la ligne rendue par le disque d'or qui paie cette hauteur. */
+  .palmares-zone { min-height: 92px; }
   .palmares-x { margin: 4px var(--marge-fin) 0 var(--marge-y); }
   .palmares-etiquette { margin-left: 6px; gap: 4px; font-size: 8px; letter-spacing: 0.08em; }
   .palmares-rang { width: 13px; height: 13px; font-size: 7.5px; }
