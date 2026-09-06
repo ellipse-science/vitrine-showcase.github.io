@@ -165,3 +165,70 @@ export const POCHETTES_REGISTRE = 'partis/fonds.json'
 export function borneJoursPosterieurs(jour: string): string {
   return `partis/${jour}0`
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   L'ILLUSTRATION PAR HISTOIRE — `une/<clé>.<ext>` — ET LES RÉFÉRENCES.
+
+   Depuis le 2026-09-04, c'est le BUILD qui illustre la Une
+   (scripts/ensure_art.ts) : il connaît la Une avant de rendre la page, demande
+   l'image de cette histoire, la génère s'il le faut, et part en ligne AVEC
+   elle. Un seul build par édition, plus de second passage, plus de course avec
+   la file de Cloudflare Pages (vitrine-showcase#723).
+
+   Pour que dev, prod et les aperçus ne paient jamais deux fois la même
+   histoire, l'image est rangée sous sa CLÉ D'HISTOIRE (`storyline_id`, ou
+   `event_id` à défaut — la même règle que `heroKey`) : `une/<clé>.<ext>`.
+   `latest.*` reste écrit en parallèle pour tout ce qui le lit encore : le
+   raffineur vitrine-art (qui trouve alors l'image « déjà à jour ») et la carte
+   de partage (lib/shareUneArt.ts).
+
+   Les images de référence de l'artiste maison (`references/<nom>.jpg`, 57
+   JPEG de 512 px) vivent dans le bucket, pas dans le dépôt public du site.
+   Même principe que pour les pochettes : une expression régulière FERMÉE, et
+   rien d'autre n'entre ni ne sort.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/** Une clé d'histoire telle que le pipeline les produit : `story-…-01a5194c`
+ *  (storyline) ou `20260903T150000Z-evt-…-3eb9c369` (event_id). Minuscules,
+ *  chiffres et tirets simples : ni point, ni barre oblique, donc aucune
+ *  remontée de chemin possible. */
+const UNE_KEY = String.raw`(?:story|\d{8}T\d{6}Z-evt)-[a-z0-9]+(?:-[a-z0-9]+)*`
+const UNE_RE = new RegExp(`^une/(${UNE_KEY})\\.(png|webp|avif|json)$`)
+
+/** Une clé ne dépasse jamais cela ; au-delà, ce n'est pas une clé du
+ *  pipeline mais une tentative de remplir le bucket de noms arbitraires. */
+export const UNE_KEY_MAX_LENGTH = 160
+
+export interface UneRef {
+  key: string
+  ext: string
+  contentType: string
+}
+
+/** Décompose `une/<clé>.<ext>`, ou `null`. Même rôle que `parsePochette` :
+ *  ce qui passe ici est validé, tout le reste est refusé en 404. */
+export function parseUne(file: string): UneRef | null {
+  const m = UNE_RE.exec(file)
+  if (!m) return null
+  const [, key, ext] = m
+  if (key.length > UNE_KEY_MAX_LENGTH) return null
+  return { key, ext, contentType: POCHETTE_TYPES[ext] }
+}
+
+/** `references/index.json` : la liste des références disponibles, calculée en
+ *  listant le bucket (jamais tenue à la main, comme `partis/index.json`). */
+export const REFERENCES_INDEX = 'references/index.json'
+
+/** `references/economy_and_labour_generic3.jpg` — et rien d'autre : le nom
+ *  commence par l'enjeu (snake_case), se termine par `_generic<n>`. */
+const REFERENCE_RE = /^references\/([a-z]+(?:_[a-z]+)*_generic\d{1,2})\.jpg$/
+
+export interface ReferenceRef {
+  name: string
+  contentType: string
+}
+
+export function parseReference(file: string): ReferenceRef | null {
+  const m = REFERENCE_RE.exec(file)
+  return m ? { name: m[1], contentType: 'image/jpeg' } : null
+}

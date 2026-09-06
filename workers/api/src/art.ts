@@ -19,6 +19,12 @@
 // là où le plan gratuit en donne 10 par requête (la leçon de la passe
 // monolithique du 2026-08-19). R2 se lit et s'écrit en STREAMING : le corps
 // passe du réseau au bucket sans jamais être matérialisé en mémoire.
+//
+// DEPUIS LE 2026-09-04, LE BUILD ILLUSTRE LUI-MÊME (scripts/ensure_art.ts,
+// vitrine-showcase#723) : il lit ou dépose l'image de la Une sous sa clé
+// d'histoire (`une/<clé>.*`) et prend ses références chez `references/*.jpg`.
+// Le circuit du raffineur (latest.* + /publish) reste servi tel quel : il
+// devient un filet, et trouve l'image « déjà à jour » quand le build est passé.
 
 import type { NeonQueryFunction } from '@neondatabase/serverless'
 import { authenticate } from './auth'
@@ -28,10 +34,13 @@ import {
   MAX_UPLOAD_BYTES,
   POCHETTES_HORIZON_JOURS,
   POCHETTES_REGISTRE,
+  REFERENCES_INDEX,
   borneIndex,
   borneJoursPosterieurs,
   heroKey,
   parsePochette,
+  parseReference,
+  parseUne,
   publishDecision,
 } from './art-logic'
 import { notifySlack, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
@@ -163,13 +172,42 @@ export async function handleArt(
     })
   }
 
+  // GET /v1/art/references/index.json — les images de référence disponibles,
+  // listées depuis le bucket. Le build en tire vingt (dix du sujet, dix au
+  // hasard) pour guider la génération, comme le raffineur avec son dossier
+  // local. Sous clé comme le reste : l'artiste maison n'a pas signé pour un
+  // dépôt public.
+  if (file === REFERENCES_INDEX) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return json({ error: 'Méthodes admises : GET, HEAD.' }, 405)
+    }
+    const auth = await authenticate(sql, request, null)
+    if (!auth.ok) return json({ error: auth.error }, auth.status)
+
+    const references: string[] = []
+    let cursor: string | undefined
+    do {
+      const page = await env.ART_BUCKET.list({ prefix: OBJECT_PREFIX + 'references/', cursor })
+      for (const obj of page.objects) {
+        const ref = parseReference(obj.key.slice(OBJECT_PREFIX.length))
+        if (ref) references.push(ref.name)
+      }
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+    return json({ references: references.sort() })
+  }
+
   // Les pochettes des partis : chemin validé par expression régulière fermée,
   // même politique de cache et de portée que les fichiers de la Une. Le registre
   // du fonds (`partis/fonds.json`) n'est pas une pochette : il échappe donc au
   // gel des journées closes, et c'est voulu — il est réécrit à chaque cycle.
+  // L'image par histoire (`une/<clé>.*`) et les références (`references/*.jpg`)
+  // passent par les mêmes GET/PUT sous clé, et par les mêmes refus.
   const pochette = parsePochette(file)
   const contentType =
     pochette?.contentType ??
+    parseUne(file)?.contentType ??
+    parseReference(file)?.contentType ??
     (file === POCHETTES_REGISTRE ? 'application/json; charset=utf-8' : undefined) ??
     ART_FILES[file]
   if (!contentType) {
