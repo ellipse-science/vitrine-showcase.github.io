@@ -57,7 +57,8 @@ export default function PartenairesPage() {
       </main>
 
       <div data-section="Pied de page">
-        <RawMaquette chunk="bottom" />
+        {/* La liste des partenaires est juste au-dessus : le pied de page ne la répète pas. */}
+        <RawMaquette chunk="bottom" sansPartenaires />
       </div>
       <IssueReporter />
     </div>
