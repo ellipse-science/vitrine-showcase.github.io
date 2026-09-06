@@ -1,5 +1,11 @@
 [
   {
+    "pr": 754,
+    "date": "2026-09-06T19:42:16Z",
+    "note": "Le palmarès garde son cadre les jours où il n'a rien à tracer : la course reste dessinée, il n'y manque que les coureurs.",
+    "version": "2.44.0-beta.1"
+  },
+  {
     "pr": 753,
     "date": "2026-09-06T19:07:43Z",
     "note": "Les partis et les sources de leur couverture deviennent plus faciles à explorer. Un clic permet de retourner un vinyle pour lire les détails de la mesure.",
