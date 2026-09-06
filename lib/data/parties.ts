@@ -2299,6 +2299,7 @@ function libellePeriode(range: RangeKey, joursIso: string[]): string {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  THEME_VERS_CATEGORIE,
   buildLookup,
   buildEnjeux,
   computeStats,

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import type { Album, Discographie, Discotheque, Pochette, PochetteSource } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
-import { signaturePochette } from "@/lib/enjeux";
+import { libelleEnjeuCourt, signaturePochette } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { formatEcartTon, phraseEcartTon } from "@/lib/ton";
 import { cheminDeRang, depuisLOrigine, hauteurDuRang, rangsParInstant } from "@/lib/rangs";
@@ -443,6 +443,10 @@ export function PartisCouvertureClient({
           : range === "week"
             ? (albumSemaineParParti.get(row.key)?.pistes[0] ?? null)
             : (discographieParParti.get(row.key)?.pistes[0] ?? null);
+      // Le libellé COMPLET, calculé une fois : `enjeu` en garde la forme
+      // courte, `enjeuTitle` la forme entière. Les deux doivent parler du même
+      // enjeu, donc ils partent de la même variable.
+      const enjeuLibelle = enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE);
       return {
         cle: row.key,
         sigle: row.label,
@@ -451,13 +455,23 @@ export function PartisCouvertureClient({
         minutes: row.minutesUne,
         ecart: ecartParParti.get(row.key) ?? null,
         partPct: row.sovPct,
-        enjeu: enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE),
-        // Dire d'où vient l'enjeu quand ce n'est pas la journée affichée : la
-        // journée en cours n'en portait aucun et `buildEnjeux` a reculé. Rien
-        // à dire dans le cas courant, donc pas d'infobulle.
-        enjeuTitle: enjeu?.dateSource
-          ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
-          : undefined,
+        // LE NOM COURT AU DOS, LE COMPLET EN INFOBULLE. Le dos ne laisse que
+        // ~13 signes à la valeur (voir `libelleEnjeuCourt`), et la boîte coupe
+        // net ce qui dépasse. On abrège donc à l'affichage seulement : la
+        // catégorie entière reste celle des pads, et le survol la donne.
+        enjeu: libelleEnjeuCourt(enjeuLibelle),
+        // L'infobulle porte DEUX choses, et l'une des deux seulement le plus
+        // souvent : la catégorie complète (dès qu'elle a été abrégée), et la
+        // date d'où vient l'enjeu (seulement quand `buildEnjeux` a reculé d'un
+        // jour). Quand il n'y a rien à dire, pas d'attribut du tout.
+        enjeuTitle: [
+          libelleEnjeuCourt(enjeuLibelle) === enjeuLibelle ? null : enjeuLibelle,
+          enjeu?.dateSource
+            ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined,
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
         tonTitle: row.toneTitle,
@@ -2258,7 +2272,7 @@ function TracklisteGrandeurs({
 }) {
   return (
     <>
-      <LigneTracklist categorie={labelTemps} chiffre>{temps}</LigneTracklist>
+      <LigneTracklist categorie={labelTemps}>{temps}</LigneTracklist>
       <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
       <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
       <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
