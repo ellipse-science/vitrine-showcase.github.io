@@ -1,5 +1,11 @@
 [
   {
+    "pr": 755,
+    "date": "2026-09-06T20:06:23Z",
+    "note": "Sur téléphone, le module retrouve son ton, ses commandes à plat et son disque d'or à côté du classement.",
+    "version": "2.44.0-beta.2"
+  },
+  {
     "pr": 754,
     "date": "2026-09-06T19:42:16Z",
     "note": "Le palmarès garde son cadre les jours où il n'a rien à tracer : la course reste dessinée, il n'y manque que les coureurs.",
