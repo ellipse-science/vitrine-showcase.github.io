@@ -201,8 +201,12 @@ function chartTermine(chart: ChartView): boolean {
  *  bon, et une fois en gabarit invisible qui réserve la place. Deux formules
  *  auraient dérivé au premier ajustement de libellé, et le gabarit aurait cessé
  *  de mesurer ce qu'il est censé mesurer, en silence. */
-const titrePalmares = (mode: ModePalmares, range: RangeKey) =>
-  `Le palmarès\u00a0: ${MODES.find((m) => m.cle === mode)!.titre}, ${PAS_DU_PALMARES[range]}`;
+const titrePalmares = (_mode: ModePalmares, _range: RangeKey) =>
+  // « Le palmarès : Le plus écouté, jour par jour » disait trois choses à la
+  // fois — l'objet, la mesure et le pas — alors que les deux knobs posés juste
+  // à côté disent déjà les deux dernières, et les disent de façon RÉGLABLE.
+  // Le titre ne garde que ce qu'aucune commande n'énonce : le nom de l'objet.
+  "Palmarès";
 
 /** Le PAS du palmarès, par onglet — ce que vaut un cran de son axe.
  *
@@ -1625,7 +1629,17 @@ function Knob({
           pousser le graphique du palmarès à côté. */}
       <span className="knob-valeur-boite">
         {positions.map((p) => (
-          <span key={p.cle} className="knob-valeur-gabarit" aria-hidden="true">{p.mot}</span>
+          <span
+            key={p.cle}
+            /* `actif` ne sert à rien sur bureau, où ces mots ne sont qu'un
+               gabarit de largeur (`visibility: hidden`). Sur tactile ils
+               DEVIENNENT la commande lisible — toutes les positions à la file,
+               l'active en évidence — et il faut alors pouvoir la désigner. */
+            className={`knob-valeur-gabarit${p.cle === valeur ? " actif" : ""}`}
+            aria-hidden="true"
+          >
+            {p.mot}
+          </span>
         ))}
         <span className="knob-valeur" aria-hidden="true">{positions[i].mot}</span>
       </span>
@@ -2050,7 +2064,12 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
                     montrait 6 h 34 au PQ. Le rang, lui, se lit sans ambiguïté.
                     L'écart de ton reste écrit : ce n'est pas une durée, et rien
                     d'autre à l'écran ne le donne. */}
-                {apprecie && <b className="palmares-etiquette-duree">{ecriteDe(s)}</b>}
+                {/* PLUS DE « +42 PTS » AU BOUT DE LA LIGNE. La vue Apprécié
+                    écrivait son écart de ton à côté du sigle, là où la vue
+                    Écoute n'écrit rien : deux vues du même graphique n'avaient
+                    pas le même encombrement, et la valeur doublait ce que la
+                    hauteur de la ligne montre déjà. L'écart reste dans
+                    l'infobulle du bouton, qui le dit en toutes lettres. */}
               </button>
             );
           })}

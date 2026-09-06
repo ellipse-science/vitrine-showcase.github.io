@@ -66,7 +66,7 @@ describe("le palmarès sans courbe à tracer — régression", () => {
     const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
 
     // La section garde sa place — son titre est là.
-    expect(html).toContain("Le palmar");
+    expect(html).toContain("Palmar");
     // Et elle porte une phrase, pas un vide.
     expect(html).toContain("course-vide");
     expect(html).toContain("pas encore publi");
@@ -501,11 +501,14 @@ describe("les deux knobs du palmarès", () => {
     expect(entete).not.toContain("cursor:pointer");
   });
 
-  it("le titre VISIBLE annonce la course en cours", () => {
-    // Sur le markup entier, « apprécié » apparaît aussi — dans le gabarit
-    // invisible qui empêche le titre de se recentrer à chaque bascule.
+  it("le titre ne dit plus QUE l'objet : les knobs disent le reste", () => {
+    // Il annonçait « Le palmarès : Le plus écouté, jour par jour » — trois
+    // choses, dont deux que les deux cadrans posés juste à côté disent déjà,
+    // et de façon réglable. Le titre ne garde que ce qu'aucune commande
+    // n'énonce.
     const visible = html.match(/course-tete-gabarit"[^>]*>[^<]+<\/span><span>([^<]+)</);
-    expect(visible![1]).toContain("le disque le plus écouté");
-    expect(visible![1]).not.toContain("apprécié");
+    expect(visible![1]).toBe("Palmarès");
+    expect(visible![1]).not.toContain("écouté");
+    expect(visible![1]).not.toContain("jour par jour");
   });
 });
