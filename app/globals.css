@@ -10830,24 +10830,59 @@
      donc PLUS COURT en largeur — c'est ce qui fait la place au disque — et
      MOINS ÉCRASÉ en hauteur, la place gagnée par la ligne supprimée lui
      revenant. */
-  .palmares-commandes {
-    flex-direction: row;
+  /* LE GRAPHIQUE SEUL SUR SA LIGNE, LES COMMANDES ET LE DISQUE SOUS LUI.
+     
+     L'ordre du DOM est commandes → graphique → disque. `order` le réarrange
+     sans toucher au balisage : le graphique prend toute la première ligne, et
+     les deux objets qui le COMMANDENT ou le COURONNENT se partagent la
+     seconde. Le graphique récupère ainsi toute la largeur, et le disque d'or
+     cesse d'être relégué seul en bas. */
+  .palmares-rangee { gap: 12px 16px; justify-content: center; align-items: center; }
+  .palmares-rangee > .palmares-figure { order: 1; flex: 1 0 100%; }
+  .palmares-commandes { order: 2; }
+  .trophee { order: 3; width: 96px; }
+
+  /* LES KNOBS RESTENT EN COLONNE — c'est leur forme de bureau, et elle tient
+     dans la hauteur du disque d'or posé à côté. Une disposition à plat les
+     étalait sur une ligne entière pour rien. */
+  .palmares-commandes { flex-direction: column; gap: 10px; }
+
+  /* SOUS CHAQUE CADRAN, TOUTES SES POSITIONS — plus seulement celle en cours.
+     
+     Sur bureau, `.knob-valeur-boite` empile les mots dans une seule cellule de
+     grille : les gabarits sont invisibles et ne servent qu'à FIGER la largeur,
+     seul `.knob-valeur` s'affiche. Au doigt, un cadran qui n'annonce que sa
+     position en cours n'apprend pas ce qu'il y a d'autre à choisir — il faut
+     le tourner pour le découvrir.
+     
+     Les mots se mettent donc à la file, l'actif en évidence. Le nom de la voie
+     (« Mesure », « Période ») s'efface : les mots eux-mêmes le disent, et deux
+     lignes d'étiquette sous un cadran de 34 px, c'est plus de texte que de
+     commande. */
+  .knob-valeur-boite {
+    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 18px;
-    width: 100%;
+    gap: 2px 7px;
   }
-  /* La base de 320 px forçait le retour à la ligne dès qu'un voisin partageait
-     la rangée. En `auto`, le graphique prend ce qui reste une fois le disque
-     servi, sans jamais réclamer une ligne à lui seul. */
-  .palmares-rangee > .palmares-figure { flex: 1 1 auto; }
-  .palmares-rangee { gap: 12px 12px; }
-  /* Le disque se resserre pour tenir à côté sans écraser le graphique. */
-  .trophee { width: 92px; }
+  .knob-valeur-boite > * { grid-area: auto; }
+  .knob-valeur { display: none; }
+  .knob-valeur-gabarit {
+    visibility: visible;
+    color: var(--ink-softer);
+    opacity: 0.42;
+  }
+  .knob-valeur-gabarit.actif {
+    opacity: 1;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .knob .fader-label { display: none; }
   /* Le cadre n'est plus borné : sur un téléphone, 720 px sont hors d'atteinte
      et la largeur de l'écran fait déjà une proportion tenable. La réserve de
      droite se resserre avec les étiquettes — et davantage encore ici, le
      graphique ayant cédé de la largeur au disque. */
-  .palmares-figure { padding: 10px 8px; --marge-y: 0px; --marge-fin: 62px; }
+  .palmares-figure { padding: 10px 8px; --marge-y: 0px; --marge-fin: 84px; }
   /* MOINS ÉCRASÉ : 74 px pour cinq rangées faisaient des rangées de 15, où deux
      lignes voisines se touchent. 92 px les portent à 18, comme sur le bureau.
      C'est la ligne rendue par le disque d'or qui paie cette hauteur. */

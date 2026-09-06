@@ -306,12 +306,12 @@ describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse"
   });
 
   it("le gabarit du knob Mesure porte les DEUX positions possibles", () => {
-    const gabarits = [...boites[0].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    const gabarits = [...boites[0].matchAll(/class="knob-valeur-gabarit(?: actif)?"[^>]*>([^<]*)</g)].map((m) => m[1]);
     expect(gabarits).toEqual(["Écouté", "Apprécié"]);
   });
 
   it("le gabarit du knob Vitesse porte les TROIS positions possibles", () => {
-    const gabarits = [...boites[1].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    const gabarits = [...boites[1].matchAll(/class="knob-valeur-gabarit(?: actif)?"[^>]*>([^<]*)</g)].map((m) => m[1]);
     expect(gabarits).toEqual(["Jour 78 T", "Semaine 45 T", "Campagne 33 T"]);
   });
 
@@ -342,5 +342,33 @@ describe("les decks — retournent leur pochette", () => {
   it("garde le rang hors des deux faces pour ne jamais l'imprimer au verso", () => {
     const rectoFermeAvantRang = /flip-face--recto[\s\S]*?flip-face--verso[\s\S]*?<\/span><span class="deck-rang"/g;
     expect([...html.matchAll(rectoFermeAvantRang)].length).toBe(4);
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   L'ENDOS DE LA POCHETTE : la barre du ton, et plus le mot.
+   « Défavorable » redisait en toutes lettres ce que le repère de la jauge
+   montre déjà, sur une rangée large de 130 px. Il n'est pas supprimé pour
+   autant : la jauge est purement graphique, et sans le mot un lecteur d'écran
+   n'aurait plus qu'une barre muette.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("le ton au dos de la pochette", () => {
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
+  const ligne = html.match(/tracklist-ligne--ton[\s\S]*?<\/div>/)?.[0] ?? "";
+
+  it("porte bien la jauge", () => {
+    expect(ligne).toContain("pochette-ton");
+    expect(ligne).toContain("pochette-ton-repere");
+  });
+
+  it("n'écrit plus le mot à l'œil, mais le garde pour les lecteurs d'écran", () => {
+    expect(ligne).toContain("visually-hidden");
+    // Le mot existe, dans le span réservé aux lecteurs d'écran — et nulle part
+    // ailleurs dans la rangée.
+    const mots = [...ligne.matchAll(/>(favorable|défavorable|neutre)</gi)];
+    for (const m of mots) {
+      const avant = ligne.slice(0, m.index);
+      expect(avant.lastIndexOf("visually-hidden")).toBeGreaterThan(avant.lastIndexOf("</span>"));
+    }
   });
 });

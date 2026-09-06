@@ -78,7 +78,15 @@ export function LigneTracklistTon({
       <span className="tracklist-points" aria-hidden="true" />
       <dd className="tracklist-metrique">
         <JaugeTon pct={tonPct} title={tonTitle} />
-        <span>{tonMot}</span>
+        {/* LA BARRE SEULE, ET PLUS LE MOT. « Défavorable » redisait en toutes
+            lettres ce que le repère de la jauge montre déjà, et il prenait la
+            moitié d'une rangée large de 130 px — la même contrainte qui avait
+            imposé d'abréger les enjeux.
+
+            Le mot n'est pas SUPPRIMÉ, il devient invisible à l'œil seul : sans
+            lui, un lecteur d'écran n'aurait plus qu'une barre muette, la jauge
+            étant purement graphique. */}
+        <span className="visually-hidden">{tonMot}</span>
       </dd>
     </div>
   );
