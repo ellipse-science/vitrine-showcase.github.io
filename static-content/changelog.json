@@ -1,5 +1,11 @@
 [
   {
+    "pr": 756,
+    "date": "2026-09-06T20:27:35Z",
+    "note": "Le palmarès prend toute sa largeur, ses cadrans annoncent leurs positions, et l'endos des pochettes montre le ton sans le nommer.",
+    "version": "2.44.0-beta.3"
+  },
+  {
     "pr": 755,
     "date": "2026-09-06T20:06:23Z",
     "note": "Sur téléphone, le module retrouve son ton, ses commandes à plat et son disque d'or à côté du classement.",
