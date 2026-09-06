@@ -194,10 +194,18 @@ apply_filter <- function(df, filter_id) {
     }
     comptes <- do.call(rbind, lapply(df$sentence_analysis, function(x) as.data.frame(compter(x))))
 
+    # La dernière capture de l'article en Une, en UTC ISO (« 2026-09-05T18:58:11Z »).
+    # C'est L'HEURE DE LA DONNÉE que le site affiche sous les 12 enjeux et les
+    # partis (lib/data/fraicheur.ts) : jamais l'heure d'une passe. Une chaîne
+    # illisible donne NA, et NA ne pèse pas dans le max.
+    fin_utc <- format(
+      as.POSIXct(df$headline_stop_utc, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC"),
+      "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"
+    )
     out <- cbind(
       data.frame(
         title = df$title, url = df$url, media_id = df$media_id,
-        jour = as.character(jour), stringsAsFactors = FALSE
+        jour = as.character(jour), fin_utc = fin_utc, stringsAsFactors = FALSE
       ),
       comptes
     )
@@ -208,9 +216,12 @@ apply_filter <- function(df, filter_id) {
     cles <- ifelse(is.na(out$url) | out$url == "", out$title, out$url)
     enjeux <- names(ISSUES_THEME_TO_CATEGORY)
     agrege <- stats::aggregate(out[, enjeux], by = list(cle = cles), FUN = sum)
+    plus_recent <- function(x) { x <- x[!is.na(x)]; if (length(x) > 0) max(x) else NA_character_ }
+    fins <- stats::aggregate(list(fin_utc = out$fin_utc), by = list(cle = cles), FUN = plus_recent)
     premier <- out[!duplicated(cles), c("title", "url", "media_id", "jour")]
     premier$cle <- cles[!duplicated(cles)]
     out <- merge(premier, agrege, by = "cle")
+    out <- merge(out, fins, by = "cle")
     out$cle <- NULL
     out <- out[rowSums(out[, enjeux]) > 0, , drop = FALSE]
     message("  -> radar_annotated_issues: ", nrow(out), " article(s) québécois retenus")
