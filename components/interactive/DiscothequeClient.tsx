@@ -151,7 +151,15 @@ function Pochette({ single, taille }: { single: Single; taille: "couverture" | "
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pochette-image" src={single.src} alt="" aria-hidden="true" loading="lazy" />
       </picture>
-      {taille === "couverture" && <b className="pochette-sigle">{single.sigle}</b>}
+      {taille === "couverture" && (
+        <>
+          <b className="pochette-sigle">{single.sigle}</b>
+          {/* LA DATE DE L'ALBUM. Le fonds range par jour, mais une pochette
+              regardée seule ne dit pas duquel elle vient — et ses chiffres sont
+              FIGÉS à sa fabrication. La date est donc ce qui les qualifie. */}
+          <b className="pochette-date">{single.jourCourt}</b>
+        </>
+      )}
     </span>
   );
 }

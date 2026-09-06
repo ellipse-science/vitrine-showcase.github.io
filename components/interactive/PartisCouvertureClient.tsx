@@ -88,6 +88,9 @@ type Mode = { cle: ModePalmares; onglet: string; titre: string; infobulle: strin
  *  plus écoutée — pour la semaine et la campagne) : le trophée ne connaît que
  *  cette forme-là, pas d'où elle vient. */
 type EntreeTrophee = {
+  /** La date de la pochette appariée, en court (« 5 sept. »). Absente quand
+   *  aucune image n'est appariée — le repli géométrique n'a pas de date. */
+  jourCourt?: string;
   /** Clé React — la clé du parti suffit, les cinq entrées d'un même trophée ne
    *  peuvent pas se répéter. */
   cle: PartyKey;
@@ -487,6 +490,9 @@ export function PartisCouvertureClient({
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
         tonTitle: row.toneTitle,
+        /* La date de la pochette APPARIÉE, pas celle du module : c'est elle
+           qui qualifie les chiffres figés que le dos affiche. */
+        jourCourt: couverture?.jour ? formatCourt(couverture.jour) : undefined,
         src: couverture?.src,
         sources: couverture?.sources,
       };
@@ -2324,6 +2330,7 @@ function TropheeCouverture({
           <img className="pochette-image" src={entree.src} alt="" aria-hidden="true" />
         </picture>
         <b className="pochette-sigle">{entree.sigle}</b>
+        {entree.jourCourt && <b className="pochette-date">{entree.jourCourt}</b>}
       </span>
     );
   }
