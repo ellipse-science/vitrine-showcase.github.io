@@ -5328,9 +5328,10 @@
     padding: 0;
     border: 0;
     /* Le vumètre est un <button> depuis qu'il ouvre les sources : sans ce
-       remisage, le fond et le chrome natifs du bouton se voient DANS les
-       interstices entre les segments, et Safari redessine la boîte à sa façon.
-       Même remisage que .une-audio-btn ou .saillance-info-btn. */
+       remisage, le fond natif (`buttonface`, un gris) se voit DANS les
+       interstices entre les segments, et Safari se réserve de redessiner la
+       boîte. Même remisage que .deck-carre et .fonds-vue-bouton, les deux
+       autres boutons du site dont l'apparence est entièrement dessinée. */
     -webkit-appearance: none;
     appearance: none;
     background: none;
