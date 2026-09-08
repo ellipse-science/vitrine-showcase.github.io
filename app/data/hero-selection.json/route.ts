@@ -2,11 +2,17 @@
 // l'export statique.
 //
 // POURQUOI. Le raffineur vitrine-art (aws-refiners) illustre la Une des unes.
-// Pour savoir LAQUELLE, il ne recalcule rien : il lit ce fichier sur le site
-// déployé. C'est la même parade que scripts/select_hero.ts en son temps
-// (issue #259) : `selectHeroFromRawEvents` est l'API publique du loader, et le
-// verdict publié ici est par construction celui du rendu — même snapshot de
-// données, même code, même build. Si le classement évolue, ce fichier suit.
+// Pour savoir LAQUELLE, il lit ce fichier sur le site déployé. C'est la même
+// parade que scripts/select_hero.ts en son temps (issue #259) : le verdict
+// publié ici est par construction celui du rendu — même snapshot de données,
+// même code, même build.
+//
+// ⚠️ LE CALCUL N'EST PLUS ICI. Il vit dans `lib/data/heroSelectionCore.ts`
+// (`heroSelectionPayload`), un module PUR que le Worker peut charger lui aussi
+// — c'est ce qui permettra à l'illustration d'être prête AVANT le build plutôt
+// qu'après (aws-refiners#490). Les deux côtés appellent LA MÊME fonction,
+// jamais une copie : c'est la seule chose qui garantit qu'ils ne divergeront
+// pas, et la divergence est précisément la panne de #259.
 //
 // `force-static` : la route est rendue UNE FOIS au build et devient un fichier
 // plat dans out/. Aucun visiteur ne déclenche de calcul. postbuild.mjs épargne
@@ -14,7 +20,8 @@
 // page d'accueil n'est pas une donnée vendue).
 
 import { readDatasetText } from "@/lib/data/source";
-import { selectHeroFromRawEvents, parseEvents } from "@/lib/data/headlineEvents";
+import { parseEvents } from "@/lib/data/headlineEvents";
+import { heroSelectionPayload } from "@/lib/data/heroSelectionCore";
 
 export const dynamic = "force-static";
 
@@ -23,33 +30,7 @@ export async function GET() {
   // illustrer, et le raffineur sait quoi faire d'un null — rien.
   try {
     const raw = await readDatasetText("public/data/headline-events.json");
-    const events = parseEvents(raw);
-    const selection = selectHeroFromRawEvents(events);
-    // `latest_block` = le bloc le plus récent du jeu servi, indépendant de
-    // l'histoire de tête. La Une garde le bloc de sa dernière occurrence (une
-    // histoire dominante depuis hier soir affiche « hier soir » à bon droit) ;
-    // la sonde de fraîcheur, elle, doit mesurer l'âge du jeu, pas celui de
-    // l'histoire — sinon elle sonne quand la tête ne se renouvelle pas (vécu le
-    // 2 septembre 2026 : « 22,4 h de retard » sur un site à jour).
-    // Le tri est LEXICOGRAPHIQUE, et il est juste parce que les intervalles
-    // sont zéro-padés à deux chiffres. Mesuré le 2026-09-03 sur le jeu servi :
-    // les six seules valeurs présentes sont 03-07, 07-11, 11-15, 15-19, 19-23
-    // et 23-03 (750 lignes). L'ordre des chaînes suit donc l'ordre du temps, y
-    // compris pour 23-03, dernier bloc de sa date. ⚠️ Une valeur non padée
-    // (« 3-7 ») casserait silencieusement ce tri : « 3-7 » se compare après
-    // « 19-23 ». Si le raffineur cesse un jour de pader, passer par une clé
-    // ISO comme le fait lib/data/headlineEvents.ts.
-    const latest = events.reduce<{ date_utc: string; time_interval_utc: string } | null>(
-      (best, e) => {
-        if (!e.date_utc || !e.time_interval_utc) return best;
-        const key = `${e.date_utc} ${e.time_interval_utc}`;
-        return !best || key > `${best.date_utc} ${best.time_interval_utc}`
-          ? { date_utc: e.date_utc, time_interval_utc: e.time_interval_utc }
-          : best;
-      },
-      null,
-    );
-    return Response.json(selection ? { ...selection, latest_block: latest } : selection);
+    return Response.json(heroSelectionPayload(parseEvents(raw)));
   } catch {
     return Response.json(null);
   }
