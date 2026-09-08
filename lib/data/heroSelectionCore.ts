@@ -32,7 +32,12 @@ import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
   recencyWeight,
-} from "@/lib/data/salienceCutover";
+} from "./salienceCutover";
+// ⚠️ IMPORT RELATIF, PAS L'ALIAS `@/`. Le tsconfig du Worker
+// (`workers/api/tsconfig.json`) ne déclare aucun `paths` : un `@/…` y serait
+// irrésolu, et ce module ne serait pas chargeable — c'est-à-dire qu'il
+// manquerait sa raison d'être. Même parade que `lib/flappy`, déjà importé par
+// `workers/api/src/flappy.ts` en relatif.
 
 export type RawEvent = {
   country_id: string | null;
@@ -450,4 +455,51 @@ export function selectHeroFromRawEvents(all: RawEvent[]): HeroSelection | null {
     sum_qc: Number(hero.sumQc.toFixed(3)),
     peak_qc: Number(hero.peakQc.toFixed(3)),
   };
+}
+
+/** Le bloc le plus récent du jeu servi, indépendant de l'histoire de tête.
+ *
+ *  La Une garde le bloc de sa dernière occurrence (une histoire dominante
+ *  depuis hier soir affiche « hier soir » à bon droit) ; la sonde de fraîcheur,
+ *  elle, doit mesurer l'âge du JEU, pas celui de l'histoire — sinon elle sonne
+ *  quand la tête ne se renouvelle pas (vécu le 2026-09-02 : « 22,4 h de
+ *  retard » sur un site à jour).
+ *
+ *  Le tri est LEXICOGRAPHIQUE, et il est juste parce que les intervalles sont
+ *  zéro-padés à deux chiffres. Mesuré le 2026-09-03 sur le jeu servi : les six
+ *  seules valeurs présentes sont 03-07, 07-11, 11-15, 15-19, 19-23 et 23-03
+ *  (750 lignes). ⚠️ Une valeur non padée (« 3-7 ») casserait silencieusement ce
+ *  tri : « 3-7 » se compare après « 19-23 ». */
+export function latestBlockOf(
+  events: RawEvent[],
+): { date_utc: string; time_interval_utc: string } | null {
+  return events.reduce<{ date_utc: string; time_interval_utc: string } | null>(
+    (best, e) => {
+      if (!e.date_utc || !e.time_interval_utc) return best;
+      const key = `${e.date_utc} ${e.time_interval_utc}`;
+      return !best || key > `${best.date_utc} ${best.time_interval_utc}`
+        ? { date_utc: e.date_utc, time_interval_utc: e.time_interval_utc }
+        : best;
+    },
+    null,
+  );
+}
+
+/** Le contenu EXACT de `data/hero-selection.json` — la Une retenue et le bloc
+ *  le plus récent du jeu.
+ *
+ *  UNE SEULE IMPLÉMENTATION, APPELÉE DES DEUX CÔTÉS. La route du site
+ *  (`app/data/hero-selection.json/route.ts`) et le Worker
+ *  (`workers/api/src/hero-selection.ts`) appellent cette fonction, jamais une
+ *  copie. C'est ce qui rend les deux verdicts identiques par construction, et
+ *  c'est la seule protection contre la divergence sélecteur/rendu de
+ *  vitrine-showcase#259. */
+export type HeroSelectionPayload =
+  | (HeroSelection & { latest_block: { date_utc: string; time_interval_utc: string } | null })
+  | null;
+
+export function heroSelectionPayload(events: RawEvent[]): HeroSelectionPayload {
+  const selection = selectHeroFromRawEvents(events);
+  if (!selection) return null;
+  return { ...selection, latest_block: latestBlockOf(events) };
 }

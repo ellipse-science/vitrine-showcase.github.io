@@ -50,6 +50,7 @@ import {
   type SnapshotEnv,
 } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
+import { publierSelectionUne, SOURCE_TABLE as HERO_SOURCE_TABLE } from './hero-selection'
 import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
 
 interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
@@ -290,6 +291,45 @@ export default {
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err)
               await notifySlack(env, `sync-athena : manifeste d'instantané en échec : ${message}`)
+            }
+          }
+
+          // SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (aws-refiners#490).
+          //
+          // `vitrine-art` lit aujourd'hui la Une sur le SITE DÉPLOYÉ, donc
+          // derrière la file de build de Cloudflare Pages : quand un build est
+          // sauté ou retardé, le raffineur illustre l'ANCIENNE Une, ou rien.
+          // Mesuré du 29 août au 3 septembre 2026 : de 1 h 20 à 5 h par jour
+          // d'édition sans illustration. Ici, la Une est connue à :56 — avant
+          // le build — et déposée dans l'instantané du cycle.
+          //
+          // PERSONNE NE LA LIT ENCORE. On publie en parallèle ; le site
+          // continue de calculer la sienne, et on compare les deux sur
+          // plusieurs cycles avant de basculer quoi que ce soit. Basculer sans
+          // preuve, c'est ce qui a produit la divergence de
+          // vitrine-showcase#259.
+          //
+          // AVALE TOUT, ET SANS SLACK. Rien ne dépend encore de cet objet :
+          // une alerte serait du bruit, et une exception qui remonterait
+          // retiendrait les Deploy Hooks — c'est-à-dire figerait le site pour
+          // un artefact que personne ne consomme. Le journal suffit.
+          //
+          // AVANT LES HOOKS, a dessein : le jour ou le build lira cette
+          // selection, elle devra etre en place quand il demarre. La placer
+          // ici maintenant evite de la deplacer plus tard, et le cout est une
+          // lecture R2 plus un calcul en memoire.
+          if (env.ART_BUCKET && snapshotTables[HERO_SOURCE_TABLE]) {
+            try {
+              const { published, selection } = await publierSelectionUne(env.ART_BUCKET, cycle)
+              console.log(
+                published
+                  ? `selection de la Une publiee : cycle ${cycle}, ${selection?.event_id ?? 'aucune Une'}`
+                  : `selection de la Une : ${HERO_SOURCE_TABLE} absente de l'instantane`,
+              )
+            } catch (err) {
+              console.error(
+                `selection de la Une : ${err instanceof Error ? err.message : String(err)}`,
+              )
             }
           }
 
