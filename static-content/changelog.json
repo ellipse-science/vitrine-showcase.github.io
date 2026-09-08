@@ -1,5 +1,11 @@
 [
   {
+    "pr": 767,
+    "date": "2026-09-08T23:52:04Z",
+    "note": "Aucune. Changement interne, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 766,
     "date": "2026-09-08T18:50:10Z",
     "note": "Le petit vumètre de chaque parti n'a plus de fond gris qui dépassait entre ses barres. Le lien pour signaler une erreur ne transmet plus la page d'où vous l'avez cliqué.",
