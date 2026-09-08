@@ -13,7 +13,10 @@
 // D'où cette extraction — la MÊME logique, dans un module qu'un Worker peut
 // charger.
 //
-// RÈGLE : aucune dépendance Node, aucune dépendance React, aucune E/S. Même
+// RÈGLE : aucune dépendance Node, aucune dépendance React, aucune E/S — et
+// AUCUN import inutile : tout ce qui entre ici entre dans le bundle du
+// Worker. Un seul import aujourd'hui, `salienceCutover`, qui n'en a lui-même
+// aucun. Même
 // convention que `workers/api/src/art-logic.ts`, `snapshot-logic.ts` et
 // `flappy-logic.ts` — logique pure ici, entrées-sorties à côté.
 //
@@ -25,11 +28,9 @@
 // Ce module a été obtenu par DÉPLACEMENT, sans modification de logique
 // (aws-refiners#490, 2026-09-08). Le comportement est celui d'avant.
 
-import { normaliserTypographie } from "@/lib/typographieFr";
 import {
   SALIENCE_CUTOVER,
   NEW_INDEX_SCALE,
-  RECENCY_WEIGHT_TOTAL,
   recencyWeight,
 } from "@/lib/data/salienceCutover";
 
