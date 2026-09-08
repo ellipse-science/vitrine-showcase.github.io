@@ -5327,6 +5327,14 @@
     gap: var(--seg-gap);
     padding: 0;
     border: 0;
+    /* Le vumètre est un <button> depuis qu'il ouvre les sources : sans ce
+       remisage, le fond natif (`buttonface`, un gris) se voit DANS les
+       interstices entre les segments, et Safari se réserve de redessiner la
+       boîte. Même remisage que .deck-carre et .fonds-vue-bouton, les deux
+       autres boutons du site dont l'apparence est entièrement dessinée. */
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
     cursor: pointer;
   }
   .console-vumetre:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 4px; }
