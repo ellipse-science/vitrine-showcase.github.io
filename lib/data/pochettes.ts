@@ -24,10 +24,22 @@ import { samediDeLaSemaine, vendrediDeLaSemaine } from "@/lib/semaine";
 
 const RACINE = path.join(process.cwd(), "public", "data", "generated-art", "partis");
 
-/** Chemin servi au navigateur. Relatif, comme `data/generated-art/latest.png`
- *  pour la Une : le `basePath` est appliqué par le composant. */
+/** Chemin servi au navigateur, DEPUIS LA RACINE du site.
+ *
+ *  ⚠️ IL ÉTAIT RELATIF (`data/generated-art/partis/…`), et c'était un bogue.
+ *  Une URL relative se résout d'après la page qui la porte : à la racine, où
+ *  vit l'illustration de la Une, `data/…` tombe juste ; mais `/discotheque/`
+ *  la résout en `/discotheque/data/…`, qui n'existe pas. Toutes les images du
+ *  fonds répondaient donc 404 — invisible jusqu'ici, les pochettes n'étant pas
+ *  encore déployées. Le disque d'or, lui, vit à la racine et n'était pas
+ *  touché.
+ *
+ *  Le `basePath` est appliqué ICI plutôt que laissé au composant : aucun ne le
+ *  faisait, et une URL qui ne dépend plus de la page qui l'affiche ne peut plus
+ *  se casser en déménageant de route. */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const urlPochette = (jour: string, parti: string, ext: string) =>
-  `data/generated-art/partis/${jour}/${parti}.${ext}`;
+  `${BASE_PATH}/data/generated-art/partis/${jour}/${parti}.${ext}`;
 
 /** Les formats, du plus léger au plus universel. `<picture>` retient le
  *  premier que le navigateur sait lire, donc l'ordre compte. */

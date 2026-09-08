@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
 import type { PartiesData, RowView } from "@/lib/data/parties";
@@ -189,7 +190,7 @@ describe("le disque d'or — la course n'est pas encore courue", () => {
     // Le lien précède le disque dans le DOM (flex-direction: column, donc dans
     // l'ordre visuel) : c'est la première chose qu'on croise, pas la dernière.
     const iLien = html.indexOf('class="trophee-voir-tout"');
-    const iDisque = html.indexOf('class="trophee-disque"');
+    const iDisque = html.indexOf('class="trophee-disque');
     expect(iLien).toBeGreaterThan(-1);
     expect(iDisque).toBeGreaterThan(iLien);
   });
@@ -249,8 +250,12 @@ describe("le disque d'or — couronné, avec une vraie pochette", () => {
     expect(html).toContain(`/pochettes/2026-08-27-${meneur.key}.png`);
   });
 
-  it("garde le sigle en légende par-dessus l'image, comme une couverture de la discothèque", () => {
-    expect(html).toMatch(/class="pochette-sigle">[^<]*<\/b>/);
+  it("grave le sigle ET la date sur l'étiquette du disque, par-dessus l'image", () => {
+    expect(html).toMatch(/class="pochette-pastille-sigle">[^<]*<\/b>/);
+    expect(html).toMatch(/class="pochette-pastille-date">27 août<\/b>/);
+    // L'étiquette porte la couleur du parti elle-même, sans l'attendre d'un
+    // ancêtre : c'est ce qui la rend posable sur n'importe quelle pochette.
+    expect(html).toContain('class="pochette-pastille" style="--party:');
   });
 });
 
@@ -306,12 +311,12 @@ describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse"
   });
 
   it("le gabarit du knob Mesure porte les DEUX positions possibles", () => {
-    const gabarits = [...boites[0].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    const gabarits = [...boites[0].matchAll(/class="knob-valeur-gabarit(?: actif)?"[^>]*>([^<]*)</g)].map((m) => m[1]);
     expect(gabarits).toEqual(["Écouté", "Apprécié"]);
   });
 
   it("le gabarit du knob Vitesse porte les TROIS positions possibles", () => {
-    const gabarits = [...boites[1].matchAll(/class="knob-valeur-gabarit"[^>]*>([^<]*)</g)].map((m) => m[1]);
+    const gabarits = [...boites[1].matchAll(/class="knob-valeur-gabarit(?: actif)?"[^>]*>([^<]*)</g)].map((m) => m[1]);
     expect(gabarits).toEqual(["Jour 78 T", "Semaine 45 T", "Campagne 33 T"]);
   });
 
@@ -324,102 +329,78 @@ describe("les knobs — le graphique ne doit pas bouger en changeant de vitesse"
   });
 });
 
-describe("les decks — inertes tant qu'aucun article n'est connu, depuis le 2026-09-01", () => {
-  // RÉGRESSION du 2026-09-01 : un clic sur un deck menait au panneau du
-  // disque d'or, une carte déjà retournée — mais ce panneau n'a rien à
-  // montrer tant que la course n'est pas courue (« disque en production »
-  // pour les cinq, sans rapport avec le parti cliqué). Sans `articleUrl`, le
-  // deck n'a donc plus rien à faire au clic : ni bouton, ni lien, un `<div>`
-  // inerte qui garde la place pour le jour où l'article existe vraiment.
+describe("les decks — retournent leur pochette", () => {
   const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
-  const inertes = [...html.matchAll(/<div[^>]*class="deck-carre deck-carre--inerte"[^>]*>/g)];
 
-  it("quatre decks, quatre VRAIS <div> inertes — ni bouton, ni lien", () => {
-    expect(inertes.length).toBe(4);
+  it("quatre boutons retournent les quatre vinyles — jamais un lien externe", () => {
+    const boutons = [...html.matchAll(/<button[^>]*class="deck-carre deck-carre--retournable"[^>]*>/g)];
+    expect(boutons.length).toBe(4);
     expect(html).not.toMatch(/<a[^>]*class="deck-carre"/);
-    expect(html).not.toMatch(/<button[^>]*class="deck-carre"/);
   });
 
-  it("aucun `aria-label`, aucun `title` — rien à annoncer tant qu'il n'y a rien à faire", () => {
-    for (const [balise] of inertes) {
-      expect(balise).not.toContain("aria-label");
-      expect(balise).not.toContain("title=");
-    }
+  it("porte les deux faces et annonce le détail au dos de la pochette", () => {
+    expect((html.match(/flip-face--recto/g) ?? []).length).toBe(4);
+    expect((html.match(/flip-face--verso/g) ?? []).length).toBe(4);
+    expect(html).toContain("Voir le détail au dos de la pochette.");
   });
 
-  it("la table de mix (le pupitre) précède le palmarès dans la page", () => {
-    // RÉGRESSION du 2026-09-01 : le palmarès (et son disque d'or) vivait EN
-    // TÊTE du module ; il suit maintenant le pupitre (decks + console +
-    // fader), l'inverse de l'ordre précédent.
-    const iPupitre = html.indexOf('class="pupitre"');
-    const iPalmares = html.indexOf('class="partis-course partis-course--tete"');
-    expect(iPupitre).toBeGreaterThan(-1);
-    expect(iPalmares).toBeGreaterThan(iPupitre);
-  });
-
-  it("aucune pochette ne s'ouvre plus EN PLACE, sous le pupitre", () => {
-    expect(html).not.toContain('class="gatefold"');
-    expect(html).not.toContain("gatefold-nom");
-    expect(html).not.toContain("gatefold-fermer");
-    expect(html).not.toContain("deck-carre--choisi");
+  it("garde le rang hors des deux faces pour ne jamais l'imprimer au verso", () => {
+    const rectoFermeAvantRang = /flip-face--recto[\s\S]*?flip-face--verso[\s\S]*?<\/span><span class="deck-rang"/g;
+    expect([...html.matchAll(rectoFermeAvantRang)].length).toBe(4);
   });
 });
 
-describe("les decks — mènent vers l'article représentatif quand il existe (aws-refiners#447)", () => {
-  // Sur « Tous les médias » (la position par défaut du fader), un deck n'a
-  // pas d'URL propre : `lienArticle` en choisit une parmi les médias qui en
-  // ont une pour ce parti (voir le commentaire de `lienArticle`,
-  // PartisCouvertureClient.tsx). Ce fixture donne DEUX médias au premier
-  // parti du classement, et AUCUN au second — pour prouver les deux issues,
-  // pas seulement la présente.
-  const base = donnees([0, 4, 8, 12, 16, 20]);
-  const visibles = base.ranges.today.rows.filter((r) => !r.inShadow);
-  const avecArticle = visibles[0];
-  const sansArticle = visibles[1];
+/* ───────────────────────────────────────────────────────────────────────────
+   L'ENDOS DE LA POCHETTE : la barre du ton, et plus le mot.
+   « Défavorable » redisait en toutes lettres ce que le repère de la jauge
+   montre déjà, sur une rangée large de 130 px. Il n'est pas supprimé pour
+   autant : la jauge est purement graphique, et sans le mot un lecteur d'écran
+   n'aurait plus qu'une barre muette.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("le ton au dos de la pochette", () => {
+  const html = renderToStaticMarkup(<PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />);
+  const ligne = html.match(/tracklist-ligne--ton[\s\S]*?<\/div>/)?.[0] ?? "";
 
-  const URL_LED = "https://ledevoir.example/article-a";
-  const URL_RCI = "https://rci.example/article-b";
-  const avecUrl = (rows: RowView[], url: string): RowView[] =>
-    rows.map((r) => (r.key === avecArticle.key ? { ...r, representativeUrl: url } : r));
-
-  const data: PartiesData = {
-    ...base,
-    medias: [
-      { id: "led", label: "Le Devoir" },
-      { id: "rci", label: "Radio-Canada" },
-    ],
-    byMedia: {
-      led: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_LED) } } },
-      rci: { ranges: { ...base.ranges, today: { ...base.ranges.today, rows: avecUrl(base.ranges.today.rows, URL_RCI) } } },
-    },
-  };
-
-  const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
-
-  it("le deck du parti qui a un article devient un VRAI lien externe", () => {
-    const liens = [...html.matchAll(/<a class="deck-carre" href="([^"]*)"[^>]*>/g)];
-    expect(liens.length).toBe(1);
-    expect([URL_LED, URL_RCI]).toContain(liens[0][1]);
+  it("porte bien la jauge", () => {
+    expect(ligne).toContain("pochette-ton");
+    expect(ligne).toContain("pochette-ton-repere");
   });
 
-  it("le lien s'ouvre dans un nouvel onglet, comme tout lien externe du site", () => {
-    expect(html).toMatch(/<a class="deck-carre" href="[^"]*" target="_blank" rel="noopener noreferrer"/);
+  it("n'écrit plus le mot à l'œil, mais le garde pour les lecteurs d'écran", () => {
+    expect(ligne).toContain("visually-hidden");
+    // Le mot existe, dans le span réservé aux lecteurs d'écran — et nulle part
+    // ailleurs dans la rangée.
+    const mots = [...ligne.matchAll(/>(favorable|défavorable|neutre)</gi)];
+    for (const m of mots) {
+      const avant = ligne.slice(0, m.index);
+      expect(avant.lastIndexOf("visually-hidden")).toBeGreaterThan(avant.lastIndexOf("</span>"));
+    }
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   PAS D'ENJEU SUR UNE POSITION DU FADER — et plus de rangée pour le dire.
+   Le raffineur publie bien parti × enjeu × média (aws-refiners#415), mais la
+   table n'est pas dans `scripts/tables.json` : les vues par média n'ont donc
+   aucun enjeu. On affichait « Non ventilé par média » ; la rangée disparaît.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("l'enjeu sur une vue par média", () => {
+  // La fixture de ce fichier porte `medias: []` : elle ne peut donc PAS
+  // exercer le chemin par média, et une assertion sur `enjeuxVentiles` y
+  // serait vide de sens. Ce qu'elle prouve, c'est que le libellé de repli a
+  // bien quitté le rendu — ce qui suffit à empêcher son retour.
+  it("le libellé de repli « Non ventilé par média » n'est plus rendu", () => {
+    const html = renderToStaticMarkup(
+      <PartisCouvertureClient data={donnees([0, 4, 8, 12, 16, 20])} />,
+    );
+    expect(html).not.toContain("Non ventilé");
   });
 
-  it("l'annonce dit qu'on quitte le site pour un article, pas qu'on ouvre une pochette", () => {
-    expect(html).toContain("Lire l&#x27;article qui en parle le plus, dans un nouvel onglet.");
-  });
-
-  it("le deck d'un parti SANS article, lui, reste un <div> inerte", () => {
-    // `sansArticle` n'a plus de nom dans le DOM (aucun `aria-label` sur
-    // l'inerte) : on vérifie sa PRÉSENCE par son sigle, gravé sur le disque
-    // lui-même (`.cap-sigle`), pas par une annonce qui n'existe plus.
-    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">([\s\S]*?)<\/div>\s*<\/div>/g)];
-    expect(inertes.some(([, contenu]) => contenu.includes(`>${sansArticle.label}<`))).toBe(true);
-  });
-
-  it("trois decks sur quatre restent inertes — un seul a un article", () => {
-    const inertes = [...html.matchAll(/<div class="deck-carre deck-carre--inerte">/g)];
-    expect(inertes.length).toBe(3);
+  it("la rangée d'enjeu est conditionnelle, pas inconditionnelle", () => {
+    // Garde de SOURCE : le jour où quelqu'un remet un `<LigneTracklist
+    // categorie="Enjeu">` sans garde, ce test le voit. C'est la seule façon
+    // d'éprouver ici un chemin que la fixture n'atteint pas.
+    const src = readFileSync("components/interactive/PartisCouvertureClient.tsx", "utf8");
+    expect(src).toContain("{enjeu !== null && (");
   });
 });

@@ -18,7 +18,8 @@ import path from "node:path";
 
 import { readDatasetText } from "@/lib/data/source";
 
-import { lastUpdatedLabel, formatDateFr } from "@/lib/dates";
+import { lastUpdatedLabel, formatDateFr, plusAncienneEdition } from "@/lib/dates";
+import { fraicheurArticlesRadar } from "./fraicheur";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { samediDeLaSemaine } from "@/lib/semaine";
@@ -580,8 +581,15 @@ export type PartiesData = {
   /** Dernier bloc de 4 h publié, ou `null` sans table intra-journée. */
   blocCourant: BlocCourant | null;
   lastDate: string; // ISO date de la dernière donnée disponible
-  /** « Dernière mise à jour : mardi 30 juin 2026 » — table journalière, pas d'heure. */
+  /** « Dernière mise à jour : samedi 5 septembre 2026, 16h » — la plus ANCIENNE
+   *  de deux éditions : celle du dernier bloc intra-journée publié et celle du
+   *  plus récent article annoté (la matière des deux étages du module). Le
+   *  raffineur des partis publie un bloc à chaque passe même quand aucun
+   *  article n'est arrivé : seul l'article dit si la donnée a bougé. Sans table
+   *  intra-journée ni article daté, la date seule. */
   lastUpdated: string;
+  /** URL d'article → titre, lu dans l'index d'articles publié au build. */
+  titresArticles?: Record<string, string>;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -2293,6 +2301,7 @@ function libellePeriode(range: RangeKey, joursIso: string[]): string {
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  THEME_VERS_CATEGORIE,
   buildLookup,
   buildEnjeux,
   computeStats,
@@ -2352,6 +2361,27 @@ if (SUR_FIXTURES && process.env.CI && process.env.NEXT_PUBLIC_SITE_ENV !== "dev"
 const DATA_DIR = SUR_FIXTURES
   ? path.resolve(process.cwd(), process.env.VITRINE_PARTIES_FIXTURES as string)
   : path.resolve(process.cwd(), "public", "data", "refined");
+
+/** Les scores de partis publient une URL représentative, mais pas son titre.
+ * L'index local d'articles permet de rendre cette source lisible sans requête
+ * côté navigateur. */
+async function loadTitresArticles(): Promise<Record<string, string>> {
+  try {
+    const raw = await readDatasetText("public/data/refined/issues_articles.json");
+    // Objet ordinaire : cette donnée traverse la frontière Server → Client de
+    // Next.js, qui refuse les objets à prototype nul (`Object.create(null)`).
+    const titres: Record<string, string> = {};
+    for (const article of JSON.parse(raw) as { url?: unknown; title?: unknown }[]) {
+      if (typeof article.url !== "string" || typeof article.title !== "string") continue;
+      const url = article.url.trim();
+      const title = article.title.trim();
+      if (url && title) titres[url] = title;
+    }
+    return titres;
+  } catch {
+    return {};
+  }
+}
 
 export async function loadParties(
   /** Édition passée (#434) : JOUR de publication de l'édition affichée.
@@ -2455,7 +2485,10 @@ export async function loadParties(
       lireMedia("month"),
     ]);
 
-    const computed = computeStats(dayRows);
+    const [computed, titresArticles] = await Promise.all([
+      Promise.resolve(computeStats(dayRows)),
+      loadTitresArticles(),
+    ]);
     if (!computed) return null;
     const { stats, dates } = computed;
 
@@ -2534,10 +2567,25 @@ export async function loadParties(
     const blocJour = intradayRows ? blocIntradayCourant(intradayRows) : null;
     const statsJour = blocJour ? statsAvecBlocCourant(stats, blocJour, dates.daily) : stats;
 
+    // L'HEURE AFFICHÉE EST CELLE DE LA DONNÉE (règle du 2026-09-06, cf.
+    // lastUpdatedLabel). Deux étages nourrissent ce module : le dernier bloc de
+    // la table intra-journée (lu à la fin de sa période, comme la course de la
+    // journée) et le plus récent article annoté. Le module n'est jamais plus
+    // frais que le plus lent des deux — le 6 septembre 2026, la table publiait
+    // encore des blocs alors que plus aucun article n'arrivait depuis la veille
+    // 15h52. Sur fixtures, pas d'articles réels : le bloc seul.
+    const blocCourant = dernierBloc(intradayRows);
+    const editionBloc = blocCourant
+      ? { date: blocCourant.date, heure: Math.min(24, surLaGraduation(blocCourant.hour) + PAS_GRADUATION_H) }
+      : null;
+    const editionArticles = SUR_FIXTURES ? null : await fraicheurArticlesRadar(asOfInstantIso);
+    const edition = plusAncienneEdition(editionBloc, editionArticles);
+
     return {
-      blocCourant: dernierBloc(intradayRows),
+      blocCourant,
       lastDate,
-      lastUpdated: lastUpdatedLabel(lastDate),
+      lastUpdated: edition ? lastUpdatedLabel(edition.date, edition.heure) : lastUpdatedLabel(lastDate),
+      titresArticles,
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.
@@ -2566,4 +2614,3 @@ export async function loadParties(
     throw err;
   }
 }
-

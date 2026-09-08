@@ -4,6 +4,8 @@ import { useState } from "react";
 import { formatDuree } from "@/lib/duree";
 import type { Album, Discographie, Single } from "@/lib/data/pochettes";
 import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Tracklist";
+import { PochettePastille } from "@/components/interactive/PochettePastille";
+import { libelleEnjeuCourt } from "@/lib/enjeux";
 
 type Vue = "jour" | "semaine" | "campagne";
 
@@ -125,8 +127,8 @@ export function DiscothequeClient({
 
 /**
  * UNE POCHETTE, réutilisée pour l'album ET pour chaque piste de la tracklist —
- * mêmes classes `.pochette-art`/`.pochette-image`/`.pochette-sigle` que partout
- * ailleurs dans le module. `taille` ne change QUE la classe qui l'englobe : la
+ * mêmes classes `.pochette-art`/`.pochette-image` et la même étiquette de
+ * disque (`PochettePastille`) que partout ailleurs dans le module. `taille` ne change QUE la classe qui l'englobe : la
  * pochette elle-même ne sait pas si elle est la vedette d'une plaque fermée ou
  * une ligne de tracklist.
  */
@@ -151,7 +153,14 @@ function Pochette({ single, taille }: { single: Single; taille: "couverture" | "
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pochette-image" src={single.src} alt="" aria-hidden="true" loading="lazy" />
       </picture>
-      {taille === "couverture" && <b className="pochette-sigle">{single.sigle}</b>}
+      {/* L'ÉTIQUETTE DU DISQUE — le sigle et la date posés sur la pastille de
+          couleur, au centre de l'illustration (`PochettePastille`).
+          LA DATE Y EST PARCE QUE LE FONDS RANGE PAR JOUR : une pochette
+          regardée seule ne dit pas duquel elle vient, et ses chiffres sont
+          FIGÉS à sa fabrication. La date est donc ce qui les qualifie. */}
+      {taille === "couverture" && (
+        <PochettePastille sigle={single.sigle} jourCourt={single.jourCourt} couleur={single.couleur} />
+      )}
     </span>
   );
 }
@@ -264,7 +273,7 @@ function CarteSingle({ single }: { single: Single }) {
   const chiffres = single.chiffres;
 
   return (
-    <div className="fonds-plaque" style={{ ["--party" as string]: single.couleur }}>
+    <div className="fonds-plaque fonds-plaque--single" style={{ ["--party" as string]: single.couleur }}>
       <button
         type="button"
         className="fonds-plaque-declencheur"
@@ -286,14 +295,23 @@ function CarteSingle({ single }: { single: Single }) {
             </span>
             <span className="flip-face flip-face--verso">
               <dl className="fonds-piste-detail">
-                <LigneTracklist categorie="Temps en Une" chiffre>
+                <LigneTracklist categorie="Temps en Une">
                   {chiffres ? formatDuree(single.minutesUne) : "n. d."}
                 </LigneTracklist>
                 <LigneTracklist categorie="Part de temps">
                   {chiffres ? `${single.partPct} %` : "n. d."}
                 </LigneTracklist>
-                <LigneTracklist categorie="Enjeu">
-                  {chiffres ? (single.enjeu ?? "Aucun enjeu identifié") : "n. d."}
+                {/* LE LIBELLÉ COURT, comme dans le module (`libelleEnjeuCourt`).
+                    Le libellé complet du CAP monte à 44 caractères (« Droits,
+                    libertés, minorités et discrimination ») et DÉBORDAIT du dos
+                    de la pochette : à 130 px de large, aucun corps lisible ne
+                    l'y fait tenir. Le texte entier reste dans l'infobulle, et un
+                    lecteur d'écran l'y trouve. */}
+                <LigneTracklist
+                  categorie="Enjeu"
+                  title={chiffres ? (single.enjeu ?? "Aucun enjeu identifié") : undefined}
+                >
+                  {chiffres ? libelleEnjeuCourt(single.enjeu ?? "Aucun enjeu identifié") : "n. d."}
                 </LigneTracklist>
                 {chiffres ? (
                   <LigneTracklistTon categorie="Ton" tonMot={single.ton} tonPct={single.tonPct} />
@@ -304,11 +322,15 @@ function CarteSingle({ single }: { single: Single }) {
             </span>
           </span>
         </span>
-        <span className="fonds-plaque-tete">
-          <b>{single.sigle}</b>
-          <span className="fonds-plaque-sous">{single.jourLabel}</span>
-          <span className="fonds-plaque-total">{chiffres ? formatDuree(single.minutesUne) : "n. d."}</span>
-        </span>
+        {/* PAS DE BANDEAU SOUS LA POCHETTE (2026-09-07). Il redisait le sigle
+            et le temps, que l'étiquette du disque porte déjà — et un mur de
+            singles se parcourt comme un bac : des pochettes, rien d'autre.
+            Rien n'est perdu pour autant : le jour complet et le temps en Une
+            restent dans l'`aria-label` du bouton ci-dessus (donc pour un
+            lecteur d'écran) et au dos de la pochette, qu'un clic retourne.
+            Les PLAQUES (album, discographie) gardent le leur : leur en-tête
+            dit ce que la carte représente et son temps total, ce qu'aucune
+            étiquette de couverture ne dit. */}
       </button>
     </div>
   );

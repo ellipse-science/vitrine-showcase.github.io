@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, ChartView, Indisponibilite } from "@/lib/data/parties";
 import type { Album, Discographie, Discotheque, Pochette, PochetteSource } from "@/lib/data/pochettes";
 import { TOUS_MEDIAS, MEDIA_ORDER, MEDIA_PANEL_QC, MEDIA_SIGLES, MEDIA_DANS, MEDIA_DE, MEDIA_LABELS } from "@/lib/medias";
-import { signaturePochette } from "@/lib/enjeux";
+import { libelleEnjeuCourt, signaturePochette } from "@/lib/enjeux";
 import { formatDuree } from "@/lib/duree";
 import { formatEcartTon, phraseEcartTon } from "@/lib/ton";
 import { cheminDeRang, depuisLOrigine, hauteurDuRang, rangsParInstant } from "@/lib/rangs";
@@ -15,6 +15,7 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
 import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Tracklist";
+import { PochettePastille } from "@/components/interactive/PochettePastille";
 
 /** L'enjeu de reste : les phrases qui nomment un parti sans qu'aucun modèle CAP
  *  ne franchisse son seuil. Il EST sélectionnable — sans lui, cocher tous les
@@ -28,10 +29,17 @@ import { LigneTracklist, LigneTracklistTon } from "@/components/interactive/Trac
  *  compilation. La chaîne doit rester identique ici, dans `parties.ts` et dans
  *  `radar-party-score-salient-shadow/runtime.R`. */
 const SANS_ENJEU = "Aucun enjeu identifié";
-/** Quand le fader quitte le centre, le raffineur ne croise pas parti × enjeu ×
- *  média : il n'y a rien à afficher, mais ce n'est PAS « aucun enjeu ». Dire la
- *  limite de la mesure plutôt qu'inventer un fait sur la couverture. */
-const ENJEU_NON_VENTILE = "Non ventilé par média";
+/* Quand le fader quitte le centre, le raffineur ne croise pas parti × enjeu ×
+ * média : la table `parties_issues_salient_shadow_by_media_*` existe côté
+ * raffineur (aws-refiners#415) mais n'est pas dans `scripts/tables.json`, donc
+ * le site ne la lit pas.
+ *
+ * On affichait alors « Non ventilé par média » à la place de l'enjeu. La rangée
+ * disait la limite de la mesure — honnête, mais elle occupait une des quatre
+ * lignes du dos pour ne rien mesurer, sur une pochette large de 130 px.
+ *
+ * La rangée DISPARAÎT désormais : trois grandeurs au lieu de quatre, et rien
+ * qui prétende parler d'enjeux quand aucun n'est mesuré. */
 
 // Doom RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20) : l'easter egg
 // des partis reste un jeu d'équipe, pas une porte du site public. Même signal
@@ -81,6 +89,9 @@ type Mode = { cle: ModePalmares; onglet: string; titre: string; infobulle: strin
  *  plus écoutée — pour la semaine et la campagne) : le trophée ne connaît que
  *  cette forme-là, pas d'où elle vient. */
 type EntreeTrophee = {
+  /** La date de la pochette appariée, en court (« 5 sept. »). Absente quand
+   *  aucune image n'est appariée — le repli géométrique n'a pas de date. */
+  jourCourt?: string;
   /** Clé React — la clé du parti suffit, les cinq entrées d'un même trophée ne
    *  peuvent pas se répéter. */
   cle: PartyKey;
@@ -93,7 +104,10 @@ type EntreeTrophee = {
    *  mode Apprécié. `null` quand le parti n'a aucune couverture mesurée. */
   ecart: number | null;
   partPct: number;
-  enjeu: string;
+  /** `null` = aucun enjeu MESURÉ pour cette vue (une position du fader) : la
+   *  rangée ne se rend pas du tout. Distinct de `SANS_ENJEU`, qui est un
+   *  résultat — « on en a parlé, sans enjeu identifiable ». */
+  enjeu: string | null;
   /** Renseigné seulement quand l'enjeu ne vient pas de la journée affichée. */
   enjeuTitle?: string;
   tonMot: string;
@@ -201,8 +215,12 @@ function chartTermine(chart: ChartView): boolean {
  *  bon, et une fois en gabarit invisible qui réserve la place. Deux formules
  *  auraient dérivé au premier ajustement de libellé, et le gabarit aurait cessé
  *  de mesurer ce qu'il est censé mesurer, en silence. */
-const titrePalmares = (mode: ModePalmares, range: RangeKey) =>
-  `Le palmarès\u00a0: ${MODES.find((m) => m.cle === mode)!.titre}, ${PAS_DU_PALMARES[range]}`;
+const titrePalmares = (_mode: ModePalmares, _range: RangeKey) =>
+  // « Le palmarès : Le plus écouté, jour par jour » disait trois choses à la
+  // fois — l'objet, la mesure et le pas — alors que les deux knobs posés juste
+  // à côté disent déjà les deux dernières, et les disent de façon RÉGLABLE.
+  // Le titre ne garde que ce qu'aucune commande n'énonce : le nom de l'objet.
+  "Palmarès";
 
 /** Le PAS du palmarès, par onglet — ce que vaut un cran de son axe.
  *
@@ -309,6 +327,9 @@ export function PartisCouvertureClient({
   const [range, setRange] = useState<RangeKey>("today");
   const [modePalmares, setModePalmares] = useState<ModePalmares>("ecoute");
   const [media, setMedia] = useState<string>(TOUS_MEDIAS);
+  /** Le verso du vumètre : une tranche ouvre les pièces publiées qui permettent
+   * de remonter de ce parti à ses articles représentatifs. */
+  const [partiSources, setPartiSources] = useState<PartyKey | null>(null);
   const [showDoom, setShowDoom] = useState(false);
   /** LE PANNEAU DU DISQUE D'OR — les cinq partis en dessous du palmarès,
    *  déplié par un clic sur le disque (voir `PalmaresTrophee`/`TropheePanel`).
@@ -357,24 +378,19 @@ export function PartisCouvertureClient({
   const mediaLabel =
     media === TOUS_MEDIAS ? null : (data.medias.find((m) => m.id === media)?.label ?? null);
 
-  /** L'ARTICLE VERS LEQUEL UN DECK MÈNE (aws-refiners#447), pour CE parti à LA
-   *  POSITION COURANTE du fader.
-   *
-   *  Sur un média précis, `view` EST déjà la vue de ce média : la ligne du
-   *  parti porte directement l'URL qui le concerne (`representativeUrl`,
-   *  posée par `lib/data/parties.ts`).
-   *
-   *  Sur « Tous les médias », l'agrégat n'a pas d'URL propre — il n'existe
-   *  qu'une URL PAR média. On en choisit une parmi les médias qui en ont une
-   *  pour ce parti, jamais un article qui ne le mentionne pas. */
-  const lienArticle = (row: RowView): string | null => {
-    if (media !== TOUS_MEDIAS) return row.representativeUrl ?? null;
-    const disponibles = data.medias
-      .map((m) => data.byMedia[m.id]?.ranges[range].rows.find((r) => r.key === row.key)?.representativeUrl)
-      .filter((u): u is string => !!u);
-    if (disponibles.length === 0) return null;
-    return disponibles[choisirParmi(row.key, disponibles.length)];
-  };
+  /** Une URL représentative est publiée par média, pas par article. Le verso
+   * ne prétend donc pas montrer tous les articles : il liste exactement les
+   * sources traçables dans l'instantané affiché. */
+  const sourcesParti = partiSources
+    ? (media === TOUS_MEDIAS ? data.medias : data.medias.filter((m) => m.id === media))
+        .map((m) => ({
+          url: data.byMedia[m.id]?.ranges[range].rows.find((r) => r.key === partiSources)?.representativeUrl ?? null,
+          title: "",
+        }))
+        .filter((source): source is { title: string; url: string } => !!source.url)
+        .map((source) => ({ ...source, title: data.titresArticles?.[source.url] ?? "Article source" }))
+        .filter((source, index, toutes) => toutes.findIndex((autre) => autre.url === source.url) === index)
+    : [];
 
   /** LE CLASSEMENT DU TROPHÉE, jusqu'à cinq entrées, pour la vitesse choisie
    *  ET LA MESURE CHOISIE — le disque d'or suit le knob Mesure, exactement
@@ -443,6 +459,10 @@ export function PartisCouvertureClient({
           : range === "week"
             ? (albumSemaineParParti.get(row.key)?.pistes[0] ?? null)
             : (discographieParParti.get(row.key)?.pistes[0] ?? null);
+      // Le libellé COMPLET, calculé une fois : `enjeu` en garde la forme
+      // courte, `enjeuTitle` la forme entière. Les deux doivent parler du même
+      // enjeu, donc ils partent de la même variable.
+      const enjeuLibelle = row.enjeuxVentiles ? (enjeu?.label ?? SANS_ENJEU) : null;
       return {
         cle: row.key,
         sigle: row.label,
@@ -451,16 +471,29 @@ export function PartisCouvertureClient({
         minutes: row.minutesUne,
         ecart: ecartParParti.get(row.key) ?? null,
         partPct: row.sovPct,
-        enjeu: enjeu?.label ?? (row.enjeuxVentiles ? SANS_ENJEU : ENJEU_NON_VENTILE),
-        // Dire d'où vient l'enjeu quand ce n'est pas la journée affichée : la
-        // journée en cours n'en portait aucun et `buildEnjeux` a reculé. Rien
-        // à dire dans le cas courant, donc pas d'infobulle.
-        enjeuTitle: enjeu?.dateSource
-          ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
-          : undefined,
+        // LE NOM COURT AU DOS, LE COMPLET EN INFOBULLE. Le dos ne laisse que
+        // ~13 signes à la valeur (voir `libelleEnjeuCourt`), et la boîte coupe
+        // net ce qui dépasse. On abrège donc à l'affichage seulement : la
+        // catégorie entière reste celle des pads, et le survol la donne.
+        enjeu: enjeuLibelle === null ? null : libelleEnjeuCourt(enjeuLibelle),
+        // L'infobulle porte DEUX choses, et l'une des deux seulement le plus
+        // souvent : la catégorie complète (dès qu'elle a été abrégée), et la
+        // date d'où vient l'enjeu (seulement quand `buildEnjeux` a reculé d'un
+        // jour). Quand il n'y a rien à dire, pas d'attribut du tout.
+        enjeuTitle: enjeuLibelle === null ? undefined : [
+          libelleEnjeuCourt(enjeuLibelle) === enjeuLibelle ? null : enjeuLibelle,
+          enjeu?.dateSource
+            ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined,
         tonMot: row.toneLabel,
         tonPct: row.tonePct,
         tonTitle: row.toneTitle,
+        /* La date de la pochette APPARIÉE, pas celle du module : c'est elle
+           qui qualifie les chiffres figés que le dos affiche. */
+        jourCourt: couverture?.jour ? formatCourt(couverture.jour) : undefined,
         src: couverture?.src,
         sources: couverture?.sources,
       };
@@ -558,8 +591,8 @@ export function PartisCouvertureClient({
               que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
               affichée sans valeur. À égalité au plus bas, les deux y passent.
               <br />
-              <br />• <b>Cliquez un disque</b> pour lire l&apos;article qui en parle le plus,
-              quand on en connaît un.
+              <br />• <b>Cliquez un disque</b> pour retourner sa pochette et lire les détails
+              de la mesure.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -573,12 +606,10 @@ export function PartisCouvertureClient({
           à gauche. Les decks débordent volontairement au-dessus et au-dessous de
           la console — ce sont eux les objets, la console est l'instrument qui
           les mesure. */}
-      <div className="regie">
+      <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[0] && lienArticle(decks[0])} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[2] && lienArticle(decks[2])} />
+          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
 
         <div className="regie-centre">
@@ -590,14 +621,15 @@ export function PartisCouvertureClient({
             saillanceRang={saillanceRang}
             media={media}
             depuis={view.depuisLabel}
+            partiSources={partiSources}
+            sources={sourcesParti}
+            onSelectParti={setPartiSources}
           />
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[1] && lienArticle(decks[1])} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel}
-            articleUrl={decks[3] && lienArticle(decks[3])} />
+          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
       </div>
 
@@ -888,6 +920,9 @@ function Console({
   saillanceRang,
   media,
   depuis,
+  partiSources,
+  sources,
+  onSelectParti,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -903,6 +938,9 @@ function Console({
   media: string;
   /** Depuis quand la mesure court : « depuis minuit », « depuis lundi »… */
   depuis: string;
+  partiSources: PartyKey | null;
+  sources: { title: string; url: string }[];
+  onSelectParti: (parti: PartyKey | null) => void;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -949,6 +987,8 @@ function Console({
     return <p className="console-vide">Aucun parti n&apos;a été détecté sur cette période.</p>;
   }
 
+  const partiChoisi = partiSources ? rows.find((row) => row.key === partiSources) : null;
+
   return (
     <section
       className="console"
@@ -958,6 +998,29 @@ function Console({
          de l'échelle plutôt qu'à une extrémité. */
       style={{ ["--tempo" as string]: `${saillanceRang > 0 ? 2.0 - (saillanceRang - 1) * 0.26 : 1.35}s` }}
     >
+      {partiChoisi && (
+        <div className="console-sources" aria-live="polite">
+          <button className="console-sources-retour" type="button" onClick={() => onSelectParti(null)}>
+            Retour au vumètre
+          </button>
+          <p className="console-sources-surtitle">Sources de la mesure</p>
+          <h3>{partiChoisi.fullLabel}</h3>
+          {sources.length > 0 ? (
+            <ul>
+              {sources.map((source) => (
+                <li key={source.url}>
+                  <a href={source.url} target="_blank" rel="noopener noreferrer">
+                    {source.title} <span aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="console-sources-vide">Aucune source représentative n’est publiée pour cette vue.</p>
+          )}
+        </div>
+      )}
+      <div className={`console-face${partiChoisi ? " console-face--masquee" : ""}`} aria-hidden={partiChoisi ? true : undefined}>
       {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
           l'instrument, il ne l'introduit pas. */}
       <p className="console-tete">
@@ -975,6 +1038,7 @@ function Console({
               total={tranches.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
+              onSelect={() => onSelectParti(row.key)}
             />
           ))}
         </ol>
@@ -995,6 +1059,7 @@ function Console({
             </li>
           ))}
         </ul>
+      </div>
       </div>
 
     </section>
@@ -1034,7 +1099,7 @@ function Deck({
   rang,
   indisponible,
   mediaLabel,
-  articleUrl,
+  selection,
 }: {
   row: RowView | null;
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
@@ -1049,16 +1114,9 @@ function Deck({
    *  que le changement de disque ne se rejoue que sur un vrai changement de
    *  piste. */
   mediaLabel: string | null;
-  /** L'article vers lequel le deck mène (aws-refiners#447), déjà résolu par
-   *  l'appelant — média courant si le fader en désigne un, sinon un média
-   *  choisi parmi ceux qui en ont un pour ce parti (voir `lienArticle`).
-   *
-   *  ⚠️ `null`/absent : PAS de repli vers le panneau du disque d'or (retiré
-   *  le 2026-09-01, cf. `PartisCouvertureClient`, section « LE BAC DU
-   *  JOUR… ») — le deck reste inerte, place gardée pour le jour où l'article
-   *  existe vraiment. */
-  articleUrl?: string | null;
+  selection?: PartyKey | null;
 }) {
+  const [ouverte, setOuverte] = useState(false);
 
   /** Un deck vide n'est pas une erreur : il dit qu'il n'y avait pas de parti à
    *  ce rang, deux partis s'étant partagé la dernière place en sourdine. */
@@ -1091,16 +1149,17 @@ function Deck({
     );
   }
 
-  /* Le survol du disque annonce ce que le clic FAIT — quand il fait
-     quelque chose. `articleUrl` seul déclenche un vrai geste : un lien qui
-     QUITTE le site pour l'article qui parle le plus de ce parti. Sans lui,
-     le deck n'a RIEN à annoncer depuis le 2026-09-01 (voir la section
-     « LE BAC DU JOUR… » plus haut dans le fichier) : plus de repli vers un
-     panneau qui ne menait nulle part avant la fin de la course. */
-  const annonceDisque = articleUrl
-    ? `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
-      `Lire l'article qui en parle le plus, dans un nouvel onglet.`
-    : undefined;
+  const enjeu = row.enjeux.find((item) => !item.reste && item.label !== SANS_ENJEU);
+  const enjeuLibelle = row.enjeuxVentiles ? (enjeu?.label ?? SANS_ENJEU) : null;
+  const enjeuCourt = enjeuLibelle === null ? null : libelleEnjeuCourt(enjeuLibelle);
+  const enjeuTitle = enjeuLibelle === null ? undefined : [
+    enjeuCourt === enjeuLibelle ? null : enjeuLibelle,
+    enjeu?.dateSource
+      ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
+      : null,
+  ].filter(Boolean).join(" ") || undefined;
+  const annonceDisque = `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
+    `${ouverte ? "Refermer" : "Voir"} le détail au dos de la pochette.`;
 
   {/* Face avant — le vinyle. Il n'est plus seulement décoratif depuis que
       la ligne de nom est partie : le sigle gravé sur son capuchon est
@@ -1149,57 +1208,67 @@ function Deck({
               <rect className="forme-parti" x="0" y="0" width="100" height="100" />
             </g>
             <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            {/* Retiré le 2026-09-01 (« enlève le trou au centre de cette
-                pastille ») : le trou du spindle qui vivait ici, au-dessus du
-                sigle. Le sigle revient donc au centre géométrique du
-                capuchon (`y="50"`, comme avant son ajout) — même traitement
-                que `.trophee-repli`, le sigle seul sur l'aplat du parti. */}
-            <text className="cap-sigle" x="50" y="50" textAnchor="middle" dominantBaseline="central">
+            {/* LE TROU DU SPINDLE — REVENU le 2026-09-07, et cette fois pour
+                une raison qui tient : le capuchon d'un deck et l'étiquette
+                d'une pochette (`.pochette-pastille`) sont le MÊME objet, et
+                l'une est percée. Il avait été retiré le 2026-09-01 (« enlève
+                le trou au centre de cette pastille ») alors qu'aucune autre
+                pastille du site n'en portait ; depuis, toutes en portent un.
+                `r="6.5"` = 13 % du capuchon, la proportion exacte du trou
+                d'une pochette. */}
+            <circle className="cap-trou" cx="50" cy="50" r="6.5" />
+            {/* LE SIGLE AU-DESSUS DU TROU, et non plus au centre : c'est sa
+                place sur une pochette, où le bas de l'étiquette porte la
+                date. `y="42"` pose le bas des lettres à 42 % de la hauteur,
+                soit 1,5 unité au-dessus du trou — le même écart que sur
+                `.pochette-pastille-sigle` (`bottom: 58 %`, trou de 13 %).
+                Pas de `dominantBaseline` : la ligne de base par défaut est
+                exactement ce qu'on veut caler ici. */}
+            <text className="cap-sigle" x="50" y="42" textAnchor="middle">
               {row.label}
             </text>
           </svg>
         </span>
       </span>
 
-      {/* LE RANG, dans le coin du vinyle. Il vit DANS le lien ou le bouton,
-          seul élément à position relative du deck : posé plus haut dans
-          l'arbre, il se serait calé sur `.deck` et non sur le carré, donc à
-          côté du disque plutôt que dessus. L'`aria-label` du conteneur
-          l'emporte de toute façon sur ce contenu, qui n'est donc jamais
-          annoncé deux fois. */}
-      <span className="deck-rang">{rang}</span>
     </>
   );
 
   return (
     <div
-      className="deck"
+      className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
       style={{ ["--party" as string]: row.color }}
     >
-      {/* La clé ne porte QUE le parti, et non la source : changer de média ne
-          change pas forcément qui occupe ce deck, keyer sur la source
-          rejouait le changement de disque à chaque coup de fader. */}
-      {articleUrl ? (
-        <a
-          key={row.key}
-          className="deck-carre"
-          href={articleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={annonceDisque}
-          title={annonceDisque}
-        >
-          {visuel}
-        </a>
-      ) : (
-        // INERTE, sans `aria-label` ni `title` : rien à annoncer tant qu'il
-        // n'y a pas d'article (voir `annonceDisque`), et un `<div>` plutôt
-        // qu'un `<button>` pour ne pas laisser croire au clavier ou au
-        // survol qu'un clic ferait quelque chose.
-        <div key={row.key} className="deck-carre deck-carre--inerte">
-          {visuel}
-        </div>
-      )}
+      <button
+        key={row.key}
+        type="button"
+        className={`deck-carre deck-carre--retournable${ouverte ? " deck-carre--dos-ouvert" : ""}`}
+        onClick={() => setOuverte((value) => !value)}
+        aria-expanded={ouverte}
+        aria-label={annonceDisque}
+        title={annonceDisque}
+      >
+        <span className={`flip-carte${ouverte ? " retournee" : ""}`}>
+          <span className="flip-face flip-face--recto">{visuel}</span>
+          <span className="flip-face flip-face--verso">
+            <dl className="deck-verso-chiffres">
+              <TracklisteGrandeurs
+                temps={formatDuree(row.minutesUne)}
+                partPct={row.sovPct}
+                enjeu={enjeuCourt}
+                enjeuTitle={enjeuTitle}
+                tonMot={row.toneLabel}
+                tonPct={row.tonePct}
+                tonTitle={row.toneTitle}
+              />
+            </dl>
+          </span>
+        </span>
+        {/* Le rang est un repère de la platine, pas une information imprimée
+            sur la pochette. Il reste donc hors de la carte 3D et s'efface
+            avant que le verso n'apparaisse. */}
+        <span className="deck-rang" aria-hidden="true">{rang}</span>
+      </button>
     </div>
   );
 }
@@ -1244,6 +1313,7 @@ function Tranche({
   total,
   moyennePct,
   onPcqTap,
+  onSelect,
   muet,
 }: {
   row: RowView;
@@ -1251,6 +1321,7 @@ function Tranche({
   total: number;
   moyennePct: number;
   onPcqTap?: () => void;
+  onSelect: () => void;
   /** Mesure suspendue : la piste garde sa place et son échelle, mais AUCUN
    *  segment ne s'allume et rien ne s'écrit dessous. */
   muet?: boolean;
@@ -1293,7 +1364,7 @@ function Tranche({
         ["--party" as string]: row.color,
       }}
     >
-      <div className="console-vumetre" title={phrase}>
+      <button className="console-vumetre" type="button" onClick={onSelect} title={`${phrase} Voir les sources.`}>
         <span className="visually-hidden">{phrase}</span>
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
@@ -1306,7 +1377,7 @@ function Tranche({
             aria-hidden="true"
           />
         ))}
-      </div>
+      </button>
 
       {/* Le ruban n'est plus une commande : les decks se remplissent seuls, par
           rang. Un <button> annoncerait donc aux lecteurs d'écran un contrôle
@@ -1586,7 +1657,17 @@ function Knob({
           pousser le graphique du palmarès à côté. */}
       <span className="knob-valeur-boite">
         {positions.map((p) => (
-          <span key={p.cle} className="knob-valeur-gabarit" aria-hidden="true">{p.mot}</span>
+          <span
+            key={p.cle}
+            /* `actif` ne sert à rien sur bureau, où ces mots ne sont qu'un
+               gabarit de largeur (`visibility: hidden`). Sur tactile ils
+               DEVIENNENT la commande lisible — toutes les positions à la file,
+               l'active en évidence — et il faut alors pouvoir la désigner. */
+            className={`knob-valeur-gabarit${p.cle === valeur ? " actif" : ""}`}
+            aria-hidden="true"
+          >
+            {p.mot}
+          </span>
         ))}
         <span className="knob-valeur" aria-hidden="true">{positions[i].mot}</span>
       </span>
@@ -1631,13 +1712,77 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
   // s'afficher — le palmarès reçoit TOUJOURS l'agrégat, jamais une vue par
   // média — et il aurait été trompeur s'il l'avait pu, le fader ne commandant
   // pas ce graphique.
+  /* SANS DONNÉES, LE CADRE RESTE — seules les lignes manquent.
+   *
+   * Ce retour rendait un simple <p> À LA PLACE de la figure : le cadre, la
+   * ligne d'arrivée et les graduations disparaissaient avec les courbes, la
+   * rangée passait de 139 px à la hauteur d'un paragraphe, et les colonnes
+   * voisines (les knobs, le disque d'or) se retrouvaient en face du vide. La
+   * vue Semaine, qui n'a qu'une journée tant que la semaine commence, cassait
+   * ainsi la mise en page une fois sur deux.
+   *
+   * On garde donc la MÊME coquille — `figure` > `corps` > `zone`, la ligne
+   * d'arrivée, l'axe des abscisses — et on n'omet que ce qui dépend vraiment
+   * des données : les cinq courbes, leurs étiquettes de bout et les bandes de
+   * saisie. Le message se pose dans la zone, à la place des lignes.
+   *
+   * Les graduations restent du TEXTE, jamais des boutons : elles servent
+   * normalement à figer le classement d'une journée, et il n'y a ici aucun
+   * classement à figer. */
   if (chart.tooShort) {
+    const arriveeDeja = chart.xLabels.some(
+      (l) => Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label,
+    );
     return (
-      <p className="course-vide">
-        {chart.raison === "detail-horaire-absent"
-          ? "Le détail heure par heure n'est pas encore publié pour cette période."
-          : "Une seule journée de données. Pas encore de tendance à lire."}
-      </p>
+      <figure className="palmares-figure palmares-figure--vide">
+        <div className="palmares-corps">
+          <div className="palmares-zone">
+            <svg
+              className="palmares-svg"
+              viewBox={`0 0 ${chart.width} ${chart.height}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                className="palmares-arrivee"
+                x1={chart.finish.x}
+                x2={chart.finish.x}
+                y1="0"
+                y2={chart.height}
+              />
+            </svg>
+            <p className="course-vide">
+              {chart.raison === "detail-horaire-absent"
+                ? "Le détail heure par heure n'est pas encore publié pour cette période."
+                : "Une seule journée de données. Pas encore de tendance à lire."}
+            </p>
+          </div>
+        </div>
+        <ul className="palmares-x">
+          {chart.xLabels.map((l) => (
+            <li
+              key={l.label}
+              className={
+                Math.abs(l.x - chart.finish.x) < 0.5 || l.label === chart.finish.label
+                  ? "palmares-x-arrivee"
+                  : undefined
+              }
+              style={{ left: `${(l.x / chart.width) * 100}%` }}
+            >
+              {l.label}
+            </li>
+          ))}
+          {!arriveeDeja && (
+            <li
+              className="palmares-x-arrivee"
+              aria-hidden="true"
+              style={{ left: `${(chart.finish.x / chart.width) * 100}%` }}
+            >
+              {chart.finish.label}
+            </li>
+          )}
+        </ul>
+      </figure>
     );
   }
 
@@ -1947,7 +2092,12 @@ function Palmares({ chart, mode }: { chart: ChartView; mode: ModePalmares }) {
                     montrait 6 h 34 au PQ. Le rang, lui, se lit sans ambiguïté.
                     L'écart de ton reste écrit : ce n'est pas une durée, et rien
                     d'autre à l'écran ne le donne. */}
-                {apprecie && <b className="palmares-etiquette-duree">{ecriteDe(s)}</b>}
+                {/* PLUS DE « +42 PTS » AU BOUT DE LA LIGNE. La vue Apprécié
+                    écrivait son écart de ton à côté du sigle, là où la vue
+                    Écoute n'écrit rien : deux vues du même graphique n'avaient
+                    pas le même encombrement, et la valeur doublait ce que la
+                    hauteur de la ligne montre déjà. L'écart reste dans
+                    l'infobulle du bouton, qui le dit en toutes lettres. */}
               </button>
             );
           })}
@@ -2191,7 +2341,10 @@ function TropheeCouverture({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="pochette-image" src={entree.src} alt="" aria-hidden="true" />
         </picture>
-        <b className="pochette-sigle">{entree.sigle}</b>
+        {/* L'ÉTIQUETTE DU DISQUE, au centre de l'illustration — la même que
+            celle du single pas encore pressé juste au-dessus
+            (`.trophee-etiquette-disque`), fond de papier en moins. */}
+        <PochettePastille sigle={entree.sigle} jourCourt={entree.jourCourt} couleur={entree.couleur} />
       </span>
     );
   }
@@ -2238,7 +2391,10 @@ function TracklisteGrandeurs({
 }: {
   temps: string;
   partPct: number;
-  enjeu: string;
+  /** `null` = aucun enjeu MESURÉ pour cette vue (une position du fader) : la
+   *  rangée ne se rend pas du tout. Distinct de `SANS_ENJEU`, qui est un
+   *  résultat — « on en a parlé, sans enjeu identifiable ». */
+  enjeu: string | null;
   /** Infobulle de la rangée « Enjeu » — sert à dater l'enjeu quand il ne vient
    *  pas de la journée affichée. Absente le reste du temps. */
   enjeuTitle?: string;
@@ -2258,9 +2414,11 @@ function TracklisteGrandeurs({
 }) {
   return (
     <>
-      <LigneTracklist categorie={labelTemps} chiffre>{temps}</LigneTracklist>
+      <LigneTracklist categorie={labelTemps}>{temps}</LigneTracklist>
       <LigneTracklist categorie="Part de temps">{partPct}&nbsp;%</LigneTracklist>
-      <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
+      {enjeu !== null && (
+        <LigneTracklist categorie={labelEnjeu} title={enjeuTitle}>{enjeu}</LigneTracklist>
+      )}
       <LigneTracklistTon categorie={labelTon} tonMot={tonMot} tonPct={tonPct} tonTitle={tonTitle} />
     </>
   );
@@ -2382,7 +2540,7 @@ function CarteTrophee({
         </span>
         {/* Le NOM du parti ne s'écrit plus ici depuis le 2026-09-07 : le
             sigle est déjà gravé sur la pochette elle-même
-            (`.pochette-sigle`/`.trophee-etiquette-sigle`), et le nom complet
+            (`.pochette-pastille-sigle`/`.trophee-etiquette-sigle`), et le nom complet
             reste accessible — `aria-label` du bouton, ci-dessus — sans qu'il
             faille le répéter à l'écran pour tout le monde. Le RANG, lui, a
             quitté la carte le 2026-09-01 : `<ol>` porte déjà l'ordre, et un

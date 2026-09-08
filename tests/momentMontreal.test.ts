@@ -27,6 +27,15 @@ describe("momentMontreal", () => {
     expect(momentMontreal("2026-09-02T19:37")).toEqual({ date: "2026-09-02", heure: 19 });
   });
 
+  it("lit une date seule comme un JOUR de Montréal, à l'heure 0, jamais comme minuit UTC", () => {
+    // Le `jour` des articles et le point quotidien des frises Semaine et
+    // Campagne. `Date.parse("2026-09-05")` donne minuit UTC, soit le 4 à 20h à
+    // Montréal : les frises reculaient d'un jour (vu le 2026-09-05).
+    expect(momentMontreal("2026-09-05")).toEqual({ date: "2026-09-05", heure: 0 });
+    expect(momentMontreal("2026-02-30")).toBeNull();
+    expect(momentMontreal("2026-13-05")).toBeNull();
+  });
+
   it("rend null sur une entrée inexploitable, pour retomber sur la date seule", () => {
     expect(momentMontreal(null)).toBeNull();
     expect(momentMontreal("")).toBeNull();

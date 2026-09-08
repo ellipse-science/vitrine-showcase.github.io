@@ -1,5 +1,107 @@
 [
   {
+    "pr": 742,
+    "date": "2026-09-07T19:07:21Z",
+    "note": "Le module « De quel parti parle-t-on dans les médias? » est désormais visible par tout le monde, ainsi que la Discothèque qui conserve ses pochettes quotidiennes.",
+    "version": "2.46.0-beta.0"
+  },
+  {
+    "pr": 765,
+    "date": "2026-09-07T18:55:34Z",
+    "note": "La page de la discothèque explique maintenant ce que chaque pochette mesure et comment son illustration est fabriquée.",
+    "version": "2.45.0-beta.1"
+  },
+  {
+    "pr": 764,
+    "date": "2026-09-07T18:24:15Z",
+    "note": "Les pochettes des partis portent maintenant une véritable étiquette de disque en leur centre, nom et date compris, au lieu de deux bandeaux qui recouvraient l'illustration.",
+    "version": "2.45.0-beta.0"
+  },
+  {
+    "pr": 763,
+    "date": "2026-09-06T22:41:00Z",
+    "note": "Une accolade s'était égarée dans un commentaire ; la feuille de style se compile de nouveau.",
+    "version": null
+  },
+  {
+    "pr": 762,
+    "date": "2026-09-06T22:33:46Z",
+    "note": "Le sigle et la date d'un album se lisent dans deux bandes noires, en haut et en bas de la pochette ; et la face cachée d'une pochette retournée est désormais retirée, non plus seulement rendue invisible.",
+    "version": "2.44.0-beta.8"
+  },
+  {
+    "pr": 761,
+    "date": "2026-09-06T22:17:54Z",
+    "note": "Le sigle d'un parti ne se lit plus à l'envers au dos de son deck, et chaque pochette porte désormais la date de l'album dont elle vient.",
+    "version": "2.44.0-beta.7"
+  },
+  {
+    "pr": 760,
+    "date": "2026-09-06T21:24:29Z",
+    "note": "Le dos d'une pochette ne s'excuse plus de ce qu'il ne mesure pas : hors de la vue d'ensemble, la ligne d'enjeu s'efface.",
+    "version": "2.44.0-beta.6"
+  },
+  {
+    "pr": 758,
+    "date": "2026-09-06T21:08:38Z",
+    "note": "Dans le module des 12 enjeux, la vue « Semaine » couvre maintenant les sept derniers jours au lieu de repartir de zéro chaque vendredi soir, et les dates des graphiques d'évolution tombent sur le bon jour.",
+    "version": "2.44.0-beta.5"
+  },
+  {
+    "pr": 757,
+    "date": "2026-09-06T20:55:46Z",
+    "note": "Sur la page Partenaires, la liste des partenaires n'apparaît plus deux fois.",
+    "version": "2.44.0-beta.4"
+  },
+  {
+    "pr": 756,
+    "date": "2026-09-06T20:27:35Z",
+    "note": "Le palmarès prend toute sa largeur, ses cadrans annoncent leurs positions, et l'endos des pochettes montre le ton sans le nommer.",
+    "version": "2.44.0-beta.3"
+  },
+  {
+    "pr": 755,
+    "date": "2026-09-06T20:06:23Z",
+    "note": "Sur téléphone, le module retrouve son ton, ses commandes à plat et son disque d'or à côté du classement.",
+    "version": "2.44.0-beta.2"
+  },
+  {
+    "pr": 754,
+    "date": "2026-09-06T19:42:16Z",
+    "note": "Le palmarès garde son cadre les jours où il n'a rien à tracer : la course reste dessinée, il n'y manque que les coureurs.",
+    "version": "2.44.0-beta.1"
+  },
+  {
+    "pr": 753,
+    "date": "2026-09-06T19:07:43Z",
+    "note": "Les partis et les sources de leur couverture deviennent plus faciles à explorer. Un clic permet de retourner un vinyle pour lire les détails de la mesure.",
+    "version": "2.44.0-beta.0"
+  },
+  {
+    "pr": 740,
+    "date": "2026-09-06T18:42:25Z",
+    "note": "Au dos des pochettes de partis, l'enjeu du jour ne se fait plus couper au milieu d'un mot : il s'écrit en abrégé, et le nom complet apparaît au survol. Les chiffres y adoptent une seule et même écriture.",
+    "version": null
+  },
+  {
+    "pr": 751,
+    "date": "2026-09-06T18:42:18Z",
+    "note": "Le registre du fonds vivait sous le même préfixe que les pochettes qu'il décrit, et triait après elles toutes. Une garde qui ne regardait que l'ordre des octets y a lu un avenir qui n'existait pas. 🤖 Assisté par Claude Code (Opus 5)",
+    "version": null
+  },
+  {
+    "pr": 750,
+    "date": "2026-09-06T17:57:08Z",
+    "note": "La page Équipe indique l'université de chaque membre, renvoie aux sites Web personnels et classe chaque section par ordre alphabétique.",
+    "version": "2.43.0-beta.11"
+  },
+  {
+    "pr": 749,
+    "date": "2026-09-06T17:55:05Z",
+    "note": "L'heure affichée sous les modules Enjeux saillants et Partis et couverture est désormais celle de la donnée la plus récente, jamais celle du dernier calcul : quand la collecte prend du retard, l'heure le montre.",
+    "version": "2.43.0-beta.10"
+  },
+  {
     "pr": 747,
     "date": "2026-09-05T21:22:06Z",
     "note": "Les logos des partenaires, au bas de chaque page, tiennent maintenant sur deux rangées au lieu de trois.",

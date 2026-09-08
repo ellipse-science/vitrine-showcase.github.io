@@ -23,12 +23,12 @@ function parseIsoDate(dateStr: string): { y: number; m: number; d: number; date:
 /** L'instant d'une passe de raffineur, ramené à l'heure de Montréal.
  *
  *  POURQUOI CE HELPER EXISTE. Les tables des modules republiés six fois par
- *  jour portent l'instant de leur passe en UTC — `computed_at` pour les partis,
- *  la colonne `tag` pour les 12 enjeux (« 2026-08-27 19:37 », vérifié UTC le
- *  2026-08-30 : le tag `03:36` porte `pass: pm`, ce qui n'a de sens qu'à 23h36
- *  à Montréal). C'est l'exception admise par la règle « heure de Montréal
- *  partout » : une clé d'ordre de stepper reste en UTC. Rien n'interdit donc
- *  cet UTC-là, mais rien n'autorise à l'AFFICHER tel quel.
+ *  jour portent l'instant de leur passe sous trois formes : un instant ISO avec
+ *  fuseau (`computed_at` pour les partis, à ramener à Montréal), un `tag` sans
+ *  fuseau pour les 12 enjeux (« 2026-09-02 19:37 », qui EST l'heure de Montréal,
+ *  voir plus bas), et une date seule pour le `jour` d'un article. Une seule
+ *  lecture pour les trois, sinon chaque appelant réinvente la conversion — et
+ *  se trompe de quatre heures ou d'un jour.
  *
  *  ⚠️ L'écart n'est pas −4 h : c'est −4 l'été et −5 l'hiver. D'où `Intl` et sa
  *  base de fuseaux, jamais une soustraction.
@@ -41,7 +41,7 @@ function parseIsoDate(dateStr: string): { y: number; m: number; d: number; date:
  *  Rend `null` si l'entrée n'est pas un instant exploitable ; l'appelant
  *  retombe alors sur la date seule, comme avant.
  */
-export function momentMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+function momentMontrealDetail(horodatage: string | null | undefined): { date: string; heure: number; minute: number } | null {
   const brut = String(horodatage ?? "").trim();
   if (!brut) return null;
   // « 2026-09-02 19:37 » est l'HORLOGE DE MONTRÉAL, pas de l'UTC : le raffineur
@@ -61,10 +61,19 @@ export function momentMontreal(horodatage: string | null | undefined): { date: s
     const [, y, mo, jour, h, mi] = sansFuseau;
     const heure = Number(h);
     // Mois 13, 31 février, 25h ou 99 min : mieux vaut « — » qu'une étiquette fausse.
-    const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
-    const valide = ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
-    if (!valide || heure > 23 || Number(mi) > 59) return null;
-    return { date: `${y}-${mo}-${jour}`, heure };
+    if (!jourCivilValide(y, mo, jour) || heure > 23 || Number(mi) > 59) return null;
+    return { date: `${y}-${mo}-${jour}`, heure, minute: Number(mi) };
+  }
+  // Une DATE SEULE (« 2026-09-05 ») est un JOUR de Montréal, pas un instant :
+  // c'est le `jour` des articles du module des 12 enjeux, et le point quotidien
+  // des frises Semaine et Campagne. `Date.parse` la lirait comme minuit UTC,
+  // soit la VEILLE à 20h à Montréal : chaque point reculait d'un jour (« 4 sept. »
+  // pour les articles du 5) et le premier jour de chaque fenêtre tombait hors du
+  // filtre (vu le 2026-09-05). Un jour se lit donc tel quel, à l'heure 0.
+  const dateSeule = /^(\d{4})-(\d{2})-(\d{2})$/.exec(brut);
+  if (dateSeule) {
+    const [, y, mo, jour] = dateSeule;
+    return jourCivilValide(y, mo, jour) ? { date: `${y}-${mo}-${jour}`, heure: 0, minute: 0 } : null;
   }
   const t = Date.parse(brut);
   if (Number.isNaN(t)) return null;
@@ -78,16 +87,29 @@ export function momentMontreal(horodatage: string | null | undefined): { date: s
   const parties = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Montreal",
     year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", hourCycle: "h23",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).formatToParts(d);
   const champ = (type: string) => parties.find((p) => p.type === type)?.value ?? "";
   const heure = Number(champ("hour").replace(/\D/g, ""));
+  const minute = Number(champ("minute").replace(/\D/g, ""));
   const date = `${champ("year")}-${champ("month")}-${champ("day")}`;
-  if (Number.isNaN(heure) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  if (Number.isNaN(heure) || Number.isNaN(minute) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
   // Ceinture et bretelles : `h23` borne déjà à 00-23, mais un « 24 » venu d'une
   // ICU récalcitrante donnerait une heure du jour SUIVANT collée à la date du
   // jour courant. Le modulo garantit que les deux se tiennent.
-  return { date, heure: heure % 24 };
+  return { date, heure: heure % 24, minute };
+}
+
+export function momentMontreal(horodatage: string | null | undefined): { date: string; heure: number } | null {
+  const m = momentMontrealDetail(horodatage);
+  return m ? { date: m.date, heure: m.heure } : null;
+}
+
+/** Un jour du calendrier qui existe : rejette le 30 février et le mois 13, que
+ *  `Date.UTC` accepterait en débordant sur le mois suivant. */
+function jourCivilValide(y: string, mo: string, jour: string): boolean {
+  const ref = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(jour)));
+  return ref.getUTCMonth() + 1 === Number(mo) && ref.getUTCDate() === Number(jour);
 }
 
 /** L'heure PUBLIQUE d'une passe de raffineur, à partir de son instant.
@@ -136,13 +158,18 @@ export function formatDateFr(dateStr: string): string {
  * si le pipeline plante → détecteur de panne. Donnée invalide ou absente →
  * placeholder « — » (jamais un libellé normalisé en douce).
  *
- * `blockEndHour` (fin du bloc 4h, heure Mtl) n'est fourni que par les tables
- * qui ont une granularité horaire (headline_events_4h → Une, Deux solitudes) :
- * 16 → « , 16h » ; 24 → « , minuit ». Heure compacte « 4h » (pas « 4 h ») :
- * l'indicateur est rendu en mono-majuscules et l'espace donnait « 4 H », jugé
- * laid — format 24 h, pas de am/pm. Les tables journalières/hebdo (partis,
- * enjeux, assemblée, polimètre) n'affichent que la date — l'heure n'existe pas
- * dans leur donnée.
+ * `blockEndHour` (heure d'ÉDITION, heure Mtl) : 16 → « , 16h » ; 24 → « , minuit ».
+ * Heure compacte « 4h » (pas « 4 h ») : l'indicateur est rendu en
+ * mono-majuscules et l'espace donnait « 4 H », jugé laid — format 24 h, pas
+ * de am/pm. Les tables journalières/hebdo (assemblée, polimètre) n'affichent
+ * que la date — l'heure n'existe pas dans leur donnée.
+ *
+ * RÈGLE (Adrien, 2026-09-06) : L'HEURE AFFICHÉE EST CELLE DE LA DONNÉE, JAMAIS
+ * CELLE D'UN CALCUL. Une passe de raffineur qui republie une donnée figée ne
+ * fait pas avancer l'heure : c'est ainsi qu'un retard se voit à l'écran, et que
+ * le public peut le signaler. Pour la Une et Deux solitudes, c'est le dernier
+ * bloc de la table ; pour les 12 enjeux et les partis, c'est l'édition du plus
+ * récent article annoté (`editionDeLaDonnee`), et jamais le `tag` de la passe.
  */
 export function lastUpdatedLabel(dateStr: string, blockEndHour?: number | null): string {
   const parsed = parseIsoDate(dateStr);
@@ -195,4 +222,69 @@ export function publicationDateFromInterval(
   const next = new Date(parsed.y, parsed.m - 1, parsed.d + 1);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
+}
+
+/** Le lendemain d'une date ISO « YYYY-MM-DD » (calendrier, pas fuseau). */
+function jourSuivantIso(dateStr: string): string {
+  const parsed = parseIsoDate(dateStr);
+  if (!parsed) return dateStr;
+  const next = new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d + 1));
+  return next.toISOString().slice(0, 10);
+}
+
+export type Edition = { date: string; heure: number };
+
+/**
+ * L'ÉDITION à laquelle appartient un instant de DONNÉE.
+ *
+ * Complément de `heurePublicationMontreal`, qui date une PASSE de raffineur —
+ * un instant APRÈS la fin du bloc. Ici l'instant est DANS le bloc : la dernière
+ * capture d'un article en Une (`headline_stop_utc`). Les blocs de collecte
+ * commencent à 3h, 7h, 11h, 15h, 19h et 23h (heure de Montréal, soit 7h, 11h…
+ * UTC), et chacun est servi une heure après sa fin : 8h, 12h, 16h, 20h, minuit
+ * et 4h — la grille du bandeau des éditions.
+ *
+ * Bornes : un instant EXACTEMENT sur une frontière (15h00) appartient au bloc
+ * qui FINIT là (11h-15h, servi à 16h) — c'est la dernière capture possible de
+ * ce bloc, pas la première du suivant. Le bloc 19h-23h est servi à minuit →
+ * `{ date, heure: 24 }`, « minuit » sous le jour qui finit, comme partout. Le
+ * bloc 23h-3h franchit minuit → servi à 4h le LENDEMAIN, la date avance.
+ *
+ * POURQUOI ÇA EXISTE (2026-09-06). Pendant une panne d'INFER, les 12 enjeux
+ * ont affiché « dimanche 6 septembre, 12h » alors que le dernier article annoté
+ * datait de la veille à 15h52 : l'heure venait du tag de la passe, qui
+ * continuait d'avancer sur une donnée figée. Rend `null` si l'instant n'est
+ * pas exploitable.
+ */
+export function editionDeLaDonnee(horodatage: string | null | undefined): Edition | null {
+  const m = momentMontrealDetail(horodatage);
+  if (!m) return null;
+  const minutes = m.heure * 60 + m.minute;
+  // (3h00, 7h00] → 0, (7h00, 11h00] → 1 … (23h00, 27h00] → 5 ; jusqu'à 3h00
+  // inclus → -1, le bloc 23h-3h commencé la veille.
+  const bloc = Math.floor((minutes - 181) / 240);
+  const heure = 3 + 4 * bloc + 4 + 1; // fin du bloc + 1 h : 8, 12, 16, 20, 24, 28 ; -1 → 4
+  if (heure > 24) return { date: jourSuivantIso(m.date), heure: heure - 24 };
+  return { date: m.date, heure };
+}
+
+/** Clé d'ordre d'une édition : « 2026-09-05, minuit (24) » vient avant
+ *  « 2026-09-06, 4h ». Sert à comparer deux éditions, jamais à les afficher. */
+export function cleEdition(e: Edition): number {
+  const parsed = parseIsoDate(e.date);
+  if (!parsed) return Number.NaN;
+  return Date.UTC(parsed.y, parsed.m - 1, parsed.d) + e.heure * 3_600_000;
+}
+
+/** La plus ANCIENNE de deux éditions — celle qu'un module peut honnêtement
+ *  annoncer quand sa donnée passe par deux étages : il n'est jamais plus frais
+ *  que le plus lent des deux. `null` des deux côtés → `null`. */
+export function plusAncienneEdition(a: Edition | null, b: Edition | null): Edition | null {
+  if (!a) return b;
+  if (!b) return a;
+  const ka = cleEdition(a);
+  const kb = cleEdition(b);
+  if (Number.isNaN(ka)) return b;
+  if (Number.isNaN(kb)) return a;
+  return kb < ka ? b : a;
 }

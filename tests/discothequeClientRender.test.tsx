@@ -84,13 +84,16 @@ describe("DiscothequeClient — la carte FERMÉE par défaut", () => {
   });
 
   it("montre les singles, pas les albums ni les discographies", () => {
-    expect(html).toContain("Lundi 24 août 2026");
+    // La journée complète ne s'écrit plus SOUS la pochette (le bandeau est
+    // parti le 2026-09-07) : elle vit dans l'`aria-label` du déclencheur, et
+    // c'est là qu'on la trouve maintenant.
+    expect(html).toMatch(/aria-label="[^"]*Lundi 24 août 2026/);
     expect(html).not.toContain(": Album");
     expect(html).not.toContain(": Discographie");
   });
 
   it("DEUX cartes indépendantes pour deux partis du même jour — plus de compilation par édition", () => {
-    expect([...html.matchAll(/class="fonds-plaque"/g)].length).toBe(2);
+    expect([...html.matchAll(/class="fonds-plaque fonds-plaque--single"/g)].length).toBe(2);
     expect(html).toContain(">CAQ<");
     expect(html).toContain(">PQ<");
   });
@@ -105,6 +108,35 @@ describe("DiscothequeClient — la carte FERMÉE par défaut", () => {
     expect([...html.matchAll(/class="flip-carte"/g)].length).toBe(2);
     expect([...html.matchAll(/class="flip-face flip-face--recto"/g)].length).toBe(2);
     expect([...html.matchAll(/class="flip-face flip-face--verso"/g)].length).toBe(2);
+  });
+
+  it("un single, c'est LA POCHETTE SEULE — aucun bandeau de texte sous elle", () => {
+    // Le sigle et le temps qu'il portait sont déjà sur l'étiquette du disque ;
+    // le reste est au dos, qu'un clic retourne. Rien n'est perdu pour un
+    // lecteur d'écran : le déclencheur annonce les deux.
+    expect(html).not.toContain("fonds-plaque-tete");
+    expect(html).not.toContain("fonds-plaque-total");
+    expect(html).toMatch(/aria-label="[^"]*1h40 en Une/);
+  });
+
+  it("l'enjeu s'écrit en libellé COURT au dos, le complet dans l'infobulle", () => {
+    // Le plus long libellé du CAP fait 44 caractères et débordait du dos de la
+    // pochette. La première ligne de défense est le libellé court, la même
+    // qu'utilise le module (`libelleEnjeuCourt`) ; le filet CSS
+    // (`.tracklist-metrique`, ellipse) est derrière.
+    const long = "Droits, libertés, minorités et discrimination";
+    const html = renderToStaticMarkup(
+      <DiscothequeClient
+        singles={[single({ jour: "2026-08-24", enjeu: long })]}
+        albums={[]}
+        discographies={[]}
+      />,
+    );
+    expect(html).toContain(">Droits<");
+    expect(html).not.toContain(`>${long}<`);
+    // Rien n'est perdu : le libellé entier reste au survol et pour un lecteur
+    // d'écran.
+    expect(html).toContain(`title="${long}"`);
   });
 
   it("la grille de la vue Jour est marquée « cinq de large »", () => {
@@ -149,6 +181,20 @@ describe("DiscothequeClient — la couverture quand une image existe", () => {
     expect(html).toContain("/pochettes/vedette.png");
     expect(html).not.toContain("fonds-repli--couverture");
   });
+
+  it("pose l'étiquette du disque dessus — sigle, date, et la couleur du parti", () => {
+    const html = renderToStaticMarkup(
+      <DiscothequeClient
+        singles={[single({ jour: "2026-08-24", minutesUne: 100, src: "/pochettes/vedette.png" })]}
+        albums={[]}
+        discographies={[]}
+      />,
+    );
+    expect(html).toMatch(/class="pochette-pastille-sigle">[^<]+<\/b>/);
+    expect(html).toMatch(/class="pochette-pastille-date">22 août<\/b>/);
+    expect(html).toContain('class="pochette-pastille" style="--party:');
+  });
+
 });
 
 describe("DiscothequeClient — sections vides", () => {

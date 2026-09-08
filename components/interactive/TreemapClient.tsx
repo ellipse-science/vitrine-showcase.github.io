@@ -759,7 +759,8 @@ function IssuesRankMobile({
 /**
  * Graphique de rang (« bump chart ») : trajectoire du classement des 12 enjeux dans le temps,
  * avec panneau « À la une » qui liste les actualités de l'enjeu sélectionné (clic) ou survolé.
- * Affiché pour les vues « Semaine » (7 derniers jours) et « Campagne » (mois courant).
+ * Un point par publication pour « Jour », un point par jour pour « Semaine » (les sept
+ * derniers jours) et « Campagne » (depuis le déclenchement du scrutin).
  */
 function IssuesRankChart({ tiles, history, period }: { tiles: TreemapIssueTile[]; history: TreemapHistoryPoint[]; period: RankPeriod }) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
@@ -1048,7 +1049,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
             <InfoTip size="lg" label="Comment interpréter cette visualisation">
               <b>Comment interpréter cette visualisation&nbsp;:</b><br /><br />
               • <b>Répartition</b>&nbsp;: Chaque tuile représente un enjeu. Sa surface est proportionnelle à sa saillance médiatique du jour. Le grand pourcentage donne sa <b>part de l’attention médiatique</b> (les 12 parts totalisent 100&nbsp;%), et le second, fléché, sa <b>variation</b> depuis le traitement précédent. Survolez une tuile pour voir son actualité principale et les médias qui la couvrent; cliquez pour afficher toutes les actualités associées.<br /><br />
-              • <b>Évolution</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux, jour après jour pour la semaine et la campagne, publication après publication pour le jour. «&nbsp;Campagne&nbsp;» couvre le mois courant, la plus large fenêtre dont ce module dispose. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
+              • <b>Évolution</b>&nbsp;: Le graphique retrace l’évolution du classement des 12 enjeux, jour après jour pour la semaine et la campagne, publication après publication pour le jour. «&nbsp;Semaine&nbsp;» couvre les sept derniers jours; «&nbsp;Campagne&nbsp;» va du déclenchement du scrutin à aujourd’hui. Cliquez sur un enjeu pour l’isoler et afficher ses actualités récentes. Sur mobile, touchez un rang pour suivre sa trajectoire et déplier ses actualités; les autres trajectoires restent visibles en arrière-plan.<br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#enjeux-saillants`}>En savoir plus sur la méthodologie →</a>
             </InfoTip>
           </h2>

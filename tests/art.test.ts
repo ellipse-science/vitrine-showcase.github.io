@@ -10,6 +10,7 @@ import {
   borneJoursPosterieurs,
   heroKey,
   parsePochette,
+  premierePochettePosterieure,
   parseReference,
   parseUne,
   publishDecision,
@@ -221,5 +222,42 @@ describe("borneJoursPosterieurs", () => {
     for (const cle of ["partis/2026-08-31/caq.png", "partis/2026-09-01/caq.png", "partis/2027-01-01/caq.png"]) {
       expect(cle > borne, cle).toBe(true);
     }
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LA GARDE DE JOURNÉE CLOSE, ET LE PIÈGE QU'ELLE A CACHÉ QUATRE JOURS.
+
+   Les tests de `borneJoursPosterieurs` ci-dessus vérifient la borne sur des
+   clés DATÉES uniquement. C'était l'angle mort : sous `partis/` vit aussi le
+   registre du fonds, et « f » trie après tous les chiffres. La garde y lisait
+   « une journée plus récente existe » et refusait toute pochette, à jamais.
+   ─────────────────────────────────────────────────────────────────────────── */
+describe("premierePochettePosterieure", () => {
+  const jour = "2026-09-05";
+
+  it("ne prend PAS le registre du fonds pour une journée plus récente", () => {
+    // Exactement ce que le listage rapportait le 2026-09-06 : le registre seul
+    // passe la borne, et rien d'autre.
+    expect(premierePochettePosterieure(["partis/fonds.json"], jour)).toBeNull();
+  });
+
+  it("voit une vraie journée postérieure, registre présent ou non", () => {
+    const cles = ["partis/2026-09-06/caq.json", "partis/fonds.json"];
+    expect(premierePochettePosterieure(cles, jour)).toBe("partis/2026-09-06/caq.json");
+  });
+
+  it("ignore la journée elle-même et les antérieures", () => {
+    const cles = ["partis/2026-09-05/caq.json", "partis/2026-09-04/pq.json", "partis/fonds.json"];
+    expect(premierePochettePosterieure(cles, jour)).toBeNull();
+  });
+
+  it("ignore tout objet étranger qui viendrait à vivre sous le préfixe", () => {
+    const cles = ["partis/index.json", "partis/README.md", "partis/zzz/pas-un-parti.png"];
+    expect(premierePochettePosterieure(cles, jour)).toBeNull();
+  });
+
+  it("liste vide : rien ne s'oppose au téléversement", () => {
+    expect(premierePochettePosterieure([], jour)).toBeNull();
   });
 });

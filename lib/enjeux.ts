@@ -43,6 +43,52 @@ export const ISSUE_LABELS_SHORT: Record<string, string> = {
   technology: "Technologie",
 };
 
+/** LES MÊMES LIBELLÉS, EN TREIZE SIGNES — pour le dos de la pochette.
+ *
+ *  ⚠️ UNE COUCHE D'AFFICHAGE, JAMAIS UN RENOMMAGE. `ISSUE_LABELS_SHORT`
+ *  ci-dessus est canonique et partagé avec le Digital Society Lab et l'Institut
+ *  Donald J. Savoie : le changer casserait la comparabilité entre projets. Cette
+ *  table-ci ne le touche pas — elle donne une forme abrégée là, et seulement là,
+ *  où la place manque. Le libellé entier reste affiché partout ailleurs, et le
+ *  dos le porte en infobulle.
+ *
+ *  LE BUDGET, mesuré. Le dos est un carré de 150 px au plus étroit
+ *  (`.trophee-panel-grille`, `minmax(150px, 1fr)`), moins 10 px de marge de
+ *  chaque côté. Une fois posés « ENJEU » (~33 px), les deux gouttières (12) et
+ *  le filet pointillé (8 au minimum), il reste 77 px à la valeur : environ
+ *  TREIZE SIGNES en Source Serif 12 px. Comme ni le libellé ni la valeur n'ont
+ *  le droit de rétrécir (`flex: none`) et que la boîte coupe ce qui déborde
+ *  (`overflow: hidden`), un signe de trop est du texte tranché en plein mot —
+ *  sans même des points de suspension.
+ *
+ *  📝 À RELIRE PAR UN HUMAIN. Abréger « Droits, libertés, minorités et
+ *  discrimination » en « Droits » est un arbitrage éditorial, pas une mesure.
+ */
+const ENJEU_COURT: Record<string, string> = {
+  "Économie et travail": "Économie",
+  "Droits, libertés, minorités et discrimination": "Droits",
+  "Santé et politiques sociales": "Santé",
+  "Terres publiques et agriculture": "Agriculture",
+  "Environnement et énergie": "Environnement",
+  "Affaires internationales et défense": "International",
+  "Gouvernements et gouvernance": "Gouvernance",
+  "Culture et nationalisme": "Culture",
+  // ⚠️ Chaîne TRIPLIQUÉE à dessein — ici, dans `parties.ts` et dans
+  // `PartisCouvertureClient.tsx`. Un import de valeur depuis `parties.ts`
+  // embarquerait `node:fs/promises` dans le paquet client (le build échoue sur
+  // « does not support external modules »). Les trois doivent rester égales.
+  "Aucun enjeu identifié": "Aucun enjeu",
+};
+
+/** Le nom court d'un libellé d'enjeu, ou le libellé lui-même quand il tient
+ *  déjà — « Éducation », « Immigration », « Technologie » et « Loi et crime »
+ *  n'ont pas besoin d'être abrégés. Un libellé inconnu passe tel quel : la
+ *  liste des têtes est découverte à l'exécution en amont, et mieux vaut un
+ *  libellé long qu'un libellé faux. */
+export function libelleEnjeuCourt(libelle: string): string {
+  return ENJEU_COURT[libelle] ?? libelle;
+}
+
 /** L'index inverse : du libellé français vers la couleur.
  *
  *  Le module des partis agrège ses enjeux en LIBELLÉS (`THEME_VERS_CATEGORIE`),

@@ -39,6 +39,7 @@ import {
   borneJoursPosterieurs,
   heroKey,
   parsePochette,
+  premierePochettePosterieure,
   parseReference,
   parseUne,
   publishDecision,
@@ -243,17 +244,32 @@ export async function handleArt(
     // aujourd'hui » : à 00h45 heure de Montréal, le dernier bloc publié est
     // encore celui de 20h de la veille, et une règle fondée sur l'horloge
     // refuserait le cycle toutes les nuits. Cf. `borneJoursPosterieurs`.
+    // ⚠️ LE LISTAGE N'EST PAS FILTRÉ PAR LA BORNE SEULE. Le préfixe `partis/`
+    // porte aussi le registre du fonds (`partis/fonds.json`), qui trie APRÈS
+    // toute clé datée. Un `limit: 1` rapportait donc le registre et faisait
+    // refuser toutes les pochettes, indéfiniment (aws-refiners#480). On passe
+    // les clés par `premierePochettePosterieure`, qui n'en retient que de
+    // vraies pochettes d'une journée strictement postérieure.
     if (pochette) {
-      const posterieurs = await env.ART_BUCKET.list({
-        prefix: OBJECT_PREFIX + 'partis/',
-        startAfter: OBJECT_PREFIX + borneJoursPosterieurs(pochette.jour),
-        limit: 1,
-      })
-      if (posterieurs.objects.length > 0) {
+      let cursor: string | undefined
+      let plusRecent: string | null = null
+      do {
+        const page = await env.ART_BUCKET.list({
+          prefix: OBJECT_PREFIX + 'partis/',
+          startAfter: OBJECT_PREFIX + borneJoursPosterieurs(pochette.jour),
+          cursor,
+        })
+        plusRecent = premierePochettePosterieure(
+          page.objects.map((o) => o.key.slice(OBJECT_PREFIX.length)),
+          pochette.jour,
+        )
+        cursor = !plusRecent && page.truncated ? page.cursor : undefined
+      } while (cursor)
+      if (plusRecent) {
         return json(
           {
             error: `Journée close : ${pochette.jour} est dépassée par une journée plus récente, sa pochette ne se réécrit plus.`,
-            plus_recent: posterieurs.objects[0].key.slice(OBJECT_PREFIX.length),
+            plus_recent: plusRecent,
           },
           409,
         )

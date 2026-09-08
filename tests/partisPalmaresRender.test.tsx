@@ -66,10 +66,44 @@ describe("le palmarès sans courbe à tracer — régression", () => {
     const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
 
     // La section garde sa place — son titre est là.
-    expect(html).toContain("Le palmar");
+    expect(html).toContain("Palmar");
     // Et elle porte une phrase, pas un vide.
     expect(html).toContain("course-vide");
     expect(html).toContain("pas encore publi");
+  });
+
+  it("GARDE SON CADRE : la figure, la ligne d'arrivée et l'axe restent", () => {
+    // LE DÉFAUT CORRIGÉ. Le composant rendait un simple <p> À LA PLACE de la
+    // figure : la rangée passait de 139 px à la hauteur d'un paragraphe, et les
+    // colonnes voisines (knobs, disque d'or) se retrouvaient en face du vide.
+    const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
+
+    expect(html).toContain("palmares-figure--vide");
+    expect(html).toContain("palmares-zone");
+    // La ligne d'arrivée est ce qui fait de la mesure une course : elle reste.
+    expect(html).toContain("palmares-arrivee");
+    // L'axe des abscisses aussi — c'est lui qui tient la largeur du cadre.
+    expect(html).toContain("palmares-x");
+  });
+
+  it("mais AUCUNE courbe, ni étiquette de bout : il n'y a rien à tracer", () => {
+    const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
+    const vide = html.slice(html.indexOf("palmares-figure--vide"));
+    const figure = vide.slice(0, vide.indexOf("</figure>"));
+
+    expect(figure).not.toContain("palmares-halo");
+    expect(figure).not.toContain("palmares-etiquette");
+    expect(figure).not.toContain("palmares-touche");
+  });
+
+  it("les graduations restent du TEXTE : aucun classement à figer", () => {
+    // Une graduation est normalement un bouton qui fige le classement d'une
+    // journée. Sans données, il n'y a pas de classement — le bouton mentirait.
+    const html = renderToStaticMarkup(<PartisCouvertureClient data={data} />);
+    const vide = html.slice(html.indexOf("palmares-figure--vide"));
+    const figure = vide.slice(0, vide.indexOf("</figure>"));
+
+    expect(figure).not.toContain("palmares-x-bouton");
   });
 
   it("une fenêtre trop courte se dit aussi, sur les autres onglets", () => {
@@ -467,11 +501,14 @@ describe("les deux knobs du palmarès", () => {
     expect(entete).not.toContain("cursor:pointer");
   });
 
-  it("le titre VISIBLE annonce la course en cours", () => {
-    // Sur le markup entier, « apprécié » apparaît aussi — dans le gabarit
-    // invisible qui empêche le titre de se recentrer à chaque bascule.
+  it("le titre ne dit plus QUE l'objet : les knobs disent le reste", () => {
+    // Il annonçait « Le palmarès : Le plus écouté, jour par jour » — trois
+    // choses, dont deux que les deux cadrans posés juste à côté disent déjà,
+    // et de façon réglable. Le titre ne garde que ce qu'aucune commande
+    // n'énonce.
     const visible = html.match(/course-tete-gabarit"[^>]*>[^<]+<\/span><span>([^<]+)</);
-    expect(visible![1]).toContain("le disque le plus écouté");
-    expect(visible![1]).not.toContain("apprécié");
+    expect(visible![1]).toBe("Palmarès");
+    expect(visible![1]).not.toContain("écouté");
+    expect(visible![1]).not.toContain("jour par jour");
   });
 });

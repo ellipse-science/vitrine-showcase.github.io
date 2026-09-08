@@ -46,11 +46,9 @@ export default async function Home() {
         <TreemapSection />
       </div>
 
-      {!isProd && (
-        <div id="partis-et-couverture" data-section="Partis et couverture">
-          <PartisCouvertureSection />
-        </div>
-      )}
+      <div id="partis-et-couverture" data-section="Partis et couverture">
+        <PartisCouvertureSection />
+      </div>
 
       <div id="polimetre-plus" data-section="Polimètre+">
         <PolimetrePlusSection />

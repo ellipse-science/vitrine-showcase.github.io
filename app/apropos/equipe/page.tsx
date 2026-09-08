@@ -12,41 +12,57 @@ export const metadata: Metadata = {
 // Titres d'équipe (décision d'Adrien, 1er septembre 2026) : doctorant·es et
 // postdoctorant·es = Scientifiques de données ; bac et maîtrise = Analystes de
 // données. La liste vient de la PR #388 d'Helena Massardier.
-type Membre = { nom: string; titre: string; detail?: string; photo: string };
+//
+// Règles d'affichage (Adrien, 6 septembre 2026) : chaque personne porte son
+// université d'attache ; celles et ceux qui ont un site Web y renvoient depuis
+// leur nom ; dans chaque section, l'ordre est ALPHABÉTIQUE par nom de famille,
+// jamais par statut. Camille Pelletier et Étienne Proulx sont au doctorat depuis
+// la rentrée 2026 : ils passent chez les scientifiques de données.
+type Membre = {
+  nom: string;
+  titre: string;
+  detail?: string;
+  /** Université d'attache. Absent pour les membres hors université. */
+  universite?: string;
+  /** Site Web personnel : le nom devient un lien. */
+  site?: string;
+  photo: string;
+};
+const LAVAL = "Université Laval";
 const GROUPES: { titre: string; membres: Membre[] }[] = [
   {
     titre: "Direction",
     membres: [
-      { nom: "Yannick Dufresne", titre: "Directeur du CAPP", detail: "Professeur titulaire, Université Laval", photo: "yannick-dufresne" },
-      { nom: "Shannon Dinan", titre: "Co-directrice du CAPP", detail: "Professeure agrégée, Université Laval", photo: "shannon-dinan" },
+      { nom: "Shannon Dinan", titre: "Co-directrice du CAPP", detail: "Professeure agrégée", universite: LAVAL, photo: "shannon-dinan" },
+      { nom: "Yannick Dufresne", titre: "Directeur du CAPP", detail: "Professeur titulaire", universite: LAVAL, photo: "yannick-dufresne" },
     ],
   },
   {
     titre: "Scientifiques de données",
     membres: [
-      { nom: "Antoine Lemor", titre: "Scientifique de données", detail: "Chercheur postdoctoral", photo: "antoine-lemor" },
+      { nom: "Adrien Cloutier", titre: "Scientifique de données", detail: "Doctorant", universite: LAVAL, photo: "adrien-cloutier" },
+      { nom: "Laurence-Olivier M. Foisy", titre: "Scientifique de données", detail: "Doctorant", universite: LAVAL, photo: "laurence-olivier-m-foisy" },
+      { nom: "Alexandre Fortier-Chouinard", titre: "Scientifique de données", detail: "Chercheur postdoctoral", universite: LAVAL, photo: "alexandre-fortier-chouinard" },
+      { nom: "Antoine Lemor", titre: "Scientifique de données", detail: "Chercheur postdoctoral", universite: "Université de Montréal", photo: "antoine-lemor" },
       { nom: "Marc-Antoine Martel", titre: "Scientifique de données", detail: "Chercheur postdoctoral", photo: "marc-antoine-martel" },
-      { nom: "Alexandre Fortier-Chouinard", titre: "Scientifique de données", detail: "Chercheur postdoctoral", photo: "alexandre-fortier-chouinard" },
-      { nom: "Adrien Cloutier", titre: "Scientifique de données", detail: "Doctorant", photo: "adrien-cloutier" },
-      { nom: "Junior Sagne", titre: "Scientifique de données", detail: "Doctorant", photo: "junior-sagne" },
-      { nom: "Laurence-Olivier M. Foisy", titre: "Scientifique de données", detail: "Doctorant", photo: "laurence-olivier-m-foisy" },
-      { nom: "Helena Massardier", titre: "Scientifique de données", detail: "Doctorante", photo: "helena-massardier" },
+      { nom: "Helena Massardier", titre: "Scientifique de données", detail: "Doctorante", universite: LAVAL, photo: "helena-massardier" },
+      { nom: "Camille Pelletier", titre: "Scientifique de données", detail: "Doctorante", universite: LAVAL, photo: "camille-pelletier" },
+      { nom: "Étienne Proulx", titre: "Scientifique de données", detail: "Doctorant", universite: LAVAL, photo: "etienne-proulx" },
+      { nom: "Junior Sagne", titre: "Scientifique de données", detail: "Doctorant", universite: LAVAL, photo: "junior-sagne" },
     ],
   },
   {
     titre: "Analystes de données",
     membres: [
-      { nom: "Camille Pelletier", titre: "Analyste de données", detail: "Maîtrise", photo: "camille-pelletier" },
-      { nom: "Benjamin Carignan", titre: "Analyste de données", detail: "Maîtrise", photo: "benjamin-carignan" },
-      { nom: "Étienne Proulx", titre: "Analyste de données", detail: "Maîtrise", photo: "etienne-proulx" },
-      { nom: "Jules Piral", titre: "Analyste de données", detail: "Baccalauréat", photo: "jules-piral" },
+      { nom: "Benjamin Carignan", titre: "Analyste de données", detail: "Maîtrise", universite: LAVAL, photo: "benjamin-carignan" },
+      { nom: "Jules Piral", titre: "Analyste de données", detail: "Baccalauréat", universite: LAVAL, photo: "jules-piral" },
     ],
   },
   {
     titre: "Ingénierie",
     membres: [
+      { nom: "Hugo Catellier", titre: "Programmeur", site: "https://hugocatellier.com/", photo: "hugo-catellier" },
       { nom: "Patrick Poncet", titre: "Développeur et ingénieur de données", photo: "patrick-poncet" },
-      { nom: "Hugo Catellier", titre: "Programmeur", photo: "hugo-catellier" },
     ],
   },
   {
@@ -55,11 +71,23 @@ const GROUPES: { titre: string; membres: Membre[] }[] = [
     // Même règle de titres que pour l'équipe en place.
     titre: "Anciens membres",
     membres: [
-      { nom: "Jérémie Drouin", titre: "Scientifique de données", detail: "Doctorant, Université de Toronto · première version", photo: "jeremie-drouin" },
-      { nom: "Jérémy Gilbert", titre: "Analyste de données", detail: "Maîtrise · première version", photo: "jeremy-gilbert" },
+      { nom: "Jérémie Drouin", titre: "Scientifique de données", detail: "Doctorant · première version", universite: "Université de Toronto", photo: "jeremie-drouin" },
+      { nom: "Jérémy Gilbert", titre: "Analyste de données", detail: "Maîtrise · première version", universite: LAVAL, photo: "jeremy-gilbert" },
     ],
   },
 ];
+
+/** Le nom de famille, pour l'ordre alphabétique : le dernier mot du nom
+ *  (« M. Foisy » → « Foisy », « Fortier-Chouinard » reste entier). Comparé
+ *  sans accents ni casse, en français. */
+function nomDeFamille(nom: string): string {
+  const mots = nom.trim().split(/\s+/);
+  return mots[mots.length - 1] ?? nom;
+}
+const COLLATION = new Intl.Collator("fr", { sensitivity: "base" });
+function parNomDeFamille(a: Membre, b: Membre): number {
+  return COLLATION.compare(nomDeFamille(a.nom), nomDeFamille(b.nom)) || COLLATION.compare(a.nom, b.nom);
+}
 
 /** Une photo n'est affichée que si `public/images/equipe/<slug>.jpg` existe au
  *  build ; sinon un médaillon aux initiales. Déposer les photos suffit. */
@@ -99,7 +127,7 @@ export default function EquipePage() {
           <section key={g.titre} className="equipe-groupe">
             <h2 className="apropos-section-title">{g.titre}</h2>
             <ul className="equipe-grille">
-              {g.membres.map((m) => {
+              {[...g.membres].sort(parNomDeFamille).map((m) => {
                 const photo = photoSiPresente(m.photo);
                 return (
                   <li key={m.nom} className="equipe-carte">
@@ -108,9 +136,14 @@ export default function EquipePage() {
                     ) : (
                       <span className="equipe-photo equipe-photo--initiales" aria-hidden="true">{initiales(m.nom)}</span>
                     )}
-                    <span className="equipe-nom">{m.nom}</span>
+                    {m.site ? (
+                      <a className="equipe-nom equipe-nom--lien" href={m.site} target="_blank" rel="noopener noreferrer">{m.nom}</a>
+                    ) : (
+                      <span className="equipe-nom">{m.nom}</span>
+                    )}
                     <span className="equipe-titre">{m.titre}</span>
                     {m.detail ? <span className="equipe-detail">{m.detail}</span> : null}
+                    {m.universite ? <span className="equipe-universite">{m.universite}</span> : null}
                   </li>
                 );
               })}

@@ -4,15 +4,20 @@ import { formatDateFr } from "@/lib/dates";
 import { instantPublicationBloc, loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
 
-// RETIRÉ DE PROD, gardé sur dev (décision du 2026-08-20, avant l'envoi aux
-// médias) : le module reste en rodage. La garde vit ICI, à la source, et non
-// aux points de montage : accueil, éditions passées et tout montage futur
-// suivent sans qu'on ait à y penser. Même signal d'environnement que
-// app/robots.ts et lib/data/parties.ts — un seul signal, pas de divergence.
-const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+// SORTI DU RODAGE : le module est public depuis cette PR. Il avait été retiré
+// de prod le 2026-08-20, avant l'envoi aux médias, le temps que le modèle des
+// partis soit réentraîné — ce qu'il a été (neuf modèles binaires, justesse
+// 0,61 → 0,94 sur un jeu annoté à quatre personnes, § 06 de la méthodologie).
+// La garde vivait ICI, à la source, pour que tout point de montage la suive
+// sans qu'on ait à y penser ; c'est pour la même raison qu'elle disparaît ici
+// en premier. Le § 06 porte l'avis d'état qui accompagne le module en public,
+// dont la réserve sur le PCQ, dont la colonne reste à zéro.
+//
+// ⚠️ NE PAS confondre avec les deux gardes `isProd` de
+// PartisCouvertureClient.tsx : celles-là protègent un easter egg réservé à dev
+// et RESTENT en place.
 
 export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
-  if (isProd) return null;
   // DEUX BORNES, PAS UNE. `asOfIso` nomme le jour de l'édition ; il suffit à la
   // table quotidienne, qui n'a qu'une ligne par journée. La table intra-journée
   // en publie six, et bornée au jour elle les servait TOUTES à chaque édition —

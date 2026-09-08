@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { RawMaquette } from "@/components/sections/RawMaquette";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { DiscothequeClient } from "@/components/interactive/DiscothequeClient";
@@ -13,12 +12,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-static";
 
-// MÊME GARDE QUE LE MODULE, à la source. « Partis et couverture » est retiré de
-// la production depuis le 2026-08-20, le temps du rodage ; sa discothèque n'a
-// aucune raison d'y être accessible par une adresse devinée. Elle est aussi
-// absente du plan du site : rien ne doit y mener tant que le module lui-même
-// n'est pas public.
-const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
+// MÊME SORT QUE LE MODULE, à la source. La discothèque était fermée en
+// production depuis le 2026-08-20, le temps du rodage de « Partis et
+// couverture » ; elle rouvre avec lui.
 
 /**
  * LE FONDS : tout ce que la discothèque a jamais rangé — lu deux façons.
@@ -46,8 +42,6 @@ const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
  * album à moins de sept titres, ce qui est exact plutôt qu'incomplet.
  */
 export default async function DiscothequePage() {
-  if (isProd) notFound();
-
   const { fonds } = await loadPochettes(formatDateFr);
   const total = fonds.reduce((n, j) => n + j.pochettes.length, 0);
   const servis = fonds.filter((j) => j.servi).length;
@@ -65,9 +59,14 @@ export default async function DiscothequePage() {
         <div className="fonds-header">
           <h1 className="fonds-title">La discothèque</h1>
           <p className="fonds-lead dek-with-cap">
-            Chaque jour, à 20h, la pochette de chaque parti est figée telle
-            qu’elle est à ce moment-là et rejoint le fonds. Ce qu’on lit ici a
-            été mesuré le jour même&nbsp;: ce n’est pas une reconstitution.
+            Chaque soir à 20h, chaque parti reçoit sa pochette du jour. Elle
+            porte quatre mesures prises ce jour-là&nbsp;: le temps passé à la
+            Une, la part du temps total, l’enjeu sur lequel les médias l’ont
+            couvert et le ton de cette couverture. L’illustration est générée
+            par intelligence artificielle, sous la direction artistique de
+            Mathieu Fortin (Anorak Studio). Elle figure cet enjeu, et rend le
+            temps de couverture par la densité des formes plutôt que par un
+            graphique.
           </p>
         </div>
 

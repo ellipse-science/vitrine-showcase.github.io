@@ -25,9 +25,18 @@ export type ChunkName = "top" | "bottom" | "polimeter_plus";
 
 export { formatVersion };
 
-export async function RawMaquette({ chunk }: { chunk: ChunkName }) {
+/** Retire la section « Partenaires » du pied de page. La page Partenaires
+ *  porte déjà la liste complète avec ses grands logos : la répéter juste en
+ *  dessous, en petit, faisait lire deux fois la même chose (Adrien,
+ *  2026-09-06). Pure, pour être testable sur le vrai `bottom.html`. */
+export function sansSectionPartenaires(html: string): string {
+  return html.replace(/\s*<!-- Partenaires -->\s*<section class="partners-section">[\s\S]*?<\/section>/, "");
+}
+
+export async function RawMaquette({ chunk, sansPartenaires = false }: { chunk: ChunkName; sansPartenaires?: boolean }) {
   const file = path.join(CHUNK_DIR, `${chunk}.html`);
   let html = await fs.readFile(file, "utf8");
+  if (sansPartenaires) html = sansSectionPartenaires(html);
 
   // Dynamically resolve relative/absolute paths for subpages (dev and prod basepath)
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";

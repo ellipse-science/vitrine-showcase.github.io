@@ -18,14 +18,29 @@ describe("SHARE_MODULE_SLUGS — visibilité par environnement", () => {
     vi.resetModules();
   });
 
-  it("exclut en production le module Partis, toujours masqué par #544", async () => {
+  it("inclut en production les Partis, sortis du rodage", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
     vi.resetModules();
 
     const prodShareModules = await import("@/lib/shareModules");
 
-    expect(prodShareModules.SHARE_MODULE_SLUGS).not.toContain("partis-et-couverture");
-    expect(prodShareModules.isShareModuleSlug("partis-et-couverture")).toBe(false);
+    expect(prodShareModules.SHARE_MODULE_SLUGS).toContain("partis-et-couverture");
+    expect(prodShareModules.isShareModuleSlug("partis-et-couverture")).toBe(true);
+  });
+
+  // Le mécanisme de rodage reste, sa liste est vide : c'est ce qui doit être
+  // vrai après ce démasquage, et ce test le dira si quelqu'un y remet un module
+  // sans le vouloir.
+  it("sert la même liste en production et sur dev", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
+    vi.resetModules();
+    const prodSlugs = [...(await import("@/lib/shareModules")).SHARE_MODULE_SLUGS];
+
+    vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "dev");
+    vi.resetModules();
+    const devSlugs = [...(await import("@/lib/shareModules")).SHARE_MODULE_SLUGS];
+
+    expect(prodSlugs).toEqual(devSlugs);
   });
 
   it("inclut en production l'Assemblée, sortie du rodage le 2026-08-27", async () => {
