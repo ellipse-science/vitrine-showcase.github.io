@@ -5327,6 +5327,13 @@
     gap: var(--seg-gap);
     padding: 0;
     border: 0;
+    /* Le vumètre est un <button> depuis qu'il ouvre les sources : sans ce
+       remisage, le fond et le chrome natifs du bouton se voient DANS les
+       interstices entre les segments, et Safari redessine la boîte à sa façon.
+       Même remisage que .une-audio-btn ou .saillance-info-btn. */
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
     cursor: pointer;
   }
   .console-vumetre:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 4px; }
