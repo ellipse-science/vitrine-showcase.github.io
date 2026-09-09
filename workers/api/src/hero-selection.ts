@@ -27,6 +27,7 @@ import {
   type RawEvent,
 } from '../../../lib/data/heroSelectionCore'
 import { tableKey } from './snapshot-logic'
+import { avecDelai, DELAI_MS } from './hero-selection-logic'
 
 /** Table source de la sélection, dans l'instantané du cycle. */
 export const SOURCE_TABLE = 'headline_events_4h'
@@ -65,6 +66,14 @@ export async function lireEvenements(
  *  table source — un cycle sans événements n'a pas de Une, et ce n'est pas
  *  une erreur. */
 export async function publierSelectionUne(
+  bucket: R2Bucket,
+  cycle: string,
+  delaiMs: number = DELAI_MS,
+): Promise<{ published: boolean; selection: HeroSelectionPayload }> {
+  return avecDelai(publier(bucket, cycle), delaiMs, 'sélection de la Une')
+}
+
+async function publier(
   bucket: R2Bucket,
   cycle: string,
 ): Promise<{ published: boolean; selection: HeroSelectionPayload }> {
