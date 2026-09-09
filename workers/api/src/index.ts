@@ -153,14 +153,14 @@ export default {
     const now = new Date(event.scheduledTime)
 
     // Les crons se distinguent par leur MINUTE :
-    //   :56 = sync DIRECT Athena -> Postgres, la passe qui vise l'heure PILE
-    //         (l'édition du midi est préparée à 11h56, cf. #570) ;
-    //   :10 = la même chose, en FILET, pour les cycles où la cascade des
-    //         raffineurs n'avait encore rien publié à :56 ;
+    //   :02 = sync DIRECT Athena -> Postgres, la passe utile — neuf minutes
+    //         après la publication du raffineur (:53), le temps que Glue et
+    //         Athena rattrapent (calage du 09-09, cf. #570) ;
+    //   :20 = la même chose, en FILET, pour les cycles où la cascade des
+    //         raffineurs n'avait encore rien publié à :02 ;
     //   :00 = ancien chemin JSON publiés -> Postgres (retiré des crons).
-    // Les deux passes n'ont pas les mêmes heures visées — :56 tombe sur
-    // l'heure qui PRÉCÈDE l'édition, :10 sur celle de l'édition — d'où
-    // `shouldRunAthenaSync`, qui lit la minute avant de juger l'heure.
+    // Les deux passes visent les mêmes heures et ne se distinguent que par la
+    // minute, d'où `shouldRunAthenaSync`, qui lit l'une puis juge l'autre.
     if ((ATHENA_SYNC_MINUTES as readonly number[]).includes(now.getUTCMinutes())) {
       if (env.SYNC_FORCE !== '1' && !shouldRunAthenaSync(now)) {
         console.log('sync-athena : hors heure visée à New York — ignoré')
@@ -300,7 +300,7 @@ export default {
           // derrière la file de build de Cloudflare Pages : quand un build est
           // sauté ou retardé, le raffineur illustre l'ANCIENNE Une, ou rien.
           // Mesuré du 29 août au 3 septembre 2026 : de 1 h 20 à 5 h par jour
-          // d'édition sans illustration. Ici, la Une est connue à :56 — avant
+          // d'édition sans illustration. Ici, la Une est connue à :02 — avant
           // le build — et déposée dans l'instantané du cycle.
           //
           // PERSONNE NE LA LIT ENCORE. On publie en parallèle ; le site
@@ -509,7 +509,7 @@ export default {
       // Déclenchement manuel du sync DIRECT Athena (chaîne émancipée). Même
       // contrat de tranches que /v1/sync, mais le travail CPU par table est
       // plus lourd (analyse des pages Athena) : défaut à 2 tables par appel.
-      // Le cron de la minute :10 fait la passe complète ; cette route sert la
+      // Le cron du filet (:20) fait la passe complète ; cette route sert la
       // phase d'ombre et les reprises.
       if (segments[0] === 'v1' && segments[1] === 'sync-athena') {
         if (request.method !== 'POST') {
