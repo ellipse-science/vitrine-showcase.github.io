@@ -7,7 +7,7 @@
 // 29 août au 3 septembre 2026 : de 1 h 20 à 5 h par jour d'édition sans
 // illustration (aws-refiners#490, vitrine-showcase#723).
 //
-// Le Worker, lui, connaît la Une à :56 — avant le build. En la publiant ici,
+// Le Worker, lui, connaît la Une à :02 — avant le build. En la publiant ici,
 // on rend possible que l'image soit produite AVANT la construction du site,
 // donc qu'elle parte dans la MÊME édition que les données.
 //

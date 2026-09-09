@@ -17,7 +17,7 @@ export async function triggerDeployHooks(env: DeployHookEnv): Promise<void> {
     ['dev', env.DEPLOY_HOOK_DEV],
   ]
   // DEUX CIRCUITS appellent cette fonction à quelques minutes d'intervalle :
-  // le sync Athena de la minute :10 (index.ts) et la publication de
+  // le sync Athena (index.ts, minutes :02 et :20) et la publication de
   // l'illustration de la Une (art.ts, actif depuis le 2026-08-23). Cloudflare
   // répond alors 304 au second : « un déploiement est déjà en file pour cette
   // branche, rien à faire ». Ce n'est PAS un échec — c'est même la preuve que
