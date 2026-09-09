@@ -509,8 +509,8 @@ export default {
       // Déclenchement manuel du sync DIRECT Athena (chaîne émancipée). Même
       // contrat de tranches que /v1/sync, mais le travail CPU par table est
       // plus lourd (analyse des pages Athena) : défaut à 2 tables par appel.
-      // Le cron du filet (:20) fait la passe complète ; cette route sert la
-      // phase d'ombre et les reprises.
+      // Les deux passes du cron (:02 et :20) font la passe complète ; cette
+      // route sert la phase d'ombre et les reprises.
       if (segments[0] === 'v1' && segments[1] === 'sync-athena') {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')

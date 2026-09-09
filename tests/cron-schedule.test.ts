@@ -191,10 +191,14 @@ describe("wrangler.toml et schedule.ts disent la même chose", () => {
       return { minute: Number(minute), heures: heures.split(",").map(Number) };
     });
 
-  it("déclare exactement les deux passes du sync Athena", () => {
-    expect(crons.map((c) => c.minute).sort((a, b) => a - b)).toEqual(
-      [...ATHENA_SYNC_MINUTES].sort((a, b) => a - b),
-    );
+  it("déclare une passe, et une seule, pour chaque minute du sync Athena", () => {
+    // On ne compte PAS les crons du fichier : un cron étranger au sync Athena
+    // (un rollback :00, un futur déclencheur) est légitime et ne doit pas
+    // faire échouer ce test. Il serait d'ailleurs inoffensif —
+    // `shouldRunAthenaSync` ne répond vrai que sur ces minutes-là.
+    for (const minute of ATHENA_SYNC_MINUTES) {
+      expect(crons.filter((c) => c.minute === minute)).toHaveLength(1);
+    }
   });
 
   it("enregistre pour chaque passe les heures UTC que le code attend", () => {
