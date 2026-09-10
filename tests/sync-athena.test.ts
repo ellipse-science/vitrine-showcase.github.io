@@ -172,5 +172,12 @@ describe("triggerDeployHooks — avec le jeton, le Worker lance les builds GitHu
     await expect(triggerDeployHooks({ ...env, GITHUB_DISPATCH_TOKEN: undefined })).resolves.toBeUndefined();
     expect(appels.map((a) => a.url)).toEqual(["https://hook.test/prod", "https://hook.test/dev"]);
   });
+
+  it("le refus porte le détail de GitHub (ref, permission, workflow introuvable)", async () => {
+    vi.stubGlobal("fetch", async () =>
+      new Response('{"message":"No ref found for: develop"}', { status: 422, statusText: "Unprocessable Entity" }),
+    );
+    await expect(triggerDeployHooks(env)).rejects.toThrow(/422 Unprocessable Entity — \{"message":"No ref found for: develop"\}/);
+  });
 });
 

@@ -43,7 +43,7 @@ export async function triggerDeployHooks(env: DeployHookEnv): Promise<void> {
     ['dev', env.DEPLOY_HOOK_DEV],
   ]
   // DEUX CIRCUITS appellent cette fonction à quelques minutes d'intervalle :
-  // le sync Athena (index.ts, minutes :53 et :10) et la publication de
+  // le sync Athena (index.ts, aux minutes de schedule.ts) et la publication de
   // l'illustration de la Une (art.ts, actif depuis le 2026-08-23). Cloudflare
   // répond alors 304 au second : « un déploiement est déjà en file pour cette
   // branche, rien à faire ». Ce n'est PAS un échec — c'est même la preuve que
@@ -94,7 +94,12 @@ async function lancerBuildsGithub(jeton: string): Promise<void> {
         body: JSON.stringify({ ref }),
       })
       if (res.status === 204) console.log(`build GitHub ${nom} lancé (${workflow})`)
-      else echecs.push(`${nom} : GitHub a répondu ${res.status}`)
+      else {
+        // Le détail de GitHub dit tout de suite ce qui cloche : ref absente,
+        // permission manquante, workflow introuvable.
+        const detail = (await res.text().catch(() => '')).slice(0, 200)
+        echecs.push(`${nom} : GitHub a répondu ${res.status}${res.statusText ? ` ${res.statusText}` : ''}${detail ? ` — ${detail}` : ''}`)
+      }
     } catch (err) {
       echecs.push(`${nom} : GitHub injoignable (${err instanceof Error ? err.message : String(err)})`)
     }
