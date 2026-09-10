@@ -1,5 +1,11 @@
 [
   {
+    "pr": 780,
+    "date": "2026-09-10T17:52:11Z",
+    "note": "Les mises à jour de la Vitrine reprennent les données les plus récentes dès qu'elles sont prêtes, au lieu d'attendre la mise à jour de secours, qui arrivait environ une heure après l'heure prévue.",
+    "version": "2.46.0-beta.2"
+  },
+  {
     "pr": 770,
     "date": "2026-09-10T17:15:22Z",
     "note": "Rien ne change sur le site.",
