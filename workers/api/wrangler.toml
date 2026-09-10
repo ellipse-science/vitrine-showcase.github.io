@@ -134,11 +134,11 @@ crons = [
   # tard laisse à Glue/Athena le temps de rattraper. À :56, trois minutes
   # seulement après lui, la passe lisait encore le bloc PRÉCÉDENT et le site
   # affichait l'édition d'avant jusqu'au filet GitHub de :50.
-  "2 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
+  "53 0,3,4,7,8,11,12,15,16,19,20,23 * * *",
   # Filet, dix-huit minutes plus tard : rattrape les cycles où la cascade des
   # raffineurs avait pris du retard et n'avait rien publié à :02. Il tombe
   # APRÈS la fin du build déclenché par la passe utile — sinon Cloudflare lui
   # répondrait 304 (« un déploiement est déjà en file ») et il ne rebâtirait
   # rien. Sans danger depuis #582 (un 304 n'est plus traité comme un échec).
-  "20 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
+  "10 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
 ]

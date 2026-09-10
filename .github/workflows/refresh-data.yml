@@ -55,7 +55,7 @@ on:
     # 🔗 La première des six passes tombe à 00:50 UTC, et c'est de ça que dépend
     # la garde du scrape des portraits de députés plus bas (`date -u +%H = 00`).
     # Toucher à cette ligne sans regarder celle-là éteindrait ce scrape en silence.
-    - cron: '50 0,4,8,12,16,20 * * *'
+    - cron: '53 3,7,11,15,19,23 * * *'
 
 permissions:
   contents: read
@@ -208,7 +208,7 @@ jobs:
       - name: Check daily deputy-photo window
         id: photo_window
         run: |
-          if [ "$(date -u +%H)" = "00" ]; then
+          if [ "$(date -u +%H)" = "03" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"

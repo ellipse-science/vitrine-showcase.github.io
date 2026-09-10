@@ -79,12 +79,12 @@ export function isTargetHourInNY(now: Date): boolean {
  *  désormais les MÊMES heures visées, ce qui est correct et voulu : ce sont
  *  les MINUTES qui les distinguent. Ne pas « corriger » cette égalité en
  *  décalant l'une des deux d'une heure : c'est le calage :56 qu'on retirerait. */
-export const ATHENA_TARGET_HOURS_NY = [0, 4, 8, 12, 16, 20]
+export const ATHENA_TARGET_HOURS_NY = [23, 3, 7, 11, 15, 19]
 
 /** Heures UTC enregistrées pour le sync Athena. Doit rester d'accord avec
  *  `crons` dans wrangler.toml : {0,4,8,12,16,20} à New York = ces douze heures
  *  UTC, été (UTC-4) et hiver (UTC-5) confondus. */
-export const ATHENA_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
+export const ATHENA_REGISTERED_UTC_HOURS = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23]
 
 export function isAthenaTargetHourInNY(now: Date): boolean {
   return ATHENA_TARGET_HOURS_NY.includes(hourInNY(now))
@@ -116,13 +116,13 @@ export function isAthenaFiletHourInNY(now: Date): boolean {
  *  filet ne rebâtirait rien. À :20 il tombe après, et garde donc son pouvoir
  *  de rattrapage. L'écart de dix-huit minutes reprend d'ailleurs celui que le
  *  filet avait avant (:56 -> :10, quatorze minutes). */
-export const ATHENA_SYNC_MINUTES = [2, 20] as const
+export const ATHENA_SYNC_MINUTES = [53, 10] as const
 
 /** Le déclenchement courant doit-il lancer le sync Athena ? Répond en tenant
  *  compte de la MINUTE (quelle passe) ET de l'heure locale (le bon calage). */
 export function shouldRunAthenaSync(now: Date): boolean {
   const minute = now.getUTCMinutes()
-  if (minute === 2) return isAthenaTargetHourInNY(now)
-  if (minute === 20) return isAthenaFiletHourInNY(now)
+  if (minute === 53) return isAthenaTargetHourInNY(now)
+  if (minute === 10) return isAthenaFiletHourInNY(now)
   return false
 }
