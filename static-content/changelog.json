@@ -1,5 +1,11 @@
 [
   {
+    "pr": 770,
+    "date": "2026-09-10T17:15:22Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 779,
     "date": "2026-09-10T17:06:42Z",
     "note": "Les six éditions du jour paraissaient jusqu'ici environ une heure après l'heure annoncée. Ce changement rapproche leur mise en ligne de l'heure dite : minuit, 4h, 8h, midi, 16h et 20h.",
