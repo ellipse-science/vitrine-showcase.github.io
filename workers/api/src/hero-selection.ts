@@ -40,6 +40,11 @@ export const SOURCE_TABLE = 'headline_events_4h'
  *  illisible — une panne silencieuse, puisque l'écriture, elle, réussirait. */
 export const HERO_OBJECT = 'hero_selection'
 
+/** Copie à adresse FIXE de la sélection, pour vitrine-art
+ *  (GET /v1/art/selection.json) : il la lit PENDANT la passe, avant que le
+ *  manifeste du cycle ne soit publié. */
+export const SELECTION_ART_KEY = 'art/selection.json'
+
 /** Lit les événements de l'instantané du cycle.
  *
  *  ON RELIT CE QUI VIENT D'ÊTRE ÉCRIT plutôt que de garder les lignes en
@@ -84,5 +89,10 @@ async function publier(
   await bucket.put(tableKey(cycle, HERO_OBJECT), JSON.stringify(selection) + '\n', {
     httpMetadata: { contentType: 'application/json; charset=utf-8' },
   })
+  await bucket.put(
+    SELECTION_ART_KEY,
+    JSON.stringify({ cycle, generated_at: new Date().toISOString(), selection }) + '\n',
+    { httpMetadata: { contentType: 'application/json; charset=utf-8' } },
+  )
   return { published: true, selection }
 }

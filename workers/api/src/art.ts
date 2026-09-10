@@ -43,8 +43,10 @@ import {
   parseReference,
   parseUne,
   publishDecision,
+  SELECTION_FILE,
 } from './art-logic'
 import { notifySlack, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
+import { SELECTION_ART_KEY } from './hero-selection'
 
 export { ART_FILES, MAX_UPLOAD_BYTES, heroKey, parsePochette, publishDecision } from './art-logic'
 
@@ -68,6 +70,13 @@ function json(body: unknown, status = 200): Response {
       'access-control-allow-origin': '*',
     },
   })
+}
+
+/** Réponse jamais mise en cache : une sélection périmée ferait illustrer la
+ *  Une d'avant. */
+function sansCache(res: Response): Response {
+  res.headers.set('cache-control', 'no-store')
+  return res
 }
 
 export async function handleArt(
@@ -178,6 +187,24 @@ export async function handleArt(
   // hasard) pour guider la génération, comme le raffineur avec son dossier
   // local. Sous clé comme le reste : l'artiste maison n'a pas signé pour un
   // dépôt public.
+  // GET /v1/art/selection.json — la Une que le Worker vient de retenir, publiée
+  // dès la tranche de `headline_events_4h`, AVANT le manifeste et le build
+  // (hero-selection.ts). Corps : { cycle, generated_at, selection }. Lecture
+  // seule, sous la clé d'API que vitrine-art porte déjà : pas de nouveau
+  // secret. Jamais en cache : une sélection périmée ferait illustrer l'ancienne
+  // Une.
+  if (file === SELECTION_FILE) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return json({ error: 'Méthodes admises : GET, HEAD.' }, 405)
+    }
+    const auth = await authenticate(sql, request, null)
+    if (!auth.ok) return json({ error: auth.error }, auth.status)
+
+    const obj = await env.ART_BUCKET.get(SELECTION_ART_KEY)
+    if (!obj) return sansCache(json({ error: 'Aucune sélection publiée.' }, 404))
+    return sansCache(json(await obj.json().catch(() => null)))
+  }
+
   if (file === REFERENCES_INDEX) {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return json({ error: 'Méthodes admises : GET, HEAD.' }, 405)

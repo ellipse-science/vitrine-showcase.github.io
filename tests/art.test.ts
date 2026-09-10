@@ -1,3 +1,5 @@
+import { vitrineArtLitLaSelection } from "@/workers/api/src/art-logic";
+import { TABLES } from "@/workers/api/src/tables";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -5,10 +7,13 @@ import {
   MAX_UPLOAD_BYTES,
   PARTY_SLUGS,
   REFERENCES_INDEX,
+  SELECTION_FILE,
   UNE_KEY_MAX_LENGTH,
+  attendreIllustration,
   borneIndex,
   borneJoursPosterieurs,
   heroKey,
+  illustrationAJour,
   parsePochette,
   premierePochettePosterieure,
   parseReference,
@@ -259,5 +264,73 @@ describe("premierePochettePosterieure", () => {
 
   it("liste vide : rien ne s'oppose au téléversement", () => {
     expect(premierePochettePosterieure([], jour)).toBeNull();
+  });
+});
+
+describe("illustrationAJour (attendre l'image avant les hooks)", () => {
+  it("à jour quand l'illustration porte la clé de la Une", () => {
+    expect(illustrationAJour("story-a", "story-a")).toBe(true);
+  });
+  it("pas à jour tant que l'illustration porte une autre histoire, ou rien", () => {
+    expect(illustrationAJour("story-b", "story-a")).toBe(false);
+    expect(illustrationAJour("story-b", null)).toBe(false);
+  });
+  it("rien à attendre sans Une", () => {
+    expect(illustrationAJour(null, "story-a")).toBe(true);
+  });
+});
+
+describe("attendreIllustration (borne et horloge injectées)", () => {
+  const horloge = () => {
+    let t = 0;
+    return { maintenant: () => t, dormir: async (ms: number) => { t += ms; } };
+  };
+
+  it("rend la main tout de suite quand l'image est déjà la bonne", async () => {
+    let lectures = 0;
+    const r = await attendreIllustration(async () => { lectures++; return "story-a"; }, "story-a", horloge());
+    expect(r).toEqual({ aJour: true, attenduMs: 0 });
+    expect(lectures).toBe(1);
+  });
+
+  it("attend que l'image rattrape la Une, puis rend la main", async () => {
+    const cles: (string | null)[] = [null, "story-a", "story-a", "story-b"];
+    let i = 0;
+    const r = await attendreIllustration(async () => cles[Math.min(i++, cles.length - 1)], "story-b", { ...horloge(), pasMs: 5_000 });
+    expect(r).toEqual({ aJour: true, attenduMs: 15_000 });
+  });
+
+  it("ne dépasse jamais la borne : le build partira sans l'image", async () => {
+    const r = await attendreIllustration(async () => "story-a", "story-b", { ...horloge(), delaiMs: 150_000, pasMs: 5_000 });
+    expect(r.aJour).toBe(false);
+    expect(r.attenduMs).toBeLessThanOrEqual(150_000);
+  });
+
+  it("une lecture en échec compte comme « pas encore », sans faire échouer la passe", async () => {
+    let n = 0;
+    const r = await attendreIllustration(async () => { if (n++ < 2) throw new Error("R2"); return "story-b"; }, "story-b", horloge());
+    expect(r.aJour).toBe(true);
+  });
+
+  it("la route de sélection reste hors de la liste blanche : lisible, jamais téléversable", () => {
+    expect(Object.keys(ART_FILES)).not.toContain(SELECTION_FILE);
+  });
+});
+
+describe("vitrineArtLitLaSelection (l'attente s'arme seule)", () => {
+  it("vrai quand la dernière illustration vient de la sélection du Worker", () => {
+    expect(vitrineArtLitLaSelection({ storyline_id: "s", selection_cycle: "20260910T1953Z" })).toBe(true);
+  });
+  it("faux tant que vitrine-art lit le site déployé, ou sans illustration", () => {
+    expect(vitrineArtLitLaSelection({ storyline_id: "s" })).toBe(false);
+    expect(vitrineArtLitLaSelection({ storyline_id: "s", selection_cycle: "" })).toBe(false);
+    expect(vitrineArtLitLaSelection(null)).toBe(false);
+  });
+});
+
+describe("la Une ouvre la synchro", () => {
+  it("headline_events_4h est la première table : sa sélection part dès la première tranche", () => {
+    expect(TABLES[0].name).toBe("headline_events_4h");
+    expect(TABLES.filter((t) => t.name === "headline_events_4h")).toHaveLength(1);
   });
 });

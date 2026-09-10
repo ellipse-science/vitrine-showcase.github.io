@@ -59,6 +59,86 @@ export function publishDecision(
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   LA SÉLECTION DE LA UNE, AVANT LE BUILD (10-09)
+
+   Le Worker calcule la Une du cycle AVANT de tirer les Deploy Hooks
+   (vitrine-showcase#767) et la dépose dans l'instantané. `vitrine-art` la lit
+   sur `/v1/art/selection.json` — sous la clé d'API qu'il porte déjà — au lieu
+   d'attendre qu'elle paraisse sur le site déployé. C'est ce qui lui permet
+   d'illustrer AVANT que le build parte, et au Worker d'attendre l'image pour
+   que le texte et l'image partent dans le MÊME build.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/** Nom, sous `/v1/art/`, de la sélection du cycle courant. Hors de `ART_FILES`
+ *  à dessein : lisible par `vitrine-art`, jamais téléversable. */
+export const SELECTION_FILE = 'selection.json'
+
+/** Borne de l'attente de l'illustration avant le build. `vitrine-art` met
+ *  2,3 s au p50 (Une inchangée), 65 s au p90 (nouvelle image) et 3 min 10 au
+ *  pire (CloudWatch, 30 jours, mesuré le 10-09). La sélection partant dès la
+ *  première tranche, ~50 s avant la fin de la passe, l'image a déjà cette
+ *  avance quand l'attente commence : 90 s couvrent le p90 sans retenir le texte
+ *  plus d'une minute et demie. Au-delà, le build part sans l'image, qui suivra
+ *  au build que déclenche `/publish`. */
+export const ATTENTE_ILLUSTRATION_MS = 90_000
+export const PAS_ATTENTE_ILLUSTRATION_MS = 5_000
+
+/** Métadonnées de `art/latest.json` qui comptent pour l'attente. */
+export interface MetaIllustration {
+  storyline_id?: string | null
+  event_id?: string | null
+  /** Posé par vitrine-art quand l'illustration vient de la sélection du Worker
+   *  (GET /v1/art/selection.json) : le cycle qu'il a lu. */
+  selection_cycle?: string | null
+}
+
+/** L'attente s'arme SEULE : vrai seulement si la dernière illustration vient
+ *  d'un vitrine-art qui lit la sélection du Worker. Tant qu'il lit encore le
+ *  site déployé, attendre retiendrait le texte pour une image qui ne peut pas
+ *  arriver avant le build. */
+export function vitrineArtLitLaSelection(meta: MetaIllustration | null): boolean {
+  return typeof meta?.selection_cycle === 'string' && meta.selection_cycle.length > 0
+}
+
+/** L'illustration publiée correspond-elle à la Une du cycle ? Même clé
+ *  d'appariement que partout ailleurs : la storyline d'abord (`heroKey`).
+ *  Sans Une, il n'y a rien à attendre. */
+export function illustrationAJour(cleUne: string | null, cleIllustration: string | null): boolean {
+  if (!cleUne) return true
+  return cleUne === cleIllustration
+}
+
+/** Attend, bornée, que l'illustration rattrape la Une du cycle.
+ *
+ *  PURE ET INJECTABLE : la lecture, le sommeil et l'horloge sont passés en
+ *  paramètres, pour que les tests éprouvent la borne sans attendre deux
+ *  minutes et demie. Une lecture en échec compte comme « pas encore » :
+ *  l'attente ne doit jamais faire échouer la passe. */
+export async function attendreIllustration(
+  lireCle: () => Promise<string | null>,
+  cleUne: string | null,
+  options: {
+    delaiMs?: number
+    pasMs?: number
+    dormir?: (ms: number) => Promise<void>
+    maintenant?: () => number
+  } = {},
+): Promise<{ aJour: boolean; attenduMs: number }> {
+  const delaiMs = options.delaiMs ?? ATTENTE_ILLUSTRATION_MS
+  const pasMs = options.pasMs ?? PAS_ATTENTE_ILLUSTRATION_MS
+  const dormir = options.dormir ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
+  const maintenant = options.maintenant ?? (() => Date.now())
+  const debut = maintenant()
+  for (;;) {
+    const cle = await lireCle().catch(() => null)
+    const attenduMs = maintenant() - debut
+    if (illustrationAJour(cleUne, cle)) return { aJour: true, attenduMs }
+    if (attenduMs + pasMs > delaiMs) return { aJour: false, attenduMs }
+    await dormir(pasMs)
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    LES POCHETTES DES PARTIS (bac du jour + discothèque)
 
    Même circuit que l'illustration de la Une, mais une image par PARTI et par

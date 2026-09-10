@@ -40,6 +40,11 @@ ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 # BASCULE 2026-08-19 : "true" = les Deploy Hooks partent quand LES 15 tables
 # ont réussi (tout ou rien). Retour à l'ombre : remettre "false".
 SYNC_TRIGGER_DEPLOYS = "true"
+# Attendre l'illustration de la Une avant de lancer le build (10-09), pour que
+# le texte et l'image partent ensemble. S'arme SEUL : le Worker n'attend que si
+# la dernière illustration vient d'un vitrine-art qui lit /v1/art/selection.json
+# (champ `selection_cycle`), et jamais plus de 90 s. "false" coupe l'attente.
+ATTENDRE_ILLUSTRATION = "true"
 # Datamart lu par la synchro (vitrine#489) : "DEV" (défaut) ou "PROD". La base
 # Glue porte le même nom dans les deux comptes ; seuls les clés (secrets
 # AWS_*_DEV / AWS_*_PROD, ci-dessous) et le seau de sortie changent. Bascule et

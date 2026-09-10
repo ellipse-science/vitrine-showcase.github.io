@@ -41,6 +41,7 @@ import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } fr
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
+import { attendreIllustration, heroKey, vitrineArtLitLaSelection, type MetaIllustration } from './art-logic'
 import { handleFlappy } from './flappy'
 import {
   cycleId,
@@ -62,6 +63,9 @@ interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
    *  l'administration. */
   ACCESS_AUD?: string
   CACHE_TTL_SECONDS?: string
+  /** « false » coupe l'attente de l'illustration avant le build ; sinon elle
+   *  s'arme seule (art-logic, vitrineArtLitLaSelection). Cf. wrangler.toml. */
+  ATTENDRE_ILLUSTRATION?: string
   /** Force la synchro hors des heures visées. UNIQUEMENT pour l'éprouver en
    *  local via `wrangler dev --test-scheduled` : le garde-fou horaire rejette
    *  sinon tout déclenchement manuel qui ne tombe pas pile sur une heure de
@@ -140,6 +144,35 @@ function problem(status: number, detail: string, extra: Record<string, unknown> 
   return json({ error: detail, ...extra }, { status })
 }
 
+/** SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (aws-refiners#490, 10-09).
+ *
+ *  vitrine-art lisait la Une sur le SITE DÉPLOYÉ, donc après le build : il
+ *  illustrait l'ancienne Une, ou rien (de 1 h 20 à 5 h par jour d'édition sans
+ *  image, mesuré du 29 août au 3 septembre). La sélection est donc publiée dès
+ *  la tranche de `headline_events_4h`, avant le manifeste et avant le build,
+ *  dans l'instantané du cycle ET à l'adresse fixe que lit vitrine-art
+ *  (hero-selection.ts). Concordance avec la Une du build prouvée le 10-09.
+ *
+ *  AVALE TOUT, sans Slack : une exception retiendrait les builds pour un
+ *  artefact secondaire ; le journal suffit. */
+async function publierSelection(
+  bucket: R2Bucket,
+  cycle: string,
+): Promise<Awaited<ReturnType<typeof publierSelectionUne>>['selection'] | null> {
+  try {
+    const { published, selection } = await publierSelectionUne(bucket, cycle)
+    console.log(
+      published
+        ? `selection de la Une publiee : cycle ${cycle}, ${selection?.event_id ?? 'aucune Une'}`
+        : `selection de la Une : ${HERO_SOURCE_TABLE} absente de l'instantane`,
+    )
+    return selection
+  } catch (err) {
+    console.error(`selection de la Une : ${err instanceof Error ? err.message : String(err)}`)
+    return null
+  }
+}
+
 export default {
   /** Cron Trigger : recharge Postgres depuis les JSON publiés, toutes les 4 h.
    *
@@ -210,6 +243,8 @@ export default {
           const cycle = cycleId(now)
           const snapshotTables: Record<string, SnapshotTableEntry> = {}
           const snapshotSkipped: string[] = []
+          let selectionUne: Awaited<ReturnType<typeof publierSelection>> = null
+          let selectionTentee = false
           try {
             while (offset !== null) {
               const res = await env.SELF.fetch(
@@ -235,6 +270,13 @@ export default {
               snapshotSkipped.push(...(body.snapshotSkipped ?? []))
               for (const t of body.tables ?? []) {
                 if (t.snapshot) snapshotTables[t.table] = t.snapshot
+              }
+              // LA UNE DÈS SA TRANCHE (10-09) : `headline_events_4h` ouvre la
+              // synchro (tables.ts), donc la sélection part ~50 s avant la fin
+              // de la passe. Une seule tentative par passe.
+              if (!selectionTentee && env.ART_BUCKET && snapshotTables[HERO_SOURCE_TABLE]) {
+                selectionTentee = true
+                selectionUne = await publierSelection(env.ART_BUCKET, cycle)
               }
               offset = body.next
             }
@@ -294,44 +336,8 @@ export default {
             }
           }
 
-          // SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (aws-refiners#490).
-          //
-          // `vitrine-art` lit aujourd'hui la Une sur le SITE DÉPLOYÉ, donc
-          // derrière la file de build de Cloudflare Pages : quand un build est
-          // sauté ou retardé, le raffineur illustre l'ANCIENNE Une, ou rien.
-          // Mesuré du 29 août au 3 septembre 2026 : de 1 h 20 à 5 h par jour
-          // d'édition sans illustration. Ici, la Une est connue à :02 — avant
-          // le build — et déposée dans l'instantané du cycle.
-          //
-          // PERSONNE NE LA LIT ENCORE. On publie en parallèle ; le site
-          // continue de calculer la sienne, et on compare les deux sur
-          // plusieurs cycles avant de basculer quoi que ce soit. Basculer sans
-          // preuve, c'est ce qui a produit la divergence de
-          // vitrine-showcase#259.
-          //
-          // AVALE TOUT, ET SANS SLACK. Rien ne dépend encore de cet objet :
-          // une alerte serait du bruit, et une exception qui remonterait
-          // retiendrait les Deploy Hooks — c'est-à-dire figerait le site pour
-          // un artefact que personne ne consomme. Le journal suffit.
-          //
-          // AVANT LES HOOKS, a dessein : le jour ou le build lira cette
-          // selection, elle devra etre en place quand il demarre. La placer
-          // ici maintenant evite de la deplacer plus tard, et le cout est une
-          // lecture R2 plus un calcul en memoire.
-          if (env.ART_BUCKET && snapshotTables[HERO_SOURCE_TABLE]) {
-            try {
-              const { published, selection } = await publierSelectionUne(env.ART_BUCKET, cycle)
-              console.log(
-                published
-                  ? `selection de la Une publiee : cycle ${cycle}, ${selection?.event_id ?? 'aucune Une'}`
-                  : `selection de la Une : ${HERO_SOURCE_TABLE} absente de l'instantane`,
-              )
-            } catch (err) {
-              console.error(
-                `selection de la Une : ${err instanceof Error ? err.message : String(err)}`,
-              )
-            }
-          }
+          // La SÉLECTION DE LA UNE est publiée DANS la boucle ci-dessus, dès la
+          // tranche de `headline_events_4h` : voir publierSelection().
 
           // MÉNAGE AVANT LA GARDE D'ÉCHEC, et MUET. Avant la garde parce
           // qu'une passe partielle écrit quand même un cycle : si le ménage
@@ -358,6 +364,37 @@ export default {
               `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
             )
             return
+          }
+
+          // ATTENDRE L'ILLUSTRATION, BORNÉ (10-09) — pour que le texte ET
+          // l'image partent dans le MÊME build. vitrine-art lit la sélection
+          // publiée dans la boucle (GET /v1/art/selection.json) et illustre en
+          // ~65 s au p90, pendant que les autres tables se synchronisent. Si la
+          // Une reste la même histoire, l'image est déjà juste : aucune attente.
+          // Au-delà de la borne (90 s), le build part sans l'image, qui suivra
+          // au build que déclenche /publish.
+          //
+          // S'ARME SEUL : on n'attend que si la dernière illustration vient d'un
+          // vitrine-art qui lit cette sélection (`selection_cycle`). Sinon on
+          // retiendrait le texte pour une image qui ne viendrait pas avant le
+          // build. "false" (wrangler.toml) coupe l'attente.
+          if (env.ATTENDRE_ILLUSTRATION !== 'false' && env.ART_BUCKET && selectionUne) {
+            const bucket = env.ART_BUCKET
+            const lireIllustration = async (): Promise<MetaIllustration | null> => {
+              const obj = await bucket.get('art/latest.json')
+              return obj ? ((await obj.json().catch(() => null)) as MetaIllustration | null) : null
+            }
+            if (!vitrineArtLitLaSelection(await lireIllustration().catch(() => null))) {
+              console.log("vitrine-art ne lit pas encore la sélection du Worker : pas d'attente")
+            } else {
+              const cleUne = heroKey(selectionUne)
+              const { aJour, attenduMs } = await attendreIllustration(async () => heroKey(await lireIllustration()), cleUne)
+              console.log(
+                aJour
+                  ? `illustration à jour (${cleUne}) après ${Math.round(attenduMs / 1000)} s`
+                  : `illustration pas prête après ${Math.round(attenduMs / 1000)} s : build sans elle, elle suivra`,
+              )
+            }
           }
 
           if (env.SYNC_TRIGGER_DEPLOYS === 'true') {
