@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { santeDesTables } from "../workers/api/src/health-logic";
-import { TABLES } from "../workers/api/src/tables";
+import { santeDesTables } from "@/workers/api/src/health-logic";
+import { TABLES } from "@/workers/api/src/tables";
 
 // Cas réel du 10-09 : une table parties_score retirée le 03-09, figée depuis.
 const lignes = [
@@ -38,10 +38,12 @@ describe("santeDesTables (/v1/health)", () => {
     expect(santeDesTables(lignes, []).plusAncienne).toBeNull();
   });
 
-  it("les tables parties_score retirées le 03-09 ne sont plus dans la synchro du Worker", () => {
+  it("les 6 tables parties_score retirées le 03-09 ne sont plus dans la synchro du Worker", () => {
     const noms = TABLES.map((t) => t.name);
-    for (const retiree of ["provincial_parties_score_day", "federal_parties_score_week", "provincial_parties_score_month"]) {
-      expect(noms).not.toContain(retiree);
-    }
+    const retirees = ["provincial", "federal"].flatMap((niveau) =>
+      ["day", "week", "month"].map((periode) => `${niveau}_parties_score_${periode}`),
+    );
+    expect(retirees).toHaveLength(6);
+    for (const retiree of retirees) expect(noms).not.toContain(retiree);
   });
 });
