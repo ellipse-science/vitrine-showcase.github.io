@@ -48,9 +48,11 @@ on:
     # livrait une heure trop tard, six fois par jour — mesuré les 09 et 10-09.
     #
     # Ce filet est aujourd'hui le chemin qui livre : la passe utile du Worker
-    # vise la même minute (:53, wrangler.toml), mais elle n'a rien synchronisé
-    # lors des trois éditions mesurées. Celui des deux qui fonctionne livre à
-    # l'heure ; un build en double est absorbé par Pages depuis #582.
+    # vise la même minute (:53, wrangler.toml), mais aucun build n'a suivi ses
+    # passes lors des trois éditions mesurées — il synchronise des tables sans
+    # que le site se reconstruise (enquête en cours, cf. #570). Celui des deux
+    # qui fonctionne livre à l'heure ; un build en double est absorbé par Pages
+    # depuis #582.
     #
     # ⚠️ C'est la grille d'ÉTÉ (UTC-4), et un cron GitHub ignore les fuseaux.
     # À l'heure normale (UTC-5, dès le 1er novembre 2026), ce filet tirera une
