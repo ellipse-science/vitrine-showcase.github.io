@@ -14,9 +14,10 @@ qu'on exige avant de basculer `vitrine-art` sur l'API plutôt que sur le site
 déployé. Une divergence ici, c'est la panne de vitrine#259 qui revient.
 
 Markdown pour le résumé de job. Lecture seule ; la clé vient de
-VITRINE_API_KEY.
+VITRINE_API_KEY, et le jeton d'instantané de SNAPSHOT_TOKEN — sans lui, la
+comparaison des sélections est sautée, et la sonde le dit.
 
-    VITRINE_API_KEY=... python scripts/sonde_api.py
+    VITRINE_API_KEY=... SNAPSHOT_TOKEN=... python scripts/sonde_api.py
 """
 from __future__ import annotations
 
@@ -28,6 +29,11 @@ import urllib.request
 API = os.environ.get("API", "https://api.vitrinedemocratique.com")
 SITE = os.environ.get("SITE", "https://vitrinedemocratique.com")
 KEY = os.environ.get("VITRINE_API_KEY", "")
+# Jeton de l'instantané du Worker — DISTINCT de la clé d'API. La route
+# /v1/snapshot/* n'accepte que lui (fermée par défaut, cf.
+# workers/api/src/snapshot.ts) : avec la clé d'API elle répond 401, et la
+# comparaison ne prouverait rien.
+SNAPSHOT = os.environ.get("SNAPSHOT_TOKEN", "")
 PAGE = 5000
 DATASETS = {
     "headline_events_4h": ("date_utc", "time_interval_utc", "tag"),
@@ -41,7 +47,7 @@ def get(path: str):
     req = urllib.request.Request(
         f"{API}{path}",
         headers={
-            "Authorization": f"Bearer {KEY}",
+            "Authorization": f"Bearer {SNAPSHOT if path.startswith('/v1/snapshot/') else KEY}",
             "Cache-Control": "no-cache",
             # Cloudflare répond 403 à l'agent « Python-urllib » avant même de lire
             # la clé (mesuré le 2 septembre 2026) ; un agent nommé passe.
@@ -83,6 +89,14 @@ def comparer_selections() -> list:
     dit à `vitrine-art` quoi illustrer.
     """
     out = ["### Sélection de la Une : Worker contre build", ""]
+
+    if not SNAPSHOT:
+        return out + [
+            "⚠️ `SNAPSHOT_TOKEN` absent des secrets du dépôt : la route "
+            "d'instantané n'accepte que ce jeton, pas la clé d'API. "
+            "Comparaison impossible — rien n'est prouvé, dans un sens ni dans l'autre.",
+            "",
+        ]
 
     try:
         _, manifest = get("/v1/snapshot/manifest.json")
