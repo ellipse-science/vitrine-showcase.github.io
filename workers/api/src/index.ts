@@ -38,6 +38,8 @@
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
 import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
+import { santeDesTables } from './health-logic'
+import { TABLES } from './tables'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
@@ -589,13 +591,22 @@ export default {
         const rows = await sql`
           SELECT table_name, synced_at, row_count, source
           FROM vitrine.sync_state ORDER BY table_name`
-        const oldest = rows.reduce<string | null>(
-          (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
-          null,
+        // SEULES LES TABLES QU'ON SYNCHRONISE COMPTENT (health-logic.ts) : une
+        // table retirée garde sa ligne, figée, et faisait juger toute l'API
+        // périmée par le build — six jours de repli sur les fichiers (10-09).
+        const { suivies, horsSynchro, plusAncienne } = santeDesTables(
+          rows,
+          TABLES.map((t) => t.name),
         )
         // PAS de cache partagé : la réponse est sous clé, et `caches.default`
         // est commun à tous les appelants — cf. le commentaire de cachePublic.
-        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows })
+        return json({
+          status: 'ok',
+          tables: suivies.length,
+          oldest_sync: plusAncienne,
+          sync_state: suivies,
+          hors_synchro: horsSynchro,
+        })
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.

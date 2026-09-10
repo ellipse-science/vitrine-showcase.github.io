@@ -19,7 +19,7 @@ URL de travail : `https://vitrine-api.vitrine-api-worker.workers.dev`
 | Route | Rôle |
 |---|---|
 | `GET /` | Ce que l'API est, et ses routes |
-| `GET /v1/health` | Fraîcheur par table, depuis `vitrine.sync_state` |
+| `GET /v1/health` | Fraîcheur des tables synchronisées (`vitrine.sync_state`), les retirées dans `hors_synchro`. Clé requise |
 | `GET /v1/datasets` | Jeux de données exposés et filtres acceptés |
 | `GET /v1/datasets/{nom}` | Les lignes |
 | `GET /v1/snapshot/manifest.json` | Cycle courant de l'instantané R2 (sous `SNAPSHOT_TOKEN`) |
