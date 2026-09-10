@@ -39,23 +39,33 @@ name: Refresh Data
 on:
   workflow_dispatch:
   schedule:
-    # 6x/jour, 50 min après chaque publication de bloc. Les blocs de Montréal
-    # se terminent à {3,7,11,15,19,23} et sont publiés une heure plus tard
-    # (règle « fin + 1 »), soit des éditions à {4,8,12,16,20,0} heure de
-    # Montréal = {0,4,8,12,16,20} UTC L'ÉTÉ. D'où la grille ci-dessous.
+    # 6x/jour, à :53 de l'heure qui PRÉCÈDE chaque édition. Les éditions tombent
+    # à {0,4,8,12,16,20} heure de Montréal ; la cascade des raffineurs publie la
+    # Une vers :47 (aws-infra#572), Glue la rend lisible cinq minutes plus tard,
+    # et le build prend cinq à six minutes (12 déploiements prod mesurés le
+    # 10-09 : médiane 5,3 min, pire cas 6,1 min). Synchroniser à :53 met donc
+    # l'édition en ligne à :00. L'ancien cron (:50 de l'heure SUIVANTE) la
+    # livrait une heure trop tard, six fois par jour — mesuré les 09 et 10-09.
     #
-    # ⚠️ C'est la grille d'ÉTÉ, et elle ne suit pas l'heure avancée — le cron
-    # GitHub ignore les fuseaux. L'hiver, les publications glissent d'une heure
-    # (UTC-5) et ce filet tirera 50 min AVANT elles plutôt qu'après. Sans
-    # conséquence pour un filet : la passe suivante ramasse le bloc manqué, et
-    # la garde-fraîcheur horaire (#628) le dirait si ce n'était pas le cas.
-    # Le Worker, lui, enregistre les DEUX jeux et filtre dans le code
-    # (isTargetHourInNY, cf. wrangler.toml) — un cron GitHub ne sait pas faire ça.
+    # Ce filet est aujourd'hui le chemin qui livre : la passe utile du Worker
+    # vise la même minute (:53, wrangler.toml), mais aucun build n'a suivi ses
+    # passes lors des trois éditions mesurées — il synchronise des tables sans
+    # que le site se reconstruise (enquête en cours, cf. #570). Celui des deux
+    # qui fonctionne livre à l'heure ; un build en double est absorbé par Pages
+    # depuis #582.
     #
-    # 🔗 La première des six passes tombe à 00:50 UTC, et c'est de ça que dépend
-    # la garde du scrape des portraits de députés plus bas (`date -u +%H = 00`).
+    # ⚠️ C'est la grille d'ÉTÉ (UTC-4), et un cron GitHub ignore les fuseaux.
+    # À l'heure normale (UTC-5, dès le 1er novembre 2026), ce filet tirera une
+    # heure trop TÔT, avant la fin de la cascade, et ne livrera l'édition qu'à
+    # la passe suivante. Tant que le Worker ne livre pas, ce sera un retard de
+    # plusieurs heures : à régler AVANT le 1er novembre, soit en réparant le
+    # Worker (qui enregistre les DEUX jeux d'heures UTC et filtre dans le code,
+    # cf. isAthenaTargetHourInNY), soit en donnant la même garde à ce filet.
+    #
+    # 🔗 La première des six passes tombe à 03:53 UTC, et c'est de ça que dépend
+    # la garde du scrape des portraits de députés plus bas (heure UTC 03 ou 04).
     # Toucher à cette ligne sans regarder celle-là éteindrait ce scrape en silence.
-    - cron: '50 0,4,8,12,16,20 * * *'
+    - cron: '53 3,7,11,15,19,23 * * *'
 
 permissions:
   contents: read
@@ -205,14 +215,18 @@ jobs:
       # lire 01h passé minuit UTC un jour de run lent, et de sauter la
       # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
       # plus sans qu'aucune alerte ne le signale.
+      # 03 OU 04, et non 03 seul (10-09) : la passe tombe désormais à 03:53 UTC,
+      # sept minutes avant 04h, et le cron GitHub part souvent en retard — la
+      # passe programmée à 00:50 UTC est partie à 01:10 le 10-09. Accepter aussi
+      # l'heure suivante absorbe jusqu'à 66 minutes de retard sans jamais lancer
+      # le scrape deux fois : la passe d'après ne tombe qu'à 07:53.
       - name: Check daily deputy-photo window
         id: photo_window
         run: |
-          if [ "$(date -u +%H)" = "00" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
+          case "$(date -u +%H)" in
+            03|04) echo "run=true"  >> "$GITHUB_OUTPUT" ;;
+            *)     echo "run=false" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: Install Python deps for deputy portraits (numpy, Pillow already present)
         if: steps.photo_window.outputs.run == 'true'

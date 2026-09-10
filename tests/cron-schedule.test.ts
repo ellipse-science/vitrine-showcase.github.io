@@ -109,22 +109,24 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
     expect(firedAthenaHoursNY("2027-01-15")).toEqual(EXPECTED_ATHENA);
   });
 
-  it("la passe :02 déclenche le sync, le filet :20 aussi, et rien d'autre", () => {
-    // Le garde lit la minute AVANT de juger l'heure. Les deux passes visent
-    // désormais les mêmes heures, mais l'ancien calage :56 — celui qui lisait
-    // trois minutes après le raffineur — ne doit plus rien déclencher.
+  it("la passe :53 déclenche le sync, le filet :10 aussi, et rien d'autre", () => {
+    // Le garde lit la minute AVANT de juger l'heure, et les deux passes ne
+    // visent PLUS les mêmes heures : la passe utile tombe dans l'heure qui
+    // précède l'édition, le filet à l'heure de l'édition elle-même.
     const aMinute = (iso: string) => new Date(iso);
-    // 12h02 à New York en été = 16h02 UTC : passe utile, heure visée 12.
-    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:02:00Z"))).toBe(true);
-    // 12h20 à New York = 16h20 UTC : passe filet, même heure visée.
-    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:20:00Z"))).toBe(true);
-    // 11h02 : 11 n'est pas une heure d'édition — ni l'une ni l'autre.
-    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:02:00Z"))).toBe(false);
+    // 11h53 à New York en été = 15h53 UTC : passe utile pour l'édition de midi.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:53:00Z"))).toBe(true);
+    // 12h10 à New York = 16h10 UTC : le filet, à l'heure de l'édition.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:10:00Z"))).toBe(true);
+    // 10h53 : 10 ne précède aucune édition — la passe utile ne sort pas.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T14:53:00Z"))).toBe(false);
+    // 11h10 : le filet vise l'heure DE l'édition, pas celle d'avant.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T15:10:00Z"))).toBe(false);
     // L'ANCIEN calage :56 est bien retiré, sur les deux heures qu'il visait.
     expect(shouldRunAthenaSync(aMinute("2026-08-19T15:56:00Z"))).toBe(false);
     expect(shouldRunAthenaSync(aMinute("2026-08-19T16:56:00Z"))).toBe(false);
-    // Et l'ancien filet :10 aussi.
-    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:10:00Z"))).toBe(false);
+    // Et celui de #775 aussi : :02 à l'heure de l'édition ne déclenche plus.
+    expect(shouldRunAthenaSync(aMinute("2026-08-19T16:02:00Z"))).toBe(false);
     // Une minute qui n'appartient à aucune passe ne déclenche jamais rien.
     expect(shouldRunAthenaSync(aMinute("2026-08-19T16:30:00Z"))).toBe(false);
   });
@@ -136,12 +138,23 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
     expect(ATHENA_FILET_REGISTERED_UTC_HOURS).toHaveLength(ATHENA_FILET_HOURS_NY.length * 2);
   });
 
-  it("vise l'heure DE chaque édition, après la publication du raffineur", () => {
-    // Les éditions tombent à {0,4,8,12,16,20} heure de Montréal, et le
-    // raffineur publie vers :53 — donc APRÈS lui : sync à 12h02 pour l'édition
-    // du midi. Viser l'heure d'avant, c'était lire le bloc précédent.
-    const editions = [0, 4, 8, 12, 16, 20];
-    expect([...ATHENA_TARGET_HOURS_NY].sort((a, b) => a - b)).toEqual(editions);
+  it("vise l'heure qui PRÉCÈDE chaque édition, parce qu'un build dure sept minutes", () => {
+    // CORRECTIF DU 10-09, et il renverse celui du 09-09 (#775).
+    //
+    // #775 avait placé la passe utile à :02 de l'heure DE l'édition, pour
+    // laisser Glue rattraper. Le raisonnement sur Glue était juste ; la
+    // conclusion, non. Un build Cloudflare Pages dure sept minutes : une
+    // synchro à 12h02 ne peut PAS être en ligne à 12h00. C'était en retard
+    // par construction, et mesuré trois fois de suite — 1 h 03, 1 h 02, 1 h 06.
+    //
+    // La synchro doit donc tomber AVANT l'heure, dans l'heure qui la précède.
+    // Ce que #775 ne pouvait pas faire : à l'époque la cascade publiait à :53,
+    // et lire à :53 aurait violé le plancher Glue. C'est infra#572, en tirant
+    // la cascade à :47, qui a ouvert le créneau de :53.
+    const veilleDesEditions = [23, 3, 7, 11, 15, 19];
+    expect([...ATHENA_TARGET_HOURS_NY].sort((a, b) => a - b)).toEqual(
+      [...veilleDesEditions].sort((a, b) => a - b),
+    );
   });
 
   it("ne saute ni ne double aucune exécution les nuits de bascule", () => {
@@ -157,20 +170,28 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
     // LE CŒUR DU CORRECTIF DU 09-09, et la seule ligne de ce fichier dont la
     // violation coûte une heure de retard à chaque édition.
     //
-    // Le dernier étage de la cascade publie `headline_events_4h` vers :53. En
-    // deçà de cinq minutes, Glue/Athena n'a pas rattrapé : la passe lit encore
-    // le bloc PRÉCÉDENT, le build est bâti dessus, et le site n'affiche la
-    // bonne édition qu'au passage du filet GitHub de :50. C'est exactement ce
-    // que faisait le calage :56 — trois minutes — mesuré le 2026-09-09.
+    // Le dernier étage de la cascade publie `headline_events_4h` vers :47
+    // depuis aws-infra#572 (:53 avant). En deçà de cinq minutes, Glue/Athena
+    // n'a pas rattrapé : la passe lit encore le bloc PRÉCÉDENT, le build est
+    // bâti dessus, et la bonne édition n'arrive qu'au passage suivant. C'est
+    // exactement ce que faisait le calage :56 — trois minutes après :53 —
+    // mesuré le 2026-09-09.
     //
     // La même contrainte des cinq minutes vaut partout ailleurs dans
     // l'écosystème entre un raffineur et la lecture qui suit.
-    const PUBLICATION_RAFFINEUR = 53; // minute, dans l'heure qui précède l'édition
-    const DELAI_MINIMAL = 5; // minutes
+    const PUBLICATION_RAFFINEUR = 47; // minute — `radar-event-salience` depuis infra#572
+    const DELAI_MINIMAL = 5; // minutes — le plancher Glue/Athena
+    const DUREE_BUILD = 7; // minutes — borne prudente : build prod mesuré le 10-09, médiane 5,3 min, pire cas 6,1 min
     const [passeUtile] = ATHENA_SYNC_MINUTES;
-    // La passe utile tombe à l'heure DE l'édition, le raffineur à l'heure d'avant.
-    const ecart = 60 - PUBLICATION_RAFFINEUR + passeUtile;
-    expect(ecart).toBeGreaterThanOrEqual(DELAI_MINIMAL);
+
+    // Le raffineur et la passe utile sont désormais dans la MÊME heure, celle
+    // qui précède l'édition. L'écart est une simple soustraction.
+    expect(passeUtile - PUBLICATION_RAFFINEUR).toBeGreaterThanOrEqual(DELAI_MINIMAL);
+
+    // ET la seconde contrainte, celle que #775 avait manquée : ce qui reste
+    // de l'heure après la synchro doit suffire à bâtir le site. Sans elle, on
+    // respecte Glue et on arrive quand même en retard.
+    expect(60 - passeUtile).toBeGreaterThanOrEqual(DUREE_BUILD);
   });
 });
 
