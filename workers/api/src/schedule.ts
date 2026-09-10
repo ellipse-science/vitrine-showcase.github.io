@@ -42,61 +42,87 @@ export function isTargetHourInNY(now: Date): boolean {
 /** Heures visées du sync DIRECT Athena (chaîne émancipée de GitHub), en heure
  *  de New York.
  *
- *  DÉCALAGE 2026-08-25 (#570) : le sync tournait à la minute :10 de l'heure
- *  SUIVANT l'édition — 12h10 pour l'édition du midi, plus 6 à 8 min de build :
- *  le site ne l'affichait que vers 12h18 (mesuré le 21-08, « l'édition de 16h
- *  en ligne ~16h20-16h24 »). Il vise maintenant la minute :56 de l'heure qui
- *  PRÉCÈDE — 11h56 pour l'édition du midi : le dernier étage de la cascade
- *  (radar-event-salience, :51) a publié vers :53, et le build a le temps de
- *  finir autour de l'heure pile.
+ *  CALAGE 2026-09-09 (#570) — la passe vise l'heure DE l'édition, minute :02.
  *
- *  Les heures visées reculent donc d'une heure — {23,3,7,11,15,19} au lieu de
- *  {0,4,8,12,16,20} — et le cron passe de :10 à :56 dans wrangler.toml. Le
- *  garde-fou été/hiver ne change pas de principe : c'est `Intl` qui sait si
- *  New York est à UTC-4 ou UTC-5.
+ *  Historique en deux temps, parce que les deux premiers calages ont chacun
+ *  corrigé un défaut réel en en découvrant un autre :
  *
- *  Le cron :10 est CONSERVÉ en filet : si la cascade a pris du retard et
- *  n'avait rien publié à :56, la passe suivante rattrape 14 minutes plus tard.
- *  C'est ce double appel qui rendait le hook 304 fatal — corrigé dans la même
- *  série (#582), donc sans danger désormais. */
-export const ATHENA_TARGET_HOURS_NY = [23, 3, 7, 11, 15, 19]
+ *  1. Jusqu'au 25-08, la passe tournait à :10 de l'heure de l'édition. Le site
+ *     n'affichait l'édition du midi que vers 12h18 — le build partait tard.
+ *  2. Du 25-08 au 09-09, elle tournait à :56 de l'heure PRÉCÉDENTE, pour que
+ *     le build finisse autour de l'heure pile. Mais le dernier étage de la
+ *     cascade publie `headline_events_4h` vers :53 : trois minutes plus tôt
+ *     seulement. Glue/Athena n'a pas rattrapé en trois minutes, et la passe
+ *     lisait donc encore le bloc PRÉCÉDENT.
+ *
+ *  MESURE DU 09-09 qui tranche (sonde-worker.yml, à cheval sur la passe de
+ *  11h56) : raffineur à 11h53, passe à 11h56, build à 11h58 — et ce build
+ *  affichait l'édition d'AVANT. Le `synced_at` de `headline_events_4h` est
+ *  12h11, c'est-à-dire la passe filet, pas 11h56. Résultat : chaque édition
+ *  était bâtie sur la donnée de la précédente, et il fallait attendre le filet
+ *  GitHub de :50 pour qu'un build lise la bonne — environ une heure de retard,
+ *  six fois par jour, tous les jours.
+ *
+ *  Ce n'était donc PAS un défaut des Deploy Hooks : la même mesure montre
+ *  qu'ils tirent bien un build prod (identifiant de build Next changé, aucun
+ *  workflow GitHub entre-temps). C'est ce qui clôt la question 1 de #570.
+ *
+ *  D'où :02 de l'heure de l'édition — environ neuf minutes après la
+ *  publication du raffineur. C'est la même contrainte que celle déjà connue
+ *  ailleurs dans l'écosystème : il faut AU MOINS CINQ MINUTES entre la
+ *  publication d'un raffineur et la lecture qui suit, sinon on lit un
+ *  watermark périmé et on court avec Glue. Neuf minutes laissent une marge de
+ *  quatre minutes sur ce plancher.
+ *
+ *  ⚠️ Les heures visées AVANCENT donc d'une heure — {0,4,8,12,16,20} au lieu
+ *  de {23,3,7,11,15,19} — et rejoignent celles du filet. Les deux passes ont
+ *  désormais les MÊMES heures visées, ce qui est correct et voulu : ce sont
+ *  les MINUTES qui les distinguent. Ne pas « corriger » cette égalité en
+ *  décalant l'une des deux d'une heure : c'est le calage :56 qu'on retirerait. */
+export const ATHENA_TARGET_HOURS_NY = [0, 4, 8, 12, 16, 20]
 
 /** Heures UTC enregistrées pour le sync Athena. Doit rester d'accord avec
- *  `crons` dans wrangler.toml : {23,3,7,11,15,19} à New York = ces douze
- *  heures UTC, été et hiver confondus. */
-export const ATHENA_REGISTERED_UTC_HOURS = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23]
+ *  `crons` dans wrangler.toml : {0,4,8,12,16,20} à New York = ces douze heures
+ *  UTC, été (UTC-4) et hiver (UTC-5) confondus. */
+export const ATHENA_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
 
 export function isAthenaTargetHourInNY(now: Date): boolean {
   return ATHENA_TARGET_HOURS_NY.includes(hourInNY(now))
 }
 
-/** Heures visées de la passe FILET (minute :10), en heure de New York.
+/** Heures visées de la passe FILET, en heure de New York.
  *
- *  Le filet garde l'ancien calage — l'heure DE l'édition — parce qu'il sert
- *  précisément les cycles où la cascade des raffineurs n'avait rien publié à
- *  :56 : il repasse 14 minutes plus tard, une fois l'édition en place.
- *
- *  Les deux passes ont donc des heures visées DIFFÉRENTES, et c'est la minute
- *  du déclenchement qui dit laquelle appliquer (voir `scheduled()` dans
- *  index.ts). Confondre les deux stérilise le filet : avec les heures de la
- *  passe :56, le garde rejetterait toutes les exécutions de :10. */
+ *  Identiques à celles de la passe utile depuis le calage du 09-09 : les deux
+ *  tombent sur l'heure DE l'édition et ne se distinguent que par la minute. */
 export const ATHENA_FILET_HOURS_NY = [0, 4, 8, 12, 16, 20]
 
-/** Heures UTC enregistrées pour la passe filet (minute :10). */
+/** Heures UTC enregistrées pour la passe filet. */
 export const ATHENA_FILET_REGISTERED_UTC_HOURS = [0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21]
 
 export function isAthenaFiletHourInNY(now: Date): boolean {
   return ATHENA_FILET_HOURS_NY.includes(hourInNY(now))
 }
 
-/** Minutes auxquelles le sync Athena tourne : la passe utile et son filet. */
-export const ATHENA_SYNC_MINUTES = [56, 10] as const
+/** Minutes auxquelles le sync Athena tourne : la passe utile et son filet.
+ *
+ *  :02 — la passe utile, environ neuf minutes après la publication du
+ *        raffineur (:53). Le build qu'elle déclenche démarre vers :04.
+ *  :20 — le filet, pour les cycles où la cascade avait pris du retard et
+ *        n'avait rien publié à :02.
+ *
+ *  POURQUOI :20 ET NON :10 : un build Pages dure six à huit minutes, donc
+ *  celui de :04 est encore en file jusque vers :12. Cloudflare répond 304 à un
+ *  hook tiré pendant ce temps — « un déploiement est déjà en file » — et le
+ *  filet ne rebâtirait rien. À :20 il tombe après, et garde donc son pouvoir
+ *  de rattrapage. L'écart de dix-huit minutes reprend d'ailleurs celui que le
+ *  filet avait avant (:56 -> :10, quatorze minutes). */
+export const ATHENA_SYNC_MINUTES = [2, 20] as const
 
 /** Le déclenchement courant doit-il lancer le sync Athena ? Répond en tenant
  *  compte de la MINUTE (quelle passe) ET de l'heure locale (le bon calage). */
 export function shouldRunAthenaSync(now: Date): boolean {
   const minute = now.getUTCMinutes()
-  if (minute === 56) return isAthenaTargetHourInNY(now)
-  if (minute === 10) return isAthenaFiletHourInNY(now)
+  if (minute === 2) return isAthenaTargetHourInNY(now)
+  if (minute === 20) return isAthenaFiletHourInNY(now)
   return false
 }

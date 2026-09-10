@@ -1,5 +1,29 @@
 [
   {
+    "pr": 775,
+    "date": "2026-09-09T23:43:40Z",
+    "note": "La Une du site est désormais mise à jour à l'heure pile, au lieu d'arriver avec environ une heure de retard.",
+    "version": null
+  },
+  {
+    "pr": 772,
+    "date": "2026-09-09T13:16:48Z",
+    "note": "Aucune. Changement interne à la suite de tests, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 771,
+    "date": "2026-09-09T13:10:19Z",
+    "note": "Aucune. Outillage interne.",
+    "version": null
+  },
+  {
+    "pr": 769,
+    "date": "2026-09-09T00:08:17Z",
+    "note": "Aucune. Changement interne, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
     "pr": 767,
     "date": "2026-09-08T23:52:04Z",
     "note": "Aucune. Changement interne, sans effet visible pour le visiteur.",
