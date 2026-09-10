@@ -202,7 +202,11 @@ export async function handleArt(
 
     const obj = await env.ART_BUCKET.get(SELECTION_ART_KEY)
     if (!obj) return sansCache(json({ error: 'Aucune sélection publiée.' }, 404))
-    return sansCache(json(await obj.json().catch(() => null)))
+    const corps = await obj.json().catch(() => null)
+    // Un JSON illisible (écriture partielle, corruption) ne doit pas passer pour
+    // une sélection vide : erreur explicite, et vitrine-art se replie sur le site.
+    if (!corps) return sansCache(json({ error: 'Sélection illisible.' }, 500))
+    return sansCache(json(corps))
   }
 
   if (file === REFERENCES_INDEX) {

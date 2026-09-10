@@ -144,7 +144,8 @@ function problem(status: number, detail: string, extra: Record<string, unknown> 
   return json({ error: detail, ...extra }, { status })
 }
 
-/** SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (aws-refiners#490, 10-09).
+/** SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (issue aws-refiners#490,
+ *  PR aws-refiners#493, 10-09).
  *
  *  vitrine-art lisait la Une sur le SITE DÉPLOYÉ, donc après le build : il
  *  illustrait l'ancienne Une, ou rien (de 1 h 20 à 5 h par jour d'édition sans

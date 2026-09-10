@@ -9,10 +9,12 @@ export interface TableSpec {
   filter: string | null
 }
 
+// `headline_events_4h` EN TÊTE du tableau, à dessein (10-09) : la Une se
+// calcule sur elle. Synchronisée dans la première tranche, sa sélection part
+// ~50 s avant la fin de la passe, et vitrine-art illustre pendant que les
+// autres passent. Aucun commentaire DANS le tableau : check_schema_drift.mjs
+// le lit comme du JSON.
 export const TABLES: TableSpec[] = [
-  // `headline_events_4h` EN TÊTE, à dessein (10-09) : la Une se calcule sur
-  // elle. Synchronisée dans la première tranche, sa sélection part ~50 s avant
-  // la fin de la passe, et vitrine-art illustre pendant que les autres passent.
   {
     "name": "headline_events_4h",
     "athena": "vitrine_datamart-headline_events_4h",

@@ -1,4 +1,3 @@
-import { vitrineArtLitLaSelection } from "@/workers/api/src/art-logic";
 import { TABLES } from "@/workers/api/src/tables";
 import { describe, expect, it } from "vitest";
 
@@ -14,6 +13,7 @@ import {
   borneJoursPosterieurs,
   heroKey,
   illustrationAJour,
+  vitrineArtLitLaSelection,
   parsePochette,
   premierePochettePosterieure,
   parseReference,
