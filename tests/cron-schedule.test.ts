@@ -170,17 +170,18 @@ describe("cron du sync Athena — horaire fixe à New York", () => {
     // LE CŒUR DU CORRECTIF DU 09-09, et la seule ligne de ce fichier dont la
     // violation coûte une heure de retard à chaque édition.
     //
-    // Le dernier étage de la cascade publie `headline_events_4h` vers :53. En
-    // deçà de cinq minutes, Glue/Athena n'a pas rattrapé : la passe lit encore
-    // le bloc PRÉCÉDENT, le build est bâti dessus, et le site n'affiche la
-    // bonne édition qu'au passage du filet GitHub de :50. C'est exactement ce
-    // que faisait le calage :56 — trois minutes — mesuré le 2026-09-09.
+    // Le dernier étage de la cascade publie `headline_events_4h` vers :47
+    // depuis aws-infra#572 (:53 avant). En deçà de cinq minutes, Glue/Athena
+    // n'a pas rattrapé : la passe lit encore le bloc PRÉCÉDENT, le build est
+    // bâti dessus, et la bonne édition n'arrive qu'au passage suivant. C'est
+    // exactement ce que faisait le calage :56 — trois minutes après :53 —
+    // mesuré le 2026-09-09.
     //
     // La même contrainte des cinq minutes vaut partout ailleurs dans
     // l'écosystème entre un raffineur et la lecture qui suit.
     const PUBLICATION_RAFFINEUR = 47; // minute — `radar-event-salience` depuis infra#572
     const DELAI_MINIMAL = 5; // minutes — le plancher Glue/Athena
-    const DUREE_BUILD = 7; // minutes — un build Cloudflare Pages, mesuré
+    const DUREE_BUILD = 7; // minutes — borne prudente : build prod mesuré le 10-09, médiane 5,3 min, pire cas 6,1 min
     const [passeUtile] = ATHENA_SYNC_MINUTES;
 
     // Le raffineur et la passe utile sont désormais dans la MÊME heure, celle
