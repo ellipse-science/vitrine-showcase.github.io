@@ -535,6 +535,8 @@
       "_note_enabled": "Allumée le 2026-09-02, en DEV seulement — les deux raffineurs sont `!isProd(envName)` dans aws-infra, donc rien de ceci n'atteint la PROD. À savoir en lisant la série : l'extraction des promesses fonctionne, leur APPARIEMENT à la couverture médiatique est le maillon faible (mesure du 2026-08-18 : 4 promesses retenues, 3 fausses à la relecture — README du raffineur). Cette mesure date d'un jour HORS campagne, où le taux de base est quasi nul : c'est le pire cas pour la précision, et l'objet de l'allumage est justement de mesurer en campagne. Retour arrière : remettre `enabled: false` — le module retombe seul sur son mode « 2022 ».",
       "_note_etape_2": "PREMIÈRE ÉTAPE SEULEMENT. La table n'est PAS encore dans la whitelist du Worker (workers/api/src/tables.ts), et c'est délibéré : l'y mettre avant que Postgres ne porte la table ferait échouer la synchro à CHAQUE passe et retiendrait les Deploy Hooks (check_schema_drift.mjs le dit). Or le DDL ne peut pas être généré tant qu'aucune donnée n'est publiée — generate_pg_schema.mjs infère les types de public/data/, et omet la table faute de fichier. Ordre : (1) ce `enabled: true` fait écrire le JSON par fetch_data.R, et le build le lit depuis le FICHIER ; (2) une fois le fichier là, regénérer sql/schema.sql et column-types.ts, l'appliquer à Postgres, et ajouter la table à tables.ts — le chemin API prend alors le relais.",
       "enabled": true,
+      "api": false,
+      "_note_api": "Étape 1 de _note_etape_2 : tant que la table n'est pas dans DATASETS, le build la lit dans le fichier sans la demander à l'API (404 inutile, repli coûteux — incident du 2026-09-10). Retirer ce drapeau à l'étape 2.",
       "used_by": "lib/data/promessesNeuves.ts + components/sections/PolimetrePlusSection.tsx"
     },
     {
@@ -588,6 +590,8 @@
       "_note_date": "date_montreal_tz volontairement ABSENT des cols : remplie sur 206 lignes sur 33 377 (0,6 %, mesuré le 31-08). Le filtre dérive le jour de headline_stop_utc, comme le raffineur.",
       "filter": "radar_annotated_issues",
       "enabled": true,
+      "api": false,
+      "_note_api": "Lue dans le FICHIER, jamais demandée à l'API : la table n'est pas servie (absente de DATASETS) et le fichier est un dérivé filtré que l'API brute ne pourrait pas remplacer. La demander faisait tomber chaque instance du build sur le repli 404 → fichier, le chemin qui a fait mourir les builds prod du 2026-09-10 (lib/data/source.ts).",
       "used_by": "lib/data/headlineEvents.ts (liste d'articles du module 4)"
     }
   ],
