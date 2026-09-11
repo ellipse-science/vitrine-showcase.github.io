@@ -53,6 +53,16 @@ jobs:
       # NEXT_PUBLIC_SITE_ENV autre que « dev » : de fausses données sur les
       # partis politiques ne doivent jamais atteindre le site public.
 
+      # SONDE MÉMOIRE (incident du 2026-09-10, vitrine#787). Le build en mode
+      # api est mort deux fois par saturation de la mémoire du runner sans
+      # qu'aucune mesure n'existe : la marge était devinée. On échantillonne la
+      # mémoire utilisée toutes les 5 s pendant le build et on publie le pic
+      # dans le résumé du run. `nohup … &` survit à la fin de l'étape ; le
+      # runner nettoie les orphelins à la fin du job.
+      - name: Démarrer la sonde mémoire
+        run: |
+          nohup bash -c 'while true; do free -m | awk "NR==2 {print \$3}" >> "$RUNNER_TEMP/memoire.log"; sleep 5; done' >/dev/null 2>&1 &
+
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
         env:
@@ -97,6 +107,17 @@ jobs:
           NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
           NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
 
+      - name: Rapporter le pic mémoire du build
+        if: always()
+        run: |
+          if [ -s "$RUNNER_TEMP/memoire.log" ]; then
+            pic=$(sort -n "$RUNNER_TEMP/memoire.log" | tail -1)
+            total=$(free -m | awk 'NR==2 {print $2}')
+            echo "Pic mémoire du build : ${pic} Mo sur ${total} Mo" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sonde mémoire : aucun échantillon" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
       # Garde-fou de dernière minute : on refuse de publier une prod qui
       # porterait le bandeau des fausses données ou un robots.txt de dev.
       # Le coût est de deux greps ; le coût d'une prod fautive est une
@@ -122,3 +143,75 @@ jobs:
             --project-name vitrine-democratique \
             --branch main \
             --commit-hash "$GITHUB_SHA"
+
+  # SECOURS (incident du 2026-09-10, vitrine#787). Quand le build en mode api
+  # meurt — un runner tué par manque de mémoire n'exécute même plus les étapes
+  # suivantes —, l'édition restait absente jusqu'au cycle suivant. Ce job
+  # repart sur un runner NEUF et reconstruit depuis les FICHIERS du dépôt, que
+  # refresh-data.yml vient de commiter : l'édition sort avec cinq minutes de
+  # retard au lieu de ne pas sortir. `needs` + `failure()` : il ne tourne que
+  # si le premier job a échoué, jamais en double.
+  secours-fichiers:
+    needs: build-and-deploy
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Mêmes variables que le build principal, sauf la source des données :
+      # la chaîne vide = fichiers commités (lib/data/source.ts).
+      - name: Build de secours (mode fichiers)
+        run: |
+          echo "::warning::Le build en mode api a échoué — reconstruction depuis les fichiers du dépôt (vitrine#787)."
+          npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_SITE_ENV: prod
+          NEXT_PUBLIC_SITE_ORIGIN: https://vitrinedemocratique.com
+          VITRINE_DATA_SOURCE: ""
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NEXT_PUBLIC_DISPATCH_URL: ${{ secrets.DISPATCH_WORKER_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
+          NEXT_PUBLIC_UPSTASH_REDIS_REST_READONLY_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_READONLY_TOKEN }}
+
+      - name: Vérifier que la sortie est bien une production
+        run: |
+          if grep -rqi "DONNÉES FICTIVES" out/index.html; then
+            echo "::error::La sortie porte le bandeau des fausses données — build interrompu."
+            exit 1
+          fi
+          if grep -qi "Disallow: /" out/robots.txt; then
+            echo "::error::robots.txt interdit l'indexation — c'est un build dev, pas une prod."
+            exit 1
+          fi
+          echo "Contrôles de production passés."
+
+      - name: Publier sur Cloudflare Pages (prod)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler@4 pages deploy out \
+            --project-name vitrine-democratique \
+            --branch main \
+            --commit-hash "$GITHUB_SHA"
+
+      - name: Signaler le secours dans le résumé
+        run: |
+          echo "⚠️ Édition publiée par le build de SECOURS (fichiers) : le build api a échoué, voir vitrine#787." >> "$GITHUB_STEP_SUMMARY"
