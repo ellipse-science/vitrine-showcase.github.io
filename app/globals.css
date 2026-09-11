@@ -9785,6 +9785,28 @@
   min-width: 0;
 }
 
+/* LA LÉGENDE sous le disque (`legendeDeck`) : les journées en tête, puis
+   l'enjeu dominant. Sa hauteur est RÉSERVÉE pour deux lignes, même vide ou
+   incomplète : un deck sans enjeu serait sinon plus court que ses voisins, et
+   les disques des deux flancs ne tomberaient plus en face. Une ligne par fait,
+   sans retour : le plus long cas (« Surtout : International (100 %) ») tient
+   dans la largeur d'un disque à ce corps. */
+.deck-legende {
+  margin: 0;
+  width: 100%;
+  min-height: calc(2 * 1.35em);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ink-soft);
+}
+.deck-legende > span { white-space: nowrap; }
+.deck-legende-enjeu { color: var(--ink-softer); }
+
 /* Le carré : format de la pochette, et cadre du disque. Le disque y est
    inscrit, la pochette l'occupe en entier.
 
@@ -10600,6 +10622,18 @@
   /* Les decks restent GRANDS : la pochette doit rester lisible. */
   .deck-carre { max-width: 146px; }
   .deck { gap: 5px; }
+  /* Sur un disque de 146 px, « Surtout : Gouvernance (49 %) » ne tient plus
+     sur une ligne : le retour est permis, et TROIS lignes sont réservées à
+     tous les decks pour qu'ils restent alignés d'un flanc à l'autre. */
+  .deck-legende { font-size: 9px; min-height: calc(3 * 1.35em); }
+  .deck-legende > span { white-space: normal; }
+  /* Sous 360 px, les deux lignes les plus longues (« En tête 7 des 7 derniers
+     jours », « Surtout : International (100 %) ») se replient TOUTES LES DEUX :
+     quatre lignes réservées, sans quoi un tel deck serait plus haut que son
+     voisin. Imbriquée ici pour passer APRÈS la règle ci-dessus dans la cascade. */
+  @media (max-width: 360px) {
+    .deck-legende { min-height: calc(4 * 1.35em); }
+  }
   .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours

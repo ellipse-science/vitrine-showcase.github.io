@@ -588,11 +588,15 @@ export function PartisCouvertureClient({
               sur les Unes de ce média seul.
               <br />
               <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
-              que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
-              affichée sans valeur. À égalité au plus bas, les deux y passent.
+              que soit sa part. Le dernier du classement y passe toujours, et sa part reste
+              affichée en gris. À égalité au plus bas, les deux y passent.
               <br />
               <br />• <b>Cliquez un disque</b> pour retourner sa pochette et lire les détails
               de la mesure.
+              <br />
+              <br />• Sous chaque disque&nbsp;: ses <b>journées en tête</b> sur la période (les
+              sept derniers jours dans l&apos;onglet Jour) et l&apos;<b>enjeu</b> dont on parle
+              le plus à son sujet.
               <br />
               <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
                 En savoir plus sur la méthodologie →
@@ -608,8 +612,8 @@ export function PartisCouvertureClient({
           les mesure. */}
       <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
         <div className="regie-flanc regie-flanc--gauche">
-          <Deck row={decks[0]} rang={1} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
-          <Deck row={decks[2]} rang={3} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[0]} rang={1} range={range} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[2]} rang={3} range={range} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
 
         <div className="regie-centre">
@@ -628,8 +632,8 @@ export function PartisCouvertureClient({
         </div>
 
         <div className="regie-flanc regie-flanc--droite">
-          <Deck row={decks[1]} rang={2} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
-          <Deck row={decks[3]} rang={4} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[1]} rang={2} range={range} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
+          <Deck row={decks[3]} rang={4} range={range} indisponible={data.indisponible} mediaLabel={mediaLabel} selection={partiSources} />
         </div>
       </div>
 
@@ -1094,9 +1098,54 @@ function pochetteAppariee(row: RowView, duJour: Pochette[]): Pochette | null {
   return duJour.find((p) => p.parti === row.key && p.signature === attendue) ?? null;
 }
 
+/** LA LÉGENDE D'UN DECK : deux faits qu'on lit sans retourner la pochette.
+ *
+ *  1. Les journées EN TÊTE sur la fenêtre de l'onglet (`chiffresParlants`) :
+ *     les jours où ce parti a occupé le plus de temps en Une parmi les cinq.
+ *     Dans « Jour », la fenêtre est celle des SEPT DERNIERS jours
+ *     (`fenetreDeLOnglet`), et la phrase le dit : « sur 7 » sous l'onglet Jour
+ *     se lirait comme « aujourd'hui ».
+ *  2. L'ENJEU DOMINANT et sa part dans la couverture du parti, en nom court.
+ *     Absent sur une position du fader, le raffineur ne croisant pas
+ *     parti × enjeu × média (`enjeuxVentiles`), et quand le seul enjeu est
+ *     « Aucun enjeu identifié ».
+ *
+ *  ÉCARTÉS EXPRÈS : le SOMMET (`peakPct`), calculé sur tout l'historique et
+ *  non sur l'onglet (il daterait un pic hors de la semaine affichée), et
+ *  l'ÉVOLUTION, dont le dernier point est la journée en cours, incomplète.
+ *  Deux chiffres exacts qui diraient faux à cet endroit. */
+export function legendeDeck(
+  row: RowView,
+  range: RangeKey,
+): { tete: string | null; teteTitle?: string; enjeu: string | null } {
+  let tete: string | null = null;
+  let teteTitle: string | undefined;
+  if (row.joursComptes > 0) {
+    const n = row.joursEnTete;
+    const m = row.joursComptes;
+    if (range === "today") {
+      tete = n > 0 ? `En tête ${n} des ${m} derniers jours` : `Jamais en tête en ${m}\u00a0jours`;
+    } else {
+      tete = n > 0 ? `En tête ${n}\u00a0jour${n > 1 ? "s" : ""} sur ${m}` : "Jamais en tête";
+    }
+    teteTitle =
+      "Journées où ce parti a occupé le plus de temps en Une parmi les cinq partis, " +
+      (range === "today" ? `sur les ${m} derniers jours.` : "sur la période.");
+  }
+  const enjeu = row.enjeuxVentiles
+    ? row.enjeux.find((e) => !e.reste && e.label !== SANS_ENJEU)
+    : undefined;
+  return {
+    tete,
+    teteTitle,
+    enjeu: enjeu ? `Surtout\u00a0: ${libelleEnjeuCourt(enjeu.label)} (${enjeu.pct}\u00a0%)` : null,
+  };
+}
+
 function Deck({
   row,
   rang,
+  range,
   indisponible,
   mediaLabel,
   selection,
@@ -1105,6 +1154,9 @@ function Deck({
   /** Le rang affiché, de 1 à 4 — la position du deck, pas le rang du parti dans
    *  les cinq (ils coïncident, la sourdine ne retirant que la queue). */
   rang: number;
+  /** L'onglet affiché : la légende « En tête » ne compte pas la même fenêtre
+   *  dans Jour (sept derniers jours) que dans Semaine et Campagne. */
+  range: RangeKey;
   indisponible: Indisponibilite | null;
   /** Nom du média affiché, ou `null` sur « tous les médias ». Il s'inscrit
    *  autour du disque et en bandeau sur la pochette : sans lui, rien sur le deck
@@ -1145,6 +1197,9 @@ function Deck({
           </span>
           <span className="deck-rang">{rang}</span>
         </div>
+        {/* Même hauteur qu'une légende pleine : un deck vide ne doit pas
+            décaler ses voisins (voir `.deck-legende`). */}
+        <p className="deck-legende" aria-hidden="true" />
       </div>
     );
   }
@@ -1158,6 +1213,7 @@ function Deck({
       ? `Enjeu du ${formatDateFr(enjeu.dateSource)}\u00a0: la journée en cours n'en porte pas encore.`
       : null,
   ].filter(Boolean).join(" ") || undefined;
+  const legende = legendeDeck(row, range);
   const annonceDisque = `${row.fullLabel}, ${rang}${rang === 1 ? "er" : "e"} au classement. ` +
     `${ouverte ? "Refermer" : "Voir"} le détail au dos de la pochette.`;
 
@@ -1269,6 +1325,17 @@ function Deck({
             avant que le verso n'apparaisse. */}
         <span className="deck-rang" aria-hidden="true">{rang}</span>
       </button>
+      {/* LA LÉGENDE, sous le disque : deux faits qu'on lit sans retourner la
+          pochette (`legendeDeck`). Sa hauteur est réservée même incomplète,
+          pour que les quatre decks restent alignés. */}
+      <p className="deck-legende">
+        {legende.tete && (
+          <span className="deck-legende-tete" title={legende.teteTitle}>{legende.tete}</span>
+        )}
+        {legende.enjeu && (
+          <span className="deck-legende-enjeu" title={enjeuTitle}>{legende.enjeu}</span>
+        )}
+      </p>
     </div>
   );
 }
