@@ -1,5 +1,77 @@
 [
   {
+    "pr": 791,
+    "date": "2026-09-11T01:10:40Z",
+    "note": "Si la mise à jour du site échoue par manque de mémoire, une seconde tentative depuis les données déjà publiées prend le relais : l'édition paraît quand même.",
+    "version": null
+  },
+  {
+    "pr": 793,
+    "date": "2026-09-11T01:04:35Z",
+    "note": "Les données que le site télécharge au moment de sa mise à jour sont désormais gardées sur disque le temps du build, ce qui rend la mise à jour aussi économe en mémoire que lorsqu'elle lit ses fichiers publiés.",
+    "version": "2.46.0-beta.4"
+  },
+  {
+    "pr": 788,
+    "date": "2026-09-11T00:52:43Z",
+    "note": "Les mises à jour du site ne risquent plus d'échouer par manque de mémoire à cause d'une table demandée inutilement à l'API.",
+    "version": "2.46.0-beta.3"
+  },
+  {
+    "pr": 780,
+    "date": "2026-09-10T17:52:11Z",
+    "note": "Les mises à jour de la Vitrine reprennent les données les plus récentes dès qu'elles sont prêtes, au lieu d'attendre la mise à jour de secours, qui arrivait environ une heure après l'heure prévue.",
+    "version": "2.46.0-beta.2"
+  },
+  {
+    "pr": 770,
+    "date": "2026-09-10T17:15:22Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 779,
+    "date": "2026-09-10T17:06:42Z",
+    "note": "Les six éditions du jour paraissaient jusqu'ici environ une heure après l'heure annoncée. Ce changement rapproche leur mise en ligne de l'heure dite : minuit, 4h, 8h, midi, 16h et 20h.",
+    "version": null
+  },
+  {
+    "pr": 775,
+    "date": "2026-09-09T23:43:40Z",
+    "note": "La Une du site est désormais mise à jour à l'heure pile, au lieu d'arriver avec environ une heure de retard.",
+    "version": null
+  },
+  {
+    "pr": 772,
+    "date": "2026-09-09T13:16:48Z",
+    "note": "Aucune. Changement interne à la suite de tests, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 771,
+    "date": "2026-09-09T13:10:19Z",
+    "note": "Aucune. Outillage interne.",
+    "version": null
+  },
+  {
+    "pr": 769,
+    "date": "2026-09-09T00:08:17Z",
+    "note": "Aucune. Changement interne, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 767,
+    "date": "2026-09-08T23:52:04Z",
+    "note": "Aucune. Changement interne, sans effet visible pour le visiteur.",
+    "version": null
+  },
+  {
+    "pr": 766,
+    "date": "2026-09-08T18:50:10Z",
+    "note": "Le petit vumètre de chaque parti n'a plus de fond gris qui dépassait entre ses barres. Le lien pour signaler une erreur ne transmet plus la page d'où vous l'avez cliqué.",
+    "version": "2.46.0-beta.1"
+  },
+  {
     "pr": 742,
     "date": "2026-09-07T19:07:21Z",
     "note": "Le module « De quel parti parle-t-on dans les médias? » est désormais visible par tout le monde, ainsi que la Discothèque qui conserve ses pochettes quotidiennes.",

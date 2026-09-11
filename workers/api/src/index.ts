@@ -38,6 +38,8 @@
 import { neon } from '@neondatabase/serverless'
 import { runSync } from './sync'
 import { notifySlack, runAthenaSync, triggerDeployHooks, type SyncAthenaEnv } from './sync-athena'
+import { santeDesTables } from './health-logic'
+import { TABLES } from './tables'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
@@ -50,6 +52,7 @@ import {
   type SnapshotEnv,
 } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
+import { publierSelectionUne, SOURCE_TABLE as HERO_SOURCE_TABLE } from './hero-selection'
 import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
 
 interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
@@ -152,14 +155,14 @@ export default {
     const now = new Date(event.scheduledTime)
 
     // Les crons se distinguent par leur MINUTE :
-    //   :56 = sync DIRECT Athena -> Postgres, la passe qui vise l'heure PILE
-    //         (l'édition du midi est préparée à 11h56, cf. #570) ;
-    //   :10 = la même chose, en FILET, pour les cycles où la cascade des
-    //         raffineurs n'avait encore rien publié à :56 ;
+    //   :02 = sync DIRECT Athena -> Postgres, la passe utile — neuf minutes
+    //         après la publication du raffineur (:53), le temps que Glue et
+    //         Athena rattrapent (calage du 09-09, cf. #570) ;
+    //   :20 = la même chose, en FILET, pour les cycles où la cascade des
+    //         raffineurs n'avait encore rien publié à :02 ;
     //   :00 = ancien chemin JSON publiés -> Postgres (retiré des crons).
-    // Les deux passes n'ont pas les mêmes heures visées — :56 tombe sur
-    // l'heure qui PRÉCÈDE l'édition, :10 sur celle de l'édition — d'où
-    // `shouldRunAthenaSync`, qui lit la minute avant de juger l'heure.
+    // Les deux passes visent les mêmes heures et ne se distinguent que par la
+    // minute, d'où `shouldRunAthenaSync`, qui lit l'une puis juge l'autre.
     if ((ATHENA_SYNC_MINUTES as readonly number[]).includes(now.getUTCMinutes())) {
       if (env.SYNC_FORCE !== '1' && !shouldRunAthenaSync(now)) {
         console.log('sync-athena : hors heure visée à New York — ignoré')
@@ -290,6 +293,45 @@ export default {
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err)
               await notifySlack(env, `sync-athena : manifeste d'instantané en échec : ${message}`)
+            }
+          }
+
+          // SÉLECTION DE LA UNE, PUBLIÉE AVANT LE BUILD (aws-refiners#490).
+          //
+          // `vitrine-art` lit aujourd'hui la Une sur le SITE DÉPLOYÉ, donc
+          // derrière la file de build de Cloudflare Pages : quand un build est
+          // sauté ou retardé, le raffineur illustre l'ANCIENNE Une, ou rien.
+          // Mesuré du 29 août au 3 septembre 2026 : de 1 h 20 à 5 h par jour
+          // d'édition sans illustration. Ici, la Une est connue à :02 — avant
+          // le build — et déposée dans l'instantané du cycle.
+          //
+          // PERSONNE NE LA LIT ENCORE. On publie en parallèle ; le site
+          // continue de calculer la sienne, et on compare les deux sur
+          // plusieurs cycles avant de basculer quoi que ce soit. Basculer sans
+          // preuve, c'est ce qui a produit la divergence de
+          // vitrine-showcase#259.
+          //
+          // AVALE TOUT, ET SANS SLACK. Rien ne dépend encore de cet objet :
+          // une alerte serait du bruit, et une exception qui remonterait
+          // retiendrait les Deploy Hooks — c'est-à-dire figerait le site pour
+          // un artefact que personne ne consomme. Le journal suffit.
+          //
+          // AVANT LES HOOKS, a dessein : le jour ou le build lira cette
+          // selection, elle devra etre en place quand il demarre. La placer
+          // ici maintenant evite de la deplacer plus tard, et le cout est une
+          // lecture R2 plus un calcul en memoire.
+          if (env.ART_BUCKET && snapshotTables[HERO_SOURCE_TABLE]) {
+            try {
+              const { published, selection } = await publierSelectionUne(env.ART_BUCKET, cycle)
+              console.log(
+                published
+                  ? `selection de la Une publiee : cycle ${cycle}, ${selection?.event_id ?? 'aucune Une'}`
+                  : `selection de la Une : ${HERO_SOURCE_TABLE} absente de l'instantane`,
+              )
+            } catch (err) {
+              console.error(
+                `selection de la Une : ${err instanceof Error ? err.message : String(err)}`,
+              )
             }
           }
 
@@ -469,8 +511,8 @@ export default {
       // Déclenchement manuel du sync DIRECT Athena (chaîne émancipée). Même
       // contrat de tranches que /v1/sync, mais le travail CPU par table est
       // plus lourd (analyse des pages Athena) : défaut à 2 tables par appel.
-      // Le cron de la minute :10 fait la passe complète ; cette route sert la
-      // phase d'ombre et les reprises.
+      // Les deux passes du cron (:02 et :20) font la passe complète ; cette
+      // route sert la phase d'ombre et les reprises.
       if (segments[0] === 'v1' && segments[1] === 'sync-athena') {
         if (request.method !== 'POST') {
           return problem(405, 'Utilisez POST pour déclencher une synchronisation.')
@@ -549,13 +591,22 @@ export default {
         const rows = await sql`
           SELECT table_name, synced_at, row_count, source
           FROM vitrine.sync_state ORDER BY table_name`
-        const oldest = rows.reduce<string | null>(
-          (acc, r) => (acc === null || String(r.synced_at) < acc ? String(r.synced_at) : acc),
-          null,
+        // SEULES LES TABLES QU'ON SYNCHRONISE COMPTENT (health-logic.ts) : une
+        // table retirée garde sa ligne, figée, et faisait juger toute l'API
+        // périmée par le build — six jours de repli sur les fichiers (10-09).
+        const { suivies, horsSynchro, plusAncienne } = santeDesTables(
+          rows,
+          TABLES.map((t) => t.name),
         )
         // PAS de cache partagé : la réponse est sous clé, et `caches.default`
         // est commun à tous les appelants — cf. le commentaire de cachePublic.
-        return json({ status: 'ok', tables: rows.length, oldest_sync: oldest, sync_state: rows })
+        return json({
+          status: 'ok',
+          tables: suivies.length,
+          oldest_sync: plusAncienne,
+          sync_state: suivies,
+          hors_synchro: horsSynchro,
+        })
       }
 
       // GET /v1/datasets — ce que l'API expose, et comment le filtrer.

@@ -28,24 +28,31 @@ Un paramètre `?api_key=` est accepté là où poser un en-tête est malcommode 
 tableur, un carnet de notes). Il est **moins sûr** : la clé se retrouve alors
 dans les journaux de serveur et l'historique du navigateur.
 
-Deux routes restent ouvertes, parce qu'elles ne livrent aucune donnée :
-`/v1/health` et `/v1/datasets`.
+Depuis la fermeture de l'API (2026-08-26), toutes les routes exigent une clé,
+`/v1/health` et `/v1/datasets` compris.
 
 ## Routes
 
 ### `GET /v1/health`
 
-Fraîcheur de chaque table. C'est ici qu'on vérifie que la donnée est à jour
-avant de s'en servir.
+Fraîcheur de chaque table synchronisée. C'est ici qu'on vérifie que la donnée
+est à jour avant de s'en servir. **Clé requise.**
+
+Seules les tables que le Worker synchronise comptent dans `tables`,
+`oldest_sync` et `sync_state`. Une table retirée de la synchro garde sa ligne en
+base, figée : elle est nommée dans `hors_synchro` au lieu de vieillir toute la
+réponse (vitrine#780 — six tables retirées le 3 septembre ont fait croire au
+build, six jours durant, que l'API était morte).
 
 ```json
 {
   "status": "ok",
-  "tables": 15,
-  "oldest_sync": "2026-08-18T18:28:42Z",
+  "tables": 16,
+  "oldest_sync": "2026-09-10T16:20:39Z",
   "sync_state": [
     { "table_name": "issues_score_week", "synced_at": "…", "row_count": 1782 }
-  ]
+  ],
+  "hors_synchro": ["provincial_parties_score_day", "federal_parties_score_week"]
 }
 ```
 

@@ -129,11 +129,16 @@ service = "vitrine-api"
 # route /v1/sync) : retour arrière = remettre la ligne de cron ci-dessous.
 #   "0 2,3,6,7,10,11,14,15,18,19,22,23 * * *"
 crons = [
-  # :56 de l'heure qui PRÉCÈDE l'édition — la passe qui vise l'heure pile.
-  # (#570 : à :10, l'édition du midi n'était en ligne que vers 12h18.)
-  "56 0,3,4,7,8,11,12,15,16,19,20,23 * * *",
-  # Filet, 14 min plus tard : rattrape les cycles où la cascade des raffineurs
-  # avait pris du retard et n'avait rien publié à :56. Sans danger depuis #582
-  # (un second appel de hook reçoit 304, qui n'est plus traité comme un échec).
+  # :53 de l'heure qui PRÉCÈDE l'édition — la passe utile (calage du 2026-09-10).
+  # La cascade publie `headline_events_4h` vers :47 (aws-infra#572) : lire six
+  # minutes plus tard respecte le plancher Glue, et le build (cinq à six
+  # minutes) finit avant l'heure. #775 synchronisait à :02 de l'heure DE
+  # l'édition : juste pour Glue, mais en retard par construction sur le build.
+  "53 0,3,4,7,8,11,12,15,16,19,20,23 * * *",
+  # Filet, à :10 de l'heure DE l'édition, dix-sept minutes après la passe
+  # utile : rattrape les cycles où la cascade avait pris du retard et n'avait
+  # rien publié à :53. Le build de la passe utile est fini depuis longtemps
+  # (pire cas mesuré 6,1 min), donc pas de 304 (« un déploiement est déjà en
+  # file »). Sans danger de toute façon depuis #582 (un 304 n'est plus un échec).
   "10 0,1,4,5,8,9,12,13,16,17,20,21 * * *",
 ]

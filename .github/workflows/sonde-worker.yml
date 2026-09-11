@@ -1,0 +1,103 @@
+# Écoute les journaux du Worker pendant quelques minutes et imprime ce qu'il dit.
+#
+# POURQUOI CE WORKFLOW EXISTE. Le Worker écrit des `console.log` — c'est ainsi
+# qu'on sait si sa passe de :56 a fait ce qu'elle devait. Mais les lire exige
+# `wrangler tail`, donc un identifiant de compte Cloudflare, qui vit en secret
+# du dépôt et que personne n'a sur son poste. Résultat : les journaux
+# existaient et restaient invisibles (constaté le 2026-09-08 en essayant de
+# vérifier la publication de la sélection de la Une, aws-refiners#490).
+#
+# Même philosophie que `sonde-api.yml` : la question « qu'est-ce que le Worker
+# a fait ? » se répond depuis le dépôt, sans copier le moindre secret ailleurs.
+#
+# LECTURE SEULE. `wrangler tail` n'écrit rien, ne déploie rien, ne redémarre
+# rien. Un tail n'est qu'un abonnement aux journaux.
+#
+# ⚠️ IL FAUT ÉCOUTER PENDANT QUE ÇA SE PASSE. Cloudflare ne conserve pas
+# l'historique des `console.log` d'un Worker : `tail` ne montre que ce qui
+# arrive PENDANT l'écoute. Lancer ce workflow après coup ne montre rien — il
+# faut le déclencher juste AVANT le moment qu'on veut observer (la passe de
+# synchro tire à :56 de l'heure qui précède l'édition).
+name: Sonde du Worker (journaux)
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Durée d'écoute, en minutes (1 à 15)"
+        required: false
+        default: "6"
+      motif:
+        description: "Filtre (expression régulière) — vide = tout"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonde-worker
+  cancel-in-progress: false
+
+jobs:
+  ecouter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/api
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Écouter les journaux
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Sans lui, wrangler échoue sur « Failed to automatically retrieve
+          # account IDs » dès que le jeton est restreint — c'est exactement ce
+          # qui rendait les journaux illisibles depuis un poste.
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MINUTES: ${{ inputs.minutes }}
+          MOTIF: ${{ inputs.motif }}
+        run: |
+          set -uo pipefail
+          m="${MINUTES:-6}"
+          case "$m" in ''|*[!0-9]*) m=6 ;; esac
+          [ "$m" -lt 1 ] && m=1
+          [ "$m" -gt 15 ] && m=15
+          duree=$(( m * 60 ))
+
+          echo "## Journaux du Worker — écoute de ${m} min" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # `|| true` : `timeout` rend 124 quand il coupe, ce qui est le cas
+          # NORMAL ici — on écoute une durée fixe, pas jusqu'à la fin de
+          # quelque chose. Sans ça, un run réussi serait marqué en échec.
+          timeout "${duree}s" npx wrangler@4 tail --format=pretty > /tmp/tail.txt 2>/tmp/tail.err || true
+
+          if [ -s /tmp/tail.err ]; then
+            echo "### Avertissements de wrangler" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 20 /tmp/tail.err >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          lignes=$(wc -l < /tmp/tail.txt | tr -d ' ')
+          echo "${lignes} ligne(s) captée(s)." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "${MOTIF:-}" ]; then
+            echo "### Lignes correspondant à \`${MOTIF}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "$MOTIF" /tmp/tail.txt | head -100 >> "$GITHUB_STEP_SUMMARY" || echo "(aucune)" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "### Tout ce qui a été capté" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          head -300 /tmp/tail.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          # Le résumé de job porte le rendu ; la sortie de l'étape sert quand on
+          # lit le run en ligne de commande.
+          cat /tmp/tail.txt

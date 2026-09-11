@@ -78,6 +78,27 @@ describe("listes blanches du Worker", () => {
     ).toEqual([]);
   });
 
+  it("toute table que le build demandera à l'API est servie — sinon `api: false` (régression du 2026-09-10)", () => {
+    // Une table `enabled` sans `api: false` entre dans la correspondance de
+    // lib/data/source.ts : en mode `api` ou `snapshot`, chaque instance du
+    // build la demande, reçoit 404 et retombe sur le fichier. Ce repli est le
+    // chemin le plus coûteux en mémoire : `radar_annotated`, entrée le 08-09
+    // sans être servie, a fait mourir les builds prod du 10-09 (> 12 Go).
+    const brut = JSON.parse(lire("scripts/tables.json")) as {
+      tables?: Array<{ name?: string; enabled?: boolean; api?: boolean }>;
+    };
+    const servies = new Set(nomsServis());
+    const demandeesPourRien = (brut.tables ?? [])
+      .filter((t) => t.name && t.enabled !== false && t.api !== false && !servies.has(t.name))
+      .map((t) => t.name as string)
+      .sort();
+    expect(
+      demandeesPourRien,
+      `Déclarées dans scripts/tables.json sans être servies par l'API : le build les demandera ` +
+        `pour rien (404 → repli fichier, coûteux). Poser "api": false sur chacune, ou les servir.\n  ${demandeesPourRien.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
   it("les cinq tables du module des partis sont servies (régression)", () => {
     const servies = new Set(nomsServis());
     for (const t of [

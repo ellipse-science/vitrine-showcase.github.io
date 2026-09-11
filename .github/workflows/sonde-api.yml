@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 10
     env:
       VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+      # Distinct de la clé d'API : la route /v1/snapshot/* n'accepte que lui.
+      SNAPSHOT_TOKEN: ${{ secrets.SNAPSHOT_TOKEN }}
       API: https://api.vitrinedemocratique.com
     steps:
       - name: Checkout

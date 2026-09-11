@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.46.0-beta.0",
+  "version": "2.46.0-beta.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -26,6 +26,6 @@
     "sharp": "^0.35.4",
     "tsx": "^4.23.13",
     "typescript": "^7",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   }
 }
