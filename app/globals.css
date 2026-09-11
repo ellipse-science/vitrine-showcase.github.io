@@ -9836,6 +9836,40 @@
 .deck-carre--retournable .flip-face--verso { border: 1px solid var(--ink); }
 .deck-carre--retournable .deck-rang { transition: opacity 120ms ease; }
 .deck-carre--dos-ouvert .deck-rang { opacity: 0; pointer-events: none; }
+
+/* LE COIN DE LA POCHETTE, sur la face avant (voir `Deck`). Le vinyle est tiré
+   en haut à gauche de sa pochette : on en voit la bande basse et le bord droit,
+   avec la première ligne de son dos. MÊME papier et MÊME filet que le dos
+   (`.flip-face--verso`), pour que le retournement montre la pochette dont on
+   voyait le coin, et non un objet de plus. */
+.deck-pochette-coin {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 8px 4px;
+  box-sizing: border-box;
+  background: var(--paper-deep);
+  border: 1px solid var(--ink);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.deck-pochette-coin .deck-verso-chiffres { gap: 0; }
+/* Le disque cède 13 % du carré à la pochette, en bas et à droite. Par `inset`
+   et non par `transform` : l'animation de changement de piste (`deck-sortie`,
+   `deck-tour-avant`) anime les transformations et revient à l'identité, elle
+   retrouve donc cette place à la fin au lieu de la réécrire. */
+.deck-carre--retournable .deck-face--disque { inset: 0 13% 13% 0; }
+/* Au survol ou au focus, le vinyle sort un peu plus de sa pochette : c'est le
+   geste qui dit « on peut la retourner ». Pas sur un écran tactile, où il n'y
+   a pas de survol, ni pour qui a demandé moins de mouvement. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .deck-carre--retournable:not(.deck-carre--dos-ouvert):hover .deck-face--disque,
+  .deck-carre--retournable:not(.deck-carre--dos-ouvert):focus-visible .deck-face--disque {
+    transform: translate(-4%, -4%);
+  }
+}
 .deck-verso-chiffres {
   display: flex;
   flex-direction: column;
@@ -10600,6 +10634,9 @@
   /* Les decks restent GRANDS : la pochette doit rester lisible. */
   .deck-carre { max-width: 146px; }
   .deck { gap: 5px; }
+  /* La bande de pochette ne fait plus que 19 px sous un disque de 146 px. */
+  .deck-pochette-coin { padding: 0 6px 3px; }
+  .deck-pochette-coin .tracklist-metrique { font-size: 11px; }
   .deck-rang { width: 16px; height: 16px; font-size: 9px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours

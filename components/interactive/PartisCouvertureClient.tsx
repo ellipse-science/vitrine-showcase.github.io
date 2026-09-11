@@ -588,8 +588,8 @@ export function PartisCouvertureClient({
               sur les Unes de ce média seul.
               <br />
               <br />• <b>Sourdine</b> : le parti dont on parle le moins sur la période, quelle
-              que soit sa part. Le dernier du classement y passe toujours, et sa colonne reste
-              affichée sans valeur. À égalité au plus bas, les deux y passent.
+              que soit sa part. Le dernier du classement y passe toujours, et sa part reste
+              affichée en gris. À égalité au plus bas, les deux y passent.
               <br />
               <br />• <b>Cliquez un disque</b> pour retourner sa pochette et lire les détails
               de la mesure.
@@ -1170,6 +1170,18 @@ function Deck({
       l'entoure, pas dans ce qu'il montre. */}
   const visuel = (
     <>
+      {/* LE COIN DE LA POCHETTE, derrière le disque. Le vinyle est tiré en haut
+          à gauche de sa pochette, dont on voit la bande basse et le bord droit
+          avec la PREMIÈRE LIGNE de son dos : on comprend qu'il y a une pochette
+          à retourner, et on retrouve cette ligne en tête de la tracklist une
+          fois le deck retourné. Même papier, même filet, même composant que le
+          dos (`TracklisteGrandeurs`). `aria-hidden` : le temps en Une est déjà
+          annoncé par le dos, et le bouton dit qu'on peut le retourner. */}
+      <span className="deck-pochette-coin" aria-hidden="true">
+        <dl className="deck-verso-chiffres">
+          <LigneTracklist categorie="Temps en Une">{formatDuree(row.minutesUne)}</LigneTracklist>
+        </dl>
+      </span>
       <span className="deck-face deck-face--disque" aria-hidden="true">
         <span className="deck-jog">
           {/* Le capuchon est un aplat de la couleur EXACTE du parti — celle du
