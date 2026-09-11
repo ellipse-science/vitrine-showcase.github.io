@@ -7,8 +7,8 @@ import type { PartiesData } from "@/lib/data/parties";
 // LE PETIT VUMÈTRE DE TON — sous chaque colonne de la console : l'aiguille dévie
 // selon le ton (`--ct-angle`, d'après `tonePct`) et sa couleur reprend le
 // dégradé de « Ton en chambre » (`--ct-ton`). La colonne EN SOURDINE en a un
-// aussi, mais CASSÉ (`console-ton--casse`), et sa pile de segments montre sa
-// part en gris.
+// aussi : actif dès qu'il a une part, CASSÉ (`console-ton--casse`) seulement à
+// part nulle. Sa pile de segments montre sa part en gris.
 
 /** Cinq partis, parts de voix décroissantes (le dernier passe en sourdine) et
  *  tons étalés : un favorable, un défavorable, un neutre. `tons` keyé par
@@ -63,10 +63,16 @@ const tonDont = (pred: (deg: number) => boolean) => {
 };
 
 describe("le petit vumètre de ton, sous chaque colonne", () => {
-  it("un par colonne — cinq, dont un CASSÉ pour la sourdine", () => {
+  it("un par colonne — cinq, tous actifs quand la sourdine a une part", () => {
     expect(styles).toHaveLength(5);
-    expect((html.match(/console-ton--casse/g) ?? []).length).toBe(1);
-    expect(anglesActifs).toHaveLength(4);
+    expect(html).not.toContain("console-ton--casse");
+    expect(anglesActifs).toHaveLength(5);
+  });
+
+  it("la sourdine qui a une part affiche SON ton, comme les autres colonnes", () => {
+    const tranche = /<li class="console-tranche coupee"[\s\S]*?<\/li>/.exec(html)![0];
+    expect(tranche).toContain('class="console-ton"');
+    expect(tranche).toMatch(/<title>Ton/);
   });
 
   it("la colonne en sourdine garde SON étiquette « Sourdine », sous le boîtier", () => {
@@ -92,6 +98,9 @@ describe("le petit vumètre de ton, sous chaque colonne", () => {
     const vide = renderToStaticMarkup(<PartisCouvertureClient data={donnees({ pcqNul: true })} />);
     expect(vide).toContain("console-sourdine");
     expect(vide).not.toContain("seg mute on");
+    // Sans part, pas de ton non plus : le vumètre de ton reste cassé.
+    expect(vide).toContain("console-ton--casse");
+    expect(vide).toContain("Aucun ton à mesurer sur cette période.");
   });
 
   it("l'échelle porte un segment rouge à gauche, vert à droite", () => {

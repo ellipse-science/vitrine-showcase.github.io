@@ -1332,9 +1332,13 @@ function Tranche({
   // affichaient un niveau fixe qui ne mesurait rien. Une part nulle reste vide :
   // un segment allumé à 0 % serait un niveau inventé.
   const coupe = !muet && row.inShadow;
+  /** Sourdine SANS MESURE : part nulle, donc ni barre ni ton. C'est le seul cas
+   *  où le vumètre de ton reste cassé — un parti en sourdine qui a une part a
+   *  aussi un ton, et il s'affiche comme celui des autres colonnes. */
+  const sansMesure = coupe && row.sovPct <= 0;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
   const allumes =
-    muet || (coupe && row.sovPct <= 0) ? 0 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
+    muet || sansMesure ? 0 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   /** Le rang d'un segment dans la tête du vumètre, de 1 (le plus bas des trois)
@@ -1402,14 +1406,15 @@ function Tranche({
           Angle ET couleur disent la même chose. Elle frémit, décalée d'une
           colonne à l'autre (`--ct-phase`) ; coupé pour `prefers-reduced-motion`.
 
-          POUR UN CANAL EN SOURDINE : le même boîtier, mais CASSÉ (`--casse`) —
-          aiguille affalée hors échelle, cadran éteint, plus aucun frémissement.
-          Rien n'est mesuré là, et ça se voit.
+          POUR UN CANAL EN SOURDINE : son ton s'affiche comme celui des autres
+          dès qu'il a une part. À part nulle seulement (`sansMesure`), le même
+          boîtier est CASSÉ (`--casse`) — aiguille affalée hors échelle, cadran
+          éteint, plus aucun frémissement. Rien n'est mesuré là, et ça se voit.
 
           `aria-hidden` ; le `<title>` porte la phrase de ton au survol. */}
       {!muet && (
         <svg
-          className={`console-ton${coupe ? " console-ton--casse" : ""}`}
+          className={`console-ton${sansMesure ? " console-ton--casse" : ""}`}
           viewBox="0 0 64 24"
           aria-hidden="true"
           style={{
@@ -1418,7 +1423,7 @@ function Tranche({
             ["--ct-phase" as string]: (choisirParmi(row.key, 24) / 10).toFixed(1),
           }}
         >
-          <title>{coupe ? "Aucun ton à mesurer : le parti est en sourdine." : row.toneTitle}</title>
+          <title>{sansMesure ? "Aucun ton à mesurer sur cette période." : row.toneTitle}</title>
           <clipPath id={`ct-${row.key}`}>
             <rect x="0.6" y="0.6" width="62.8" height="22.8" rx="1.6" />
           </clipPath>
@@ -1445,7 +1450,7 @@ function Tranche({
         </svg>
       )}
 
-      {/* « Sourdine » — SOUS le vumètre cassé, dans la 4e rangée réservée de la
+      {/* « Sourdine » — SOUS le vumètre de ton, dans la 4e rangée réservée de la
           grille (vide pour les colonnes actives, pour que tous les boîtiers
           restent alignés). Le mot reste le seul emprunt visible au vocabulaire
           de la table de mixage : court, connu, il dit l'état mieux qu'un rang. */}

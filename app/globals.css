@@ -5494,7 +5494,8 @@
     .ct-saut { animation: none; }
   }
 
-  /* CASSÉ — le vumètre de ton d'un canal en sourdine. Rien n'y est mesuré :
+  /* CASSÉ — le vumètre de ton d'un canal en sourdine SANS MESURE (part nulle ;
+     avec une part, son ton s'affiche comme les autres). Rien n'y est mesuré :
      l'aiguille est affalée HORS échelle (−74°, bien au-delà du bout rouge),
      le cadran s'éteint, le frémissement s'arrête. On lit « instrument mort »,
      pas « ton très défavorable ». */
