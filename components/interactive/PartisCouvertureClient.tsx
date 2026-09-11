@@ -1326,13 +1326,15 @@ function Tranche({
    *  segment ne s'allume et rien ne s'écrit dessous. */
   muet?: boolean;
 }) {
-  // Sourdine : la colonne reste VIDE — aucun segment, gris compris. Les deux
-  // segments gris d'avant (« signal résiduel » d'une table de mix) laissaient
-  // croire à un petit niveau ; rien du tout se lit plus clairement, et le
-  // vumètre de ton CASSÉ dessous dit déjà « pas de mesure ici ».
+  // Sourdine : la colonne montre SA PART, en gris (`.seg.on.mute`), sur la même
+  // échelle que les autres — seule la couleur dit « sourdine ». Vide, elle
+  // laissait croire à une couverture nulle ; les deux segments gris d'avant, eux,
+  // affichaient un niveau fixe qui ne mesurait rien. Une part nulle reste vide :
+  // un segment allumé à 0 % serait un niveau inventé.
   const coupe = !muet && row.inShadow;
   const niveau = Math.min(1, row.sovPct / METER_FULL_SCALE);
-  const allumes = muet || coupe ? 0 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
+  const allumes =
+    muet || (coupe && row.sovPct <= 0) ? 0 : Math.max(1, Math.round(niveau * METER_SEGMENTS));
   // Moyenne nulle ⇒ pas d'écart calculable : on reste au vert plutôt que
   // d'inventer une sur-représentation par division par zéro.
   /** Le rang d'un segment dans la tête du vumètre, de 1 (le plus bas des trois)
@@ -1452,7 +1454,7 @@ function Tranche({
           <InfoTip size="sm" label="Sourdine">
             C&apos;est le parti dont les médias parlent le MOINS sur cette période. Le
             dernier du classement passe toujours en sourdine, quelle que soit sa part,
-            et sa colonne reste affichée sans valeur. En cas d&apos;égalité au plus bas,
+            qui reste affichée en gris. En cas d&apos;égalité au plus bas,
             les deux y passent.
           </InfoTip>
         </span>

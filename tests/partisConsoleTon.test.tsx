@@ -7,12 +7,13 @@ import type { PartiesData } from "@/lib/data/parties";
 // LE PETIT VUMÈTRE DE TON — sous chaque colonne de la console : l'aiguille dévie
 // selon le ton (`--ct-angle`, d'après `tonePct`) et sa couleur reprend le
 // dégradé de « Ton en chambre » (`--ct-ton`). La colonne EN SOURDINE en a un
-// aussi, mais CASSÉ (`console-ton--casse`), et sa pile de segments reste vide.
+// aussi, mais CASSÉ (`console-ton--casse`), et sa pile de segments montre sa
+// part en gris.
 
 /** Cinq partis, parts de voix décroissantes (le dernier passe en sourdine) et
  *  tons étalés : un favorable, un défavorable, un neutre. `tons` keyé par
- *  sigle. */
-function donnees(): PartiesData {
+ *  sigle. `pcqNul` met la part du dernier à zéro. */
+function donnees({ pcqNul = false }: { pcqNul?: boolean } = {}): PartiesData {
   const tons: Record<string, number> = { plq: 0.2, caq: 0.6, qs: 0, pq: -0.6, pcq: -0.1 };
   const jours = ["2026-08-25", "2026-08-26", "2026-08-27"];
   const lignes = jours.flatMap((j) =>
@@ -20,8 +21,8 @@ function donnees(): PartiesData {
       party: p.toUpperCase(),
       date_utc: j,
       date_montreal_tz: j,
-      weighted_mentions: 0.34 - i * 0.06,
-      total_raw_score: 100 - i * 10,
+      weighted_mentions: pcqNul && p === "pcq" ? 0 : 0.34 - i * 0.06,
+      total_raw_score: pcqNul && p === "pcq" ? 0 : 100 - i * 10,
       weighted_tone: tons[p],
       computed_at: `${j}T11:31:00Z`,
     })),
@@ -72,8 +73,19 @@ describe("le petit vumètre de ton, sous chaque colonne", () => {
     expect(html).toContain("console-sourdine");
   });
 
-  it("la colonne en sourdine n'a plus aucun segment allumé — pas même les deux gris", () => {
-    expect(html).not.toContain("seg mute on");
+  it("la colonne en sourdine montre SA PART, en gris, à la même échelle, sans vaciller", () => {
+    // La part lue dans la phrase de la colonne, celle des lecteurs d'écran.
+    const part = Number(/parlent le moins sur cette période : (\d+) %/.exec(html)![1]);
+    expect(part).toBeGreaterThan(0);
+    const gris = (html.match(/class="seg mute on"/g) ?? []).length;
+    expect(gris).toBe(Math.max(1, Math.round((part / 100) * 20)));
+    expect(html).not.toContain("seg mute on vu");
+  });
+
+  it("une sourdine à 0 % reste vide : un segment allumé serait un niveau inventé", () => {
+    const vide = renderToStaticMarkup(<PartisCouvertureClient data={donnees({ pcqNul: true })} />);
+    expect(vide).toContain("console-sourdine");
+    expect(vide).not.toContain("seg mute on");
   });
 
   it("l'échelle porte un segment rouge à gauche, vert à droite", () => {
