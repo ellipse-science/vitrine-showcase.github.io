@@ -1,5 +1,11 @@
 [
   {
+    "pr": 791,
+    "date": "2026-09-11T01:10:40Z",
+    "note": "Si la mise à jour du site échoue par manque de mémoire, une seconde tentative depuis les données déjà publiées prend le relais : l'édition paraît quand même.",
+    "version": null
+  },
+  {
     "pr": 793,
     "date": "2026-09-11T01:04:35Z",
     "note": "Les données que le site télécharge au moment de sa mise à jour sont désormais gardées sur disque le temps du build, ce qui rend la mise à jour aussi économe en mémoire que lorsqu'elle lit ses fichiers publiés.",
