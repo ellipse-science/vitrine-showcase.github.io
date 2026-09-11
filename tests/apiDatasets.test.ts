@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { TABLES } from "@/workers/api/src/tables";
+
 /**
  * LES DEUX LISTES BLANCHES DU WORKER DOIVENT BOUGER ENSEMBLE.
  *
@@ -50,6 +52,20 @@ function nomsDuContrat(): string[] {
   return tables.filter((t) => t.name && t.enabled !== false).map((t) => t.name as string);
 }
 
+/** Écarts de colonnes CONNUS entre scripts/tables.json et TABLES, laissés tels
+ *  quels : rien ne garantit que Neon porte ces colonnes, et en ajouter une à
+ *  TABLES sans elle fait échouer la synchro de la table entière
+ *  (`recordDefinition`, workers/api/src/sync.ts).
+ *
+ *  ⚠️ Probablement un défaut ACTIF, du même type que `representative_url` :
+ *  lib/data/assemblee.ts lit `deputy_id` et `district_id` par
+ *  `readDatasetText`, donc par l'API en prod. Signalé le 2026-09-11. Le test
+ *  compare à l'égalité : corriger l'écart oblige à le retirer d'ici. */
+const ECARTS_DE_COLONNES_CONNUS = [
+  "agora_decideurs_qc_deputes.deputy_id",
+  "agora_decideurs_qc_deputes.district_id",
+];
+
 describe("listes blanches du Worker", () => {
   it("toute table synchronisée ET au contrat public est servie par l'API", () => {
     const synchronisees = new Set(nomsSynchronises());
@@ -97,6 +113,36 @@ describe("listes blanches du Worker", () => {
       `Déclarées dans scripts/tables.json sans être servies par l'API : le build les demandera ` +
         `pour rien (404 → repli fichier, coûteux). Poser "api": false sur chacune, ou les servir.\n  ${demandeesPourRien.join("\n  ")}`,
     ).toEqual([]);
+  });
+
+  it("toute colonne que le site lit dans une table synchronisée est synchronisée (régression du 2026-09-11)", () => {
+    // scripts/tables.json dit quelles colonnes le SITE lit ; TABLES dit
+    // lesquelles le Worker copie vers Neon et vers l'instantané R2. En mode
+    // `api` — celui de la prod et de dev —, une colonne absente de TABLES
+    // arrive `undefined` au build, sans la moindre erreur. Deux fois déjà :
+    // `total_raw_score` (0 minute sur « tous les médias », 2026-08-28), puis
+    // `representative_url` (sources du module des partis vides en prod depuis
+    // le 2026-09-10 au soir). Le second défaut datait du 09-01 : tant que
+    // l'API se croyait périmée, le build retombait sur les fichiers, qui ont
+    // la colonne, et le masquait.
+    const brut = JSON.parse(lire("scripts/tables.json")) as {
+      tables?: Array<{ name?: string; enabled?: boolean; cols?: string[] }>;
+    };
+    const synchronisees = new Map(TABLES.map((t) => [t.name, new Set(t.cols)]));
+    const manquantes = (brut.tables ?? [])
+      .filter((t) => t.name && t.enabled !== false && synchronisees.has(t.name))
+      .flatMap((t) => {
+        const cols = synchronisees.get(t.name as string)!;
+        return (t.cols ?? []).filter((c) => !cols.has(c)).map((c) => `${t.name}.${c}`);
+      })
+      .sort();
+    expect(
+      manquantes,
+      `Colonnes lues par le site mais absentes de workers/api/src/tables.ts : en mode api, elles ` +
+        `arriveront vides au build, en silence. Les ajouter à TABLES ET à sql/schema.sql (avec un ` +
+        `ALTER TABLE … ADD COLUMN IF NOT EXISTS appliqué à Neon AVANT de redéployer le Worker). ` +
+        `Un écart corrigé se retire de ECARTS_DE_COLONNES_CONNUS.`,
+    ).toEqual([...ECARTS_DE_COLONNES_CONNUS].sort());
   });
 
   it("les cinq tables du module des partis sont servies (régression)", () => {
