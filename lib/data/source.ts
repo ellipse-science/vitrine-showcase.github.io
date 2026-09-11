@@ -213,7 +213,20 @@ async function fetchSnapshotRows(
  *  partagée ramène cela à un appel par build et par table. */
 const datasetCache = new Map<string, Promise<string>>();
 
-type TableSpec = { name: string; out: string; enabled: boolean };
+/** `api: false` : la table est publiée en fichier par fetch_data.R mais l'API
+ *  ne la sert pas (absente de DATASETS, workers/api/src/index.ts). Le build
+ *  la lit alors DIRECTEMENT dans le fichier, sans la demander à l'API.
+ *
+ *  POURQUOI CE DRAPEAU EXISTE (incident du 2026-09-10). `radar_annotated` est
+ *  entrée dans tables.json le 08-09 (#759) sans être servie : chaque instance
+ *  du build la demandait à l'API, recevait 404 et retombait sur le fichier.
+ *  Ce repli est le chemin le plus coûteux en mémoire des modes distants : en
+ *  mode `api`, le build de prod dépassait 12 Go et mourait avant la moitié
+ *  des pages (GitHub : « runner has received a shutdown signal » ; Cloudflare :
+ *  36 min puis « exceeded the time limit »), alors que le même build en
+ *  mode fichiers tenait en 7,6 Go. Sans cette entrée dans la correspondance,
+ *  le même build passe en 5 min. Mesures : issue vitrine#787. */
+type TableSpec = { name: string; out: string; enabled: boolean; api?: boolean };
 
 let datasetByPath: Map<string, string> | null = null;
 
@@ -229,7 +242,7 @@ async function loadMapping(): Promise<Map<string, string>> {
   );
   const config = JSON.parse(raw) as { tables: TableSpec[] };
   datasetByPath = new Map(
-    config.tables.filter((t) => t.enabled).map((t) => [t.out, t.name]),
+    config.tables.filter((t) => t.enabled && t.api !== false).map((t) => [t.out, t.name]),
   );
   return datasetByPath;
 }
