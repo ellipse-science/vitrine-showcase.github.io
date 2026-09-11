@@ -1,5 +1,11 @@
 [
   {
+    "pr": 797,
+    "date": "2026-09-11T20:05:44Z",
+    "note": "Dans le module sur la couverture des partis, le parti dont les médias parlent le moins garde sa part visible, en gris, au lieu d'une colonne vide.",
+    "version": "2.46.0-beta.6"
+  },
+  {
     "pr": 796,
     "date": "2026-09-11T18:52:20Z",
     "note": "Les articles qui ont servi à mesurer la couverture de chaque parti s'affichent de nouveau au dos des pochettes du module « De quel parti parle-t-on dans les médias? ».",
