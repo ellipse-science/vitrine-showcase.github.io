@@ -59,9 +59,12 @@ export const MEDIA_DANS: Record<string, string> = {
  * Ordre des crans du fader, « tous les médias » AU CENTRE — position de repos
  * d'un crossfader, celle qu'on retrouve sans regarder.
  *
- * Cet ordre est un CHOIX ÉDITORIAL de l'équipe. Il n'est ni alphabétique, ni
- * dérivé des données, et il ne porte aucune étiquette dans l'interface : ne pas
- * le « corriger » en croyant à un tri cassé.
+ * ORDRE ALPHABÉTIQUE DES SIGLES AFFICHÉS : JdM · LD · LP | MG · RC · TVA. C'est
+ * un choix éditorial (2026-09-11, qui remplace l'ordre fixé le 2026-08-13 par
+ * 3695e026) : le tri se lit sur ce que le visiteur voit sur les crans. Il ne
+ * suit donc NI les identifiants techniques (`RCI` avant `TVA` par hasard), NI
+ * les noms complets (« La Presse » avant « Le Devoir ») : ne pas le « corriger »
+ * sur l'un d'eux. `tests/partisPanelMedias.test.ts` le vérifie.
  */
 /**
  * Sigles affichés sur les crans du fader.
@@ -106,9 +109,9 @@ export const MEDIA_DE: Record<string, string> = {
 };
 
 export const MEDIA_ORDER: string[] = [
-  "LED", "RCI", "LAP",
+  "JDM", "LED", "LAP",
   TOUS_MEDIAS,
-  "MG", "TVA", "JDM",
+  "MG", "RCI", "TVA",
 ];
 
 /**

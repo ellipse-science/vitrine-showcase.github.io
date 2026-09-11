@@ -26,6 +26,15 @@ describe("le panel de médias du fader", () => {
     expect(MEDIA_PANEL_QC).toHaveLength(6);
   });
 
+  it("range les crans dans l'ordre alphabétique des SIGLES affichés, « tous » au centre", () => {
+    // Ce que le visiteur lit sur les crans, et non les identifiants techniques
+    // ni les noms complets (cf. le commentaire de MEDIA_ORDER).
+    const sigles = MEDIA_PANEL_QC.map((id) => MEDIA_SIGLES[id]);
+    const tries = [...sigles].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+    expect(sigles).toEqual(tries);
+    expect(MEDIA_ORDER.indexOf(TOUS_MEDIAS)).toBe(3);
+  });
+
   it("ne contient que des médias nommables — un sigle et un libellé chacun", () => {
     // Un cran sans sigle retombe sur l'identifiant brut du corpus, qui est une
     // clé technique et non un nom.
