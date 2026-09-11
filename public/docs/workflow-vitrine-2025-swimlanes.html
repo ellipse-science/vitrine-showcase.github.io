@@ -1381,7 +1381,7 @@
                 },
                 'polimetre_promesses_neuves_hits': {
                     title: 'Table: polimetre_promesses_neuves_hits',
-                    description: 'Étage de SAILLANCE, incrémental (aws-refiners#511). Une ligne par (paragraphe de une × promesse × bloc de 4 h Montréal), plus un témoin par paragraphe examiné sans reprise et une ligne-marqueur par bloc vide. Les fenêtres day (6 blocs) et week (42) se LISENT ici : aucun appel LLM à la publication. Le curseur n\'avance que sur un bloc block_complete = true ; un paragraphe encore en une au bloc suivant est rejoué du cache avec les minutes du nouveau bloc.',
+                    description: 'Étage de SAILLANCE, incrémental (aws-refiners#511). Une ligne par (paragraphe de une × promesse × article × bloc de 4 h Montréal) — la même dépêche chez deux médias compte deux fois —, plus un témoin par paragraphe examiné sans reprise et une ligne-marqueur par bloc vide. Les fenêtres day (les 6 derniers blocs complets, 24 h glissantes) et week (les 42 derniers) se LISENT ici : aucun appel LLM à la publication, et un bloc publié incomplet puis repris est dédoublonné avant la somme. Le curseur n\'avance que sur un bloc block_complete = true ; un paragraphe encore en une au bloc suivant est rejoué du cache avec les minutes du nouveau bloc, et RÉINTERROGÉ sur les seules candidates détectées après son verdict (candidates_until).',
                     columns: [
                         '📍 BLOC:',
                         'block_start_montreal_tz - Début du bloc, heure de Montréal (grille 3, 7, 11, 15, 19, 23)',
@@ -1418,7 +1418,7 @@
                         'announce_date / release_url / release_title - Communiqué d\'origine',
                         '',
                         '📈 SAILLANCE:',
-                        'n_mentions - Nombre d\'articles distincts reprenant la promesse',
+                        'n_mentions - Nombre de paragraphes de une (par article) reprenant la promesse sur la fenêtre — la même dépêche chez deux médias compte deux fois',
                         'salience_index - Indice de saillance (minutes en une pondérées)',
                         'articles - Array [{media_id, title, url}] (JSON)',
                         'computed_at - Horodatage UTC du calcul'
@@ -1985,9 +1985,9 @@
                         '',
                         '⚙️ ÉTAGE DE SAILLANCE (mode: saillance, aws-refiners#511):',
                         '• Un bloc de 4 h de unes par run (grille Montréal 3/7/11/15/19/23), max_blocks: 2 pour rattraper un run raté',
-                        '• Préfiltre lexical (~12,5 % des paragraphes retenus) puis LLM : « ce paragraphe reprend-il l\'une des promesses candidates ? »',
-                        '• Écrit _hits : une ligne par (paragraphe × promesse × bloc) + témoins ; cache par (paragraphe × modèle × prompt) ; curseur sur bloc complet seulement',
-                        '• Publie polimetre_promesses_neuves pour day (6 blocs) et week (42 blocs) en SOMMANT les hits — zéro appel LLM à la publication',
+                        '• Préfiltre lexical (12 à 23 % des paragraphes retenus selon le nombre de candidates — 23 % à 84) puis LLM : « ce paragraphe reprend-il l\'une des promesses candidates ? »',
+                        '• Écrit _hits : une ligne par (paragraphe × promesse × article × bloc) + témoins ; cache par (paragraphe × modèle × prompt), réinterrogé sur les candidates détectées après le verdict ; curseur sur bloc complet seulement',
+                        '• Publie polimetre_promesses_neuves pour day (les 6 derniers blocs complets, 24 h glissantes) et week (les 42 derniers) en SOMMANT les hits, dédoublonnés par (bloc × paragraphe × promesse × url) — zéro appel LLM à la publication',
                         '',
                         '⚠️ LIMITE CONNUE: l\'appariement promesse ↔ couverture est le maillon faible (mesure hors campagne du 2026-08-18 : 4 promesses retenues, 3 fausses à la relecture). L\'allumage en DEV sert à mesurer en campagne.',
                         '',
