@@ -1,5 +1,11 @@
 [
   {
+    "pr": 796,
+    "date": "2026-09-11T18:52:20Z",
+    "note": "Les articles qui ont servi à mesurer la couverture de chaque parti s'affichent de nouveau au dos des pochettes du module « De quel parti parle-t-on dans les médias? ».",
+    "version": "2.46.0-beta.5"
+  },
+  {
     "pr": 784,
     "date": "2026-09-11T01:23:16Z",
     "note": "Aucune : cette PR ne touche qu'une page de documentation interne, rien ne change pour les visiteurs du site.",
