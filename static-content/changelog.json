@@ -1,5 +1,11 @@
 [
   {
+    "pr": 793,
+    "date": "2026-09-11T01:04:35Z",
+    "note": "Les données que le site télécharge au moment de sa mise à jour sont désormais gardées sur disque le temps du build, ce qui rend la mise à jour aussi économe en mémoire que lorsqu'elle lit ses fichiers publiés.",
+    "version": "2.46.0-beta.4"
+  },
+  {
     "pr": 788,
     "date": "2026-09-11T00:52:43Z",
     "note": "Les mises à jour du site ne risquent plus d'échouer par manque de mémoire à cause d'une table demandée inutilement à l'API.",
