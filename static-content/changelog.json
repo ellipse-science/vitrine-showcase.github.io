@@ -1,5 +1,11 @@
 [
   {
+    "pr": 784,
+    "date": "2026-09-11T01:23:16Z",
+    "note": "Aucune : cette PR ne touche qu'une page de documentation interne, rien ne change pour les visiteurs du site.",
+    "version": null
+  },
+  {
     "pr": 791,
     "date": "2026-09-11T01:10:40Z",
     "note": "Si la mise à jour du site échoue par manque de mémoire, une seconde tentative depuis les données déjà publiées prend le relais : l'édition paraît quand même.",
