@@ -1,5 +1,11 @@
 [
   {
+    "pr": 795,
+    "date": "2026-09-12T21:15:37Z",
+    "note": "La documentation des pipelines et la page Méthodologie décrivent maintenant le mode « promesses de la campagne » du Polimètre+ : d'où viennent les promesses détectées, comment leur écho dans les unes est mesuré toutes les quatre heures, et ce que ce mode ne mesure pas.",
+    "version": null
+  },
+  {
     "pr": 797,
     "date": "2026-09-11T20:05:44Z",
     "note": "Dans le module sur la couverture des partis, le parti dont les médias parlent le moins garde sa part visible, en gris, au lieu d'une colonne vide.",
