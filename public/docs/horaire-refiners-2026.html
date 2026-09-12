@@ -2715,7 +2715,7 @@
 
             <div class="schedule-compare">
               <div class="schedule-box schedule-old">
-                <div class="schedule-label old">✅ HORAIRE ACTUEL (APPLIQUÉ DANS LE TS), UTC</div>
+                <div class="schedule-label old">✅ HORAIRE ACTUEL (APPLIQUÉ DANS LE TS), Montréal (America/Toronto)</div>
                 <div class="time-block">
                   <div class="time-line">
                     <span class="refiner-name">GLUE JOB:</span>
@@ -2855,8 +2855,8 @@
                 <div class="problems">
                   <div class="problem-item">Mélange de cadences: certains daily en 3x/jour, d'autres en 6x/jour</div>
                   <div class="problem-item">VITRINE_GRAPH_DATA en 5x/jour (pas encore aligné 6x)</div>
-                  <div class="problem-item">Horaires de production exprimés en UTC dans le code actuel</div>
-                  <div class="problem-item">Le ciblage final est documenté en heure de Montréal</div>
+                  <div class="problem-item">Heures de Montréal, pas UTC : tout cron de refiners.ts et de glue-stack.ts passe par LocalCronLambdaScheduler (aws-infra), qui fixe le fuseau America/Toronto depuis mars 2026</div>
+                  <div class="problem-item">Les deux boîtes sont dans le même fuseau et se comparent directement. Les lignes de la chaîne de la Une (GLUE JOB → HEADLINE_OF_HEADLINES) datent d'avant la migration du 15 juillet 2026 (aws-refiners#214) : pour l'heure vivante d'un raffineur, faire foi à refiners.ts</div>
                 </div>
               </div>
 
