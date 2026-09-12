@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 4 septembre 2026 (quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 11 septembre 2026 (le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -578,7 +578,7 @@
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>3️⃣ Couverture médiatique des partis politiques</span><span class="frequency">6×/jour — sur les modèles locaux</span></div><div class="chaine-libelle">La chaîne en production — <code>radar-party-score-salient-shadow</code>, sur les <strong>modèles locaux</strong></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">thèmes CAP, partis, sentiment</div></div><div class="arrow">→</div><div class="node node-refiner">radar-party-score-salient-shadow<div class="node-detail">part des phrases, pas des objets</div></div><div class="arrow">→</div><div class="node node-table">provincial_parties_salient_shadow_{day,week,month}</div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 3<div class="node-detail">part de voix, ton — <strong>ce que le visiteur voit</strong></div></div></div><div class="note-module">Le module tourne <strong>déjà sur les classifieurs locaux</strong> : il part de <code>radar_annotated</code>, pas des objets saillants. La part de voix est normalisée en amont (0-1) et le seuil d'éclipse est de <strong>2 %</strong>.<br>Le nom <code>salient_shadow</code> est un vestige — cette chaîne n'a plus rien d'un régime d'essai, c'est celle que <code>lib/data/parties.ts</code> lit.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>4️⃣ Les 12 enjeux de la campagne</span><span class="frequency">6×/jour — trois provenances dans une seule tuile</span></div><div class="chaine-libelle">Chaîne A — la TAILLE des tuiles</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">thèmes CAP, partis, sentiment</div></div><div class="arrow">→</div><div class="node node-refiner">radar-issues-score<div class="node-detail">proportions des 12 enjeux CAP</div></div><div class="arrow">→</div><div class="node node-table">issues_score_{day,week,month}<div class="node-detail">+ colonne issues_meta</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">taille de chaque tuile</div></div></div><div class="chaine-libelle">Chaîne B — les ARTICLES listés sous chaque tuile</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-objects<div class="node-detail">objets saillants — GPT-4o<br><em>→ modèles locaux après #206</em></div></div><div class="arrow">→</div><div class="node node-table">salient_headlines_objects<div class="node-detail">objets par article</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-index<div class="node-detail">agrège par objet et par bloc</div></div><div class="arrow">→</div><div class="node node-table">salient_index<div class="node-detail">indice de saillance par objet</div></div><div class="arrow">→</div><div class="node node-refiner">radar-event-salience</div><div class="arrow">→</div><div class="node node-table">headline_events_4h<div class="node-detail">liés à la tuile par main_issue</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">articles de la tuile</div></div></div><div class="chaine-libelle">Chaîne C — l'OBJET dominant et l'ACCROCHE</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">d'où sortent les titres dominants de l'enjeu</div></div><div class="arrow">→</div><div class="node node-refiner">radar-issues-score<div class="node-detail">2ᵉ appel&nbsp;: GPT-4o<br><em>ne voit que des titres</em></div></div><div class="arrow">→</div><div class="node node-table">issues_meta<div class="node-detail">obj + label + url</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">objet et accroche de la tuile</div></div></div><div class="note-module"><strong>Trois provenances dans une seule tuile</strong> — c'est ce que la vue par pipeline ne montrait pas. La <em>taille</em> vient des classifieurs locaux, les <em>articles</em> de l'indice de saillance, et l'<em>objet dominant</em> d'un appel GPT-4o qui n'a jamais vu ces articles. Rien ne garantit que les trois s'accordent.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>5️⃣ L'alignement de l'Assemblée</span><span class="frequency">hebdomadaire — corpus de décideurs</span></div><div class="pipeline-content"><div class="node node-source">a-qc-parliament-debates<div class="node-detail">débats de l'Assemblée — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">agora-decideurs-qc-phrases<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">agora_datamart-…_phrases · _affiliations</div><div class="arrow">→</div><div class="node node-refiner">agora-decideurs-qc<div class="node-detail">agrège par jour et par parti</div></div><div class="arrow">→</div><div class="node node-table">agora_decideurs_qc · _deputes_v2</div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 5<div class="node-detail">jauge de ton, enjeux débattus</div></div></div><div class="note-module">Seul module qui <strong>ne part pas des médias</strong>. Sa chaîne d'alerte Sonar est donc celle des <strong>décideurs</strong> — la chaîne se choisit sur la source de la donnée, jamais sur le sujet.</div></div>
-        <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>6️⃣ Polimètre+ : promesses électorales à la Une</span><span class="frequency">hebdomadaire</span></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">+</div><div class="node node-dict">polimeter / mastersheet_Promesses<div class="node-detail">promesses officielles — Polimètre, U. Laval</div></div><div class="arrow">→</div><div class="node node-refiner">polimetre-plus<div class="node-detail">identification (IA, repli regex) + saillance hebdo<br><em>libellés courts&nbsp;: gemma3 local</em></div></div><div class="arrow">→</div><div class="node node-table">polimetre_plus<div class="node-detail">indice + progression</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 6<div class="node-detail">promesses les plus couvertes</div></div></div></div>
+        <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>6️⃣ Polimètre+ : promesses électorales à la Une</span><span class="frequency">hebdomadaire</span></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">+</div><div class="node node-dict">polimeter / mastersheet_Promesses<div class="node-detail">promesses officielles — Polimètre, U. Laval</div></div><div class="arrow">→</div><div class="node node-refiner">polimetre-plus<div class="node-detail">identification (IA, repli regex) + saillance hebdo<br><em>libellés courts&nbsp;: gemma3 local</em></div></div><div class="arrow">→</div><div class="node node-table">polimetre_plus<div class="node-detail">indice + progression</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 6<div class="node-detail">promesses les plus couvertes</div></div></div><div class="chaine-libelle">Mode « promesses de la campagne » (DEV seulement)</div><div class="pipeline-content"><div class="node node-source">a-qc-press-releases<div class="node-detail">communiqués des partis + plateformes — PROD</div></div><div class="arrow">+</div><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">polimetre-promesses-neuves<div class="node-detail">détection 4×/jour ; saillance 6×/jour, un bloc de 4&nbsp;h par run<br><em>Gemma&nbsp;3 local</em></div></div><div class="arrow">→</div><div class="node node-table">polimetre_promesses_neuves_hits<div class="node-detail">reprises par bloc</div></div><div class="arrow">→</div><div class="node node-table">polimetre_promesses_neuves<div class="node-detail">day / week = sommes de blocs</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena DEV</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 6<div class="node-detail">mode « campagne »</div></div></div></div>
         <div style="margin:26px auto 10px;max-width:900px;padding:.9rem 1.2rem;border-left:4px solid #4A90E2;background:#f4f8fd;font-size:.9em;line-height:1.55"><strong>Ce que cette vue montre et que l'autre cachait.</strong> Un raffineur alimente souvent plusieurs modules — <code>radar-salient-objects</code> est en amont de quatre d'entre eux — et un module a souvent plusieurs provenances. Le jour où un étage s'arrête, cette vue dit immédiatement ce qui s'éteint à l'écran. Pour les horaires et l'état actif, passer à la <strong>vue par pipeline</strong>.</div>
         </div>
 
@@ -1155,6 +1155,53 @@
             </div>
         </div>
 
+        <!-- POLIMÈTRE+ — MODE « PROMESSES DE LA CAMPAGNE » (DEV) -->
+        <div class="pipeline pipeline-polimetre" data-pipeline="polimetre">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>🗳️ Polimètre+ — mode « promesses de la campagne » (DEV seulement)</span>
+                <span class="frequency">Détection 4×/jour aux&nbsp;:05 (9, 13, 17, 21&nbsp;h) • saillance 6×/jour aux&nbsp;:45, un bloc de 4&nbsp;h par run • fenêtres <code>day</code> et <code>week</code> = sommes de blocs</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="a-qc-press-releases" data-env-source="PROD">
+                    a-qc-press-releases
+                    <div class="node-detail">Communiqués des partis (datawarehouse) + plateformes déposées à la main (<code>party-manifestos</code>, datalake)</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">+</div>
+                <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
+                    r-media-headlines
+                    <div class="node-detail">Les unes québécoises, lues par bloc de 4&nbsp;h à l'étage de saillance</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="polimetre-promesses-neuves" data-ecr="polimetre-promesses-neuves" data-active="true" data-cron="09:05,13:05,17:05,21:05,03:45,07:45,11:45,15:45,19:45,23:45">
+                    polimetre-promesses-neuves.R
+                    <div class="node-detail">Deux fonctions sur la même image, choisies par le payload. <strong>Détection</strong>&nbsp;: extrait les promesses neuves des communiqués et plateformes (LLM Gemma&nbsp;3 via l'infer-api), écrit <code>_detections</code>. <strong>Saillance</strong>&nbsp;: mesure leur reprise dans les unes, UN BLOC DE 4&nbsp;H par run, écrit <code>_hits</code> puis publie <code>day</code> et <code>week</code> comme sommes de blocs — sans appel LLM à la publication.</div>
+                    <div class="node-schedule">⏰ détection 09:05, 13:05, 17:05, 21:05 • saillance 03:45, 07:45, 11:45, 15:45, 19:45, 23:45</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_promesses_neuves_detections" data-env-output="DEV">
+                    polimetre_promesses_neuves_detections
+                    <div class="node-detail">Une ligne par promesse détectée + un témoin par communiqué examiné sans promesse</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_promesses_neuves_hits" data-env-output="DEV">
+                    polimetre_promesses_neuves_hits
+                    <div class="node-detail">Une ligne par (paragraphe × promesse × bloc de 4&nbsp;h) + témoins ; curseur sur bloc complet ; cache par (paragraphe × modèle × prompt)</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="polimetre_promesses_neuves" data-env-output="DEV">
+                    polimetre_promesses_neuves
+                    <div class="node-detail">Classement des promesses neuves par écho médiatique, fenêtres <code>day</code> et <code>week</code> — lue par le site (mode « campagne » du module 6)</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+            </div>
+        </div>
+
         <!-- PUBLICATION VITRINE -->
         <div class="pipeline pipeline-vitrine" data-pipeline="vitrine">
             <div class="pipeline-header">
@@ -1314,6 +1361,67 @@
                         'titles - Titres des articles (JSON)',
                         'urls - URLs des articles (JSON)',
                         'articles - Array [{media_id, title, url}] (JSON)'
+                    ]
+                },
+                'polimetre_promesses_neuves_detections': {
+                    title: 'Table: polimetre_promesses_neuves_detections',
+                    description: 'Étage de DÉTECTION du mode « promesses de la campagne ». Une ligne par promesse extraite d\'un communiqué ou d\'une plateforme, plus un TÉMOIN (promesse_id vide) par communiqué examiné sans promesse — sinon « jamais examiné » et « examiné, rien trouvé » seraient indistinguables. Écriture en APPEND, 4×/jour.',
+                    columns: [
+                        'promesse_id - Identifiant de la promesse (vide sur un témoin)',
+                        'party_id - Parti émetteur (clé de PARTY_COLORS côté site)',
+                        'promesse_text - Texte de la promesse tel qu\'extrait',
+                        'label - Libellé court (LLM, best-effort)',
+                        'category - Libellé français de l\'un des 12 enjeux, ou "NA" (inféré, pas codé à la main)',
+                        'release_id - Communiqué ou plateforme d\'origine',
+                        'release_title - Titre du communiqué',
+                        'release_url - URL du communiqué',
+                        'announce_date - Date d\'annonce',
+                        'examined_at - Horodatage UTC de l\'examen'
+                    ]
+                },
+                'polimetre_promesses_neuves_hits': {
+                    title: 'Table: polimetre_promesses_neuves_hits',
+                    description: 'Étage de SAILLANCE, incrémental (aws-refiners#511). Une ligne par (paragraphe de une × promesse × article × bloc de 4 h Montréal) — la même dépêche chez deux médias compte deux fois —, plus un témoin par paragraphe examiné sans reprise et une ligne-marqueur par bloc vide. Les fenêtres day (les 6 derniers blocs complets, 24 h glissantes) et week (les 42 derniers) se LISENT ici : aucun appel LLM à la publication, et un bloc publié incomplet puis repris est dédoublonné avant la somme. Le curseur n\'avance que sur un bloc block_complete = true ; un paragraphe encore en une au bloc suivant est rejoué du cache avec les minutes du nouveau bloc, et RÉINTERROGÉ sur les seules candidates détectées après son verdict (candidates_until).',
+                    columns: [
+                        '📍 BLOC:',
+                        'block_start_montreal_tz - Début du bloc, heure de Montréal (grille 3, 7, 11, 15, 19, 23)',
+                        'block_start_utc / block_stop_utc - Bornes UTC du bloc',
+                        'block_date_utc - Date UTC du bloc (filtre de lecture)',
+                        'block_complete - "true" si tous les paragraphes retenus ont été examinés (sinon le bloc est repris)',
+                        '',
+                        '📰 REPRISE:',
+                        'paragraph_hash - Empreinte du paragraphe (clé de cache et de dédoublonnage)',
+                        'promesse_id - Promesse reprise (vide sur un témoin)',
+                        'media_id / url / title - Article porteur',
+                        'headline_minutes - Minutes en une de l\'article pendant CE bloc',
+                        '',
+                        '🧪 PROVENANCE:',
+                        'model - Modèle LLM ayant jugé le paragraphe',
+                        'prompt_fingerprint - Empreinte du squelette du prompt (pas de la liste de candidates)',
+                        'examined_at - Horodatage UTC de l\'examen'
+                    ]
+                },
+                'polimetre_promesses_neuves': {
+                    title: 'Table: polimetre_promesses_neuves',
+                    description: 'Table PUBLIÉE du mode « promesses de la campagne » (module 6, mode « campagne »). Classement des promesses neuves par écho dans les unes, une ligne par (fenêtre × promesse), réécrite à chaque run de saillance. Depuis aws-refiners#511, day et week sont des SOMMES lues dans polimetre_promesses_neuves_hits. Lue par le site depuis le 2026-09-02 (scripts/tables.json, DEV seulement ; pas encore dans le Worker).',
+                    columns: [
+                        '📍 IDENTIFIANTS:',
+                        'country_id - Pays (QC)',
+                        'window_key - Fenêtre : day ou week',
+                        'window_end - Date de fin de la fenêtre',
+                        'rank_current - Rang par saillance (recalculé côté site)',
+                        'promesse_id - Identifiant de la promesse',
+                        'party_id - Parti émetteur',
+                        'label - Libellé court',
+                        'category - Libellé français de l\'enjeu, ou "NA"',
+                        'promesse_text - Texte de la promesse',
+                        'announce_date / release_url / release_title - Communiqué d\'origine',
+                        '',
+                        '📈 SAILLANCE:',
+                        'n_mentions - Nombre de paragraphes de une (par article) reprenant la promesse sur la fenêtre — la même dépêche chez deux médias compte deux fois',
+                        'salience_index - Indice de saillance (minutes en une pondérées)',
+                        'articles - Array [{media_id, title, url}] (JSON)',
+                        'computed_at - Horodatage UTC du calcul'
                     ]
                 },
                 'headlines_objects_extracted': {
@@ -1806,6 +1914,7 @@
                         'vitrine_datamart-parties_issues_salient_shadow_day',
                         'vitrine_datamart-headline_events_4h',
                         'vitrine_datamart-polimetre_plus',
+                        'vitrine_datamart-polimetre_promesses_neuves (lue depuis le fichier, pas encore dans le Worker)',
                         'agora_datamart-agora_decideurs_qc',
                         'agora_datamart-agora_decideurs_qc_deputes_v2'
                     ],
@@ -1859,6 +1968,31 @@
                         '🎯 UTILITÉ: suivi médiatique des promesses électorales de la CAQ (module Polimètre+)',
                         '→ Publie polimetre_plus, lue par lib/data/polimetre.ts',
                         '📌 Le site ne projette PAS rank_current, rank_delta ni n_mentions : le raffineur les produit en entiers (INT32) alors que le catalogue Glue les déclare en double, ce qui bloque toute lecture Athena qui les inclut. Les rangs sont recalculés côté site.'
+                    ]
+                },
+                'polimetre-promesses-neuves': {
+                    title: 'Refiner: polimetre-promesses-neuves.R',
+                    description: 'Mode « promesses de la campagne » du Polimètre+ : détecte les promesses NEUVES dans les communiqués et plateformes des partis, puis mesure leur reprise dans les unes québécoises. Deux fonctions Lambda sur une seule image, choisies par le payload (motif de polimetre-plus). DEV seulement : les deux entrées sont !isProd(envName) dans aws-infra.',
+                    details: [
+                        '📥 SOURCES: <span class="badge-prod">PROD</span>/datawarehouse - a-qc-press-releases + r-media-headlines ; <span class="badge-prod">PROD</span>/datalake - party-manifestos',
+                        '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts - polimetre_promesses_neuves_detections, polimetre_promesses_neuves_hits, polimetre_promesses_neuves',
+                        '⏰ Détection 4×/jour aux :05 (09:05, 13:05, 17:05, 21:05) • saillance 6×/jour aux :45 sur la grille de 4 h (03:45, 07:45, 11:45, 15:45, 19:45, 23:45)',
+                        '',
+                        '⚙️ ÉTAGE DE DÉTECTION (mode: detection):',
+                        '• Portillon lexical puis LLM Gemma 3 (infer-api) sur chaque communiqué non encore examiné, du plus récent au plus ancien, budget 11 min',
+                        '• Un communiqué examiné sans promesse laisse un TÉMOIN dans _detections ; un appel raté n\'est pas marqué examiné et repasse',
+                        '• Libellé court + catégorie d\'enjeu inférés (best-effort)',
+                        '',
+                        '⚙️ ÉTAGE DE SAILLANCE (mode: saillance, aws-refiners#511):',
+                        '• Un bloc de 4 h de unes par run (grille Montréal 3/7/11/15/19/23), max_blocks: 2 pour rattraper un run raté',
+                        '• Préfiltre lexical (12 à 23 % des paragraphes retenus selon le nombre de candidates — 23 % à 84) puis LLM : « ce paragraphe reprend-il l\'une des promesses candidates ? »',
+                        '• Écrit _hits : une ligne par (paragraphe × promesse × article × bloc) + témoins ; cache par (paragraphe × modèle × prompt), réinterrogé sur les candidates détectées après le verdict ; curseur sur bloc complet seulement',
+                        '• Publie polimetre_promesses_neuves pour day (les 6 derniers blocs complets, 24 h glissantes) et week (les 42 derniers) en SOMMANT les hits, dédoublonnés par (bloc × paragraphe × promesse × url) — zéro appel LLM à la publication',
+                        '',
+                        '⚠️ LIMITE CONNUE: l\'appariement promesse ↔ couverture est le maillon faible (mesure hors campagne du 2026-08-18 : 4 promesses retenues, 3 fausses à la relecture). L\'allumage en DEV sert à mesurer en campagne.',
+                        '',
+                        '🎯 UTILITÉ: mode « campagne » du module Polimètre+ (promesses annoncées pendant la campagne, classées par écho médiatique)',
+                        '→ Publie polimetre_promesses_neuves, lue par le site depuis le fichier public/data/refined/day/ (api: false tant que le Worker ne porte pas la table)'
                     ]
                 },
                 'articles-segmented': {
@@ -2507,6 +2641,15 @@
                         '💡 POURQUOI PAS CLOUDWATCH: nos pannes réelles sont silencieuses côté AWS — la Lambda « réussit », les logs sont propres, et la donnée est pourtant en retard ou incomplète.',
                         '',
                         '📋 Le périmètre exact est déclaré dans refiners/sonar-pipeline/manifest.R : une entrée par table d\'un raffineur actif.'
+                    ]
+                },
+                'a-qc-press-releases': {
+                    title: 'Source: a-qc-press-releases (+ party-manifestos)',
+                    description: 'Communiqués de presse des partis québécois, moissonnés dans le datawarehouse PROD ; la colonne party_id donne le parti émetteur. Les plateformes électorales sont déposées à la main dans le datalake (party-manifestos) et traitées au même titre qu\'un communiqué — corpus PERMANENT de la campagne, sans filtre de date.',
+                    details: [
+                        '📍 <span class="badge-prod">PROD</span>/datawarehouse — a-qc-press-releases ; <span class="badge-prod">PROD</span>/datalake — party-manifestos',
+                        '🎯 Seul consommateur planifié : polimetre-promesses-neuves (étage de détection)',
+                        '📌 Taux de base mesuré hors campagne (2026-08-25) : 27 communiqués sur 469 passent le portillon, dont ZÉRO pour la CAQ — un parti au pouvoir communique en gouvernant, pas en promettant'
                     ]
                 },
                 'r-media-headlines': {
