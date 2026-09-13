@@ -1,5 +1,11 @@
 [
   {
+    "pr": 782,
+    "date": "2026-09-13T18:22:42Z",
+    "note": "Les éditions de la Vitrine sont mises en ligne dès que leurs données sont prêtes, sans attendre la mise à jour de secours.",
+    "version": "2.46.0-beta.7"
+  },
+  {
     "pr": 799,
     "date": "2026-09-13T18:11:34Z",
     "note": "La page Méthodologie dit maintenant ce que le mode « promesses de la campagne » affiche vraiment : un titre écrit par le modèle, le texte de la promesse cité tel quel en dessous, et un inverseur qui n'apparaît qu'une fois une promesse reprise en Une.",
