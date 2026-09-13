@@ -1,5 +1,11 @@
 [
   {
+    "pr": 804,
+    "date": "2026-09-13T22:37:43Z",
+    "note": "Le mode « promesses de la campagne » du Polimètre+ ne montre plus qu'un instantané par fenêtre : celui du dernier run, sans doublons, et la fenêtre de la semaine reste visible quand celle du jour avance.",
+    "version": null
+  },
+  {
     "pr": 782,
     "date": "2026-09-13T18:22:42Z",
     "note": "Les éditions de la Vitrine sont mises en ligne dès que leurs données sont prêtes, sans attendre la mise à jour de secours.",
