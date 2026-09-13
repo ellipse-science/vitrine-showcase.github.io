@@ -1,5 +1,11 @@
 [
   {
+    "pr": 802,
+    "date": "2026-09-13T17:49:16Z",
+    "note": "La mesure de fréquentation du site, sans témoin ni profil, compte de nouveau toutes les pages. Un doublon technique la faisait échouer depuis le 21 août.",
+    "version": null
+  },
+  {
     "pr": 795,
     "date": "2026-09-12T21:15:37Z",
     "note": "La documentation des pipelines et la page Méthodologie décrivent maintenant le mode « promesses de la campagne » du Polimètre+ : d'où viennent les promesses détectées, comment leur écho dans les unes est mesuré toutes les quatre heures, et ce que ce mode ne mesure pas.",
