@@ -126,3 +126,58 @@ describe("triggerDeployHooks — un hook n'en bloque pas un autre", () => {
     expect(appels).toEqual(["https://hook.test/dev"]);
   });
 });
+
+/* Le 10-09 : les builds Cloudflare lancés par les hooks se figent et meurent à
+ * ~36 min ; seuls les builds GitHub aboutissent. Avec son jeton, le Worker les
+ * lance lui-même — et n'appelle plus les hooks. */
+describe("triggerDeployHooks — avec le jeton, le Worker lance les builds GitHub", () => {
+  const appels: { url: string; init?: RequestInit }[] = [];
+  const stub = (statut: number) => {
+    appels.length = 0;
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      appels.push({ url, init });
+      return new Response(null, { status: statut });
+    });
+  };
+  const env = {
+    DEPLOY_HOOK_PROD: "https://hook.test/prod",
+    DEPLOY_HOOK_DEV: "https://hook.test/dev",
+    GITHUB_DISPATCH_TOKEN: "jeton-test",
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("lance deploy-prod sur main et deploy-dev sur develop, et plus aucun Deploy Hook", async () => {
+    stub(204);
+    await expect(triggerDeployHooks(env)).resolves.toBeUndefined();
+    const base = "https://api.github.com/repos/ellipse-science/vitrine-showcase.github.io/actions/workflows";
+    expect(appels.map((a) => a.url)).toEqual([
+      `${base}/deploy-prod.yml/dispatches`,
+      `${base}/deploy-dev-cloudflare.yml/dispatches`,
+    ]);
+    expect(appels.map((a) => JSON.parse(String(a.init?.body)).ref)).toEqual(["main", "develop"]);
+    const entetes = new Headers(appels[0].init?.headers);
+    expect(entetes.get("authorization")).toBe("Bearer jeton-test");
+    expect(entetes.get("user-agent")).toBeTruthy();
+  });
+
+  it("GitHub refuse : les deux sont tentés, puis l'échec remonte (alerte Slack)", async () => {
+    stub(401);
+    await expect(triggerDeployHooks(env)).rejects.toThrow(/prod : GitHub a répondu 401.*dev : GitHub a répondu 401/);
+    expect(appels).toHaveLength(2);
+  });
+
+  it("sans jeton, rien ne change : les Deploy Hooks, comme avant", async () => {
+    stub(200);
+    await expect(triggerDeployHooks({ ...env, GITHUB_DISPATCH_TOKEN: undefined })).resolves.toBeUndefined();
+    expect(appels.map((a) => a.url)).toEqual(["https://hook.test/prod", "https://hook.test/dev"]);
+  });
+
+  it("le refus porte le détail de GitHub (ref, permission, workflow introuvable)", async () => {
+    vi.stubGlobal("fetch", async () =>
+      new Response('{"message":"No ref found for: develop"}', { status: 422, statusText: "Unprocessable Entity" }),
+    );
+    await expect(triggerDeployHooks(env)).rejects.toThrow(/422 Unprocessable Entity — \{"message":"No ref found for: develop"\}/);
+  });
+});
+
