@@ -59,7 +59,30 @@ type Row = {
   n_mentions: number;
   salience_index: number;
   articles: string; // JSON: [{media_id, title, url}]
+  // Horodatage ISO du run qui a publié la ligne. Six runs par jour publient
+  // chacun leur instantané sous le MÊME window_end : c'est lui qui départage.
+  computed_at?: string | null;
 };
+
+// Le dernier instantané d'UNE fenêtre : les lignes du window_end le plus récent,
+// puis, parmi elles, celles du run le plus récent (computed_at). Sans ce second
+// tri, les six runs quotidiens de la saillance (append, un instantané chacun)
+// se superposaient dans l'onglet : la même promesse six fois, six « rang 1 ».
+// Dédoublonnage par promesse en filet, pour des lignes sans computed_at.
+function dernierInstantane(rows: Row[]): Row[] {
+  if (rows.length === 0) return rows;
+  const fin = rows.reduce((max, r) => (r.window_end > max ? r.window_end : max), "");
+  const duJour = rows.filter((r) => r.window_end === fin);
+  const stamp = (r: Row) => String(r.computed_at ?? "");
+  const dernier = duJour.reduce((max, r) => (stamp(r) > max ? stamp(r) : max), "");
+  const snap = dernier ? duJour.filter((r) => stamp(r) === dernier) : duJour;
+  const vus = new Set<string>();
+  return snap.filter((r) => {
+    if (vus.has(r.promesse_id)) return false;
+    vus.add(r.promesse_id);
+    return true;
+  });
+}
 
 // media_id → nom d'affichage. MÊME table que lib/data/polimetre.ts : les deux
 // modes du module citent les mêmes cinq médias, ils doivent les nommer pareil.
@@ -213,13 +236,15 @@ export async function loadPromessesNeuves(
   // Un seul instantané : le plus récent. Le raffineur republie la fenêtre
   // entière à chaque run, donc mélanger deux `window_end` compterait deux fois
   // les mêmes promesses.
-  const windowEnd = rows.reduce((max, r) => (r.window_end > max ? r.window_end : max), "");
-  const latest = rows.filter((r) => r.window_end === windowEnd);
-
+  // Chaque fenêtre garde SON dernier instantané : `day` est republiée six fois
+  // par jour, `week` peut dater d'un run antérieur — la couper au window_end de
+  // `day` la faisait disparaître dès le lendemain.
   const ranges = { day: [], week: [] } as Record<NeuveRangeKey, PromesseNeuveView[]>;
+  let windowEnd = "";
   for (const key of ["day", "week"] as NeuveRangeKey[]) {
-    ranges[key] = latest
-      .filter((r) => r.window_key === key)
+    const snap = dernierInstantane(rows.filter((r) => r.window_key === key));
+    if (snap.length > 0 && snap[0].window_end > windowEnd) windowEnd = snap[0].window_end;
+    ranges[key] = snap
       // rank_current vient du raffineur, qui a déjà tranché les ex æquo (écho
       // médiatique, puis date d'annonce). On le respecte au lieu de reclasser :
       // deux classements concurrents finiraient par diverger en silence.
