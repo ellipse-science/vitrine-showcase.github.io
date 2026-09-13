@@ -1,5 +1,11 @@
 [
   {
+    "pr": 799,
+    "date": "2026-09-13T18:11:34Z",
+    "note": "La page Méthodologie dit maintenant ce que le mode « promesses de la campagne » affiche vraiment : un titre écrit par le modèle, le texte de la promesse cité tel quel en dessous, et un inverseur qui n'apparaît qu'une fois une promesse reprise en Une.",
+    "version": null
+  },
+  {
     "pr": 802,
     "date": "2026-09-13T17:49:16Z",
     "note": "La mesure de fréquentation du site, sans témoin ni profil, compte de nouveau toutes les pages. Un doublon technique la faisait échouer depuis le 21 août.",
