@@ -1987,7 +1987,7 @@
                         '',
                         '⚙️ ÉTAGE DE SAILLANCE (mode: saillance, aws-refiners#511):',
                         '• Un bloc de 4 h de unes par run (grille Montréal 3/7/11/15/19/23), max_blocks: 2 pour rattraper un run raté',
-                        '• Préfiltre lexical (12 à 23 % des paragraphes retenus selon le nombre de candidates — 23 % à 84) puis LLM : « ce paragraphe reprend-il l\'une des promesses candidates? »',
+                        '• Préfiltre lexical (12 à 23 % des paragraphes retenus selon le nombre de candidates — 23 % à 84) puis LLM sur les 30 candidates lexicalement les plus proches du paragraphe (aws-refiners#519) : « ce paragraphe reprend-il l\'une d\'elles? »',
                         '• Écrit _hits : une ligne par (paragraphe × promesse × article × bloc) + témoins ; cache par (paragraphe × modèle × prompt), réinterrogé sur les candidates détectées après le verdict ; curseur sur bloc complet seulement',
                         '• Publie polimetre_promesses_neuves pour day (les 6 derniers blocs complets, 24 h glissantes) et week (les 42 derniers) en SOMMANT les hits, dédoublonnés par (bloc × paragraphe × promesse × url) — zéro appel LLM à la publication',
                         '',
