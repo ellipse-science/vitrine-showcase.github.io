@@ -208,8 +208,15 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_d
   "weighted_mentions" double precision,
   "total_raw_score" double precision,
   "weighted_tone" double precision,
+  "representative_url" text,
   "computed_at" text
 );
+-- `representative_url` ajoutée le 2026-09-11 (aws-refiners#447). CREATE TABLE IF
+-- NOT EXISTS ne touche pas une table existante, d'où l'ALTER, idempotent comme le
+-- reste du fichier. À appliquer à Neon AVANT de redéployer le Worker : sinon
+-- recordDefinition (workers/api/src/sync.ts) lève « colonnes absentes du schéma »
+-- et la table cesse de se synchroniser.
+ALTER TABLE vitrine."provincial_parties_salient_shadow_by_media_day" ADD COLUMN IF NOT EXISTS "representative_url" text;
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("date_utc");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_day_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_day" ("date_montreal_tz");
@@ -224,8 +231,11 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_w
   "weighted_mentions" double precision,
   "total_raw_score" double precision,
   "weighted_tone" double precision,
+  "representative_url" text,
   "computed_at" text
 );
+-- Même ajout que by_media_day, même raison.
+ALTER TABLE vitrine."provincial_parties_salient_shadow_by_media_week" ADD COLUMN IF NOT EXISTS "representative_url" text;
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("date_utc");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_week_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_week" ("date_montreal_tz");
@@ -240,8 +250,11 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_by_media_m
   "weighted_mentions" double precision,
   "total_raw_score" double precision,
   "weighted_tone" double precision,
+  "representative_url" text,
   "computed_at" text
 );
+-- Même ajout que by_media_day, même raison.
+ALTER TABLE vitrine."provincial_parties_salient_shadow_by_media_month" ADD COLUMN IF NOT EXISTS "representative_url" text;
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_party_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("date_utc");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_by_media_month_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_by_media_month" ("date_montreal_tz");

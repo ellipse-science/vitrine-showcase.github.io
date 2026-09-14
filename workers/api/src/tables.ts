@@ -138,6 +138,7 @@ export const TABLES: TableSpec[] = [
       "weighted_mentions",
       "total_raw_score",
       "weighted_tone",
+      "representative_url",
       "computed_at"
     ],
     "filter": null
@@ -153,6 +154,7 @@ export const TABLES: TableSpec[] = [
       "weighted_mentions",
       "total_raw_score",
       "weighted_tone",
+      "representative_url",
       "computed_at"
     ],
     "filter": null
@@ -168,6 +170,7 @@ export const TABLES: TableSpec[] = [
       "weighted_mentions",
       "total_raw_score",
       "weighted_tone",
+      "representative_url",
       "computed_at"
     ],
     "filter": null
