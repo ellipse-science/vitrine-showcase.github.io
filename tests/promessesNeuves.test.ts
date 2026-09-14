@@ -161,6 +161,38 @@ describe("chargeur des promesses neuves", () => {
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-neuf"]);
   });
 
+  it("six runs par jour : ne garde que le dernier instantané de `day` (computed_at)", async () => {
+    // La saillance republie `day` à chaque run (append). Sans départage par
+    // computed_at, la même promesse revenait une fois par run, avec six « rang 1 ».
+    const d = await charger([
+      ligne({ promesse_id: "pn-matin", rank_current: 1, computed_at: "2026-09-03T11:51:00Z" }),
+      ligne({ promesse_id: "pn-matin", rank_current: 2, computed_at: "2026-09-03T15:51:00Z" }),
+      ligne({ promesse_id: "pn-midi", rank_current: 1, computed_at: "2026-09-03T15:51:00Z" }),
+      ligne({ promesse_id: "pn-tot", rank_current: 1, computed_at: "2026-09-03T07:51:00Z" }),
+    ]);
+    expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-midi", "pn-matin"]);
+  });
+
+  it("`week` garde son propre dernier instantané, même antérieur à celui de `day`", async () => {
+    // Un balayage `week` publié le 3 doit rester visible quand `day` avance au 4.
+    const d = await charger([
+      ligne({ window_key: "day", window_end: "2026-09-04", promesse_id: "pn-jour", computed_at: "2026-09-04T07:51:00Z" }),
+      ligne({ window_key: "week", window_end: "2026-09-03", promesse_id: "pn-semaine", computed_at: "2026-09-03T20:00:00Z" }),
+    ]);
+    expect(d!.windowEnd).toBe("2026-09-04");
+    expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-jour"]);
+    expect(d!.ranges.week.map((p) => p.promesseId)).toEqual(["pn-semaine"]);
+  });
+
+  it("sans computed_at : dédoublonne par promesse, en filet", async () => {
+    const d = await charger([
+      ligne({ promesse_id: "pn-double", rank_current: 1 }),
+      ligne({ promesse_id: "pn-double", rank_current: 3 }),
+      ligne({ promesse_id: "pn-autre", rank_current: 2 }),
+    ]);
+    expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-double", "pn-autre"]);
+  });
+
   it("respecte la coupe d'édition passée (asOfIso)", async () => {
     const d = await charger(
       [
