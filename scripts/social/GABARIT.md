@@ -83,12 +83,36 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
 5. **Couverture.** « 6/6 » en grand, « des médias québécois en parlent », liste des six
    médias du panel avec « ✓ En Une » (ou grisé, « Pas en Une ») ; « En Une depuis … ».
    ARRÊTÉ.
-6. **Course.** Titre explicite (« La première Une face à la deuxième ») ; légende
-   affichée AVANT le tracé (pastille pictogramme, « Une n°1 · enjeu », titre) ; courbes
-   aux couleurs des enjeux ; pastille pictogramme + valeur au bout de chaque courbe ;
-   axe avec pictogrammes des moments. Même enjeu pour deux Unes : seconde courbe en
-   pointillé. ARRÊTÉ.
-7. **Fin.** Fleur de lys, « Ce qui domine l'actualité du Québec »,
+6. **Classement (remplace « Course »).** Demande d'Adrien, 2026-09-16 : montrer
+   **les cinq nouvelles les plus saillantes de la journée et leur évolution**, plutôt
+   que la première Une face à la deuxième. Titre « Les cinq nouvelles les plus
+   saillantes » ; légende affichée AVANT le tracé (pastille pictogramme, « N°1 ·
+   enjeu » en mono, titre sur deux lignes au plus, échantillon du trait) ; courbes aux
+   couleurs des enjeux ; pastille + valeur **dans une gouttière à droite du dernier
+   point** ; axe avec pictogrammes des moments. Même enjeu pour deux nouvelles :
+   tirets, puis pointillé pour la troisième. ARRÊTÉ.
+   - ⚠️ Le rang vient du **classement PUR** de l'indice (`rankTopUnes`, lu par
+     `loadHeadlineEvents(cle, { classement: 5 })`), pas de la sélection du module :
+     la page n'affiche que les Unes qui valent au moins la moitié du meneur (#430,
+     B6) et en montre souvent deux. Montrer cinq nouvelles classées n'est donc pas
+     affirmer que le module en afficherait cinq — d'où « nouvelles », jamais
+     « Unes », dans le titre de la scène.
+7. **Pendant ce temps, au Canada… (module 2).** Demande d'Adrien, 2026-09-16. Le
+   radar des Deux solitudes : balayage qui fait deux tours, puis les deux polygones
+   qui éclosent depuis le centre (rouge Canada anglais, bleu Québec), pastille
+   pictogramme au bout de chaque axe dans la couleur du camp qui le mène ; sous le
+   radar, le chiffre de **convergence** et son niveau, puis la phrase éditoriale du
+   site. ARRÊTÉ.
+   - Le module ne chiffre QUE la convergence : `divPct` existe pour l'axe, il n'a
+     aucun libellé public. Ne jamais écrire « X % de divergence ».
+   - Deux anneaux (50 %, 100 %), pas quatre : quatre hexagones emboîtés se lisent
+     comme un cube en perspective.
+8. **Ce que le Québec en a retenu.** Les nouvelles du Canada anglais, les plus
+   couvertes là-bas d'abord, chacune avec **deux barres** — part de l'attention des
+   Unes canadiennes, part de l'attention des Unes québécoises — et son niveau de
+   saillance. L'écart entre les deux barres EST la divergence : montrée, pas
+   énoncée. ARRÊTÉ.
+9. **Fin.** Fleur de lys, « Ce qui domine l'actualité du Québec »,
    vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
@@ -106,6 +130,12 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - « Illustration générée par IA · Anorak Studio » ; crédit en petites capitales mono
   posé sur l'image (trop visible).
 - Éléments pleine page qui débordent de l'encadré.
+- Valeurs de fin posées à GAUCHE du dernier point : la courbe n°1, qui redescend,
+  passait au travers de son propre chiffre. Elles vont dans une gouttière à droite.
+- Radar à quatre anneaux : l'emboîtement se lit comme un cube isométrique.
+- Pictogramme d'enjeu posé DANS le `<svg>` du radar : le composant du site rend un
+  `<svg>` complet, qui ne s'affiche pas imbriqué. Les pastilles sont en HTML, par
+  ‑dessus le graphique.
 
 ## 3. Points ouverts
 
@@ -116,4 +146,8 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
   l'aperçu (bouton « Zones Instagram »), pas encore imposées au gabarit.
 - **Les six autres reels** (Deux solitudes, 12 enjeux, Partis et couverture,
   Polimètre+, Assemblée nationale, global) : reprennent toutes les règles de la
-  section 1.
+  section 1. ⚠️ Le reel « Deux solitudes » devra tenir compte des scènes 7 et 8
+  ci-dessus, qui en montrent déjà le radar et les nouvelles canadiennes.
+- **Durée.** Le reel passe de ~46 s à ~75 s avec les scènes 6 à 8. À valider :
+  Instagram accepte 90 s, mais la rétention chute. Si on coupe, couper la scène 4
+  (centile) avant les nouvelles.
