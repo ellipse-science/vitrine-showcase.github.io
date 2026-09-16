@@ -33,7 +33,7 @@ import {
 const HASHTAGS = ["#polqc", "#QC2026", "#VitrineDémocratique"];
 
 /** Crédit de l'illustration de la Une. */
-const ART_CREDIT = "Sous la direction de Mathieu Fortin";
+const ART_CREDIT = "Image générée sous la direction de Mathieu Fortin";
 
 // ── Illustration ────────────────────────────────────────────────────────────
 // Même garde que le module (UneDesUnesSection) : `latest.png` est écrasée à
@@ -114,7 +114,8 @@ const CSS = `
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:30px;width:1020px;height:1060px;display:flex;align-items:center;justify-content:center}
 #une .rank{position:absolute;top:230px;left:76px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:1040px;left:76px;right:76px;text-align:right;font-size:18px;color:var(--soft);letter-spacing:.08em}
+#une .credit{position:absolute;top:1046px;right:76px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:21px;color:var(--softer);opacity:.85}
+#une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
 #une .body{position:absolute;left:76px;right:76px;top:1100px}
 #une .tag{display:inline-block;color:var(--paper);font-size:26px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
@@ -229,7 +230,7 @@ function sceneAccroche(edition: EditionRef, top: UneEvent): Scene {
 function sceneUne(top: UneEvent, art: string | null): Scene {
   const visual = art
     ? `<div class="art" ${anim("fadeIn", .6, .1)}><img id="art" src="${art}"></div>
-       <div class="credit mono" ${anim("fadeIn", .5, .8)}>${txt(ART_CREDIT)}</div>`
+       <div class="credit" ${anim("fadeIn", .8, 1.4)}>${txt(ART_CREDIT)}</div>`
     : `<div class="noart" style="background:${top.issueColor};animation:fadeIn .6s .1s both">${fleur(COLORS.paper, 320)}</div>`;
   // Les bandes 1 à 3 sont trop pâles pour un texte sur papier : encre.
   const salColor = top.saillanceRank >= 4 ? bandOf(top.saillanceRank).bg : COLORS.ink;
