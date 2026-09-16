@@ -56,6 +56,7 @@ import {
   ageH,
   storiesFrom24h,
   selectTopUnes,
+  rankTopUnes,
   selectHeroFromRawEvents,
   MIN_PART_DU_MENEUR,
 } from "@/lib/data/heroSelectionCore";
@@ -1700,6 +1701,13 @@ export type HeadlineData = {
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
   top3: UneEvent[];
+  /** Classement PUR des N nouvelles les plus saillantes de la fenêtre 24 h,
+   *  rempli UNIQUEMENT si l'appelant le demande (`loadHeadlineEvents(cle,
+   *  { classement: 5 })`) — aujourd'hui les reels de `scripts/social`. Il
+   *  ignore la règle de domination (#430, B6) qui décide de `top3` : c'est un
+   *  classement, pas ce que le module afficherait. Le site n'en demande pas et
+   *  ne paie donc ni le calcul ni la charge utile. */
+  classement?: UneEvent[];
   solitudes: SolitudeData;
   treemapTier1: TreemapTile[];
   treemapTier2: TreemapTile[];
@@ -1814,7 +1822,7 @@ export const listEditions = cache(async (): Promise<EditionRef[]> => {
 // édition passée l'écho de son avenir.
 //
 // Sans argument, le comportement est strictement inchangé (édition courante).
-export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { classement?: number }): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await readDatasetText("public/data/headline-events.json");
@@ -1941,7 +1949,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const totalUs = echoesUs.reduce((acc, u) => acc + u.scoreUs, 0);
   const totalRoc = stories.reduce((acc, s) => acc + s.sumRoc, 0);
 
-  const top3: UneEvent[] = qcStories.map((s) => {
+  const toUneEvent = (s: Story): UneEvent => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
     // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
     // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
@@ -2069,7 +2077,13 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       resonanceCan: canResonance(s, totalRoc),
       resonanceUs: usResonance(s, echoesUs, totalUs),
     };
-  });
+  };
+
+  const top3: UneEvent[] = qcStories.map(toUneEvent);
+  // Classement pur, à la demande seulement (cf. HeadlineData.classement).
+  const classement = opts?.classement
+    ? rankTopUnes(stories, opts.classement).map(toUneEvent)
+    : undefined;
 
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
@@ -2133,7 +2147,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, ...(classement ? { classement } : {}), solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 });
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);

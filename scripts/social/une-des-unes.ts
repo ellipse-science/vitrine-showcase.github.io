@@ -21,7 +21,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
+import {
+  listEditions, loadHeadlineEvents,
+  type EditionRef, type SolitudeAxis, type SolitudeData, type UneEvent,
+} from "@/lib/data/headlineEvents";
+import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS } from "@/lib/enjeux";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
@@ -176,22 +180,63 @@ const CSS = `
 #couverture li.off span{color:var(--rule)}
 #couverture .since{position:absolute;left:76px;right:76px;top:1620px;font-size:42px;font-style:italic;color:var(--soft)}
 
-/* 6. Course */
-#course .head{position:absolute;top:200px;left:76px;right:76px}
-#course h3{font-size:76px;line-height:1.02;margin-top:14px}
-#course .leg{position:absolute;left:76px;right:76px;top:450px}
-#course .item{display:flex;gap:24px;align-items:center;padding:18px 0;border-top:2px solid var(--rule)}
-#course .badge{flex:none;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#course .item .k{font-size:20px;letter-spacing:.14em}
-#course .item .t{font-size:34px;line-height:1.12;margin-top:4px}
-#course .chart{position:absolute;left:60px;right:60px;top:830px;height:740px}
-#course .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
-#course .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
-#course .end .badge{width:62px;height:62px}
-#course .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
-#course .xl{position:absolute;top:700px;text-align:center;color:var(--soft)}
-#course .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;margin-top:4px;color:var(--ink)}
-#course .note{position:absolute;left:76px;right:76px;top:1720px;font-size:20px;color:var(--softer)}
+/* 6. Classement */
+#classement .head{position:absolute;top:186px;left:76px;right:76px}
+#classement h3{font-size:72px;line-height:1.02;margin-top:14px}
+#classement .leg{position:absolute;left:76px;right:76px;top:392px}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
+#classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
+#classement .item .txt{min-width:0}
+#classement .item .k{font-size:19px;letter-spacing:.12em;display:flex;align-items:center;gap:12px}
+#classement .item .k i{flex:none;display:block;width:46px;height:6px}
+#classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#classement .chart{position:absolute;left:60px;right:60px;top:950px;height:640px}
+#classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+#classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
+#classement .end .badge{width:54px;height:54px}
+#classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
+#classement .xl{position:absolute;top:600px;text-align:center;color:var(--soft)}
+#classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;margin-top:4px;color:var(--ink)}
+#classement .note{position:absolute;left:76px;right:76px;top:1720px;font-size:20px;color:var(--softer)}
+
+/* 6b. Pendant ce temps, au Canada — le radar */
+#radar .head{position:absolute;top:150px;left:76px;right:76px}
+#radar h3{font-size:74px;line-height:1;margin-top:12px}
+#radar .chart{position:absolute;left:60px;right:60px;top:380px;height:960px}
+#radar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
+#radar .keys{position:absolute;left:76px;right:76px;top:1398px;display:flex;gap:56px;font-size:30px}
+#radar .keys div{display:flex;align-items:center;gap:14px}
+#radar .keys i{display:block;width:44px;height:8px}
+#radar .vx{position:absolute;width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
+#radar .conv{position:absolute;left:76px;right:76px;top:1470px;border-top:3px solid var(--ink);padding-top:20px;display:flex;align-items:center;gap:24px}
+#radar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:100px;line-height:.86}
+#radar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.25}
+#radar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:24px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+#radar .edito{position:absolute;left:76px;right:76px;top:1636px;font-size:34px;line-height:1.2;font-style:italic;color:var(--soft)}
+#radar .note{position:absolute;left:76px;right:76px;top:1342px;font-size:20px;color:var(--softer)}
+@keyframes vanish{to{opacity:0}}
+@keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(720deg)}}
+@keyframes bloom{from{transform:scale(.04);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* 6c. Ce que le Québec en a retenu */
+#echo .head{position:absolute;top:170px;left:76px;right:76px}
+#echo h3{font-size:70px;line-height:1.02;margin-top:12px}
+/* La liste occupe toute la hauteur utile : deux nouvelles ou quatre, pas de
+   grand vide en bas (GABARIT, « remplir l'espace du cadre »). */
+#echo .list{position:absolute;left:76px;right:76px;top:410px;height:1230px;display:flex;flex-direction:column;justify-content:space-around}
+#echo .row{padding:18px 0;border-top:2px solid var(--rule)}
+#echo .top{display:flex;gap:18px;align-items:flex-start}
+#echo .badge{flex:none;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
+#echo .top .txt{min-width:0}
+#echo .top .k{font-size:18px;letter-spacing:.12em}
+#echo .top .t{font-size:30px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#echo .bars{margin:14px 0 0 76px;display:flex;flex-direction:column;gap:9px}
+#echo .bar{display:flex;align-items:center;gap:14px;font-size:22px}
+#echo .bar em{font-style:normal;width:112px;flex:none;color:var(--soft)}
+#echo .bar i{display:block;height:20px;transform-origin:left}
+#echo .bar b{font-family:"IBM Plex Mono",monospace;font-size:26px}
+#echo .chip{display:inline-block;font-size:20px;padding:7px 14px;margin-left:16px;vertical-align:middle}
+#echo .note{position:absolute;left:76px;right:76px;top:1700px;font-size:20px;color:var(--softer)}
 
 /* 7. Fin */
 #fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:330px}
@@ -377,68 +422,219 @@ function sceneCouverture(top: UneEvent): Scene | null {
   };
 }
 
-// Les Unes du moment sur le même axe. Chaque Une porte la couleur et le
-// pictogramme de son enjeu, comme partout sur le site : la légende les
-// présente avant que les courbes ne se tracent, et le pictogramme est répété
-// au bout de chaque courbe. Deux Unes du même enjeu : la seconde en pointillé.
-const DRAW0 = 1.8, DRAW = 3.2;
+// Le classement du moment sur le même axe : les cinq nouvelles les plus
+// saillantes des 24 dernières heures et leur évolution d'une édition à
+// l'autre. Le rang vient du classement PUR de l'indice (`classement` du
+// loader), pas de la règle d'affichage du module — le module, lui, n'expose
+// que les Unes qui valent au moins la moitié du meneur (#430, B6). Chaque
+// nouvelle porte la couleur et le pictogramme de son enjeu, présentés dans la
+// légende AVANT que les courbes ne se tracent ; deux nouvelles du même enjeu
+// partagent la couleur, alors la seconde passe en tirets et la troisième en
+// pointillé.
+const DRAW = 3.2;
+const drawStart = (n: number) => 0.9 + n * 0.32;
+const DASHES = ["", ".022 .016", ".006 .014"];
+/** Le même trait, côté légende (CSS) : plein, tirets, pointillé. */
+const DASH_CSS = ["solid", "dashed", "dotted"];
+const NOMBRES = ["", "une", "deux", "trois", "quatre", "cinq"];
 
-function sceneCourse(top3: UneEvent[], edition: EditionRef): Scene | null {
-  const stories = top3.filter((e) => e.salienceTrend && e.salienceTrend.points.length >= 2);
-  if (stories.length < 2) return null;
-  const ref = stories[0].salienceTrend!.points;
+function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: Scene; draw0: number } | null {
+  // Toutes les courbes se lisent sur le MÊME axe : on écarte une nouvelle dont
+  // la série n'a pas les mêmes blocs que le meneur plutôt que de la décaler.
+  const lead = classement.find((e) => (e.salienceTrend?.points.length ?? 0) >= 2);
+  if (!lead) return null;
+  const ref = lead.salienceTrend!.points;
   const n = ref.length;
+  const stories = classement.filter((e) => e.salienceTrend?.points.length === n);
+  if (stories.length < 2) return null;
+
+  const DRAW0 = drawStart(stories.length);
   const max = Math.max(1, ...stories.flatMap((e) => e.salienceTrend!.points.map((p) => p.cumul)));
-  const PAD = 70, BASE = 680, H = 560;
-  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - 2 * PAD);
+  // Gouttière à droite : les valeurs se posent APRÈS le dernier point, jamais
+  // par-dessus une courbe qui descend (la n°1 croisait son propre chiffre).
+  const PAD = 76, GUT = 196, BASE = 580, H = 520, CHART_H = 640;
+  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - PAD - GUT);
   const y = (v: number) => BASE - (v / max) * H;
-  const seen = new Set<string | null>();
-  const dashed = stories.map((e) => { const d = seen.has(e.issueKey); seen.add(e.issueKey); return d; });
+  // Même enjeu, même couleur : le trait change pour qu'on distingue les courbes.
+  const seen = new Map<string | null, number>();
+  const rangEnjeu = stories.map((e) => {
+    const k = seen.get(e.issueKey) ?? 0;
+    seen.set(e.issueKey, k + 1);
+    return Math.min(k, DASHES.length - 1);
+  });
+  const dash = rangEnjeu.map((k) => DASHES[k]);
   const badge = (e: UneEvent, size: number) =>
     `<div class="badge" style="background:${e.issueColor}">${enjeuGlyph(e.issueKey, COLORS.paper, size)}</div>`;
 
   const lines = stories.map((e, k) => {
     const pts = e.salienceTrend!.points;
-    return `<polyline class="c-line" points="${pts.map((p, i) => `${x(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none" stroke="${e.issueColor}" stroke-width="${k === 0 ? 10 : 8}" stroke-dasharray="1" stroke-dashoffset="1" stroke-linejoin="round" stroke-linecap="round"${dashed[k] ? ' data-dashed="1"' : ""}/>`;
+    return `<polyline class="c-line" points="${pts.map((p, i) => `${x(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none" stroke="${e.issueColor}" stroke-width="${k === 0 ? 10 : 7}" stroke-dasharray="1" stroke-dashoffset="1" stroke-linejoin="round" stroke-linecap="round"${dash[k] ? ` data-dash="${dash[k]}"` : ""}/>`;
   }).join("");
 
-  // Pastille et valeur au bout de chaque courbe, à gauche du point ; sous le
-  // point si la courbe descend (elle arrive d'en haut), au-dessus sinon.
+  // Pastille et valeur au bout de chaque courbe, à gauche du point d'arrivée.
+  // Les fins se tassent (trois nouvelles à 6 points arrivent au même endroit) :
+  // on les écarte d'au moins GAP, puis on ramène toute la colonne dans le
+  // graphique — l'ordre vertical reste celui des valeurs.
+  const GAP = 66;
   const ends = stories.map((e, k) => {
     const pts = e.salienceTrend!.points;
     const last = pts[pts.length - 1].cumul, prev = pts[pts.length - 2].cumul;
-    return { e, k, v: last, top: y(last) + (prev > last ? 10 : -72) };
+    return { e, k, v: last, top: y(last) + (prev > last ? 8 : -62) };
   }).sort((a, b) => a.top - b.top);
-  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + 72);
+  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + GAP);
+  const debord = ends.length ? ends[ends.length - 1].top + 62 - (CHART_H - 70) : 0;
+  if (debord > 0) for (const l of ends) l.top -= debord;
+  for (const l of ends) l.top = Math.max(0, l.top);
   const endLabels = ends.map((l) =>
-    `<div class="end" style="right:${CHART_W - x(n - 1) - 31}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both"><b style="color:${l.e.issueColor}">${frNum(l.v)}</b>${badge(l.e, 36)}</div>`).join("");
+    `<div class="end" style="left:${x(n - 1) + 16}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both">${badge(l.e, 32)}<b style="color:${l.e.issueColor}">${frNum(l.v)}</b></div>`).join("");
 
-  const colW = (CHART_W - 2 * PAD) / (n - 1);
+  const colW = (CHART_W - PAD - GUT) / (n - 1);
   const axis = ref.map((p, i) => {
     const h = publicationHour(p.blockUtc) ?? 0;
     return `<div class="xl" style="left:${x(i) - colW / 2}px;width:${colW}px;animation:fadeIn .3s ${DRAW0 + (i / (n - 1)) * DRAW}s both"><div style="display:flex;justify-content:center">${celestial(h, i === n - 1 ? COLORS.blue : COLORS.soft, 42)}</div><b>${h}h</b></div>`;
   }).join("");
 
+  // « N°3 » en mono : le signe numéro flotte en Playfair (GABARIT, typographie).
   const legend = stories.map((e, k) =>
-    `<div class="item" ${anim("fadeUp", .5, .5 + k * .35)}>${badge(e, 50)}<div><div class="k mono" style="color:${e.issueColor}">Une n°${k + 1} · ${txt(e.issueFr)}</div><div class="t pf">${txt(e.title)}</div></div></div>`).join("");
+    `<div class="item" ${anim("fadeUp", .5, .4 + k * .3)}>${badge(e, 38)}<div class="txt"><div class="k mono" style="color:${e.issueColor}"><i style="border-top:6px ${DASH_CSS[rangEnjeu[k]]} ${e.issueColor}"></i>N°${k + 1} · ${txt(e.issueFr)}</div><div class="t pf">${txt(e.title)}</div></div></div>`).join("");
 
-  const title = stories.length === 2 ? "La première Une face à la deuxième" : `Les ${stories.length} Unes de ${pubHourLabel(edition)}, côte à côte`;
-  return {
-    id: "course", duration: DRAW0 + DRAW + 3,
+  const title = stories.length === 2
+    ? "La première Une face à la deuxième"
+    : `Les ${NOMBRES[stories.length] ?? stories.length} nouvelles les plus saillantes`;
+  const scene: Scene = {
+    id: "classement", duration: DRAW0 + DRAW + 3,
     html: `
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Les Unes de ${pubHourLabel(edition)} · 24 dernières heures</div>
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Édition de ${pubHourLabel(edition)} · 24 dernières heures</div>
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
       <div class="leg">${legend}</div>
       <div class="chart">
-        <svg viewBox="0 0 ${CHART_W} 740" preserveAspectRatio="none">
+        <svg viewBox="0 0 ${CHART_W} ${CHART_H}" preserveAspectRatio="none">
           <line x1="0" x2="${CHART_W}" y1="${BASE}" y2="${BASE}" stroke="${COLORS.ink}" stroke-width="3"/>
           ${lines}
         </svg>
         ${endLabels}${axis}
       </div>
-      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée, en points</div>`,
+      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée sur 24 heures, en points, à chacune des six éditions du jour</div>`,
+  };
+  return { scene, draw0: DRAW0 };
+}
+
+// ── Pendant ce temps, au Canada ─────────────────────────────────────────────
+// Le module 2 (Deux solitudes) en deux scènes : le radar qui tourne, puis ce
+// que le Québec a retenu des nouvelles du Canada anglais. Tout vient de
+// `solitudes` : mêmes axes, mêmes parts d'attention, mêmes niveaux de
+// saillance que la page — y compris le chiffre de CONVERGENCE, le seul que le
+// module énonce publiquement (la divergence n'a pas de libellé public).
+const RANK_BY_CLS: Record<string, number> = {
+  "s-tres-faible": 1, "s-faible": 2, "s-moyenne": 3,
+  "s-eleve": 4, "s-tres-eleve": 5, "s-extreme": 6,
+};
+const SPIN = 2.2;
+
+function sceneRadar(sol: SolitudeData): Scene | null {
+  const axes = sol.axes;
+  if (axes.length < 3) return null;
+  const CX = 480, CY = 470, R = 330, n = axes.length;
+  const at = (i: number, f: number) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    return [CX + R * f * Math.cos(a), CY + R * f * Math.sin(a)] as const;
+  };
+  const poly = (f: number) => axes.map((_, i) => at(i, f).join(",")).join(" ");
+  const shape = (pick: (a: SolitudeAxis) => number) =>
+    axes.map((a, i) => at(i, Math.min(100, pick(a)) / 100).join(",")).join(" ");
+  // Deux anneaux seulement : quatre hexagones emboîtés se lisent comme un cube.
+  const rings = [.5, 1].map((f) =>
+    `<polygon points="${poly(f)}" fill="none" stroke="${COLORS.rule}" stroke-width="${f === 1 ? 3 : 2}" ${f === 1 ? "" : 'stroke-dasharray="8 10"'}/>`).join("");
+  const spokes = axes.map((_, i) => {
+    const [px, py] = at(i, 1);
+    return `<line x1="${CX}" y1="${CY}" x2="${px}" y2="${py}" stroke="${COLORS.rule}" stroke-width="1.5" opacity=".7"/>`;
+  }).join("");
+  // Au bout de chaque axe, le pictogramme de l'enjeu, dans la couleur du camp
+  // qui mène cet axe : on voit d'un coup quels sujets sont tirés par le Canada.
+  // Pastilles en HTML par-dessus le graphique — le pictogramme du site est un
+  // <svg> complet, qui ne se rend pas imbriqué dans un autre <svg>.
+  const vertices = axes.map((a, i) => {
+    const [px, py] = at(i, 1.14);
+    const col = a.side === "qc" ? COLORS.blue : COLORS.red;
+    return `<div class="vx" style="left:${px - 36}px;top:${py - 36}px;background:${col};animation:pop .4s ${SPIN + .3 + i * .1}s both">${enjeuGlyph(a.issueKey, COLORS.paper, 40)}</div>`;
+  }).join("");
+  // Balayage : un secteur qui tourne, comme un vrai radar.
+  const wedge = (() => {
+    const a0 = -Math.PI / 2, a1 = a0 + Math.PI / 7;
+    const p = (a: number) => `${CX + R * 1.02 * Math.cos(a)},${CY + R * 1.02 * Math.sin(a)}`;
+    return `<path d="M${CX},${CY} L${p(a0)} A${R * 1.02},${R * 1.02} 0 0 1 ${p(a1)} Z" fill="${COLORS.blue}" opacity=".13"/>`;
+  })();
+  const layer = (pts: string, col: string, fill: string, delay: number) =>
+    `<g style="transform-box:view-box;transform-origin:${CX}px ${CY}px;animation:bloom .7s ${delay}s both"><polygon points="${pts}" fill="${fill}" stroke="${col}" stroke-width="6" stroke-linejoin="round"/></g>`;
+  return {
+    id: "radar", duration: SPIN + 4.6,
+    html: `
+      <div class="head">
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Deux solitudes · 24 dernières heures</div>
+        <h3 class="disp" ${anim("fadeUp", .6, .2)}>Pendant ce temps, au&nbsp;Canada…</h3>
+      </div>
+      <div class="chart">
+        <svg viewBox="0 0 960 960">
+          <g ${anim("fadeIn", .5, .5)}>${rings}${spokes}</g>
+          <g style="transform-box:view-box;transform-origin:${CX}px ${CY}px;animation:sweep ${SPIN}s .4s linear both,vanish .4s ${SPIN + .4}s both">
+            ${wedge}
+            <line x1="${CX}" y1="${CY}" x2="${CX}" y2="${CY - R * 1.02}" stroke="${COLORS.blue}" stroke-width="4" opacity=".8"/>
+          </g>
+          ${layer(shape((a) => a.canRadial), COLORS.red, "rgba(168,48,44,.17)", SPIN + .2)}
+          ${layer(shape((a) => a.qcRadial), COLORS.blue, "rgba(34,79,125,.20)", SPIN + .6)}
+        </svg>
+        ${vertices}
+      </div>
+      <div class="note mono" ${anim("fadeIn", .5, SPIN + .8)}>Part de l’attention de chaque région, sur les six sujets les plus couverts de part et d’autre</div>
+      <div class="keys">
+        <div ${anim("fadeIn", .4, SPIN + .9)}><i style="background:${COLORS.red}"></i>🍁 Canada anglais</div>
+        <div ${anim("fadeIn", .4, SPIN + 1.1)}><i style="background:${COLORS.blue}"></i>${fleur(COLORS.blue, 26)} Québec</div>
+      </div>
+      <div class="conv" ${anim("fadeUp", .6, SPIN + 1.4)}>
+        <b style="color:${COLORS.blue}">${sol.convPct}&nbsp;%</b>
+        <span>de convergence<br><u>${txt(sol.modeWord)}</u></span>
+      </div>
+      <div class="edito pf" ${anim("fadeUp", .6, SPIN + 1.9)}>${txt(sol.edito)}</div>`,
+  };
+}
+
+function sceneEcho(sol: SolitudeData): Scene | null {
+  // Les nouvelles du Canada anglais, les plus couvertes là-bas d'abord ; en
+  // face, la part d'attention que le Québec leur a donnée. L'écart entre les
+  // deux barres EST la divergence, montrée plutôt qu'énoncée.
+  const rows = [...sol.axes].filter((a) => a.canShare > 0).sort((a, b) => b.canShare - a.canShare).slice(0, 4);
+  if (rows.length < 2) return null;
+  const maxShare = Math.max(...rows.flatMap((a) => [a.canShare, a.qcShare]), 1);
+  const w = (v: number) => Math.max(v > 0 ? 8 : 0, (v / maxShare) * 560);
+  // Les axes du radar portent la clé d'enjeu, pas sa couleur (le site la tire
+  // de la même table) : on la prend à la source, jamais une seconde palette.
+  const couleur = (a: SolitudeAxis) => (a.issueKey ? ISSUE_COLORS[a.issueKey] ?? COULEUR_ENJEU_DEFAUT : COULEUR_ENJEU_DEFAUT);
+  const items = rows.map((a, k) => {
+    const d = .5 + k * .55;
+    const rank = a.salienceCls ? RANK_BY_CLS[a.salienceCls] : undefined;
+    const band = rank ? bandOf(rank) : null;
+    const chip = a.salienceLabel && band
+      ? `<span class="chip mono" style="background:${band.bg};color:${band.fg}">${txt(a.salienceLabel)}</span>` : "";
+    const bar = (lab: string, v: number, col: string, delay: number) =>
+      `<div class="bar"><em class="mono">${lab}</em><i style="width:${w(v)}px;background:${col};animation:grow .5s ${delay}s both"></i><b style="color:${col}">${v}&nbsp;%</b></div>`;
+    return `<div class="row" ${anim("fadeUp", .5, d)}>
+      <div class="top"><div class="badge" style="background:${couleur(a)}">${enjeuGlyph(a.issueKey, COLORS.paper, 34)}</div>
+      <div class="txt"><div class="k mono" style="color:${couleur(a)}">${txt(a.eyebrow ?? "Actualité")}${chip}</div>
+      <div class="t pf">${txt(a.label)}</div></div></div>
+      <div class="bars">${bar("Canada", a.canShare, COLORS.red, d + .25)}${bar("Québec", a.qcShare, COLORS.blue, d + .4)}</div>
+    </div>`;
+  }).join("");
+  return {
+    id: "echo", duration: 1.5 + rows.length * 1.5,
+    html: `
+      <div class="head">
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Ce que le Québec en a retenu</div>
+        <h3 class="disp" ${anim("fadeUp", .6, .2)}>Les nouvelles du Canada anglais, vues d’ici</h3>
+      </div>
+      <div class="list">${items}</div>
+      <div class="note mono" ${anim("fadeIn", .5, 1)}>Part de l’attention des Unes de chaque région, sur 24 heures</div>`,
   };
 }
 
@@ -458,7 +654,7 @@ function sceneFin(edition: EditionRef): Scene {
 }
 
 // Effets pilotés par le temps : compteurs, étiquette de niveau, tracés.
-function script(traj: unknown): string {
+function script(traj: unknown, draw0: number): string {
   return `
 const TRAJ=${JSON.stringify(traj)};
 const ease=k=>1-Math.pow(1-k,3);
@@ -481,10 +677,12 @@ window.onSceneTime=function(id,t,len){
     const sc=document.getElementById("c-scale"),lit=Math.round(+sc.dataset.c*k);
     sc.querySelectorAll("i").forEach(el=>{const on=+el.dataset.i<lit;el.className=on?"on":"";el.style.background=on?sc.dataset.color:""});
   }
-  if(id==="course"){
-    const k=ease(clamp((t-${DRAW0})/${DRAW}));
-    document.querySelectorAll("#course .c-line").forEach(l=>{
-      if(l.dataset.dashed&&k>=1){l.setAttribute("stroke-dasharray",".02 .015");l.style.strokeDashoffset="0";}
+  if(id==="classement"){
+    const k=ease(clamp((t-${draw0})/${DRAW}));
+    document.querySelectorAll("#classement .c-line").forEach(l=>{
+      // Le trait plein sert à TRACER la courbe (dasharray 1 + offset) ; le motif
+      // des enjeux répétés ne se pose qu'une fois le tracé terminé.
+      if(l.dataset.dash&&k>=1){l.setAttribute("stroke-dasharray",l.dataset.dash);l.style.strokeDashoffset="0";}
       else l.style.strokeDashoffset=String(1-k);
     });
   }
@@ -492,8 +690,8 @@ window.onSceneTime=function(id,t,len){
 }
 
 // ── Légende Instagram ───────────────────────────────────────────────────────
-function caption(edition: EditionRef, top3: UneEvent[]): string {
-  const [top, ...others] = top3;
+function caption(edition: EditionRef, classement: UneEvent[], sol: SolitudeData | null): string {
+  const [top, ...others] = classement;
   const lines = [
     `Ce qui domine l’actualité du Québec en ce moment · Édition de ${pubHourLabel(edition)}, ${edition.dateLabel.toLowerCase()}`,
     "",
@@ -502,7 +700,10 @@ function caption(edition: EditionRef, top3: UneEvent[]): string {
     "",
     `${top.qcOutletCount}/${top.totalQcOutlets} ${coverageLabel(top.qcOutletCount)} : ${top.mediaToday.map((m) => m.name).join(", ")}.`,
     `Saillance des 24 dernières heures : ${top.saillanceLabel.toLowerCase()}.`,
-    ...(others.length ? ["", "Aussi à la Une :", ...others.map((e) => `· ${e.title}`)] : []),
+    ...(others.length ? ["", "Les autres nouvelles les plus saillantes :", ...others.map((e, i) => `${i + 2}. ${e.title}`)] : []),
+    // Le même segment que les deux dernières scènes : ce que le Canada anglais a
+    // mis en Une, et le chiffre de convergence du module Deux solitudes.
+    ...(sol ? ["", `Pendant ce temps, au Canada : ${sol.axes.filter((a) => a.side === "can").map((a) => a.label).slice(0, 1).join("")} (${sol.axes.filter((a) => a.side === "can").map((a) => `${a.canShare} % de l’attention canadienne, ${a.qcShare} % de l’attention québécoise`).slice(0, 1).join("")}).`, `Convergence des deux agendas : ${sol.convPct} % — ${sol.modeWord.toLowerCase()}.`] : []),
     "",
     "L’actualité saillante au Québec, six fois par jour : vitrinedemocratique.com",
     "",
@@ -526,8 +727,12 @@ async function main() {
     console.warn(`  ⚠️ La dernière édition du dépôt date de ${Math.round(ageH)} h. Faites « git pull » pour publier l'édition du moment.`);
   }
 
-  const data = await loadHeadlineEvents(edition.key);
+  // `classement` : les cinq nouvelles les plus saillantes de la fenêtre 24 h,
+  // classement pur (la scène 6 les montre côte à côte). `top3` reste ce que le
+  // module affiche, et c'est lui qui porte les scènes 1 à 5 et la légende.
+  const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const top3 = data?.top3 ?? [];
+  const classement = data?.classement ?? top3;
   if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
   const top = top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
@@ -535,14 +740,18 @@ async function main() {
 
   const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
   const traj = sceneTrajectoire(top);
+  const clsmt = sceneClassement(classement, edition);
   const scenes = [
     sceneAccroche(edition, top), sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
-    sceneCouverture(top), sceneCourse(top3, edition), sceneFin(edition),
+    sceneCouverture(top), clsmt?.scene ?? null,
+    data?.solitudes ? sceneRadar(data.solitudes) : null,
+    data?.solitudes ? sceneEcho(data.solitudes) : null,
+    sceneFin(edition),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS, scenes, script: script(traj?.data ?? null),
+    css: CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
@@ -550,7 +759,7 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(`${base}.txt`, caption(edition, top3));
+  await fs.writeFile(`${base}.txt`, caption(edition, classement, data?.solitudes ?? null));
   console.log(`  légende → ${base}.txt`);
 
   await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
