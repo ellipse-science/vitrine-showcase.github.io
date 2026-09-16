@@ -60,18 +60,25 @@ confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 
 Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scènes :
 
-1. **Accroche.** « Ce qui domine l'actualité du Québec en ce moment » en très grand ;
-   bandeau noir en bas où montent les barres de saillance de la journée ; édition et
-   date. ARRÊTÉ.
+1. **Accroche.** **Logo de la Vitrine en haut** (demande d'Adrien, 2026-09-16 — le
+   même fichier que les cartes de partage, `public/images/brand/`), puis « Ce qui
+   domine l'actualité du Québec en ce moment » en très grand ; bandeau noir en bas où
+   montent les barres de saillance de la journée ; édition et date. ARRÊTÉ.
 2. **Une n°1.** Illustration en haut, étiquette « Une n°1 », enjeu, titre, puis deux
-   chiffres : niveau de saillance (« Saillance sur 24 heures ») et
-   **« 6/6 des médias québécois en parlent »**. ARRÊTÉ.
+   chiffres : niveau de saillance **avec sa valeur en points** (« 43,7 points de
+   saillance sur 24 heures » — demande d'Adrien, 2026-09-16 : le niveau seul ne dit
+   pas de combien) et **« 6/6 des médias québécois en parlent »**. ARRÊTÉ.
 3. **Trajectoire (scène vedette).** Kicker « Saillance · 24 dernières heures » ; **titre
    de la Une** avec le pictogramme de son enjeu ; compteur géant qui suit la valeur ;
    étiquette de niveau qui change de couleur à chaque édition ; barres qui montent une
    à une, valeurs dans les barres, « Sommet » marqué, barre rayée pour « Hors des
    Unes » ; pictogramme + heure + moment sous chaque barre ; phrase de tendance du
    site en bas. ARRÊTÉ.
+   - **Ligne de tendance sur le sommet des barres, avec une flèche au bout**, « comme
+     pour la bourse » : demande d'Adrien le 2026-09-16, qui **renverse le rejet** pris
+     le matin même. Elle se trace une fois les barres montées, un point marque chaque
+     sommet, et la flèche prend l'angle du dernier segment — elle pointe donc vers le
+     bas quand l'attention retombe.
 4. **Centile.** « *Cette actualité est plus saillante que* / **92 %** / des nouvelles de
    la dernière année » ; échelle de 100 graduations fines (1 graduation = 1 % des
    nouvelles, plus saillantes en haut) qui se remplit ; trait « *Cette actualité* » ;
@@ -84,35 +91,38 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
    médias du panel avec « ✓ En Une » (ou grisé, « Pas en Une ») ; « En Une depuis … ».
    ARRÊTÉ.
 6. **Classement (remplace « Course »).** Demande d'Adrien, 2026-09-16 : montrer
-   **les cinq nouvelles les plus saillantes de la journée et leur évolution**, plutôt
-   que la première Une face à la deuxième. Titre « Les cinq nouvelles les plus
-   saillantes » ; légende affichée AVANT le tracé (pastille pictogramme, « N°1 ·
+   **les TROIS nouvelles les plus saillantes de la journée et leur évolution**, plutôt
+   que la première Une face à la deuxième. (Cinq a été essayé le même jour et écarté :
+   trop dense, et les courbes du bas se confondent.) Titre « Les trois nouvelles les
+   plus saillantes » ; légende affichée AVANT le tracé (pastille pictogramme, « N°1 ·
    enjeu » en mono, titre sur deux lignes au plus, échantillon du trait) ; courbes aux
-   couleurs des enjeux ; pastille + valeur **dans une gouttière à droite du dernier
-   point** ; axe avec pictogrammes des moments. Même enjeu pour deux nouvelles :
-   tirets, puis pointillé pour la troisième. ARRÊTÉ.
+   couleurs des enjeux ; **point au bout de chaque courbe, et pastille + valeur
+   exactement à sa hauteur**, dans une gouttière à droite ; axe avec pictogrammes des
+   moments. Même enjeu pour deux nouvelles : tirets, puis pointillé. ARRÊTÉ.
    - ⚠️ Le rang vient du **classement PUR** de l'indice (`rankTopUnes`, lu par
      `loadHeadlineEvents(cle, { classement: 5 })`), pas de la sélection du module :
      la page n'affiche que les Unes qui valent au moins la moitié du meneur (#430,
      B6) et en montre souvent deux. Montrer cinq nouvelles classées n'est donc pas
      affirmer que le module en afficherait cinq — d'où « nouvelles », jamais
      « Unes », dans le titre de la scène.
-7. **Pendant ce temps, au Canada… (module 2).** Demande d'Adrien, 2026-09-16. Le
-   radar des Deux solitudes : balayage qui fait deux tours, puis les deux polygones
-   qui éclosent depuis le centre (rouge Canada anglais, bleu Québec), pastille
-   pictogramme au bout de chaque axe dans la couleur du camp qui le mène ; sous le
-   radar, le chiffre de **convergence** et son niveau, puis la phrase éditoriale du
-   site. ARRÊTÉ.
+7. **Pendant ce temps, au Canada… (module 2).** Demande d'Adrien, 2026-09-16. **UNE
+   SEULE scène** (deux ont été essayées le même jour et refusées) :
+   - le radar des Deux solitudes, **anneaux RONDS** (les hexagones emboîtés se
+     lisaient comme un cube en perspective) : balayage qui fait deux tours puis
+     s'efface, les deux polygones éclosent depuis le centre (rouge Canada anglais,
+     bleu Québec), pastille pictogramme au bout de chaque axe dans la couleur du camp
+     qui le mène ;
+   - le chiffre de **convergence**, lu **comme sur le site** : « 42 % de convergence »
+     puis « 10 % plus divergent que d'habitude » (`relDiffPct` + `relLabel`, la phrase
+     du hero du module) ;
+   - **les trois nouvelles du Canada anglais**, les plus couvertes là-bas d'abord,
+     chacune avec **deux barres** — part de l'attention des Unes canadiennes, part de
+     l'attention des Unes québécoises — et son niveau de saillance. L'écart entre les
+     deux barres EST la divergence : montrée, pas énoncée. ARRÊTÉ.
    - Le module ne chiffre QUE la convergence : `divPct` existe pour l'axe, il n'a
      aucun libellé public. Ne jamais écrire « X % de divergence ».
-   - Deux anneaux (50 %, 100 %), pas quatre : quatre hexagones emboîtés se lisent
-     comme un cube en perspective.
-8. **Ce que le Québec en a retenu.** Les nouvelles du Canada anglais, les plus
-   couvertes là-bas d'abord, chacune avec **deux barres** — part de l'attention des
-   Unes canadiennes, part de l'attention des Unes québécoises — et son niveau de
-   saillance. L'écart entre les deux barres EST la divergence : montrée, pas
-   énoncée. ARRÊTÉ.
-9. **Fin.** Fleur de lys, « Ce qui domine l'actualité du Québec »,
+8. **Fin.** **Logo de la Vitrine** à la place de la fleur de lys (demande d'Adrien,
+   2026-09-16), Fleur de lys, « Ce qui domine l'actualité du Québec »,
    vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
@@ -122,7 +132,14 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 
 ### Rejeté (ne pas réintroduire)
 
-- Ligne reliant le sommet des barres de la trajectoire.
+- ~~Ligne reliant le sommet des barres de la trajectoire.~~ **Renversé par Adrien le
+  2026-09-16** : elle est maintenant demandée, avec une flèche (voir la scène 3).
+- Cinq nouvelles au classement : trop dense, les courbes du bas se confondent (Adrien,
+  2026-09-16). Trois.
+- Deux scènes pour le Canada : une seule, radar et nouvelles ensemble (Adrien, 16-09).
+- Radar en hexagone : rond (Adrien, 16-09).
+- Étiquettes de fin posées à une hauteur « de rangement » : elles doivent tomber
+  exactement sur le point d'arrivée de leur courbe (Adrien, 16-09).
 - Tuiles noires pour les médias.
 - Grille de 10×10 cases pour le centile (peu parlante).
 - Couleurs de courbes par rang sans légende ni pictogramme (incompréhensibles).
@@ -136,6 +153,11 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - Pictogramme d'enjeu posé DANS le `<svg>` du radar : le composant du site rend un
   `<svg>` complet, qui ne s'affiche pas imbriqué. Les pastilles sont en HTML, par
   ‑dessus le graphique.
+- 🪤 **Animation `pop` (ou toute keyframe à `transform`) directement sur un élément
+  SVG** : la transformation CSS REMPLACE l'attribut `transform` et se calcule depuis
+  l'origine du SVG — la flèche de la trajectoire partait dans le coin haut-gauche et
+  sortait du cadre. Mettre le placement sur un `<g>` parent et l'animation sur
+  l'enfant, avec `transform-box:fill-box;transform-origin:center`.
 
 ## 3. Points ouverts
 
@@ -148,6 +170,6 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
   Polimètre+, Assemblée nationale, global) : reprennent toutes les règles de la
   section 1. ⚠️ Le reel « Deux solitudes » devra tenir compte des scènes 7 et 8
   ci-dessus, qui en montrent déjà le radar et les nouvelles canadiennes.
-- **Durée.** Le reel passe de ~46 s à ~75 s avec les scènes 6 à 8. À valider :
+- **Durée.** ~70 s avec les scènes 6 et 7 (contre ~46 s au départ). À valider :
   Instagram accepte 90 s, mais la rétention chute. Si on coupe, couper la scène 4
   (centile) avant les nouvelles.
