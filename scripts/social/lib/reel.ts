@@ -174,10 +174,53 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
  *  `script` peut définir `window.onSceneTime(id, local)` pour les effets que
  *  CSS ne sait pas rendre (compteurs, zoom lent). */
+/** ACCROCHE, COMMUNE À TOUS LES REELS (demande d'Adrien, 2026-09-16 : « chaque
+ *  reel de chaque module devrait avoir la même intro, mais adaptée »).
+ *  Même structure partout — logo, filet et nom du module, trois lignes qui
+ *  tombent UNE PAR UNE, un visuel propre au module en bas, l'édition — et une
+ *  seule chose change : les lignes, le visuel et la couleur. Les trois lignes
+ *  arrivent séparément parce que chacune doit porter : c'est le rythme de
+ *  l'accroche, pas une animation décorative. */
+export function sceneIntro(opts: {
+  logo: string | null;
+  module: string;
+  accent: string;
+  lignes: { t: string; accent?: boolean; c?: string }[];
+  /** Le visuel du bas, propre au module (HTML), posé dans le bandeau d'encre. */
+  visuel: string;
+  edition: string;
+}): Scene {
+  const L0 = 0.75, PAS = 0.62;
+  const lignes = opts.lignes.map((l, i) => {
+    const couleur = l.c ?? (l.accent ? opts.accent : "");
+    return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
+  }).join("");
+  return {
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideFooter: true,
+    html: `
+      ${opts.logo ? `<img class="logo" src="${opts.logo}" style="animation:fadeIn .6s .1s both">` : ""}
+      <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
+      <h1 class="disp">${lignes}</h1>
+      <div class="band" style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
+      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+  };
+}
+
+/** CSS de l'accroche — à concaténer au CSS du module. */
+export const INTRO_CSS = `
+#intro .logo{position:absolute;top:120px;left:76px;width:540px}
+#intro .module{position:absolute;top:330px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .module i{display:block;width:120px;height:10px;transform-origin:left}
+#intro h1{position:absolute;top:412px;left:76px;right:60px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1 span{display:block}
+#intro .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
+#intro .ed{position:absolute;left:76px;right:76px;bottom:640px;color:var(--paper);font-size:30px}
+`;
+
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
  *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null }): Scene {
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string }): Scene {
   const now = opts.pubHour % 24;
   const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
     `<div class="mono${h === now ? " on" : ""}" style="animation:pop .4s ${1.2 + i * .12}s both">${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
@@ -189,7 +232,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
       <div class="kick mono" style="animation:fadeIn .5s .4s both">${typo(esc(opts.signature))}</div>
       <div class="url disp" style="animation:fadeUp .7s .6s both">vitrinedemocratique.com</div>
-      <div class="band" style="animation:growY .8s .2s both"></div>
+      <div class="band" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
       <div class="foot"><div class="six" style="animation:fadeIn .6s 1s both">Six éditions par jour</div><div class="hours">${hours}</div></div>`,
   };
 }
@@ -199,7 +242,7 @@ export const FIN_CSS = `
 #fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:400px}
 #fin .logo{width:880px;display:block}
 #fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
-#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid var(--blue);padding-bottom:10px}
+#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
 #fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
 #fin .foot{position:absolute;left:30px;right:30px;top:1370px;display:flex;flex-direction:column;align-items:center}
 #fin .six{font-size:52px;font-style:italic;margin-bottom:46px;color:var(--paper)}

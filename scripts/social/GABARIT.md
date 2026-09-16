@@ -9,6 +9,31 @@ Décisions de Jules Piral, séance du 2026-09-16, sur le reel « La Une des Unes
 État de chaque point : **ARRÊTÉ** (validé), **À VALIDER** (en place, pas encore
 confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 
+## 0. L'identité : une intro commune, une fin commune, une couleur par module
+
+Demandes d'Adrien du 2026-09-16 (et de Yannick depuis le 2 sept.) : **un look
+commun, une identité visuelle, un rappel marqué.**
+
+- **ARRÊTÉ · Même accroche partout** (`sceneIntro`, `lib/reel.ts`) : logo, filet et
+  nom du module à la couleur du module, **trois lignes qui tombent une par une**
+  (« pour appuyer chaque ligne »), un visuel propre au module dans le bandeau
+  d'encre, puis l'édition. Seuls les lignes, le visuel et la couleur changent.
+  - Une des Unes : « Les faits saillants / au Québec / en ce moment ».
+  - Deux solitudes : « Québec / Canada / 2 solitudes ? » (Québec en bleu, Canada
+    en rouge, la question à la couleur du module).
+  - Les quatre autres sont déjà écrites dans `lib/modules.ts`.
+- **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
+  bandeau des six éditions — le bandeau prend la couleur du module.
+- **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
+  **`lib/modules.ts`**, lue par les reels ET par le site. Les six couleurs suivent
+  les trois familles du banc d'essai (vitrine#715) mais donnent une nuance à
+  CHAQUE module : le banc n'en donnait qu'une par famille, donc deux modules se
+  ressemblaient. Aucune ne reprend une couleur d'enjeu (`lib/enjeux.ts`).
+  🕑 **À trancher avec Yannick** : les six teintes elles-mêmes. Le mécanisme est
+  posé, chaque couleur est une ligne à changer dans `lib/modules.ts`.
+- ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde
+  le papier tel quel. L'accent colore les filets et les bandeaux, pas le fond.
+
 ## 1. Règles communes à tous les reels
 
 ### Production
@@ -181,6 +206,18 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
   le chiffre de **convergence** (« 42 % de convergence · 10 % plus divergent que
   d'habitude ») et la phrase éditoriale du site.
 - **ARRÊTÉ · Anneaux ronds**, quatre, en pointillé sauf le dernier : c'est un sonar.
+- **ARRÊTÉ · UN SUJET À LA FOIS** (retour d'Adrien, 2026-09-16 : « les points qui
+  apparaissent, c'est cool, mais un peu mêlant »). Pendant sa fenêtre, le sujet
+  détecté tient tout : sa tranche du radar s'éclaire, son rayon s'épaissit, ses
+  deux points sont pleins. Au sujet suivant, tout ça s'estompe — les points
+  restent en retrait, pour que les deux formes se dessinent à la fin.
+- **ARRÊTÉ · Radar petit, détections rapides** (même retour) : `TOUR = 2,1 s`, six
+  sujets en ~15 s, rayon 228. La carte du bas, elle, est grande : titre sur trois
+  lignes, deux barres, et les médias qui l'avaient en Une.
+- **ARRÊTÉ · Six pastilles** sous la carte disent combien de sujets sont passés et
+  lesquels sont menés par le Québec (bleu) ou par le Canada anglais (rouge).
+- 🪤 Une opacité posée en ATTRIBUT (`opacity=".12"`) est écrasée par une animation
+  CSS d'opacité : la tranche devenait un aplat plein. Passer par `fill-opacity`.
 
 ## 4. Points ouverts
 
