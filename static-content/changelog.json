@@ -1,5 +1,11 @@
 [
   {
+    "pr": 811,
+    "date": "2026-09-16T21:36:02Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 804,
     "date": "2026-09-13T22:37:43Z",
     "note": "Le mode « promesses de la campagne » du Polimètre+ ne montre plus qu'un instantané par fenêtre : celui du dernier run, sans doublons, et la fenêtre de la semaine reste visible quand celle du jour avance.",
