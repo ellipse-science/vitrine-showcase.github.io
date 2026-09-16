@@ -25,7 +25,23 @@ confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 - **ARRÊTÉ · Rien ne dépasse du cadre.** Tout (illustration, bandeaux, graphiques,
   texte) reste à l'intérieur de l'encadré (30 px de chaque bord). `checkFrame`
   vérifie chaque scène ; `--mp4` refuse de produire la vidéo si un élément dépasse.
-- **ARRÊTÉ · Remplir l'espace du cadre.** Pas de grands vides en bas de scène.
+- **ARRÊTÉ · Tout est lisible sur un téléphone.** Toute information (texte, chiffre,
+  graphique) tient dans la ZONE SÛRE `SAFE`, selon la convention des **Reels organiques** :
+  220 px en haut (nom du compte), 400 px en bas (légende, musique), 60 px à gauche,
+  120 px à droite **à partir de y 640** (colonne de boutons, qui commence au tiers de
+  l'écran ; au-dessus, 60 px suffisent). Seul le décor marqué `data-deco`
+  (illustration, bandeaux) en sort. La zone des **publicités** Meta (14 % haut, jusqu'à
+  35 % bas, 6 % côtés) n'est PAS retenue : trop d'espace perdu, et nos reels ne sont pas
+  sponsorisés. Sources consultées le 2026-09-16 : guides Kreatli, Pod2Reels, Outfy
+  (organique), Billo et Behaviour Digital (publicités). La vignette de la grille du
+  profil est recadrée en 3:4 (bande y 240 → 1680) : l'accroche y tient.
+- **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), soit ~9,5 points sur un
+  téléphone, où le reel s'affiche à ~36 %.
+- **ARRÊTÉ · Vérification automatique.** `checkFrame` contrôle les trois règles (cadre,
+  zone sûre, taille) sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre
+  écart. L'aperçu montre les mêmes zones (bouton « Zones Instagram »).
+- **ARRÊTÉ · Remplir l'espace de la zone sûre.** Pas de grands vides dans la partie visible ;
+  mais pas de compactage non plus (la couverture resserrée a été rejetée).
 - **ARRÊTÉ · Langage visuel du site.** Papier/encre, Playfair Display, Source Serif 4,
   IBM Plex Mono, fleur de lys ; couleurs des bandes de saillance du site.
 
@@ -52,15 +68,18 @@ confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 - **ARRÊTÉ · Crédit de l'illustration :** « Image générée sous la direction de Mathieu
   Fortin », discret et intégré : italique Source Serif, gris pâle, précédé d'un filet
   fin, en bas à droite là où l'image se fond dans le papier ; il apparaît après
-  l'image. L'illustration n'apparaît que si elle correspond à la Une n°1 (garde du site).
+  l'image. L'illustration n'apparaît que si elle correspond à la Une n°1 ET que le site
+  l'affiche (juste après une nouvelle édition, l'image peut encore être l'ancienne).
 - **ARRÊTÉ · Listes plutôt que tuiles.** Pour énumérer (médias…), une liste
   typographique ; pas de blocs noirs.
 
 ## 2. La Une des Unes (`une-des-unes.ts`)
 
-Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scènes :
+Titre : **« Les faits saillants au Québec »** (accroche, fin et légende ; arrêté le
+2026-09-16, remplace « Ce qui domine l'actualité du Québec en ce moment »).
+Ordre des scènes :
 
-1. **Accroche.** « Ce qui domine l'actualité du Québec en ce moment » en très grand ;
+1. **Accroche.** « Les faits saillants au Québec » en très grand (« Québec » en bleu) ;
    bandeau noir en bas où montent les barres de saillance de la journée ; édition et
    date. ARRÊTÉ.
 2. **Une n°1.** Illustration en haut, étiquette « Une n°1 », enjeu, titre, puis deux
@@ -72,15 +91,19 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
    à une, valeurs dans les barres, « Sommet » marqué, barre rayée pour « Hors des
    Unes » ; pictogramme + heure + moment sous chaque barre ; phrase de tendance du
    site en bas. ARRÊTÉ.
-4. **Centile.** « *Cette actualité est plus saillante que* / **92 %** / des nouvelles de
-   la dernière année » ; échelle de 100 graduations fines (1 graduation = 1 % des
-   nouvelles, plus saillantes en haut) qui se remplit ; trait « *Cette actualité* » ;
-   annotations **« 8 % des nouvelles de la dernière année ont été plus saillantes »**
-   et **« 92 % ont été moins saillantes »**. ARRÊTÉ.
+4. **Centile.** « **Cette actualité est plus saillante que** / **92 %** / **des nouvelles de
+   la dernière année** » : la phrase a le même poids que le chiffre (Playfair gras 52 px,
+   une ligne chacune ; la version en petit italique gris a été rejetée, on voyait le
+   92 % sans savoir de quoi il parlait) ; échelle HORIZONTALE de 100 graduations fines (1 graduation =
+   1 % des nouvelles ; moins saillantes à gauche, plus saillantes à droite) qui se
+   remplit ; trait « *Cette actualité* » ; annotations de part et d'autre :
+   **« 92 % des nouvelles de la dernière année ont été moins saillantes »** (gauche) et
+   **« 8 % des nouvelles de la dernière année ont été plus saillantes »** (droite).
+   ARRÊTÉ. L'échelle verticale a été couchée pour tenir dans la zone sûre.
    - Note de source « Nouvelles : les Unes des médias québécois suivis, sur une année
      de référence » : À VALIDER. Raison : la référence est une période fixe
      (17 mai 2025 → 7 août 2026, bientôt l'année civile 2025), pas une année glissante.
-5. **Couverture.** « 6/6 » en grand, « des médias québécois en parlent », liste des six
+5. **Couverture.** « 6/6 » en très grand (270 px), lignes aérées (128 px), « des médias québécois en parlent », liste des six
    médias du panel avec « ✓ En Une » (ou grisé, « Pas en Une ») ; « En Une depuis … ».
    ARRÊTÉ.
 6. **Course.** Titre explicite (« La première Une face à la deuxième ») ; légende
@@ -88,11 +111,11 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
    aux couleurs des enjeux ; pastille pictogramme + valeur au bout de chaque courbe ;
    axe avec pictogrammes des moments. Même enjeu pour deux Unes : seconde courbe en
    pointillé. ARRÊTÉ.
-7. **Fin.** Fleur de lys, « Ce qui domine l'actualité du Québec »,
+7. **Fin.** Fleur de lys, « Les faits saillants au Québec »,
    vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
-**Légende Instagram** (`.txt`) : titre de l'édition, titre et résumé de la Une,
+**Légende Instagram** (`.txt`) : « Les faits saillants au Québec · Édition de … », titre et résumé de la Une,
 « 6/6 des médias québécois en parlent : … », niveau de saillance, autres Unes, lien.
 Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 
@@ -106,14 +129,15 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - « Illustration générée par IA · Anorak Studio » ; crédit en petites capitales mono
   posé sur l'image (trop visible).
 - Éléments pleine page qui débordent de l'encadré.
+- Informations dans les zones cachées par Instagram ; étiquettes sous 26 px.
+- Zone sûre des publicités Meta (250 px haut, 480 px bas) : trop d'espace perdu.
+- Liste des médias resserrée (lignes de 106 px) : trop compacte.
 
 ## 3. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
-- **Zones de l'interface Instagram** (en-tête, légende, boutons) : visibles dans
-  l'aperçu (bouton « Zones Instagram »), pas encore imposées au gabarit.
 - **Les six autres reels** (Deux solitudes, 12 enjeux, Partis et couverture,
   Polimètre+, Assemblée nationale, global) : reprennent toutes les règles de la
   section 1.

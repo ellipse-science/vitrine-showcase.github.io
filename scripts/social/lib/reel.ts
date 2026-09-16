@@ -33,12 +33,23 @@ export const SLOW = 1.4;
 
 export const SITE_URL = "https://vitrinedemocratique.com";
 
-/** Zones sûres des Reels (mesurées sur l'interface Instagram, 2026) : l'en-tête
- *  couvre le haut, la légende et les boutons le bas et la droite. Le texte
- *  essentiel reste DANS ce cadre ; les graphiques et images peuvent déborder
- *  jusqu'aux bords pour remplir l'écran. Le recadrage 3:4 de la grille du
- *  profil garde la bande 240–1680 : l'accroche doit y tenir. */
-export const SAFE = { top: 220, bottom: 1500, left: 60, right: 960 };
+/** ZONE SÛRE : ce que l'interface des Reels laisse voir sur un téléphone, selon
+ *  la convention des Reels ORGANIQUES (guides Kreatli, Pod2Reels, Outfy, 2026) :
+ *    · haut 220 px   : nom du compte ;
+ *    · bas 400 px    : légende et titre de la musique ;
+ *    · gauche 60 px  : marge de bord ;
+ *    · droite 120 px : colonne de boutons (j'aime, commentaire, partage,
+ *      enregistrer), qui ne commence qu'au tiers de l'écran (`buttonsTop`).
+ *  Plus prudente, la zone des PUBLICITÉS Meta (14 % haut, jusqu'à 35 % bas, 6 %
+ *  côtés) ne s'applique pas : nos reels ne sont pas sponsorisés.
+ *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
+ *  seul le décor (`data-deco` : illustration, bandeaux) peut en sortir.
+ *  L'aperçu affiche ces zones en rouge (bouton « Zones Instagram »). */
+export const SAFE = { top: 220, bottom: HEIGHT - 400, left: 60, right: WIDTH - 60, buttonsTop: 640, buttonsLeft: WIDTH - 120 };
+
+/** Taille minimale d'un texte, en px du reel. Un téléphone affiche le reel à
+ *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran. */
+export const MIN_FONT = 26;
 
 /** Intérieur de l'encadré du reel (filet à 28 px, épaisseur 2). RÈGLE : rien
  *  ne dépasse du cadre, ni image, ni bandeau, ni texte. Les scènes sont
@@ -242,14 +253,14 @@ input[type=range]{width:100%}
 #time{font-size:22px}
 .hint{color:#9C9486;line-height:1.5}
 </style></head><body>
-<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:220px"></div><div style="left:0;right:0;bottom:0;height:420px"></div><div style="right:0;width:120px;top:220px;bottom:420px"></div></div></div>
+<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div></div></div>
 <div id="panel">
   <h1>${esc(title)}</h1>
   <div id="time">0,0 s / ${duration.toFixed(1).replace(".", ",")} s</div>
   <input id="scrub" type="range" min="0" max="${duration}" step="0.0333" value="0">
   <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button></div>
   <div class="row" id="scenes">${marks.map((m) => `<button class="ghost" data-t="${m.start}">${esc(m.id)}</button>`).join("")}</div>
-  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons).</p>
+  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons) — aucune information n’y va.</p>
 </div>
 <script>
 const REEL=${payload};
@@ -289,11 +300,11 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
   const { html, scenes, title, base, args } = opts;
   const overflow = await checkFrame(html, scenes);
   if (overflow.length) {
-    console.warn(`  ⚠️ ${overflow.length} élément(s) dépassent du cadre :`);
+    console.warn(`  ⚠️ ${overflow.length} écart(s) au gabarit :`);
     for (const o of overflow) console.warn(`     · ${o}`);
-    if (args.mp4) throw new Error("Vidéo non produite : corrigez ce qui dépasse du cadre (voir l'aperçu).");
+    if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  cadre   → rien ne dépasse");
+    console.log("  gabarit → cadre, zone Instagram et lisibilité respectés");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
@@ -312,11 +323,15 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
   if (!args["sans-ouvrir"]) openInBrowser(player);
 }
 
-/** Contrôle du cadre : chaque scène est posée à son état final (juste avant
- *  son fondu de sortie), et tout élément visible dont la boîte franchit FRAME
- *  est signalé. La boîte est d'abord rognée par les ancêtres en
+/** Contrôle du gabarit, scène par scène, à l'état final de chaque scène (juste
+ *  avant son fondu de sortie). Trois règles :
+ *   1. CADRE : aucun élément visible ne franchit l'encadré (FRAME) ;
+ *   2. ZONE SÛRE : aucune information (tout ce qui n'est pas `data-deco`) ne
+ *      sort de SAFE, sinon l'interface Instagram la cache sur le téléphone ;
+ *   3. LISIBILITÉ : aucun texte sous MIN_FONT.
+ *  La boîte de chaque élément est d'abord rognée par ses ancêtres en
  *  `overflow: hidden` : une image zoomée dans un cadre qui la contient ne
- *  dépasse pas. */
+ *  dépasse pas. Un seul signalement par débordement (l'ancêtre fautif). */
 export async function checkFrame(html: string, scenes: Scene[]): Promise<string[]> {
   const browser = await launch();
   try {
@@ -328,7 +343,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     for (const s of scenes) {
       const at = (t + s.duration - 0.4) * SLOW;
       t += s.duration;
-      found.push(...(await overflowAt(page, s.id, at)));
+      found.push(...(await inspectAt(page, s.id, at)));
     }
     return found;
   } finally {
@@ -336,40 +351,60 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
   }
 }
 
-async function overflowAt(page: Page, sceneId: string, at: number): Promise<string[]> {
-  return page.evaluate(({ sceneId, at, frame }) => {
-    (window as unknown as { setTime(t: number): void }).setTime(at);
-    const scene = document.getElementById(sceneId)!;
-    const out: string[] = [];
-    const flagged = new Set<Element>();
-    for (const el of Array.from(scene.querySelectorAll("*"))) {
-      const r = el.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) continue;
-      let left = r.left, top = r.top, right = r.right, bottom = r.bottom;
-      for (let a = el.parentElement; a && a !== scene; a = a.parentElement) {
-        if (getComputedStyle(a).overflow === "visible") continue;
-        const ar = a.getBoundingClientRect();
-        left = Math.max(left, ar.left); top = Math.max(top, ar.top);
-        right = Math.min(right, ar.right); bottom = Math.min(bottom, ar.bottom);
-      }
-      if (right - left < 1 || bottom - top < 1) continue;
-      const d = [
-        left < frame.left - .5 ? `gauche ${Math.round(frame.left - left)} px` : "",
-        top < frame.top - .5 ? `haut ${Math.round(frame.top - top)} px` : "",
-        right > frame.right + .5 ? `droite ${Math.round(right - frame.right)} px` : "",
-        bottom > frame.bottom + .5 ? `bas ${Math.round(bottom - frame.bottom)} px` : "",
-      ].filter(Boolean);
-      if (!d.length) continue;
-      // Un seul signalement par débordement : l'ancêtre fautif suffit.
-      flagged.add(el);
-      let a: Element | null = el.parentElement, inherited = false;
-      for (; a && a !== scene; a = a.parentElement) if (flagged.has(a)) { inherited = true; break; }
-      if (inherited) continue;
-      const label = (el.textContent ?? "").trim().slice(0, 40) || `<${el.tagName.toLowerCase()} class="${el.getAttribute("class") ?? ""}">`;
-      out.push(`scène ${sceneId} : « ${label} » (${d.join(", ")})`);
+// Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
+// un utilitaire `__name` qui n'existe pas côté navigateur.
+const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
+  window.setTime(at);
+  const scene = document.getElementById(sceneId);
+  const out = [];
+  const flagged = { frame: new Set(), safe: new Set() };
+  const inherited = (set, el) => {
+    for (let a = el.parentElement; a && a !== scene; a = a.parentElement) if (set.has(a)) return true;
+    return false;
+  };
+  const excess = (box, lim) => [
+    box.left < lim.left - .5 ? "gauche " + Math.round(lim.left - box.left) + " px" : "",
+    box.top < lim.top - .5 ? "haut " + Math.round(lim.top - box.top) + " px" : "",
+    box.right > lim.right + .5 ? "droite " + Math.round(box.right - lim.right) + " px" : "",
+    box.bottom > lim.bottom + .5 ? "bas " + Math.round(box.bottom - lim.bottom) + " px" : "",
+  ].filter(Boolean);
+  for (const el of scene.querySelectorAll("*")) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    for (let a = el.parentElement; a && a !== scene; a = a.parentElement) {
+      if (getComputedStyle(a).overflow === "visible") continue;
+      const ar = a.getBoundingClientRect();
+      box.left = Math.max(box.left, ar.left); box.top = Math.max(box.top, ar.top);
+      box.right = Math.min(box.right, ar.right); box.bottom = Math.min(box.bottom, ar.bottom);
     }
-    return out;
-  }, { sceneId, at, frame: FRAME });
+    if (box.right - box.left < 1 || box.bottom - box.top < 1) continue;
+    const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
+    const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
+    const f = excess(box, frame);
+    if (f.length) {
+      flagged.frame.add(el);
+      if (!inherited(flagged.frame, el)) out.push("cadre · scène " + sceneId + " : « " + label + " » (" + f.join(", ") + ")");
+    }
+    if (el.closest("[data-deco]")) continue;
+    const z = excess(box, safe);
+    // Colonne de boutons : seulement à partir du tiers de l'écran.
+    if (box.bottom > safe.buttonsTop && box.right > safe.buttonsLeft + .5) z.push("boutons " + Math.round(box.right - safe.buttonsLeft) + " px");
+    if (z.length) {
+      flagged.safe.add(el);
+      if (!inherited(flagged.safe, el)) out.push("zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")");
+    }
+    if (ownText) {
+      const size = parseFloat(getComputedStyle(el).fontSize);
+      if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
+    }
+  }
+  return out;
+}`;
+
+async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: SAFE, minFont: MIN_FONT });
+  return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 
 async function launch(): Promise<Browser> {
