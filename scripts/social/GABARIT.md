@@ -49,8 +49,10 @@ confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 - **ARRÊTÉ · Typographie.** OQLF (insécable avant « : » et « % ») ; heures collées
   (« 16h ») ; pas de « n° » en Playfair (le signe y flotte) : en mono seulement,
   sinon une formulation en toutes lettres.
-- **ARRÊTÉ · Crédit de l'illustration :** « Sous la direction de Mathieu Fortin ».
-  L'illustration n'apparaît que si elle correspond à la Une n°1 (garde du site).
+- **ARRÊTÉ · Crédit de l'illustration :** « Image générée sous la direction de Mathieu
+  Fortin », discret et intégré : italique Source Serif, gris pâle, précédé d'un filet
+  fin, en bas à droite là où l'image se fond dans le papier ; il apparaît après
+  l'image. L'illustration n'apparaît que si elle correspond à la Une n°1 (garde du site).
 - **ARRÊTÉ · Listes plutôt que tuiles.** Pour énumérer (médias…), une liste
   typographique ; pas de blocs noirs.
 
@@ -101,7 +103,8 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - Grille de 10×10 cases pour le centile (peu parlante).
 - Couleurs de courbes par rang sans légende ni pictogramme (incompréhensibles).
 - « 92 % plus saillante que toutes les Unes de l'année » (faux : c'est un rang).
-- « Illustration générée par IA · Anorak Studio ».
+- « Illustration générée par IA · Anorak Studio » ; crédit en petites capitales mono
+  posé sur l'image (trop visible).
 - Éléments pleine page qui débordent de l'encadré.
 
 ## 3. Points ouverts
