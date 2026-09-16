@@ -105,8 +105,10 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
      B6) et en montre souvent deux. Montrer cinq nouvelles classées n'est donc pas
      affirmer que le module en afficherait cinq — d'où « nouvelles », jamais
      « Unes », dans le titre de la scène.
-7. **Pendant ce temps, au Canada… (module 2).** Demande d'Adrien, 2026-09-16. **UNE
-   SEULE scène** (deux ont été essayées le même jour et refusées) :
+7. **~~Pendant ce temps, au Canada…~~ — PARTI dans son propre reel.** Essayé le
+   2026-09-16 dans ce reel-ci, puis sorti le jour même : « un module, un post »
+   (Jules et Adrien). Voir `deux-solitudes.ts` et la section 3. Ce qui avait été
+   arrêté et qui a déménagé tel quel :
    - le radar des Deux solitudes, **anneaux RONDS** (les hexagones emboîtés se
      lisaient comme un cube en perspective) : balayage qui fait deux tours puis
      s'efface, les deux polygones éclosent depuis le centre (rouge Canada anglais,
@@ -121,8 +123,8 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
      deux barres EST la divergence : montrée, pas énoncée. ARRÊTÉ.
    - Le module ne chiffre QUE la convergence : `divPct` existe pour l'axe, il n'a
      aucun libellé public. Ne jamais écrire « X % de divergence ».
-8. **Fin.** **Logo de la Vitrine** à la place de la fleur de lys (demande d'Adrien,
-   2026-09-16), Fleur de lys, « Ce qui domine l'actualité du Québec »,
+8. **Fin (commune à tous les reels, `sceneFin` dans `lib/reel.ts`).** **Logo de la
+   Vitrine** à la place de la fleur de lys (demande d'Adrien, 2026-09-16), Fleur de lys, « Ce qui domine l'actualité du Québec »,
    vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
@@ -159,17 +161,40 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
   sortait du cadre. Mettre le placement sur un `<g>` parent et l'animation sur
   l'enfant, avec `transform-box:fill-box;transform-origin:center`.
 
-## 3. Points ouverts
+## 3. Deux solitudes (`deux-solitudes.ts`)
+
+Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
+
+- **ARRÊTÉ · Un seul plan, pas des slides** (Jules Piral et Adrien, 2026-09-16).
+  Le radar tourne d'un bout à l'autre du reel, comme un sonar ; il n'y a pas de
+  scènes qui se succèdent, sauf la fin.
+- **ARRÊTÉ · Le balayage détecte.** Chaque tour du rayon fait apparaître un sujet :
+  deux points sur son axe — rouge pour la part d'attention du Canada anglais, bleu
+  pour celle du Québec — et la pastille de son enjeu au bout de l'axe. Une carte, en
+  bas, nomme le sujet détecté et porte ses deux barres.
+- **ARRÊTÉ · Synchronisme.** Un tour dure `TOUR` secondes, il y a autant d'axes que
+  de sujets : le sujet k est détecté à `T0 + k·(TOUR + TOUR/n)`, donc exactement
+  quand le rayon passe sur son axe. Changer `TOUR` ou l'ordre des axes sans refaire
+  ce calcul casse l'effet.
+- **ARRÊTÉ · Les deux solitudes apparaissent à la fin, pas au début.** Une fois les
+  six sujets détectés, on relie les points : les deux polygones se dessinent, puis
+  le chiffre de **convergence** (« 42 % de convergence · 10 % plus divergent que
+  d'habitude ») et la phrase éditoriale du site.
+- **ARRÊTÉ · Anneaux ronds**, quatre, en pointillé sauf le dernier : c'est un sonar.
+
+## 4. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
 - **Zones de l'interface Instagram** (en-tête, légende, boutons) : visibles dans
   l'aperçu (bouton « Zones Instagram »), pas encore imposées au gabarit.
-- **Les six autres reels** (Deux solitudes, 12 enjeux, Partis et couverture,
-  Polimètre+, Assemblée nationale, global) : reprennent toutes les règles de la
-  section 1. ⚠️ Le reel « Deux solitudes » devra tenir compte des scènes 7 et 8
-  ci-dessus, qui en montrent déjà le radar et les nouvelles canadiennes.
+- **Les reels restants** (12 enjeux, Partis et couverture, Polimètre+, Assemblée
+  nationale, global) : reprennent toutes les règles de la section 1.
+- **UN MODULE, UN POST** (Jules et Adrien, 2026-09-16) : un reel ne mélange pas deux
+  modules. Le Canada était entré dans la Une des Unes le 16-09 ; il en est ressorti
+  le jour même pour devenir le reel Deux solitudes. Seul le reel global les traverse
+  tous, et c'est Jules qui le travaille.
 - **Durée.** ~70 s avec les scènes 6 et 7 (contre ~46 s au départ). À valider :
   Instagram accepte 90 s, mais la rétention chute. Si on coupe, couper la scène 4
   (centile) avant les nouvelles.

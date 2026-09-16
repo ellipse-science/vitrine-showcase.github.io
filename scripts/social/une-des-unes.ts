@@ -21,16 +21,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import {
-  listEditions, loadHeadlineEvents,
-  type EditionRef, type SolitudeAxis, type SolitudeData, type UneEvent,
-} from "@/lib/data/headlineEvents";
-import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS } from "@/lib/enjeux";
+import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
-  COLORS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum, parseArgs, produce,
-  publicationHour, txt, type Scene,
+  COLORS, FIN_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum, parseArgs, produce,
+  publicationHour, sceneFin, txt, type Scene,
 } from "./lib/reel";
 
 /** Mots-clics ajoutés à la légende. À ajuster par l'équipe des réseaux. */
@@ -214,47 +210,6 @@ const CSS = `
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;margin-top:4px;color:var(--ink)}
 #classement .note{position:absolute;left:76px;right:76px;top:1720px;font-size:20px;color:var(--softer)}
 
-/* 6b. Pendant ce temps, au Canada — radar + les trois nouvelles canadiennes */
-#canada .head{position:absolute;top:150px;left:76px;right:76px}
-#canada h3{font-size:70px;line-height:1.02;margin-top:12px}
-#canada .chart{position:absolute;left:60px;right:60px;top:368px;height:560px}
-#canada .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
-#canada .vx{position:absolute;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#canada .keys{position:absolute;left:76px;right:76px;top:912px;display:flex;gap:48px;font-size:26px}
-#canada .keys div{display:flex;align-items:center;gap:12px}
-#canada .keys i{display:block;width:38px;height:7px}
-#canada .conv{position:absolute;left:76px;right:76px;top:972px;border-top:3px solid var(--ink);padding-top:16px;display:flex;align-items:center;gap:22px}
-#canada .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:84px;line-height:.86}
-#canada .conv span{font-size:28px;font-style:italic;color:var(--soft);line-height:1.3}
-#canada .conv u{text-decoration:none;font-style:normal;font-size:22px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
-#canada .list{position:absolute;left:76px;right:76px;top:1160px;height:600px;display:flex;flex-direction:column;justify-content:space-between}
-#canada .row{padding:14px 0;border-top:2px solid var(--rule)}
-#canada .top{display:flex;gap:16px;align-items:flex-start}
-#canada .badge{flex:none;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#canada .top .txt{min-width:0}
-#canada .top .k{font-size:17px;letter-spacing:.11em}
-#canada .top .t{font-size:28px;line-height:1.1;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#canada .bars{margin:10px 0 0 66px;display:flex;flex-direction:column;gap:7px}
-#canada .bar{display:flex;align-items:center;gap:12px;font-size:20px}
-#canada .bar em{font-style:normal;width:96px;flex:none;color:var(--soft)}
-#canada .bar i{display:block;height:18px;transform-origin:left}
-#canada .bar b{font-family:"IBM Plex Mono",monospace;font-size:24px}
-#canada .chip{display:inline-block;font-size:18px;padding:6px 12px;margin-left:14px;vertical-align:middle}
-@keyframes vanish{to{opacity:0}}
-@keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(720deg)}}
-@keyframes bloom{from{transform:scale(.04);opacity:0}to{transform:scale(1);opacity:1}}
-
-/* 7. Fin */
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:400px}
-#fin .logo{width:880px;display:block}
-#fin .kick{margin-top:50px;color:var(--soft)}
-#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid var(--blue);padding-bottom:10px}
-#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:30px;right:30px;top:1370px;display:flex;flex-direction:column;align-items:center}
-#fin .six{font-size:52px;font-style:italic;margin-bottom:46px;color:var(--paper)}
-#fin .hours{display:flex;gap:12px}
-#fin .hours div{width:144px;padding:18px 0 16px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
-#fin .hours div.on{background:var(--paper);border-color:var(--paper);color:var(--blue)}
 `;
 
 const anim = (name: string, dur: number, delay: number) => `style="animation:${name} ${dur}s ${delay}s both"`;
@@ -555,124 +510,6 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
   return { scene, draw0: DRAW0 };
 }
 
-// ── Pendant ce temps, au Canada ─────────────────────────────────────────────
-// UNE seule scène (demande d'Adrien, 2026-09-16) : le radar des Deux solitudes
-// qui tourne, le chiffre de convergence lu comme sur le site (« 10 % plus
-// divergent que d'habitude »), puis les trois nouvelles du Canada anglais avec,
-// en face, la part d'attention que le Québec leur a donnée. Tout vient de
-// `solitudes` : mêmes axes, mêmes parts, mêmes niveaux que la page.
-const RANK_BY_CLS: Record<string, number> = {
-  "s-tres-faible": 1, "s-faible": 2, "s-moyenne": 3,
-  "s-eleve": 4, "s-tres-eleve": 5, "s-extreme": 6,
-};
-const SPIN = 1.6;
-
-function sceneCanada(sol: SolitudeData): Scene | null {
-  const axes = sol.axes;
-  if (axes.length < 3) return null;
-  // Les axes du radar portent la clé d'enjeu, pas sa couleur (le site la tire
-  // de la même table) : on la prend à la source, jamais une seconde palette.
-  const couleur = (a: SolitudeAxis) => (a.issueKey ? ISSUE_COLORS[a.issueKey] ?? COULEUR_ENJEU_DEFAUT : COULEUR_ENJEU_DEFAUT);
-  const CX = 480, CY = 276, R = 203, n = axes.length;
-  const at = (i: number, f: number) => {
-    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-    return [CX + R * f * Math.cos(a), CY + R * f * Math.sin(a)] as const;
-  };
-  const shape = (pick: (a: SolitudeAxis) => number) =>
-    axes.map((a, i) => at(i, Math.min(100, pick(a)) / 100).join(",")).join(" ");
-  // Anneaux RONDS (demande d'Adrien) : les hexagones emboîtés se lisaient comme
-  // un cube en perspective.
-  const rings = [.5, 1].map((f) =>
-    `<circle cx="${CX}" cy="${CY}" r="${R * f}" fill="none" stroke="${COLORS.rule}" stroke-width="${f === 1 ? 3 : 2}"${f === 1 ? "" : ' stroke-dasharray="8 10"'}/>`).join("");
-  const spokes = axes.map((_, i) => {
-    const [px, py] = at(i, 1);
-    return `<line x1="${CX}" y1="${CY}" x2="${px}" y2="${py}" stroke="${COLORS.rule}" stroke-width="1.5" opacity=".7"/>`;
-  }).join("");
-  // Pastilles en HTML par-dessus le graphique : le pictogramme du site est un
-  // <svg> complet, qui ne se rend pas imbriqué dans un autre <svg>.
-  const vertices = axes.map((a, i) => {
-    const [px, py] = at(i, 1.17);
-    const col = a.side === "qc" ? COLORS.blue : COLORS.red;
-    return `<div class="vx" style="left:${px - 29}px;top:${py - 29}px;background:${col};animation:pop .4s ${SPIN + .3 + i * .08}s both">${enjeuGlyph(a.issueKey, COLORS.paper, 32)}</div>`;
-  }).join("");
-  const wedge = (() => {
-    const a0 = -Math.PI / 2, a1 = a0 + Math.PI / 7;
-    const p = (a: number) => `${CX + R * Math.cos(a)},${CY + R * Math.sin(a)}`;
-    return `<path d="M${CX},${CY} L${p(a0)} A${R},${R} 0 0 1 ${p(a1)} Z" fill="${COLORS.blue}" opacity=".13"/>`;
-  })();
-  const layer = (pts: string, col: string, fill: string, delay: number) =>
-    `<g style="transform-box:view-box;transform-origin:${CX}px ${CY}px;animation:bloom .7s ${delay}s both"><polygon points="${pts}" fill="${fill}" stroke="${col}" stroke-width="5" stroke-linejoin="round"/></g>`;
-
-  // Les nouvelles du Canada anglais, les plus couvertes là-bas d'abord ; en
-  // face, la part d'attention que le Québec leur a donnée. L'écart entre les
-  // deux barres EST la divergence, montrée plutôt qu'énoncée.
-  const rows = [...axes].filter((a) => a.canShare > 0).sort((a, b) => b.canShare - a.canShare).slice(0, 3);
-  const maxShare = Math.max(...rows.flatMap((a) => [a.canShare, a.qcShare]), 1);
-  const w = (v: number) => Math.max(v > 0 ? 8 : 0, (v / maxShare) * 470);
-  const items = rows.map((a, k) => {
-    const d = SPIN + 2 + k * .7;
-    const rank = a.salienceCls ? RANK_BY_CLS[a.salienceCls] : undefined;
-    const band = rank ? bandOf(rank) : null;
-    const chip = a.salienceLabel && band
-      ? `<span class="chip mono" style="background:${band.bg};color:${band.fg}">${txt(a.salienceLabel)}</span>` : "";
-    const bar = (lab: string, v: number, col: string, delay: number) =>
-      `<div class="bar"><em class="mono">${lab}</em><i style="width:${w(v)}px;background:${col};animation:grow .5s ${delay}s both"></i><b style="color:${col}">${v}&nbsp;%</b></div>`;
-    return `<div class="row" ${anim("fadeUp", .5, d)}>
-      <div class="top"><div class="badge" style="background:${couleur(a)}">${enjeuGlyph(a.issueKey, COLORS.paper, 30)}</div>
-      <div class="txt"><div class="k mono" style="color:${couleur(a)}">${txt(a.eyebrow ?? "Actualité")}${chip}</div>
-      <div class="t pf">${txt(a.label)}</div></div></div>
-      <div class="bars">${bar("Canada", a.canShare, COLORS.red, d + .2)}${bar("Québec", a.qcShare, COLORS.blue, d + .35)}</div>
-    </div>`;
-  }).join("");
-
-  return {
-    id: "canada", duration: SPIN + 2 + rows.length * .7 + 3,
-    html: `
-      <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Deux solitudes · 24 dernières heures</div>
-        <h3 class="disp" ${anim("fadeUp", .6, .2)}>Pendant ce temps, au&nbsp;Canada…</h3>
-      </div>
-      <div class="chart">
-        <svg viewBox="0 0 960 560">
-          <g ${anim("fadeIn", .5, .4)}>${rings}${spokes}</g>
-          <g style="transform-box:view-box;transform-origin:${CX}px ${CY}px;animation:sweep ${SPIN}s .4s linear both,vanish .4s ${SPIN + .4}s both">
-            ${wedge}
-            <line x1="${CX}" y1="${CY}" x2="${CX}" y2="${CY - R}" stroke="${COLORS.blue}" stroke-width="4" opacity=".8"/>
-          </g>
-          ${layer(shape((a) => a.canRadial), COLORS.red, "rgba(168,48,44,.17)", SPIN + .2)}
-          ${layer(shape((a) => a.qcRadial), COLORS.blue, "rgba(34,79,125,.20)", SPIN + .5)}
-        </svg>
-        ${vertices}
-      </div>
-      <div class="keys">
-        <div ${anim("fadeIn", .4, SPIN + .8)}><i style="background:${COLORS.red}"></i>🍁 Canada anglais</div>
-        <div ${anim("fadeIn", .4, SPIN + .95)}><i style="background:${COLORS.blue}"></i>${fleur(COLORS.blue, 24)} Québec</div>
-      </div>
-      <div class="conv" ${anim("fadeUp", .6, SPIN + 1.2)}>
-        <b style="color:${COLORS.blue}">${sol.convPct}&nbsp;%</b>
-        <span>de convergence<br><u class="mono">${sol.relDiffPct}&nbsp;% ${txt(sol.relLabel)}</u></span>
-      </div>
-      <div class="list">${items}</div>`,
-  };
-}
-
-function sceneFin(edition: EditionRef, logo: string | null): Scene {
-  const now = edition.pubHour % 24;
-  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
-    `<div class="mono${h === now ? " on" : ""}" style="animation:pop .4s ${1.2 + i * .12}s both">${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
-  return {
-    id: "fin", duration: 4, noFadeOut: true, hideFooter: true,
-    html: `
-      ${logo
-        ? `<img class="logo" src="${logo}" ${anim("pop", .7, .1)}>`
-        : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
-      <div class="kick mono" ${anim("fadeIn", .5, .4)}>Ce qui domine l’actualité du Québec</div>
-      <div class="url disp" ${anim("fadeUp", .7, .6)}>vitrinedemocratique.com</div>
-      <div class="band" ${anim("growY", .8, .2)}></div>
-      <div class="foot"><div class="six" ${anim("fadeIn", .6, 1)}>Six éditions par jour</div><div class="hours">${hours}</div></div>`,
-  };
-}
-
 // Effets pilotés par le temps : compteurs, étiquette de niveau, tracés.
 function script(traj: unknown, draw0: number): string {
   return `
@@ -710,7 +547,7 @@ window.onSceneTime=function(id,t,len){
 }
 
 // ── Légende Instagram ───────────────────────────────────────────────────────
-function caption(edition: EditionRef, classement: UneEvent[], sol: SolitudeData | null): string {
+function caption(edition: EditionRef, classement: UneEvent[]): string {
   const [top, ...others] = classement;
   const lines = [
     `Ce qui domine l’actualité du Québec en ce moment · Édition de ${pubHourLabel(edition)}, ${edition.dateLabel.toLowerCase()}`,
@@ -721,9 +558,6 @@ function caption(edition: EditionRef, classement: UneEvent[], sol: SolitudeData 
     `${top.qcOutletCount}/${top.totalQcOutlets} ${coverageLabel(top.qcOutletCount)} : ${top.mediaToday.map((m) => m.name).join(", ")}.`,
     `Saillance des 24 dernières heures : ${top.saillanceLabel.toLowerCase()}.`,
     ...(others.length ? ["", "Les autres nouvelles les plus saillantes :", ...others.map((e, i) => `${i + 2}. ${e.title}`)] : []),
-    // Le même segment que les deux dernières scènes : ce que le Canada anglais a
-    // mis en Une, et le chiffre de convergence du module Deux solitudes.
-    ...(sol ? ["", `Pendant ce temps, au Canada : ${sol.axes.filter((a) => a.side === "can").map((a) => a.label).slice(0, 1).join("")} (${sol.axes.filter((a) => a.side === "can").map((a) => `${a.canShare} % de l’attention canadienne, ${a.qcShare} % de l’attention québécoise`).slice(0, 1).join("")}).`, `Convergence des deux agendas : ${sol.convPct} % — ${sol.modeWord.toLowerCase()}.`] : []),
     "",
     "L’actualité saillante au Québec, six fois par jour : vitrinedemocratique.com",
     "",
@@ -765,13 +599,12 @@ async function main() {
   const scenes = [
     sceneAccroche(edition, top, logo), sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    data?.solitudes ? sceneCanada(data.solitudes) : null,
-    sceneFin(edition, logo),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    css: CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
@@ -779,7 +612,7 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(`${base}.txt`, caption(edition, classement, data?.solitudes ?? null));
+  await fs.writeFile(`${base}.txt`, caption(edition, classement));
   console.log(`  légende → ${base}.txt`);
 
   await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
