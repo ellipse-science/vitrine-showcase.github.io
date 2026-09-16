@@ -23,11 +23,15 @@ import path from "node:path";
 
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
+import { MODULES } from "@/lib/modules";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
-  COLORS, FIN_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum, parseArgs, produce,
-  publicationHour, sceneFin, txt, type Scene,
+  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
+  parseArgs, produce, publicationHour, sceneFin, sceneIntro, txt, type Scene,
 } from "./lib/reel";
+
+/** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
+const MODULE = MODULES["une-des-unes"];
 
 /** Mots-clics ajoutés à la légende. À ajuster par l'équipe des réseaux. */
 const HASHTAGS = ["#polqc", "#QC2026", "#VitrineDémocratique"];
@@ -110,16 +114,9 @@ const momentOf = (label: string) => label.replace(/^\d{1,2}h\s*/, "");
 const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
-/* 1. Accroche */
-#accroche .logo{position:absolute;top:120px;left:76px;width:540px}
-#accroche .brand{position:absolute;top:330px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
-#accroche .brand i{display:block;width:120px;height:10px;background:var(--blue);transform-origin:left}
-#accroche h1{position:absolute;top:420px;left:76px;right:60px;font-size:140px;line-height:.97}
-#accroche h1 em{font-style:normal;color:var(--blue)}
-#accroche .band{position:absolute;left:30px;right:30px;bottom:30px;height:730px;background:var(--ink);overflow:hidden}
-#accroche .ghost{position:absolute;left:46px;right:46px;bottom:0;height:540px;display:flex;align-items:flex-end;gap:18px}
-#accroche .ghost div{flex:1;transform-origin:bottom}
-#accroche .ed{position:absolute;left:76px;right:76px;top:1210px;color:var(--paper);font-size:30px}
+/* 1. Accroche — le reste est dans INTRO_CSS (lib/reel.ts) */
+#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:520px;display:flex;align-items:flex-end;gap:18px}
+#intro .ghost div{flex:1;transform-origin:bottom}
 
 /* 2. Une n°1 */
 #une .art{position:absolute;left:30px;top:30px;width:1020px;height:1060px;overflow:hidden}
@@ -219,20 +216,14 @@ const bandOf = (rank: number) => SALIENCE_COLORS[rank] ?? { bg: COLORS.rule, fg:
 /** Largeur des graphiques : intérieur du cadre moins 30 px de chaque côté. */
 const CHART_W = 960;
 
-function sceneAccroche(edition: EditionRef, top: UneEvent, logo: string | null): Scene {
+/** Le visuel d'accroche du module 1 : les barres de saillance de la journée,
+ *  en ombre, dans le bandeau d'encre de l'accroche commune. */
+function visuelAccroche(top: UneEvent): string {
   const pts = top.salienceTrend?.points ?? [];
   const max = Math.max(1, ...pts.map((p) => p.cumul));
-  const ghost = pts.map((p, i) =>
+  const barres = pts.map((p, i) =>
     `<div style="height:${Math.max(2, (p.cumul / max) * 100)}%;background:${p.rank > 0 ? bandOf(p.rank).bg : COLORS.soft};animation:growY .7s ${1.2 + i * 0.15}s both"></div>`).join("");
-  return {
-    id: "accroche", duration: 3.6, noFadeIn: true, hideFooter: true,
-    html: `
-      ${logo ? `<img class="logo" src="${logo}" ${anim("fadeIn", .6, .1)}>` : ""}
-      <div class="brand mono" ${anim("fadeIn", .5, .3)}><i ${anim("grow", .6, .3)}></i>La Une des Unes</div>
-      <h1 class="disp" ${anim("fadeUp", .8, .3)}>Ce qui domine l’actualité du <em>Québec</em> en ce moment</h1>
-      <div class="band" ${anim("fadeIn", .4, .9)}><div class="ghost">${ghost}</div></div>
-      <div class="ed mono" ${anim("fadeIn", .5, 1.6)}>Édition de ${pubHourLabel(edition)} · ${esc(edition.dateLabel)}</div>`,
-  };
+  return `<div class="ghost">${barres}</div>`;
 }
 
 function sceneUne(top: UneEvent, art: string | null): Scene {
@@ -597,14 +588,19 @@ async function main() {
   const traj = sceneTrajectoire(top);
   const clsmt = sceneClassement(classement, edition);
   const scenes = [
-    sceneAccroche(edition, top, logo), sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
+    sceneIntro({
+      logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
+      visuel: visuelAccroche(top),
+      edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
+    }),
+    sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    css: CSS + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
