@@ -11,8 +11,13 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 | Script | État |
 |---|---|
 | `une-des-unes.ts` (module 1) | LIVRÉ |
-| Deux solitudes, 12 enjeux, Partis et couverture, Polimètre+, Assemblée nationale | PLANIFIÉ |
-| Reel global (tour des six modules) | PLANIFIÉ |
+| `deux-solitudes.ts` (module 2) | LIVRÉ |
+| 12 enjeux, Partis et couverture, Polimètre+, Assemblée nationale | PLANIFIÉ |
+| Reel global (tour des six modules) | PLANIFIÉ — Jules |
+
+**Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
+mélange pas deux modules, sinon le public ne sait plus ce qu'il regarde. Le reel
+global est le seul qui les traverse tous.
 
 La publication reste **manuelle** : le script ne publie rien sur Instagram.
 
@@ -31,6 +36,7 @@ Deux temps : **on regarde l'aperçu, puis on produit la vidéo.**
 git pull                                   # données de l'édition du moment
 npm run reel:une-des-unes                  # 1. aperçu animé dans le navigateur
 npm run reel:une-des-unes -- --mp4         # 2. la vidéo, une fois l'aperçu validé
+npm run reel:deux-solitudes                # module 2, mêmes options
 ```
 
 L'aperçu est la même page que celle qui est filmée pour le MP4 : lecture,

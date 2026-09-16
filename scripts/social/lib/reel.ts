@@ -174,6 +174,40 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
  *  `script` peut définir `window.onSceneTime(id, local)` pour les effets que
  *  CSS ne sait pas rendre (compteurs, zoom lent). */
+/** Scène de fin, commune à tous les reels : logo, signature, adresse et le
+ *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
+ *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null }): Scene {
+  const now = opts.pubHour % 24;
+  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
+    `<div class="mono${h === now ? " on" : ""}" style="animation:pop .4s ${1.2 + i * .12}s both">${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
+  return {
+    id: "fin", duration: 4, noFadeOut: true, hideFooter: true,
+    html: `
+      ${opts.logo
+        ? `<img class="logo" src="${opts.logo}" style="animation:pop .7s .1s both">`
+        : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
+      <div class="kick mono" style="animation:fadeIn .5s .4s both">${typo(esc(opts.signature))}</div>
+      <div class="url disp" style="animation:fadeUp .7s .6s both">vitrinedemocratique.com</div>
+      <div class="band" style="animation:growY .8s .2s both"></div>
+      <div class="foot"><div class="six" style="animation:fadeIn .6s 1s both">Six éditions par jour</div><div class="hours">${hours}</div></div>`,
+  };
+}
+
+/** CSS de la scène de fin — à concaténer au CSS du module. */
+export const FIN_CSS = `
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:400px}
+#fin .logo{width:880px;display:block}
+#fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
+#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid var(--blue);padding-bottom:10px}
+#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
+#fin .foot{position:absolute;left:30px;right:30px;top:1370px;display:flex;flex-direction:column;align-items:center}
+#fin .six{font-size:52px;font-style:italic;margin-bottom:46px;color:var(--paper)}
+#fin .hours{display:flex;gap:12px}
+#fin .hours div{width:144px;padding:18px 0 16px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
+#fin .hours div.on{background:var(--paper);border-color:var(--paper);color:var(--blue)}
+`;
+
 export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
