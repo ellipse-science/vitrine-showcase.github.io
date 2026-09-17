@@ -302,41 +302,82 @@ export const INTRO_CSS = `
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
  *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string }): Scene {
+/** Les dix partenaires du site, dans l'ordre de `app/apropos/partenaires`
+ *  (Adrien, 2026-09-16). Chargés en data URI : la page de rendu est autonome. */
+export async function chargerPartenaires(): Promise<string[]> {
+  const dir = path.resolve(process.cwd(), "public", "images", "partners");
+  const fichiers = [
+    "ChaireQuebecCitoyennete.png", "CLESSN-nobg.png", "ULaval.png", "cegepgarneau-nobg.png",
+    "CECD-nobg.png", "GRCP-nobg.png", "Unicorne.png", "Infoscope-nobg.png",
+    "llm-tool.png", "aws.svg",
+  ];
+  const out: string[] = [];
+  for (const f of fichiers) {
+    try {
+      const buf = await fs.readFile(path.join(dir, f));
+      // 🪤 `llm-tool.png` est du texte BLANC sur fond NOIR, les autres sont noirs
+      // sur transparent : l'inversion qui sauve les uns ferait de lui un
+      // rectangle blanc. Il passe donc en `screen`, qui efface son fond noir.
+      const src = `data:${f.endsWith(".svg") ? "image/svg+xml" : "image/png"};base64,${buf.toString("base64")}`;
+      out.push(f === "llm-tool.png" ? `screen:${src}` : src);
+    } catch { /* un logo manquant n'empêche pas la vidéo */ }
+  }
+  return out;
+}
+
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
   const now = opts.pubHour % 24;
   // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
   // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
   // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
   // modules qui opposent deux régions.
   const accent = opts.accent ?? COLORS.blue;
-  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
-    `<div class="mono${h === now ? " on" : ""}"${h === now ? ` style="color:${accent};animation:pop .4s ${1.2 + i * .12}s both"` : ` style="animation:pop .4s ${1.2 + i * .12}s both"`}>${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
+  const hours = [0, 4, 8, 12, 16, 20].map((h, i) => {
+    const style = h === now
+      ? `background:${accent};border-color:${accent};color:${COLORS.paper};animation:pop .4s ${1.2 + i * .12}s both`
+      : `border-color:${accent};animation:pop .4s ${1.2 + i * .12}s both`;
+    return `<div class="mono" style="${style}">${celestial(h, "currentColor", 36)}${h}h</div>`;
+  }).join("");
+  const logos = (opts.partenaires ?? []).map((src, i) => {
+    const screen = src.startsWith("screen:");
+    return `<img class="${screen ? "screen" : ""}" src="${screen ? src.slice(7) : src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
+  }).join("");
   return {
-    id: "fin", duration: 4, noFadeOut: true, hideFooter: true, lightBrand: true,
+    id: "fin", duration: 4.8, noFadeOut: true, hideFooter: true, lightBrand: true,
     html: `
+      <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
-        ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 780, passe: .9 })}</div>`
-        : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
-      <div class="kick mono" style="animation:fadeIn .5s .4s both">${typo(esc(opts.signature))}</div>
-      <div class="url disp" style="animation:fadeUp .7s .6s both">vitrinedemocratique.com</div>
+        ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 640, passe: .9 })}</div>`
+        : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
+      <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
+      <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
+      <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
+      <div class="hours">${hours}</div>
       <div class="band" data-deco style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
-      <div class="foot"><div class="six" style="animation:fadeIn .6s 1s both">Six éditions par jour</div><div class="hours">${hours}</div></div>`,
+      ${logos ? `<div class="foot"><div class="part mono" style="animation:fadeIn .5s 1.7s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
   };
 }
 
-/** CSS de la scène de fin — à concaténer au CSS du module. */
+/** CSS de la scène de fin — à concaténer au CSS du module.
+ *  LES PARTENAIRES ONT LE CARRÉ DE COULEUR POUR EUX (Adrien, 2026-09-16) :
+ *  l'horaire des six éditions est sur le papier, les logos dans le bandeau.
+ *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
+ *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-/* Marge de droite : la colonne de boutons d'Instagram (120 px sous le tiers de l'écran). */
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:400px 120px 0 76px}
-#fin .logo{width:780px}
-#fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
-#fin .url{font-size:66px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
-#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:76px;right:120px;top:1200px;display:flex;flex-direction:column;align-items:center}
-#fin .six{font-size:46px;font-style:italic;margin-bottom:24px;color:var(--paper)}
-#fin .hours{display:flex;gap:12px}
-#fin .hours div{width:126px;padding:12px 0 10px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
-#fin .hours div.on{background:var(--paper);border-color:var(--paper)}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:236px 120px 0 76px}
+#fin .kick{font-size:28px;color:var(--soft)}
+#fin .logo{width:640px;margin-top:18px}
+#fin .metho{font-size:26px;margin-top:26px;color:var(--soft)}
+#fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
+#fin .six{font-size:34px;font-style:italic;margin-top:30px;color:var(--soft)}
+#fin .hours{display:flex;gap:10px;margin-top:14px}
+#fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:6px}
+#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
+#fin .foot{position:absolute;left:76px;right:120px;top:1050px;display:flex;flex-direction:column;align-items:center}
+#fin .part{font-size:26px;color:rgba(243,236,221,.8)}
+#fin .logos{margin-top:26px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:30px 44px}
+#fin .logos img{height:64px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
+#fin .logos img.screen{filter:none;mix-blend-mode:screen}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
@@ -490,7 +531,12 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
         "  Lancez la commande SANS --mp4, relisez l'aperçu dans le navigateur, puis relancez avec --mp4.",
       );
     }
-    await renderReel(html, { out: `${base}.mp4` });
+    // PAS DE SON par défaut (Adrien, 2026-09-16) : la musique se prend dans le
+    // catalogue de la plateforme au moment de publier. `--musique fichier.mp3`
+    // monte une trame dont on détient les droits, pour publier ailleurs.
+    const piste = typeof args.musique === "string" ? args.musique : undefined;
+    if (piste) console.log(`  musique → ${piste}`);
+    await renderReel(html, { out: `${base}.mp4`, musique: piste });
     console.log(`  vidéo   → ${base}.mp4`);
     return;
   }
@@ -597,7 +643,7 @@ async function launch(): Promise<Browser> {
 
 /** Rend la page en MP4 (H.264, 30 i/s, 1080×1920), ou en images fixes si
  *  `previewAt` est fourni (secondes de la vidéo finale). */
-export async function renderReel(html: string, opts: { out: string; previewAt?: number[] }): Promise<void> {
+export async function renderReel(html: string, opts: { out: string; previewAt?: number[]; musique?: string }): Promise<void> {
   await fs.mkdir(path.dirname(opts.out), { recursive: true });
   const browser = await launch();
   try {
@@ -623,7 +669,9 @@ export async function renderReel(html: string, opts: { out: string; previewAt?: 
     // piste son, et Instagram en pose une (la musique) par-dessus de toute façon.
     const ffmpeg = spawn(ffmpegPath, [
       "-y", "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "png", "-i", "-",
-      "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+      ...(opts.musique
+        ? ["-stream_loop", "-1", "-i", opts.musique]
+        : ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"]),
       "-map", "0:v", "-map", "1:a", "-shortest",
       "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow",
       "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",

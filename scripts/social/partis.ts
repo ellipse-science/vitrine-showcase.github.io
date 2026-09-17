@@ -29,7 +29,7 @@ import { MODULES } from "@/lib/modules";
 
 import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
-import { COLORS, FIN_CSS, TONE, buildPage, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
+import { COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
 
 const IDENTITE = MODULES["partis-et-couverture"];
 const MODULE = IDENTITE.nom;
@@ -363,7 +363,7 @@ async function main() {
   ].filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
-  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent }));
+  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,

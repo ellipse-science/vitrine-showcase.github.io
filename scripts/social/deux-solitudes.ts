@@ -30,7 +30,7 @@ import {
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
 import {
-  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, enjeuGlyph, esc, fleur, parseArgs, produce,
+  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
@@ -75,10 +75,7 @@ const CSS = `
 #sonar .chart{position:absolute;left:60px;right:200px;top:318px;height:720px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .keys{position:absolute;left:76px;right:200px;top:1052px;display:flex;gap:40px;font-size:26px}
-#sonar .keys div{display:flex;align-items:center;gap:12px}
-#sonar .keys i{display:block;width:26px;height:26px;border-radius:50%}
-#sonar .zone{position:absolute;left:76px;right:200px;top:1098px;height:320px}
+#sonar .zone{position:absolute;left:76px;right:200px;top:1060px;height:360px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
@@ -209,10 +206,6 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
         </svg>
         ${vertices}
       </div>
-      <div class="keys">
-        <div ${anim("fadeIn", .4, T0 - .4)}><i style="background:${COLORS.red}"></i>🍁 Canada anglais</div>
-        <div ${anim("fadeIn", .4, T0 - .3)}><i style="background:${COLORS.blue}"></i>${fleur(COLORS.blue, 24)} Québec</div>
-      </div>
       <div class="zone">
         ${cartes}
         <div class="conv" ${anim("fadeUp", .6, fin + OUTRO)}>
@@ -281,7 +274,7 @@ async function main() {
       edition: `Édition de ${edition.pubHour % 24}h · ${edition.dateLabel}`,
     }),
     sceneSonar(sol, edition),
-    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({

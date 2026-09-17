@@ -29,7 +29,7 @@ import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, sceneFin, sceneIntro, loadLogos, txt, type Scene,
+  parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -99,7 +99,7 @@ function centileMessage(centile: number): { c: number; big: number; before: stri
 }
 
 /** « 6/6 des médias québécois en parlent ». */
-const coverageLabel = (n: number) => (n > 1 ? "des médias québécois en parlent" : "des médias québécois en parle");
+const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent" : "des grands médias québécois en parle");
 
 /** « Le Journal de Montréal » (lib/medias.ts) et « Journal de Montréal »
  *  (mediaToday) désignent le même média. */
@@ -181,11 +181,11 @@ const CSS = `
 
 /* 5. Couverture */
 #couverture .head{position:absolute;top:262px;left:76px;right:200px}
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:280px;line-height:.9;color:var(--blue)}
-#couverture .lab{font-size:50px;margin-top:10px}
-#couverture ul{position:absolute;left:76px;right:200px;top:620px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:120px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:62px}
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
+#couverture ul{position:absolute;left:76px;right:200px;top:640px;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:112px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px}
 #couverture li span{font-size:26px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
@@ -657,7 +657,7 @@ async function main() {
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
