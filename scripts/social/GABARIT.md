@@ -50,6 +50,13 @@ commun, une identité visuelle, un rappel marqué.**
   foncé ou coloré et on efface ses séparations claires (`traceSeul`).
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
+- **ARRÊTÉ · Accents alignés sur le site** (Jules Piral, 2026-09-17 : « assure-toi
+  que les couleurs des titres de chaque module soient les bonnes ») : les accents de
+  `lib/modules.ts` sont ceux du banc d'essai du site (`PaletteScrollLab.tsx`, Adrien,
+  16-09) — Une des Unes laiton `#86642C`, Deux solitudes rouge `#A8302C`, 12 enjeux
+  mauve `#6E4F73`, Partis bleu `#2F6480`, Polimètre+ vert `#517368`, Assemblée
+  orange LNH `#B5521E`. **Renverse** l'accent par famille de la palette sépia
+  ci-dessous (trois modules partageaient le même brun) ; les papiers sépia restent.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
   **`lib/modules.ts`** (`papier` et `accent`), lue par les reels ET par le site.
   **Palette « Sépia » du banc d'essai** (`components/lab/PaletteScrollLab.tsx`),
@@ -364,10 +371,12 @@ d'une édition à l'autre. À VALIDER.
 
 1. **Accroche.** Logo, « 6 modules / pour mieux comprendre la démocratie au Québec »,
    six tuiles numérotées aux couleurs des modules.
-2. **D'où viennent les données.** 13 médias québécois et canadiens (six fois par
-   jour), l'Assemblée nationale (chaque jour de débat), modèles d'IA locaux
-   (Université Laval) ; « Gratuit, sans publicité, méthodologie publique ». Phrases
-   reprises du pied de page du site.
+2. **D'où viennent les données.** Trois sources : 13 médias québécois et canadiens
+   (leurs Unes, six fois par jour), l'Assemblée nationale (chaque jour de débat), les
+   promesses électorales (leur écho dans les médias, avec le Polimètre). Puis, en
+   encadré, **« Des modèles locaux, entraînés, validés et conservés à l'Université
+   Laval »** — l'emphase est sur LOCAL, pas sur « IA » (Jules Piral, 2026-09-17 ;
+   rejeté : le grand « IA »). « Gratuit, sans publicité, méthodologie publique ».
 3. **Un module par scène**, sur son papier : « Module n sur 6 » et six points, le nom
    à la couleur du module, la QUESTION à laquelle il répond, **l'élément distinctif
    du module** (Jules Piral, 2026-09-16), puis « Sur le site : » ce qu'on y trouve.

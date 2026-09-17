@@ -37,6 +37,14 @@
 // celui du Canada À L'INTÉRIEUR du module), et deux modules d'une même famille
 // partagent leur accent — c'est le papier qui les distingue.
 //
+// ⚠️ ACCENTS ALIGNÉS SUR LE SITE (Jules Piral, 2026-09-17 : « assure-toi que les
+// couleurs des titres de chaque module soient les bonnes »). Les accents sont
+// ceux du banc d'essai du site de travail (`components/lab/PaletteScrollLab.tsx`,
+// tranché par Adrien le 16-09) : une couleur PAR module, qu'on reconnaît d'un
+// coup d'œil. Renverse l'accent par famille de la palette sépia (trois modules
+// partageaient le même brun, deux le même bordeaux). Les papiers sépia restent.
+// Si le banc d'essai change, recopier ici.
+//
 // ⚠️ La règle d'Adrien du 3 sept. tient toujours : **la Une des Unes garde le
 // papier tel quel** en ligne. L'accent ci-dessous colore les filets, les titres
 // d'accroche et les bandeaux — pas le fond de la Une.
@@ -61,7 +69,7 @@ export const MODULES = {
   "une-des-unes": {
     nom: "La Une des Unes",
     famille: "médias",
-    // Famille médias (sépia) : laiton encre, papier du site tel quel.
+    // Laiton : la couleur des paliers de saillance du module.
     accent: "#86642C",
     papier: "#F3ECDD",
     lignes: [{ t: "Les faits saillants", accent: true }, { t: "au Québec" }, { t: "en ce moment" }],
@@ -69,10 +77,9 @@ export const MODULES = {
   "deux-solitudes": {
     nom: "Deux solitudes",
     famille: "médias",
-    // Famille médias (sépia). Le rouge du Canada et le bleu du Québec restent les
-    // couleurs des RÉGIONS à l'intérieur du module (accroche, polygones, barres).
-    // Le rouge comme couleur du module (Adrien, 16-09) a cédé à la palette sépia.
-    accent: "#86642C",
+    // Le rouge du Canada : seul module qui mobilise le Canada. Le bleu reste au
+    // Québec À L'INTÉRIEUR du module.
+    accent: "#A8302C",
     papier: "#EDE1CB",
     lignes: [
       { t: "Québec", c: "#2E4663" },
@@ -83,32 +90,32 @@ export const MODULES = {
   "enjeux-saillants": {
     nom: "Les 12 enjeux",
     famille: "médias",
-    // Famille médias (sépia). Les douze couleurs d'enjeu restent celles des enjeux.
-    accent: "#86642C",
+    // Mauve sépia (Adrien, 16-09). Les douze couleurs d'enjeu restent celles des enjeux.
+    accent: "#6E4F73",
     papier: "#E6D6B8",
     lignes: [{ t: "Les 12 enjeux", accent: true }, { t: "de la campagne" }, { t: "jour après jour" }],
   },
   "partis-et-couverture": {
     nom: "Partis et couverture",
     famille: "pont",
-    // Famille « pont » (sépia) : brun chaud, entre médias et décideurs.
-    accent: "#7A4E33",
+    // Bleu de la « salle sombre » du module (Adrien, 16-09).
+    accent: "#2F6480",
     papier: "#E2D0B1",
     lignes: [{ t: "De quel parti", accent: true }, { t: "parle-t-on" }, { t: "dans les médias?" }],
   },
   "polimetre-plus": {
     nom: "Polimètre+",
     famille: "décideurs",
-    // Famille décideurs (sépia) : bordeaux.
-    accent: "#5E1A25",
+    // Le vert du Polimètre (mot-symbole de polimetre.org, rgb(81,115,104)).
+    accent: "#517368",
     papier: "#E5D1C3",
     lignes: [{ t: "Les promesses", accent: true }, { t: "tenues, brisées" }, { t: "et oubliées" }],
   },
   "assemblee-nationale": {
     nom: "L’alignement de l’Assemblée",
     famille: "décideurs",
-    // Famille décideurs (sépia) : bordeaux ; le papier le distingue du Polimètre+.
-    accent: "#5E1A25",
+    // L'orange de la LNH, variante encre lisible sur papier (Adrien, 16-09).
+    accent: "#B5521E",
     papier: "#DCC3B4",
     lignes: [{ t: "Qui parle", accent: true }, { t: "au Salon bleu", c: "#2E4663" }, { t: "et de quoi?" }],
   },
