@@ -285,13 +285,13 @@ function sceneRecap(): Scene {
 // ── Mise en page ────────────────────────────────────────────────────────────
 // Zone utile : x 60 → 960 (1020 au-dessus de y 640), y 220 → 1422 (GABARIT.md).
 const CSS = `
-#accroche .bandes{position:absolute;left:30px;right:180px;top:414px;bottom:30px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 170px);mask-image:linear-gradient(to bottom,transparent 0,#000 170px)}
+#accroche .bandes{position:absolute;left:30px;right:30px;top:414px;bottom:30px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 170px);mask-image:linear-gradient(to bottom,transparent 0,#000 170px)}
 #accroche .bande{position:absolute;top:0;bottom:0;width:calc(100% / 6 + 1px);transform-origin:top}
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
-#accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px;text-align:center}
-#accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;text-align:center;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
+#accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px}
+#accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;text-align:left;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
@@ -300,40 +300,40 @@ const CSS = `
 #accroche .date{font-size:28px;letter-spacing:.16em;color:var(--soft)}
 /* Liseré des six encres tout en haut : l'en-tête d'Instagram le couvre au
    visionnement, mais il habille la vignette et les autres plateformes. */
-#accroche .liseré{position:absolute;left:30px;right:180px;top:30px;height:14px;display:flex;z-index:3}
+#accroche .liseré{position:absolute;left:30px;right:30px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
-#accroche h1{position:absolute;top:600px;left:180px;right:180px;text-align:center}
+#accroche h1{position:absolute;top:600px;left:180px;right:180px;text-align:left}
 #accroche .six{display:block;font-size:148px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
-#accroche .traits{position:absolute;left:180px;right:180px;top:1080px;display:flex;gap:12px;height:18px}
+#accroche .traits{position:absolute;left:180px;right:180px;top:1190px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:282px;left:180px;right:180px;text-align:center;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:330px;left:180px;right:180px;text-align:center;font-size:72px;line-height:1.02}
+#sources .kick{position:absolute;top:282px;left:180px;right:180px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:330px;left:180px;right:180px;font-size:72px;line-height:1.02}
 #sources .lignes{position:absolute;top:560px;left:180px;right:180px}
 #sources .ligne{display:flex;align-items:center;gap:26px;padding:14px 0;border-top:3px solid var(--ink);text-align:left}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:center;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
+#sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
-#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;text-align:center;font-size:34px;font-style:italic}
+#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{position:absolute;top:282px;left:180px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:336px;left:180px;right:180px;text-align:center}
+.scene .tete{position:absolute;top:336px;left:180px;right:180px;text-align:left}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
 .scene .schema{position:absolute;left:0;top:0;width:900px;height:410px}
 /* Les schémas sont dessinés dans 900 × 410 ; la zone utile n'en fait plus que
    784 depuis les marges mesurées au simulateur : on les réduit d'un bloc. */
 .scene .ech{position:absolute;left:180px;top:780px;width:900px;height:410px;transform:scale(.8);transform-origin:0 0}
-.scene .site{position:absolute;left:180px;right:180px;top:1240px;text-align:center;font-size:38px;line-height:1.2}
-.scene .site b{display:block;font-size:28px;margin-bottom:8px}
+.scene .site{position:absolute;left:180px;right:180px;top:1240px;text-align:left;font-size:38px;line-height:1.2;border-top:3px solid currentColor;padding-top:20px}
+.scene .site b{display:block;font-size:28px;margin-bottom:10px}
 
 .schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
 .schema .journal b{display:inline-block;background:var(--ink);color:var(--paper);font-size:28px;padding:8px 14px;margin-bottom:24px}
@@ -376,11 +376,12 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:292px;left:180px;right:180px;text-align:center;font-size:76px;line-height:1.02}
+#recap h2{position:absolute;top:292px;left:180px;right:180px;text-align:left;font-size:76px;line-height:1.02}
 #recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
-#recap li{display:grid;grid-template-columns:50px auto;justify-content:center;align-items:center;gap:26px;height:100px;text-align:left;padding:0 26px;border-left:14px solid}
+#recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
-#recap li span{font-size:50px}
+#recap li span{font-size:50px;line-height:1}
+#fin.scene .band{right:30px}
 `;
 
 // Le vu-mètre bouge comme un vu-mètre : niveau pseudo-musical, déterministe
