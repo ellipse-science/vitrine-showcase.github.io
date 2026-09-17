@@ -1,5 +1,11 @@
 [
   {
+    "pr": 816,
+    "date": "2026-09-17T02:37:49Z",
+    "note": "Sur le site de travail, chaque module s'affiche maintenant sur un fond de sa propre couleur, avec trois degrés d'intensité au choix.",
+    "version": null
+  },
+  {
     "pr": 815,
     "date": "2026-09-17T02:17:07Z",
     "note": "Le module sur la couverture des partis s'affiche désormais sur un fond sombre, comme une console de mixage.",
