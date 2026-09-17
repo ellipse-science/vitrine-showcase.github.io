@@ -18,7 +18,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { ELECTION_LABEL } from "@/lib/election";
 import { ISSUE_COLORS } from "@/lib/enjeux";
 import { MODULES, type CleModule } from "@/lib/modules";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
@@ -223,7 +222,6 @@ function sceneAccroche(logo: string): Scene {
       <div class="liseré" data-deco>${ORDRE.map((k, i) => `<i style="background:${MODULES[k].accent};animation:grow .35s ${(i * .06).toFixed(2)}s both"></i>`).join("")}</div>
       <div class="entete" data-deco>
         <div class="logo" style="${anim("pop", .7, .1)}">${logoAnime(logo, { classe: "", taille: 560, passe: .9 })}</div>
-        <div class="date mono" style="${anim("fadeIn", .5, .3)}">Élections québécoises du ${ELECTION_LABEL}</div>
       </div>
       <h1 data-cle><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
       <div class="traits">${traits}</div>`,
@@ -296,8 +294,7 @@ const CSS = `
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
    du bas de cet encadré, jamais derrière le logo (Jules, 17-09). */
-#accroche .entete{position:absolute;left:180px;right:180px;top:44px;height:370px;background:#F3ECDD;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:96px;gap:26px;z-index:2}
-#accroche .date{font-size:28px;letter-spacing:.16em;color:var(--soft)}
+#accroche .entete{position:absolute;left:180px;right:180px;top:44px;height:370px;background:#F3ECDD;display:flex;align-items:center;justify-content:center;z-index:2}
 /* Liseré des six encres tout en haut : l'en-tête d'Instagram le couvre au
    visionnement, mais il habille la vignette et les autres plateformes. */
 #accroche .liseré{position:absolute;left:30px;right:30px;top:30px;height:14px;display:flex;z-index:3}
