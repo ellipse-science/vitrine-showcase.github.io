@@ -16,20 +16,23 @@
  *                       donc la couleur se retient toute seule. Le bleu reste au
  *                       Québec À L'INTÉRIEUR du module.
  *   · 12 enjeux         mauve sépia (Adrien, 16-09).
- *   · Partis            SALLE SOMBRE (Adrien, 16-09) : « le look d'être dans un
- *                       club, devant une console ». Seul module où l'encre et les
- *                       filets basculent aussi.
+ *   · Partis            SALLE SOMBRE + BLEU (Adrien, 16-09) : « le look d'être
+ *                       dans un club, devant une console ». Seul module où
+ *                       l'encre et les filets basculent aussi ; le bleu s'y
+ *                       éclaire, sinon il disparaît dans la nuit.
  *   · Polimètre+        le vert du Polimètre, relevé sur polimetre.org — couleur
  *                       du mot-symbole dans l'en-tête, rgb(81,115,104).
- *   · Assemblée         bleu acier.
+ *   · Assemblée         l'ORANGE DE LA LNH — l'inspiration d'Étienne pour ce
+ *                       module : un alignement d'équipe. L'orange vif de
+ *                       l'écusson teinte le fond, sa variante encre écrit.
  * Aucune ne reprend une des douze couleurs d'enjeu (`lib/enjeux.ts`) : la
  * couleur d'un enjeu doit rester celle de cet enjeu.
  *
  * ⚠️ Règle d'Adrien du 3 sept., toujours valable : LA UNE DES UNES GARDE LE
  * PAPIER. Le premier changement se voit en arrivant sur Deux solitudes.
  *
- * Les jetons sont posés SUR CHAQUE SECTION, jamais globalement : le reste de la
- * page n'en sait rien, et « off » rend tout au papier.
+ * TOUTE LA PAGE prend la couleur du module où l'on se trouve, et le changement
+ * est franc d'un module à l'autre. « off » rend tout au papier.
  *
  *   ?lab=off | discret | marque | franc
  */
@@ -40,13 +43,26 @@ type Intensite = "off" | "discret" | "marque" | "franc";
 const PAPIER = "#F3ECDD";
 const NUIT = "#14120F";
 
-const MODULES: { id: string; nom: string; accent: string; papierPur?: boolean; sombre?: boolean }[] = [
+const MODULES: {
+  id: string; nom: string; accent: string;
+  /** La couleur qui teinte le fond, quand elle diffère de l'accent (un orange
+   *  vif teinte mieux qu'un orange encre, qui lui reste lisible en texte). */
+  teinte?: string;
+  /** L'accent, éclairci, quand le module est en salle sombre. */
+  accentNuit?: string;
+  papierPur?: boolean; sombre?: boolean;
+}[] = [
   { id: "une-des-unes", nom: "Une des Unes", accent: "#86642C", papierPur: true },
   { id: "deux-solitudes", nom: "Deux solitudes", accent: "#A8302C" },
   { id: "enjeux-saillants", nom: "12 enjeux", accent: "#6E4F73" },
-  { id: "partis-et-couverture", nom: "Partis", accent: "#D9B36C", sombre: true },
+  // Le bleu passe aux Partis (Adrien, 16-09) : dans la salle sombre, il s'éclaire
+  // pour rester lisible sur la nuit — c'est la même couleur, sous un projecteur.
+  { id: "partis-et-couverture", nom: "Partis", accent: "#2F6480", accentNuit: "#7FB2D4", sombre: true },
   { id: "polimetre-plus", nom: "Polimètre+", accent: "#517368" },
-  { id: "assemblee-nationale", nom: "Assemblée", accent: "#2F6480" },
+  // L'ORANGE DE LA LNH (Adrien, 16-09) : l'inspiration d'Étienne pour ce module,
+  // l'alignement d'une équipe. L'orange vif de l'écusson teinte le fond ; le
+  // texte prend sa variante encre, seule lisible sur du papier.
+  { id: "assemblee-nationale", nom: "Assemblée", accent: "#B5521E", teinte: "#E0661F" },
 ];
 
 /** Trois degrés : combien de la couleur du module passe dans son fond. */
@@ -79,9 +95,6 @@ const jetonsNuit = (fond: string, accent: string): Record<string, string> => ({
   "--cordovan": "#C9585F",
 });
 
-const TOUS_JETONS = ["--paper", "--paper-deep", "--ink", "--ink-soft", "--ink-softer",
-  "--rule", "--rule-faint", "--brass", "--amber-encre", "--cordovan", "--lab-accent"];
-
 export default function PaletteScrollLab() {
   if (process.env.NEXT_PUBLIC_SITE_ENV === "prod") return null;
   return <PaletteScrollLabInner />;
@@ -101,29 +114,30 @@ function PaletteScrollLabInner() {
 
   useEffect(() => {
     try { window.localStorage.setItem("lab-intensite", intensite); } catch { /* rien */ }
+  }, [intensite]);
 
-    const sections = MODULES
-      .map((m) => ({ m, el: document.getElementById(m.id) }))
-      .filter((x): x is typeof x & { el: HTMLElement } => !!x.el);
-
-    const rendre = () => sections.forEach(({ el }) => {
-      TOUS_JETONS.forEach((k) => el.style.removeProperty(k));
-      el.style.removeProperty("background");
-    });
-
-    if (intensite === "off") { rendre(); return rendre; }
-
+  // TOUT EST EN CSS, POSÉ SUR CHAQUE SECTION PAR SON IDENTIFIANT. Aucun
+  // observateur, aucun réglage au montage : le style s'applique que les modules
+  // soient déjà là ou non (correctif du 16-09 — l'ancienne version branchait un
+  // IntersectionObserver avant que les sections existent, et ne posait jamais
+  // rien : « je vois rien »).
+  //
+  // Le fond de la section ET son papier prennent la couleur : sans le papier,
+  // les cartes restent crème au milieu et on ne voit qu'une bande derrière le
+  // titre — l'autre moitié du même correctif.
+  const css = intensite === "off" ? "" : (() => {
     const I = INTENSITES[intensite];
-    for (const { m, el } of sections) {
+    return MODULES.map((m) => {
       const fond = m.sombre
         ? melange(PAPIER, NUIT, I.nuit)
-        : m.papierPur ? PAPIER : melange(PAPIER, m.accent, I.force);
-      el.style.background = fond;
-      el.style.setProperty("--lab-accent", m.accent);
-      if (m.sombre) for (const [k, v] of Object.entries(jetonsNuit(fond, m.accent))) el.style.setProperty(k, v);
-    }
-    return rendre;
-  }, [intensite]);
+        : m.papierPur ? PAPIER : melange(PAPIER, m.teinte ?? m.accent, I.force);
+      const accent = m.sombre ? (m.accentNuit ?? m.accent) : m.accent;
+      const jetons = m.sombre
+        ? Object.entries(jetonsNuit(fond, accent))
+        : [["--paper", fond], ["--paper-deep", melange(fond, "#1C1917", 0.05)]];
+      return `#${m.id}{background:${fond};--lab-accent:${accent};${jetons.map(([k, v]) => `${k}:${v}`).join(";")}}`;
+    }).join("\n");
+  })();
 
   const bouton = (i: Intensite, libelle: string) => (
     <button
@@ -143,8 +157,9 @@ function PaletteScrollLabInner() {
   return (
     <>
       <style>{`
-        [data-section] { transition: background-color 500ms ease; }
-        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 500ms ease; }
+        [data-section] { transition: background-color 450ms ease; }
+        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 450ms ease; }
+        ${css}
       `}</style>
       {replie ? (
         <button
