@@ -403,8 +403,10 @@ function sceneCourse(top3: UneEvent[], edition: EditionRef): Scene | null {
   const max = Math.max(1, ...stories.flatMap((e) => e.salienceTrend!.points.map((p) => p.cumul)));
   // Le graphique occupe ce que la légende laisse, jusqu'à l'axe.
   const chartTop = LEG_TOP + stories.length * LEG_ITEM + 60;
-  const BASE = AXIS_Y - chartTop, H = BASE - 40, PAD = 60;
-  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - 2 * PAD);
+  // Colonne d'étiquettes réservée à droite du tracé : pastille + valeur de
+  // chaque courbe, écartées verticalement même quand les valeurs sont proches.
+  const BASE = AXIS_Y - chartTop, H = BASE - 40, PAD = 50, LABELS = 190;
+  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - PAD - LABELS);
   const y = (v: number) => BASE - (v / max) * H;
   const seen = new Set<string | null>();
   const dashed = stories.map((e) => { const d = seen.has(e.issueKey); seen.add(e.issueKey); return d; });
@@ -416,18 +418,17 @@ function sceneCourse(top3: UneEvent[], edition: EditionRef): Scene | null {
     return `<polyline class="c-line" points="${pts.map((p, i) => `${x(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none" stroke="${e.issueColor}" stroke-width="${k === 0 ? 10 : 8}" stroke-dasharray="1" stroke-dashoffset="1" stroke-linejoin="round" stroke-linecap="round"${dashed[k] ? ' data-dashed="1"' : ""}/>`;
   }).join("");
 
-  // Pastille et valeur au bout de chaque courbe, à gauche du point ; sous le
-  // point si la courbe descend (elle arrive d'en haut), au-dessus sinon.
   const ends = stories.map((e) => {
     const pts = e.salienceTrend!.points;
-    const last = pts[pts.length - 1].cumul, prev = pts[pts.length - 2].cumul;
-    return { e, v: last, top: y(last) + (prev > last ? 10 : -64) };
+    return { e, v: pts[pts.length - 1].cumul, top: y(pts[pts.length - 1].cumul) - 27 };
   }).sort((a, b) => a.top - b.top);
-  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + 62);
+  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + 66);
+  const overflow = ends.length ? ends[ends.length - 1].top + 54 - BASE : 0;
+  if (overflow > 0) ends.forEach((l) => { l.top -= overflow; });
   const endLabels = ends.map((l) =>
-    `<div class="end" style="right:${CHART_W - x(n - 1) - 27}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both"><b style="color:${l.e.issueColor}">${frNum(l.v)}</b>${badge(l.e, 32)}</div>`).join("");
+    `<div class="end" style="left:${x(n - 1) + 24}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both">${badge(l.e, 32)}<b style="color:${l.e.issueColor}">${frNum(l.v)}</b></div>`).join("");
 
-  const colW = Math.min((CHART_W - 2 * PAD) / (n - 1), 2 * PAD - 4); // l’étiquette extrême reste dans la zone sûre
+  const colW = Math.min((CHART_W - PAD - LABELS) / (n - 1), 2 * PAD + 20);
   const axis = ref.map((p, i) => {
     const h = publicationHour(p.blockUtc) ?? 0;
     return `<div class="xl" style="left:${x(i) - colW / 2}px;width:${colW}px;top:${BASE + 10}px;animation:fadeIn .3s ${DRAW0 + (i / (n - 1)) * DRAW}s both"><div style="display:flex;justify-content:center">${celestial(h, i === n - 1 ? COLORS.blue : COLORS.soft, 36)}</div><b>${h}h</b></div>`;

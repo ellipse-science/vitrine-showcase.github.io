@@ -108,7 +108,9 @@ Ordre des scènes :
    ARRÊTÉ.
 6. **Course.** Titre explicite (« La première Une face à la deuxième ») ; légende
    affichée AVANT le tracé (pastille pictogramme, « Une n°1 · enjeu », titre) ; courbes
-   aux couleurs des enjeux ; pastille pictogramme + valeur au bout de chaque courbe ;
+   aux couleurs des enjeux ; pastille pictogramme + valeur dans une colonne à droite du tracé, face au bout de chaque
+   courbe et écartées même quand les valeurs sont proches (empilées sur les courbes à 20h
+   le 2026-09-16 : rejeté) ;
    axe avec pictogrammes des moments. Même enjeu pour deux Unes : seconde courbe en
    pointillé. ARRÊTÉ.
 7. **Fin.** Fleur de lys, « Les faits saillants au Québec »,
