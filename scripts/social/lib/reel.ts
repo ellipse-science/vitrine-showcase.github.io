@@ -60,7 +60,7 @@ export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 
 /** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
  *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
  *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
- *  rien ne les couvre. L'édition se glisse entre les deux logos. */
+ *  rien ne les couvre. L'édition se place sous les deux logos. */
 export const BRAND = { top: SAFE.top, height: 62 };
 export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
 export const CONTENT_BOTTOM = SAFE.bottom;
@@ -236,7 +236,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .brandbar.light img{filter:invert(1)}
-.progress{position:absolute;left:28px;top:28px;height:8px;width:${WIDTH - 56}px;background:var(--blue);transform-origin:left;z-index:60}
+.progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
