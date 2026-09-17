@@ -39,7 +39,7 @@ npm run reel:une-des-unes                  # 1. aperçu animé dans le navigateu
 npm run reel:une-des-unes -- --mp4         # 2. la vidéo, une fois l'aperçu validé
 npm run reel:deux-solitudes                # module 2, mêmes options
 npm run reel:partis                        # Partis et couverture
-npm run reel:partis-court                  # la même, courte et punchée (12 s max)
+npm run reel:partis-court                  # 10 reels courts (12 s), un par analyse, index des aperçus
 ```
 
 **L'aperçu est obligatoire** : `--mp4` refuse de produire la vidéo tant que

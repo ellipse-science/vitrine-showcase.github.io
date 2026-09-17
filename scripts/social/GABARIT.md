@@ -314,23 +314,34 @@ résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
    sur une échelle ABSOLUE (une barre à 100 % laissait croire à un monopole). ARRÊTÉ.
 6. **Fin commune.**
 
-**Version courte et punchée** (`npm run reel:partis-court`, Jules Piral,
-2026-09-17 ; la longue est gardée). À VALIDER :
-- **12 secondes au plus, fin comprise** : le script refuse de dépasser.
-- **Un seul plan, pas des slides** (« quelque chose qui sorte de l'ordinaire ») :
-  les cinq barres des partis montent, la caméra avance lentement, les phrases se
-  succèdent par-dessus ; puis la fin commune.
-- **Des phrases qu'on comprend du premier coup** : « Aujourd'hui, quand les Unes
-  parlent d'un parti… » / « 2 fois sur 3, c'est le PQ. » (fraction simple à 3
-  points près, sinon « X % du temps »).
-- **Deux informations au plus**, dont une **inédite**, calculée à partir du module
-  et jamais affichée telle quelle sur le site : **record** (« Et c'est un record :
-  du jamais vu depuis le début de la campagne » — la barre franchit la ligne du
-  meilleur jour d'un autre parti, à la même échelle), sinon **multiple** de sa
-  moyenne de campagne (dès 1,5 fois), sinon rien.
-- ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger.
-- Rejeté le 17-09 : cinq scènes en slides (trop d'éléments), puis deux slides
-  chiffre + record (« pas juste des slides », phrases pas assez claires).
+**Versions courtes** (`npm run reel:partis-court`, Jules Piral, 2026-09-17 ; la
+longue est gardée). À VALIDER. Règles communes (moteur `partis-court/plan.ts`) :
+- **12 secondes au plus, fin comprise** ; **un seul plan, pas des slides** : le
+  visuel reste à l'écran, la caméra bouge, deux phrases se succèdent par-dessus ;
+- **deux informations au plus**, en **phrases qu'on comprend du premier coup** ;
+- au moins une **statistique inédite**, calculée à partir du module et jamais
+  affichée telle quelle sur le site ;
+- une analyse qui ne s'applique pas aux données du jour est **sautée** : on ne
+  force jamais une histoire. `-- --liste` dit lesquelles s'appliquent.
+
+Les dix analyses (`partis-court/analyses/`, un fichier chacune) :
+
+| id | L'histoire | Le visuel |
+|---|---|---|
+| `record` | « 2 fois sur 3, c'est le PQ » ; record : du jamais vu depuis le début de la campagne | barres, la ligne du meilleur jour d'un autre parti, un éclair |
+| `reunis` | le parti en tête pèse plus que les 4 autres réunis | une colonne contre la pile des autres |
+| `horloge` | temps en Une en heures et minutes, contre les autres réunis | deux rubans d'heures qui se remplissent |
+| `bascule` | le meneur depuis lundi n'est plus le meneur aujourd'hui | les barres de la semaine se transforment en barres du jour |
+| `calendrier` | une case par journée de campagne ; aucun parti n'en mène la moitié | calendrier qui se colore |
+| `ton` | défavorable pour 4 partis sur 5 ; un seul s'en tire | cinq cadrans dont les aiguilles s'agitent puis se posent |
+| `medias` | « quand Le Devoir parle d'un parti, 97 % du temps c'est le PQ » ; en tête dans N médias | barres par média, les autres pâlissent |
+| `oublie` | le parti dont on parle le moins, N fois moins que le premier | zoom de caméra sur sa barre |
+| `remontee` | en une semaine, qui gagne le plus de points, qui en perd le plus | deux traits qui se croisent |
+| `multiple` | d'habitude X %, aujourd'hui N fois plus | une barre découpée en blocs de sa moyenne |
+
+⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger. Les
+minutes en Une s'additionnent sur tous les médias (« tous médias confondus »).
+Rejeté le 17-09 : cinq scènes en slides, puis deux slides chiffre + record.
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.

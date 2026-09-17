@@ -23,77 +23,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { instantPublicationBloc, type EditionRef } from "@/lib/data/headlineEvents";
-import { PARTY_FULL_NAMES, loadParties, type PartiesData, type PartyKey, type RowView } from "@/lib/data/parties";
-import { MEDIA_DANS } from "@/lib/medias";
-import { MODULES } from "@/lib/modules";
+import { loadParties, type PartiesData, type RowView } from "@/lib/data/parties";
 
 import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
-import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
-import { COLORS, FIN_CSS, SLOW, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
-
-const IDENTITE = MODULES["partis-et-couverture"];
-const MODULE = IDENTITE.nom;
-
-/** Mots-clics : ceux du gabarit commun (lib/post.ts), sans celui de la Une des Unes. */
-const HASHTAGS = ["#PartisEtCouverture", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
-
-// ── Formulations ────────────────────────────────────────────────────────────
-// Gabarits finis, nourris par les données (règle #7 : à relire avant publication).
-
-/** Nom complet avec article (« le Parti québécois »). */
-const NOM_ARTICLE: Record<PartyKey, string> = {
-  pq: `le ${PARTY_FULL_NAMES.pq}`,
-  plq: `le ${PARTY_FULL_NAMES.plq}`,
-  caq: `la ${PARTY_FULL_NAMES.caq}`,
-  pcq: `le ${PARTY_FULL_NAMES.pcq}`,
-  qs: PARTY_FULL_NAMES.qs,
-};
-/** Sigle avec article (« le PQ », « la CAQ », « QS »). */
-const SIGLE_ARTICLE: Record<PartyKey, string> = { pq: "le PQ", plq: "le PLQ", caq: "la CAQ", pcq: "le PCQ", qs: "QS" };
-/** « du PQ », « de la CAQ », « de QS ». */
-const SIGLE_DE: Record<PartyKey, string> = { pq: "du PQ", plq: "du PLQ", caq: "de la CAQ", pcq: "du PCQ", qs: "de QS" };
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-const TONE_MOT = { negative: "défavorable", positive: "favorable", neutral: "neutre" } as const;
-
-// ── Par média ──────────────────────────────────────────────────────────────
-// Le fader « Source » du site : chaque média a sa propre ventilation des cinq
-// partis (les parts d'un média se somment à 100 % de SA couverture des partis).
-type MediaMix = { id: string; nom: string; dans: string; rows: RowView[]; minutes: number };
-
-function mediaMixes(data: PartiesData): MediaMix[] {
-  return data.medias.flatMap((m) => {
-    const view = data.byMedia[m.id];
-    if (!view) return [];
-    const rows = [...view.ranges.today.rows];
-    const minutes = rows.reduce((t, r) => t + r.minutesUne, 0);
-    if (minutes <= 0) return [];
-    const lower = (s: string) => s.replace(/^./, (c) => c.toLowerCase());
-    return [{
-      id: m.id,
-      nom: m.label.replace(/^Le Journal/, "Journal"),
-      dans: lower(MEDIA_DANS[m.id] ?? `Dans ${m.label}`),
-      rows,
-      minutes,
-    }];
-  });
-}
-
-/** Le ou les partis en tête d'un média (égalité possible). */
-function leaders(mix: MediaMix): RowView[] {
-  const max = Math.max(...mix.rows.map((r) => r.sovPct));
-  return mix.rows.filter((r) => r.sovPct === max && max > 0);
-}
-
-/** « défavorable pour 4 partis, favorable pour QS » : groupes de ton. */
-function tonGroupes(rows: RowView[]): string[] {
-  return (["negative", "positive", "neutral"] as const).flatMap((dir) => {
-    const g = rows.filter((r) => r.toneDirection === dir);
-    if (!g.length) return [];
-    const qui = g.length >= 3 ? `${g.length} partis` : joinFr(g.map((r) => SIGLE_ARTICLE[r.key]));
-    return [`${TONE_MOT[dir]} pour ${qui}`];
-  });
-}
+import {
+  HASHTAGS, IDENTITE, MODULE, NOM_ARTICLE, SIGLE_ARTICLE, SIGLE_DE, TONE_MOT, cap, leaders, mediaMixes, tonGroupes, type MediaMix,
+} from "./lib/partis";
+import { COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
 
 // ── Objets du module ────────────────────────────────────────────────────────
 /** Colonne du vumètre : vingt segments de 5 %, allumés jusqu'à la part (0 → 100 %,
@@ -291,153 +227,6 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   };
 }
 
-// ── Version COURTE : un seul plan ──────────────────────────────────────────
-// Jules Piral, 2026-09-17 : 12 secondes au plus, « compris facilement », « moins
-// d'éléments », « des statistiques inédites », « 2-3 informations MAX », « des
-// phrases compréhensibles », « quelque chose qui sorte de l'ordinaire, pas juste
-// des slides ». Donc UN SEUL PLAN, comme le sonar de Deux solitudes : les cinq
-// barres des partis montent, la caméra avance lentement, et des phrases courtes
-// en français courant se succèdent par-dessus. Puis la fin commune.
-//
-// Les deux informations :
-//  1. la part du parti en tête, dite comme on la dirait : « 2 fois sur 3, c'est
-//     le PQ » (fraction simple quand elle tombe à 3 points près, sinon « X % du
-//     temps ») ;
-//  2. une statistique INÉDITE, calculée à partir du module et jamais affichée
-//     telle quelle sur le site : RECORD de campagne (sa part du jour dépasse le
-//     meilleur jour de tous les autres partis — la barre franchit la ligne), sinon
-//     MULTIPLE de sa moyenne de campagne (dès 1,5 fois — la barre dépasse la ligne
-//     de sa moyenne), sinon rien : deux informations valent mieux qu'une de trop.
-// ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger.
-const COURT_MAX_S = 12;
-
-const FRACTIONS: [number, number][] = [[1, 2], [2, 3], [3, 4], [4, 5], [1, 3], [1, 4], [2, 5], [3, 5]];
-function commeOnLeDit(pct: number): string | null {
-  const f = FRACTIONS.find(([n, d]) => Math.abs((n / d) * 100 - pct) <= 3);
-  return f ? `${f[0]} fois sur ${f[1]}` : null;
-}
-const fois = (r: number) => {
-  const n = Math.round(r);
-  return Math.abs(r - n) < .05 ? `${n} fois` : r < n ? `près de ${n} fois` : `plus de ${n} fois`;
-};
-
-type Inedit = { ligne: number; etiquette: string; a: string; b: string; legende: string };
-
-function inedit(data: PartiesData, lead: RowView): Inedit | null {
-  const camp = data.ranges.overall.rows;
-  const moi = camp.find((r) => r.key === lead.key);
-  if (!moi) return null;
-  const autres = camp.filter((r) => r.key !== lead.key).sort((x, y) => y.peakPct - x.peakPct);
-  if (moi.peakPct === lead.sovPct && autres.every((r) => r.peakPct < lead.sovPct) && autres[0]) {
-    return {
-      ligne: autres[0].peakPct,
-      etiquette: `Meilleur jour d’un autre parti : ${autres[0].label}, ${autres[0].peakPct} %`,
-      a: "Et c’est un record :",
-      b: "du jamais vu depuis le début de la campagne",
-      legende: `Aucun autre parti n’a eu autant de place en une journée depuis le début de la campagne (meilleur jour : ${SIGLE_ARTICLE[autres[0].key]}, ${autres[0].peakPct} %).`,
-    };
-  }
-  if (moi.sovPct > 0 && lead.sovPct / moi.sovPct >= 1.5) {
-    const x = fois(lead.sovPct / moi.sovPct);
-    return {
-      ligne: moi.sovPct,
-      etiquette: `Sa moyenne depuis le début de la campagne : ${moi.sovPct} %`,
-      a: "C’est inhabituel :",
-      b: `${x} plus que sa moyenne de campagne`,
-      legende: `C’est ${x} sa moyenne depuis le début de la campagne (${moi.sovPct} %).`,
-    };
-  }
-  return null;
-}
-
-/** Géométrie du plan (px) : les barres partent de BASE et 1 % vaut ECHELLE px ;
- *  la ligne du record se pose à la même échelle, donc la barre la franchit
- *  VRAIMENT à la bonne valeur. */
-const GEO = { haut: 700, bas: 1400, puce: 70 };
-const BASE_BARRES = GEO.bas - GEO.puce;
-const ECHELLE = (BASE_BARRES - GEO.haut - 70) / 100;
-
-/** Durées du plan, au rythme de base (× SLOW à l'écran). */
-const PLAN = { monte: .3, phraseB: 1.7, bascule: 3.1, fin: 5.6 };
-
-function scenePlan(rows: RowView[], ined: Inedit | null): Scene {
-  const lead = rows[0];
-  const dit = commeOnLeDit(lead.sovPct);
-  const nom = cap(SIGLE_ARTICLE[lead.key]).replace(/^L[ae] /, (m) => m.toLowerCase());
-  const b1 = dit ? `${cap(dit)}, c’est ${nom}.` : `${cap(nom)} : ${lead.sovPct} % du temps.`;
-  const barres = rows.map((r) => `
-    <div class="bp" data-key="${r.key}" data-pct="${r.sovPct}">
-      <div class="p disp" style="color:${r.color}">0&nbsp;%</div>
-      <div class="f" style="background:${r.color}"></div>
-      <div class="s pf" style="background:${r.color}">${esc(r.label)}</div>
-    </div>`).join("");
-  const sortie = (t: number) => `, sortie .35s ${t}s forwards`;
-  return {
-    id: "plan", duration: ined ? PLAN.fin : PLAN.bascule + .9, noFadeIn: true, hideFooter: true,
-    html: `
-      <div class="camera">
-        <div class="barres">${barres}</div>
-        ${ined ? `<div class="record" style="top:${(BASE_BARRES - GEO.haut - ined.ligne * ECHELLE).toFixed(0)}px"><i style="animation:grow .6s ${PLAN.bascule}s both"></i><span class="mono" style="animation:fadeIn .4s ${PLAN.bascule + .3}s both">${esc(ined.etiquette)}</span></div>` : ""}
-      </div>
-      ${ined ? `<div class="eclair" data-deco style="animation:eclair .7s ${PLAN.bascule + .75}s both"></div>` : ""}
-      <div class="phr a pf" style="animation:fadeUp .45s .15s both${ined ? sortie(PLAN.bascule) : ""}">Aujourd’hui, quand les Unes parlent d’un parti…</div>
-      <div class="phr b disp" style="color:${lead.color};animation:fadeUp .45s ${PLAN.phraseB}s both${ined ? sortie(PLAN.bascule) : ""}">${txt(b1)}</div>
-      ${ined ? `<div class="phr a pf" style="animation:fadeUp .45s ${PLAN.bascule + .35}s both">${esc(ined.a)}</div>
-      <div class="phr b disp" style="animation:fadeUp .5s ${PLAN.bascule + .75}s both">${txt(ined.b)}</div>` : ""}`,
-  };
-}
-
-const CSS_COURT = `
-#plan .camera{position:absolute;left:96px;right:150px;top:${GEO.haut}px;height:${GEO.bas - GEO.haut}px;transform-origin:50% 100%;animation:camera ${PLAN.fin}s linear both}
-@keyframes camera{from{transform:scale(.97)}to{transform:scale(1.03)}}
-#plan .barres{position:absolute;inset:0;display:flex;align-items:flex-end;gap:26px}
-#plan .bp{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;position:relative}
-#plan .bp .p{text-align:center;font-size:52px;line-height:1;margin-bottom:10px}
-#plan .bp .f{height:0;transition:none}
-#plan .bp .s{height:${GEO.puce - 12}px;margin-top:12px;text-align:center;color:#fff;font-size:40px;line-height:${GEO.puce - 12}px}
-#plan .record{position:absolute;left:0;right:0;height:0}
-#plan .record i{position:absolute;left:0;right:0;top:0;border-top:5px dashed var(--ink);transform-origin:left}
-#plan .record span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:26px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
-#plan .eclair{position:absolute;left:30px;right:30px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
-@keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
-@keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
-#plan .phr{position:absolute;left:76px;right:120px}
-#plan .phr.a{top:240px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:370px;font-size:96px;line-height:1.02;color:var(--ink)}
-`;
-
-// Barres et pourcentages pilotés par le temps : montée commune, le meneur
-// continue seul, les autres s'éteignent un peu quand la phrase le nomme.
-const SCRIPT_COURT = `
-(function(){
-const ease=k=>1-Math.pow(1-k,3), clamp=k=>Math.max(0,Math.min(1,k));
-const prev=window.onSceneTime;
-window.onSceneTime=function(id,t,d){
-  if(prev)prev(id,t,d);
-  if(id!=="plan")return;
-  const bs=[...document.querySelectorAll("#plan .bp")];
-  const max=Math.max(...bs.map(b=>+b.dataset.pct));
-  bs.forEach((b,i)=>{
-    const pct=+b.dataset.pct, lead=pct===max;
-    // Les autres s'arrêtent vite ; le meneur monte plus longtemps.
-    const k=ease(clamp((t-${PLAN.monte}-i*.05)/(lead?1.6:1.0)));
-    const v=pct*k;
-    b.querySelector(".f").style.height=(v*${ECHELLE.toFixed(3)})+"px";
-    b.querySelector(".p").textContent=Math.round(v)+"\\u00A0%";
-    b.style.opacity=lead?1:(1-.55*clamp((t-${PLAN.phraseB})/.5));
-  });
-};
-})();`;
-
-function captionCourte(lead: RowView, ined: Inedit | null): string {
-  const dit = commeOnLeDit(lead.sovPct);
-  const texte = [
-    `Aujourd’hui, quand les Unes des médias québécois parlent d’un parti, c’est ${NOM_ARTICLE[lead.key]} ${dit ?? `${lead.sovPct} % du temps`}${dit ? ` (${lead.sovPct} % du temps, depuis minuit)` : " (depuis minuit)"}.`,
-    ined?.legende ?? null,
-  ].filter(Boolean).join(" ");
-  return captionTypo([texte, `${MODULE}, six fois par jour : vitrinedemocratique.com`, HASHTAGS.join(" ")].join("\n\n")) + "\n";
-}
-
 // Vumètres, compteurs et aiguilles pilotés par le temps.
 const SCRIPT = `
 const ease=k=>1-Math.pow(1-k,3);
@@ -504,26 +293,16 @@ async function main() {
   console.log(`${MODULE} · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  en tête : ${rows[0].label} (${rows[0].sovPct} %) · ${mixes.length} médias`);
 
-  const court = !!args.court;
-  const ined = court ? inedit(data, rows[0]) : null;
-  const scenes = (court
-    ? [scenePlan(rows, ined)]
-    : [sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows), sceneTon(rows), sceneCampagne(data, rows[0])]
-  ).filter((s): s is Scene => s !== null);
+  const scenes = [
+    sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows),
+    sceneTon(rows), sceneCampagne(data, rows[0]),
+  ].filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
   scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
-  if (court) {
-    // La fin prend ce qui reste, 3,5 s au plus : 12 secondes, fin comprise.
-    const avant = scenes.slice(0, -1).reduce((t, sc) => t + sc.duration, 0);
-    scenes[scenes.length - 1].duration = Math.min(3.5, COURT_MAX_S / SLOW - avant);
-    const total = scenes.reduce((t, sc) => t + sc.duration, 0) * SLOW;
-    if (total > COURT_MAX_S + 1e-6) throw new Error(`Version courte trop longue : ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s).`);
-    console.log(`  durée   → ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s)`);
-  }
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
-    css: CSS + (court ? CSS_COURT : "") + FIN_CSS, scenes, script: SCRIPT + (court ? SCRIPT_COURT : ""),
+    css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: footerEdition(edition),
     logos,
@@ -531,13 +310,13 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `${court ? "partis-court" : "partis"}_${edition.navDateIso}_${pubHourLabel(edition)}`);
+  const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
   // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
-  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(rows[0], ined) : caption(edition, data, rows, mixes));
+  await fs.writeFile(`${base}_instagram.txt`, caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 
-  await produce({ html, scenes, title: `${MODULE}${court ? " (court)" : ""} · édition de ${pubHourLabel(edition)}`, base, args });
+  await produce({ html, scenes, title: `${MODULE} · édition de ${pubHourLabel(edition)}`, base, args });
 }
 
 main().catch((err) => {
