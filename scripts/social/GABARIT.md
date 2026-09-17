@@ -315,10 +315,12 @@ résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
 6. **Fin commune.**
 
 **Version courte et punchée** (`npm run reel:partis-court`, Jules Piral,
-2026-09-17 ; la longue est gardée) : ~20 s au lieu de ~45. Accroche, médias en
-rafale, ton, puis la campagne en une image comme l'accroche (« Mais depuis le
-début de la campagne / La CAQ / mène, avec 27 % »), fin raccourcie. Pas de
-vumètre du jour : l'accroche le dit déjà. Légende en trois phrases. À VALIDER.
+2026-09-17 ; la longue est gardée). **12 secondes au plus, fin comprise** : le
+script refuse de dépasser, et la fin prend ce qui reste (3 s au plus). Accroche,
+médias en rafale, puis la campagne en une image comme l'accroche (« Mais depuis
+le début de la campagne / La CAQ / mène, avec 27 % »), fin. Ni vumètre du jour
+(l'accroche le dit) ni ton : ils ne tiennent pas en 12 s. Légende en trois
+phrases. À VALIDER.
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.

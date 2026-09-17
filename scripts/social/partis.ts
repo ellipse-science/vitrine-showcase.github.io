@@ -29,7 +29,7 @@ import { MODULES } from "@/lib/modules";
 
 import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
-import { COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
+import { COLORS, FIN_CSS, SLOW, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
 
 const IDENTITE = MODULES["partis-et-couverture"];
 const MODULE = IDENTITE.nom;
@@ -190,9 +190,12 @@ const head = (kicker: string, title: string) => `
  *  gardées). Mêmes scènes et mêmes données ; la courte enchaîne plus vite, saute
  *  le vumètre du jour (l'accroche le dit déjà) et finit sur le retournement de la
  *  campagne en une seule image. */
-type Rythme = { accroche: number; playlist0: number; playlistStep: number; playlistTail: number; ton0: number; tonStep: number; tonTail: number };
-const LONG: Rythme = { accroche: 3.4, playlist0: 0.9, playlistStep: 0.75, playlistTail: 2.2, ton0: 1.0, tonStep: 0.28, tonTail: 5.4 };
-const COURT: Rythme = { accroche: 2.4, playlist0: 0.6, playlistStep: 0.28, playlistTail: 1.3, ton0: 0.6, tonStep: 0.14, tonTail: 3.0 };
+type Rythme = { accroche: number; then: number; vu0: number; vuStep: number; playlist0: number; playlistStep: number; playlistTail: number; ton0: number; tonStep: number; tonTail: number };
+const LONG: Rythme = { accroche: 3.4, then: .9, vu0: 1.2, vuStep: .12, playlist0: 0.9, playlistStep: 0.75, playlistTail: 2.2, ton0: 1.0, tonStep: 0.28, tonTail: 5.4 };
+// COURTE : 12 secondes AU PLUS, fin comprise (Jules Piral, 2026-09-17). Le ton
+// n'y tient pas : accroche, médias, campagne, fin. `main` refuse de dépasser.
+const COURT: Rythme = { accroche: 1.9, then: .45, vu0: .55, vuStep: .05, playlist0: 0.35, playlistStep: 0.16, playlistTail: 0.75, ton0: 0.6, tonStep: 0.14, tonTail: 3.0 };
+const COURT_MAX_S = 12;
 
 function sceneAccroche(rows: RowView[], ry: Rythme = LONG): Scene {
   const lead = rows[0];
@@ -204,9 +207,9 @@ function sceneAccroche(rows: RowView[], ry: Rythme = LONG): Scene {
       <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result">
         <div class="answer disp" style="color:${lead.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .7s .3s both">${esc(answer)}</div>
-        <div class="then disp" ${anim("fadeUp", .6, .9)}>est le parti dont on parle le plus aujourd’hui</div>
+        <div class="then disp" ${anim("fadeUp", .5, ry.then)}>est le parti dont on parle le plus aujourd’hui</div>
       </div>
-      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, 1.2 + i * 0.12)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
+      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, ry.vu0 + i * ry.vuStep)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
   };
 }
 
@@ -247,7 +250,7 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[], ry: Rythme = LONG): 
       .map((r, k, all) => `<div style="flex:${k === all.length - 1 ? `1 1 ${r.sovPct}%` : `0 0 ${r.sovPct}%`};background:${r.color}">${r.sovPct >= 12 ? esc(r.label) : ""}</div>`).join("");
     return `<div class="row" style="animation:fadeUp .6s ${d}s both">
       <div class="line"><b>${esc(m.nom)}</b><span style="color:${l.length > 1 ? COLORS.soft : l[0].color}">${esc(quoi)}</span></div>
-      <div class="mix" style="animation:wipe ${ry === LONG ? 1 : .5}s ${d + .15}s both">${segs}</div>
+      <div class="mix" style="animation:wipe ${ry === LONG ? 1 : .35}s ${d + (ry === LONG ? .25 : .08)}s both">${segs}</div>
     </div>`;
   }).join("");
   return {
@@ -308,14 +311,14 @@ function sceneCampagneCourte(data: PartiesData, lead: RowView): Scene | null {
   const tete = rows[0];
   const answer = cap(SIGLE_ARTICLE[tete.key]);
   return {
-    id: "campagne", duration: 2.8,
+    id: "campagne", duration: 1.8,
     html: `
-      <div class="brand mono" ${anim("fadeIn", .4, .05)}><i ${anim("grow", .5, .05)}></i>${esc(tete.key === lead.key ? "Et depuis le début de la campagne" : "Mais depuis le début de la campagne")}</div>
+      <div class="brand mono" ${anim("fadeIn", .3, .0)}><i ${anim("grow", .4, .0)}></i>${esc(tete.key === lead.key ? "Et depuis le début de la campagne" : "Mais depuis le début de la campagne")}</div>
       <div class="result">
-        <div class="answer disp" style="color:${tete.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .6s .2s both">${esc(answer)}</div>
-        <div class="then disp" ${anim("fadeUp", .5, .6)}>${esc(tete.key === lead.key ? "mène aussi" : "mène")}, avec ${tete.sovPct}&nbsp;%</div>
+        <div class="answer disp" style="color:${tete.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .45s .1s both">${esc(answer)}</div>
+        <div class="then disp" ${anim("fadeUp", .4, .35)}>${esc(tete.key === lead.key ? "mène aussi" : "mène")}, avec ${tete.sovPct}&nbsp;%</div>
       </div>
-      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, .8 + i * .08)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
+      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, .4 + i * .04)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
   };
 }
 
@@ -326,7 +329,7 @@ const clamp=k=>Math.max(0,Math.min(1,k));
 window.onSceneTime=function(id,t){
   const sc=document.getElementById(id);
   sc.querySelectorAll(".vu").forEach(v=>{
-    const lit=Math.round(+v.dataset.lit*ease(clamp((t-+v.dataset.d)/1.1)));
+    const lit=Math.round(+v.dataset.lit*ease(clamp((t-+v.dataset.d)/(window.VU_DUREE||1.1))));
     v.querySelectorAll("i").forEach(s=>s.classList.toggle("on",+s.dataset.i<lit));
   });
   sc.querySelectorAll(".count").forEach(n=>{
@@ -402,17 +405,25 @@ async function main() {
 
   const court = !!args.court;
   const scenes = (court
-    ? [sceneAccroche(rows, COURT), scenePlaylist(mixes, rows, COURT), sceneTon(rows, COURT), sceneCampagneCourte(data, rows[0])]
+    ? [sceneAccroche(rows, COURT), scenePlaylist(mixes, rows, COURT), sceneCampagneCourte(data, rows[0])]
     : [sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows), sceneTon(rows), sceneCampagne(data, rows[0])]
   ).filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
   scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
   // Fin plus brève dans la version courte : les partenaires ont fini d'apparaître à ~2,9 s.
-  if (court) scenes[scenes.length - 1].duration = 3.4;
+  if (court) {
+    // La fin prend ce qui reste (3 s au plus) : un jour à six médias, la
+    // playlist est plus longue et la fin raccourcit d'autant.
+    const avant = scenes.slice(0, -1).reduce((t, sc) => t + sc.duration, 0);
+    scenes[scenes.length - 1].duration = Math.min(3.0, COURT_MAX_S / SLOW - avant);
+    const total = scenes.reduce((t, sc) => t + sc.duration, 0) * SLOW;
+    if (total > COURT_MAX_S + 1e-6) throw new Error(`Version courte trop longue : ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s).`);
+    console.log(`  durée   → ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s)`);
+  }
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
-    css: CSS + FIN_CSS, scenes, script: SCRIPT,
+    css: CSS + FIN_CSS, scenes, script: (court ? "window.VU_DUREE=.5;" : "") + SCRIPT,
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: footerEdition(edition),
     logos,
