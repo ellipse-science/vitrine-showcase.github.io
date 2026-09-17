@@ -131,6 +131,11 @@ commun, une identité visuelle, un rappel marqué.**
   haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
   sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
   de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
+- **ARRÊTÉ · Pied de page dans la zone sûre** (Jules Piral, 2026-09-17, mesuré au
+  simulateur en PLEIN ÉCRAN) : à 70 px du bas, il tombait derrière la barre de
+  navigation d'Instagram. Il remonte juste au-dessus des logos et ne garde que
+  l'édition (« Édition de 8h · 17.09.2026 ») ; le nom de la Vitrine, lui, est déjà
+  dans la barre de logos.
 - **ARRÊTÉ · Dézoom de 6 %** (Jules Piral, 2026-09-17 : « il faut dézoomer ») :
   chaque scène est réduite de 6 % autour du centre de la zone sûre. On gagne de
   l'air partout sans redessiner scène par scène, et le décor cesse de coller au

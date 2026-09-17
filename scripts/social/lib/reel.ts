@@ -216,7 +216,10 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .disp{font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
 .scene{position:absolute;inset:0;padding:120px 180px 0 116px;opacity:0}
-.footer{position:absolute;left:116px;right:180px;bottom:70px;display:flex;justify-content:space-between;font-size:22px;color:var(--softer);z-index:40}
+/* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
+   DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
+   dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
+.footer{position:absolute;left:116px;right:180px;top:${BRAND.top - 44}px;display:flex;justify-content:flex-end;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:40}
 .brandbar{position:absolute;left:116px;right:180px;display:flex;align-items:center;justify-content:space-between;z-index:45}
 .brandbar img{display:block}
 .brandbar.light img{filter:invert(1)}
@@ -437,7 +440,7 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
 <div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
-<div class="footer mono" id="__foot"><span>${opts.footerLeft}</span><span>${opts.footerRight}</span></div>
+<div class="footer mono" id="__foot"><span>${opts.footerRight}</span></div>
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
