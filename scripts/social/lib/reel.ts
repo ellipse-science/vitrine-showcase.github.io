@@ -38,7 +38,11 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  essentiel reste DANS ce cadre ; les graphiques et images peuvent déborder
  *  jusqu'aux bords pour remplir l'écran. Le recadrage 3:4 de la grille du
  *  profil garde la bande 240–1680 : l'accroche doit y tenir. */
-export const SAFE = { top: 220, bottom: 1500, left: 60, right: 960 };
+// Ce que l'interface d'Instagram recouvre : en-tête en haut, légende et boutons
+// en bas, colonne d'actions à DROITE. La colonne de droite a été resserrée de
+// 960 à 880 le 2026-09-16, après Jules Piral : « il y a trop d'infos dans le bas
+// du reel, les gens ne verront rien, même chose sur les côtés ».
+export const SAFE = { top: 230, bottom: 1500, left: 70, right: 880 };
 
 /** Intérieur de l'encadré du reel (filet à 28 px, épaisseur 2). RÈGLE : rien
  *  ne dépasse du cadre, ni image, ni bandeau, ni texte. Les scènes sont
@@ -252,10 +256,10 @@ export const INTRO_CSS = `
 #intro .logo{position:absolute;top:120px;left:76px;width:540px}
 #intro .module{position:absolute;top:330px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:412px;left:76px;right:60px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:412px;left:76px;right:200px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:76px;right:76px;bottom:640px;color:var(--paper);font-size:30px}
+#intro .ed{position:absolute;left:76px;right:200px;bottom:640px;color:var(--paper);font-size:30px}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
@@ -263,8 +267,13 @@ export const INTRO_CSS = `
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
 export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string }): Scene {
   const now = opts.pubHour % 24;
+  // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
+  // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
+  // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
+  // modules qui opposent deux régions.
+  const accent = opts.accent ?? COLORS.blue;
   const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
-    `<div class="mono${h === now ? " on" : ""}" style="animation:pop .4s ${1.2 + i * .12}s both">${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
+    `<div class="mono${h === now ? " on" : ""}"${h === now ? ` style="color:${accent};animation:pop .4s ${1.2 + i * .12}s both"` : ` style="animation:pop .4s ${1.2 + i * .12}s both"`}>${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
   return {
     id: "fin", duration: 4, noFadeOut: true, hideFooter: true,
     html: `
@@ -280,16 +289,17 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
 
 /** CSS de la scène de fin — à concaténer au CSS du module. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:400px}
-#fin .logo{width:880px}
+/* Marge de droite plus large : la colonne de boutons d'Instagram mange 200 px. */
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:400px 200px 0 76px}
+#fin .logo{width:780px}
 #fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
-#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
+#fin .url{font-size:66px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
 #fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:30px;right:30px;top:1370px;display:flex;flex-direction:column;align-items:center}
+#fin .foot{position:absolute;left:30px;right:30px;top:1230px;display:flex;flex-direction:column;align-items:center}
 #fin .six{font-size:52px;font-style:italic;margin-bottom:46px;color:var(--paper)}
 #fin .hours{display:flex;gap:12px}
-#fin .hours div{width:144px;padding:18px 0 16px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
-#fin .hours div.on{background:var(--paper);border-color:var(--paper);color:var(--blue)}
+#fin .hours div{width:126px;padding:18px 0 16px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
+#fin .hours div.on{background:var(--paper);border-color:var(--paper)}
 `;
 
 /** Le papier, TRÈS légèrement teinté de la couleur du module (demande d'Adrien,
@@ -428,6 +438,19 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
   } else {
     console.log("  cadre   → rien ne dépasse");
   }
+  // ZONES INSTAGRAM (retour de Jules Piral, 2026-09-16 : « il y a trop d'infos
+  // dans le bas du reel, les gens ne verront rien, même chose sur les côtés »).
+  // Le bouton de l'aperçu les colorait déjà ; elles sont maintenant VÉRIFIÉES à
+  // chaque production. Ce n'est pas bloquant — un bandeau décoratif a le droit
+  // de passer dessous — mais tout ce qui porte un chiffre ou un mot doit tenir
+  // dans SAFE.
+  const caches = await checkSafe(html, scenes);
+  if (caches.length) {
+    console.warn(`  ⚠️ ${caches.length} élément(s) sous l'interface d'Instagram :`);
+    for (const o of caches) console.warn(`     · ${o}`);
+  } else {
+    console.log("  zones   → rien sous l'interface d'Instagram");
+  }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
     await renderReel(html, { out: `${base}.mp4`, previewAt });
@@ -503,6 +526,58 @@ async function overflowAt(page: Page, sceneId: string, at: number): Promise<stri
     }
     return out;
   }, { sceneId, at, frame: FRAME });
+}
+
+/** Ce qui porte un TEXTE et tombe sous l'interface d'Instagram (en-tête,
+ *  légende, colonne de boutons). On ne regarde que le texte : un bandeau, un
+ *  graphique décoratif ou le cadre ont le droit de passer dessous. */
+export async function checkSafe(html: string, scenes: Scene[]): Promise<string[]> {
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
+    await page.setContent(html, { waitUntil: "networkidle" });
+    await page.evaluate(() => document.fonts.ready);
+    const found: string[] = [];
+    let t = 0;
+    for (const s of scenes) {
+      const at = (t + s.duration - 0.4) * SLOW;
+      t += s.duration;
+      found.push(...(await hiddenAt(page, s.id, at)));
+    }
+    return found;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function hiddenAt(page: Page, sceneId: string, at: number): Promise<string[]> {
+  return page.evaluate(({ sceneId, at, safe }) => {
+    (window as unknown as { setTime(t: number): void }).setTime(at);
+    const scene = document.getElementById(sceneId);
+    if (!scene) return [];
+    const out: string[] = [];
+    for (const el of Array.from(scene.querySelectorAll("*"))) {
+      // Seules les FEUILLES de texte : sinon chaque conteneur rapporte le même
+      // problème que son contenu.
+      if (el.children.length) continue;
+      const texte = (el.textContent ?? "").trim();
+      if (!texte) continue;
+      const plage = document.createRange();
+      plage.selectNodeContents(el);
+      const r = plage.getBoundingClientRect();
+      plage.detach();
+      if (r.width < 1 || r.height < 1) continue;
+      if (getComputedStyle(el).opacity === "0") continue;
+      const d = [
+        r.bottom > safe.bottom + .5 ? `bas ${Math.round(r.bottom - safe.bottom)} px` : "",
+        r.top < safe.top - .5 ? `haut ${Math.round(safe.top - r.top)} px` : "",
+        r.right > safe.right + .5 ? `droite ${Math.round(r.right - safe.right)} px` : "",
+        r.left < safe.left - .5 ? `gauche ${Math.round(safe.left - r.left)} px` : "",
+      ].filter(Boolean);
+      if (d.length) out.push(`scène ${sceneId} : « ${texte.slice(0, 34)} » (${d.join(", ")})`);
+    }
+    return out;
+  }, { sceneId, at, safe: SAFE });
 }
 
 async function launch(): Promise<Browser> {
