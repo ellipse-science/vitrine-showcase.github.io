@@ -69,37 +69,27 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:150px;left:76px;right:76px}
+#sonar .head{position:absolute;top:240px;left:76px;right:200px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:60px;right:60px;top:236px;height:620px}
+#sonar .chart{position:absolute;left:40px;right:200px;top:318px;height:720px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
-#sonar .vx{position:absolute;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .keys{position:absolute;left:76px;right:76px;top:880px;display:flex;gap:44px;font-size:26px}
+#sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
+#sonar .keys{position:absolute;left:76px;right:200px;top:1052px;display:flex;gap:40px;font-size:25px}
 #sonar .keys div{display:flex;align-items:center;gap:12px}
 #sonar .keys i{display:block;width:26px;height:26px;border-radius:50%}
-#sonar .zone{position:absolute;left:76px;right:76px;top:930px;height:620px}
+#sonar .zone{position:absolute;left:76px;right:200px;top:1118px;height:390px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
-#sonar .carte .k{font-size:19px;letter-spacing:.12em;display:flex;align-items:center;gap:14px}
-#sonar .chip{display:inline-block;font-size:19px;padding:6px 13px}
-#sonar .carte .t{font-size:52px;line-height:1.08;margin-top:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-#sonar .bars{margin-top:24px;display:flex;flex-direction:column;gap:12px}
-#sonar .medias{margin-top:26px;display:flex;align-items:center;flex-wrap:wrap;gap:10px}
-#sonar .medias em{font-style:normal;font-size:19px;color:var(--softer);margin-right:6px}
-#sonar .medias span{font-size:20px;padding:6px 12px;border:2px solid}
-#sonar .bar{display:flex;align-items:center;gap:16px;font-size:26px}
-#sonar .bar em{font-style:normal;width:116px;flex:none;color:var(--soft)}
-#sonar .bar i{display:block;height:28px;transform-origin:left}
-#sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:34px}
-#sonar .conv{position:absolute;left:0;right:0;top:170px;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
+#sonar .carte .t{font-size:50px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#sonar .bars{margin-top:26px;display:flex;flex-direction:column;gap:14px}
+#sonar .bar{display:flex;align-items:center;gap:18px;font-size:24px}
+#sonar .bar em{font-style:normal;width:128px;flex:none;color:var(--soft)}
+#sonar .bar i{display:block;height:30px;transform-origin:left}
+#sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:54px;font-weight:500;line-height:1}
+#sonar .conv{position:absolute;left:0;right:0;top:150px;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
 #sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:23px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
-#sonar .edito{position:absolute;left:0;right:0;top:400px;font-size:32px;line-height:1.2;font-style:italic;color:var(--soft)}
-#sonar .pips{position:absolute;left:76px;right:76px;top:1620px;display:flex;align-items:center;gap:16px}
-#sonar .pips i{display:block;width:44px;height:10px;background:var(--rule)}
-#sonar .pips b{margin-left:10px;font-size:20px;color:var(--softer)}
-#sonar .note{position:absolute;left:76px;right:76px;top:1710px;font-size:20px;color:var(--softer)}
 #intro .mini{position:absolute;left:50%;bottom:40px;width:620px;transform:translateX(-50%)}
 @keyframes tourne{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes carte{0%,3%{opacity:0;transform:translateY(26px)}9%,88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-14px)}}
@@ -107,7 +97,6 @@ const CSS = `
 @keyframes estompe{to{opacity:.32}}
 @keyframes veille{to{opacity:.5}}
 @keyframes eteint{to{opacity:0}}
-@keyframes plein{to{background:var(--on)}}
 `;
 
 const anim = (name: string, dur: number, delay: number) => `style="animation:${name} ${dur}s ${delay}s both"`;
@@ -115,7 +104,7 @@ const anim = (name: string, dur: number, delay: number) => `style="animation:${n
 function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
   const axes = sol.axes;
   const n = axes.length;
-  const CX = 480, CY = 300, R = 228;
+  const CX = 420, CY = 352, R = 288;
   const at = (i: number, f: number) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
     return [CX + R * f * Math.cos(a), CY + R * f * Math.sin(a)] as const;
@@ -175,7 +164,7 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
   const vertices = axes.map((a, k) => {
     const [px, py] = at(k, 1.15);
     const col = a.side === "qc" ? COLORS.blue : COLORS.red;
-    return `<div class="vx" style="left:${px - 27}px;top:${py - 27}px;background:${col};animation:ping .45s ${detect(k)}s both,${enVeille(k, "veille", .4)}">${enjeuGlyph(a.issueKey, COLORS.paper, 30)}</div>`;
+    return `<div class="vx" style="left:${px - 31}px;top:${py - 31}px;background:${col};animation:ping .45s ${detect(k)}s both,${enVeille(k, "veille", .4)}">${enjeuGlyph(a.issueKey, COLORS.paper, 34)}</div>`;
   }).join("");
 
   // Les six sujets détectés, on relie les points : les deux formes apparaissent.
@@ -187,24 +176,19 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
   // Une carte par détection, toutes au même endroit : le sonar reste maître de
   // l'écran, la carte ne fait que nommer ce qu'il vient de trouver.
   const maxShare = Math.max(...axes.flatMap((a) => [a.canShare, a.qcShare]), 1);
-  const w = (v: number) => Math.max(v > 0 ? 10 : 0, (v / maxShare) * 620);
+  const w = (v: number) => Math.max(v > 0 ? 10 : 0, (v / maxShare) * 380);
+  // MOINS DE STOCK (Jules Piral, 2026-09-16 : « ya trop d'information, j'arrive
+  // pas à tout lire […] ce qui est important c'est les titres et la distinction
+  // qc/can »). Une carte = UN TITRE et DEUX BARRES. Sont partis : l'enjeu, le
+  // niveau de saillance, les médias couvrants, le compteur de sujets et la note
+  // de bas de scène. Ils restent sur le site, où on a le temps de lire.
   const cartes = axes.map((a, k) => {
     const d = detect(k);
-    const rank = a.salienceCls ? RANK_BY_CLS[a.salienceCls] : undefined;
-    const band = rank ? bandOf(rank) : null;
-    const chip = a.salienceLabel && band
-      ? `<span class="chip mono" style="background:${band.bg};color:${band.fg}">${txt(a.salienceLabel)}</span>` : "";
     const bar = (lab: string, v: number, col: string, delay: number) =>
       `<div class="bar"><em class="mono">${lab}</em><i style="width:${w(v)}px;background:${col};animation:grow .5s ${delay}s both"></i><b style="color:${col}">${v}&nbsp;%</b></div>`;
-    const medias = a.media.length
-      ? `<div class="medias" style="animation:fadeIn .4s ${d + .6}s both"><em class="mono">En Une chez</em>${a.media
-        .map((m) => `<span class="mono" style="color:${m.region === "qc" ? COLORS.blue : COLORS.red};border-color:${m.region === "qc" ? COLORS.blue : COLORS.red}">${esc(m.badge)}</span>`).join("")}</div>`
-      : "";
     return `<div class="carte" style="animation:carte ${TOUR + TOUR / n}s ${d}s both">
-      <div class="k mono" style="color:${couleur(a)}">${txt(a.eyebrow ?? "Actualité")}${chip}</div>
       <div class="t pf">${txt(a.label)}</div>
       <div class="bars">${bar("Canada", a.canShare, COLORS.red, d + .3)}${bar("Québec", a.qcShare, COLORS.blue, d + .45)}</div>
-      ${medias}
     </div>`;
   }).join("");
 
@@ -212,10 +196,10 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
     id: "sonar", duration: fin + OUTRO + 3.4,
     html: `
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}><i style="background:${MODULE.accent};animation:grow .5s .1s both"></i>Six sujets · 24 dernières heures · Édition de ${edition.pubHour % 24}h</div>
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}><i style="background:${MODULE.accent};animation:grow .5s .1s both"></i>Six sujets · Édition de ${edition.pubHour % 24}h</div>
       </div>
       <div class="chart">
-        <svg viewBox="0 0 960 620">
+        <svg viewBox="0 0 840 720">
           <g ${anim("fadeIn", .6, .5)}>${rings}${spokes}</g>
           ${tranches}${rayons}
           ${balayage}
@@ -235,13 +219,7 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
           <b style="color:${COLORS.blue}">${sol.convPct}&nbsp;%</b>
           <span>de convergence<br><u>${sol.relDiffPct}&nbsp;% ${txt(sol.relLabel)}</u></span>
         </div>
-        <div class="edito pf" ${anim("fadeUp", .6, fin + OUTRO + .5)}>${txt(sol.edito)}</div>
-      </div>
-      <div class="pips">${axes.map((a, k) => {
-        const col = a.side === "qc" ? COLORS.blue : COLORS.red;
-        return `<i style="animation:plein .3s ${detect(k)}s both;--on:${col}"></i>`;
-      }).join("")}<b class="mono" ${anim("fadeIn", .4, T0)}>${n} sujets</b></div>
-      <div class="note mono" ${anim("fadeIn", .5, T0)}>Part de l’attention des Unes de chaque région, sur 24 heures</div>`,
+      </div>`,
   };
 }
 
