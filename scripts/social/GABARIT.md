@@ -14,7 +14,7 @@ confirmé), **REJETÉ** (essayé puis écarté : ne pas réintroduire).
 Demandes d'Adrien du 2026-09-16 (et de Yannick depuis le 2 sept.) : **un look
 commun, une identité visuelle, un rappel marqué.**
 
-- **ARRÊTÉ · Même accroche partout** (`sceneIntro`, `lib/reel.ts`) : logo, filet et
+- **ARRÊTÉ · Même accroche partout, sauf Partis et couverture** (`sceneIntro`, `lib/reel.ts`) : logo, filet et
   nom du module à la couleur du module, **trois lignes qui tombent une par une**
   (« pour appuyer chaque ligne »), un visuel propre au module dans le bandeau
   d'encre, puis l'édition. Seuls les lignes, le visuel et la couleur changent.
@@ -22,6 +22,10 @@ commun, une identité visuelle, un rappel marqué.**
   - Deux solitudes : « Québec / Canada / 2 solitudes ? » (Québec en bleu, Canada
     en rouge, la question à la couleur du module).
   - Les quatre autres sont déjà écrites dans `lib/modules.ts`.
+  - **Exception · Partis et couverture** (Jules Piral, 2026-09-16) : l'accroche
+    donne d'emblée le RÉSULTAT et un visuel (« Le PQ / est le parti dont on parle
+    le plus aujourd'hui » et le vumètre des partis). Une accroche en questions y a
+    été jugée « trop de texte ». Le nom du module reste en surtitre.
 - **ARRÊTÉ · Le logo est traversé par l'iridescence** (Adrien, 2026-09-16, d'après
   la version iridescente de « Vitrine — Image de marque » dans Notion) : une tache
   irisée floue respire derrière la marque, et une bande irisée traverse le logo,
@@ -31,12 +35,21 @@ commun, une identité visuelle, un rappel marqué.**
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
-  **`lib/modules.ts`**, lue par les reels ET par le site. Les six couleurs suivent
-  les trois familles du banc d'essai (vitrine#715) mais donnent une nuance à
-  CHAQUE module : le banc n'en donnait qu'une par famille, donc deux modules se
-  ressemblaient. Aucune ne reprend une couleur d'enjeu (`lib/enjeux.ts`).
-  🕑 **À trancher avec Yannick** : les six teintes elles-mêmes. Le mécanisme est
-  posé, chaque couleur est une ligne à changer dans `lib/modules.ts`.
+  **`lib/modules.ts`** (`papier` et `accent`), lue par les reels ET par le site.
+  **Palette « Sépia » du banc d'essai** (`components/lab/PaletteScrollLab.tsx`),
+  retenue par Jules Piral le 2026-09-16 : un papier propre à chaque module, qui
+  fonce d'un module à l'autre (Une des Unes `#F3ECDD` → Assemblée `#DCC3B4`), et
+  un accent par famille (médias `#86642C`, pont `#7A4E33`, décideurs `#5E1A25`).
+  C'est le papier qui distingue deux modules d'une même famille.
+  **Renverse** les nuances par module du 16-09 et le papier teinté à 6 %
+  (`teintePapier`) : Deux solitudes perd le rouge comme couleur de MODULE (il
+  reste celui du Canada à l'intérieur du reel).
+- **ARRÊTÉ · Logos de la Vitrine ET du CAPP sur TOUTES les scènes** (Jules Piral,
+  2026-09-16) : barre de marque commune (`BRAND`, `loadLogos`, `lib/reel.ts`), en
+  bas de la zone sûre, logos officiels de `public/images/brand/` rognés de leurs
+  marges ; en blanc sur un bandeau d'encre (`lightBrand`, accroche et fin). Un
+  script de module n'a rien à faire que passer `logos: await loadLogos()` à
+  `buildPage`.
 - ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde
   le papier tel quel. L'accent colore les filets et les bandeaux, pas le fond.
 
@@ -44,8 +57,13 @@ commun, une identité visuelle, un rappel marqué.**
 
 ### Production
 
-- **ARRÊTÉ · Aperçu avant vidéo.** Le script ouvre d'abord un aperçu animé dans le
-  navigateur ; la vidéo ne se produit qu'ensuite, avec `--mp4`, après relecture.
+- **ARRÊTÉ · Aperçu avant vidéo, IMPOSÉ.** Le script écrit et ouvre d'abord
+  l'aperçu animé (`social-out/<module>_<date>_<heure>_apercu.html` : lecture,
+  défilement, vitesse, bouton « Zones Instagram »). C'est là qu'on regarde et
+  qu'on corrige son reel. `--mp4` **refuse** de produire la vidéo si l'aperçu de
+  CETTE version exacte (même page, donc mêmes données et même code : empreinte
+  `data-empreinte`) n'a pas été généré juste avant. L'aperçu n'est pas versionné
+  (~2 Mo, instantané des données) : il se régénère en une commande.
 - **ARRÊTÉ · Format.** 1080×1920 (9:16), H.264, 30 images/s, piste audio muette
   (la musique s'ajoute dans Instagram).
 - **ARRÊTÉ · Rythme.** Durées de base étirées par `SLOW = 1,4` (`lib/reel.ts`).
@@ -54,9 +72,26 @@ commun, une identité visuelle, un rappel marqué.**
 ### Mise en page
 
 - **ARRÊTÉ · Rien ne dépasse du cadre.** Tout (illustration, bandeaux, graphiques,
-  texte) reste à l'intérieur de l'encadré (30 px de chaque bord). `checkFrame`
-  vérifie chaque scène ; `--mp4` refuse de produire la vidéo si un élément dépasse.
+  texte) reste à l'intérieur de l'encadré (30 px de chaque bord).
+- **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Toute
+  information tient dans la ZONE SÛRE `SAFE` (convention des **Reels organiques**) :
+  220 px en haut (nom du compte), 400 px en bas (légende, musique), 60 px à gauche,
+  **120 px à droite à partir de y 640** (colonne de boutons, sous le tiers de
+  l'écran ; 60 px au-dessus). Le contenu s'arrête au-dessus de la barre de marque
+  (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` (illustration, bandeaux,
+  halo du logo) en sort. Zone des publicités Meta (14 % haut, 35 % bas) : non
+  retenue, trop d'espace perdu. Sources consultées le 2026-09-16 : Kreatli,
+  Pod2Reels, Outfy (organique) ; Billo, Behaviour Digital (publicités).
+  **Renverse** la marge de 200 px non bloquante du 16-09.
+- **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
+  téléphone, où le reel s'affiche à ~36 %.
+- **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle cadre, zone sûre et
+  taille sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre écart,
+  et la console nomme l'élément fautif (« zone Instagram · scène classement : … (bas
+  25 px) »).
 - **ARRÊTÉ · Remplir l'espace du cadre.** Pas de grands vides en bas de scène.
+- **ARRÊTÉ · Couleurs du ton, partout** : vert = favorable, rouge = défavorable
+  (`TONE`, `lib/reel.ts`).
 - **ARRÊTÉ · Langage visuel du site.** Papier/encre, Playfair Display, Source Serif 4,
   IBM Plex Mono, fleur de lys ; couleurs des bandes de saillance du site.
 
@@ -161,8 +196,8 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
    - Le module ne chiffre QUE la convergence : `divPct` existe pour l'axe, il n'a
      aucun libellé public. Ne jamais écrire « X % de divergence ».
 8. **Fin (commune à tous les reels, `sceneFin` dans `lib/reel.ts`).** **Logo de la
-   Vitrine** à la place de la fleur de lys (demande d'Adrien, 2026-09-16), Fleur de lys, « Ce qui domine l'actualité du Québec »,
-   vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
+   Vitrine** à la place de la fleur de lys (demande d'Adrien, 2026-09-16), la
+   signature du module, vitrinedemocratique.com, bandeau à la couleur du module « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
 **Légende Instagram** (`.txt`) : titre de l'édition, titre et résumé de la Une,
@@ -231,14 +266,46 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
 - 🪤 Une opacité posée en ATTRIBUT (`opacity=".12"`) est écrasée par une animation
   CSS d'opacité : la tranche devenait un aplat plein. Passer par `fill-opacity`.
 
-## 4. Points ouverts
+## 4. Partis et couverture (`partis.ts`)
+
+Thème : **de quel parti parlent les Unes, dans quel média, sur quel ton.** Données :
+`loadParties` (la section du site, y compris sa ventilation par média). Décisions
+de Jules Piral, 2026-09-16. Règle de la série : **des titres qui disent le
+résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
+
+1. **Accroche (résultat + visuel).** « Le PQ » en très grand, « est le parti dont on
+   parle le plus aujourd'hui », petit vumètre des cinq partis. ARRÊTÉ.
+2. **Jour.** « Le PQ est le parti dont on parle le plus aujourd'hui » ; vumètre par
+   parti, temps en Une depuis minuit. ARRÊTÉ.
+3. **Playlist par média.** Les médias se dévoilent un à un, lentement ; barre
+   empilée par parti, sigle seulement au-delà de 12 %, **pas de pourcentages** ;
+   à droite, le parti en tête dans ce média (« Surtout le PCQ », « X et Y à
+   égalité »). ARRÊTÉ.
+4. **Ton.** « Un ton défavorable pour 4 partis, favorable pour QS » ; un cadran par
+   parti, rouge à gauche, vert à droite. ARRÊTÉ.
+5. **Campagne.** « Depuis le début de la campagne, c'est la CAQ qui mène » ; barres
+   sur une échelle ABSOLUE (une barre à 100 % laissait croire à un monopole). ARRÊTÉ.
+6. **Fin commune.**
+
+**Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
+meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.
+Les autres réseaux (`lib/reseaux.ts`) sont écrits pour la Une des Unes : À FAIRE.
+
+### Rejeté (ne pas réintroduire)
+
+- Gros vinyle dans l'accroche, vinyles qui tournent : attirent l'œil, ne disent rien.
+- Accroche en question ou en texte : trop de texte.
+- Sous-titres de scène : rendent la lecture plus confuse.
+- Pourcentages dans la playlist ; scène « par média » séparée (redondante).
+- Pochettes d'album des partis : une seule par jour (bloc de 20h), pas fiables à
+  chaque édition.
+
+## 5. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
-- **Zones de l'interface Instagram** (en-tête, légende, boutons) : visibles dans
-  l'aperçu (bouton « Zones Instagram »), pas encore imposées au gabarit.
-- **Les reels restants** (12 enjeux, Partis et couverture, Polimètre+, Assemblée
+- **Les reels restants** (12 enjeux, Polimètre+, Assemblée
   nationale, global) : reprennent toutes les règles de la section 1.
 - **UN MODULE, UN POST** (Jules et Adrien, 2026-09-16) : un reel ne mélange pas deux
   modules. Le Canada était entré dans la Une des Unes le 16-09 ; il en est ressorti

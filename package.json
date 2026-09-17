@@ -12,7 +12,8 @@
     "test": "vitest run",
     "garde-redaction": "node scripts/garde_redaction.mjs",
     "reel:une-des-unes": "tsx scripts/social/une-des-unes.ts",
-    "reel:deux-solitudes": "tsx scripts/social/deux-solitudes.ts"
+    "reel:deux-solitudes": "tsx scripts/social/deux-solitudes.ts",
+    "reel:partis": "tsx scripts/social/partis.ts"
   },
   "dependencies": {
     "next": "16.3.4",

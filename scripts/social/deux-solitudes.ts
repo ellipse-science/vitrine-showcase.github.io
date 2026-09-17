@@ -31,7 +31,7 @@ import {
 import { MODULES } from "@/lib/modules";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, enjeuGlyph, esc, fleur, parseArgs, produce,
-  sceneFin, sceneIntro, teintePapier, txt, type Scene,
+  sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -72,24 +72,24 @@ const CSS = `
 #sonar .head{position:absolute;top:240px;left:76px;right:200px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:40px;right:200px;top:318px;height:720px}
+#sonar .chart{position:absolute;left:60px;right:200px;top:318px;height:720px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .keys{position:absolute;left:76px;right:200px;top:1052px;display:flex;gap:40px;font-size:25px}
+#sonar .keys{position:absolute;left:76px;right:200px;top:1052px;display:flex;gap:40px;font-size:26px}
 #sonar .keys div{display:flex;align-items:center;gap:12px}
 #sonar .keys i{display:block;width:26px;height:26px;border-radius:50%}
-#sonar .zone{position:absolute;left:76px;right:200px;top:1118px;height:390px}
+#sonar .zone{position:absolute;left:76px;right:200px;top:1098px;height:320px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
-#sonar .carte .t{font-size:50px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-#sonar .bars{margin-top:26px;display:flex;flex-direction:column;gap:14px}
-#sonar .bar{display:flex;align-items:center;gap:18px;font-size:24px}
+#sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+#sonar .bar{display:flex;align-items:center;gap:18px;font-size:26px}
 #sonar .bar em{font-style:normal;width:128px;flex:none;color:var(--soft)}
 #sonar .bar i{display:block;height:30px;transform-origin:left}
-#sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:54px;font-weight:500;line-height:1}
+#sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:44px;font-weight:500;line-height:1}
 #sonar .conv{position:absolute;left:0;right:0;top:150px;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
-#sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:23px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
+#sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:26px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
 #intro .mini{position:absolute;left:50%;bottom:40px;width:620px;transform:translateX(-50%)}
 @keyframes tourne{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes carte{0%,3%{opacity:0;transform:translateY(26px)}9%,88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-14px)}}
@@ -287,7 +287,8 @@ async function main() {
   const html = buildPage({
     title: `Deux solitudes · ${edition.key}`,
     css: CSS + INTRO_CSS + FIN_CSS, scenes,
-    fond: teintePapier(MODULE.accent),
+    theme: { paper: MODULE.papier, accent: MODULE.accent },
+    logos: await loadLogos(),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${edition.pubHour % 24}h · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });

@@ -27,8 +27,15 @@
 // prend le ROUGE DU CANADA plutôt qu'une nuance de sa famille. C'est le seul
 // module qui mobilise le Canada — la mémorisation l'emporte ici sur la famille.
 //
-// Le fond des reels est ce même accent, mêlé au papier à 6 % (`teintePapier`) :
-// « très discret », demande d'Adrien du 16-09.
+// ⚠️ PALETTE SÉPIA RETENUE (Jules Piral, 2026-09-16, intégration des PR #812 et
+// #813) : les couleurs sont celles de l'humeur « Sépia » du banc d'essai
+// (components/lab/PaletteScrollLab.tsx) — un PAPIER propre à chaque module, qui
+// fonce d'un module à l'autre, et un accent par famille (médias #86642C, pont
+// #7A4E33, décideurs #5E1A25). Elles remplacent les nuances par module proposées
+// le 16-09 et le papier teinté à 6 % (`teintePapier`). Conséquence assumée :
+// Deux solitudes perd le rouge du Canada comme couleur de module (le rouge reste
+// celui du Canada À L'INTÉRIEUR du module), et deux modules d'une même famille
+// partagent leur accent — c'est le papier qui les distingue.
 //
 // ⚠️ La règle d'Adrien du 3 sept. tient toujours : **la Une des Unes garde le
 // papier tel quel** en ligne. L'accent ci-dessous colore les filets, les titres
@@ -42,6 +49,8 @@ export type IdentiteModule = {
   famille: FamilleModule;
   /** La couleur du module : filets, accents, bandeau de fin du reel. */
   accent: string;
+  /** Le papier du module (fond des reels), palette « Sépia ». */
+  papier: string;
   /** Les trois lignes de l'accroche du reel, de la première à la troisième.
    *  `c` force une couleur (le Québec en bleu, le Canada en rouge) ; sans `c`,
    *  la ligne est à l'encre, et `accent: true` prend la couleur du module. */
@@ -52,54 +61,55 @@ export const MODULES = {
   "une-des-unes": {
     nom: "La Une des Unes",
     famille: "médias",
-    // Laiton encre (`--amber-encre`) : la couleur des paliers de saillance,
-    // déjà celle de ce module partout dans le site.
+    // Famille médias (sépia) : laiton encre, papier du site tel quel.
     accent: "#86642C",
+    papier: "#F3ECDD",
     lignes: [{ t: "Les faits saillants", accent: true }, { t: "au Québec" }, { t: "en ce moment" }],
   },
   "deux-solitudes": {
     nom: "Deux solitudes",
     famille: "médias",
-    // Le ROUGE DU CANADA (`--red`), tranché par Adrien le 2026-09-16 : c'est le
-    // seul module qui mobilise le Canada, donc la couleur se retient toute
-    // seule. Le bleu du Québec reste réservé au Québec À L'INTÉRIEUR du module
-    // (polygone, barres, points) : le module a le rouge, la région a le bleu.
-    accent: "#A8302C",
+    // Famille médias (sépia). Le rouge du Canada et le bleu du Québec restent les
+    // couleurs des RÉGIONS à l'intérieur du module (accroche, polygones, barres).
+    // Le rouge comme couleur du module (Adrien, 16-09) a cédé à la palette sépia.
+    accent: "#86642C",
+    papier: "#EDE1CB",
     lignes: [
       { t: "Québec", c: "#2E4663" },
-      { t: "Canada", accent: true },
+      { t: "Canada", c: "#A8302C" },
       { t: "2 solitudes?" },
     ],
   },
   "enjeux-saillants": {
     nom: "Les 12 enjeux",
     famille: "médias",
-    // Encre adoucie (`--ink-soft`) : le module porte DÉJÀ douze couleurs. Lui en
-    // donner une treizième les concurrencerait ; il prend donc l'encre.
-    accent: "#433F38",
+    // Famille médias (sépia). Les douze couleurs d'enjeu restent celles des enjeux.
+    accent: "#86642C",
+    papier: "#E6D6B8",
     lignes: [{ t: "Les 12 enjeux", accent: true }, { t: "de la campagne" }, { t: "jour après jour" }],
   },
   "partis-et-couverture": {
     nom: "Partis et couverture",
     famille: "pont",
-    // Brun chaud : l'accent « pont » du banc d'essai, entre médias et décideurs
-    // — ce module est exactement ce pont.
-    accent: "#8A5A3A",
+    // Famille « pont » (sépia) : brun chaud, entre médias et décideurs.
+    accent: "#7A4E33",
+    papier: "#E2D0B1",
     lignes: [{ t: "De quel parti", accent: true }, { t: "parle-t-on" }, { t: "dans les médias?" }],
   },
   "polimetre-plus": {
     nom: "Polimètre+",
     famille: "décideurs",
-    // Cordovan (`--cordovan`) : la couleur du Polimètre et des décideurs.
-    accent: "#6B1E2A",
+    // Famille décideurs (sépia) : bordeaux.
+    accent: "#5E1A25",
+    papier: "#E5D1C3",
     lignes: [{ t: "Les promesses", accent: true }, { t: "tenues, brisées" }, { t: "et oubliées" }],
   },
   "assemblee-nationale": {
     nom: "L’alignement de l’Assemblée",
     famille: "décideurs",
-    // Rose profond : le cordovan éclairci vers le rose, seconde nuance de la
-    // famille décideurs, distincte du Polimètre+ au premier coup d'œil.
-    accent: "#7A3B57",
+    // Famille décideurs (sépia) : bordeaux ; le papier le distingue du Polimètre+.
+    accent: "#5E1A25",
+    papier: "#DCC3B4",
     lignes: [{ t: "Qui parle", accent: true }, { t: "au Salon bleu", c: "#2E4663" }, { t: "et de quoi?" }],
   },
 } as const satisfies Record<string, IdentiteModule>;

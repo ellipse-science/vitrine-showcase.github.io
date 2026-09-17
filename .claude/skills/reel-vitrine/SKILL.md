@@ -25,6 +25,7 @@ est datée et signée — y compris les renversements.
 git pull                                   # ⚠️ indispensable : voir le piège 1
 npm run reel:une-des-unes                  # aperçu animé + les cinq textes
 npm run reel:deux-solitudes
+npm run reel:partis                        # légende Instagram seulement (pour l'instant)
 npm run reel:une-des-unes -- --mp4         # la vidéo, après avoir regardé l'aperçu
 ```
 
@@ -42,15 +43,20 @@ Sortie dans `social-out/` (hors Git — on ne pousse JAMAIS de MP4) :
 
 La musique s'ajoute dans l'application au moment de publier (la piste est muette).
 
-## 2. Les deux contrôles, à chaque production
+## 2. Les deux verrous, à chaque production
 
-Le script les lance seul et refuse de produire le MP4 si le premier échoue :
-
-- **`cadre → rien ne dépasse`** : tout reste dans l'encadré (30 px des bords).
-- **`zones → rien sous l'interface d'Instagram`** : aucun TEXTE sous l'en-tête,
-  la légende ou la colonne de boutons (`SAFE` dans `lib/reel.ts`). Non bloquant —
-  un bandeau décoratif a le droit de passer dessous — mais un chiffre ou un mot
-  qui s'y trouve ne sera jamais lu.
+1. **L'aperçu d'abord, toujours.** `--mp4` refuse de produire la vidéo si
+   l'aperçu (`…_apercu.html`) de CETTE version exacte du reel n'a pas été généré
+   juste avant (empreinte de la page). On lance sans `--mp4`, on REGARDE l'aperçu
+   dans le navigateur (bouton « Zones Instagram »), on corrige, puis `--mp4`.
+2. **Le gabarit, bloquant** (`gabarit → cadre, zone Instagram et lisibilité
+   respectés`) — le moindre écart empêche le MP4 :
+   - cadre : tout reste dans l'encadré (30 px des bords) ;
+   - zone Instagram : 220 px en haut, 400 px en bas, 60 px à gauche, **120 px à
+     droite sous y 640** (boutons), et le contenu au-dessus de la barre de logos
+     (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` a le droit d'en sortir ;
+   - lisibilité : aucun texte sous 26 px (`MIN_FONT`).
+   Ne JAMAIS contourner un écart en marquant du texte `data-deco`.
 
 **Ne jamais annoncer un reel sans avoir REGARDÉ des images fixes.**
 `-- --apercu 12,31,47` écrit des PNG aux secondes demandées ; les ouvrir et les
@@ -75,11 +81,16 @@ niveau, médias couvrants, notes de méthode — vit sur le site, où on a le te
 charger ses données avec **les loaders du site**, décrire ses scènes, écrire ses
 textes. Tout le reste est commun :
 
-- `lib/modules.ts` — nom, couleur et lignes d'accroche du module. **Une couleur
-  par module, une seule table**, lue par les reels et par le site.
+- `lib/modules.ts` — nom, `papier`, `accent` (palette Sépia) et lignes
+  d'accroche du module. **Une seule table**, lue par les reels et par le site.
+  Le script passe `theme: { paper: M.papier, accent: M.accent }` et
+  `logos: await loadLogos()` à `buildPage` : les logos Vitrine + CAPP sont sur
+  TOUTES les scènes.
 - `lib/reel.ts` — le moteur : `sceneIntro` (accroche commune, trois lignes qui
   tombent une par une), `sceneFin` (logo irisé, adresse, bandeau des six
-  éditions), `logoAnime`, `teintePapier`, `buildPage`, `produce`.
+  éditions), `logoAnime`, `loadLogos`, `buildPage`, `produce`, `TONE`
+  (vert favorable, rouge défavorable).
+- `lib/commun.ts` — choix de l'édition, tournures de rédaction (`joinFr`, OQLF).
 - `lib/post.ts` — émojis, rappel, mots-clics, comptes à identifier.
 - `lib/reseaux.ts` — les cinq formats et leurs contraintes.
 

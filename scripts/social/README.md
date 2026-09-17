@@ -12,7 +12,8 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 |---|---|
 | `une-des-unes.ts` (module 1) | LIVRÉ |
 | `deux-solitudes.ts` (module 2) | LIVRÉ |
-| 12 enjeux, Partis et couverture, Polimètre+, Assemblée nationale | PLANIFIÉ |
+| `partis.ts` (Partis et couverture) | LIVRÉ — légende Instagram seulement |
+| 12 enjeux, Polimètre+, Assemblée nationale | PLANIFIÉ |
 | Reel global (tour des six modules) | PLANIFIÉ — Jules |
 
 **Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
@@ -37,7 +38,14 @@ git pull                                   # données de l'édition du moment
 npm run reel:une-des-unes                  # 1. aperçu animé dans le navigateur
 npm run reel:une-des-unes -- --mp4         # 2. la vidéo, une fois l'aperçu validé
 npm run reel:deux-solitudes                # module 2, mêmes options
+npm run reel:partis                        # Partis et couverture
 ```
+
+**L'aperçu est obligatoire** : `--mp4` refuse de produire la vidéo tant que
+l'aperçu de cette version exacte du reel n'a pas été généré, et tant que le
+gabarit (cadre, zone Instagram de 120 px à droite, texte de 26 px minimum,
+contenu au-dessus des logos) n'est pas respecté. C'est dans l'aperçu qu'on
+regarde et qu'on corrige son reel.
 
 L'aperçu est la même page que celle qui est filmée pour le MP4 : lecture,
 défilement, saut de scène, vitesse ralentie et bouton « Zones Instagram », qui
