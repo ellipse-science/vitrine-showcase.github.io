@@ -50,13 +50,16 @@ commun, une identité visuelle, un rappel marqué.**
   foncé ou coloré et on efface ses séparations claires (`traceSeul`).
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
-- **ARRÊTÉ · Accents alignés sur le site** (Jules Piral, 2026-09-17 : « assure-toi
-  que les couleurs des titres de chaque module soient les bonnes ») : les accents de
-  `lib/modules.ts` sont ceux du banc d'essai du site (`PaletteScrollLab.tsx`, Adrien,
-  16-09) — Une des Unes laiton `#86642C`, Deux solitudes rouge `#A8302C`, 12 enjeux
-  mauve `#6E4F73`, Partis bleu `#2F6480`, Polimètre+ vert `#517368`, Assemblée
-  orange LNH `#B5521E`. **Renverse** l'accent par famille de la palette sépia
-  ci-dessous (trois modules partageaient le même brun) ; les papiers sépia restent.
+- **ARRÊTÉ · Palette « Sépia · Terres »** (Jules Piral, 2026-09-17, choisie parmi
+  15 pistes : https://claude.ai/artifact/Wk2Ta2v3L3gxusxmRdWfgh). Papiers sépia
+  inchangés ; une encre par module, sourde et lisible (contraste ≥ 3,9) : Une des
+  Unes laiton `#80602A`, Deux solitudes bordeaux `#8F3036`, 12 enjeux mauve
+  `#6A4872`, Partis **orange brûlé** `#8E4413`, Polimètre+ sauge `#4B6E50`,
+  Assemblée **bleu Salon** `#2F4A8A` (comme le Salon bleu). **Renverse** les accents
+  du banc d'essai (17-09 au matin). ⚠️ Orange des Partis voisin de QS, bleu de
+  l'Assemblée voisin du PQ et de la CAQ. Même source pour le site : le banc
+  d'essai lit `lib/modules.ts` (mode « Sépia · Terres »), avec un fond qui glisse
+  d'un module à l'autre dans l'ordre réel des sections (`lib/degradeModules.ts`).
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
   **`lib/modules.ts`** (`papier` et `accent`), lue par les reels ET par le site.
   **Palette « Sépia » du banc d'essai** (`components/lab/PaletteScrollLab.tsx`),
