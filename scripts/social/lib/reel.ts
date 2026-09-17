@@ -304,6 +304,18 @@ export function logoAnime(logo: string, opts: { classe: string; taille: number; 
   </div>`;
 }
 
+/** L'ÉDITION TIENT SUR DEUX LIGNES VOULUES — l'heure, puis la date. En une
+ *  seule ligne, « Édition de 16h · Jeudi 17 septembre 2026 » fait 960 px de
+ *  mono espacé pour 884 px utiles : elle se repliait toute seule et laissait
+ *  « 2026 » orphelin sous le reste (vu par Adrien sur l'édition de 16h du
+ *  17-09). Deux lignes tiennent quelle que soit la date — « Mercredi
+ *  30 septembre » est le pire cas. */
+function edition(texte: string): string {
+  const [heure, ...reste] = texte.split(" · ");
+  const date = reste.join(" · ");
+  return `<b>${typo(esc(heure))}</b>${date ? `<span>${typo(esc(date))}</span>` : ""}`;
+}
+
 /** ACCROCHE, COMMUNE À TOUS LES REELS (demande d'Adrien, 2026-09-16 : « chaque
  *  reel de chaque module devrait avoir la même intro, mais adaptée »).
  *  Même structure partout — logo, filet et nom du module, trois lignes qui
@@ -332,7 +344,7 @@ export function sceneIntro(opts: {
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
       <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
-      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${edition(opts.edition)}</div>`,
   };
 }
 
@@ -345,6 +357,8 @@ export const INTRO_CSS = `
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
 #intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
+#intro .ed b{display:block;font-weight:400}
+#intro .ed span{display:block;margin-top:12px;opacity:.72}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
