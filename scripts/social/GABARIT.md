@@ -45,8 +45,8 @@ commun, une identité visuelle, un rappel marqué.**
   complète au » au-dessus de l'adresse. Porté au format strict le 17-09 : tout
   tient au-dessus de la barre Vitrine + CAPP. 🪤 `llm-tool.png` est blanc sur fond
   noir : il passe en `mix-blend-mode:screen`, pas par l'inversion.
-  ⚠️ À revoir : le logo de la Chaire est en couleurs, l'inversion en fait une
-  silhouette blanche.
+  🪤 Le logo de la Chaire est en couleurs : l'inversion en faisait une silhouette
+  blanche. Il garde ses couleurs, seuls ses gris (texte, contour) passent en papier.
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans

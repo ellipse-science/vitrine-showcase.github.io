@@ -304,6 +304,20 @@ export const INTRO_CSS = `
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
 /** Les dix partenaires du site, dans l'ordre de `app/apropos/partenaires`
  *  (Adrien, 2026-09-16). Chargés en data URI : la page de rendu est autonome. */
+/** 🪤 Le logo de la Chaire est EN COULEURS (bulle à quatre quartiers, texte
+ *  noir) : l'inversion commune en faisait une silhouette blanche. On garde ses
+ *  couleurs et on ne passe en papier que ses gris (texte, contour, fond de la
+ *  bulle), qui se lisent alors sur le bandeau comme les autres logos. */
+async function chaireEnCouleurs(buf: Buffer): Promise<Buffer> {
+  const sharp = (await import("sharp")).default;
+  const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (Math.max(r, g, b) - Math.min(r, g, b) < 40) { data[i] = 243; data[i + 1] = 236; data[i + 2] = 221; }
+  }
+  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+}
+
 export async function chargerPartenaires(): Promise<string[]> {
   const dir = path.resolve(process.cwd(), "public", "images", "partners");
   const fichiers = [
@@ -318,6 +332,10 @@ export async function chargerPartenaires(): Promise<string[]> {
       // 🪤 `llm-tool.png` est du texte BLANC sur fond NOIR, les autres sont noirs
       // sur transparent : l'inversion qui sauve les uns ferait de lui un
       // rectangle blanc. Il passe donc en `screen`, qui efface son fond noir.
+      if (f === "ChaireQuebecCitoyennete.png") {
+        out.push(`brut:data:image/png;base64,${(await chaireEnCouleurs(buf)).toString("base64")}`);
+        continue;
+      }
       const src = `data:${f.endsWith(".svg") ? "image/svg+xml" : "image/png"};base64,${buf.toString("base64")}`;
       out.push(f === "llm-tool.png" ? `screen:${src}` : src);
     } catch { /* un logo manquant n'empêche pas la vidéo */ }
@@ -339,8 +357,8 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     return `<div class="mono" style="${style}">${celestial(h, "currentColor", 36)}${h}h</div>`;
   }).join("");
   const logos = (opts.partenaires ?? []).map((src, i) => {
-    const screen = src.startsWith("screen:");
-    return `<img class="${screen ? "screen" : ""}" src="${screen ? src.slice(7) : src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
+    const classe = src.startsWith("screen:") ? "screen" : src.startsWith("brut:") ? "brut" : "";
+    return `<img class="${classe}" src="${classe ? src.slice(classe.length + 1) : src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
   }).join("");
   return {
     id: "fin", duration: 4.8, noFadeOut: true, hideFooter: true, lightBrand: true,
@@ -378,6 +396,7 @@ export const FIN_CSS = `
 #fin .logos{margin-top:26px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:30px 44px}
 #fin .logos img{height:64px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 #fin .logos img.screen{filter:none;mix-blend-mode:screen}
+#fin .logos img.brut{filter:none}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
