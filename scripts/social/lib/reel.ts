@@ -489,6 +489,35 @@ body{margin:0;height:100vh;background:#1C1917;color:#F3ECDD;font:14px "IBM Plex 
 #safe div{position:absolute;background:rgba(220,40,40,.28);outline:1px dashed rgba(255,80,80,.9)}
 #safe div.coeur{background:transparent;outline:2px solid rgba(80,180,255,.95)}
 #panel{width:320px;display:flex;flex-direction:column;gap:14px}
+/* SIMULATEUR D'IPHONE 17 (Jules Piral, 2026-09-17) : écran 1206 × 2622 (19,5:9),
+   le reel ajusté à la largeur — comme Instagram, qui ne rogne pas le 9:16 mais
+   pose son interface par-dessus. Barres noires en haut et en bas, îlot dynamique,
+   colonne de boutons, légende, son, et la barre de navigation du profil. */
+#tel{position:relative;flex:none;display:none;background:#0A0A0A;border-radius:62px;padding:12px;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 2px #2A2A2A}
+body.tel #tel{display:block}
+body.tel #stage{display:none}
+#ecran{position:relative;overflow:hidden;border-radius:52px;background:#000}
+#ecran .video{position:absolute;left:0;top:0;transform-origin:0 0}
+#ig{position:absolute;inset:0;color:#fff;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
+#ig .ilot{position:absolute;top:22px;left:50%;transform:translateX(-50%);width:250px;height:74px;border-radius:40px;background:#000}
+#ig .heure{position:absolute;top:40px;left:70px;font-size:36px;font-weight:600}
+#ig .titre{position:absolute;top:48px;right:70px;font-size:34px;font-weight:700}
+#ig .rail{position:absolute;right:26px;bottom:430px;display:flex;flex-direction:column;align-items:center;gap:46px}
+#ig .rail div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:26px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+#ig .rail svg{width:58px;height:58px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+#ig .pochette{width:56px;height:56px;border-radius:12px;border:3px solid #fff;background:#444}
+#ig .bas{position:absolute;left:36px;right:170px;bottom:250px;display:flex;flex-direction:column;gap:16px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+#ig .compte{display:flex;align-items:center;gap:16px;font-size:32px;font-weight:600}
+#ig .avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#F3ECDD,#B07A3B);border:2px solid #fff}
+#ig .suivre{border:2px solid #fff;border-radius:10px;padding:6px 16px;font-size:28px;font-weight:600}
+#ig .legende{font-size:30px;line-height:1.35;opacity:.96;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#ig .son{display:flex;align-items:center;gap:12px;font-size:28px;opacity:.95}
+#ig .nav{position:absolute;left:0;right:0;bottom:0;height:190px;background:linear-gradient(transparent,rgba(0,0,0,.55) 40%);display:flex;align-items:flex-start;justify-content:space-around;padding:26px 40px 0}
+#ig .nav svg{width:62px;height:62px}
+#ig .nav .moi{width:58px;height:58px;border-radius:50%;background:#C9BEA8;border:2px solid #fff}
+#ig .barre{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;width:390px;height:10px;border-radius:6px;background:#fff;opacity:.9}
+#ig .voile{position:absolute;left:0;right:0;top:0;height:260px;background:linear-gradient(rgba(0,0,0,.45),transparent)}
+#ig .voileBas{position:absolute;left:0;right:0;bottom:0;height:820px;background:linear-gradient(transparent,rgba(0,0,0,.55) 55%,rgba(0,0,0,.75))}
 h1{font-size:15px;margin:0 0 6px;letter-spacing:.08em;text-transform:uppercase}
 button{font:inherit;background:#F3ECDD;color:#1C1917;border:0;padding:9px 12px;cursor:pointer;text-align:left}
 button.ghost{background:transparent;color:#F3ECDD;outline:1px solid #6E685F}
@@ -502,11 +531,39 @@ body.mini{padding:0;gap:0}
 body.mini #panel{display:none}
 </style></head><body>
 <div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div class="coeur" style="left:0;right:0;top:${COEUR.top}px;height:${COEUR.bottom - COEUR.top}px"></div></div></div>
+<div id="tel"><div id="ecran">
+  <iframe class="video" id="reelTel"></iframe>
+  <div id="ig">
+    <div class="voile"></div><div class="voileBas"></div><div class="ilot"></div>
+    <div class="heure">9:41</div><div class="titre">Reels</div>
+    <div class="rail">
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.6-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7 2.7C19 15.4 12 20 12 20z"/></svg>12,4 k</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M21 11.5A7.5 8 0 0 1 13.5 19H8l-4 3v-5.4A8 8 0 0 1 13.5 4 7.5 8 0 0 1 21 11.5z"/></svg>318</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M22 3 11 14M22 3l-7 18-4-7-7-4 18-7z"/></svg>1 207</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></div>
+      <div><svg viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+      <div class="pochette"></div>
+    </div>
+    <div class="bas">
+      <div class="compte"><span class="avatar"></span>vitrine.democratique<span class="suivre">Suivre</span></div>
+      <div class="legende" id="igLegende">${esc(title)} — Toutes les 4 heures, la Vitrine démocratique mesure ce qui occupe l’espace médiatique québécois…</div>
+      <div class="son"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M9 18V5l10-2v13"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/></svg>Son original · vitrine.democratique</div>
+    </div>
+    <div class="nav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M9 9l6 3-6 3z" fill="#fff"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 7h16l-2 12H6z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+      <span class="moi"></span>
+    </div>
+    <div class="barre"></div>
+  </div>
+</div></div>
 <div id="panel">
   <h1>${esc(title)}</h1>
   <div id="time">0,0 s / ${duration.toFixed(1).replace(".", ",")} s</div>
   <input id="scrub" type="range" min="0" max="${duration}" step="0.0333" value="0">
-  <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button></div>
+  <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button><button class="ghost" id="telBtn">iPhone 17</button></div>
   <div class="row" id="scenes">${marks.map((m) => `<button class="ghost" data-t="${m.start}">${esc(m.id)}</button>`).join("")}</div>
   <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons) · bleu : le carré central, ce qu’on voit avant d’ouvrir le reel.</p>
 </div>
@@ -516,18 +573,35 @@ const DUR=${duration};
 const MINI=new URLSearchParams(location.search).has("mini");
 if(MINI)document.body.classList.add("mini");
 const iframe=document.getElementById("reel"), stage=document.getElementById("stage");
-iframe.srcdoc=REEL;
+// L'iPhone 17 : 1206 × 2622 points d'écran (19,5:9). Instagram pose le reel 9:16
+// à la largeur de l'écran et laisse du noir en haut et en bas.
+const TEL={l:1206,h:2622}, ecran=document.getElementById("ecran"), tel=document.getElementById("tel"), video=document.getElementById("reelTel");
+iframe.srcdoc=REEL;video.srcdoc=REEL;
 function fit(){const s=Math.max(.01,Math.min((innerHeight-(MINI?0:40))/${HEIGHT},(innerWidth-(MINI?0:400))/${WIDTH}));stage.style.width=${WIDTH}*s+"px";stage.style.height=${HEIGHT}*s+"px";iframe.style.transform="scale("+s+")";document.getElementById("safe").style.transform="scale("+s+")";}
-addEventListener("resize",fit);fit();
+function fitTel(){
+  const s=Math.max(.01,Math.min((innerHeight-90)/TEL.h,(innerWidth-420)/TEL.l));
+  ecran.style.width=TEL.l*s+"px";ecran.style.height=TEL.h*s+"px";
+  const v=TEL.l/${WIDTH}; // le reel occupe toute la largeur de l'écran
+  video.style.width=${WIDTH}+"px";video.style.height=${HEIGHT}+"px";
+  video.style.transform="scale("+(v*s)+")";
+  video.style.top=((TEL.h-${HEIGHT}*v)/2*s)+"px";
+  document.getElementById("ig").style.transform="scale("+s+")";
+  document.getElementById("ig").style.transformOrigin="0 0";
+  document.getElementById("ig").style.width=TEL.l+"px";
+  document.getElementById("ig").style.height=TEL.h+"px";
+}
+addEventListener("resize",()=>{fit();fitTel();});fit();fitTel();
 let t=0,playing=false,speed=1,last=0;
 const scrub=document.getElementById("scrub"),timeEl=document.getElementById("time"),playBtn=document.getElementById("play");
-function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(Math.max(0,t));scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
+function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(Math.max(0,t));
+  const wt=video.contentWindow;if(wt&&wt.setTime)wt.setTime(Math.max(0,t));scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
   document.querySelectorAll("#scenes button").forEach((b,i,all)=>{const s=+b.dataset.t,e=i+1<all.length?+all[i+1].dataset.t:DUR;b.classList.toggle("on",t>=s&&t<e)});}
 function loop(now){if(playing){t+=(now-last)/1000*speed;if(t>=DUR){if(MINI){t=-1;}else{t=DUR;playing=false;playBtn.textContent="▶ Lecture";}}}last=now;show();requestAnimationFrame(loop);}
 function toggle(){if(t>=DUR)t=0;playing=!playing;playBtn.textContent=playing?"❚❚ Pause":"▶ Lecture";}
 playBtn.onclick=toggle;
 scrub.oninput=()=>{t=+scrub.value;};
 document.getElementById("slow").onclick=e=>{speed=speed===1?.5:speed===.5?.25:1;e.target.textContent="Vitesse ×"+String(speed).replace(".",",");};
+document.getElementById("telBtn").onclick=e=>{document.body.classList.toggle("tel");e.target.classList.toggle("on",document.body.classList.contains("tel"));fit();fitTel();};
 document.getElementById("safeBtn").onclick=e=>{const s=document.getElementById("safe");const on=s.style.display!=="block";s.style.display=on?"block":"none";e.target.classList.toggle("on",on);};
 document.querySelectorAll("#scenes button").forEach(b=>b.onclick=()=>{t=+b.dataset.t+.01;});
 addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();toggle();}if(e.code==="ArrowRight")t=Math.min(DUR,t+1);if(e.code==="ArrowLeft")t=Math.max(0,t-1);});

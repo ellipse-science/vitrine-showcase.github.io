@@ -83,6 +83,11 @@ commun, une identité visuelle, un rappel marqué.**
 
 ### Production
 
+- **ARRÊTÉ · Simulateur d'iPhone 17 dans l'aperçu** (Jules Piral, 2026-09-17) :
+  bouton « iPhone 17 » — écran 1206 × 2622 (19,5:9), îlot dynamique, colonne de
+  boutons, nom du compte, légende, son et barre de navigation du profil. Le reel
+  9:16 y est posé à la largeur de l'écran, avec du noir en haut et en bas, comme
+  le fait Instagram. C'est là qu'on juge ce qui se perd vraiment.
 - **ARRÊTÉ · Aperçu avant vidéo, IMPOSÉ.** Le script écrit et ouvre d'abord
   l'aperçu animé (`social-out/<module>_<date>_<heure>_apercu.html` : lecture,
   défilement, vitesse, bouton « Zones Instagram »). C'est là qu'on regarde et
