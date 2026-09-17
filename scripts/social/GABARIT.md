@@ -315,22 +315,22 @@ résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
 6. **Fin commune.**
 
 **Version courte et punchée** (`npm run reel:partis-court`, Jules Piral,
-2026-09-17 ; la longue est gardée). ARRÊTÉ :
-- **12 secondes au plus, fin comprise** : le script refuse de dépasser ; la fin
-  prend ce qui reste.
-- **Deux informations, un seul visuel chacune** (« compris facilement », « moins
-  d'éléments », « 2-3 informations MAX ») :
-  1. « Depuis minuit / Le PQ / 66 % / du temps que les Unes consacrent aux
-     partis », avec une jauge ;
-  2. une **statistique inédite**, calculée à partir du module et jamais affichée
-     telle quelle sur le site, dans cet ordre : **record** (« Du jamais vu depuis
-     le 27 août » : sa part du jour dépasse le meilleur jour de tous les autres
-     partis ; deux barres, le parti aujourd'hui et le meilleur jour du suivant),
-     sinon **multiple** de sa moyenne de campagne (dès 1,5 fois), sinon jours en
-     tête du parti qui mène la campagne.
+2026-09-17 ; la longue est gardée). À VALIDER :
+- **12 secondes au plus, fin comprise** : le script refuse de dépasser.
+- **Un seul plan, pas des slides** (« quelque chose qui sorte de l'ordinaire ») :
+  les cinq barres des partis montent, la caméra avance lentement, les phrases se
+  succèdent par-dessus ; puis la fin commune.
+- **Des phrases qu'on comprend du premier coup** : « Aujourd'hui, quand les Unes
+  parlent d'un parti… » / « 2 fois sur 3, c'est le PQ. » (fraction simple à 3
+  points près, sinon « X % du temps »).
+- **Deux informations au plus**, dont une **inédite**, calculée à partir du module
+  et jamais affichée telle quelle sur le site : **record** (« Et c'est un record :
+  du jamais vu depuis le début de la campagne » — la barre franchit la ligne du
+  meilleur jour d'un autre parti, à la même échelle), sinon **multiple** de sa
+  moyenne de campagne (dès 1,5 fois), sinon rien.
 - ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger.
-- Rejeté le même jour : la version courte à cinq scènes (accroche, médias, ton,
-  campagne, fin) — trop d'éléments pour 12 s.
+- Rejeté le 17-09 : cinq scènes en slides (trop d'éléments), puis deux slides
+  chiffre + record (« pas juste des slides », phrases pas assez claires).
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.

@@ -620,6 +620,9 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
       box.right = Math.min(box.right, ar.right); box.bottom = Math.min(box.bottom, ar.bottom);
     }
     if (box.right - box.left < 1 || box.bottom - box.top < 1) continue;
+    // Un élément invisible (fondu terminé) ne se voit pas : ni cadre ni zone.
+    let op = 1; for (let q = el; q && q !== document.body; q = q.parentElement) op *= parseFloat(getComputedStyle(q).opacity);
+    if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
     const f = excess(box, frame);

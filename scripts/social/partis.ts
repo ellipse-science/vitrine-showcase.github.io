@@ -291,111 +291,149 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   };
 }
 
-// ── Version COURTE ─────────────────────────────────────────────────────────
-// Jules Piral, 2026-09-17 : « plus courte et punchée », 12 secondes au plus,
-// « compris facilement », « moins d'éléments », « des statistiques inédites »,
-// « 2-3 informations MAX ». Deux scènes, une information chacune, un seul visuel
-// par scène, puis la fin. La version longue ne change pas.
+// ── Version COURTE : un seul plan ──────────────────────────────────────────
+// Jules Piral, 2026-09-17 : 12 secondes au plus, « compris facilement », « moins
+// d'éléments », « des statistiques inédites », « 2-3 informations MAX », « des
+// phrases compréhensibles », « quelque chose qui sorte de l'ordinaire, pas juste
+// des slides ». Donc UN SEUL PLAN, comme le sonar de Deux solitudes : les cinq
+// barres des partis montent, la caméra avance lentement, et des phrases courtes
+// en français courant se succèdent par-dessus. Puis la fin commune.
 //
-// L'information inédite est CALCULÉE à partir des chiffres du module, jamais
-// affichée telle quelle sur le site, par ordre de préférence :
-//  1. RECORD — la part du meneur aujourd'hui est la plus forte d'un parti en une
-//     journée depuis le début de la campagne (son sommet est aujourd'hui et
-//     dépasse le sommet de tous les autres partis) ;
-//  2. MULTIPLE — sa part aujourd'hui vaut au moins 1,5 fois sa moyenne de
-//     campagne ;
-//  3. sinon, le parti qui mène la campagne et ses jours en tête.
-// ⚠️ « Aujourd'hui » = depuis minuit : la journée n'est pas finie, le record peut
-// encore bouger. Les phrases le disent.
+// Les deux informations :
+//  1. la part du parti en tête, dite comme on la dirait : « 2 fois sur 3, c'est
+//     le PQ » (fraction simple quand elle tombe à 3 points près, sinon « X % du
+//     temps ») ;
+//  2. une statistique INÉDITE, calculée à partir du module et jamais affichée
+//     telle quelle sur le site : RECORD de campagne (sa part du jour dépasse le
+//     meilleur jour de tous les autres partis — la barre franchit la ligne), sinon
+//     MULTIPLE de sa moyenne de campagne (dès 1,5 fois — la barre dépasse la ligne
+//     de sa moyenne), sinon rien : deux informations valent mieux qu'une de trop.
+// ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger.
 const COURT_MAX_S = 12;
 
-function sceneChiffreCourt(lead: RowView): Scene {
-  return {
-    id: "chiffre", duration: 2.6, noFadeIn: true, hideFooter: true,
-    html: `
-      <div class="brand mono" ${anim("fadeIn", .3, 0)}><i ${anim("grow", .4, 0)}></i>Depuis minuit</div>
-      <div class="qui disp" style="color:${lead.color};animation:slam .45s .1s both">${esc(cap(SIGLE_ARTICLE[lead.key]))}</div>
-      <div class="gros disp" style="color:${lead.color}"><span class="count" data-n="${lead.sovPct}" data-d=".3">0&nbsp;%</span></div>
-      <div class="phrase pf" ${anim("fadeUp", .4, .5)}>du temps que les Unes consacrent aux partis</div>
-      <div class="jauge"><div class="plein" style="width:${lead.sovPct}%;background:${lead.color};animation:grow .9s .3s both"></div></div>`,
-  };
+const FRACTIONS: [number, number][] = [[1, 2], [2, 3], [3, 4], [4, 5], [1, 3], [1, 4], [2, 5], [3, 5]];
+function commeOnLeDit(pct: number): string | null {
+  const f = FRACTIONS.find(([n, d]) => Math.abs((n / d) * 100 - pct) <= 3);
+  return f ? `${f[0]} fois sur ${f[1]}` : null;
 }
-
-const multiple = (r: number) => {
+const fois = (r: number) => {
   const n = Math.round(r);
   return Math.abs(r - n) < .05 ? `${n} fois` : r < n ? `près de ${n} fois` : `plus de ${n} fois`;
 };
 
-function sceneInediteCourt(data: PartiesData, lead: RowView): { scene: Scene; phrase: string } | null {
-  const camp = [...data.ranges.overall.rows].sort((a, b) => a.rang - b.rang);
-  const moi = camp.find((r) => r.key === lead.key);
-  const depuis = data.ranges.overall.depuisLabel.replace(/^depuis\s+(le\s+)?/i, "").replace(/^\S+\s(?=\d)/, "").replace(/\s\d{4}$/, "");
-  const barres = (a: { lab: string; pct: number; color: string }, b: { lab: string; pct: number; color: string }) => `
-    <div class="duo">${[a, b].map((x, i) => `<div class="barre">
-      <div class="val disp" style="color:${x.color}">${x.pct}&nbsp;%</div>
-      <div class="col"><div style="height:${x.pct}%;background:${x.color};animation:growY .7s ${.4 + i * .25}s both"></div></div>
-      <div class="lab mono">${esc(x.lab)}</div></div>`).join("")}</div>`;
+type Inedit = { ligne: number; etiquette: string; a: string; b: string; legende: string };
 
-  if (moi && moi.peakPct === lead.sovPct && camp.every((r) => r.key === lead.key || r.peakPct < moi.peakPct)) {
-    const second = camp.filter((r) => r.key !== lead.key).sort((a, b) => b.peakPct - a.peakPct)[0];
-    const titre = `Du jamais vu depuis le ${depuis}`;
+function inedit(data: PartiesData, lead: RowView): Inedit | null {
+  const camp = data.ranges.overall.rows;
+  const moi = camp.find((r) => r.key === lead.key);
+  if (!moi) return null;
+  const autres = camp.filter((r) => r.key !== lead.key).sort((x, y) => y.peakPct - x.peakPct);
+  if (moi.peakPct === lead.sovPct && autres.every((r) => r.peakPct < lead.sovPct) && autres[0]) {
     return {
-      phrase: `C’est la plus forte part d’un parti en une journée depuis le début de la campagne (le ${depuis}).`,
-      scene: {
-        id: "inedit", duration: 2.9,
-        html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Record de la campagne</div>
-          <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(titre)}</h2>
-          ${barres({ lab: `${lead.label} · aujourd’hui`, pct: lead.sovPct, color: lead.color }, { lab: `Meilleur jour · ${second.label}`, pct: second.peakPct, color: second.color })}`,
-      },
+      ligne: autres[0].peakPct,
+      etiquette: `Meilleur jour d’un autre parti : ${autres[0].label}, ${autres[0].peakPct} %`,
+      a: "Et c’est un record :",
+      b: "du jamais vu depuis le début de la campagne",
+      legende: `Aucun autre parti n’a eu autant de place en une journée depuis le début de la campagne (meilleur jour : ${SIGLE_ARTICLE[autres[0].key]}, ${autres[0].peakPct} %).`,
     };
   }
-  if (moi && moi.sovPct > 0 && lead.sovPct / moi.sovPct >= 1.5) {
-    const x = multiple(lead.sovPct / moi.sovPct);
+  if (moi.sovPct > 0 && lead.sovPct / moi.sovPct >= 1.5) {
+    const x = fois(lead.sovPct / moi.sovPct);
     return {
-      phrase: `C’est ${x} sa moyenne depuis le début de la campagne (${moi.sovPct} %).`,
-      scene: {
-        id: "inedit", duration: 2.9,
-        html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Par rapport à la campagne</div>
-          <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(`${cap(x)} sa moyenne de campagne`)}</h2>
-          ${barres({ lab: "Aujourd’hui", pct: lead.sovPct, color: lead.color }, { lab: "Moyenne campagne", pct: moi.sovPct, color: COLORS.soft })}`,
-      },
+      ligne: moi.sovPct,
+      etiquette: `Sa moyenne depuis le début de la campagne : ${moi.sovPct} %`,
+      a: "C’est inhabituel :",
+      b: `${x} plus que sa moyenne de campagne`,
+      legende: `C’est ${x} sa moyenne depuis le début de la campagne (${moi.sovPct} %).`,
     };
   }
-  const tete = camp[0];
-  if (!tete) return null;
+  return null;
+}
+
+/** Géométrie du plan (px) : les barres partent de BASE et 1 % vaut ECHELLE px ;
+ *  la ligne du record se pose à la même échelle, donc la barre la franchit
+ *  VRAIMENT à la bonne valeur. */
+const GEO = { haut: 700, bas: 1400, puce: 70 };
+const BASE_BARRES = GEO.bas - GEO.puce;
+const ECHELLE = (BASE_BARRES - GEO.haut - 70) / 100;
+
+/** Durées du plan, au rythme de base (× SLOW à l'écran). */
+const PLAN = { monte: .3, phraseB: 1.7, bascule: 3.1, fin: 5.6 };
+
+function scenePlan(rows: RowView[], ined: Inedit | null): Scene {
+  const lead = rows[0];
+  const dit = commeOnLeDit(lead.sovPct);
+  const nom = cap(SIGLE_ARTICLE[lead.key]).replace(/^L[ae] /, (m) => m.toLowerCase());
+  const b1 = dit ? `${cap(dit)}, c’est ${nom}.` : `${cap(nom)} : ${lead.sovPct} % du temps.`;
+  const barres = rows.map((r) => `
+    <div class="bp" data-key="${r.key}" data-pct="${r.sovPct}">
+      <div class="p disp" style="color:${r.color}">0&nbsp;%</div>
+      <div class="f" style="background:${r.color}"></div>
+      <div class="s pf" style="background:${r.color}">${esc(r.label)}</div>
+    </div>`).join("");
+  const sortie = (t: number) => `, sortie .35s ${t}s forwards`;
   return {
-    phrase: `Depuis le début de la campagne, ${SIGLE_ARTICLE[tete.key]} a mené ${tete.joursEnTete} journées sur ${tete.joursComptes}.`,
-    scene: {
-      id: "inedit", duration: 2.9,
-      html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Depuis le début de la campagne</div>
-        <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(`${cap(SIGLE_ARTICLE[tete.key])} a mené ${tete.joursEnTete} journées sur ${tete.joursComptes}`)}</h2>
-        ${barres({ lab: `Jours en tête · ${tete.label}`, pct: Math.round((tete.joursEnTete / tete.joursComptes) * 100), color: tete.color }, { lab: "Toute la campagne", pct: 100, color: COLORS.soft })}`,
-    },
+    id: "plan", duration: ined ? PLAN.fin : PLAN.bascule + .9, noFadeIn: true, hideFooter: true,
+    html: `
+      <div class="camera">
+        <div class="barres">${barres}</div>
+        ${ined ? `<div class="record" style="top:${(BASE_BARRES - GEO.haut - ined.ligne * ECHELLE).toFixed(0)}px"><i style="animation:grow .6s ${PLAN.bascule}s both"></i><span class="mono" style="animation:fadeIn .4s ${PLAN.bascule + .3}s both">${esc(ined.etiquette)}</span></div>` : ""}
+      </div>
+      ${ined ? `<div class="eclair" data-deco style="animation:eclair .7s ${PLAN.bascule + .75}s both"></div>` : ""}
+      <div class="phr a pf" style="animation:fadeUp .45s .15s both${ined ? sortie(PLAN.bascule) : ""}">Aujourd’hui, quand les Unes parlent d’un parti…</div>
+      <div class="phr b disp" style="color:${lead.color};animation:fadeUp .45s ${PLAN.phraseB}s both${ined ? sortie(PLAN.bascule) : ""}">${txt(b1)}</div>
+      ${ined ? `<div class="phr a pf" style="animation:fadeUp .45s ${PLAN.bascule + .35}s both">${esc(ined.a)}</div>
+      <div class="phr b disp" style="animation:fadeUp .5s ${PLAN.bascule + .75}s both">${txt(ined.b)}</div>` : ""}`,
   };
 }
 
 const CSS_COURT = `
-#chiffre .brand{position:absolute;top:240px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
-#chiffre .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#chiffre .qui{position:absolute;top:330px;left:76px;right:120px;font-size:150px;line-height:1}
-#chiffre .gros{position:absolute;top:470px;left:60px;right:120px;font-size:400px;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-#chiffre .phrase{position:absolute;top:900px;left:76px;right:120px;font-size:76px;line-height:1.05}
-#chiffre .jauge{position:absolute;top:1180px;left:76px;right:120px;height:120px;background:var(--deep)}
-#chiffre .plein{height:100%;transform-origin:left}
-#inedit .kick-c{position:absolute;top:240px;left:76px;right:120px;font-size:30px;color:var(--soft)}
-#inedit .titre-c{position:absolute;top:290px;left:76px;right:120px;font-size:100px;line-height:1.03}
-#inedit .duo{position:absolute;top:640px;left:76px;right:120px;height:760px;display:flex;gap:60px}
-#inedit .barre{flex:1;display:flex;flex-direction:column;align-items:stretch}
-#inedit .val{font-size:96px;line-height:1;text-align:center}
-#inedit .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;margin-top:14px;background:var(--deep)}
-#inedit .col div{transform-origin:bottom}
-#inedit .lab{margin-top:14px;text-align:center;font-size:30px;letter-spacing:.04em;color:var(--ink);line-height:1.2;white-space:nowrap}
+#plan .camera{position:absolute;left:96px;right:150px;top:${GEO.haut}px;height:${GEO.bas - GEO.haut}px;transform-origin:50% 100%;animation:camera ${PLAN.fin}s linear both}
+@keyframes camera{from{transform:scale(.97)}to{transform:scale(1.03)}}
+#plan .barres{position:absolute;inset:0;display:flex;align-items:flex-end;gap:26px}
+#plan .bp{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;position:relative}
+#plan .bp .p{text-align:center;font-size:52px;line-height:1;margin-bottom:10px}
+#plan .bp .f{height:0;transition:none}
+#plan .bp .s{height:${GEO.puce - 12}px;margin-top:12px;text-align:center;color:#fff;font-size:40px;line-height:${GEO.puce - 12}px}
+#plan .record{position:absolute;left:0;right:0;height:0}
+#plan .record i{position:absolute;left:0;right:0;top:0;border-top:5px dashed var(--ink);transform-origin:left}
+#plan .record span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:26px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
+#plan .eclair{position:absolute;left:30px;right:30px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
+@keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
+@keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
+#plan .phr{position:absolute;left:76px;right:120px}
+#plan .phr.a{top:240px;font-size:46px;line-height:1.12;font-weight:700}
+#plan .phr.b{top:370px;font-size:96px;line-height:1.02;color:var(--ink)}
 `;
 
-function captionCourte(edition: EditionRef, lead: RowView, phrase: string | null): string {
+// Barres et pourcentages pilotés par le temps : montée commune, le meneur
+// continue seul, les autres s'éteignent un peu quand la phrase le nomme.
+const SCRIPT_COURT = `
+(function(){
+const ease=k=>1-Math.pow(1-k,3), clamp=k=>Math.max(0,Math.min(1,k));
+const prev=window.onSceneTime;
+window.onSceneTime=function(id,t,d){
+  if(prev)prev(id,t,d);
+  if(id!=="plan")return;
+  const bs=[...document.querySelectorAll("#plan .bp")];
+  const max=Math.max(...bs.map(b=>+b.dataset.pct));
+  bs.forEach((b,i)=>{
+    const pct=+b.dataset.pct, lead=pct===max;
+    // Les autres s'arrêtent vite ; le meneur monte plus longtemps.
+    const k=ease(clamp((t-${PLAN.monte}-i*.05)/(lead?1.6:1.0)));
+    const v=pct*k;
+    b.querySelector(".f").style.height=(v*${ECHELLE.toFixed(3)})+"px";
+    b.querySelector(".p").textContent=Math.round(v)+"\\u00A0%";
+    b.style.opacity=lead?1:(1-.55*clamp((t-${PLAN.phraseB})/.5));
+  });
+};
+})();`;
+
+function captionCourte(lead: RowView, ined: Inedit | null): string {
+  const dit = commeOnLeDit(lead.sovPct);
   const texte = [
-    `Depuis minuit, ${NOM_ARTICLE[lead.key]} occupe ${lead.sovPct} % du temps que les Unes des médias québécois consacrent aux partis.`,
-    phrase,
+    `Aujourd’hui, quand les Unes des médias québécois parlent d’un parti, c’est ${NOM_ARTICLE[lead.key]} ${dit ?? `${lead.sovPct} % du temps`}${dit ? ` (${lead.sovPct} % du temps, depuis minuit)` : " (depuis minuit)"}.`,
+    ined?.legende ?? null,
   ].filter(Boolean).join(" ");
   return captionTypo([texte, `${MODULE}, six fois par jour : vitrinedemocratique.com`, HASHTAGS.join(" ")].join("\n\n")) + "\n";
 }
@@ -467,9 +505,9 @@ async function main() {
   console.log(`  en tête : ${rows[0].label} (${rows[0].sovPct} %) · ${mixes.length} médias`);
 
   const court = !!args.court;
-  const inedit = court ? sceneInediteCourt(data, rows[0]) : null;
+  const ined = court ? inedit(data, rows[0]) : null;
   const scenes = (court
-    ? [sceneChiffreCourt(rows[0]), inedit?.scene ?? null]
+    ? [scenePlan(rows, ined)]
     : [sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows), sceneTon(rows), sceneCampagne(data, rows[0])]
   ).filter((s): s is Scene => s !== null);
 
@@ -485,7 +523,7 @@ async function main() {
   }
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
-    css: CSS + (court ? CSS_COURT : "") + FIN_CSS, scenes, script: SCRIPT,
+    css: CSS + (court ? CSS_COURT : "") + FIN_CSS, scenes, script: SCRIPT + (court ? SCRIPT_COURT : ""),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: footerEdition(edition),
     logos,
@@ -496,7 +534,7 @@ async function main() {
   const base = path.join(outDir, `${court ? "partis-court" : "partis"}_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
   // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
-  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(edition, rows[0], inedit?.phrase ?? null) : caption(edition, data, rows, mixes));
+  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(rows[0], ined) : caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 
   await produce({ html, scenes, title: `${MODULE}${court ? " (court)" : ""} · édition de ${pubHourLabel(edition)}`, base, args });
