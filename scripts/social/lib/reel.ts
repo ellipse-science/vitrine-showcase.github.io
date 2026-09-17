@@ -295,8 +295,12 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
   // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
   // modules qui opposent deux régions.
   const accent = opts.accent ?? COLORS.blue;
-  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
-    `<div class="mono${h === now ? " on" : ""}"${h === now ? ` style="color:${accent};animation:pop .4s ${1.2 + i * .12}s both"` : ` style="animation:pop .4s ${1.2 + i * .12}s both"`}>${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
+  const hours = [0, 4, 8, 12, 16, 20].map((h, i) => {
+    const style = h === now
+      ? `background:${accent};border-color:${accent};color:${COLORS.paper};animation:pop .4s ${1.2 + i * .12}s both`
+      : `border-color:${accent};animation:pop .4s ${1.2 + i * .12}s both`;
+    return `<div class="mono" style="${style}">${celestial(h, "currentColor", 36)}${h}h</div>`;
+  }).join("");
   const logos = (opts.partenaires ?? []).map((src, i) => {
     const screen = src.startsWith("screen:");
     return `<img class="${screen ? "screen" : ""}" src="${screen ? src.slice(7) : src}" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
@@ -310,34 +314,31 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
       <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
+      <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
+      <div class="hours">${hours}</div>
       <div class="band" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
-      <div class="foot">
-        <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
-        <div class="hours">${hours}</div>
-        ${logos ? `<div class="part mono" style="animation:fadeIn .5s 1.8s both">Partenaires</div><div class="logos">${logos}</div>` : ""}
-      </div>`,
+      ${logos ? `<div class="foot"><div class="part mono" style="animation:fadeIn .5s 1.7s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
   };
 }
 
 /** CSS de la scène de fin — à concaténer au CSS du module. */
 export const FIN_CSS = `
-/* Marge de droite plus large : la colonne de boutons d'Instagram mange 200 px. */
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:250px 200px 0 76px}
-#fin .logo{width:740px;margin-top:28px}
+/* Marge de droite plus large : la colonne de boutons d'Instagram mange 200 px.
+   LES PARTENAIRES ONT LE CARRÉ DE COULEUR POUR EUX (Adrien, 2026-09-16) :
+   l'horaire des six éditions remonte sur le papier, les logos grossissent. */
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:230px 200px 0 76px}
+#fin .logo{width:700px;margin-top:22px}
 #fin .kick{font-size:28px;color:var(--soft)}
-#fin .metho{font-size:26px;margin-top:54px;color:var(--soft)}
-#fin .url{font-size:62px;margin-top:14px;border-bottom:7px solid currentColor;padding-bottom:10px}
-#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:770px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:30px;right:30px;top:1140px;display:flex;flex-direction:column;align-items:center}
-#fin .six{font-size:44px;font-style:italic;margin-bottom:30px;color:var(--paper)}
-#fin .hours{display:flex;gap:10px}
-#fin .hours div{width:118px;padding:14px 0 12px;border:3px solid rgba(243,236,221,.5);font-size:28px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:8px}
-#fin .hours div.on{background:var(--paper);border-color:var(--paper)}
-/* Les partenaires, dans le carré de couleur (demande d'Adrien, 2026-09-16).
-   Les logos du site sont noirs : \`brightness(0) invert(1)\` les passe en papier. */
-#fin .part{margin-top:40px;font-size:22px;color:rgba(243,236,221,.75)}
-#fin .logos{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 32px;max-width:820px}
-#fin .logos img{height:42px;width:auto;max-width:170px;object-fit:contain;filter:brightness(0) invert(1);opacity:.92}
+#fin .metho{font-size:26px;margin-top:40px;color:var(--soft)}
+#fin .url{font-size:58px;margin-top:12px;border-bottom:6px solid currentColor;padding-bottom:8px}
+#fin .six{font-size:34px;font-style:italic;margin-top:54px;color:var(--soft)}
+#fin .hours{display:flex;gap:10px;margin-top:20px}
+#fin .hours div{width:114px;padding:12px 0 10px;border:3px solid;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:8px}
+#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:640px;background:var(--blue);transform-origin:bottom}
+#fin .foot{position:absolute;left:30px;right:30px;top:1270px;display:flex;flex-direction:column;align-items:center}
+#fin .part{font-size:24px;color:rgba(243,236,221,.8)}
+#fin .logos{margin-top:34px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:40px 52px;max-width:880px}
+#fin .logos img{height:72px;width:auto;max-width:250px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 #fin .logos img.screen{filter:none;mix-blend-mode:screen}
 `;
 
