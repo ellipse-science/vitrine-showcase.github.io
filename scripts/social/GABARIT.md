@@ -97,8 +97,18 @@ commun, une identité visuelle, un rappel marqué.**
 
 ### Mise en page
 
-- **ARRÊTÉ · Rien ne dépasse du cadre.** Tout (illustration, bandeaux, graphiques,
-  texte) reste à l'intérieur de l'encadré (30 px de chaque bord).
+- **ARRÊTÉ · PLUS D'ENCADRÉ** (Jules Piral, 2026-09-17 : « dépendamment de
+  l'affichage ça va avoir l'air coupé »). Le filet autour du reel est retiré : un
+  trait collé au bord se lit comme une erreur dès qu'une plateforme rogne l'image.
+  Le **décor** (`data-deco` : bandeaux, illustrations, aplats) va maintenant jusqu'aux
+  bords ; tout le reste garde 30 px de marge, que le contrôle vérifie.
+- **ARRÊTÉ · L'ESSENTIEL AU CENTRE** (Jules Piral, 2026-09-17 : « dans la vue pas
+  en reel on doit voir LA stat ou LE contenu »). Le **cœur** est le carré central
+  (1080 × 1080, y 420 → 1500), ce que montrent la grille du profil et le fil avant
+  qu'on ouvre le reel. Chaque scène marque son essentiel — LA statistique, LE
+  résultat — avec `data-cle`, et le contrôle refuse la vidéo s'il en sort. Le
+  surtitre, la note de méthode et la légende vivent au-dessus et au-dessous : on
+  les découvre en plein écran. L'aperçu trace ce carré en bleu.
 - **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Image
   en **1080 × 1920 (9:16)** — le format qu'Instagram réclame, et celui que les
   iPhone récents affichent le mieux, même si leur écran est plus haut (19,5:9).
@@ -113,7 +123,7 @@ commun, une identité visuelle, un rappel marqué.**
   publicités Meta : toujours non retenue.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
-- **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle cadre, zone sûre et
+- **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et
   taille sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre écart,
   et la console nomme l'élément fautif (« zone Instagram · scène classement : … (bas
   25 px) »).

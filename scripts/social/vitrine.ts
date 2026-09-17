@@ -225,7 +225,7 @@ function sceneAccroche(logo: string): Scene {
         <div class="logo" style="${anim("pop", .7, .1)}">${logoAnime(logo, { classe: "", taille: 560, passe: .9 })}</div>
         <div class="date mono" style="${anim("fadeIn", .5, .3)}">Élections québécoises du ${ELECTION_LABEL}</div>
       </div>
-      <h1><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
+      <h1 data-cle><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
       <div class="traits">${traits}</div>`,
   };
 }
@@ -245,7 +245,7 @@ function sceneSources(): Scene {
     html: `
       <div class="kick mono" style="${anim("fadeIn", .5, .1)}">D’où viennent les données</div>
       <h2 class="disp" style="${anim("fadeUp", .6, .2)}">La Vitrine lit la politique québécoise en continu</h2>
-      <div class="lignes">${lignes}</div>
+      <div class="lignes" data-cle>${lignes}</div>
       <div class="local" style="${anim("fadeUp", .6, 2.5)}">
         <div class="mono">Analysé ici</div>
         <p class="disp">Des modèles locaux, entraînés, validés et conservés à l’Université Laval</p>
@@ -264,7 +264,7 @@ function sceneModule(k: CleModule, i: number): Scene {
       <div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
       <div class="tete"><h2 class="nom disp" style="color:${m.accent};${anim("fadeUp", .5, .15)}">${t(m.nom)}</h2>
       <p class="question pf" style="${anim("fadeUp", .6, .45)}">${t(TEXTES[k].question)}</p></div>
-      ${SCHEMAS[k]()}
+      <div data-cle>${SCHEMAS[k]()}</div>
       <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p>`,
   };
 }
@@ -278,7 +278,7 @@ function sceneRecap(): Scene {
     id: "recap", duration: 4.6,
     html: `
       <h2 class="disp" style="${anim("fadeUp", .6, .1)}">6 modules pour mieux comprendre la démocratie au Québec</h2>
-      <ul>${liste}</ul>`,
+      <ul data-cle>${liste}</ul>`,
   };
 }
 

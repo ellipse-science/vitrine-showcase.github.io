@@ -69,7 +69,7 @@ export function scenePlanHtml(plan: Plan): { html: string; css: string; script: 
     ? `transform-origin:${z.x}% ${z.y}%;animation:zoomPlan ${DUREE_PLAN}s linear both`
     : `transform-origin:50% 100%;animation:cameraPlan ${DUREE_PLAN}s linear both`;
   const html = `
-    <div class="cadre-camera"><div class="camera" style="${camera}">${plan.visuel}</div></div>
+    <div class="cadre-camera" data-cle><div class="camera" style="${camera}">${plan.visuel}</div></div>
     ${plan.eclair != null ? `<div class="eclair" data-deco style="animation:eclair .7s ${plan.eclair}s both"></div>` : ""}
     ${phrases}`;
   const css = `

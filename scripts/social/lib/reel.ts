@@ -82,10 +82,21 @@ export async function loadLogos(): Promise<Logos> {
  *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran. */
 export const MIN_FONT = 26;
 
-/** Intérieur de l'encadré du reel (filet à 28 px, épaisseur 2). RÈGLE : rien
- *  ne dépasse du cadre, ni image, ni bandeau, ni texte. Les scènes sont
- *  rognées à ce rectangle, et `checkFrame` signale tout élément qui le franchit. */
+/** MARGE DE BORD. ⚠️ L'encadré dessiné a été RETIRÉ le 2026-09-17 (Jules Piral :
+ *  « je crois que l'encadré autour est une mauvaise idée, dépendamment de
+ *  l'affichage ça va avoir l'air coupé ») : un filet collé au bord se lit comme
+ *  une erreur dès que la plateforme rogne l'image. Le DÉCOR (`data-deco` :
+ *  bandeaux, illustrations, aplats) va donc jusqu'aux bords ; le reste garde
+ *  cette marge, que `checkFrame` vérifie. */
 export const FRAME = { left: 30, top: 30, right: WIDTH - 30, bottom: HEIGHT - 30 };
+
+/** LE CŒUR : le carré central (1080 × 1080) que montrent la grille du profil et
+ *  l'aperçu du fil, avant qu'on ouvre le reel. RÈGLE (Jules Piral, 2026-09-17) :
+ *  l'ESSENTIEL de chaque scène — LA statistique, LE résultat — tient là ; le
+ *  reste (surtitre, note de méthode, légende) vit au-dessus et au-dessous, et
+ *  n'apparaît qu'en plein écran. Une scène marque son essentiel avec
+ *  `data-cle` ; `checkFrame` refuse la vidéo si cet élément déborde du cœur. */
+export const COEUR = { top: Math.round((HEIGHT - WIDTH) / 2), bottom: Math.round((HEIGHT + WIDTH) / 2) };
 
 /** Palette du site (app/globals.css) et bandes de saillance
  *  (lib/shareCardTemplate.tsx, rangs calibrés 1 à 6). */
@@ -199,11 +210,10 @@ const BASE_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:${WIDTH}px;height:${HEIGHT}px;overflow:hidden;background:var(--paper)}
 body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
-.frame{position:absolute;inset:28px;border:2px solid var(--rule);z-index:50}
 .mono{font-family:"IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
 .disp{font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
-.scene{position:absolute;inset:0;padding:120px 76px 0;opacity:0;clip-path:inset(30px)}
+.scene{position:absolute;inset:0;padding:120px 76px 0;opacity:0}
 .footer{position:absolute;left:76px;right:76px;bottom:70px;display:flex;justify-content:space-between;font-size:22px;color:var(--softer);z-index:40}
 .brandbar{position:absolute;left:76px;right:120px;display:flex;align-items:center;justify-content:space-between;z-index:45}
 .brandbar img{display:block}
@@ -288,7 +298,7 @@ export function sceneIntro(opts: {
     html: `
       ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
-      <h1 class="disp">${lignes}</h1>
+      <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
       <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
   };
@@ -423,7 +433,7 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
-<div class="frame"></div><div class="progress" id="__prog"></div>
+<div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
 <div class="footer mono" id="__foot"><span>${opts.footerLeft}</span><span>${opts.footerRight}</span></div>
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
@@ -474,6 +484,7 @@ body{margin:0;height:100vh;background:#1C1917;color:#F3ECDD;font:14px "IBM Plex 
 #stage iframe{position:absolute;left:0;top:0;width:${WIDTH}px;height:${HEIGHT}px;border:0;transform-origin:0 0}
 #safe{position:absolute;left:0;top:0;width:${WIDTH}px;height:${HEIGHT}px;transform-origin:0 0;pointer-events:none;display:none}
 #safe div{position:absolute;background:rgba(220,40,40,.28);outline:1px dashed rgba(255,80,80,.9)}
+#safe div.coeur{background:transparent;outline:2px solid rgba(80,180,255,.95)}
 #panel{width:320px;display:flex;flex-direction:column;gap:14px}
 h1{font-size:15px;margin:0 0 6px;letter-spacing:.08em;text-transform:uppercase}
 button{font:inherit;background:#F3ECDD;color:#1C1917;border:0;padding:9px 12px;cursor:pointer;text-align:left}
@@ -487,14 +498,14 @@ input[type=range]{width:100%}
 body.mini{padding:0;gap:0}
 body.mini #panel{display:none}
 </style></head><body>
-<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div></div></div>
+<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div class="coeur" style="left:0;right:0;top:${COEUR.top}px;height:${COEUR.bottom - COEUR.top}px"></div></div></div>
 <div id="panel">
   <h1>${esc(title)}</h1>
   <div id="time">0,0 s / ${duration.toFixed(1).replace(".", ",")} s</div>
   <input id="scrub" type="range" min="0" max="${duration}" step="0.0333" value="0">
   <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button></div>
   <div class="row" id="scenes">${marks.map((m) => `<button class="ghost" data-t="${m.start}">${esc(m.id)}</button>`).join("")}</div>
-  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons).</p>
+  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons) · bleu : le carré central, ce qu’on voit avant d’ouvrir le reel.</p>
 </div>
 <script>
 const REEL=${payload};
@@ -540,7 +551,7 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
     for (const o of ecarts) console.warn(`     · ${o}`);
     if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  gabarit → cadre, zone Instagram, lisibilité et textes non empilés respectés");
+    console.log("  gabarit → bords, zone Instagram, cœur, lisibilité et textes non empilés respectés");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
@@ -580,7 +591,9 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
  *   1. CADRE : aucun élément visible ne franchit l'encadré (FRAME) ;
  *   2. ZONE SÛRE : aucune information (tout ce qui n'est pas `data-deco`) ne
  *      sort de SAFE, sinon l'interface Instagram la cache sur le téléphone ;
- *   3. LISIBILITÉ : aucun texte sous MIN_FONT.
+ *   3. LISIBILITÉ : aucun texte sous MIN_FONT ;
+ *   4. CŒUR : l'élément marqué `data-cle` (LA statistique de la scène) tient dans
+ *      le carré central, celui qu'on voit avant d'ouvrir le reel.
  *  La boîte de chaque élément est d'abord rognée par ses ancêtres en
  *  `overflow: hidden` : une image zoomée dans un cadre qui la contient ne
  *  dépasse pas. Un seul signalement par débordement (l'ancêtre fautif). */
@@ -605,7 +618,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
 
 // Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
 // un utilitaire `__name` qui n'existe pas côté navigateur.
-const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
+const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
   window.setTime(at);
   const scene = document.getElementById(sceneId);
   const out = [];
@@ -636,7 +649,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
     if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
-    const f = excess(box, frame);
+    const f = el.closest("[data-deco]") ? [] : excess(box, frame);
     if (f.length) {
       flagged.frame.add(el);
       if (!inherited(flagged.frame, el)) out.push("cadre · scène " + sceneId + " : « " + label + " » (" + f.join(", ") + ")");
@@ -653,6 +666,14 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
       const size = parseFloat(getComputedStyle(el).fontSize);
       if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
     }
+  }
+  // LE CŒUR : l'essentiel de la scène tient dans le carré central.
+  for (const el of scene.querySelectorAll("[data-cle]")) {
+    const r = el.getBoundingClientRect();
+    if (r.height < 1) continue;
+    const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
+      r.bottom > coeur.bottom + .5 ? "bas " + Math.round(r.bottom - coeur.bottom) + " px" : ""].filter(Boolean);
+    if (d.length) out.push("cœur · scène " + sceneId + " : « " + (el.textContent || "").trim().slice(0, 40) + " » sort du carré central (" + d.join(", ") + ")");
   }
   // TEXTES EMPILÉS (Jules Piral, 2026-09-17 : « des infos et du texte empilés les
   // uns sur les autres »). Chaque ligne de texte visible est mesurée au plus près
@@ -691,7 +712,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
 
 async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
   // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT });
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

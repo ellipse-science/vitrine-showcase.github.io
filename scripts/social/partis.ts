@@ -77,10 +77,10 @@ const CSS = `
 /* Accroche : le résultat, et rien d'autre */
 #accroche .brand{position:absolute;top:272px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{position:absolute;top:368px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
+#accroche .result{position:absolute;top:436px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
 #accroche .then{font-size:88px;line-height:1.02}
-#accroche .mini{position:absolute;left:76px;right:120px;top:1020px;height:300px;display:flex;gap:26px}
+#accroche .mini{position:absolute;left:76px;right:120px;top:1040px;height:290px;display:flex;gap:26px}
 #accroche .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
 #accroche .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
 
@@ -129,7 +129,7 @@ function sceneAccroche(rows: RowView[]): Scene {
     id: "accroche", duration: 3.4, noFadeIn: true, hideFooter: true,
     html: `
       <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
-      <div class="result">
+      <div class="result" data-cle>
         <div class="answer disp" style="color:${lead.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .7s .3s both">${esc(answer)}</div>
         <div class="then disp" ${anim("fadeUp", .6, .9)}>est le parti dont on parle le plus aujourd’hui</div>
       </div>
@@ -151,7 +151,7 @@ function sceneJour(rows: RowView[]): Scene {
     id: "jour", duration: 5.6,
     html: `
       ${head("Temps en Une · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
-      <div class="chart">${cols}</div>`,
+      <div class="chart" data-cle>${cols}</div>`,
   };
 }
 
@@ -181,7 +181,7 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
   return {
     id: "playlist", duration: PLAYLIST0 + mixes.length * PLAYLIST_STEP + 2.2,
     html: `${head("Média par média · depuis minuit", title)}
-      <div class="rows">${list}</div>`,
+      <div class="rows" data-cle>${list}</div>`,
   };
 }
 
@@ -197,7 +197,7 @@ function sceneTon(rows: RowView[]): Scene {
     id: "ton", duration: 5.4,
     html: `${head("Le ton · depuis minuit", cap(`un ton ${tonGroupes(rows).join(", ")}`))}
       <div class="legend mono" ${anim("fadeIn", .5, .8)}><span style="color:${TONE.negative}">← Défavorable</span><span style="color:${TONE.positive}">Favorable →</span></div>
-      <div class="rows">${list}</div>`,
+      <div class="rows" data-cle>${list}</div>`,
   };
 }
 
@@ -223,7 +223,7 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   return {
     id: "campagne", duration: 5.4,
     html: `${head(`Temps en Une · ${depuis}`, title)}
-      <div class="rows">${list}</div>`,
+      <div class="rows" data-cle>${list}</div>`,
   };
 }
 

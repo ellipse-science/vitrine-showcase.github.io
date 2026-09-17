@@ -181,16 +181,16 @@ const CSS = `
 #centile .src{position:absolute;left:76px;right:120px;top:1296px;font-size:26px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
-#couverture .head{position:absolute;top:272px;left:76px;right:200px}
+#couverture .head{position:absolute;top:392px;left:76px;right:200px}
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
 #couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
-#couverture ul{position:absolute;left:76px;right:200px;top:636px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:104px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
+#couverture ul{position:absolute;left:76px;right:200px;top:716px;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:96px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
 #couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px}
 #couverture li span{font-size:26px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
-#couverture .since{position:absolute;left:76px;right:200px;top:1296px;font-size:38px;font-style:italic;color:var(--soft)}
+#couverture .since{position:absolute;left:76px;right:200px;top:1306px;font-size:38px;font-style:italic;color:var(--soft)}
 
 /* 6. Classement */
 #classement .head{position:absolute;top:268px;left:76px;right:120px}
@@ -246,7 +246,7 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
       <div class="rank mono" ${anim("pop", .5, .6)}>Une n°1</div>
       <div class="body">
         <div class="tag mono" style="background:${top.issueColor};animation:wipe .6s .7s both">${txt(top.issueFr)}</div>
-        <h2 class="disp" ${anim("fadeUp", .8, .9)}>${txt(top.title)}</h2>
+        <h2 class="disp" data-cle ${anim("fadeUp", .8, .9)}>${txt(top.title)}</h2>
         <div class="stats">
           <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">${top.scoreQcSum24h != null ? `${frNum(top.scoreQcSum24h)} points de saillance sur 24 heures` : "Saillance sur 24 heures"}</span></div>
           <div class="stat" ${anim("fadeUp", .5, 2.1)}><b style="color:var(--blue)">${top.qcOutletCount}/${top.totalQcOutlets}</b><span class="pf">${coverageLabel(top.qcOutletCount)}</span></div>
@@ -333,7 +333,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
         </div>
         <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
         <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
-        <div class="chart">${grid}${bars}${ligne}</div>
+        <div class="chart" data-cle>${grid}${bars}${ligne}</div>
         <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div>`,
     },
   };
@@ -381,7 +381,7 @@ function sceneCentile(top: UneEvent): Scene | null {
         ${lead}
       </div>
       <div class="tick mono" style="top:${SCALE_TOP - 44}px;animation:fadeIn .4s .6s both">Plus saillantes ↑</div>
-      <div class="scale" id="c-scale" data-c="${c}" data-color="${color}" style="top:${SCALE_TOP}px;height:${SCALE_H}px;animation:fadeIn .4s .6s both">${ticks}</div>
+      <div class="scale" id="c-scale" data-cle data-c="${c}" data-color="${color}" style="top:${SCALE_TOP}px;height:${SCALE_H}px;animation:fadeIn .4s .6s both">${ticks}</div>
       <div class="tick mono" style="top:${SCALE_TOP + SCALE_H + 16}px;animation:fadeIn .4s .6s both">↓ Moins saillantes</div>
       <div class="mark" style="top:${markY - 1}px;animation:grow .6s ${done}s both"></div>
       <div class="mlabel" style="top:${markY + 14}px;animation:fadeIn .4s ${done + .3}s both">Cette actualité</div>
@@ -405,7 +405,7 @@ function sceneCouverture(top: UneEvent): Scene | null {
     html: `
       <div class="head">
         <div class="kick mono" ${anim("fadeIn", .5, .1)}>Couverture</div>
-        <div class="big" ${anim("slam", .6, .2)}>${top.qcOutletCount}/${top.totalQcOutlets}</div>
+        <div class="big" data-cle ${anim("slam", .6, .2)}>${top.qcOutletCount}/${top.totalQcOutlets}</div>
         <div class="lab pf" ${anim("fadeIn", .5, .6)}>${coverageLabel(top.qcOutletCount)}</div>
       </div>
       <ul>${rows}</ul>
@@ -506,7 +506,7 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
       <div class="leg${stories.length > 2 ? " trois" : ""}">${legend}</div>
-      <div class="chart">
+      <div class="chart" data-cle>
         <svg viewBox="0 0 ${CHART_W} ${CHART_H}" preserveAspectRatio="none">
           <line x1="0" x2="${CHART_W}" y1="${BASE}" y2="${BASE}" stroke="${COLORS.ink}" stroke-width="3"/>
           ${lines}${dots}
