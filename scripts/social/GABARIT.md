@@ -44,9 +44,10 @@ commun, une identité visuelle, un rappel marqué.**
   contour de la couleur du module (l'édition en cours est pleine). « Méthodologie
   complète au » au-dessus de l'adresse. Porté au format strict le 17-09 : tout
   tient au-dessus de la barre Vitrine + CAPP. 🪤 `llm-tool.png` est blanc sur fond
-  noir : il passe en `mix-blend-mode:screen`, pas par l'inversion.
-  🪤 Le logo de la Chaire est en couleurs : l'inversion en faisait une silhouette
-  blanche. Il garde ses couleurs, seuls ses gris (texte, contour) passent en papier.
+  noir, avec des bandes de couleur : on n'en garde que le mot « LLM TOOL ».
+  **ARRÊTÉ · Tous les logos en blanc, aucune couleur** (Jules Piral, 2026-09-17).
+  🪤 La Chaire est en couleurs : en silhouette, une tache. On garde son tracé
+  foncé ou coloré et on efface ses séparations claires (`traceSeul`).
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
