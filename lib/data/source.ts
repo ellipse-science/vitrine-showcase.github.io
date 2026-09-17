@@ -315,7 +315,15 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     const cached = datasetCache.get(dataset);
     if (cached) return cached;
 
-    const pending = fetchSnapshotRows(dataset, manifest).catch(async (err: unknown) => {
+    const pending = fetchSnapshotRows(dataset, manifest).then((texte) => {
+      // TRACE DE PROVENANCE. Le 17 septembre 2026, prod et dev ont bâti à la même
+      // minute, sur le même code et la même clé, et seule la prod est sortie sans
+      // la Une des Unes : impossible de dire ce que chaque build avait reçu, les
+      // journaux étaient muets. Une ligne par jeu suffit à trancher la prochaine
+      // fois.
+      console.log(`[source] ${dataset} : ${JSON.parse(texte).length} ligne(s) (instantané)`);
+      return texte;
+    }).catch(async (err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       console.warn(
         `[source] instantané indisponible pour ${dataset} (${message}). Repli sur le fichier.`,
@@ -346,6 +354,8 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
       if (rows.length === 0) {
         throw new Error("0 ligne renvoyée par l'API");
       }
+      // Trace de provenance : voir le commentaire du mode instantané.
+      console.log(`[source] ${dataset} : ${rows.length} ligne(s) (API)`);
       return JSON.stringify(rows);
     } catch (err) {
       // On retombe sur le fichier plutôt que de casser le build. Un site qui se
