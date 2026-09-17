@@ -315,12 +315,22 @@ résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
 6. **Fin commune.**
 
 **Version courte et punchée** (`npm run reel:partis-court`, Jules Piral,
-2026-09-17 ; la longue est gardée). **12 secondes au plus, fin comprise** : le
-script refuse de dépasser, et la fin prend ce qui reste (3 s au plus). Accroche,
-médias en rafale, puis la campagne en une image comme l'accroche (« Mais depuis
-le début de la campagne / La CAQ / mène, avec 27 % »), fin. Ni vumètre du jour
-(l'accroche le dit) ni ton : ils ne tiennent pas en 12 s. Légende en trois
-phrases. À VALIDER.
+2026-09-17 ; la longue est gardée). ARRÊTÉ :
+- **12 secondes au plus, fin comprise** : le script refuse de dépasser ; la fin
+  prend ce qui reste.
+- **Deux informations, un seul visuel chacune** (« compris facilement », « moins
+  d'éléments », « 2-3 informations MAX ») :
+  1. « Depuis minuit / Le PQ / 66 % / du temps que les Unes consacrent aux
+     partis », avec une jauge ;
+  2. une **statistique inédite**, calculée à partir du module et jamais affichée
+     telle quelle sur le site, dans cet ordre : **record** (« Du jamais vu depuis
+     le 27 août » : sa part du jour dépasse le meilleur jour de tous les autres
+     partis ; deux barres, le parti aujourd'hui et le meilleur jour du suivant),
+     sinon **multiple** de sa moyenne de campagne (dès 1,5 fois), sinon jours en
+     tête du parti qui mène la campagne.
+- ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger.
+- Rejeté le même jour : la version courte à cinq scènes (accroche, médias, ton,
+  campagne, fin) — trop d'éléments pour 12 s.
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.

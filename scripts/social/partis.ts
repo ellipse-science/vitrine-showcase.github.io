@@ -139,14 +139,14 @@ const CSS = `
 .vu i.on{background:var(--on)}
 
 /* Accroche : le résultat, et rien d'autre */
-#accroche .brand,#campagne .brand{position:absolute;top:240px;line-height:1.25;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
-#accroche .brand i,#campagne .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result,#campagne .result{position:absolute;top:340px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
-#accroche .answer,#campagne .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
-#accroche .then,#campagne .then{font-size:88px;line-height:1.02}
-#accroche .mini,#campagne .mini{position:absolute;left:76px;right:120px;top:1070px;height:330px;display:flex;gap:26px}
-#accroche .mini .col,#campagne .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
-#accroche .mini b,#campagne .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
+#accroche .brand{position:absolute;top:250px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
+#accroche .result{position:absolute;top:340px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
+#accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
+#accroche .then{font-size:88px;line-height:1.02}
+#accroche .mini{position:absolute;left:76px;right:120px;top:1070px;height:330px;display:flex;gap:26px}
+#accroche .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
+#accroche .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
 
 /* Le jour, en vumètre */
 #jour .chart{position:absolute;top:530px;left:76px;right:120px;height:880px;display:flex;gap:28px}
@@ -185,31 +185,19 @@ const head = (kicker: string, title: string) => `
     <h2 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h2>
   </div>`;
 
-/** RYTHME : la version longue (défaut) et la version COURTE et punchée
- *  (`--court`, Jules Piral, 2026-09-17 : « plus courte et punchée », les deux
- *  gardées). Mêmes scènes et mêmes données ; la courte enchaîne plus vite, saute
- *  le vumètre du jour (l'accroche le dit déjà) et finit sur le retournement de la
- *  campagne en une seule image. */
-type Rythme = { accroche: number; then: number; vu0: number; vuStep: number; playlist0: number; playlistStep: number; playlistTail: number; ton0: number; tonStep: number; tonTail: number };
-const LONG: Rythme = { accroche: 3.4, then: .9, vu0: 1.2, vuStep: .12, playlist0: 0.9, playlistStep: 0.75, playlistTail: 2.2, ton0: 1.0, tonStep: 0.28, tonTail: 5.4 };
-// COURTE : 12 secondes AU PLUS, fin comprise (Jules Piral, 2026-09-17). Le ton
-// n'y tient pas : accroche, médias, campagne, fin. `main` refuse de dépasser.
-const COURT: Rythme = { accroche: 1.9, then: .45, vu0: .55, vuStep: .05, playlist0: 0.35, playlistStep: 0.16, playlistTail: 0.75, ton0: 0.6, tonStep: 0.14, tonTail: 3.0 };
-const COURT_MAX_S = 12;
-
-function sceneAccroche(rows: RowView[], ry: Rythme = LONG): Scene {
+function sceneAccroche(rows: RowView[]): Scene {
   const lead = rows[0];
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: ry.accroche, noFadeIn: true, hideFooter: true,
+    id: "accroche", duration: 3.4, noFadeIn: true, hideFooter: true,
     html: `
       <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result">
         <div class="answer disp" style="color:${lead.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .7s .3s both">${esc(answer)}</div>
-        <div class="then disp" ${anim("fadeUp", .5, ry.then)}>est le parti dont on parle le plus aujourd’hui</div>
+        <div class="then disp" ${anim("fadeUp", .6, .9)}>est le parti dont on parle le plus aujourd’hui</div>
       </div>
-      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, ry.vu0 + i * ry.vuStep)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
+      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, 1.2 + i * 0.12)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
   };
 }
 
@@ -231,9 +219,10 @@ function sceneJour(rows: RowView[]): Scene {
   };
 }
 
-/** Un média à la fois : chacun a le temps d'être lu avant le suivant
- *  (version longue) ; la courte les fait tomber en rafale. */
-function scenePlaylist(mixes: MediaMix[], order: RowView[], ry: Rythme = LONG): Scene | null {
+/** Un média à la fois : chacun a le temps d'être lu avant le suivant. */
+const PLAYLIST0 = 0.9, PLAYLIST_STEP = 0.75;
+
+function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
   if (!mixes.length) return null;
   const rank = new Map(order.map((r, i) => [r.key, i]));
   const tetes = new Set(mixes.map((m) => leaders(m)[0]?.key));
@@ -242,7 +231,7 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[], ry: Rythme = LONG): 
     ? "Chaque média ne met pas en avant le même parti"
     : `Tous les médias parlent surtout ${SIGLE_DE[seule]}`;
   const list = mixes.map((m, i) => {
-    const d = ry.playlist0 + i * ry.playlistStep;
+    const d = PLAYLIST0 + i * PLAYLIST_STEP;
     const l = leaders(m);
     const quoi = l.length > 1 ? `${joinFr(l.map((r) => r.label))} à égalité` : `Surtout ${SIGLE_ARTICLE[l[0].key]}`;
     const segs = [...m.rows].sort((a, b) => (rank.get(a.key) ?? 9) - (rank.get(b.key) ?? 9))
@@ -250,26 +239,26 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[], ry: Rythme = LONG): 
       .map((r, k, all) => `<div style="flex:${k === all.length - 1 ? `1 1 ${r.sovPct}%` : `0 0 ${r.sovPct}%`};background:${r.color}">${r.sovPct >= 12 ? esc(r.label) : ""}</div>`).join("");
     return `<div class="row" style="animation:fadeUp .6s ${d}s both">
       <div class="line"><b>${esc(m.nom)}</b><span style="color:${l.length > 1 ? COLORS.soft : l[0].color}">${esc(quoi)}</span></div>
-      <div class="mix" style="animation:wipe ${ry === LONG ? 1 : .35}s ${d + (ry === LONG ? .25 : .08)}s both">${segs}</div>
+      <div class="mix" style="animation:wipe 1s ${d + .25}s both">${segs}</div>
     </div>`;
   }).join("");
   return {
-    id: "playlist", duration: ry.playlist0 + mixes.length * ry.playlistStep + ry.playlistTail,
+    id: "playlist", duration: PLAYLIST0 + mixes.length * PLAYLIST_STEP + 2.2,
     html: `${head("Média par média · depuis minuit", title)}
       <div class="rows">${list}</div>`,
   };
 }
 
-function sceneTon(rows: RowView[], ry: Rythme = LONG): Scene {
+function sceneTon(rows: RowView[]): Scene {
   const list = rows.map((r, i) => {
-    const d = ry.ton0 + i * ry.tonStep;
+    const d = 1.0 + i * 0.28;
     return `<div class="row" style="animation:fadeUp .5s ${d}s both">
       ${pchip(r)}${needle(r, d + .3)}
       <div class="lab" style="color:${TONE[r.toneDirection]}">${esc(cap(TONE_MOT[r.toneDirection]))}</div>
     </div>`;
   }).join("");
   return {
-    id: "ton", duration: ry.tonTail,
+    id: "ton", duration: 5.4,
     html: `${head("Le ton · depuis minuit", cap(`un ton ${tonGroupes(rows).join(", ")}`))}
       <div class="legend mono" ${anim("fadeIn", .5, .8)}><span style="color:${TONE.negative}">← Défavorable</span><span style="color:${TONE.positive}">Favorable →</span></div>
       <div class="rows">${list}</div>`,
@@ -302,24 +291,113 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   };
 }
 
-/** Version courte : la campagne en une image, comme l'accroche — le parti qui
- *  mène depuis le début, en très grand, et le vumètre de la campagne. */
-function sceneCampagneCourte(data: PartiesData, lead: RowView): Scene | null {
-  const view = data.ranges.overall;
-  const rows = [...view.rows].sort((a, b) => a.rang - b.rang);
-  if (!rows.length) return null;
-  const tete = rows[0];
-  const answer = cap(SIGLE_ARTICLE[tete.key]);
+// ── Version COURTE ─────────────────────────────────────────────────────────
+// Jules Piral, 2026-09-17 : « plus courte et punchée », 12 secondes au plus,
+// « compris facilement », « moins d'éléments », « des statistiques inédites »,
+// « 2-3 informations MAX ». Deux scènes, une information chacune, un seul visuel
+// par scène, puis la fin. La version longue ne change pas.
+//
+// L'information inédite est CALCULÉE à partir des chiffres du module, jamais
+// affichée telle quelle sur le site, par ordre de préférence :
+//  1. RECORD — la part du meneur aujourd'hui est la plus forte d'un parti en une
+//     journée depuis le début de la campagne (son sommet est aujourd'hui et
+//     dépasse le sommet de tous les autres partis) ;
+//  2. MULTIPLE — sa part aujourd'hui vaut au moins 1,5 fois sa moyenne de
+//     campagne ;
+//  3. sinon, le parti qui mène la campagne et ses jours en tête.
+// ⚠️ « Aujourd'hui » = depuis minuit : la journée n'est pas finie, le record peut
+// encore bouger. Les phrases le disent.
+const COURT_MAX_S = 12;
+
+function sceneChiffreCourt(lead: RowView): Scene {
   return {
-    id: "campagne", duration: 1.8,
+    id: "chiffre", duration: 2.6, noFadeIn: true, hideFooter: true,
     html: `
-      <div class="brand mono" ${anim("fadeIn", .3, .0)}><i ${anim("grow", .4, .0)}></i>${esc(tete.key === lead.key ? "Et depuis le début de la campagne" : "Mais depuis le début de la campagne")}</div>
-      <div class="result">
-        <div class="answer disp" style="color:${tete.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .45s .1s both">${esc(answer)}</div>
-        <div class="then disp" ${anim("fadeUp", .4, .35)}>${esc(tete.key === lead.key ? "mène aussi" : "mène")}, avec ${tete.sovPct}&nbsp;%</div>
-      </div>
-      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, .4 + i * .04)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
+      <div class="brand mono" ${anim("fadeIn", .3, 0)}><i ${anim("grow", .4, 0)}></i>Depuis minuit</div>
+      <div class="qui disp" style="color:${lead.color};animation:slam .45s .1s both">${esc(cap(SIGLE_ARTICLE[lead.key]))}</div>
+      <div class="gros disp" style="color:${lead.color}"><span class="count" data-n="${lead.sovPct}" data-d=".3">0&nbsp;%</span></div>
+      <div class="phrase pf" ${anim("fadeUp", .4, .5)}>du temps que les Unes consacrent aux partis</div>
+      <div class="jauge"><div class="plein" style="width:${lead.sovPct}%;background:${lead.color};animation:grow .9s .3s both"></div></div>`,
   };
+}
+
+const multiple = (r: number) => {
+  const n = Math.round(r);
+  return Math.abs(r - n) < .05 ? `${n} fois` : r < n ? `près de ${n} fois` : `plus de ${n} fois`;
+};
+
+function sceneInediteCourt(data: PartiesData, lead: RowView): { scene: Scene; phrase: string } | null {
+  const camp = [...data.ranges.overall.rows].sort((a, b) => a.rang - b.rang);
+  const moi = camp.find((r) => r.key === lead.key);
+  const depuis = data.ranges.overall.depuisLabel.replace(/^depuis\s+(le\s+)?/i, "").replace(/^\S+\s(?=\d)/, "").replace(/\s\d{4}$/, "");
+  const barres = (a: { lab: string; pct: number; color: string }, b: { lab: string; pct: number; color: string }) => `
+    <div class="duo">${[a, b].map((x, i) => `<div class="barre">
+      <div class="val disp" style="color:${x.color}">${x.pct}&nbsp;%</div>
+      <div class="col"><div style="height:${x.pct}%;background:${x.color};animation:growY .7s ${.4 + i * .25}s both"></div></div>
+      <div class="lab mono">${esc(x.lab)}</div></div>`).join("")}</div>`;
+
+  if (moi && moi.peakPct === lead.sovPct && camp.every((r) => r.key === lead.key || r.peakPct < moi.peakPct)) {
+    const second = camp.filter((r) => r.key !== lead.key).sort((a, b) => b.peakPct - a.peakPct)[0];
+    const titre = `Du jamais vu depuis le ${depuis}`;
+    return {
+      phrase: `C’est la plus forte part d’un parti en une journée depuis le début de la campagne (le ${depuis}).`,
+      scene: {
+        id: "inedit", duration: 2.9,
+        html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Record de la campagne</div>
+          <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(titre)}</h2>
+          ${barres({ lab: `${lead.label} · aujourd’hui`, pct: lead.sovPct, color: lead.color }, { lab: `Meilleur jour · ${second.label}`, pct: second.peakPct, color: second.color })}`,
+      },
+    };
+  }
+  if (moi && moi.sovPct > 0 && lead.sovPct / moi.sovPct >= 1.5) {
+    const x = multiple(lead.sovPct / moi.sovPct);
+    return {
+      phrase: `C’est ${x} sa moyenne depuis le début de la campagne (${moi.sovPct} %).`,
+      scene: {
+        id: "inedit", duration: 2.9,
+        html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Par rapport à la campagne</div>
+          <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(`${cap(x)} sa moyenne de campagne`)}</h2>
+          ${barres({ lab: "Aujourd’hui", pct: lead.sovPct, color: lead.color }, { lab: "Moyenne campagne", pct: moi.sovPct, color: COLORS.soft })}`,
+      },
+    };
+  }
+  const tete = camp[0];
+  if (!tete) return null;
+  return {
+    phrase: `Depuis le début de la campagne, ${SIGLE_ARTICLE[tete.key]} a mené ${tete.joursEnTete} journées sur ${tete.joursComptes}.`,
+    scene: {
+      id: "inedit", duration: 2.9,
+      html: `<div class="kick-c mono" ${anim("fadeIn", .3, 0)}>Depuis le début de la campagne</div>
+        <h2 class="titre-c disp" ${anim("fadeUp", .45, .1)}>${txt(`${cap(SIGLE_ARTICLE[tete.key])} a mené ${tete.joursEnTete} journées sur ${tete.joursComptes}`)}</h2>
+        ${barres({ lab: `Jours en tête · ${tete.label}`, pct: Math.round((tete.joursEnTete / tete.joursComptes) * 100), color: tete.color }, { lab: "Toute la campagne", pct: 100, color: COLORS.soft })}`,
+    },
+  };
+}
+
+const CSS_COURT = `
+#chiffre .brand{position:absolute;top:240px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#chiffre .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
+#chiffre .qui{position:absolute;top:330px;left:76px;right:120px;font-size:150px;line-height:1}
+#chiffre .gros{position:absolute;top:470px;left:60px;right:120px;font-size:400px;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+#chiffre .phrase{position:absolute;top:900px;left:76px;right:120px;font-size:76px;line-height:1.05}
+#chiffre .jauge{position:absolute;top:1180px;left:76px;right:120px;height:120px;background:var(--deep)}
+#chiffre .plein{height:100%;transform-origin:left}
+#inedit .kick-c{position:absolute;top:240px;left:76px;right:120px;font-size:30px;color:var(--soft)}
+#inedit .titre-c{position:absolute;top:290px;left:76px;right:120px;font-size:100px;line-height:1.03}
+#inedit .duo{position:absolute;top:640px;left:76px;right:120px;height:760px;display:flex;gap:60px}
+#inedit .barre{flex:1;display:flex;flex-direction:column;align-items:stretch}
+#inedit .val{font-size:96px;line-height:1;text-align:center}
+#inedit .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;margin-top:14px;background:var(--deep)}
+#inedit .col div{transform-origin:bottom}
+#inedit .lab{margin-top:14px;text-align:center;font-size:30px;letter-spacing:.04em;color:var(--ink);line-height:1.2;white-space:nowrap}
+`;
+
+function captionCourte(edition: EditionRef, lead: RowView, phrase: string | null): string {
+  const texte = [
+    `Depuis minuit, ${NOM_ARTICLE[lead.key]} occupe ${lead.sovPct} % du temps que les Unes des médias québécois consacrent aux partis.`,
+    phrase,
+  ].filter(Boolean).join(" ");
+  return captionTypo([texte, `${MODULE}, six fois par jour : vitrinedemocratique.com`, HASHTAGS.join(" ")].join("\n\n")) + "\n";
 }
 
 // Vumètres, compteurs et aiguilles pilotés par le temps.
@@ -329,7 +407,7 @@ const clamp=k=>Math.max(0,Math.min(1,k));
 window.onSceneTime=function(id,t){
   const sc=document.getElementById(id);
   sc.querySelectorAll(".vu").forEach(v=>{
-    const lit=Math.round(+v.dataset.lit*ease(clamp((t-+v.dataset.d)/(window.VU_DUREE||1.1))));
+    const lit=Math.round(+v.dataset.lit*ease(clamp((t-+v.dataset.d)/1.1)));
     v.querySelectorAll("i").forEach(s=>s.classList.toggle("on",+s.dataset.i<lit));
   });
   sc.querySelectorAll(".count").forEach(n=>{
@@ -374,21 +452,6 @@ function caption(edition: EditionRef, data: PartiesData, rows: RowView[], mixes:
   return captionTypo(paragraphs.join("\n\n")) + "\n";
 }
 
-/** Légende de la version courte : trois phrases, le lien, les mots-clics. */
-function captionCourte(edition: EditionRef, data: PartiesData, rows: RowView[]): string {
-  const lead = rows[0];
-  const campagne = [...data.ranges.overall.rows].sort((a, b) => a.rang - b.rang)[0];
-  const groupes = tonGroupes(rows);
-  const phrases = [
-    `Aujourd’hui, ${NOM_ARTICLE[lead.key]} domine les Unes : ${lead.sovPct} % du temps consacré aux partis.`,
-    groupes.length ? `Le ton : ${groupes.join(", ")}.` : null,
-    campagne ? (campagne.key === lead.key
-      ? `Et depuis le début de la campagne, ${SIGLE_ARTICLE[campagne.key]} mène aussi.`
-      : `Mais depuis le début de la campagne, c’est ${SIGLE_ARTICLE[campagne.key]} qui mène.`) : null,
-  ].filter(Boolean).join(" ");
-  return captionTypo([phrases, `${MODULE}, six fois par jour : vitrinedemocratique.com`, HASHTAGS.join(" ")].join("\n\n")) + "\n";
-}
-
 // ── Programme ───────────────────────────────────────────────────────────────
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -404,26 +467,25 @@ async function main() {
   console.log(`  en tête : ${rows[0].label} (${rows[0].sovPct} %) · ${mixes.length} médias`);
 
   const court = !!args.court;
+  const inedit = court ? sceneInediteCourt(data, rows[0]) : null;
   const scenes = (court
-    ? [sceneAccroche(rows, COURT), scenePlaylist(mixes, rows, COURT), sceneCampagneCourte(data, rows[0])]
+    ? [sceneChiffreCourt(rows[0]), inedit?.scene ?? null]
     : [sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows), sceneTon(rows), sceneCampagne(data, rows[0])]
   ).filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
   scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
-  // Fin plus brève dans la version courte : les partenaires ont fini d'apparaître à ~2,9 s.
   if (court) {
-    // La fin prend ce qui reste (3 s au plus) : un jour à six médias, la
-    // playlist est plus longue et la fin raccourcit d'autant.
+    // La fin prend ce qui reste, 3,5 s au plus : 12 secondes, fin comprise.
     const avant = scenes.slice(0, -1).reduce((t, sc) => t + sc.duration, 0);
-    scenes[scenes.length - 1].duration = Math.min(3.0, COURT_MAX_S / SLOW - avant);
+    scenes[scenes.length - 1].duration = Math.min(3.5, COURT_MAX_S / SLOW - avant);
     const total = scenes.reduce((t, sc) => t + sc.duration, 0) * SLOW;
     if (total > COURT_MAX_S + 1e-6) throw new Error(`Version courte trop longue : ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s).`);
     console.log(`  durée   → ${total.toFixed(1)} s (maximum ${COURT_MAX_S} s)`);
   }
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
-    css: CSS + FIN_CSS, scenes, script: (court ? "window.VU_DUREE=.5;" : "") + SCRIPT,
+    css: CSS + (court ? CSS_COURT : "") + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: footerEdition(edition),
     logos,
@@ -434,7 +496,7 @@ async function main() {
   const base = path.join(outDir, `${court ? "partis-court" : "partis"}_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
   // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
-  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(edition, data, rows) : caption(edition, data, rows, mixes));
+  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(edition, rows[0], inedit?.phrase ?? null) : caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 
   await produce({ html, scenes, title: `${MODULE}${court ? " (court)" : ""} · édition de ${pubHourLabel(edition)}`, base, args });
