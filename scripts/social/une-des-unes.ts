@@ -23,17 +23,32 @@ import path from "node:path";
 
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
+import { MODULES } from "@/lib/modules";
+import { TRAIT, oqlf } from "./lib/post";
+import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
-  COLORS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum, parseArgs, produce,
-  publicationHour, txt, type Scene,
+  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
+  parseArgs, produce, publicationHour, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
-/** Mots-clics ajoutés à la légende. À ajuster par l'équipe des réseaux. */
-const HASHTAGS = ["#polqc", "#QC2026", "#VitrineDémocratique"];
+/** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
+const MODULE = MODULES["une-des-unes"];
 
 /** Crédit de l'illustration de la Une. */
-const ART_CREDIT = "Sous la direction de Mathieu Fortin";
+const ART_CREDIT = "Image générée sous la direction de Mathieu Fortin";
+
+/** Logo de la Vitrine (même fichier que les cartes de partage,
+ *  `lib/globalShareCard.tsx`) : une seule version de la marque. */
+async function loadLogo(): Promise<string | null> {
+  try {
+    const png = await fs.readFile(path.resolve(process.cwd(), "public", "images", "brand", "logo_vitrinedemocratique_bg-none_theme-black.png"));
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    console.warn("  logo introuvable : scènes d'ouverture et de fin sans logo.");
+    return null;
+  }
+}
 
 // ── Illustration ────────────────────────────────────────────────────────────
 // Même garde que le module (UneDesUnesSection) : `latest.png` est écrasée à
@@ -98,33 +113,28 @@ const momentOf = (label: string) => label.replace(/^\d{1,2}h\s*/, "");
 const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
-/* 1. Accroche */
-#accroche .brand{position:absolute;top:220px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
-#accroche .brand i{display:block;width:120px;height:10px;background:var(--blue);transform-origin:left}
-#accroche h1{position:absolute;top:320px;left:76px;right:60px;font-size:156px;line-height:.97}
-#accroche h1 em{font-style:normal;color:var(--blue)}
-#accroche .band{position:absolute;left:30px;right:30px;bottom:30px;height:730px;background:var(--ink);overflow:hidden}
-#accroche .ghost{position:absolute;left:46px;right:46px;bottom:0;height:540px;display:flex;align-items:flex-end;gap:18px}
-#accroche .ghost div{flex:1;transform-origin:bottom}
-#accroche .ed{position:absolute;left:76px;right:76px;top:1210px;color:var(--paper);font-size:30px}
+/* 1. Accroche — le reste est dans INTRO_CSS (lib/reel.ts) */
+#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:520px;display:flex;align-items:flex-end;gap:18px}
+#intro .ghost div{flex:1;transform-origin:bottom}
 
 /* 2. Une n°1 */
-#une .art{position:absolute;left:30px;top:30px;width:1020px;height:1060px;overflow:hidden}
+#une .art{position:absolute;left:30px;top:30px;width:1020px;height:860px;overflow:hidden}
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
-#une .noart{position:absolute;left:30px;top:30px;width:1020px;height:1060px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:230px;left:76px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:1040px;left:76px;right:76px;text-align:right;font-size:18px;color:var(--soft);letter-spacing:.08em}
-#une .body{position:absolute;left:76px;right:76px;top:1100px}
+#une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
+#une .rank{position:absolute;top:250px;left:76px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .credit{position:absolute;top:750px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:26px;color:var(--softer);opacity:.85}
+#une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
+#une .body{position:absolute;left:76px;right:200px;top:796px}
 #une .tag{display:inline-block;color:var(--paper);font-size:26px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
-#une .stats{display:flex;gap:26px;margin-top:50px}
+#une .stats{display:flex;gap:26px;margin-top:30px}
 #une .stat{flex:1;border-top:6px solid var(--ink);padding-top:16px}
-#une .stat b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:84px;line-height:1.05}
+#une .stat b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:76px;line-height:1.05}
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
-#trajectoire .head{position:absolute;top:200px;left:76px;right:76px}
+#trajectoire .head{position:absolute;top:240px;left:76px;right:200px}
 #trajectoire .une{display:flex;gap:18px;align-items:flex-start;margin-top:14px}
 #trajectoire .une svg{flex:none;margin-top:6px}
 #trajectoire .une h3{font-size:50px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -132,76 +142,76 @@ const CSS = `
 #trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:150px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:26px;color:var(--softer);padding-bottom:16px}
 #trajectoire .chip{position:absolute;left:76px;top:590px;font-size:28px;padding:9px 16px}
-#trajectoire .when{position:absolute;right:76px;top:582px;display:flex;align-items:center;gap:14px;font-size:24px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:60px;right:60px;top:690px;height:900px}
+#trajectoire .when{position:absolute;right:200px;top:602px;display:flex;align-items:center;gap:14px;font-size:26px;color:var(--soft)}
+#trajectoire .chart{position:absolute;left:60px;right:200px;top:700px;height:640px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
 #trajectoire .val{position:absolute;font-family:"Playfair Display",serif;font-weight:700;font-size:40px;text-align:center}
-#trajectoire .peak{position:absolute;font-size:22px;background:var(--ink);color:var(--paper);padding:8px 0;text-align:center}
+#trajectoire .peak{position:absolute;font-size:26px;background:var(--ink);color:var(--paper);padding:8px 0;text-align:center}
 #trajectoire .xl{position:absolute;text-align:center;color:var(--soft)}
 #trajectoire .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:6px;color:var(--ink)}
-#trajectoire .xl span{display:block;font-family:"IBM Plex Mono",monospace;font-size:18px;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+#trajectoire .xl span{display:block;font-size:26px;line-height:1.05;margin-top:2px}
 #trajectoire .xl.now b{color:var(--blue)}
-#trajectoire .cap{position:absolute;left:76px;right:76px;top:1630px;font-size:50px;line-height:1.15}
+#trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#trajectoire .cap{position:absolute;left:76px;right:200px;top:1318px;font-size:42px;line-height:1.15}
+@keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:200px;left:76px;right:76px}
+#centile .head{position:absolute;top:240px;left:76px;right:200px}
 #centile .lead{font-style:italic;font-size:46px;color:var(--soft);margin-top:18px}
 #centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:200px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
 #centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:52px;line-height:1.1;margin-top:8px}
-#centile .scale{position:absolute;left:76px;width:250px}
-#centile .scale i{position:absolute;left:0;right:0;height:1px;background:var(--rule)}
-#centile .scale i.on{height:4px;margin-top:-1px}
-#centile .tick{position:absolute;left:76px;width:250px;font-size:17px;letter-spacing:.12em;color:var(--softer)}
-#centile .mark{position:absolute;left:76px;right:76px;height:3px;background:var(--ink);transform-origin:left}
+#centile .scale{position:absolute;left:76px;width:280px}
+/* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
+   l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
+#centile .scale i{position:absolute;left:0;height:6px;background:#E3D9C2;
+  background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
+  box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
+#centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
+#centile .tick{position:absolute;left:76px;white-space:nowrap;font-size:26px;letter-spacing:.12em;color:var(--softer)}
+#centile .mark{position:absolute;left:76px;right:200px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
-#centile .mlabel{position:absolute;right:76px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
-#centile .note{position:absolute;left:380px;right:76px}
+#centile .mlabel{position:absolute;right:200px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
+#centile .note{position:absolute;left:380px;right:200px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:76px;right:76px;top:1745px;font-size:15px;white-space:nowrap;letter-spacing:.1em;color:var(--softer)}
+#centile .src{position:absolute;left:76px;right:200px;top:1318px;font-size:26px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
-#couverture .head{position:absolute;top:210px;left:76px;right:76px}
+#couverture .head{position:absolute;top:262px;left:76px;right:200px}
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:280px;line-height:.9;color:var(--blue)}
 #couverture .lab{font-size:50px;margin-top:10px}
-#couverture ul{position:absolute;left:76px;right:76px;top:660px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:148px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
+#couverture ul{position:absolute;left:76px;right:200px;top:620px;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:120px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
 #couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:62px}
 #couverture li span{font-size:26px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
-#couverture .since{position:absolute;left:76px;right:76px;top:1620px;font-size:42px;font-style:italic;color:var(--soft)}
+#couverture .since{position:absolute;left:76px;right:200px;top:1360px;font-size:40px;font-style:italic;color:var(--soft)}
 
-/* 6. Course */
-#course .head{position:absolute;top:200px;left:76px;right:76px}
-#course h3{font-size:76px;line-height:1.02;margin-top:14px}
-#course .leg{position:absolute;left:76px;right:76px;top:450px}
-#course .item{display:flex;gap:24px;align-items:center;padding:18px 0;border-top:2px solid var(--rule)}
-#course .badge{flex:none;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#course .item .k{font-size:20px;letter-spacing:.14em}
-#course .item .t{font-size:34px;line-height:1.12;margin-top:4px}
-#course .chart{position:absolute;left:60px;right:60px;top:830px;height:740px}
-#course .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
-#course .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
-#course .end .badge{width:62px;height:62px}
-#course .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
-#course .xl{position:absolute;top:700px;text-align:center;color:var(--soft)}
-#course .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;margin-top:4px;color:var(--ink)}
-#course .note{position:absolute;left:76px;right:76px;top:1720px;font-size:20px;color:var(--softer)}
+/* 6. Classement */
+#classement .head{position:absolute;top:240px;left:76px;right:120px}
+#classement h3{font-size:62px;line-height:1.02;margin-top:14px}
+#classement .leg{position:absolute;left:76px;right:120px;top:440px}
+/* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
+#classement .leg.trois .t{-webkit-line-clamp:1}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
+#classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
+#classement .item .txt{min-width:0}
+#classement .item .k{font-size:26px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
+#classement .item .k i{flex:none;display:block;width:46px;height:6px}
+#classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#classement .chart{position:absolute;left:60px;right:200px;top:790px;height:540px}
+#classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+#classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
+#classement .end .badge{width:54px;height:54px}
+#classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
+#classement .xl{position:absolute;top:490px;text-align:center;color:var(--soft)}
+#classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
+#classement .note{position:absolute;left:76px;right:120px;top:1350px;font-size:26px;line-height:1.2;color:var(--softer)}
 
-/* 7. Fin */
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:330px}
-#fin .kick{margin-top:50px;color:var(--soft)}
-#fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid var(--blue);padding-bottom:10px}
-#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:30px;right:30px;top:1370px;display:flex;flex-direction:column;align-items:center}
-#fin .six{font-size:52px;font-style:italic;margin-bottom:46px;color:var(--paper)}
-#fin .hours{display:flex;gap:12px}
-#fin .hours div{width:144px;padding:18px 0 16px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
-#fin .hours div.on{background:var(--paper);border-color:var(--paper);color:var(--blue)}
 `;
 
 const anim = (name: string, dur: number, delay: number) => `style="animation:${name} ${dur}s ${delay}s both"`;
@@ -209,28 +219,23 @@ const pubHourLabel = (edition: EditionRef) => `${edition.pubHour % 24}h`;
 const bandOf = (rank: number) => SALIENCE_COLORS[rank] ?? { bg: COLORS.rule, fg: COLORS.ink };
 
 /** Largeur des graphiques : intérieur du cadre moins 30 px de chaque côté. */
-const CHART_W = 960;
+const CHART_W = 820;
 
-function sceneAccroche(edition: EditionRef, top: UneEvent): Scene {
+/** Le visuel d'accroche du module 1 : les barres de saillance de la journée,
+ *  en ombre, dans le bandeau d'encre de l'accroche commune. */
+function visuelAccroche(top: UneEvent): string {
   const pts = top.salienceTrend?.points ?? [];
   const max = Math.max(1, ...pts.map((p) => p.cumul));
-  const ghost = pts.map((p, i) =>
+  const barres = pts.map((p, i) =>
     `<div style="height:${Math.max(2, (p.cumul / max) * 100)}%;background:${p.rank > 0 ? bandOf(p.rank).bg : COLORS.soft};animation:growY .7s ${1.2 + i * 0.15}s both"></div>`).join("");
-  return {
-    id: "accroche", duration: 3.6, noFadeIn: true, hideFooter: true,
-    html: `
-      <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>La Une des Unes</div>
-      <h1 class="disp" ${anim("fadeUp", .8, .3)}>Ce qui domine l’actualité du <em>Québec</em> en ce moment</h1>
-      <div class="band" ${anim("fadeIn", .4, .9)}><div class="ghost">${ghost}</div></div>
-      <div class="ed mono" ${anim("fadeIn", .5, 1.6)}>Édition de ${pubHourLabel(edition)} · ${esc(edition.dateLabel)}</div>`,
-  };
+  return `<div class="ghost">${barres}</div>`;
 }
 
 function sceneUne(top: UneEvent, art: string | null): Scene {
   const visual = art
-    ? `<div class="art" ${anim("fadeIn", .6, .1)}><img id="art" src="${art}"></div>
-       <div class="credit mono" ${anim("fadeIn", .5, .8)}>${txt(ART_CREDIT)}</div>`
-    : `<div class="noart" style="background:${top.issueColor};animation:fadeIn .6s .1s both">${fleur(COLORS.paper, 320)}</div>`;
+    ? `<div class="art" data-deco ${anim("fadeIn", .6, .1)}><img id="art" src="${art}"></div>
+       <div class="credit" ${anim("fadeIn", .8, 1.4)}>${txt(ART_CREDIT)}</div>`
+    : `<div class="noart" data-deco style="background:${top.issueColor};animation:fadeIn .6s .1s both">${fleur(COLORS.paper, 320)}</div>`;
   // Les bandes 1 à 3 sont trop pâles pour un texte sur papier : encre.
   const salColor = top.saillanceRank >= 4 ? bandOf(top.saillanceRank).bg : COLORS.ink;
   return {
@@ -242,7 +247,7 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
         <div class="tag mono" style="background:${top.issueColor};animation:wipe .6s .7s both">${txt(top.issueFr)}</div>
         <h2 class="disp" ${anim("fadeUp", .8, .9)}>${txt(top.title)}</h2>
         <div class="stats">
-          <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">Saillance sur 24 heures</span></div>
+          <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">${top.scoreQcSum24h != null ? `${frNum(top.scoreQcSum24h)} points de saillance sur 24 heures` : "Saillance sur 24 heures"}</span></div>
           <div class="stat" ${anim("fadeUp", .5, 2.1)}><b style="color:var(--blue)">${top.qcOutletCount}/${top.totalQcOutlets}</b><span class="pf">${coverageLabel(top.qcOutletCount)}</span></div>
         </div>
       </div>`,
@@ -261,9 +266,9 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
   if (!trend || trend.points.length < 2) return null;
   const pts = trend.points;
   const max = Math.max(...pts.map((p) => p.cumul), 1);
-  const BASE = 720, H = 580; // ligne de base et hauteur utile (repère .chart)
-  const n = pts.length, gap = 24, bw = (CHART_W - gap * (n - 1)) / n;
-  const left = (i: number) => i * (bw + gap);
+  const BASE = 500, H = 400; // ligne de base et hauteur utile (repère .chart)
+  const n = pts.length, gap = 22, bw = (CHART_W - 14 - gap * (n - 1)) / n;
+  const left = (i: number) => 7 + i * (bw + gap);
   const y = (v: number) => BASE - (v / max) * H;
   const hours = pts.map((p) => publicationHour(p.blockUtc) ?? 0);
 
@@ -285,7 +290,27 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
       </div>`;
   }).join("");
 
-  const end = STEP0 + (n - 1) * STEP + GROW;
+  // Ligne qui suit le sommet des barres, avec une flèche au bout — « comme pour
+  // la bourse » (demande d'Adrien, 2026-09-16, qui renverse le REJET du 16-09
+  // au matin). Elle se trace une fois les barres montées ; la flèche prend
+  // l'angle du dernier segment, donc elle pointe vers le bas quand l'attention
+  // retombe. Un point sur chaque sommet : la ligne dit le mouvement, les points
+  // disent qu'il y a six mesures, pas une courbe continue.
+  const cx = (i: number) => left(i) + bw / 2;
+  const lastDx = cx(n - 1) - cx(n - 2), lastDy = y(pts[n - 1].cumul) - y(pts[n - 2].cumul);
+  const angle = (Math.atan2(lastDy, lastDx) * 180) / Math.PI;
+  const trace = STEP0 + (n - 1) * STEP + GROW + .15;
+  const DRAWN = 1.1;
+  const ligne = `
+    <svg class="trace" viewBox="0 0 ${CHART_W} 900" preserveAspectRatio="none">
+      <polyline points="${pts.map((p, i) => `${cx(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none"
+        stroke="${COLORS.ink}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"
+        stroke-dasharray="1" stroke-dashoffset="1" style="animation:draw ${DRAWN}s ${trace}s linear forwards"/>
+      ${pts.map((p, i) => `<circle cx="${cx(i)}" cy="${y(p.cumul)}" r="9" fill="${COLORS.ink}" style="transform-box:fill-box;transform-origin:center;animation:pop .3s ${trace + (i / (n - 1)) * DRAWN}s both"/>`).join("")}
+      <g transform="translate(${cx(n - 1)},${y(pts[n - 1].cumul)}) rotate(${angle.toFixed(1)})"><path d="M0,0 L-34,-15 L-34,15 Z" fill="${COLORS.ink}" style="transform-box:fill-box;transform-origin:center;animation:pop .35s ${trace + DRAWN}s both"/></g>
+    </svg>`;
+
+  const end = STEP0 + (n - 1) * STEP + GROW + DRAWN + .5;
   return {
     data: {
       points: pts.map((p, i) => ({
@@ -307,7 +332,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
         </div>
         <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
         <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
-        <div class="chart">${grid}${bars}</div>
+        <div class="chart">${grid}${bars}${ligne}</div>
         <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div>`,
     },
   };
@@ -317,7 +342,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
 // graduation = 1 % des nouvelles de la dernière année, les plus saillantes en
 // haut. Les graduations se remplissent jusqu'à la nouvelle, puis un trait la
 // situe et deux annotations disent ce qu'il y a au-dessus et au-dessous.
-const SCALE_TOP = 840, SCALE_H = 840, FILL0 = 0.9, FILL = 2.2;
+const SCALE_TOP = 680, SCALE_H = 590, FILL0 = 0.9, FILL = 2.2;
 
 function sceneCentile(top: UneEvent): Scene | null {
   if (top.saillanceCentile == null) return null;
@@ -325,8 +350,19 @@ function sceneCentile(top: UneEvent): Scene | null {
   const color = bandOf(Math.max(4, top.saillanceRank)).bg;
   const step = SCALE_H / 100;
   const markY = SCALE_TOP + SCALE_H * (1 - c / 100);
-  const ticks = Array.from({ length: 100 }, (_, i) =>
-    `<i data-i="${i}" style="top:${SCALE_H - (i + .5) * step}px;${i % 10 === 9 ? "right:-18px;" : ""}"></i>`).join("");
+  // UNE PILE DE JOURNAUX, PAS UNE RÈGLE GRADUÉE (demande d'Adrien, 2026-09-16).
+  // Cent nouvelles de l'année, cent feuilles empilées : chacune décalée, un peu
+  // plus courte ou plus longue que sa voisine, légèrement de travers. Le désordre
+  // est PSEUDO-ALÉATOIRE MAIS STABLE (fonction de l'indice) : la même édition
+  // rejouée donne la même pile, sinon la vidéo tremblerait d'un rendu à l'autre.
+  const gigue = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  const ticks = Array.from({ length: 100 }, (_, i) => {
+    const largeur = 84 + gigue(i) * 16;            // 84 → 100 % de la largeur
+    const decale = (gigue(i + 91) - .5) * 26;      // ±13 px : les deux bords bougent
+    const angle = (gigue(i + 37) - .5) * 1.2;      // ±0,6°
+    const teinte = .82 + gigue(i + 5) * .18;       // toutes les feuilles ne sont pas du même papier
+    return `<i data-i="${i}" style="top:${SCALE_H - (i + .5) * step}px;width:${largeur.toFixed(1)}%;margin-left:${decale.toFixed(1)}px;transform:rotate(${angle.toFixed(2)}deg);opacity:${teinte.toFixed(2)}"></i>`;
+  }).join("");
   const done = FILL0 + FILL;
   // Au-dessus de la médiane, on dit ce que la nouvelle dépasse ; en dessous, ce
   // qui la dépasse (même bascule que hintFromCentile sur le site).
@@ -376,88 +412,113 @@ function sceneCouverture(top: UneEvent): Scene | null {
   };
 }
 
-// Les Unes du moment sur le même axe. Chaque Une porte la couleur et le
-// pictogramme de son enjeu, comme partout sur le site : la légende les
-// présente avant que les courbes ne se tracent, et le pictogramme est répété
-// au bout de chaque courbe. Deux Unes du même enjeu : la seconde en pointillé.
-const DRAW0 = 1.8, DRAW = 3.2;
+// Le classement du moment sur le même axe : les cinq nouvelles les plus
+// saillantes des 24 dernières heures et leur évolution d'une édition à
+// l'autre. Le rang vient du classement PUR de l'indice (`classement` du
+// loader), pas de la règle d'affichage du module — le module, lui, n'expose
+// que les Unes qui valent au moins la moitié du meneur (#430, B6). Chaque
+// nouvelle porte la couleur et le pictogramme de son enjeu, présentés dans la
+// légende AVANT que les courbes ne se tracent ; deux nouvelles du même enjeu
+// partagent la couleur, alors la seconde passe en tirets et la troisième en
+// pointillé.
+const DRAW = 3.2;
+const drawStart = (n: number) => 0.9 + n * 0.32;
+const DASHES = ["", ".022 .016", ".006 .014"];
+/** Le même trait, côté légende (CSS) : plein, tirets, pointillé. */
+const DASH_CSS = ["solid", "dashed", "dotted"];
+const NOMBRES = ["", "une", "deux", "trois", "quatre", "cinq"];
 
-function sceneCourse(top3: UneEvent[], edition: EditionRef): Scene | null {
-  const stories = top3.filter((e) => e.salienceTrend && e.salienceTrend.points.length >= 2);
-  if (stories.length < 2) return null;
-  const ref = stories[0].salienceTrend!.points;
+function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: Scene; draw0: number } | null {
+  // Toutes les courbes se lisent sur le MÊME axe : on écarte une nouvelle dont
+  // la série n'a pas les mêmes blocs que le meneur plutôt que de la décaler.
+  const lead = classement.find((e) => (e.salienceTrend?.points.length ?? 0) >= 2);
+  if (!lead) return null;
+  const ref = lead.salienceTrend!.points;
   const n = ref.length;
+  const stories = classement.filter((e) => e.salienceTrend?.points.length === n);
+  if (stories.length < 2) return null;
+
+  const DRAW0 = drawStart(stories.length);
   const max = Math.max(1, ...stories.flatMap((e) => e.salienceTrend!.points.map((p) => p.cumul)));
-  const PAD = 70, BASE = 680, H = 560;
-  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - 2 * PAD);
+  // Gouttière à droite : les valeurs se posent APRÈS le dernier point, jamais
+  // par-dessus une courbe qui descend (la n°1 croisait son propre chiffre).
+  const PAD = 60, GUT = 190, BASE = 480, H = 400, CHART_H = 540;
+  const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - PAD - GUT);
   const y = (v: number) => BASE - (v / max) * H;
-  const seen = new Set<string | null>();
-  const dashed = stories.map((e) => { const d = seen.has(e.issueKey); seen.add(e.issueKey); return d; });
+  // Même enjeu, même couleur : le trait change pour qu'on distingue les courbes.
+  const seen = new Map<string | null, number>();
+  const rangEnjeu = stories.map((e) => {
+    const k = seen.get(e.issueKey) ?? 0;
+    seen.set(e.issueKey, k + 1);
+    return Math.min(k, DASHES.length - 1);
+  });
+  const dash = rangEnjeu.map((k) => DASHES[k]);
   const badge = (e: UneEvent, size: number) =>
     `<div class="badge" style="background:${e.issueColor}">${enjeuGlyph(e.issueKey, COLORS.paper, size)}</div>`;
 
   const lines = stories.map((e, k) => {
     const pts = e.salienceTrend!.points;
-    return `<polyline class="c-line" points="${pts.map((p, i) => `${x(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none" stroke="${e.issueColor}" stroke-width="${k === 0 ? 10 : 8}" stroke-dasharray="1" stroke-dashoffset="1" stroke-linejoin="round" stroke-linecap="round"${dashed[k] ? ' data-dashed="1"' : ""}/>`;
+    return `<polyline class="c-line" points="${pts.map((p, i) => `${x(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none" stroke="${e.issueColor}" stroke-width="${k === 0 ? 10 : 7}" stroke-dasharray="1" stroke-dashoffset="1" stroke-linejoin="round" stroke-linecap="round"${dash[k] ? ` data-dash="${dash[k]}"` : ""}/>`;
+  }).join("");
+  // Un point au bout de chaque courbe : c'est LUI que l'étiquette prolonge, et
+  // il doit tomber exactement à la même hauteur qu'elle.
+  const dots = stories.map((e) => {
+    const pts = e.salienceTrend!.points;
+    return `<circle cx="${x(n - 1)}" cy="${y(pts[pts.length - 1].cumul)}" r="11" fill="${e.issueColor}" style="transform-box:fill-box;transform-origin:center;animation:pop .3s ${DRAW0 + DRAW}s both"/>`;
   }).join("");
 
-  // Pastille et valeur au bout de chaque courbe, à gauche du point ; sous le
-  // point si la courbe descend (elle arrive d'en haut), au-dessus sinon.
+  // Pastille et valeur DANS L'AXE du point d'arrivée : l'étiquette est centrée
+  // sur lui (LH = sa demi-hauteur). Deux nouvelles au même niveau se tassent :
+  // on les écarte d'au moins GAP, puis on ramène la colonne dans le graphique —
+  // l'ordre vertical reste celui des valeurs.
+  const GAP = 66, LH = 27;
   const ends = stories.map((e, k) => {
     const pts = e.salienceTrend!.points;
-    const last = pts[pts.length - 1].cumul, prev = pts[pts.length - 2].cumul;
-    return { e, k, v: last, top: y(last) + (prev > last ? 10 : -72) };
+    const last = pts[pts.length - 1].cumul;
+    return { e, k, v: last, top: y(last) - LH };
   }).sort((a, b) => a.top - b.top);
-  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + 72);
+  for (let i = 1; i < ends.length; i++) ends[i].top = Math.max(ends[i].top, ends[i - 1].top + GAP);
+  const debord = ends.length ? ends[ends.length - 1].top + 62 - (CHART_H - 70) : 0;
+  if (debord > 0) for (const l of ends) l.top -= debord;
+  for (const l of ends) l.top = Math.max(0, l.top);
   const endLabels = ends.map((l) =>
-    `<div class="end" style="right:${CHART_W - x(n - 1) - 31}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both"><b style="color:${l.e.issueColor}">${frNum(l.v)}</b>${badge(l.e, 36)}</div>`).join("");
+    `<div class="end" style="left:${x(n - 1) + 16}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both">${badge(l.e, 32)}<b style="color:${l.e.issueColor}">${frNum(l.v)}</b></div>`).join("");
 
-  const colW = (CHART_W - 2 * PAD) / (n - 1);
+  const colW = (CHART_W - PAD - GUT) / (n - 1);
   const axis = ref.map((p, i) => {
     const h = publicationHour(p.blockUtc) ?? 0;
     return `<div class="xl" style="left:${x(i) - colW / 2}px;width:${colW}px;animation:fadeIn .3s ${DRAW0 + (i / (n - 1)) * DRAW}s both"><div style="display:flex;justify-content:center">${celestial(h, i === n - 1 ? COLORS.blue : COLORS.soft, 42)}</div><b>${h}h</b></div>`;
   }).join("");
 
+  // « N°3 » en mono : le signe numéro flotte en Playfair (GABARIT, typographie).
   const legend = stories.map((e, k) =>
-    `<div class="item" ${anim("fadeUp", .5, .5 + k * .35)}>${badge(e, 50)}<div><div class="k mono" style="color:${e.issueColor}">Une n°${k + 1} · ${txt(e.issueFr)}</div><div class="t pf">${txt(e.title)}</div></div></div>`).join("");
+    `<div class="item" ${anim("fadeUp", .5, .4 + k * .3)}>${badge(e, 38)}<div class="txt"><div class="k mono" style="color:${e.issueColor}"><i style="border-top:6px ${DASH_CSS[rangEnjeu[k]]} ${e.issueColor}"></i>N°${k + 1} · ${txt(e.issueFr)}</div><div class="t pf">${txt(e.title)}</div></div></div>`).join("");
 
-  const title = stories.length === 2 ? "La première Une face à la deuxième" : `Les ${stories.length} Unes de ${pubHourLabel(edition)}, côte à côte`;
-  return {
-    id: "course", duration: DRAW0 + DRAW + 3,
+  const title = stories.length === 2
+    ? "La première nouvelle face à la deuxième"
+    : `Les ${NOMBRES[stories.length] ?? stories.length} nouvelles les plus saillantes`;
+  const scene: Scene = {
+    id: "classement", duration: DRAW0 + DRAW + 3,
     html: `
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Les Unes de ${pubHourLabel(edition)} · 24 dernières heures</div>
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Édition de ${pubHourLabel(edition)} · 24 dernières heures</div>
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
-      <div class="leg">${legend}</div>
+      <div class="leg${stories.length > 2 ? " trois" : ""}">${legend}</div>
       <div class="chart">
-        <svg viewBox="0 0 ${CHART_W} 740" preserveAspectRatio="none">
+        <svg viewBox="0 0 ${CHART_W} ${CHART_H}" preserveAspectRatio="none">
           <line x1="0" x2="${CHART_W}" y1="${BASE}" y2="${BASE}" stroke="${COLORS.ink}" stroke-width="3"/>
-          ${lines}
+          ${lines}${dots}
         </svg>
         ${endLabels}${axis}
       </div>
-      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée, en points</div>`,
+      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée sur 24 heures, en points, à chacune des six éditions du jour</div>`,
   };
-}
-
-function sceneFin(edition: EditionRef): Scene {
-  const now = edition.pubHour % 24;
-  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
-    `<div class="mono${h === now ? " on" : ""}" style="animation:pop .4s ${1.2 + i * .12}s both">${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
-  return {
-    id: "fin", duration: 4, noFadeOut: true, hideFooter: true,
-    html: `
-      <div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>
-      <div class="kick mono" ${anim("fadeIn", .5, .4)}>Ce qui domine l’actualité du Québec</div>
-      <div class="url disp" ${anim("fadeUp", .7, .6)}>vitrinedemocratique.com</div>
-      <div class="band" ${anim("growY", .8, .2)}></div>
-      <div class="foot"><div class="six" ${anim("fadeIn", .6, 1)}>Six éditions par jour</div><div class="hours">${hours}</div></div>`,
-  };
+  return { scene, draw0: DRAW0 };
 }
 
 // Effets pilotés par le temps : compteurs, étiquette de niveau, tracés.
-function script(traj: unknown): string {
+function script(traj: unknown, draw0: number): string {
   return `
 const TRAJ=${JSON.stringify(traj)};
 const ease=k=>1-Math.pow(1-k,3);
@@ -480,35 +541,82 @@ window.onSceneTime=function(id,t,len){
     const sc=document.getElementById("c-scale"),lit=Math.round(+sc.dataset.c*k);
     sc.querySelectorAll("i").forEach(el=>{const on=+el.dataset.i<lit;el.className=on?"on":"";el.style.background=on?sc.dataset.color:""});
   }
-  if(id==="course"){
-    const k=ease(clamp((t-${DRAW0})/${DRAW}));
-    document.querySelectorAll("#course .c-line").forEach(l=>{
-      if(l.dataset.dashed&&k>=1){l.setAttribute("stroke-dasharray",".02 .015");l.style.strokeDashoffset="0";}
+  if(id==="classement"){
+    const k=ease(clamp((t-${draw0})/${DRAW}));
+    document.querySelectorAll("#classement .c-line").forEach(l=>{
+      // Le trait plein sert à TRACER la courbe (dasharray 1 + offset) ; le motif
+      // des enjeux répétés ne se pose qu'une fois le tracé terminé.
+      if(l.dataset.dash&&k>=1){l.setAttribute("stroke-dasharray",l.dataset.dash);l.style.strokeDashoffset="0";}
       else l.style.strokeDashoffset=String(1-k);
     });
   }
 };`;
 }
 
-// ── Légende Instagram ───────────────────────────────────────────────────────
-function caption(edition: EditionRef, top3: UneEvent[]): string {
-  const [top, ...others] = top3;
-  const lines = [
-    `Ce qui domine l’actualité du Québec en ce moment · Édition de ${pubHourLabel(edition)}, ${edition.dateLabel.toLowerCase()}`,
+// ── Le post quotidien ───────────────────────────────────────────────────────
+// GABARIT DEMANDÉ PAR ADRIEN (2026-09-16) : le même texte à chaque édition, que
+// le script remplit tout seul — titre, les cinq nouvelles avec leur saillance,
+// le rappel de ce qu'est la Vitrine, les mots-clics, puis les comptes à
+// identifier. Le premier commentaire sort dans un fichier à part : il porte les
+// articles publiés sur la nouvelle n°1, avec leurs liens et leurs signatures.
+//
+// CE QUI SE MODIFIE À LA MAIN est ici, en haut : les émojis, la phrase de
+// rappel, les mots-clics et la liste des comptes. Le reste vient des données.
+
+/** « Saillance très élevée, 43,7 pts, −24 % / ce midi ». Le dernier point de la
+ *  trajectoire EST l'édition du moment : c'est lui qui porte la variation. */
+function mesure(e: UneEvent): string {
+  const bouts = [`Saillance ${e.saillanceLabel.toLowerCase()}`];
+  if (e.scoreQcSum24h != null) bouts.push(`${frNum(e.scoreQcSum24h)} pts`);
+  const pts = e.salienceTrend?.points ?? [];
+  const last = pts[pts.length - 1];
+  if (last?.delta != null && last.deltaDepuis) {
+    const signe = last.delta > 0 ? "+" : "−";
+    bouts.push(`${signe}${Math.abs(Math.round(last.delta))} % / ${last.deltaDepuis}`);
+  } else if (last?.isFirst) {
+    bouts.push("nouveau");
+  }
+  return bouts.join(", ");
+}
+
+function matiere(edition: EditionRef, classement: UneEvent[]): Matiere {
+  return {
+    titre: `Les faits saillants au Québec en ce moment (Édition de ${pubHourLabel(edition)})`,
+    items: classement.map((e, i) => `${i + 1}. ${e.title} (${mesure(e)})`),
+    titresSeuls: classement.map((e) => e.title),
+    lien: "vitrinedemocratique.com",
+  };
+}
+
+/** Le premier commentaire : les articles publiés sur la nouvelle n°1, un par
+ *  média, avec leur signature et leur lien. Les auteurs viennent des données
+ *  (`author` de chaque article) ; à identifier à la main s'ils sont sur la
+ *  plateforme — on ne devine pas un compte. */
+function premierCommentaire(top: UneEvent): string {
+  // `articlesUne` (loader) : un article par média, avec sa signature, tirés de
+  // la même ligne que le lien. Repli sur les liens du module si la table des
+  // articles est vide pour cette édition.
+  const liste = top.articlesUne.length
+    ? top.articlesUne.map((a) => [
+      a.author ? `${a.media} — par ${a.author}` : a.media,
+      a.title,
+      a.url,
+    ].filter(Boolean).join("\n"))
+    : top.mediaToday.filter((m) => m.url).map((m) => `${m.name}\n${m.url}`);
+  const signes = top.articlesUne.filter((a) => a.author).length;
+  return [
+    `Ce qui a été publié sur « ${top.title} » :`,
     "",
-    top.title,
-    ...(top.excerpt ? ["", top.excerpt] : []),
+    liste.join("\n\n"),
     "",
-    `${top.qcOutletCount}/${top.totalQcOutlets} ${coverageLabel(top.qcOutletCount)} : ${top.mediaToday.map((m) => m.name).join(", ")}.`,
-    `Saillance des 24 dernières heures : ${top.saillanceLabel.toLowerCase()}.`,
-    ...(others.length ? ["", "Aussi à la Une :", ...others.map((e) => `· ${e.title}`)] : []),
+    TRAIT,
     "",
-    "L’actualité saillante au Québec, six fois par jour : vitrinedemocratique.com",
+    ...(signes
+      ? ["Les signatures ci-dessus viennent des articles eux-mêmes. Identifier les journalistes qui sont sur la plateforme — ne jamais deviner un identifiant."]
+      : []),
     "",
-    HASHTAGS.join(" "),
-  ];
-  // Mêmes règles OQLF que la vidéo, en texte brut (U+00A0).
-  return lines.join("\n").replace(/[ \t]*:(?=\s|$)/gm, " :").replace(/[ \t]*%/g, " %") + "\n";
+    `La courbe de cette nouvelle sur 24 heures, et la méthodologie : ${SITE_URL}`,
+  ].join("\n") + "\n";
 }
 
 // ── Programme ───────────────────────────────────────────────────────────────
@@ -525,23 +633,38 @@ async function main() {
     console.warn(`  ⚠️ La dernière édition du dépôt date de ${Math.round(ageH)} h. Faites « git pull » pour publier l'édition du moment.`);
   }
 
-  const data = await loadHeadlineEvents(edition.key);
+  // `classement` : les cinq nouvelles les plus saillantes de la fenêtre 24 h,
+  // classement pur (la scène 6 les montre côte à côte). `top3` reste ce que le
+  // module affiche, et c'est lui qui porte les scènes 1 à 5 et la légende.
+  // 5 nouvelles pour le post (gabarit quotidien), 3 pour la scène du reel.
+  const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const top3 = data?.top3 ?? [];
+  const classement = data?.classement ?? top3;
   if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
   const top = top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${top.title}`);
 
   const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
+  const logo = await loadLogo();
   const traj = sceneTrajectoire(top);
+  const clsmt = sceneClassement(classement.slice(0, 3), edition);
   const scenes = [
-    sceneAccroche(edition, top), sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
-    sceneCouverture(top), sceneCourse(top3, edition), sceneFin(edition),
+    sceneIntro({
+      logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
+      visuel: visuelAccroche(top),
+      edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
+    }),
+    sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
+    sceneCouverture(top), clsmt?.scene ?? null,
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS, scenes, script: script(traj?.data ?? null),
+    css: CSS + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    theme: { paper: MODULE.papier, accent: MODULE.accent },
+    logos: await loadLogos(),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
@@ -549,8 +672,14 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(`${base}.txt`, caption(edition, top3));
-  console.log(`  légende → ${base}.txt`);
+  // Un fichier par réseau, plus le premier commentaire (le même partout).
+  const textes = formats(matiere(edition, classement));
+  for (const [reseau, texte] of Object.entries(textes) as [Reseau, string][]) {
+    await fs.writeFile(`${base}_${reseau}.txt`, texte);
+    console.log(`  ${reseau.padEnd(9)} → ${path.basename(base)}_${reseau}.txt   (${RESPONSABLE[reseau]})`);
+  }
+  await fs.writeFile(`${base}_commentaire.txt`, premierCommentaire(top));
+  console.log(`  1er com   → ${path.basename(base)}_commentaire.txt   (sous le post, partout)`);
 
   await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
 }

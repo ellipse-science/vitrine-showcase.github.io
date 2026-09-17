@@ -11,6 +11,7 @@
 // sur les mêmes données donnent la même vidéo, sur n'importe quel poste.
 
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -33,12 +34,47 @@ export const SLOW = 1.4;
 
 export const SITE_URL = "https://vitrinedemocratique.com";
 
-/** Zones sûres des Reels (mesurées sur l'interface Instagram, 2026) : l'en-tête
- *  couvre le haut, la légende et les boutons le bas et la droite. Le texte
- *  essentiel reste DANS ce cadre ; les graphiques et images peuvent déborder
- *  jusqu'aux bords pour remplir l'écran. Le recadrage 3:4 de la grille du
- *  profil garde la bande 240–1680 : l'accroche doit y tenir. */
-export const SAFE = { top: 220, bottom: 1500, left: 60, right: 960 };
+/** ZONE SÛRE : ce que l'interface des Reels laisse voir sur un téléphone, selon
+ *  la convention des Reels ORGANIQUES (guides Kreatli, Pod2Reels, Outfy, 2026) :
+ *    · haut 220 px   : nom du compte ;
+ *    · bas 400 px    : légende et titre de la musique ;
+ *    · gauche 60 px  : marge de bord ;
+ *    · droite 120 px : colonne de boutons (j'aime, commentaire, partage,
+ *      enregistrer), qui ne commence qu'au tiers de l'écran (`buttonsTop`).
+ *  Plus prudente, la zone des PUBLICITÉS Meta (14 % haut, jusqu'à 35 % bas, 6 %
+ *  côtés) ne s'applique pas : nos reels ne sont pas sponsorisés.
+ *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
+ *  seul le décor (`data-deco` : illustration, bandeaux) peut en sortir.
+ *  L'aperçu affiche ces zones en rouge (bouton « Zones Instagram »). */
+export const SAFE = { top: 220, bottom: HEIGHT - 400, left: 60, right: WIDTH - 60, buttonsTop: 640, buttonsLeft: WIDTH - 120 };
+
+/** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
+ *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
+ *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
+export const BRAND = { top: SAFE.bottom - 86, height: 76 };
+export const CONTENT_BOTTOM = BRAND.top - 12;
+
+export type Logos = { vitrine: string; capp: string };
+
+/** Logos officiels du site (public/images/brand/), noirs sur fond transparent.
+ *  Leurs marges vides sont rognées pour que la hauteur affichée soit celle du
+ *  dessin. */
+export async function loadLogos(): Promise<Logos> {
+  const sharp = (await import("sharp")).default;
+  const dir = path.resolve(process.cwd(), "public", "images", "brand");
+  const uri = async (file: string) => {
+    const png = await sharp(path.join(dir, file)).trim().png().toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  };
+  return {
+    vitrine: await uri("logo_vitrinedemocratique_bg-none_theme-black.png"),
+    capp: await uri("logo_capp_1row_bg-none_theme-black.png"),
+  };
+}
+
+/** Taille minimale d'un texte, en px du reel. Un téléphone affiche le reel à
+ *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran. */
+export const MIN_FONT = 26;
 
 /** Intérieur de l'encadré du reel (filet à 28 px, épaisseur 2). RÈGLE : rien
  *  ne dépasse du cadre, ni image, ni bandeau, ni texte. Les scènes sont
@@ -148,6 +184,8 @@ export type Scene = {
   noFadeOut?: boolean;
   /** Masque le pied de page (scène à fond sombre ou pleine page). */
   hideFooter?: boolean;
+  /** Logos en blanc : la barre de marque passe sur un fond sombre. */
+  lightBrand?: boolean;
 };
 
 const BASE_CSS = `
@@ -161,6 +199,9 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
 .scene{position:absolute;inset:0;padding:120px 76px 0;opacity:0;clip-path:inset(30px)}
 .footer{position:absolute;left:76px;right:76px;bottom:70px;display:flex;justify-content:space-between;font-size:22px;color:var(--softer);z-index:40}
+.brandbar{position:absolute;left:76px;right:120px;display:flex;align-items:center;justify-content:space-between;z-index:45}
+.brandbar img{display:block}
+.brandbar.light img{filter:invert(1)}
 .progress{position:absolute;left:28px;top:28px;height:8px;width:${WIDTH - 56}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -169,30 +210,164 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 @keyframes slam{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
 @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+
+/* Le logo et son iridescence (logoAnime). */
+.logo-irise{position:relative;display:block}
+.logo-irise img{display:block;width:100%}
+.logo-irise .tache{position:absolute;left:36%;top:-10%;width:30%;height:120%;filter:blur(34px);opacity:.85;
+  background:
+    radial-gradient(42% 42% at 32% 22%, #F0C3DD 0%, rgba(240,195,221,0) 70%),
+    radial-gradient(42% 42% at 68% 34%, #C6E2F4 0%, rgba(198,226,244,0) 70%),
+    radial-gradient(46% 46% at 46% 72%, #F4E3AE 0%, rgba(244,227,174,0) 70%),
+    radial-gradient(38% 38% at 74% 76%, #C7E9D6 0%, rgba(199,233,214,0) 70%);
+  animation:respire 7s ease-in-out infinite alternate}
+.logo-irise .passe{position:absolute;inset:0;
+  -webkit-mask-image:var(--logo);mask-image:var(--logo);
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  background:linear-gradient(100deg,rgba(0,0,0,0) 36%,#E79FC6 44%,#8FCFEE 50%,#F3DE95 56%,#A9DFC4 62%,rgba(0,0,0,0) 70%);
+  background-size:260% 100%;background-position:135% 0;
+  animation:traverse 2.6s cubic-bezier(.4,0,.2,1) both}
+@keyframes respire{from{transform:translateX(-10px) scale(1)}to{transform:translateX(12px) scale(1.07)}}
+@keyframes traverse{from{background-position:135% 0}to{background-position:-35% 0}}
 `;
 
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
  *  `script` peut définir `window.onSceneTime(id, local)` pour les effets que
  *  CSS ne sait pas rendre (compteurs, zoom lent). */
-export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string }): string {
+/** LE LOGO, TRAVERSÉ PAR L'IRIDESCENCE (demande d'Adrien, 2026-09-16, d'après
+ *  la version iridescente de la page « Vitrine — Image de marque »).
+ *
+ *  Deux couches, et le tracé noir reste le tracé noir :
+ *   · derrière la marque, une tache irisée floue qui respire lentement — c'est
+ *     ce qu'on voit sur la version fixe de la charte ;
+ *   · par-dessus, une bande irisée qui TRAVERSE le logo de droite à gauche,
+ *     découpée par le PNG lui-même (`mask-image`) : seuls les traits s'allument,
+ *     jamais le papier autour. Le PNG sert de gabarit, donc le calage est exact
+ *     par construction — aucun tracé à redessiner.
+ *
+ *  `passe` : le moment (en secondes) où la bande traverse. `taille` : largeur du
+ *  logo en px. */
+export function logoAnime(logo: string, opts: { classe: string; taille: number; passe: number }): string {
+  return `<div class="logo-irise ${opts.classe}" style="--logo:url('${logo}');width:${opts.taille}px">
+    <div class="tache" data-deco></div>
+    <img src="${logo}" alt="La Vitrine démocratique">
+    <div class="passe" style="animation-delay:${opts.passe}s"></div>
+  </div>`;
+}
+
+/** ACCROCHE, COMMUNE À TOUS LES REELS (demande d'Adrien, 2026-09-16 : « chaque
+ *  reel de chaque module devrait avoir la même intro, mais adaptée »).
+ *  Même structure partout — logo, filet et nom du module, trois lignes qui
+ *  tombent UNE PAR UNE, un visuel propre au module en bas, l'édition — et une
+ *  seule chose change : les lignes, le visuel et la couleur. Les trois lignes
+ *  arrivent séparément parce que chacune doit porter : c'est le rythme de
+ *  l'accroche, pas une animation décorative. */
+export function sceneIntro(opts: {
+  logo: string | null;
+  module: string;
+  accent: string;
+  lignes: { t: string; accent?: boolean; c?: string }[];
+  /** Le visuel du bas, propre au module (HTML), posé dans le bandeau d'encre. */
+  visuel: string;
+  edition: string;
+}): Scene {
+  const L0 = 0.75, PAS = 0.62;
+  const lignes = opts.lignes.map((l, i) => {
+    const couleur = l.c ?? (l.accent ? opts.accent : "");
+    return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
+  }).join("");
+  return {
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideFooter: true, lightBrand: true,
+    html: `
+      ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
+      <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
+      <h1 class="disp">${lignes}</h1>
+      <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
+      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+  };
+}
+
+/** CSS de l'accroche — à concaténer au CSS du module. */
+export const INTRO_CSS = `
+#intro .logo{position:absolute;top:230px;left:76px;width:540px}
+#intro .module{position:absolute;top:440px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .module i{display:block;width:120px;height:10px;transform-origin:left}
+#intro h1{position:absolute;top:510px;left:76px;right:120px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1 span{display:block}
+#intro .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
+#intro .ed{position:absolute;left:76px;right:120px;bottom:640px;color:var(--paper);font-size:30px}
+`;
+
+/** Scène de fin, commune à tous les reels : logo, signature, adresse et le
+ *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
+ *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string }): Scene {
+  const now = opts.pubHour % 24;
+  // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
+  // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
+  // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
+  // modules qui opposent deux régions.
+  const accent = opts.accent ?? COLORS.blue;
+  const hours = [0, 4, 8, 12, 16, 20].map((h, i) =>
+    `<div class="mono${h === now ? " on" : ""}"${h === now ? ` style="color:${accent};animation:pop .4s ${1.2 + i * .12}s both"` : ` style="animation:pop .4s ${1.2 + i * .12}s both"`}>${celestial(h, "currentColor", 40)}${h}h</div>`).join("");
+  return {
+    id: "fin", duration: 4, noFadeOut: true, hideFooter: true, lightBrand: true,
+    html: `
+      ${opts.logo
+        ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 780, passe: .9 })}</div>`
+        : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
+      <div class="kick mono" style="animation:fadeIn .5s .4s both">${typo(esc(opts.signature))}</div>
+      <div class="url disp" style="animation:fadeUp .7s .6s both">vitrinedemocratique.com</div>
+      <div class="band" data-deco style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
+      <div class="foot"><div class="six" style="animation:fadeIn .6s 1s both">Six éditions par jour</div><div class="hours">${hours}</div></div>`,
+  };
+}
+
+/** CSS de la scène de fin — à concaténer au CSS du module. */
+export const FIN_CSS = `
+/* Marge de droite : la colonne de boutons d'Instagram (120 px sous le tiers de l'écran). */
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:400px 120px 0 76px}
+#fin .logo{width:780px}
+#fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
+#fin .url{font-size:66px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
+#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--blue);transform-origin:bottom}
+#fin .foot{position:absolute;left:76px;right:120px;top:1200px;display:flex;flex-direction:column;align-items:center}
+#fin .six{font-size:46px;font-style:italic;margin-bottom:24px;color:var(--paper)}
+#fin .hours{display:flex;gap:12px}
+#fin .hours div{width:126px;padding:12px 0 10px;border:3px solid rgba(243,236,221,.5);font-size:32px;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:10px}
+#fin .hours div.on{background:var(--paper);border-color:var(--paper)}
+`;
+
+/** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
+ *  progression, filets de marque, bandeau de fin). Les tons dérivés — fond des
+ *  éléments éteints, filets — se calculent à partir du fond, pour rester lisibles
+ *  quel que soit le papier. Palettes : `papier` et `accent` de lib/modules.ts. */
+export type Theme = { paper: string; accent?: string };
+
+/** Ton sémantique commun à tous les reels : vert = favorable, rouge = défavorable. */
+export const TONE = { positive: "#4E7A43", negative: "#B0473A", neutral: "#6E685F" } as const;
+
+export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; theme?: Theme; logos?: Logos }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
-    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideFooter: !!s.hideFooter };
+    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideFooter: !!s.hideFooter, lightBrand: !!s.lightBrand };
     t += s.duration;
     return entry;
   });
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
-<style>${BASE_CSS}${opts.css}</style></head><body>
+<style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
 <div class="frame"></div><div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
 <div class="footer mono" id="__foot"><span>${opts.footerLeft}</span><span>${opts.footerRight}</span></div>
+${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
 const TIMELINE=${JSON.stringify(timeline)};
 const BASE=${t};
 function seek(t){
-  let foot=1;
+  let foot=1,light=false;
   for(const s of TIMELINE){
     const el=document.getElementById(s.id), local=t-s.start, fade=.35;
     let o=0;
@@ -201,10 +376,12 @@ function seek(t){
     el.style.opacity=o;
     if(o===0)continue;
     if(s.hideFooter)foot=Math.min(foot,1-o);
+    if(s.lightBrand&&o>.5)light=true;
     el.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=Math.max(0,local)*1000});
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
   document.getElementById("__foot").style.opacity=foot;
+  const brand=document.getElementById("__brand");if(brand)brand.classList.toggle("light",light);
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};
@@ -242,7 +419,7 @@ input[type=range]{width:100%}
 #time{font-size:22px}
 .hint{color:#9C9486;line-height:1.5}
 </style></head><body>
-<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:220px"></div><div style="left:0;right:0;bottom:0;height:420px"></div><div style="right:0;width:120px;top:220px;bottom:420px"></div></div></div>
+<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div></div></div>
 <div id="panel">
   <h1>${esc(title)}</h1>
   <div id="time">0,0 s / ${duration.toFixed(1).replace(".", ",")} s</div>
@@ -287,36 +464,51 @@ export function openInBrowser(file: string): void {
  *  `--apercu 5,20` donne des images fixes ; `--sans-ouvrir` n'ouvre rien. */
 export async function produce(opts: { html: string; scenes: Scene[]; title: string; base: string; args: Record<string, string | true> }): Promise<void> {
   const { html, scenes, title, base, args } = opts;
-  const overflow = await checkFrame(html, scenes);
-  if (overflow.length) {
-    console.warn(`  ⚠️ ${overflow.length} élément(s) dépassent du cadre :`);
-    for (const o of overflow) console.warn(`     · ${o}`);
-    if (args.mp4) throw new Error("Vidéo non produite : corrigez ce qui dépasse du cadre (voir l'aperçu).");
+  const ecarts = await checkFrame(html, scenes);
+  if (ecarts.length) {
+    console.warn(`  ⚠️ ${ecarts.length} écart(s) au gabarit :`);
+    for (const o of ecarts) console.warn(`     · ${o}`);
+    if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  cadre   → rien ne dépasse");
+    console.log("  gabarit → cadre, zone Instagram et lisibilité respectés");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
     await renderReel(html, { out: `${base}.mp4`, previewAt });
     return;
   }
+  // VERROU D'APERÇU : la vidéo n'est produite que si l'aperçu de CETTE version
+  // exacte du reel (même page, donc mêmes données et même code) a été généré
+  // juste avant. On ne produit pas un MP4 qu'on n'a pas regardé.
+  const empreinte = createHash("sha256").update(html).digest("hex").slice(0, 16);
+  const player = `${base}_apercu.html`;
   if (args.mp4) {
+    const apercu = await fs.readFile(player, "utf8").catch(() => "");
+    if (!apercu.includes(`data-empreinte="${empreinte}"`)) {
+      throw new Error(
+        "Vidéo non produite : regardez d'abord l'aperçu de cette version du reel.\n" +
+        "  Lancez la commande SANS --mp4, relisez l'aperçu dans le navigateur, puis relancez avec --mp4.",
+      );
+    }
     await renderReel(html, { out: `${base}.mp4` });
     console.log(`  vidéo   → ${base}.mp4`);
     return;
   }
-  const player = `${base}_apercu.html`;
-  await fs.writeFile(player, buildPlayer(html, scenes, title));
+  await fs.writeFile(player, buildPlayer(html, scenes, title).replace("<body>", `<body data-empreinte="${empreinte}">`));
   console.log(`  aperçu  → ${player}`);
   console.log("  Relisez l'aperçu, puis relancez avec --mp4 pour produire la vidéo.");
   if (!args["sans-ouvrir"]) openInBrowser(player);
 }
 
-/** Contrôle du cadre : chaque scène est posée à son état final (juste avant
- *  son fondu de sortie), et tout élément visible dont la boîte franchit FRAME
- *  est signalé. La boîte est d'abord rognée par les ancêtres en
+/** Contrôle du gabarit, scène par scène, à l'état final de chaque scène (juste
+ *  avant son fondu de sortie). Trois règles :
+ *   1. CADRE : aucun élément visible ne franchit l'encadré (FRAME) ;
+ *   2. ZONE SÛRE : aucune information (tout ce qui n'est pas `data-deco`) ne
+ *      sort de SAFE, sinon l'interface Instagram la cache sur le téléphone ;
+ *   3. LISIBILITÉ : aucun texte sous MIN_FONT.
+ *  La boîte de chaque élément est d'abord rognée par ses ancêtres en
  *  `overflow: hidden` : une image zoomée dans un cadre qui la contient ne
- *  dépasse pas. */
+ *  dépasse pas. Un seul signalement par débordement (l'ancêtre fautif). */
 export async function checkFrame(html: string, scenes: Scene[]): Promise<string[]> {
   const browser = await launch();
   try {
@@ -328,7 +520,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     for (const s of scenes) {
       const at = (t + s.duration - 0.4) * SLOW;
       t += s.duration;
-      found.push(...(await overflowAt(page, s.id, at)));
+      found.push(...(await inspectAt(page, s.id, at)));
     }
     return found;
   } finally {
@@ -336,40 +528,61 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
   }
 }
 
-async function overflowAt(page: Page, sceneId: string, at: number): Promise<string[]> {
-  return page.evaluate(({ sceneId, at, frame }) => {
-    (window as unknown as { setTime(t: number): void }).setTime(at);
-    const scene = document.getElementById(sceneId)!;
-    const out: string[] = [];
-    const flagged = new Set<Element>();
-    for (const el of Array.from(scene.querySelectorAll("*"))) {
-      const r = el.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) continue;
-      let left = r.left, top = r.top, right = r.right, bottom = r.bottom;
-      for (let a = el.parentElement; a && a !== scene; a = a.parentElement) {
-        if (getComputedStyle(a).overflow === "visible") continue;
-        const ar = a.getBoundingClientRect();
-        left = Math.max(left, ar.left); top = Math.max(top, ar.top);
-        right = Math.min(right, ar.right); bottom = Math.min(bottom, ar.bottom);
-      }
-      if (right - left < 1 || bottom - top < 1) continue;
-      const d = [
-        left < frame.left - .5 ? `gauche ${Math.round(frame.left - left)} px` : "",
-        top < frame.top - .5 ? `haut ${Math.round(frame.top - top)} px` : "",
-        right > frame.right + .5 ? `droite ${Math.round(right - frame.right)} px` : "",
-        bottom > frame.bottom + .5 ? `bas ${Math.round(bottom - frame.bottom)} px` : "",
-      ].filter(Boolean);
-      if (!d.length) continue;
-      // Un seul signalement par débordement : l'ancêtre fautif suffit.
-      flagged.add(el);
-      let a: Element | null = el.parentElement, inherited = false;
-      for (; a && a !== scene; a = a.parentElement) if (flagged.has(a)) { inherited = true; break; }
-      if (inherited) continue;
-      const label = (el.textContent ?? "").trim().slice(0, 40) || `<${el.tagName.toLowerCase()} class="${el.getAttribute("class") ?? ""}">`;
-      out.push(`scène ${sceneId} : « ${label} » (${d.join(", ")})`);
+// Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
+// un utilitaire `__name` qui n'existe pas côté navigateur.
+const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
+  window.setTime(at);
+  const scene = document.getElementById(sceneId);
+  const out = [];
+  const flagged = { frame: new Set(), safe: new Set() };
+  const inherited = (set, el) => {
+    for (let a = el.parentElement; a && a !== scene; a = a.parentElement) if (set.has(a)) return true;
+    return false;
+  };
+  const excess = (box, lim) => [
+    box.left < lim.left - .5 ? "gauche " + Math.round(lim.left - box.left) + " px" : "",
+    box.top < lim.top - .5 ? "haut " + Math.round(lim.top - box.top) + " px" : "",
+    box.right > lim.right + .5 ? "droite " + Math.round(box.right - lim.right) + " px" : "",
+    box.bottom > lim.bottom + .5 ? "bas " + Math.round(box.bottom - lim.bottom) + " px" : "",
+  ].filter(Boolean);
+  for (const el of scene.querySelectorAll("*")) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    for (let a = el.parentElement; a && a !== scene; a = a.parentElement) {
+      if (getComputedStyle(a).overflow === "visible") continue;
+      const ar = a.getBoundingClientRect();
+      box.left = Math.max(box.left, ar.left); box.top = Math.max(box.top, ar.top);
+      box.right = Math.min(box.right, ar.right); box.bottom = Math.min(box.bottom, ar.bottom);
     }
-    return out;
-  }, { sceneId, at, frame: FRAME });
+    if (box.right - box.left < 1 || box.bottom - box.top < 1) continue;
+    const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
+    const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
+    const f = excess(box, frame);
+    if (f.length) {
+      flagged.frame.add(el);
+      if (!inherited(flagged.frame, el)) out.push("cadre · scène " + sceneId + " : « " + label + " » (" + f.join(", ") + ")");
+    }
+    if (el.closest("[data-deco]")) continue;
+    const z = excess(box, safe);
+    // Colonne de boutons : seulement à partir du tiers de l'écran.
+    if (box.bottom > safe.buttonsTop && box.right > safe.buttonsLeft + .5) z.push("boutons " + Math.round(box.right - safe.buttonsLeft) + " px");
+    if (z.length) {
+      flagged.safe.add(el);
+      if (!inherited(flagged.safe, el)) out.push("zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")");
+    }
+    if (ownText) {
+      const size = parseFloat(getComputedStyle(el).fontSize);
+      if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
+    }
+  }
+  return out;
+}`;
+
+async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
+  // Le contenu s'arrête au-dessus de la barre de marque.
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT });
+  return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 
 async function launch(): Promise<Browser> {

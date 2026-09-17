@@ -11,8 +11,14 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 | Script | État |
 |---|---|
 | `une-des-unes.ts` (module 1) | LIVRÉ |
-| Deux solitudes, 12 enjeux, Partis et couverture, Polimètre+, Assemblée nationale | PLANIFIÉ |
-| Reel global (tour des six modules) | PLANIFIÉ |
+| `deux-solitudes.ts` (module 2) | LIVRÉ |
+| `partis.ts` (Partis et couverture) | LIVRÉ — légende Instagram seulement |
+| 12 enjeux, Polimètre+, Assemblée nationale | PLANIFIÉ |
+| `vitrine.ts` (présentation des six modules) | LIVRÉ — `npm run reel:vitrine`, légende Instagram seulement |
+
+**Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
+mélange pas deux modules, sinon le public ne sait plus ce qu'il regarde. Le reel
+global est le seul qui les traverse tous.
 
 La publication reste **manuelle** : le script ne publie rien sur Instagram.
 
@@ -31,17 +37,37 @@ Deux temps : **on regarde l'aperçu, puis on produit la vidéo.**
 git pull                                   # données de l'édition du moment
 npm run reel:une-des-unes                  # 1. aperçu animé dans le navigateur
 npm run reel:une-des-unes -- --mp4         # 2. la vidéo, une fois l'aperçu validé
+npm run reel:deux-solitudes                # module 2, mêmes options
+npm run reel:partis                        # Partis et couverture
 ```
+
+**L'aperçu est obligatoire** : `--mp4` refuse de produire la vidéo tant que
+l'aperçu de cette version exacte du reel n'a pas été généré, et tant que le
+gabarit (cadre, zone Instagram de 120 px à droite, texte de 26 px minimum,
+contenu au-dessus des logos) n'est pas respecté. C'est dans l'aperçu qu'on
+regarde et qu'on corrige son reel.
 
 L'aperçu est la même page que celle qui est filmée pour le MP4 : lecture,
 défilement, saut de scène, vitesse ralentie et bouton « Zones Instagram », qui
 colore en rouge ce que l'interface masque (en-tête, légende, boutons).
 
-Sortie dans `social-out/` (ignoré par Git) :
+Sortie dans `social-out/` (ignoré par Git — **on ne pousse jamais de MP4**) :
 
-- `une-des-unes_2026-09-16_16h_apercu.html` : l'aperçu ;
-- `une-des-unes_2026-09-16_16h.mp4` : la vidéo (environ 50 s, piste audio muette) ;
-- `une-des-unes_2026-09-16_16h.txt` : la légende, prête à copier.
+- `…_apercu.html` : l'aperçu animé ;
+- `…​.mp4` : la vidéo (1080×1920, piste audio muette) ;
+- **un texte par réseau**, prêt à copier, et le premier commentaire :
+
+| Fichier | Qui publie |
+|---|---|
+| `…_linkedin.txt` | Adrien |
+| `…_x.txt` (fil, caractères comptés par message) | Adrien |
+| `…_facebook.txt` | Jules |
+| `…_instagram.txt` (« lien dans la bio ») | Jules |
+| `…_tiktok.txt` | Jules |
+| `…_commentaire.txt` (articles + signatures de la nouvelle n°1) | en premier commentaire, partout |
+
+Pour produire, adapter ou créer un reel, le skill **`reel-vitrine`**
+(`.claude/skills/reel-vitrine/`) tient la marche à suivre et les pièges.
 
 Options (après `--`, par exemple `npm run reel:une-des-unes -- --mp4`) :
 
