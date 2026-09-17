@@ -25,7 +25,7 @@ import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 import { captionTypo } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
 import {
-  COLORS, FIN_CSS, TONE, buildPage, celestial, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
+  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
   type Scene,
 } from "./lib/reel";
 
@@ -42,19 +42,19 @@ const ORDRE: CleModule[] = [
 const TEXTES: Record<CleModule, { question: string; site: string }> = {
   "une-des-unes": {
     question: "Quelle nouvelle domine l’actualité au Québec en ce moment?",
-    site: "Les nouvelles à la Une de nos médias, classées selon leur saillance.",
+    site: "Les nouvelles à la Une et leur saillance, de très faible à exceptionnelle.",
   },
   "deux-solitudes": {
     question: "Le Québec et le Canada anglais parlent-ils des mêmes sujets?",
-    site: "Les Unes québécoises et canadiennes comparées, sujet par sujet.",
+    site: "Le radar des sujets qui retiennent l’attention au Québec et au Canada anglais.",
   },
   "enjeux-saillants": {
     question: "Quels enjeux occupent l’espace médiatique?",
-    site: "L’attention des médias répartie entre 12 grands enjeux.",
+    site: "La bourse des 12 enjeux : la part d’attention de chacun, en hausse ou en baisse.",
   },
   "partis-et-couverture": {
     question: "De quel parti parle-t-on dans les médias, et sur quel ton?",
-    site: "Le temps passé en Une par chaque parti, et le ton des phrases qui le nomment.",
+    site: "Le vu-mètre des partis : leur temps en Une, et le ton des phrases qui les nomment.",
   },
   "polimetre-plus": {
     question: "Quelles promesses électorales font parler?",
@@ -62,85 +62,120 @@ const TEXTES: Record<CleModule, { question: string; site: string }> = {
   },
   "assemblee-nationale": {
     question: "De quoi parlent les partis au Salon bleu, et sur quel ton?",
-    site: "Les débats de l’Assemblée nationale, analysés chaque jour de débat.",
+    site: "Une carte par député·e : son enjeu, son ton et son mot distinctif au Salon bleu.",
   },
 };
 
-// ── Schémas des modules ─────────────────────────────────────────────────────
-// Des dessins, pas des données : aucune valeur, aucun rang.
+// ── L'élément distinctif de chaque module ───────────────────────────────────
+// Jules Piral, 2026-09-16 : chaque module se reconnaît à SON objet — la
+// saillance, le radar, la bourse, le vu-mètre, les promesses, les cartes de
+// hockey. On les redessine d'après le CSS et les composants du site, mais SANS
+// DONNÉES : aucune valeur, aucun nom, aucun rang réel. Ce sont des schémas.
+// Zone du schéma : 900 × 410 px.
 
-/** La Une des Unes : une pile de Unes, celle du dessus en évidence. */
-function schemaUne(accent: string): string {
-  const feuilles = [0, 1, 2, 3].map((i) =>
-    `<div class="feuille" data-deco style="left:${120 + i * 150}px;top:${40 + (3 - i) * 16}px;transform:rotate(${(i - 1.5) * 4}deg);${anim("fadeUp", .5, .5 + i * .15)}">
-      <i style="width:70%"></i><i style="width:90%"></i><i style="width:55%"></i><i style="width:80%"></i></div>`).join("");
-  return `<div class="schema">${feuilles}
-    <div class="une" style="${anim("pop", .6, 1.3)}"><b class="mono" style="background:${accent}">À la Une</b><i style="width:88%;height:22px"></i><i style="width:64%;height:22px"></i><i style="width:92%"></i><i style="width:76%"></i><i style="width:84%"></i></div>
+/** La Une des Unes : l'échelle de SAILLANCE à six bandes (couleurs et libellés
+ *  du site, lib/data/headlineEvents.ts), et une Une qui monte au sommet. */
+function schemaUne(): string {
+  const NIVEAUX = ["Très faible", "Faible", "Modérée", "Élevée", "Très élevée", "Exceptionnelle"];
+  const bandes = NIVEAUX.map((n, i) => {
+    const c = SALIENCE_COLORS[i + 1];
+    return `<div class="bande" style="bottom:${i * 66}px;background:${c.bg};color:${c.fg};${i === 5 ? "box-shadow:inset 0 0 0 4px var(--ink);" : ""}${anim("wipe", .35, .5 + i * .12)}">${t(n)}</div>`;
+  }).join("");
+  return `<div class="schema saillance">
+    <div class="journal" style="${anim("fadeUp", .5, .4)}"><b class="mono">À la Une</b><i style="width:90%;height:20px"></i><i style="width:70%;height:20px"></i><i style="width:92%"></i><i style="width:80%"></i><i style="width:86%"></i></div>
+    <div class="echelle">${bandes}</div>
+    <div class="curseur" style="animation:monte 1.6s cubic-bezier(.3,.7,.3,1) 1.4s both">◀</div>
   </div>`;
 }
 
-/** Deux solitudes : deux cercles qui se recoupent (ou pas). */
+/** Deux solitudes : le RADAR — anneaux ronds, six axes, un polygone Québec
+ *  (bleu) et un polygone Canada anglais (rouge), comme DeuxSolitudesRadar. */
 function schemaSolitudes(): string {
+  const cx = 450, cy = 205, R = 190, n = 6;
+  const pt = (k: number, r: number) => {
+    const a = -Math.PI / 2 + (2 * Math.PI * k) / n;
+    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+  };
+  const anneaux = [.25, .5, .75, 1].map((f, i) =>
+    `<circle cx="${cx}" cy="${cy}" r="${R * f}" fill="none" stroke="var(--rule)" stroke-width="3" ${i < 3 ? `stroke-dasharray="6 8"` : ""}/>`).join("");
+  const axes = Array.from({ length: n }, (_, k) => `<line x1="${cx}" y1="${cy}" x2="${pt(k, R).split(",")[0]}" y2="${pt(k, R).split(",")[1]}" stroke="var(--rule)" stroke-width="3"/>`).join("");
+  // Formes de dessin, pas des parts d'attention.
+  const qc = [.85, .62, .4, .3, .45, .72].map((f, k) => pt(k, R * f)).join(" ");
+  const ca = [.42, .78, .7, .58, .3, .36].map((f, k) => pt(k, R * f)).join(" ");
   return `<div class="schema">
-    <div class="cercle" data-deco style="left:190px;border-color:${COLORS.blue};background:color-mix(in srgb, ${COLORS.blue} 12%, transparent);${anim("fadeIn", .6, .5)}"></div>
-    <div class="cercle" data-deco style="left:370px;border-color:${COLORS.red};background:color-mix(in srgb, ${COLORS.red} 12%, transparent);${anim("fadeIn", .6, .8)}"></div>
-    <div class="etiq" style="left:110px;width:340px;color:${COLORS.blue};${anim("fadeUp", .5, .7)}">${fleur(COLORS.blue, 36)}<span>Québec</span></div>
-    <div class="etiq" style="left:450px;width:340px;color:${COLORS.red};${anim("fadeUp", .5, 1)}"><span>Canada anglais</span></div>
-    <div class="inter disp" style="${anim("pop", .6, 1.4)}">?</div>
+    <svg class="radar" viewBox="0 0 900 410">
+      ${anneaux}${axes}
+      <g class="balai"><path d="M${cx} ${cy} L${cx} ${cy - R} A${R} ${R} 0 0 1 ${pt(1, R).replace(",", " ")} Z" fill="${COLORS.ink}" fill-opacity=".08"/></g>
+      <polygon points="${ca}" fill="${COLORS.red}" fill-opacity=".18" stroke="${COLORS.red}" stroke-width="6" style="${anim("pop", .7, 1.4)};transform-box:fill-box;transform-origin:center"/>
+      <polygon points="${qc}" fill="${COLORS.blue}" fill-opacity=".18" stroke="${COLORS.blue}" stroke-width="6" style="${anim("pop", .7, 1.1)};transform-box:fill-box;transform-origin:center"/>
+    </svg>
+    <div class="legende" style="left:0;color:${COLORS.blue};${anim("fadeIn", .4, 1.1)}">${fleur(COLORS.blue, 34)}<span>Québec</span></div>
+    <div class="legende" style="right:0;color:${COLORS.red};${anim("fadeIn", .4, 1.4)}"><span>Canada anglais</span></div>
   </div>`;
 }
 
-/** Les 12 enjeux : les douze pictogrammes du site, dans leurs couleurs. */
+/** Les 12 enjeux : la BOURSE — la mosaïque de tuiles du site (treemap), une par
+ *  enjeu, avec son pictogramme et sa flèche de hausse ou de baisse. */
 function schemaEnjeux(): string {
   const cles = Object.keys(ISSUE_COLORS);
-  const pastilles = cles.map((k, i) =>
-    `<div class="pastille" style="background:${ISSUE_COLORS[k]};${anim("pop", .45, .5 + i * .1)}">${enjeuGlyph(k, COLORS.paper, 62)}</div>`).join("");
-  return `<div class="schema"><div class="grille">${pastilles}</div></div>`;
+  // [x, y, largeur, hauteur, hausse ?] — un pavage de dessin, sans proportion réelle.
+  const TUILES: [number, number, number, number, boolean][] = [
+    [0, 0, 330, 240, true], [330, 0, 220, 240, false], [550, 0, 190, 140, true], [740, 0, 160, 140, true],
+    [550, 140, 350, 100, false], [0, 240, 200, 170, true], [200, 240, 160, 170, false], [360, 240, 140, 170, true],
+    [500, 240, 120, 170, false], [620, 240, 110, 170, true], [730, 240, 90, 170, false], [820, 240, 80, 170, true],
+  ];
+  const tuiles = TUILES.map(([x, y, w, h, up], i) => {
+    const size = Math.round(Math.min(w, h) * .42);
+    return `<div class="tuile-b" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${ISSUE_COLORS[cles[i]]};${anim("pop", .4, .45 + i * .08)}">
+      ${enjeuGlyph(cles[i], COLORS.paper, size)}
+      <b class="fleche" style="color:${up ? "#A3E635" : "#FFAAAA"};animation:clignote 1.4s ${(i * .23).toFixed(2)}s infinite alternate">${up ? "▲" : "▼"}</b></div>`;
+  }).join("");
+  return `<div class="schema bourse">${tuiles}</div>`;
 }
 
-/** Partis et couverture : les cinq partis et un cadran de ton. */
+/** Partis et couverture : le VU-MÈTRE — une colonne de segments par parti, qui
+ *  vit comme un vu-mètre (animation en boucle, aucune hauteur n'est une donnée). */
 function schemaPartis(): string {
-  const partis = (["caq", "plq", "pq", "qs", "pcq"] as const).filter((k) => PARTY_KEYS.includes(k)).map((k, i) =>
-    `<span class="sigle pf" style="background:${PARTY_COLORS[k]};${anim("fadeUp", .45, .5 + i * .12)}">${esc(PARTY_LABELS[k])}</span>`).join("");
-  return `<div class="schema">
-    <div class="sigles">${partis}</div>
-    <svg class="cadran" viewBox="0 0 400 230" style="${anim("fadeIn", .5, 1.1)}">
-      <path d="M40 200 A160 160 0 0 1 200 40" fill="none" stroke="${TONE.negative}" stroke-width="22"/>
-      <path d="M200 40 A160 160 0 0 1 360 200" fill="none" stroke="${TONE.positive}" stroke-width="22"/>
-      <g class="aiguille"><line x1="200" y1="200" x2="200" y2="70" stroke="${COLORS.ink}" stroke-width="9" stroke-linecap="round"/></g>
-      <circle cx="200" cy="200" r="16" fill="${COLORS.ink}"/>
-    </svg>
-    <div class="pole" style="left:170px;color:${TONE.negative};${anim("fadeIn", .4, 1.3)}">Défavorable</div>
-    <div class="pole" style="right:150px;color:${TONE.positive};${anim("fadeIn", .4, 1.3)}">Favorable</div>
-  </div>`;
+  const partis = (["caq", "plq", "pq", "qs", "pcq"] as const).filter((k) => PARTY_KEYS.includes(k));
+  const colonnes = partis.map((k, i) => {
+    const segs = Array.from({ length: 12 }, (_, s) => `<i data-s="${s}"></i>`).reverse().join("");
+    return `<div class="colonne" style="${anim("fadeUp", .45, .5 + i * .12)}"><div class="segs" data-deco data-p="${i}" style="--c:${PARTY_COLORS[k]}">${segs}</div><span class="sigle pf" style="background:${PARTY_COLORS[k]}">${esc(PARTY_LABELS[k])}</span></div>`;
+  }).join("");
+  return `<div class="schema vumetre">${colonnes}</div>`;
 }
 
-/** Polimètre+ : trois promesses et leur verdict. */
+/** Polimètre+ : les PROMESSES — la liste du site, pastille de rang à l'anneau
+ *  du verdict, titre, étiquette de verdict. Titres et rangs sont des traits. */
 function schemaPolimetre(): string {
-  const verdicts = [["Réalisée", TONE.positive], ["Partiellement réalisée", "#94781B"], ["Rompue", TONE.negative]] as const;
-  const cartes = verdicts.map(([v, c], i) =>
-    `<div class="promesse" style="${anim("fadeUp", .5, .5 + i * .3)}"><div class="lignes"><i style="width:85%"></i><i style="width:60%"></i></div>
-      <b class="tampon mono" style="color:${c};border-color:${c};${anim("pop", .45, .9 + i * .3)}">${t(v)}</b></div>`).join("");
+  const V = [["Réalisée", "#228B22"], ["Partiellement réalisée", "#F3C349"], ["Rompue", "#C1121F"]] as const;
+  const lignes = [0, 1, 2, 0].map((v, i) => {
+    const [label, c] = V[v];
+    return `<div class="promesse" style="${anim("fadeUp", .45, .5 + i * .22)}">
+      <span class="rangp" style="border-color:${c};background:color-mix(in srgb, ${c} 20%, transparent)"></span>
+      <span class="titre"><i style="width:${[92, 70, 84, 64][i]}%"></i><i style="width:${[55, 80, 48, 72][i]}%"></i></span>
+      <span class="verdict mono"><s style="background:${c}"></s>${t(label)}</span></div>`;
+  }).join("");
+  return `<div class="schema">${lignes}</div>`;
+}
+
+/** L'Assemblée : les CARTES DE HOCKEY du vestiaire — cadre à la couleur du
+ *  parti, bandeau « Assemblée nationale », portrait, position (enjeu dominant),
+ *  plaque nominative, macaron. Portraits en silhouette : aucun élu désigné. */
+function schemaAssemblee(): string {
+  const cles = Object.keys(ISSUE_COLORS);
+  const cartes = ([["caq", -9, 70], ["plq", 0, 320], ["qs", 9, 570]] as const).map(([k, rot, x], i) => {
+    const c = PARTY_COLORS[k];
+    return `<div class="carte-h" style="left:${x}px;--rot:${rot}deg;background:${c};${anim("donne", .6, .5 + i * .3)}">
+      <div class="cadre"><div class="bandeau" data-deco style="background:${c}"></div>
+      <div class="photo" style="border-bottom-color:${c}"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet"><circle cx="50" cy="40" r="20" fill="${c}" fill-opacity=".55"/><path d="M12 100 C14 70 32 62 50 62 C68 62 86 70 88 100Z" fill="${c}" fill-opacity=".55"/></svg>
+        <span class="position">${enjeuGlyph(cles[[1, 0, 3][i]], COLORS.paper, 40)}</span></div>
+      <div class="plaque"><i></i><i style="width:60%"></i></div>
+      <span class="macaron pf" style="background:${c}">${esc(PARTY_LABELS[k])}</span></div></div>`;
+  }).join("");
   return `<div class="schema">${cartes}</div>`;
 }
 
-/** L'Assemblée : l'hémicycle du Salon bleu. */
-function schemaAssemblee(accent: string): string {
-  const sieges: string[] = [];
-  const rangs = [[150, 11], [210, 15], [270, 19], [330, 23]] as const;
-  let k = 0;
-  for (const [r, n] of rangs) {
-    for (let i = 0; i < n; i++) {
-      const a = Math.PI * (1 - i / (n - 1));
-      sieges.push(`<circle cx="${(450 + r * Math.cos(a)).toFixed(1)}" cy="${(345 - r * Math.sin(a)).toFixed(1)}" r="12" fill="${accent}" style="${anim("pop", .25, .5 + k * .018)};transform-box:fill-box;transform-origin:center"/>`);
-      k++;
-    }
-  }
-  return `<div class="schema"><svg class="hemi" viewBox="0 0 900 410">${sieges.join("")}</svg>
-    <div class="bulle pf" style="${anim("pop", .5, 2.1)}">« Monsieur le Président… »</div></div>`;
-}
-
-const SCHEMAS: Record<CleModule, (accent: string) => string> = {
+const SCHEMAS: Record<CleModule, () => string> = {
   "une-des-unes": schemaUne,
   "deux-solitudes": schemaSolitudes,
   "enjeux-saillants": schemaEnjeux,
@@ -191,7 +226,7 @@ function sceneModule(k: CleModule, i: number): Scene {
       <div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
       <div class="tete"><h2 class="nom disp" style="color:${m.accent};${anim("fadeUp", .5, .15)}">${t(m.nom)}</h2>
       <p class="question pf" style="${anim("fadeUp", .6, .45)}">${t(TEXTES[k].question)}</p></div>
-      ${SCHEMAS[k](m.accent)}
+      ${SCHEMAS[k]()}
       <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p>`,
   };
 }
@@ -243,33 +278,46 @@ const CSS = `
 .scene .site{position:absolute;left:76px;right:120px;top:1238px;font-size:38px;line-height:1.2}
 .scene .site b{display:block;font-size:28px;margin-bottom:8px}
 
-.schema .feuille{position:absolute;width:250px;height:330px;background:#FBF8F1;border:2px solid var(--rule);padding:30px 22px;box-shadow:0 4px 0 rgba(0,0,0,.06)}
-.schema .feuille i,.schema .une i{display:block;height:14px;background:var(--rule);margin-bottom:18px}
-.schema .une{position:absolute;left:560px;top:10px;width:320px;height:390px;background:#FFFDF8;border:3px solid var(--ink);padding:30px 26px}
-.schema .une b{display:inline-block;color:var(--paper);font-size:28px;padding:8px 14px;margin-bottom:26px}
-.schema .une i{background:var(--ink)}
+.schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
+.schema .journal b{display:inline-block;background:var(--ink);color:var(--paper);font-size:28px;padding:8px 14px;margin-bottom:24px}
+.schema .journal i{display:block;height:14px;background:var(--ink);margin-bottom:18px}
+.schema .echelle{position:absolute;left:430px;right:80px;top:0;height:396px}
+.schema .bande{position:absolute;left:0;right:0;height:60px;display:flex;align-items:center;padding:0 22px;font-family:"IBM Plex Mono",monospace;font-size:28px;letter-spacing:.06em;text-transform:uppercase}
+.schema .curseur{position:absolute;right:20px;font-size:48px;line-height:60px;color:var(--ink)}
+@keyframes monte{from{top:336px}to{top:0}}
 
-.schema .cercle{position:absolute;top:0;width:340px;height:340px;border-radius:50%;border:8px solid}
-.schema .etiq{position:absolute;top:356px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:"Playfair Display",serif;font-weight:900;font-size:40px}
-.schema .inter{position:absolute;left:390px;width:120px;top:100px;text-align:center;font-size:130px;line-height:1;color:var(--ink)}
+.schema .radar{position:absolute;left:0;top:0;width:900px;height:410px;overflow:visible}
+.schema .balai{transform-origin:450px 205px;animation:balaye 2.4s linear infinite}
+@keyframes balaye{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.schema .legende{position:absolute;bottom:10px;display:flex;align-items:center;gap:10px;font-family:"Playfair Display",serif;font-weight:900;font-size:40px}
 
-.schema .grille{display:grid;grid-template-columns:repeat(6,1fr);gap:26px 20px;padding:20px 0 0}
-.schema .pastille{width:118px;height:118px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.schema .tuile-b{position:absolute;border:3px solid var(--paper);display:flex;align-items:center;justify-content:center}
+.schema .fleche{position:absolute;top:8px;right:10px;font-size:28px;line-height:1;font-family:sans-serif}
+@keyframes clignote{from{opacity:.35}to{opacity:1}}
 
-.schema .sigles{display:flex;justify-content:center;gap:18px}
-.schema .sigle{color:#fff;font-size:44px;padding:8px 18px}
-.schema .cadran{position:absolute;left:200px;top:110px;width:500px;height:288px}
-.schema .aiguille{transform-origin:200px 200px;animation:balance 3.2s ease-in-out .9s infinite alternate}
-@keyframes balance{from{transform:rotate(-55deg)}to{transform:rotate(55deg)}}
-.schema .pole{position:absolute;top:380px;font-family:"IBM Plex Mono",monospace;font-size:28px;text-transform:uppercase;letter-spacing:.1em}
+.schema.vumetre{display:flex;justify-content:center;gap:40px}
+.schema .colonne{display:flex;flex-direction:column;align-items:center;gap:14px}
+.schema .segs{display:flex;flex-direction:column;gap:5px;padding:10px;background:color-mix(in srgb, var(--paper), #000 7%);border:3px solid color-mix(in srgb, var(--paper), #000 20%)}
+.schema .segs i{display:block;width:110px;height:21px;background:var(--c)}
+.schema .sigle{color:#fff;font-size:40px;padding:4px 16px}
 
-.schema .promesse{display:flex;align-items:center;justify-content:space-between;gap:24px;height:118px;border-top:3px solid var(--ink);padding:0 4px}
-.schema .promesse .lignes{flex:1}
-.schema .promesse .lignes i{display:block;height:16px;background:var(--rule);margin:14px 0}
-.schema .tampon{flex:none;font-size:28px;letter-spacing:.06em;border:4px solid;padding:10px 16px;transform:rotate(-3deg)}
+.schema .promesse{display:flex;align-items:center;gap:26px;height:100px;border-top:3px solid var(--ink)}
+.schema .rangp{flex:none;width:58px;height:58px;border-radius:50%;border:4px solid}
+.schema .promesse .titre{flex:1}
+.schema .promesse .titre i{display:block;height:16px;background:var(--rule);margin:12px 0}
+.schema .verdict{flex:none;display:flex;align-items:center;gap:12px;font-size:26px;letter-spacing:.06em;color:var(--soft)}
+.schema .verdict s{display:block;width:22px;height:22px;border-radius:50%}
 
-.schema .hemi{position:absolute;left:0;top:0;width:900px;height:410px}
-.schema .bulle{position:absolute;left:0;right:0;top:365px;text-align:center;font-size:38px;font-style:italic}
+.schema .carte-h{position:absolute;top:0;width:270px;height:390px;padding:8px;transform:rotate(var(--rot))}
+@keyframes donne{from{opacity:0;transform:translateY(80px) rotate(0)}to{opacity:1;transform:rotate(var(--rot))}}
+.schema .cadre{position:relative;display:flex;flex-direction:column;height:100%;background:#FBF8F1}
+.schema .bandeau{height:30px}
+.schema .photo{position:relative;flex:1;border-bottom:5px solid;overflow:hidden}
+.schema .photo > svg{position:absolute;inset:0;width:100%;height:100%}
+.schema .position{position:absolute;top:18px;right:0;background:#86642C;padding:8px 12px}
+.schema .plaque{padding:16px 12px 18px 90px}
+.schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
+.schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
 
 #recap h2{position:absolute;top:250px;left:76px;right:120px;font-size:86px;line-height:1.02}
 #recap ul{position:absolute;top:640px;left:76px;right:120px;list-style:none;display:flex;flex-direction:column;gap:16px}
@@ -278,7 +326,17 @@ const CSS = `
 #recap li span{font-size:50px}
 `;
 
-const SCRIPT = ``;
+// Le vu-mètre bouge comme un vu-mètre : niveau pseudo-musical, déterministe
+// (même image à la même seconde), qui ne représente aucune donnée.
+const SCRIPT = `
+window.onSceneTime=function(id,t){
+  if(id!=="m-partis-et-couverture")return;
+  document.querySelectorAll("#m-partis-et-couverture .segs").forEach(function(col){
+    var p=+col.dataset.p, on=t<.8?0:Math.min(1,(t-.8)/.6);
+    var lvl=on*(6.5+3.2*Math.sin(t*(3.1+p*.7)+p*1.9)+1.8*Math.sin(t*(7.3-p*.9)+p));
+    col.querySelectorAll("i").forEach(function(seg){seg.style.opacity=(+seg.dataset.s<lvl)?1:.13});
+  });
+};`;
 
 // ── Légende ─────────────────────────────────────────────────────────────────
 function caption(): string {

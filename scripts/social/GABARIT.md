@@ -313,11 +313,21 @@ d'une édition à l'autre. À VALIDER.
    (Université Laval) ; « Gratuit, sans publicité, méthodologie publique ». Phrases
    reprises du pied de page du site.
 3. **Un module par scène**, sur son papier : « Module n sur 6 » et six points, le nom
-   à la couleur du module, la QUESTION à laquelle il répond, un SCHÉMA du module,
-   puis « Sur le site : » ce qu'on y trouve. Les schémas sont des dessins sans
-   aucune valeur ni rang (pile de Unes, deux cercles Québec/Canada anglais, les
-   douze pictogrammes, sigles + cadran de ton, trois verdicts, hémicycle), pour
-   qu'aucun ne se lise comme un résultat.
+   à la couleur du module, la QUESTION à laquelle il répond, **l'élément distinctif
+   du module** (Jules Piral, 2026-09-16), puis « Sur le site : » ce qu'on y trouve.
+   ARRÊTÉ :
+   - Une des Unes : l'échelle de **saillance** à six bandes (couleurs et libellés du site) ;
+   - Deux solitudes : le **radar** (anneaux ronds, polygones Québec bleu / Canada anglais rouge, balayage) ;
+   - 12 enjeux : la **bourse** (mosaïque de tuiles aux couleurs et pictogrammes des enjeux, flèches ▲▼) ;
+   - Partis et couverture : le **vu-mètre** (une colonne de segments par parti, qui bouge) ;
+   - Polimètre+ : les **promesses** (pastille de rang à l'anneau du verdict, étiquette de verdict) ;
+   - Assemblée : les **cartes de hockey** (cadre du parti, portrait, position = enjeu, macaron).
+
+   Ces éléments sont redessinés SANS DONNÉES : aucune valeur, aucun nom, aucun
+   rang, portraits en silhouette. Rejeté : les schémas génériques du premier jet
+   (pile de journaux, cercles qui se recoupent, grille de pictogrammes, cadran,
+   hémicycle), qui ne rappelaient pas le module. Piège : deux triangles opposés sur
+   le radar dessinent une étoile à six branches — garder des formes irrégulières.
 4. **Récapitulatif** : le message et la liste des six modules.
 5. **Fin commune**, sans édition en surbrillance.
 
