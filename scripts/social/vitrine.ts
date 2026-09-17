@@ -237,7 +237,7 @@ function sceneSources(): Scene {
   // l'emphase sur les modèles LOCAUX plutôt que sur « l'IA »).
   const lignes = [
     `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, six fois par jour</small><div class="heures">${heures}</div></div>`,
-    `<b class="disp">${fleur(COLORS.blue, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
+    `<b class="disp">${fleur(MODULES["assemblee-nationale"].accent, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
     `<b class="disp coche" style="color:${MODULES["polimetre-plus"].accent}">✓</b><div><p class="pf">les promesses électorales</p><small>leur écho dans les médias, avec le Polimètre</small></div>`,
   ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .6 + i * .55)}">${l}</div>`).join("");
   return {
@@ -272,7 +272,7 @@ function sceneModule(k: CleModule, i: number): Scene {
 function sceneRecap(): Scene {
   const liste = ORDRE.map((k, i) => {
     const m = MODULES[k];
-    return `<li style="background:${m.papier};border-left-color:${m.accent};${anim("fadeUp", .4, .5 + i * .2)}"><b class="disp" style="color:${m.accent}">${i + 1}</b><span class="pf">${t(m.nom)}</span></li>`;
+    return `<li style="background:${m.papier};border-left-color:${m.accent};${anim("fadeUp", .4, .5 + i * .2)}"><b class="disp" style="color:${m.accent}">${i + 1}</b><span class="pf" style="color:${m.accent}">${t(m.nom)}</span></li>`;
   }).join("");
   return {
     id: "recap", duration: 4.6,
