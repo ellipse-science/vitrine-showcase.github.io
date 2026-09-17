@@ -1837,7 +1837,30 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
   const all = eventsUpTo(parseEvents(raw), editionKey);
   const unique = uniqueQcEvents(all);
 
-  if (unique.length === 0) return null;
+  // ÉDITION VIVANTE : un vide est une PANNE, jamais une accalmie de l'actualité.
+  //
+  // Nuit du 16 au 17 septembre 2026. Le build de prod a reçu de l'API des
+  // événements qui sont tous tombés au filtre `sumQc + sumRoc > 0` : la Une des
+  // Unes et Deux solitudes ont disparu du site, sans une seule erreur, pendant
+  // que les mêmes fichiers du dépôt donnaient un top3 plein. La garde bruyante
+  // écrite pour ce cas précis (plus bas, SALIENCE_CUTOVER) était INATTEIGNABLE :
+  // ce `return null` la précédait.
+  //
+  // Échouer ici réveille le filet qui existe déjà : le job `secours-fichiers` de
+  // deploy-prod.yml (`if: failure()`) rebâtit en mode fichiers et publie. Une
+  // archive, elle, a le droit d'être vide : on ne casse que l'édition courante.
+  if (unique.length === 0) {
+    if (!editionKey) {
+      throw new Error(
+        "Aucun événement pour l'édition courante après filtrage. La source a " +
+        "servi des lignes sans saillance QC/ROC exploitable (colonnes " +
+        "`salience_index_qc` / `score_qc` nulles ?). Vérifiez /v1/health et le " +
+        "dernier cycle de synchro ; le build de secours en mode fichiers prend " +
+        "le relais.",
+      );
+    }
+    return null;
+  }
 
   // GARDE DU JOUR J. Le mode d'échec redouté de la bascule n'est pas un mauvais
   // calcul, c'est un snapshot MUET : si `salience_index_qc` n'a pas encore été
