@@ -169,7 +169,7 @@ function PaletteScrollLabInner() {
   // laisser voir le dégradé de la page.
   const cssSepia = Object.entries(IDENTITES).map(([id, m]) =>
     `#${id}{background:transparent;--lab-accent:${m.accent};--paper:${m.papier};--paper-deep:${melange(m.papier, "#1C1917", 0.05)}}`).join("\n")
-    + `\nbody{background:var(--lab-fond, ${PAPIER}) !important}`;
+    + `\nbody{background:var(--lab-fond, ${PAPIER})!important}`;
 
   const css = intensite === "off" ? "" : intensite === "sepia" ? cssSepia : (() => {
     const I = INTENSITES[intensite];
