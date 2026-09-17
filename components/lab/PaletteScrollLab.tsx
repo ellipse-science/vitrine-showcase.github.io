@@ -36,26 +36,47 @@ const MODULES: { id: string; nom: string; famille: Famille }[] = [
 ];
 
 // Fonds par module, dans l'ordre de MODULES (la Une reste toujours PAPIER).
+// LE MODULE DES PARTIS PASSE EN SALLE SOMBRE (demande d'Adrien, 2026-09-16) :
+// « et si c'était plus foncé/gris/noir le module, que ça donne le look d'être
+// dans un club, devant une console ». Les pochettes de vinyle et la table de
+// mixage ne sont plus posées sur du papier, mais sur la nuit.
+//
+// On ne touche à rien globalement : les jetons sont reposés SUR LA SECTION
+// elle-même, donc tout ce qui vit dedans (texte, filets, cartes) bascule d'un
+// coup, et le reste de la page n'en sait rien.
+const CLUB: Record<string, string> = {
+  "--paper": "#14120F",
+  "--paper-deep": "#1D1A16",
+  "--ink": "#F1E9D8",
+  "--ink-soft": "#C9BEA8",
+  "--ink-softer": "#8F8776",
+  "--rule": "#3A352C",
+  "--rule-faint": "#2A261F",
+  "--brass": "#D9B36C",
+  "--amber-encre": "#D9B36C",
+  "--cordovan": "#C9585F",
+};
+
 const HUMEURS: Record<Exclude<Humeur, "off">, { nom: string; fonds: string[]; accents: Record<Famille, string> }> = {
   clair: {
     nom: "Clair",
-    fonds: [PAPIER, "#F1E7D2", "#EEE2C6", "#F0E2D0", "#F2E3DC", "#EEDAD6"],
-    accents: { "médias": "#A07A3D", pont: "#8A5A3A", "décideurs": "#6B1E2A" },
+    fonds: [PAPIER, "#F1E7D2", "#EEE2C6", CLUB["--paper"], "#F2E3DC", "#EEDAD6"],
+    accents: { "médias": "#A07A3D", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
   },
   franc: {
     nom: "Franc",
-    fonds: [PAPIER, "#EFE1C2", "#EAD8AE", "#ECD7C1", "#EDD3CA", "#E6C5BF"],
-    accents: { "médias": "#A07A3D", pont: "#8A5A3A", "décideurs": "#6B1E2A" },
+    fonds: [PAPIER, "#EFE1C2", "#EAD8AE", CLUB["--paper"], "#EDD3CA", "#E6C5BF"],
+    accents: { "médias": "#A07A3D", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
   },
   sepia: {
     nom: "Sépia",
-    fonds: [PAPIER, "#EDE1CB", "#E6D6B8", "#E2D0B1", "#E5D1C3", "#DCC3B4"],
-    accents: { "médias": "#86642C", pont: "#7A4E33", "décideurs": "#5E1A25" },
+    fonds: [PAPIER, "#EDE1CB", "#E6D6B8", CLUB["--paper"], "#E5D1C3", "#DCC3B4"],
+    accents: { "médias": "#86642C", pont: CLUB["--brass"], "décideurs": "#5E1A25" },
   },
   moderne: {
     nom: "Moderne",
-    fonds: [PAPIER, "#F0EDE6", "#EBEAE6", "#EAE5E2", "#EFE2E3", "#E9DADB"],
-    accents: { "médias": "#8B6A33", pont: "#6E685F", "décideurs": "#6B1E2A" },
+    fonds: [PAPIER, "#F0EDE6", "#EBEAE6", CLUB["--paper"], "#EFE2E3", "#E9DADB"],
+    accents: { "médias": "#8B6A33", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
   },
 };
 
@@ -109,10 +130,15 @@ function PaletteScrollLabInner() {
     if (humeur === "off") {
       root.style.removeProperty("--lab-fond");
       root.style.removeProperty("--lab-accent");
+      const salleOff = document.getElementById("partis-et-couverture");
+      if (salleOff) for (const k of Object.keys(CLUB)) salleOff.style.removeProperty(k);
       setCourant("");
       return;
     }
     const H = HUMEURS[humeur];
+    // La salle sombre suit l'interrupteur des palettes : « off » la rend au papier.
+    const salle = document.getElementById("partis-et-couverture");
+    if (salle) for (const [k, v] of Object.entries(CLUB)) salle.style.setProperty(k, v);
     const sections = MODULES
       .map((m, i) => ({ m, fond: H.fonds[i], accent: H.accents[m.famille], el: document.getElementById(m.id) }))
       .filter((x): x is typeof x & { el: HTMLElement } => !!x.el);
