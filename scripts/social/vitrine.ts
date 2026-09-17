@@ -219,7 +219,7 @@ function sceneAccroche(logo: string): Scene {
     html: `
       <div class="bandes" data-deco>${bandes}</div>
       <div class="questions">${questions}</div>
-      <div class="logo" style="animation:pop .7s .15s both, plaque .5s ${BASCULE}s forwards">${logoAnime(logo, { classe: "", taille: 800, passe: .9 })}</div>
+      <div class="entete" data-deco><div class="logo" style="${anim("pop", .7, .15)}">${logoAnime(logo, { classe: "", taille: 800, passe: .9 })}</div></div>
       <h1><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
       <div class="traits">${traits}</div>`,
   };
@@ -280,24 +280,22 @@ function sceneRecap(): Scene {
 // ── Mise en page ────────────────────────────────────────────────────────────
 // Zone utile : x 60 → 960 (1020 au-dessus de y 640), y 220 → 1422 (GABARIT.md).
 const CSS = `
-#accroche .bandes{position:absolute;inset:30px;overflow:hidden}
+#accroche .bandes{position:absolute;left:30px;right:30px;top:594px;bottom:30px;overflow:hidden}
 #accroche .bande{position:absolute;top:0;bottom:0;width:calc(100% / 6 + 1px);transform-origin:top}
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
-#accroche .questions{position:absolute;left:76px;right:120px;top:760px;height:420px}
+#accroche .questions{position:absolute;left:76px;right:120px;top:820px;height:420px}
 #accroche .q{position:absolute;left:0;top:0;max-width:100%;font-size:96px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
-/* Le logo est là dès l'ouverture, sur une plaque de papier au-dessus des bandes
-   (Jules, 17-09 : « dans les lignes qui tombent, le logo doit être présent ») ;
-   la plaque se fond dans le papier quand les bandes s'effacent. */
-#accroche .logo{position:absolute;top:232px;left:124px;padding:18px 16px;background:#F3ECDD;box-shadow:0 14px 40px rgba(28,25,23,.18);transform-origin:center center}
-@keyframes plaque{to{box-shadow:0 0 0 rgba(28,25,23,0)}}
-#accroche h1{position:absolute;top:620px;left:76px;right:120px}
+/* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
+   du bas de cet encadré, jamais derrière le logo (Jules, 17-09). */
+#accroche .entete{position:absolute;left:30px;right:30px;top:30px;height:560px;background:#F3ECDD;border-bottom:4px solid var(--ink);display:flex;align-items:flex-end;justify-content:center;padding-bottom:70px;z-index:2}
+#accroche h1{position:absolute;top:670px;left:76px;right:120px}
 #accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
-#accroche .traits{position:absolute;left:76px;right:120px;top:1110px;display:flex;gap:12px;height:18px}
+#accroche .traits{position:absolute;left:76px;right:120px;top:1160px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
 #sources .kick{position:absolute;top:240px;left:76px;font-size:28px;color:var(--soft)}

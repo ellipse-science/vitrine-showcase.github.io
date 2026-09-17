@@ -373,8 +373,9 @@ Piral, 2026-09-16). Ce reel EXPLIQUE : pas de résultat du jour, donc il reste v
 d'une édition à l'autre. À VALIDER.
 
 1. **Accroche** (refaite le 2026-09-17 : « plus catchy et belle », « un peu plus
-   lentement », « le logo plus proéminent »). Six bandes verticales aux papiers des
-   modules remplissent l'écran ; six questions passent une à une (~1,3 s chacune),
+   lentement », « le logo plus proéminent »). Le logo, centré, est dans un encadré en
+   haut dès l'ouverture ; six bandes verticales aux papiers des modules partent du
+   bas de cet encadré (jamais derrière le logo) ; six questions passent une à une (~1,3 s chacune),
    sur une carte crème, dans l'encre de leur module, pendant que sa bande s'éclaire
    (« Qu'est-ce qui fait la Une ? » … « Qui parle au Salon bleu ? ») ; les bandes
    s'effacent, le logo arrive SEUL et en grand (800 px), puis « 6 modules / pour
