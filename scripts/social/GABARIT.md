@@ -300,13 +300,36 @@ Les autres réseaux (`lib/reseaux.ts`) sont écrits pour la Une des Unes : À FA
 - Pochettes d'album des partis : une seule par jour (bloc de 20h), pas fiables à
   chaque édition.
 
-## 5. Points ouverts
+## 5. Présentation de la Vitrine (`vitrine.ts`)
+
+Message : **« 6 modules pour mieux comprendre la démocratie au Québec »** (Jules
+Piral, 2026-09-16). Ce reel EXPLIQUE : pas de résultat du jour, donc il reste vrai
+d'une édition à l'autre. À VALIDER.
+
+1. **Accroche.** Logo, « 6 modules / pour mieux comprendre la démocratie au Québec »,
+   six tuiles numérotées aux couleurs des modules.
+2. **D'où viennent les données.** 13 médias québécois et canadiens (six fois par
+   jour), l'Assemblée nationale (chaque jour de débat), modèles d'IA locaux
+   (Université Laval) ; « Gratuit, sans publicité, méthodologie publique ». Phrases
+   reprises du pied de page du site.
+3. **Un module par scène**, sur son papier : « Module n sur 6 » et six points, le nom
+   à la couleur du module, la QUESTION à laquelle il répond, un SCHÉMA du module,
+   puis « Sur le site : » ce qu'on y trouve. Les schémas sont des dessins sans
+   aucune valeur ni rang (pile de Unes, deux cercles Québec/Canada anglais, les
+   douze pictogrammes, sigles + cadran de ton, trois verdicts, hémicycle), pour
+   qu'aucun ne se lise comme un résultat.
+4. **Récapitulatif** : le message et la liste des six modules.
+5. **Fin commune**, sans édition en surbrillance.
+
+Légende Instagram : le message, la collecte, les six questions, le lien.
+
+## 6. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
 - **Les reels restants** (12 enjeux, Polimètre+, Assemblée
-  nationale, global) : reprennent toutes les règles de la section 1.
+  nationale) : reprennent toutes les règles de la section 1.
 - **UN MODULE, UN POST** (Jules et Adrien, 2026-09-16) : un reel ne mélange pas deux
   modules. Le Canada était entré dans la Une des Unes le 16-09 ; il en est ressorti
   le jour même pour devenir le reel Deux solitudes. Seul le reel global les traverse

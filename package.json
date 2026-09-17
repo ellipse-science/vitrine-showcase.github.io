@@ -13,7 +13,8 @@
     "garde-redaction": "node scripts/garde_redaction.mjs",
     "reel:une-des-unes": "tsx scripts/social/une-des-unes.ts",
     "reel:deux-solitudes": "tsx scripts/social/deux-solitudes.ts",
-    "reel:partis": "tsx scripts/social/partis.ts"
+    "reel:partis": "tsx scripts/social/partis.ts",
+    "reel:vitrine": "tsx scripts/social/vitrine.ts"
   },
   "dependencies": {
     "next": "16.3.4",

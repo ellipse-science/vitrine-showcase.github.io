@@ -14,7 +14,7 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 | `deux-solitudes.ts` (module 2) | LIVRÉ |
 | `partis.ts` (Partis et couverture) | LIVRÉ — légende Instagram seulement |
 | 12 enjeux, Polimètre+, Assemblée nationale | PLANIFIÉ |
-| Reel global (tour des six modules) | PLANIFIÉ — Jules |
+| `vitrine.ts` (présentation des six modules) | LIVRÉ — `npm run reel:vitrine`, légende Instagram seulement |
 
 **Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
 mélange pas deux modules, sinon le public ne sait plus ce qu'il regarde. Le reel
