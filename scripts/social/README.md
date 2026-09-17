@@ -13,7 +13,8 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 | `une-des-unes.ts` (module 1) | LIVRÉ |
 | `deux-solitudes.ts` (module 2) | LIVRÉ |
 | `partis.ts` (Partis et couverture) | LIVRÉ — légende Instagram seulement |
-| 12 enjeux, Polimètre+, Assemblée nationale | PLANIFIÉ |
+| `enjeux-semaine.ts` (12 enjeux · évolution sur 7 jours) | LIVRÉ |
+| Polimètre+, Assemblée nationale | PLANIFIÉ |
 | `vitrine.ts` (présentation des six modules) | LIVRÉ — `npm run reel:vitrine`, légende Instagram seulement |
 
 **Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
@@ -38,6 +39,7 @@ git pull                                   # données de l'édition du moment
 npm run reel:une-des-unes                  # 1. aperçu animé dans le navigateur
 npm run reel:une-des-unes -- --mp4         # 2. la vidéo, une fois l'aperçu validé
 npm run reel:deux-solitudes                # module 2, mêmes options
+npm run reel:enjeux-semaine                # évolution des 12 enjeux sur 7 jours
 npm run reel:partis                        # Partis et couverture
 npm run reel:partis-court                  # 10 reels courts (12 s), un par analyse, index des aperçus
 ```

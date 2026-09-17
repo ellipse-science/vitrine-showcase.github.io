@@ -439,12 +439,30 @@ d'une édition à l'autre. À VALIDER.
 
 Légende Instagram : le message, la collecte, les six questions, le lien.
 
-## 6. Points ouverts
+## 6. Les 12 enjeux · évolution de la semaine (`enjeux-semaine.ts`)
+
+Thème : **comment le classement des douze enjeux a évolué pendant les sept
+derniers jours.** Les rangs, parts d’attention et dates viennent de
+`loadTreemap(...).week`, le même calcul que la vue « Semaine » du site.
+
+1. **Accroche commune.** Les trois lignes du module et une miniature des douze
+   trajectoires réelles de la semaine.
+2. **Classement animé.** Les douze enjeux changent de rang, jour après jour. Une
+   ligne porte toujours son rang, son pictogramme, son libellé court et son
+   déplacement total sur la fenêtre.
+3. **Bilan.** L’enjeu en tête, sa part d’attention, le nombre de jours passés au
+   premier rang et les six déplacements les plus grands en valeur absolue.
+4. **Fin commune.** Signature « Les 12 enjeux, jour après jour ».
+
+Le Reel emploie une semaine glissante de sept jours, comme le site. Aucun rang
+ni pourcentage n’est écrit à la main.
+
+## 7. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
-- **Les reels restants** (12 enjeux, Polimètre+, Assemblée
+- **Les reels restants** (Polimètre+, Assemblée
   nationale) : reprennent toutes les règles de la section 1.
 - **UN MODULE, UN POST** (Jules et Adrien, 2026-09-16) : un reel ne mélange pas deux
   modules. Le Canada était entré dans la Une des Unes le 16-09 ; il en est ressorti
