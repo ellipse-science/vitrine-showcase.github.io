@@ -290,7 +290,7 @@ const CSS = `
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
-#accroche .questions{position:absolute;left:116px;right:180px;top:800px;height:420px}
+#accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px}
 #accroche .q{position:absolute;left:0;top:0;max-width:100%;font-size:96px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
@@ -302,37 +302,37 @@ const CSS = `
    visionnement, mais il habille la vignette et les autres plateformes. */
 #accroche .liseré{position:absolute;left:30px;right:180px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
-#accroche h1{position:absolute;top:600px;left:116px;right:180px}
+#accroche h1{position:absolute;top:600px;left:180px;right:180px}
 #accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
-#accroche .traits{position:absolute;left:116px;right:180px;top:1080px;display:flex;gap:12px;height:18px}
+#accroche .traits{position:absolute;left:180px;right:180px;top:1080px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:250px;left:116px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:300px;left:116px;right:180px;font-size:76px;line-height:1.02}
-#sources .lignes{position:absolute;top:540px;left:116px;right:180px}
-#sources .ligne{display:flex;align-items:center;gap:30px;padding:16px 0;border-top:3px solid var(--ink)}
+#sources .kick{position:absolute;top:282px;left:180px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:330px;left:180px;right:180px;font-size:76px;line-height:1.02}
+#sources .lignes{position:absolute;top:560px;left:180px;right:180px}
+#sources .ligne{display:flex;align-items:center;gap:26px;padding:14px 0;border-top:3px solid var(--ink);text-align:left}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1020px;left:116px;right:180px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
+#sources .local{position:absolute;top:1090px;left:180px;right:180px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
-#sources .local p{font-size:56px;line-height:1.04;margin-top:10px}
-#sources .gratuit{position:absolute;top:1350px;left:116px;right:180px;font-size:36px;font-style:italic}
+#sources .local p{font-size:50px;line-height:1.04;margin-top:10px}
+#sources .gratuit{position:absolute;top:1420px;left:180px;right:180px;font-size:36px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
-.scene .rang{position:absolute;top:250px;left:116px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
+.scene .rang{position:absolute;top:282px;left:180px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:304px;left:116px;right:180px}
+.scene .tete{position:absolute;top:336px;left:180px;right:180px}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
 .scene .schema{position:absolute;left:0;top:0;width:900px;height:410px}
 /* Les schémas sont dessinés dans 900 × 410 ; la zone utile n'en fait plus que
    784 depuis les marges mesurées au simulateur : on les réduit d'un bloc. */
-.scene .ech{position:absolute;left:116px;top:700px;width:900px;height:410px;transform:scale(.871);transform-origin:0 0}
-.scene .site{position:absolute;left:116px;right:180px;top:1216px;font-size:38px;line-height:1.2}
+.scene .ech{position:absolute;left:180px;top:700px;width:900px;height:410px;transform:scale(.8);transform-origin:0 0}
+.scene .site{position:absolute;left:180px;right:180px;top:1216px;font-size:38px;line-height:1.2}
 .scene .site b{display:block;font-size:28px;margin-bottom:8px}
 
 .schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
@@ -376,9 +376,9 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:276px;left:116px;right:180px;font-size:86px;line-height:1.02}
-#recap ul{position:absolute;top:630px;left:116px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
-#recap li{display:flex;align-items:center;gap:30px;height:112px;padding:0 26px;border-left:14px solid}
+#recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
+#recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap li{display:flex;align-items:center;gap:26px;height:100px;text-align:left;padding:0 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px}
 `;
@@ -424,7 +424,7 @@ async function main() {
     title: "La Vitrine démocratique · 6 modules",
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: "vitrinedemocratique.com",
+    footerRight: "",
     theme: { paper: COLORS.paper, accent: COLORS.ink },
     logos,
   });

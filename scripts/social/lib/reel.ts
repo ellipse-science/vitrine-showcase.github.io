@@ -61,8 +61,8 @@ export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 
  *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
  *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
  *  rien ne les couvre. L'édition se glisse entre les deux logos. */
-export const BRAND = { top: SAFE.top, height: 76 };
-export const CONTENT_TOP = BRAND.top + BRAND.height + 16;
+export const BRAND = { top: SAFE.top, height: 62 };
+export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
 export const CONTENT_BOTTOM = SAFE.bottom;
 
 export type Logos = { vitrine: string; capp: string };
@@ -220,12 +220,20 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .mono{font-family:"IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
 .disp{font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
-.scene{position:absolute;inset:0;padding:120px 180px 0 116px;opacity:0}
+/* CONTENU CENTRÉ (Jules Piral, 2026-09-17 : « c'est bizarre qu'à droite il n'y ait
+   rien parce que les boutons de like sont là, alors qu'à gauche il y a de
+   l'information »). La colonne va de x 180 à x 900 — la limite de la colonne de
+   boutons — donc elle est SYMÉTRIQUE par rapport au milieu de l'image, et le texte
+   est centré. */
+.scene{position:absolute;inset:0;padding:120px 180px;text-align:center;opacity:0}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
-.footer{position:absolute;left:116px;right:180px;top:${BRAND.top + 22}px;display:flex;justify-content:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:41;pointer-events:none}
-.brandbar{position:absolute;left:116px;right:180px;display:flex;align-items:center;justify-content:space-between;z-index:45}
+/* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
+   une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
+.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+.edition.light{color:var(--paper);opacity:.85}
+.brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .brandbar.light img{filter:invert(1)}
 .progress{position:absolute;left:28px;top:28px;height:8px;width:${WIDTH - 56}px;background:var(--blue);transform-origin:left;z-index:60}
@@ -316,13 +324,13 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:258px;left:116px;width:540px}
-#intro .module{position:absolute;top:452px;left:116px;right:180px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:288px;left:180px;width:540px}
+#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:522px;left:116px;right:180px;font-size:122px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:30px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:116px;right:180px;bottom:700px;color:var(--paper);font-size:30px}
+#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
@@ -409,7 +417,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:268px 180px 0 116px}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
 #fin .kick{font-size:28px;color:var(--soft)}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
@@ -418,7 +426,7 @@ export const FIN_CSS = `
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .band{position:absolute;left:30px;right:180px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:116px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center}
+#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
 #fin .logos{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
 #fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
@@ -445,14 +453,14 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
 <div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
-<div class="footer mono" id="__foot"><span>${opts.footerRight}</span></div>
+${opts.footerRight ? `<div class="edition mono" id="__ed">${esc(opts.footerRight)}</div>` : ""}
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
 const TIMELINE=${JSON.stringify(timeline)};
 const BASE=${t};
 function seek(t){
-  let foot=1,light=false;
+  let light=false;
   for(const s of TIMELINE){
     const el=document.getElementById(s.id), local=t-s.start, fade=.35;
     let o=0;
@@ -460,13 +468,12 @@ function seek(t){
     if(!s.fadeOut&&t>=s.end)o=1;
     el.style.opacity=o;
     if(o===0)continue;
-    if(s.hideFooter)foot=Math.min(foot,1-o);
     if(s.lightBrand&&o>.5)light=true;
     el.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=Math.max(0,local)*1000});
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
-  document.getElementById("__foot").style.opacity=foot;
   const brand=document.getElementById("__brand");if(brand)brand.classList.toggle("light",light);
+  const ed=document.getElementById("__ed");if(ed)ed.classList.toggle("light",light);
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};

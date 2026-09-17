@@ -122,10 +122,10 @@ const CSS = `
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:252px;left:116px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
 #une .credit{position:absolute;top:806px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:116px;right:180px;top:830px}
+#une .body{position:absolute;left:180px;right:180px;top:830px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -135,16 +135,16 @@ const CSS = `
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
-#trajectoire .head{position:absolute;top:250px;left:116px;right:180px}
+#trajectoire .head{position:absolute;top:282px;left:180px;right:180px}
 #trajectoire .une{display:flex;gap:18px;align-items:flex-start;margin-top:14px}
 #trajectoire .une svg{flex:none;margin-top:6px}
-#trajectoire .une h3{font-size:50px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#trajectoire .une h3{font-size:44px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #trajectoire .live{display:flex;align-items:flex-end;gap:22px;margin-top:22px}
-#trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:150px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+#trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:132px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:28px;color:var(--softer);padding-bottom:16px}
-#trajectoire .chip{position:absolute;left:116px;top:596px;font-size:28px;padding:9px 16px}
+#trajectoire .chip{position:absolute;left:180px;top:596px;font-size:28px;padding:9px 16px}
 #trajectoire .when{position:absolute;right:180px;top:608px;display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:116px;right:180px;top:686px;height:600px}
+#trajectoire .chart{position:absolute;left:180px;right:180px;top:706px;height:580px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -155,11 +155,11 @@ const CSS = `
 #trajectoire .xl span{display:block;font-size:28px;line-height:1.05;margin-top:2px;margin-left:-6px;margin-right:-6px}
 #trajectoire .xl.now b{color:var(--blue)}
 #trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#trajectoire .cap{position:absolute;left:116px;right:180px;top:1300px;font-size:34px;line-height:1.12}
+#trajectoire .cap{position:absolute;left:180px;right:180px;top:1300px;font-size:34px;line-height:1.12}
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:250px;left:116px;right:180px}
+#centile .head{position:absolute;top:282px;left:180px;right:180px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
 #centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
@@ -171,31 +171,31 @@ const CSS = `
   background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
   box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
 #centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
-#centile .tick{position:absolute;left:116px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
-#centile .mark{position:absolute;left:116px;right:180px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
+#centile .tick{position:absolute;left:180px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
+#centile .mark{position:absolute;left:180px;right:180px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
 #centile .mlabel{position:absolute;right:180px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
 #centile .note{position:absolute;left:380px;right:180px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:116px;right:180px;top:1332px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:180px;right:180px;top:1332px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
-#couverture .head{position:absolute;top:404px;left:116px;right:180px}
+#couverture .head{position:absolute;top:412px;left:180px;right:180px}
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
 #couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
-#couverture ul{position:absolute;left:116px;right:180px;top:716px;list-style:none;border-top:3px solid var(--ink)}
+#couverture ul{position:absolute;left:180px;right:180px;top:716px;list-style:none;border-top:3px solid var(--ink)}
 #couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
 #couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px}
 #couverture li span{font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
-#couverture .since{position:absolute;left:116px;right:180px;top:1320px;font-size:38px;font-style:italic;color:var(--soft)}
+#couverture .since{position:absolute;left:180px;right:180px;top:1320px;font-size:38px;font-style:italic;color:var(--soft)}
 
 /* 6. Classement */
-#classement .head{position:absolute;top:250px;left:116px;right:180px}
+#classement .head{position:absolute;top:282px;left:180px;right:180px}
 #classement h3{font-size:62px;line-height:1.02;margin-top:14px}
-#classement .leg{position:absolute;left:116px;right:180px;top:460px}
+#classement .leg{position:absolute;left:180px;right:180px;top:500px}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 #classement .leg.trois .t{-webkit-line-clamp:1}
 #classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
@@ -204,14 +204,14 @@ const CSS = `
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:absolute;left:116px;right:180px;top:720px;height:560px}
+#classement .chart{position:absolute;left:180px;right:180px;top:720px;height:560px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
 #classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
-#classement .note{position:absolute;left:116px;right:180px;top:1310px;font-size:28px;line-height:1.2;color:var(--softer)}
+#classement .note{position:absolute;left:180px;right:180px;top:1310px;font-size:28px;line-height:1.2;color:var(--softer)}
 
 `;
 
@@ -220,7 +220,7 @@ const pubHourLabel = (edition: EditionRef) => `${edition.pubHour % 24}h`;
 const bandOf = (rank: number) => SALIENCE_COLORS[rank] ?? { bg: COLORS.rule, fg: COLORS.ink };
 
 /** Largeur des graphiques : intérieur du cadre moins 30 px de chaque côté. */
-const CHART_W = 784;
+const CHART_W = 720;
 
 /** Le visuel d'accroche du module 1 : les barres de saillance de la journée,
  *  en ombre, dans le bandeau d'encre de l'accroche commune. */
@@ -267,7 +267,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
   if (!trend || trend.points.length < 2) return null;
   const pts = trend.points;
   const max = Math.max(...pts.map((p) => p.cumul), 1);
-  const BASE = 440, H = 356; // ligne de base et hauteur utile (repère .chart)
+  const BASE = 410, H = 330; // ligne de base et hauteur utile (repère .chart)
   const n = pts.length, gap = 22, bw = (CHART_W - 14 - gap * (n - 1)) / n;
   const left = (i: number) => 7 + i * (bw + gap);
   const y = (v: number) => BASE - (v / max) * H;

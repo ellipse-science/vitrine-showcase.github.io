@@ -70,13 +70,15 @@ commun, une identité visuelle, un rappel marqué.**
   **Renverse** les nuances par module du 16-09 et le papier teinté à 6 %
   (`teintePapier`) : Deux solitudes perd le rouge comme couleur de MODULE (il
   reste celui du Canada à l'intérieur du reel).
-- **ARRÊTÉ · Logos de la Vitrine ET du CAPP sur TOUTES les scènes**, EN HAUT
-  (Jules Piral, 2026-09-17, après mesure au simulateur) : barre de marque
-  (`BRAND`) posée à y 150, avec l'ÉDITION entre les deux logos. **Renverse** la
-  barre du bas du 16-09 : en plein écran sur iPhone, le bas du reel est pris par
-  le voile d'Instagram, la légende et la barre de navigation, et les logos y
-  viraient au gris. En haut, sous la caméra, rien ne les couvre. Le contenu des
-  scènes commence dessous (`CONTENT_TOP`, y 242) et descend jusqu'à `CONTENT_BOTTOM`.
+- **ARRÊTÉ · Bandeau de marque EN HAUT, contenu CENTRÉ** (Jules Piral, 2026-09-17,
+  mesuré dans le simulateur d'iPhone) : les deux logos, centrés côte à côte, à
+  y 150 ; l'édition juste dessous ; le contenu des scènes de y 272 à
+  `CONTENT_BOTTOM`. La colonne va de **x 180 à x 900** — la limite de la colonne de
+  boutons — donc elle est symétrique par rapport au milieu de l'image, et le texte
+  est **centré**. « C'est bizarre qu'à droite il n'y ait rien parce que les boutons
+  sont là, alors qu'à gauche il y a de l'information. » **Renverse** la barre du bas
+  (16-09) : en plein écran sur iPhone, le bas est pris par le voile d'Instagram, la
+  légende et la barre de navigation. Le texte s'écrit à 28 px au moins.
 - ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde
   le papier tel quel. L'accent colore les filets et les bandeaux, pas le fond.
 
@@ -137,11 +139,6 @@ commun, une identité visuelle, un rappel marqué.**
   navigation d'Instagram. Il remonte juste au-dessus des logos et ne garde que
   l'édition (« Édition de 8h · 17.09.2026 ») ; le nom de la Vitrine, lui, est déjà
   dans la barre de logos.
-- **ARRÊTÉ · Dézoom de 6 %** (Jules Piral, 2026-09-17 : « il faut dézoomer ») :
-  chaque scène est réduite de 6 % autour du centre de la zone sûre. On gagne de
-  l'air partout sans redessiner scène par scène, et le décor cesse de coller au
-  bord. Conséquence : le texte s'écrit à 28 px au moins, pour qu'il en fasse 26 à
-  l'écran une fois réduit.
 - **ARRÊTÉ · La barre d'avancement descend sous la caméra** (Jules Piral,
   2026-09-17 : « la barre qui avance en haut passe à travers la caméra frontale ») :
   elle se pose à y 128, dans la largeur de la zone sûre, et non plus à 28 px du

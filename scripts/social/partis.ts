@@ -67,7 +67,7 @@ const pchip = (row: RowView) => `<span class="pchip" style="background:${row.col
 // Zone sûre (Reels organiques) : texte de x 76 à 960, y 220 → 1520.
 const CSS = `
 .kick{font-size:28px;color:var(--softer);letter-spacing:.14em}
-.head{position:absolute;top:250px;left:116px;right:180px}
+.head{position:absolute;top:282px;left:180px;right:180px}
 .head h2{font-size:70px;line-height:1.04;margin-top:12px;color:var(--blue)}
 .pchip{flex:none;display:inline-block;width:118px;text-align:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:38px;padding:4px 0}
 .vu{display:flex;flex-direction:column-reverse;gap:5px;width:100%}
@@ -75,23 +75,23 @@ const CSS = `
 .vu i.on{background:var(--on)}
 
 /* Accroche : le résultat, et rien d'autre */
-#accroche .brand{position:absolute;top:252px;left:116px;right:180px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#accroche .brand{position:absolute;top:284px;left:180px;right:180px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{position:absolute;top:430px;left:116px;right:180px;display:flex;flex-direction:column;gap:30px}
+#accroche .result{position:absolute;top:430px;left:180px;right:180px;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
 #accroche .then{font-size:88px;line-height:1.02}
-#accroche .mini{position:absolute;left:116px;right:180px;top:1040px;height:290px;display:flex;gap:26px}
+#accroche .mini{position:absolute;left:180px;right:180px;top:1040px;height:290px;display:flex;gap:26px}
 #accroche .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
 #accroche .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
 
 /* Le jour, en vumètre */
-#jour .chart{position:absolute;top:556px;left:116px;right:180px;height:770px;display:flex;gap:28px}
+#jour .chart{position:absolute;top:556px;left:180px;right:180px;height:770px;display:flex;gap:28px}
 #jour .col{flex:1;display:flex;flex-direction:column;align-items:center}
 #jour .pct{font-family:"Playfair Display",serif;font-weight:900;font-size:64px;line-height:1;margin-bottom:14px}
 #jour .lab{width:100%;text-align:center;margin-top:14px;font-family:"Playfair Display",serif;font-weight:900;font-size:44px;color:var(--paper);padding:4px 0}
 
 /* Par média */
-#playlist .rows{position:absolute;top:540px;left:116px;right:180px}
+#playlist .rows{position:absolute;top:540px;left:180px;right:180px}
 #playlist .row{height:132px;padding-top:12px;border-top:2px solid var(--rule)}
 #playlist .line{display:flex;align-items:baseline;justify-content:space-between;gap:20px}
 #playlist .line b{font-family:"Playfair Display",serif;font-weight:900;font-size:40px}
@@ -100,14 +100,14 @@ const CSS = `
 #playlist .mix div{display:flex;align-items:center;justify-content:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:28px;white-space:nowrap;overflow:hidden}
 
 /* Ton */
-#ton .legend{position:absolute;top:556px;left:116px;right:180px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{position:absolute;top:606px;left:116px;right:180px}
+#ton .legend{position:absolute;top:556px;left:180px;right:180px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
+#ton .rows{position:absolute;top:606px;left:180px;right:180px}
 #ton .row{height:148px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
 /* Campagne */
-#campagne .rows{position:absolute;top:566px;left:116px;right:180px}
+#campagne .rows{position:absolute;top:566px;left:180px;right:180px}
 #campagne .row{height:150px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
 #campagne .hvu{flex:1;display:flex;gap:4px;height:40px}
 #campagne .hvu i{flex:1;background:var(--deep)}
