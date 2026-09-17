@@ -24,7 +24,8 @@ import path from "node:path";
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
-import { COMPTES, EMOJIS, HASHTAGS, RAPPEL, TRAIT, oqlf, piedDePost } from "./lib/post";
+import { TRAIT, oqlf } from "./lib/post";
+import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
@@ -576,14 +577,13 @@ function mesure(e: UneEvent): string {
   return bouts.join(", ");
 }
 
-function post(edition: EditionRef, classement: UneEvent[]): string {
-  const lignes = classement.map((e, i) => `${i + 1}. ${e.title} (${mesure(e)})`).join("\n\n");
-  return oqlf([
-    `Les faits saillants au Québec en ce moment (Édition de ${pubHourLabel(edition)}) ${EMOJIS}`,
-    "",
-    lignes,
-    ...piedDePost(),
-  ].join("\n"));
+function matiere(edition: EditionRef, classement: UneEvent[]): Matiere {
+  return {
+    titre: `Les faits saillants au Québec en ce moment (Édition de ${pubHourLabel(edition)})`,
+    items: classement.map((e, i) => `${i + 1}. ${e.title} (${mesure(e)})`),
+    titresSeuls: classement.map((e) => e.title),
+    lien: "vitrinedemocratique.com",
+  };
 }
 
 /** Le premier commentaire : les articles publiés sur la nouvelle n°1, un par
@@ -669,10 +669,14 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(`${base}.txt`, post(edition, classement));
+  // Un fichier par réseau, plus le premier commentaire (le même partout).
+  const textes = formats(matiere(edition, classement));
+  for (const [reseau, texte] of Object.entries(textes) as [Reseau, string][]) {
+    await fs.writeFile(`${base}_${reseau}.txt`, texte);
+    console.log(`  ${reseau.padEnd(9)} → ${path.basename(base)}_${reseau}.txt   (${RESPONSABLE[reseau]})`);
+  }
   await fs.writeFile(`${base}_commentaire.txt`, premierCommentaire(top));
-  console.log(`  post    → ${base}.txt`);
-  console.log(`  1er com → ${base}_commentaire.txt`);
+  console.log(`  1er com   → ${path.basename(base)}_commentaire.txt   (sous le post, partout)`);
 
   await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
 }

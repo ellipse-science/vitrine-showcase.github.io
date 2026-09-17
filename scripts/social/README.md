@@ -43,11 +43,23 @@ L'aperçu est la même page que celle qui est filmée pour le MP4 : lecture,
 défilement, saut de scène, vitesse ralentie et bouton « Zones Instagram », qui
 colore en rouge ce que l'interface masque (en-tête, légende, boutons).
 
-Sortie dans `social-out/` (ignoré par Git) :
+Sortie dans `social-out/` (ignoré par Git — **on ne pousse jamais de MP4**) :
 
-- `une-des-unes_2026-09-16_16h_apercu.html` : l'aperçu ;
-- `une-des-unes_2026-09-16_16h.mp4` : la vidéo (environ 50 s, piste audio muette) ;
-- `une-des-unes_2026-09-16_16h.txt` : la légende, prête à copier.
+- `…_apercu.html` : l'aperçu animé ;
+- `…​.mp4` : la vidéo (1080×1920, piste audio muette) ;
+- **un texte par réseau**, prêt à copier, et le premier commentaire :
+
+| Fichier | Qui publie |
+|---|---|
+| `…_linkedin.txt` | Adrien |
+| `…_x.txt` (fil, caractères comptés par message) | Adrien |
+| `…_facebook.txt` | Jules |
+| `…_instagram.txt` (« lien dans la bio ») | Jules |
+| `…_tiktok.txt` | Jules |
+| `…_commentaire.txt` (articles + signatures de la nouvelle n°1) | en premier commentaire, partout |
+
+Pour produire, adapter ou créer un reel, le skill **`reel-vitrine`**
+(`.claude/skills/reel-vitrine/`) tient la marche à suivre et les pièges.
 
 Options (après `--`, par exemple `npm run reel:une-des-unes -- --mp4`) :
 
