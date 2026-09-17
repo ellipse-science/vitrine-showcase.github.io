@@ -679,7 +679,7 @@ async function main() {
   await fs.writeFile(`${base}_commentaire.txt`, premierCommentaire(top));
   console.log(`  1er com   → ${path.basename(base)}_commentaire.txt   (sous le post, partout)`);
 
-  await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args, musique: MODULE.musique });
+  await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
 }
 
 main().catch((err) => {

@@ -292,7 +292,7 @@ async function main() {
   await fs.writeFile(`${base}.txt`, caption(edition, sol));
   console.log(`  légende → ${base}.txt`);
 
-  await produce({ html, scenes, title: `Deux solitudes · édition de ${edition.pubHour % 24}h`, base, args, musique: MODULE.musique });
+  await produce({ html, scenes, title: `Deux solitudes · édition de ${edition.pubHour % 24}h`, base, args });
 }
 
 main().catch((err) => {

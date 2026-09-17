@@ -28,15 +28,13 @@ commun, une identité visuelle, un rappel marqué.**
   **découpée par le PNG lui-même** (`mask-image`) — seuls les traits s'allument, le
   papier autour ne bouge pas. Le PNG sert de gabarit : le calage est exact par
   construction, aucun tracé n'est redessiné. À l'accroche ET à la fin.
-- **ARRÊTÉ · Une musique par module** (Adrien, 2026-09-16). Un ACCORD TENU
-  fabriqué par nous (`scripts/social/lib/musique.ts`) à partir de l'intention
-  déclarée dans `lib/modules.ts` : rien d'emprunté, rien à libérer de droits, et
-  un module sonne pareil d'une édition à l'autre — c'est une signature.
-  ⚠️ Ce n'est pas une trame musicale. Sur **Instagram et TikTok**, prendre la
-  musique dans le catalogue de l'application au moment de publier : c'est la
-  seule façon d'être en règle. Ailleurs, `--musique fichier.mp3` monte un
-  fichier dont on détient les droits. 🪤 `public/audio/latest.mp3` date du
-  16 juin et sa génération est en panne : ne pas le coller sur une vidéo du jour.
+- **ARRÊTÉ · AUCUN SON dans le MP4.** La piste reste muette et la musique se
+  prend dans le **catalogue de la plateforme** au moment de publier — c'est la
+  seule façon d'être en règle sur Instagram et TikTok, et c'est là que se
+  trouvent les pièces que le public reconnaît. `--musique fichier.mp3` monte une
+  trame dont on détient les droits, pour les plateformes sans catalogue.
+  🪤 `public/audio/latest.mp3` date du 16 juin et sa génération est en panne
+  silencieuse : ne pas le coller sur une vidéo du jour.
 - **ARRÊTÉ · Les partenaires dans le carré de couleur** (Adrien, 2026-09-16) :
   les dix logos du site, en papier, sous les six éditions. 🪤 `llm-tool.png` est
   blanc sur fond noir quand les autres sont noirs sur transparent : il passe en
@@ -199,6 +197,9 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - « 92 % plus saillante que toutes les Unes de l'année » (faux : c'est un rang).
 - « Illustration générée par IA · Anorak Studio » ; crédit en petites capitales mono
   posé sur l'image (trop visible).
+- **Un lit sonore fabriqué par nous** (accord tenu en sinusoïdes, essayé le
+  2026-09-16) : « c'est pas d'la musique ahahaha ». La musique vient du
+  catalogue de la plateforme, point.
 - Éléments pleine page qui débordent de l'encadré.
 - Valeurs de fin posées à GAUCHE du dernier point : la courbe n°1, qui redescend,
   passait au travers de son propre chiffre. Elles vont dans une gouttière à droite.

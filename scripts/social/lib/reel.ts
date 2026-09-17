@@ -21,9 +21,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
-import type { IntentionMusicale } from "@/lib/modules";
-
-import { litSonore } from "./musique";
 import { instantPublicationBloc } from "@/lib/data/headlineEvents";
 
 export const WIDTH = 1080;
@@ -470,7 +467,7 @@ export function openInBrowser(file: string): void {
  *  1. par défaut, APERÇU animé dans le navigateur — on regarde, on corrige ;
  *  2. `--mp4` seulement ensuite, pour produire la vidéo à publier.
  *  `--apercu 5,20` donne des images fixes ; `--sans-ouvrir` n'ouvre rien. */
-export async function produce(opts: { html: string; scenes: Scene[]; title: string; base: string; args: Record<string, string | true>; musique?: IntentionMusicale }): Promise<void> {
+export async function produce(opts: { html: string; scenes: Scene[]; title: string; base: string; args: Record<string, string | true> }): Promise<void> {
   const { html, scenes, title, base, args } = opts;
   const overflow = await checkFrame(html, scenes);
   if (overflow.length) {
@@ -499,15 +496,12 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
     return;
   }
   if (args.mp4) {
-    // La musique : un fichier fourni (`--musique`), sinon le lit sonore du
-    // module, sauf si on la refuse (`--sans-musique`).
-    let piste: string | undefined;
-    if (typeof args.musique === "string") piste = args.musique;
-    else if (opts.musique && !args["sans-musique"]) {
-      const duree = scenes.reduce((t, sc) => t + sc.duration, 0) * SLOW;
-      piste = await litSonore(opts.musique, duree);
-      console.log(`  musique → lit sonore du module (${opts.musique.intention})`);
-    }
+    // PAS DE SON par défaut (décision d'Adrien, 2026-09-16) : la musique se
+    // prend dans le catalogue de la plateforme au moment de publier. `--musique
+    // fichier.mp3` reste là pour monter une trame dont on détient les droits,
+    // quand on publie ailleurs qu'Instagram ou TikTok.
+    const piste = typeof args.musique === "string" ? args.musique : undefined;
+    if (piste) console.log(`  musique → ${piste}`);
     await renderReel(html, { out: `${base}.mp4`, musique: piste });
     console.log(`  vidéo   → ${base}.mp4`);
     return;
