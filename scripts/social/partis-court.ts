@@ -80,9 +80,9 @@ async function main() {
     await fs.writeFile(index, `<!doctype html><meta charset="utf-8"><title>Reels courts · ${MODULE}</title>
 <style>body{margin:0;background:#1C1917;color:#F3ECDD;font:15px "IBM Plex Mono",monospace;padding:24px}h1{font:700 22px Georgia,serif;margin:0 0 18px}
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}.c{background:#292524;padding:10px}
-.c iframe{width:100%;aspect-ratio:9/16;border:0;background:#000}.c b{display:block;margin:8px 0 2px}.c span{opacity:.75}</style>
+.c iframe{width:100%;aspect-ratio:9/16;border:0;background:#000}.c a{color:#F3ECDD}.c b{display:block;margin:8px 0 2px}.c span{opacity:.75}</style>
 <h1>Reels courts · ${MODULE} · édition de ${pubHourLabel(edition)} (${edition.dateLabel})</h1><div class="g">
-${faits.map((f) => `<div class="c"><iframe src="${f.apercu}"></iframe><b>${f.id}</b><span>${f.idee}</span></div>`).join("\n")}
+${faits.map((f) => `<div class="c"><iframe src="${f.apercu}?mini" loading="lazy"></iframe><a href="${f.apercu}" target="_blank"><b>${f.id}</b></a><span>${f.idee}</span></div>`).join("\n")}
 </div>`);
     console.log(`\n  index   → ${index}`);
     if (!args["sans-ouvrir"]) openInBrowser(index);
