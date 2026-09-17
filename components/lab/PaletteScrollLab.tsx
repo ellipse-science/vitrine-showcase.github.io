@@ -1,212 +1,139 @@
 "use client";
 
-/* BANC D'ESSAI LOCAL — palettes par module (demande de Yannick, 2 sept. 2026).
+/* BANC D'ESSAI LOCAL — une couleur par module (Yannick, 2 sept. 2026 ; repris et
+ * tranché par Adrien le 16 sept.).
  *
- * Principe (concept Projet Quorum, repris ici avec les jetons de la Vitrine) :
- * trois familles de données, trois couleurs.
- *   · MÉDIAS     → le papier jaune de la Vitrine (paper, brass)     : Une des Unes,
- *                  Deux solitudes, 12 enjeux
- *   · DÉCIDEURS  → le rose / cordovan                               : Polimètre+ (promesses),
- *                  Assemblée nationale (Agora)
- *   · OPINION    → le bleu (--bleu)                                  : réservé aux modules
- *                  d'opinion publique à venir (Datagotchi, campagne)
- * Partis et couverture fait le pont : des médias vers les décideurs.
+ * CE QUI A CHANGÉ LE 16-09. Le banc donnait UNE couleur par famille de données,
+ * donc deux modules partageaient la même : impossible de reconnaître un module à
+ * sa couleur, et les fonds se ressemblaient tous à l'écran. Chaque module a
+ * maintenant SA couleur, et le fond de sa section en est teinté — « que ce soit
+ * bien apparent, découpé ». Les quatre humeurs sont remplacées par trois DEGRÉS
+ * D'INTENSITÉ de la même palette : discret, marqué, franc.
  *
- * Règle d'Adrien : la Une des Unes garde le papier tel quel ; le premier
- * changement se voit en arrivant sur Deux solitudes. Ensuite, le fond descend
- * dans la famille médias (papier qui se creuse), puis bascule vers le rose des
- * décideurs. Quatre « humeurs » de la même logique : clair, franc, sépia
- * (vieillot), moderne (neutres froids). Rien n'est destiné à être poussé tel quel.
+ * D'OÙ VIENNENT CES COULEURS (règle d'Adrien : réfléchies, pas aléatoires) :
+ *   · Une des Unes      laiton — la couleur des paliers de saillance du module.
+ *   · Deux solitudes    le ROUGE DU CANADA : seul module qui mobilise le Canada,
+ *                       donc la couleur se retient toute seule. Le bleu reste au
+ *                       Québec À L'INTÉRIEUR du module.
+ *   · 12 enjeux         mauve sépia (Adrien, 16-09).
+ *   · Partis            SALLE SOMBRE (Adrien, 16-09) : « le look d'être dans un
+ *                       club, devant une console ». Seul module où l'encre et les
+ *                       filets basculent aussi.
+ *   · Polimètre+        le vert du Polimètre, relevé sur polimetre.org — couleur
+ *                       du mot-symbole dans l'en-tête, rgb(81,115,104).
+ *   · Assemblée         bleu acier.
+ * Aucune ne reprend une des douze couleurs d'enjeu (`lib/enjeux.ts`) : la
+ * couleur d'un enjeu doit rester celle de cet enjeu.
  *
- *   ?lab=clair | franc | sepia | moderne | off      ?glisse=1 pour le dégradé continu
+ * ⚠️ Règle d'Adrien du 3 sept., toujours valable : LA UNE DES UNES GARDE LE
+ * PAPIER. Le premier changement se voit en arrivant sur Deux solitudes.
+ *
+ * Les jetons sont posés SUR CHAQUE SECTION, jamais globalement : le reste de la
+ * page n'en sait rien, et « off » rend tout au papier.
+ *
+ *   ?lab=off | discret | marque | franc
  */
 import { useEffect, useState } from "react";
 
-type Famille = "médias" | "pont" | "décideurs";
-type Humeur = "off" | "clair" | "franc" | "sepia" | "moderne";
+type Intensite = "off" | "discret" | "marque" | "franc";
 
 const PAPIER = "#F3ECDD";
-const MODULES: { id: string; nom: string; famille: Famille }[] = [
-  { id: "une-des-unes",         nom: "Une des Unes",   famille: "médias" },
-  { id: "deux-solitudes",       nom: "Deux solitudes", famille: "médias" },
-  { id: "enjeux-saillants",     nom: "12 enjeux",      famille: "médias" },
-  { id: "partis-et-couverture", nom: "Partis",         famille: "pont" },
-  { id: "polimetre-plus",       nom: "Polimètre+",     famille: "décideurs" },
-  { id: "assemblee-nationale",  nom: "Assemblée",      famille: "décideurs" },
+const NUIT = "#14120F";
+
+const MODULES: { id: string; nom: string; accent: string; papierPur?: boolean; sombre?: boolean }[] = [
+  { id: "une-des-unes", nom: "Une des Unes", accent: "#86642C", papierPur: true },
+  { id: "deux-solitudes", nom: "Deux solitudes", accent: "#A8302C" },
+  { id: "enjeux-saillants", nom: "12 enjeux", accent: "#6E4F73" },
+  { id: "partis-et-couverture", nom: "Partis", accent: "#D9B36C", sombre: true },
+  { id: "polimetre-plus", nom: "Polimètre+", accent: "#517368" },
+  { id: "assemblee-nationale", nom: "Assemblée", accent: "#2F6480" },
 ];
 
-// Fonds par module, dans l'ordre de MODULES (la Une reste toujours PAPIER).
-// LE MODULE DES PARTIS PASSE EN SALLE SOMBRE (demande d'Adrien, 2026-09-16) :
-// « et si c'était plus foncé/gris/noir le module, que ça donne le look d'être
-// dans un club, devant une console ». Les pochettes de vinyle et la table de
-// mixage ne sont plus posées sur du papier, mais sur la nuit.
-//
-// On ne touche à rien globalement : les jetons sont reposés SUR LA SECTION
-// elle-même, donc tout ce qui vit dedans (texte, filets, cartes) bascule d'un
-// coup, et le reste de la page n'en sait rien.
-const CLUB: Record<string, string> = {
-  "--paper": "#14120F",
-  "--paper-deep": "#1D1A16",
+/** Trois degrés : combien de la couleur du module passe dans son fond. */
+const INTENSITES: Record<Exclude<Intensite, "off">, { nom: string; force: number; nuit: number }> = {
+  discret: { nom: "Discret", force: 0.10, nuit: 0.72 },
+  marque: { nom: "Marqué", force: 0.22, nuit: 0.86 },
+  franc: { nom: "Franc", force: 0.34, nuit: 1 },
+};
+
+/** Mélange deux couleurs : `f` = 0 donne `a`, 1 donne `b`. */
+function melange(a: string, b: string, f: number): string {
+  const lire = (x: string) => [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16));
+  const [r1, g1, b1] = lire(a);
+  const [r2, g2, b2] = lire(b);
+  return "#" + [r1 + (r2 - r1) * f, g1 + (g2 - g1) * f, b1 + (b2 - b1) * f]
+    .map((c) => Math.round(c).toString(16).padStart(2, "0")).join("");
+}
+
+/** La salle sombre : les seuls jetons qui basculent, et seulement là. */
+const jetonsNuit = (fond: string, accent: string): Record<string, string> => ({
+  "--paper": fond,
+  "--paper-deep": melange(fond, PAPIER, 0.06),
   "--ink": "#F1E9D8",
   "--ink-soft": "#C9BEA8",
   "--ink-softer": "#8F8776",
-  "--rule": "#3A352C",
-  "--rule-faint": "#2A261F",
-  "--brass": "#D9B36C",
-  "--amber-encre": "#D9B36C",
+  "--rule": melange(fond, PAPIER, 0.22),
+  "--rule-faint": melange(fond, PAPIER, 0.12),
+  "--brass": accent,
+  "--amber-encre": accent,
   "--cordovan": "#C9585F",
-};
+});
 
-const HUMEURS: Record<Exclude<Humeur, "off">, { nom: string; fonds: string[]; accents: Record<Famille, string> }> = {
-  clair: {
-    nom: "Clair",
-    fonds: [PAPIER, "#F1E7D2", "#EEE2C6", CLUB["--paper"], "#F2E3DC", "#EEDAD6"],
-    accents: { "médias": "#A07A3D", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
-  },
-  franc: {
-    nom: "Franc",
-    fonds: [PAPIER, "#EFE1C2", "#EAD8AE", CLUB["--paper"], "#EDD3CA", "#E6C5BF"],
-    accents: { "médias": "#A07A3D", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
-  },
-  sepia: {
-    nom: "Sépia",
-    fonds: [PAPIER, "#EDE1CB", "#E6D6B8", CLUB["--paper"], "#E5D1C3", "#DCC3B4"],
-    accents: { "médias": "#86642C", pont: CLUB["--brass"], "décideurs": "#5E1A25" },
-  },
-  moderne: {
-    nom: "Moderne",
-    fonds: [PAPIER, "#F0EDE6", "#EBEAE6", CLUB["--paper"], "#EFE2E3", "#E9DADB"],
-    accents: { "médias": "#8B6A33", pont: CLUB["--brass"], "décideurs": "#6B1E2A" },
-  },
-};
+const TOUS_JETONS = ["--paper", "--paper-deep", "--ink", "--ink-soft", "--ink-softer",
+  "--rule", "--rule-faint", "--brass", "--amber-encre", "--cordovan", "--lab-accent"];
 
-function hexToRgb(h: string): [number, number, number] {
-  const n = parseInt(h.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-function mix(a: string, b: string, t: number): string {
-  const [r1, g1, b1] = hexToRgb(a);
-  const [r2, g2, b2] = hexToRgb(b);
-  const k = Math.max(0, Math.min(1, t));
-  return `rgb(${Math.round(r1 + (r2 - r1) * k)}, ${Math.round(g1 + (g2 - g1) * k)}, ${Math.round(b1 + (b2 - b1) * k)})`;
-}
-
-// Jamais en production : le composant ne se monte que hors prod (voir aussi
-// app/page.tsx, qui ne l'inclut pas quand NEXT_PUBLIC_SITE_ENV vaut « prod »).
 export default function PaletteScrollLab() {
   if (process.env.NEXT_PUBLIC_SITE_ENV === "prod") return null;
   return <PaletteScrollLabInner />;
 }
 
 function PaletteScrollLabInner() {
-  const [humeur, setHumeur] = useState<Humeur>("off");
+  const [intensite, setIntensite] = useState<Intensite>("off");
   const [replie, setReplie] = useState(false);
-  const [glisse, setGlisse] = useState(false);
-  const [courant, setCourant] = useState("");
 
   useEffect(() => {
     try {
       const p = new URLSearchParams(window.location.search);
-      // Par défaut sur dev : Clair, en continu (choix d'Adrien, 3 sept.). Le
-      // panneau garde ensuite le dernier choix du visiteur dans son navigateur.
-      const h = (p.get("lab") ?? window.localStorage.getItem("lab-humeur") ?? "clair") as Humeur;
-      setHumeur(["off", "clair", "franc", "sepia", "moderne"].includes(h) ? h : "clair");
-      const g = p.get("glisse") ?? window.localStorage.getItem("lab-glisse") ?? "1";
-      setGlisse(g === "1" || g === "true");
+      const i = (p.get("lab") ?? window.localStorage.getItem("lab-intensite") ?? "marque") as Intensite;
+      setIntensite(["off", "discret", "marque", "franc"].includes(i) ? i : "marque");
     } catch { /* rien */ }
   }, []);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem("lab-humeur", humeur);
-      window.localStorage.setItem("lab-glisse", glisse ? "1" : "0");
-    } catch { /* rien */ }
-    const root = document.documentElement;
-    const poser = (fond: string, accent: string, nom: string) => {
-      root.style.setProperty("--lab-fond", fond);
-      root.style.setProperty("--lab-accent", accent);
-      setCourant(nom);
-    };
-    if (humeur === "off") {
-      root.style.removeProperty("--lab-fond");
-      root.style.removeProperty("--lab-accent");
-      const salleOff = document.getElementById("partis-et-couverture");
-      if (salleOff) for (const k of Object.keys(CLUB)) salleOff.style.removeProperty(k);
-      setCourant("");
-      return;
-    }
-    const H = HUMEURS[humeur];
-    // La salle sombre suit l'interrupteur des palettes : « off » la rend au papier.
-    const salle = document.getElementById("partis-et-couverture");
-    if (salle) for (const [k, v] of Object.entries(CLUB)) salle.style.setProperty(k, v);
+    try { window.localStorage.setItem("lab-intensite", intensite); } catch { /* rien */ }
+
     const sections = MODULES
-      .map((m, i) => ({ m, fond: H.fonds[i], accent: H.accents[m.famille], el: document.getElementById(m.id) }))
+      .map((m) => ({ m, el: document.getElementById(m.id) }))
       .filter((x): x is typeof x & { el: HTMLElement } => !!x.el);
-    const libelle = (m: { nom: string; famille: Famille }) => `${m.nom} · ${m.famille}`;
 
-    if (!glisse) {
-      const ratios = new Map<string, number>();
-      const choisir = () => {
-        let meilleur: (typeof sections)[number] | null = null;
-        let rmax = 0;
-        for (const s of sections) {
-          const r = ratios.get(s.m.id) ?? 0;
-          if (r > rmax) { rmax = r; meilleur = s; }
-        }
-        if (meilleur) poser(meilleur.fond, meilleur.accent, libelle(meilleur.m));
-        else poser(PAPIER, H.accents["médias"], "hors module");
-      };
-      const io = new IntersectionObserver((entries) => {
-        for (const e of entries) ratios.set((e.target as HTMLElement).id, e.intersectionRatio);
-        choisir();
-      }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] });
-      sections.forEach((s) => io.observe(s.el));
-      return () => io.disconnect();
+    const rendre = () => sections.forEach(({ el }) => {
+      TOUS_JETONS.forEach((k) => el.style.removeProperty(k));
+      el.style.removeProperty("background");
+    });
+
+    if (intensite === "off") { rendre(); return rendre; }
+
+    const I = INTENSITES[intensite];
+    for (const { m, el } of sections) {
+      const fond = m.sombre
+        ? melange(PAPIER, NUIT, I.nuit)
+        : m.papierPur ? PAPIER : melange(PAPIER, m.accent, I.force);
+      el.style.background = fond;
+      el.style.setProperty("--lab-accent", m.accent);
+      if (m.sombre) for (const [k, v] of Object.entries(jetonsNuit(fond, m.accent))) el.style.setProperty(k, v);
     }
+    return rendre;
+  }, [intensite]);
 
-    // Glissement continu : le fond s'interpole entre les centres des modules.
-    let raf = 0;
-    const calculer = () => {
-      raf = 0;
-      const centre = window.scrollY + window.innerHeight / 2;
-      const pts = sections.map((s) => {
-        const r = s.el.getBoundingClientRect();
-        return { s, y: window.scrollY + r.top + r.height / 2 };
-      });
-      if (!pts.length) return;
-      if (centre <= pts[0].y) { poser(pts[0].s.fond, pts[0].s.accent, libelle(pts[0].s.m)); return; }
-      for (let i = 0; i < pts.length - 1; i++) {
-        const a = pts[i], b = pts[i + 1];
-        if (centre >= a.y && centre < b.y) {
-          const t = (centre - a.y) / (b.y - a.y);
-          const proche = t < 0.5 ? a.s : b.s;
-          poser(mix(a.s.fond, b.s.fond, t), proche.accent, libelle(proche.m));
-          return;
-        }
-      }
-      const d = pts[pts.length - 1].s;
-      poser(d.fond, d.accent, libelle(d.m));
-    };
-    const onScroll = () => { if (!raf) raf = window.requestAnimationFrame(calculer); };
-    calculer();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) window.cancelAnimationFrame(raf);
-    };
-  }, [humeur, glisse]);
-
-  const bouton = (h: Humeur, libelle: string) => (
+  const bouton = (i: Intensite, libelle: string) => (
     <button
-      key={h}
+      key={i}
       type="button"
-      onClick={() => setHumeur(h)}
+      onClick={() => setIntensite(i)}
       style={{
         font: "inherit", fontSize: 12, padding: "4px 9px", borderRadius: 999, cursor: "pointer",
-        border: "1px solid #C8BDA6", background: humeur === h ? "#6B1E2A" : "transparent",
-        color: humeur === h ? "#F3ECDD" : "#1C1917",
+        border: "1px solid #C8BDA6", background: intensite === i ? "#6B1E2A" : "transparent",
+        color: intensite === i ? "#F3ECDD" : "#1C1917",
       }}
     >
       {libelle}
@@ -216,9 +143,8 @@ function PaletteScrollLabInner() {
   return (
     <>
       <style>{`
-        html { --lab-fond: ${PAPIER}; }
-        body { background: var(--lab-fond, var(--paper)) !important; transition: background-color ${glisse ? "0ms" : "700ms"} ease; }
-        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 700ms ease; }
+        [data-section] { transition: background-color 500ms ease; }
+        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 500ms ease; }
       `}</style>
       {replie ? (
         <button
@@ -234,30 +160,26 @@ function PaletteScrollLabInner() {
           Palettes ▸
         </button>
       ) : (
-      <div
-        aria-label="Banc d'essai des palettes par module"
-        style={{
-          position: "fixed", right: 14, bottom: 14, zIndex: 9999, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
-          maxWidth: "min(560px, calc(100vw - 28px))", padding: "8px 10px", borderRadius: 12, background: "rgba(243,236,221,.94)", border: "1px solid #C8BDA6",
-          boxShadow: "0 4px 18px rgba(0,0,0,.12)", backdropFilter: "blur(6px)", fontSize: 12, color: "#1C1917",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setReplie(true)}
-          aria-label="Replier le banc d'essai"
-          style={{ font: "inherit", fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "2px 4px", color: "#6E685F" }}
+        <div
+          aria-label="Banc d'essai des palettes par module"
+          style={{
+            position: "fixed", right: 14, bottom: 14, zIndex: 9999, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
+            maxWidth: "min(560px, calc(100vw - 28px))", padding: "8px 10px", borderRadius: 12, background: "rgba(243,236,221,.94)",
+            border: "1px solid #C8BDA6", boxShadow: "0 4px 18px rgba(0,0,0,.12)", backdropFilter: "blur(6px)", fontSize: 12, color: "#1C1917",
+          }}
         >
-          ×
-        </button>
-        <span style={{ fontWeight: 600 }}>Palettes</span>
-        {bouton("off", "off")}
-        {(Object.keys(HUMEURS) as Exclude<Humeur, "off">[]).map((h) => bouton(h, HUMEURS[h].nom))}
-        <label style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 4 }}>
-          <input type="checkbox" checked={glisse} onChange={(e) => setGlisse(e.target.checked)} /> continu
-        </label>
-        <span style={{ color: "#6E685F", marginLeft: 4 }}>{courant}</span>
-      </div>
+          <button
+            type="button"
+            onClick={() => setReplie(true)}
+            aria-label="Replier le banc d'essai"
+            style={{ font: "inherit", fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "2px 4px", color: "#6E685F" }}
+          >
+            ×
+          </button>
+          <span style={{ fontWeight: 600 }}>Couleurs des modules</span>
+          {bouton("off", "off")}
+          {(Object.keys(INTENSITES) as Exclude<Intensite, "off">[]).map((i) => bouton(i, INTENSITES[i].nom))}
+        </div>
       )}
     </>
   );
