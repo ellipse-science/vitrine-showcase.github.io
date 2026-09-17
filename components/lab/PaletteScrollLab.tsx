@@ -16,12 +16,15 @@
  *                       donc la couleur se retient toute seule. Le bleu reste au
  *                       Québec À L'INTÉRIEUR du module.
  *   · 12 enjeux         mauve sépia (Adrien, 16-09).
- *   · Partis            SALLE SOMBRE (Adrien, 16-09) : « le look d'être dans un
- *                       club, devant une console ». Seul module où l'encre et les
- *                       filets basculent aussi.
+ *   · Partis            SALLE SOMBRE + BLEU (Adrien, 16-09) : « le look d'être
+ *                       dans un club, devant une console ». Seul module où
+ *                       l'encre et les filets basculent aussi ; le bleu s'y
+ *                       éclaire, sinon il disparaît dans la nuit.
  *   · Polimètre+        le vert du Polimètre, relevé sur polimetre.org — couleur
  *                       du mot-symbole dans l'en-tête, rgb(81,115,104).
- *   · Assemblée         bleu acier.
+ *   · Assemblée         l'ORANGE DE LA LNH — l'inspiration d'Étienne pour ce
+ *                       module : un alignement d'équipe. L'orange vif de
+ *                       l'écusson teinte le fond, sa variante encre écrit.
  * Aucune ne reprend une des douze couleurs d'enjeu (`lib/enjeux.ts`) : la
  * couleur d'un enjeu doit rester celle de cet enjeu.
  *
@@ -40,13 +43,26 @@ type Intensite = "off" | "discret" | "marque" | "franc";
 const PAPIER = "#F3ECDD";
 const NUIT = "#14120F";
 
-const MODULES: { id: string; nom: string; accent: string; papierPur?: boolean; sombre?: boolean }[] = [
+const MODULES: {
+  id: string; nom: string; accent: string;
+  /** La couleur qui teinte le fond, quand elle diffère de l'accent (un orange
+   *  vif teinte mieux qu'un orange encre, qui lui reste lisible en texte). */
+  teinte?: string;
+  /** L'accent, éclairci, quand le module est en salle sombre. */
+  accentNuit?: string;
+  papierPur?: boolean; sombre?: boolean;
+}[] = [
   { id: "une-des-unes", nom: "Une des Unes", accent: "#86642C", papierPur: true },
   { id: "deux-solitudes", nom: "Deux solitudes", accent: "#A8302C" },
   { id: "enjeux-saillants", nom: "12 enjeux", accent: "#6E4F73" },
-  { id: "partis-et-couverture", nom: "Partis", accent: "#D9B36C", sombre: true },
+  // Le bleu passe aux Partis (Adrien, 16-09) : dans la salle sombre, il s'éclaire
+  // pour rester lisible sur la nuit — c'est la même couleur, sous un projecteur.
+  { id: "partis-et-couverture", nom: "Partis", accent: "#2F6480", accentNuit: "#7FB2D4", sombre: true },
   { id: "polimetre-plus", nom: "Polimètre+", accent: "#517368" },
-  { id: "assemblee-nationale", nom: "Assemblée", accent: "#2F6480" },
+  // L'ORANGE DE LA LNH (Adrien, 16-09) : l'inspiration d'Étienne pour ce module,
+  // l'alignement d'une équipe. L'orange vif de l'écusson teinte le fond ; le
+  // texte prend sa variante encre, seule lisible sur du papier.
+  { id: "assemblee-nationale", nom: "Assemblée", accent: "#B5521E", teinte: "#E0661F" },
 ];
 
 /** Trois degrés : combien de la couleur du module passe dans son fond. */
@@ -117,10 +133,11 @@ function PaletteScrollLabInner() {
     for (const { m, el } of sections) {
       const fond = m.sombre
         ? melange(PAPIER, NUIT, I.nuit)
-        : m.papierPur ? PAPIER : melange(PAPIER, m.accent, I.force);
+        : m.papierPur ? PAPIER : melange(PAPIER, m.teinte ?? m.accent, I.force);
+      const accent = m.sombre ? (m.accentNuit ?? m.accent) : m.accent;
       el.style.background = fond;
-      el.style.setProperty("--lab-accent", m.accent);
-      if (m.sombre) for (const [k, v] of Object.entries(jetonsNuit(fond, m.accent))) el.style.setProperty(k, v);
+      el.style.setProperty("--lab-accent", accent);
+      if (m.sombre) for (const [k, v] of Object.entries(jetonsNuit(fond, accent))) el.style.setProperty(k, v);
     }
     return rendre;
   }, [intensite]);
