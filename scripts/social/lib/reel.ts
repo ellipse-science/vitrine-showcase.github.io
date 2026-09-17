@@ -477,6 +477,9 @@ input[type=range]{width:100%}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 #time{font-size:22px}
 .hint{color:#9C9486;line-height:1.5}
+/* Mode miniature (?mini) : la vidéo seule, en boucle, pour une page qui en montre plusieurs. */
+body.mini{padding:0;gap:0}
+body.mini #panel{display:none}
 </style></head><body>
 <div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div></div></div>
 <div id="panel">
@@ -490,15 +493,17 @@ input[type=range]{width:100%}
 <script>
 const REEL=${payload};
 const DUR=${duration};
+const MINI=new URLSearchParams(location.search).has("mini");
+if(MINI)document.body.classList.add("mini");
 const iframe=document.getElementById("reel"), stage=document.getElementById("stage");
 iframe.srcdoc=REEL;
-function fit(){const s=Math.min((innerHeight-40)/${HEIGHT},(innerWidth-400)/${WIDTH});stage.style.width=${WIDTH}*s+"px";stage.style.height=${HEIGHT}*s+"px";iframe.style.transform="scale("+s+")";document.getElementById("safe").style.transform="scale("+s+")";}
+function fit(){const s=Math.max(.01,Math.min((innerHeight-(MINI?0:40))/${HEIGHT},(innerWidth-(MINI?0:400))/${WIDTH}));stage.style.width=${WIDTH}*s+"px";stage.style.height=${HEIGHT}*s+"px";iframe.style.transform="scale("+s+")";document.getElementById("safe").style.transform="scale("+s+")";}
 addEventListener("resize",fit);fit();
 let t=0,playing=false,speed=1,last=0;
 const scrub=document.getElementById("scrub"),timeEl=document.getElementById("time"),playBtn=document.getElementById("play");
-function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(t);scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
+function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(Math.max(0,t));scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
   document.querySelectorAll("#scenes button").forEach((b,i,all)=>{const s=+b.dataset.t,e=i+1<all.length?+all[i+1].dataset.t:DUR;b.classList.toggle("on",t>=s&&t<e)});}
-function loop(now){if(playing){t+=(now-last)/1000*speed;if(t>=DUR){t=DUR;playing=false;playBtn.textContent="▶ Lecture";}}last=now;show();requestAnimationFrame(loop);}
+function loop(now){if(playing){t+=(now-last)/1000*speed;if(t>=DUR){if(MINI){t=-1;}else{t=DUR;playing=false;playBtn.textContent="▶ Lecture";}}}last=now;show();requestAnimationFrame(loop);}
 function toggle(){if(t>=DUR)t=0;playing=!playing;playBtn.textContent=playing?"❚❚ Pause":"▶ Lecture";}
 playBtn.onclick=toggle;
 scrub.oninput=()=>{t=+scrub.value;};
@@ -506,7 +511,7 @@ document.getElementById("slow").onclick=e=>{speed=speed===1?.5:speed===.5?.25:1;
 document.getElementById("safeBtn").onclick=e=>{const s=document.getElementById("safe");const on=s.style.display!=="block";s.style.display=on?"block":"none";e.target.classList.toggle("on",on);};
 document.querySelectorAll("#scenes button").forEach(b=>b.onclick=()=>{t=+b.dataset.t+.01;});
 addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();toggle();}if(e.code==="ArrowRight")t=Math.min(DUR,t+1);if(e.code==="ArrowLeft")t=Math.max(0,t-1);});
-iframe.onload=()=>{iframe.contentDocument.fonts.ready.then(()=>{last=performance.now();requestAnimationFrame(loop);});};
+iframe.onload=()=>{iframe.contentDocument.fonts.ready.then(()=>{last=performance.now();if(MINI)playing=true;requestAnimationFrame(loop);});};
 </script></body></html>`;
 }
 
@@ -620,6 +625,9 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
       box.right = Math.min(box.right, ar.right); box.bottom = Math.min(box.bottom, ar.bottom);
     }
     if (box.right - box.left < 1 || box.bottom - box.top < 1) continue;
+    // Un élément invisible (fondu terminé) ne se voit pas : ni cadre ni zone.
+    let op = 1; for (let q = el; q && q !== document.body; q = q.parentElement) op *= parseFloat(getComputedStyle(q).opacity);
+    if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
     const f = excess(box, frame);

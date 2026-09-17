@@ -23,77 +23,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { instantPublicationBloc, type EditionRef } from "@/lib/data/headlineEvents";
-import { PARTY_FULL_NAMES, loadParties, type PartiesData, type PartyKey, type RowView } from "@/lib/data/parties";
-import { MEDIA_DANS } from "@/lib/medias";
-import { MODULES } from "@/lib/modules";
+import { loadParties, type PartiesData, type RowView } from "@/lib/data/parties";
 
 import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
-import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
+import {
+  HASHTAGS, IDENTITE, MODULE, NOM_ARTICLE, SIGLE_ARTICLE, SIGLE_DE, TONE_MOT, cap, leaders, mediaMixes, tonGroupes, type MediaMix,
+} from "./lib/partis";
 import { COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
-
-const IDENTITE = MODULES["partis-et-couverture"];
-const MODULE = IDENTITE.nom;
-
-/** Mots-clics : ceux du gabarit commun (lib/post.ts), sans celui de la Une des Unes. */
-const HASHTAGS = ["#PartisEtCouverture", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
-
-// ── Formulations ────────────────────────────────────────────────────────────
-// Gabarits finis, nourris par les données (règle #7 : à relire avant publication).
-
-/** Nom complet avec article (« le Parti québécois »). */
-const NOM_ARTICLE: Record<PartyKey, string> = {
-  pq: `le ${PARTY_FULL_NAMES.pq}`,
-  plq: `le ${PARTY_FULL_NAMES.plq}`,
-  caq: `la ${PARTY_FULL_NAMES.caq}`,
-  pcq: `le ${PARTY_FULL_NAMES.pcq}`,
-  qs: PARTY_FULL_NAMES.qs,
-};
-/** Sigle avec article (« le PQ », « la CAQ », « QS »). */
-const SIGLE_ARTICLE: Record<PartyKey, string> = { pq: "le PQ", plq: "le PLQ", caq: "la CAQ", pcq: "le PCQ", qs: "QS" };
-/** « du PQ », « de la CAQ », « de QS ». */
-const SIGLE_DE: Record<PartyKey, string> = { pq: "du PQ", plq: "du PLQ", caq: "de la CAQ", pcq: "du PCQ", qs: "de QS" };
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-const TONE_MOT = { negative: "défavorable", positive: "favorable", neutral: "neutre" } as const;
-
-// ── Par média ──────────────────────────────────────────────────────────────
-// Le fader « Source » du site : chaque média a sa propre ventilation des cinq
-// partis (les parts d'un média se somment à 100 % de SA couverture des partis).
-type MediaMix = { id: string; nom: string; dans: string; rows: RowView[]; minutes: number };
-
-function mediaMixes(data: PartiesData): MediaMix[] {
-  return data.medias.flatMap((m) => {
-    const view = data.byMedia[m.id];
-    if (!view) return [];
-    const rows = [...view.ranges.today.rows];
-    const minutes = rows.reduce((t, r) => t + r.minutesUne, 0);
-    if (minutes <= 0) return [];
-    const lower = (s: string) => s.replace(/^./, (c) => c.toLowerCase());
-    return [{
-      id: m.id,
-      nom: m.label.replace(/^Le Journal/, "Journal"),
-      dans: lower(MEDIA_DANS[m.id] ?? `Dans ${m.label}`),
-      rows,
-      minutes,
-    }];
-  });
-}
-
-/** Le ou les partis en tête d'un média (égalité possible). */
-function leaders(mix: MediaMix): RowView[] {
-  const max = Math.max(...mix.rows.map((r) => r.sovPct));
-  return mix.rows.filter((r) => r.sovPct === max && max > 0);
-}
-
-/** « défavorable pour 4 partis, favorable pour QS » : groupes de ton. */
-function tonGroupes(rows: RowView[]): string[] {
-  return (["negative", "positive", "neutral"] as const).flatMap((dir) => {
-    const g = rows.filter((r) => r.toneDirection === dir);
-    if (!g.length) return [];
-    const qui = g.length >= 3 ? `${g.length} partis` : joinFr(g.map((r) => SIGLE_ARTICLE[r.key]));
-    return [`${TONE_MOT[dir]} pour ${qui}`];
-  });
-}
 
 // ── Objets du module ────────────────────────────────────────────────────────
 /** Colonne du vumètre : vingt segments de 5 %, allumés jusqu'à la part (0 → 100 %,
@@ -164,9 +100,9 @@ const CSS = `
 #playlist .mix div{display:flex;align-items:center;justify-content:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:28px;white-space:nowrap;overflow:hidden}
 
 /* Ton */
-#ton .legend{position:absolute;top:500px;left:76px;right:120px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{position:absolute;top:560px;left:76px;right:120px}
-#ton .row{height:168px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
+#ton .legend{position:absolute;top:548px;left:76px;right:120px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
+#ton .rows{position:absolute;top:600px;left:76px;right:120px}
+#ton .row{height:162px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
