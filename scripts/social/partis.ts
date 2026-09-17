@@ -139,14 +139,14 @@ const CSS = `
 .vu i.on{background:var(--on)}
 
 /* Accroche : le résultat, et rien d'autre */
-#accroche .brand{position:absolute;top:250px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
-#accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{position:absolute;top:340px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
-#accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
-#accroche .then{font-size:88px;line-height:1.02}
-#accroche .mini{position:absolute;left:76px;right:120px;top:1070px;height:330px;display:flex;gap:26px}
-#accroche .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
-#accroche .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
+#accroche .brand,#campagne .brand{position:absolute;top:240px;line-height:1.25;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#accroche .brand i,#campagne .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
+#accroche .result,#campagne .result{position:absolute;top:340px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
+#accroche .answer,#campagne .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
+#accroche .then,#campagne .then{font-size:88px;line-height:1.02}
+#accroche .mini,#campagne .mini{position:absolute;left:76px;right:120px;top:1070px;height:330px;display:flex;gap:26px}
+#accroche .mini .col,#campagne .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
+#accroche .mini b,#campagne .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
 
 /* Le jour, en vumètre */
 #jour .chart{position:absolute;top:530px;left:76px;right:120px;height:880px;display:flex;gap:28px}
@@ -164,9 +164,9 @@ const CSS = `
 #playlist .mix div{display:flex;align-items:center;justify-content:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:28px;white-space:nowrap;overflow:hidden}
 
 /* Ton */
-#ton .legend{position:absolute;top:500px;left:76px;right:120px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{position:absolute;top:560px;left:76px;right:120px}
-#ton .row{height:168px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
+#ton .legend{position:absolute;top:548px;left:76px;right:120px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
+#ton .rows{position:absolute;top:600px;left:76px;right:120px}
+#ton .row{height:162px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
@@ -185,12 +185,21 @@ const head = (kicker: string, title: string) => `
     <h2 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h2>
   </div>`;
 
-function sceneAccroche(rows: RowView[]): Scene {
+/** RYTHME : la version longue (défaut) et la version COURTE et punchée
+ *  (`--court`, Jules Piral, 2026-09-17 : « plus courte et punchée », les deux
+ *  gardées). Mêmes scènes et mêmes données ; la courte enchaîne plus vite, saute
+ *  le vumètre du jour (l'accroche le dit déjà) et finit sur le retournement de la
+ *  campagne en une seule image. */
+type Rythme = { accroche: number; playlist0: number; playlistStep: number; playlistTail: number; ton0: number; tonStep: number; tonTail: number };
+const LONG: Rythme = { accroche: 3.4, playlist0: 0.9, playlistStep: 0.75, playlistTail: 2.2, ton0: 1.0, tonStep: 0.28, tonTail: 5.4 };
+const COURT: Rythme = { accroche: 2.4, playlist0: 0.6, playlistStep: 0.28, playlistTail: 1.3, ton0: 0.6, tonStep: 0.14, tonTail: 3.0 };
+
+function sceneAccroche(rows: RowView[], ry: Rythme = LONG): Scene {
   const lead = rows[0];
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: 3.4, noFadeIn: true, hideFooter: true,
+    id: "accroche", duration: ry.accroche, noFadeIn: true, hideFooter: true,
     html: `
       <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result">
@@ -219,10 +228,9 @@ function sceneJour(rows: RowView[]): Scene {
   };
 }
 
-/** Un média à la fois : chacun a le temps d'être lu avant le suivant. */
-const PLAYLIST0 = 0.9, PLAYLIST_STEP = 0.75;
-
-function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
+/** Un média à la fois : chacun a le temps d'être lu avant le suivant
+ *  (version longue) ; la courte les fait tomber en rafale. */
+function scenePlaylist(mixes: MediaMix[], order: RowView[], ry: Rythme = LONG): Scene | null {
   if (!mixes.length) return null;
   const rank = new Map(order.map((r, i) => [r.key, i]));
   const tetes = new Set(mixes.map((m) => leaders(m)[0]?.key));
@@ -231,7 +239,7 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
     ? "Chaque média ne met pas en avant le même parti"
     : `Tous les médias parlent surtout ${SIGLE_DE[seule]}`;
   const list = mixes.map((m, i) => {
-    const d = PLAYLIST0 + i * PLAYLIST_STEP;
+    const d = ry.playlist0 + i * ry.playlistStep;
     const l = leaders(m);
     const quoi = l.length > 1 ? `${joinFr(l.map((r) => r.label))} à égalité` : `Surtout ${SIGLE_ARTICLE[l[0].key]}`;
     const segs = [...m.rows].sort((a, b) => (rank.get(a.key) ?? 9) - (rank.get(b.key) ?? 9))
@@ -239,26 +247,26 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
       .map((r, k, all) => `<div style="flex:${k === all.length - 1 ? `1 1 ${r.sovPct}%` : `0 0 ${r.sovPct}%`};background:${r.color}">${r.sovPct >= 12 ? esc(r.label) : ""}</div>`).join("");
     return `<div class="row" style="animation:fadeUp .6s ${d}s both">
       <div class="line"><b>${esc(m.nom)}</b><span style="color:${l.length > 1 ? COLORS.soft : l[0].color}">${esc(quoi)}</span></div>
-      <div class="mix" style="animation:wipe 1s ${d + .25}s both">${segs}</div>
+      <div class="mix" style="animation:wipe ${ry === LONG ? 1 : .5}s ${d + .15}s both">${segs}</div>
     </div>`;
   }).join("");
   return {
-    id: "playlist", duration: PLAYLIST0 + mixes.length * PLAYLIST_STEP + 2.2,
+    id: "playlist", duration: ry.playlist0 + mixes.length * ry.playlistStep + ry.playlistTail,
     html: `${head("Média par média · depuis minuit", title)}
       <div class="rows">${list}</div>`,
   };
 }
 
-function sceneTon(rows: RowView[]): Scene {
+function sceneTon(rows: RowView[], ry: Rythme = LONG): Scene {
   const list = rows.map((r, i) => {
-    const d = 1.0 + i * 0.28;
+    const d = ry.ton0 + i * ry.tonStep;
     return `<div class="row" style="animation:fadeUp .5s ${d}s both">
       ${pchip(r)}${needle(r, d + .3)}
       <div class="lab" style="color:${TONE[r.toneDirection]}">${esc(cap(TONE_MOT[r.toneDirection]))}</div>
     </div>`;
   }).join("");
   return {
-    id: "ton", duration: 5.4,
+    id: "ton", duration: ry.tonTail,
     html: `${head("Le ton · depuis minuit", cap(`un ton ${tonGroupes(rows).join(", ")}`))}
       <div class="legend mono" ${anim("fadeIn", .5, .8)}><span style="color:${TONE.negative}">← Défavorable</span><span style="color:${TONE.positive}">Favorable →</span></div>
       <div class="rows">${list}</div>`,
@@ -288,6 +296,26 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
     id: "campagne", duration: 5.4,
     html: `${head(`Temps en Une · ${depuis}`, title)}
       <div class="rows">${list}</div>`,
+  };
+}
+
+/** Version courte : la campagne en une image, comme l'accroche — le parti qui
+ *  mène depuis le début, en très grand, et le vumètre de la campagne. */
+function sceneCampagneCourte(data: PartiesData, lead: RowView): Scene | null {
+  const view = data.ranges.overall;
+  const rows = [...view.rows].sort((a, b) => a.rang - b.rang);
+  if (!rows.length) return null;
+  const tete = rows[0];
+  const answer = cap(SIGLE_ARTICLE[tete.key]);
+  return {
+    id: "campagne", duration: 2.8,
+    html: `
+      <div class="brand mono" ${anim("fadeIn", .4, .05)}><i ${anim("grow", .5, .05)}></i>${esc(tete.key === lead.key ? "Et depuis le début de la campagne" : "Mais depuis le début de la campagne")}</div>
+      <div class="result">
+        <div class="answer disp" style="color:${tete.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .6s .2s both">${esc(answer)}</div>
+        <div class="then disp" ${anim("fadeUp", .5, .6)}>${esc(tete.key === lead.key ? "mène aussi" : "mène")}, avec ${tete.sovPct}&nbsp;%</div>
+      </div>
+      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, .8 + i * .08)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
   };
 }
 
@@ -343,6 +371,21 @@ function caption(edition: EditionRef, data: PartiesData, rows: RowView[], mixes:
   return captionTypo(paragraphs.join("\n\n")) + "\n";
 }
 
+/** Légende de la version courte : trois phrases, le lien, les mots-clics. */
+function captionCourte(edition: EditionRef, data: PartiesData, rows: RowView[]): string {
+  const lead = rows[0];
+  const campagne = [...data.ranges.overall.rows].sort((a, b) => a.rang - b.rang)[0];
+  const groupes = tonGroupes(rows);
+  const phrases = [
+    `Aujourd’hui, ${NOM_ARTICLE[lead.key]} domine les Unes : ${lead.sovPct} % du temps consacré aux partis.`,
+    groupes.length ? `Le ton : ${groupes.join(", ")}.` : null,
+    campagne ? (campagne.key === lead.key
+      ? `Et depuis le début de la campagne, ${SIGLE_ARTICLE[campagne.key]} mène aussi.`
+      : `Mais depuis le début de la campagne, c’est ${SIGLE_ARTICLE[campagne.key]} qui mène.`) : null,
+  ].filter(Boolean).join(" ");
+  return captionTypo([phrases, `${MODULE}, six fois par jour : vitrinedemocratique.com`, HASHTAGS.join(" ")].join("\n\n")) + "\n";
+}
+
 // ── Programme ───────────────────────────────────────────────────────────────
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -357,13 +400,16 @@ async function main() {
   console.log(`${MODULE} · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  en tête : ${rows[0].label} (${rows[0].sovPct} %) · ${mixes.length} médias`);
 
-  const scenes = [
-    sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows),
-    sceneTon(rows), sceneCampagne(data, rows[0]),
-  ].filter((s): s is Scene => s !== null);
+  const court = !!args.court;
+  const scenes = (court
+    ? [sceneAccroche(rows, COURT), scenePlaylist(mixes, rows, COURT), sceneTon(rows, COURT), sceneCampagneCourte(data, rows[0])]
+    : [sceneAccroche(rows), sceneJour(rows), scenePlaylist(mixes, rows), sceneTon(rows), sceneCampagne(data, rows[0])]
+  ).filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
   scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
+  // Fin plus brève dans la version courte : les partenaires ont fini d'apparaître à ~2,9 s.
+  if (court) scenes[scenes.length - 1].duration = 3.4;
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
@@ -374,13 +420,13 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}`);
+  const base = path.join(outDir, `${court ? "partis-court" : "partis"}_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
   // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
-  await fs.writeFile(`${base}_instagram.txt`, caption(edition, data, rows, mixes));
+  await fs.writeFile(`${base}_instagram.txt`, court ? captionCourte(edition, data, rows) : caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 
-  await produce({ html, scenes, title: `${MODULE} · édition de ${pubHourLabel(edition)}`, base, args });
+  await produce({ html, scenes, title: `${MODULE}${court ? " (court)" : ""} · édition de ${pubHourLabel(edition)}`, base, args });
 }
 
 main().catch((err) => {

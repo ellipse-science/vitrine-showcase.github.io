@@ -314,6 +314,12 @@ résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
    sur une échelle ABSOLUE (une barre à 100 % laissait croire à un monopole). ARRÊTÉ.
 6. **Fin commune.**
 
+**Version courte et punchée** (`npm run reel:partis-court`, Jules Piral,
+2026-09-17 ; la longue est gardée) : ~20 s au lieu de ~45. Accroche, médias en
+rafale, ton, puis la campagne en une image comme l'accroche (« Mais depuis le
+début de la campagne / La CAQ / mène, avec 27 % »), fin raccourcie. Pas de
+vumètre du jour : l'accroche le dit déjà. Légende en trois phrases. À VALIDER.
+
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.
 Les autres réseaux (`lib/reseaux.ts`) sont écrits pour la Une des Unes : À FAIRE.
