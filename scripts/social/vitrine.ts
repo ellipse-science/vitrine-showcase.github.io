@@ -109,7 +109,7 @@ function schemaSolitudes(): string {
       <polygon points="${ca}" fill="${COLORS.red}" fill-opacity=".18" stroke="${COLORS.red}" stroke-width="6" style="${anim("pop", .7, 1.4)};transform-box:fill-box;transform-origin:center"/>
       <polygon points="${qc}" fill="${COLORS.blue}" fill-opacity=".18" stroke="${COLORS.blue}" stroke-width="6" style="${anim("pop", .7, 1.1)};transform-box:fill-box;transform-origin:center"/>
     </svg>
-    <div class="legende" style="left:0;color:${COLORS.blue};${anim("fadeIn", .4, 1.1)}">${fleur(COLORS.blue, 34)}<span>Québec</span></div>
+    <div class="legende" style="left:0;color:${COLORS.blue};${anim("fadeIn", .4, 1.1)}"><span>Québec</span></div>
     <div class="legende" style="right:0;color:${COLORS.red};${anim("fadeIn", .4, 1.4)}"><span>Canada anglais</span></div>
   </div>`;
 }
@@ -219,7 +219,7 @@ function sceneAccroche(logo: string): Scene {
     html: `
       <div class="bandes" data-deco>${bandes}</div>
       <div class="questions">${questions}</div>
-      <div class="logo" style="${anim("pop", .7, BASCULE + .15)}">${logoAnime(logo, { classe: "", taille: 800, passe: BASCULE + .7 })}</div>
+      <div class="logo" style="animation:pop .7s .15s both, plaque .5s ${BASCULE}s forwards">${logoAnime(logo, { classe: "", taille: 800, passe: .9 })}</div>
       <h1><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
       <div class="traits">${traits}</div>`,
   };
@@ -289,7 +289,11 @@ const CSS = `
 #accroche .q{position:absolute;left:0;top:0;max-width:100%;font-size:96px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
-#accroche .logo{position:absolute;top:250px;left:76px;transform-origin:left center}
+/* Le logo est là dès l'ouverture, sur une plaque de papier au-dessus des bandes
+   (Jules, 17-09 : « dans les lignes qui tombent, le logo doit être présent ») ;
+   la plaque se fond dans le papier quand les bandes s'effacent. */
+#accroche .logo{position:absolute;top:232px;left:60px;padding:18px 16px;background:#F3ECDD;box-shadow:0 14px 40px rgba(28,25,23,.18);transform-origin:left center}
+@keyframes plaque{to{box-shadow:0 0 0 rgba(28,25,23,0)}}
 #accroche h1{position:absolute;top:620px;left:76px;right:120px}
 #accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
@@ -408,7 +412,7 @@ async function main() {
   const html = buildPage({
     title: "La Vitrine démocratique · 6 modules",
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
-    footerLeft: "⚜ La Vitrine démocratique",
+    footerLeft: "La Vitrine démocratique",
     footerRight: "vitrinedemocratique.com",
     theme: { paper: COLORS.paper, accent: COLORS.ink },
     logos,

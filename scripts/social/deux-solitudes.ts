@@ -282,7 +282,7 @@ async function main() {
     css: CSS + INTRO_CSS + FIN_CSS, scenes,
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
-    footerLeft: "⚜ La Vitrine démocratique",
+    footerLeft: "La Vitrine démocratique",
     footerRight: `Édition de ${edition.pubHour % 24}h · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
 
