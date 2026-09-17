@@ -303,7 +303,7 @@ async function main() {
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
-    footerLeft: "⚜ La Vitrine démocratique",
+    footerLeft: "La Vitrine démocratique",
     footerRight: footerEdition(edition),
     logos,
     theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
