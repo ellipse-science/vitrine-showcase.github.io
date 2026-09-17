@@ -161,11 +161,15 @@ const CSS = `
 #centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:200px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
 #centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:52px;line-height:1.1;margin-top:8px}
-#centile .scale{position:absolute;left:76px;width:250px}
-#centile .scale i{position:absolute;left:0;right:0;height:1px;background:var(--rule)}
-#centile .scale i.on{height:4px;margin-top:-1px}
+#centile .scale{position:absolute;left:76px;width:280px}
+/* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
+   l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
+#centile .scale i{position:absolute;left:0;height:6px;background:#E3D9C2;
+  background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
+  box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
+#centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
 #centile .tick{position:absolute;left:76px;width:250px;font-size:17px;letter-spacing:.12em;color:var(--softer)}
-#centile .mark{position:absolute;left:76px;right:76px;height:3px;background:var(--ink);transform-origin:left}
+#centile .mark{position:absolute;left:76px;right:76px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
 #centile .mlabel{position:absolute;right:76px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
 #centile .note{position:absolute;left:380px;right:76px}
@@ -342,8 +346,19 @@ function sceneCentile(top: UneEvent): Scene | null {
   const color = bandOf(Math.max(4, top.saillanceRank)).bg;
   const step = SCALE_H / 100;
   const markY = SCALE_TOP + SCALE_H * (1 - c / 100);
-  const ticks = Array.from({ length: 100 }, (_, i) =>
-    `<i data-i="${i}" style="top:${SCALE_H - (i + .5) * step}px;${i % 10 === 9 ? "right:-18px;" : ""}"></i>`).join("");
+  // UNE PILE DE JOURNAUX, PAS UNE RÈGLE GRADUÉE (demande d'Adrien, 2026-09-16).
+  // Cent nouvelles de l'année, cent feuilles empilées : chacune décalée, un peu
+  // plus courte ou plus longue que sa voisine, légèrement de travers. Le désordre
+  // est PSEUDO-ALÉATOIRE MAIS STABLE (fonction de l'indice) : la même édition
+  // rejouée donne la même pile, sinon la vidéo tremblerait d'un rendu à l'autre.
+  const gigue = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  const ticks = Array.from({ length: 100 }, (_, i) => {
+    const largeur = 84 + gigue(i) * 16;            // 84 → 100 % de la largeur
+    const decale = (gigue(i + 91) - .5) * 26;      // ±13 px : les deux bords bougent
+    const angle = (gigue(i + 37) - .5) * 1.2;      // ±0,6°
+    const teinte = .82 + gigue(i + 5) * .18;       // toutes les feuilles ne sont pas du même papier
+    return `<i data-i="${i}" style="top:${SCALE_H - (i + .5) * step}px;width:${largeur.toFixed(1)}%;margin-left:${decale.toFixed(1)}px;transform:rotate(${angle.toFixed(2)}deg);opacity:${teinte.toFixed(2)}"></i>`;
+  }).join("");
   const done = FILL0 + FILL;
   // Au-dessus de la médiane, on dit ce que la nouvelle dépasse ; en dessous, ce
   // qui la dépasse (même bascule que hintFromCentile sur le site).

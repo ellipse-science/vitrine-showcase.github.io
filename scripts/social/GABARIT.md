@@ -22,6 +22,12 @@ commun, une identité visuelle, un rappel marqué.**
   - Deux solitudes : « Québec / Canada / 2 solitudes ? » (Québec en bleu, Canada
     en rouge, la question à la couleur du module).
   - Les quatre autres sont déjà écrites dans `lib/modules.ts`.
+- **ARRÊTÉ · Le logo est traversé par l'iridescence** (Adrien, 2026-09-16, d'après
+  la version iridescente de « Vitrine — Image de marque » dans Notion) : une tache
+  irisée floue respire derrière la marque, et une bande irisée traverse le logo,
+  **découpée par le PNG lui-même** (`mask-image`) — seuls les traits s'allument, le
+  papier autour ne bouge pas. Le PNG sert de gabarit : le calage est exact par
+  construction, aucun tracé n'est redessiné. À l'accroche ET à la fin.
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
@@ -109,6 +115,12 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
    nouvelles, plus saillantes en haut) qui se remplit ; trait « *Cette actualité* » ;
    annotations **« 8 % des nouvelles de la dernière année ont été plus saillantes »**
    et **« 92 % ont été moins saillantes »**. ARRÊTÉ.
+   - **ARRÊTÉ · L'échelle est une PILE DE JOURNAUX** (Adrien, 2026-09-16 : « ça
+     aurait l'air d'être des journaux qui s'empilent ») : cent feuilles, chacune
+     décalée, un peu plus courte ou plus longue que sa voisine, légèrement de
+     travers, d'un papier un peu différent. Le désordre est pseudo-aléatoire mais
+     STABLE (fonction de l'indice) : la même édition rejouée donne la même pile,
+     sinon la vidéo tremblerait d'un rendu à l'autre.
    - Note de source « Nouvelles : les Unes des médias québécois suivis, sur une année
      de référence » : À VALIDER. Raison : la référence est une période fixe
      (17 mai 2025 → 7 août 2026, bientôt l'année civile 2025), pas une année glissante.

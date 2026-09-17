@@ -169,11 +169,52 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 @keyframes slam{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:scale(1)}}
 @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+
+/* Le logo et son iridescence (logoAnime). */
+.logo-irise{position:relative;display:block}
+.logo-irise img{display:block;width:100%}
+.logo-irise .tache{position:absolute;left:36%;top:-10%;width:30%;height:120%;filter:blur(34px);opacity:.85;
+  background:
+    radial-gradient(42% 42% at 32% 22%, #F0C3DD 0%, rgba(240,195,221,0) 70%),
+    radial-gradient(42% 42% at 68% 34%, #C6E2F4 0%, rgba(198,226,244,0) 70%),
+    radial-gradient(46% 46% at 46% 72%, #F4E3AE 0%, rgba(244,227,174,0) 70%),
+    radial-gradient(38% 38% at 74% 76%, #C7E9D6 0%, rgba(199,233,214,0) 70%);
+  animation:respire 7s ease-in-out infinite alternate}
+.logo-irise .passe{position:absolute;inset:0;
+  -webkit-mask-image:var(--logo);mask-image:var(--logo);
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  background:linear-gradient(100deg,rgba(0,0,0,0) 36%,#E79FC6 44%,#8FCFEE 50%,#F3DE95 56%,#A9DFC4 62%,rgba(0,0,0,0) 70%);
+  background-size:260% 100%;background-position:135% 0;
+  animation:traverse 2.6s cubic-bezier(.4,0,.2,1) both}
+@keyframes respire{from{transform:translateX(-10px) scale(1)}to{transform:translateX(12px) scale(1.07)}}
+@keyframes traverse{from{background-position:135% 0}to{background-position:-35% 0}}
 `;
 
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
  *  `script` peut définir `window.onSceneTime(id, local)` pour les effets que
  *  CSS ne sait pas rendre (compteurs, zoom lent). */
+/** LE LOGO, TRAVERSÉ PAR L'IRIDESCENCE (demande d'Adrien, 2026-09-16, d'après
+ *  la version iridescente de la page « Vitrine — Image de marque »).
+ *
+ *  Deux couches, et le tracé noir reste le tracé noir :
+ *   · derrière la marque, une tache irisée floue qui respire lentement — c'est
+ *     ce qu'on voit sur la version fixe de la charte ;
+ *   · par-dessus, une bande irisée qui TRAVERSE le logo de droite à gauche,
+ *     découpée par le PNG lui-même (`mask-image`) : seuls les traits s'allument,
+ *     jamais le papier autour. Le PNG sert de gabarit, donc le calage est exact
+ *     par construction — aucun tracé à redessiner.
+ *
+ *  `passe` : le moment (en secondes) où la bande traverse. `taille` : largeur du
+ *  logo en px. */
+export function logoAnime(logo: string, opts: { classe: string; taille: number; passe: number }): string {
+  return `<div class="logo-irise ${opts.classe}" style="--logo:url('${logo}');width:${opts.taille}px">
+    <div class="tache"></div>
+    <img src="${logo}" alt="La Vitrine démocratique">
+    <div class="passe" style="animation-delay:${opts.passe}s"></div>
+  </div>`;
+}
+
 /** ACCROCHE, COMMUNE À TOUS LES REELS (demande d'Adrien, 2026-09-16 : « chaque
  *  reel de chaque module devrait avoir la même intro, mais adaptée »).
  *  Même structure partout — logo, filet et nom du module, trois lignes qui
@@ -198,7 +239,7 @@ export function sceneIntro(opts: {
   return {
     id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideFooter: true,
     html: `
-      ${opts.logo ? `<img class="logo" src="${opts.logo}" style="animation:fadeIn .6s .1s both">` : ""}
+      ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
       <h1 class="disp">${lignes}</h1>
       <div class="band" style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
@@ -228,7 +269,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     id: "fin", duration: 4, noFadeOut: true, hideFooter: true,
     html: `
       ${opts.logo
-        ? `<img class="logo" src="${opts.logo}" style="animation:pop .7s .1s both">`
+        ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 880, passe: .9 })}</div>`
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 260)}</div>`}
       <div class="kick mono" style="animation:fadeIn .5s .4s both">${typo(esc(opts.signature))}</div>
       <div class="url disp" style="animation:fadeUp .7s .6s both">vitrinedemocratique.com</div>
@@ -240,7 +281,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
 /** CSS de la scène de fin — à concaténer au CSS du module. */
 export const FIN_CSS = `
 #fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:400px}
-#fin .logo{width:880px;display:block}
+#fin .logo{width:880px}
 #fin .kick{font-size:30px;margin-top:50px;color:var(--soft)}
 #fin .url{font-size:84px;margin-top:30px;border-bottom:8px solid currentColor;padding-bottom:10px}
 #fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:600px;background:var(--blue);transform-origin:bottom}
