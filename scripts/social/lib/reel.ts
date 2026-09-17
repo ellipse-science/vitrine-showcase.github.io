@@ -251,7 +251,22 @@ export const FIN_CSS = `
 #fin .hours div.on{background:var(--paper);border-color:var(--paper);color:var(--blue)}
 `;
 
-export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string }): string {
+/** Le papier, TRÈS légèrement teinté de la couleur du module (demande d'Adrien,
+ *  2026-09-16 : « le fond devrait être très discret de la couleur associée au
+ *  module »). 6 % : assez pour qu'on sente le module d'un reel à l'autre, pas
+ *  assez pour que le papier cesse d'être du papier. */
+export function teintePapier(accent: string, force = 0.06): string {
+  const h = accent.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(h)) return COLORS.paper;
+  const base = [243, 236, 221];
+  const melange = [0, 2, 4].map((i, k) => {
+    const c = parseInt(h.slice(i, i + 2), 16);
+    return Math.round(base[k] + (c - base[k]) * force);
+  });
+  return `#${melange.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; fond?: string }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
     const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideFooter: !!s.hideFooter };
@@ -260,7 +275,7 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
   });
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
-<style>${BASE_CSS}${opts.css}</style></head><body>
+<style>${BASE_CSS}${opts.fond ? `:root{--paper:${opts.fond}}` : ""}${opts.css}</style></head><body>
 <div class="frame"></div><div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
 <div class="footer mono" id="__foot"><span>${opts.footerLeft}</span><span>${opts.footerRight}</span></div>

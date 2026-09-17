@@ -31,7 +31,7 @@ import {
 import { MODULES } from "@/lib/modules";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, enjeuGlyph, esc, fleur, parseArgs, produce,
-  sceneFin, sceneIntro, txt, type Scene,
+  sceneFin, sceneIntro, teintePapier, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -309,6 +309,7 @@ async function main() {
   const html = buildPage({
     title: `Deux solitudes · ${edition.key}`,
     css: CSS + INTRO_CSS + FIN_CSS, scenes,
+    fond: teintePapier(MODULE.accent),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${edition.pubHour % 24}h · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });

@@ -27,14 +27,11 @@ import { MODULES } from "@/lib/modules";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, sceneFin, sceneIntro, txt, type Scene,
+  parseArgs, produce, publicationHour, sceneFin, sceneIntro, teintePapier, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
 const MODULE = MODULES["une-des-unes"];
-
-/** Mots-clics ajoutés à la légende. À ajuster par l'équipe des réseaux. */
-const HASHTAGS = ["#polqc", "#QC2026", "#VitrineDémocratique"];
 
 /** Crédit de l'illustration de la Une. */
 const ART_CREDIT = "Image générée sous la direction de Mathieu Fortin";
@@ -537,25 +534,113 @@ window.onSceneTime=function(id,t,len){
 };`;
 }
 
-// ── Légende Instagram ───────────────────────────────────────────────────────
-function caption(edition: EditionRef, classement: UneEvent[]): string {
-  const [top, ...others] = classement;
-  const lines = [
-    `Ce qui domine l’actualité du Québec en ce moment · Édition de ${pubHourLabel(edition)}, ${edition.dateLabel.toLowerCase()}`,
+// ── Le post quotidien ───────────────────────────────────────────────────────
+// GABARIT DEMANDÉ PAR ADRIEN (2026-09-16) : le même texte à chaque édition, que
+// le script remplit tout seul — titre, les cinq nouvelles avec leur saillance,
+// le rappel de ce qu'est la Vitrine, les mots-clics, puis les comptes à
+// identifier. Le premier commentaire sort dans un fichier à part : il porte les
+// articles publiés sur la nouvelle n°1, avec leurs liens et leurs signatures.
+//
+// CE QUI SE MODIFIE À LA MAIN est ici, en haut : les émojis, la phrase de
+// rappel, les mots-clics et la liste des comptes. Le reste vient des données.
+
+/** Émojis du titre. Une ligne à changer. */
+const EMOJIS = "📰 ⚜️";
+
+/** Mots-clics du post. */
+const HASHTAGS = ["#LaUnedesUnes", "#CAPP", "#CLESSN", "#Élections2026", "#ScienceDesDonnées", "#polqc"];
+
+/** Le rappel, sous le trait. Tout y est vérifiable sur le site. */
+const RAPPEL = [
+  "Toutes les 4 heures, la Vitrine démocratique mesure ce qui occupe l’espace médiatique québécois.",
+  "La première page de 13 médias québécois et canadiens est enregistrée toutes les dix minutes, sans interruption depuis septembre 2018. Gratuit, sans publicité, méthodologie publique.",
+  "vitrinedemocratique.com",
+].join("\n\n");
+
+/** COMPTES À IDENTIFIER — à compléter et à tenir à jour par l'équipe comm.
+ *  ⚠️ Ce sont des NOMS, pas des identifiants : sur LinkedIn et Facebook on les
+ *  choisit dans l'autocomplétion ; sur X et Bluesky, il faut l'identifiant exact
+ *  du compte, que personne n'a encore recensé — ne pas en inventer. */
+const COMPTES = {
+  organisations: [
+    "CLESSN", "Groupe de recherche en communication politique (GRCP)", "Infoscope inc.",
+    "Université Laval", "Université de Montréal", "Cégep Garneau",
+    "Centre pour l’étude de la citoyenneté démocratique (CECD-CSDC)",
+    "Chaire sur la démocratie, le vivre-ensemble et les valeurs communes au Québec",
+    "Unicorne", "LLM Tool", "Amazon Web Services", "Datagotchi_fr", "Datagotchi_en",
+  ],
+  equipe: [
+    "Yannick Dufresne", "Shannon Dinan", "Adrien Cloutier", "Jérémie Drouin",
+    "Alexandre Fortier-Chouinard", "Antoine Lemor", "Jules Piral", "Patrick Poncet",
+    "Catherine Ouellet", "Benjamin Guinaudeau", "Thomas Lefebvre", "Marc-Antoine Rancourt",
+    "Lisa Birch", "Mathieu Fortin (Anorak Studio)",
+  ],
+};
+
+/** « Saillance très élevée, 43,7 pts, −24 % / ce midi ». Le dernier point de la
+ *  trajectoire EST l'édition du moment : c'est lui qui porte la variation. */
+function mesure(e: UneEvent): string {
+  const bouts = [`Saillance ${e.saillanceLabel.toLowerCase()}`];
+  if (e.scoreQcSum24h != null) bouts.push(`${frNum(e.scoreQcSum24h)} pts`);
+  const pts = e.salienceTrend?.points ?? [];
+  const last = pts[pts.length - 1];
+  if (last?.delta != null && last.deltaDepuis) {
+    const signe = last.delta > 0 ? "+" : "−";
+    bouts.push(`${signe}${Math.abs(Math.round(last.delta))} % / ${last.deltaDepuis}`);
+  } else if (last?.isFirst) {
+    bouts.push("nouveau");
+  }
+  return bouts.join(", ");
+}
+
+function post(edition: EditionRef, classement: UneEvent[]): string {
+  const lignes = classement.map((e, i) => `${i + 1}. ${e.title} (${mesure(e)})`).join("\n\n");
+  const bloc = [
+    `Les faits saillants au Québec en ce moment (Édition de ${pubHourLabel(edition)}) ${EMOJIS}`,
     "",
-    top.title,
-    ...(top.excerpt ? ["", top.excerpt] : []),
+    lignes,
     "",
-    `${top.qcOutletCount}/${top.totalQcOutlets} ${coverageLabel(top.qcOutletCount)} : ${top.mediaToday.map((m) => m.name).join(", ")}.`,
-    `Saillance des 24 dernières heures : ${top.saillanceLabel.toLowerCase()}.`,
-    ...(others.length ? ["", "Les autres nouvelles les plus saillantes :", ...others.map((e, i) => `${i + 2}. ${e.title}`)] : []),
+    "————————————————",
     "",
-    "L’actualité saillante au Québec, six fois par jour : vitrinedemocratique.com",
+    RAPPEL,
     "",
     HASHTAGS.join(" "),
-  ];
+    "",
+    [...COMPTES.organisations, ...COMPTES.equipe].join(" · "),
+  ].join("\n");
   // Mêmes règles OQLF que la vidéo, en texte brut (U+00A0).
-  return lines.join("\n").replace(/[ \t]*:(?=\s|$)/gm, " :").replace(/[ \t]*%/g, " %") + "\n";
+  return bloc.replace(/[ \t]*:(?=\s|$)/gm, " :").replace(/[ \t]*%/g, " %") + "\n";
+}
+
+/** Le premier commentaire : les articles publiés sur la nouvelle n°1, un par
+ *  média, avec leur signature et leur lien. Les auteurs viennent des données
+ *  (`author` de chaque article) ; à identifier à la main s'ils sont sur la
+ *  plateforme — on ne devine pas un compte. */
+function premierCommentaire(top: UneEvent): string {
+  // `articlesUne` (loader) : un article par média, avec sa signature, tirés de
+  // la même ligne que le lien. Repli sur les liens du module si la table des
+  // articles est vide pour cette édition.
+  const liste = top.articlesUne.length
+    ? top.articlesUne.map((a) => [
+      a.author ? `${a.media} — par ${a.author}` : a.media,
+      a.title,
+      a.url,
+    ].filter(Boolean).join("\n"))
+    : top.mediaToday.filter((m) => m.url).map((m) => `${m.name}\n${m.url}`);
+  const signes = top.articlesUne.filter((a) => a.author).length;
+  return [
+    `Ce qui a été publié sur « ${top.title} » :`,
+    "",
+    liste.join("\n\n"),
+    "",
+    "————————————————",
+    "",
+    ...(signes
+      ? ["Les signatures ci-dessus viennent des articles eux-mêmes. Identifier les journalistes qui sont sur la plateforme — ne jamais deviner un identifiant."]
+      : []),
+    "",
+    `La courbe de cette nouvelle sur 24 heures, et la méthodologie : ${SITE_URL}`,
+  ].join("\n") + "\n";
 }
 
 // ── Programme ───────────────────────────────────────────────────────────────
@@ -575,7 +660,8 @@ async function main() {
   // `classement` : les cinq nouvelles les plus saillantes de la fenêtre 24 h,
   // classement pur (la scène 6 les montre côte à côte). `top3` reste ce que le
   // module affiche, et c'est lui qui porte les scènes 1 à 5 et la légende.
-  const data = await loadHeadlineEvents(edition.key, { classement: 3 });
+  // 5 nouvelles pour le post (gabarit quotidien), 3 pour la scène du reel.
+  const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const top3 = data?.top3 ?? [];
   const classement = data?.classement ?? top3;
   if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
@@ -586,7 +672,7 @@ async function main() {
   const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
   const logo = await loadLogo();
   const traj = sceneTrajectoire(top);
-  const clsmt = sceneClassement(classement, edition);
+  const clsmt = sceneClassement(classement.slice(0, 3), edition);
   const scenes = [
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
@@ -601,6 +687,7 @@ async function main() {
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
     css: CSS + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    fond: teintePapier(MODULE.accent),
     footerLeft: "⚜ La Vitrine démocratique",
     footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
   });
@@ -608,8 +695,10 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(`${base}.txt`, caption(edition, classement));
-  console.log(`  légende → ${base}.txt`);
+  await fs.writeFile(`${base}.txt`, post(edition, classement));
+  await fs.writeFile(`${base}_commentaire.txt`, premierCommentaire(top));
+  console.log(`  post    → ${base}.txt`);
+  console.log(`  1er com → ${base}_commentaire.txt`);
 
   await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
 }
