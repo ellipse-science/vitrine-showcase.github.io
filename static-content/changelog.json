@@ -1,5 +1,11 @@
 [
   {
+    "pr": 815,
+    "date": "2026-09-17T02:17:07Z",
+    "note": "Le module sur la couverture des partis s'affiche désormais sur un fond sombre, comme une console de mixage.",
+    "version": null
+  },
+  {
     "pr": 811,
     "date": "2026-09-16T21:36:02Z",
     "note": "Rien ne change sur le site.",
