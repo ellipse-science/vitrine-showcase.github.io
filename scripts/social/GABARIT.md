@@ -117,9 +117,26 @@ Ordre des scènes :
    vitrinedemocratique.com, bandeau bleu « Six éditions par jour » avec les six
    pictogrammes et l'édition en cours en surbrillance. ARRÊTÉ.
 
-**Légende Instagram** (`.txt`) : « Les faits saillants au Québec · Édition de … », titre et résumé de la Une,
-« 6/6 des médias québécois en parlent : … », niveau de saillance, autres Unes, lien.
-Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
+**Légende Instagram** (`.txt`) : un **récit suivi**, puis le lien, puis les mots-clics.
+ARRÊTÉ (format). Quatre paragraphes :
+
+1. « {Jour date}, édition de {heure}. L'histoire qui domine l'actualité au Québec :
+   « {titre} ». » suivi du résumé du site.
+2. Apparition à la Une ; couverture sur 24 heures (« les 6 médias québécois que nous
+   suivons en ont tous fait leur Une (…) », ou « {n} des 6 … », ou « {média} est le seul
+   … ») ; niveau et rang (« Sa saillance sur 24 heures est {niveau} : elle est plus
+   saillante que {c} % des nouvelles de la dernière année ») ; état de l'attention selon
+   la situation du site (nouvelle, sommet, remonte, baisse, retour, retombée, stable).
+   Quand l'histoire a quitté les Unes de l'édition : « Elle ne fait plus la Une à {heure},
+   mais reste l'histoire la plus saillante des 24 dernières heures, avec un sommet atteint
+   {moment} » — jamais une phrase qui contredit « domine l'actualité ».
+3. Les autres Unes, titres entre guillemets (guillemets intérieurs en “ ”).
+4. « Les faits saillants au Québec, six fois par jour : vitrinedemocratique.com », puis
+   les mots-clics.
+
+Les gabarits de phrases sont listés dans `une-des-unes.ts` (fonctions `*Sentence`) :
+À VALIDER par Adrien (AGENTS.md, règle 7). Mots-clics `#polqc #QC2026
+#VitrineDémocratique` : À VALIDER.
 
 ### Rejeté (ne pas réintroduire)
 
@@ -132,6 +149,7 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
   posé sur l'image (trop visible).
 - Éléments pleine page qui débordent de l'encadré.
 - Informations dans les zones cachées par Instagram ; étiquettes sous 26 px.
+- Légende en fiche à puces (« 6/6 des médias… », « Aussi à la Une : · … ») : on veut un récit.
 - Zone sûre des publicités Meta (250 px haut, 480 px bas) : trop d'espace perdu.
 - Liste des médias resserrée (lignes de 106 px) : trop compacte.
 

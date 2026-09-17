@@ -506,24 +506,75 @@ window.onSceneTime=function(id,t,len){
 }
 
 // ── Légende Instagram ───────────────────────────────────────────────────────
+// Un RÉCIT suivi, puis le lien, puis les mots-clics. Chaque phrase suit un
+// gabarit FINI, listé ici et nourri seulement par les données de l'édition
+// (AGENTS.md règle 7 : gabarits relus avant publication). Rien n'est ajouté
+// qui ne soit dans les loaders.
+
+/** « A, B et C ». */
+const joinFr = (items: string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`);
+
+/** Titre de Une entre guillemets français (insécables) ; les guillemets déjà
+ *  présents dans le titre passent au second niveau (“ ”). */
+const quote = (s: string) => `«\u00A0${s.replace(/«\s*/g, "“").replace(/\s*»/g, "”")}\u00A0»`;
+
+/** Qui a mis l'histoire en Une (fenêtre de 24 heures, comme le module). */
+function coverageSentence(top: UneEvent): string {
+  const names = top.mediaToday.map((m) => m.name);
+  const n = top.qcOutletCount, total = top.totalQcOutlets;
+  if (n >= total) return `Au cours des 24 dernières heures, les ${total} médias québécois que nous suivons en ont tous fait leur Une (${joinFr(names)}).`;
+  if (n > 1) return `Au cours des 24 dernières heures, ${n} des ${total} médias québécois que nous suivons en ont fait leur Une (${joinFr(names)}).`;
+  return `Au cours des 24 dernières heures, ${names[0]} est le seul des ${total} médias québécois que nous suivons à en avoir fait sa Une.`;
+}
+
+/** Niveau et rang dans l'année (même bascule que le site à la médiane). */
+function salienceSentence(top: UneEvent): string {
+  const level = top.saillanceLabel.toLowerCase();
+  if (top.saillanceCentile == null) return `Sa saillance sur 24 heures est ${level}.`;
+  const c = Math.max(1, Math.min(99, Math.round(top.saillanceCentile)));
+  return c >= 50
+    ? `Sa saillance sur 24 heures est ${level} : elle est plus saillante que ${c} % des nouvelles de la dernière année.`
+    : `Sa saillance sur 24 heures est ${level} : ${100 - c} % des nouvelles de la dernière année ont été plus saillantes.`;
+}
+
+/** Où en est l'attention à cette édition (situations du site : SalienceTrend).
+ *  L'histoire racontée est la n°1 sur 24 heures : quand elle a quitté les Unes
+ *  de l'édition, on le dit sans contredire qu'elle domine la période. */
+function trendSentence(top: UneEvent, hour: string): string | null {
+  const t = top.salienceTrend;
+  if (!t) return null;
+  const peak = top.sommetLabel ? `, avec un sommet atteint ${top.sommetLabel}` : "";
+  switch (t.situation) {
+    case "nouvelle": return `Elle vient d’entrer dans les Unes, à ${hour}.`;
+    case "sommet": return `L’attention atteint son sommet à ${hour}.`;
+    case "remonte": return `L’attention remonte à ${hour}.`;
+    case "baisse": return `L’attention baisse à ${hour}${peak}.`;
+    case "retour": return `Elle revient dans les Unes à ${hour}.`;
+    case "retombee": return `Elle ne fait plus la Une à ${hour}, mais reste l’histoire la plus saillante des 24 dernières heures${peak}.`;
+    case "stable": return `L’attention reste stable à ${hour}.`;
+    default: return null;
+  }
+}
+
+/** Les autres Unes du moment. */
+function othersSentence(others: UneEvent[]): string | null {
+  if (!others.length) return null;
+  if (others.length === 1) return `Une autre histoire est aussi à la Une : ${quote(others[0].title)}.`;
+  return `${others.length === 2 ? "Deux" : others.length} autres histoires sont aussi à la Une : ${joinFr(others.map((e) => quote(e.title)))}.`;
+}
+
 function caption(edition: EditionRef, top3: UneEvent[]): string {
   const [top, ...others] = top3;
-  const lines = [
-    `${TITLE} · Édition de ${pubHourLabel(edition)}, ${edition.dateLabel.toLowerCase()}`,
-    "",
-    top.title,
-    ...(top.excerpt ? ["", top.excerpt] : []),
-    "",
-    `${top.qcOutletCount}/${top.totalQcOutlets} ${coverageLabel(top.qcOutletCount)} : ${top.mediaToday.map((m) => m.name).join(", ")}.`,
-    `Saillance des 24 dernières heures : ${top.saillanceLabel.toLowerCase()}.`,
-    ...(others.length ? ["", "Aussi à la Une :", ...others.map((e) => `· ${e.title}`)] : []),
-    "",
-    "L’actualité saillante au Québec, six fois par jour : vitrinedemocratique.com",
-    "",
-    HASHTAGS.join(" "),
-  ];
+  const date = edition.dateLabel.replace(/\s\d{4}$/, "");
+  const paragraphs = [
+    [`${date}, édition de ${pubHourLabel(edition)}. L’histoire qui domine l’actualité au Québec : ${quote(top.title)}.`, top.excerpt],
+    [top.saillantSince ? `Elle est apparue à la Une ${top.saillantSince.replace(/\s\d{4}$/, "")}.` : null, coverageSentence(top), salienceSentence(top), trendSentence(top, pubHourLabel(edition))],
+    [othersSentence(others)],
+    [`${TITLE}, six fois par jour : vitrinedemocratique.com`],
+    [HASHTAGS.join(" ")],
+  ].map((p) => p.filter(Boolean).join(" ")).filter(Boolean);
   // Mêmes règles OQLF que la vidéo, en texte brut (U+00A0).
-  return lines.join("\n").replace(/[ \t]*:(?=\s|$)/gm, " :").replace(/[ \t]*%/g, " %") + "\n";
+  return paragraphs.join("\n\n").replace(/[ \t]*:(?=\s|$)/gm, "\u00A0:").replace(/[ \t]*%/g, "\u00A0%") + "\n";
 }
 
 // ── Programme ───────────────────────────────────────────────────────────────
