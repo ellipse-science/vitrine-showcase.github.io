@@ -285,7 +285,7 @@ function sceneRecap(): Scene {
 // ── Mise en page ────────────────────────────────────────────────────────────
 // Zone utile : x 60 → 960 (1020 au-dessus de y 640), y 220 → 1422 (GABARIT.md).
 const CSS = `
-#accroche .bandes{position:absolute;left:30px;right:30px;top:520px;bottom:30px;overflow:hidden}
+#accroche .bandes{position:absolute;left:30px;right:30px;top:414px;bottom:30px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 170px);mask-image:linear-gradient(to bottom,transparent 0,#000 170px)}
 #accroche .bande{position:absolute;top:0;bottom:0;width:calc(100% / 6 + 1px);transform-origin:top}
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
@@ -296,7 +296,7 @@ const CSS = `
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
    du bas de cet encadré, jamais derrière le logo (Jules, 17-09). */
-#accroche .entete{position:absolute;left:30px;right:30px;top:44px;height:476px;background:#F3ECDD;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:96px;gap:26px;z-index:2}
+#accroche .entete{position:absolute;left:30px;right:30px;top:44px;height:370px;background:#F3ECDD;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:96px;gap:26px;z-index:2}
 #accroche .date{font-size:28px;letter-spacing:.16em;color:var(--soft)}
 /* Liseré des six encres tout en haut : l'en-tête d'Instagram le couvre au
    visionnement, mais il habille la vignette et les autres plateformes. */
