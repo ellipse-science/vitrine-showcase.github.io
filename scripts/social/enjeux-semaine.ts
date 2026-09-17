@@ -35,7 +35,9 @@ const CSS = `
 .kick{font-size:28px;color:var(--softer)}
 
 /* Accroche commune : une miniature du classement réel de la semaine. */
-#intro .mini-ranks{position:absolute;left:120px;right:120px;bottom:72px;height:510px}
+/* La miniature remonte : à 72 px du bas, elle passait sous la légende et la barre
+   de navigation d'Instagram en plein écran (mesuré au simulateur, 17-09). */
+#intro .mini-ranks{position:absolute;left:180px;right:180px;bottom:420px;height:430px}
 #intro .mini-ranks svg{display:block;width:100%;height:100%;overflow:visible}
 @keyframes traceRank{to{stroke-dashoffset:0}}
 
@@ -46,7 +48,7 @@ const CSS = `
 #course .day strong{font-family:"Playfair Display",serif;font-size:42px;line-height:1}
 #course .day span{font-size:28px;color:var(--soft)}
 #course .board{position:absolute;left:180px;right:180px;top:570px;height:744px}
-#course .runner{position:absolute;left:0;right:0;top:0;height:54px;display:grid;grid-template-columns:54px 44px minmax(0,1fr) 84px;align-items:center;gap:12px;padding:0 14px 0 10px;border-left:9px solid var(--c);background:color-mix(in srgb,var(--c) 10%,var(--paper));will-change:transform}
+#course .runner{position:absolute;left:0;right:0;top:0;height:54px;box-shadow:0 0 0 0 rgba(28,25,23,0);transition:none;display:grid;grid-template-columns:54px 44px minmax(0,1fr) 84px;align-items:center;gap:12px;padding:0 14px 0 10px;border-left:9px solid var(--c);background:color-mix(in srgb,var(--c) 10%,var(--paper));will-change:transform}
 #course .place{font-family:"Playfair Display",serif;font-weight:900;font-size:36px;line-height:1;text-align:center}
 #course .ico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--c)}
 #course .name{font-family:"Playfair Display",serif;font-weight:700;font-size:30px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -184,6 +186,13 @@ window.onSceneTime=function(id,t){
     const rank=row.ranks[from]+(row.ranks[to]-row.ranks[from])*ease;
     el.style.transform="translateY("+((rank-1)*${ROW_STEP})+"px)";
     const place=el.querySelector(".place");if(place)place.textContent=String(row.ranks[active]);
+    // Celle qui bouge passe DEVANT les autres, et se détache le temps du
+    // dépassement : sans ça, deux lignes qui se croisent se lisent l'une sur
+    // l'autre (relevé le 17-09 dans le simulateur).
+    const saut=Math.abs(row.ranks[to]-row.ranks[from]);
+    const bouge=saut>0?Math.sin(Math.max(0,Math.min(1,ease))*Math.PI):0;
+    el.style.zIndex=String(2+Math.round(saut*10*bouge));
+    el.style.boxShadow=bouge>.05?("0 "+(6*bouge).toFixed(1)+"px "+(22*bouge).toFixed(1)+"px rgba(28,25,23,"+(.28*bouge).toFixed(2)+")"):"none";
   });
 };`;
 }

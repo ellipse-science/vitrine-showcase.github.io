@@ -457,6 +457,11 @@ derniers jours.** Les rangs, parts d’attention et dates viennent de
 Le Reel emploie une semaine glissante de sept jours, comme le site. Aucun rang
 ni pourcentage n’est écrit à la main.
 
+Repris le 17-09 après mesure au simulateur d'iPhone : la ligne qui double une
+autre passe DEVANT, avec une ombre le temps du dépassement (sinon deux lignes
+qui se croisent se lisent l'une sur l'autre), et la miniature de l'accroche
+remonte au-dessus de la légende d'Instagram.
+
 ## 7. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
