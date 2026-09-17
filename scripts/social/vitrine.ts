@@ -185,17 +185,43 @@ const SCHEMAS: Record<CleModule, () => string> = {
 };
 
 // ── Scènes ──────────────────────────────────────────────────────────────────
+/** L'ACCROCHE (Jules Piral, 2026-09-17 : « plus catchy et belle »). Trois temps,
+ *  un seul plan :
+ *   1. six bandes verticales, aux papiers des six modules, remplissent l'écran ;
+ *   2. six questions en rafale, chacune dans l'encre de son module, pendant que
+ *      sa bande s'éclaire — on voit défiler ce que la Vitrine mesure ;
+ *   3. les bandes s'effacent, le logo et « 6 modules pour mieux comprendre la
+ *      démocratie au Québec » arrivent, soulignés par les six encres. */
+const QUESTIONS: Record<CleModule, string> = {
+  "une-des-unes": "Qu’est-ce qui fait la Une?",
+  "deux-solitudes": "Québec, Canada : mêmes sujets?",
+  "enjeux-saillants": "Quels enjeux dominent?",
+  "partis-et-couverture": "De quel parti parle-t-on?",
+  "polimetre-plus": "Les promesses sont-elles tenues?",
+  "assemblee-nationale": "Qui parle au Salon bleu?",
+};
+const Q0 = .5, QPAS = .9, BASCULE = Q0 + ORDRE.length * QPAS + .1;
+
 function sceneAccroche(logo: string): Scene {
-  const tuiles = ORDRE.map((k, i) => {
+  const bandes = ORDRE.map((k, i) => {
     const m = MODULES[k];
-    return `<div class="tuile" style="background:${m.papier};border-top-color:${m.accent};${anim("fadeUp", .45, 1.6 + i * .18)}"><b class="disp" style="color:${m.accent}">${i + 1}</b><span>${t(m.nom)}</span></div>`;
+    const d = Q0 + i * QPAS;
+    return `<div class="bande" data-deco style="left:${(i * 100) / 6}%;background:${m.papier};animation:growY .45s ${(i * .05).toFixed(2)}s both, efface .5s ${BASCULE}s forwards">
+      <i style="background:${m.accent};animation:eclaire ${QPAS + .15}s ${d}s both"></i></div>`;
   }).join("");
+  const questions = ORDRE.map((k, i) => {
+    const d = Q0 + i * QPAS;
+    return `<div class="q disp" style="color:${MODULES[k].accent};animation:qentre .22s ${d}s both, qsort .18s ${d + QPAS - .12}s forwards">${t(QUESTIONS[k])}</div>`;
+  }).join("");
+  const traits = ORDRE.map((k, i) => `<i style="background:${MODULES[k].accent};animation:grow .3s ${BASCULE + 1.7 + i * .07}s both"></i>`).join("");
   return {
-    id: "accroche", duration: 5.4, noFadeIn: true,
+    id: "accroche", duration: BASCULE + 3.2, noFadeIn: true,
     html: `
-      <div class="logo" style="${anim("fadeIn", .6, .1)}">${logoAnime(logo, { classe: "", taille: 460, passe: .9 })}</div>
-      <h1><span class="six disp" style="${anim("slam", .7, .4)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .6, .9)}">pour mieux comprendre la démocratie au Québec</span></h1>
-      <div class="tuiles">${tuiles}</div>`,
+      <div class="bandes" data-deco>${bandes}</div>
+      <div class="questions">${questions}</div>
+      <div class="logo" style="${anim("pop", .7, BASCULE + .15)}">${logoAnime(logo, { classe: "", taille: 800, passe: BASCULE + .7 })}</div>
+      <h1><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
+      <div class="traits">${traits}</div>`,
   };
 }
 
@@ -254,14 +280,21 @@ function sceneRecap(): Scene {
 // ── Mise en page ────────────────────────────────────────────────────────────
 // Zone utile : x 60 → 960 (1020 au-dessus de y 640), y 220 → 1422 (GABARIT.md).
 const CSS = `
-#accroche .logo{position:absolute;top:240px;left:76px}
-#accroche h1{position:absolute;top:470px;left:76px;right:120px}
+#accroche .bandes{position:absolute;inset:30px;overflow:hidden}
+#accroche .bande{position:absolute;top:0;bottom:0;width:calc(100% / 6 + 1px);transform-origin:top}
+#accroche .bande i{position:absolute;inset:0;opacity:0}
+@keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
+@keyframes efface{to{opacity:0}}
+#accroche .questions{position:absolute;left:76px;right:120px;top:760px;height:420px}
+#accroche .q{position:absolute;left:0;top:0;max-width:100%;font-size:96px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
+@keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
+#accroche .logo{position:absolute;top:250px;left:76px;transform-origin:left center}
+#accroche h1{position:absolute;top:620px;left:76px;right:120px}
 #accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
-#accroche .pour{display:block;font-size:72px;line-height:1.08;margin-top:22px}
-#accroche .tuiles{position:absolute;left:76px;right:120px;top:1000px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-#accroche .tuile{border-top:10px solid;padding:14px 16px 16px;height:176px;display:flex;flex-direction:column;justify-content:space-between}
-#accroche .tuile b{font-size:60px;line-height:1}
-#accroche .tuile span{font-size:28px;line-height:1.1;font-weight:700}
+#accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
+#accroche .traits{position:absolute;left:76px;right:120px;top:1110px;display:flex;gap:12px;height:18px}
+#accroche .traits i{flex:1;display:block;transform-origin:left}
 
 #sources .kick{position:absolute;top:240px;left:76px;font-size:28px;color:var(--soft)}
 #sources h2{position:absolute;top:290px;left:76px;right:120px;font-size:76px;line-height:1.02}

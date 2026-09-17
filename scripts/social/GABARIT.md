@@ -372,8 +372,14 @@ Message : **« 6 modules pour mieux comprendre la démocratie au Québec »** (J
 Piral, 2026-09-16). Ce reel EXPLIQUE : pas de résultat du jour, donc il reste vrai
 d'une édition à l'autre. À VALIDER.
 
-1. **Accroche.** Logo, « 6 modules / pour mieux comprendre la démocratie au Québec »,
-   six tuiles numérotées aux couleurs des modules.
+1. **Accroche** (refaite le 2026-09-17 : « plus catchy et belle », « un peu plus
+   lentement », « le logo plus proéminent »). Six bandes verticales aux papiers des
+   modules remplissent l'écran ; six questions passent une à une (~1,3 s chacune),
+   sur une carte crème, dans l'encre de leur module, pendant que sa bande s'éclaire
+   (« Qu'est-ce qui fait la Une ? » … « Qui parle au Salon bleu ? ») ; les bandes
+   s'effacent, le logo arrive SEUL et en grand (800 px), puis « 6 modules / pour
+   mieux comprendre la démocratie au Québec » et un trait de chacune des six encres.
+   Rejeté : question dans la même couleur que la bande qu'elle croise (illisible).
 2. **D'où viennent les données.** Trois sources : 13 médias québécois et canadiens
    (leurs Unes, six fois par jour), l'Assemblée nationale (chaque jour de débat), les
    promesses électorales (leur écho dans les médias, avec le Polimètre). Puis, en
