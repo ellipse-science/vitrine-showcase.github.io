@@ -23,6 +23,13 @@
 //     les 12 enjeux comme dans la Une, la couleur d'un enjeu doit rester la
 //     couleur de cet enjeu, jamais celle d'un module.
 //
+// ⚠️ UNE EXCEPTION ASSUMÉE, tranchée par Adrien le 2026-09-16 : Deux solitudes
+// prend le ROUGE DU CANADA plutôt qu'une nuance de sa famille. C'est le seul
+// module qui mobilise le Canada — la mémorisation l'emporte ici sur la famille.
+//
+// Le fond des reels est ce même accent, mêlé au papier à 6 % (`teintePapier`) :
+// « très discret », demande d'Adrien du 16-09.
+//
 // ⚠️ La règle d'Adrien du 3 sept. tient toujours : **la Une des Unes garde le
 // papier tel quel** en ligne. L'accent ci-dessous colore les filets, les titres
 // d'accroche et les bandeaux — pas le fond de la Une.
@@ -53,14 +60,15 @@ export const MODULES = {
   "deux-solitudes": {
     nom: "Deux solitudes",
     famille: "médias",
-    // Bleu acier : la famille médias, mais du côté froid — et volontairement
-    // PAS le `--bleu` du Québec ni le `--red` du Canada, qui servent déjà à
-    // désigner les deux régions à l'intérieur du module.
-    accent: "#2F6480",
+    // Le ROUGE DU CANADA (`--red`), tranché par Adrien le 2026-09-16 : c'est le
+    // seul module qui mobilise le Canada, donc la couleur se retient toute
+    // seule. Le bleu du Québec reste réservé au Québec À L'INTÉRIEUR du module
+    // (polygone, barres, points) : le module a le rouge, la région a le bleu.
+    accent: "#A8302C",
     lignes: [
       { t: "Québec", c: "#2E4663" },
-      { t: "Canada", c: "#A8302C" },
-      { t: "2 solitudes ?", accent: true },
+      { t: "Canada", accent: true },
+      { t: "2 solitudes ?" },
     ],
   },
   "enjeux-saillants": {

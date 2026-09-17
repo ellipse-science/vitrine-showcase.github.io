@@ -1520,6 +1520,10 @@ export type UneEvent = {
   sommetEdition: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
+  /** Les articles de l'occurrence la plus récente, un par média : média, titre,
+   *  signature et lien, tous tirés de la MÊME ligne — jamais recomposés. Sert au
+   *  premier commentaire du post quotidien (`scripts/social`). */
+  articlesUne: { media: string; title: string; url: string; author: string | null }[];
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
    *  courbe survolable. null si rien à raconter (un seul bloc actif). */
   salienceTrend: SalienceTrend | null;
@@ -2015,15 +2019,32 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
     // point porte le niveau que le BADGE affichait à cette édition-là.
     const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history, suivi?.sums);
 
-    type RawArticle = { media_id: string; headline_minutes?: number | null };
+    type RawArticle = {
+      media_id: string; headline_minutes?: number | null;
+      title?: string | null; url?: string | null; author?: string | null;
+    };
     let totalHeadlineMinutes = 0;
+    // Un article par média, celui de l'occurrence la plus récente. Média, titre,
+    // signature et lien viennent de LA MÊME ligne : ils ne peuvent pas se
+    // contredire. Ne jamais recomposer une signature depuis une autre source —
+    // une signature fausse sur un article publié est une erreur coûteuse.
+    const parMedia = new Map<string, { media: string; title: string; url: string; author: string | null }>();
     try {
       const arts = JSON.parse(e.articles ?? "[]") as RawArticle[];
       for (const art of arts) {
         const mins = Number(art.headline_minutes ?? 0);
         if (Number.isFinite(mins) && mins > 0) totalHeadlineMinutes += mins;
+        if (art.url && art.media_id && !parMedia.has(art.media_id)) {
+          parMedia.set(art.media_id, {
+            media: MEDIA_NAMES[art.media_id] ?? art.media_id,
+            title: (art.title ?? "").trim(),
+            url: art.url,
+            author: art.author?.trim() || null,
+          });
+        }
       }
     } catch { }
+    const articlesUne = [...parMedia.values()];
     const excerpt = e.text?.trim() || null;
     const headlineHours =
       totalHeadlineMinutes > 0 ? Math.max(1, Math.round(totalHeadlineMinutes / 60)) : null;
@@ -2070,6 +2091,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
       sommetCls,
       sommetEdition,
       nBlocks24h: e.n_blocks_24h ?? null,
+      articlesUne,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
       // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
