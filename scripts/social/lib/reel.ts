@@ -206,10 +206,10 @@ export type Scene = {
   /** Pas de fondu d'entrée (première scène) ou de sortie (dernière). */
   noFadeIn?: boolean;
   noFadeOut?: boolean;
-  /** Masque le pied de page (scène à fond sombre ou pleine page). */
-  hideFooter?: boolean;
-  /** Logos en blanc : la barre de marque passe sur un fond sombre. */
-  lightBrand?: boolean;
+  /** Masque la ligne d'édition commune quand la scène porte déjà cette information. */
+  hideEdition?: boolean;
+  /** Masque les logos communs quand la scène affiche déjà le grand logo de marque. */
+  hideBrand?: boolean;
 };
 
 const BASE_CSS = `
@@ -220,22 +220,21 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .mono{font-family:"IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
 .disp{font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
-/* CONTENU CENTRÉ (Jules Piral, 2026-09-17 : « c'est bizarre qu'à droite il n'y ait
-   rien parce que les boutons de like sont là, alors qu'à gauche il y a de
-   l'information »). La colonne va de x 180 à x 900 — la limite de la colonne de
-   boutons — donc elle est SYMÉTRIQUE par rapport au milieu de l'image, et le texte
-   est centré. */
-.scene{position:absolute;inset:0;padding:120px 180px;text-align:center;opacity:0}
+/* CONTENU GÉOMÉTRIQUEMENT CENTRÉ (Jules Piral, 2026-09-17 : « c'est bizarre qu'à
+   droite il n'y ait rien parce que les boutons de like sont là, alors qu'à gauche
+   il y a de l'information »). La colonne va de x 180 à x 900 — la limite de la
+   colonne de boutons — donc elle est SYMÉTRIQUE par rapport au milieu de l'image.
+   L'alignement typographique reste propre à chaque scène : le centrer globalement
+   tassait tous les niveaux de lecture dans une même pile verticale. */
+.scene{position:absolute;inset:0;padding:120px 180px;opacity:0}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
 /* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
    une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
 .edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
-.edition.light{color:var(--paper);opacity:.85}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
-.brandbar.light img{filter:invert(1)}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -312,7 +311,7 @@ export function sceneIntro(opts: {
     return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
   }).join("");
   return {
-    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideFooter: true, lightBrand: true,
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideEdition: true, hideBrand: true,
     html: `
       ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
@@ -396,7 +395,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     return `<img src="${src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
   }).join("");
   return {
-    id: "fin", duration: 4.8, noFadeOut: true, hideFooter: true, lightBrand: true,
+    id: "fin", duration: 4.8, noFadeOut: true, hideEdition: true, hideBrand: true,
     html: `
       <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
@@ -444,7 +443,7 @@ export const TONE = { positive: "#4E7A43", negative: "#B0473A", neutral: "#6E685
 export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; theme?: Theme; logos?: Logos }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
-    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideFooter: !!s.hideFooter, lightBrand: !!s.lightBrand };
+    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideEdition: !!s.hideEdition, hideBrand: !!s.hideBrand };
     t += s.duration;
     return entry;
   });
@@ -460,7 +459,7 @@ ${opts.script ?? ""}
 const TIMELINE=${JSON.stringify(timeline)};
 const BASE=${t};
 function seek(t){
-  let light=false;
+  let editionOpacity=1,brandOpacity=1;
   for(const s of TIMELINE){
     const el=document.getElementById(s.id), local=t-s.start, fade=.35;
     let o=0;
@@ -468,12 +467,13 @@ function seek(t){
     if(!s.fadeOut&&t>=s.end)o=1;
     el.style.opacity=o;
     if(o===0)continue;
-    if(s.lightBrand&&o>.5)light=true;
+    if(s.hideEdition)editionOpacity=Math.min(editionOpacity,1-o);
+    if(s.hideBrand)brandOpacity=Math.min(brandOpacity,1-o);
     el.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=Math.max(0,local)*1000});
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
-  const brand=document.getElementById("__brand");if(brand)brand.classList.toggle("light",light);
-  const ed=document.getElementById("__ed");if(ed)ed.classList.toggle("light",light);
+  const brand=document.getElementById("__brand");if(brand)brand.style.opacity=brandOpacity;
+  const ed=document.getElementById("__ed");if(ed)ed.style.opacity=editionOpacity;
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};

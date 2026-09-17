@@ -126,7 +126,7 @@ function sceneAccroche(rows: RowView[]): Scene {
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: 3.4, noFadeIn: true, hideFooter: true,
+    id: "accroche", duration: 3.4, noFadeIn: true, hideEdition: true,
     html: `
       <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result" data-cle>

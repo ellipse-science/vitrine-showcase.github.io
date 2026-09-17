@@ -73,10 +73,13 @@ commun, une identité visuelle, un rappel marqué.**
 - **ARRÊTÉ · Bandeau de marque EN HAUT, contenu CENTRÉ** (Jules Piral, 2026-09-17,
   mesuré dans le simulateur d'iPhone) : les deux logos, centrés côte à côte, à
   y 150 ; l'édition juste dessous ; le contenu des scènes de y 272 à
-  `CONTENT_BOTTOM`. La colonne va de **x 180 à x 900** — la limite de la colonne de
-  boutons — donc elle est symétrique par rapport au milieu de l'image, et le texte
-  est **centré**. « C'est bizarre qu'à droite il n'y ait rien parce que les boutons
-  sont là, alors qu'à gauche il y a de l'information. » **Renverse** la barre du bas
+  `CONTENT_BOTTOM`. L'accroche et la fin, qui portent déjà le grand logo, masquent
+  ce bandeau commun ; une scène qui écrit déjà son édition masque aussi la ligne
+  commune. La colonne va de **x 180 à x 900** — la limite de la colonne de boutons —
+  donc elle est symétrique par rapport au milieu de l'image. Le texte garde
+  l'alignement propre à chaque scène : le centrer partout écrase la hiérarchie en
+  une pile verticale. « C'est bizarre qu'à droite il n'y ait rien parce que les
+  boutons sont là, alors qu'à gauche il y a de l'information. » **Renverse** la barre du bas
   (16-09) : en plein écran sur iPhone, le bas est pris par le voile d'Instagram, la
   légende et la barre de navigation. Le texte s'écrit à 28 px au moins.
 - ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde

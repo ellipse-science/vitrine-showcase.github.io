@@ -216,7 +216,7 @@ function sceneAccroche(logo: string): Scene {
   }).join("");
   const traits = ORDRE.map((k, i) => `<i style="background:${MODULES[k].accent};animation:grow .3s ${BASCULE + 1.7 + i * .07}s both"></i>`).join("");
   return {
-    id: "accroche", duration: BASCULE + 3.2, noFadeIn: true,
+    id: "accroche", duration: BASCULE + 3.2, noFadeIn: true, hideBrand: true,
     html: `
       <div class="bandes" data-deco>${bandes}</div>
       <div class="questions">${questions}</div>
@@ -303,7 +303,7 @@ const CSS = `
 #accroche .liseré{position:absolute;left:30px;right:180px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
 #accroche h1{position:absolute;top:600px;left:180px;right:180px}
-#accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
+#accroche .six{display:block;font-size:148px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
 #accroche .traits{position:absolute;left:180px;right:180px;top:1080px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
@@ -316,10 +316,10 @@ const CSS = `
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1090px;left:180px;right:180px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
+#sources .local{position:absolute;top:1125px;left:180px;right:180px;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
-#sources .local p{font-size:50px;line-height:1.04;margin-top:10px}
-#sources .gratuit{position:absolute;top:1420px;left:180px;right:180px;font-size:36px;font-style:italic}
+#sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
+#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{position:absolute;top:282px;left:180px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}

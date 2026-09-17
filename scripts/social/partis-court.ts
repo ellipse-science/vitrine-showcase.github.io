@@ -54,7 +54,7 @@ async function main() {
     if (!plan) continue;
     const { html: planHtml, css, script } = scenePlanHtml(plan);
     const scenes: Scene[] = [
-      { id: "plan", duration: DUREE_PLAN, noFadeIn: true, hideFooter: true, html: planHtml },
+      { id: "plan", duration: DUREE_PLAN, noFadeIn: true, hideEdition: true, html: planHtml },
       sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires }),
     ];
     // 12 secondes, fin comprise : la fin prend ce qui reste.
