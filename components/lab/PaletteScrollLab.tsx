@@ -34,11 +34,20 @@
  * TOUTE LA PAGE prend la couleur du module où l'on se trouve, et le changement
  * est franc d'un module à l'autre. « off » rend tout au papier.
  *
- *   ?lab=off | discret | marque | franc
+ *   ?lab=off | sepia | discret | marque | franc
+ *
+ * MODE « SÉPIA · TERRES » (retenu par Jules Piral le 17-09, mode par défaut) :
+ * papiers et encres lus dans `lib/modules.ts` — LA MÊME SOURCE que les reels.
+ * Le fond de la page GLISSE d'un papier à l'autre au défilement, et le calcul
+ * trie les modules par leur POSITION RÉELLE sur la page (`lib/degradeModules.ts`,
+ * testé) : réordonner les sections dans `app/page.tsx` ne casse pas le dégradé.
  */
 import { useEffect, useState } from "react";
 
-type Intensite = "off" | "discret" | "marque" | "franc";
+import { fondAuDefilement, type Repere } from "@/lib/degradeModules";
+import { MODULES as IDENTITES } from "@/lib/modules";
+
+type Intensite = "off" | "sepia" | "discret" | "marque" | "franc";
 
 const PAPIER = "#F3ECDD";
 const NUIT = "#14120F";
@@ -66,7 +75,7 @@ const MODULES: {
 ];
 
 /** Trois degrés : combien de la couleur du module passe dans son fond. */
-const INTENSITES: Record<Exclude<Intensite, "off">, { nom: string; force: number; nuit: number }> = {
+const INTENSITES: Record<Exclude<Intensite, "off" | "sepia">, { nom: string; force: number; nuit: number }> = {
   discret: { nom: "Discret", force: 0.10, nuit: 0.72 },
   marque: { nom: "Marqué", force: 0.22, nuit: 0.86 },
   franc: { nom: "Franc", force: 0.34, nuit: 1 },
@@ -107,13 +116,43 @@ function PaletteScrollLabInner() {
   useEffect(() => {
     try {
       const p = new URLSearchParams(window.location.search);
-      const i = (p.get("lab") ?? window.localStorage.getItem("lab-intensite") ?? "marque") as Intensite;
-      setIntensite(["off", "discret", "marque", "franc"].includes(i) ? i : "marque");
+      const i = (p.get("lab") ?? window.localStorage.getItem("lab-intensite") ?? "sepia") as Intensite;
+      setIntensite(["off", "sepia", "discret", "marque", "franc"].includes(i) ? i : "sepia");
     } catch { /* rien */ }
   }, []);
 
   useEffect(() => {
     try { window.localStorage.setItem("lab-intensite", intensite); } catch { /* rien */ }
+  }, [intensite]);
+
+  // Sépia · Terres : le fond de la page glisse au défilement. Les repères sont
+  // relus à chaque image, dans l'ordre où les sections se trouvent sur la page.
+  useEffect(() => {
+    if (intensite !== "sepia") return;
+    const root = document.documentElement;
+    let raf = 0;
+    const calculer = () => {
+      raf = 0;
+      const reperes: Repere[] = [];
+      for (const [id, m] of Object.entries(IDENTITES)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        reperes.push({ id, centre: window.scrollY + r.top + r.height / 2, fond: m.papier, accent: m.accent });
+      }
+      const f = fondAuDefilement(reperes, window.scrollY + window.innerHeight / 2);
+      if (f) root.style.setProperty("--lab-fond", f.fond);
+    };
+    const planifier = () => { if (!raf) raf = window.requestAnimationFrame(calculer); };
+    calculer();
+    window.addEventListener("scroll", planifier, { passive: true });
+    window.addEventListener("resize", planifier);
+    return () => {
+      window.removeEventListener("scroll", planifier);
+      window.removeEventListener("resize", planifier);
+      if (raf) window.cancelAnimationFrame(raf);
+      root.style.removeProperty("--lab-fond");
+    };
   }, [intensite]);
 
   // TOUT EST EN CSS, POSÉ SUR CHAQUE SECTION PAR SON IDENTIFIANT. Aucun
@@ -125,7 +164,14 @@ function PaletteScrollLabInner() {
   // Le fond de la section ET son papier prennent la couleur : sans le papier,
   // les cartes restent crème au milieu et on ne voit qu'une bande derrière le
   // titre — l'autre moitié du même correctif.
-  const css = intensite === "off" ? "" : (() => {
+  // Sépia · Terres : chaque section garde SON papier pour ses cartes et SON encre
+  // pour ses titres (posés par identifiant), mais son fond est transparent pour
+  // laisser voir le dégradé de la page.
+  const cssSepia = Object.entries(IDENTITES).map(([id, m]) =>
+    `#${id}{background:transparent;--lab-accent:${m.accent};--paper:${m.papier};--paper-deep:${melange(m.papier, "#1C1917", 0.05)}}`).join("\n")
+    + `\nbody{background:var(--lab-fond, ${PAPIER})!important}`;
+
+  const css = intensite === "off" ? "" : intensite === "sepia" ? cssSepia : (() => {
     const I = INTENSITES[intensite];
     return MODULES.map((m) => {
       const fond = m.sombre
@@ -193,7 +239,8 @@ function PaletteScrollLabInner() {
           </button>
           <span style={{ fontWeight: 600 }}>Couleurs des modules</span>
           {bouton("off", "off")}
-          {(Object.keys(INTENSITES) as Exclude<Intensite, "off">[]).map((i) => bouton(i, INTENSITES[i].nom))}
+          {bouton("sepia", "Sépia · Terres")}
+          {(Object.keys(INTENSITES) as Exclude<Intensite, "off" | "sepia">[]).map((i) => bouton(i, INTENSITES[i].nom))}
         </div>
       )}
     </>

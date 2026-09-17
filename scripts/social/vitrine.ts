@@ -200,19 +200,26 @@ function sceneAccroche(logo: string): Scene {
 }
 
 function sceneSources(): Scene {
-  const heures = [0, 4, 8, 12, 16, 20].map((h, i) => `<span style="${anim("pop", .35, 1.3 + i * .1)}">${celestial(h, COLORS.ink, 40)}</span>`).join("");
+  const heures = [0, 4, 8, 12, 16, 20].map((h, i) => `<span style="${anim("pop", .35, 1.1 + i * .08)}">${celestial(h, COLORS.ink, 36)}</span>`).join("");
+  // Trois sources, une ligne chacune ; les modèles locaux en encadré, en dessous
+  // (Jules Piral, 2026-09-17 : parler aussi des promesses électorales, mettre
+  // l'emphase sur les modèles LOCAUX plutôt que sur « l'IA »).
   const lignes = [
-    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, analysées six fois par jour</small><div class="heures">${heures}</div></div>`,
-    `<b class="disp">${fleur(COLORS.blue, 96)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
-    `<b class="disp ia">IA</b><div><p class="pf">des modèles locaux</p><small>entraînés et validés à l’Université Laval</small></div>`,
-  ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .7 + i * .7)}">${l}</div>`).join("");
+    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, six fois par jour</small><div class="heures">${heures}</div></div>`,
+    `<b class="disp">${fleur(COLORS.blue, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
+    `<b class="disp coche" style="color:${MODULES["polimetre-plus"].accent}">✓</b><div><p class="pf">les promesses électorales</p><small>leur écho dans les médias, avec le Polimètre</small></div>`,
+  ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .6 + i * .55)}">${l}</div>`).join("");
   return {
-    id: "sources", duration: 6,
+    id: "sources", duration: 6.4,
     html: `
       <div class="kick mono" style="${anim("fadeIn", .5, .1)}">D’où viennent les données</div>
       <h2 class="disp" style="${anim("fadeUp", .6, .2)}">La Vitrine lit la politique québécoise en continu</h2>
       <div class="lignes">${lignes}</div>
-      <div class="gratuit pf" style="${anim("fadeIn", .5, 3)}">Gratuit, sans publicité, méthodologie publique.</div>`,
+      <div class="local" style="${anim("fadeUp", .6, 2.5)}">
+        <div class="mono">Analysé ici</div>
+        <p class="disp">Des modèles locaux, entraînés, validés et conservés à l’Université Laval</p>
+      </div>
+      <div class="gratuit pf" style="${anim("fadeIn", .5, 3.3)}">Gratuit, sans publicité, méthodologie publique.</div>`,
   };
 }
 
@@ -257,15 +264,17 @@ const CSS = `
 #accroche .tuile span{font-size:28px;line-height:1.1;font-weight:700}
 
 #sources .kick{position:absolute;top:240px;left:76px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:290px;left:76px;right:120px;font-size:80px;line-height:1.02}
-#sources .lignes{position:absolute;top:600px;left:76px;right:120px}
-#sources .ligne{display:flex;align-items:center;gap:34px;padding:26px 0;border-top:3px solid var(--ink)}
-#sources .ligne > b{flex:none;width:200px;font-size:130px;line-height:1;text-align:center;display:flex;justify-content:center}
-#sources .ligne > b.ia{color:var(--blue)}
-#sources .ligne p{font-size:52px;line-height:1.05}
-#sources .ligne small{display:block;font-size:34px;color:var(--soft);margin-top:6px;font-style:italic}
-#sources .heures{display:flex;gap:18px;margin-top:14px}
-#sources .gratuit{position:absolute;top:1320px;left:76px;right:120px;font-size:40px;font-style:italic}
+#sources h2{position:absolute;top:290px;left:76px;right:120px;font-size:76px;line-height:1.02}
+#sources .lignes{position:absolute;top:500px;left:76px;right:120px}
+#sources .ligne{display:flex;align-items:center;gap:30px;padding:16px 0;border-top:3px solid var(--ink)}
+#sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
+#sources .ligne p{font-size:46px;line-height:1.05}
+#sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
+#sources .heures{display:flex;gap:16px;margin-top:10px}
+#sources .local{position:absolute;top:1032px;left:76px;right:120px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
+#sources .local .mono{font-size:26px;letter-spacing:.14em;opacity:.8}
+#sources .local p{font-size:56px;line-height:1.04;margin-top:10px}
+#sources .gratuit{position:absolute;top:1358px;left:76px;right:120px;font-size:36px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{position:absolute;top:236px;left:76px;right:60px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
@@ -344,7 +353,7 @@ function caption(): string {
   const hashtags = ["#VitrineDémocratique", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
   return captionTypo([
     "La Vitrine démocratique, c’est 6 modules pour mieux comprendre la démocratie au Québec.",
-    "Nous suivons les Unes de 13 médias québécois et canadiens, six fois par jour, et les débats de l’Assemblée nationale, chaque jour de débat. Les analyses viennent de modèles d’IA locaux, entraînés et validés à l’Université Laval.",
+    "Nous suivons les Unes de 13 médias québécois et canadiens six fois par jour, les débats de l’Assemblée nationale chaque jour de débat, et l’écho médiatique des promesses électorales. Les analyses viennent de modèles locaux, entraînés, validés et conservés à l’Université Laval.",
     modules.join("\n"),
     "Gratuit, sans publicité, méthodologie publique : vitrinedemocratique.com",
     hashtags.join(" "),
