@@ -1,5 +1,11 @@
 [
   {
+    "pr": 817,
+    "date": "2026-09-17T03:18:26Z",
+    "note": "Le module sur l'Assemblée nationale reprend les couleurs d'un alignement de hockey.",
+    "version": null
+  },
+  {
     "pr": 816,
     "date": "2026-09-17T02:37:49Z",
     "note": "Sur le site de travail, chaque module s'affiche maintenant sur un fond de sa propre couleur, avec trois degrés d'intensité au choix.",
