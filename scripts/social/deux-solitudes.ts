@@ -69,13 +69,13 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:240px;left:76px;right:200px}
+#sonar .head{position:absolute;top:268px;left:76px;right:200px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:60px;right:200px;top:318px;height:720px}
+#sonar .chart{position:absolute;left:60px;right:200px;top:346px;height:660px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:76px;right:200px;top:1060px;height:360px}
+#sonar .zone{position:absolute;left:76px;right:200px;top:1010px;height:330px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}

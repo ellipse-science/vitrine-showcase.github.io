@@ -36,8 +36,8 @@ export const SITE_URL = "https://vitrinedemocratique.com";
 
 /** ZONE SÛRE : ce que l'interface des Reels laisse voir sur un téléphone, selon
  *  la convention des Reels ORGANIQUES (guides Kreatli, Pod2Reels, Outfy, 2026) :
- *    · haut 220 px   : nom du compte ;
- *    · bas 400 px    : légende et titre de la musique ;
+ *    · haut 250 px   : nom du compte et titre de la musique ;
+ *    · bas 450 px    : légende, son, et la rangée de boutons du bas ;
  *    · gauche 60 px  : marge de bord ;
  *    · droite 120 px : colonne de boutons (j'aime, commentaire, partage,
  *      enregistrer), qui ne commence qu'au tiers de l'écran (`buttonsTop`).
@@ -45,8 +45,14 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  côtés) ne s'applique pas : nos reels ne sont pas sponsorisés.
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco` : illustration, bandeaux) peut en sortir.
- *  L'aperçu affiche ces zones en rouge (bouton « Zones Instagram »). */
-export const SAFE = { top: 220, bottom: HEIGHT - 400, left: 60, right: WIDTH - 60, buttonsTop: 640, buttonsLeft: WIDTH - 120 };
+ *  L'aperçu affiche ces zones en rouge (bouton « Zones Instagram »).
+ *  ⚠️ MARGES ÉLARGIES le 2026-09-17 (Jules Piral : « il faut vraiment que ce soit
+ *  adapté au format des téléphones actuels ») : 250 px en haut et 450 px en bas
+ *  au lieu de 220 et 400. Les iPhone récents sont plus hauts que le 9:16 du reel
+ *  (19,5:9) ; l'image reste en 1080 × 1920, le format que réclame Instagram, mais
+ *  son interface mange davantage de haut et de bas. Valeurs relevées le 17-09
+ *  dans les guides 2026 (SocialSizes, Wavegen, Outfy). */
+export const SAFE = { top: 250, bottom: HEIGHT - 450, left: 60, right: WIDTH - 60, buttonsTop: 640, buttonsLeft: WIDTH - 120 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
@@ -290,10 +296,10 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:230px;left:76px;width:540px}
-#intro .module{position:absolute;top:440px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:262px;left:76px;width:540px}
+#intro .module{position:absolute;top:470px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:510px;left:76px;right:120px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:545px;left:76px;right:120px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
 #intro .ed{position:absolute;left:76px;right:120px;bottom:640px;color:var(--paper);font-size:30px}
@@ -383,19 +389,19 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:236px 120px 0 76px}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:266px 120px 0 76px}
 #fin .kick{font-size:28px;color:var(--soft)}
-#fin .logo{width:640px;margin-top:18px}
+#fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:26px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-#fin .six{font-size:34px;font-style:italic;margin-top:30px;color:var(--soft)}
+#fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:76px;right:120px;top:1050px;display:flex;flex-direction:column;align-items:center}
+#fin .foot{position:absolute;left:76px;right:120px;top:1010px;display:flex;flex-direction:column;align-items:center}
 #fin .part{font-size:26px;color:rgba(243,236,221,.8)}
-#fin .logos{margin-top:26px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:30px 44px}
-#fin .logos img{height:64px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
+#fin .logos{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
+#fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de

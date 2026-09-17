@@ -99,22 +99,18 @@ commun, une identité visuelle, un rappel marqué.**
 
 - **ARRÊTÉ · Rien ne dépasse du cadre.** Tout (illustration, bandeaux, graphiques,
   texte) reste à l'intérieur de l'encadré (30 px de chaque bord).
-- **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Toute
-  information tient dans la ZONE SÛRE `SAFE` (convention des **Reels organiques**) :
-  220 px en haut (nom du compte), 400 px en bas (légende, musique), 60 px à gauche,
-  **120 px à droite à partir de y 640** (colonne de boutons, sous le tiers de
-  l'écran ; 60 px au-dessus). Le contenu s'arrête au-dessus de la barre de marque
-  (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` (illustration, bandeaux,
-  halo du logo) en sort. Zone des publicités Meta (14 % haut, 35 % bas) : non
-  retenue, trop d'espace perdu. Sources consultées le 2026-09-16 : Kreatli,
-  Pod2Reels, Outfy (organique) ; Billo, Behaviour Digital (publicités).
-  **Renverse** la marge de 200 px non bloquante du 16-09.
-- **ARRÊTÉ · Aucun texte empilé sur un autre** (Jules Piral, 2026-09-17 : « des
-  infos et du texte empilés les uns sur les autres »). Le contrôle mesure chaque
-  ligne de texte visible à la fin de chaque scène et bloque le MP4 si deux lignes
-  se recouvrent (cœur de la ligne, pour ne pas compter l'interlignage serré d'un
-  titre). ⚠️ Il ne voit ni le texte posé sur un graphique ni les chevauchements
-  en cours d'animation : les images fixes restent à relire.
+- **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Image
+  en **1080 × 1920 (9:16)** — le format qu'Instagram réclame, et celui que les
+  iPhone récents affichent le mieux, même si leur écran est plus haut (19,5:9).
+  Toute information tient dans la ZONE SÛRE `SAFE` : **250 px en haut** (nom du
+  compte, musique), **450 px en bas** (légende, son, boutons du bas), 60 px à
+  gauche, **120 px à droite sous y 640** (colonne de boutons). Le contenu s'arrête
+  au-dessus de la barre de logos (`CONTENT_BOTTOM`). Seul le décor marqué
+  `data-deco` en sort. ⚠️ **Marges élargies le 2026-09-17** (Jules Piral : « il faut
+  vraiment que ce soit adapté au format des téléphones actuels ») : 250/450 au lieu
+  de 220/400, d'après les guides 2026 (SocialSizes, Wavegen, Outfy) ; les quatre
+  reels et les dix reels courts ont été resserrés en conséquence. Zone des
+  publicités Meta : toujours non retenue.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle cadre, zone sûre et

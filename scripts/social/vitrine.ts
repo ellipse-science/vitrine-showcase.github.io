@@ -308,28 +308,28 @@ const CSS = `
 #accroche .traits{position:absolute;left:76px;right:120px;top:1080px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:240px;left:76px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:290px;left:76px;right:120px;font-size:76px;line-height:1.02}
-#sources .lignes{position:absolute;top:500px;left:76px;right:120px}
+#sources .kick{position:absolute;top:268px;left:76px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:318px;left:76px;right:120px;font-size:76px;line-height:1.02}
+#sources .lignes{position:absolute;top:528px;left:76px;right:120px}
 #sources .ligne{display:flex;align-items:center;gap:30px;padding:16px 0;border-top:3px solid var(--ink)}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1032px;left:76px;right:120px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
+#sources .local{position:absolute;top:1006px;left:76px;right:120px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
 #sources .local .mono{font-size:26px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:56px;line-height:1.04;margin-top:10px}
-#sources .gratuit{position:absolute;top:1358px;left:76px;right:120px;font-size:36px;font-style:italic}
+#sources .gratuit{position:absolute;top:1308px;left:76px;right:120px;font-size:36px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
-.scene .rang{position:absolute;top:236px;left:76px;right:60px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
+.scene .rang{position:absolute;top:266px;left:76px;right:60px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:300px;left:76px;right:120px}
+.scene .tete{position:absolute;top:326px;left:76px;right:120px}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
-.scene .schema{position:absolute;left:60px;right:120px;top:800px;height:410px}
-.scene .site{position:absolute;left:76px;right:120px;top:1238px;font-size:38px;line-height:1.2}
+.scene .schema{position:absolute;left:60px;right:120px;top:806px;height:370px}
+.scene .site{position:absolute;left:76px;right:120px;top:1204px;font-size:38px;line-height:1.2}
 .scene .site b{display:block;font-size:28px;margin-bottom:8px}
 
 .schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
@@ -373,9 +373,9 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:250px;left:76px;right:120px;font-size:86px;line-height:1.02}
-#recap ul{position:absolute;top:640px;left:76px;right:120px;list-style:none;display:flex;flex-direction:column;gap:16px}
-#recap li{display:flex;align-items:center;gap:30px;height:112px;padding:0 26px;border-left:14px solid}
+#recap h2{position:absolute;top:276px;left:76px;right:120px;font-size:86px;line-height:1.02}
+#recap ul{position:absolute;top:656px;left:76px;right:120px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap li{display:flex;align-items:center;gap:30px;height:100px;padding:0 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px}
 `;
