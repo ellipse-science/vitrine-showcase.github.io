@@ -59,6 +59,7 @@ détient les droits, pour les plateformes sans catalogue.
      droite sous y 640** (boutons), et le contenu au-dessus de la barre de logos
      (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` a le droit d'en sortir ;
    - lisibilité : aucun texte sous 26 px (`MIN_FONT`).
+   - empilement : aucune ligne de texte sur une autre (fin de chaque scène seulement).
    Ne JAMAIS contourner un écart en marquant du texte `data-deco`.
 
 **Ne jamais annoncer un reel sans avoir REGARDÉ des images fixes.**

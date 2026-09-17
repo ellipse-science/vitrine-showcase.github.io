@@ -511,7 +511,7 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
     for (const o of ecarts) console.warn(`     · ${o}`);
     if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  gabarit → cadre, zone Instagram et lisibilité respectés");
+    console.log("  gabarit → cadre, zone Instagram, lisibilité et textes non empilés respectés");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
@@ -621,6 +621,38 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
       const size = parseFloat(getComputedStyle(el).fontSize);
       if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
     }
+  }
+  // TEXTES EMPILÉS (Jules Piral, 2026-09-17 : « des infos et du texte empilés les
+  // uns sur les autres »). Chaque ligne de texte visible est mesurée au plus près
+  // (Range sur le nœud texte) ; deux lignes de deux nœuds différents qui se
+  // recouvrent de plus de 6 px dans les deux sens sont un écart.
+  const opacity = (el) => { let o = 1; for (let a = el; a && a !== document.body; a = a.parentElement) o *= parseFloat(getComputedStyle(a).opacity); return o; };
+  const lines = [];
+  const walker = document.createTreeWalker(scene, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const txt = (n.textContent || "").trim();
+    if (!txt || !n.parentElement || opacity(n.parentElement) < .2) continue;
+    const range = document.createRange(); range.selectNodeContents(n);
+    // La boîte d'un Range couvre toute la hauteur de la fonte (jambages, blanc
+    // au-dessus des capitales) : avec un interlignage serré, deux lignes d'un même
+    // titre se touchent sans que les lettres se touchent. On ne garde que le
+    // cœur de la ligne (la moitié centrale), là où sont les lettres.
+    for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) {
+      const pad = q.height * .15;
+      lines.push({ n, txt, r: { left: q.left, right: q.right, top: q.top + pad, bottom: q.bottom - pad } });
+    }
+  }
+  const seen = new Set();
+  for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+    const a = lines[i], b = lines[j];
+    if (a.n === b.n) continue;
+    const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+    const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+    if (w <= 6 || h <= 6) continue;
+    const key = a.txt + "|" + b.txt;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push("empilement · scène " + sceneId + " : « " + a.txt.slice(0, 30) + " » sur « " + b.txt.slice(0, 30) + " »");
   }
   return out;
 }`;
