@@ -31,8 +31,8 @@
  * ⚠️ Règle d'Adrien du 3 sept., toujours valable : LA UNE DES UNES GARDE LE
  * PAPIER. Le premier changement se voit en arrivant sur Deux solitudes.
  *
- * Les jetons sont posés SUR CHAQUE SECTION, jamais globalement : le reste de la
- * page n'en sait rien, et « off » rend tout au papier.
+ * TOUTE LA PAGE prend la couleur du module où l'on se trouve, et le changement
+ * est franc d'un module à l'autre. « off » rend tout au papier.
  *
  *   ?lab=off | discret | marque | franc
  */
@@ -95,9 +95,6 @@ const jetonsNuit = (fond: string, accent: string): Record<string, string> => ({
   "--cordovan": "#C9585F",
 });
 
-const TOUS_JETONS = ["--paper", "--paper-deep", "--ink", "--ink-soft", "--ink-softer",
-  "--rule", "--rule-faint", "--brass", "--amber-encre", "--cordovan", "--lab-accent"];
-
 export default function PaletteScrollLab() {
   if (process.env.NEXT_PUBLIC_SITE_ENV === "prod") return null;
   return <PaletteScrollLabInner />;
@@ -117,30 +114,30 @@ function PaletteScrollLabInner() {
 
   useEffect(() => {
     try { window.localStorage.setItem("lab-intensite", intensite); } catch { /* rien */ }
+  }, [intensite]);
 
-    const sections = MODULES
-      .map((m) => ({ m, el: document.getElementById(m.id) }))
-      .filter((x): x is typeof x & { el: HTMLElement } => !!x.el);
-
-    const rendre = () => sections.forEach(({ el }) => {
-      TOUS_JETONS.forEach((k) => el.style.removeProperty(k));
-      el.style.removeProperty("background");
-    });
-
-    if (intensite === "off") { rendre(); return rendre; }
-
+  // TOUT EST EN CSS, POSÉ SUR CHAQUE SECTION PAR SON IDENTIFIANT. Aucun
+  // observateur, aucun réglage au montage : le style s'applique que les modules
+  // soient déjà là ou non (correctif du 16-09 — l'ancienne version branchait un
+  // IntersectionObserver avant que les sections existent, et ne posait jamais
+  // rien : « je vois rien »).
+  //
+  // Le fond de la section ET son papier prennent la couleur : sans le papier,
+  // les cartes restent crème au milieu et on ne voit qu'une bande derrière le
+  // titre — l'autre moitié du même correctif.
+  const css = intensite === "off" ? "" : (() => {
     const I = INTENSITES[intensite];
-    for (const { m, el } of sections) {
+    return MODULES.map((m) => {
       const fond = m.sombre
         ? melange(PAPIER, NUIT, I.nuit)
         : m.papierPur ? PAPIER : melange(PAPIER, m.teinte ?? m.accent, I.force);
       const accent = m.sombre ? (m.accentNuit ?? m.accent) : m.accent;
-      el.style.background = fond;
-      el.style.setProperty("--lab-accent", accent);
-      if (m.sombre) for (const [k, v] of Object.entries(jetonsNuit(fond, accent))) el.style.setProperty(k, v);
-    }
-    return rendre;
-  }, [intensite]);
+      const jetons = m.sombre
+        ? Object.entries(jetonsNuit(fond, accent))
+        : [["--paper", fond], ["--paper-deep", melange(fond, "#1C1917", 0.05)]];
+      return `#${m.id}{background:${fond};--lab-accent:${accent};${jetons.map(([k, v]) => `${k}:${v}`).join(";")}}`;
+    }).join("\n");
+  })();
 
   const bouton = (i: Intensite, libelle: string) => (
     <button
@@ -160,8 +157,9 @@ function PaletteScrollLabInner() {
   return (
     <>
       <style>{`
-        [data-section] { transition: background-color 500ms ease; }
-        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 500ms ease; }
+        [data-section] { transition: background-color 450ms ease; }
+        [data-section] h2, [data-section] .section-label { color: var(--lab-accent, inherit); transition: color 450ms ease; }
+        ${css}
       `}</style>
       {replie ? (
         <button
