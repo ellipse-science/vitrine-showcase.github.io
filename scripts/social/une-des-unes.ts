@@ -29,7 +29,7 @@ import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, sceneFin, sceneIntro, loadLogos, txt, type Scene,
+  parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -99,7 +99,7 @@ function centileMessage(centile: number): { c: number; big: number; before: stri
 }
 
 /** « 6/6 des médias québécois en parlent ». */
-const coverageLabel = (n: number) => (n > 1 ? "des médias québécois en parlent" : "des médias québécois en parle");
+const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent" : "des grands médias québécois en parle");
 
 /** « Le Journal de Montréal » (lib/medias.ts) et « Journal de Montréal »
  *  (mediaToday) désignent le même média. */
@@ -123,14 +123,15 @@ const CSS = `
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
 #une .rank{position:absolute;top:250px;left:76px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:750px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:26px;color:var(--softer);opacity:.85}
+#une .credit{position:absolute;top:806px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:26px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:76px;right:200px;top:796px}
+#une .body{position:absolute;left:76px;right:120px;top:850px}
 #une .tag{display:inline-block;color:var(--paper);font-size:26px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
 #une .stat{flex:1;border-top:6px solid var(--ink);padding-top:16px}
-#une .stat b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:76px;line-height:1.05}
+#une .stat:first-child{flex:1.4}
+#une .stat b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:60px;line-height:1.05;white-space:nowrap}
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
@@ -143,7 +144,7 @@ const CSS = `
 #trajectoire .unit{font-size:26px;color:var(--softer);padding-bottom:16px}
 #trajectoire .chip{position:absolute;left:76px;top:590px;font-size:28px;padding:9px 16px}
 #trajectoire .when{position:absolute;right:200px;top:602px;display:flex;align-items:center;gap:14px;font-size:26px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:60px;right:200px;top:700px;height:640px}
+#trajectoire .chart{position:absolute;left:76px;right:200px;top:700px;height:640px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -151,18 +152,18 @@ const CSS = `
 #trajectoire .peak{position:absolute;font-size:26px;background:var(--ink);color:var(--paper);padding:8px 0;text-align:center}
 #trajectoire .xl{position:absolute;text-align:center;color:var(--soft)}
 #trajectoire .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:6px;color:var(--ink)}
-#trajectoire .xl span{display:block;font-size:26px;line-height:1.05;margin-top:2px}
+#trajectoire .xl span{display:block;font-size:26px;line-height:1.05;margin-top:2px;margin-left:-12px;margin-right:-12px}
 #trajectoire .xl.now b{color:var(--blue)}
 #trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#trajectoire .cap{position:absolute;left:76px;right:200px;top:1318px;font-size:42px;line-height:1.15}
+#trajectoire .cap{position:absolute;left:76px;right:120px;top:1340px;font-size:34px;line-height:1.12}
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:240px;left:76px;right:200px}
+#centile .head{position:absolute;top:240px;left:76px;right:120px}
 #centile .lead{font-style:italic;font-size:46px;color:var(--soft);margin-top:18px}
-#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:200px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
+#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
-#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:52px;line-height:1.1;margin-top:8px}
+#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:44px;line-height:1.1;margin-top:8px}
 #centile .scale{position:absolute;left:76px;width:280px}
 /* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
    l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
@@ -170,22 +171,22 @@ const CSS = `
   background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
   box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
 #centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
-#centile .tick{position:absolute;left:76px;white-space:nowrap;font-size:26px;letter-spacing:.12em;color:var(--softer)}
+#centile .tick{position:absolute;left:76px;white-space:nowrap;font-size:26px;letter-spacing:.02em;color:var(--softer)}
 #centile .mark{position:absolute;left:76px;right:200px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
 #centile .mlabel{position:absolute;right:200px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
 #centile .note{position:absolute;left:380px;right:200px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:76px;right:200px;top:1318px;font-size:26px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:76px;right:120px;top:1346px;font-size:26px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 #couverture .head{position:absolute;top:262px;left:76px;right:200px}
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:280px;line-height:.9;color:var(--blue)}
-#couverture .lab{font-size:50px;margin-top:10px}
-#couverture ul{position:absolute;left:76px;right:200px;top:620px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:120px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:62px}
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
+#couverture ul{position:absolute;left:76px;right:200px;top:640px;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:112px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px}
 #couverture li span{font-size:26px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
@@ -208,9 +209,9 @@ const CSS = `
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:490px;text-align:center;color:var(--soft)}
+#classement .xl{position:absolute;top:470px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
-#classement .note{position:absolute;left:76px;right:120px;top:1350px;font-size:26px;line-height:1.2;color:var(--softer)}
+#classement .note{position:absolute;left:76px;right:120px;top:1352px;font-size:26px;line-height:1.2;color:var(--softer)}
 
 `;
 
@@ -266,7 +267,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
   if (!trend || trend.points.length < 2) return null;
   const pts = trend.points;
   const max = Math.max(...pts.map((p) => p.cumul), 1);
-  const BASE = 500, H = 400; // ligne de base et hauteur utile (repère .chart)
+  const BASE = 470, H = 370; // ligne de base et hauteur utile (repère .chart)
   const n = pts.length, gap = 22, bw = (CHART_W - 14 - gap * (n - 1)) / n;
   const left = (i: number) => 7 + i * (bw + gap);
   const y = (v: number) => BASE - (v / max) * H;
@@ -286,7 +287,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
       <div class="val" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) + (inside ? 46 : -62)}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
       ${p.isPeak ? `<div class="peak mono" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) - 58}px;animation:pop .5s ${d + GROW + .1}s both">Sommet</div>` : ""}
       <div class="xl${p.isNow ? " now" : ""}" style="left:${left(i)}px;width:${bw}px;top:${BASE + 16}px;animation:fadeIn .3s ${d}s both">
-        <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b><span>${esc(momentOf(p.timeLabel))}</span>
+        <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b><span>${esc(momentOf(p.timeLabel)).replace("après-midi", "après\u2011midi")}</span>
       </div>`;
   }).join("");
 
@@ -342,7 +343,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
 // graduation = 1 % des nouvelles de la dernière année, les plus saillantes en
 // haut. Les graduations se remplissent jusqu'à la nouvelle, puis un trait la
 // situe et deux annotations disent ce qu'il y a au-dessus et au-dessous.
-const SCALE_TOP = 680, SCALE_H = 590, FILL0 = 0.9, FILL = 2.2;
+const SCALE_TOP = 730, SCALE_H = 550, FILL0 = 0.9, FILL = 2.2;
 
 function sceneCentile(top: UneEvent): Scene | null {
   if (top.saillanceCentile == null) return null;
@@ -442,7 +443,7 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
   const max = Math.max(1, ...stories.flatMap((e) => e.salienceTrend!.points.map((p) => p.cumul)));
   // Gouttière à droite : les valeurs se posent APRÈS le dernier point, jamais
   // par-dessus une courbe qui descend (la n°1 croisait son propre chiffre).
-  const PAD = 60, GUT = 190, BASE = 480, H = 400, CHART_H = 540;
+  const PAD = 60, GUT = 190, BASE = 460, H = 380, CHART_H = 520;
   const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - PAD - GUT);
   const y = (v: number) => BASE - (v / max) * H;
   // Même enjeu, même couleur : le trait change pour qu'on distingue les courbes.
@@ -657,7 +658,7 @@ async function main() {
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({

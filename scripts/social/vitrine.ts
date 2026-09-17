@@ -25,7 +25,7 @@ import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 import { captionTypo } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
 import {
-  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
+  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
   type Scene,
 } from "./lib/reel";
 
@@ -360,7 +360,7 @@ async function main() {
     ...ORDRE.map((k, i) => sceneModule(k, i)),
     sceneRecap(),
     // pubHour -1 : aucune édition en surbrillance, ce reel n'appartient à aucune.
-    sceneFin({ pubHour: -1, signature: "6 modules pour mieux comprendre la démocratie au Québec", logo: logos.vitrine, accent: COLORS.ink }),
+    sceneFin({ pubHour: -1, signature: "6 modules pour mieux comprendre la démocratie au Québec", logo: logos.vitrine, accent: COLORS.ink, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({

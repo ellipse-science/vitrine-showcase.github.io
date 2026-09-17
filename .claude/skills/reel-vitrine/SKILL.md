@@ -41,7 +41,10 @@ Sortie dans `social-out/` (hors Git — on ne pousse JAMAIS de MP4) :
 | `…_tiktok.txt` | légende courte | Jules |
 | `…_commentaire.txt` | les articles de la nouvelle n°1, avec signatures et liens | premier commentaire, partout |
 
-La musique s'ajoute dans l'application au moment de publier (la piste est muette).
+**La piste est muette, et elle le reste** : la musique se prend dans le catalogue
+de la plateforme au moment de publier. Un lit sonore fabriqué par nous a été
+essayé le 16-09 et rejeté. `--musique fichier.mp3` monte une trame dont on
+détient les droits, pour les plateformes sans catalogue.
 
 ## 2. Les deux verrous, à chaque production
 
@@ -56,6 +59,7 @@ La musique s'ajoute dans l'application au moment de publier (la piste est muette
      droite sous y 640** (boutons), et le contenu au-dessus de la barre de logos
      (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` a le droit d'en sortir ;
    - lisibilité : aucun texte sous 26 px (`MIN_FONT`).
+   - empilement : aucune ligne de texte sur une autre (fin de chaque scène seulement).
    Ne JAMAIS contourner un écart en marquant du texte `data-deco`.
 
 **Ne jamais annoncer un reel sans avoir REGARDÉ des images fixes.**

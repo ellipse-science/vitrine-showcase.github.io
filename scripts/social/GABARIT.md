@@ -32,6 +32,22 @@ commun, une identité visuelle, un rappel marqué.**
   **découpée par le PNG lui-même** (`mask-image`) — seuls les traits s'allument, le
   papier autour ne bouge pas. Le PNG sert de gabarit : le calage est exact par
   construction, aucun tracé n'est redessiné. À l'accroche ET à la fin.
+- **ARRÊTÉ · AUCUN SON dans le MP4** (Adrien, 2026-09-16). La piste reste muette
+  et la musique se prend dans le **catalogue de la plateforme** au moment de
+  publier : c'est la seule façon d'être en règle sur Instagram et TikTok.
+  `--musique fichier.mp3` monte une trame dont on détient les droits, pour les
+  plateformes sans catalogue. 🪤 `public/audio/latest.mp3` date du 16 juin et sa
+  génération est en panne silencieuse : ne pas le coller sur une vidéo du jour.
+- **ARRÊTÉ · Les partenaires ont le carré de couleur pour eux** (Adrien,
+  2026-09-16) : « Nos partenaires » et les dix logos du site, en papier, dans le
+  bandeau de fin ; l'horaire des six éditions remonte sur le papier, ses cases au
+  contour de la couleur du module (l'édition en cours est pleine). « Méthodologie
+  complète au » au-dessus de l'adresse. Porté au format strict le 17-09 : tout
+  tient au-dessus de la barre Vitrine + CAPP. 🪤 `llm-tool.png` est blanc sur fond
+  noir, avec des bandes de couleur : on n'en garde que le mot « LLM TOOL ».
+  **ARRÊTÉ · Tous les logos en blanc, aucune couleur** (Jules Piral, 2026-09-17).
+  🪤 La Chaire est en couleurs : en silhouette, une tache. On garde son tracé
+  foncé ou coloré et on efface ses séparations claires (`traceSeul`).
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
@@ -83,6 +99,12 @@ commun, une identité visuelle, un rappel marqué.**
   retenue, trop d'espace perdu. Sources consultées le 2026-09-16 : Kreatli,
   Pod2Reels, Outfy (organique) ; Billo, Behaviour Digital (publicités).
   **Renverse** la marge de 200 px non bloquante du 16-09.
+- **ARRÊTÉ · Aucun texte empilé sur un autre** (Jules Piral, 2026-09-17 : « des
+  infos et du texte empilés les uns sur les autres »). Le contrôle mesure chaque
+  ligne de texte visible à la fin de chaque scène et bloque le MP4 si deux lignes
+  se recouvrent (cœur de la ligne, pour ne pas compter l'interlignage serré d'un
+  titre). ⚠️ Il ne voit ni le texte posé sur un graphique ni les chevauchements
+  en cours d'animation : les images fixes restent à relire.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle cadre, zone sûre et
@@ -218,6 +240,9 @@ Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 - Grille de 10×10 cases pour le centile (peu parlante).
 - Couleurs de courbes par rang sans légende ni pictogramme (incompréhensibles).
 - « 92 % plus saillante que toutes les Unes de l'année » (faux : c'est un rang).
+- **Un lit sonore fabriqué par nous** (accord tenu en sinusoïdes, essayé le
+  2026-09-16) : « c'est pas d'la musique ». La musique vient du catalogue de la
+  plateforme.
 - « Illustration générée par IA · Anorak Studio » ; crédit en petites capitales mono
   posé sur l'image (trop visible).
 - Éléments pleine page qui débordent de l'encadré.
@@ -253,6 +278,8 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
   le chiffre de **convergence** (« 42 % de convergence · 10 % plus divergent que
   d'habitude ») et la phrase éditoriale du site.
 - **ARRÊTÉ · Anneaux ronds**, quatre, en pointillé sauf le dernier : c'est un sonar.
+- **ARRÊTÉ · Pas de légende sous le radar** (Adrien, 2026-09-16) : rouge = Canada,
+  bleu = Québec, c'est évident et la place va à la carte du sujet.
 - **ARRÊTÉ · UN SUJET À LA FOIS** (retour d'Adrien, 2026-09-16 : « les points qui
   apparaissent, c'est cool, mais un peu mêlant »). Pendant sa fenêtre, le sujet
   détecté tient tout : sa tranche du radar s'éclaire, son rayon s'épaissit, ses
