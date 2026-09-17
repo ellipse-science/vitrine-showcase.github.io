@@ -55,7 +55,7 @@ export const DUREE_PLAN = 5.6;
 export const MAX_SECONDES = 12;
 
 /** Boîte caméra. */
-export const BOITE = { gauche: 76, droite: 120, haut: 706, hauteur: 650 };
+export const BOITE = { gauche: 116, droite: 180, haut: 706, hauteur: 650 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
@@ -77,10 +77,10 @@ export function scenePlanHtml(plan: Plan): { html: string; css: string; script: 
 #plan .camera{position:absolute;inset:0}
 @keyframes cameraPlan{from{transform:scale(.94)}to{transform:scale(1)}}
 ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / DUREE_PLAN) * 100)}%{transform:scale(${z.de})}100%{transform:scale(${z.a})}}` : ""}
-#plan .eclair{position:absolute;left:30px;right:30px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
+#plan .eclair{position:absolute;left:30px;right:180px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
-#plan .phr{position:absolute;left:76px;right:120px}
+#plan .phr{position:absolute;left:116px;right:180px}
 #plan .phr.a{top:318px;font-size:46px;line-height:1.12;font-weight:700}
 #plan .phr.b{top:430px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;

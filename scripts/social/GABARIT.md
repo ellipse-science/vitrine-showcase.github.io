@@ -114,19 +114,23 @@ commun, une identité visuelle, un rappel marqué.**
   résultat — avec `data-cle`, et le contrôle refuse la vidéo s'il en sort. Le
   surtitre, la note de méthode et la légende vivent au-dessus et au-dessous : on
   les découvre en plein écran. L'aperçu trace ce carré en bleu.
-- **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Image
-  en **1080 × 1920 (9:16)** — le format qu'Instagram réclame, et celui que les
-  iPhone récents affichent le mieux, même si leur écran est plus haut (19,5:9).
-  Toute information tient dans la ZONE SÛRE `SAFE` : **300 px en haut** (nom du
-  compte, musique, et la caméra ou l'îlot dynamique des iPhone récents), **450 px en bas** (légende, son, boutons du bas), 60 px à
-  gauche, **120 px à droite sous y 640** (colonne de boutons). Le contenu s'arrête
-  au-dessus de la barre de logos (`CONTENT_BOTTOM`). Seul le décor marqué
-  `data-deco` en sort. ⚠️ **Marges élargies le 2026-09-17** (Jules Piral : « il faut
-  vraiment que ce soit adapté au format des téléphones actuels ») : 300/450 au lieu
-  de 220/400 (250 en haut au premier essai, porté à 300 le même jour pour la
-  caméra des iPhone), d'après les guides 2026 (SocialSizes, Wavegen, Outfy) ; les quatre
-  reels et les dix reels courts ont été resserrés en conséquence. Zone des
-  publicités Meta : toujours non retenue.
+- **ARRÊTÉ · Format Instagram STRICT, MESURÉ AU SIMULATEUR** (Jules Piral,
+  2026-09-17). Image en **1080 × 1920 (9:16)**, le format qu'Instagram réclame.
+  Sur un écran 19,5:9 (iPhone récents), l'application peut l'afficher de deux
+  façons, et on tient dans l'union des deux :
+  - **ajusté** (barres noires en haut et en bas) : rien n'est rogné, mais le
+    compte, la légende et le son couvrent de y 1700 à 1920 ;
+  - **plein écran** (agrandi jusqu'à remplir) : **98 px rognés à gauche et à
+    droite**, et le bas couvert dès y 1560.
+
+  D'où la ZONE SÛRE `SAFE` : **haut 150 px** (l'heure et l'îlot dynamique tombent
+  sur la bande noire), **bas 380 px**, **côtés 110 px**, et rien à droite de
+  **x 900** sous y 1040 (colonne de boutons). Le contenu s'arrête au-dessus de la
+  barre de logos (`CONTENT_BOTTOM`) ; seul le décor `data-deco` sort de la zone.
+  **Renverse** les marges tirées des guides (300/450/60/120) : trop prudentes en
+  haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
+  sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
+  de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et
