@@ -292,7 +292,7 @@ const CSS = `
 /* Le logo est là dès l'ouverture, sur une plaque de papier au-dessus des bandes
    (Jules, 17-09 : « dans les lignes qui tombent, le logo doit être présent ») ;
    la plaque se fond dans le papier quand les bandes s'effacent. */
-#accroche .logo{position:absolute;top:232px;left:60px;padding:18px 16px;background:#F3ECDD;box-shadow:0 14px 40px rgba(28,25,23,.18);transform-origin:left center}
+#accroche .logo{position:absolute;top:232px;left:124px;padding:18px 16px;background:#F3ECDD;box-shadow:0 14px 40px rgba(28,25,23,.18);transform-origin:center center}
 @keyframes plaque{to{box-shadow:0 0 0 rgba(28,25,23,0)}}
 #accroche h1{position:absolute;top:620px;left:76px;right:120px}
 #accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
