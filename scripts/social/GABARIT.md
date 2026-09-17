@@ -28,6 +28,20 @@ commun, une identité visuelle, un rappel marqué.**
   **découpée par le PNG lui-même** (`mask-image`) — seuls les traits s'allument, le
   papier autour ne bouge pas. Le PNG sert de gabarit : le calage est exact par
   construction, aucun tracé n'est redessiné. À l'accroche ET à la fin.
+- **ARRÊTÉ · Une musique par module** (Adrien, 2026-09-16). Un ACCORD TENU
+  fabriqué par nous (`scripts/social/lib/musique.ts`) à partir de l'intention
+  déclarée dans `lib/modules.ts` : rien d'emprunté, rien à libérer de droits, et
+  un module sonne pareil d'une édition à l'autre — c'est une signature.
+  ⚠️ Ce n'est pas une trame musicale. Sur **Instagram et TikTok**, prendre la
+  musique dans le catalogue de l'application au moment de publier : c'est la
+  seule façon d'être en règle. Ailleurs, `--musique fichier.mp3` monte un
+  fichier dont on détient les droits. 🪤 `public/audio/latest.mp3` date du
+  16 juin et sa génération est en panne : ne pas le coller sur une vidéo du jour.
+- **ARRÊTÉ · Les partenaires dans le carré de couleur** (Adrien, 2026-09-16) :
+  les dix logos du site, en papier, sous les six éditions. 🪤 `llm-tool.png` est
+  blanc sur fond noir quand les autres sont noirs sur transparent : il passe en
+  `mix-blend-mode:screen`, pas par l'inversion.
+- **ARRÊTÉ · « Méthodologie complète au » au-dessus de l'adresse** (Adrien, 16-09).
 - **ARRÊTÉ · Même fin partout** (`sceneFin`) : logo, signature du module, adresse,
   bandeau des six éditions — le bandeau prend la couleur du module.
 - **ARRÊTÉ · Une couleur par module**, définie une seule fois dans
@@ -218,6 +232,8 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
   le chiffre de **convergence** (« 42 % de convergence · 10 % plus divergent que
   d'habitude ») et la phrase éditoriale du site.
 - **ARRÊTÉ · Anneaux ronds**, quatre, en pointillé sauf le dernier : c'est un sonar.
+- **ARRÊTÉ · Pas de légende sous le radar** (Adrien, 2026-09-16) : rouge = Canada,
+  bleu = Québec, c'est évident et la place est mieux employée par le titre.
 - **ARRÊTÉ · UN SUJET À LA FOIS** (retour d'Adrien, 2026-09-16 : « les points qui
   apparaissent, c'est cool, mais un peu mêlant »). Pendant sa fenêtre, le sujet
   détecté tient tout : sa tranche du radar s'éclaire, son rayon s'épaissit, ses

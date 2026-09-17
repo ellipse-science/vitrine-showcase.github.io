@@ -29,7 +29,7 @@ import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, sceneFin, sceneIntro, teintePapier, txt, type Scene,
+  parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, teintePapier, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -99,7 +99,7 @@ function centileMessage(centile: number): { c: number; big: number; before: stri
 }
 
 /** « 6/6 des médias québécois en parlent ». */
-const coverageLabel = (n: number) => (n > 1 ? "des médias québécois en parlent" : "des médias québécois en parle");
+const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent" : "des grands médias québécois en parle");
 
 /** « Le Journal de Montréal » (lib/medias.ts) et « Journal de Montréal »
  *  (mediaToday) désignent le même média. */
@@ -143,7 +143,7 @@ const CSS = `
 #trajectoire .unit{font-size:26px;color:var(--softer);padding-bottom:16px}
 #trajectoire .chip{position:absolute;left:76px;top:590px;font-size:28px;padding:9px 16px}
 #trajectoire .when{position:absolute;right:200px;top:602px;display:flex;align-items:center;gap:14px;font-size:24px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:60px;right:200px;top:700px;height:640px}
+#trajectoire .chart{position:absolute;left:60px;right:200px;top:672px;height:640px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -151,18 +151,18 @@ const CSS = `
 #trajectoire .peak{position:absolute;font-size:22px;background:var(--ink);color:var(--paper);padding:8px 0;text-align:center}
 #trajectoire .xl{position:absolute;text-align:center;color:var(--soft)}
 #trajectoire .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:6px;color:var(--ink)}
-#trajectoire .xl span{display:block;font-family:"IBM Plex Mono",monospace;font-size:18px;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+#trajectoire .xl span{display:block;font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.15;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
 #trajectoire .xl.now b{color:var(--blue)}
 #trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#trajectoire .cap{position:absolute;left:76px;right:200px;top:1350px;font-size:44px;line-height:1.15}
+#trajectoire .cap{position:absolute;left:76px;right:200px;top:1386px;font-size:42px;line-height:1.14}
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
 #centile .head{position:absolute;top:240px;left:76px;right:200px}
-#centile .lead{font-style:italic;font-size:46px;color:var(--soft);margin-top:18px}
-#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:200px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
-#centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
-#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:52px;line-height:1.1;margin-top:8px}
+#centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
+#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:156px;line-height:.9;letter-spacing:-.04em;margin-top:4px}
+#centile .big small{font-size:78px;letter-spacing:0;margin-left:10px}
+#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:44px;line-height:1.1;margin-top:6px}
 #centile .scale{position:absolute;left:76px;width:280px}
 /* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
    l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
@@ -181,32 +181,32 @@ const CSS = `
 
 /* 5. Couverture */
 #couverture .head{position:absolute;top:262px;left:76px;right:200px}
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:280px;line-height:.9;color:var(--blue)}
-#couverture .lab{font-size:50px;margin-top:10px}
-#couverture ul{position:absolute;left:76px;right:200px;top:620px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:148px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:62px}
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
+#couverture ul{position:absolute;left:76px;right:200px;top:700px;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:116px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:54px}
 #couverture li span{font-size:26px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
-#couverture .since{position:absolute;left:76px;right:200px;top:1360px;font-size:40px;font-style:italic;color:var(--soft)}
+#couverture .since{position:absolute;left:76px;right:200px;top:1424px;font-size:36px;font-style:italic;color:var(--soft)}
 
 /* 6. Classement */
 #classement .head{position:absolute;top:240px;left:76px;right:200px}
-#classement h3{font-size:72px;line-height:1.02;margin-top:14px}
-#classement .leg{position:absolute;left:76px;right:200px;top:432px}
+#classement h3{font-size:66px;line-height:1.02;margin-top:12px}
+#classement .leg{position:absolute;left:76px;right:200px;top:470px}
 #classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0}
 #classement .item .k{font-size:19px;letter-spacing:.12em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:absolute;left:60px;right:200px;top:790px;height:620px}
+#classement .chart{position:absolute;left:60px;right:200px;top:812px;height:600px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:580px;text-align:center;color:var(--soft)}
+#classement .xl{position:absolute;top:560px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;margin-top:4px;color:var(--ink)}
 #classement .note{position:absolute;left:76px;right:200px;top:1430px;font-size:20px;color:var(--softer)}
 
@@ -340,7 +340,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
 // graduation = 1 % des nouvelles de la dernière année, les plus saillantes en
 // haut. Les graduations se remplissent jusqu'à la nouvelle, puis un trait la
 // situe et deux annotations disent ce qu'il y a au-dessus et au-dessous.
-const SCALE_TOP = 700, SCALE_H = 620, FILL0 = 0.9, FILL = 2.2;
+const SCALE_TOP = 760, SCALE_H = 580, FILL0 = 0.9, FILL = 2.2;
 
 function sceneCentile(top: UneEvent): Scene | null {
   if (top.saillanceCentile == null) return null;
@@ -440,7 +440,7 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
   const max = Math.max(1, ...stories.flatMap((e) => e.salienceTrend!.points.map((p) => p.cumul)));
   // Gouttière à droite : les valeurs se posent APRÈS le dernier point, jamais
   // par-dessus une courbe qui descend (la n°1 croisait son propre chiffre).
-  const PAD = 60, GUT = 190, BASE = 560, H = 490, CHART_H = 620;
+  const PAD = 60, GUT = 190, BASE = 540, H = 470, CHART_H = 600;
   const x = (i: number) => PAD + (i / (n - 1)) * (CHART_W - PAD - GUT);
   const y = (v: number) => BASE - (v / max) * H;
   // Même enjeu, même couleur : le trait change pour qu'on distingue les courbes.
@@ -645,6 +645,7 @@ async function main() {
 
   const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
   const logo = await loadLogo();
+  const partenaires = await chargerPartenaires();
   const traj = sceneTrajectoire(top);
   const clsmt = sceneClassement(classement.slice(0, 3), edition);
   const scenes = [
@@ -655,7 +656,7 @@ async function main() {
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
@@ -678,7 +679,7 @@ async function main() {
   await fs.writeFile(`${base}_commentaire.txt`, premierCommentaire(top));
   console.log(`  1er com   → ${path.basename(base)}_commentaire.txt   (sous le post, partout)`);
 
-  await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args });
+  await produce({ html, scenes, title: `La Une des Unes · édition de ${pubHourLabel(edition)}`, base, args, musique: MODULE.musique });
 }
 
 main().catch((err) => {
