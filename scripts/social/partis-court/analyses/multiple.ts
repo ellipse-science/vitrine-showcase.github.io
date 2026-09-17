@@ -32,7 +32,7 @@ export const multiple: Analyse = {
 #plan .mult .bloc span{font-size:60px;color:var(--paper)}
 #plan .mult .moy{position:absolute;left:0;right:0;height:0}
 #plan .mult .moy i{position:absolute;left:0;right:0;border-top:5px dashed var(--ink)}
-#plan .mult .moy span{position:absolute;right:0;top:12px;font-size:26px;letter-spacing:.04em;background:var(--paper);padding:2px 8px}
+#plan .mult .moy span{position:absolute;right:0;top:12px;font-size:28px;letter-spacing:.04em;background:var(--paper);padding:2px 8px}
 #plan .mult .lab{position:absolute;left:60px;width:300px;bottom:0;height:56px;line-height:56px;text-align:center;color:#fff;font-size:40px}`,
       phrases: [
         { a: `D’habitude, dans les Unes, ${SIGLE_ARTICLE[lead.key]} c’est`, b: `${moi.sovPct} % du temps consacré aux partis`, debut: .15, fin: 3.0 },

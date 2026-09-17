@@ -40,7 +40,7 @@ export const remontee: Analyse = {
 @keyframes trace{to{stroke-dashoffset:0}}
 #plan .pente{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #plan .et{position:absolute;font-size:46px;line-height:1;white-space:nowrap}
-#plan .axe{position:absolute;bottom:0;width:220px;text-align:center;font-size:26px;letter-spacing:.04em;color:var(--soft)}`,
+#plan .axe{position:absolute;bottom:0;width:220px;text-align:center;font-size:28px;letter-spacing:.04em;color:var(--soft)}`,
       phrases: [
         { a: "En une semaine, dans les Unes :", b: `${cap(SIGLE_ARTICLE[monte.key])} gagne ${monte.evolutionPts} points`, couleur: monte.color, debut: .15, fin: 3.0 },
         { a: "Pendant ce temps,", b: `${SIGLE_ARTICLE[baisse.key]} en perd ${-baisse.evolutionPts}`, couleur: baisse.color, debut: 3.2 },

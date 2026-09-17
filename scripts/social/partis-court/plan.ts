@@ -145,7 +145,7 @@ export function ligneBarres(pct: number, etiquette: string, debut: number): stri
 export const CSS_LIGNE = `
 #plan .ligne{position:absolute;left:20px;right:20px;height:0}
 #plan .ligne i{position:absolute;left:0;right:0;top:0;border-top:5px dashed var(--ink);transform-origin:left}
-#plan .ligne span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:26px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
+#plan .ligne span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:28px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
 `;
 
 /** Fraction simple quand elle tombe à 3 points près (« 2 fois sur 3 »). */

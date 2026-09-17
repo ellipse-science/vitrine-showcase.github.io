@@ -317,7 +317,7 @@ const CSS = `
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
 #sources .local{position:absolute;top:1020px;left:116px;right:180px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
-#sources .local .mono{font-size:26px;letter-spacing:.14em;opacity:.8}
+#sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:56px;line-height:1.04;margin-top:10px}
 #sources .gratuit{position:absolute;top:1350px;left:116px;right:180px;font-size:36px;font-style:italic}
 
@@ -362,7 +362,7 @@ const CSS = `
 .schema .rangp{flex:none;width:58px;height:58px;border-radius:50%;border:4px solid}
 .schema .promesse .titre{flex:1}
 .schema .promesse .titre i{display:block;height:16px;background:var(--rule);margin:12px 0}
-.schema .verdict{flex:none;display:flex;align-items:center;gap:12px;font-size:26px;letter-spacing:.06em;color:var(--soft)}
+.schema .verdict{flex:none;display:flex;align-items:center;gap:12px;font-size:28px;letter-spacing:.06em;color:var(--soft)}
 .schema .verdict s{display:block;width:22px;height:22px;border-radius:50%}
 
 .schema .carte-h{position:absolute;top:0;width:270px;height:390px;padding:8px;transform:rotate(var(--rot))}
@@ -374,7 +374,7 @@ const CSS = `
 .schema .position{position:absolute;top:18px;right:0;background:#86642C;padding:8px 12px}
 .schema .plaque{padding:16px 12px 18px 90px}
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
-.schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
+.schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
 #recap h2{position:absolute;top:210px;left:116px;right:180px;font-size:86px;line-height:1.02}
 #recap ul{position:absolute;top:560px;left:116px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}

@@ -79,8 +79,10 @@ export async function loadLogos(): Promise<Logos> {
 }
 
 /** Taille minimale d'un texte, en px du reel. Un téléphone affiche le reel à
- *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran. */
-export const MIN_FONT = 26;
+ *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran.
+ *  28 depuis le dézoom du 2026-09-17 : les scènes sont réduites de 6 %, donc
+ *  28 px écrits font 26 px vus. */
+export const MIN_FONT = 28;
 
 /** MARGE DE BORD. ⚠️ L'encadré dessiné a été RETIRÉ le 2026-09-17 (Jules Piral :
  *  « je crois que l'encadré autour est une mauvaise idée, dépendamment de
@@ -402,14 +404,14 @@ export const FIN_CSS = `
 #fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:200px 180px 0 116px}
 #fin .kick{font-size:28px;color:var(--soft)}
 #fin .logo{width:600px;margin-top:14px}
-#fin .metho{font-size:26px;margin-top:26px;color:var(--soft)}
+#fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
-#fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:6px}
+#fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .band{position:absolute;left:30px;right:180px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
 #fin .foot{position:absolute;left:116px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center}
-#fin .part{font-size:26px;color:rgba(243,236,221,.8)}
+#fin .part{font-size:28px;color:rgba(243,236,221,.8)}
 #fin .logos{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
 #fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
@@ -500,7 +502,7 @@ body.tel #stage{display:none}
 #ig .heure{position:absolute;top:40px;left:70px;font-size:36px;font-weight:600}
 #ig .titre{position:absolute;top:48px;right:70px;font-size:34px;font-weight:700}
 #ig .rail{position:absolute;right:26px;bottom:430px;display:flex;flex-direction:column;align-items:center;gap:46px}
-#ig .rail div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:26px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+#ig .rail div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:28px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 #ig .rail svg{width:58px;height:58px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 #ig .pochette{width:56px;height:56px;border-radius:12px;border:3px solid #fff;background:#444}
 #ig .bas{position:absolute;left:36px;right:170px;bottom:250px;display:flex;flex-direction:column;gap:16px;text-shadow:0 1px 4px rgba(0,0,0,.6)}

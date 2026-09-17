@@ -131,6 +131,15 @@ commun, une identité visuelle, un rappel marqué.**
   haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
   sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
   de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
+- **ARRÊTÉ · Dézoom de 6 %** (Jules Piral, 2026-09-17 : « il faut dézoomer ») :
+  chaque scène est réduite de 6 % autour du centre de la zone sûre. On gagne de
+  l'air partout sans redessiner scène par scène, et le décor cesse de coller au
+  bord. Conséquence : le texte s'écrit à 28 px au moins, pour qu'il en fasse 26 à
+  l'écran une fois réduit.
+- **ARRÊTÉ · La barre d'avancement descend sous la caméra** (Jules Piral,
+  2026-09-17 : « la barre qui avance en haut passe à travers la caméra frontale ») :
+  elle se pose à y 128, dans la largeur de la zone sûre, et non plus à 28 px du
+  bord supérieur.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et

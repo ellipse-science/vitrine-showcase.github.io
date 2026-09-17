@@ -29,7 +29,7 @@ export const horloge: Analyse = {
 #plan .ruban .piste i{flex:1;background:var(--deep)}
 #plan .ruban .rempli{position:absolute;left:0;top:0;bottom:0;transform-origin:left;mix-blend-mode:multiply}
 #plan .ruban .cpt{font-size:84px;line-height:1;margin-top:12px;font-variant-numeric:tabular-nums}
-#plan .horloge .note{font-size:26px;letter-spacing:.04em;color:var(--soft);max-width:${LARGEUR}px}`,
+#plan .horloge .note{font-size:28px;letter-spacing:.04em;color:var(--soft);max-width:${LARGEUR}px}`,
       script: `
   racine.querySelectorAll(".cpt").forEach(function(c){
     var m=Math.round(+c.dataset.min*clamp((t-+c.dataset.t0)/+c.dataset.d));
