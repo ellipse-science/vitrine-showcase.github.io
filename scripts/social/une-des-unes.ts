@@ -122,7 +122,7 @@ const CSS = `
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:190px;left:116px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .rank{position:absolute;top:252px;left:116px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
 #une .credit{position:absolute;top:806px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
 #une .body{position:absolute;left:116px;right:180px;top:830px}
@@ -135,16 +135,16 @@ const CSS = `
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
-#trajectoire .head{position:absolute;top:186px;left:116px;right:180px}
+#trajectoire .head{position:absolute;top:250px;left:116px;right:180px}
 #trajectoire .une{display:flex;gap:18px;align-items:flex-start;margin-top:14px}
 #trajectoire .une svg{flex:none;margin-top:6px}
 #trajectoire .une h3{font-size:50px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #trajectoire .live{display:flex;align-items:flex-end;gap:22px;margin-top:22px}
 #trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:150px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:28px;color:var(--softer);padding-bottom:16px}
-#trajectoire .chip{position:absolute;left:116px;top:520px;font-size:28px;padding:9px 16px}
-#trajectoire .when{position:absolute;right:180px;top:532px;display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:116px;right:180px;top:610px;height:640px}
+#trajectoire .chip{position:absolute;left:116px;top:596px;font-size:28px;padding:9px 16px}
+#trajectoire .when{position:absolute;right:180px;top:608px;display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
+#trajectoire .chart{position:absolute;left:116px;right:180px;top:686px;height:600px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -159,7 +159,7 @@ const CSS = `
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:186px;left:116px;right:180px}
+#centile .head{position:absolute;top:250px;left:116px;right:180px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
 #centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
@@ -181,7 +181,7 @@ const CSS = `
 #centile .src{position:absolute;left:116px;right:180px;top:1332px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
-#couverture .head{position:absolute;top:392px;left:116px;right:180px}
+#couverture .head{position:absolute;top:404px;left:116px;right:180px}
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
 #couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
 #couverture ul{position:absolute;left:116px;right:180px;top:716px;list-style:none;border-top:3px solid var(--ink)}
@@ -193,9 +193,9 @@ const CSS = `
 #couverture .since{position:absolute;left:116px;right:180px;top:1320px;font-size:38px;font-style:italic;color:var(--soft)}
 
 /* 6. Classement */
-#classement .head{position:absolute;top:186px;left:116px;right:180px}
+#classement .head{position:absolute;top:250px;left:116px;right:180px}
 #classement h3{font-size:62px;line-height:1.02;margin-top:14px}
-#classement .leg{position:absolute;left:116px;right:180px;top:400px}
+#classement .leg{position:absolute;left:116px;right:180px;top:460px}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 #classement .leg.trois .t{-webkit-line-clamp:1}
 #classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
@@ -267,7 +267,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
   if (!trend || trend.points.length < 2) return null;
   const pts = trend.points;
   const max = Math.max(...pts.map((p) => p.cumul), 1);
-  const BASE = 470, H = 380; // ligne de base et hauteur utile (repère .chart)
+  const BASE = 440, H = 356; // ligne de base et hauteur utile (repère .chart)
   const n = pts.length, gap = 22, bw = (CHART_W - 14 - gap * (n - 1)) / n;
   const left = (i: number) => 7 + i * (bw + gap);
   const y = (v: number) => BASE - (v / max) * H;

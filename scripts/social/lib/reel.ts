@@ -57,8 +57,13 @@ export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
  *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
-export const BRAND = { top: SAFE.bottom - 86, height: 76 };
-export const CONTENT_BOTTOM = BRAND.top - 12;
+/** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
+ *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
+ *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
+ *  rien ne les couvre. L'édition se glisse entre les deux logos. */
+export const BRAND = { top: SAFE.top, height: 76 };
+export const CONTENT_TOP = BRAND.top + BRAND.height + 16;
+export const CONTENT_BOTTOM = SAFE.bottom;
 
 export type Logos = { vitrine: string; capp: string };
 
@@ -219,7 +224,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
-.footer{position:absolute;left:116px;right:180px;top:${BRAND.top - 44}px;display:flex;justify-content:flex-end;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:40}
+.footer{position:absolute;left:116px;right:180px;top:${BRAND.top + 22}px;display:flex;justify-content:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:41;pointer-events:none}
 .brandbar{position:absolute;left:116px;right:180px;display:flex;align-items:center;justify-content:space-between;z-index:45}
 .brandbar img{display:block}
 .brandbar.light img{filter:invert(1)}
@@ -311,10 +316,10 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:186px;left:116px;width:540px}
-#intro .module{position:absolute;top:392px;left:116px;right:180px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:258px;left:116px;width:540px}
+#intro .module{position:absolute;top:452px;left:116px;right:180px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:466px;left:116px;right:180px;font-size:122px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:522px;left:116px;right:180px;font-size:122px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:30px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
 #intro .ed{position:absolute;left:116px;right:180px;bottom:700px;color:var(--paper);font-size:30px}
@@ -404,7 +409,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:200px 180px 0 116px}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:268px 180px 0 116px}
 #fin .kick{font-size:28px;color:var(--soft)}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
@@ -797,7 +802,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
 
 async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
   // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

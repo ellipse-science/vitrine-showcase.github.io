@@ -69,7 +69,7 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:318px;left:116px;right:180px}
+#sonar .head{position:absolute;top:250px;left:116px;right:180px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
 #sonar .chart{position:absolute;left:116px;right:180px;top:430px;height:600px}

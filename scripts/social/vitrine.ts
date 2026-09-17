@@ -308,9 +308,9 @@ const CSS = `
 #accroche .traits{position:absolute;left:116px;right:180px;top:1080px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:186px;left:116px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:236px;left:116px;right:180px;font-size:76px;line-height:1.02}
-#sources .lignes{position:absolute;top:470px;left:116px;right:180px}
+#sources .kick{position:absolute;top:250px;left:116px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:300px;left:116px;right:180px;font-size:76px;line-height:1.02}
+#sources .lignes{position:absolute;top:540px;left:116px;right:180px}
 #sources .ligne{display:flex;align-items:center;gap:30px;padding:16px 0;border-top:3px solid var(--ink)}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
@@ -322,10 +322,10 @@ const CSS = `
 #sources .gratuit{position:absolute;top:1350px;left:116px;right:180px;font-size:36px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
-.scene .rang{position:absolute;top:186px;left:116px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
+.scene .rang{position:absolute;top:250px;left:116px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:240px;left:116px;right:180px}
+.scene .tete{position:absolute;top:304px;left:116px;right:180px}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
 .scene .schema{position:absolute;left:0;top:0;width:900px;height:410px}
@@ -376,9 +376,9 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:210px;left:116px;right:180px;font-size:86px;line-height:1.02}
-#recap ul{position:absolute;top:560px;left:116px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
-#recap li{display:flex;align-items:center;gap:30px;height:118px;padding:0 26px;border-left:14px solid}
+#recap h2{position:absolute;top:276px;left:116px;right:180px;font-size:86px;line-height:1.02}
+#recap ul{position:absolute;top:630px;left:116px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap li{display:flex;align-items:center;gap:30px;height:112px;padding:0 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px}
 `;

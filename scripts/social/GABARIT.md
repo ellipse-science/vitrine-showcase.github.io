@@ -70,12 +70,13 @@ commun, une identité visuelle, un rappel marqué.**
   **Renverse** les nuances par module du 16-09 et le papier teinté à 6 %
   (`teintePapier`) : Deux solitudes perd le rouge comme couleur de MODULE (il
   reste celui du Canada à l'intérieur du reel).
-- **ARRÊTÉ · Logos de la Vitrine ET du CAPP sur TOUTES les scènes** (Jules Piral,
-  2026-09-16) : barre de marque commune (`BRAND`, `loadLogos`, `lib/reel.ts`), en
-  bas de la zone sûre, logos officiels de `public/images/brand/` rognés de leurs
-  marges ; en blanc sur un bandeau d'encre (`lightBrand`, accroche et fin). Un
-  script de module n'a rien à faire que passer `logos: await loadLogos()` à
-  `buildPage`.
+- **ARRÊTÉ · Logos de la Vitrine ET du CAPP sur TOUTES les scènes**, EN HAUT
+  (Jules Piral, 2026-09-17, après mesure au simulateur) : barre de marque
+  (`BRAND`) posée à y 150, avec l'ÉDITION entre les deux logos. **Renverse** la
+  barre du bas du 16-09 : en plein écran sur iPhone, le bas du reel est pris par
+  le voile d'Instagram, la légende et la barre de navigation, et les logos y
+  viraient au gris. En haut, sous la caméra, rien ne les couvre. Le contenu des
+  scènes commence dessous (`CONTENT_TOP`, y 242) et descend jusqu'à `CONTENT_BOTTOM`.
 - ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde
   le papier tel quel. L'accent colore les filets et les bandeaux, pas le fond.
 
