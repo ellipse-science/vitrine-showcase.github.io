@@ -68,7 +68,7 @@ export const MODULES = {
     lignes: [
       { t: "Québec", c: "#2E4663" },
       { t: "Canada", accent: true },
-      { t: "2 solitudes ?" },
+      { t: "2 solitudes?" },
     ],
   },
   "enjeux-saillants": {
@@ -85,7 +85,7 @@ export const MODULES = {
     // Brun chaud : l'accent « pont » du banc d'essai, entre médias et décideurs
     // — ce module est exactement ce pont.
     accent: "#8A5A3A",
-    lignes: [{ t: "De quel parti", accent: true }, { t: "parle-t-on" }, { t: "dans les médias ?" }],
+    lignes: [{ t: "De quel parti", accent: true }, { t: "parle-t-on" }, { t: "dans les médias?" }],
   },
   "polimetre-plus": {
     nom: "Polimètre+",
@@ -100,7 +100,7 @@ export const MODULES = {
     // Rose profond : le cordovan éclairci vers le rose, seconde nuance de la
     // famille décideurs, distincte du Polimètre+ au premier coup d'œil.
     accent: "#7A3B57",
-    lignes: [{ t: "Qui parle", accent: true }, { t: "au Salon bleu", c: "#2E4663" }, { t: "et de quoi ?" }],
+    lignes: [{ t: "Qui parle", accent: true }, { t: "au Salon bleu", c: "#2E4663" }, { t: "et de quoi?" }],
   },
 } as const satisfies Record<string, IdentiteModule>;
 
