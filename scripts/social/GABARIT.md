@@ -112,13 +112,14 @@ commun, une identité visuelle, un rappel marqué.**
 - **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Image
   en **1080 × 1920 (9:16)** — le format qu'Instagram réclame, et celui que les
   iPhone récents affichent le mieux, même si leur écran est plus haut (19,5:9).
-  Toute information tient dans la ZONE SÛRE `SAFE` : **250 px en haut** (nom du
-  compte, musique), **450 px en bas** (légende, son, boutons du bas), 60 px à
+  Toute information tient dans la ZONE SÛRE `SAFE` : **300 px en haut** (nom du
+  compte, musique, et la caméra ou l'îlot dynamique des iPhone récents), **450 px en bas** (légende, son, boutons du bas), 60 px à
   gauche, **120 px à droite sous y 640** (colonne de boutons). Le contenu s'arrête
   au-dessus de la barre de logos (`CONTENT_BOTTOM`). Seul le décor marqué
   `data-deco` en sort. ⚠️ **Marges élargies le 2026-09-17** (Jules Piral : « il faut
-  vraiment que ce soit adapté au format des téléphones actuels ») : 250/450 au lieu
-  de 220/400, d'après les guides 2026 (SocialSizes, Wavegen, Outfy) ; les quatre
+  vraiment que ce soit adapté au format des téléphones actuels ») : 300/450 au lieu
+  de 220/400 (250 en haut au premier essai, porté à 300 le même jour pour la
+  caméra des iPhone), d'après les guides 2026 (SocialSizes, Wavegen, Outfy) ; les quatre
   reels et les dix reels courts ont été resserrés en conséquence. Zone des
   publicités Meta : toujours non retenue.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
@@ -314,7 +315,7 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
 Thème : **de quel parti parlent les Unes, dans quel média, sur quel ton.** Données :
 `loadParties` (la section du site, y compris sa ventilation par média). Décisions
 de Jules Piral, 2026-09-16. Règle de la série : **des titres qui disent le
-résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
+résultat, AUCUN sous-titre**, à la couleur du module (orange brûlé, 17-09), rien qui attire l'œil sans servir.
 
 1. **Accroche (résultat + visuel).** « Le PQ » en très grand, « est le parti dont on
    parle le plus aujourd'hui », petit vumètre des cinq partis. ARRÊTÉ.

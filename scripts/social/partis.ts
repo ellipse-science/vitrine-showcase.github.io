@@ -67,15 +67,15 @@ const pchip = (row: RowView) => `<span class="pchip" style="background:${row.col
 // Zone sûre (Reels organiques) : texte de x 76 à 960, y 220 → 1520.
 const CSS = `
 .kick{font-size:28px;color:var(--softer);letter-spacing:.14em}
-.head{position:absolute;top:266px;left:76px;right:120px}
-.head h2{font-size:70px;line-height:1.04;margin-top:12px}
+.head{position:absolute;top:316px;left:76px;right:120px}
+.head h2{font-size:70px;line-height:1.04;margin-top:12px;color:var(--blue)}
 .pchip{flex:none;display:inline-block;width:118px;text-align:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:38px;padding:4px 0}
 .vu{display:flex;flex-direction:column-reverse;gap:5px;width:100%}
 .vu i{flex:1;display:block;background:var(--deep)}
 .vu i.on{background:var(--on)}
 
 /* Accroche : le résultat, et rien d'autre */
-#accroche .brand{position:absolute;top:272px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#accroche .brand{position:absolute;top:316px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
 #accroche .result{position:absolute;top:436px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}

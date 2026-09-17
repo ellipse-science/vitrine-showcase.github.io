@@ -81,8 +81,8 @@ ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / D
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
 #plan .phr{position:absolute;left:76px;right:120px}
-#plan .phr.a{top:268px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:396px;font-size:88px;line-height:1.02;color:var(--ink)}
+#plan .phr.a{top:318px;font-size:46px;line-height:1.12;font-weight:700}
+#plan .phr.b{top:430px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;
   const script = plan.script ? `
 (function(){
