@@ -123,7 +123,7 @@ const CSS = `
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
 #une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:806px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
+#une .credit{position:absolute;top:742px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
 #une .body{position:absolute;left:180px;right:180px;top:830px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
@@ -135,16 +135,17 @@ const CSS = `
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
-#trajectoire .head{position:absolute;top:282px;left:180px;right:180px}
-#trajectoire .une{display:flex;gap:18px;align-items:flex-start;margin-top:14px}
+#trajectoire .head{flex:none}
+#trajectoire .une{display:flex;justify-content:center;gap:18px;align-items:flex-start;margin-top:14px}
 #trajectoire .une svg{flex:none;margin-top:6px}
 #trajectoire .une h3{font-size:44px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#trajectoire .live{display:flex;align-items:flex-end;gap:22px;margin-top:22px}
+#trajectoire .live{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin-top:22px}
 #trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:132px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:28px;color:var(--softer);padding-bottom:16px}
-#trajectoire .chip{position:absolute;left:180px;top:596px;font-size:28px;padding:9px 16px}
-#trajectoire .when{position:absolute;right:180px;top:608px;display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:absolute;left:180px;right:180px;top:706px;height:580px}
+#trajectoire .bandeau{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
+#trajectoire .chip{font-size:28px;padding:9px 16px}
+#trajectoire .when{display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
+#trajectoire .chart{position:relative;flex:none;height:580px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -152,18 +153,19 @@ const CSS = `
 #trajectoire .peak{position:absolute;font-size:28px;background:var(--ink);color:var(--paper);padding:8px 0;text-align:center}
 #trajectoire .xl{position:absolute;text-align:center;color:var(--soft)}
 #trajectoire .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:6px;color:var(--ink)}
-#trajectoire .xl span{display:block;font-size:28px;line-height:1.05;margin-top:2px;margin-left:-6px;margin-right:-6px}
+#trajectoire .xl span{display:block;font-size:28px;line-height:1.05;margin-top:4px;margin-left:-40px;margin-right:-40px;white-space:nowrap}
 #trajectoire .xl.now b{color:var(--blue)}
+#trajectoire .xl.now span{margin-left:-80px;margin-right:0}
 #trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#trajectoire .cap{position:absolute;left:180px;right:180px;top:1300px;font-size:34px;line-height:1.12}
+#trajectoire .cap{flex:none;font-size:34px;line-height:1.12}
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
 #centile .head{position:absolute;top:282px;left:180px;right:180px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
-#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:.9;letter-spacing:-.04em;margin-top:6px}
+#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
-#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:42px;line-height:1.1;margin-top:6px}
+#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:42px;line-height:1.1;margin-top:16px}
 #centile .scale{position:absolute;left:124px;width:270px}
 /* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
    l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
@@ -178,40 +180,41 @@ const CSS = `
 #centile .note{position:absolute;left:380px;right:180px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;top:1332px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:180px;right:180px;bottom:380px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
-#couverture .head{position:absolute;top:412px;left:180px;right:180px}
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:.9;color:var(--blue)}
-#couverture .lab{font-size:44px;line-height:1.1;margin-top:10px}
-#couverture ul{position:absolute;left:180px;right:180px;top:716px;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px}
-#couverture li span{font-size:28px;color:var(--blue)}
+
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:1.02;color:var(--blue)}
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:22px}
+#couverture .grandir{padding-top:80px}
+#couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
+#couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
-#couverture .since{position:absolute;left:180px;right:180px;top:1320px;font-size:38px;font-style:italic;color:var(--soft)}
+#couverture .since{flex:none;font-size:38px;font-style:italic;color:var(--soft)}
 
 /* 6. Classement */
-#classement .head{position:absolute;top:282px;left:180px;right:180px}
-#classement h3{font-size:62px;line-height:1.02;margin-top:14px}
-#classement .leg{position:absolute;left:180px;right:180px;top:500px}
+#classement .head{flex:none}
+#classement h3{font-size:58px;line-height:1.02;margin-top:10px}
+#classement .leg{flex:none}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 #classement .leg.trois .t{-webkit-line-clamp:1}
-#classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:9px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#classement .item .txt{min-width:0}
+#classement .item .txt{min-width:0;text-align:left}
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:absolute;left:180px;right:180px;top:720px;height:560px}
+#classement .chart{position:relative;flex:none;height:560px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
 #classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
-#classement .note{position:absolute;left:180px;right:180px;top:1310px;font-size:28px;line-height:1.2;color:var(--softer)}
+#classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
 `;
 
@@ -239,6 +242,7 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
     : `<div class="noart" data-deco style="background:${top.issueColor};animation:fadeIn .6s .1s both">${fleur(COLORS.paper, 320)}</div>`;
   // Les bandes 1 à 3 sont trop pâles pour un texte sur papier : encre.
   const salColor = top.saillanceRank >= 4 ? bandOf(top.saillanceRank).bg : COLORS.ink;
+  const corps = top.title.length > 62 ? 62 : top.title.length > 46 ? 72 : 82;
   return {
     id: "une", duration: 4.6,
     html: `
@@ -246,7 +250,7 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
       <div class="rank mono" ${anim("pop", .5, .6)}>Une n°1</div>
       <div class="body">
         <div class="tag mono" style="background:${top.issueColor};animation:wipe .6s .7s both">${txt(top.issueFr)}</div>
-        <h2 class="disp" data-cle ${anim("fadeUp", .8, .9)}>${txt(top.title)}</h2>
+        <h2 class="disp" data-cle style="font-size:${corps}px;animation:fadeUp .8s .9s both">${txt(top.title)}</h2>
         <div class="stats">
           <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">${top.scoreQcSum24h != null ? `${frNum(top.scoreQcSum24h)} points de saillance sur 24 heures` : "Saillance sur 24 heures"}</span></div>
           <div class="stat" ${anim("fadeUp", .5, 2.1)}><b style="color:var(--blue)">${top.qcOutletCount}/${top.totalQcOutlets}</b><span class="pf">${coverageLabel(top.qcOutletCount)}</span></div>
@@ -285,9 +289,9 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     return `
       <div class="bar${p.isAbsent ? " absent" : ""}" style="left:${left(i)}px;width:${bw}px;height:${h}px;top:${y(p.cumul)}px;background:${bandOf(p.rank).bg};animation:growY ${GROW}s ${d}s both"></div>
       <div class="val" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) + (inside ? 46 : -62)}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
-      ${p.isPeak ? `<div class="peak mono" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) - 58}px;animation:pop .5s ${d + GROW + .1}s both">Sommet</div>` : ""}
+      ${p.isPeak ? `<div class="peak mono" style="left:${Math.max(0, Math.min(CHART_W - 190, left(i) + bw / 2 - 95))}px;width:190px;top:${y(p.cumul) - 58}px;animation:pop .5s ${d + GROW + .1}s both">Sommet</div>` : ""}
       <div class="xl${p.isNow ? " now" : ""}" style="left:${left(i)}px;width:${bw}px;top:${BASE + 16}px;animation:fadeIn .3s ${d}s both">
-        <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b><span>${esc(momentOf(p.timeLabel)).replace("après-midi", "après\u2011midi")}</span>
+        <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b>${i === 0 || p.isNow ? `<span>${esc(momentOf(p.timeLabel)).replace("après-midi", "après\u2011midi")}</span>` : ""}
       </div>`;
   }).join("");
 
@@ -326,15 +330,18 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     scene: {
       id: "trajectoire", duration: end + 3,
       html: `
+        <div class="zone-utile">
         <div class="head">
           <div class="kick mono" ${anim("fadeIn", .5, .1)}>Saillance · 24 dernières heures</div>
           <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp">${txt(top.title)}</h3></div>
           <div class="live" ${anim("fadeIn", .4, .6)}><div class="counter" id="t-counter">0,0</div><div class="unit mono">points</div></div>
         </div>
-        <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
-        <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
+        <div class="bandeau">
+          <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
+          <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
+        </div>
         <div class="chart" data-cle>${grid}${bars}${ligne}</div>
-        <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div>`,
+        <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div></div>`,
     },
   };
 }
@@ -405,13 +412,14 @@ function sceneCouverture(top: UneEvent): Scene | null {
   return {
     id: "couverture", duration: 5,
     html: `
-      <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Couverture</div>
+      <div class="zone-utile">
+      <div class="kick mono" ${anim("fadeIn", .5, .1)}>Couverture</div>
+      <div class="grandir">
         <div class="big" data-cle ${anim("slam", .6, .2)}>${top.qcOutletCount}/${top.totalQcOutlets}</div>
         <div class="lab pf" ${anim("fadeIn", .5, .6)}>${coverageLabel(top.qcOutletCount)}</div>
       </div>
       <ul>${rows}</ul>
-      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une depuis ${txt(top.saillantSince)}</div>` : ""}`,
+      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une depuis ${txt(top.saillantSince)}</div>` : ""}</div>`,
   };
 }
 
@@ -503,8 +511,9 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
   const scene: Scene = {
     id: "classement", duration: DRAW0 + DRAW + 3,
     html: `
+      <div class="zone-utile">
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Édition de ${pubHourLabel(edition)} · 24 dernières heures</div>
+        <div class="kick mono" ${anim("fadeIn", .5, .1)}>24 dernières heures</div>
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
       <div class="leg${stories.length > 2 ? " trois" : ""}">${legend}</div>
@@ -515,7 +524,7 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
         </svg>
         ${endLabels}${axis}
       </div>
-      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée sur 24 heures, en points, à chacune des six éditions du jour</div>`,
+      <div class="note mono" ${anim("fadeIn", .5, DRAW0)}>Saillance cumulée sur 24 heures, en points, à chacune des six éditions du jour</div></div>`,
   };
   return { scene, draw0: DRAW0 };
 }

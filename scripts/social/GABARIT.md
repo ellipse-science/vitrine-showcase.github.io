@@ -462,6 +462,41 @@ autre passe DEVANT, avec une ombre le temps du dépassement (sinon deux lignes
 qui se croisent se lisent l'une sur l'autre), et la miniature de l'accroche
 remonte au-dessus de la légende d'Instagram.
 
+## 6 bis. La colonne, et la symétrie (17-09)
+
+Deux défauts revenaient à chaque relecture de Jules Piral : « tout est pogné en
+moton / en pain » et « à droite il y a un gros vide ».
+
+**La colonne.** Chaque bloc d'une scène portait un `top` fixe, hérité d'un
+cadrage plus haut : tout se tassait dans le tiers supérieur et le bas restait
+vide. Une classe commune, `.zone-utile` (`lib/reel.ts`), va de `CONTENT_TOP`
+(274) au BAS DU CARRÉ CENTRAL (1500) et répartit les blocs qu'on lui donne. Une
+scène y met son titre, son graphique et sa légende ; `.grandir` marque le bloc
+qui prend la place restante. Les scènes de `partis.ts`, `une-des-unes.ts` et le
+reel de présentation sont passées dessus. Elle s'arrête à 1500 et non à 1540 :
+ce qui porte `data-cle` doit tenir dans le carré vu dans la grille du profil.
+
+⚠️ Le nom est long exprès. Une première version s'appelait `.colonne`, puis
+`.pile` : ces deux noms existaient déjà dans des scènes (le vumètre, le duel des
+reels courts), et une classe globale en `position:absolute` empilait tous leurs
+éléments au même endroit.
+
+**La symétrie.** Trois blocs étaient ancrés de x 30 à x 900, donc décalés à
+gauche, avec 180 px de papier nu sur la droite : le bandeau de l'accroche, la
+boîte des partenaires et le logo de l'accroche. Tout est maintenant à 180 px des
+deux bords. La boîte des partenaires ne descend plus jusqu'en bas non plus :
+elle porte elle-même le fond, donc elle épouse ses logos, titre compris.
+
+**Le texte qui ne tient pas.** Le titre de la Une n'a pas de longueur fixe ; à
+82 px, un titre de six lignes poussait les statistiques sous la légende
+d'Instagram. Le corps suit la longueur (82 / 72 / 62 px). Même principe partout :
+un bloc de taille fixe qui reçoit un texte variable finit par déborder.
+
+**Le vérificateur.** `checkFrame` inspecte maintenant quatre moments par scène,
+et il intersecte chaque ligne de texte avec l'ancêtre qui la ROGNE (`overflow`,
+`-webkit-line-clamp`, ellipsis). Sans ça, un titre coupé à deux lignes était
+signalé comme empilé sur ce qui suit, alors qu'à l'écran il n'y a rien.
+
 ## 7. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi

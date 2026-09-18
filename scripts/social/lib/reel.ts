@@ -226,7 +226,22 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    colonne de boutons — donc elle est SYMÉTRIQUE par rapport au milieu de l'image.
    L'alignement typographique reste propre à chaque scène : le centrer globalement
    tassait tous les niveaux de lecture dans une même pile verticale. */
-.scene{position:absolute;inset:0;padding:120px 180px;opacity:0}
+/* CONTENU CENTRÉ (Jules Piral, 2026-09-17). La colonne va de x 180 à x 900 — la
+   limite de la colonne de boutons d'Instagram — donc elle est symétrique par
+   rapport au milieu de l'image, et le texte est centré. Une ligne de données
+   (liste de médias, rangs) peut redevenir alignée à gauche : elle se lit en
+   colonnes, pas en paragraphe. */
+.scene{position:absolute;inset:0;padding:120px 180px;text-align:center;opacity:0}
+/* LA ZONE UTILE : de CONTENT_TOP à CONTENT_BOTTOM, entre les deux marges
+   latérales. Une scène y empile ses blocs et la colonne les répartit sur toute
+   la hauteur utile — sans ça, tout se tasse en haut et le bas reste vide.
+   Elle s'arrête au BAS DU CARRÉ CENTRAL (y 1500), pas à la limite de la zone
+   sûre : ce qui porte data-cle doit rester dans le carré vu dans la grille
+   (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
+   exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
+   globale en position:absolute les empilait toutes au même endroit. */
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - COEUR.bottom}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
@@ -323,12 +338,12 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:288px;left:180px;width:540px}
-#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:288px;left:270px;width:540px}
+#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
 #intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
-#intro .band{position:absolute;left:30px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
+#intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
 #intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
@@ -405,8 +420,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
-      <div class="band" data-deco style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
-      ${logos ? `<div class="foot"><div class="part mono" style="animation:fadeIn .5s 1.7s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
+      ${logos ? `<div class="foot" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
   };
 }
 
@@ -424,10 +438,9 @@ export const FIN_CSS = `
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .band{position:absolute;left:30px;right:180px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center}
+#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
-#fin .logos{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
+#fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
 #fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
 
@@ -700,12 +713,23 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
     await page.setContent(html, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
+    // ⚠️ On contrôle PLUSIEURS MOMENTS par scène, pas seulement la fin (Jules
+    // Piral, 2026-09-17 : « plein de trucs s'empilent les uns sur les autres ») :
+    // pendant une animation, deux blocs peuvent se croiser alors que l'état final
+    // est propre. Quatre instants suffisent à les attraper.
     const found: string[] = [];
+    const vus = new Set<string>();
     let t = 0;
     for (const s of scenes) {
-      const at = (t + s.duration - 0.4) * SLOW;
+      const moments = [0.75, 0.45, 0.7, 1].map((f, i) => (i === 0 ? t + 0.75 : t + s.duration * f)).map((x) => Math.min(x, t + s.duration - 0.35));
+      for (const m of [...new Set(moments)]) {
+        for (const ecart of await inspectAt(page, s.id, m * SLOW)) {
+          if (vus.has(ecart)) continue;
+          vus.add(ecart);
+          found.push(ecart);
+        }
+      }
       t += s.duration;
-      found.push(...(await inspectAt(page, s.id, at)));
     }
     return found;
   } finally {
@@ -787,9 +811,26 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     // au-dessus des capitales) : avec un interlignage serré, deux lignes d'un même
     // titre se touchent sans que les lettres se touchent. On ne garde que le
     // cœur de la ligne (la moitié centrale), là où sont les lettres.
-    for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) {
-      const pad = q.height * .15;
-      lines.push({ n, txt, r: { left: q.left, right: q.right, top: q.top + pad, bottom: q.bottom - pad } });
+    // Un ancêtre qui ROGNE (overflow hidden, -webkit-line-clamp, ellipsis) cache
+    // une partie du texte, mais le Range, lui, couvre le texte ENTIER : sans
+    // cette intersection, un titre coupé à deux lignes était signalé comme
+    // empilé sur ce qui suit, alors qu'à l'écran il n'y a rien.
+    const fenetre = (el) => {
+      let w = { left: -1e9, right: 1e9, top: -1e9, bottom: 1e9 };
+      for (let a = el; a && a !== document.body; a = a.parentElement) {
+        const st = getComputedStyle(a);
+        if (st.overflow === "visible" && st.overflowX === "visible" && st.overflowY === "visible") continue;
+        const c = a.getBoundingClientRect();
+        w = { left: Math.max(w.left, c.left), right: Math.min(w.right, c.right), top: Math.max(w.top, c.top), bottom: Math.min(w.bottom, c.bottom) };
+      }
+      return w;
+    };
+    const vue = fenetre(n.parentElement);
+    for (const q of range.getClientRects()) {
+      const r = { left: Math.max(q.left, vue.left), right: Math.min(q.right, vue.right), top: Math.max(q.top, vue.top), bottom: Math.min(q.bottom, vue.bottom) };
+      if (r.right - r.left <= 2 || r.bottom - r.top <= 2) continue;
+      const pad = (r.bottom - r.top) * .15;
+      lines.push({ n, txt, r: { left: r.left, right: r.right, top: r.top + pad, bottom: r.bottom - pad } });
     }
   }
   const seen = new Set();

@@ -259,11 +259,11 @@ function sceneModule(k: CleModule, i: number): Scene {
     id: `m-${k}`, duration: 5.6,
     html: `
       <div class="fond" data-deco style="background:${m.papier}"></div>
-      <div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
+      <div class="zone-utile"><div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
       <div class="tete"><h2 class="nom disp" style="color:${m.accent};${anim("fadeUp", .5, .15)}">${t(m.nom)}</h2>
       <p class="question pf" style="${anim("fadeUp", .6, .45)}">${t(TEXTES[k].question)}</p></div>
-      <div data-cle class="ech">${SCHEMAS[k]()}</div>
-      <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p>`,
+      <div class="grandir"><div data-cle class="ech">${SCHEMAS[k]()}</div></div>
+      <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p></div>`,
   };
 }
 
@@ -289,7 +289,7 @@ const CSS = `
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
 #accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px}
-#accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;text-align:left;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
+#accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
@@ -299,7 +299,7 @@ const CSS = `
    visionnement, mais il habille la vignette et les autres plateformes. */
 #accroche .liseré{position:absolute;left:30px;right:30px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
-#accroche h1{position:absolute;top:600px;left:180px;right:180px;text-align:left}
+#accroche h1{position:absolute;top:600px;left:180px;right:180px}
 #accroche .six{display:block;font-size:148px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
 #accroche .traits{position:absolute;left:180px;right:180px;top:1190px;display:flex;gap:12px;height:18px}
@@ -319,17 +319,17 @@ const CSS = `
 #sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
-.scene .rang{position:absolute;top:282px;left:180px;right:180px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
+.scene .rang{display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:336px;left:180px;right:180px;text-align:left}
+.scene .tete{flex:none}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
 .scene .schema{position:absolute;left:0;top:0;width:900px;height:410px}
 /* Les schémas sont dessinés dans 900 × 410 ; la zone utile n'en fait plus que
    784 depuis les marges mesurées au simulateur : on les réduit d'un bloc. */
-.scene .ech{position:absolute;left:180px;top:780px;width:900px;height:410px;transform:scale(.8);transform-origin:0 0}
-.scene .site{position:absolute;left:180px;right:180px;top:1240px;text-align:left;font-size:38px;line-height:1.2;border-top:3px solid currentColor;padding-top:20px}
+.scene .ech{position:relative;width:900px;height:410px;transform:scale(.8);transform-origin:50% 50%;margin:-41px -90px;flex:none}
+.scene .site{text-align:left;font-size:38px;line-height:1.2;border-top:3px solid currentColor;padding-top:20px}
 .scene .site b{display:block;font-size:28px;margin-bottom:10px}
 
 .schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
@@ -373,7 +373,7 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:292px;left:180px;right:180px;text-align:left;font-size:76px;line-height:1.02}
+#recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
 #recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
 #recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}

@@ -55,7 +55,10 @@ export const DUREE_PLAN = 5.6;
 export const MAX_SECONDES = 12;
 
 /** Boîte caméra. */
-export const BOITE = { gauche: 116, droite: 180, haut: 706, hauteur: 650 };
+// La boîte descend jusqu'à y 1500 : le BAS DU CARRÉ CENTRAL, puisqu'elle porte
+// `data-cle` — c'est elle qu'on doit voir dans la grille du profil. À 650 px de
+// haut elle s'arrêtait à 1356 et laissait 184 px vides sous le plan.
+export const BOITE = { gauche: 116, droite: 180, haut: 706, hauteur: 794 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
