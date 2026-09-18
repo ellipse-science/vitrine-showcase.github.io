@@ -9,7 +9,7 @@ const TOTAL = 7;
 
 export const tenue: Analyse = {
   id: "tenue",
-  idee: "À combien des sept dernières éditions la nouvelle est restée en Une",
+  idee: "À combien des sept dernières éditions la nouvelle est restée en Une de l’actualité",
   construire({ top }) {
     const n = top.nBlocks24h ?? 0;
     // Tenir une ou deux éditions, c'est ordinaire ; à partir de quatre, l'histoire

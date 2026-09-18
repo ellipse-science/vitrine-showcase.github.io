@@ -42,7 +42,7 @@ const ORDRE: CleModule[] = [
 const TEXTES: Record<CleModule, { question: string; site: string }> = {
   "une-des-unes": {
     question: "Quelle nouvelle domine l’actualité au Québec en ce moment?",
-    site: "Les nouvelles à la Une et leur saillance, de très faible à exceptionnelle.",
+    site: "Les nouvelles à la Une de l’actualité et leur saillance, de très faible à exceptionnelle.",
   },
   "deux-solitudes": {
     question: "Le Québec et le Canada anglais parlent-ils des mêmes sujets?",
@@ -54,7 +54,7 @@ const TEXTES: Record<CleModule, { question: string; site: string }> = {
   },
   "partis-et-couverture": {
     question: "De quel parti parle-t-on dans les médias, et sur quel ton?",
-    site: "Le vu-mètre des partis : leur temps en Une, et le ton des phrases qui les nomment.",
+    site: "Le vu-mètre des partis : leur temps en Une de l’actualité, et le ton des phrases qui les nomment.",
   },
   "polimetre-plus": {
     question: "Quelles promesses électorales font parler?",
@@ -193,7 +193,7 @@ const SCHEMAS: Record<CleModule, () => string> = {
  *   3. les bandes s'effacent, le logo et « 6 modules pour mieux comprendre la
  *      démocratie au Québec » arrivent, soulignés par les six encres. */
 const QUESTIONS: Record<CleModule, string> = {
-  "une-des-unes": "Qu’est-ce qui fait la Une?",
+  "une-des-unes": "Qu’est-ce qui fait la Une de l’actualité?",
   "deux-solitudes": "Québec, Canada : mêmes sujets?",
   "enjeux-saillants": "Quels enjeux dominent?",
   "partis-et-couverture": "De quel parti parle-t-on?",
@@ -234,7 +234,7 @@ function sceneSources(): Scene {
   // (Jules Piral, 2026-09-17 : parler aussi des promesses électorales, mettre
   // l'emphase sur les modèles LOCAUX plutôt que sur « l'IA »).
   const lignes = [
-    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, six fois par jour</small><div class="heures">${heures}</div></div>`,
+    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes de l’actualité, six fois par jour</small><div class="heures">${heures}</div></div>`,
     `<b class="disp">${fleur(MODULES["assemblee-nationale"].accent, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
     `<b class="disp coche" style="color:${MODULES["polimetre-plus"].accent}">✓</b><div><p class="pf">les promesses électorales</p><small>leur écho dans les médias, avec le Polimètre</small></div>`,
   ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .6 + i * .55)}">${l}</div>`).join("");
@@ -399,7 +399,7 @@ function caption(): string {
   const hashtags = ["#VitrineDémocratique", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
   return captionTypo([
     "La Vitrine démocratique, c’est 6 modules pour mieux comprendre la démocratie au Québec.",
-    "Nous suivons les Unes de 13 médias québécois et canadiens six fois par jour, les débats de l’Assemblée nationale chaque jour de débat, et l’écho médiatique des promesses électorales. Les analyses viennent de modèles locaux, entraînés, validés et conservés à l’Université Laval.",
+    "Nous suivons les Unes de l’actualité de 13 médias québécois et canadiens six fois par jour, les débats de l’Assemblée nationale chaque jour de débat, et l’écho médiatique des promesses électorales. Les analyses viennent de modèles locaux, entraînés, validés et conservés à l’Université Laval.",
     modules.join("\n"),
     "Gratuit, sans publicité, méthodologie publique : vitrinedemocratique.com",
     hashtags.join(" "),

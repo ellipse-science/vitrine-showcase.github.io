@@ -74,7 +74,7 @@ async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEven
   try {
     const hero = (await (await fetch(`${SITE_URL}/data/hero-selection.json`)).json()) as { storyline_id?: string; event_id?: string };
     if (!matchesCurrentUneArt(hero, top)) {
-      console.warn("  illustration ignorée : le site publié illustre une autre Une que le dépôt local.");
+      console.warn("  illustration ignorée : le site publié illustre une autre Une de l’actualité que le dépôt local.");
       return null;
     }
     const res = await fetch(`${SITE_URL}/data/generated-art/latest.png`);
@@ -95,8 +95,8 @@ async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEven
 function centileMessage(centile: number): { c: number; big: number; before: string; after: string } {
   const c = Math.max(1, Math.min(99, Math.round(centile)));
   return c >= 50
-    ? { c, big: c, before: "Cette actualité est plus saillante que", after: "des Unes québécoises de l’année" }
-    : { c, big: 100 - c, before: "", after: "des Unes québécoises de l’année sont plus saillantes que cette actualité" };
+    ? { c, big: c, before: "Cette actualité est plus saillante que", after: "des Unes de l’actualité québécoises de l’année" }
+    : { c, big: 100 - c, before: "", after: "des Unes de l’actualité québécoises de l’année sont plus saillantes que cette actualité" };
 }
 
 /** « 6/6 des médias québécois en parlent ». */
@@ -653,7 +653,7 @@ async function main() {
   const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const top3 = data?.top3 ?? [];
   const classement = data?.classement ?? top3;
-  if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
+  if (!top3.length) throw new Error(`Aucune Une de l’actualité pour l'édition ${edition.key}.`);
   const top = top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${top.title}`);

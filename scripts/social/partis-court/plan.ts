@@ -159,20 +159,28 @@ export const BARRES = { puce: 70, etiquette: 70 };
  *  plafond qu'il faut remonter, en connaissance de cause. */
 export const PLAFOND_AXE = 50;
 
-/** L'échelle de l'axe, à écrire sous le graphique. */
-export const AXE_LABEL = `Part des Unes de l’actualité · axe 0–${PLAFOND_AXE} %`;
+/** LE PLAFOND EST PROPRE À CHAQUE MODULE. Les partis se partagent le temps de Une
+ *  à cinq — le premier tourne autour de 40 %. Les 12 enjeux se le partagent à
+ *  douze : le premier tourne autour de 20 %, et un axe à 50 % laisserait les
+ *  trois quarts du graphique vides. Chaque module déclare le sien et l'ÉCRIT. */
+export const echelleBarres = (plafond: number) => (BOITE.hauteur - BARRES.puce - BARRES.etiquette) / plafond;
 
-export const ECHELLE_BARRES = (BOITE.hauteur - BARRES.puce - BARRES.etiquette) / PLAFOND_AXE;
+/** « Part des Unes de l'actualité · axe 0–50 % » : ce qu'on mesure, et jusqu'où. */
+export const axeLabel = (quoi: string, plafond: number) => `${quoi} · axe 0–${plafond} %`;
+
+export const AXE_LABEL = axeLabel("Part des Unes de l’actualité", PLAFOND_AXE);
+
+export const ECHELLE_BARRES = echelleBarres(PLAFOND_AXE);
 export const BASE_BARRES = BOITE.hauteur - BARRES.puce;
 
-export function barresHtml(barres: { key: string; label: string; color: string; de: number; a: number }[]): string {
+export function barresHtml(barres: { key: string; label: string; color: string; de: number; a: number }[], plafond = PLAFOND_AXE): string {
   // Le plafond est une garantie de lecture : on ne produit pas une barre rognée.
-  const trop = barres.filter((b) => Math.max(b.de, b.a) > PLAFOND_AXE);
+  const trop = barres.filter((b) => Math.max(b.de, b.a) > plafond);
   if (trop.length) {
     const noms = trop.map((b) => `${b.label} ${Math.max(b.de, b.a)} %`).join(", ");
     throw new Error(
-      `Barres au-dessus du plafond de l'axe (${PLAFOND_AXE} %) : ${noms}. ` +
-      "Remontez PLAFOND_AXE dans partis-court/plan.ts — et dites-le dans le gabarit : " +
+      `Barres au-dessus du plafond de l'axe (${plafond} %) : ${noms}. ` +
+      "Remontez le plafond du module — et dites-le dans le gabarit : " +
       "l'échelle change pour tous les reels, donc les hauteurs ne se comparent plus aux précédentes.",
     );
   }
@@ -193,21 +201,21 @@ export const CSS_BARRES = `
 
 /** Anime les barres de `data-de` à `data-a` entre `t0` et `t0 + d` ; les barres
  *  autres que `garder` pâlissent à partir de `pale`. */
-export function scriptBarres(o: { t0: number; d: number; garder?: string; pale?: number; decale?: number }): string {
+export function scriptBarres(o: { t0: number; d: number; garder?: string; pale?: number; decale?: number; plafond?: number }): string {
   return `
   racine.querySelectorAll(".bp").forEach(function(b,i){
     var de=+b.dataset.de, a=+b.dataset.a;
     var k=ease(clamp((t-${o.t0}-i*${o.decale ?? .05})/${o.d}));
     var v=de+(a-de)*k;
-    b.querySelector(".f").style.height=(v*${ECHELLE_BARRES.toFixed(3)})+"px";
+    b.querySelector(".f").style.height=(v*${echelleBarres(o.plafond ?? PLAFOND_AXE).toFixed(3)})+"px";
     b.querySelector(".p").textContent=Math.round(v)+"\\u00A0%";
     ${o.garder ? `b.style.opacity=(b.dataset.key==="${o.garder}")?1:(1-.55*clamp((t-${o.pale ?? 99})/.5));` : ""}
   });`;
 }
 
 /** Ligne pointillée horizontale à la valeur `pct` des barres, avec son étiquette. */
-export function ligneBarres(pct: number, etiquette: string, debut: number): string {
-  return `<div class="ligne" style="top:${(BASE_BARRES - pct * ECHELLE_BARRES).toFixed(0)}px">
+export function ligneBarres(pct: number, etiquette: string, debut: number, plafond = PLAFOND_AXE): string {
+  return `<div class="ligne" style="top:${(BASE_BARRES - pct * echelleBarres(plafond)).toFixed(0)}px">
     <i style="animation:grow .6s ${debut}s both"></i><span class="mono" style="animation:fadeIn .4s ${debut + .3}s both">${esc(etiquette)}</span></div>`;
 }
 export const CSS_LIGNE = `
