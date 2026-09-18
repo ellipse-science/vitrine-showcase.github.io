@@ -422,7 +422,7 @@ async function main() {
     title: "La Vitrine démocratique · 6 modules",
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: "",
+    date: "",
     theme: { paper: COLORS.paper, accent: COLORS.ink },
     logos,
   });

@@ -28,10 +28,10 @@ export const tenue: Analyse = {
 #plan .case.on{border-color:transparent}
 #plan .socle{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:28px;letter-spacing:.04em;color:var(--soft)}`,
       phrases: [
-        { a: "Cette nouvelle ne lâche pas les Unes…", b: esc(top.title), taille: corpsTitre(top.title), couleur: top.issueColor, debut: .15, fin: 3.0 },
+        { a: "Cette nouvelle ne lâche pas les Unes de l’actualité…", b: esc(top.title), taille: corpsTitre(top.title), couleur: top.issueColor, debut: .15, fin: 3.0 },
         { a: "Sur les sept dernières éditions…", b: `Elle en a tenu ${n}.`, couleur: top.issueColor, debut: 3.2 },
       ],
-      legende: `« ${top.title} » figure en Une à ${n} des sept dernières éditions de la Vitrine démocratique, soit les 24 dernières heures.`,
+      legende: `« ${top.title} » figure en Une de l’actualité à ${n} des sept dernières éditions de la Vitrine démocratique, soit les 24 dernières heures.`,
     };
   },
 };

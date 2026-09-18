@@ -25,7 +25,7 @@ import path from "node:path";
 import { instantPublicationBloc, type EditionRef } from "@/lib/data/headlineEvents";
 import { loadParties, type PartiesData, type RowView } from "@/lib/data/parties";
 
-import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
+import { anim, captionTypo, dateLongue, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
 import {
   HASHTAGS, IDENTITE, MODULE, NOM_ARTICLE, SIGLE_ARTICLE, SIGLE_DE, TONE_MOT, cap, leaders, mediaMixes, tonGroupes, type MediaMix,
 } from "./lib/partis";
@@ -130,7 +130,7 @@ function sceneAccroche(rows: RowView[]): Scene {
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: 3.4, noFadeIn: true, hideEdition: true,
+    id: "accroche", duration: 3.4, noFadeIn: true,
     html: `
       <div class="zone-utile"><div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result" data-cle>
@@ -154,7 +154,7 @@ function sceneJour(rows: RowView[]): Scene {
   return {
     id: "jour", duration: 5.6,
     html: `
-      <div class="zone-utile">${head("Temps en Une · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
+      <div class="zone-utile">${head("Temps en Une de l’actualité · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
       <div class="chart" data-cle>${cols}</div></div>`,
   };
 }
@@ -226,7 +226,7 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   }).join("");
   return {
     id: "campagne", duration: 5.4,
-    html: `<div class="zone-utile">${head(`Temps en Une · ${depuis}`, title)}
+    html: `<div class="zone-utile">${head(`Temps en Une de l’actualité · ${depuis}`, title)}
       <div class="rows" data-cle>${list}</div></div>`,
   };
 }
@@ -256,7 +256,7 @@ function caption(edition: EditionRef, data: PartiesData, rows: RowView[], mixes:
   const date = edition.dateLabel.replace(/\s\d{4}$/, "");
 
   const p1 = [
-    `${date}, édition de ${pubHourLabel(edition)}. Depuis minuit, ${NOM_ARTICLE[lead.key]} est le parti dont on parle le plus dans les Unes des médias québécois : ${lead.sovPct} % du temps que les Unes consacrent aux partis.`,
+    `${date}, édition de ${pubHourLabel(edition)}. Depuis minuit, ${NOM_ARTICLE[lead.key]} est le parti dont on parle le plus dans les Unes de l’actualité des médias québécois : ${lead.sovPct} % du temps que les Unes de l’actualité consacrent aux partis.`,
     rest.length ? `Suivent ${joinFr(rest.map((r) => `${SIGLE_ARTICLE[r.key]} (${r.sovPct} %)`))}.` : null,
   ];
 
@@ -303,12 +303,13 @@ async function main() {
   ].filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
-  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires(), date: footerEdition(edition) }));
+  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: footerEdition(edition),
+    date: dateLongue(edition),
+    module: { nom: IDENTITE.nom, couleur: IDENTITE.accent },
     logos,
     theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
   });

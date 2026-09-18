@@ -30,7 +30,7 @@ import {
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
 
-import { footerEdition } from "./lib/commun";
+import { dateLongue } from "./lib/commun";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce, RESERVE_BAS,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
@@ -227,8 +227,8 @@ function caption(edition: EditionRef, sol: SolitudeData): string {
     "",
     `Aujourd’hui : ${sol.convPct} % de convergence, ${sol.relDiffPct} % ${sol.relLabel}.`,
     sol.edito,
-    ...(qc.length ? ["", "Ce que le Québec avait en Une :", ...qc.map(ligne)] : []),
-    ...(can.length ? ["", "Ce que le Canada anglais avait en Une :", ...can.map(ligne)] : []),
+    ...(qc.length ? ["", "Ce que le Québec avait en Une de l’actualité :", ...qc.map(ligne)] : []),
+    ...(can.length ? ["", "Ce que le Canada anglais avait en Une de l’actualité :", ...can.map(ligne)] : []),
     "",
     "Les deux agendas, côte à côte, six fois par jour : vitrinedemocratique.com",
     "",
@@ -273,10 +273,9 @@ async function main() {
   const scenes = [
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes, visuel,
-      edition: `Édition de ${edition.pubHour % 24}h · ${edition.dateLabel}`,
     }),
     sceneSonar(sol, edition),
-    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires(), date: footerEdition(edition) }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({
@@ -285,7 +284,8 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: footerEdition(edition),
+    date: dateLongue(edition),
+    module: { nom: MODULE.nom, couleur: MODULE.accent },
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");

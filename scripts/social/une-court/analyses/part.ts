@@ -29,9 +29,9 @@ export const part: Analyse = {
 #plan .socle{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:28px;letter-spacing:.04em;color:var(--soft);line-height:1.2}`,
       phrases: [
         { a: "Ce soir, une nouvelle prend toute la place…", b: esc(top.title), taille: corpsTitre(top.title), couleur: top.issueColor, debut: .15, fin: 3.0 },
-        { a: "À elle seule, dans les Unes…", b: `${pct} % de l’attention des cinq premières.`, couleur: top.issueColor, debut: 3.2 },
+        { a: "À elle seule, dans les Unes de l’actualité…", b: `${pct} % de l’attention des cinq premières.`, couleur: top.issueColor, debut: 3.2 },
       ],
-      legende: `« ${top.title} » accapare ${pct} % de l’attention que les Unes consacrent aux cinq nouvelles les plus saillantes des 24 dernières heures.`,
+      legende: `« ${top.title} » accapare ${pct} % de l’attention que les Unes de l’actualité consacrent aux cinq nouvelles les plus saillantes des 24 dernières heures.`,
     };
   },
 };

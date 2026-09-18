@@ -66,13 +66,23 @@ export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 
  *  Le haut ne garde plus que la barre de progression : le contenu commence à
  *  y 180 au lieu de 274. */
 export const BRAND = { top: SAFE.bottom - 130, height: 62 };
-export const CONTENT_TOP = SAFE.top + 30;
 
-/** LE PIED FIXE (Jules Piral, 2026-09-18) : les logos Vitrine + CAPP, puis la
- *  date. « Aucun contenu ne doit toucher à la date et aux logos » : le pied
- *  n'est pas une décoration qu'une scène peut recouvrir, c'est LUI qui décide
- *  où l'analyse commence et jusqu'où elle peut aller. Il va de la barre de
- *  marque au bas de la zone sûre, et rien d'autre n'y entre. */
+/** L'EN-TÊTE FIXE : la DATE, dans un encadré, en haut (Jules Piral, 2026-09-18,
+ *  le soir — renverse « la date en bas » du matin même). Elle se lit AVANT le
+ *  contenu : sur Instagram et TikTok, où le fil défile vite, savoir de quand
+ *  date l'information passe avant l'information elle-même. En toutes lettres et
+ *  sans l'heure d'édition : « Jeudi 17 septembre 2026 ». L'encadré la détache du
+ *  papier — une ligne de texte seule s'y perdait. */
+export const EN_TETE = { top: SAFE.top, height: 70 };
+
+/** Le contenu des scènes commence sous l'en-tête. */
+export const CONTENT_TOP = EN_TETE.top + EN_TETE.height + 30;
+
+/** LE PIED FIXE (Jules Piral, 2026-09-18) : les logos Vitrine + CAPP, puis le
+ *  NOM DU MODULE, à sa couleur. « Aucun contenu ne doit toucher à la date et aux
+ *  logos » : le pied n'est pas une décoration qu'une scène peut recouvrir, c'est
+ *  LUI qui décide jusqu'où l'analyse peut aller. Il va de la barre de marque au
+ *  bas de la zone sûre, et rien d'autre n'y entre. */
 export const PIED = { top: BRAND.top, bottom: SAFE.bottom };
 
 /** Blanc entre le contenu et le pied : ce qui garantit que rien ne le « touche ». */
@@ -231,7 +241,8 @@ export type Scene = {
   /** Pas de fondu d'entrée (première scène) ou de sortie (dernière). */
   noFadeIn?: boolean;
   noFadeOut?: boolean;
-  /** Masque la ligne d'édition commune quand la scène porte déjà cette information. */
+  /** ⚠️ HÉRITÉ, plus utilisé : l'en-tête de date est FIXE depuis le 2026-09-18 et
+   *  aucune scène ne le masque. Conservé parce que le lecteur lit encore le drapeau. */
   hideEdition?: boolean;
   /** Masque les logos communs quand la scène affiche déjà le grand logo de marque. */
   hideBrand?: boolean;
@@ -284,7 +295,12 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    voir rapidement de quand date l'information »). Elle était en 28 px dans la
    couleur la plus pâle de la palette — le texte le moins visible de l'image. Elle
    passe à 34 px dans l'encre douce, et la date précède l'heure d'édition. */
-.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 8}px;text-align:center;font-size:34px;letter-spacing:.06em;color:var(--soft);z-index:45}
+.datebox{position:absolute;left:180px;right:180px;top:${EN_TETE.top}px;height:${EN_TETE.height}px;display:flex;align-items:center;justify-content:center;border:3px solid var(--rule);font-size:32px;letter-spacing:.06em;color:var(--ink);z-index:45}
+/* LE NOM DU MODULE, à sa couleur, sous les logos. « Une manière élégante et
+   subtile » (Jules Piral, 2026-09-18) : mono très espacé, petit, la couleur
+   faisant tout le travail. C'est le seul endroit du pied qui change d'un
+   module à l'autre. */
+.modulenom{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 14}px;text-align:center;font-size:28px;letter-spacing:.22em;z-index:45}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
@@ -355,7 +371,6 @@ export function sceneIntro(opts: {
   lignes: { t: string; accent?: boolean; c?: string }[];
   /** Le visuel du bas, propre au module (HTML), posé dans le bandeau d'encre. */
   visuel: string;
-  edition: string;
 }): Scene {
   const L0 = 0.75, PAS = 0.62;
   const lignes = opts.lignes.map((l, i) => {
@@ -363,13 +378,13 @@ export function sceneIntro(opts: {
     return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
   }).join("");
   return {
-    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideEdition: true, hideBrand: true,
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideBrand: true,
     html: `
       ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
       <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
-      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+      `,
   };
 }
 
@@ -381,7 +396,6 @@ export const INTRO_CSS = `
 #intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse, DATE et le
@@ -430,7 +444,7 @@ export async function chargerPartenaires(): Promise<string[]> {
   return out;
 }
 
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[]; date?: string }): Scene {
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
   const now = opts.pubHour % 24;
   // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
   // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
@@ -447,7 +461,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     return `<img src="${src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
   }).join("");
   return {
-    id: "fin", duration: 4.8, noFadeOut: true, hideEdition: true, hideBrand: true,
+    id: "fin", duration: 4.8, noFadeOut: true, hideBrand: true,
     html: `
       <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
@@ -455,7 +469,6 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
       <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
-      ${opts.date ? `<div class="jour mono" style="animation:fadeIn .5s .95s both">${typo(esc(opts.date))}</div>` : ""}
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
       ${logos ? `<div class="foot" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
@@ -495,7 +508,7 @@ export type Theme = { paper: string; accent?: string };
 /** Ton sémantique commun à tous les reels : vert = favorable, rouge = défavorable. */
 export const TONE = { positive: "#4E7A43", negative: "#B0473A", neutral: "#6E685F" } as const;
 
-export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; theme?: Theme; logos?: Logos }): string {
+export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; date: string; module?: { nom: string; couleur: string }; script?: string; theme?: Theme; logos?: Logos }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
     const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideEdition: !!s.hideEdition, hideBrand: !!s.hideBrand };
@@ -507,7 +520,8 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
 <div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
-${opts.footerRight ? `<div class="edition mono" id="__ed">${esc(opts.footerRight)}</div>` : ""}
+${opts.date ? `<div class="datebox mono" id="__date">${esc(opts.date)}</div>` : ""}
+${opts.module ? `<div class="modulenom mono" id="__mod" style="color:${opts.module.couleur}">${esc(opts.module.nom)}</div>` : ""}
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
@@ -528,7 +542,8 @@ function seek(t){
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
   const brand=document.getElementById("__brand");if(brand)brand.style.opacity=brandOpacity;
-  const ed=document.getElementById("__ed");if(ed)ed.style.opacity=editionOpacity;
+  const ed=document.getElementById("__date");if(ed)ed.style.opacity=editionOpacity;
+  const md=document.getElementById("__mod");if(md)md.style.opacity=brandOpacity;
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};

@@ -10,12 +10,11 @@ export const anim = (name: string, dur: number, delay: number) => `style="animat
 /** « 20h » : heure de publication de l'édition (heures collées, règle #7). */
 export const pubHourLabel = (edition: EditionRef) => `${edition.pubHour % 24}h`;
 
-/** « 16.09.2026 · Édition de 20h », pour le pied de page.
- *  LA DATE PASSE DEVANT (Jules Piral, 2026-09-18) : sur Instagram et TikTok, où
- *  le fil défile vite, la première chose à lire est DE QUAND DATE l'information.
- *  L'heure d'édition vient après — elle ne sert qu'à qui suit les six éditions. */
-export const footerEdition = (edition: EditionRef) =>
-  `${edition.navDateIso.split("-").reverse().join(".")} · Édition de ${pubHourLabel(edition)}`;
+/** LA DATE DE L'EN-TÊTE, en toutes lettres : « Jeudi 17 septembre 2026 »
+ *  (Jules Piral, 2026-09-18). SANS l'heure d'édition : elle ne sert qu'à qui
+ *  suit les six éditions, et elle alourdissait la seule ligne que le public doit
+ *  lire d'un coup d'œil. `dateLabel` vient des données, pas d'un format recopié. */
+export const dateLongue = (edition: EditionRef) => edition.dateLabel;
 
 /** « A, B et C ». */
 export const joinFr = (items: string[]) =>

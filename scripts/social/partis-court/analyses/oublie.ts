@@ -22,11 +22,11 @@ export const oublie: Analyse = {
       script: scriptBarres({ t0: .3, d: 1.2, garder: dernier.key, pale: 2.6 }),
       zoom: { x, y: 100, de: 1, a: 1.9, debut: 2.8 },
       phrases: [
-        { a: "Depuis minuit, le parti dont les Unes parlent le moins :", b: `${cap(SIGLE_ARTICLE[dernier.key])}, ${duree(dernier.minutesUne)} de Une`, couleur: dernier.color, debut: .15, fin: 3.0 },
+        { a: "Depuis minuit, le moins présent en Une de l’actualité :", b: `${cap(SIGLE_ARTICLE[dernier.key])}, ${duree(dernier.minutesUne)}`, couleur: dernier.color, debut: .15, fin: 3.0 },
         { a: `Face ${lead.key === "caq" ? "à la" : lead.key === "qs" ? "à" : "au"} ${lead.label} :`, b: `${fois(lead.minutesUne / dernier.minutesUne)} moins de temps`, debut: 3.2 },
       ],
       methode: AXE_LABEL,
-      legende: `Depuis minuit, ${SIGLE_ARTICLE[dernier.key]} est le parti dont les Unes parlent le moins : ${duree(dernier.minutesUne)} de temps en Une, tous médias confondus, soit ${fois(lead.minutesUne / dernier.minutesUne)} moins que ${SIGLE_ARTICLE[lead.key]} (${duree(lead.minutesUne)}).`,
+      legende: `Depuis minuit, ${SIGLE_ARTICLE[dernier.key]} est le parti dont les Unes de l’actualité parlent le moins : ${duree(dernier.minutesUne)} de temps en Une de l’actualité, tous médias confondus, soit ${fois(lead.minutesUne / dernier.minutesUne)} moins que ${SIGLE_ARTICLE[lead.key]} (${duree(lead.minutesUne)}).`,
     };
   },
 };

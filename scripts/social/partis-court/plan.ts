@@ -88,7 +88,7 @@ export function verifierDuree(secondes: number, quoi: string): void {
 // doit voir dans la grille du profil, donc elle reste dans le carré central.
 // La boîte perd 58 px en bas : c'est la place de la LIGNE DE MÉTHODE, qui dit ce
 // qu'on mesure et sur quel axe. Un chiffre sans sa mesure n'est pas un résultat.
-export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 706 };
+export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 660 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
@@ -114,10 +114,10 @@ ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / D
 #plan .eclair{position:absolute;left:30px;right:180px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
-#plan .methode{position:absolute;left:180px;right:180px;top:${BOITE.haut + BOITE.hauteur + 16}px;font-size:28px;line-height:1.2;color:var(--soft)}
+#plan .methode{position:absolute;left:180px;right:180px;top:${BOITE.haut + BOITE.hauteur + 16}px;font-size:28px;line-height:1.2;letter-spacing:.02em;white-space:nowrap;color:var(--soft)}
 #plan .phr{position:absolute;left:180px;right:180px}
 #plan .phr.a{top:288px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:396px;font-size:88px;line-height:1.02;color:var(--ink)}
+#plan .phr.b{top:424px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;
   const script = plan.script ? `
 (function(){
@@ -156,7 +156,7 @@ export const BARRES = { puce: 70, etiquette: 70 };
 export const PLAFOND_AXE = 50;
 
 /** L'échelle de l'axe, à écrire sous le graphique. */
-export const AXE_LABEL = `Part des Unes · axe 0–${PLAFOND_AXE} %`;
+export const AXE_LABEL = `Part des Unes de l’actualité · axe 0–${PLAFOND_AXE} %`;
 
 export const ECHELLE_BARRES = (BOITE.hauteur - BARRES.puce - BARRES.etiquette) / PLAFOND_AXE;
 export const BASE_BARRES = BOITE.hauteur - BARRES.puce;

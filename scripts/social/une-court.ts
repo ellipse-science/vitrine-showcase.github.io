@@ -17,7 +17,7 @@ import path from "node:path";
 import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
 
-import { footerEdition, pubHourLabel, resolveEdition } from "./lib/commun";
+import { dateLongue, pubHourLabel, resolveEdition } from "./lib/commun";
 import {
   FIN_CSS, SLOW, buildPage, chargerPartenaires, loadLogos, openInBrowser, parseArgs, produce, sceneFin, type Scene,
 } from "./lib/reel";
@@ -59,7 +59,7 @@ async function main() {
       // la fin n'en portait aucune — un reel court sortait donc SANS date, du
       // début à la fin. C'est le format qui part sur Instagram et TikTok.
       { id: "plan", duration: DUREE_PLAN, noFadeIn: true, html: planHtml },
-      sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo: logos.vitrine, accent: IDENTITE.accent, partenaires, date: footerEdition(edition) }),
+      sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo: logos.vitrine, accent: IDENTITE.accent, partenaires }),
     ];
     // La fin prend ce qui reste sous le plafond, puis on VÉRIFIE la fenêtre.
     scenes[1].duration = Math.min(3.5, MAX_SECONDES / SLOW - DUREE_PLAN);
@@ -68,7 +68,8 @@ async function main() {
       title: `${MODULE} · ${a.id} · ${edition.key}`,
       css: css + FIN_CSS, scenes, script,
       footerLeft: "La Vitrine démocratique",
-      footerRight: footerEdition(edition),
+      date: dateLongue(edition),
+      module: { nom: IDENTITE.nom, couleur: IDENTITE.accent },
       logos,
       theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
     });

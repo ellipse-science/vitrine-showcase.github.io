@@ -17,7 +17,7 @@ import { loadTreemap, type TreemapIssueTile } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
 import { jourMontreal, rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
 
-import { captionTypo, footerEdition, pubHourLabel, resolveEdition } from "./lib/commun";
+import { captionTypo, dateLongue, pubHourLabel, resolveEdition } from "./lib/commun";
 import {
   COLORS, FIN_CSS, INTRO_CSS, buildPage, chargerPartenaires, enjeuGlyph, esc,
   frNum, loadLogos, parseArgs, produce, RESERVE_BAS, sceneFin, sceneIntro, txt, type Scene,
@@ -236,7 +236,6 @@ async function main() {
       accent: MODULE.accent,
       lignes: MODULE.lignes,
       visuel: miniRanks(data.week.tiles, points),
-      edition: `${rangeLabel} · Édition de ${pubHourLabel(edition)}`,
     }),
     sceneCourse(data.week.tiles, points, rangeLabel),
     sceneBilan(data.week.tiles, points),
@@ -246,7 +245,6 @@ async function main() {
       logo: logos.vitrine,
       accent: MODULE.accent,
       partenaires: await chargerPartenaires(),
-      date: footerEdition(edition),
     }),
   ];
 
@@ -258,7 +256,8 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos,
     footerLeft: "La Vitrine démocratique",
-    footerRight: footerEdition(edition),
+    date: dateLongue(edition),
+    module: { nom: MODULE.nom, couleur: MODULE.accent },
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");

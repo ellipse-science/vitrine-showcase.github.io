@@ -24,7 +24,7 @@ import path from "node:path";
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
-import { footerEdition } from "./lib/commun";
+import { dateLongue } from "./lib/commun";
 import { TRAIT, oqlf } from "./lib/identite";
 import { RESPONSABLE, formats, type Matiere, type Reseau } from "./reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
@@ -208,12 +208,12 @@ const CSS = `
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:relative;flex:none;height:560px}
+#classement .chart{position:relative;flex:none;height:488px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
+#classement .xl{position:absolute;top:408px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
 #classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
@@ -321,7 +321,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     data: {
       points: pts.map((p, i) => ({
         v: p.cumul,
-        label: p.isAbsent ? "Hors des Unes" : p.level,
+        label: p.isAbsent ? "Hors des Unes de l’actualité" : p.level,
         when: `${celestial(hours[i], COLORS.soft, 36)}<span>${esc(p.timeLabel)}</span>`,
         bg: p.isAbsent ? COLORS.rule : bandOf(p.rank).bg,
         fg: p.isAbsent ? COLORS.ink : bandOf(p.rank).fg,
@@ -408,7 +408,7 @@ function sceneCouverture(top: UneEvent): Scene | null {
     const label = (MEDIA_LABELS[id] ?? id).replace(/^Le Journal/, "Journal");
     const on = top.mediaToday.some((m) => sameOutlet(m.name, label));
     const d = 0.8 + (on ? lit++ : i) * 0.25;
-    return `<li class="${on ? "" : "off"}" style="animation:fadeUp .45s ${d}s both"><b>${esc(label)}</b><span class="mono">${on ? "✓ En Une" : "Pas en Une"}</span></li>`;
+    return `<li class="${on ? "" : "off"}" style="animation:fadeUp .45s ${d}s both"><b>${esc(label)}</b><span class="mono">${on ? "✓ En Une de l’actualité" : "Pas en Une de l’actualité"}</span></li>`;
   }).join("");
   return {
     id: "couverture", duration: 5,
@@ -420,7 +420,7 @@ function sceneCouverture(top: UneEvent): Scene | null {
         <div class="lab pf" ${anim("fadeIn", .5, .6)}>${coverageLabel(top.qcOutletCount)}</div>
       </div>
       <ul>${rows}</ul>
-      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une depuis ${txt(top.saillantSince)}</div>` : ""}</div>`,
+      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une de l’actualité depuis ${txt(top.saillantSince)}</div>` : ""}</div>`,
   };
 }
 
@@ -666,11 +666,10 @@ async function main() {
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
       visuel: visuelAccroche(top),
-      edition: `${edition.dateLabel} · Édition de ${pubHourLabel(edition)}`,
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires(), date: footerEdition(edition) }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
@@ -679,7 +678,8 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: footerEdition(edition),
+    date: dateLongue(edition),
+    module: { nom: MODULE.nom, couleur: MODULE.accent },
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
