@@ -7,6 +7,7 @@ import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
 import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
+import { PromoDatagotchi } from "@/components/interactive/PromoDatagotchi";
 import { listEditions } from "@/lib/data/headlineEvents";
 import PaletteScrollLab from "@/components/lab/PaletteScrollLab";
 
@@ -64,6 +65,7 @@ export default async function Home() {
 
       <EditionNav editions={editions} />
       <IssueReporter />
+      <PromoDatagotchi surLabo={!isProd} />
     </div>
   );
 }
