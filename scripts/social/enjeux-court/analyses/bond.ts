@@ -49,7 +49,7 @@ export const bond: Analyse = {
           // la période, en mots simples, avant de montrer quoi que ce soit.
           // `depuis` vient des données (« ce matin », « hier soir ») : jamais
           // une période écrite à la main.
-          a: `Dans l’actualité, le thème qui monte le plus depuis ${depuis} :`,
+          a: `Dans l’actualité, l’enjeu qui monte le plus depuis ${depuis} :`,
           b: libelleEnjeuCourt(monte.issueFr),
           couleur: monte.color,
           debut: .15,
@@ -62,8 +62,8 @@ export const bond: Analyse = {
           debut: 3.2,
         },
       ],
-      methode: "Part des 12 thèmes · aujourd’hui",
-      legende: `Depuis ${depuis}, c’est ${libelleEnjeuCourt(monte.issueFr)} dont la présence progresse le plus parmi les douze thèmes de la campagne : +${croissance} %. Il occupe maintenant ${Math.round(monte.share)} % de l’attention que les Unes de l’actualité consacrent aux douze thèmes.`,
+      methode: "Part des 12 enjeux · aujourd’hui",
+      legende: `Depuis ${depuis}, c’est ${libelleEnjeuCourt(monte.issueFr)} dont la présence progresse le plus parmi les douze enjeux de la campagne : +${croissance} %. Il occupe maintenant ${Math.round(monte.share)} % de l’attention que les Unes de l’actualité consacrent aux douze enjeux.`,
     };
   },
 };

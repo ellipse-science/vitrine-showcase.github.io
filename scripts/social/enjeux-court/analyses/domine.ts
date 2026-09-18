@@ -86,7 +86,7 @@ export const domine: Analyse = {
           // « Dans l'actualité, les thèmes qui dominent aujourd'hui ». On nomme
           // le cadre (l'actualité), l'objet (les thèmes) et la période
           // (aujourd'hui) avant de montrer quoi que ce soit.
-          a: "Dans l’actualité, les thèmes qui dominent aujourd’hui :",
+          a: "Dans l’actualité, les enjeux qui dominent aujourd’hui :",
           b: esc(libelleEnjeuCourt(trois[0].issueFr)),
           couleur: trois[0].color,
           debut: .15,
@@ -99,8 +99,8 @@ export const domine: Analyse = {
           debut: 3.2,
         },
       ],
-      methode: "Les 12 thèmes = 100 % · aujourd’hui",
-      legende: `Aujourd’hui (depuis minuit), les trois thèmes les plus présents — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze thèmes de la campagne. Les douze parts somment à 100 %.`,
+      methode: "Les 12 enjeux = 100 % · aujourd’hui",
+      legende: `Aujourd’hui (depuis minuit), les trois enjeux les plus présents — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze enjeux de la campagne. Les douze parts somment à 100 %.`,
     };
   },
 };

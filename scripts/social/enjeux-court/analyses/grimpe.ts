@@ -69,7 +69,7 @@ export const grimpe: Analyse = {
 @keyframes monte{0%{top:var(--de);opacity:0}12%{top:var(--de);opacity:1}55%{top:var(--a)}100%{top:var(--a);opacity:1}}`,
       phrases: [
         {
-          a: "Dans l’actualité, les thèmes qui dominent cette semaine :",
+          a: "Dans l’actualité, les enjeux qui dominent cette semaine :",
           b: esc(nom),
           couleur: tile.color,
           debut: .15,
@@ -82,8 +82,8 @@ export const grimpe: Analyse = {
           debut: 3.2,
         },
       ],
-      methode: "Rang sur 12 thèmes · cette semaine",
-      legende: `Cette semaine (sept derniers jours), ${nom} est le thème qui a gagné le plus de rangs parmi les douze de la campagne : de la ${startRank}e à la ${endRank}e place, soit ${meilleur.delta} rangs. Le classement des douze thèmes est établi chaque jour à partir de leur présence dans les Unes de l’actualité.`,
+      methode: "Rang sur 12 enjeux · cette semaine",
+      legende: `Cette semaine (sept derniers jours), ${nom} est l’enjeu qui a gagné le plus de rangs parmi les douze de la campagne : de la ${startRank}e à la ${endRank}e place, soit ${meilleur.delta} rangs. Le classement des douze enjeux est établi chaque jour à partir de leur présence dans les Unes de l’actualité.`,
     };
   },
 };
