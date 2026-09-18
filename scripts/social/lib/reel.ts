@@ -470,7 +470,7 @@ export const FIN_CSS = `
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;${LINKEDIN ? "bottom:250px;justify-content:center;" : ""}display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .foot{position:absolute;left:180px;right:180px;top:${LINKEDIN ? 1098 : 1010}px;${LINKEDIN ? "bottom:250px;justify-content:center;" : ""}display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
 #fin .logos{margin-top:${LINKEDIN ? 28 : 20}px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:${LINKEDIN ? "34px 52px" : "24px 40px"}}
 #fin .logos img{height:${LINKEDIN ? 70 : 56}px;width:auto;max-width:${LINKEDIN ? 260 : 220}px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
