@@ -283,7 +283,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:center;gap:26px}
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;padding-top:40px;display:flex;flex-direction:column;justify-content:center;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 .zone-utile > [data-cle]:last-child{margin-bottom:${Math.max(0, CONTENT_BOTTOM - COEUR.bottom)}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
@@ -296,11 +296,12 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    couleur la plus pâle de la palette — le texte le moins visible de l'image. Elle
    passe à 34 px dans l'encre douce, et la date précède l'heure d'édition. */
 .datebox{position:absolute;left:180px;right:180px;top:${EN_TETE.top}px;height:${EN_TETE.height}px;display:flex;align-items:center;justify-content:center;border:3px solid var(--rule);font-size:32px;letter-spacing:.06em;color:var(--ink);z-index:45}
-/* LE NOM DU MODULE, à sa couleur, sous les logos. « Une manière élégante et
-   subtile » (Jules Piral, 2026-09-18) : mono très espacé, petit, la couleur
-   faisant tout le travail. C'est le seul endroit du pied qui change d'un
-   module à l'autre. */
-.modulenom{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 14}px;text-align:center;font-size:28px;letter-spacing:.22em;z-index:45}
+/* LE NOM DU MODULE, dans un ENCADRÉ de sa couleur, sous les logos (Jules Piral,
+   2026-09-18) — le même traitement que le bloc des partenaires de la scène de
+   fin : aplat de la couleur du module, texte sur le papier. C'est le seul
+   endroit du pied qui change d'un module à l'autre. */
+.modulenom{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 12}px;text-align:center;z-index:45}
+.modulenom span{display:inline-block;padding:7px 22px 6px;color:var(--paper);font-size:28px;letter-spacing:.18em}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
@@ -444,13 +445,18 @@ export async function chargerPartenaires(): Promise<string[]> {
   return out;
 }
 
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
+/** LA SCÈNE DE FIN EST LA MÊME POUR TOUS LES MODULES (Jules Piral, 2026-09-18).
+ *  Une seule chose y change : la COULEUR DU BLOC DES PARTENAIRES. Ni signature de
+ *  module, ni date, ni nom de module — la fin est la signature de la Vitrine, pas
+ *  celle d'un module.
+ *  ⚠️ Renverse deux décisions antérieures : la ligne de signature propre au module
+ *  (« De quel parti parlent les médias ») et l'horaire à la couleur du module
+ *  (16-09). Les cases des six éditions sont désormais à l'encre, partout. */
+export function sceneFin(opts: { pubHour: number; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
   const now = opts.pubHour % 24;
-  // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
-  // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
-  // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
-  // modules qui opposent deux régions.
-  const accent = opts.accent ?? COLORS.blue;
+  // L'horaire est à l'ENCRE, identique d'un module à l'autre : la couleur du
+  // module ne vit plus que dans le bloc des partenaires.
+  const accent = COLORS.ink;
   const hours = [0, 4, 8, 12, 16, 20].map((h, i) => {
     const style = h === now
       ? `background:${accent};border-color:${accent};color:${COLORS.paper};animation:pop .4s ${1.2 + i * .12}s both`
@@ -461,13 +467,12 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     return `<img src="${src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
   }).join("");
   return {
-    id: "fin", duration: 4.8, noFadeOut: true, hideBrand: true,
+    id: "fin", duration: 4.8, noFadeOut: true, hideEdition: true, hideBrand: true,
     html: `
-      <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
         ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 640, passe: .9 })}</div>`
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
-      <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
+      <div class="metho mono" style="animation:fadeIn .5s .7s both">Pour la méthodologie :</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
@@ -481,16 +486,12 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
-#fin .kick{font-size:28px;color:var(--soft)}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:330px 180px 0}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-/* LA DATE SUR LA SCÈNE DE FIN (Jules Piral, 2026-09-18). La fin ne portait AUCUNE
-   date : sur un reel court, elle occupe le tiers du temps d'écran et c'est elle
-   qui reste affichée quand la lecture boucle. */
-#fin .jour{font-size:36px;margin-top:22px;letter-spacing:.06em;color:var(--ink)}
-#fin .six{font-size:34px;font-style:italic;margin-top:20px;color:var(--soft)}
+/* « Six éditions par jour » était collé au soulignement de l'adresse. */
+#fin .six{font-size:34px;font-style:italic;margin-top:54px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .foot{position:absolute;left:180px;right:180px;bottom:${HEIGHT - SAFE.bottom}px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
@@ -521,7 +522,7 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
 <div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
 ${opts.date ? `<div class="datebox mono" id="__date">${esc(opts.date)}</div>` : ""}
-${opts.module ? `<div class="modulenom mono" id="__mod" style="color:${opts.module.couleur}">${esc(opts.module.nom)}</div>` : ""}
+${opts.module ? `<div class="modulenom" id="__mod"><span class="mono" style="background:${opts.module.couleur}">${esc(opts.module.nom)}</span></div>` : ""}
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}

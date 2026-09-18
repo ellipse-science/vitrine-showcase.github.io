@@ -415,7 +415,7 @@ async function main() {
     ...ORDRE.map((k, i) => sceneModule(k, i)),
     sceneRecap(),
     // pubHour -1 : aucune édition en surbrillance, ce reel n'appartient à aucune.
-    sceneFin({ pubHour: -1, signature: "6 modules pour mieux comprendre la démocratie au Québec", logo: logos.vitrine, accent: COLORS.ink, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: -1, logo: logos.vitrine, accent: COLORS.ink, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({

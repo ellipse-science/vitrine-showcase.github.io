@@ -275,7 +275,7 @@ async function main() {
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes, visuel,
     }),
     sceneSonar(sol, edition),
-    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({

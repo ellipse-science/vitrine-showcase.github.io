@@ -303,7 +303,7 @@ async function main() {
   ].filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
-  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
+  scenes.push(sceneFin({ pubHour: edition.pubHour, logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,

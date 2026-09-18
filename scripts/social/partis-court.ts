@@ -58,7 +58,7 @@ async function main() {
       // la fin n'en portait aucune — un reel court sortait donc SANS date, du
       // début à la fin. C'est le format qui part sur Instagram et TikTok.
       { id: "plan", duration: DUREE_PLAN, noFadeIn: true, html: planHtml },
-      sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires }),
+      sceneFin({ pubHour: edition.pubHour, logo: logos.vitrine, accent: IDENTITE.accent, partenaires }),
     ];
     // La fin prend ce qui reste sous le plafond, puis on VÉRIFIE la fenêtre.
     scenes[1].duration = Math.min(3.5, MAX_SECONDES / SLOW - DUREE_PLAN);

@@ -241,7 +241,6 @@ async function main() {
     sceneBilan(data.week.tiles, points),
     sceneFin({
       pubHour: edition.pubHour,
-      signature: "Les 12 enjeux, jour après jour",
       logo: logos.vitrine,
       accent: MODULE.accent,
       partenaires: await chargerPartenaires(),

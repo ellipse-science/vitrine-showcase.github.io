@@ -88,7 +88,11 @@ export function verifierDuree(secondes: number, quoi: string): void {
 // doit voir dans la grille du profil, donc elle reste dans le carré central.
 // La boîte perd 58 px en bas : c'est la place de la LIGNE DE MÉTHODE, qui dit ce
 // qu'on mesure et sur quel axe. Un chiffre sans sa mesure n'est pas un résultat.
-export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 660 };
+// TOUT LE PLAN DESCEND DE 40 px (Jules Piral, 2026-09-18 : « j'ai l'impression
+// qu'il y a un gros vide en bas »). C'est la marge disponible : sous la ligne de
+// méthode il restait 50 px avant le pied. Au-delà, le contenu passerait sous la
+// légende d'Instagram, mesurée à y 1582 en plein écran.
+export const BOITE = { gauche: 116, droite: 180, haut: 676, hauteur: 660 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
@@ -116,8 +120,8 @@ ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / D
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
 #plan .methode{position:absolute;left:180px;right:180px;top:${BOITE.haut + BOITE.hauteur + 16}px;font-size:28px;line-height:1.2;letter-spacing:.02em;white-space:nowrap;color:var(--soft)}
 #plan .phr{position:absolute;left:180px;right:180px}
-#plan .phr.a{top:288px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:424px;font-size:88px;line-height:1.02;color:var(--ink)}
+#plan .phr.a{top:328px;font-size:46px;line-height:1.12;font-weight:700}
+#plan .phr.b{top:464px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;
   const script = plan.script ? `
 (function(){

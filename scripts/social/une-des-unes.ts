@@ -208,12 +208,12 @@ const CSS = `
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:relative;flex:none;height:488px}
+#classement .chart{position:relative;flex:none;height:440px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:408px;text-align:center;color:var(--soft)}
+#classement .xl{position:absolute;top:360px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
 #classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
@@ -669,7 +669,7 @@ async function main() {
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
