@@ -146,7 +146,7 @@ const CSS = `
 #trajectoire .bandeau{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
 #trajectoire .chip{font-size:28px;padding:9px 16px}
 #trajectoire .when{display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:relative;flex:none;height:580px}
+#trajectoire .chart{position:relative;flex:none;height:552px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}

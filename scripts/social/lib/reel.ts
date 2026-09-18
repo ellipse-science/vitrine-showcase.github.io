@@ -73,10 +73,15 @@ export const BRAND = { top: SAFE.bottom - 130, height: 62 };
  *  date l'information passe avant l'information elle-même. En toutes lettres et
  *  sans l'heure d'édition : « Jeudi 17 septembre 2026 ». L'encadré la détache du
  *  papier — une ligne de texte seule s'y perdait. */
-export const EN_TETE = { top: SAFE.top, height: 70 };
+export const EN_TETE = { top: SAFE.top + 48, height: 70 };
+
+/** La barre d'avancement garde ses 22 px au-dessus de l'encadré : les deux
+ *  descendent ensemble, comme un seul bloc (Jules Piral, 2026-09-18). Elle reste
+ *  sous l'îlot dynamique, qui est la seule contrainte par le haut. */
+export const PROGRESS_TOP = EN_TETE.top - 22;
 
 /** Le contenu des scènes commence sous l'en-tête. */
-export const CONTENT_TOP = EN_TETE.top + EN_TETE.height + 30;
+export const CONTENT_TOP = EN_TETE.top + EN_TETE.height + 12;
 
 /** LE PIED FIXE (Jules Piral, 2026-09-18) : les logos Vitrine + CAPP, puis le
  *  NOM DU MODULE, à sa couleur. « Aucun contenu ne doit toucher à la date et aux
@@ -283,7 +288,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;padding-top:40px;display:flex;flex-direction:column;justify-content:center;gap:26px}
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:center;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 .zone-utile > [data-cle]:last-child{margin-bottom:${Math.max(0, CONTENT_BOTTOM - COEUR.bottom)}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
@@ -304,7 +309,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 .modulenom span{display:inline-block;padding:7px 22px 6px;color:var(--paper);font-size:28px;letter-spacing:.18em}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
-.progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
+.progress{position:absolute;left:${SAFE.left}px;top:${PROGRESS_TOP}px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -391,10 +396,10 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:288px;left:270px;width:540px}
-#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:${CONTENT_TOP + 38}px;left:270px;width:540px}
+#intro .module{position:absolute;top:${CONTENT_TOP + 224}px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:${CONTENT_TOP + 290}px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
 `;
