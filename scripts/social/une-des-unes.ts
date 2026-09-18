@@ -99,7 +99,8 @@ function centileMessage(centile: number): { c: number; big: number; before: stri
 }
 
 /** « 6/6 des médias québécois en parlent ». */
-const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent" : "des grands médias québécois en parle");
+/** « en parlent EN UNE » (Adrien, 17-09) : c'est la première page qu'on mesure, pas la couverture. */
+const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent en Une" : "des grands médias québécois en parle en Une");
 
 /** « Le Journal de Montréal » (lib/medias.ts) et « Journal de Montréal »
  *  (mediaToday) désignent le même média. */
@@ -125,14 +126,14 @@ const CSS = `
    LinkedIn (Adrien, 17-09 : « libère le haut avec les logos clairement visibles,
    descends l'image et le texte ») : l'image commence sous la ligne d'édition, à
    280, et le texte prend le bas. */
-#une .art{position:absolute;left:30px;top:${LINKEDIN ? 330 : 30}px;width:1020px;height:${LINKEDIN ? 800 : 860}px;overflow:hidden}
+#une .art{position:absolute;left:30px;top:${LINKEDIN ? 380 : 30}px;width:1020px;height:${LINKEDIN ? 760 : 860}px;overflow:hidden}
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
-#une .noart{position:absolute;left:30px;top:${LINKEDIN ? 330 : 30}px;width:1020px;height:${LINKEDIN ? 800 : 860}px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:${LINKEDIN ? 380 : 282}px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:${LINKEDIN ? 1074 : 742}px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
+#une .noart{position:absolute;left:30px;top:${LINKEDIN ? 380 : 30}px;width:1020px;height:${LINKEDIN ? 760 : 860}px;display:flex;align-items:center;justify-content:center}
+#une .rank{position:absolute;top:${LINKEDIN ? 430 : 282}px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .credit{position:absolute;top:${LINKEDIN ? 1084 : 742}px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:${LINKEDIN ? 1170 : 830}px}
+#une .body{position:absolute;left:180px;right:180px;top:${LINKEDIN ? 1190 : 830}px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -144,13 +145,13 @@ const CSS = `
 
 /* 3. Trajectoire */
 #trajectoire .head{flex:none}
-#trajectoire .une{display:flex;justify-content:center;gap:18px;align-items:flex-start;margin-top:14px}
+#trajectoire .une{display:flex;justify-content:center;gap:18px;align-items:flex-start;margin-top:${LINKEDIN ? 30 : 14}px}
 #trajectoire .une svg{flex:none;margin-top:6px}
 #trajectoire .une h3{font-size:44px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#trajectoire .live{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin-top:22px}
+#trajectoire .live{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin-top:${LINKEDIN ? 36 : 22}px}
 #trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:132px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:28px;color:var(--softer);padding-bottom:16px}
-#trajectoire .bandeau{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
+#trajectoire .bandeau{flex:none;display:flex;align-items:center;${LINKEDIN ? "justify-content:center;gap:44px;margin-top:26px" : "justify-content:space-between;gap:24px"}}
 #trajectoire .chip{font-size:28px;padding:9px 16px}
 #trajectoire .when{display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
 #trajectoire .chart{position:relative;flex:none;height:${TRAJ_H}px}
@@ -169,7 +170,7 @@ const CSS = `
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:${LINKEDIN ? 310 : 282}px;left:180px;right:180px}
+#centile .head{position:absolute;top:${LINKEDIN ? 400 : 282}px;left:180px;right:180px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
 #centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
@@ -210,7 +211,7 @@ const CSS = `
 
 /* 6. Classement */
 #classement .head{flex:none}
-#classement h3{font-size:58px;line-height:1.02;margin-top:10px}
+#classement h3{font-size:58px;line-height:1.02;margin-top:${LINKEDIN ? 30 : 10}px}
 /* La liste des trois nouvelles vit au-dessus de y 1040 : là, la zone sûre de #823
    laisse 110 px de chaque côté (la colonne de boutons n'existe qu'en dessous).
    Elle s'élargit donc à 860 px, symétrique elle aussi — sinon « Affaires
@@ -371,11 +372,15 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
           ${LINKEDIN ? "" : `<div class="kick mono" ${anim("fadeIn", .5, .1)}>Saillance · 24 dernières heures</div>`}
           <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp" style="font-size:${tailleTitre(top.title)}px">${txt(top.title)}</h3></div>
           <div class="live" ${anim("fadeIn", .4, .6)}><div class="counter" id="t-counter">0,0</div><div class="unit mono">points</div></div>
-        </div>
+        ${LINKEDIN ? "" : "</div>"}
+        <!-- LinkedIn : le bandeau (niveau + édition lue) reste DANS l'en-tête, collé au
+             compteur qu'il qualifie ; séparé par la colonne, il flottait entre le
+             compteur et le graphique (Adrien, 17-09 : « ça flotte dans le vide »). -->
         <div class="bandeau">
           <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
           <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
         </div>
+        ${LINKEDIN ? "</div>" : ""}
         <div class="chart" data-cle>${grid}${bars}${ligne}</div>
         <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div></div>`,
     },
