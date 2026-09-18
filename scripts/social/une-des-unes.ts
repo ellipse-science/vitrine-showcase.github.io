@@ -29,7 +29,7 @@ import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
+  parseArgs, produce, RESERVE_BAS, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -125,7 +125,7 @@ const CSS = `
 #une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
 #une .credit{position:absolute;top:742px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:830px}
+#une .body{position:absolute;left:180px;right:180px;top:830px;bottom:${RESERVE_BAS}px;display:flex;flex-direction:column;justify-content:space-between;padding-bottom:14px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -180,15 +180,15 @@ const CSS = `
 #centile .note{position:absolute;left:380px;right:180px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;bottom:350px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:180px;right:180px;bottom:${RESERVE_BAS}px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:1.02;color:var(--blue)}
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:190px;line-height:1.02;color:var(--blue)}
 #couverture .lab{font-size:44px;line-height:1.1;margin-top:22px}
-#couverture .grandir{padding-top:80px}
+#couverture .grandir{justify-content:flex-end;padding-bottom:24px}
 #couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
+#couverture li{height:86px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
 #couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:50px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
@@ -197,11 +197,11 @@ const CSS = `
 
 /* 6. Classement */
 #classement .head{flex:none}
-#classement h3{font-size:58px;line-height:1.02;margin-top:10px}
+#classement h3{font-size:52px;line-height:1.02;margin-top:8px}
 #classement .leg{flex:none}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 #classement .leg.trois .t{-webkit-line-clamp:1}
-#classement .item{display:flex;gap:20px;align-items:flex-start;padding:9px 0;border-top:2px solid var(--rule)}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:5px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0;text-align:left}
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}

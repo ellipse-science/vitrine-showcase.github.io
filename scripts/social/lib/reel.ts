@@ -57,13 +57,20 @@ export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
  *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
-/** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
- *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
- *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
- *  rien ne les couvre. L'édition se place sous les deux logos. */
-export const BRAND = { top: SAFE.top, height: 62 };
-export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
-export const CONTENT_BOTTOM = SAFE.bottom;
+/** ⚠️ LA BARRE DE MARQUE REDESCEND EN BAS (Jules Piral, 2026-09-17, le soir :
+ *  « les logos et l'édition en haut sont encore pognés en haut, mets-les en
+ *  bas »). Elle était passée en haut le matin même parce qu'elle tombait sous la
+ *  barre de navigation d'Instagram ; on sait maintenant, par mesure au
+ *  simulateur, que la légende commence à y 1582 en plein écran. La barre se pose
+ *  donc JUSTE AU-DESSUS, à 1440 → 1502, et l'édition sous elle, à 1512 → 1552.
+ *  Le haut ne garde plus que la barre de progression : le contenu commence à
+ *  y 180 au lieu de 274. */
+export const BRAND = { top: SAFE.bottom - 130, height: 62 };
+export const CONTENT_TOP = SAFE.top + 30;
+/** Le contenu des scènes s'arrête au-dessus de la barre de marque. */
+export const CONTENT_BOTTOM = BRAND.top - 40;
+/** Réserve sous le contenu, en pixels : ce que les scènes mettent en `bottom`. */
+export const RESERVE_BAS = HEIGHT - CONTENT_BOTTOM;
 
 export type Logos = { vitrine: string; capp: string };
 
@@ -243,7 +250,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    globale en position:absolute les empilait toutes au même endroit. */
 .zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
-.zone-utile > [data-cle]:last-child{margin-bottom:${CONTENT_BOTTOM - COEUR.bottom}px}
+.zone-utile > [data-cle]:last-child{margin-bottom:${Math.max(0, CONTENT_BOTTOM - COEUR.bottom)}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
@@ -440,7 +447,7 @@ export const FIN_CSS = `
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .foot{position:absolute;left:180px;right:180px;bottom:${HEIGHT - SAFE.bottom}px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
 #fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
 #fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
@@ -725,7 +732,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     for (const s of scenes) {
       const moments = [0.75, 0.45, 0.7, 1].map((f, i) => (i === 0 ? t + 0.75 : t + s.duration * f)).map((x) => Math.min(x, t + s.duration - 0.35));
       for (const m of [...new Set(moments)]) {
-        for (const ecart of await inspectAt(page, s.id, m * SLOW)) {
+        for (const ecart of await inspectAt(page, s.id, m * SLOW, !!s.hideBrand)) {
           if (vus.has(ecart)) continue;
           vus.add(ecart);
           found.push(ecart);
@@ -850,9 +857,11 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
   return out;
 }`;
 
-async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
-  // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
+async function inspectAt(page: Page, sceneId: string, at: number, sansMarque = false): Promise<string[]> {
+  // Le contenu s'arrête au-dessus de la barre de marque — sauf dans une scène qui
+  // la masque (accroche, intro, fin) : elle a droit à toute la zone sûre.
+  const bas = sansMarque ? SAFE.bottom : CONTENT_BOTTOM;
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: bas }, minFont: MIN_FONT, coeur: COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

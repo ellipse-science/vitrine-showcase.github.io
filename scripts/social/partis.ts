@@ -80,7 +80,7 @@ const CSS = `
 /* Accroche : le résultat, et rien d'autre */
 #accroche .brand{flex:none;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{flex:none;margin:auto 0;display:flex;flex-direction:column;gap:30px}
+#accroche .result{flex:none;margin:auto 0;position:relative;top:70px;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
 #accroche .then{font-size:88px;line-height:1.02}
 #accroche .mini{flex:none;height:290px;display:flex;gap:26px}
@@ -105,13 +105,13 @@ const CSS = `
 
 /* Ton */
 #ton .legend{flex:none;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
 #ton .row{flex:1 1 0;min-height:148px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
 /* Campagne */
-#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
 #campagne .row{flex:1 1 0;min-height:150px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
 #campagne .hvu{flex:1;display:flex;gap:4px;height:40px}
 #campagne .hvu i{flex:1;background:var(--deep)}

@@ -16,6 +16,7 @@
     "reel:enjeux-semaine": "tsx scripts/social/enjeux-semaine.ts",
     "reel:partis": "tsx scripts/social/partis.ts",
     "reel:partis-court": "tsx scripts/social/partis-court.ts",
+    "reel:une-court": "tsx scripts/social/une-court.ts",
     "reel:vitrine": "tsx scripts/social/vitrine.ts"
   },
   "dependencies": {

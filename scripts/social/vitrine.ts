@@ -25,7 +25,7 @@ import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 import { captionTypo } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
 import {
-  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
+  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, RESERVE_BAS, sceneFin, typo,
   type Scene,
 } from "./lib/reel";
 
@@ -316,7 +316,7 @@ const CSS = `
 #sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
-#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
+#sources .gratuit{position:absolute;bottom:${RESERVE_BAS}px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
@@ -374,7 +374,7 @@ const CSS = `
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
 #recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
-#recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap ul{position:absolute;top:660px;bottom:${RESERVE_BAS + 70}px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;justify-content:space-between;gap:14px}
 #recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px;line-height:1}

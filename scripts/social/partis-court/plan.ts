@@ -23,7 +23,17 @@ export type Contexte = { data: PartiesData; rows: RowView[]; mixes: MediaMix[]; 
 
 /** Une phrase à l'écran : une petite ligne d'amorce (`a`), une grande ligne
  *  (`b`), de `debut` à `fin` (secondes au rythme de base). */
-export type Phrase = { a?: string; b: string; couleur?: string; debut: number; fin?: number };
+export type Phrase = {
+  a?: string;
+  b: string;
+  couleur?: string;
+  /** Corps de la grande ligne, en pixels, quand 88 px ne suffisent pas : un titre
+   *  de Une n'a pas de longueur fixe, et il doit se lire EN ENTIER (Jules Piral,
+   *  2026-09-17 : « on ne voit pas le nom de la nouvelle en entier »). */
+  taille?: number;
+  debut: number;
+  fin?: number;
+};
 
 export type Plan = {
   /** Le visuel, posé dans la boîte caméra (884 × 700 px, y 700 → 1400). */
@@ -55,17 +65,17 @@ export const DUREE_PLAN = 5.6;
 export const MAX_SECONDES = 12;
 
 /** Boîte caméra. */
-// La boîte descend jusqu'à y 1500 : le BAS DU CARRÉ CENTRAL, puisqu'elle porte
-// `data-cle` — c'est elle qu'on doit voir dans la grille du profil. À 650 px de
-// haut elle s'arrêtait à 1356 et laissait 184 px vides sous le plan.
-export const BOITE = { gauche: 116, droite: 180, haut: 706, hauteur: 794 };
+// La boîte va de y 636 à y 1400 — tout le bas de la zone utile, sous les phrases
+// et au-dessus de la barre de marque. Elle porte `data-cle` : c'est elle qu'on
+// doit voir dans la grille du profil, donc elle reste dans le carré central.
+export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 764 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
   const phrases = plan.phrases.map((p, i) => {
     const sortie = p.fin != null ? `, sortie .35s ${p.fin}s forwards` : "";
     return `${p.a ? `<div class="phr a pf" style="animation:fadeUp .45s ${p.debut}s both${sortie}">${txt(p.a)}</div>` : ""}
-      <div class="phr b disp" data-i="${i}" style="${p.couleur ? `color:${p.couleur};` : ""}animation:fadeUp .45s ${p.debut + (p.a ? .45 : 0)}s both${sortie}">${txt(p.b)}</div>`;
+      <div class="phr b disp" data-i="${i}" style="${p.couleur ? `color:${p.couleur};` : ""}${p.taille ? `font-size:${p.taille}px;` : ""}animation:fadeUp .45s ${p.debut + (p.a ? .45 : 0)}s both${sortie}">${txt(p.b)}</div>`;
   }).join("");
   const z = plan.zoom;
   const camera = z
