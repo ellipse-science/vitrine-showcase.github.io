@@ -2,7 +2,7 @@
 // minuscule. Combien de fois moins que le parti en tête.
 
 import { SIGLE_ARTICLE, cap } from "../../lib/partis";
-import { BOITE, CSS_BARRES, barresHtml, duree, fois, scriptBarres, type Analyse } from "../plan";
+import { AXE_LABEL, BOITE, CSS_BARRES, barresHtml, duree, fois, scriptBarres, type Analyse } from "../plan";
 
 export const oublie: Analyse = {
   id: "oublie",
@@ -25,6 +25,7 @@ export const oublie: Analyse = {
         { a: "Depuis minuit, le parti dont les Unes parlent le moins :", b: `${cap(SIGLE_ARTICLE[dernier.key])}, ${duree(dernier.minutesUne)} de Une`, couleur: dernier.color, debut: .15, fin: 3.0 },
         { a: `Face ${lead.key === "caq" ? "à la" : lead.key === "qs" ? "à" : "au"} ${lead.label} :`, b: `${fois(lead.minutesUne / dernier.minutesUne)} moins de temps`, debut: 3.2 },
       ],
+      methode: AXE_LABEL,
       legende: `Depuis minuit, ${SIGLE_ARTICLE[dernier.key]} est le parti dont les Unes parlent le moins : ${duree(dernier.minutesUne)} de temps en Une, tous médias confondus, soit ${fois(lead.minutesUne / dernier.minutesUne)} moins que ${SIGLE_ARTICLE[lead.key]} (${duree(lead.minutesUne)}).`,
     };
   },

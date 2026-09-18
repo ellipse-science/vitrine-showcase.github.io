@@ -3,7 +3,7 @@
 // ligne de ce meilleur jour, à la même échelle.
 
 import { SIGLE_ARTICLE, cap } from "../../lib/partis";
-import { CSS_BARRES, CSS_LIGNE, barresHtml, commeOnLeDit, ligneBarres, scriptBarres, type Analyse } from "../plan";
+import { AXE_LABEL, CSS_BARRES, CSS_LIGNE, barresHtml, commeOnLeDit, ligneBarres, scriptBarres, type Analyse } from "../plan";
 
 export const record: Analyse = {
   id: "record",
@@ -24,6 +24,7 @@ export const record: Analyse = {
         { a: "Et c’est un record :", b: "du jamais vu depuis le début de la campagne", debut: 3.2 },
       ],
       eclair: 3.9,
+      methode: AXE_LABEL,
       legende: `Depuis minuit, ${SIGLE_ARTICLE[lead.key]} occupe ${lead.sovPct} % du temps que les Unes consacrent aux partis. Aucun autre parti n’a eu autant de place en une journée depuis le début de la campagne (meilleur jour : ${SIGLE_ARTICLE[autres[0].key]}, ${autres[0].peakPct} %).`,
     };
   },

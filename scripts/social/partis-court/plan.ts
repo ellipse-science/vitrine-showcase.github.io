@@ -48,6 +48,10 @@ export type Plan = {
   /** Mouvement de caméra : léger travelling avant (défaut) ou zoom sur un point
    *  de la boîte (x, y en % de la boîte). */
   zoom?: { x: number; y: number; de: number; a: number; debut: number };
+  /** CE QU'ON MESURE, écrit sous le graphique — l'unité, la fenêtre, l'axe s'il
+   *  est tronqué (« Part des Unes · axe 0–50 % »). Obligatoire dès que le visuel
+   *  porte une échelle : un axe tronqué qu'on ne déclare pas exagère les écarts. */
+  methode?: string;
   /** Légende Instagram : une ou deux phrases, sans lien ni mots-clics. */
   legende: string;
 };
@@ -82,7 +86,9 @@ export function verifierDuree(secondes: number, quoi: string): void {
 // La boîte va de y 636 à y 1400 — tout le bas de la zone utile, sous les phrases
 // et au-dessus de la barre de marque. Elle porte `data-cle` : c'est elle qu'on
 // doit voir dans la grille du profil, donc elle reste dans le carré central.
-export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 764 };
+// La boîte perd 58 px en bas : c'est la place de la LIGNE DE MÉTHODE, qui dit ce
+// qu'on mesure et sur quel axe. Un chiffre sans sa mesure n'est pas un résultat.
+export const BOITE = { gauche: 116, droite: 180, haut: 636, hauteur: 706 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
@@ -98,6 +104,7 @@ export function scenePlanHtml(plan: Plan): { html: string; css: string; script: 
   const html = `
     <div class="cadre-camera" data-cle><div class="camera" style="${camera}">${plan.visuel}</div></div>
     ${plan.eclair != null ? `<div class="eclair" data-deco style="animation:eclair .7s ${plan.eclair}s both"></div>` : ""}
+    ${plan.methode ? `<div class="methode mono" style="animation:fadeIn .5s 1.2s both">${txt(plan.methode)}</div>` : ""}
     ${phrases}`;
   const css = `
 #plan .cadre-camera{position:absolute;left:${BOITE.gauche}px;right:${BOITE.droite}px;top:${BOITE.haut}px;height:${BOITE.hauteur}px;overflow:hidden}
@@ -107,6 +114,7 @@ ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / D
 #plan .eclair{position:absolute;left:30px;right:180px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
+#plan .methode{position:absolute;left:180px;right:180px;top:${BOITE.haut + BOITE.hauteur + 16}px;font-size:28px;line-height:1.2;color:var(--soft)}
 #plan .phr{position:absolute;left:180px;right:180px}
 #plan .phr.a{top:288px;font-size:46px;line-height:1.12;font-weight:700}
 #plan .phr.b{top:396px;font-size:88px;line-height:1.02;color:var(--ink)}
@@ -131,10 +139,39 @@ export function legendeComplete(plan: Plan): string {
  *  et `data-a` (valeur d'arrivée) ; `scriptBarres` les anime et affiche la valeur.
  *  Échelle : 1 % = `echelle` px, depuis la ligne de base. */
 export const BARRES = { puce: 70, etiquette: 70 };
-export const ECHELLE_BARRES = (BOITE.hauteur - BARRES.puce - BARRES.etiquette) / 100;
+
+/** PLAFOND DE L'AXE, FIXE (Jules Piral, 2026-09-18). L'axe montait à 100 % alors
+ *  qu'aucun parti n'a jamais dépassé 40 % : la plus haute barre du jour occupait
+ *  38 % de la hauteur du graphique, et les 62 % au-dessus étaient vides tous les
+ *  jours — le vide tombait pile au centre de la vignette du profil.
+ *
+ *  UN PLAFOND FIXE, PAS UNE ÉCHELLE DU JOUR : une barre de la même hauteur veut
+ *  dire la même chose d'une édition à l'autre, ce qu'une échelle recalculée
+ *  chaque jour détruirait. Le plafond est ÉCRIT sous le graphique — un axe tronqué
+ *  qu'on ne déclare pas exagère les écarts.
+ *
+ *  Si un parti dépasse le plafond, on REFUSE de produire plutôt que de rogner la
+ *  barre : une barre coupée à 50 % est un mensonge, et ce jour-là c'est le
+ *  plafond qu'il faut remonter, en connaissance de cause. */
+export const PLAFOND_AXE = 50;
+
+/** L'échelle de l'axe, à écrire sous le graphique. */
+export const AXE_LABEL = `Part des Unes · axe 0–${PLAFOND_AXE} %`;
+
+export const ECHELLE_BARRES = (BOITE.hauteur - BARRES.puce - BARRES.etiquette) / PLAFOND_AXE;
 export const BASE_BARRES = BOITE.hauteur - BARRES.puce;
 
 export function barresHtml(barres: { key: string; label: string; color: string; de: number; a: number }[]): string {
+  // Le plafond est une garantie de lecture : on ne produit pas une barre rognée.
+  const trop = barres.filter((b) => Math.max(b.de, b.a) > PLAFOND_AXE);
+  if (trop.length) {
+    const noms = trop.map((b) => `${b.label} ${Math.max(b.de, b.a)} %`).join(", ");
+    throw new Error(
+      `Barres au-dessus du plafond de l'axe (${PLAFOND_AXE} %) : ${noms}. ` +
+      "Remontez PLAFOND_AXE dans partis-court/plan.ts — et dites-le dans le gabarit : " +
+      "l'échelle change pour tous les reels, donc les hauteurs ne se comparent plus aux précédentes.",
+    );
+  }
   return `<div class="barres">${barres.map((b) => `
     <div class="bp" data-key="${b.key}" data-de="${b.de}" data-a="${b.a}">
       <div class="p disp" style="color:${b.color}">${b.de}&nbsp;%</div>
