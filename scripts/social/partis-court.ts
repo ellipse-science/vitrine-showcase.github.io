@@ -25,6 +25,11 @@ import {
 import { ANALYSES } from "./partis-court/analyses";
 import { DUREE_PLAN, MAX_SECONDES, verifierDuree, legendeComplete, scenePlanHtml, type Contexte } from "./partis-court/plan";
 
+// Sélection éditoriale par défaut : on garde les analyses qui restent lisibles
+// sans peaufinage au cas par cas. Les analyses plus denses (`calendrier`, `ton`,
+// `medias`) demeurent disponibles si on les demande explicitement avec --analyse.
+const ANALYSES_PAR_DEFAUT = new Set(["horloge", "oublie", "remontee", "multiple"]);
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const { edition, current } = await resolveEdition(args);
@@ -36,7 +41,9 @@ async function main() {
   const ctx: Contexte = { data, rows, mixes: mediaMixes(data), edition };
   console.log(`${MODULE} · reels courts · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
 
-  const choix = typeof args.analyse === "string" ? ANALYSES.filter((a) => a.id === args.analyse) : ANALYSES;
+  const choix = typeof args.analyse === "string"
+    ? ANALYSES.filter((a) => a.id === args.analyse)
+    : ANALYSES.filter((a) => ANALYSES_PAR_DEFAUT.has(a.id));
   if (!choix.length) throw new Error(`Analyse « ${args.analyse} » inconnue. Analyses : ${ANALYSES.map((a) => a.id).join(", ")}`);
 
   const plans = choix.map((a) => ({ a, plan: a.construire(ctx) }));

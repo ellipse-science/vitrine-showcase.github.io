@@ -364,6 +364,10 @@ longue est gardée). À VALIDER. Règles communes (moteur `partis-court/plan.ts`
   affichée telle quelle sur le site ;
 - une analyse qui ne s'applique pas aux données du jour est **sautée** : on ne
   force jamais une histoire. `-- --liste` dit lesquelles s'appliquent.
+- Par défaut, le script ne propose que les analyses les plus robustes visuellement
+  (`horloge`, `oublie`, `remontee`, `multiple`). Les analyses plus denses
+  (`calendrier`, `ton`, `medias`) restent appelables explicitement avec
+  `-- --analyse`, mais ne doivent pas être choisies automatiquement.
 
 Les dix analyses (`partis-court/analyses/`, un fichier chacune) :
 
@@ -377,7 +381,7 @@ Les dix analyses (`partis-court/analyses/`, un fichier chacune) :
 | `ton` | défavorable pour 4 partis sur 5 ; un seul s'en tire | cinq cadrans dont les aiguilles s'agitent puis se posent |
 | `medias` | « quand Le Devoir parle d'un parti, 97 % du temps c'est le PQ » ; en tête dans N médias | barres par média, les autres pâlissent |
 | `oublie` | le parti dont on parle le moins, N fois moins que le premier | zoom de caméra sur sa barre |
-| `remontee` | en une semaine, qui gagne le plus de points, qui en perd le plus | deux traits qui se croisent |
+| `remontee` | cette semaine, le parti le plus présent dans la couverture accordée aux partis | vu-mètre simple |
 | `multiple` | d'habitude X %, aujourd'hui N fois plus | une barre découpée en blocs de sa moyenne |
 
 ⚠️ « Aujourd'hui » = depuis minuit : un record à 8h peut encore bouger. Les

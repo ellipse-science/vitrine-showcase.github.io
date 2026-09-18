@@ -495,8 +495,8 @@ export const FIN_CSS = `
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-/* « Six éditions par jour » était collé au soulignement de l'adresse. */
-#fin .six{font-size:34px;font-style:italic;margin-top:54px;color:var(--soft)}
+/* Rapproche visuellement l'horaire du bloc des partenaires, sans toucher à la signature. */
+#fin .six{font-size:34px;font-style:italic;margin-top:82px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .foot{position:absolute;left:180px;right:180px;bottom:${HEIGHT - SAFE.bottom}px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
