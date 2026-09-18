@@ -203,13 +203,21 @@ const CSS = `
 /* 6. Classement */
 #classement .head{flex:none}
 #classement h3{font-size:58px;line-height:1.02;margin-top:10px}
-#classement .leg{flex:none}
+/* La liste des trois nouvelles vit au-dessus de y 1040 : là, la zone sûre de #823
+   laisse 110 px de chaque côté (la colonne de boutons n'existe qu'en dessous).
+   Elle s'élargit donc à 860 px, symétrique elle aussi — sinon « Affaires
+   internationales et défense » (41 caractères) ne tient sur une ligne à aucune
+   taille lisible dans les 638 px que laisse la colonne (20h du 17-09). */
+#classement .leg{flex:none;margin:0 -70px}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
-#classement .leg.trois .t{-webkit-line-clamp:1}
-#classement .item{display:flex;gap:20px;align-items:flex-start;padding:9px 0;border-top:2px solid var(--rule)}
+/* Un titre de Une ne se tronque pas : deux lignes même à trois nouvelles. */
+#classement .leg.trois .t{-webkit-line-clamp:2}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:13px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0;text-align:left}
-#classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
+/* Sans interlettrage : avec .04em, « N°2 · Affaires internationales et défense »
+   faisait 793 px pour 778 de large ; à 28 px (le minimum) et 0, 747. */
+#classement .item .k{font-size:28px;letter-spacing:0;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #classement .chart{position:relative;flex:none;height:560px}
