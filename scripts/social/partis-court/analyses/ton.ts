@@ -43,7 +43,7 @@ export const ton: Analyse = {
           ? { a: "Un seul s’en tire :", b: `${cap(SIGLE_ARTICLE[seul.key])}`, couleur: seul.color, debut: 3.2 }
           : { a: pos.length ? `${pos.length} partis s’en tirent :` : "Aucun n’y échappe :", b: pos.length ? pos.map((r) => r.label).join(" et ") : "pas un seul ton favorable", debut: 3.2 },
       ],
-      legende: `Depuis minuit, le ton des phrases qui nomment les partis dans les Unes est défavorable pour ${neg.length} partis sur ${rows.length}. ${seul ? `Seul ${SIGLE_ARTICLE[seul.key]} a droit à un ton favorable.` : pos.length ? `Ton favorable : ${pos.map((r) => SIGLE_ARTICLE[r.key]).join(" et ")}.` : "Aucun n’a droit à un ton favorable."}`,
+      legende: `Depuis minuit, le ton des phrases qui nomment les partis dans les Unes de l’actualité est défavorable pour ${neg.length} partis sur ${rows.length}. ${seul ? `Seul ${SIGLE_ARTICLE[seul.key]} a droit à un ton favorable.` : pos.length ? `Ton favorable : ${pos.map((r) => SIGLE_ARTICLE[r.key]).join(" et ")}.` : "Aucun n’a droit à un ton favorable."}`,
     };
   },
 };

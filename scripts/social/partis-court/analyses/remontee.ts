@@ -42,10 +42,10 @@ export const remontee: Analyse = {
 #plan .et{position:absolute;font-size:46px;line-height:1;white-space:nowrap}
 #plan .axe{position:absolute;bottom:0;width:220px;text-align:center;font-size:28px;letter-spacing:.04em;color:var(--soft)}`,
       phrases: [
-        { a: "En une semaine, dans les Unes :", b: `${cap(SIGLE_ARTICLE[monte.key])} gagne ${monte.evolutionPts} points`, couleur: monte.color, debut: .15, fin: 3.0 },
+        { a: "En une semaine, dans les Unes de l’actualité :", b: `${cap(SIGLE_ARTICLE[monte.key])} gagne ${monte.evolutionPts} points`, couleur: monte.color, debut: .15, fin: 3.0 },
         { a: "Pendant ce temps,", b: `${SIGLE_ARTICLE[baisse.key]} en perd ${-baisse.evolutionPts}`, couleur: baisse.color, debut: 3.2 },
       ],
-      legende: `En une semaine, la part de ${SIGLE_ARTICLE[monte.key]} dans le temps que les Unes consacrent aux partis a gagné ${monte.evolutionPts} points (${Math.max(0, monte.sovPct - monte.evolutionPts)} % → ${monte.sovPct} %). Celle de ${SIGLE_ARTICLE[baisse.key]} en a perdu ${-baisse.evolutionPts}.`,
+      legende: `En une semaine, la part de ${SIGLE_ARTICLE[monte.key]} dans le temps que les Unes de l’actualité consacrent aux partis a gagné ${monte.evolutionPts} points (${Math.max(0, monte.sovPct - monte.evolutionPts)} % → ${monte.sovPct} %). Celle de ${SIGLE_ARTICLE[baisse.key]} en a perdu ${-baisse.evolutionPts}.`,
     };
   },
 };

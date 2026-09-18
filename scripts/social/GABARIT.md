@@ -386,7 +386,7 @@ Rejeté le 17-09 : cinq scènes en slides, puis deux slides chiffre + record.
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.
-Les autres réseaux (`lib/reseaux.ts`) sont écrits pour la Une des Unes : À FAIRE.
+Les autres réseaux (`reseaux/`, un fichier par réseau) sont écrits pour la Une des Unes : À FAIRE.
 
 ### Rejeté (ne pas réintroduire)
 

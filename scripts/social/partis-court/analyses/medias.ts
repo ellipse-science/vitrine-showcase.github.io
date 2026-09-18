@@ -34,10 +34,10 @@ export const medias: Analyse = {
     l.style.opacity=l.dataset.top==="1"?1:(1-.6*clamp((t-3.0)/.5));
   });`,
       phrases: [
-        { a: `Depuis minuit, quand ${top.m.nom} parle d’un parti en Une…`, b: `${top.pct} % du temps, c’est ${SIGLE_ARTICLE[lead.key]}`, couleur: lead.color, debut: .15, fin: 3.0 },
+        { a: `En Une de l’actualité, depuis minuit, ${top.m.nom} :`, b: `${top.pct} % du temps, c’est ${SIGLE_ARTICLE[lead.key]}`, couleur: lead.color, debut: .15, fin: 3.0 },
         { a: `${cap(SIGLE_ARTICLE[lead.key])} est en tête`, b: `dans ${mene} médias sur ${mixes.length}`, debut: 3.2 },
       ],
-      legende: `Depuis minuit, ${top.m.dans}, ${top.pct} % du temps que les Unes consacrent aux partis va ${lead.key === "caq" ? "à la" : lead.key === "qs" ? "à" : "au"} ${lead.label}. ${cap(SIGLE_ARTICLE[lead.key])} est en tête dans ${mene} médias sur ${mixes.length}.`,
+      legende: `Depuis minuit, ${top.m.dans}, ${top.pct} % du temps que les Unes de l’actualité consacrent aux partis va ${lead.key === "caq" ? "à la" : lead.key === "qs" ? "à" : "au"} ${lead.label}. ${cap(SIGLE_ARTICLE[lead.key])} est en tête dans ${mene} médias sur ${mixes.length}.`,
     };
   },
 };

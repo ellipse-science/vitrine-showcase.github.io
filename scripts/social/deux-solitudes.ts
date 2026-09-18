@@ -29,8 +29,10 @@ import {
   type EditionRef, type SolitudeAxis, type SolitudeData,
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
+
+import { dateLongue } from "./lib/commun";
 import {
-  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce,
+  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce, RESERVE_BAS,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
@@ -75,7 +77,7 @@ const CSS = `
 #sonar .chart{position:absolute;left:180px;right:180px;top:430px;height:600px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:350px}
+#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:${RESERVE_BAS}px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
@@ -83,7 +85,10 @@ const CSS = `
 #sonar .bar em{font-style:normal;width:128px;flex:none;color:var(--soft)}
 #sonar .bar i{display:block;height:30px;transform-origin:left}
 #sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:44px;font-weight:500;line-height:1}
-#sonar .conv{position:absolute;left:0;right:0;bottom:0;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
+/* Le grand chiffre est en line-height .86 : son jambage descend sous la boîte de
+   la ligne et mordait de 9 px sur le pied. Invisible jusqu au 18-09, où le
+   contrôle s est mis à mesurer le TEXTE et non plus seulement sa boîte. */
+#sonar .conv{position:absolute;left:0;right:0;bottom:0;border-top:3px solid var(--ink);padding-top:22px;padding-bottom:14px;display:flex;align-items:center;gap:26px}
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
 #sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:28px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
@@ -225,8 +230,8 @@ function caption(edition: EditionRef, sol: SolitudeData): string {
     "",
     `Aujourd’hui : ${sol.convPct} % de convergence, ${sol.relDiffPct} % ${sol.relLabel}.`,
     sol.edito,
-    ...(qc.length ? ["", "Ce que le Québec avait en Une :", ...qc.map(ligne)] : []),
-    ...(can.length ? ["", "Ce que le Canada anglais avait en Une :", ...can.map(ligne)] : []),
+    ...(qc.length ? ["", "Ce que le Québec avait en Une de l’actualité :", ...qc.map(ligne)] : []),
+    ...(can.length ? ["", "Ce que le Canada anglais avait en Une de l’actualité :", ...can.map(ligne)] : []),
     "",
     "Les deux agendas, côte à côte, six fois par jour : vitrinedemocratique.com",
     "",
@@ -271,10 +276,9 @@ async function main() {
   const scenes = [
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes, visuel,
-      edition: `Édition de ${edition.pubHour % 24}h · ${edition.dateLabel}`,
     }),
     sceneSonar(sol, edition),
-    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({
@@ -283,7 +287,8 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: `Édition de ${edition.pubHour % 24}h · ${edition.navDateIso.split("-").reverse().join(".")}`,
+    date: dateLongue(edition),
+    module: { nom: MODULE.nom, couleur: MODULE.accent },
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
