@@ -1,21 +1,29 @@
 // 3. LA REMONTÉE DE LA SEMAINE — l'enjeu qui a gagné le plus de rangs en sept
 // jours. Le graphique de rang est sur le site ; le nombre de rangs gagnés, dit
 // en clair, ne l'est pas.
+//
+// LE VISUEL EST UNE ÉCHELLE DE DOUZE BARREAUX (Jules Piral, 2026-09-18). Deux
+// pastilles « 6e → 3e » ne disaient ni sur combien on se classe, ni DE QUOI on
+// parle : le nom de l'enjeu vivait dans une phrase qui s'efface à 3 s, si bien
+// qu'à la fin du plan on lisait « 3 rangs gagnés » sans sujet. Ici les douze
+// places sont dessinées, et le nom voyage AVEC la pastille : il ne quitte plus
+// l'écran.
 
 import { libelleEnjeuCourt } from "@/lib/enjeux";
 import { rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
 
 import { esc } from "../../lib/reel";
-import { BOITE, type Analyse } from "../plan";
+import { BOITE, LARGEUR, type Analyse } from "../plan";
 
 /** Sous trois rangs, un enjeu n'a pas « remonté » : il a bougé dans le bruit. */
 const SEUIL_RANGS = 3;
 
-/** Un rang, en gros, dans un pastillon de la couleur de l'enjeu. */
-const badge = (rang: number, couleur: string, delai: number, eteint = false) => `
-  <div class="rang" style="background:${eteint ? "#C6BBA4" : couleur};animation:pop .5s ${delai}s both">
-    <b>${rang}</b><i>e</i>
-  </div>`;
+/** Les douze places, du haut vers le bas. */
+const PLACES = 12;
+const BARREAU = Math.floor((BOITE.hauteur - 40) / PLACES);
+
+/** Le moment où la pastille monte, au rythme de base. */
+const MONTEE = 2.6;
 
 export const grimpe: Analyse = {
   id: "grimpe",
@@ -36,35 +44,46 @@ export const grimpe: Analyse = {
     const { tile, startRank, endRank } = meilleur;
     const nom = libelleEnjeuCourt(tile.issueFr);
 
+    // Les douze barreaux : un par place, numérotés. C'est ce qui manquait pour
+    // comprendre « 3e » — 3e SUR DOUZE.
+    const barreaux = Array.from({ length: PLACES }, (_, i) => `
+      <div class="barreau" style="top:${i * BARREAU}px;animation:fadeIn .4s ${(.3 + i * .04).toFixed(2)}s both">
+        <span class="mono">${i + 1}</span><i></i>
+      </div>`).join("");
+
     return {
-      visuel: `<div class="course">
-        ${badge(startRank, tile.color, .5, true)}
-        <div class="fleche disp" style="color:${tile.color};animation:pop .4s 1.6s both">→</div>
-        ${badge(endRank, tile.color, 1.2)}
-      </div>`,
+      visuel: `
+        <div class="echelle">
+          ${barreaux}
+          <div class="pastille" style="--de:${(startRank - 1) * BARREAU}px;--a:${(endRank - 1) * BARREAU}px;background:${tile.color};animation:monte 1.1s ${MONTEE}s both">
+            <b>${esc(nom)}</b>
+          </div>
+        </div>`,
       css: `
-#plan .course{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:48px}
-#plan .course .rang{width:${Math.round((BOITE.hauteur - 180) * .62)}px;height:${Math.round((BOITE.hauteur - 180) * .62)}px;border-radius:50%;display:flex;align-items:baseline;justify-content:center;color:var(--paper)}
-#plan .course .rang b{font-family:"Playfair Display",serif;font-weight:900;font-size:180px;line-height:1}
-#plan .course .rang i{font-family:"Playfair Display",serif;font-style:normal;font-size:64px;line-height:1;align-self:flex-start;margin-top:26px}
-#plan .course .fleche{font-size:104px;line-height:1}`,
+#plan .echelle{position:absolute;inset:0}
+#plan .echelle .barreau{position:absolute;left:0;right:0;height:${BARREAU}px;display:flex;align-items:center;gap:18px}
+#plan .echelle .barreau span{flex:none;width:58px;text-align:right;font-size:28px;color:var(--soft)}
+#plan .echelle .barreau i{flex:1;height:2px;background:var(--rule)}
+#plan .echelle .pastille{position:absolute;left:92px;width:${LARGEUR - 92}px;height:${BARREAU - 8}px;display:flex;align-items:center;padding:0 24px;color:var(--paper)}
+#plan .echelle .pastille b{font-family:"Playfair Display",serif;font-weight:700;font-size:40px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes monte{0%{top:var(--de);opacity:0}12%{top:var(--de);opacity:1}55%{top:var(--a)}100%{top:var(--a);opacity:1}}`,
       phrases: [
         {
-          a: "En sept jours, l’enjeu qui remonte le plus :",
+          a: "Le classement des 12 enjeux en Une de l’actualité :",
           b: esc(nom),
           couleur: tile.color,
           debut: .15,
           fin: 3.0,
         },
         {
-          a: `De la ${startRank}e à la ${endRank}e place :`,
+          a: `En sept jours, de la ${startRank}e à la ${endRank}e place :`,
           b: `${meilleur.delta} rangs gagnés.`,
           couleur: tile.color,
           debut: 3.2,
         },
       ],
-      methode: "Rang parmi les 12 enjeux · 7 derniers jours",
-      legende: `En sept jours, ${nom} est l’enjeu qui a gagné le plus de rangs parmi les douze de la campagne : de la ${startRank}e à la ${endRank}e place, soit ${meilleur.delta} rangs.`,
+      methode: "Rang sur 12 enjeux · 7 derniers jours",
+      legende: `En sept jours, ${nom} est l’enjeu qui a gagné le plus de rangs parmi les douze de la campagne : de la ${startRank}e à la ${endRank}e place, soit ${meilleur.delta} rangs. Le classement des douze enjeux est établi chaque jour à partir de leur saillance dans les Unes de l’actualité.`,
     };
   },
 };

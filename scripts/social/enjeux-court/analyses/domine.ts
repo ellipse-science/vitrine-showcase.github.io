@@ -1,67 +1,101 @@
 // 1. LA CONCENTRATION — combien les trois premiers enjeux pèsent, à eux seuls,
 // dans l'attention des douze. La treemap montre les douze parts ; leur SOMME,
 // elle, n'est écrite nulle part sur le site.
+//
+// LE VISUEL MONTRE LE TOUT, PAS UN CLASSEMENT (Jules Piral, 2026-09-18 : « les
+// gens ne comprennent pas nécessairement de quoi on parle »). Des barres
+// répondaient à « lequel est le plus gros ? » ; la question ici est « combien
+// pèsent trois enjeux sur douze ? ». On dessine donc les DOUZE bouts d'une même
+// bande de 100 % : les trois premiers en couleur, les neuf autres en sourdine,
+// et un repère à la moitié. Qu'ils dépassent la moitié se voit sans lire un
+// seul chiffre — et l'axe n'a plus besoin d'être expliqué, puisqu'on voit le
+// tout dont on parle.
 
 import { libelleEnjeuCourt } from "@/lib/enjeux";
 
-import { AXE_LABEL, CSS_BARRES, PLAFOND_AXE, barresHtml, scriptBarres, type Analyse } from "../plan";
+import { esc } from "../../lib/reel";
+import { BOITE, LARGEUR, type Analyse } from "../plan";
 
 /** Sous ce seuil, trois enjeux sur douze ne « dominent » rien : les douze se
  *  partagent l'attention à peu près également et il n'y a pas d'histoire.
  *  Un partage parfaitement égal donnerait 25 % pour trois enjeux sur douze. */
 const SEUIL = 45;
 
-/** QUATRE barres, pas cinq comme les partis : le podium, plus celui qui suit.
- *  Un parti a un sigle de trois lettres, un enjeu porte un nom — « International »,
- *  « Loi et ordre ». À cinq colonnes, les noms se faisaient couper en « Loi et »
- *  et « G ». Quatre colonnes les laissent entiers ; c'est la seule chose que ce
- *  module change au graphique. */
-const BARRES_MONTREES = 4;
-
-/** Le nom d'un enjeu est plus long qu'un sigle de parti : l'étiquette descend au
- *  plancher de lisibilité (28 px) pour tenir dans sa colonne. */
-const CSS_ETIQUETTES = `
-#plan .bp .s{font-size:28px}`;
+/** Hauteur de la bande des 100 %. */
+const BANDE = 150;
 
 export const domine: Analyse = {
   id: "domine",
   idee: "Ce que les trois premiers enjeux pèsent, à eux seuls, dans l’attention des douze",
   construire({ tuiles }) {
-    if (tuiles.length < BARRES_MONTREES) return null;
+    if (tuiles.length < 4) return null;
     const trois = tuiles.slice(0, 3);
     const somme = Math.round(trois.reduce((t, x) => t + x.share, 0));
     if (somme < SEUIL) return null;
 
-    const montrees = tuiles.slice(0, BARRES_MONTREES);
+    // Les douze bouts de la bande, dans l'ordre du classement. Les largeurs
+    // viennent des parts elles-mêmes : elles somment à 100 par construction.
+    const segments = tuiles.map((t, i) => {
+      const large = (t.share / 100) * LARGEUR;
+      return `<div class="seg" style="width:${large.toFixed(1)}px;background:${i < 3 ? t.color : "#CFC4AC"};animation:growX .8s ${(.4 + i * .06).toFixed(2)}s both"></div>`;
+    }).join("");
+
+    // L'accolade sur les trois premiers, et le repère de la moitié.
+    const finTrois = (somme / 100) * LARGEUR;
+    const moitie = LARGEUR / 2;
+
+    const legende = trois.map((t, i) => `
+      <li style="animation:fadeUp .5s ${(2.4 + i * .18).toFixed(2)}s both">
+        <i style="background:${t.color}"></i>
+        <b>${esc(libelleEnjeuCourt(t.issueFr))}</b>
+        <span class="mono">${Math.round(t.share)}&nbsp;%</span>
+      </li>`).join("");
+
     return {
-      visuel: barresHtml(montrees.map((t, i) => ({
-        key: t.issueKey,
-        label: libelleEnjeuCourt(t.issueFr),
-        // Le podium à sa couleur, le reste en sourdine : c'est le podium qu'on
-        // additionne, et l'œil doit voir lequel.
-        color: i < 3 ? t.color : "#C6BBA4",
-        de: 0,
-        a: Math.round(t.share),
-      })), PLAFOND_AXE),
-      css: CSS_BARRES + CSS_ETIQUETTES,
-      script: scriptBarres({ t0: .3, d: 1.3, decale: .08, plafond: PLAFOND_AXE }),
+      visuel: `
+        <div class="tout">
+          <div class="accolade" style="width:${finTrois.toFixed(1)}px;animation:growX .6s 1.9s both">
+            <div class="trait"></div>
+            <div class="somme disp" style="animation:fadeIn .4s 2.2s both">${somme}&nbsp;%</div>
+          </div>
+          <div class="bande">${segments}</div>
+          <div class="moitie" style="left:${moitie.toFixed(1)}px;animation:fadeIn .5s 1.6s both">
+            <i></i><span class="mono">la moitié</span>
+          </div>
+          <ul class="podium">${legende}</ul>
+        </div>`,
+      css: `
+#plan .tout{position:absolute;inset:0}
+#plan .tout .bande{position:absolute;left:0;top:${Math.round(BANDE * .62)}px;width:${LARGEUR}px;height:${BANDE}px;display:flex;gap:3px}
+#plan .tout .seg{height:100%;transform-origin:left}
+#plan .tout .accolade{position:absolute;left:0;top:0;height:${Math.round(BANDE * .62)}px;transform-origin:left}
+#plan .tout .accolade .trait{position:absolute;left:0;right:0;bottom:10px;height:8px;background:var(--ink)}
+#plan .tout .accolade .somme{position:absolute;left:0;right:0;bottom:28px;text-align:center;font-size:84px;line-height:1;color:var(--ink)}
+#plan .tout .moitie{position:absolute;top:${Math.round(BANDE * .62) - 14}px;height:${BANDE + 28}px}
+#plan .tout .moitie i{position:absolute;left:0;top:0;bottom:22px;width:5px;background:var(--ink)}
+#plan .tout .moitie span{position:absolute;left:0;bottom:-16px;transform:translateX(-50%);font-size:28px;letter-spacing:.04em;color:var(--soft);white-space:nowrap;background:var(--paper);padding:0 10px}
+#plan .tout .podium{position:absolute;left:0;right:0;top:${Math.round(BANDE * .62) + BANDE + 96}px;list-style:none}
+#plan .tout .podium li{display:flex;align-items:center;gap:20px;height:96px;border-bottom:2px solid var(--rule)}
+#plan .tout .podium i{flex:none;display:block;width:44px;height:44px}
+#plan .tout .podium b{font-family:"Playfair Display",serif;font-weight:700;font-size:44px;line-height:1.05;text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#plan .tout .podium span{flex:none;font-size:36px;color:var(--soft)}
+@keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}`,
       phrases: [
         {
-          a: "Depuis minuit, sur les douze enjeux…",
-          b: `${libelleEnjeuCourt(trois[0].issueFr)} mène.`,
-          couleur: trois[0].color,
+          a: "Les 12 enjeux, en Une de l’actualité :",
+          b: "douze parts d’un même tout.",
           debut: .15,
           fin: 3.0,
         },
         {
-          a: "Les trois premiers, à eux seuls :",
-          b: `${somme} % de l’attention.`,
+          a: "Depuis minuit, les trois premiers :",
+          b: `${somme} % à eux seuls.`,
           couleur: trois[0].color,
           debut: 3.2,
         },
       ],
-      methode: AXE_LABEL,
-      legende: `Depuis minuit, les trois enjeux les plus saillants — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze enjeux de la campagne.`,
+      methode: "Les 12 enjeux = 100 % · depuis minuit",
+      legende: `Depuis minuit, les trois enjeux les plus saillants — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze enjeux de la campagne. Les douze parts somment à 100 %.`,
     };
   },
 };

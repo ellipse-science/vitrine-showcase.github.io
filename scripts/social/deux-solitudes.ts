@@ -85,7 +85,10 @@ const CSS = `
 #sonar .bar em{font-style:normal;width:128px;flex:none;color:var(--soft)}
 #sonar .bar i{display:block;height:30px;transform-origin:left}
 #sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:44px;font-weight:500;line-height:1}
-#sonar .conv{position:absolute;left:0;right:0;bottom:0;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
+/* Le grand chiffre est en line-height .86 : son jambage descend sous la boîte de
+   la ligne et mordait de 9 px sur le pied. Invisible jusqu au 18-09, où le
+   contrôle s est mis à mesurer le TEXTE et non plus seulement sa boîte. */
+#sonar .conv{position:absolute;left:0;right:0;bottom:0;border-top:3px solid var(--ink);padding-top:22px;padding-bottom:14px;display:flex;align-items:center;gap:26px}
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
 #sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:28px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}

@@ -803,6 +803,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
 // Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
 // un utilitaire `__name` qui n'existe pas côté navigateur.
 const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur, videMax, signature }) => {
+  const MARGE_TEXTE = 5;
   window.setTime(at);
   const scene = document.getElementById(sceneId);
   const out = [];
@@ -832,6 +833,25 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur, videMax, signature
     let op = 1; for (let q = el; q && q !== document.body; q = q.parentElement) op *= parseFloat(getComputedStyle(q).opacity);
     if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
+    // Un texte qui déborde de sa boîte (white-space: nowrap, mot trop long) ne
+    // fait PAS grandir la boîte : on mesure le texte lui-même et on l'ajoute.
+    if (ownText) {
+      for (const n of el.childNodes) {
+        if (n.nodeType !== 3 || !(n.textContent || "").trim()) continue;
+        const rg = document.createRange();
+        rg.selectNodeContents(n);
+        const tr = rg.getBoundingClientRect();
+        rg.detach?.();
+        if (tr.width < 1 || tr.height < 1) continue;
+        // 5 px de tolérance : la boîte d'une ligne de texte dépasse toujours son
+        // conteneur de un ou deux pixels (jambages, interligne). Sans cette
+        // marge, TOUTES les notes de bas de scène seraient signalées pour un
+        // débordement qui ne se voit pas. Ce qu'on cherche ici, c'est le texte
+        // qui sort VRAIMENT — 33 px pour une ligne de méthode en nowrap.
+        box.left = Math.min(box.left, tr.left + MARGE_TEXTE); box.top = Math.min(box.top, tr.top + MARGE_TEXTE);
+        box.right = Math.max(box.right, tr.right - MARGE_TEXTE); box.bottom = Math.max(box.bottom, tr.bottom - MARGE_TEXTE);
+      }
+    }
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
     const f = el.closest("[data-deco]") ? [] : excess(box, frame);
     if (f.length) {
