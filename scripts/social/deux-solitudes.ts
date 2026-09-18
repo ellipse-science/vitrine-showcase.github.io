@@ -69,24 +69,24 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:240px;left:76px;right:200px}
+#sonar .head{position:absolute;top:282px;left:180px;right:180px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:60px;right:200px;top:318px;height:720px}
+#sonar .chart{position:absolute;left:180px;right:180px;top:430px;height:600px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:76px;right:200px;top:1060px;height:360px}
+#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:420px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
-#sonar .bar{display:flex;align-items:center;gap:18px;font-size:26px}
+#sonar .bar{display:flex;align-items:center;gap:18px;font-size:28px}
 #sonar .bar em{font-style:normal;width:128px;flex:none;color:var(--soft)}
 #sonar .bar i{display:block;height:30px;transform-origin:left}
 #sonar .bar b{font-family:"IBM Plex Mono",monospace;font-size:44px;font-weight:500;line-height:1}
-#sonar .conv{position:absolute;left:0;right:0;top:150px;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
+#sonar .conv{position:absolute;left:0;right:0;bottom:0;border-top:3px solid var(--ink);padding-top:22px;display:flex;align-items:center;gap:26px}
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
-#sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:26px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
+#sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:28px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
 #intro .mini{position:absolute;left:50%;bottom:40px;width:620px;transform:translateX(-50%)}
 @keyframes tourne{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes carte{0%,3%{opacity:0;transform:translateY(26px)}9%,88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-14px)}}
@@ -195,7 +195,7 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
       <div class="head">
         <div class="kick mono" ${anim("fadeIn", .5, .1)}><i style="background:${MODULE.accent};animation:grow .5s .1s both"></i>Six sujets · Édition de ${edition.pubHour % 24}h</div>
       </div>
-      <div class="chart">
+      <div class="chart" data-cle>
         <svg viewBox="0 0 840 720">
           <g ${anim("fadeIn", .6, .5)}>${rings}${spokes}</g>
           ${tranches}${rayons}

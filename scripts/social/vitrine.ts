@@ -18,7 +18,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { ELECTION_LABEL } from "@/lib/election";
 import { ISSUE_COLORS } from "@/lib/enjeux";
 import { MODULES, type CleModule } from "@/lib/modules";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
@@ -216,16 +215,15 @@ function sceneAccroche(logo: string): Scene {
   }).join("");
   const traits = ORDRE.map((k, i) => `<i style="background:${MODULES[k].accent};animation:grow .3s ${BASCULE + 1.7 + i * .07}s both"></i>`).join("");
   return {
-    id: "accroche", duration: BASCULE + 3.2, noFadeIn: true,
+    id: "accroche", duration: BASCULE + 3.2, noFadeIn: true, hideBrand: true,
     html: `
       <div class="bandes" data-deco>${bandes}</div>
       <div class="questions">${questions}</div>
       <div class="liseré" data-deco>${ORDRE.map((k, i) => `<i style="background:${MODULES[k].accent};animation:grow .35s ${(i * .06).toFixed(2)}s both"></i>`).join("")}</div>
       <div class="entete" data-deco>
         <div class="logo" style="${anim("pop", .7, .1)}">${logoAnime(logo, { classe: "", taille: 560, passe: .9 })}</div>
-        <div class="date mono" style="${anim("fadeIn", .5, .3)}">Élections québécoises du ${ELECTION_LABEL}</div>
       </div>
-      <h1><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
+      <h1 data-cle><span class="six disp" style="${anim("slam", .6, BASCULE + 1.1)}">6 modules</span><span class="pour pf" style="${anim("fadeUp", .5, BASCULE + 1.45)}">pour mieux comprendre la démocratie au Québec</span></h1>
       <div class="traits">${traits}</div>`,
   };
 }
@@ -237,7 +235,7 @@ function sceneSources(): Scene {
   // l'emphase sur les modèles LOCAUX plutôt que sur « l'IA »).
   const lignes = [
     `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, six fois par jour</small><div class="heures">${heures}</div></div>`,
-    `<b class="disp">${fleur(COLORS.blue, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
+    `<b class="disp">${fleur(MODULES["assemblee-nationale"].accent, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
     `<b class="disp coche" style="color:${MODULES["polimetre-plus"].accent}">✓</b><div><p class="pf">les promesses électorales</p><small>leur écho dans les médias, avec le Polimètre</small></div>`,
   ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .6 + i * .55)}">${l}</div>`).join("");
   return {
@@ -245,7 +243,7 @@ function sceneSources(): Scene {
     html: `
       <div class="kick mono" style="${anim("fadeIn", .5, .1)}">D’où viennent les données</div>
       <h2 class="disp" style="${anim("fadeUp", .6, .2)}">La Vitrine lit la politique québécoise en continu</h2>
-      <div class="lignes">${lignes}</div>
+      <div class="lignes" data-cle>${lignes}</div>
       <div class="local" style="${anim("fadeUp", .6, 2.5)}">
         <div class="mono">Analysé ici</div>
         <p class="disp">Des modèles locaux, entraînés, validés et conservés à l’Université Laval</p>
@@ -261,24 +259,24 @@ function sceneModule(k: CleModule, i: number): Scene {
     id: `m-${k}`, duration: 5.6,
     html: `
       <div class="fond" data-deco style="background:${m.papier}"></div>
-      <div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
+      <div class="zone-utile"><div class="rang mono" style="${anim("fadeIn", .4, .1)}"><span>Module ${i + 1} sur 6</span><span class="points">${points}</span></div>
       <div class="tete"><h2 class="nom disp" style="color:${m.accent};${anim("fadeUp", .5, .15)}">${t(m.nom)}</h2>
       <p class="question pf" style="${anim("fadeUp", .6, .45)}">${t(TEXTES[k].question)}</p></div>
-      ${SCHEMAS[k]()}
-      <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p>`,
+      <div class="grandir"><div data-cle class="ech">${SCHEMAS[k]()}</div></div>
+      <p class="site" style="${anim("fadeIn", .6, 2.2)}"><b class="mono" style="color:${m.accent}">Sur le site</b>${t(TEXTES[k].site)}</p></div>`,
   };
 }
 
 function sceneRecap(): Scene {
   const liste = ORDRE.map((k, i) => {
     const m = MODULES[k];
-    return `<li style="background:${m.papier};border-left-color:${m.accent};${anim("fadeUp", .4, .5 + i * .2)}"><b class="disp" style="color:${m.accent}">${i + 1}</b><span class="pf">${t(m.nom)}</span></li>`;
+    return `<li style="background:${m.papier};border-left-color:${m.accent};${anim("fadeUp", .4, .5 + i * .2)}"><b class="disp" style="color:${m.accent}">${i + 1}</b><span class="pf" style="color:${m.accent}">${t(m.nom)}</span></li>`;
   }).join("");
   return {
     id: "recap", duration: 4.6,
     html: `
       <h2 class="disp" style="${anim("fadeUp", .6, .1)}">6 modules pour mieux comprendre la démocratie au Québec</h2>
-      <ul>${liste}</ul>`,
+      <ul data-cle>${liste}</ul>`,
   };
 }
 
@@ -290,47 +288,49 @@ const CSS = `
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
-#accroche .questions{position:absolute;left:76px;right:120px;top:800px;height:420px}
-#accroche .q{position:absolute;left:0;top:0;max-width:100%;font-size:96px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
+#accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px}
+#accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
    du bas de cet encadré, jamais derrière le logo (Jules, 17-09). */
-#accroche .entete{position:absolute;left:30px;right:30px;top:44px;height:370px;background:#F3ECDD;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:96px;gap:26px;z-index:2}
-#accroche .date{font-size:28px;letter-spacing:.16em;color:var(--soft)}
+#accroche .entete{position:absolute;left:180px;right:180px;top:44px;height:370px;background:#F3ECDD;display:flex;align-items:center;justify-content:center;z-index:2}
 /* Liseré des six encres tout en haut : l'en-tête d'Instagram le couvre au
    visionnement, mais il habille la vignette et les autres plateformes. */
 #accroche .liseré{position:absolute;left:30px;right:30px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
-#accroche h1{position:absolute;top:600px;left:76px;right:120px}
-#accroche .six{display:block;font-size:172px;line-height:1;white-space:nowrap;color:var(--ink)}
+#accroche h1{position:absolute;top:600px;left:180px;right:180px}
+#accroche .six{display:block;font-size:148px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
-#accroche .traits{position:absolute;left:76px;right:120px;top:1080px;display:flex;gap:12px;height:18px}
+#accroche .traits{position:absolute;left:180px;right:180px;top:1190px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:240px;left:76px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:290px;left:76px;right:120px;font-size:76px;line-height:1.02}
-#sources .lignes{position:absolute;top:500px;left:76px;right:120px}
-#sources .ligne{display:flex;align-items:center;gap:30px;padding:16px 0;border-top:3px solid var(--ink)}
+#sources .kick{position:absolute;top:282px;left:180px;right:180px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:330px;left:180px;right:180px;font-size:72px;line-height:1.02}
+#sources .lignes{position:absolute;top:560px;left:180px;right:180px}
+#sources .ligne{display:flex;align-items:center;gap:26px;padding:14px 0;border-top:3px solid var(--ink);text-align:left}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1032px;left:76px;right:120px;background:var(--ink);color:var(--paper);padding:26px 30px 30px}
-#sources .local .mono{font-size:26px;letter-spacing:.14em;opacity:.8}
-#sources .local p{font-size:56px;line-height:1.04;margin-top:10px}
-#sources .gratuit{position:absolute;top:1358px;left:76px;right:120px;font-size:36px;font-style:italic}
+#sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
+#sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
+#sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
+#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
-.scene .rang{position:absolute;top:236px;left:76px;right:60px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
+.scene .rang{display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
 .scene .points{display:flex;gap:12px}
 .scene .points i{display:block;width:30px;height:30px;border-radius:50%;border:4px solid}
-.scene .tete{position:absolute;top:300px;left:76px;right:120px}
+.scene .tete{flex:none}
 .scene .nom{font-size:96px;line-height:1}
 .scene .question{font-size:62px;line-height:1.08;margin-top:26px}
-.scene .schema{position:absolute;left:60px;right:120px;top:800px;height:410px}
-.scene .site{position:absolute;left:76px;right:120px;top:1238px;font-size:38px;line-height:1.2}
-.scene .site b{display:block;font-size:28px;margin-bottom:8px}
+.scene .schema{position:absolute;left:0;top:0;width:900px;height:410px}
+/* Les schémas sont dessinés dans 900 × 410 ; la zone utile n'en fait plus que
+   784 depuis les marges mesurées au simulateur : on les réduit d'un bloc. */
+.scene .ech{position:relative;width:900px;height:410px;transform:scale(.8);transform-origin:50% 50%;margin:-41px -90px;flex:none}
+.scene .site{text-align:left;font-size:38px;line-height:1.2;border-top:3px solid currentColor;padding-top:20px}
+.scene .site b{display:block;font-size:28px;margin-bottom:10px}
 
 .schema.saillance .journal{position:absolute;left:40px;top:40px;width:330px;height:340px;background:#FFFDF8;border:3px solid var(--ink);padding:28px 24px;transform:rotate(-3deg)}
 .schema .journal b{display:inline-block;background:var(--ink);color:var(--paper);font-size:28px;padding:8px 14px;margin-bottom:24px}
@@ -359,7 +359,7 @@ const CSS = `
 .schema .rangp{flex:none;width:58px;height:58px;border-radius:50%;border:4px solid}
 .schema .promesse .titre{flex:1}
 .schema .promesse .titre i{display:block;height:16px;background:var(--rule);margin:12px 0}
-.schema .verdict{flex:none;display:flex;align-items:center;gap:12px;font-size:26px;letter-spacing:.06em;color:var(--soft)}
+.schema .verdict{flex:none;display:flex;align-items:center;gap:12px;font-size:28px;letter-spacing:.06em;color:var(--soft)}
 .schema .verdict s{display:block;width:22px;height:22px;border-radius:50%}
 
 .schema .carte-h{position:absolute;top:0;width:270px;height:390px;padding:8px;transform:rotate(var(--rot))}
@@ -371,13 +371,14 @@ const CSS = `
 .schema .position{position:absolute;top:18px;right:0;background:#86642C;padding:8px 12px}
 .schema .plaque{padding:16px 12px 18px 90px}
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
-.schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
+.schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:250px;left:76px;right:120px;font-size:86px;line-height:1.02}
-#recap ul{position:absolute;top:640px;left:76px;right:120px;list-style:none;display:flex;flex-direction:column;gap:16px}
-#recap li{display:flex;align-items:center;gap:30px;height:112px;padding:0 26px;border-left:14px solid}
+#recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
+#recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
-#recap li span{font-size:50px}
+#recap li span{font-size:50px;line-height:1}
+#fin.scene .band{right:30px}
 `;
 
 // Le vu-mètre bouge comme un vu-mètre : niveau pseudo-musical, déterministe
@@ -421,7 +422,7 @@ async function main() {
     title: "La Vitrine démocratique · 6 modules",
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: "vitrinedemocratique.com",
+    footerRight: "",
     theme: { paper: COLORS.paper, accent: COLORS.ink },
     logos,
   });

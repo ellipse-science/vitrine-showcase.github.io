@@ -34,25 +34,36 @@ export const SLOW = 1.4;
 
 export const SITE_URL = "https://vitrinedemocratique.com";
 
-/** ZONE SÛRE : ce que l'interface des Reels laisse voir sur un téléphone, selon
- *  la convention des Reels ORGANIQUES (guides Kreatli, Pod2Reels, Outfy, 2026) :
- *    · haut 220 px   : nom du compte ;
- *    · bas 400 px    : légende et titre de la musique ;
- *    · gauche 60 px  : marge de bord ;
- *    · droite 120 px : colonne de boutons (j'aime, commentaire, partage,
- *      enregistrer), qui ne commence qu'au tiers de l'écran (`buttonsTop`).
- *  Plus prudente, la zone des PUBLICITÉS Meta (14 % haut, jusqu'à 35 % bas, 6 %
- *  côtés) ne s'applique pas : nos reels ne sont pas sponsorisés.
+/** ZONE SÛRE : ce que l'interface d'Instagram laisse voir, MESURÉ le 2026-09-17
+ *  dans le simulateur d'iPhone 17 de l'aperçu (bouton « iPhone 17 »), dans les
+ *  deux affichages possibles d'un 9:16 sur un écran 19,5:9 :
+ *    · AJUSTÉ (barres noires) : rien n'est rogné ; le compte, la légende et le
+ *      son couvrent de y 1700 à 1920 ; la colonne de boutons, x 992-1057 ;
+ *    · PLEIN ÉCRAN (agrandi pour remplir) : 98 px rognés À GAUCHE ET À DROITE ;
+ *      le bas est couvert dès y 1560 ; la colonne de boutons dès x 909.
+ *  On tient dans l'union des deux :
+ *    · haut 150 px    : l'heure, l'îlot dynamique et « Reels » tombent sur la
+ *      bande noire — c'est en haut qu'on perd le moins ;
+ *    · bas 380 px     : compte, légende, son ;
+ *    · côtés 110 px   : le rognage du plein écran ;
+ *    · boutons        : rien à droite de x 900 entre y 1040 et le bas.
+ *  ⚠️ Remplace les marges « organiques » des guides (300/450/60/120), trop
+ *  prudentes en haut et trop permissives sur les côtés : c'est le simulateur,
+ *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
- *  seul le décor (`data-deco` : illustration, bandeaux) peut en sortir.
- *  L'aperçu affiche ces zones en rouge (bouton « Zones Instagram »). */
-export const SAFE = { top: 220, bottom: HEIGHT - 400, left: 60, right: WIDTH - 60, buttonsTop: 640, buttonsLeft: WIDTH - 120 };
+ *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
+export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
  *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
-export const BRAND = { top: SAFE.bottom - 86, height: 76 };
-export const CONTENT_BOTTOM = BRAND.top - 12;
+/** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
+ *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
+ *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
+ *  rien ne les couvre. L'édition se place sous les deux logos. */
+export const BRAND = { top: SAFE.top, height: 62 };
+export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
+export const CONTENT_BOTTOM = SAFE.bottom;
 
 export type Logos = { vitrine: string; capp: string };
 
@@ -73,13 +84,26 @@ export async function loadLogos(): Promise<Logos> {
 }
 
 /** Taille minimale d'un texte, en px du reel. Un téléphone affiche le reel à
- *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran. */
-export const MIN_FONT = 26;
+ *  ~36 % (390 points de large pour 1080 px) : 26 px ≈ 9,5 points à l'écran.
+ *  28 depuis le dézoom du 2026-09-17 : les scènes sont réduites de 6 %, donc
+ *  28 px écrits font 26 px vus. */
+export const MIN_FONT = 28;
 
-/** Intérieur de l'encadré du reel (filet à 28 px, épaisseur 2). RÈGLE : rien
- *  ne dépasse du cadre, ni image, ni bandeau, ni texte. Les scènes sont
- *  rognées à ce rectangle, et `checkFrame` signale tout élément qui le franchit. */
+/** MARGE DE BORD. ⚠️ L'encadré dessiné a été RETIRÉ le 2026-09-17 (Jules Piral :
+ *  « je crois que l'encadré autour est une mauvaise idée, dépendamment de
+ *  l'affichage ça va avoir l'air coupé ») : un filet collé au bord se lit comme
+ *  une erreur dès que la plateforme rogne l'image. Le DÉCOR (`data-deco` :
+ *  bandeaux, illustrations, aplats) va donc jusqu'aux bords ; le reste garde
+ *  cette marge, que `checkFrame` vérifie. */
 export const FRAME = { left: 30, top: 30, right: WIDTH - 30, bottom: HEIGHT - 30 };
+
+/** LE CŒUR : le carré central (1080 × 1080) que montrent la grille du profil et
+ *  l'aperçu du fil, avant qu'on ouvre le reel. RÈGLE (Jules Piral, 2026-09-17) :
+ *  l'ESSENTIEL de chaque scène — LA statistique, LE résultat — tient là ; le
+ *  reste (surtitre, note de méthode, légende) vit au-dessus et au-dessous, et
+ *  n'apparaît qu'en plein écran. Une scène marque son essentiel avec
+ *  `data-cle` ; `checkFrame` refuse la vidéo si cet élément déborde du cœur. */
+export const COEUR = { top: Math.round((HEIGHT - WIDTH) / 2), bottom: Math.round((HEIGHT + WIDTH) / 2) };
 
 /** Palette du site (app/globals.css) et bandes de saillance
  *  (lib/shareCardTemplate.tsx, rangs calibrés 1 à 6). */
@@ -182,10 +206,10 @@ export type Scene = {
   /** Pas de fondu d'entrée (première scène) ou de sortie (dernière). */
   noFadeIn?: boolean;
   noFadeOut?: boolean;
-  /** Masque le pied de page (scène à fond sombre ou pleine page). */
-  hideFooter?: boolean;
-  /** Logos en blanc : la barre de marque passe sur un fond sombre. */
-  lightBrand?: boolean;
+  /** Masque la ligne d'édition commune quand la scène porte déjà cette information. */
+  hideEdition?: boolean;
+  /** Masque les logos communs quand la scène affiche déjà le grand logo de marque. */
+  hideBrand?: boolean;
 };
 
 const BASE_CSS = `
@@ -193,16 +217,40 @@ const BASE_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:${WIDTH}px;height:${HEIGHT}px;overflow:hidden;background:var(--paper)}
 body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
-.frame{position:absolute;inset:28px;border:2px solid var(--rule);z-index:50}
 .mono{font-family:"IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
 .disp{font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 .pf{font-family:"Playfair Display",serif;font-weight:700}
-.scene{position:absolute;inset:0;padding:120px 76px 0;opacity:0;clip-path:inset(30px)}
-.footer{position:absolute;left:76px;right:76px;bottom:70px;display:flex;justify-content:space-between;font-size:22px;color:var(--softer);z-index:40}
-.brandbar{position:absolute;left:76px;right:120px;display:flex;align-items:center;justify-content:space-between;z-index:45}
+/* CONTENU GÉOMÉTRIQUEMENT CENTRÉ (Jules Piral, 2026-09-17 : « c'est bizarre qu'à
+   droite il n'y ait rien parce que les boutons de like sont là, alors qu'à gauche
+   il y a de l'information »). La colonne va de x 180 à x 900 — la limite de la
+   colonne de boutons — donc elle est SYMÉTRIQUE par rapport au milieu de l'image.
+   L'alignement typographique reste propre à chaque scène : le centrer globalement
+   tassait tous les niveaux de lecture dans une même pile verticale. */
+/* CONTENU CENTRÉ (Jules Piral, 2026-09-17). La colonne va de x 180 à x 900 — la
+   limite de la colonne de boutons d'Instagram — donc elle est symétrique par
+   rapport au milieu de l'image, et le texte est centré. Une ligne de données
+   (liste de médias, rangs) peut redevenir alignée à gauche : elle se lit en
+   colonnes, pas en paragraphe. */
+.scene{position:absolute;inset:0;padding:120px 180px;text-align:center;opacity:0}
+/* LA ZONE UTILE : de CONTENT_TOP à CONTENT_BOTTOM, entre les deux marges
+   latérales. Une scène y empile ses blocs et la colonne les répartit sur toute
+   la hauteur utile — sans ça, tout se tasse en haut et le bas reste vide.
+   Elle s'arrête au BAS DU CARRÉ CENTRAL (y 1500), pas à la limite de la zone
+   sûre : ce qui porte data-cle doit rester dans le carré vu dans la grille
+   (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
+   exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
+   globale en position:absolute les empilait toutes au même endroit. */
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - COEUR.bottom}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+/* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
+   DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
+   dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
+/* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
+   une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
+.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+.brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
-.brandbar.light img{filter:invert(1)}
-.progress{position:absolute;left:28px;top:28px;height:8px;width:${WIDTH - 56}px;background:var(--blue);transform-origin:left;z-index:60}
+.progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -278,11 +326,11 @@ export function sceneIntro(opts: {
     return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
   }).join("");
   return {
-    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideFooter: true, lightBrand: true,
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideEdition: true, hideBrand: true,
     html: `
       ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
-      <h1 class="disp">${lignes}</h1>
+      <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
       <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
   };
@@ -290,13 +338,13 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:230px;left:76px;width:540px}
-#intro .module{position:absolute;top:440px;left:76px;right:76px;display:flex;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:288px;left:270px;width:540px}
+#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:510px;left:76px;right:120px;font-size:132px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
-#intro .band{position:absolute;left:30px;right:30px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:76px;right:120px;bottom:640px;color:var(--paper);font-size:30px}
+#intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
+#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
@@ -362,7 +410,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
     return `<img src="${src}" alt="" style="animation:fadeIn .5s ${1.9 + i * .05}s both">`;
   }).join("");
   return {
-    id: "fin", duration: 4.8, noFadeOut: true, hideFooter: true, lightBrand: true,
+    id: "fin", duration: 4.8, noFadeOut: true, hideEdition: true, hideBrand: true,
     html: `
       <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
@@ -372,8 +420,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
-      <div class="band" data-deco style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s .2s both"></div>
-      ${logos ? `<div class="foot"><div class="part mono" style="animation:fadeIn .5s 1.7s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
+      ${logos ? `<div class="foot" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
   };
 }
 
@@ -383,19 +430,18 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:236px 120px 0 76px}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
 #fin .kick{font-size:28px;color:var(--soft)}
-#fin .logo{width:640px;margin-top:18px}
-#fin .metho{font-size:26px;margin-top:26px;color:var(--soft)}
+#fin .logo{width:600px;margin-top:14px}
+#fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-#fin .six{font-size:34px;font-style:italic;margin-top:30px;color:var(--soft)}
+#fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
-#fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .band{position:absolute;left:30px;right:30px;bottom:30px;height:870px;background:var(--blue);transform-origin:bottom}
-#fin .foot{position:absolute;left:76px;right:120px;top:1050px;display:flex;flex-direction:column;align-items:center}
-#fin .part{font-size:26px;color:rgba(243,236,221,.8)}
-#fin .logos{margin-top:26px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:30px 44px}
-#fin .logos img{height:64px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
+#fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
+#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .part{font-size:28px;color:rgba(243,236,221,.8)}
+#fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
+#fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
@@ -410,23 +456,23 @@ export const TONE = { positive: "#4E7A43", negative: "#B0473A", neutral: "#6E685
 export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; theme?: Theme; logos?: Logos }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
-    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideFooter: !!s.hideFooter, lightBrand: !!s.lightBrand };
+    const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideEdition: !!s.hideEdition, hideBrand: !!s.hideBrand };
     t += s.duration;
     return entry;
   });
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
-<div class="frame"></div><div class="progress" id="__prog"></div>
+<div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
-<div class="footer mono" id="__foot"><span>${opts.footerLeft}</span><span>${opts.footerRight}</span></div>
+${opts.footerRight ? `<div class="edition mono" id="__ed">${esc(opts.footerRight)}</div>` : ""}
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
 const TIMELINE=${JSON.stringify(timeline)};
 const BASE=${t};
 function seek(t){
-  let foot=1,light=false;
+  let editionOpacity=1,brandOpacity=1;
   for(const s of TIMELINE){
     const el=document.getElementById(s.id), local=t-s.start, fade=.35;
     let o=0;
@@ -434,13 +480,13 @@ function seek(t){
     if(!s.fadeOut&&t>=s.end)o=1;
     el.style.opacity=o;
     if(o===0)continue;
-    if(s.hideFooter)foot=Math.min(foot,1-o);
-    if(s.lightBrand&&o>.5)light=true;
+    if(s.hideEdition)editionOpacity=Math.min(editionOpacity,1-o);
+    if(s.hideBrand)brandOpacity=Math.min(brandOpacity,1-o);
     el.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=Math.max(0,local)*1000});
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
-  document.getElementById("__foot").style.opacity=foot;
-  const brand=document.getElementById("__brand");if(brand)brand.classList.toggle("light",light);
+  const brand=document.getElementById("__brand");if(brand)brand.style.opacity=brandOpacity;
+  const ed=document.getElementById("__ed");if(ed)ed.style.opacity=editionOpacity;
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};
@@ -468,7 +514,37 @@ body{margin:0;height:100vh;background:#1C1917;color:#F3ECDD;font:14px "IBM Plex 
 #stage iframe{position:absolute;left:0;top:0;width:${WIDTH}px;height:${HEIGHT}px;border:0;transform-origin:0 0}
 #safe{position:absolute;left:0;top:0;width:${WIDTH}px;height:${HEIGHT}px;transform-origin:0 0;pointer-events:none;display:none}
 #safe div{position:absolute;background:rgba(220,40,40,.28);outline:1px dashed rgba(255,80,80,.9)}
+#safe div.coeur{background:transparent;outline:2px solid rgba(80,180,255,.95)}
 #panel{width:320px;display:flex;flex-direction:column;gap:14px}
+/* SIMULATEUR D'IPHONE 17 (Jules Piral, 2026-09-17) : écran 1206 × 2622 (19,5:9),
+   le reel ajusté à la largeur — comme Instagram, qui ne rogne pas le 9:16 mais
+   pose son interface par-dessus. Barres noires en haut et en bas, îlot dynamique,
+   colonne de boutons, légende, son, et la barre de navigation du profil. */
+#tel{position:relative;flex:none;display:none;background:#0A0A0A;border-radius:62px;padding:12px;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 2px #2A2A2A}
+body.tel #tel{display:block}
+body.tel #stage{display:none}
+#ecran{position:relative;overflow:hidden;border-radius:52px;background:#000}
+#ecran .video{position:absolute;left:0;top:0;transform-origin:0 0}
+#ig{position:absolute;inset:0;color:#fff;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
+#ig .ilot{position:absolute;top:22px;left:50%;transform:translateX(-50%);width:250px;height:74px;border-radius:40px;background:#000}
+#ig .heure{position:absolute;top:40px;left:70px;font-size:36px;font-weight:600}
+#ig .titre{position:absolute;top:48px;right:70px;font-size:34px;font-weight:700}
+#ig .rail{position:absolute;right:26px;bottom:430px;display:flex;flex-direction:column;align-items:center;gap:46px}
+#ig .rail div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:28px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+#ig .rail svg{width:58px;height:58px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+#ig .pochette{width:56px;height:56px;border-radius:12px;border:3px solid #fff;background:#444}
+#ig .bas{position:absolute;left:36px;right:170px;bottom:250px;display:flex;flex-direction:column;gap:16px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+#ig .compte{display:flex;align-items:center;gap:16px;font-size:32px;font-weight:600}
+#ig .avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#F3ECDD,#B07A3B);border:2px solid #fff}
+#ig .suivre{border:2px solid #fff;border-radius:10px;padding:6px 16px;font-size:28px;font-weight:600}
+#ig .legende{font-size:30px;line-height:1.35;opacity:.96;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#ig .son{display:flex;align-items:center;gap:12px;font-size:28px;opacity:.95}
+#ig .nav{position:absolute;left:0;right:0;bottom:0;height:190px;background:linear-gradient(transparent,rgba(0,0,0,.55) 40%);display:flex;align-items:flex-start;justify-content:space-around;padding:26px 40px 0}
+#ig .nav svg{width:62px;height:62px}
+#ig .nav .moi{width:58px;height:58px;border-radius:50%;background:#C9BEA8;border:2px solid #fff}
+#ig .barre{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;width:390px;height:10px;border-radius:6px;background:#fff;opacity:.9}
+#ig .voile{position:absolute;left:0;right:0;top:0;height:260px;background:linear-gradient(rgba(0,0,0,.45),transparent)}
+#ig .voileBas{position:absolute;left:0;right:0;bottom:0;height:820px;background:linear-gradient(transparent,rgba(0,0,0,.55) 55%,rgba(0,0,0,.75))}
 h1{font-size:15px;margin:0 0 6px;letter-spacing:.08em;text-transform:uppercase}
 button{font:inherit;background:#F3ECDD;color:#1C1917;border:0;padding:9px 12px;cursor:pointer;text-align:left}
 button.ghost{background:transparent;color:#F3ECDD;outline:1px solid #6E685F}
@@ -481,14 +557,42 @@ input[type=range]{width:100%}
 body.mini{padding:0;gap:0}
 body.mini #panel{display:none}
 </style></head><body>
-<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div></div></div>
+<div id="stage"><iframe id="reel"></iframe><div id="safe"><div style="left:0;right:0;top:0;height:${SAFE.top}px"></div><div style="left:0;right:0;bottom:0;height:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.buttonsLeft}px;top:${SAFE.buttonsTop}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div style="right:0;width:${WIDTH - SAFE.right}px;top:${SAFE.top}px;height:${SAFE.buttonsTop - SAFE.top}px"></div><div style="left:0;width:${SAFE.left}px;top:${SAFE.top}px;bottom:${HEIGHT - SAFE.bottom}px"></div><div class="coeur" style="left:0;right:0;top:${COEUR.top}px;height:${COEUR.bottom - COEUR.top}px"></div></div></div>
+<div id="tel"><div id="ecran">
+  <iframe class="video" id="reelTel"></iframe>
+  <div id="ig">
+    <div class="voile"></div><div class="voileBas"></div><div class="ilot"></div>
+    <div class="heure">9:41</div><div class="titre">Reels</div>
+    <div class="rail">
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.6-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7 2.7C19 15.4 12 20 12 20z"/></svg>12,4 k</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M21 11.5A7.5 8 0 0 1 13.5 19H8l-4 3v-5.4A8 8 0 0 1 13.5 4 7.5 8 0 0 1 21 11.5z"/></svg>318</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M22 3 11 14M22 3l-7 18-4-7-7-4 18-7z"/></svg>1 207</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></div>
+      <div><svg viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+      <div class="pochette"></div>
+    </div>
+    <div class="bas">
+      <div class="compte"><span class="avatar"></span>vitrine.democratique<span class="suivre">Suivre</span></div>
+      <div class="legende" id="igLegende">${esc(title)} — Toutes les 4 heures, la Vitrine démocratique mesure ce qui occupe l’espace médiatique québécois…</div>
+      <div class="son"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M9 18V5l10-2v13"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/></svg>Son original · vitrine.democratique</div>
+    </div>
+    <div class="nav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M9 9l6 3-6 3z" fill="#fff"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 7h16l-2 12H6z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+      <span class="moi"></span>
+    </div>
+    <div class="barre"></div>
+  </div>
+</div></div>
 <div id="panel">
   <h1>${esc(title)}</h1>
   <div id="time">0,0 s / ${duration.toFixed(1).replace(".", ",")} s</div>
   <input id="scrub" type="range" min="0" max="${duration}" step="0.0333" value="0">
-  <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button></div>
+  <div class="row"><button id="play">▶ Lecture</button><button class="ghost" id="slow">Vitesse ×1</button><button class="ghost" id="safeBtn">Zones Instagram</button><button class="ghost" id="telBtn">iPhone 17</button><button class="ghost" id="telModeBtn">Ajusté</button></div>
   <div class="row" id="scenes">${marks.map((m) => `<button class="ghost" data-t="${m.start}">${esc(m.id)}</button>`).join("")}</div>
-  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons).</p>
+  <p class="hint">Espace : lecture/pause · ← → : 1 s · rouge : zones couvertes par l’interface Instagram (en-tête, légende, boutons) · bleu : le carré central, ce qu’on voit avant d’ouvrir le reel.</p>
 </div>
 <script>
 const REEL=${payload};
@@ -496,18 +600,41 @@ const DUR=${duration};
 const MINI=new URLSearchParams(location.search).has("mini");
 if(MINI)document.body.classList.add("mini");
 const iframe=document.getElementById("reel"), stage=document.getElementById("stage");
-iframe.srcdoc=REEL;
+// L'iPhone 17 : 1206 × 2622 points d'écran (19,5:9). Instagram pose le reel 9:16
+// à la largeur de l'écran et laisse du noir en haut et en bas.
+const TEL={l:1206,h:2622}, ecran=document.getElementById("ecran"), tel=document.getElementById("tel"), video=document.getElementById("reelTel");
+iframe.srcdoc=REEL;video.srcdoc=REEL;
 function fit(){const s=Math.max(.01,Math.min((innerHeight-(MINI?0:40))/${HEIGHT},(innerWidth-(MINI?0:400))/${WIDTH}));stage.style.width=${WIDTH}*s+"px";stage.style.height=${HEIGHT}*s+"px";iframe.style.transform="scale("+s+")";document.getElementById("safe").style.transform="scale("+s+")";}
-addEventListener("resize",fit);fit();
+// Deux comportements possibles d'Instagram sur un écran plus haut que le 9:16 :
+// AJUSTÉ (le reel entier, barres noires en haut et en bas) ou PLEIN ÉCRAN (le
+// reel agrandi jusqu'à remplir l'écran, ce qui rogne les CÔTÉS).
+let telPlein=false;
+function fitTel(){
+  const s=Math.max(.01,Math.min((innerHeight-90)/TEL.h,(innerWidth-420)/TEL.l));
+  ecran.style.width=TEL.l*s+"px";ecran.style.height=TEL.h*s+"px";
+  const v=telPlein?TEL.h/${HEIGHT}:TEL.l/${WIDTH};
+  video.style.width=${WIDTH}+"px";video.style.height=${HEIGHT}+"px";
+  video.style.transform="scale("+(v*s)+")";
+  video.style.top=((TEL.h-${HEIGHT}*v)/2*s)+"px";
+  video.style.left=((TEL.l-${WIDTH}*v)/2*s)+"px";
+  document.getElementById("ig").style.transform="scale("+s+")";
+  document.getElementById("ig").style.transformOrigin="0 0";
+  document.getElementById("ig").style.width=TEL.l+"px";
+  document.getElementById("ig").style.height=TEL.h+"px";
+}
+addEventListener("resize",()=>{fit();fitTel();});fit();fitTel();
 let t=0,playing=false,speed=1,last=0;
 const scrub=document.getElementById("scrub"),timeEl=document.getElementById("time"),playBtn=document.getElementById("play");
-function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(Math.max(0,t));scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
+function show(){const w=iframe.contentWindow;if(w&&w.setTime)w.setTime(Math.max(0,t));
+  const wt=video.contentWindow;if(wt&&wt.setTime)wt.setTime(Math.max(0,t));scrub.value=t;timeEl.textContent=t.toFixed(1).replace(".",",")+" s / "+DUR.toFixed(1).replace(".",",")+" s";
   document.querySelectorAll("#scenes button").forEach((b,i,all)=>{const s=+b.dataset.t,e=i+1<all.length?+all[i+1].dataset.t:DUR;b.classList.toggle("on",t>=s&&t<e)});}
 function loop(now){if(playing){t+=(now-last)/1000*speed;if(t>=DUR){if(MINI){t=-1;}else{t=DUR;playing=false;playBtn.textContent="▶ Lecture";}}}last=now;show();requestAnimationFrame(loop);}
 function toggle(){if(t>=DUR)t=0;playing=!playing;playBtn.textContent=playing?"❚❚ Pause":"▶ Lecture";}
 playBtn.onclick=toggle;
 scrub.oninput=()=>{t=+scrub.value;};
 document.getElementById("slow").onclick=e=>{speed=speed===1?.5:speed===.5?.25:1;e.target.textContent="Vitesse ×"+String(speed).replace(".",",");};
+document.getElementById("telModeBtn").onclick=e=>{telPlein=!telPlein;e.target.textContent=telPlein?"Plein écran":"Ajusté";e.target.classList.toggle("on",telPlein);fitTel();};
+document.getElementById("telBtn").onclick=e=>{document.body.classList.toggle("tel");e.target.classList.toggle("on",document.body.classList.contains("tel"));fit();fitTel();};
 document.getElementById("safeBtn").onclick=e=>{const s=document.getElementById("safe");const on=s.style.display!=="block";s.style.display=on?"block":"none";e.target.classList.toggle("on",on);};
 document.querySelectorAll("#scenes button").forEach(b=>b.onclick=()=>{t=+b.dataset.t+.01;});
 addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();toggle();}if(e.code==="ArrowRight")t=Math.min(DUR,t+1);if(e.code==="ArrowLeft")t=Math.max(0,t-1);});
@@ -534,7 +661,7 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
     for (const o of ecarts) console.warn(`     · ${o}`);
     if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  gabarit → cadre, zone Instagram, lisibilité et textes non empilés respectés");
+    console.log("  gabarit → bords, zone Instagram, cœur, lisibilité et textes non empilés respectés");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
@@ -574,7 +701,9 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
  *   1. CADRE : aucun élément visible ne franchit l'encadré (FRAME) ;
  *   2. ZONE SÛRE : aucune information (tout ce qui n'est pas `data-deco`) ne
  *      sort de SAFE, sinon l'interface Instagram la cache sur le téléphone ;
- *   3. LISIBILITÉ : aucun texte sous MIN_FONT.
+ *   3. LISIBILITÉ : aucun texte sous MIN_FONT ;
+ *   4. CŒUR : l'élément marqué `data-cle` (LA statistique de la scène) tient dans
+ *      le carré central, celui qu'on voit avant d'ouvrir le reel.
  *  La boîte de chaque élément est d'abord rognée par ses ancêtres en
  *  `overflow: hidden` : une image zoomée dans un cadre qui la contient ne
  *  dépasse pas. Un seul signalement par débordement (l'ancêtre fautif). */
@@ -584,12 +713,23 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
     await page.setContent(html, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
+    // ⚠️ On contrôle PLUSIEURS MOMENTS par scène, pas seulement la fin (Jules
+    // Piral, 2026-09-17 : « plein de trucs s'empilent les uns sur les autres ») :
+    // pendant une animation, deux blocs peuvent se croiser alors que l'état final
+    // est propre. Quatre instants suffisent à les attraper.
     const found: string[] = [];
+    const vus = new Set<string>();
     let t = 0;
     for (const s of scenes) {
-      const at = (t + s.duration - 0.4) * SLOW;
+      const moments = [0.75, 0.45, 0.7, 1].map((f, i) => (i === 0 ? t + 0.75 : t + s.duration * f)).map((x) => Math.min(x, t + s.duration - 0.35));
+      for (const m of [...new Set(moments)]) {
+        for (const ecart of await inspectAt(page, s.id, m * SLOW)) {
+          if (vus.has(ecart)) continue;
+          vus.add(ecart);
+          found.push(ecart);
+        }
+      }
       t += s.duration;
-      found.push(...(await inspectAt(page, s.id, at)));
     }
     return found;
   } finally {
@@ -599,7 +739,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
 
 // Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
 // un utilitaire `__name` qui n'existe pas côté navigateur.
-const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
+const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
   window.setTime(at);
   const scene = document.getElementById(sceneId);
   const out = [];
@@ -630,7 +770,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
     if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
-    const f = excess(box, frame);
+    const f = el.closest("[data-deco]") ? [] : excess(box, frame);
     if (f.length) {
       flagged.frame.add(el);
       if (!inherited(flagged.frame, el)) out.push("cadre · scène " + sceneId + " : « " + label + " » (" + f.join(", ") + ")");
@@ -648,6 +788,14 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
       if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
     }
   }
+  // LE CŒUR : l'essentiel de la scène tient dans le carré central.
+  for (const el of scene.querySelectorAll("[data-cle]")) {
+    const r = el.getBoundingClientRect();
+    if (r.height < 1) continue;
+    const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
+      r.bottom > coeur.bottom + .5 ? "bas " + Math.round(r.bottom - coeur.bottom) + " px" : ""].filter(Boolean);
+    if (d.length) out.push("cœur · scène " + sceneId + " : « " + (el.textContent || "").trim().slice(0, 40) + " » sort du carré central (" + d.join(", ") + ")");
+  }
   // TEXTES EMPILÉS (Jules Piral, 2026-09-17 : « des infos et du texte empilés les
   // uns sur les autres »). Chaque ligne de texte visible est mesurée au plus près
   // (Range sur le nœud texte) ; deux lignes de deux nœuds différents qui se
@@ -663,9 +811,26 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
     // au-dessus des capitales) : avec un interlignage serré, deux lignes d'un même
     // titre se touchent sans que les lettres se touchent. On ne garde que le
     // cœur de la ligne (la moitié centrale), là où sont les lettres.
-    for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) {
-      const pad = q.height * .15;
-      lines.push({ n, txt, r: { left: q.left, right: q.right, top: q.top + pad, bottom: q.bottom - pad } });
+    // Un ancêtre qui ROGNE (overflow hidden, -webkit-line-clamp, ellipsis) cache
+    // une partie du texte, mais le Range, lui, couvre le texte ENTIER : sans
+    // cette intersection, un titre coupé à deux lignes était signalé comme
+    // empilé sur ce qui suit, alors qu'à l'écran il n'y a rien.
+    const fenetre = (el) => {
+      let w = { left: -1e9, right: 1e9, top: -1e9, bottom: 1e9 };
+      for (let a = el; a && a !== document.body; a = a.parentElement) {
+        const st = getComputedStyle(a);
+        if (st.overflow === "visible" && st.overflowX === "visible" && st.overflowY === "visible") continue;
+        const c = a.getBoundingClientRect();
+        w = { left: Math.max(w.left, c.left), right: Math.min(w.right, c.right), top: Math.max(w.top, c.top), bottom: Math.min(w.bottom, c.bottom) };
+      }
+      return w;
+    };
+    const vue = fenetre(n.parentElement);
+    for (const q of range.getClientRects()) {
+      const r = { left: Math.max(q.left, vue.left), right: Math.min(q.right, vue.right), top: Math.max(q.top, vue.top), bottom: Math.min(q.bottom, vue.bottom) };
+      if (r.right - r.left <= 2 || r.bottom - r.top <= 2) continue;
+      const pad = (r.bottom - r.top) * .15;
+      lines.push({ n, txt, r: { left: r.left, right: r.right, top: r.top + pad, bottom: r.bottom - pad } });
     }
   }
   const seen = new Set();
@@ -685,7 +850,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont }) => {
 
 async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
   // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT });
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

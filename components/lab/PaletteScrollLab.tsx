@@ -10,21 +10,15 @@
  * bien apparent, découpé ». Les quatre humeurs sont remplacées par trois DEGRÉS
  * D'INTENSITÉ de la même palette : discret, marqué, franc.
  *
- * D'OÙ VIENNENT CES COULEURS (règle d'Adrien : réfléchies, pas aléatoires) :
+ * LES COULEURS : palette « Sépia · Terres » (Jules Piral, 17-09), lues dans
+ * `lib/modules.ts` — la même source que les reels, dans TOUS les modes :
  *   · Une des Unes      laiton — la couleur des paliers de saillance du module.
- *   · Deux solitudes    le ROUGE DU CANADA : seul module qui mobilise le Canada,
- *                       donc la couleur se retient toute seule. Le bleu reste au
- *                       Québec À L'INTÉRIEUR du module.
- *   · 12 enjeux         mauve sépia (Adrien, 16-09).
- *   · Partis            SALLE SOMBRE + BLEU (Adrien, 16-09) : « le look d'être
- *                       dans un club, devant une console ». Seul module où
- *                       l'encre et les filets basculent aussi ; le bleu s'y
- *                       éclaire, sinon il disparaît dans la nuit.
- *   · Polimètre+        le vert du Polimètre, relevé sur polimetre.org — couleur
- *                       du mot-symbole dans l'en-tête, rgb(81,115,104).
- *   · Assemblée         l'ORANGE DE LA LNH — l'inspiration d'Étienne pour ce
- *                       module : un alignement d'équipe. L'orange vif de
- *                       l'écusson teinte le fond, sa variante encre écrit.
+ *   · Deux solitudes    bordeaux (le rouge du Canada, assourdi).
+ *   · 12 enjeux         mauve.
+ *   · Partis            orange brûlé ; en SALLE SOMBRE dans les modes discret,
+ *                       marqué et franc (Adrien, 16-09), l'accent s'y éclaircit.
+ *   · Polimètre+        sauge (le vert du Polimètre, assourdi).
+ *   · Assemblée         bleu Salon, comme le Salon bleu.
  * Aucune ne reprend une des douze couleurs d'enjeu (`lib/enjeux.ts`) : la
  * couleur d'un enjeu doit rester celle de cet enjeu.
  *
@@ -45,34 +39,34 @@
 import { useEffect, useState } from "react";
 
 import { fondAuDefilement, type Repere } from "@/lib/degradeModules";
-import { MODULES as IDENTITES } from "@/lib/modules";
+import { MODULES as IDENTITES, type CleModule } from "@/lib/modules";
 
 type Intensite = "off" | "sepia" | "discret" | "marque" | "franc";
 
 const PAPIER = "#F3ECDD";
 const NUIT = "#14120F";
 
+// Les accents viennent de `lib/modules.ts` (palette Sépia · Terres, 17-09) : ils
+// sont les mêmes dans TOUS les modes et dans les reels. Ce tableau ne garde que
+// ce qui est propre au banc d'essai : l'ordre de repli, la salle sombre, le papier
+// pur de la Une.
 const MODULES: {
-  id: string; nom: string; accent: string;
-  /** La couleur qui teinte le fond, quand elle diffère de l'accent (un orange
-   *  vif teinte mieux qu'un orange encre, qui lui reste lisible en texte). */
-  teinte?: string;
+  id: CleModule; nom: string; accent: string;
   /** L'accent, éclairci, quand le module est en salle sombre. */
   accentNuit?: string;
   papierPur?: boolean; sombre?: boolean;
-}[] = [
-  { id: "une-des-unes", nom: "Une des Unes", accent: "#86642C", papierPur: true },
-  { id: "deux-solitudes", nom: "Deux solitudes", accent: "#A8302C" },
-  { id: "enjeux-saillants", nom: "12 enjeux", accent: "#6E4F73" },
-  // Le bleu passe aux Partis (Adrien, 16-09) : dans la salle sombre, il s'éclaire
-  // pour rester lisible sur la nuit — c'est la même couleur, sous un projecteur.
-  { id: "partis-et-couverture", nom: "Partis", accent: "#2F6480", accentNuit: "#7FB2D4", sombre: true },
-  { id: "polimetre-plus", nom: "Polimètre+", accent: "#517368" },
-  // L'ORANGE DE LA LNH (Adrien, 16-09) : l'inspiration d'Étienne pour ce module,
-  // l'alignement d'une équipe. L'orange vif de l'écusson teinte le fond ; le
-  // texte prend sa variante encre, seule lisible sur du papier.
-  { id: "assemblee-nationale", nom: "Assemblée", accent: "#B5521E", teinte: "#E0661F" },
-];
+}[] = ([
+  { id: "une-des-unes", nom: "Une des Unes", papierPur: true },
+  { id: "deux-solitudes", nom: "Deux solitudes" },
+  { id: "enjeux-saillants", nom: "12 enjeux" },
+  { id: "partis-et-couverture", nom: "Partis", sombre: true },
+  { id: "polimetre-plus", nom: "Polimètre+" },
+  { id: "assemblee-nationale", nom: "Assemblée" },
+] as { id: CleModule; nom: string; papierPur?: boolean; sombre?: boolean }[]).map((m) => ({
+  ...m,
+  accent: IDENTITES[m.id].accent,
+  accentNuit: m.sombre ? melange(IDENTITES[m.id].accent, PAPIER, 0.45) : undefined,
+}));
 
 /** Trois degrés : combien de la couleur du module passe dans son fond. */
 const INTENSITES: Record<Exclude<Intensite, "off" | "sepia">, { nom: string; force: number; nuit: number }> = {
@@ -176,7 +170,7 @@ function PaletteScrollLabInner() {
     return MODULES.map((m) => {
       const fond = m.sombre
         ? melange(PAPIER, NUIT, I.nuit)
-        : m.papierPur ? PAPIER : melange(PAPIER, m.teinte ?? m.accent, I.force);
+        : m.papierPur ? PAPIER : melange(PAPIER, m.accent, I.force);
       const accent = m.sombre ? (m.accentNuit ?? m.accent) : m.accent;
       const jetons = m.sombre
         ? Object.entries(jetonsNuit(fond, accent))

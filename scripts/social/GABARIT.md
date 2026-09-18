@@ -70,12 +70,18 @@ commun, une identité visuelle, un rappel marqué.**
   **Renverse** les nuances par module du 16-09 et le papier teinté à 6 %
   (`teintePapier`) : Deux solitudes perd le rouge comme couleur de MODULE (il
   reste celui du Canada à l'intérieur du reel).
-- **ARRÊTÉ · Logos de la Vitrine ET du CAPP sur TOUTES les scènes** (Jules Piral,
-  2026-09-16) : barre de marque commune (`BRAND`, `loadLogos`, `lib/reel.ts`), en
-  bas de la zone sûre, logos officiels de `public/images/brand/` rognés de leurs
-  marges ; en blanc sur un bandeau d'encre (`lightBrand`, accroche et fin). Un
-  script de module n'a rien à faire que passer `logos: await loadLogos()` à
-  `buildPage`.
+- **ARRÊTÉ · Bandeau de marque EN HAUT, contenu CENTRÉ** (Jules Piral, 2026-09-17,
+  mesuré dans le simulateur d'iPhone) : les deux logos, centrés côte à côte, à
+  y 150 ; l'édition juste dessous ; le contenu des scènes de y 272 à
+  `CONTENT_BOTTOM`. L'accroche et la fin, qui portent déjà le grand logo, masquent
+  ce bandeau commun ; une scène qui écrit déjà son édition masque aussi la ligne
+  commune. La colonne va de **x 180 à x 900** — la limite de la colonne de boutons —
+  donc elle est symétrique par rapport au milieu de l'image. Le texte garde
+  l'alignement propre à chaque scène : le centrer partout écrase la hiérarchie en
+  une pile verticale. « C'est bizarre qu'à droite il n'y ait rien parce que les
+  boutons sont là, alors qu'à gauche il y a de l'information. » **Renverse** la barre du bas
+  (16-09) : en plein écran sur iPhone, le bas est pris par le voile d'Instagram, la
+  légende et la barre de navigation. Le texte s'écrit à 28 px au moins.
 - ⚠️ Rappel de la règle d'Adrien du 3 sept. : **en ligne**, la Une des Unes garde
   le papier tel quel. L'accent colore les filets et les bandeaux, pas le fond.
 
@@ -83,6 +89,11 @@ commun, une identité visuelle, un rappel marqué.**
 
 ### Production
 
+- **ARRÊTÉ · Simulateur d'iPhone 17 dans l'aperçu** (Jules Piral, 2026-09-17) :
+  bouton « iPhone 17 » — écran 1206 × 2622 (19,5:9), îlot dynamique, colonne de
+  boutons, nom du compte, légende, son et barre de navigation du profil. Le reel
+  9:16 y est posé à la largeur de l'écran, avec du noir en haut et en bas, comme
+  le fait Instagram. C'est là qu'on juge ce qui se perd vraiment.
 - **ARRÊTÉ · Aperçu avant vidéo, IMPOSÉ.** Le script écrit et ouvre d'abord
   l'aperçu animé (`social-out/<module>_<date>_<heure>_apercu.html` : lecture,
   défilement, vitesse, bouton « Zones Instagram »). C'est là qu'on regarde et
@@ -97,27 +108,47 @@ commun, une identité visuelle, un rappel marqué.**
 
 ### Mise en page
 
-- **ARRÊTÉ · Rien ne dépasse du cadre.** Tout (illustration, bandeaux, graphiques,
-  texte) reste à l'intérieur de l'encadré (30 px de chaque bord).
-- **ARRÊTÉ · Format Instagram STRICT : tout est lisible sur un téléphone.** Toute
-  information tient dans la ZONE SÛRE `SAFE` (convention des **Reels organiques**) :
-  220 px en haut (nom du compte), 400 px en bas (légende, musique), 60 px à gauche,
-  **120 px à droite à partir de y 640** (colonne de boutons, sous le tiers de
-  l'écran ; 60 px au-dessus). Le contenu s'arrête au-dessus de la barre de marque
-  (`CONTENT_BOTTOM`). Seul le décor marqué `data-deco` (illustration, bandeaux,
-  halo du logo) en sort. Zone des publicités Meta (14 % haut, 35 % bas) : non
-  retenue, trop d'espace perdu. Sources consultées le 2026-09-16 : Kreatli,
-  Pod2Reels, Outfy (organique) ; Billo, Behaviour Digital (publicités).
-  **Renverse** la marge de 200 px non bloquante du 16-09.
-- **ARRÊTÉ · Aucun texte empilé sur un autre** (Jules Piral, 2026-09-17 : « des
-  infos et du texte empilés les uns sur les autres »). Le contrôle mesure chaque
-  ligne de texte visible à la fin de chaque scène et bloque le MP4 si deux lignes
-  se recouvrent (cœur de la ligne, pour ne pas compter l'interlignage serré d'un
-  titre). ⚠️ Il ne voit ni le texte posé sur un graphique ni les chevauchements
-  en cours d'animation : les images fixes restent à relire.
+- **ARRÊTÉ · PLUS D'ENCADRÉ** (Jules Piral, 2026-09-17 : « dépendamment de
+  l'affichage ça va avoir l'air coupé »). Le filet autour du reel est retiré : un
+  trait collé au bord se lit comme une erreur dès qu'une plateforme rogne l'image.
+  Le **décor** (`data-deco` : bandeaux, illustrations, aplats) va maintenant jusqu'aux
+  bords ; tout le reste garde 30 px de marge, que le contrôle vérifie.
+- **ARRÊTÉ · L'ESSENTIEL AU CENTRE** (Jules Piral, 2026-09-17 : « dans la vue pas
+  en reel on doit voir LA stat ou LE contenu »). Le **cœur** est le carré central
+  (1080 × 1080, y 420 → 1500), ce que montrent la grille du profil et le fil avant
+  qu'on ouvre le reel. Chaque scène marque son essentiel — LA statistique, LE
+  résultat — avec `data-cle`, et le contrôle refuse la vidéo s'il en sort. Le
+  surtitre, la note de méthode et la légende vivent au-dessus et au-dessous : on
+  les découvre en plein écran. L'aperçu trace ce carré en bleu.
+- **ARRÊTÉ · Format Instagram STRICT, MESURÉ AU SIMULATEUR** (Jules Piral,
+  2026-09-17). Image en **1080 × 1920 (9:16)**, le format qu'Instagram réclame.
+  Sur un écran 19,5:9 (iPhone récents), l'application peut l'afficher de deux
+  façons, et on tient dans l'union des deux :
+  - **ajusté** (barres noires en haut et en bas) : rien n'est rogné, mais le
+    compte, la légende et le son couvrent de y 1700 à 1920 ;
+  - **plein écran** (agrandi jusqu'à remplir) : **98 px rognés à gauche et à
+    droite**, et le bas couvert dès y 1560.
+
+  D'où la ZONE SÛRE `SAFE` : **haut 150 px** (l'heure et l'îlot dynamique tombent
+  sur la bande noire), **bas 380 px**, **côtés 110 px**, et rien à droite de
+  **x 900** sous y 1040 (colonne de boutons). Le contenu s'arrête au-dessus de la
+  barre de logos (`CONTENT_BOTTOM`) ; seul le décor `data-deco` sort de la zone.
+  **Renverse** les marges tirées des guides (300/450/60/120) : trop prudentes en
+  haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
+  sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
+  de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
+- **ARRÊTÉ · Pied de page dans la zone sûre** (Jules Piral, 2026-09-17, mesuré au
+  simulateur en PLEIN ÉCRAN) : à 70 px du bas, il tombait derrière la barre de
+  navigation d'Instagram. Il remonte juste au-dessus des logos et ne garde que
+  l'édition (« Édition de 8h · 17.09.2026 ») ; le nom de la Vitrine, lui, est déjà
+  dans la barre de logos.
+- **ARRÊTÉ · La barre d'avancement descend sous la caméra** (Jules Piral,
+  2026-09-17 : « la barre qui avance en haut passe à travers la caméra frontale ») :
+  elle se pose à y 128, dans la largeur de la zone sûre, et non plus à 28 px du
+  bord supérieur.
 - **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
   téléphone, où le reel s'affiche à ~36 %.
-- **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle cadre, zone sûre et
+- **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et
   taille sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre écart,
   et la console nomme l'élément fautif (« zone Instagram · scène classement : … (bas
   25 px) »).
@@ -308,7 +339,7 @@ Thème : **le Québec et le Canada anglais regardent-ils la même journée ?**
 Thème : **de quel parti parlent les Unes, dans quel média, sur quel ton.** Données :
 `loadParties` (la section du site, y compris sa ventilation par média). Décisions
 de Jules Piral, 2026-09-16. Règle de la série : **des titres qui disent le
-résultat, AUCUN sous-titre**, rien qui attire l'œil sans servir.
+résultat, AUCUN sous-titre**, à la couleur du module (orange brûlé, 17-09), rien qui attire l'œil sans servir.
 
 1. **Accroche (résultat + visuel).** « Le PQ » en très grand, « est le parti dont on
    parle le plus aujourd'hui », petit vumètre des cinq partis. ARRÊTÉ.
@@ -408,12 +439,70 @@ d'une édition à l'autre. À VALIDER.
 
 Légende Instagram : le message, la collecte, les six questions, le lien.
 
-## 6. Points ouverts
+## 6. Les 12 enjeux · évolution de la semaine (`enjeux-semaine.ts`)
+
+Thème : **comment le classement des douze enjeux a évolué pendant les sept
+derniers jours.** Les rangs, parts d’attention et dates viennent de
+`loadTreemap(...).week`, le même calcul que la vue « Semaine » du site.
+
+1. **Accroche commune.** Les trois lignes du module et une miniature des douze
+   trajectoires réelles de la semaine.
+2. **Classement animé.** Les douze enjeux changent de rang, jour après jour. Une
+   ligne porte toujours son rang, son pictogramme, son libellé court et son
+   déplacement total sur la fenêtre.
+3. **Bilan.** L’enjeu en tête, sa part d’attention, le nombre de jours passés au
+   premier rang et les six déplacements les plus grands en valeur absolue.
+4. **Fin commune.** Signature « Les 12 enjeux, jour après jour ».
+
+Le Reel emploie une semaine glissante de sept jours, comme le site. Aucun rang
+ni pourcentage n’est écrit à la main.
+
+Repris le 17-09 après mesure au simulateur d'iPhone : la ligne qui double une
+autre passe DEVANT, avec une ombre le temps du dépassement (sinon deux lignes
+qui se croisent se lisent l'une sur l'autre), et la miniature de l'accroche
+remonte au-dessus de la légende d'Instagram.
+
+## 6 bis. La colonne, et la symétrie (17-09)
+
+Deux défauts revenaient à chaque relecture de Jules Piral : « tout est pogné en
+moton / en pain » et « à droite il y a un gros vide ».
+
+**La colonne.** Chaque bloc d'une scène portait un `top` fixe, hérité d'un
+cadrage plus haut : tout se tassait dans le tiers supérieur et le bas restait
+vide. Une classe commune, `.zone-utile` (`lib/reel.ts`), va de `CONTENT_TOP`
+(274) au BAS DU CARRÉ CENTRAL (1500) et répartit les blocs qu'on lui donne. Une
+scène y met son titre, son graphique et sa légende ; `.grandir` marque le bloc
+qui prend la place restante. Les scènes de `partis.ts`, `une-des-unes.ts` et le
+reel de présentation sont passées dessus. Elle s'arrête à 1500 et non à 1540 :
+ce qui porte `data-cle` doit tenir dans le carré vu dans la grille du profil.
+
+⚠️ Le nom est long exprès. Une première version s'appelait `.colonne`, puis
+`.pile` : ces deux noms existaient déjà dans des scènes (le vumètre, le duel des
+reels courts), et une classe globale en `position:absolute` empilait tous leurs
+éléments au même endroit.
+
+**La symétrie.** Trois blocs étaient ancrés de x 30 à x 900, donc décalés à
+gauche, avec 180 px de papier nu sur la droite : le bandeau de l'accroche, la
+boîte des partenaires et le logo de l'accroche. Tout est maintenant à 180 px des
+deux bords. La boîte des partenaires ne descend plus jusqu'en bas non plus :
+elle porte elle-même le fond, donc elle épouse ses logos, titre compris.
+
+**Le texte qui ne tient pas.** Le titre de la Une n'a pas de longueur fixe ; à
+82 px, un titre de six lignes poussait les statistiques sous la légende
+d'Instagram. Le corps suit la longueur (82 / 72 / 62 px). Même principe partout :
+un bloc de taille fixe qui reçoit un texte variable finit par déborder.
+
+**Le vérificateur.** `checkFrame` inspecte maintenant quatre moments par scène,
+et il intersecte chaque ligne de texte avec l'ancêtre qui la ROGNE (`overflow`,
+`-webkit-line-clamp`, ellipsis). Sans ça, un titre coupé à deux lignes était
+signalé comme empilé sur ce qui suit, alors qu'à l'écran il n'y a rien.
+
+## 7. Points ouverts
 
 - **Phrase de tendance du site** (« L'attention est retombée depuis 16h cet après-midi
   (Sommet ce midi) ») : maladroite, affichée en grand ; à corriger dans le site
   (`lib/data/headlineEvents.ts`), le reel suivra.
-- **Les reels restants** (12 enjeux, Polimètre+, Assemblée
+- **Les reels restants** (Polimètre+, Assemblée
   nationale) : reprennent toutes les règles de la section 1.
 - **UN MODULE, UN POST** (Jules et Adrien, 2026-09-16) : un reel ne mélange pas deux
   modules. Le Canada était entré dans la Une des Unes le 16-09 ; il en est ressorti

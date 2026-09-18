@@ -64,35 +64,41 @@ function needle(row: RowView, delay: number): string {
 const pchip = (row: RowView) => `<span class="pchip" style="background:${row.color}">${esc(row.label)}</span>`;
 
 // ── Mise en page ────────────────────────────────────────────────────────────
+// Les blocs de contenu descendent jusqu'à `bottom:420px`, c'est-à-dire y 1500 :
+// le BAS DU CARRÉ CENTRAL. Aller jusqu'à la zone sûre (1540) ferait sortir du
+// carré ce qui est marqué `data-cle` — et c'est justement ce qu'on doit voir
+// dans la grille du profil. Les rangées se répartissent sur toute la hauteur au
+// lieu de se tasser sous le titre (Jules Piral, 17-09 : « pogné en moton »).
 // Zone sûre (Reels organiques) : texte de x 76 à 960, y 220 → 1520.
 const CSS = `
 .kick{font-size:28px;color:var(--softer);letter-spacing:.14em}
-.head{position:absolute;top:236px;left:76px;right:120px}
-.head h2{font-size:70px;line-height:1.04;margin-top:12px}
+.head{flex:none}
+.head h2{font-size:70px;line-height:1.04;margin-top:12px;color:var(--blue)}
 .pchip{flex:none;display:inline-block;width:118px;text-align:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:38px;padding:4px 0}
 .vu{display:flex;flex-direction:column-reverse;gap:5px;width:100%}
 .vu i{flex:1;display:block;background:var(--deep)}
 .vu i.on{background:var(--on)}
 
 /* Accroche : le résultat, et rien d'autre */
-#accroche .brand{position:absolute;top:250px;left:76px;right:120px;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
+#accroche .brand{flex:none;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{position:absolute;top:340px;left:76px;right:120px;display:flex;flex-direction:column;gap:30px}
+#accroche .result{flex:none;margin:auto 0;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
 #accroche .then{font-size:88px;line-height:1.02}
-#accroche .mini{position:absolute;left:76px;right:120px;top:1070px;height:330px;display:flex;gap:26px}
+#accroche .mini{flex:none;height:290px;display:flex;gap:26px}
 #accroche .mini .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px}
 #accroche .mini b{width:100%;text-align:center;font-family:"Playfair Display",serif;font-weight:900;font-size:38px;color:var(--paper);padding:2px 0}
 
 /* Le jour, en vumètre */
-#jour .chart{position:absolute;top:530px;left:76px;right:120px;height:880px;display:flex;gap:28px}
-#jour .col{flex:1;display:flex;flex-direction:column;align-items:center}
-#jour .pct{font-family:"Playfair Display",serif;font-weight:900;font-size:64px;line-height:1;margin-bottom:14px}
+#jour .chart{flex:1;min-height:0;display:flex;gap:28px}
+#jour .col{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center}
+#jour .col .vu{flex:1;min-height:0;height:auto!important}
+#jour .pct{font-family:"Playfair Display",serif;font-weight:900;font-size:56px;line-height:1;margin-bottom:14px}
 #jour .lab{width:100%;text-align:center;margin-top:14px;font-family:"Playfair Display",serif;font-weight:900;font-size:44px;color:var(--paper);padding:4px 0}
 
 /* Par média */
-#playlist .rows{position:absolute;top:520px;left:76px;right:120px}
-#playlist .row{height:146px;padding-top:12px;border-top:2px solid var(--rule)}
+#playlist .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#playlist .row{flex:1 1 0;min-height:132px;padding-top:12px;border-top:2px solid var(--rule);display:flex;flex-direction:column;justify-content:center}
 #playlist .line{display:flex;align-items:baseline;justify-content:space-between;gap:20px}
 #playlist .line b{font-family:"Playfair Display",serif;font-weight:900;font-size:40px}
 #playlist .line span{font-family:"Playfair Display",serif;font-weight:700;font-size:36px;white-space:nowrap}
@@ -100,15 +106,15 @@ const CSS = `
 #playlist .mix div{display:flex;align-items:center;justify-content:center;color:var(--paper);font-family:"Playfair Display",serif;font-weight:900;font-size:28px;white-space:nowrap;overflow:hidden}
 
 /* Ton */
-#ton .legend{position:absolute;top:548px;left:76px;right:120px;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{position:absolute;top:600px;left:76px;right:120px}
-#ton .row{height:162px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
+#ton .legend{flex:none;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
+#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#ton .row{flex:1 1 0;min-height:148px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
 /* Campagne */
-#campagne .rows{position:absolute;top:580px;left:76px;right:120px}
-#campagne .row{height:164px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
+#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#campagne .row{flex:1 1 0;min-height:150px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
 #campagne .hvu{flex:1;display:flex;gap:4px;height:40px}
 #campagne .hvu i{flex:1;background:var(--deep)}
 #campagne .hvu i.on{background:var(--on)}
@@ -126,14 +132,14 @@ function sceneAccroche(rows: RowView[]): Scene {
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: 3.4, noFadeIn: true, hideFooter: true,
+    id: "accroche", duration: 3.4, noFadeIn: true, hideEdition: true,
     html: `
-      <div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
-      <div class="result">
+      <div class="zone-utile"><div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
+      <div class="result" data-cle>
         <div class="answer disp" style="color:${lead.color};font-size:${answer.length <= 5 ? 270 : 230}px;animation:slam .7s .3s both">${esc(answer)}</div>
         <div class="then disp" ${anim("fadeUp", .6, .9)}>est le parti dont on parle le plus aujourd’hui</div>
       </div>
-      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, 1.2 + i * 0.12)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div>`,
+      <div class="mini">${rows.map((r, i) => `<div class="col">${vuColumn(r, 250, 1.2 + i * 0.12)}<b style="background:${r.color}">${esc(r.label)}</b></div>`).join("")}</div></div>`,
   };
 }
 
@@ -150,8 +156,8 @@ function sceneJour(rows: RowView[]): Scene {
   return {
     id: "jour", duration: 5.6,
     html: `
-      ${head("Temps en Une · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
-      <div class="chart">${cols}</div>`,
+      <div class="zone-utile">${head("Temps en Une · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
+      <div class="chart" data-cle>${cols}</div></div>`,
   };
 }
 
@@ -180,8 +186,8 @@ function scenePlaylist(mixes: MediaMix[], order: RowView[]): Scene | null {
   }).join("");
   return {
     id: "playlist", duration: PLAYLIST0 + mixes.length * PLAYLIST_STEP + 2.2,
-    html: `${head("Média par média · depuis minuit", title)}
-      <div class="rows">${list}</div>`,
+    html: `<div class="zone-utile">${head("Média par média · depuis minuit", title)}
+      <div class="rows" data-cle>${list}</div></div>`,
   };
 }
 
@@ -195,9 +201,9 @@ function sceneTon(rows: RowView[]): Scene {
   }).join("");
   return {
     id: "ton", duration: 5.4,
-    html: `${head("Le ton · depuis minuit", cap(`un ton ${tonGroupes(rows).join(", ")}`))}
+    html: `<div class="zone-utile">${head("Le ton · depuis minuit", cap(`un ton ${tonGroupes(rows).join(", ")}`))}
       <div class="legend mono" ${anim("fadeIn", .5, .8)}><span style="color:${TONE.negative}">← Défavorable</span><span style="color:${TONE.positive}">Favorable →</span></div>
-      <div class="rows">${list}</div>`,
+      <div class="rows" data-cle>${list}</div></div>`,
   };
 }
 
@@ -222,8 +228,8 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   }).join("");
   return {
     id: "campagne", duration: 5.4,
-    html: `${head(`Temps en Une · ${depuis}`, title)}
-      <div class="rows">${list}</div>`,
+    html: `<div class="zone-utile">${head(`Temps en Une · ${depuis}`, title)}
+      <div class="rows" data-cle>${list}</div></div>`,
   };
 }
 

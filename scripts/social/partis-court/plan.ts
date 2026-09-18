@@ -55,7 +55,10 @@ export const DUREE_PLAN = 5.6;
 export const MAX_SECONDES = 12;
 
 /** Boîte caméra. */
-export const BOITE = { gauche: 76, droite: 120, haut: 700, hauteur: 700 };
+// La boîte descend jusqu'à y 1500 : le BAS DU CARRÉ CENTRAL, puisqu'elle porte
+// `data-cle` — c'est elle qu'on doit voir dans la grille du profil. À 650 px de
+// haut elle s'arrêtait à 1356 et laissait 184 px vides sous le plan.
+export const BOITE = { gauche: 116, droite: 180, haut: 706, hauteur: 794 };
 export const LARGEUR = 1080 - BOITE.gauche - BOITE.droite;
 
 export function scenePlanHtml(plan: Plan): { html: string; css: string; script: string } {
@@ -69,7 +72,7 @@ export function scenePlanHtml(plan: Plan): { html: string; css: string; script: 
     ? `transform-origin:${z.x}% ${z.y}%;animation:zoomPlan ${DUREE_PLAN}s linear both`
     : `transform-origin:50% 100%;animation:cameraPlan ${DUREE_PLAN}s linear both`;
   const html = `
-    <div class="cadre-camera"><div class="camera" style="${camera}">${plan.visuel}</div></div>
+    <div class="cadre-camera" data-cle><div class="camera" style="${camera}">${plan.visuel}</div></div>
     ${plan.eclair != null ? `<div class="eclair" data-deco style="animation:eclair .7s ${plan.eclair}s both"></div>` : ""}
     ${phrases}`;
   const css = `
@@ -77,12 +80,12 @@ export function scenePlanHtml(plan: Plan): { html: string; css: string; script: 
 #plan .camera{position:absolute;inset:0}
 @keyframes cameraPlan{from{transform:scale(.94)}to{transform:scale(1)}}
 ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / DUREE_PLAN) * 100)}%{transform:scale(${z.de})}100%{transform:scale(${z.a})}}` : ""}
-#plan .eclair{position:absolute;left:30px;right:30px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
+#plan .eclair{position:absolute;left:30px;right:180px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
-#plan .phr{position:absolute;left:76px;right:120px}
-#plan .phr.a{top:240px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:370px;font-size:88px;line-height:1.02;color:var(--ink)}
+#plan .phr{position:absolute;left:180px;right:180px}
+#plan .phr.a{top:288px;font-size:46px;line-height:1.12;font-weight:700}
+#plan .phr.b{top:396px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;
   const script = plan.script ? `
 (function(){
@@ -145,7 +148,7 @@ export function ligneBarres(pct: number, etiquette: string, debut: number): stri
 export const CSS_LIGNE = `
 #plan .ligne{position:absolute;left:20px;right:20px;height:0}
 #plan .ligne i{position:absolute;left:0;right:0;top:0;border-top:5px dashed var(--ink);transform-origin:left}
-#plan .ligne span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:26px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
+#plan .ligne span{position:absolute;right:0;top:14px;max-width:560px;text-align:right;line-height:1.25;font-size:28px;letter-spacing:.04em;color:var(--ink);background:var(--paper);padding:2px 8px}
 `;
 
 /** Fraction simple quand elle tombe à 3 points près (« 2 fois sur 3 »). */
