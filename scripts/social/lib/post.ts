@@ -48,4 +48,12 @@ export function piedDePost(): string[] {
 }
 
 /** Mêmes règles OQLF que les vidéos, en texte brut (U+00A0 avant « : » et « % »). */
-export const oqlf = (s: string) => s.replace(/[ \t]*:(?=\s|$)/gm, " :").replace(/[ \t]*%/g, " %") + "\n";
+export const oqlf = (s: string) => s
+  // ⚠️ L'ESPACE POSÉE EST UNE INSÉCABLE (U+00A0), comme l'exige le GABARIT : la
+  // version d'origine posait une espace ORDINAIRE, donc aucune protection. Et la
+  // classe ne retenait que l'espace et la tabulation : un titre qui portait déjà
+  // son insécable ressortait avec DEUX espaces avant le deux-points (« Guerre
+  // tarifaire  : » à l'édition de 20h du 17-09). On ne prend pas \s : il avalerait
+  // le saut de ligne d'un deux-points en début de ligne.
+  .replace(/[ \t\u00A0\u202F]*:(?=\s|$)/gm, "\u00A0:")
+  .replace(/[ \t\u00A0\u202F]*%/g, "\u00A0%") + "\n";

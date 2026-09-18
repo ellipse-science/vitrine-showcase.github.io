@@ -270,6 +270,14 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
 // journée il s'agit. Minutage : barre i de STEP0 + i·STEP, pendant GROW.
 const STEP0 = 1.2, STEP = 0.8, GROW = 0.6;
 
+/** LE TITRE DE LA TRAJECTOIRE TIENT EN DEUX LIGNES, quelle qu'en soit la
+ *  longueur. La boîte est cadrée à deux lignes pour laisser le compteur
+ *  respirer : à 50 px, « Un bébé trouvé dans un campement bouleverse la
+ *  campagne électorale » en demandait trois et se faisait couper (édition de
+ *  20h du 17-09). On réduit le corps plutôt que d'amputer la nouvelle — un
+ *  titre de Une ne se tronque pas. */
+const tailleTitre = (t: string) => (t.length > 58 ? 42 : t.length > 48 ? 46 : 50);
+
 function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null {
   const trend = top.salienceTrend;
   if (!trend || trend.points.length < 2) return null;
@@ -337,7 +345,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
         <div class="zone-utile">
         <div class="head">
           <div class="kick mono" ${anim("fadeIn", .5, .1)}>Saillance · 24 dernières heures</div>
-          <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp">${txt(top.title)}</h3></div>
+          <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp" style="font-size:${tailleTitre(top.title)}px">${txt(top.title)}</h3></div>
           <div class="live" ${anim("fadeIn", .4, .6)}><div class="counter" id="t-counter">0,0</div><div class="unit mono">points</div></div>
         </div>
         <div class="bandeau">
