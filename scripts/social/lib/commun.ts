@@ -10,9 +10,12 @@ export const anim = (name: string, dur: number, delay: number) => `style="animat
 /** « 20h » : heure de publication de l'édition (heures collées, règle #7). */
 export const pubHourLabel = (edition: EditionRef) => `${edition.pubHour % 24}h`;
 
-/** « Édition de 20h · 16.09.2026 », pour le pied de page. */
+/** « 16.09.2026 · Édition de 20h », pour le pied de page.
+ *  LA DATE PASSE DEVANT (Jules Piral, 2026-09-18) : sur Instagram et TikTok, où
+ *  le fil défile vite, la première chose à lire est DE QUAND DATE l'information.
+ *  L'heure d'édition vient après — elle ne sert qu'à qui suit les six éditions. */
 export const footerEdition = (edition: EditionRef) =>
-  `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`;
+  `${edition.navDateIso.split("-").reverse().join(".")} · Édition de ${pubHourLabel(edition)}`;
 
 /** « A, B et C ». */
 export const joinFr = (items: string[]) =>

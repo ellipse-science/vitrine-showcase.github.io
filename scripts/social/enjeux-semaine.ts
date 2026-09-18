@@ -246,6 +246,7 @@ async function main() {
       logo: logos.vitrine,
       accent: MODULE.accent,
       partenaires: await chargerPartenaires(),
+      date: footerEdition(edition),
     }),
   ];
 

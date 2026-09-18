@@ -62,7 +62,21 @@ export type Analyse = {
 
 /** Durée du plan, au rythme de base (× SLOW à l'écran). */
 export const DUREE_PLAN = 5.6;
+
+/** FENÊTRE DE DURÉE, fin comprise (Jules Piral, 2026-09-18) : « pour Instagram et
+ *  TikTok, il faut privilégier du contenu entre 8 et 12 secondes ». Sous 8 s on
+ *  n'a pas le temps de lire le résultat ; au-delà de 12 s, le fil a déjà tourné.
+ *  `verifierDuree` en fait une règle, pas une intention. */
+export const MIN_SECONDES = 8;
 export const MAX_SECONDES = 12;
+
+/** Contrôle la durée totale d'un reel court. Jette si elle sort de la fenêtre. */
+export function verifierDuree(secondes: number, quoi: string): void {
+  const s = Math.round(secondes * 100) / 100;
+  if (s < MIN_SECONDES - 0.05 || s > MAX_SECONDES + 0.05) {
+    throw new Error(`${quoi} : ${s} s à l'écran, hors de la fenêtre ${MIN_SECONDES}–${MAX_SECONDES} s des reels courts.`);
+  }
+}
 
 /** Boîte caméra. */
 // La boîte va de y 636 à y 1400 — tout le bas de la zone utile, sous les phrases

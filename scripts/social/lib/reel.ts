@@ -67,8 +67,19 @@ export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 
  *  y 180 au lieu de 274. */
 export const BRAND = { top: SAFE.bottom - 130, height: 62 };
 export const CONTENT_TOP = SAFE.top + 30;
-/** Le contenu des scènes s'arrête au-dessus de la barre de marque. */
-export const CONTENT_BOTTOM = BRAND.top - 40;
+
+/** LE PIED FIXE (Jules Piral, 2026-09-18) : les logos Vitrine + CAPP, puis la
+ *  date. « Aucun contenu ne doit toucher à la date et aux logos » : le pied
+ *  n'est pas une décoration qu'une scène peut recouvrir, c'est LUI qui décide
+ *  où l'analyse commence et jusqu'où elle peut aller. Il va de la barre de
+ *  marque au bas de la zone sûre, et rien d'autre n'y entre. */
+export const PIED = { top: BRAND.top, bottom: SAFE.bottom };
+
+/** Blanc entre le contenu et le pied : ce qui garantit que rien ne le « touche ». */
+export const MARGE_PIED = 40;
+
+/** Le contenu des scènes s'arrête au-dessus du pied. */
+export const CONTENT_BOTTOM = PIED.top - MARGE_PIED;
 /** Réserve sous le contenu, en pixels : ce que les scènes mettent en `bottom`. */
 export const RESERVE_BAS = HEIGHT - CONTENT_BOTTOM;
 
@@ -111,6 +122,13 @@ export const FRAME = { left: 30, top: 30, right: WIDTH - 30, bottom: HEIGHT - 30
  *  n'apparaît qu'en plein écran. Une scène marque son essentiel avec
  *  `data-cle` ; `checkFrame` refuse la vidéo si cet élément déborde du cœur. */
 export const COEUR = { top: Math.round((HEIGHT - WIDTH) / 2), bottom: Math.round((HEIGHT + WIDTH) / 2) };
+
+/** LE CŒUR NE RESTE PAS VIDE (Jules Piral, 2026-09-18 : « au centre, il ne doit y
+ *  avoir aucun espace vide, c'est là que notre contenu vit »). Hauteur du plus
+ *  grand blanc toléré dans le carré central. Mesuré sur les reels courts du
+ *  17-09, qui laissaient jusqu'à 430 px de papier nu entre la phrase et le
+ *  graphique — le vide tombait pile au milieu de la vignette du profil. */
+export const COEUR_VIDE_MAX = 220;
 
 /** Palette du site (app/globals.css) et bandes de saillance
  *  (lib/shareCardTemplate.tsx, rangs calibrés 1 à 6). */
@@ -242,13 +260,19 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /* LA ZONE UTILE : de CONTENT_TOP à CONTENT_BOTTOM, entre les deux marges
    latérales. Une scène y empile ses blocs et la colonne les répartit sur toute
    la hauteur utile — sans ça, tout se tasse en haut et le bas reste vide.
-   Elle descend jusqu'à la limite mesurée de la zone sûre (y 1570). Ce qui
+   Elle s'arrête au-dessus du PIED, pas à la limite de la zone sûre.
+   CONTENU FORCÉ AU CENTRE (Jules Piral, 2026-09-18 : « les analyses et données
+   doivent être forcées au centre, entre la date et les logos »). La colonne
+   répartissait ses blocs sur toute la hauteur (space-between), ce qui creusait
+   un trou au milieu dès qu'une scène n'avait que deux blocs — jusqu'à 526 px de
+   papier nu en plein dans la vignette du profil. Elle les groupe maintenant au
+   centre de la bande. Ce qui
    porte data-cle doit en revanche tenir dans le carré central (y 420 → 1500) :
    une scène dont le bloc clé irait plus bas le centre au lieu de l'étirer
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:center;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 .zone-utile > [data-cle]:last-child{margin-bottom:${Math.max(0, CONTENT_BOTTOM - COEUR.bottom)}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
@@ -256,7 +280,11 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
 /* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
    une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
-.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+/* LA DATE SE LIT D'UN COUP D'ŒIL (Jules Piral, 2026-09-18 : « les gens doivent
+   voir rapidement de quand date l'information »). Elle était en 28 px dans la
+   couleur la plus pâle de la palette — le texte le moins visible de l'image. Elle
+   passe à 34 px dans l'encre douce, et la date précède l'heure d'édition. */
+.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 8}px;text-align:center;font-size:34px;letter-spacing:.06em;color:var(--soft);z-index:45}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
@@ -356,7 +384,7 @@ export const INTRO_CSS = `
 #intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
-/** Scène de fin, commune à tous les reels : logo, signature, adresse et le
+/** Scène de fin, commune à tous les reels : logo, signature, adresse, DATE et le
  *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
 /** Les dix partenaires du site, dans l'ordre de `app/apropos/partenaires`
@@ -402,7 +430,7 @@ export async function chargerPartenaires(): Promise<string[]> {
   return out;
 }
 
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
+export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[]; date?: string }): Scene {
   const now = opts.pubHour % 24;
   // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
   // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
@@ -427,6 +455,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
       <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
+      ${opts.date ? `<div class="jour mono" style="animation:fadeIn .5s .95s both">${typo(esc(opts.date))}</div>` : ""}
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
       ${logos ? `<div class="foot" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
@@ -444,7 +473,11 @@ export const FIN_CSS = `
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-#fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
+/* LA DATE SUR LA SCÈNE DE FIN (Jules Piral, 2026-09-18). La fin ne portait AUCUNE
+   date : sur un reel court, elle occupe le tiers du temps d'écran et c'est elle
+   qui reste affichée quand la lecture boucle. */
+#fin .jour{font-size:36px;margin-top:22px;letter-spacing:.06em;color:var(--ink)}
+#fin .six{font-size:34px;font-style:italic;margin-top:20px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
 #fin .foot{position:absolute;left:180px;right:180px;bottom:${HEIGHT - SAFE.bottom}px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
@@ -732,7 +765,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     for (const s of scenes) {
       const moments = [0.75, 0.45, 0.7, 1].map((f, i) => (i === 0 ? t + 0.75 : t + s.duration * f)).map((x) => Math.min(x, t + s.duration - 0.35));
       for (const m of [...new Set(moments)]) {
-        for (const ecart of await inspectAt(page, s.id, m * SLOW, !!s.hideBrand)) {
+        for (const ecart of await inspectAt(page, s.id, m * SLOW, SIGNATURE.has(s.id))) {
           if (vus.has(ecart)) continue;
           vus.add(ecart);
           found.push(ecart);
@@ -748,7 +781,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
 
 // Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
 // un utilitaire `__name` qui n'existe pas côté navigateur.
-const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
+const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur, videMax, signature }) => {
   window.setTime(at);
   const scene = document.getElementById(sceneId);
   const out = [];
@@ -790,7 +823,10 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     if (box.bottom > safe.buttonsTop && box.right > safe.buttonsLeft + .5) z.push("boutons " + Math.round(box.right - safe.buttonsLeft) + " px");
     if (z.length) {
       flagged.safe.add(el);
-      if (!inherited(flagged.safe, el)) out.push("zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")");
+      // Un débordement par le BAS, c'est le pied qu'on touche : on le nomme, sinon
+      // « zone Instagram » envoie chercher du côté de l'interface du téléphone.
+      const quoi = z.length === 1 && z[0].indexOf("bas ") === 0 ? "pied · scène " + sceneId + " : « " + label + " » touche la date et les logos (" + z[0] + ")" : "zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")";
+      if (!inherited(flagged.safe, el)) out.push(quoi);
     }
     if (ownText) {
       const size = parseFloat(getComputedStyle(el).fontSize);
@@ -804,6 +840,56 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
       r.bottom > coeur.bottom + .5 ? "bas " + Math.round(r.bottom - coeur.bottom) + " px" : ""].filter(Boolean);
     if (d.length) out.push("cœur · scène " + sceneId + " : « " + (el.textContent || "").trim().slice(0, 40) + " » sort du carré central (" + d.join(", ") + ")");
+  }
+  // LE CŒUR NE RESTE PAS VIDE. On ne retient que ce qui PEINT vraiment — un texte,
+  // une image, un aplat, un filet — car les conteneurs (la boîte caméra) couvrent
+  // le carré sans rien y montrer. Leurs hauteurs sont projetées sur l'axe
+  // vertical, fusionnées, et on mesure le plus grand trou.
+  // ⚠️ Un aplat de la COULEUR DU PAPIER ne se voit pas : l'étiquette d'une ligne
+  // pointillée porte « background: var(--paper) » pour masquer le trait derrière
+  // elle, et elle comblait à elle seule tout le vide du plan.
+  const fondPage = getComputedStyle(document.body).backgroundColor;
+  const peint = (el) => {
+    const cs = getComputedStyle(el);
+    if (el.tagName === "IMG" || el.tagName === "svg" || el.tagName === "SVG") return true;
+    const bg = cs.backgroundColor;
+    if (bg && bg !== fondPage && !/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(bg)) return true;
+    for (const c of ["borderTopWidth", "borderBottomWidth", "borderLeftWidth", "borderRightWidth"]) {
+      if (parseFloat(cs[c]) > 0 && cs[c.replace("Width", "Style")] !== "none") return true;
+    }
+    return Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent || "").trim());
+  };
+  // Les scènes de SIGNATURE (accroche, fin) ont leur composition propre — grand
+  // logo, partenaires, horaire — et se construisent en plusieurs temps : la règle
+  // du vide ne vaut que pour les scènes qui portent une ANALYSE.
+  const bandes = signature ? null : [];
+  if (bandes) {
+  for (const el of scene.querySelectorAll("*")) {
+    if (!peint(el)) continue;
+    let o = 1; for (let q = el; q && q !== document.body; q = q.parentElement) o *= parseFloat(getComputedStyle(q).opacity);
+    if (o < .05) continue;
+    const r = el.getBoundingClientRect();
+    if (r.height < 1 || r.width < 1) continue;
+    const haut = Math.max(r.top, coeur.top), bas2 = Math.min(r.bottom, coeur.bottom);
+    if (bas2 - haut > 0) bandes.push([haut, bas2]);
+  }
+  bandes.sort((u, v) => u[0] - v[0]);
+  const fusion = [];
+  for (const [h, b2] of bandes) {
+    const last = fusion[fusion.length - 1];
+    if (last && h <= last[1]) last[1] = Math.max(last[1], b2);
+    else fusion.push([h, b2]);
+  }
+  let trou = 0, ou = 0;
+  let curseur = coeur.top;
+  for (const [h, b2] of fusion) {
+    if (h - curseur > trou) { trou = h - curseur; ou = curseur; }
+    curseur = Math.max(curseur, b2);
+  }
+  if (coeur.bottom - curseur > trou) { trou = coeur.bottom - curseur; ou = curseur; }
+  if (trou > videMax) {
+    out.push("cœur vide · scène " + sceneId + " : " + Math.round(trou) + " px de vide au centre (y " + Math.round(ou) + " → " + Math.round(ou + trou) + ", maximum " + videMax + ")");
+  }
   }
   // TEXTES EMPILÉS (Jules Piral, 2026-09-17 : « des infos et du texte empilés les
   // uns sur les autres »). Chaque ligne de texte visible est mesurée au plus près
@@ -857,11 +943,19 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
   return out;
 }`;
 
-async function inspectAt(page: Page, sceneId: string, at: number, sansMarque = false): Promise<string[]> {
-  // Le contenu s'arrête au-dessus de la barre de marque — sauf dans une scène qui
-  // la masque (accroche, intro, fin) : elle a droit à toute la zone sûre.
-  const bas = sansMarque ? SAFE.bottom : CONTENT_BOTTOM;
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: bas }, minFont: MIN_FONT, coeur: COEUR });
+/** LES DEUX SCÈNES DE SIGNATURE. Elles portent elles-mêmes le logo, la date et
+ *  les partenaires en pleine page : ce sont les seules qui remplacent le pied
+ *  fixe au lieu de le laisser par-dessus. Toute autre scène — toute scène qui
+ *  porte une ANALYSE — est régie par le pied et s'arrête au-dessus (Jules Piral,
+ *  2026-09-18 : « ces en-tête et bas de page doivent être fixes, c'est eux qui
+ *  régissent où se trouve l'analyse »). */
+const SIGNATURE = new Set(["intro", "fin"]);
+
+async function inspectAt(page: Page, sceneId: string, at: number, signature = false): Promise<string[]> {
+  // Une scène d'analyse s'arrête au-dessus du pied ; une scène de signature a
+  // droit à toute la zone sûre parce qu'elle EST le pied, en pleine page.
+  const bas = signature ? SAFE.bottom : CONTENT_BOTTOM;
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: bas }, minFont: MIN_FONT, coeur: COEUR, videMax: COEUR_VIDE_MAX, signature });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

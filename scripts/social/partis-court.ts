@@ -23,7 +23,7 @@ import {
   FIN_CSS, SLOW, buildPage, chargerPartenaires, loadLogos, openInBrowser, parseArgs, produce, sceneFin, type Scene,
 } from "./lib/reel";
 import { ANALYSES } from "./partis-court/analyses";
-import { DUREE_PLAN, MAX_SECONDES, legendeComplete, scenePlanHtml, type Contexte } from "./partis-court/plan";
+import { DUREE_PLAN, MAX_SECONDES, verifierDuree, legendeComplete, scenePlanHtml, type Contexte } from "./partis-court/plan";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -54,11 +54,15 @@ async function main() {
     if (!plan) continue;
     const { html: planHtml, css, script } = scenePlanHtml(plan);
     const scenes: Scene[] = [
-      { id: "plan", duration: DUREE_PLAN, noFadeIn: true, hideEdition: true, html: planHtml },
-      sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires }),
+      // LA DATE RESTE À L'ÉCRAN (Jules Piral, 2026-09-18) : le plan la masquait, et
+      // la fin n'en portait aucune — un reel court sortait donc SANS date, du
+      // début à la fin. C'est le format qui part sur Instagram et TikTok.
+      { id: "plan", duration: DUREE_PLAN, noFadeIn: true, html: planHtml },
+      sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires, date: footerEdition(edition) }),
     ];
-    // 12 secondes, fin comprise : la fin prend ce qui reste.
+    // La fin prend ce qui reste sous le plafond, puis on VÉRIFIE la fenêtre.
     scenes[1].duration = Math.min(3.5, MAX_SECONDES / SLOW - DUREE_PLAN);
+    verifierDuree((DUREE_PLAN + scenes[1].duration) * SLOW, `reel court « ${a.id} »`);
     const html = buildPage({
       title: `${MODULE} · ${a.id} · ${edition.key}`,
       css: css + FIN_CSS, scenes, script,

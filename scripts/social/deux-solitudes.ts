@@ -29,6 +29,8 @@ import {
   type EditionRef, type SolitudeAxis, type SolitudeData,
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
+
+import { footerEdition } from "./lib/commun";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce, RESERVE_BAS,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
@@ -274,7 +276,7 @@ async function main() {
       edition: `Édition de ${edition.pubHour % 24}h · ${edition.dateLabel}`,
     }),
     sceneSonar(sol, edition),
-    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Deux solitudes, une seule journée", logo, accent: MODULE.accent, partenaires: await chargerPartenaires(), date: footerEdition(edition) }),
   ];
 
   const html = buildPage({
@@ -283,7 +285,7 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: `Édition de ${edition.pubHour % 24}h · ${edition.navDateIso.split("-").reverse().join(".")}`,
+    footerRight: footerEdition(edition),
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");

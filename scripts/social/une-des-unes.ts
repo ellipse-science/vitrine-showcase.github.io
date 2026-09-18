@@ -24,6 +24,7 @@ import path from "node:path";
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
+import { footerEdition } from "./lib/commun";
 import { TRAIT, oqlf } from "./lib/identite";
 import { RESPONSABLE, formats, type Matiere, type Reseau } from "./reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
@@ -665,11 +666,11 @@ async function main() {
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
       visuel: visuelAccroche(top),
-      edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
+      edition: `${edition.dateLabel} · Édition de ${pubHourLabel(edition)}`,
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires(), date: footerEdition(edition) }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
@@ -678,7 +679,7 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
+    footerRight: footerEdition(edition),
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");

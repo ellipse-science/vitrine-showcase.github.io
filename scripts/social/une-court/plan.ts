@@ -16,7 +16,7 @@ import { captionTypo } from "../lib/commun";
 import type { Plan } from "../partis-court/plan";
 
 export {
-  BOITE, LARGEUR, DUREE_PLAN, MAX_SECONDES, BARRES, ECHELLE_BARRES, BASE_BARRES,
+  BOITE, LARGEUR, DUREE_PLAN, MIN_SECONDES, MAX_SECONDES, verifierDuree, BARRES, ECHELLE_BARRES, BASE_BARRES,
   barresHtml, CSS_BARRES, scriptBarres, scenePlanHtml,
 } from "../partis-court/plan";
 export type { Plan, Phrase } from "../partis-court/plan";
