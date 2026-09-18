@@ -185,11 +185,16 @@ const CSS = `
 /* 5. Couverture */
 
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:1.02;color:var(--blue)}
-#couverture .lab{font-size:44px;line-height:1.1;margin-top:22px}
+/* Dans la colonne de 720 px, « des grands médias québécois en parlent » se
+   repliait en laissant « parlent » seul : le repli est décidé (deux lignes
+   équilibrées), plus subi. */
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:22px;text-wrap:balance}
 #couverture .grandir{padding-top:80px}
 #couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
 #couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 48 px, pas 56 : « Journal de Montréal » (516 px à 56 px) perdait ses cinq
+   dernières lettres dans les 466 px que lui laisse la colonne de #823. */
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:48px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
@@ -272,7 +277,10 @@ const STEP0 = 1.2, STEP = 0.8, GROW = 0.6;
  *  campagne électorale » en demandait trois et se faisait couper (édition de
  *  20h du 17-09). On réduit le corps plutôt que d'amputer la nouvelle — un
  *  titre de Une ne se tronque pas. */
-const tailleTitre = (t: string) => (t.length > 58 ? 42 : t.length > 48 ? 46 : 50);
+// Paliers MESURÉS dans la colonne de #823 (h3 de 652 px) : à 42 px, le titre du
+// bébé (66 caractères) prend trois lignes ; à 40 il en prend deux, 38 garde une
+// marge. 44 est le corps de base de Jules.
+const tailleTitre = (t: string) => (t.length > 58 ? 38 : t.length > 48 ? 41 : 44);
 
 function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null {
   const trend = top.salienceTrend;
