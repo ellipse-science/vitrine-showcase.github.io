@@ -74,7 +74,7 @@ export const SAFE = { top: 150, bottom: HEIGHT - (LINKEDIN ? 120 : 380), left: 1
  *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
  *  rien ne les couvre. L'édition se place sous les deux logos. */
 export const BRAND = { top: SAFE.top, height: LINKEDIN ? 88 : 62 };  // LinkedIn : « logos clairement visibles »
-export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
+export const CONTENT_TOP = BRAND.top + BRAND.height + (LINKEDIN ? 150 : 62);  // LinkedIn : de l'air sous la ligne d'édition (Adrien, 17-09)
 export const CONTENT_BOTTOM = SAFE.bottom;
 
 export type Logos = { vitrine: string; capp: string };
@@ -261,7 +261,7 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
 /* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
    une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
-.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + (LINKEDIN ? 26 : 10)}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
@@ -364,10 +364,10 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:${LINKEDIN ? 316 : 288}px;left:270px;width:540px}
-#intro .module{position:absolute;top:${LINKEDIN ? 500 : 474}px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:${LINKEDIN ? 404 : 288}px;left:270px;width:540px}
+#intro .module{position:absolute;top:${LINKEDIN ? 588 : 474}px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:${LINKEDIN ? 566 : 540}px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:${LINKEDIN ? 654 : 540}px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:${LINKEDIN ? 0 : 30}px;height:700px;background:var(--ink);overflow:hidden}
 /* DANS le bandeau d'encre (haut à y 1190), pas au-dessus : à bottom:760 (#823)
@@ -462,7 +462,7 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:${LINKEDIN ? 388 : 300}px 180px 0}
 #fin .kick{font-size:28px;color:var(--soft);text-wrap:balance}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
