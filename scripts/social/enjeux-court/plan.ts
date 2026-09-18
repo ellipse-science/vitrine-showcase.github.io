@@ -54,6 +54,10 @@ export type Contexte = {
   edition: EditionRef;
 };
 
+/** Les trois périodes du module, sous les mots du site : « Jour », « Semaine »,
+ *  « Campagne » (onglets de la treemap). `month` n'est PAS « le mois » ici. */
+export type Periode = "day" | "week" | "month";
+
 export type Analyse = {
   id: string;
   /** Ce que l'analyse raconte, en une ligne (pour la liste). */
