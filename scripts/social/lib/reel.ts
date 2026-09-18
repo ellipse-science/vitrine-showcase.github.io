@@ -356,7 +356,11 @@ export const INTRO_CSS = `
 #intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
+/* DANS le bandeau d'encre (haut à y 1190), pas au-dessus : à bottom:760 (#823)
+   la ligne tombait sur le papier, en couleur papier — invisible (20h du 17-09).
+   À 600, ses deux lignes finissent à y 1320, 50 px sous le haut du bandeau et
+   50 px au-dessus des barres fantômes. */
+#intro .ed{position:absolute;left:180px;right:180px;bottom:600px;color:var(--paper);font-size:30px}
 #intro .ed b{display:block;font-weight:400}
 #intro .ed span{display:block;margin-top:12px;opacity:.72}
 `;
