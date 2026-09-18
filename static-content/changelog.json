@@ -1,5 +1,11 @@
 [
   {
+    "pr": 810,
+    "date": "2026-09-18T14:51:02Z",
+    "note": "Aucune. Cette PR ne change rien pour un visiteur du site : elle met à jour une page de documentation technique interne.",
+    "version": null
+  },
+  {
     "pr": 823,
     "date": "2026-09-18T00:28:32Z",
     "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
