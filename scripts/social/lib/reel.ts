@@ -52,7 +52,19 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
-export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
+/** FORMAT DE SORTIE. « instagram » (défaut) est le format de Jules, mesuré au
+ *  simulateur d'iPhone : on n'y touche pas. « linkedin » (Adrien, 2026-09-17 :
+ *  « c'est un format LinkedIn, on adapte le nôtre, on peut meubler le bas ») garde
+ *  le même cadre — logos en haut, colonne, palette — mais le lecteur n'y couvre
+ *  presque rien : le plancher descend à 1800 et le carré central n'est plus une
+ *  contrainte. Se choisit par `-- --format linkedin` ; le fichier prend le suffixe. */
+export const FORMAT: "instagram" | "linkedin" = (() => {
+  const i = process.argv.indexOf("--format");
+  const v = i >= 0 ? process.argv[i + 1] : process.argv.find((a) => a.startsWith("--format="))?.slice(9);
+  return v === "linkedin" ? "linkedin" : "instagram";
+})();
+export const LINKEDIN = FORMAT === "linkedin";
+export const SAFE = { top: 150, bottom: HEIGHT - (LINKEDIN ? 120 : 380), left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
@@ -61,7 +73,7 @@ export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 
  *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
  *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
  *  rien ne les couvre. L'édition se place sous les deux logos. */
-export const BRAND = { top: SAFE.top, height: 62 };
+export const BRAND = { top: SAFE.top, height: LINKEDIN ? 88 : 62 };  // LinkedIn : « logos clairement visibles »
 export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
 export const CONTENT_BOTTOM = SAFE.bottom;
 
@@ -240,10 +252,9 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-/* Le bas de la colonne descend au bas de la zone sûre (CONTENT_BOTTOM), plus
-   au bas du carré central : « prends l'espace en bas » (Adrien, 17-09). Le cœur
-   (data-cle) reste contrôlé dans le carré. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+/* Instagram : la colonne s'arrête au bas du carré central (Jules). LinkedIn : au
+   plancher de la zone sûre — « prends l'espace en bas » (Adrien, 17-09). */
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - (LINKEDIN ? CONTENT_BOTTOM : COEUR.bottom)}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
@@ -353,12 +364,12 @@ export function sceneIntro(opts: {
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:288px;left:270px;width:540px}
-#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:${LINKEDIN ? 316 : 288}px;left:270px;width:540px}
+#intro .module{position:absolute;top:${LINKEDIN ? 500 : 474}px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:${LINKEDIN ? 566 : 540}px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
-#intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
+#intro .band{position:absolute;left:180px;right:180px;bottom:${LINKEDIN ? 0 : 30}px;height:700px;background:var(--ink);overflow:hidden}
 /* DANS le bandeau d'encre (haut à y 1190), pas au-dessus : à bottom:760 (#823)
    la ligne tombait sur le papier, en couleur papier — invisible (20h du 17-09).
    À 600, ses deux lignes finissent à y 1320, 50 px sous le haut du bandeau et
@@ -452,17 +463,17 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
 #fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
-#fin .kick{font-size:28px;color:var(--soft)}
+#fin .kick{font-size:28px;color:var(--soft);text-wrap:balance}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .foot{position:absolute;left:180px;right:180px;top:1010px;${LINKEDIN ? "bottom:250px;justify-content:center;" : ""}display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
-#fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
-#fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
+#fin .logos{margin-top:${LINKEDIN ? 28 : 20}px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:${LINKEDIN ? "34px 52px" : "24px 40px"}}
+#fin .logos img{height:${LINKEDIN ? 70 : 56}px;width:auto;max-width:${LINKEDIN ? 260 : 220}px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
@@ -810,7 +821,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     }
   }
   // LE CŒUR : l'essentiel de la scène tient dans le carré central.
-  for (const el of scene.querySelectorAll("[data-cle]")) {
+  for (const el of (coeur ? scene.querySelectorAll("[data-cle]") : [])) {
     const r = el.getBoundingClientRect();
     if (r.height < 1) continue;
     const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
@@ -871,7 +882,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
 
 async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
   // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: LINKEDIN ? null : COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

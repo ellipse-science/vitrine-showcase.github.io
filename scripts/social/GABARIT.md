@@ -137,6 +137,25 @@ commun, une identité visuelle, un rappel marqué.**
   haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
   sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
   de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
+- **ARRÊTÉ · Deux formats, un seul gabarit : Instagram (Jules) et LinkedIn (le nôtre)**
+  (Adrien, 2026-09-17 : « c'est un format LinkedIn, ne détruis pas les formats de
+  Jules ; on adapte le nôtre pour LinkedIn, on peut meubler le bas »). Le format
+  d'Instagram, mesuré au simulateur, ne bouge pas. `-- --format linkedin` produit
+  `<module>_<date>_<h>_linkedin.mp4` avec le même cadre (logos en haut, colonne,
+  palette) et ces différences, parce que le lecteur de LinkedIn ne couvre presque
+  rien : plancher à **1800** (réserve de 120 px), pas de carré central, bandeau
+  de marque à 88 px (« logos clairement visibles »), l'image de la Une sous la
+  ligne d'édition et le texte dessous, surtitres redondants retirés (« 24 dernières
+  heures », « Par rapport à la dernière année »), échelle du centile, liste de
+  couverture, courbe de trajectoire et boîte des partenaires agrandies jusqu'au
+  plancher, liste du classement à 860 px avec titres sur deux lignes. Toute
+  différence entre les deux formats se lit dans le code sous `LINKEDIN`.
+- **ARRÊTÉ · La ligne de tendance repose sur les barres** (relevé de l'agent
+  design, 2026-09-17) : le `viewBox` de la ligne est la boîte du graphique en px
+  — avec « 900 », la ligne flottait au-dessus des barres et entrait dans le pavé
+  « Sommet ». **Les pastilles du classement sont reliées à leur courbe** par un
+  trait fin : écartées pour ne pas se chevaucher, elles pouvaient tomber à la
+  hauteur d'une autre courbe.
 - **ARRÊTÉ · Pied de page dans la zone sûre** (Jules Piral, 2026-09-17, mesuré au
   simulateur en PLEIN ÉCRAN) : à 70 px du bas, il tombait derrière la barre de
   navigation d'Instagram. Il remonte juste au-dessus des logos et ne garde que
