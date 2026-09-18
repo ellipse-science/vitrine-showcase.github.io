@@ -44,7 +44,9 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  On tient dans l'union des deux :
  *    · haut 150 px    : l'heure, l'îlot dynamique et « Reels » tombent sur la
  *      bande noire — c'est en haut qu'on perd le moins ;
- *    · bas 380 px     : compte, légende, son ;
+ *    · bas 300 px     : compte, légende, son. Ajusté après publication réelle
+ *      Instagram (2026-09-18) : il restait environ 1 cm entre le nom du module
+ *      et l'icône du compte, donc le pied pouvait descendre encore ;
  *    · côtés 110 px   : le rognage du plein écran ;
  *    · boutons        : rien à droite de x 900 entre y 1040 et le bas.
  *  ⚠️ Remplace les marges « organiques » des guides (300/450/60/120), trop
@@ -52,7 +54,7 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
-export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
+export const SAFE = { top: 150, bottom: HEIGHT - 300, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
@@ -61,8 +63,9 @@ export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 
  *  « les logos et l'édition en haut sont encore pognés en haut, mets-les en
  *  bas »). Elle était passée en haut le matin même parce qu'elle tombait sous la
  *  barre de navigation d'Instagram ; on sait maintenant, par mesure au
- *  simulateur, que la légende commence à y 1582 en plein écran. La barre se pose
- *  donc JUSTE AU-DESSUS, à 1440 → 1502, et l'édition sous elle, à 1512 → 1552.
+ *  simulateur, que la légende commence à y 1582 en plein écran. Après test réel
+ *  dans Instagram, on descend le pied de 50 px : la barre se pose à 1490 → 1552,
+ *  et le nom du module sous elle.
  *  Le haut ne garde plus que la barre de progression : le contenu commence à
  *  y 180 au lieu de 274. */
 export const BRAND = { top: SAFE.bottom - 130, height: 62 };
