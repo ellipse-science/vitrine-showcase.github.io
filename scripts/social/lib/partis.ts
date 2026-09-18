@@ -6,12 +6,12 @@ import { MEDIA_DANS } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
 
 import { joinFr } from "./commun";
-import { HASHTAGS as HASHTAGS_UNE } from "./post";
+import { HASHTAGS as HASHTAGS_UNE } from "./identite";
 
 export const IDENTITE = MODULES["partis-et-couverture"];
 export const MODULE = IDENTITE.nom;
 
-/** Mots-clics : ceux du gabarit commun (lib/post.ts), sans celui de la Une des Unes. */
+/** Mots-clics : ceux du gabarit commun (lib/identite.ts), sans celui de la Une des Unes. */
 export const HASHTAGS = ["#PartisEtCouverture", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
 
 // ── Formulations ────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@
 // édition à l'autre et qu'aucun dessin ne se lise comme un résultat.
 //
 // Les phrases sur la collecte reprennent le pied de page du site
-// (static-content/bottom.html) et le rappel commun (lib/post.ts).
+// (static-content/bottom.html) et le rappel commun (lib/identite.ts).
 //
 // Gabarit commun : scripts/social/GABARIT.md (section 5).
 
@@ -23,7 +23,7 @@ import { MODULES, type CleModule } from "@/lib/modules";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 
 import { captionTypo } from "./lib/commun";
-import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
+import { HASHTAGS as HASHTAGS_UNE } from "./lib/identite";
 import {
   COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, RESERVE_BAS, sceneFin, typo,
   type Scene,

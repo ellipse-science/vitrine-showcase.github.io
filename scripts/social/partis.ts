@@ -316,7 +316,7 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
+  // Instagram seulement pour l’instant : reseaux/ est écrit pour la Une des Unes.
   await fs.writeFile(`${base}_instagram.txt`, caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 

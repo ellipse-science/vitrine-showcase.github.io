@@ -24,8 +24,8 @@ import path from "node:path";
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
-import { TRAIT, oqlf } from "./lib/post";
-import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
+import { TRAIT, oqlf } from "./lib/identite";
+import { RESPONSABLE, formats, type Matiere, type Reseau } from "./reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
