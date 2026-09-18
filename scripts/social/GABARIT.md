@@ -180,7 +180,7 @@ commun, une identité visuelle, un rappel marqué.**
   explique. Les 10 px d'origine donnaient un bloc compact illisible au
   téléphone ; #823 pose 22 px sous le « 3/6 » (210 px) et 16 px sous le centile
   (170 px) — c'est le plancher, pas la cible.
-- **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
+- **ARRÊTÉ · Taille minimale du texte : 28 px** (`MIN_FONT`, porté de 26 à 28 par #823 — le texte du GABARIT ne suivait pas), ~10 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et
   taille sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre écart,
