@@ -82,20 +82,25 @@ export const domine: Analyse = {
 @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}`,
       phrases: [
         {
-          a: "Les 12 enjeux, en Une de l’actualité :",
-          b: "douze parts d’un même tout.",
+          // DIRE DE QUOI ON PARLE, EN MOTS SIMPLES (Jules Piral, 2026-09-18) :
+          // « Dans l'actualité, les thèmes qui dominent aujourd'hui ». On nomme
+          // le cadre (l'actualité), l'objet (les thèmes) et la période
+          // (aujourd'hui) avant de montrer quoi que ce soit.
+          a: "Dans l’actualité, les thèmes qui dominent aujourd’hui :",
+          b: esc(libelleEnjeuCourt(trois[0].issueFr)),
+          couleur: trois[0].color,
           debut: .15,
           fin: 3.0,
         },
         {
-          a: "Depuis minuit, les trois premiers :",
+          a: "Les trois premiers, sur douze :",
           b: `${somme} % à eux seuls.`,
           couleur: trois[0].color,
           debut: 3.2,
         },
       ],
-      methode: "Les 12 enjeux = 100 % · depuis minuit",
-      legende: `Depuis minuit, les trois enjeux les plus saillants — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze enjeux de la campagne. Les douze parts somment à 100 %.`,
+      methode: "Les 12 thèmes = 100 % · aujourd’hui",
+      legende: `Aujourd’hui (depuis minuit), les trois thèmes les plus présents — ${trois.map((t) => libelleEnjeuCourt(t.issueFr)).join(", ")} — pèsent ${somme} % de l’attention que les Unes de l’actualité consacrent aux douze thèmes de la campagne. Les douze parts somment à 100 %.`,
     };
   },
 };

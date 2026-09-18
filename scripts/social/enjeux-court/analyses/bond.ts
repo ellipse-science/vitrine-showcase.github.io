@@ -4,7 +4,7 @@
 
 import { libelleEnjeuCourt } from "@/lib/enjeux";
 
-import { AXE_LABEL, CSS_BARRES, PLAFOND_AXE, barresHtml, scriptBarres, type Analyse } from "../plan";
+import { CSS_BARRES, PLAFOND_AXE, barresHtml, scriptBarres, type Analyse } from "../plan";
 
 /** Sous ce seuil, une progression est du bruit de mesure, pas une nouvelle. */
 const SEUIL = 40;
@@ -45,21 +45,25 @@ export const bond: Analyse = {
       eclair: 2.1,
       phrases: [
         {
-          a: `L’enjeu qui monte le plus depuis ${depuis} :`,
+          // Même formulation que les deux autres analyses : le cadre, l'objet,
+          // la période, en mots simples, avant de montrer quoi que ce soit.
+          // `depuis` vient des données (« ce matin », « hier soir ») : jamais
+          // une période écrite à la main.
+          a: `Dans l’actualité, le thème qui monte le plus depuis ${depuis} :`,
           b: libelleEnjeuCourt(monte.issueFr),
           couleur: monte.color,
           debut: .15,
           fin: 3.0,
         },
         {
-          a: "Sa saillance :",
+          a: "Sa présence en Une de l’actualité :",
           b: `+${croissance} %.`,
           couleur: monte.color,
           debut: 3.2,
         },
       ],
-      methode: AXE_LABEL,
-      legende: `Depuis ${depuis}, c’est ${libelleEnjeuCourt(monte.issueFr)} dont la saillance progresse le plus parmi les douze enjeux de la campagne : +${croissance} %. Il occupe maintenant ${Math.round(monte.share)} % de l’attention que les Unes de l’actualité consacrent aux douze.`,
+      methode: "Part des 12 thèmes · aujourd’hui",
+      legende: `Depuis ${depuis}, c’est ${libelleEnjeuCourt(monte.issueFr)} dont la présence progresse le plus parmi les douze thèmes de la campagne : +${croissance} %. Il occupe maintenant ${Math.round(monte.share)} % de l’attention que les Unes de l’actualité consacrent aux douze thèmes.`,
     };
   },
 };
