@@ -11487,22 +11487,24 @@
 
 /* ============================================================
    Mascotte Datagotchi — coin inférieur droit (PromoDatagotchi.tsx)
-   Le vocabulaire est celui de Datagotchi, pas celui de la Vitrine : papier
-   clair, contour d'encre de 2 px, queue de bulle en escalier, police à pixels,
-   bouton ambre, ombre dure. C'est voulu — on doit reconnaître un invité. Ce qui
-   l'accorde à la page : le texte de la bulle est en Source Serif 4, la seule
-   police que les deux sites partagent.
+   Les formes sont celles de Datagotchi : contour d'encre de 2 px, queue de
+   bulle en escalier, police à pixels, bouton ambre, ombre dure. Ce qui l'accorde à la page : le papier et l'encre
+   sont ceux de la Vitrine, et le texte de la bulle est en Source Serif 4, la
+   seule police que les deux sites partagent.
    N'anime que transform et opacity ; les phases viennent de `data-phase`.
    ============================================================ */
 @font-face {
   font-family: "Datagotchi Pixel";
-  src: url("/datagotchi/000webfont.woff2") format("woff2");
+  src: url("/datagotchi/pixeloperatorsc.woff2") format("woff2");
   font-display: swap;
 }
 
 .dg-promo {
-  --dg-encre: #2a1e14;
-  --dg-papier: #faf5ec;
+  /* Papier et encre sont ceux de la Vitrine, pas ceux de Datagotchi (#faf5ec
+     sur #2a1e14) : le papier de Datagotchi, plus blanc, faisait une tache
+     claire sur la page (retour reçu le 2026-09-18). */
+  --dg-encre: var(--ink, #1C1917);
+  --dg-papier: var(--paper, #F3ECDD);
   --dg-ambre: #e0912a;
   --dg-ambre-vif: #f7c05a;
   --dg-ambre-fonce: #8f5314;
@@ -11526,13 +11528,15 @@
 .dg-bulle {
   position: relative;
   box-sizing: border-box;
-  width: min(292px, calc(100vw - 32px));
+  /* --dg-largeur : posée par le composant quand la bulle tient dans la marge
+     à droite de la colonne. Sinon elle ne s'ouvre qu'à la demande. */
+  width: var(--dg-largeur, min(348px, calc(100vw - 32px)));
   margin: 0 0 24px;
-  padding: 13px 16px 15px;
+  padding: 16px 20px 19px;
   background: var(--dg-papier);
   border: 2px solid var(--dg-encre);
   border-radius: 2px;
-  box-shadow: 5px 5px 0 rgba(42, 30, 20, 0.16);
+  box-shadow: 5px 5px 0 rgba(28, 25, 23, 0.16);
   /* Elle se déplie depuis la pointe de sa queue. */
   transform-origin: calc(100% - 48px) calc(100% + 20px);
   transform: scale(0.5) translateY(10px);
@@ -11544,7 +11548,7 @@
     visibility 0s linear 160ms;
   will-change: transform, opacity;
 }
-.dg-promo[data-phase="parle"] .dg-bulle {
+.dg-promo[data-ouvert] .dg-bulle {
   transform: none;
   opacity: 1;
   visibility: visible;
@@ -11567,18 +11571,18 @@
 .dg-queue-trait { fill: none; stroke: var(--dg-encre); stroke-width: 2; }
 
 .dg-nom {
-  margin: 0 28px 7px 0;
+  margin: 0 30px 9px 0;
   font-family: "Datagotchi Pixel", 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  line-height: 1.2;
-  letter-spacing: 0.06em;
+  font-size: 16px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
   color: var(--dg-ambre-fonce);
 }
 .dg-texte {
-  margin: 0 0 13px;
+  margin: 0 0 16px;
   font-family: 'Source Serif 4', Georgia, serif;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 18.5px;
+  line-height: 1.38;
   color: var(--dg-encre);
   text-wrap: pretty;
 }
@@ -11595,14 +11599,19 @@
 .dg-action {
   display: inline-flex;
   align-items: center;
-  height: 38px;
-  padding: 0 15px;
+  height: 46px;
+  padding: 0 18px;
   background: var(--dg-ambre);
   border: 2px solid var(--dg-encre);
   border-radius: 2px;
-  font-family: "Datagotchi Pixel", 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.05em;
+  /* Le bouton est en Source Serif 4 grasse, pas en police à pixels : une
+     police à pixels n'est nette qu'à 16 px, où ses capitales font 9 px de
+     haut, trop petit sur l'ambre (retour reçu le 2026-09-18). Les boutons de
+     Datagotchi sont eux aussi dans une police de texte. */
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.005em;
   color: var(--dg-encre);
   text-decoration: none;
   /* Le bouton attend la fin de la phrase. */
@@ -11647,7 +11656,7 @@
   transition: background-color 120ms;
 }
 .dg-fermer svg { stroke: var(--dg-encre); stroke-width: 1.6; fill: none; }
-.dg-fermer:hover { background: rgba(42, 30, 20, 0.1); }
+.dg-fermer:hover { background: rgba(28, 25, 23, 0.1); }
 
 .dg-action:focus-visible,
 .dg-fermer:focus-visible,
@@ -11696,6 +11705,40 @@
   100% { transform: translateY(calc(112% + var(--dg-bas))); }
 }
 
+/* Le « ! » : seulement quand la bulle ne tient pas dans la marge. Il dit qu'il
+   y a un message sans rien poser sur le contenu ; il s'efface bulle ouverte. */
+.dg-signe {
+  position: absolute;
+  /* Au-dessus de la tête, à l'intérieur de la largeur du personnage : posé à
+     sa gauche, il mordait sur la colonne à 1440. */
+  top: -22px;
+  left: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  background: var(--dg-ambre);
+  border: 2px solid var(--dg-encre);
+  border-radius: 2px;
+  box-shadow: 3px 3px 0 rgba(28, 25, 23, 0.16);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--dg-encre);
+  opacity: 0;
+  transform: scale(0.3);
+  transition: transform 160ms ease-in, opacity 120ms ease-in;
+  pointer-events: none;
+}
+.dg-perso { position: relative; }
+.dg-promo[data-discret][data-phase="parle"]:not([data-ouvert]) .dg-signe {
+  opacity: 1;
+  transform: none;
+  transition: transform 420ms var(--dg-ressort) 120ms, opacity 140ms ease-out 120ms;
+}
+
 /* Au repos : le chien a son GIF, le professeur flotte à peine. Le survol
    agit sur l'image, le flottement sur son enveloppe — les deux se composent. */
 .dg-perso-vie { display: block; }
@@ -11717,6 +11760,13 @@
     right: max(12px, env(safe-area-inset-right));
   }
   .dg-promo[data-perso="prof"] .dg-perso { margin-bottom: 0; }
+  /* Un tiers plus petit : sur un téléphone il est posé sur du texte. Le chien
+     passe de ×6 à ×4, un multiple entier pour que ses pixels restent nets. */
+  .dg-promo[data-perso="chien"] img { width: 56px; height: 60px; }
+  .dg-promo[data-perso="prof"] img { width: 54px; height: 71px; }
+  .dg-perso { margin-right: 6px; }
+  .dg-queue { right: 22px; }
+  .dg-signe { top: -24px; left: 0; }
 }
 /* Sur dev seulement : au-dessus du panneau du laboratoire de palettes. */
 .dg-promo[data-leve] { --dg-bas: 70px; }
@@ -11727,13 +11777,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .dg-signe { transform: none; transition: opacity 200ms; }
   .dg-perso { transform: none; opacity: 0; transition: opacity 300ms; }
   .dg-promo[data-phase="entre"] .dg-perso,
   .dg-promo[data-phase="parle"] .dg-perso { animation: none; opacity: 1; }
   .dg-promo[data-phase="sort"] .dg-perso { animation: none; opacity: 0; }
   .dg-promo[data-perso="prof"][data-phase="parle"] .dg-perso-vie { animation: none; }
   .dg-bulle,
-  .dg-promo[data-phase="parle"] .dg-bulle { transform: none; transition: opacity 200ms, visibility 0s; }
+  .dg-promo[data-ouvert] .dg-bulle { transform: none; transition: opacity 200ms, visibility 0s; }
   .dg-action { transform: none; }
   .dg-perso:hover img { transform: none; }
 }

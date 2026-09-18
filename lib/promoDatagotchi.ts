@@ -57,3 +57,18 @@ export function choisirPerso(memorise: unknown, hasard: number): Perso {
   if (estPerso(memorise)) return memorise;
   return hasard < 0.5 ? "chien" : "prof";
 }
+
+// La bulle ne recouvre jamais le contenu de son propre chef : elle ne s'ouvre
+// seule que si elle tient dans la marge à droite de la colonne. `marge` est la
+// largeur libre (px) entre la colonne et le bord de la fenêtre ; le résultat
+// est la largeur à donner à la bulle, ou null si elle n'y tient pas (elle ne
+// s'ouvre alors qu'à la demande du visiteur).
+export const BULLE_MAX = 348;
+export const BULLE_MIN = 300;
+// 20 px jusqu'au bord de la fenêtre + 16 px d'air avant la colonne.
+export const BULLE_DEGAGEMENT = 36;
+
+export function largeurBulle(marge: number): number | null {
+  const place = Math.floor(marge) - BULLE_DEGAGEMENT;
+  return place >= BULLE_MIN ? Math.min(BULLE_MAX, place) : null;
+}
