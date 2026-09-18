@@ -64,11 +64,9 @@ function needle(row: RowView, delay: number): string {
 const pchip = (row: RowView) => `<span class="pchip" style="background:${row.color}">${esc(row.label)}</span>`;
 
 // ── Mise en page ────────────────────────────────────────────────────────────
-// Les blocs de contenu descendent jusqu'à `bottom:420px`, c'est-à-dire y 1500 :
-// le BAS DU CARRÉ CENTRAL. Aller jusqu'à la zone sûre (1540) ferait sortir du
-// carré ce qui est marqué `data-cle` — et c'est justement ce qu'on doit voir
-// dans la grille du profil. Les rangées se répartissent sur toute la hauteur au
-// lieu de se tasser sous le titre (Jules Piral, 17-09 : « pogné en moton »).
+// Les blocs de contenu descendent jusqu'au bas de la zone utile (y 1570) et
+// les rangées s'y répartissent, au lieu de se tasser sous le titre
+// (Jules Piral, 17-09 : « pogné en moton », puis « baisse le tout vers le bas »).
 // Zone sûre (Reels organiques) : texte de x 76 à 960, y 220 → 1520.
 const CSS = `
 .kick{font-size:28px;color:var(--softer);letter-spacing:.14em}

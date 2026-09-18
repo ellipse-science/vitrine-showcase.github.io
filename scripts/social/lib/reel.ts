@@ -52,7 +52,7 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
-export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
+export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
@@ -235,13 +235,15 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /* LA ZONE UTILE : de CONTENT_TOP à CONTENT_BOTTOM, entre les deux marges
    latérales. Une scène y empile ses blocs et la colonne les répartit sur toute
    la hauteur utile — sans ça, tout se tasse en haut et le bas reste vide.
-   Elle s'arrête au BAS DU CARRÉ CENTRAL (y 1500), pas à la limite de la zone
-   sûre : ce qui porte data-cle doit rester dans le carré vu dans la grille
+   Elle descend jusqu'à la limite mesurée de la zone sûre (y 1570). Ce qui
+   porte data-cle doit en revanche tenir dans le carré central (y 420 → 1500) :
+   une scène dont le bloc clé irait plus bas le centre au lieu de l'étirer
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - COEUR.bottom}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.zone-utile > [data-cle]:last-child{margin-bottom:${CONTENT_BOTTOM - COEUR.bottom}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */

@@ -180,7 +180,7 @@ const CSS = `
 #centile .note{position:absolute;left:380px;right:180px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;bottom:380px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:180px;right:180px;bottom:350px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 
@@ -189,7 +189,7 @@ const CSS = `
 #couverture .grandir{padding-top:80px}
 #couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
 #couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:50px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}

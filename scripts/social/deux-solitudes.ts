@@ -75,7 +75,7 @@ const CSS = `
 #sonar .chart{position:absolute;left:180px;right:180px;top:430px;height:600px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:420px}
+#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:350px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
