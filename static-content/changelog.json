@@ -1,5 +1,11 @@
 [
   {
+    "pr": 823,
+    "date": "2026-09-18T00:28:32Z",
+    "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
+    "version": null
+  },
+  {
     "pr": 822,
     "date": "2026-09-17T15:15:38Z",
     "note": "Rien ne change sur le site.",
