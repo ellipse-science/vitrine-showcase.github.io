@@ -122,14 +122,17 @@ const CSS = `
 #intro .ghost div{flex:1;transform-origin:bottom}
 
 /* 2. Une n°1 */
-#une .art{position:absolute;left:30px;top:30px;width:1020px;height:860px;overflow:hidden}
+/* « Descends tout, libère le haut avec les logos clairement visibles » (Adrien,
+   17-09) : la barre des logos et la ligne d'édition occupent y 150 → 260 ; l'image
+   commence sous elles, à 280, et le texte prend le bas de la zone sûre. */
+#une .art{position:absolute;left:30px;top:280px;width:1020px;height:720px;overflow:hidden}
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
-#une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:742px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
+#une .noart{position:absolute;left:30px;top:280px;width:1020px;height:720px;display:flex;align-items:center;justify-content:center}
+#une .rank{position:absolute;top:330px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .credit{position:absolute;top:944px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:830px}
+#une .body{position:absolute;left:180px;right:180px;top:1030px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -541,7 +544,7 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
     html: `
       <div class="zone-utile">
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>24 dernières heures</div>
+          <!-- Surtitre « 24 dernières heures » retiré (Adrien, 17-09) : redondant avec la ligne d'édition, et ça libère de l'espace. -->
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
       <div class="leg${stories.length > 2 ? " trois" : ""}">${legend}</div>
