@@ -137,6 +137,25 @@ commun, une identité visuelle, un rappel marqué.**
   haut, trop permissives sur les côtés. Le simulateur d'iPhone 17 de l'aperçu
   sert de mesure ; les 14 reels ont été redécoupés le même jour (contenu décalé
   de 76 à 116 px à gauche, graphiques resserrés, titres remontés).
+- **ARRÊTÉ · Deux formats, un seul gabarit : Instagram (Jules) et LinkedIn (le nôtre)**
+  (Adrien, 2026-09-17 : « c'est un format LinkedIn, ne détruis pas les formats de
+  Jules ; on adapte le nôtre pour LinkedIn, on peut meubler le bas »). Le format
+  d'Instagram, mesuré au simulateur, ne bouge pas. `-- --format linkedin` produit
+  `<module>_<date>_<h>_linkedin.mp4` avec le même cadre (logos en haut, colonne,
+  palette) et ces différences, parce que le lecteur de LinkedIn ne couvre presque
+  rien : plancher à **1800** (réserve de 120 px), pas de carré central, bandeau
+  de marque à 88 px (« logos clairement visibles »), l'image de la Une sous la
+  ligne d'édition et le texte dessous, surtitres redondants retirés (« 24 dernières
+  heures », « Par rapport à la dernière année »), échelle du centile, liste de
+  couverture, courbe de trajectoire et boîte des partenaires agrandies jusqu'au
+  plancher, liste du classement à 860 px avec titres sur deux lignes. Toute
+  différence entre les deux formats se lit dans le code sous `LINKEDIN`.
+- **ARRÊTÉ · La ligne de tendance repose sur les barres** (relevé de l'agent
+  design, 2026-09-17) : le `viewBox` de la ligne est la boîte du graphique en px
+  — avec « 900 », la ligne flottait au-dessus des barres et entrait dans le pavé
+  « Sommet ». **Les pastilles du classement sont reliées à leur courbe** par un
+  trait fin : écartées pour ne pas se chevaucher, elles pouvaient tomber à la
+  hauteur d'une autre courbe.
 - **ARRÊTÉ · Pied de page dans la zone sûre** (Jules Piral, 2026-09-17, mesuré au
   simulateur en PLEIN ÉCRAN) : à 70 px du bas, il tombait derrière la barre de
   navigation d'Instagram. Il remonte juste au-dessus des logos et ne garde que
@@ -146,7 +165,41 @@ commun, une identité visuelle, un rappel marqué.**
   2026-09-17 : « la barre qui avance en haut passe à travers la caméra frontale ») :
   elle se pose à y 128, dans la largeur de la zone sûre, et non plus à 28 px du
   bord supérieur.
-- **ARRÊTÉ · Taille minimale du texte : 26 px** (`MIN_FONT`), ~9,5 points sur un
+- **ARRÊTÉ · Aucun texte empilé sur un autre** (Jules Piral, 2026-09-17 : « des
+  infos et du texte empilés les uns sur les autres »). Le contrôle mesure chaque
+  ligne de texte visible à la fin de chaque scène et bloque le MP4 si deux lignes
+  se recouvrent (cœur de la ligne, pour ne pas compter l'interlignage serré d'un
+  titre). ⚠️ Il ne voit ni le texte posé sur un graphique ni les chevauchements
+  en cours d'animation : les images fixes restent à relire. ⚠️ Il ne voit pas non
+  plus un texte TRONQUÉ par son propre fond, ni un repli de ligne subi : ces
+  deux-là se lisent à 100 %, pas sur une planche contact réduite (17-09).
+- **ARRÊTÉ · Aucun texte tronqué, aucun repli subi** (Adrien, 2026-09-17, sur
+  l'édition de 16h). Trois défauts sortis le même jour, tous invisibles aux
+  contrôles parce que rien ne sortait du cadre :
+  - **« Sommet » débordait de son pavé d'encre.** L'étiquette prenait la largeur
+    de la BARRE (113 px) alors que le mot en mono espacé en fait 125 : le « T »
+    sortait du noir et devenait papier sur papier. #823 lui donne 190 px fixes,
+    centrés sur la barre.
+  - **La ligne d'édition se repliait sur « 2026 ».** 960 px de mono espacé pour
+    884 px utiles — et 720 depuis la colonne de #823. Elle tient sur DEUX lignes
+    voulues — l'heure, puis la date — ce qui passe quelle que soit la date
+    (« Mercredi 30 septembre » est le pire cas). Vaut pour tous les modules
+    (`INTRO_CSS`).
+  - **Un titre de Une ne se tronque jamais.** Le 17-09 à 20h, « Un bébé trouvé
+    dans un campement bouleverse la campagne électorale » demandait trois lignes
+    dans une boîte cadrée à deux : le corps du titre s'adapte à sa longueur
+    (`tailleTitre`) plutôt que d'amputer la nouvelle.
+  - Règle générale : **un repli ou une coupe se DÉCIDENT, ils ne se subissent
+    pas.** La coupe à une ligne des nouvelles n°2 et n°3 du classement est
+    voulue et reste ; ce qui est proscrit, c'est la coupe qu'on n'a pas choisie.
+  ⚠️ Le contrôle ne voit ni un texte tronqué par son propre fond, ni un repli
+  subi : ces deux-là se lisent à 100 %, pas sur une planche contact réduite.
+- **ARRÊTÉ · De l'air sous les grands chiffres** (Adrien, 2026-09-17 : « trop
+  serré, fait attention »). Une légende ne se colle pas au nombre qu'elle
+  explique. Les 10 px d'origine donnaient un bloc compact illisible au
+  téléphone ; #823 pose 22 px sous le « 3/6 » (210 px) et 16 px sous le centile
+  (170 px) — c'est le plancher, pas la cible.
+- **ARRÊTÉ · Taille minimale du texte : 28 px** (`MIN_FONT`, porté de 26 à 28 par #823 — le texte du GABARIT ne suivait pas), ~10 points sur un
   téléphone, où le reel s'affiche à ~36 %.
 - **ARRÊTÉ · Vérification BLOQUANTE.** `checkFrame` contrôle bords, zone sûre, cœur et
   taille sur chaque scène ; `--mp4` refuse de produire la vidéo au moindre écart,
