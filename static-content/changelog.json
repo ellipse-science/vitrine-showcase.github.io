@@ -1,5 +1,11 @@
 [
   {
+    "pr": 827,
+    "date": "2026-09-19T02:21:02Z",
+    "note": "La Vitrine lit désormais ses données depuis l'environnement de production, séparé de celui du développement.",
+    "version": null
+  },
+  {
     "pr": 809,
     "date": "2026-09-19T02:03:44Z",
     "note": "Le mode « promesses de la campagne » du Polimètre+ continuera de s'afficher même une fois le site basculé sur les données de production, le temps que cette mesure y soit elle-même activée.",
