@@ -1,5 +1,11 @@
 [
   {
+    "pr": 829,
+    "date": "2026-09-19T11:45:06Z",
+    "note": "La collecte des comptes de réseaux sociaux des candidats tourne désormais toute la journée plutôt qu'une demi-journée, afin de remonter plus vite l'historique des publications, et les comptes officiels des cinq partis rejoignent les 601 comptes de candidats déjà suivis. Rien ne change sur le site : cette collecte ne publie aucune table et n'alimente aucun module.",
+    "version": null
+  },
+  {
     "pr": 827,
     "date": "2026-09-19T02:21:02Z",
     "note": "La Vitrine lit désormais ses données depuis l'environnement de production, séparé de celui du développement.",
