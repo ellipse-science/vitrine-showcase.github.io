@@ -24,12 +24,13 @@ import path from "node:path";
 import { listEditions, loadHeadlineEvents, type EditionRef, type UneEvent } from "@/lib/data/headlineEvents";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
-import { TRAIT, oqlf } from "./lib/post";
-import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
+import { dateLongue } from "./lib/commun";
+import { TRAIT, oqlf } from "./lib/identite";
+import { RESPONSABLE, formats, type Matiere, type Reseau } from "./reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
-  parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
+  parseArgs, produce, RESERVE_BAS, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
@@ -73,7 +74,7 @@ async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEven
   try {
     const hero = (await (await fetch(`${SITE_URL}/data/hero-selection.json`)).json()) as { storyline_id?: string; event_id?: string };
     if (!matchesCurrentUneArt(hero, top)) {
-      console.warn("  illustration ignorée : le site publié illustre une autre Une que le dépôt local.");
+      console.warn("  illustration ignorée : le site publié illustre une autre Une de l’actualité que le dépôt local.");
       return null;
     }
     const res = await fetch(`${SITE_URL}/data/generated-art/latest.png`);
@@ -94,8 +95,8 @@ async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEven
 function centileMessage(centile: number): { c: number; big: number; before: string; after: string } {
   const c = Math.max(1, Math.min(99, Math.round(centile)));
   return c >= 50
-    ? { c, big: c, before: "Cette actualité est plus saillante que", after: "des Unes québécoises de l’année" }
-    : { c, big: 100 - c, before: "", after: "des Unes québécoises de l’année sont plus saillantes que cette actualité" };
+    ? { c, big: c, before: "Cette actualité est plus saillante que", after: "des Unes de l’actualité québécoises de l’année" }
+    : { c, big: 100 - c, before: "", after: "des Unes de l’actualité québécoises de l’année sont plus saillantes que cette actualité" };
 }
 
 /** « 6/6 des médias québécois en parlent ». */
@@ -125,7 +126,7 @@ const CSS = `
 #une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
 #une .credit{position:absolute;top:742px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:830px}
+#une .body{position:absolute;left:180px;right:180px;top:830px;bottom:${RESERVE_BAS}px;display:flex;flex-direction:column;justify-content:space-between;padding-bottom:14px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -145,7 +146,7 @@ const CSS = `
 #trajectoire .bandeau{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
 #trajectoire .chip{font-size:28px;padding:9px 16px}
 #trajectoire .when{display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:relative;flex:none;height:580px}
+#trajectoire .chart{position:relative;flex:none;height:552px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -180,16 +181,16 @@ const CSS = `
 #centile .note{position:absolute;left:380px;right:180px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;bottom:380px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:180px;right:180px;bottom:${RESERVE_BAS}px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 
-#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:1.02;color:var(--blue)}
+#couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:190px;line-height:1.02;color:var(--blue)}
 #couverture .lab{font-size:44px;line-height:1.1;margin-top:22px}
-#couverture .grandir{padding-top:80px}
+#couverture .grandir{justify-content:flex-end;padding-bottom:24px}
 #couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#couverture li{height:86px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:50px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
@@ -197,22 +198,22 @@ const CSS = `
 
 /* 6. Classement */
 #classement .head{flex:none}
-#classement h3{font-size:58px;line-height:1.02;margin-top:10px}
+#classement h3{font-size:52px;line-height:1.02;margin-top:8px}
 #classement .leg{flex:none}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 #classement .leg.trois .t{-webkit-line-clamp:1}
-#classement .item{display:flex;gap:20px;align-items:flex-start;padding:9px 0;border-top:2px solid var(--rule)}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:5px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0;text-align:left}
 #classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:relative;flex:none;height:560px}
+#classement .chart{position:relative;flex:none;height:440px}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
+#classement .xl{position:absolute;top:360px;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
 #classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
@@ -320,7 +321,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     data: {
       points: pts.map((p, i) => ({
         v: p.cumul,
-        label: p.isAbsent ? "Hors des Unes" : p.level,
+        label: p.isAbsent ? "Hors des Unes de l’actualité" : p.level,
         when: `${celestial(hours[i], COLORS.soft, 36)}<span>${esc(p.timeLabel)}</span>`,
         bg: p.isAbsent ? COLORS.rule : bandOf(p.rank).bg,
         fg: p.isAbsent ? COLORS.ink : bandOf(p.rank).fg,
@@ -407,7 +408,7 @@ function sceneCouverture(top: UneEvent): Scene | null {
     const label = (MEDIA_LABELS[id] ?? id).replace(/^Le Journal/, "Journal");
     const on = top.mediaToday.some((m) => sameOutlet(m.name, label));
     const d = 0.8 + (on ? lit++ : i) * 0.25;
-    return `<li class="${on ? "" : "off"}" style="animation:fadeUp .45s ${d}s both"><b>${esc(label)}</b><span class="mono">${on ? "✓ En Une" : "Pas en Une"}</span></li>`;
+    return `<li class="${on ? "" : "off"}" style="animation:fadeUp .45s ${d}s both"><b>${esc(label)}</b><span class="mono">${on ? "✓ En Une de l’actualité" : "Pas en Une de l’actualité"}</span></li>`;
   }).join("");
   return {
     id: "couverture", duration: 5,
@@ -419,7 +420,7 @@ function sceneCouverture(top: UneEvent): Scene | null {
         <div class="lab pf" ${anim("fadeIn", .5, .6)}>${coverageLabel(top.qcOutletCount)}</div>
       </div>
       <ul>${rows}</ul>
-      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une depuis ${txt(top.saillantSince)}</div>` : ""}</div>`,
+      ${top.saillantSince ? `<div class="since" ${anim("fadeUp", .6, 2.6)}>En Une de l’actualité depuis ${txt(top.saillantSince)}</div>` : ""}</div>`,
   };
 }
 
@@ -652,7 +653,7 @@ async function main() {
   const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const top3 = data?.top3 ?? [];
   const classement = data?.classement ?? top3;
-  if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
+  if (!top3.length) throw new Error(`Aucune Une de l’actualité pour l'édition ${edition.key}.`);
   const top = top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${top.title}`);
@@ -665,11 +666,10 @@ async function main() {
     sceneIntro({
       logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes,
       visuel: visuelAccroche(top),
-      edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
     }),
     sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
-    sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: edition.pubHour, logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
@@ -678,7 +678,8 @@ async function main() {
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
-    footerRight: `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`,
+    date: dateLongue(edition),
+    module: { nom: MODULE.nom, couleur: MODULE.accent },
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");

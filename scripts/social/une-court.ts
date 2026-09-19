@@ -1,40 +1,41 @@
-// Reels COURTS du module « Partis et couverture » : 12 secondes, un seul plan,
-// une analyse à la fois. Chaque analyse est un fichier de `partis-court/analyses/`.
+// Reels COURTS du module « La Une des Unes » : 12 secondes, un seul plan, une
+// analyse à la fois. Chaque analyse est un fichier de `une-court/analyses/`.
 //
-//   npm run reel:partis-court                         # toutes les analyses du jour, index des aperçus
-//   npm run reel:partis-court -- --analyse record     # une seule
-//   npm run reel:partis-court -- --analyse record --mp4
-//   npm run reel:partis-court -- --liste              # les analyses et si elles s'appliquent aujourd'hui
+//   npm run reel:une-court                        # toutes les analyses du jour, index des aperçus
+//   npm run reel:une-court -- --analyse bond      # une seule
+//   npm run reel:une-court -- --analyse bond --mp4
+//   npm run reel:une-court -- --liste             # les analyses et si elles s'appliquent aujourd'hui
 //
-// Une analyse qui ne s'applique pas aux données du jour (pas de record, pas de
-// bascule…) est simplement sautée : on ne force jamais une histoire.
+// Une analyse qui ne s'applique pas aux données du jour (pas de bond, pas de
+// nouvelle qui s'installe…) est simplement sautée.
 //
 // Décisions : scripts/social/GABARIT.md, section 4 (version courte).
 
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { instantPublicationBloc } from "@/lib/data/headlineEvents";
-import { loadParties } from "@/lib/data/parties";
+import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
+import { MODULES } from "@/lib/modules";
 
 import { dateLongue, pubHourLabel, resolveEdition } from "./lib/commun";
-import { IDENTITE, MODULE, mediaMixes } from "./lib/partis";
 import {
   FIN_CSS, SLOW, buildPage, chargerPartenaires, loadLogos, openInBrowser, parseArgs, produce, sceneFin, type Scene,
 } from "./lib/reel";
-import { ANALYSES } from "./partis-court/analyses";
-import { DUREE_PLAN, MAX_SECONDES, verifierDuree, legendeComplete, scenePlanHtml, type Contexte } from "./partis-court/plan";
+import { ANALYSES } from "./une-court/analyses";
+import { DUREE_PLAN, MAX_SECONDES, verifierDuree, MODULE, legendeComplete, scenePlanHtml, type Contexte } from "./une-court/plan";
+
+/** Identité du module : couleur et papier (lib/modules.ts). */
+const IDENTITE = MODULES["une-des-unes"];
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { edition, current } = await resolveEdition(args);
-  const past = edition.key !== current.key;
-  const data = await loadParties(past ? edition.navDateIso : undefined, past ? instantPublicationBloc(edition.key) ?? undefined : undefined);
-  if (!data) throw new Error("Aucune donnée de partis.");
-  if (data.indisponible) throw new Error(`Module indisponible (${data.indisponible.raison}).`);
-  const rows = [...data.ranges.today.rows].sort((a, b) => a.rang - b.rang);
-  const ctx: Contexte = { data, rows, mixes: mediaMixes(data), edition };
+  const { edition } = await resolveEdition(args);
+  const data = await loadHeadlineEvents(edition.key, { classement: 5 });
+  const classement = data?.classement ?? data?.top3 ?? [];
+  if (!classement.length) throw new Error(`Aucune Une de l’actualité pour l'édition ${edition.key}.`);
+  const ctx: Contexte = { classement, top: classement[0], edition };
   console.log(`${MODULE} · reels courts · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
+  console.log(`  n°1 : ${ctx.top.title}`);
 
   const choix = typeof args.analyse === "string" ? ANALYSES.filter((a) => a.id === args.analyse) : ANALYSES;
   if (!choix.length) throw new Error(`Analyse « ${args.analyse} » inconnue. Analyses : ${ANALYSES.map((a) => a.id).join(", ")}`);
@@ -72,7 +73,7 @@ async function main() {
       logos,
       theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
     });
-    const base = path.join(outDir, `partis-court-${a.id}_${edition.navDateIso}_${pubHourLabel(edition)}`);
+    const base = path.join(outDir, `une-court-${a.id}_${edition.navDateIso}_${pubHourLabel(edition)}`);
     await fs.writeFile(`${base}_instagram.txt`, legendeComplete(plan));
     console.log(`\n▶ ${a.id} — ${a.idee}`);
     await produce({ html, scenes, title: `${MODULE} · ${a.id}`, base, args: plusieurs ? { ...args, "sans-ouvrir": true } : args });
@@ -81,7 +82,7 @@ async function main() {
 
   // Plusieurs analyses : une page qui les rassemble, pour les comparer d'un coup d'œil.
   if (plusieurs && faits.length && !args.mp4 && typeof args.apercu !== "string") {
-    const index = path.join(outDir, `partis-court_${edition.navDateIso}_${pubHourLabel(edition)}_index.html`);
+    const index = path.join(outDir, `une-court_${edition.navDateIso}_${pubHourLabel(edition)}_index.html`);
     await fs.writeFile(index, `<!doctype html><meta charset="utf-8"><title>Reels courts · ${MODULE}</title>
 <style>body{margin:0;background:#1C1917;color:#F3ECDD;font:15px "IBM Plex Mono",monospace;padding:24px}h1{font:700 22px Georgia,serif;margin:0 0 18px}
 .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}.c{background:#292524;padding:10px}

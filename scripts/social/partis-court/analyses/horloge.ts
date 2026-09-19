@@ -8,7 +8,7 @@ import { COLORS, LARGEUR, duree, type Analyse } from "../plan";
 
 export const horloge: Analyse = {
   id: "horloge",
-  idee: "Le temps passé en Une, en heures et minutes : le parti en tête contre tous les autres",
+  idee: "Le temps passé en Une de l’actualité, en heures et minutes : le parti en tête contre tous les autres",
   construire({ rows }) {
     const [lead, ...autres] = rows;
     const autresMin = autres.reduce((t, r) => t + r.minutesUne, 0);
@@ -37,10 +37,10 @@ export const horloge: Analyse = {
     c.textContent=h?(h+"\\u00A0h\\u00A0"+String(r).padStart(2,"0")):(r+"\\u00A0min");
   });`,
       phrases: [
-        { a: `Depuis minuit, temps en Une pour ${SIGLE_ARTICLE[lead.key]} :`, b: duree(lead.minutesUne), couleur: lead.color, debut: .15, fin: 3.0 },
+        { a: `Depuis minuit, temps en Une de l’actualité pour ${SIGLE_ARTICLE[lead.key]} :`, b: duree(lead.minutesUne), couleur: lead.color, debut: .15, fin: 3.0 },
         { a: `Pour les ${autres.length} autres partis réunis :`, b: `${duree(autresMin)} seulement`, debut: 3.2 },
       ],
-      legende: `Depuis minuit, ${SIGLE_ARTICLE[lead.key]} a occupé ${duree(lead.minutesUne)} de temps en Une, tous médias confondus. ${cap(`les ${autres.length} autres partis réunis : ${duree(autresMin)}`)}.`,
+      legende: `Depuis minuit, ${SIGLE_ARTICLE[lead.key]} a occupé ${duree(lead.minutesUne)} de temps en Une de l’actualité, tous médias confondus. ${cap(`les ${autres.length} autres partis réunis : ${duree(autresMin)}`)}.`,
     };
   },
 };

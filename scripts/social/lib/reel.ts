@@ -52,18 +52,51 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
-export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
+export const SAFE = { top: 150, bottom: HEIGHT - 350, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
  *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
-/** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
- *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
- *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
- *  rien ne les couvre. L'édition se place sous les deux logos. */
-export const BRAND = { top: SAFE.top, height: 62 };
-export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
-export const CONTENT_BOTTOM = SAFE.bottom;
+/** ⚠️ LA BARRE DE MARQUE REDESCEND EN BAS (Jules Piral, 2026-09-17, le soir :
+ *  « les logos et l'édition en haut sont encore pognés en haut, mets-les en
+ *  bas »). Elle était passée en haut le matin même parce qu'elle tombait sous la
+ *  barre de navigation d'Instagram ; on sait maintenant, par mesure au
+ *  simulateur, que la légende commence à y 1582 en plein écran. La barre se pose
+ *  donc JUSTE AU-DESSUS, à 1440 → 1502, et l'édition sous elle, à 1512 → 1552.
+ *  Le haut ne garde plus que la barre de progression : le contenu commence à
+ *  y 180 au lieu de 274. */
+export const BRAND = { top: SAFE.bottom - 130, height: 62 };
+
+/** L'EN-TÊTE FIXE : la DATE, dans un encadré, en haut (Jules Piral, 2026-09-18,
+ *  le soir — renverse « la date en bas » du matin même). Elle se lit AVANT le
+ *  contenu : sur Instagram et TikTok, où le fil défile vite, savoir de quand
+ *  date l'information passe avant l'information elle-même. En toutes lettres et
+ *  sans l'heure d'édition : « Jeudi 17 septembre 2026 ». L'encadré la détache du
+ *  papier — une ligne de texte seule s'y perdait. */
+export const EN_TETE = { top: SAFE.top + 48, height: 70 };
+
+/** La barre d'avancement garde ses 22 px au-dessus de l'encadré : les deux
+ *  descendent ensemble, comme un seul bloc (Jules Piral, 2026-09-18). Elle reste
+ *  sous l'îlot dynamique, qui est la seule contrainte par le haut. */
+export const PROGRESS_TOP = EN_TETE.top - 22;
+
+/** Le contenu des scènes commence sous l'en-tête. */
+export const CONTENT_TOP = EN_TETE.top + EN_TETE.height + 12;
+
+/** LE PIED FIXE (Jules Piral, 2026-09-18) : les logos Vitrine + CAPP, puis le
+ *  NOM DU MODULE, à sa couleur. « Aucun contenu ne doit toucher à la date et aux
+ *  logos » : le pied n'est pas une décoration qu'une scène peut recouvrir, c'est
+ *  LUI qui décide jusqu'où l'analyse peut aller. Il va de la barre de marque au
+ *  bas de la zone sûre, et rien d'autre n'y entre. */
+export const PIED = { top: BRAND.top, bottom: SAFE.bottom };
+
+/** Blanc entre le contenu et le pied : ce qui garantit que rien ne le « touche ». */
+export const MARGE_PIED = 40;
+
+/** Le contenu des scènes s'arrête au-dessus du pied. */
+export const CONTENT_BOTTOM = PIED.top - MARGE_PIED;
+/** Réserve sous le contenu, en pixels : ce que les scènes mettent en `bottom`. */
+export const RESERVE_BAS = HEIGHT - CONTENT_BOTTOM;
 
 export type Logos = { vitrine: string; capp: string };
 
@@ -104,6 +137,13 @@ export const FRAME = { left: 30, top: 30, right: WIDTH - 30, bottom: HEIGHT - 30
  *  n'apparaît qu'en plein écran. Une scène marque son essentiel avec
  *  `data-cle` ; `checkFrame` refuse la vidéo si cet élément déborde du cœur. */
 export const COEUR = { top: Math.round((HEIGHT - WIDTH) / 2), bottom: Math.round((HEIGHT + WIDTH) / 2) };
+
+/** LE CŒUR NE RESTE PAS VIDE (Jules Piral, 2026-09-18 : « au centre, il ne doit y
+ *  avoir aucun espace vide, c'est là que notre contenu vit »). Hauteur du plus
+ *  grand blanc toléré dans le carré central. Mesuré sur les reels courts du
+ *  17-09, qui laissaient jusqu'à 430 px de papier nu entre la phrase et le
+ *  graphique — le vide tombait pile au milieu de la vignette du profil. */
+export const COEUR_VIDE_MAX = 220;
 
 /** Palette du site (app/globals.css) et bandes de saillance
  *  (lib/shareCardTemplate.tsx, rangs calibrés 1 à 6). */
@@ -206,7 +246,8 @@ export type Scene = {
   /** Pas de fondu d'entrée (première scène) ou de sortie (dernière). */
   noFadeIn?: boolean;
   noFadeOut?: boolean;
-  /** Masque la ligne d'édition commune quand la scène porte déjà cette information. */
+  /** ⚠️ HÉRITÉ, plus utilisé : l'en-tête de date est FIXE depuis le 2026-09-18 et
+   *  aucune scène ne le masque. Conservé parce que le lecteur lit encore le drapeau. */
   hideEdition?: boolean;
   /** Masque les logos communs quand la scène affiche déjà le grand logo de marque. */
   hideBrand?: boolean;
@@ -235,22 +276,40 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 /* LA ZONE UTILE : de CONTENT_TOP à CONTENT_BOTTOM, entre les deux marges
    latérales. Une scène y empile ses blocs et la colonne les répartit sur toute
    la hauteur utile — sans ça, tout se tasse en haut et le bas reste vide.
-   Elle s'arrête au BAS DU CARRÉ CENTRAL (y 1500), pas à la limite de la zone
-   sûre : ce qui porte data-cle doit rester dans le carré vu dans la grille
+   Elle s'arrête au-dessus du PIED, pas à la limite de la zone sûre.
+   CONTENU FORCÉ AU CENTRE (Jules Piral, 2026-09-18 : « les analyses et données
+   doivent être forcées au centre, entre la date et les logos »). La colonne
+   répartissait ses blocs sur toute la hauteur (space-between), ce qui creusait
+   un trou au milieu dès qu'une scène n'avait que deux blocs — jusqu'à 526 px de
+   papier nu en plein dans la vignette du profil. Elle les groupe maintenant au
+   centre de la bande. Ce qui
+   porte data-cle doit en revanche tenir dans le carré central (y 420 → 1500) :
+   une scène dont le bloc clé irait plus bas le centre au lieu de l'étirer
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - COEUR.bottom}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;display:flex;flex-direction:column;justify-content:center;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.zone-utile > [data-cle]:last-child{margin-bottom:${Math.max(0, CONTENT_BOTTOM - COEUR.bottom)}px}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
 /* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
    une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
-.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+/* LA DATE SE LIT D'UN COUP D'ŒIL (Jules Piral, 2026-09-18 : « les gens doivent
+   voir rapidement de quand date l'information »). Elle était en 28 px dans la
+   couleur la plus pâle de la palette — le texte le moins visible de l'image. Elle
+   passe à 34 px dans l'encre douce, et la date précède l'heure d'édition. */
+.datebox{position:absolute;left:180px;right:180px;top:${EN_TETE.top}px;height:${EN_TETE.height}px;display:flex;align-items:center;justify-content:center;border:3px solid var(--rule);font-size:32px;letter-spacing:.06em;color:var(--ink);z-index:45}
+/* LE NOM DU MODULE, dans un ENCADRÉ de sa couleur, sous les logos (Jules Piral,
+   2026-09-18) — le même traitement que le bloc des partenaires de la scène de
+   fin : aplat de la couleur du module, texte sur le papier. C'est le seul
+   endroit du pied qui change d'un module à l'autre. */
+.modulenom{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 12}px;text-align:center;z-index:45}
+.modulenom span{display:inline-block;padding:7px 22px 6px;color:var(--paper);font-size:28px;letter-spacing:.18em}
 .brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
-.progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
+.progress{position:absolute;left:${SAFE.left}px;top:${PROGRESS_TOP}px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -318,7 +377,6 @@ export function sceneIntro(opts: {
   lignes: { t: string; accent?: boolean; c?: string }[];
   /** Le visuel du bas, propre au module (HTML), posé dans le bandeau d'encre. */
   visuel: string;
-  edition: string;
 }): Scene {
   const L0 = 0.75, PAS = 0.62;
   const lignes = opts.lignes.map((l, i) => {
@@ -326,28 +384,27 @@ export function sceneIntro(opts: {
     return `<span style="${couleur ? `color:${couleur};` : ""}animation:fadeUp .55s ${L0 + i * PAS}s both">${typo(esc(l.t))}</span>`;
   }).join("");
   return {
-    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideEdition: true, hideBrand: true,
+    id: "intro", duration: L0 + opts.lignes.length * PAS + 1.9, noFadeIn: true, hideBrand: true,
     html: `
       ${opts.logo ? `<div class="logo" style="animation:fadeIn .6s .1s both">${logoAnime(opts.logo, { classe: "", taille: 540, passe: 1.1 })}</div>` : ""}
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
       <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
-      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+      `,
   };
 }
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:288px;left:270px;width:540px}
-#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:${CONTENT_TOP + 38}px;left:270px;width:540px}
+#intro .module{position:absolute;top:${CONTENT_TOP + 224}px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:${CONTENT_TOP + 290}px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
 #intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
 `;
 
-/** Scène de fin, commune à tous les reels : logo, signature, adresse et le
+/** Scène de fin, commune à tous les reels : logo, signature, adresse, DATE et le
  *  bandeau bleu des six éditions avec celle du moment en surbrillance. Un seul
  *  endroit à corriger le jour où la marque bouge. Son CSS est dans FIN_CSS. */
 /** Les dix partenaires du site, dans l'ordre de `app/apropos/partenaires`
@@ -393,13 +450,18 @@ export async function chargerPartenaires(): Promise<string[]> {
   return out;
 }
 
-export function sceneFin(opts: { pubHour: number; signature: string; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
+/** LA SCÈNE DE FIN EST LA MÊME POUR TOUS LES MODULES (Jules Piral, 2026-09-18).
+ *  Une seule chose y change : la COULEUR DU BLOC DES PARTENAIRES. Ni signature de
+ *  module, ni date, ni nom de module — la fin est la signature de la Vitrine, pas
+ *  celle d'un module.
+ *  ⚠️ Renverse deux décisions antérieures : la ligne de signature propre au module
+ *  (« De quel parti parlent les médias ») et l'horaire à la couleur du module
+ *  (16-09). Les cases des six éditions sont désormais à l'encre, partout. */
+export function sceneFin(opts: { pubHour: number; logo: string | null; accent?: string; partenaires?: string[] }): Scene {
   const now = opts.pubHour % 24;
-  // ⚠️ L'heure en cours prend la COULEUR DU MODULE, pas le bleu du gabarit
-  // (retour de Jules Piral, 2026-09-16 : « les pictogrammes de l'heure sont
-  // encore bleus »). Le bleu ne vaut plus que pour le Québec, à l'intérieur des
-  // modules qui opposent deux régions.
-  const accent = opts.accent ?? COLORS.blue;
+  // L'horaire est à l'ENCRE, identique d'un module à l'autre : la couleur du
+  // module ne vit plus que dans le bloc des partenaires.
+  const accent = COLORS.ink;
   const hours = [0, 4, 8, 12, 16, 20].map((h, i) => {
     const style = h === now
       ? `background:${accent};border-color:${accent};color:${COLORS.paper};animation:pop .4s ${1.2 + i * .12}s both`
@@ -412,11 +474,10 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
   return {
     id: "fin", duration: 4.8, noFadeOut: true, hideEdition: true, hideBrand: true,
     html: `
-      <div class="kick mono" style="animation:fadeIn .5s .35s both">${typo(esc(opts.signature))}</div>
       ${opts.logo
         ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 640, passe: .9 })}</div>`
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
-      <div class="metho mono" style="animation:fadeIn .5s .7s both">Méthodologie complète au</div>
+      <div class="metho mono" style="animation:fadeIn .5s .7s both">Pour la méthodologie :</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
@@ -430,15 +491,15 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
-#fin .kick{font-size:28px;color:var(--soft)}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:330px 180px 0}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
-#fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
+/* « Six éditions par jour » était collé au soulignement de l'adresse. */
+#fin .six{font-size:34px;font-style:italic;margin-top:54px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .foot{position:absolute;left:180px;right:180px;bottom:${HEIGHT - SAFE.bottom}px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
 #fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
 #fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
@@ -453,7 +514,7 @@ export type Theme = { paper: string; accent?: string };
 /** Ton sémantique commun à tous les reels : vert = favorable, rouge = défavorable. */
 export const TONE = { positive: "#4E7A43", negative: "#B0473A", neutral: "#6E685F" } as const;
 
-export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; footerRight: string; script?: string; theme?: Theme; logos?: Logos }): string {
+export function buildPage(opts: { title: string; css: string; scenes: Scene[]; footerLeft: string; date: string; module?: { nom: string; couleur: string }; script?: string; theme?: Theme; logos?: Logos }): string {
   let t = 0;
   const timeline = opts.scenes.map((s) => {
     const entry = { id: s.id, start: t, end: t + s.duration, fadeIn: !s.noFadeIn, fadeOut: !s.noFadeOut, hideEdition: !!s.hideEdition, hideBrand: !!s.hideBrand };
@@ -465,7 +526,8 @@ export function buildPage(opts: { title: string; css: string; scenes: Scene[]; f
 <style>${BASE_CSS}${opts.theme ? `:root{--paper:${opts.theme.paper};--deep:color-mix(in srgb, ${opts.theme.paper}, #000 7%);--rule:color-mix(in srgb, ${opts.theme.paper}, #000 20%);${opts.theme.accent ? `--blue:${opts.theme.accent};` : ""}}` : ""}${opts.css}</style></head><body>
 <div class="progress" id="__prog"></div>
 ${opts.scenes.map((s) => `<section class="scene" id="${s.id}">${s.html}</section>`).join("\n")}
-${opts.footerRight ? `<div class="edition mono" id="__ed">${esc(opts.footerRight)}</div>` : ""}
+${opts.date ? `<div class="datebox mono" id="__date">${esc(opts.date)}</div>` : ""}
+${opts.module ? `<div class="modulenom" id="__mod"><span class="mono" style="background:${opts.module.couleur}">${esc(opts.module.nom)}</span></div>` : ""}
 ${opts.logos ? `<div class="brandbar" id="__brand" style="top:${BRAND.top}px;height:${BRAND.height}px"><img src="${opts.logos.vitrine}" alt="La Vitrine démocratique" style="height:${BRAND.height}px"><img src="${opts.logos.capp}" alt="CAPP, Centre d’analyse des politiques publiques" style="height:${Math.round(BRAND.height * 0.5)}px"></div>` : ""}
 <script>
 ${opts.script ?? ""}
@@ -486,7 +548,8 @@ function seek(t){
     if(window.onSceneTime)window.onSceneTime(s.id,Math.max(0,local),s.end-s.start);
   }
   const brand=document.getElementById("__brand");if(brand)brand.style.opacity=brandOpacity;
-  const ed=document.getElementById("__ed");if(ed)ed.style.opacity=editionOpacity;
+  const ed=document.getElementById("__date");if(ed)ed.style.opacity=editionOpacity;
+  const md=document.getElementById("__mod");if(md)md.style.opacity=brandOpacity;
   document.getElementById("__prog").style.transform="scaleX("+Math.min(1,t/BASE)+")";
 }
 window.DURATION=BASE*${SLOW};
@@ -723,7 +786,7 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
     for (const s of scenes) {
       const moments = [0.75, 0.45, 0.7, 1].map((f, i) => (i === 0 ? t + 0.75 : t + s.duration * f)).map((x) => Math.min(x, t + s.duration - 0.35));
       for (const m of [...new Set(moments)]) {
-        for (const ecart of await inspectAt(page, s.id, m * SLOW)) {
+        for (const ecart of await inspectAt(page, s.id, m * SLOW, SIGNATURE.has(s.id))) {
           if (vus.has(ecart)) continue;
           vus.add(ecart);
           found.push(ecart);
@@ -739,7 +802,8 @@ export async function checkFrame(html: string, scenes: Scene[]): Promise<string[
 
 // Code exécuté DANS la page, passé en texte : tsx (esbuild) injecterait sinon
 // un utilitaire `__name` qui n'existe pas côté navigateur.
-const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
+const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur, videMax, signature }) => {
+  const MARGE_TEXTE = 5;
   window.setTime(at);
   const scene = document.getElementById(sceneId);
   const out = [];
@@ -769,6 +833,25 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     let op = 1; for (let q = el; q && q !== document.body; q = q.parentElement) op *= parseFloat(getComputedStyle(q).opacity);
     if (op < .05) continue;
     const ownText = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
+    // Un texte qui déborde de sa boîte (white-space: nowrap, mot trop long) ne
+    // fait PAS grandir la boîte : on mesure le texte lui-même et on l'ajoute.
+    if (ownText) {
+      for (const n of el.childNodes) {
+        if (n.nodeType !== 3 || !(n.textContent || "").trim()) continue;
+        const rg = document.createRange();
+        rg.selectNodeContents(n);
+        const tr = rg.getBoundingClientRect();
+        rg.detach?.();
+        if (tr.width < 1 || tr.height < 1) continue;
+        // 5 px de tolérance : la boîte d'une ligne de texte dépasse toujours son
+        // conteneur de un ou deux pixels (jambages, interligne). Sans cette
+        // marge, TOUTES les notes de bas de scène seraient signalées pour un
+        // débordement qui ne se voit pas. Ce qu'on cherche ici, c'est le texte
+        // qui sort VRAIMENT — 33 px pour une ligne de méthode en nowrap.
+        box.left = Math.min(box.left, tr.left + MARGE_TEXTE); box.top = Math.min(box.top, tr.top + MARGE_TEXTE);
+        box.right = Math.max(box.right, tr.right - MARGE_TEXTE); box.bottom = Math.max(box.bottom, tr.bottom - MARGE_TEXTE);
+      }
+    }
     const label = (el.textContent || "").trim().slice(0, 40) || "<" + el.tagName.toLowerCase() + " class=\\"" + (el.getAttribute("class") || "") + "\\">";
     const f = el.closest("[data-deco]") ? [] : excess(box, frame);
     if (f.length) {
@@ -781,7 +864,10 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     if (box.bottom > safe.buttonsTop && box.right > safe.buttonsLeft + .5) z.push("boutons " + Math.round(box.right - safe.buttonsLeft) + " px");
     if (z.length) {
       flagged.safe.add(el);
-      if (!inherited(flagged.safe, el)) out.push("zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")");
+      // Un débordement par le BAS, c'est le pied qu'on touche : on le nomme, sinon
+      // « zone Instagram » envoie chercher du côté de l'interface du téléphone.
+      const quoi = z.length === 1 && z[0].indexOf("bas ") === 0 ? "pied · scène " + sceneId + " : « " + label + " » touche la date et les logos (" + z[0] + ")" : "zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")";
+      if (!inherited(flagged.safe, el)) out.push(quoi);
     }
     if (ownText) {
       const size = parseFloat(getComputedStyle(el).fontSize);
@@ -795,6 +881,56 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
       r.bottom > coeur.bottom + .5 ? "bas " + Math.round(r.bottom - coeur.bottom) + " px" : ""].filter(Boolean);
     if (d.length) out.push("cœur · scène " + sceneId + " : « " + (el.textContent || "").trim().slice(0, 40) + " » sort du carré central (" + d.join(", ") + ")");
+  }
+  // LE CŒUR NE RESTE PAS VIDE. On ne retient que ce qui PEINT vraiment — un texte,
+  // une image, un aplat, un filet — car les conteneurs (la boîte caméra) couvrent
+  // le carré sans rien y montrer. Leurs hauteurs sont projetées sur l'axe
+  // vertical, fusionnées, et on mesure le plus grand trou.
+  // ⚠️ Un aplat de la COULEUR DU PAPIER ne se voit pas : l'étiquette d'une ligne
+  // pointillée porte « background: var(--paper) » pour masquer le trait derrière
+  // elle, et elle comblait à elle seule tout le vide du plan.
+  const fondPage = getComputedStyle(document.body).backgroundColor;
+  const peint = (el) => {
+    const cs = getComputedStyle(el);
+    if (el.tagName === "IMG" || el.tagName === "svg" || el.tagName === "SVG") return true;
+    const bg = cs.backgroundColor;
+    if (bg && bg !== fondPage && !/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(bg)) return true;
+    for (const c of ["borderTopWidth", "borderBottomWidth", "borderLeftWidth", "borderRightWidth"]) {
+      if (parseFloat(cs[c]) > 0 && cs[c.replace("Width", "Style")] !== "none") return true;
+    }
+    return Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent || "").trim());
+  };
+  // Les scènes de SIGNATURE (accroche, fin) ont leur composition propre — grand
+  // logo, partenaires, horaire — et se construisent en plusieurs temps : la règle
+  // du vide ne vaut que pour les scènes qui portent une ANALYSE.
+  const bandes = signature ? null : [];
+  if (bandes) {
+  for (const el of scene.querySelectorAll("*")) {
+    if (!peint(el)) continue;
+    let o = 1; for (let q = el; q && q !== document.body; q = q.parentElement) o *= parseFloat(getComputedStyle(q).opacity);
+    if (o < .05) continue;
+    const r = el.getBoundingClientRect();
+    if (r.height < 1 || r.width < 1) continue;
+    const haut = Math.max(r.top, coeur.top), bas2 = Math.min(r.bottom, coeur.bottom);
+    if (bas2 - haut > 0) bandes.push([haut, bas2]);
+  }
+  bandes.sort((u, v) => u[0] - v[0]);
+  const fusion = [];
+  for (const [h, b2] of bandes) {
+    const last = fusion[fusion.length - 1];
+    if (last && h <= last[1]) last[1] = Math.max(last[1], b2);
+    else fusion.push([h, b2]);
+  }
+  let trou = 0, ou = 0;
+  let curseur = coeur.top;
+  for (const [h, b2] of fusion) {
+    if (h - curseur > trou) { trou = h - curseur; ou = curseur; }
+    curseur = Math.max(curseur, b2);
+  }
+  if (coeur.bottom - curseur > trou) { trou = coeur.bottom - curseur; ou = curseur; }
+  if (trou > videMax) {
+    out.push("cœur vide · scène " + sceneId + " : " + Math.round(trou) + " px de vide au centre (y " + Math.round(ou) + " → " + Math.round(ou + trou) + ", maximum " + videMax + ")");
+  }
   }
   // TEXTES EMPILÉS (Jules Piral, 2026-09-17 : « des infos et du texte empilés les
   // uns sur les autres »). Chaque ligne de texte visible est mesurée au plus près
@@ -848,9 +984,19 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
   return out;
 }`;
 
-async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
-  // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
+/** LES DEUX SCÈNES DE SIGNATURE. Elles portent elles-mêmes le logo, la date et
+ *  les partenaires en pleine page : ce sont les seules qui remplacent le pied
+ *  fixe au lieu de le laisser par-dessus. Toute autre scène — toute scène qui
+ *  porte une ANALYSE — est régie par le pied et s'arrête au-dessus (Jules Piral,
+ *  2026-09-18 : « ces en-tête et bas de page doivent être fixes, c'est eux qui
+ *  régissent où se trouve l'analyse »). */
+const SIGNATURE = new Set(["intro", "fin"]);
+
+async function inspectAt(page: Page, sceneId: string, at: number, signature = false): Promise<string[]> {
+  // Une scène d'analyse s'arrête au-dessus du pied ; une scène de signature a
+  // droit à toute la zone sûre parce qu'elle EST le pied, en pleine page.
+  const bas = signature ? SAFE.bottom : CONTENT_BOTTOM;
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: bas }, minFont: MIN_FONT, coeur: COEUR, videMax: COEUR_VIDE_MAX, signature });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 

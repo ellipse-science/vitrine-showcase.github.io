@@ -33,10 +33,10 @@ export const reunis: Analyse = {
 #plan .duel .lab{margin-top:14px;text-align:center;font-size:28px;letter-spacing:.04em;height:40px}
 #plan .duel .vs{align-self:center;font-size:44px;color:var(--soft)}`,
       phrases: [
-        { a: "Depuis minuit, dans les Unes…", b: `${cap(SIGLE_ARTICLE[lead.key])} prend ${lead.sovPct} % de la place des partis.`, couleur: lead.color, debut: .15, fin: 3.0 },
+        { a: "Depuis minuit, dans les Unes de l’actualité…", b: `${cap(SIGLE_ARTICLE[lead.key])} prend ${lead.sovPct} % de la place des partis.`, couleur: lead.color, debut: .15, fin: 3.0 },
         { a: "Les 4 autres partis ensemble ?", b: `${somme} %. Il pèse plus qu’eux tous.`, debut: 3.2 },
       ],
-      legende: `Depuis minuit, ${SIGLE_ARTICLE[lead.key]} occupe ${lead.sovPct} % du temps que les Unes consacrent aux partis : plus que les ${autres.length} autres partis réunis (${somme} %).`,
+      legende: `Depuis minuit, ${SIGLE_ARTICLE[lead.key]} occupe ${lead.sovPct} % du temps que les Unes de l’actualité consacrent aux partis : plus que les ${autres.length} autres partis réunis (${somme} %).`,
     };
   },
 };

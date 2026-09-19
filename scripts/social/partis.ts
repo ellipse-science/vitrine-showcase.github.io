@@ -25,7 +25,7 @@ import path from "node:path";
 import { instantPublicationBloc, type EditionRef } from "@/lib/data/headlineEvents";
 import { loadParties, type PartiesData, type RowView } from "@/lib/data/parties";
 
-import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
+import { anim, captionTypo, dateLongue, joinFr, pubHourLabel, resolveEdition } from "./lib/commun";
 import {
   HASHTAGS, IDENTITE, MODULE, NOM_ARTICLE, SIGLE_ARTICLE, SIGLE_DE, TONE_MOT, cap, leaders, mediaMixes, tonGroupes, type MediaMix,
 } from "./lib/partis";
@@ -64,11 +64,9 @@ function needle(row: RowView, delay: number): string {
 const pchip = (row: RowView) => `<span class="pchip" style="background:${row.color}">${esc(row.label)}</span>`;
 
 // ── Mise en page ────────────────────────────────────────────────────────────
-// Les blocs de contenu descendent jusqu'à `bottom:420px`, c'est-à-dire y 1500 :
-// le BAS DU CARRÉ CENTRAL. Aller jusqu'à la zone sûre (1540) ferait sortir du
-// carré ce qui est marqué `data-cle` — et c'est justement ce qu'on doit voir
-// dans la grille du profil. Les rangées se répartissent sur toute la hauteur au
-// lieu de se tasser sous le titre (Jules Piral, 17-09 : « pogné en moton »).
+// Les blocs de contenu descendent jusqu'au bas de la zone utile (y 1570) et
+// les rangées s'y répartissent, au lieu de se tasser sous le titre
+// (Jules Piral, 17-09 : « pogné en moton », puis « baisse le tout vers le bas »).
 // Zone sûre (Reels organiques) : texte de x 76 à 960, y 220 → 1520.
 const CSS = `
 .kick{font-size:28px;color:var(--softer);letter-spacing:.14em}
@@ -82,7 +80,7 @@ const CSS = `
 /* Accroche : le résultat, et rien d'autre */
 #accroche .brand{flex:none;display:flex;align-items:center;gap:20px;font-size:30px;color:var(--soft)}
 #accroche .brand i{display:block;width:110px;height:10px;background:var(--blue);transform-origin:left}
-#accroche .result{flex:none;margin:auto 0;display:flex;flex-direction:column;gap:30px}
+#accroche .result{flex:none;margin:auto 0;position:relative;top:70px;display:flex;flex-direction:column;gap:30px}
 #accroche .answer{line-height:1;letter-spacing:-.03em;white-space:nowrap}
 #accroche .then{font-size:88px;line-height:1.02}
 #accroche .mini{flex:none;height:290px;display:flex;gap:26px}
@@ -107,13 +105,13 @@ const CSS = `
 
 /* Ton */
 #ton .legend{flex:none;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
 #ton .row{flex:1 1 0;min-height:148px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
 /* Campagne */
-#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
 #campagne .row{flex:1 1 0;min-height:150px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
 #campagne .hvu{flex:1;display:flex;gap:4px;height:40px}
 #campagne .hvu i{flex:1;background:var(--deep)}
@@ -132,7 +130,7 @@ function sceneAccroche(rows: RowView[]): Scene {
   // Une seule ligne, quel que soit le sigle (« Le PQ », « La CAQ »).
   const answer = cap(SIGLE_ARTICLE[lead.key]);
   return {
-    id: "accroche", duration: 3.4, noFadeIn: true, hideEdition: true,
+    id: "accroche", duration: 3.4, noFadeIn: true,
     html: `
       <div class="zone-utile"><div class="brand mono" ${anim("fadeIn", .5, .1)}><i ${anim("grow", .6, .1)}></i>${esc(MODULE)}</div>
       <div class="result" data-cle>
@@ -156,7 +154,7 @@ function sceneJour(rows: RowView[]): Scene {
   return {
     id: "jour", duration: 5.6,
     html: `
-      <div class="zone-utile">${head("Temps en Une · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
+      <div class="zone-utile">${head("Temps en Une de l’actualité · depuis minuit", `${cap(SIGLE_ARTICLE[lead.key])} est le parti dont on parle le plus aujourd’hui`)}
       <div class="chart" data-cle>${cols}</div></div>`,
   };
 }
@@ -228,7 +226,7 @@ function sceneCampagne(data: PartiesData, lead: RowView): Scene | null {
   }).join("");
   return {
     id: "campagne", duration: 5.4,
-    html: `<div class="zone-utile">${head(`Temps en Une · ${depuis}`, title)}
+    html: `<div class="zone-utile">${head(`Temps en Une de l’actualité · ${depuis}`, title)}
       <div class="rows" data-cle>${list}</div></div>`,
   };
 }
@@ -258,7 +256,7 @@ function caption(edition: EditionRef, data: PartiesData, rows: RowView[], mixes:
   const date = edition.dateLabel.replace(/\s\d{4}$/, "");
 
   const p1 = [
-    `${date}, édition de ${pubHourLabel(edition)}. Depuis minuit, ${NOM_ARTICLE[lead.key]} est le parti dont on parle le plus dans les Unes des médias québécois : ${lead.sovPct} % du temps que les Unes consacrent aux partis.`,
+    `${date}, édition de ${pubHourLabel(edition)}. Depuis minuit, ${NOM_ARTICLE[lead.key]} est le parti dont on parle le plus dans les Unes de l’actualité des médias québécois : ${lead.sovPct} % du temps que les Unes de l’actualité consacrent aux partis.`,
     rest.length ? `Suivent ${joinFr(rest.map((r) => `${SIGLE_ARTICLE[r.key]} (${r.sovPct} %)`))}.` : null,
   ];
 
@@ -305,12 +303,13 @@ async function main() {
   ].filter((s): s is Scene => s !== null);
 
   const logos = await loadLogos();
-  scenes.push(sceneFin({ pubHour: edition.pubHour, signature: "De quel parti parlent les médias", logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
+  scenes.push(sceneFin({ pubHour: edition.pubHour, logo: logos.vitrine, accent: IDENTITE.accent, partenaires: await chargerPartenaires() }));
   const html = buildPage({
     title: `${MODULE} · ${edition.key}`,
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: footerEdition(edition),
+    date: dateLongue(edition),
+    module: { nom: IDENTITE.nom, couleur: IDENTITE.accent },
     logos,
     theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
   });
@@ -318,7 +317,7 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
   const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}`);
   await fs.mkdir(outDir, { recursive: true });
-  // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
+  // Instagram seulement pour l’instant : reseaux/ est écrit pour la Une des Unes.
   await fs.writeFile(`${base}_instagram.txt`, caption(edition, data, rows, mixes));
   console.log(`  instagram → ${path.basename(base)}_instagram.txt`);
 
