@@ -1,5 +1,11 @@
 [
   {
+    "pr": 809,
+    "date": "2026-09-19T02:03:44Z",
+    "note": "Le mode « promesses de la campagne » du Polimètre+ continuera de s'afficher même une fois le site basculé sur les données de production, le temps que cette mesure y soit elle-même activée.",
+    "version": null
+  },
+  {
     "pr": 831,
     "date": "2026-09-18T22:05:03Z",
     "note": "Deux personnages de Datagotchi font leur apparition au bas de la page d'accueil : l'un invite à tester si vos opinions sont prévisibles, l'autre à discuter de la campagne électorale.",
