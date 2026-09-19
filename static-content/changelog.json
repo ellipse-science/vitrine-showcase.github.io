@@ -1,5 +1,17 @@
 [
   {
+    "pr": 831,
+    "date": "2026-09-18T22:05:03Z",
+    "note": "Deux personnages de Datagotchi font leur apparition au bas de la page d'accueil : l'un invite à tester si vos opinions sont prévisibles, l'autre à discuter de la campagne électorale.",
+    "version": "2.47.0-beta.0"
+  },
+  {
+    "pr": 810,
+    "date": "2026-09-18T14:51:02Z",
+    "note": "Aucune. Cette PR ne change rien pour un visiteur du site : elle met à jour une page de documentation technique interne.",
+    "version": null
+  },
+  {
     "pr": 823,
     "date": "2026-09-18T00:28:32Z",
     "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
