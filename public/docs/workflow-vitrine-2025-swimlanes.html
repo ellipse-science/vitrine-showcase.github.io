@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 11 septembre 2026 (le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 18 septembre 2026 (la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>DEV</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -1210,9 +1210,9 @@
                 <span class="frequency">Filet de secours — workflow <code>refresh-data.yml</code>, lancé à la main ou par son cron GitHub&nbsp;; commite les JSON de repli du build. Le chemin critique est la chaîne émancipée (couloir Worker ci-dessous) depuis le 19 août 2026</span>
             </div>
             <div class="pipeline-content">
-                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
-                    21 tables du datamart
-                    <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes</div>
+                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="PROD">
+                    18 tables du datamart
+                    <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes. <code>polimetre_promesses_neuves</code>, produite en DEV seulement, reste lue en DEV</div>
                     <div class="info-badge">📋 Cliquer pour liste complète</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1270,14 +1270,14 @@
                 <span class="frequency">6x/jour à :56 de l'heure précédant la publication&nbsp;: 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 (heure de Montréal), plus une passe filet à :10 de l'heure de publication — Worker du dépôt vitrine-showcase (<code>workers/api</code>), vitrine-showcase#584</span>
             </div>
             <div class="pipeline-content">
-                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="DEV">
-                    21 tables du datamart
-                    <div class="node-detail">Mêmes tables et filtres de rétention que <code>scripts/tables.json</code></div>
+                <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="PROD">
+                    16 tables du datamart
+                    <div class="node-detail">Les tables de <code>workers/api/src/tables.ts</code>, mêmes colonnes et filtres de rétention que <code>scripts/tables.json</code></div>
                 </div>
                 <div class="arrow">→</div>
                 <div class="node node-refiner">
                     sync-athena (Worker)
-                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 19 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
+                    <div class="node-detail">✅ LIVRÉ&nbsp;: écrit les 16 tables dans Postgres à chaque passe. Le raffineur <code>vitrine-publish</code> d'aws-refiners, lui, a été abandonné</div>
                     <div class="node-schedule">⏰ 23:56, 03:56, 07:56, 11:56, 15:56, 19:56 + filet :10 (Montréal)</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1288,7 +1288,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-output">
                     Deploy Hooks Cloudflare (prod + dev)
-                    <div class="node-detail">Déclenchés seulement quand les 21 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
+                    <div class="node-detail">Déclenchés seulement quand les 16 tables ont réussi&nbsp;; l'édition est en ligne autour de l'heure pile (vitrine-showcase#584). Un déploiement déjà en file répond 304, traité comme un succès (vitrine-showcase#582) — deux passes ne se gênent plus</div>
                 </div>
             </div>
             <div style="margin:14px 4px 2px;padding:.7rem 1rem;border-left:4px solid #4A90E2;background:rgba(74,144,226,.07);font-size:.9em;line-height:1.5">
@@ -1903,24 +1903,25 @@
                     ]
                 },
                 'all-final-tables': {
-                    title: 'Entrée : les 21 tables que la Vitrine consomme',
-                    description: 'Liste blanche tenue dans scripts/tables.json (dépôt vitrine). Elle fixe les tables ET les colonnes projetées : ce qui n\'y est pas n\'est jamais lu. Audit du 2026-08-02.',
+                    title: 'Entrée : les 18 tables que la Vitrine consomme',
+                    description: 'Liste blanche tenue dans scripts/tables.json (dépôt vitrine). Elle fixe les tables ET les colonnes projetées : ce qui n\'y est pas n\'est jamais lu. Audit du 2026-09-18.',
                     columns: [
                         'vitrine_datamart-issues_score_day / _week / _month',
-                        'vitrine_datamart-provincial_parties_score_day / _week / _month',
-                        'vitrine_datamart-federal_parties_score_week / _month',
                         'vitrine_datamart-provincial_parties_salient_shadow_day / _week / _month',
-                        'vitrine_datamart-federal_parties_salient_shadow_intraday',
+                        'vitrine_datamart-provincial_parties_salient_shadow_by_media_day / _week / _month',
                         'vitrine_datamart-provincial_parties_salient_shadow_intraday',
                         'vitrine_datamart-parties_issues_salient_shadow_day',
                         'vitrine_datamart-headline_events_4h',
+                        'vitrine_datamart-radar_annotated (articles des 12 enjeux ; lue par le filet seulement)',
                         'vitrine_datamart-polimetre_plus',
-                        'vitrine_datamart-polimetre_promesses_neuves (lue depuis le fichier, pas encore dans le Worker)',
+                        'vitrine_datamart-polimetre_promesses_neuves (lue en DEV, depuis le fichier ; pas dans le Worker)',
                         'agora_datamart-agora_decideurs_qc',
-                        'agora_datamart-agora_decideurs_qc_deputes_v2'
+                        'agora_datamart-agora_decideurs_qc_deputes',
+                        'agora_datamart-agora_decideurs_qc_affiliations'
                     ],
                     details: [
-                        '⛔ Désactivées dans la liste blanche (produites, jamais lues) : federal_parties_score_day, reflet_day/week/month, headline_of_headlines',
+                        '🌐 Lues dans le datamart PROD depuis le 18 septembre 2026 (vitrine-showcase#702), sauf polimetre_promesses_neuves, produite en DEV seulement. Le Worker en synchronise 16 : toutes sauf radar_annotated et polimetre_promesses_neuves.',
+                        '⛔ Désactivées dans la liste blanche (produites, jamais lues) : provincial_parties_score_day/week/month, federal_parties_score_day/week/month, reflet_day/week/month, headline_of_headlines',
                         '⛔ Non consommées non plus : federal_parties_salient_shadow_*, headlines_issues_*, hot_20_headlines, data_quality_14_days, agora_sonar_daily',
                         '🔒 La projection par colonnes est une protection : elle a mis le module Polimètre+ à l\'abri d\'une dérive de type INT32/double sur rank_current, rank_delta et n_mentions (2026-07-29).'
                     ]
