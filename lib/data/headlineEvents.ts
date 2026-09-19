@@ -56,6 +56,7 @@ import {
   ageH,
   storiesFrom24h,
   selectTopUnes,
+  rankTopUnes,
   selectHeroFromRawEvents,
   MIN_PART_DU_MENEUR,
 } from "@/lib/data/heroSelectionCore";
@@ -1519,6 +1520,10 @@ export type UneEvent = {
   sommetEdition: string | null;
   /** Nombre de blocs 4h (≤ 7) où la storyline figurait parmi les Unes. */
   nBlocks24h: number | null;
+  /** Les articles de l'occurrence la plus récente, un par média : média, titre,
+   *  signature et lien, tous tirés de la MÊME ligne — jamais recomposés. Sert au
+   *  premier commentaire du post quotidien (`scripts/social`). */
+  articlesUne: { media: string; title: string; url: string; author: string | null }[];
   /** Trajectoire de saillance sur 24 h (#274) : flèche + libellé de tendance +
    *  courbe survolable. null si rien à raconter (un seul bloc actif). */
   salienceTrend: SalienceTrend | null;
@@ -1700,6 +1705,13 @@ export type HeadlineData = {
   /** « de la soirée », « du matin »… selon le bloc 4h (#125). */
   periodLabel: string;
   top3: UneEvent[];
+  /** Classement PUR des N nouvelles les plus saillantes de la fenêtre 24 h,
+   *  rempli UNIQUEMENT si l'appelant le demande (`loadHeadlineEvents(cle,
+   *  { classement: 5 })`) — aujourd'hui les reels de `scripts/social`. Il
+   *  ignore la règle de domination (#430, B6) qui décide de `top3` : c'est un
+   *  classement, pas ce que le module afficherait. Le site n'en demande pas et
+   *  ne paie donc ni le calcul ni la charge utile. */
+  classement?: UneEvent[];
   solitudes: SolitudeData;
   treemapTier1: TreemapTile[];
   treemapTier2: TreemapTile[];
@@ -1814,7 +1826,7 @@ export const listEditions = cache(async (): Promise<EditionRef[]> => {
 // édition passée l'écho de son avenir.
 //
 // Sans argument, le comportement est strictement inchangé (édition courante).
-export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<HeadlineData | null> => {
+export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { classement?: number }): Promise<HeadlineData | null> => {
   let raw: string;
   try {
     raw = await readDatasetText("public/data/headline-events.json");
@@ -1941,7 +1953,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const totalUs = echoesUs.reduce((acc, u) => acc + u.scoreUs, 0);
   const totalRoc = stories.reduce((acc, s) => acc + s.sumRoc, 0);
 
-  const top3: UneEvent[] = qcStories.map((s) => {
+  const toUneEvent = (s: Story): UneEvent => {
     const e = s.rep; // occurrence du bloc le plus récent (titre, enjeu, articles frais)
     // Pastille de saillance sur le PIC 24 h (peakQc). Les seuils viennent de la
     // distribution des PICS (salThresholds ci-dessus) : le max d'une histoire sur
@@ -2007,15 +2019,32 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
     // point porte le niveau que le BADGE affichait à cette édition-là.
     const salienceTrend = buildSalienceTrend(s.series, blockThresholds, editionRefDayIso, suivi?.history, suivi?.sums);
 
-    type RawArticle = { media_id: string; headline_minutes?: number | null };
+    type RawArticle = {
+      media_id: string; headline_minutes?: number | null;
+      title?: string | null; url?: string | null; author?: string | null;
+    };
     let totalHeadlineMinutes = 0;
+    // Un article par média, celui de l'occurrence la plus récente. Média, titre,
+    // signature et lien viennent de LA MÊME ligne : ils ne peuvent pas se
+    // contredire. Ne jamais recomposer une signature depuis une autre source —
+    // une signature fausse sur un article publié est une erreur coûteuse.
+    const parMedia = new Map<string, { media: string; title: string; url: string; author: string | null }>();
     try {
       const arts = JSON.parse(e.articles ?? "[]") as RawArticle[];
       for (const art of arts) {
         const mins = Number(art.headline_minutes ?? 0);
         if (Number.isFinite(mins) && mins > 0) totalHeadlineMinutes += mins;
+        if (art.url && art.media_id && !parMedia.has(art.media_id)) {
+          parMedia.set(art.media_id, {
+            media: MEDIA_NAMES[art.media_id] ?? art.media_id,
+            title: (art.title ?? "").trim(),
+            url: art.url,
+            author: art.author?.trim() || null,
+          });
+        }
       }
     } catch { }
+    const articlesUne = [...parMedia.values()];
     const excerpt = e.text?.trim() || null;
     const headlineHours =
       totalHeadlineMinutes > 0 ? Math.max(1, Math.round(totalHeadlineMinutes / 60)) : null;
@@ -2062,6 +2091,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       sommetCls,
       sommetEdition,
       nBlocks24h: e.n_blocks_24h ?? null,
+      articlesUne,
       salienceTrend,
       // Grille du BADGE (cumul 24 h) : c'est elle que la figure du ⓘ doit
       // représenter, puisque le repère « CETTE UNE » s'y pose désormais.
@@ -2069,7 +2099,13 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
       resonanceCan: canResonance(s, totalRoc),
       resonanceUs: usResonance(s, echoesUs, totalUs),
     };
-  });
+  };
+
+  const top3: UneEvent[] = qcStories.map(toUneEvent);
+  // Classement pur, à la demande seulement (cf. HeadlineData.classement).
+  const classement = opts?.classement
+    ? rankTopUnes(stories, opts.classement).map(toUneEvent)
+    : undefined;
 
   // Score = convergence au niveau HISTOIRE (windowEventConvergence) — décision
   // ratifiée 2026-07-15 vs cosinus-objet (windowConvergence, conservé pour tests).
@@ -2133,7 +2169,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string): Promise<Hea
   const topScore = allObjects[0]?.score ?? 1;
   const treemapMobile = withTruncContext.slice(0, 14).map((o) => ({ ...o, relWidth: Math.round((o.score / topScore) * 100) }));
 
-  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
+  return { dateLabel, lastUpdated, snapshotInterval, periodLabel, top3, ...(classement ? { classement } : {}), solitudes, treemapTier1: tier1, treemapTier2: tier2, treemapTier3: tier3, treemapTier4: tier4, treemapMobile };
 });
 
 const ISSUE_KEYS = Object.keys(ISSUE_COLORS);
