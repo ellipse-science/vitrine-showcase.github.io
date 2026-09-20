@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -224,10 +225,27 @@ async function readArtMeta(jsonPath: string): Promise<ArtMeta | null> {
   }
 }
 
+/** Suffixe `?v=<empreinte>` tiré du CONTENU du fichier.
+ *
+ *  Les fichiers de l'illustration sont écrasés sur place à chaque édition, à
+ *  adresse constante, et le bord Cloudflare les garde 15 min puis les sert
+ *  périmés jusqu'à une heure (public/_headers). Sans ce suffixe, un visiteur
+ *  voit l'image de la Une PRÉCÉDENTE sous le NOUVEAU titre — vécu le
+ *  17 septembre 2026, revu le 20. L'adresse change désormais avec l'image :
+ *  une nouvelle illustration n'a jamais de copie en cache, une illustration
+ *  inchangée garde la sienne.
+ *
+ *  Empreinte du contenu, et non clé d'histoire : dev et prod peuvent dessiner
+ *  chacun la même histoire, et l'image change alors sans que la Une change. */
+async function artVersion(file: string): Promise<string> {
+  const bytes = await fs.readFile(path.resolve(process.cwd(), "public", "data", "generated-art", file));
+  return `?v=${createHash("sha1").update(bytes).digest("hex").slice(0, 10)}`;
+}
+
 async function detectArtSources(): Promise<ArtSource[]> {
   const found = await Promise.all(ART_FORMATS.map((f) =>
-    fs.access(path.resolve(process.cwd(), "public", "data", "generated-art", f.file))
-      .then((): ArtSource => ({ src: `data/generated-art/${f.file}`, type: f.type }))
+    artVersion(f.file)
+      .then((v): ArtSource => ({ src: `data/generated-art/${f.file}${v}`, type: f.type }))
       .catch(() => null),
   ));
   return found.filter((s): s is ArtSource => s !== null);
@@ -362,11 +380,13 @@ export async function UneDesUnesSection({
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, editions, artMeta, artSources, audioUrl] = await Promise.all([
+  const [data, editions, artMeta, artSources, artPngVersion, audioUrl] = await Promise.all([
     loadHeadlineEvents(editionKey),
     listEditions(),
     isArchive ? null : readArtMeta(artJsonPath),
     isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
+    // PNG absent : adresse nue, comme avant — le manque se voit, il ne se cache pas.
+    isArchive ? "" : artVersion("latest.png").catch(() => ""),
     isArchive || isProd ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
       .then(() => "audio/latest.mp3")
       .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
@@ -389,7 +409,7 @@ export async function UneDesUnesSection({
   const mainKey = main.storylineId ?? main.eventId;
   const artKey = artMeta?.storyline_id ?? artMeta?.event_id ?? null;
   const artMatches = Boolean(artKey && mainKey && artKey === mainKey);
-  const generatedArtUrl = artMatches ? "data/generated-art/latest.png" : undefined;
+  const generatedArtUrl = artMatches ? `data/generated-art/latest.png${artPngVersion}` : undefined;
   const generatedArtSources = artMatches ? artSources : [];
 
   // Traitement « breaking » inversé (noir) quand la Une #1 atteint le niveau
