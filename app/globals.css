@@ -7906,6 +7906,14 @@
     --ppl-parti-pcq: #5A3B6E;
   }
 
+  /* Le bloc « campagne » prend la hauteur de son contenu, pas les 390px de
+     .ppl-grid : ce plancher réservait de l'air sous une liste courte quand le
+     module était seul ; empilé au-dessus du bloc « 2022 », cet air séparait
+     les deux blocs plus que leur marge. Le rail (six filtres de parti) reste le
+     plancher naturel, donc une liste d'une promesse ne fait pas sauter la
+     hauteur. */
+  .polimeter-plus--neuves .ppl-grid { min-height: 0; }
+
   /* Rang : lavis du parti + anneau plein, exactement comme les verdicts. */
   .ppl-promise--parti-plq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-plq) 20%, transparent); border-color: var(--ppl-parti-plq); }
   .ppl-promise--parti-caq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-caq) 20%, transparent); border-color: var(--ppl-parti-caq); }
