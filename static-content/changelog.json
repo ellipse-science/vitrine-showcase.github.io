@@ -1,5 +1,11 @@
 [
   {
+    "pr": 844,
+    "date": "2026-09-21T20:16:26Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 843,
     "date": "2026-09-21T18:32:01Z",
     "note": "Le point d'exclamation du personnage de Datagotchi prend la forme d'une petite bulle de parole : on comprend mieux qu'il a un message à montrer.",
