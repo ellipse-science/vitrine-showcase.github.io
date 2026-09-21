@@ -7996,16 +7996,18 @@
     border-radius: 3px;
   }
 
-  /* Sous-titres du Polimètre+ : un cran au-dessus du .period-subtitle des
-     autres modules (10px), parce que celui du bloc « 2022 » est le seul titre
-     de son bloc. Les deux blocs suivent, pour rester jumeaux. Portée limitée
-     au module : les autres sous-titres du site ne bougent pas. */
-  .polimeter-plus .period-subtitle { font-size: 12px; }
+  /* Sous-titres du Polimètre+ : plus gros et en gras que le .period-subtitle
+     des autres modules (10px, 400), parce que celui du bloc « 2022 » est le
+     seul titre de son bloc. Les deux blocs suivent, pour rester jumeaux.
+     Portée limitée au module : les autres sous-titres du site ne bougent pas.
+     Le 700 est une vraie graisse (chargée dans app/layout.tsx), pas un gras
+     synthétisé par le navigateur. */
+  .polimeter-plus .period-subtitle { font-size: 14px; font-weight: 700; }
   /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
      de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
-     .period-subtitle en div — on efface ce que h3 apporte de lui-même
-     (graisse, marges). */
-  .ppl-sous-titre { margin: 0; font-weight: 400; }
+     .period-subtitle en div du bloc du haut — on efface la marge que h3
+     apporte de lui-même. */
+  .ppl-sous-titre { margin: 0; }
   /* …et il se tient tout près : 12px au lieu des 56px inter-modules de
      .partis-title-row (10px au lieu de 40px sous le même seuil de 768px que
      sa marge mobile). Le bloc « 2022 » se lit comme la suite du module, pas
