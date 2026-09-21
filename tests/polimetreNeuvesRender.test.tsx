@@ -113,6 +113,12 @@ describe("Polimètre+ — empilement des deux blocs", () => {
     expect(html).toContain(SOUS_TITRE_2022);
     expect(html).toContain('aria-label="À propos du Polimètre+"');
   });
+
+  it("ne donne qu'un lien « Méthodologie du Polimètre », dans le bloc « 2022 »", () => {
+    const html = rendre(neuves);
+    expect(html.match(/ppl-metho-rail/g)).toHaveLength(1);
+    expect(html.indexOf("ppl-metho-rail")).toBeGreaterThan(html.indexOf("ppl-sous-titre"));
+  });
 });
 
 // Le bloc « campagne » se rend via NeuvesView. Ci-dessous : le contrat de

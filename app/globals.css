@@ -7991,9 +7991,16 @@
   /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
      de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
      .period-subtitle en div des autres modules — on efface ce que h3 apporte
-     de lui-même (graisse, marges). Le reste de la mise en page (56px de marge
-     de .partis-title-row, rail, onglets) est celui d'un module entier. */
+     de lui-même (graisse, marges). */
   .ppl-sous-titre { margin: 0; font-weight: 400; }
+  /* …et il se tient à mi-distance : la moitié de la marge inter-modules de
+     .partis-title-row (56px → 28px ; 40px → 20px sous le même seuil de 768px
+     que la marge mobile de .partis-title-row). Assez pour séparer deux listes,
+     pas assez pour lire deux modules. */
+  .polimeter-plus--second .partis-title-row { margin-top: 28px; }
+  @media (max-width: 768px) {
+    .polimeter-plus--second .partis-title-row { margin-top: 20px; }
+  }
 
   /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
      pièce justificative du mode — ce que le parti a écrit, mot pour mot. */

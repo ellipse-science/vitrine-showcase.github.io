@@ -309,7 +309,10 @@ function PolimetreView({
   );
 
   return (
-    <section className="polimeter-plus" aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}>
+    <section
+      className={sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
+      aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
+    >
       <div className="partis-title-row">
         <div className="title-block">
           {sousModule ? (
@@ -694,19 +697,8 @@ function NeuvesView({
             onChange={setEnjeu}
             options={enjeuItems}
           />
-
-          {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
-              qui décide ce qui compte comme promesse, dans les deux modes. Le
-              prompt de repérage applique son critère de testabilité — pointer
-              ailleurs laisserait croire à un standard maison. */}
-          <a
-            className="ppl-metho-rail"
-            href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
-            target="_blank"
-            rel="noopener"
-          >
-            Méthodologie du Polimètre
-          </a>
+          {/* Pas de lien « Méthodologie du Polimètre » ici : le bloc « 2022 »,
+              juste en dessous, le porte pour le module entier. */}
         </aside>
 
         {/* Rail droit : liste des promesses neuves */}
