@@ -1,5 +1,11 @@
 [
   {
+    "pr": 842,
+    "date": "2026-09-21T18:09:47Z",
+    "note": "Le personnage de Datagotchi au bas de la page d'accueil se fait plus discret : il arrive après quinze secondes, et son message ne s'affiche que si on le survole ou le touche. On peut refermer le message sans faire partir le personnage.",
+    "version": "2.47.0-beta.3"
+  },
+  {
     "pr": 807,
     "date": "2026-09-21T14:59:15Z",
     "note": "La Méthodologie précise que, pour chaque paragraphe de Une, le modèle ne juge que les trente promesses de campagne les plus proches par le vocabulaire.",
