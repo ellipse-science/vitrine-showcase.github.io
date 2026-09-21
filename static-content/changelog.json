@@ -1,5 +1,11 @@
 [
   {
+    "pr": 808,
+    "date": "2026-09-21T01:20:01Z",
+    "note": "La page Méthodologie explique maintenant ce que fait la Vitrine quand la Une de CNN est une vidéo : elle retient le premier article du même bloc, ou écarte la capture s'il s'agit d'un épisode payant.",
+    "version": "2.47.0-beta.2"
+  },
+  {
     "pr": 833,
     "date": "2026-09-21T01:19:48Z",
     "note": "L'illustration de la Une change maintenant au même instant que le titre pour tous les visiteurs. Avant, l'image de l'édition précédente pouvait rester affichée jusqu'à une heure sous la nouvelle Une.",
