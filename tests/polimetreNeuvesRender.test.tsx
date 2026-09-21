@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PolimetrePlusClient } from "@/components/interactive/PolimetrePlusClient";
+import { PolimetrePlusClient, messageEtatVide } from "@/components/interactive/PolimetrePlusClient";
 import type {
   PolimetreData,
   PromessesNeuvesData,
@@ -65,7 +65,7 @@ const neuve = (o: Partial<Neuve> = {}): Neuve => ({
 const neuves: PromessesNeuvesData = {
   windowEnd: "2026-09-03",
   lastUpdated: "Dernière mise à jour : jeudi 3 septembre 2026",
-  ranges: { day: [neuve()], week: [neuve()] },
+  ranges: { day: [neuve()], week: [neuve()], campaign: [neuve()] },
 };
 
 const rendre = (n?: PromessesNeuvesData | null) =>
@@ -89,10 +89,16 @@ describe("Polimètre+ — empilement des deux blocs", () => {
     expect(html).toContain("Depuis une semaine");
   });
 
-  it("n'affiche pas le bloc « campagne » quand les deux fenêtres neuves sont vides", () => {
-    const html = rendre({ ...neuves, ranges: { day: [], week: [] } });
+  it("n'affiche pas le bloc « campagne » quand les trois fenêtres neuves sont vides", () => {
+    const html = rendre({ ...neuves, ranges: { day: [], week: [], campaign: [] } });
     expect(html).not.toContain("les promesses de la campagne");
     expect(html).toContain(H2_2022);
+  });
+
+  it("empile campagne AU-DESSUS de 2022 dès qu'une seule fenêtre neuve a des promesses", () => {
+    // Un run manuel peut publier `campaign` un jour où `day` n'a rien à dire.
+    const html = rendre({ ...neuves, ranges: { day: [], week: [], campaign: [neuve()] } });
+    expect(html).toContain(H2_CAMPAGNE);
   });
 
   it("empile campagne AU-DESSUS de 2022 dès qu'il y a des promesses neuves", () => {
@@ -170,7 +176,11 @@ describe("Polimètre+ — enjeux du mode « campagne »", () => {
   it("n'affiche pas le filtre d'enjeu quand aucune promesse n'en porte", () => {
     const sans = {
       ...neuves,
-      ranges: { day: [neuve({ enjeu: null })], week: [neuve({ enjeu: null })] },
+      ranges: {
+        day: [neuve({ enjeu: null })],
+        week: [neuve({ enjeu: null })],
+        campaign: [neuve({ enjeu: null })],
+      },
     };
     const html = rendreCampagne(sans);
     // Le rail reste là, mais chaque option est grisée : aucune donnée à filtrer.
@@ -182,5 +192,48 @@ describe("Polimètre+ — enjeux du mode « campagne »", () => {
     const html = rendreCampagne();
     expect(html).toContain("Tous les partis");
     expect(html).toContain("Tous les enjeux");
+  });
+});
+
+describe("Polimètre+ — onglets de période du mode « campagne »", () => {
+  it("offre les trois onglets, dans l'ordre de l'emboîtement, sans « mois »", () => {
+    const html = rendreCampagne();
+    const auj = html.indexOf("Aujourd&#x27;hui");
+    const sem = html.indexOf("Depuis une semaine");
+    const camp = html.indexOf(">Campagne<");
+    expect(auj).toBeGreaterThan(-1);
+    expect(sem).toBeGreaterThan(auj);
+    expect(camp).toBeGreaterThan(sem);
+    expect(html).not.toContain("Depuis un mois");
+  });
+
+  // L'onglet ouvert au premier rendu est « Aujourd'hui » : c'est donc lui que
+  // le rendu statique laisse observer. Ce que les deux cas suivants prouvent
+  // vaut pour les trois onglets, la règle étant la même (messageEtatVide).
+  it("un onglet vide sans onglet plus court à le contredire dit « aucune reprise »", () => {
+    const html = rendreCampagne({ ...neuves, ranges: { day: [], week: [], campaign: [neuve()] } });
+    expect(html).toContain("n&#x27;a été reprise dans les Unes aujourd&#x27;hui");
+    expect(html).not.toContain("pas encore été publié");
+  });
+
+  it("un onglet vide n'affirme jamais « aucune reprise » sur une fenêtre pas publiée", () => {
+    // Le raffineur ne publie pas une fenêtre sans reprise : `campaign` vide
+    // alors que `day` est plein ne peut être qu'une fenêtre non calculée. Le
+    // rendu statique n'ouvre que « Aujourd'hui » ; on éprouve donc la règle sur
+    // la fonction elle-même, avec la donnée telle qu'elle est en production
+    // tant que la campagne n'est calculée que sur demande.
+    const ranges = { day: [neuve()], week: [], campaign: [] };
+    expect(messageEtatVide("campaign", ranges)).toBe(
+      "Le classement de cette période n'a pas encore été publié.",
+    );
+    expect(messageEtatVide("week", ranges)).toBe(
+      "Le classement de cette période n'a pas encore été publié.",
+    );
+    // Rien de plus court que « Aujourd'hui » : lui seul peut dire « aucune reprise ».
+    expect(messageEtatVide("day", ranges)).toContain("aujourd'hui");
+    // Et une campagne vide sous une semaine vide et un jour vide dit la vérité.
+    expect(messageEtatVide("campaign", { day: [], week: [], campaign: [] })).toContain(
+      "depuis le début de la campagne",
+    );
   });
 });
