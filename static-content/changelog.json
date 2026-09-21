@@ -1,5 +1,95 @@
 [
   {
+    "pr": 829,
+    "date": "2026-09-19T11:45:06Z",
+    "note": "La collecte des comptes de réseaux sociaux des candidats tourne désormais toute la journée plutôt qu'une demi-journée, afin de remonter plus vite l'historique des publications, et les comptes officiels des cinq partis rejoignent les 601 comptes de candidats déjà suivis. Rien ne change sur le site : cette collecte ne publie aucune table et n'alimente aucun module.",
+    "version": null
+  },
+  {
+    "pr": 827,
+    "date": "2026-09-19T02:21:02Z",
+    "note": "La Vitrine lit désormais ses données depuis l'environnement de production, séparé de celui du développement.",
+    "version": null
+  },
+  {
+    "pr": 809,
+    "date": "2026-09-19T02:03:44Z",
+    "note": "Le mode « promesses de la campagne » du Polimètre+ continuera de s'afficher même une fois le site basculé sur les données de production, le temps que cette mesure y soit elle-même activée.",
+    "version": null
+  },
+  {
+    "pr": 831,
+    "date": "2026-09-18T22:05:03Z",
+    "note": "Deux personnages de Datagotchi font leur apparition au bas de la page d'accueil : l'un invite à tester si vos opinions sont prévisibles, l'autre à discuter de la campagne électorale.",
+    "version": "2.47.0-beta.0"
+  },
+  {
+    "pr": 810,
+    "date": "2026-09-18T14:51:02Z",
+    "note": "Aucune. Cette PR ne change rien pour un visiteur du site : elle met à jour une page de documentation technique interne.",
+    "version": null
+  },
+  {
+    "pr": 823,
+    "date": "2026-09-18T00:28:32Z",
+    "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
+    "version": null
+  },
+  {
+    "pr": 822,
+    "date": "2026-09-17T15:15:38Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 821,
+    "date": "2026-09-17T14:58:07Z",
+    "note": "Rien ne change sur le site public.",
+    "version": null
+  },
+  {
+    "pr": 820,
+    "date": "2026-09-17T14:51:20Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 819,
+    "date": "2026-09-17T13:21:19Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 814,
+    "date": "2026-09-17T12:57:08Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 817,
+    "date": "2026-09-17T03:18:26Z",
+    "note": "Le module sur l'Assemblée nationale reprend les couleurs d'un alignement de hockey.",
+    "version": null
+  },
+  {
+    "pr": 816,
+    "date": "2026-09-17T02:37:49Z",
+    "note": "Sur le site de travail, chaque module s'affiche maintenant sur un fond de sa propre couleur, avec trois degrés d'intensité au choix.",
+    "version": null
+  },
+  {
+    "pr": 815,
+    "date": "2026-09-17T02:17:07Z",
+    "note": "Le module sur la couverture des partis s'affiche désormais sur un fond sombre, comme une console de mixage.",
+    "version": null
+  },
+  {
+    "pr": 811,
+    "date": "2026-09-16T21:36:02Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 804,
     "date": "2026-09-13T22:37:43Z",
     "note": "Le mode « promesses de la campagne » du Polimètre+ ne montre plus qu'un instantané par fenêtre : celui du dernier run, sans doublons, et la fenêtre de la semaine reste visible quand celle du jour avance.",

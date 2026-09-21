@@ -127,14 +127,18 @@ raffineurs (R, AWS Lambda) ──→ Athena
 ```
 
 **Quel datamart est lu.** Les deux lecteurs, `scripts/fetch_data.R` et la synchro
-du Worker, lisent le datamart désigné par `DATAMART_ENV` : `DEV` aujourd'hui,
-`PROD` après la migration de Patrick (vitrine#489). Côté filet c'est une variable
+du Worker, lisent le datamart désigné par `DATAMART_ENV` : `PROD` depuis la
+bascule du site (vitrine#702), qui suit la migration DEV→PROD des 22 tables du
+datamart terminée par Patrick Poncet le 17 septembre 2026 ; `DEV` avant elle.
+Seule exception : `polimetre_promesses_neuves`, produite en DEV seulement, que
+la clé `env` de `scripts/tables.json` fait lire en DEV (vitrine#809). Côté filet c'est une variable
 de dépôt (Settings → Variables → `DATAMART_ENV`), côté Worker une variable de
 `wrangler.toml` ; les clés des deux comptes sont en place des deux côtés, la
 variable choisit la paire. **On bascule les deux ensemble**, et le repli tient en
 une valeur : `DEV`. Ni code à modifier ni migration à rejouer. Avant de mettre
-`PROD`, vérifier que les 21 tables de `workers/api/src/tables.ts` existent dans le
-datamart PROD ; au 2 septembre 2026 il en manquait 7 (partis, Assemblée). La
+`PROD`, vérifier que les 16 tables de `workers/api/src/tables.ts` existent dans le
+datamart PROD ; au 2 septembre 2026 il en manquait 7 (partis, Assemblée), et les
+16 figurent parmi les 22 tables migrées le 17 septembre. La
 répétition à blanc se lance depuis Actions, « Répétition à blanc (datamart) »,
 avec `PROD` : elle roule `fetch_data.R` avec les secrets du dépôt, résume table par
 table ce qui sort et dépose le résultat en artefact, sans commit ni synchro. Zéro

@@ -66,3 +66,6 @@ _worktrees/
 # ne parte jamais dans un commit.
 /public/data/generated-art/partis/
 /public/data/partis-selection.json
+
+# Reels et légendes produits par scripts/social/ : livrables à publier, pas du code.
+/social-out/
