@@ -237,6 +237,10 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
       >
         <span className="dg-signe" aria-hidden="true">
           !
+          <svg className="dg-signe-queue" viewBox="0 0 14 10" width="14" height="10">
+            <path className="dg-signe-queue-fond" d="M0 0H14V10H5V5H0Z" />
+            <path className="dg-signe-queue-trait" d="M1 0V4H6V9H13V0" />
+          </svg>
         </span>
         <span className="dg-perso-vie">
           {/* eslint-disable-next-line @next/next/no-img-element */}
