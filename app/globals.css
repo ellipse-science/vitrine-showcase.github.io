@@ -7988,10 +7988,12 @@
     border-radius: 3px;
   }
 
-  /* Inverseur de mode — au-dessus des onglets de période, dont il est la
-     hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
-     changent que la fenêtre. */
-  .ppl-mode-switch { margin-bottom: 8px; }
+  /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
+     de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
+     .period-subtitle en div des autres modules — on efface ce que h3 apporte
+     de lui-même (graisse, marges). Le reste de la mise en page (56px de marge
+     de .partis-title-row, rail, onglets) est celui d'un module entier. */
+  .ppl-sous-titre { margin: 0; font-weight: 400; }
 
   /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
      pièce justificative du mode — ce que le parti a écrit, mot pour mot. */
