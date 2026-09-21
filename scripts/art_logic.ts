@@ -229,8 +229,11 @@ export function buildMetadata(
  *
  *  Un dépôt manqué n'est donc qu'un avertissement : l'image part avec sa Une,
  *  et le build suivant, ne la trouvant pas en R2 sous la clé de l'histoire, la
- *  redessine et retente le dépôt. Une écriture locale manquée, elle, reste une
- *  vraie panne : sans fichier, il n'y a rien à servir. */
+ *  redessine et retente le dépôt. Une écriture locale manquée, elle, remonte à
+ *  l'appelant : ensure_art.ts l'avertit et garde les fichiers de fetch_art, car
+ *  l'illustration se fait au mieux et ne bloque JAMAIS une édition — latest.json
+ *  s'écrit en dernier, donc la garde d'appariement du site écarte une image
+ *  écrite à moitié plutôt que de la servir sous un autre titre. */
 export async function writeThenUpload(
   writeLocal: () => Promise<void>,
   upload: () => Promise<void>,

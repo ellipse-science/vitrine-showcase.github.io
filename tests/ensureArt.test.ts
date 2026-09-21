@@ -222,7 +222,7 @@ describe("writeThenUpload — l'image part avec sa Une, même si R2 boude", () =
     expect(avertissements[0]).toContain("l'image part quand même");
   });
 
-  it("une écriture locale manquée reste une panne, et rien n'est déposé", async () => {
+  it("une écriture locale manquée remonte à l'appelant, et rien n'est déposé", async () => {
     let depose = false;
     await expect(
       writeThenUpload(
