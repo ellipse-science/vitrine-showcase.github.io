@@ -1,5 +1,11 @@
 [
   {
+    "pr": 833,
+    "date": "2026-09-21T01:19:48Z",
+    "note": "L'illustration de la Une change maintenant au même instant que le titre pour tous les visiteurs. Avant, l'image de l'édition précédente pouvait rester affichée jusqu'à une heure sous la nouvelle Une.",
+    "version": "2.47.0-beta.1"
+  },
+  {
     "pr": 829,
     "date": "2026-09-19T11:45:06Z",
     "note": "La collecte des comptes de réseaux sociaux des candidats tourne désormais toute la journée plutôt qu'une demi-journée, afin de remonter plus vite l'historique des publications, et les comptes officiels des cinq partis rejoignent les 601 comptes de candidats déjà suivis. Rien ne change sur le site : cette collecte ne publie aucune table et n'alimente aucun module.",
