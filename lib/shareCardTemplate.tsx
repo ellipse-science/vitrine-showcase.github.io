@@ -22,11 +22,12 @@ export type ShareCardContent = {
   subtitle?: string;
   /** Étiquette au-dessus du bloc central : l'enjeu CAP, quand il existe. */
   kicker?: string;
-  /** Le grand chiffre. Absent pour la Une des Unes, qui affiche une manchette. */
+  /** Le grand chiffre. Réduit à une preuve de second plan sur une carte à manchette. */
   figureValue?: string;
   /** Légende du grand chiffre. */
   figureLabel?: string;
-  /** Manchette (Une des Unes) : le titre domine, le ratio passe au second plan. */
+  /** Manchette (Une des Unes, Polimètre+) : le titre de la Une ou la promesse
+   *  en tête domine, le chiffre passe au second plan. */
   headline?: string;
   /** Lead synthétique sous la manchette. */
   excerpt?: string;
@@ -58,9 +59,10 @@ export function toShareCardContent(
   editionLabel?: string,
 ): ShareCardContent {
   const { stat } = content;
-  // `kicker` ne vaut que pour la Une des Unes, seul module dont la carte mène
-  // avec une manchette : c'est le drapeau que les deux générateurs lisaient
-  // déjà pour choisir leur gabarit.
+  // `kicker` est le drapeau des cartes qui mènent avec une manchette plutôt
+  // qu'avec un chiffre : la Une des Unes (le titre de la Une) et le Polimètre+
+  // (la promesse en tête). C'est celui que les deux générateurs lisaient déjà
+  // pour choisir leur gabarit.
   const isHeadline = Boolean(stat.kicker);
   const joined = [stat.context, stat.contextHighlight].filter(Boolean).join(" ");
 
@@ -226,9 +228,10 @@ export function ShareCard({ content, format }: { content: ShareCardContent; form
   const display = "Playfair Display";
   const body = "Source Serif 4";
 
-  // La manchette (Une des Unes) est une nouvelle, pas une statistique : le
-  // titre de la Une domine, et le ratio « X/Y médias » devient une preuve de
-  // second plan. Les cinq autres modules mènent avec leur chiffre.
+  // La manchette est une nouvelle, pas une statistique : le titre de la Une
+  // (Une des Unes) ou la promesse en tête (Polimètre+) domine, et le compte de
+  // médias devient une preuve de second plan. Les quatre autres modules mènent
+  // avec leur chiffre.
   const isHeadlineCard = Boolean(content.headline);
   const showHeadlineImage = Boolean(isHeadlineCard && !f.stacked && content.imageSrc);
   const showSalience = Boolean(isHeadlineCard && !f.stacked && content.salienceLabel);
