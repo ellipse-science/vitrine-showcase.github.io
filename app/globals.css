@@ -7988,18 +7988,23 @@
     border-radius: 3px;
   }
 
+  /* Sous-titres du Polimètre+ : un cran au-dessus du .period-subtitle des
+     autres modules (10px), parce que celui du bloc « 2022 » est le seul titre
+     de son bloc. Les deux blocs suivent, pour rester jumeaux. Portée limitée
+     au module : les autres sous-titres du site ne bougent pas. */
+  .polimeter-plus .period-subtitle { font-size: 12px; }
   /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
      de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
-     .period-subtitle en div des autres modules — on efface ce que h3 apporte
-     de lui-même (graisse, marges). */
+     .period-subtitle en div — on efface ce que h3 apporte de lui-même
+     (graisse, marges). */
   .ppl-sous-titre { margin: 0; font-weight: 400; }
-  /* …et il se tient à mi-distance : la moitié de la marge inter-modules de
-     .partis-title-row (56px → 28px ; 40px → 20px sous le même seuil de 768px
-     que la marge mobile de .partis-title-row). Assez pour séparer deux listes,
-     pas assez pour lire deux modules. */
-  .polimeter-plus--second .partis-title-row { margin-top: 28px; }
+  /* …et il se tient tout près : 12px au lieu des 56px inter-modules de
+     .partis-title-row (10px au lieu de 40px sous le même seuil de 768px que
+     sa marge mobile). Le bloc « 2022 » se lit comme la suite du module, pas
+     comme un module de plus. */
+  .polimeter-plus--second .partis-title-row { margin-top: 12px; }
   @media (max-width: 768px) {
-    .polimeter-plus--second .partis-title-row { margin-top: 20px; }
+    .polimeter-plus--second .partis-title-row { margin-top: 10px; }
   }
 
   /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
