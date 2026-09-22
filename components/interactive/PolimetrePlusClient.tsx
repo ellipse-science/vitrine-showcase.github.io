@@ -750,7 +750,10 @@ function NeuvesView({
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <PromiseTitle title={p.title} />
+                          {/* Même symbole d'enjeu que le mode « 2022 » (issue #425).
+                              L'enjeu est ici inféré : `p.enjeu` vaut null hors des
+                              douze libellés, et le symbole s'efface alors sans bruit. */}
+                          <PromiseTitle title={p.title} categorie={p.enjeu} />
                           <PartiBadge parti={p.parti} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -824,7 +827,7 @@ function NeuvesView({
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <PromiseTitle title={p.title} />
+                        <PromiseTitle title={p.title} categorie={p.enjeu} />
                         <PartiBadge parti={p.parti} />
                       </>
                     )}
