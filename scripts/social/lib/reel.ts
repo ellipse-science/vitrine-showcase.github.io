@@ -118,7 +118,12 @@ export const FORMATS: Record<FormatCle, FormatSpec> = {
 export const FORMAT: FormatCle = (() => {
   const i = process.argv.indexOf("--format");
   const v = i >= 0 ? process.argv[i + 1] : process.argv.find((a) => a.startsWith("--format="))?.slice(9);
-  return v && v in FORMATS ? (v as FormatCle) : "instagram";
+  if (v === undefined) return "instagram";
+  // Une faute de frappe (« tik-tok ») ne retombe pas en silence sur Instagram :
+  // on produirait un reel qui n'est pas celui qu'on a demandé, sous un nom de
+  // fichier qui ne le dit pas.
+  if (!Object.hasOwn(FORMATS, v)) throw new Error(`Format « ${v} » inconnu. Formats : ${Object.keys(FORMATS).join(", ")}`);
+  return v as FormatCle;
 })();
 const SPEC = FORMATS[FORMAT];
 
@@ -409,8 +414,13 @@ export function logoAnime(logo: string, opts: { classe: string; taille: number; 
  *  17-09). Deux lignes tiennent quelle que soit la date — « Mercredi
  *  30 septembre » est le pire cas. */
 function edition(texte: string): string {
-  const [heure, ...reste] = texte.split(" · ");
-  const date = reste.join(" · ");
+  // Le segment « Édition de … » passe en premier où qu'il soit : Enjeux
+  // saillants écrit « du … au … · Édition de 20h », les autres modules
+  // l'inverse (relevé de Copilot, vitrine#826).
+  const segments = texte.split(" · ");
+  const i = Math.max(0, segments.findIndex((s) => s.startsWith("Édition de")));
+  const [heure] = segments.splice(i, 1);
+  const date = segments.join(" · ");
   return `<b>${typo(esc(heure))}</b>${date ? `<span>${typo(esc(date))}</span>` : ""}`;
 }
 

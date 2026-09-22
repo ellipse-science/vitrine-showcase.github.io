@@ -126,7 +126,7 @@ function calque(p, zones, estime) {
   c.innerHTML =
     '<i style="left:0;top:0;right:0;height:' + pc(zones.haut, 1920) + '">interface, ' + zones.haut + ' px</i>' +
     '<i style="left:0;right:0;bottom:0;height:' + pc(zones.bas, 1920) + '">légende et navigation, ' + zones.bas + ' px</i>' +
-    (zones.droite ? '<i style="right:0;top:' + pc(640, 1920) + ';bottom:' + pc(zones.bas, 1920) + ';width:' + pc(zones.droite, 1080) + '">boutons</i>' : "");
+    (zones.droite ? '<i style="right:0;top:' + pc(zones.boutonsDepuis, 1920) + ';bottom:' + pc(zones.bas, 1920) + ';width:' + pc(zones.droite, 1080) + '">boutons</i>' : "");
 }
 
 function rendre() {
