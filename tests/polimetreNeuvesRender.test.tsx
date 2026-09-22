@@ -197,14 +197,17 @@ describe("Polimètre+ — enjeux du mode « campagne »", () => {
 
 describe("Polimètre+ — onglets de période du mode « campagne »", () => {
   it("offre les trois onglets, dans l'ordre de l'emboîtement, sans « mois »", () => {
+    // Le bloc « 2022 » empilé en dessous a lui-même un onglet « Depuis un mois » :
+    // la vérification « sans mois » ne porte donc que sur le bloc campagne.
     const html = rendreCampagne();
-    const auj = html.indexOf("Aujourd&#x27;hui");
-    const sem = html.indexOf("Depuis une semaine");
-    const camp = html.indexOf(">Campagne<");
+    const blocCampagne = html.slice(0, html.indexOf("polimeter-plus--second"));
+    const auj = blocCampagne.indexOf("Aujourd&#x27;hui");
+    const sem = blocCampagne.indexOf("Depuis une semaine");
+    const camp = blocCampagne.indexOf(">Campagne<");
     expect(auj).toBeGreaterThan(-1);
     expect(sem).toBeGreaterThan(auj);
     expect(camp).toBeGreaterThan(sem);
-    expect(html).not.toContain("Depuis un mois");
+    expect(blocCampagne).not.toContain("Depuis un mois");
   });
 
   // L'onglet ouvert au premier rendu est « Aujourd'hui » : c'est donc lui que
