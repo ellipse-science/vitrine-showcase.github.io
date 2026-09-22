@@ -11529,7 +11529,7 @@
   position: relative;
   box-sizing: border-box;
   /* --dg-largeur : posée par le composant quand la bulle tient dans la marge
-     à droite de la colonne. Sinon elle ne s'ouvre qu'à la demande. */
+     à droite de la colonne. Dans tous les cas, elle ne s'ouvre qu'à la demande. */
   width: var(--dg-largeur, min(348px, calc(100vw - 32px)));
   margin: 0 0 24px;
   padding: 16px 20px 19px;
@@ -11685,9 +11685,6 @@
 .dg-promo[data-phase="parle"] .dg-perso {
   animation: dg-monte 1350ms both;
 }
-.dg-promo[data-phase="sort"] .dg-perso {
-  animation: dg-descend 420ms 100ms both;
-}
 
 /* Un coup d'œil par-dessus le bord, une hésitation, puis le saut. */
 @keyframes dg-monte {
@@ -11699,23 +11696,21 @@
   89% { transform: translateY(2.5%); animation-timing-function: ease-out; }
   100% { transform: translateY(0); }
 }
-@keyframes dg-descend {
-  0% { transform: translateY(0); animation-timing-function: ease-out; }
-  28% { transform: translateY(-6%); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.5); }
-  100% { transform: translateY(calc(112% + var(--dg-bas))); }
-}
 
-/* Le « ! » : seulement quand la bulle ne tient pas dans la marge. Il dit qu'il
-   y a un message sans rien poser sur le contenu ; il s'efface bulle ouverte. */
+/* Le « ! » : il dit qu'il y a un message sans rien poser sur le contenu ; il
+   s'efface bulle ouverte et revient quand elle se referme. C'est une petite
+   bulle de parole, avec la même queue en escalier que la grande : un carré
+   seul se lisait comme une alerte, pas comme « j'ai quelque chose à dire ». */
 .dg-signe {
   position: absolute;
   /* Au-dessus de la tête, à l'intérieur de la largeur du personnage : posé à
-     sa gauche, il mordait sur la colonne à 1440. */
-  top: -22px;
-  left: 6px;
+     sa gauche, il mordait sur la colonne à 1440. Remonté de la hauteur de la
+     queue (10 px), dont la pointe vise la tête. */
+  top: -34px;
+  left: 4px;
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 32px;
   height: 26px;
   box-sizing: border-box;
   background: var(--dg-ambre);
@@ -11728,12 +11723,27 @@
   line-height: 1;
   color: var(--dg-encre);
   opacity: 0;
+  /* Elle sort de la pointe de sa queue, comme la grande bulle. */
+  transform-origin: calc(100% - 8px) calc(100% + 10px);
   transform: scale(0.3);
   transition: transform 160ms ease-in, opacity 120ms ease-in;
   pointer-events: none;
 }
+.dg-signe-queue {
+  position: absolute;
+  /* Même raccord que .dg-queue : le fond recouvre les 2 px du contour. */
+  top: 100%;
+  right: 4px;
+  overflow: visible;
+  shape-rendering: crispEdges;
+}
+.dg-signe-queue-fond { fill: var(--dg-ambre); }
+.dg-signe-queue-trait { fill: none; stroke: var(--dg-encre); stroke-width: 2; }
 .dg-perso { position: relative; }
-.dg-promo[data-discret][data-phase="parle"]:not([data-ouvert]) .dg-signe {
+/* La tête du chien est plus bas dans son image (l'antenne dépasse à droite) :
+   sa bulle descend d'autant, sinon elle flotte loin au-dessus de lui. */
+.dg-promo[data-perso="chien"] .dg-signe { top: -20px; }
+.dg-promo[data-phase="parle"]:not([data-ouvert]) .dg-signe {
   opacity: 1;
   transform: none;
   transition: transform 420ms var(--dg-ressort) 120ms, opacity 140ms ease-out 120ms;
@@ -11766,7 +11776,8 @@
   .dg-promo[data-perso="prof"] img { width: 54px; height: 71px; }
   .dg-perso { margin-right: 6px; }
   .dg-queue { right: 22px; }
-  .dg-signe { top: -24px; left: 0; }
+  .dg-signe { top: -36px; left: -2px; }
+  .dg-promo[data-perso="chien"] .dg-signe { top: -27px; }
 }
 /* Sur dev seulement : au-dessus du panneau du laboratoire de palettes. */
 .dg-promo[data-leve] { --dg-bas: 70px; }
@@ -11781,7 +11792,6 @@
   .dg-perso { transform: none; opacity: 0; transition: opacity 300ms; }
   .dg-promo[data-phase="entre"] .dg-perso,
   .dg-promo[data-phase="parle"] .dg-perso { animation: none; opacity: 1; }
-  .dg-promo[data-phase="sort"] .dg-perso { animation: none; opacity: 0; }
   .dg-promo[data-perso="prof"][data-phase="parle"] .dg-perso-vie { animation: none; }
   .dg-bulle,
   .dg-promo[data-ouvert] .dg-bulle { transform: none; transition: opacity 200ms, visibility 0s; }

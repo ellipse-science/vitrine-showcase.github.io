@@ -1,24 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { PERSOS, choisirPerso, estPerso, largeurBulle } from "@/lib/promoDatagotchi";
+import { PERSOS, choisirPerso, largeurBulle } from "@/lib/promoDatagotchi";
 
 describe("choisirPerso", () => {
-  it("garde le personnage déjà attribué au visiteur", () => {
-    expect(choisirPerso("prof", 0.1)).toBe("prof");
-    expect(choisirPerso("chien", 0.9)).toBe("chien");
-  });
-
-  it("tire au sort, moitié-moitié, quand rien n'est mémorisé", () => {
-    expect(choisirPerso(null, 0)).toBe("chien");
-    expect(choisirPerso(null, 0.49)).toBe("chien");
-    expect(choisirPerso(null, 0.5)).toBe("prof");
-    expect(choisirPerso(null, 0.99)).toBe("prof");
-  });
-
-  it("retire au sort sur une valeur mémorisée inconnue", () => {
-    expect(choisirPerso("clippy", 0.7)).toBe("prof");
-    expect(estPerso("clippy")).toBe(false);
+  it("tire au sort, moitié-moitié, à chaque chargement", () => {
+    expect(choisirPerso(0)).toBe("chien");
+    expect(choisirPerso(0.49)).toBe("chien");
+    expect(choisirPerso(0.5)).toBe("prof");
+    expect(choisirPerso(0.99)).toBe("prof");
   });
 });
 
@@ -51,7 +41,7 @@ describe("largeurBulle", () => {
     expect(largeurBulle(678)).toBe(348);
   });
 
-  it("renonce quand la marge est trop étroite : la bulle attend qu'on la demande", () => {
+  it("renonce quand la marge est trop étroite : la bulle garde sa largeur par défaut", () => {
     expect(largeurBulle(238)).toBeNull();
     expect(largeurBulle(118)).toBeNull();
     expect(largeurBulle(48)).toBeNull();

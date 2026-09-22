@@ -1,5 +1,41 @@
 [
   {
+    "pr": 846,
+    "date": "2026-09-22T02:59:49Z",
+    "note": "Aucune. Correction de trois notes du journal lui-même, rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 845,
+    "date": "2026-09-22T02:55:38Z",
+    "note": "L'illustration de la Une ne disparaît plus quand son archivage échoue : elle part avec le titre, et l'archivage est retenté à l'édition suivante.",
+    "version": "2.47.0-beta.5"
+  },
+  {
+    "pr": 844,
+    "date": "2026-09-21T20:16:26Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 843,
+    "date": "2026-09-21T18:32:01Z",
+    "note": "Le point d'exclamation du personnage de Datagotchi prend la forme d'une petite bulle de parole : on comprend mieux qu'il a un message à montrer.",
+    "version": "2.47.0-beta.4"
+  },
+  {
+    "pr": 842,
+    "date": "2026-09-21T18:09:47Z",
+    "note": "Le personnage de Datagotchi au bas de la page d'accueil se fait plus discret : il arrive après quinze secondes, et son message ne s'affiche que si on le survole ou le touche. On peut refermer le message sans faire partir le personnage.",
+    "version": "2.47.0-beta.3"
+  },
+  {
+    "pr": 807,
+    "date": "2026-09-21T14:59:15Z",
+    "note": "La Méthodologie précise que, pour chaque paragraphe de Une, le modèle ne juge que les trente promesses de campagne les plus proches par le vocabulaire.",
+    "version": null
+  },
+  {
     "pr": 808,
     "date": "2026-09-21T01:20:01Z",
     "note": "La page Méthodologie explique maintenant ce que fait la Vitrine quand la Une de CNN est une vidéo : elle retient le premier article du même bloc, ou écarte la capture s'il s'agit d'un épisode payant.",
@@ -44,7 +80,7 @@
   {
     "pr": 823,
     "date": "2026-09-18T00:28:32Z",
-    "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
+    "note": "Rien ne change sur le site : retouches aux vidéos destinées aux réseaux sociaux.",
     "version": null
   },
   {
@@ -80,7 +116,7 @@
   {
     "pr": 817,
     "date": "2026-09-17T03:18:26Z",
-    "note": "Le module sur l'Assemblée nationale reprend les couleurs d'un alignement de hockey.",
+    "note": "Sur le site de travail seulement : le module sur l'Assemblée nationale s'essaie aux couleurs d'un alignement de hockey. Rien ne change sur le site public.",
     "version": null
   },
   {
@@ -92,7 +128,7 @@
   {
     "pr": 815,
     "date": "2026-09-17T02:17:07Z",
-    "note": "Le module sur la couverture des partis s'affiche désormais sur un fond sombre, comme une console de mixage.",
+    "note": "Sur le site de travail seulement : le module sur la couverture des partis s'essaie à un fond sombre, comme une console de mixage. Rien ne change sur le site public.",
     "version": null
   },
   {
