@@ -26,7 +26,8 @@ La publication reste **manuelle** : le script ne publie rien sur Instagram.
 
 ## Cartes de député (`cartes-deputes.ts`)
 
-Un visuel FIXE par élu, recto et verso, en 1080 × 1350 — pas une vidéo, donc
+Un visuel FIXE par élu, recto et verso, en 1071 × 1496 — ratio exact 63:88,
+proche du format physique d'une carte de collection — pas une vidéo, donc
 hors de la chaîne `lib/reel.ts` et hors de la zone sûre des reels, qui n'a pas
 lieu d'être sur un post statique. La grammaire est celle des cartes de
 collection O-Pee-Chee 1965-1978 ; tout est commenté en tête du script.
@@ -35,7 +36,7 @@ collection O-Pee-Chee 1965-1978 ; tout est commenté en tête du script.
 npm run carte:deputes -- --echantillon   # 5 cartes, une par parti
 npm run carte:deputes -- --limite 10     # les 10 premières de la série
 npm run carte:deputes -- --only tanguay  # une carte, par nom ou circonscription
-npm run carte:deputes                    # la planche-contact des 129
+npm run carte:deputes                    # la planche-contact des 128
 npm run carte:deputes -- --png           # les PNG, la planche une fois relue
 npm run carte:deputes -- --annee 2027    # année de l'édition (défaut : l'année courante)
 ```
@@ -46,15 +47,16 @@ générée et regardée — même esprit que le verrou d'aperçu des reels. Le
 disclaimer imprimé au dos affirme « validé à la main » : cette phrase n'est
 vraie que si la planche est réellement relue.
 
-🪤 **Ce qu'il faut savoir avant de produire les 129 :**
+🪤 **Ce qu'il faut savoir avant de produire les 128 :**
 
 - `CHEFS`, en tête du script, est la liste des titres (premier ministre, chefs
   de parti). **Rien dans les données ne dit qui dirige un parti** : elle est
   tenue à la main, sa clé est le slug de circonscription, et un garde-fou
   signale toute entrée sans élu correspondant.
-- Maïté Blanchette Vézina (Rimouski) a changé d'allégeance : elle produit DEUX
-  cartes, suffixées par parti. On n'en envoie qu'une.
-- L'enjeu dominant est « Terres » sur 59 cartes de 129, parce que le raffineur
+- Maïté Blanchette Vézina (Rimouski) a changé d'allégeance : sa carte retient
+  son allégeance actuelle au Parti conservateur du Québec; son parcours
+  antérieur demeure expliqué au verso.
+- L'enjeu dominant est « Terres » sur 59 cartes de 128, parce que le raffineur
   sur-attribue `public_lands_and_agriculture` (21,2 % de part moyenne, devant
   l'économie). Défaut de donnée, pas de rendu.
 - Trois écarts assumés à `GABARIT.md`, commentés dans le script : polices Oswald
