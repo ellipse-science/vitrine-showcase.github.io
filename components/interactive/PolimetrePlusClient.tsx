@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_ORDER,
+  NEUVE_RANGE_ORDER,
   NEUVE_RANGE_TAB_LABELS,
   PARTI_FULL_LABELS,
   PARTI_LABELS,
@@ -524,11 +525,45 @@ function PolimetreView({
  *  - la pastille porte le PARTI, pas le verdict. Une promesse formulée hier n'a
  *    pas d'état de réalisation ; le Polimètre ne se prononcera que des mois plus
  *    tard. Ce qu'on sait d'elle le jour même, c'est qui l'a formulée.
- *  - les onglets sont « Aujourd'hui » et « Depuis une semaine », sans « mois » :
- *    une fenêtre d'un mois noierait la nouveauté sous l'accumulé.
+ *  - les onglets sont « Aujourd'hui », « Depuis une semaine » et « Campagne »,
+ *    sans « mois » : une fenêtre d'un mois noierait la nouveauté sous
+ *    l'accumulé. « Campagne » n'est pas un mois qui glisse mais le cumul depuis
+ *    le jour du bref, la même période que les autres modules appellent ainsi.
  * ========================================================================== */
 
-const NEUVE_RANGES: NeuveRangeKey[] = ["day", "week"];
+const NEUVE_RANGES: NeuveRangeKey[] = NEUVE_RANGE_ORDER;
+
+/** L'état vide d'un onglet, et ce qu'il a le droit d'affirmer.
+ *
+ *  Le raffineur ne publie PAS une fenêtre sans reprise : dans la donnée, « aucune
+ *  promesse reprise cette semaine » et « la semaine n'a pas été calculée » se
+ *  ressemblent (`week` et `campaign` ne sont calculées que sur demande, hors
+ *  Lambda). Mais les fenêtres sont emboîtées, day ⊂ week ⊂ campaign : si un
+ *  onglet plus court montre des promesses, l'onglet plus long ne peut pas être
+ *  vide faute de reprise. Il est vide parce qu'il n'a pas été publié, et c'est ce
+ *  qu'on dit. Écrire « aucune promesse n'a été reprise depuis le début de la
+ *  campagne » sous un onglet « Aujourd'hui » qui en liste quatre serait faux.
+ *
+ *  Sans onglet plus court à contredire, l'état vide dit ce qui est vrai — aucune
+ *  REPRISE — et non « aucune promesse » : des promesses ont pu être formulées
+ *  sans qu'un seul média en parle, c'est précisément ce que le module donne à
+ *  voir.
+ *
+ *  Exportée pour le test : le rendu statique n'ouvre que « Aujourd'hui ». */
+export function messageEtatVide(range: NeuveRangeKey, ranges: PromessesNeuvesData["ranges"]): string {
+  const plusCourtes = NEUVE_RANGE_ORDER.slice(0, NEUVE_RANGE_ORDER.indexOf(range));
+  if (plusCourtes.some((r) => ranges[r].length > 0)) {
+    return "Le classement de cette période n'a pas encore été publié.";
+  }
+  switch (range) {
+    case "day":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes aujourd'hui.";
+    case "week":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes cette semaine.";
+    case "campaign":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes depuis le début de la campagne.";
+  }
+}
 
 /** Badge de parti — sigle sur fond de la couleur du parti. Le nom complet part
  *  en title/aria : « QS » seul ne se lit pas à voix haute, et la couleur ne dit
@@ -711,13 +746,12 @@ function NeuvesView({
 
           {filtered.length === 0 ? (
             <p style={{ padding: "18px 0", opacity: 0.6, fontStyle: "italic" }}>
-              {/* L'état vide dit ce qui est vrai — aucune REPRISE — et non
-                  « aucune promesse ». Des promesses ont pu être formulées sans
-                  qu'un seul média en parle : c'est précisément ce que le module
-                  donne à voir, et l'écrire autrement serait faux. */}
-              {range === "day"
-                ? "Aucune promesse de campagne n'a été reprise dans les Unes aujourd'hui."
-                : "Aucune promesse de campagne n'a été reprise dans les Unes cette semaine."}
+              {/* Deux vides qui ne disent pas la même chose : la FENÊTRE est
+                  vide (messageEtatVide), ou ce sont les filtres parti + enjeu
+                  qui ont tout écarté d'une fenêtre qui a des promesses. */}
+              {promesses.length === 0
+                ? messageEtatVide(range, data.ranges)
+                : "Aucune promesse ne correspond à ces filtres sur cette période."}
             </p>
           ) : (
             <ol className="ppl-promises">
@@ -865,7 +899,7 @@ export function PolimetrePlusClient({
   neuves?: PromessesNeuvesData | null;
   editionKey?: string;
 }) {
-  const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
+  const hasNeuves = !!neuves && NEUVE_RANGE_ORDER.some((r) => neuves.ranges[r].length > 0);
 
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
