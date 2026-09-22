@@ -27,8 +27,8 @@ import { MODULES } from "@/lib/modules";
 import { TRAIT, oqlf } from "./lib/post";
 import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
-import {
-  COLORS, FIN_CSS, INTRO_CSS, LINKEDIN, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
+import { CONTENT_TOP, CONTENT_BOTTOM, HEIGHT, COL,
+  COLORS, FORMAT, FIN_CSS, INTRO_CSS, LINKEDIN, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
   parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
@@ -134,10 +134,10 @@ const CSS = `
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
 #une .noart{position:absolute;left:30px;top:${LINKEDIN ? 380 : 30}px;width:1020px;height:${LINKEDIN ? 760 : 860}px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:${LINKEDIN ? 430 : 282}px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .rank{position:absolute;top:${LINKEDIN ? 430 : 282}px;left:${COL}px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
 #une .credit{position:absolute;top:${LINKEDIN ? 1084 : 742}px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:${LINKEDIN ? 1190 : 830}px}
+#une .body{position:absolute;left:${COL}px;right:${COL}px;top:${LINKEDIN ? 1190 : 830}px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
@@ -174,9 +174,9 @@ const CSS = `
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:${LINKEDIN ? 400 : 282}px;left:180px;right:180px}
+#centile .head{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${COL}px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
-#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;letter-spacing:-.04em;margin-top:6px}
+#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;padding-top:16px;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
 #centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:42px;line-height:1.1;margin-top:${LINKEDIN ? 30 : 16}px}
 #centile .scale{position:absolute;left:124px;width:270px}
@@ -186,14 +186,14 @@ const CSS = `
   background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
   box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
 #centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
-#centile .tick{position:absolute;left:180px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
-#centile .mark{position:absolute;left:180px;right:180px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
+#centile .tick{position:absolute;left:124px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
+#centile .mark{position:absolute;left:${COL}px;right:${COL}px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
-#centile .mlabel{position:absolute;right:180px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
-#centile .note{position:absolute;left:380px;right:180px}
+#centile .mlabel{position:absolute;right:${COL}px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
+#centile .note{position:absolute;left:430px;right:${COL}px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;bottom:${LINKEDIN ? 250 : 380}px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:${COL}px;right:${COL}px;bottom:${HEIGHT - CONTENT_BOTTOM + (LINKEDIN ? 130 : 0)}px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 
@@ -224,7 +224,10 @@ const CSS = `
 #classement .leg{flex:none;margin:0 ${LINKEDIN ? -70 : 0}px}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
 /* Un titre de Une ne se tronque pas : deux lignes même à trois nouvelles. */
-#classement .leg.trois .t{-webkit-line-clamp:${LINKEDIN ? 2 : 1}}
+/* DEUX lignes partout : une seule coupait les trois titres (« Un an après sa
+   mort, Nooran Rezayi honor… »), mesuré le 2026-09-22 par le contrôle de
+   troncature. Le graphique cède la place qu'il faut. */
+#classement .leg.trois .t{-webkit-line-clamp:2}
 #classement .item{display:flex;gap:20px;align-items:flex-start;padding:${LINKEDIN ? 13 : 9}px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0;text-align:left}
@@ -233,12 +236,17 @@ const CSS = `
 #classement .item .k{font-size:28px;letter-spacing:${LINKEDIN ? 0 : ".04em"};display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:relative;flex:none;height:560px}
+/* ÉLASTIQUE, pas 510 px en dur : le graphique prend la place qui reste une fois
+   le titre et les trois nouvelles posés. C'est ce qui permet au même classement
+   de tenir sur Instagram (1540 px de plancher) comme sur TikTok (1440). */
+#classement .chart{position:relative;flex:1 1 auto;min-height:0}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
+/* En PROPORTION, pas en pixels : les heures étaient calées à 480 px dans un
+   graphique de 560, et restaient sur place dès qu'il changeait de hauteur. */
+#classement .xl{position:absolute;top:86%;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
 #classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
@@ -440,7 +448,7 @@ function sceneCentile(top: UneEvent): Scene | null {
       ${markY - SCALE_TOP >= 210
         ? `<div class="note" style="top:${markY - 200}px;animation:fadeUp .5s ${done + .5}s both"><b>${100 - c}&nbsp;%</b><span>des nouvelles de la dernière année ont été plus saillantes</span></div>`
         : ""}
-      <div class="note" style="top:${(markY + SCALE_TOP + SCALE_H) / 2 - 40}px;animation:fadeUp .5s ${done + .8}s both"><b style="color:${color}">${c}&nbsp;%</b><span>ont été moins saillantes</span></div>
+      <div class="note" style="top:${Math.max((markY + SCALE_TOP + SCALE_H) / 2 - 40, markY + 100)}px;animation:fadeUp .5s ${done + .8}s both"><b style="color:${color}">${c}&nbsp;%</b><span>ont été moins saillantes</span></div>
       <div class="src mono" ${anim("fadeIn", .5, done + 1)}>Nouvelles&nbsp;: les Unes des médias québécois suivis, sur une année de référence</div>`,
   };
 }
@@ -733,7 +741,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}${LINKEDIN ? "_linkedin" : ""}`);
+  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   // Un fichier par réseau, plus le premier commentaire (le même partout).
   const textes = formats(matiere(edition, classement));

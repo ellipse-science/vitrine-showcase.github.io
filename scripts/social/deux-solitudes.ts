@@ -29,7 +29,7 @@ import {
   type EditionRef, type SolitudeAxis, type SolitudeData,
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
-import {
+import { CONTENT_TOP, COL, FORMAT,
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
@@ -69,13 +69,13 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:282px;left:180px;right:180px}
+#sonar .head{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${COL}px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:180px;right:180px;top:430px;height:600px}
+#sonar .chart{position:absolute;left:${COL}px;right:${COL}px;top:430px;height:600px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:180px;right:180px;top:1046px;bottom:420px}
+#sonar .zone{position:absolute;left:${COL}px;right:${COL}px;top:1046px;bottom:420px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
@@ -287,7 +287,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `deux-solitudes_${edition.navDateIso}_${edition.pubHour % 24}h`);
+  const base = path.join(outDir, `deux-solitudes_${edition.navDateIso}_${edition.pubHour % 24}h${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   await fs.writeFile(`${base}.txt`, caption(edition, sol));
   console.log(`  légende → ${base}.txt`);

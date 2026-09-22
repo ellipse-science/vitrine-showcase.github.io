@@ -15,7 +15,7 @@ import type { PartiesData, RowView } from "@/lib/data/parties";
 
 import { captionTypo } from "../lib/commun";
 import { HASHTAGS, MODULE, type MediaMix } from "../lib/partis";
-import { COLORS, TONE, esc, txt } from "../lib/reel";
+import { COL, CONTENT_TOP, COLORS, TONE, esc, txt } from "../lib/reel";
 
 /** Ce que reçoit une analyse. `rows` : les partis depuis minuit, du plus au
  *  moins présent. */
@@ -83,9 +83,12 @@ ${z ? `@keyframes zoomPlan{0%{transform:scale(${z.de})}${Math.round((z.debut / D
 #plan .eclair{position:absolute;left:30px;right:180px;top:30px;bottom:30px;background:#fff;opacity:0;pointer-events:none}
 @keyframes eclair{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
 @keyframes sortie{to{opacity:0;transform:translateY(-40px)}}
-#plan .phr{position:absolute;left:180px;right:180px}
-#plan .phr.a{top:288px;font-size:46px;line-height:1.12;font-weight:700}
-#plan .phr.b{top:396px;font-size:88px;line-height:1.02;color:var(--ink)}
+#plan .phr{position:absolute;left:${COL}px;right:${COL}px}
+/* Sous la barre de marque de LA PLATEFORME : 288 px était la valeur d'Instagram.
+   Les dix courts n'avaient jamais été essayés en format fil, où la barre est
+   plus haute — 32 écarts, un par phrase (mesuré le 2026-09-22). */
+#plan .phr.a{top:${CONTENT_TOP + 14}px;font-size:46px;line-height:1.12;font-weight:700}
+#plan .phr.b{top:${CONTENT_TOP + 122}px;font-size:88px;line-height:1.02;color:var(--ink)}
 ${plan.css ?? ""}`;
   const script = plan.script ? `
 (function(){
