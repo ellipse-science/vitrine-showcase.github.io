@@ -43,6 +43,7 @@ import {
   generationAllowed,
   selectReferenceNames,
   uneKey,
+  writeThenUpload,
   type ArtFile,
 } from "./art_logic";
 
@@ -259,8 +260,7 @@ async function main(): Promise<void> {
   );
   log(`image générée en ${Math.round((Date.now() - started) / 1000)} s (${Math.round(png.length / 1024)} Ko PNG)`);
 
-  await upload(key, files);
-  await writeLocal(files);
+  await writeThenUpload(() => writeLocal(files), () => upload(key, files), warn);
 }
 
 main().catch((err: unknown) => {
