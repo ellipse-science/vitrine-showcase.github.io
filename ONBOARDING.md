@@ -48,7 +48,7 @@ site ; Jules (`julespiral`) = illustrations ; Adrien (`AdriClout`) = modules
    pièges : `AGENTS.md` (vitrine, aws-infra) ou `.claude/CLAUDE.md`
    (aws-refiners).
 
-## Les 5 règles de survie (transversales aux 3 repos)
+## Les 6 règles de survie (transversales aux 3 repos)
 
 1. **FAIT vs VISION** — ne jamais documenter une intention au présent de
    l'indicatif. Ce qui EST implémenté (vérifié dans le code, daté) ≠ ce qui
@@ -65,6 +65,13 @@ site ; Jules (`julespiral`) = illustrations ; Adrien (`AdriClout`) = modules
 5. **Ne jamais éditer `public/data/` à la main** (écrasé par
    `scripts/fetch_data.R`) et **aucun chemin de déploiement AWS dans le repo
    vitrine** (GitHub Pages seulement).
+6. **Données de référence CAPP, une source par concept** — député·e·s, partis
+   (codes/couleurs/attributs), médias, enjeux, promesses : la plupart sont
+   produites par un raffineur ou tirées d'Ellipse, pas inventées localement.
+   Adapter un sous-ensemble pour un besoin différent est correct ; redéfinir
+   tout le concept en parallèle ne l'est pas — c'est le problème qu'on avait
+   avec les dossiers partagés Dropbox. Registre des sources connues :
+   [`docs/reference/donnees-de-reference.md`](./docs/reference/donnees-de-reference.md).
 
 ## Le workflow d'une PR (identique dans les 3 repos)
 
