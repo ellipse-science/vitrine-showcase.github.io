@@ -32,12 +32,23 @@ const RANGES: RangeKey[] = ["week", "month"];
 const SUMMARY_PLACEHOLDER =
   "Résumé en préparation : un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
 
-const VERDICT_FILTERS: { value: VerdictSlug | "all"; label: string; short?: string }[] = [
+/* `masquableSiVide` : le filtre disparaît du rail quand aucune promesse de la
+   période ne porte ce verdict. Réservé aux verdicts TRANSITOIRES — « En cours »
+   et « En suspens » n'existent que pendant le mandat ; une fois celui-ci clos,
+   chaque promesse est réalisée, partielle ou rompue, et ces deux boutons ne
+   mèneraient plus qu'à une liste vide. Les trois verdicts finaux restent
+   toujours affichés : le rail est aussi la légende des pastilles. */
+const VERDICT_FILTERS: {
+  value: VerdictSlug | "all";
+  label: string;
+  short?: string;
+  masquableSiVide?: boolean;
+}[] = [
   { value: "all", label: "Tous les verdicts" },
   { value: "realisee", label: "Réalisée" },
   { value: "partielle", label: "Partiellement réalisée", short: "Partiellement" },
-  { value: "en-cours", label: "En cours" },
-  { value: "en-suspens", label: "En suspens" },
+  { value: "en-cours", label: "En cours", masquableSiVide: true },
+  { value: "en-suspens", label: "En suspens", masquableSiVide: true },
   { value: "rompue", label: "Rompue" },
 ];
 
@@ -289,8 +300,25 @@ function PolimetreView({
       .map((c) => ({ name: c, present: present.has(c) }));
   }, [promises]);
 
+  // Filtres de verdict offerts sur la période : les verdicts transitoires ne
+  // sont listés que s'ils ont au moins une promesse (cf. VERDICT_FILTERS).
+  // Calculé sur la liste COMPLÈTE de la période, pas sur les cinq affichés : un
+  // verdict absent du top 5 mais présent plus bas reste un filtre valide.
+  const verdictFilters = useMemo(() => {
+    const present = new Set(promises.map((p) => p.verdict));
+    return VERDICT_FILTERS.filter(
+      (f) => f.value === "all" || !f.masquableSiVide || present.has(f.value),
+    );
+  }, [promises]);
+
+  // Un verdict choisi sur une période puis absent de la suivante n'a plus de
+  // bouton : le choix retombe sur « Tous ». Dérivé plutôt que réinitialisé au
+  // changement d'onglet, pour que l'affichage ne puisse jamais montrer un filtre
+  // actif qui n'est pas dans le rail.
+  const verdictActif = verdictFilters.some((f) => f.value === verdict) ? verdict : "all";
+
   const filtered = promises
-    .filter((p) => verdict === "all" || p.verdict === verdict)
+    .filter((p) => verdictActif === "all" || p.verdict === verdictActif)
     .filter((p) => category === "all" || p.category === category)
     .slice(0, TOP_N);
 
@@ -342,15 +370,15 @@ function PolimetreView({
         {/* Rail gauche : légende des verdicts + catégories d'enjeux */}
         <aside className="ppl-filters">
           <nav className="ppl-verdicts" aria-label="Filtrer par verdict">
-            {VERDICT_FILTERS.map((f) => {
+            {verdictFilters.map((f) => {
               const cls = f.value === "all" ? "ppl-verdict" : `ppl-verdict ppl-verdict--${f.value}`;
               return (
                 <button
                   key={f.value}
                   type="button"
-                  className={verdict === f.value ? `${cls} active` : cls}
+                  className={verdictActif === f.value ? `${cls} active` : cls}
                   data-verdict={f.value}
-                  aria-pressed={verdict === f.value}
+                  aria-pressed={verdictActif === f.value}
                   onClick={() => setVerdict(f.value)}
                 >
                   {f.short ? (
