@@ -15,6 +15,7 @@
 |------|------|
 | Directory tree, data flow, what-to-edit map | [`docs/reference/architecture.md`](./docs/reference/architecture.md) |
 | Data schemas: `issues_score_day`, `headline_events_4h`, ISSUE_KEYS | [`docs/reference/data-schemas.md`](./docs/reference/data-schemas.md) |
+| Reference data registry: single source per concept (deputies, parties, media, issues, promises) across the 3 repos, known duplication debt | [`docs/reference/donnees-de-reference.md`](./docs/reference/donnees-de-reference.md) |
 | AWS backend: refiner lifecycle, deploy, schedules, active refiners, Athena | [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md) |
 | Procedures (skill candidates): add a section, diagnose stale data, modify/schedule a refiner, edit static HTML | [`docs/reference/procedures.md`](./docs/reference/procedures.md) |
 | Automated guardrails: the `PreToolUse` hook (`.claude/hooks/guard.py`) that blocks `public/data/` edits + AWS deploy paths | [`docs/reference/guardrails.md`](./docs/reference/guardrails.md) |
