@@ -78,14 +78,25 @@ describe("chargeur des promesses neuves", () => {
     expect(p.articles.map((a) => a.media)).toEqual(["La Presse", "Le Devoir"]);
   });
 
-  it("sépare les deux fenêtres et n'invente pas de « mois »", async () => {
+  it("sépare les trois fenêtres et n'invente pas de « mois »", async () => {
     const d = await charger([
       ligne({ window_key: "day" }),
       ligne({ window_key: "week", promesse_id: "pn-bbbbbbbbbbbb", rank_current: 1 }),
+      ligne({ window_key: "campaign", promesse_id: "pn-cccccccccccc", rank_current: 1 }),
     ]);
     expect(d!.ranges.day).toHaveLength(1);
     expect(d!.ranges.week).toHaveLength(1);
-    expect(Object.keys(d!.ranges).sort()).toEqual(["day", "week"]);
+    expect(d!.ranges.campaign).toHaveLength(1);
+    expect(Object.keys(d!.ranges).sort()).toEqual(["campaign", "day", "week"]);
+  });
+
+  it("une fenêtre `campaign` seule suffit à publier le mode", async () => {
+    // Un run manuel peut publier la campagne sans que `day` ait quoi que ce
+    // soit à dire ce jour-là : le mode ne doit pas retomber sur « 2022 ».
+    const d = await charger([ligne({ window_key: "campaign" })]);
+    expect(d).not.toBeNull();
+    expect(d!.ranges.day).toHaveLength(0);
+    expect(d!.ranges.campaign.map((p) => p.promesseId)).toEqual(["pn-aaaaaaaaaaaa"]);
   });
 
   it("respecte le rang du raffineur au lieu de reclasser par saillance", async () => {
@@ -173,15 +184,18 @@ describe("chargeur des promesses neuves", () => {
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-midi", "pn-matin"]);
   });
 
-  it("`week` garde son propre dernier instantané, même antérieur à celui de `day`", async () => {
-    // Un balayage `week` publié le 3 doit rester visible quand `day` avance au 4.
+  it("`week` et `campaign` gardent leur propre dernier instantané, même antérieur à celui de `day`", async () => {
+    // Un balayage `week` ou `campaign` publié le 3 (run manuel) doit rester
+    // visible quand `day` avance au 4.
     const d = await charger([
       ligne({ window_key: "day", window_end: "2026-09-04", promesse_id: "pn-jour", computed_at: "2026-09-04T07:51:00Z" }),
       ligne({ window_key: "week", window_end: "2026-09-03", promesse_id: "pn-semaine", computed_at: "2026-09-03T20:00:00Z" }),
+      ligne({ window_key: "campaign", window_end: "2026-09-03", promesse_id: "pn-campagne", computed_at: "2026-09-03T20:00:00Z" }),
     ]);
     expect(d!.windowEnd).toBe("2026-09-04");
     expect(d!.ranges.day.map((p) => p.promesseId)).toEqual(["pn-jour"]);
     expect(d!.ranges.week.map((p) => p.promesseId)).toEqual(["pn-semaine"]);
+    expect(d!.ranges.campaign.map((p) => p.promesseId)).toEqual(["pn-campagne"]);
   });
 
   it("sans computed_at : dédoublonne par promesse, en filet", async () => {

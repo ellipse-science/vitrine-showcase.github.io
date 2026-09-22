@@ -88,12 +88,24 @@ export type PolimetreData = {
 
 /** Onglets du bloc « neuves ». Volontairement PAS de « mois » : une promesse
  *  neuve est un événement daté, et une fenêtre d'un mois noierait la nouveauté
- *  sous l'accumulé — ce que le mode « 2022 » fait déjà. */
-export type NeuveRangeKey = "day" | "week";
+ *  sous l'accumulé — ce que le mode « 2022 » fait déjà.
+ *
+ *  `campaign` n'est pas une fenêtre glissante mais une ORIGINE FIXE : le cumul
+ *  depuis le jour du bref (`ELECTION_CALL_DATE`, lib/election.ts), la même
+ *  période que les autres modules appellent « Campagne ». Elle ne dit pas « de
+ *  quoi parle-t-on cette semaine » mais « de quelles promesses a-t-on parlé
+ *  depuis le début ». Les trois sont emboîtées : day ⊂ week ⊂ campaign — c'est
+ *  ce qui permet à l'état vide de distinguer « aucune reprise » de « fenêtre
+ *  pas encore publiée » (cf. NeuvesView). L'ORDRE de ce tableau est celui des
+ *  onglets et de l'emboîtement, ne pas le changer. */
+export type NeuveRangeKey = "day" | "week" | "campaign";
+
+export const NEUVE_RANGE_ORDER: NeuveRangeKey[] = ["day", "week", "campaign"];
 
 export const NEUVE_RANGE_TAB_LABELS: Record<NeuveRangeKey, string> = {
   day: "Aujourd'hui",
   week: "Depuis une semaine",
+  campaign: "Campagne",
 };
 
 /** Clés de parti — les mêmes que PARTY_KEYS de lib/data/parties.ts, en
