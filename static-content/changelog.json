@@ -1,5 +1,11 @@
 [
   {
+    "pr": 841,
+    "date": "2026-09-22T12:59:48Z",
+    "note": "Dans le Polimètre+, les promesses formulées pendant la campagne s'affichent maintenant au-dessus des promesses de 2022, sans avoir à changer de mode.",
+    "version": "2.48.0-beta.0"
+  },
+  {
     "pr": 848,
     "date": "2026-09-22T03:09:10Z",
     "note": "_Sans objet_ — document de travail interne à l'équipe, aucun label `semver`. Rien ne change pour le visiteur du site.",
