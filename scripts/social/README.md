@@ -14,7 +14,8 @@ site, à partir des **mêmes données et des mêmes calculs que la page**.
 | `deux-solitudes.ts` (module 2) | LIVRÉ |
 | `partis.ts` (Partis et couverture) | LIVRÉ — légende Instagram seulement |
 | `enjeux-semaine.ts` (12 enjeux · évolution sur 7 jours) | LIVRÉ |
-| Polimètre+, Assemblée nationale | PLANIFIÉ |
+| Polimètre+ | PLANIFIÉ |
+| `cartes-deputes.ts` (Assemblée nationale) | LIVRÉ — cartes fixes recto-verso, pas un reel |
 | `vitrine.ts` (présentation des six modules) | LIVRÉ — `npm run reel:vitrine`, légende Instagram seulement |
 
 **Un module, un post** (décision de Jules et d'Adrien, 2026-09-16) : un reel ne
@@ -22,6 +23,44 @@ mélange pas deux modules, sinon le public ne sait plus ce qu'il regarde. Le ree
 global est le seul qui les traverse tous.
 
 La publication reste **manuelle** : le script ne publie rien sur Instagram.
+
+## Cartes de député (`cartes-deputes.ts`)
+
+Un visuel FIXE par élu, recto et verso, en 1080 × 1350 — pas une vidéo, donc
+hors de la chaîne `lib/reel.ts` et hors de la zone sûre des reels, qui n'a pas
+lieu d'être sur un post statique. La grammaire est celle des cartes de
+collection O-Pee-Chee 1965-1978 ; tout est commenté en tête du script.
+
+```bash
+npm run carte:deputes -- --echantillon   # 5 cartes, une par parti
+npm run carte:deputes -- --limite 10     # les 10 premières de la série
+npm run carte:deputes -- --only tanguay  # une carte, par nom ou circonscription
+npm run carte:deputes                    # la planche-contact des 129
+npm run carte:deputes -- --png           # les PNG, la planche une fois relue
+npm run carte:deputes -- --annee 2027    # année de l'édition (défaut : l'année courante)
+```
+
+**Le verrou de relecture.** Sans `--only` ni `--echantillon`, `--png` refuse de
+produire tant que la planche-contact de CETTE version exacte n'a pas été
+générée et regardée — même esprit que le verrou d'aperçu des reels. Le
+disclaimer imprimé au dos affirme « validé à la main » : cette phrase n'est
+vraie que si la planche est réellement relue.
+
+🪤 **Ce qu'il faut savoir avant de produire les 129 :**
+
+- `CHEFS`, en tête du script, est la liste des titres (premier ministre, chefs
+  de parti). **Rien dans les données ne dit qui dirige un parti** : elle est
+  tenue à la main, sa clé est le slug de circonscription, et un garde-fou
+  signale toute entrée sans élu correspondant.
+- Maïté Blanchette Vézina (Rimouski) a changé d'allégeance : elle produit DEUX
+  cartes, suffixées par parti. On n'en envoie qu'une.
+- L'enjeu dominant est « Terres » sur 59 cartes de 129, parce que le raffineur
+  sur-attribue `public_lands_and_agriculture` (21,2 % de part moyenne, devant
+  l'économie). Défaut de donnée, pas de rendu.
+- Trois écarts assumés à `GABARIT.md`, commentés dans le script : polices Oswald
+  et Archivo Narrow, couleur d'enjeu abandonnée au verso pour tenir la
+  bichromie, et libellé de l'enjeu absent du recto — l'étoile en porte la
+  couleur et le pictogramme.
 
 ## Installation (une fois)
 
