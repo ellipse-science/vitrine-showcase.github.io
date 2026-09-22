@@ -1,5 +1,11 @@
 [
   {
+    "pr": 846,
+    "date": "2026-09-22T02:59:49Z",
+    "note": "Aucune. Correction de trois notes du journal lui-même, rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 845,
     "date": "2026-09-22T02:55:38Z",
     "note": "L'illustration de la Une ne disparaît plus quand son archivage échoue : elle part avec le titre, et l'archivage est retenté à l'édition suivante.",
