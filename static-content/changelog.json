@@ -1,5 +1,11 @@
 [
   {
+    "pr": 837,
+    "date": "2026-09-22T13:55:27Z",
+    "note": "La carte que l'on obtient en partageant le Polimètre+ montre désormais la promesse la plus couverte par les médias de la semaine, plutôt qu'un pourcentage global de promesses tenues.",
+    "version": "2.49.0-beta.2"
+  },
+  {
     "pr": 840,
     "date": "2026-09-22T13:44:48Z",
     "note": "Dans le Polimètre+, les filtres « En cours » et « En suspens » n'apparaissent plus quand aucune promesse de la période n'a ce statut.",
