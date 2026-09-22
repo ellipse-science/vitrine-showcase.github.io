@@ -1,6 +1,6 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.46.0-beta.7",
+  "version": "2.47.0-beta.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,12 +10,18 @@
     "start": "next start",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "garde-redaction": "node scripts/garde_redaction.mjs"
+    "garde-redaction": "node scripts/garde_redaction.mjs",
+    "reel:une-des-unes": "tsx scripts/social/une-des-unes.ts",
+    "reel:deux-solitudes": "tsx scripts/social/deux-solitudes.ts",
+    "reel:enjeux-semaine": "tsx scripts/social/enjeux-semaine.ts",
+    "reel:partis": "tsx scripts/social/partis.ts",
+    "reel:partis-court": "tsx scripts/social/partis-court.ts",
+    "reel:vitrine": "tsx scripts/social/vitrine.ts"
   },
   "dependencies": {
-    "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -23,6 +29,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "aws4fetch": "^1.0.20",
+    "ffmpeg-static": "^5.3.0",
+    "playwright": "^1.63.0",
     "sharp": "^0.35.4",
     "tsx": "^4.23.13",
     "typescript": "^7",

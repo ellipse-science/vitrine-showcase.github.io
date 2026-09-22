@@ -821,6 +821,16 @@ datamart_env_choisi <- function() {
   env
 }
 
+# Environnement d'UNE table : `entry$env` s'il est posé, sinon celui du run.
+# Fonction pure, testée (tests/fetch_data_env.test.ts lit le source).
+env_de_table <- function(entry, datamart_env) {
+  env <- if (is.null(entry$env) || !nzchar(trimws(entry$env))) datamart_env else toupper(trimws(entry$env))
+  if (!env %in% c("DEV", "PROD")) {
+    stop("tables.json : env inconnu pour « ", entry$name, " » : ", env, ". Valeurs : DEV, PROD.")
+  }
+  env
+}
+
 run <- function() {
   message("[", format(Sys.time(), "%H:%M:%S"), "] Loaded ",
           length(ENABLED_TABLES), " enabled table(s), ",
@@ -864,11 +874,48 @@ run <- function() {
   conn <- tube::ellipse_connect(datamart_env, "datamarts")
   on.exit(tube::ellipse_disconnect(conn), add = TRUE)
 
+  # Exception par table : `"env": "DEV"` dans tables.json force la lecture d'une
+  # table dans le datamart DEV même quand DATAMART_ENV vaut PROD. Le cas :
+  # polimetre-promesses-neuves n'est pas activé en PROD (aws-infra, « NE PAS
+  # passer à active: true sans une mesure en campagne ») ; ses tables n'existent
+  # qu'en DEV, et le site les affiche déjà. Sans cette exception, la bascule du
+  # site sur PROD fait disparaître le mode « campagne » le jour même. La
+  # connexion DEV n'est ouverte que si une table en a besoin ; noctua lit les
+  # clés standard au moment de la requête, on les bascule le temps de l'appel.
+  conn_par_env <- list()
+  conn_par_env[[datamart_env]] <- conn
+  connexion_pour <- function(env) {
+    if (is.null(conn_par_env[[env]])) {
+      id  <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
+      sec <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
+      if (!nzchar(id) || !nzchar(sec)) {
+        stop("La table demande le datamart ", env, " mais AWS_ACCESS_KEY_ID_", env,
+             " / AWS_SECRET_ACCESS_KEY_", env, " manquent.", call. = FALSE)
+      }
+      message("[", format(Sys.time(), "%H:%M:%S"), "] Datamart environment (exception par table): ", env)
+      conn_par_env[[env]] <<- tube::ellipse_connect(env, "datamarts")
+    }
+    conn_par_env[[env]]
+  }
+  on.exit({
+    for (e in setdiff(names(conn_par_env), datamart_env)) tube::ellipse_disconnect(conn_par_env[[e]])
+  }, add = TRUE)
+  avec_cles_de <- function(env, expr) {
+    if (identical(env, datamart_env)) return(force(expr))
+    anciennes <- Sys.getenv(c("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"))
+    on.exit(Sys.setenv(AWS_ACCESS_KEY_ID = anciennes[[1]], AWS_SECRET_ACCESS_KEY = anciennes[[2]]), add = TRUE)
+    Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env)),
+               AWS_SECRET_ACCESS_KEY = Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env)))
+    force(expr)
+  }
+
   for (entry in ENABLED_TABLES) {
-    message("[", format(Sys.time(), "%H:%M:%S"), "] Fetching: ", entry$name)
+    env_table <- env_de_table(entry, datamart_env)
+    message("[", format(Sys.time(), "%H:%M:%S"), "] Fetching: ", entry$name,
+            if (!identical(env_table, datamart_env)) paste0(" (datamart ", env_table, ")") else "")
 
     res <- tryCatch({
-      df <- fetch_table(conn, entry)
+      df <- avec_cles_de(env_table, fetch_table(connexion_pour(env_table), entry))
       write_json_file(df, entry$out)
       message("  -> ", nrow(df), " rows -> ", entry$out)
       list(name = entry$name, status = "ok", rowCount = nrow(df),

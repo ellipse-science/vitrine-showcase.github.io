@@ -218,3 +218,31 @@ export function buildMetadata(
     generated_by: "build",
   };
 }
+
+/** Sert l'image de CE build d'abord, la dépose en R2 ensuite.
+ *
+ *  L'ordre inverse a coûté son illustration à la Une du 21 septembre 2026 à
+ *  midi : image générée en 59 s, dépôt en R2 expiré après 120 s, et comme
+ *  l'écriture locale venait APRÈS le dépôt, la bonne image était jetée. La
+ *  garde d'appariement écartait ensuite celle de la Une précédente, et la page
+ *  partait sans illustration jusqu'à l'édition suivante.
+ *
+ *  Un dépôt manqué n'est donc qu'un avertissement : l'image part avec sa Une,
+ *  et le build suivant, ne la trouvant pas en R2 sous la clé de l'histoire, la
+ *  redessine et retente le dépôt. Une écriture locale manquée, elle, remonte à
+ *  l'appelant : ensure_art.ts l'avertit et garde les fichiers de fetch_art, car
+ *  l'illustration se fait au mieux et ne bloque JAMAIS une édition — latest.json
+ *  s'écrit en dernier, donc la garde d'appariement du site écarte une image
+ *  écrite à moitié plutôt que de la servir sous un autre titre. */
+export async function writeThenUpload(
+  writeLocal: () => Promise<void>,
+  upload: () => Promise<void>,
+  warn: (message: string) => void,
+): Promise<void> {
+  await writeLocal();
+  try {
+    await upload();
+  } catch (err) {
+    warn(`dépôt en R2 manqué (${err instanceof Error ? err.message : String(err)}) : l'image part quand même avec ce build`);
+  }
+}

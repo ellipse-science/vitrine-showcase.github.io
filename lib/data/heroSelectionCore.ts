@@ -363,12 +363,25 @@ export const MIN_PART_DU_MENEUR = 0.5;
 // « héros retombés » les nuits creuses — est assumé : c'est aussi ce que font les
 // médias quand rien de neuf n'émerge. Déclencheur : cas Oliver Jones (mort culturelle
 // de la nuit, pic ~record, exclue à tort de la Une du midi le 2026-07-23).
+/** Classement PUR par saillance QC cumulée 24 h : les histoires éligibles, de
+ *  la plus forte à la plus faible. C'est la MESURE, sans la règle d'AFFICHAGE —
+ *  `selectTopUnes` y ajoute ensuite la règle de domination (#430, B6), qui
+ *  décide du nombre de cartes du module. Les reels (`scripts/social`) lisent ce
+ *  classement tel quel : montrer les cinq nouvelles les plus saillantes n'est
+ *  pas affirmer que le module en afficherait cinq. */
+export function rankTopUnes(stories: Story[], max = Number.POSITIVE_INFINITY): Story[] {
+  return stories
+    .filter((s) => s.qcMedia.size > 0 && s.sumQc > 0)
+    .sort((a, b) => b.sumQc - a.sumQc)
+    .slice(0, max);
+}
+
 export function selectTopUnes(stories: Story[], max = 3): Story[] {
   // Top-3 par saillance cumulée, sans repêchage (le pool est partagé avec le
   // radar) et SANS filtre de nombre de médias depuis #430 A2 : l'indice
   // hiérarchise lui-même, et le badge dit honnêtement où chaque carte se situe.
-  const eligible = stories.filter((s) => s.qcMedia.size > 0 && s.sumQc > 0);
-  const top = eligible.sort((a, b) => b.sumQc - a.sumQc).slice(0, max);
+  const eligible = rankTopUnes(stories);
+  const top = eligible.slice(0, max);
   if (top.length === 0) return top;
   // RÈGLE DE DOMINATION (#430, B6, décision d'Adrien du 2026-08-09).
   //
