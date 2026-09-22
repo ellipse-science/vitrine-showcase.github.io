@@ -29,7 +29,7 @@ import { anim, captionTypo, footerEdition, joinFr, pubHourLabel, resolveEdition 
 import {
   HASHTAGS, IDENTITE, MODULE, NOM_ARTICLE, SIGLE_ARTICLE, SIGLE_DE, TONE_MOT, cap, leaders, mediaMixes, tonGroupes, type MediaMix,
 } from "./lib/partis";
-import { COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
+import { FORMAT, COLORS, FIN_CSS, TONE, buildPage, chargerPartenaires, loadLogos, esc, parseArgs, produce, sceneFin, txt, type Scene } from "./lib/reel";
 
 // ── Objets du module ────────────────────────────────────────────────────────
 /** Colonne du vumètre : vingt segments de 5 %, allumés jusqu'à la part (0 → 100 %,
@@ -107,14 +107,14 @@ const CSS = `
 
 /* Ton */
 #ton .legend{flex:none;display:flex;justify-content:space-between;font-size:28px;letter-spacing:.06em}
-#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column}
-#ton .row{flex:1 1 0;min-height:148px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
+#ton .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
+#ton .row{flex:1 1 0;min-height:140px;display:flex;align-items:center;gap:28px;border-top:2px solid var(--rule)}
 #ton .needle{width:260px;height:146px;flex:none}
 #ton .lab{font-family:"Playfair Display",serif;font-weight:900;font-size:46px}
 
 /* Campagne */
-#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column}
-#campagne .row{flex:1 1 0;min-height:150px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
+#campagne .rows{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:8px}
+#campagne .row{flex:1 1 0;min-height:140px;display:flex;align-items:center;gap:24px;border-top:2px solid var(--rule)}
 #campagne .hvu{flex:1;display:flex;gap:4px;height:40px}
 #campagne .hvu i{flex:1;background:var(--deep)}
 #campagne .hvu i.on{background:var(--on)}
@@ -316,7 +316,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}`);
+  const base = path.join(outDir, `partis_${edition.navDateIso}_${pubHourLabel(edition)}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   // Instagram seulement pour l'instant : lib/reseaux.ts est écrit pour la Une des Unes.
   await fs.writeFile(`${base}_instagram.txt`, caption(edition, data, rows, mixes));
