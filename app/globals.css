@@ -579,9 +579,11 @@
   .sub-nav .nav-item:focus-within .nav-menu,
   .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
   /* Les deux panneaux se chevauchent, et celui qui se referme reste cliquable 0,35 s (délai de
-     `visibility` ci-dessus) : le panneau de l'item survolé passe devant, sinon l'autre, invisible mais
-     placé après dans le DOM, reprenait le survol et se rouvrait à sa place. */
-  .sub-nav .nav-item:hover .nav-menu { z-index: 31; }
+     `visibility` ci-dessus) : le panneau actif passe devant, sinon l'autre, invisible mais placé après
+     dans le DOM, reprenait le survol et se rouvrait à sa place. Deux étages, et non un seul : à égalité,
+     l'ordre du DOM donnerait toujours raison à « À propos » — le survol l'emporte donc sur le focus. */
+  .sub-nav .nav-item:focus-within .nav-menu { z-index: 31; }
+  .sub-nav .nav-item:hover .nav-menu { z-index: 32; }
   .sub-nav .nav-menu a {
     display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
