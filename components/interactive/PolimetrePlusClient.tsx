@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_ORDER,
-  MODE_LABELS,
   NEUVE_RANGE_TAB_LABELS,
   PARTI_FULL_LABELS,
   PARTI_LABELS,
   PARTI_ORDER,
   RANGE_TAB_LABELS,
-  type ModeKey,
   type NeuveRangeKey,
   type PartiKey,
   type PolimetreData,
@@ -258,17 +256,21 @@ function EnjeuDropdown({
   );
 }
 
-/* Vue « promesses de 2022 » — le module historique. `modeSwitch` est l'inverseur
-   de mode injecté par la coquille : il n'apparaît que lorsqu'il y a un second
-   mode à offrir (cf. PolimetrePlusClient plus bas). */
+/* Vue « promesses de 2022 » — le module historique.
+
+   `sousModule` : la vue se rend SOUS le bloc « campagne » (cf. PolimetrePlusClient
+   plus bas). Elle garde ses contrôles et son rail, mais cède le titre h2 au bloc
+   du dessus : ne restent que son sous-titre et son infobulle, promus en h3 pour
+   que le plan de la page nomme encore le bloc. Sans second bloc, la vue est le
+   module entier et porte son h2 comme avant. */
 function PolimetreView({
   data,
-  modeSwitch,
   editionKey,
+  sousModule = false,
 }: {
   data: PolimetreData;
-  modeSwitch?: ReactNode;
   editionKey?: string;
+  sousModule?: boolean;
 }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
@@ -294,23 +296,35 @@ function PolimetreView({
     .filter((p) => category === "all" || p.category === category)
     .slice(0, TOP_N);
 
+  const sousTitre = (
+    <>
+      Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
+      <InfoTip size="sm" label="À propos du Polimètre+">
+        Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
+        Polimètre+ croise les promesses de la Coalition avenir Québec, faites
+        lors de la campagne de 2022, avec leur couverture en une dans les médias
+        québécois pour faire ressortir celles qui retiennent l&apos;attention.
+      </InfoTip>
+    </>
+  );
+
   return (
-    <section className="polimeter-plus" aria-label="Polimètre+">
+    <section
+      className={sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
+      aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
+    >
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
-          <div className="period-subtitle">
-            Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
-            <InfoTip size="sm" label="À propos du Polimètre+">
-              Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
-              Polimètre+ croise les promesses de la Coalition avenir Québec, faites
-              lors de la campagne de 2022, avec leur couverture en une dans les médias
-              québécois pour faire ressortir celles qui retiennent l&apos;attention.
-            </InfoTip>
-          </div>
+          {sousModule ? (
+            <h3 className="period-subtitle ppl-sous-titre">{sousTitre}</h3>
+          ) : (
+            <>
+              <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
+              <div className="period-subtitle">{sousTitre}</div>
+            </>
+          )}
         </div>
         <div className="control-block">
-          {modeSwitch}
           <div className="control-row">
             <div className="legend-toggle inline">
               {RANGES.map((r) => (
@@ -539,11 +553,9 @@ function formatAnnonce(iso: string): string {
 
 function NeuvesView({
   data,
-  modeSwitch,
   editionKey,
 }: {
   data: PromessesNeuvesData;
-  modeSwitch?: ReactNode;
   editionKey?: string;
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
@@ -598,7 +610,7 @@ function NeuvesView({
           <h2 className="partis-title">Polimètre+&nbsp;: les promesses de la campagne</h2>
           <div className="period-subtitle">
             Promesses repérées dans les communiqués des partis, classées selon leur écho médiatique
-            <InfoTip size="sm" label="À propos de ce mode">
+            <InfoTip size="sm" label="À propos des promesses de la campagne">
               Chaque communiqué de presse publié par un des cinq grands partis au Québec est lu
               automatiquement pour y repérer les promesses qu&apos;il formule, au sens du
               Polimètre&nbsp;: un engagement à une action ou à un but précis, formulé de façon
@@ -610,7 +622,6 @@ function NeuvesView({
           </div>
         </div>
         <div className="control-block">
-          {modeSwitch}
           <div className="control-row">
             <div className="legend-toggle inline">
               {NEUVE_RANGES.map((r) => (
@@ -686,19 +697,8 @@ function NeuvesView({
             onChange={setEnjeu}
             options={enjeuItems}
           />
-
-          {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
-              qui décide ce qui compte comme promesse, dans les deux modes. Le
-              prompt de repérage applique son critère de testabilité — pointer
-              ailleurs laisserait croire à un standard maison. */}
-          <a
-            className="ppl-metho-rail"
-            href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
-            target="_blank"
-            rel="noopener"
-          >
-            Méthodologie du Polimètre
-          </a>
+          {/* Pas de lien « Méthodologie du Polimètre » ici : le bloc « 2022 »,
+              juste en dessous, le porte pour le module entier. */}
         </aside>
 
         {/* Rail droit : liste des promesses neuves */}
@@ -841,67 +841,35 @@ function NeuvesView({
 }
 
 /* ========================================================================== *
- * Coquille — porte l'état de MODE et rend l'une des deux vues.
+ * Coquille — empile les deux vues, campagne AU-DESSUS de 2022.
+ *
+ * Pas d'inverseur de mode : les deux blocs sont visibles en même temps, chacun
+ * avec ses onglets et son rail. Le bloc « campagne » porte le titre h2 du
+ * module ; le bloc « 2022 » n'a que son sous-titre (cf. `sousModule`).
  *
  * `neuves` est optionnel et vaut null tant que le raffineur n'a rien publié (le
  * cas hors campagne, où les communiqués sont des annonces de candidature sans
- * promesse). L'inverseur n'apparaît alors PAS : offrir un mode qui mène à une
- * liste vide se lit comme une panne. Le module se comporte exactement comme
- * avant tant qu'il n'y a pas de promesse neuve à montrer.
+ * promesse). Le bloc « campagne » n'apparaît alors PAS : un bloc qui n'offre
+ * qu'une liste vide se lit comme une panne. Le module redevient exactement
+ * celui d'avant, h2 compris, tant qu'il n'y a pas de promesse neuve à montrer.
  * ========================================================================== */
 export function PolimetrePlusClient({
   data,
   neuves,
   editionKey,
-  defaultMode = "polimetre",
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
   editionKey?: string;
-  /* Mode affiché au premier rendu. Existe pour DEUX raisons :
-     1. le mode « campagne » est autrement inatteignable sans clic, donc
-        intestable — c'est ce trou qui a laissé passer un rail sans son filtre
-        d'enjeu jusqu'en revue;
-     2. c'est la « une ligne » annoncée ci-dessous pour basculer le défaut le
-        jour où la campagne le justifie. */
-  defaultMode?: ModeKey;
 }) {
   const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
-  /* Défaut = le module historique, PAS le mode neuf. Un visiteur qui revient doit
-     retrouver ce qu'il connaît ; le mode « campagne » s'offre, il ne s'impose pas.
-     L'ordre de l'inverseur suit ce défaut — un inverseur qui présente en premier
-     un mode qui n'est pas celui affiché se lit comme un état incohérent. */
-  const [mode, setMode] = useState<ModeKey>(defaultMode);
 
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
-  const modeSwitch = (
-    <div className="legend-toggle inline ppl-mode-switch" role="group" aria-label="Source des promesses">
-      {(["polimetre", "neuves"] as ModeKey[]).map((m) => (
-        <span
-          key={m}
-          className={m === mode ? "active" : undefined}
-          role="button"
-          tabIndex={0}
-          aria-pressed={m === mode}
-          onClick={() => setMode(m)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setMode(m);
-            }
-          }}
-          style={{ cursor: "pointer" }}
-        >
-          {MODE_LABELS[m]}
-        </span>
-      ))}
-    </div>
-  );
-
-  return mode === "neuves" ? (
-    <NeuvesView data={neuves!} modeSwitch={modeSwitch} editionKey={editionKey} />
-  ) : (
-    <PolimetreView data={data} modeSwitch={modeSwitch} editionKey={editionKey} />
+  return (
+    <>
+      <NeuvesView data={neuves!} editionKey={editionKey} />
+      <PolimetreView data={data} editionKey={editionKey} sousModule />
+    </>
   );
 }
