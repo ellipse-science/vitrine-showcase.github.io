@@ -1,5 +1,11 @@
 [
   {
+    "pr": 838,
+    "date": "2026-09-22T13:36:42Z",
+    "note": "Le Polimètre+, en mode « promesses de la campagne », offre un troisième onglet, Campagne, qui classe les promesses selon leur écho dans les Unes depuis le déclenchement des élections. Tant que ce classement n'a pas été publié, l'onglet le dit plutôt que d'afficher une liste vide.",
+    "version": "2.49.0-beta.0"
+  },
+  {
     "pr": 839,
     "date": "2026-09-22T13:10:47Z",
     "note": "Dans le Polimètre+, les promesses de la campagne affichent maintenant le symbole de leur enjeu, comme les promesses de 2022.",
