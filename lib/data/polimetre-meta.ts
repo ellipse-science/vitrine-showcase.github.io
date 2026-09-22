@@ -74,11 +74,11 @@ export type PolimetreData = {
 };
 
 /* ========================================================================== *
- * MODE « promesses neuves » (#—)
+ * BLOC « promesses neuves » (#—)
  *
- * Deuxième source du même module : au lieu des ~150 promesses de la CAQ de
- * 2022, les promesses repérées dans les communiqués de presse des partis au fur
- * et à mesure qu'ils les formulent (raffineur `polimetre-promesses-neuves`).
+ * Deuxième source du même module, affichée AU-DESSUS des promesses de 2022 :
+ * les promesses repérées dans les communiqués de presse des partis au fur et à
+ * mesure qu'ils les formulent (raffineur `polimetre-promesses-neuves`).
  *
  * Deux choses changent, et elles se tiennent : la liste n'est plus fermée, donc
  * une promesse neuve n'a pas encore de VERDICT — le Polimètre ne se prononcera
@@ -86,14 +86,7 @@ export type PolimetreData = {
  * c'est QUI l'a formulée. La pastille porte donc le PARTI à la place du verdict.
  * ========================================================================== */
 
-export type ModeKey = "polimetre" | "neuves";
-
-export const MODE_LABELS: Record<ModeKey, string> = {
-  polimetre: "Promesses de 2022",
-  neuves: "Promesses de la campagne",
-};
-
-/** Onglets du mode « neuves ». Volontairement PAS de « mois » : une promesse
+/** Onglets du bloc « neuves ». Volontairement PAS de « mois » : une promesse
  *  neuve est un événement daté, et une fenêtre d'un mois noierait la nouveauté
  *  sous l'accumulé — ce que le mode « 2022 » fait déjà. */
 export type NeuveRangeKey = "day" | "week";
