@@ -1,5 +1,11 @@
 [
   {
+    "pr": 848,
+    "date": "2026-09-22T03:09:10Z",
+    "note": "_Sans objet_ — document de travail interne à l'équipe, aucun label `semver`. Rien ne change pour le visiteur du site.",
+    "version": null
+  },
+  {
     "pr": 846,
     "date": "2026-09-22T02:59:49Z",
     "note": "Aucune. Correction de trois notes du journal lui-même, rien ne change sur le site.",
