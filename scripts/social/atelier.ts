@@ -184,14 +184,20 @@ async function main() {
         process.stdout.write(`  Partis · 10 courts · ${rendu} … `);
         const { sortie } = await lancer("partis-court", ["--sans-ouvrir", "--sortie", dossier, "--format", rendu,
           ...(typeof args.edition === "string" ? ["--edition", args.edition] : [])]);
-        const e = ecarts(sortie);
-        console.log(e.length ? `⚠️ ${e.length} écart(s)` : "ok");
-        // Le contrôle rapporte les écarts de tous les courts ensemble : on les
-        // range sous l'analyse qu'ils nomment, sinon ils seraient illisibles.
-        for (const c of voulus) {
-          const miens = e.filter((x) => x.includes(c));
-          if (miens.length) parCourt[c].ecarts = { ...parCourt[c].ecarts, [rendu]: miens };
+        // Le script produit les courts l'un après l'autre et annonce chacun par
+        // « ▶ <id> — ». On découpe la sortie sur ces annonces : les écarts, eux,
+        // ne nomment JAMAIS l'analyse (scènes « plan » et « fin »), et chercher
+        // l'identifiant dans leur texte rangeait tout écart de « boutons » sous
+        // « ton » (vitrine#826).
+        const troncons = sortie.split(/^▶ /m).slice(1);
+        let total = 0;
+        for (const t of troncons) {
+          const c = t.slice(0, t.indexOf(" "));
+          const miens = ecarts(t);
+          total += miens.length;
+          if (parCourt[c] && miens.length) parCourt[c].ecarts = { ...parCourt[c].ecarts, [rendu]: miens };
         }
+        console.log(total ? `⚠️ ${total} écart(s)` : "ok");
       }
       const fichiers = await fs.readdir(dossier).catch(() => [] as string[]);
       for (const c of voulus) {

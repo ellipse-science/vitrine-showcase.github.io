@@ -2028,13 +2028,16 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
     // signature et lien viennent de LA MÊME ligne : ils ne peuvent pas se
     // contredire. Ne jamais recomposer une signature depuis une autre source —
     // une signature fausse sur un article publié est une erreur coûteuse.
+    // Médias QUÉBÉCOIS seulement : le post annonce « n/6 des grands médias
+    // québécois », compté sur QC_MEDIA ; le commentaire ne peut pas citer CTV
+    // ou CBC sous ce chiffre (54 lignes QC sur 263 en portaient un le 22-09).
     const parMedia = new Map<string, { media: string; title: string; url: string; author: string | null }>();
     try {
       const arts = JSON.parse(e.articles ?? "[]") as RawArticle[];
       for (const art of arts) {
         const mins = Number(art.headline_minutes ?? 0);
         if (Number.isFinite(mins) && mins > 0) totalHeadlineMinutes += mins;
-        if (art.url && art.media_id && !parMedia.has(art.media_id)) {
+        if (art.url && art.media_id && QC_MEDIA.includes(art.media_id) && !parMedia.has(art.media_id)) {
           parMedia.set(art.media_id, {
             media: MEDIA_NAMES[art.media_id] ?? art.media_id,
             title: (art.title ?? "").trim(),
@@ -2053,7 +2056,7 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
     try {
       const arts24 = JSON.parse(e.articles_24h ?? "[]") as RawArticle[];
       for (const art of arts24) {
-        if (art.url && art.media_id && !parMedia.has(art.media_id)) {
+        if (art.url && art.media_id && QC_MEDIA.includes(art.media_id) && !parMedia.has(art.media_id)) {
           parMedia.set(art.media_id, {
             media: MEDIA_NAMES[art.media_id] ?? art.media_id,
             title: (art.title ?? "").trim(),
