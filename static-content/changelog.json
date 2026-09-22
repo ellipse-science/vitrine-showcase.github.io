@@ -1,5 +1,11 @@
 [
   {
+    "pr": 839,
+    "date": "2026-09-22T13:10:47Z",
+    "note": "Dans le Polimètre+, les promesses de la campagne affichent maintenant le symbole de leur enjeu, comme les promesses de 2022.",
+    "version": "2.48.0-beta.1"
+  },
+  {
     "pr": 841,
     "date": "2026-09-22T12:59:48Z",
     "note": "Dans le Polimètre+, les promesses formulées pendant la campagne s'affichent maintenant au-dessus des promesses de 2022, sans avoir à changer de mode.",
