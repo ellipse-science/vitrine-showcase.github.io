@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATEGORY_ORDER,
-  MODE_LABELS,
+  NEUVE_RANGE_ORDER,
   NEUVE_RANGE_TAB_LABELS,
   PARTI_FULL_LABELS,
   PARTI_LABELS,
   PARTI_ORDER,
   RANGE_TAB_LABELS,
-  type ModeKey,
   type NeuveRangeKey,
   type PartiKey,
   type PolimetreData,
@@ -32,12 +31,23 @@ const RANGES: RangeKey[] = ["week", "month"];
 const SUMMARY_PLACEHOLDER =
   "Résumé en préparation : un texte généré automatiquement à partir de la couverture médiatique sera bientôt inséré ici.";
 
-const VERDICT_FILTERS: { value: VerdictSlug | "all"; label: string; short?: string }[] = [
+/* `masquableSiVide` : le filtre disparaît du rail quand aucune promesse de la
+   période ne porte ce verdict. Réservé aux verdicts TRANSITOIRES — « En cours »
+   et « En suspens » n'existent que pendant le mandat ; une fois celui-ci clos,
+   chaque promesse est réalisée, partielle ou rompue, et ces deux boutons ne
+   mèneraient plus qu'à une liste vide. Les trois verdicts finaux restent
+   toujours affichés : le rail est aussi la légende des pastilles. */
+const VERDICT_FILTERS: {
+  value: VerdictSlug | "all";
+  label: string;
+  short?: string;
+  masquableSiVide?: boolean;
+}[] = [
   { value: "all", label: "Tous les verdicts" },
   { value: "realisee", label: "Réalisée" },
   { value: "partielle", label: "Partiellement réalisée", short: "Partiellement" },
-  { value: "en-cours", label: "En cours" },
-  { value: "en-suspens", label: "En suspens" },
+  { value: "en-cours", label: "En cours", masquableSiVide: true },
+  { value: "en-suspens", label: "En suspens", masquableSiVide: true },
   { value: "rompue", label: "Rompue" },
 ];
 
@@ -258,17 +268,21 @@ function EnjeuDropdown({
   );
 }
 
-/* Vue « promesses de 2022 » — le module historique. `modeSwitch` est l'inverseur
-   de mode injecté par la coquille : il n'apparaît que lorsqu'il y a un second
-   mode à offrir (cf. PolimetrePlusClient plus bas). */
+/* Vue « promesses de 2022 » — le module historique.
+
+   `sousModule` : la vue se rend SOUS le bloc « campagne » (cf. PolimetrePlusClient
+   plus bas). Elle garde ses contrôles et son rail, mais cède le titre h2 au bloc
+   du dessus : ne restent que son sous-titre et son infobulle, promus en h3 pour
+   que le plan de la page nomme encore le bloc. Sans second bloc, la vue est le
+   module entier et porte son h2 comme avant. */
 function PolimetreView({
   data,
-  modeSwitch,
   editionKey,
+  sousModule = false,
 }: {
   data: PolimetreData;
-  modeSwitch?: ReactNode;
   editionKey?: string;
+  sousModule?: boolean;
 }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
@@ -289,28 +303,57 @@ function PolimetreView({
       .map((c) => ({ name: c, present: present.has(c) }));
   }, [promises]);
 
+  // Filtres de verdict offerts sur la période : les verdicts transitoires ne
+  // sont listés que s'ils ont au moins une promesse (cf. VERDICT_FILTERS).
+  // Calculé sur la liste COMPLÈTE de la période, pas sur les cinq affichés : un
+  // verdict absent du top 5 mais présent plus bas reste un filtre valide.
+  const verdictFilters = useMemo(() => {
+    const present = new Set(promises.map((p) => p.verdict));
+    return VERDICT_FILTERS.filter(
+      (f) => f.value === "all" || !f.masquableSiVide || present.has(f.value),
+    );
+  }, [promises]);
+
+  // Un verdict choisi sur une période puis absent de la suivante n'a plus de
+  // bouton : le choix retombe sur « Tous ». Dérivé plutôt que réinitialisé au
+  // changement d'onglet, pour que l'affichage ne puisse jamais montrer un filtre
+  // actif qui n'est pas dans le rail.
+  const verdictActif = verdictFilters.some((f) => f.value === verdict) ? verdict : "all";
+
   const filtered = promises
-    .filter((p) => verdict === "all" || p.verdict === verdict)
+    .filter((p) => verdictActif === "all" || p.verdict === verdictActif)
     .filter((p) => category === "all" || p.category === category)
     .slice(0, TOP_N);
 
+  const sousTitre = (
+    <>
+      Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
+      <InfoTip size="sm" label="À propos du Polimètre+">
+        Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
+        Polimètre+ croise les promesses de la Coalition avenir Québec, faites
+        lors de la campagne de 2022, avec leur couverture en une dans les médias
+        québécois pour faire ressortir celles qui retiennent l&apos;attention.
+      </InfoTip>
+    </>
+  );
+
   return (
-    <section className="polimeter-plus" aria-label="Polimètre+">
+    <section
+      className={sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
+      aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
+    >
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
-          <div className="period-subtitle">
-            Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
-            <InfoTip size="sm" label="À propos du Polimètre+">
-              Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
-              Polimètre+ croise les promesses de la Coalition avenir Québec, faites
-              lors de la campagne de 2022, avec leur couverture en une dans les médias
-              québécois pour faire ressortir celles qui retiennent l&apos;attention.
-            </InfoTip>
-          </div>
+          {sousModule ? (
+            <h3 className="period-subtitle ppl-sous-titre">{sousTitre}</h3>
+          ) : (
+            <>
+              <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
+              <div className="period-subtitle">{sousTitre}</div>
+            </>
+          )}
         </div>
         <div className="control-block">
-          {modeSwitch}
           <div className="control-row">
             <div className="legend-toggle inline">
               {RANGES.map((r) => (
@@ -342,15 +385,15 @@ function PolimetreView({
         {/* Rail gauche : légende des verdicts + catégories d'enjeux */}
         <aside className="ppl-filters">
           <nav className="ppl-verdicts" aria-label="Filtrer par verdict">
-            {VERDICT_FILTERS.map((f) => {
+            {verdictFilters.map((f) => {
               const cls = f.value === "all" ? "ppl-verdict" : `ppl-verdict ppl-verdict--${f.value}`;
               return (
                 <button
                   key={f.value}
                   type="button"
-                  className={verdict === f.value ? `${cls} active` : cls}
+                  className={verdictActif === f.value ? `${cls} active` : cls}
                   data-verdict={f.value}
-                  aria-pressed={verdict === f.value}
+                  aria-pressed={verdictActif === f.value}
                   onClick={() => setVerdict(f.value)}
                 >
                   {f.short ? (
@@ -510,11 +553,45 @@ function PolimetreView({
  *  - la pastille porte le PARTI, pas le verdict. Une promesse formulée hier n'a
  *    pas d'état de réalisation ; le Polimètre ne se prononcera que des mois plus
  *    tard. Ce qu'on sait d'elle le jour même, c'est qui l'a formulée.
- *  - les onglets sont « Aujourd'hui » et « Depuis une semaine », sans « mois » :
- *    une fenêtre d'un mois noierait la nouveauté sous l'accumulé.
+ *  - les onglets sont « Aujourd'hui », « Depuis une semaine » et « Campagne »,
+ *    sans « mois » : une fenêtre d'un mois noierait la nouveauté sous
+ *    l'accumulé. « Campagne » n'est pas un mois qui glisse mais le cumul depuis
+ *    le jour du bref, la même période que les autres modules appellent ainsi.
  * ========================================================================== */
 
-const NEUVE_RANGES: NeuveRangeKey[] = ["day", "week"];
+const NEUVE_RANGES: NeuveRangeKey[] = NEUVE_RANGE_ORDER;
+
+/** L'état vide d'un onglet, et ce qu'il a le droit d'affirmer.
+ *
+ *  Le raffineur ne publie PAS une fenêtre sans reprise : dans la donnée, « aucune
+ *  promesse reprise cette semaine » et « la semaine n'a pas été calculée » se
+ *  ressemblent (`week` et `campaign` ne sont calculées que sur demande, hors
+ *  Lambda). Mais les fenêtres sont emboîtées, day ⊂ week ⊂ campaign : si un
+ *  onglet plus court montre des promesses, l'onglet plus long ne peut pas être
+ *  vide faute de reprise. Il est vide parce qu'il n'a pas été publié, et c'est ce
+ *  qu'on dit. Écrire « aucune promesse n'a été reprise depuis le début de la
+ *  campagne » sous un onglet « Aujourd'hui » qui en liste quatre serait faux.
+ *
+ *  Sans onglet plus court à contredire, l'état vide dit ce qui est vrai — aucune
+ *  REPRISE — et non « aucune promesse » : des promesses ont pu être formulées
+ *  sans qu'un seul média en parle, c'est précisément ce que le module donne à
+ *  voir.
+ *
+ *  Exportée pour le test : le rendu statique n'ouvre que « Aujourd'hui ». */
+export function messageEtatVide(range: NeuveRangeKey, ranges: PromessesNeuvesData["ranges"]): string {
+  const plusCourtes = NEUVE_RANGE_ORDER.slice(0, NEUVE_RANGE_ORDER.indexOf(range));
+  if (plusCourtes.some((r) => ranges[r].length > 0)) {
+    return "Le classement de cette période n'a pas encore été publié.";
+  }
+  switch (range) {
+    case "day":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes aujourd'hui.";
+    case "week":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes cette semaine.";
+    case "campaign":
+      return "Aucune promesse de campagne n'a été reprise dans les Unes depuis le début de la campagne.";
+  }
+}
 
 /** Badge de parti — sigle sur fond de la couleur du parti. Le nom complet part
  *  en title/aria : « QS » seul ne se lit pas à voix haute, et la couleur ne dit
@@ -539,11 +616,9 @@ function formatAnnonce(iso: string): string {
 
 function NeuvesView({
   data,
-  modeSwitch,
   editionKey,
 }: {
   data: PromessesNeuvesData;
-  modeSwitch?: ReactNode;
   editionKey?: string;
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
@@ -598,7 +673,7 @@ function NeuvesView({
           <h2 className="partis-title">Polimètre+&nbsp;: les promesses de la campagne</h2>
           <div className="period-subtitle">
             Promesses repérées dans les communiqués des partis, classées selon leur écho médiatique
-            <InfoTip size="sm" label="À propos de ce mode">
+            <InfoTip size="sm" label="À propos des promesses de la campagne">
               Chaque communiqué de presse publié par un des cinq grands partis au Québec est lu
               automatiquement pour y repérer les promesses qu&apos;il formule, au sens du
               Polimètre&nbsp;: un engagement à une action ou à un but précis, formulé de façon
@@ -610,7 +685,6 @@ function NeuvesView({
           </div>
         </div>
         <div className="control-block">
-          {modeSwitch}
           <div className="control-row">
             <div className="legend-toggle inline">
               {NEUVE_RANGES.map((r) => (
@@ -686,19 +760,8 @@ function NeuvesView({
             onChange={setEnjeu}
             options={enjeuItems}
           />
-
-          {/* MÊME lien que le mode « 2022 » : c'est la définition du Polimètre
-              qui décide ce qui compte comme promesse, dans les deux modes. Le
-              prompt de repérage applique son critère de testabilité — pointer
-              ailleurs laisserait croire à un standard maison. */}
-          <a
-            className="ppl-metho-rail"
-            href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
-            target="_blank"
-            rel="noopener"
-          >
-            Méthodologie du Polimètre
-          </a>
+          {/* Pas de lien « Méthodologie du Polimètre » ici : le bloc « 2022 »,
+              juste en dessous, le porte pour le module entier. */}
         </aside>
 
         {/* Rail droit : liste des promesses neuves */}
@@ -711,13 +774,12 @@ function NeuvesView({
 
           {filtered.length === 0 ? (
             <p style={{ padding: "18px 0", opacity: 0.6, fontStyle: "italic" }}>
-              {/* L'état vide dit ce qui est vrai — aucune REPRISE — et non
-                  « aucune promesse ». Des promesses ont pu être formulées sans
-                  qu'un seul média en parle : c'est précisément ce que le module
-                  donne à voir, et l'écrire autrement serait faux. */}
-              {range === "day"
-                ? "Aucune promesse de campagne n'a été reprise dans les Unes aujourd'hui."
-                : "Aucune promesse de campagne n'a été reprise dans les Unes cette semaine."}
+              {/* Deux vides qui ne disent pas la même chose : la FENÊTRE est
+                  vide (messageEtatVide), ou ce sont les filtres parti + enjeu
+                  qui ont tout écarté d'une fenêtre qui a des promesses. */}
+              {promesses.length === 0
+                ? messageEtatVide(range, data.ranges)
+                : "Aucune promesse ne correspond à ces filtres sur cette période."}
             </p>
           ) : (
             <ol className="ppl-promises">
@@ -750,7 +812,10 @@ function NeuvesView({
                       <>
                         <div className="ppl-promise__head">
                           <span className="ppl-rank">{i + 1}</span>
-                          <PromiseTitle title={p.title} />
+                          {/* Même symbole d'enjeu que le mode « 2022 » (issue #425).
+                              L'enjeu est ici inféré : `p.enjeu` vaut null hors des
+                              douze libellés, et le symbole s'efface alors sans bruit. */}
+                          <PromiseTitle title={p.title} categorie={p.enjeu} />
                           <PartiBadge parti={p.parti} />
                         </div>
                         <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
@@ -824,7 +889,7 @@ function NeuvesView({
                     ) : (
                       <>
                         <span className="ppl-rank">{i + 1}</span>
-                        <PromiseTitle title={p.title} />
+                        <PromiseTitle title={p.title} categorie={p.enjeu} />
                         <PartiBadge parti={p.parti} />
                       </>
                     )}
@@ -841,67 +906,35 @@ function NeuvesView({
 }
 
 /* ========================================================================== *
- * Coquille — porte l'état de MODE et rend l'une des deux vues.
+ * Coquille — empile les deux vues, campagne AU-DESSUS de 2022.
+ *
+ * Pas d'inverseur de mode : les deux blocs sont visibles en même temps, chacun
+ * avec ses onglets et son rail. Le bloc « campagne » porte le titre h2 du
+ * module ; le bloc « 2022 » n'a que son sous-titre (cf. `sousModule`).
  *
  * `neuves` est optionnel et vaut null tant que le raffineur n'a rien publié (le
  * cas hors campagne, où les communiqués sont des annonces de candidature sans
- * promesse). L'inverseur n'apparaît alors PAS : offrir un mode qui mène à une
- * liste vide se lit comme une panne. Le module se comporte exactement comme
- * avant tant qu'il n'y a pas de promesse neuve à montrer.
+ * promesse). Le bloc « campagne » n'apparaît alors PAS : un bloc qui n'offre
+ * qu'une liste vide se lit comme une panne. Le module redevient exactement
+ * celui d'avant, h2 compris, tant qu'il n'y a pas de promesse neuve à montrer.
  * ========================================================================== */
 export function PolimetrePlusClient({
   data,
   neuves,
   editionKey,
-  defaultMode = "polimetre",
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
   editionKey?: string;
-  /* Mode affiché au premier rendu. Existe pour DEUX raisons :
-     1. le mode « campagne » est autrement inatteignable sans clic, donc
-        intestable — c'est ce trou qui a laissé passer un rail sans son filtre
-        d'enjeu jusqu'en revue;
-     2. c'est la « une ligne » annoncée ci-dessous pour basculer le défaut le
-        jour où la campagne le justifie. */
-  defaultMode?: ModeKey;
 }) {
-  const hasNeuves = !!neuves && (neuves.ranges.day.length > 0 || neuves.ranges.week.length > 0);
-  /* Défaut = le module historique, PAS le mode neuf. Un visiteur qui revient doit
-     retrouver ce qu'il connaît ; le mode « campagne » s'offre, il ne s'impose pas.
-     L'ordre de l'inverseur suit ce défaut — un inverseur qui présente en premier
-     un mode qui n'est pas celui affiché se lit comme un état incohérent. */
-  const [mode, setMode] = useState<ModeKey>(defaultMode);
+  const hasNeuves = !!neuves && NEUVE_RANGE_ORDER.some((r) => neuves.ranges[r].length > 0);
 
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
-  const modeSwitch = (
-    <div className="legend-toggle inline ppl-mode-switch" role="group" aria-label="Source des promesses">
-      {(["polimetre", "neuves"] as ModeKey[]).map((m) => (
-        <span
-          key={m}
-          className={m === mode ? "active" : undefined}
-          role="button"
-          tabIndex={0}
-          aria-pressed={m === mode}
-          onClick={() => setMode(m)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setMode(m);
-            }
-          }}
-          style={{ cursor: "pointer" }}
-        >
-          {MODE_LABELS[m]}
-        </span>
-      ))}
-    </div>
-  );
-
-  return mode === "neuves" ? (
-    <NeuvesView data={neuves!} modeSwitch={modeSwitch} editionKey={editionKey} />
-  ) : (
-    <PolimetreView data={data} modeSwitch={modeSwitch} editionKey={editionKey} />
+  return (
+    <>
+      <NeuvesView data={neuves!} editionKey={editionKey} />
+      <PolimetreView data={data} editionKey={editionKey} sousModule />
+    </>
   );
 }

@@ -2,10 +2,14 @@
 //
 // Lit public/data/refined/day/polimetre_promesses_neuves.json, produit par le
 // raffineur `polimetre-promesses-neuves` (→ vitrine_datamart.polimetre_promesses_neuves).
-// Le raffineur publie DEUX fenêtres par run — `window_key` ∈ {day, week} — déjà
-// classées et déjà rangées : la Vitrine ne recalcule aucun rang ici, contrairement
-// au mode « 2022 » où la vue « mois » agrège plusieurs instantanés hebdomadaires
-// et doit donc reclasser.
+// Le raffineur publie jusqu'à TROIS fenêtres par run — `window_key` ∈ {day,
+// week, campaign} — déjà classées et déjà rangées : la Vitrine ne recalcule aucun
+// rang ici, contrairement au mode « 2022 » où la vue « mois » agrège plusieurs
+// instantanés hebdomadaires et doit donc reclasser. `campaign` est le cumul
+// depuis le jour du bref (même origine que ELECTION_CALL_DATE), pas une fenêtre
+// glissante. Une fenêtre sans reprise n'est pas publiée du tout : « vide » et
+// « pas calculée » se ressemblent dans la donnée, et c'est la vue qui les
+// départage par l'emboîtement day ⊂ week ⊂ campaign.
 //
 // Renvoie null quand le JSON est absent (raffineur pas encore passé) ou qu'aucune
 // promesse n'a encore été repérée — le cas ATTENDU hors campagne, où les
@@ -20,6 +24,7 @@ import { lastUpdatedLabel } from "@/lib/dates";
 import { COULEUR_PAR_LIBELLE } from "@/lib/enjeux";
 import { readDatasetText } from "@/lib/data/source";
 import {
+  NEUVE_RANGE_ORDER,
   partiKeyFromId,
   type ArticleRef,
   type NeuveRangeKey,
@@ -237,11 +242,11 @@ export async function loadPromessesNeuves(
   // entière à chaque run, donc mélanger deux `window_end` compterait deux fois
   // les mêmes promesses.
   // Chaque fenêtre garde SON dernier instantané : `day` est republiée six fois
-  // par jour, `week` peut dater d'un run antérieur — la couper au window_end de
-  // `day` la faisait disparaître dès le lendemain.
-  const ranges = { day: [], week: [] } as Record<NeuveRangeKey, PromesseNeuveView[]>;
+  // par jour, `week` et `campaign` peuvent dater d'un run antérieur — les couper
+  // au window_end de `day` les faisait disparaître dès le lendemain.
+  const ranges: Record<NeuveRangeKey, PromesseNeuveView[]> = { day: [], week: [], campaign: [] };
   let windowEnd = "";
-  for (const key of ["day", "week"] as NeuveRangeKey[]) {
+  for (const key of NEUVE_RANGE_ORDER) {
     const snap = dernierInstantane(rows.filter((r) => r.window_key === key));
     if (snap.length > 0 && snap[0].window_end > windowEnd) windowEnd = snap[0].window_end;
     ranges[key] = snap
@@ -254,7 +259,7 @@ export async function loadPromessesNeuves(
       .slice(0, KEEP_PER_RANGE);
   }
 
-  if (ranges.day.length === 0 && ranges.week.length === 0) return null;
+  if (NEUVE_RANGE_ORDER.every((key) => ranges[key].length === 0)) return null;
 
   return {
     windowEnd,

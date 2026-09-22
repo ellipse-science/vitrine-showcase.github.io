@@ -40,11 +40,17 @@ ACCESS_AUD = "8217d6f3af04da4d6185d6ba20db7c1654b16ad545010eb8f84dddd9ffe1e219"
 # BASCULE 2026-08-19 : "true" = les Deploy Hooks partent quand LES 15 tables
 # ont réussi (tout ou rien). Retour à l'ombre : remettre "false".
 SYNC_TRIGGER_DEPLOYS = "true"
-# Datamart lu par la synchro (vitrine#489) : "DEV" (défaut) ou "PROD". La base
-# Glue porte le même nom dans les deux comptes ; seuls les clés (secrets
-# AWS_*_DEV / AWS_*_PROD, ci-dessous) et le seau de sortie changent. Bascule et
-# repli = changer cette valeur, puis `wrangler deploy` — sans toucher au code.
-DATAMART_ENV = "DEV"
+# Datamart lu par la synchro (vitrine#489) : "DEV" ou "PROD". La base Glue porte
+# le même nom dans les deux comptes ; seuls les clés (secrets AWS_*_DEV /
+# AWS_*_PROD, ci-dessous) et le seau de sortie changent. Bascule et repli =
+# changer cette valeur, puis `wrangler deploy` — sans toucher au code.
+#
+# BASCULE (vitrine#702) : "PROD" depuis la migration DEV→PROD des 22 tables du
+# datamart, terminée par Patrick Poncet le 17 septembre 2026. Les deux clés
+# PROD doivent être posées sur le Worker AVANT de déployer cette valeur : sans
+# elles, la synchro échoue à chaque passe et retient les Deploy Hooks.
+# Repli = "DEV" + `wrangler deploy` (workflow deploy-worker.yml).
+DATAMART_ENV = "PROD"
 # Coordonnées Athena (non secrètes) : base Glue des datamarts et compartiments
 # de résultats de chaque compte, les mêmes que ceux que `tube` résout.
 ATHENA_REGION = "ca-central-1"

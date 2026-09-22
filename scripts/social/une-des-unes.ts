@@ -76,7 +76,11 @@ async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEven
       console.warn("  illustration ignorée : le site publié illustre une autre Une que le dépôt local.");
       return null;
     }
-    const res = await fetch(`${SITE_URL}/data/generated-art/latest.png`);
+    // `?v=` : l'adresse est constante et le bord Cloudflare peut encore servir
+    // l'image de la Une PRÉCÉDENTE (15 min de cache, puis périmé jusqu'à 1 h).
+    // hero-selection.json nommerait alors la bonne Une, et l'image serait
+    // l'ancienne. Une adresse inédite va chercher le fichier à l'origine.
+    const res = await fetch(`${SITE_URL}/data/generated-art/latest.png?v=${Date.now()}`);
     if (!res.ok) return null;
     return `data:image/png;base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
   } catch {
